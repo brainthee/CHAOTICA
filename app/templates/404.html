@@ -1,0 +1,12 @@
+{% extends "base_error.html" %}
+{% load widget_tweaks %}
+{% load i18n static %}
+
+{% block head_title %}Error 404{% endblock head_title %}
+{% block error_header %}
+Error 404
+{% endblock error_header %}
+
+{% block error_desc %}
+<img width="100%" class="pb-4" src="{% static 'assets/img/404.jpg' %}">
+{% endblock error_desc %}

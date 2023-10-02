@@ -1,0 +1,19 @@
+<ul class="dropdown-menu dropdown-menu-end p-0" style="z-index: 9999;">
+    <li>
+        <a href="{% url 'job_update' job.slug %}" class="dropdown-item">
+            Edit Job
+        </a>
+    </li>
+    {% if job.can_proceed_to_lost %}
+        <li>
+            <button data-url="{% url 'job_update_workflow' job.slug 8 %}" class="dropdown-item js-update-job-workflow text-warning" 
+                data-status="Lost" data-status-id="8">Close as Lost</button>
+        </li>
+    {% endif %}
+    {% if job.can_proceed_to_delete %}
+        <li>
+            <button data-url="{% url 'job_update_workflow' job.slug 9 %}" class="dropdown-item js-update-job-workflow text-danger" 
+                data-status="Deleted" data-status-id="9">Delete Engagement</button>
+        </li>
+    {% endif %}
+</ul>

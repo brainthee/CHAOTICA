@@ -1,0 +1,127 @@
+{% load static %}
+
+<ul class="list-group">
+   <!-- Account Manager -->
+   <div class="d-flex align-items-center mb-3 mb-md-0 mb-xl-3">
+      {% if job.account_manager %}
+      <a class="me-3 dropdown-toggle dropdown-caret-none d-inline-block" href="#" role="button" 
+         data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+         <div class="avatar avatar-xl rounded-circle">
+            <img class="rounded-circle " src="{{ job.account_manager.get_avatar_url }}" alt="" />
+         </div>
+      </a>
+      {% include 'partials/users/user_profile_card.html' with userProfile=job.account_manager %}
+      {% else %}
+      <div class="avatar avatar-xl me-3">
+         <span class="rounded-circle fs-4 fas fa-user-slash"></span>
+      </div>
+      {% endif %}
+      <div>
+         <h5>
+         {% if job.account_manager %}{{ job.account_manager.get_full_name }}{% else %}None Assigned{% endif %}
+         </h5>
+
+         <a class="text-800 dropdown-toggle js-load-modal-form text-decoration-none dropdown-caret-none" 
+            data-url="{% url 'assign_job_field' job.slug 'account_manager' %}" href="#!">
+            Account Manager
+            <span class="fa-solid fa-caret-down text-800 fs--1 ms-2"></span>
+         </a>
+      </div>
+   </div>
+
+   <!-- Deputy Account Manager -->
+   <div class="d-flex align-items-center mb-3 mb-md-0 mb-xl-3">
+      {% if job.dep_account_manager %}
+         <a class="me-3 dropdown-toggle dropdown-caret-none d-inline-block" href="#" role="button" 
+            data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+            <div class="avatar avatar-xl rounded-circle">
+               <img class="rounded-circle " src="{{ job.dep_account_manager.get_avatar_url }}" alt="" />
+            </div>
+         </a>
+         {% include 'partials/users/user_profile_card.html' with userProfile=job.dep_account_manager %}
+      {% else %}
+         <div class="avatar avatar-xl me-3">
+            <span class="rounded-circle fs-4 fas fa-user-slash"></span>
+         </div>
+      {% endif %}
+      <div>
+         <h5>
+         {% if job.dep_account_manager %}{{ job.dep_account_manager.get_full_name }}{% else %}None Assigned{% endif %}
+         </h5>
+         <a class="text-800 dropdown-toggle js-load-modal-form text-decoration-none dropdown-caret-none" 
+            data-url="{% url 'assign_job_field' job.slug 'dep_account_manager' %}" href="#!">
+            Deputy Account Manager
+            <span class="fa-solid fa-caret-down text-800 fs--1 ms-2"></span>
+         </a>
+      </div>
+   </div>
+
+   <!-- Scoped By -->
+   <div class="d-flex align-items-center mb-3 mb-md-0 mb-xl-3">
+      {% if job.scoped_by.all|length > 1 %}
+      <!-- Multiple -->
+      <div class="avatar avatar-xl me-3">
+         <span class="rounded-circle fas fs-4 fa-users"></span>
+      </div>
+      <div>
+         <h5>
+            {% include 'partials/users/user_group.html' with users=job.scoped_by.all %}
+         </h5>
+      {% elif job.scoped_by.all|length == 1 %}
+      <!-- Just one -->
+         <a class="me-3 dropdown-toggle dropdown-caret-none d-inline-block" href="#" role="button" 
+         data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+         <div class="avatar avatar-xl rounded-circle">
+            <img class="rounded-circle " src="{{ job.scoped_by.all.0.get_avatar_url }}" alt="" />
+         </div>
+      </a>
+      {% include 'partials/users/user_profile_card.html' with userProfile=job.scoped_by.all.0 %}
+      <div>
+         <h5>
+         {{ job.scoped_by.all.0.get_full_name }}
+         </h5>
+
+      {% else %}
+      <!-- None set -->
+      <div class="avatar avatar-xl me-3">
+         <span class="rounded-circle fs-4 fas fa-user-slash"></span>
+      </div>
+      <div>
+         <h5>
+         None Assigned
+         </h5>
+      {% endif %}
+         <a class="text-800 dropdown-toggle js-load-modal-form text-decoration-none dropdown-caret-none" 
+            data-url="{% url 'assign_job_field' job.slug 'scoped_by' %}" href="#!">
+            Scoped By
+            <span class="fa-solid fa-caret-down text-800 fs--1 ms-2"></span>
+         </a>
+      </div>
+   </div>
+
+   <!-- Scope Signed Off by -->
+   <div class="d-flex align-items-center mb-3 mb-md-0 mb-xl-3">
+      {% if job.scoped_signed_off_by %}
+         <a class="me-3 dropdown-toggle dropdown-caret-none d-inline-block" href="#" role="button" 
+            data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+            <div class="avatar avatar-xl rounded-circle">
+               <img class="rounded-circle " src="{{ job.scoped_signed_off_by.get_avatar_url }}" alt="" />
+            </div>
+         </a>
+         {% include 'partials/users/user_profile_card.html' with userProfile=job.scoped_signed_off_by %}
+      {% else %}
+         <div class="avatar avatar-xl me-3">
+            <span class="rounded-circle fs-4 fas fa-user-slash"></span>
+         </div>
+      {% endif %}
+      <div>
+         <h5>
+         {% if job.scoped_signed_off_by %}{{ job.scoped_signed_off_by.get_full_name }}{% else %}None Assigned{% endif %}
+         </h5>
+         <a class="text-800 dropdown-toggle text-decoration-none dropdown-caret-none" href="#!">
+            Signed Off Scope
+         </a>
+      </div>
+   </div>
+
+</ul>

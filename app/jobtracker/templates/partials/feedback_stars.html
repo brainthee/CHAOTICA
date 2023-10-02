@@ -1,0 +1,9 @@
+{% load index %}
+    {% getRange 5 as feedbackRange %}
+    {% for i in feedbackRange %}
+    {% if feedback > i %}
+        <span class="fa fa-xs fa-star "></span>
+    {% else %}
+        <span class="text-300 fa-xs fa-regular fa-star "></span>
+    {% endif %}
+    {% endfor %}

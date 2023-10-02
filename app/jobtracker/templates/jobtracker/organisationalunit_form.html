@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% load menu %}{% load static %}
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+
+{% block pageTitle %}Organisational Unit Management{% endblock pageTitle %}
+{% block head_title %}Organisational Unit Management{% endblock head_title %}
+
+
+{% block breadcrumbItem %}
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{% url 'organisationalunit_list' %}">Organisational Units</a></li>
+<li class="breadcrumb-item text-sm text-dark active" aria-current="page">New Organisational Unit</li>
+{% endblock breadcrumbItem %}
+
+{% block content %}
+<div class="mt-3">
+    <form method="post">
+        {% csrf_token %}
+        {{ form.media }}
+
+        <div class="row g-3 flex-between-end mb-5">
+            <div class="col-auto">
+                <h2 class="mb-2">
+                    {% if form.instance.pk %}
+                    Edit Organisational Unit
+                    {% else %}
+                    Add Organisational Unit
+                    {% endif %}
+                </h2>
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-phoenix-secondary me-2 mb-2 mb-sm-0" type="button">Discard</button>
+                <button class="btn btn-outline-success mb-2 mb-sm-0" type="submit">Save</button>
+            </div>
+        </div>
+
+        <div class="row g-5">
+            <div class="col-12 col-xl-8">
+                <div class="row g-5">
+                    <div class="col-7">
+                        <h4 class="mb-3">Name</h4>
+                        {{ form.name|as_crispy_field }}       
+                    </div>
+                    <div class="col-5">
+                        <h4 class="mb-3">Unit Lead</h4>
+                        {{ form.lead|as_crispy_field }}      
+                    </div>
+                </div>
+                <div class="row g-5">
+                    <div class="col-6">
+                        <h4 class="mb-3">Description</h4>
+                        {{ form.description|as_crispy_field }}      
+                    </div>
+                    <div class="col-6">
+                        <h4 class="mb-3">Special Requirements</h4>
+                        {{ form.special_requirements|as_crispy_field }}      
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="col-12 col-xl-4">
+                <div class="row g-2">
+                
+                    <div class="col-12 col-xl-12">
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h4 class="card-title mb-4">Settings</h4>
+                                <div class="row gx-3">
+                                    <div class="col-12 col-sm-6 col-xl-12">
+                                        <div class="mb-4">
+                                            {{ form.approval_required|as_crispy_field }}
+                                        </div>
+                                    </div>
+                                    <div class="col-12 col-sm-6 col-xl-12">
+                                        <div class="mb-4">
+                                            {{ form.targetProfit|as_crispy_field }}
+                                        
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h4 class="card-title mb-4">Working Hours</h4>
+                                <div class="row gx-3">
+                                    <div class="col-12 col-sm-6 col-xl-12">
+                                        <div class="mb-4">
+                                            {{ form.businessHours_days|as_crispy_field }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row gx-3">
+                                    <div class="col-6">
+                                        <div class="mb-4">
+                                            {{ form.businessHours_startTime|as_crispy_field }}
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="mb-4">
+                                            {{ form.businessHours_endTime|as_crispy_field }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock content %}

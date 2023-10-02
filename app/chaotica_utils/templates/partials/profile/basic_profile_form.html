@@ -1,0 +1,25 @@
+{% load menu %}{% load static %}{% load crispy_forms_tags %}{% load skill_tags %}
+<form method="post" id="profileForm" class="profileForm" action="{% url 'update_own_profile' %}">
+    {% csrf_token %}
+    <div class="card-header">
+
+       <div class="row justify-content-between align-items-center">
+          <div class="col-12 col-md">
+             <h5>Basic Info</h5>
+          </div>
+          <div class="col col-md-auto">
+          <nav class="nav nav-underline justify-content-end doc-tab-nav align-items-center" role="tablist">
+             {{ profileForm.show_help|as_crispy_field }}
+             <!-- <div class="form-check form-switch">
+                <input class="form-check-input" id="flexSwitchCheckChecked" type="checkbox" {% if user.show_help %}checked=""{% endif %}>
+                <label class="form-check-label" for="flexSwitchCheckChecked">Show Tips</label>
+             </div>                   -->
+          </nav>
+          </div>
+       </div>
+
+    </div>
+    <div class="card-body">
+       {% crispy profileForm %}
+    </div>
+ </form>

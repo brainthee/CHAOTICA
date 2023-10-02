@@ -1,0 +1,85 @@
+<div class="table-responsive scrollbar mx-n1 px-1">
+  <table class="table table-sm fs--1 datatable mb-0">
+    <thead>
+      <tr>
+        <th class="sort white-space-nowrap align-middle ps-0" scope="col" data-sort="projectName" style="width:30%;">
+          PROJECT
+        </th>
+        <th class="sort align-middle ps-3" scope="col" data-sort="unit" style="width:10%;">
+          UNIT
+        </th>
+        <th class="sort align-middle ps-3" scope="col" data-sort="client" style="width:10%;">
+          CLIENT
+        </th>
+        <th class="sort align-middle ps-3" scope="col" data-sort="start" style="width:10%;">
+          START DATE
+        </th>
+        <th class="sort align-middle ps-3" scope="col" data-sort="deadline" style="width:15%;">
+          END DATE
+        </th>
+        <th class="sort align-middle ps-3" scope="col" data-sort="task" style="width:12%;">
+          PHASES
+        </th>
+        <th class="sort align-middle text-end" scope="col" data-sort="statuses" style="width:10%;">
+          STATUS
+        </th>
+        <th class="sort align-middle text-end" scope="col" style="width:10%;">
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for job in job_list %}
+    <tr>
+
+      <td class="align-middle time white-space-nowrap ps-0 projectName py-4">
+        <a class="fw-bold fs-0" href="{{ job.get_absolute_url }}">
+          {{ job.title }}
+        </a>
+      </td>
+
+      <td class="align-middle white-space-nowrap unit ps-3 py-4">
+        <a class="fw-bold fs-0" href="{{ job.unit.get_absolute_url }}">
+          {{ job.unit }}
+        </a>
+      </td>
+
+      <td class="align-middle white-space-nowrap client ps-3 py-4">
+        <a class="fw-bold fs-0" href="{{ job.client.get_absolute_url }}">
+          {{ job.client }}
+        </a>
+      </td>
+
+      <td class="align-middle white-space-nowrap start ps-3 py-4">
+        <p class="mb-0 fs--1 text-900">{{ job.job_starts }}</p>
+      </td>
+
+      <td class="align-middle white-space-nowrap end ps-3 py-4">
+        <p class="mb-0 fs--1 text-900">{{ job.job_ends }}</p>
+      </td>
+
+      <td class="align-middle white-space-nowrap phases ps-3 py-4">
+        <p class="fw-bo text-900 fs--1 mb-0">{{ job.phases.all|length }}</p>
+      </td>
+
+      <td class="align-middle white-space-nowrap text-end statuses">  
+        {% include 'partials/job/status_badge.html' with badge_size='sm' %}
+      </td>
+
+      <td class="align-middle text-end white-space-nowrap pe-0 action">
+        <!-- <div class="font-sans-serif btn-reveal-trigger position-static">
+          <button class="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal fs--2" type="button" data-bs-toggle="dropdown" data-boundary="window" aria-haspopup="true" aria-expanded="false" data-bs-reference="parent">
+            <span class="fas fa-ellipsis-h fs--2"></span>
+          </button>
+          <div class="dropdown-menu dropdown-menu-end py-2">
+            <a class="dropdown-item" href="#!">View</a>
+            <a class="dropdown-item" href="#!">Export</a>
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item text-danger" href="#!">Remove</a>
+          </div>
+        </div> -->
+      </td>
+      </tr>
+    {% endfor %}        
+    </tbody>
+  </table>
+</div>

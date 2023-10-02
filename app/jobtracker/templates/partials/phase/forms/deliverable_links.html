@@ -1,0 +1,96 @@
+{% load crispy_forms_tags %}
+<div class="card mt-3" id="basic-info">
+    <form method="post" action="{% url 'phase_edit_delivery' phase.job.slug phase.slug %}" class="js-submit-modal-form">
+        <div class="card-header">
+            <div class="row">
+                <div class="col my-auto">
+                    <div class="h-100">
+                    <h5 class="mb-1 text-gradient text-primary">
+                        Deliverables
+                    </h5>
+                    </div>
+                </div>
+                <div class="col-lg-4 text-end">
+                    <button type="submit" class="btn btn-outline-success btn-sm">Save</button> 
+                </div>
+            </div>
+        </div>
+        <div class="card-body pt-0">
+            {% csrf_token %}
+
+            <div class="row">
+                <div class="col">
+                    <div class="input-group input-group-static">
+                        <div class="row w-100 ">
+                            <div class="col-10">
+                                {{ phaseDeliverInlineForm.linkDeliverable|as_crispy_field }}
+                            </div>
+                            <div class="col-2 text-end">
+                                {% if phase.linkDeliverable %}
+                                <a href="{{ phase.linkDeliverable }}" class="text-primary text-sm ms-auto icon-move-right my-auto">
+                                    Goto
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col">
+                    <div class="input-group input-group-static">
+                        <div class="row w-100 ">
+                            <div class="col-10">
+                                {{ phaseDeliverInlineForm.linkTechData|as_crispy_field }}
+                            </div>
+                            <div class="col-2 text-end">
+                                {% if phase.linkTechData %}
+                                <a href="{{ phase.linkTechData }}" class="text-primary text-sm ms-auto icon-move-right my-auto">
+                                    Goto
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col">
+                    <div class="input-group input-group-static">
+                        <div class="row w-100 ">
+                            <div class="col-10">
+                                {{ phaseDeliverInlineForm.linkReportData|as_crispy_field }}
+                            </div>
+                            <div class="col-2 text-end">
+                                {% if phase.linkReportData %}
+                                <a href="{{ phase.linkReportData }}" class="text-primary text-sm ms-auto icon-move-right my-auto">
+                                    Goto
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="row mt-2">
+                <div class="col-12">   
+                    <div class="row">
+                        <div class="col-12 col-md-6">
+                            <h6 class="mb-0">Scope</h6>
+                        </div>
+                        <div class="col-12 col-md-6 d-flex justify-content-end">
+                            {{ phaseDeliverInlineForm.feedback_scope_correct|as_crispy_field }}
+                        </div>
+                    </div>
+                    <p>
+                        {{ phaseDeliverInlineForm.feedback_scope|as_crispy_field }}
+                    </p>
+                </div>
+            </div>
+        </div>
+   </form>
+ </div>

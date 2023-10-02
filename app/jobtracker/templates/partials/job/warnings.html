@@ -1,0 +1,13 @@
+<!-- Warnings -->
+{% if job.is_restricted %}
+<span class="badge badge-phoenix badge-phoenix-danger fs-1 m-2">Restricted: {{ job.get_restricted_detail_display }}</span>
+{% endif %}
+{% if job.high_risk %}
+<span class="badge badge-phoenix badge-phoenix-danger fs-1 m-2">High Risk</span>
+{% endif %}
+{% if job.technically_complex_test %}
+<span class="badge badge-phoenix badge-phoenix-danger fs-1 m-2">Complex Job</span>
+{% endif %}
+{% if job.is_time_limited %}
+<span class="badge badge-phoenix badge-phoenix-danger fs-1 m-2">Time Limited</span>
+{% endif %}

@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% load menu %}{% load static %}
+{% load skill_tags %}{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+{% block pageTitle %}Settings{% endblock pageTitle %}
+{% block head_title %}Settings{% endblock head_title %}
+
+
+{% block breadcrumbItem %}
+<li class="breadcrumb-item text-sm text-dark active" aria-current="page">Profile</li>
+{% endblock breadcrumbItem %}
+
+{% block content %}
+<div class="alert alert-danger text-white">
+  This functionality is not yet complete. Do not use!
+</div>
+<div class="row mb-5">
+    <div class="col-lg-3">
+       <div class="card position-sticky top-1">
+          <ul class="nav flex-column bg-white border-radius-lg p-3">
+             <li class="nav-item">
+                <a class="nav-link text-dark d-flex" data-scroll="" href="#app-settings">
+                <i class="material-icons text-lg me-2">person</i>
+                <span class="text-sm">App Settings</span>
+                </a>
+             </li>
+             <li class="nav-item pt-2">
+                <a class="nav-link text-dark d-flex" data-scroll="" href="#feeds">
+                <i class="material-icons text-lg me-2">date_range</i>
+                <span class="text-sm">Data Import/Export</span>
+                </a>
+             </li>
+          </ul>
+       </div>
+    </div>
+    <div class="col-lg-9 mt-lg-0 mt-4">      
+
+      <div class="card" id="app-settings">
+        <form method="post" action="{{ request.get_full_path }}" enctype="multipart/form-data">
+            {% csrf_token %}     
+          <div class="card-header">
+            <div class="row">
+              <div class="col-auto my-auto">
+                  <div class="h-100">
+                      <h5>Application Settings</h5>
+                  </div>
+              </div>
+              <div class="col-auto mt-2">
+                  
+              </div>
+              <div class="col-lg-4 col-md-6 my-sm-auto text-end ms-sm-auto me-sm-0 mx-auto mt-3">
+                  <button type="submit" class="btn btn-icon btn-outline-success ms-auto">
+                  Save
+                  </button>
+              </div>
+
+            </div>
+          </div>
+          <div class="card-body pt-0">
+            {% crispy app_settings %}
+          </div>
+         </form>
+       </div>
+
+
+       <div class="card mt-4" id="data-impex">
+         <div class="card-body">
+           <div class="d-flex align-items-center mb-sm-0 mb-4">
+             <div class="w-50">
+               <h5>Import/Export Data</h5>
+               <p class="text-sm mb-0">This function allows you to import or export data that is site wide. Effectively; this is a 'data takeaway' feature.</p>
+             </div>
+             <div class="w-50 text-end">
+               <button class="btn bg-gradient-warning mb-3 mb-md-0 ms-auto js-load-modal-form" 
+                  data-url="{% url 'import_site_data' %}" type="button" name="button">Import</button>
+               <button class="btn bg-gradient-info mb-0 ms-2 js-load-modal-form" 
+                  data-url="{% url 'export_site_data' %}" type="button" name="button">Export</button>
+             </div>
+           </div>
+         </div>
+       </div>
+
+
+    </div>
+ </div>
+{% endblock content %}

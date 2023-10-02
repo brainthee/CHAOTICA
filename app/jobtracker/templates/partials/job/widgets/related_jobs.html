@@ -1,0 +1,14 @@
+{% load humanize %}
+{% load static %}
+<div class="col-12 col-sm-auto col-xl-12">
+    {% for pJob in job.related_jobs.all %}
+        <a href="{{ pJob.get_absolute_url }}" class="btn btn-phoenix-primary w-100" type="button">
+            {{ pJob }} {% include 'partials/widgets/status_badge.html' with job=pJob %}
+        </a>
+    {% empty %}
+        <a href="javascript:;" class="btn btn-phoenix-light w-100" type="button">
+            <span class="fas fa-minus-circle me-2"></span>
+            No related jobs
+        </a>
+    {% endfor %}
+</div>

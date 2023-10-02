@@ -1,0 +1,33 @@
+[
+  {
+      "id": "a",
+      "title": "Auditorium A"
+  },
+  {
+      "id": "b",
+      "title": "Auditorium B",
+      "eventColor": "green"
+  },
+  {
+      "id": "c",
+      "title": "Auditorium C",
+      "eventColor": "orange"
+  },
+  {
+      "id": "e",
+      "title": "Auditorium E"
+  },
+  {
+      "id": "f",
+      "title": "Auditorium F",
+      "eventColor": "red"
+  },
+  {
+      "id": "g",
+      "title": "Auditorium G"
+  },
+  {
+      "id": "newUser",
+      "title": "New User"
+  }
+]

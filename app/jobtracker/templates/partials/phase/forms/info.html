@@ -1,0 +1,120 @@
+{% load bleach_tags %}
+{% load crispy_forms_tags %}
+
+<form method="post" action="{% url 'phase_update' phase.job.slug phase.slug %}" id="scopePhaseForm" class="scopePhaseForm js-submit-modal-form">
+    <div class="card mt-3" id="basic-info">
+        <div class="card-header">
+            <div class="row">
+                <div class="col my-auto">
+                    <div class="h-100">
+                        <h4 class="mb-1 text-gradient text-primary">
+                            Phase Information
+                        </h4>
+                    </div>
+                </div>
+                <div class="col-lg-4 text-end">
+                    <button type="submit" class="btn btn-phoenix-success btn-sm">Save</button> 
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+
+            {% csrf_token %}
+            <div class="row">
+                <div class="col-12">               
+                    <h6 class="text-start">Description</h6>
+                    <div class="border border-cake p-2">
+                    {{ infoForm.description|as_crispy_field }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-3">
+
+                <div class="col-6">   
+                    
+                    <h6 class="text-start">Logistics</h6>
+
+                    <ul class="list-group">
+                        <li class="list-group-item border-0 px-0">
+                            <div class="form-check form-switch ps-0">
+                                {{ infoForm.is_testing_onsite|as_crispy_field }}
+                            </div>
+                            <div class="form-check form-switch ps-0">
+                                {{ infoForm.is_reporting_onsite|as_crispy_field }}
+                            </div>
+                            <div class="form-check form-switch ps-0">
+                                <h6 class="text-start">Location</h6>
+                                <div class="border border-cake p-2">
+                                    {{ infoForm.location|as_crispy_field }}
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="col-6">
+                        
+                    <h6 class="text-start">Reporting</h6>
+                    <ul class="list-group">
+                        <li class="list-group-item border-0 px-0">
+                            <div class="form-check form-switch ps-0">
+                                {{ infoForm.number_of_reports|as_crispy_field }}
+                            </div>
+                            <div class="form-check form-switch ps-0">
+                                {{ infoForm.report_to_be_left_on_client_site|as_crispy_field }}
+                            </div>
+                        </li>
+                    </ul>
+
+                </div>
+            </div>
+
+            <div class="row mt-3">
+                <div class="col-12 col-md-6 position-relative">  
+                    <h6 class="mb-0">Target</h6>       
+                    <div class="border border-cake p-2">
+                        {{ infoForm.test_target|as_crispy_field }}
+                    </div>           
+                </div>
+                <div class="col-12 col-md-6 position-relative">     
+                    <h6 class="mb-0">Communication Requirements</h6>
+                    <div class="border border-cake p-2">
+                        {{ infoForm.comm_reqs|as_crispy_field }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-3">
+                <div class="col-12 col-md-6 position-relative">      
+                    <h6 class="mb-0">Pre-Reqs</h6>
+                    <div class="border border-cake p-2">
+                        {{ infoForm.prerequisites|as_crispy_field }}
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 position-relative">       
+                    <h6 class="mb-0">Credentials</h6>
+                    <div class="border border-cake p-2">
+                        {{ infoForm.account_credentials|as_crispy_field }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-3">
+                <div class="col-12 col-md-6 position-relative">    
+                    <h6 class="mb-0">Restrictions</h6>
+                    <div class="border border-cake p-2">
+                        {{ infoForm.restrictions|as_crispy_field }}
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 position-relative">   
+                    <h6 class="mb-0">Scheduling Requirements</h6>
+                    <div class="border border-cake p-2">
+                        {{ infoForm.scheduling_requirements|as_crispy_field }}
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+ </form>

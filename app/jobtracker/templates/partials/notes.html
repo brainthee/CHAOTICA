@@ -1,0 +1,26 @@
+{% load humanize %}{% load crispy_forms_tags %}{% load static %}
+<div class="row gy-4">
+    <div class="col-12 col-xl-auto flex-1">
+
+        {% for note in notes %}
+            <div class="{% if not forloop.last %}border-2 border-dashed border-bottom mb-4{% endif %}  pb-4 ">
+                <p class="mb-1 text-1000">
+                    {{ note.content }}
+                </p>
+                <div class="d-flex">
+                    <div class="fs--1 text-600">
+                        <span class="fa-solid fa-clock me-2"></span>
+                        <span class="fw-semi-bold me-1"
+                            data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ note.create_date }}">
+                            {{ note.create_date|naturaltime }}
+                        </span>
+                    </div>
+                    <p class="fs--1 mb-0 text-600">
+                        by <a class="ms-1 fw-semi-bold" href="{{ note.author.get_absolute_url }}">{{ note.author.get_full_name }}</a>
+                    </p>
+                </div>
+            </div>
+        {% endfor %}
+      
+    </div>
+  </div>

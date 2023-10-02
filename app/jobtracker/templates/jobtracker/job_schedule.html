@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% load menu %}{% load static %}{% load crispy_forms_tags %}{% load index %}
+
+{% block pageTitle %}Job{% endblock pageTitle %}
+{% block head_title %}{{ job }}{% endblock head_title %}
+
+
+{% block breadcrumbItem %}
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{% url 'job_list' %}">Jobs</a></li>
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{{ job.client.get_absolute_url }}">{{ job.client }}</a></li>
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{{ job.get_absolute_url }}">{{ job.id }}:{{ job.title }}</a></li>
+<li class="breadcrumb-item text-sm text-dark active" aria-current="page">Schedule</li>
+{% endblock breadcrumbItem %}
+
+{% block content %}
+<div class="card mb-3 ">
+    <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+        {% include 'partials/job/progress_wizard.html' %}
+    </div>
+    <div class="card-body mx-3 pb-2 mx-md-4">
+      <div class="row gx-4 mb-0">
+          <div class="col-auto my-auto">
+            <h5 class="mb-1 display-6">
+                Schedule: {{ job.id }} - {{ job.title }}
+            </h5>    
+          </div>
+          <div class="col-lg-5 col-md-6 my-sm-auto ms-sm-auto me-sm-0 mx-auto mt-3 text-end">
+            {% include 'partials/job/status_button.html' %}            
+          </div>
+      </div>
+
+      {% include 'partials/job/warnings.html' %}
+    </div>
+</div>
+<div class="row">
+  <!-- Show the add slot panel -->
+  <div class="col-7">
+    
+  </div>
+  <!-- Show the util stats -->
+  <div class="col-5">
+    <div class="card">
+      <div class="card-header pb-0">
+        <h6>Utilisation</h6>
+        <p>
+          Of the scoped hours, the following bars show how they are currently being utilised.
+        </p>
+      </div>
+      <div class="card-body pt-0">
+        <div class="row">
+          <div class="col position-relative">
+            {% for v,t in TimeSlotJobTypes %}
+            {% get_slotType_usage_perc job v as typePerc %}
+            {% get_total_scheduled_by_type job v as totalScheduled %}
+            {% get_total_scoped_by_type job v as totalScoped %}
+              {% if forloop.counter == 6 %}
+              <hr class="vertical mt-0 dark">
+              </div>
+              <div class="col">
+              {% endif %}
+              <div class="progress-wrapper">
+                <div class="progress-info">
+                  <div class="progress-percentage row">
+                    <div class="col">
+                      <span class="text-sm font-weight-normal">{{ t }}</span>
+                    </div>
+                    <div class="col text-end">
+                      <span class="text-sm font-weight-normal">{{ totalScheduled }} of {{ totalScoped }}</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="progress">
+                  <div class="progress-bar bg-{% if typePerc > 100 %}danger{% elif typePerc == 100 and totalScoped > 0 %}success{% elif typePerc == 100 %}danger{% elif typePerc > 75 %}warning{% elif typePerc > 0.0 %}info{% else %}light{% endif %}"
+                      role="progressbar" aria-valuenow="{{ typePerc }}" aria-valuemin="0" 
+                      aria-valuemax="100" style="width: {{ typePerc }}%;"></div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card mt-3 card-calendar">
+  <div class="card-body p-3">
+    <div class="calendar" data-bs-toggle="calendar" id="calendar"></div>
+  </div>
+</div>
+{% endblock content %}
+
+{% block footer_javascript_page %}
+<script>
+
+var containerEl = document.getElementById('external-events');
+var calendarEl = document.getElementById('calendar');
+
+if (containerEl) {
+    new FullCalendar.Draggable(containerEl, {
+        itemSelector: '.fc-event',
+        eventData: function(eventEl) {
+        return {
+            title: eventEl.innerText
+        };
+        }
+    });
+}
+
+var calendar = new FullCalendar.Calendar(calendarEl, {
+    initialView: 'resourceTimelineMonth',
+    themeSystem: 'bootstrap5',
+    headerToolbar: {
+        left: 'today prev,next',
+        center: 'title',
+        right: 'resourceTimelineTenDay,resourceTimelineMonth,resourceTimelineYear'
+    },
+    initialDate: '2023-07-01',  
+    // resources: [
+    //     "Hello Lewis",
+    //     "Hello Lewis",
+    //     "Hello Lewis",
+    // ],
+    scrollTime: '08:00',
+    aspectRatio: 1.75,
+    views: {
+        resourceTimelineTenDay: {
+            type: 'resourceTimeline',
+            duration: { days: 10 },
+            buttonText: '10 days'
+        }
+    },
+    resourceAreaHeaderContent: 'Users',
+    resources: '{% url 'view_job_schedule_members' job.slug %}',
+    events: '{% url 'view_job_schedule_slots' job.slug %}',
+    editable: false,
+    droppable: false,
+    nowIndicator: true,
+    // weekNumberCalculation: "ISO",
+    // slotDuration: "00:30:00",
+    // scrollTime: "08:00:00",
+    // slotMinTime: "08:00:00",
+    // slotMaxTime: "18:00:00",
+  });
+
+var addUser = function() {
+  var form = $(this);
+  userVal = $('#id_user').find(":selected").val()
+  userObj = $('#id_user').find(":selected").text()
+  if(userVal) {
+    calendar.addResource({
+      id: userVal,
+      title: userObj
+    });
+  } else {
+    Swal.fire(
+      'No User Selected!',
+      'Please select a user to add them to the resource table.',
+      'warning'
+    );    
+  }
+};
+
+$('#addUserToResource').click(addUser);
+
+calendar.render();
+</script>
+{% endblock footer_javascript_page %}

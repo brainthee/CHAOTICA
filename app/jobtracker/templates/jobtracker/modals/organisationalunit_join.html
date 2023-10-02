@@ -1,0 +1,36 @@
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+<div class="modal-dialog modal- modal-dialog-centered modal-" role="document">
+    <div class="modal-content">
+        <form method="post" action="{{ request.get_full_path }}" class="js-submit-modal-form">
+            {% csrf_token %}            
+            <div class="modal-header bg-info">
+                <h6 class="modal-title text-white font-weight-normal" 
+                    id="modal-title-default">
+                        Join Organisation Unit
+                </h6>
+                <button type="button" class="btn-close text-dark" 
+                    data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you wish to join this unit?</p>
+
+                <p>
+                    {% if orgUnit.approval_required %}
+                    Your request will be reviewed before access is granted.
+                    {% else %}
+                    Approval is not required so your membership will be added straight away.
+                    {% endif %}
+                <p>
+            </div>
+            <div class="modal-footer bg-info">
+                {% if orgUnit.approval_required %}
+                <button type="submit" class="btn bg-gradient-warning mb-0">Request Membership</button>
+                {% else %}
+                <button type="submit" class="btn bg-gradient-success mb-0">Join</button>
+                {% endif %}
+                <button type="button" class="btn btn-light shadow-none mb-0" data-bs-dismiss="modal">Close</button>
+            </div>
+        </form>
+    </div>
+ </div>

@@ -1,0 +1,74 @@
+{% load static %}
+<div class="row mb-3">
+    <div class="col-6">                
+        <div class="row">
+            <div class="col-9">
+                <h5 class="mb-1 text-gradient text-primary">
+                    <a href="javascript:;">Account Managers</a>
+                </h5>
+                </div>
+        </div>
+        {% for member in client.account_managers.all %}
+        <div class="row d-flex ">
+            <div class="col-lg-2 col-md-2 col-sm-3 col-4 text-center">
+                <a href="javascript:;" 
+                data-bs-toggle="tooltip" data-bs-placement="top" title="{{ member.get_full_name }}" data-container="body" data-animation="true"
+                class="avatar avatar-lg rounded-circle border bg-gradient-primary">
+                    <img alt="Image placeholder" class="p-1" src="{{ member.get_avatar_url }}">
+                </a>
+                <p class="mb-0 text-sm">
+                    {{ member.get_full_name }}
+                </p>
+            </div>
+        </div>
+        {% empty %}
+        <div class="row d-flex ">
+            <div class="col-lg-2 col-md-2 col-sm-3 col-4 text-center">
+                <a href="javascript:;" 
+                data-bs-toggle="tooltip" data-bs-placement="top" title="No users defined" data-container="body" data-animation="true"
+                class="avatar avatar-lg rounded-circle border bg-gradient-light">
+                </a>
+                <p class="mb-0 text-sm">
+                    None Defined
+                </p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="col-6">                
+        <div class="row">
+            <div class="col-9">
+                <h5 class="mb-1 text-gradient text-primary">
+                    <a href="javascript:;">Technical Account Managers</a>
+                </h5>
+                </div>
+        </div>
+        {% for member in client.tech_account_managers.all %}
+        <div class="row d-flex ">
+            <div class="col-lg-2 col-md-2 col-sm-3 col-4 text-center">
+                <a href="javascript:;" 
+                data-bs-toggle="tooltip" data-bs-placement="top" title="{{ member.get_full_name }}" data-container="body" data-animation="true"
+                class="avatar avatar-lg rounded-circle border bg-gradient-primary">
+                    <img alt="Image placeholder" class="p-1" src="{{ member.get_avatar_url }}">
+                </a>
+                <p class="mb-0 text-sm">
+                    {{ member.get_full_name }}
+                </p>
+            </div>
+        </div>
+        {% empty %}
+        <div class="row d-flex ">
+            <div class="col-lg-2 col-md-2 col-sm-3 col-4 text-center">
+                <a href="javascript:;" 
+                data-bs-toggle="tooltip" data-bs-placement="top" title="No users defined" data-container="body" data-animation="true"
+                class="avatar avatar-lg rounded-circle border bg-gradient-light">
+                </a>
+                <p class="mb-0 text-sm">
+                    None Defined
+                </p>
+            </div>
+        </div>
+        {% endfor %}              
+    </div>
+</div>

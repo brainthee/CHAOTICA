@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+{% load menu %}
+
+{% block pageTitle %}Scheduler{% endblock pageTitle %}
+{% block head_title %}Scheduler{% endblock head_title %}
+
+{% block headerBlock_css %}mb-6{% endblock headerBlock_css %}
+{% block content_classes %}px-0 {% endblock content_classes %}
+{% block breadcrumb_classes %}px-5{% endblock breadcrumb_classes %}
+
+{% block breadcrumbItem %}
+<li class="breadcrumb-item active" aria-current="page">Scheduler</li>
+{% endblock breadcrumbItem %}
+
+{% block content %}
+<div class="row px-5">
+  <div class="col-12">
+    <div class="row align-items-center justify-content-between g-3 mt-0 mb-0">
+      <div class="col-6 col-md-auto">
+        <h2 class="mb-2">
+          Scheduler
+        </h2>
+      </div>
+
+      <div class="col-md-auto">
+        <div class="d-flex">
+          <a href="#" class="btn btn-outline-secondary ms-auto">
+            Export
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div class="row g-0 mt-3 border-1 border-top bg-light dark__bg-1100 h-100">
+  <div class="col-10 bg-white border-1 border-end">
+
+    <div class="card-calendar min-vh-100">
+      <div class="card-body p-0">
+        <div class="calendar" data-bs-toggle="calendar" id="calendar"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="col-2 px-0 border-start-xxl border-300 border-top-0">
+    <div class="h-100">
+      <div class="bg-light dark__bg-1100 h-100 p-3">
+
+                
+                <span class="fw-bold">Date Range</span>
+                <div class="input-group">
+                  <input class="form-control" type="text" aria-label="First name">
+                  <input class="form-control" type="text" aria-label="Last name">
+                </div>
+                
+                <!-- <button class="btn btn-phoenix-primary me-1 mb-1" type="button">My Team</button> -->
+              
+                <div class="row">
+                  <div class="col-6">
+                    <div class="fw-bold">Skills</div>
+    
+                    <div class="mb-2">
+                      <div class="form-check mb-0">
+                        <input class="form-check-input mt-0" id="inStockInput" type="checkbox" name="color" checked>
+                        <label class="form-check-label d-block lh-sm fs-0 text-900 fw-normal mb-0" for="inStockInput">In stock</label>
+                      </div>
+                      <div class="form-check mb-0">
+                        <input class="form-check-input mt-0" id="preBookInput" type="checkbox" name="color">
+                        <label class="form-check-label d-block lh-sm fs-0 text-900 fw-normal mb-0" for="preBookInput">Pre-book</label>
+                      </div>
+                      <div class="form-check mb-0">
+                        <input class="form-check-input mt-0" id="outOfStockInput" type="checkbox" name="color">
+                        <label class="form-check-label d-block lh-sm fs-0 text-900 fw-normal mb-0" for="outOfStockInput">Out of stock</label>
+                      </div>
+                    </div>
+                    
+                  </div>
+                  <div class="col-6">
+                    <div class="fw-bold">Skills</div>
+    
+                    <div class="mb-2">
+                      <div class="form-check mb-0">
+                        <input class="form-check-input mt-0" id="inStockInput" type="checkbox" name="color" checked>
+                        <label class="form-check-label d-block lh-sm fs-0 text-900 fw-normal mb-0" for="inStockInput">In stock</label>
+                      </div>
+                      <div class="form-check mb-0">
+                        <input class="form-check-input mt-0" id="preBookInput" type="checkbox" name="color">
+                        <label class="form-check-label d-block lh-sm fs-0 text-900 fw-normal mb-0" for="preBookInput">Pre-book</label>
+                      </div>
+                      <div class="form-check mb-0">
+                        <input class="form-check-input mt-0" id="outOfStockInput" type="checkbox" name="color">
+                        <label class="form-check-label d-block lh-sm fs-0 text-900 fw-normal mb-0" for="outOfStockInput">Out of stock</label>
+                      </div>
+                    </div>
+                    
+                  </div>
+                </div>
+                
+
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock content %}
+
+
+{% block footer_javascript_page %}
+<script>
+
+var containerEl = document.getElementById('external-events');
+var calendarEl = document.getElementById('calendar');
+
+if (containerEl) {
+    new FullCalendar.Draggable(containerEl, {
+        itemSelector: '.fc-event',
+        eventData: function(eventEl) {
+        return {
+            title: eventEl.innerText
+        };
+        }
+    });
+}
+
+var calendar = new FullCalendar.Calendar(calendarEl, {
+    initialView: 'resourceTimelineMonth',
+    themeSystem: 'bootstrap5',
+    headerToolbar: {
+        left: 'today prev,next',
+        center: 'title',
+        right: 'resourceTimelineTenDay,resourceTimelineMonth,resourceTimelineYear'
+    },
+    scrollTime: '08:00',
+    // aspectRatio: 1.75,
+    views: {
+        resourceTimelineTenDay: {
+            type: 'resourceTimeline',
+            duration: { days: 10 },
+            buttonText: '10 days'
+        }
+    },
+    resourceAreaHeaderContent: 'Users',
+    resources: '{% url 'view_scheduler_members' %}',
+    events: '{% url 'view_scheduler_slots' %}',
+    // selectable: true,
+    // select: function(info) {
+    //   // get the selection info
+    //   phasePk = $('#phaseSelect').find(":selected").val()
+    //   slotType = $('#typeSelect').find(":selected").val()      
+    //   onsiteCheck = $('#is_onsite').is(':checked')
+    //   csrf = $('form :input[name="csrfmiddlewaretoken"]');
+    //   if(slotType == 0) {
+    //     Swal.fire(
+    //       'No slot type selected',
+    //       'Please select a type before adding a slot.',
+    //       'warning'
+    //     );    
+    //   } else {
+    //     var slotData = {
+    //         "phase": 0,
+    //         "slotType": slotType,
+    //         "start": info.start.toJSON(),
+    //         "end": info.end.toJSON(),
+    //         "is_onsite": onsiteCheck,
+    //         "user": info.resource.id,
+    //         "csrfmiddlewaretoken": csrf.val(),
+    //       };
+    //     $.ajax({
+    //       url: '',
+    //       data: slotData,
+    //       type: "POST",
+    //       dataType: 'json',
+    //       success: function(data) {
+    //         if (data.form_is_valid) {
+
+    //           location.reload();
+    //         } else {
+    //           Swal.fire(
+    //             'Failed to add',
+    //             'Something went wrong. Please check the data entered.',
+    //             'warning'
+    //           );    
+    //         }
+    //       }
+    //     });
+    //   };
+    // },
+    eventClick: function(info) {
+      info.jsEvent.preventDefault(); // don't let the browser navigate
+      // Show slot edit modal
+      if (info.event.url) {
+        $.ajax({
+            url: info.event.url,
+            type: 'get',
+            dataType: 'json',
+            success: function(data) {
+                $("#mainModalContent").html(data.html_form);
+                $("#mainModal").modal("show");
+            }
+        });
+      }
+    },
+    editable: true,
+    droppable: false,
+    nowIndicator: true,
+  });
+
+calendar.render();
+</script>
+{% endblock footer_javascript_page %}

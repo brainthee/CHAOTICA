@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% load menu %}{% load static %}
+
+{% block pageTitle %}{{ client }}{% endblock pageTitle %}
+{% block head_title %}{{ client }}{% endblock head_title %}
+
+
+{% block breadcrumbItem %}
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{% url 'client_list' %}">Clients</a></li>
+<li class="breadcrumb-item text-sm text-dark active" aria-current="page">{{ client.name }}</li>
+{% endblock breadcrumbItem %}
+
+{% block content_classes %}pt-15 px-0 {% endblock content_classes %}
+{% block breadcrumb_classes %}px-5{% endblock breadcrumb_classes %}
+
+{% block content %}
+
+<div class="row px-5">
+  <div class="col-12">
+    <div class="row align-items-center justify-content-between g-3 mt-0 mb-0">
+      <div class="col-6 col-md-auto">
+        <h2 class="mb-2">
+            Client
+        </h2>
+      </div>
+
+      <div class="col-md-auto">
+        <div class="d-flex">
+            <a href="{% url 'client_update' client.slug %}" 
+                class="btn btn-outline-secondary ms-auto">
+            Edit
+            </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div class="row justify-content-between ms-3 me-3 g-3 mt-0 mb-0 pb-3">
+    <div class="col-4">
+      <div class="card h-100">
+        <div class="card-body">
+          <div class="row align-items-center g-3">
+            <div class="col-12 col-sm-auto flex-1">
+              <h3 class="fw-bolder mb-2 line-clamp-1">
+                {{ client.name }}
+              </h3>
+            </div>
+          </div>  
+        </div>
+      </div>
+    </div>
+  
+    <div class="col-4">
+        {% if client.special_requirements %}
+        <div class="card border h-100 border-warning mb-3">
+            <div class="card-header pb-2">
+                <h5>Specific Requirements</h5>
+            </div>
+            <div class="card-body py-2 ">
+                {{ client.special_requirements |safe }}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+  
+    <div class="col-4">
+    </div>
+  </div>
+
+
+  {% if not client.is_ready_for_jobs %}
+  <div class="alert alert-warning mx-5 mt-3 text-white" role="alert">
+      <strong>Warning!</strong> Jobs can not be booked until an account manager is assigned.
+  </div>
+  {% endif %}
+  
+
+  <div class="row g-0 mt-3 border-1 border-top bg-light dark__bg-1100 h-100">
+    <div class="col-12 px-6 pt-3 border-1 border-end">
+
+        <div class="row mx-1">  
+            <ul class="nav nav-underline scrollbar flex-nowrap w-100 pb-1 mb-3" id="sectionNav" role="tablist" style="overflow-y: hidden;">
+                <li class="nav-item text-nowrap me-2" role="presentation">
+                    <a class="nav-link active" id="team-tab" data-bs-toggle="tab" href="#team" role="tab" aria-controls="tab-team" aria-selected="true">
+                    <span class="fa-solid fa-video me-2 tab-icon-color"></span>Team
+                    </a>
+                </li>
+                <li class="nav-item text-nowrap me-2" role="presentation">
+                    <a class="nav-link" id="contacts-tab" data-bs-toggle="tab" href="#contacts" role="tab" aria-controls="tab-contacts" aria-selected="false" tabindex="-1">
+                    <span class="fa-solid fa-clipboard me-2 tab-icon-color"></span>Contacts
+                    </a>
+                </li>
+                <li class="nav-item text-nowrap me-2" role="presentation">
+                    <a class="nav-link" id="jobs-tab" data-bs-toggle="tab" href="#jobs" role="tab" aria-controls="tab-jobs" aria-selected="false" tabindex="-1">
+                    <span class="fa-solid fa-clipboard me-2 tab-icon-color"></span>Jobs
+                    </a>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="myTabContent">
+                <div class="tab-pane fade active show" id="team" role="tabpanel" aria-labelledby="team-tab">
+                    {% include 'partials/client/team_widget.html' %}
+                </div>
+
+                <div class="tab-pane fade" id="contacts" role="tabpanel" aria-labelledby="contacts-tab">
+                    <div class="row gx-4 mb-0">
+                        <div class="col-auto my-auto">
+                            <div class="h-100">
+                                <h5>Contacts</h5>
+                            </div>
+                        </div>
+                        <div class="col-lg-4 col-md-6 my-sm-auto text-end ms-sm-auto me-sm-0 mx-auto mt-3">
+                            <a href="{% url 'client_contact_create' client.slug %}" class="btn btn-icon btn-sm btn-outline-success ms-auto">
+                            Add Contact
+                            </a>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12">
+                            {% include 'partials/contact_table.html' with contacts=client.contacts.all %}
+                        </div>
+                    </div>                    
+                </div>
+
+                <div class="tab-pane fade" id="jobs" role="tabpanel" aria-labelledby="jobs-tab">
+                    <div class="row">
+                        <div class="col-12">
+                            {% include 'partials/job/job_list_table.html' with job_list=allowedJobs %}
+                        </div>
+                    </div>
+                </div>
+            </div>        
+        </div>
+    </div>
+</div>
+
+{% endblock content %}

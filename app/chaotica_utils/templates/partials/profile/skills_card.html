@@ -1,0 +1,77 @@
+<div class="mb-3">
+    <h4 class="text-black">Skills</h4>
+</div>
+
+<div class="row g-0 mt-3 border-top border-300">
+    <div class="col-sm-2">
+      <div class="nav flex-sm-column border-end-sm border-300 fs--1 vertical-tab justify-content-between" role="tablist" aria-orientation="vertical">      
+          <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center active" 
+            id="specialistTab" data-bs-toggle="tab" data-bs-target="#specialistTabContent" role="tab" aria-controls="specialistTabContent" aria-selected="true">
+            <span class="d-none d-sm-inline">Specialist</span>
+          </a>
+  
+          <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center" 
+            id="aloneTab" data-bs-toggle="tab" data-bs-target="#aloneTabContent" role="tab" aria-controls="aloneTabContent" aria-selected="false">
+            <span class="d-none d-sm-inline">Can do alone</span>
+          </a>
+  
+          <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center" 
+            id="supportTab" data-bs-toggle="tab" data-bs-target="#supportTabContent" role="tab" aria-controls="supportTabContent" aria-selected="false">
+            <span class="d-none d-sm-inline">Can do with support</span>
+          </a>  
+      </div>
+    </div>
+    <div class="col-sm-10">
+      <div class="tab-content py-3 ps-sm-4 h-100">
+  
+        <div class="tab-pane fade active show" id="specialistTabContent" role="tabpanel" aria-labelledby="#specialistTab">
+          <h4 class="mb-3 d-sm-none">Specialist</h4>
+          
+          <div class="card">
+            <div class="card-body p-3">
+                {% for skill in user.get_skills_specialist %}
+                <a href="{{ skill.skill.get_absolute_url }}">
+                    <span class="badge badge-tag me-2 mb-1">{{ skill.skill }}</span>
+                </a>
+                {% empty %}
+                &nbsp;
+                {% endfor %}              
+            </div>
+          </div>
+        </div>
+  
+        <div class="tab-pane fade" id="aloneTabContent" role="tabpanel" aria-labelledby="aloneTab">
+          <h4 class="mb-3 d-sm-none">Can do alone</h4>
+          
+          <div class="card">
+            <div class="card-body p-3">
+                {% for skill in user.get_skills_alone %}
+                <a href="{{ skill.skill.get_absolute_url }}">
+                    <span class="badge badge-tag me-2 mb-1">{{ skill.skill }}</span>
+                </a>
+                {% empty %}
+                &nbsp;
+                {% endfor %}                    
+            </div>
+          </div>
+        </div>
+  
+        <div class="tab-pane fade" id="supportTabContent" role="tabpanel" aria-labelledby="supportTab">
+          <h4 class="mb-3 d-sm-none">With Support</h4>
+          
+          <div class="card">
+            <div class="card-body p-3">
+                {% for skill in user.get_skills_support %}
+                <a href="{{ skill.skill.get_absolute_url }}">
+                    <span class="badge badge-tag me-2 mb-1">{{ skill.skill }}</span>
+                </a>
+                {% empty %}
+                &nbsp;
+                {% endfor %}                
+            </div>
+          </div>
+        </div>
+        
+      </div>
+    </div>
+  </div>

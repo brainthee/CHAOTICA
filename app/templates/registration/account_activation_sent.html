@@ -1,0 +1,24 @@
+{% extends "../base_card.html" %}
+{% load widget_tweaks %}
+{% load i18n static %}
+{% load crispy_forms_tags %}
+
+
+{% block head_title %}Register{% endblock head_title %}
+{% block alerts %}
+  {% if form.errors %}
+  <div class="alert alert-danger" role="alert">
+      <strong>Danger!</strong> 
+      Your details were not recognised. 
+      Please try again.
+  </div>
+  {% endif %}
+{% endblock alerts %}
+
+{% block left_col_content %}
+<div class="card card-plain">
+  <div class="card-header pb-0 text-start">
+    <h4 class="font-weight-bolder">Activation e-mail sent</h4>
+  </div>
+</div>
+{% endblock left_col_content %}

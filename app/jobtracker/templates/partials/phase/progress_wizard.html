@@ -1,0 +1,136 @@
+<ul class="nav justify-content-between ">
+
+    <li class="nav-item">
+        <a class="nav-link fw-semi-bold {% if phase.status > 0 %}done complete{% else %}active{% endif %}" href="#">
+            <div class="text-center d-inline-block">
+                <span class="nav-item-circle-parent">
+                    <span class="nav-item-circle">
+                        <span class="fas fa-pen"></span>
+                    </span>
+                </span>
+                <span class="d-none d-md-block mt-1 fs--1">Draft</span>
+            </div>
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link fw-semi-bold {% if phase.status > 1 %}done complete{% elif phase.status == 1 %}active{% endif %}" href="#">
+            <div class="text-center d-inline-block">
+                <span class="nav-item-circle-parent">
+                    <span class="nav-item-circle">
+                        <span class="far fa-calendar-plus"></span>
+                    </span>
+                </span>
+                <span class="d-none d-md-block mt-1 fs--1">Scheduling</span>
+            </div>
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link fw-semi-bold {% if phase.status > 2 %}done complete{% elif phase.status == 2 %}active{% endif %}" href="#">
+            <div class="text-center d-inline-block">
+                <span class="nav-item-circle-parent">
+                    <span class="nav-item-circle">
+                        <span class="far fa-calendar-alt"></span>
+                    </span>
+                </span>
+                <span class="d-none d-md-block mt-1 fs--1">Scheduled</span>
+            </div>
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link fw-semi-bold {% if phase.status > 4 %}done complete{% elif phase.status == 4 %}active{% endif %}" href="#">
+            <div class="text-center d-inline-block">
+                <span class="nav-item-circle-parent">
+                    <span class="nav-item-circle">
+                        <span class="fas fa-clipboard-check"></span>
+                    </span>
+                </span>
+                <span class="d-none d-md-block mt-1 fs--1">Pre-Checks</span>
+            </div>
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link fw-semi-bold {% if phase.status > 6 %}done complete{% elif phase.status == 6 %}active{% elif phase.status == 5 %}warning{% endif %}" href="#">
+            <div class="text-center d-inline-block">
+                <span class="nav-item-circle-parent">
+                    <span class="nav-item-circle">
+                        <span class="fas fa-hourglass"></span>
+                    </span>
+                </span>
+                <span class="d-none d-md-block mt-1 fs--1">Ready To Start</span>
+            </div>
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link fw-semi-bold {% if phase.status > 7 %}done complete{% elif phase.status == 7 %}active{% endif %}" href="#">
+            <div class="text-center d-inline-block">
+                <span class="nav-item-circle-parent">
+                    <span class="nav-item-circle">
+                        <span class="fas fa-running"></span>
+                    </span>
+                </span>
+                <span class="d-none d-md-block mt-1 fs--1">In Progress</span>
+            </div>
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link fw-semi-bold {% if phase.status > 11 %}done complete{% elif phase.status > 7 %}active{% endif %}" href="#">
+            <div class="text-center d-inline-block">
+                <span class="nav-item-circle-parent">
+                    <span class="nav-item-circle">
+                        <span class="fas fa-search"></span>
+                    </span>
+                </span>
+                <span class="d-none d-md-block mt-1 fs--1">QA</span>
+            </div>
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link fw-semi-bold {% if phase.status > 12 %}done complete{% elif phase.status > 11 %}active{% endif %}" href="#">
+            <div class="text-center d-inline-block">
+                <span class="nav-item-circle-parent">
+                    <span class="nav-item-circle">
+                        <span class="fas fa-file-export"></span>
+                    </span>
+                </span>
+                <span class="d-none d-md-block mt-1 fs--1">Delivery</span>
+            </div>
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link fw-semi-bold {% if phase.status >= 13 %}done complete{% endif %}" href="#">
+            <div class="text-center d-inline-block">
+                <span class="nav-item-circle-parent">
+                    <span class="nav-item-circle">
+                        <span class="far fa-check-circle"></span>
+                    </span>
+                </span>
+                <span class="d-none d-md-block mt-1 fs--1">Delivered</span>
+            </div>
+        </a>
+    </li>
+
+    {% if phase.status > 13 %}
+    <li class="nav-item">
+        <a class="nav-link fw-semi-bold {% if phase.status > 13 %}done complete{% endif %}" href="#">
+            <div class="text-center d-inline-block">
+                <span class="nav-item-circle-parent">
+                    <span class="nav-item-circle">
+                        <span class="fas fa-exclamation-circle"></span>
+                    </span>
+                </span>
+                <span class="d-none d-md-block mt-1 fs--1">
+                {{ phase.get_status_display }}
+                </span>
+            </div>
+        </a>
+    </li>
+    {% endif %}
+</ul>

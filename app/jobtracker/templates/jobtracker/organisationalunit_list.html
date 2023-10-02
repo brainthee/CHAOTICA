@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% load menu %}{% load static %}
+
+{% block pageTitle %}Organisational Units{% endblock pageTitle %}
+{% block head_title %}Organisational Units{% endblock head_title %}
+
+{% block headerBlock_css %}mb-6{% endblock headerBlock_css %}
+
+{% block breadcrumbItem %}
+<li class="breadcrumb-item text-sm text-dark active" aria-current="page">Organisational Units</li>
+{% endblock breadcrumbItem %}
+
+{% block content %}
+
+{% if request.user.show_help %}
+<div class="row">
+  <div class="col-lg-12 col-12 mt-4 mt-lg-0">
+{% include 'help/organisationalunit_list.html' %}
+  </div>
+</div>
+{% endif %}
+
+<div class="row">
+  <div class="col-lg-6 col-12 d-flex ms-auto">
+    <a href="{% url 'organisationalunit_create' %}" class="btn btn-outline-success ms-auto">
+    New Organisational Unit
+    </a>
+  </div>
+</div>
+
+<div class="row my-4">
+  {% for unit in organisationalunit_list %}
+    {% include 'partials/unit/orgunit_card.html' %}
+  {% endfor %}
+</div>
+{% endblock content %}

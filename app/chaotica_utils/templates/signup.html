@@ -1,0 +1,51 @@
+{% extends "base_card.html" %}
+{% load widget_tweaks %}
+{% load i18n static %}
+{% load crispy_forms_tags %}
+
+{% block head_title %}Signup{% endblock head_title %}
+
+{% block alerts %}
+  {% if form.errors %}
+  {{ form.errors }}
+  <div class="alert alert-outline-danger m-3" role="alert">
+      <strong>Danger!</strong> 
+      There was a problem with your submission.
+  </div>
+  {% endif %}
+{% endblock alerts %}
+
+{% block left_col_content %}
+
+{% if new_install %}
+<div class="alert alert-outline-info m-3" role="alert">
+  <strong>New Install</strong>
+  <p class="mb-0">
+    Welcome! Sign up for a new user account, you will automatically be given administrative privileges. 😀
+  </p>
+</div>
+{% endif %}
+
+
+<div class="auth-form-box">
+  <div class="text-center mb-7">
+    <a class="d-flex flex-center text-decoration-none mb-4" href="../../../index.html">
+      <div class="d-flex align-items-center fw-bolder fs-5 d-inline-block">
+        <img src="{% static 'assets/img/icons/logo.png' %}" alt="chaotica" width="58" />
+      </div>
+    </a>    
+    <h3 class="text-1000">Sign Up</h3>
+    <p class="text-700">Create your account today</p>
+  </div>
+  
+  {% crispy form %}
+  
+<div class="text-center">
+  <a class="fs--1 fw-bold" href="{% url 'login' %}">
+    Sign in to an existing account
+  </a>
+</div>
+
+</div>
+
+{% endblock left_col_content %}

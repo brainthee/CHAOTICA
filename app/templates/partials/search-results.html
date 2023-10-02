@@ -1,0 +1,147 @@
+
+<div class="list py-2">
+  {% if results_count > 0 %}
+  <h6 class="dropdown-header text-1000 fs--2 py-2">{{ results_count }} <span class="text-500">results</span></h6>
+
+    {% if recentSearches %}
+    <hr class="text-200 my-0" />
+    <h6 class="dropdown-header text-1000 fs--1 border-bottom border-200 py-2 lh-sm">Recently Searched</h6>
+    <div class="py-2">
+      {% for search in recentSearches %}
+      <a class="dropdown-item" href="#!">
+        <div class="d-flex align-items-center">
+          <div class="fw-normal text-1000 title">
+            <span class="fa-solid fa-clock-rotate-left" data-fa-transform="shrink-2"></span>
+             {{ search }}
+            </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if search_jobs %}
+    <hr class="text-200 my-0" />
+    <h6 class="dropdown-header text-1000 fs--1 border-bottom border-200 py-2 lh-sm">Jobs</h6>
+    <div class="py-2">
+      {% for job in search_jobs %}
+      <a class="dropdown-item py-2 d-flex align-items-center" href="{{ job.get_absolute_url }}">
+        <div class="flex-1">
+          <h6 class="mb-0 text-1000 title">{{ job }}</h6>
+          <p class="fs--2 mb-0 d-flex text-700">
+            <span class="fw-medium text-600">{{ job.client }}</span>
+          </p>
+        </div>
+        <div class="flex-1 text-end">
+          <span class="fw-medium text-600">{% include 'partials/job/status_badge.html' %}</span>
+        </div>
+      </a>
+      {% endfor %}
+
+    </div>
+    {% endif %}
+
+    {% if search_clients %}
+    <hr class="text-200 my-0" />
+    <h6 class="dropdown-header text-1000 fs--1 border-bottom border-200 py-2 lh-sm">Clients</h6>
+    <div class="py-2">
+      {% for client in search_clients %}
+      <a class="dropdown-item" href="{{ client.get_absolute_url }}">
+        <div class="d-flex align-items-center">
+          <div class="fw-normal text-1000 title">
+            <span class="fa-solid fa-handshake text-900" data-fa-transform="shrink-2"></span>
+            {{ client }}
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if search_billingCodes %}
+    <hr class="text-200 my-0" />
+    <h6 class="dropdown-header text-1000 fs--1 border-bottom border-200 py-2 lh-sm">Billing Codes</h6>
+    <div class="py-2">
+      {% for code in search_billingCodes %}
+      <a class="dropdown-item" href="{{ code.get_absolute_url }}">
+        <div class="d-flex align-items-center">
+          <div class="fw-normal text-1000 title">
+            <span class="fa-solid fa-money text-900" data-fa-transform="shrink-2"></span>
+            {{ code }}
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if search_services %}
+    <hr class="text-200 my-0" />
+    <h6 class="dropdown-header text-1000 fs--1 border-bottom border-200 py-2 lh-sm">Services</h6>
+    <div class="py-2">
+      {% for svc in search_services %}
+      <a class="dropdown-item" href="{{ svc.get_absolute_url }}">
+        <div class="d-flex align-items-center">
+          <div class="fw-normal text-1000 title">
+            <span class="fa-solid fa-laptop-code text-900" data-fa-transform="shrink-2"></span>
+            {{ svc }}
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if search_skills %}
+    <hr class="text-200 my-0" />
+    <h6 class="dropdown-header text-1000 fs--1 border-bottom border-200 py-2 lh-sm">Skills</h6>
+    <div class="py-2">
+      {% for skill in search_skills %}
+      <a class="dropdown-item" href="{{ skill.get_absolute_url }}">
+        <div class="d-flex align-items-center">
+          <div class="fw-normal text-1000 title">
+            <span class="fab fa-readme-code text-900" data-fa-transform="shrink-2"></span>
+            {{ skill }}
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+    
+    {% if search_users %}
+    <hr class="text-200 my-0" />
+    <h6 class="dropdown-header text-1000 fs--1 border-bottom border-200 py-2 lh-sm">Members</h6>
+    <div class="py-2">
+      {% for usr in search_users %}
+      <a class="dropdown-item py-2 d-flex align-items-center" href="{{ usr.get_absolute_url }}">
+        <div class="avatar avatar-l status-online  me-2 text-900">
+          <img class="rounded-circle " src="{{ usr.get_avatar_url }}" alt="" />
+        </div>
+        <div class="flex-1">
+          <h6 class="mb-0 text-1000 title">{{ usr }}</h6>
+          <p class="fs--2 mb-0 d-flex text-700">{{ usr.jobtitle }}</p>
+        </div>
+      </a>
+      {% endfor %}  
+    </div>
+    {% endif %}
+    
+{% else %}
+  {% if q %}
+    {% if q|length < 3 %}
+    <h6 class="dropdown-header text-1000 fs--1 py-2">
+      Type more than 2 characters
+    </h6>
+    {% else %}
+      <h6 class="dropdown-header text-1000 fs--1 py-2">
+        No results found
+      </h6>
+    {% endif %}
+  {% else %}
+  <h6 class="dropdown-header text-1000 fs--1 py-2">
+    Start typing to search...
+  </h6>
+  {% endif %}
+{% endif %}
+</div>

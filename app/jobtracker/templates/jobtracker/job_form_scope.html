@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% load menu %}{% load static %}
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+
+{% block pageTitle %}Scope Job{% endblock pageTitle %}
+{% block head_title %}{{ job }}{% endblock head_title %}
+
+
+{% block breadcrumbItem %}
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{% url 'job_list' %}">Jobs</a></li>
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{{ job.client.get_absolute_url }}">{{ job.client }}</a></li>
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{{ job.get_absolute_url }}">{{ job.title }}</a></li>
+<li class="breadcrumb-item text-sm text-dark active" aria-current="page">Scope</li>
+{% endblock breadcrumbItem %}
+
+{% block content %}
+
+<div class="row min-vh-80">
+    <div class="col-lg-8 col-md-10 col-12 m-auto">
+       <h3 class="text-center">
+        Edit Scope
+        </h3>
+        <form method="post">
+            {% csrf_token %}
+            {% crispy form %}
+        </form>
+    </div>
+ </div>
+{% endblock content %}

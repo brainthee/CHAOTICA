@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% load menu %}{% load static %}
+
+{% block pageTitle %}Users{% endblock pageTitle %}
+{% block head_title %}Users{% endblock head_title %}
+
+{% block headerBlock_css %}mb-6{% endblock headerBlock_css %}
+
+{% block breadcrumbItem %}
+<li class="breadcrumb-item text-sm text-dark active" aria-current="page">Users</li>
+{% endblock breadcrumbItem %}
+
+{% block content %}
+
+{% if request.u.show_help %}
+<div class="row">
+  <div class="col-lg-12 col-12 mt-4 mt-lg-0">
+{% include 'help/user_list.html' %}
+  </div>
+</div>
+{% endif %}
+
+<div class="row my-3">
+  <div class="col-12">
+     <div class="card p-2">
+        <div class="card-header pb-2">
+            <div class="row justify-content-center align-items-center">
+               <div class="col-sm-auto col-8 my-auto">
+                  <h5>Users</h5>
+               </div>
+            </div>
+        </div>
+        <div class="card-body py-2 ">
+          <table class="table datatable align-items-center mb-0">
+            <thead>
+              <tr>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                    Name
+                </th>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+                    E-mail
+                </th>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+                    Units
+                </th>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+                    Global Roles
+                </th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+            {% for u in user_list %}
+              <tr>
+                <td>
+                  {{ u }}
+                </td>
+                <td>
+                  <div class="d-flex px-2">
+                      <a href="{{ u.get_absolute_url }}">
+                          {{ u.email }}
+                      </a>
+                  </div>
+                </td>
+                <td>
+                  {% for unitMembership in u.unit_memberships.all %}
+                    <a href="{{ unitMembership.unit.get_absolute_url }}">
+                      {{ unitMembership.unit }}
+                    </a> {% include 'partials/unit/role_badge.html' with member=unitMembership %}
+                    {% if not forloop.last %}<br /> {% endif %}
+                  {% empty %}
+                  No assigned units
+                  {% endfor %}
+                </td>   
+                <td>
+                  <p class="text-xs font-weight-normal mb-0">
+                    {% for group in u.groups.all %}
+                      {% include 'partials/globalRoleBadge.html' with group=group %}
+                    {% empty %}
+                    No assigned roles
+                    {% endfor %}
+                    </p>
+                </td>        
+                <td class="align-end text-end">
+                    <button class="btn btn-link text-secondary ps-0 pe-2" id="navbarDropdownMenuLink" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                      <i class="fa fa-ellipsis-v text-lg" aria-hidden="true"></i>
+                    </button>
+                    <div class="dropdown-menu shadow dropdown-menu-end me-sm-n4 me-n3" aria-labelledby="navbarDropdownMenuLink" style="">
+                      <a class="dropdown-item text-warning" href="{% url 'impersonate-start' u.id %}">Impersonate</a>
+                      <button class="dropdown-item text-primary js-load-modal-form" data-url="{% url 'user_assign_global_role' u.username %}" href="#!">Assign Global Role</button>
+                      
+                      
+                      <a class="dropdown-item " href="{{ u.get_absolute_url }}">View Profile</a>
+                      
+                    </div>
+                </td>
+              </tr>
+            {% endfor %}        
+            </tbody>
+          </table>
+
+        </div>
+     </div>
+  </div>
+</div>
+{% endblock content %}

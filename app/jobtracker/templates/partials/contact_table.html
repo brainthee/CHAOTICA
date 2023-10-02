@@ -1,0 +1,35 @@
+<table class="table align-items-center mb-0">
+    <thead>
+        <tr>
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Name</th>
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Phone</th>
+            <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Email</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for contact in contacts %}
+    <tr>
+        <td>
+            <div class="d-flex px-2 py-1">
+                <div class="d-flex flex-column justify-content-center">
+                    <h6 class="mb-0 text-xs">{{ contact.get_full_name }}</h6>
+                    <p class="text-xs text-secondary mb-0">{{ contact.jobtitle }}</p>
+                </div>
+            </div>
+        </td>
+        <td>
+            <p class="text-xs text-secondary mb-0">{{ contact.phone }}</p>
+        </td>
+        <td class="align-middle text-center text-sm">
+            <p class="text-xs text-secondary mb-0">{{ contact.email }}</p>                
+        </td>
+    </tr>
+    {% empty %}
+    <tr>
+        <td colspan="3">
+            <p class="text-xs text-secondary mb-0">No contacts found</p>  
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
