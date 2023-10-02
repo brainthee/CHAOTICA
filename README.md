@@ -20,6 +20,14 @@ It is a Django based engagement life-cycle management tool. Primaryily geared to
 - Skill tracking
 - Service tracking with skills definable (e.g. service X must have skill Y)
 
+## Roadmap
+
+In time, this will outline what should be expected for version 1 and what will be added later on.
+
+## Support
+
+This project is maintained by @brainthee. Please understand that I can not provide individual support via email. I also believe that help is much more valuable if it’s shared publicly, so that more people can benefit from it. So please raise any problems on the project issue tracker.
+
 ## Installation
 
 There are no released versions yet. Eventually you will be able to pull the latest image from DockerHub.
