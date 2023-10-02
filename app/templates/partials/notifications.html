@@ -1,0 +1,63 @@
+{% load humanize %}{% load static %}
+
+<div class="card position-relative border-0">
+  <div class="card-header p-2">
+    <div class="d-flex justify-content-between">
+      <h5 class="text-black mb-0">Notificatons</h5>
+      <button class="btn btn-link p-0 fs--1 fw-normal" type="button">Mark all as read</button>
+    </div>
+  </div>
+  <div class="card-body p-0">
+    <div class="scrollbar-overlay" style="height: 27rem;">
+      <div class="border-300">
+        {% for notification in notifications %}
+
+        <div class="px-2 px-sm-3 py-3 border-300 notification-card position-relative {% if notification.is_read %}read{% else %}unread{% endif %} border-bottom">
+          <div class="d-flex align-items-center justify-content-between position-relative">
+            <div class="d-flex">              
+              <div class="flex-1 me-sm-3">
+                <h4 class="fs--1 text-black">
+                  {{ notification.title }}
+                </h4>
+                <p class="fs--1 text-1000 mb-2 mb-sm-3 fw-normal">
+                  <span class='me-1 fs--2'>💬</span>
+                  {{ notification.message }}
+                </p>
+                <p class="text-800 fs--1 mb-0">
+                  <span class="me-1 fas fa-clock"></span>
+                  {{ notification.timestamp|naturaltime }}
+                </p>
+              </div>
+            </div>
+            <div class="font-sans-serif d-none d-sm-block">
+              <button class="btn fs--2 btn-sm dropdown-toggle dropdown-caret-none transition-none notification-dropdown-toggle" type="button" data-bs-toggle="dropdown" data-boundary="window" aria-haspopup="true" aria-expanded="false" data-bs-reference="parent"><span class="fas fa-ellipsis-h fs--2 text-900"></span></button>
+              <div class="dropdown-menu dropdown-menu-end py-2">
+                <a class="dropdown-item" href="#!">Mark as unread</a>
+                {% if notification.link %}
+                <a class="dropdown-item" href="{{ notification.link }}">Go to action</a>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+        {% empty %}
+        <div class="px-2 px-sm-3 py-3 border-300 notification-card position-relative {% if notification.is_read %}read{% else %}unread{% endif %} border-bottom">
+          <div class="d-flex align-items-center justify-content-between position-relative">
+            <div class="d-flex">
+              <div class="flex-1 me-sm-3">
+                <h4 class="fs--1 text-black">
+                  No new notifications
+                </h4>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+
+      </div>
+    </div>
+  </div>
+  <div class="card-footer p-0 border-top border-0">
+    <div class="my-2 text-center fw-bold fs--2 text-600"><a class="fw-bolder" href="../pages/notifications.html">Notification history</a></div>
+  </div>
+</div>

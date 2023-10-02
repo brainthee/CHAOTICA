@@ -1,0 +1,48 @@
+span.select2-container {
+    z-index:10050;
+}
+
+.select2-selection__rendered {
+    line-height: 31px !important;
+}
+.select2-container .select2-selection--single {
+    height: 45px !important;
+}
+.select2-selection__arrow {
+    height: 34px !important;
+}
+
+
+.dataTables_wrapper .dataTables_length select {
+    padding: 10px;
+}
+
+.dataTables_wrapper .dataTables_length select{
+  height: 44px;
+  border: none !important;
+  overflow: hidden;
+  display: unset !important;
+  width: 75px !important;
+}
+.dataTables_wrapper .dataTables_length select::-moz-focus-inner {
+  border: 0;
+}
+.dataTables_wrapper .dataTables_length select:focus {
+  outline: none;
+}
+.dataTables_wrapper .dataTables_length select option{
+  width: 60px;
+  font-size: 1.2em;
+  padding: 5px 0;
+  text-align: center;
+  margin-right: 20px;
+  display: inline-block;
+  cursor: pointer;
+  border:rgb(204, 204, 0) solid 1px;
+  border-radius: 5px;
+  color: rgb(204, 204, 0);
+}
+
+.fc-header-toolbar {
+  margin: 1.5em !important;
+}

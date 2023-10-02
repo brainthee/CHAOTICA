@@ -1,0 +1,75 @@
+<div class="table-responsive scrollbar mx-n1 px-1">
+  <table class="table table-sm fs--1 datatable mb-0">
+    <thead>
+      <tr>
+        <th class="sort white-space-nowrap align-middle ps-0" scope="col" data-sort="name" style="width:30%;">
+          Name
+        </th>
+        <th class="sort align-middle ps-3" scope="col" data-sort="sector" style="width:10%;">
+          Sector
+        </th>
+        <th class="sort align-middle ps-3" scope="col" data-sort="am" style="width:10%;">
+          Account Managers
+        </th>
+        <th class="sort align-middle ps-3" scope="col" data-sort="tam" style="width:10%;">
+          Technical Account Managers
+        </th>
+        <th class="sort align-middle ps-3" scope="col" data-sort="status" style="width:15%;">
+          Status
+        </th>
+        <th class="sort align-middle text-end" scope="col" style="width:10%;">
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for client in client_list %}
+    <tr>
+
+      <td class="align-middle time white-space-nowrap ps-0 projectName">
+        <a class="fw-bold fs-0" href="{{ client.get_absolute_url }}">
+          {{ client }}
+        </a>
+      </td>
+
+      <td class="align-middle white-space-nowrap unit ps-3">
+        {{ client.sector }}
+      </td>
+
+      <td class="align-middle white-space-nowrap client ps-3">
+        {% include 'partials/users/user_group.html' with users=client.account_managers.all %}
+      </td>
+
+      <td class="align-middle white-space-nowrap start ps-3">
+        {% include 'partials/users/user_group.html' with users=client.tech_account_managers.all %}
+      </td>
+
+      <td class="align-middle white-space-nowrap end ps-3">
+        {% if client.is_ready_for_jobs %}
+        <span class="badge badge-warning">Ready</span>
+        {% else %}
+        <span class="badge badge-warning">Not Ready</span>
+        {% endif %}
+      </td>
+
+      <td class="align-middle text-end white-space-nowrap pe-0 action">
+        <!-- <div class="font-sans-serif btn-reveal-trigger position-static">
+          <button class="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal fs--2" type="button" data-bs-toggle="dropdown" data-boundary="window" aria-haspopup="true" aria-expanded="false" data-bs-reference="parent">
+            <span class="fas fa-ellipsis-h fs--2"></span>
+          </button>
+          <div class="dropdown-menu dropdown-menu-end py-2">
+            <a class="dropdown-item" href="#!">View</a>
+            <a class="dropdown-item" href="#!">Export</a>
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item text-danger" href="#!">Remove</a>
+          </div>
+        </div> -->
+      </td>
+      </tr>
+    {% empty %}
+      <tr>
+        <td colspan="6">No clients</td>
+      </tr>
+    {% endfor %}        
+    </tbody>
+  </table>
+</div>

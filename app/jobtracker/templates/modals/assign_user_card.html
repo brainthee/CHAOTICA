@@ -1,0 +1,27 @@
+{% load static %}
+<div class="card position-relative border-0">
+    <div class="card-body p-0">
+        <form method="post" action="{% url 'assign_job_field' job.slug userField %}" class="js-submit-modal-form">
+
+            <div class="mx-3">
+                <h4 class="mb-3 fw-bold">Switch User</h4>
+
+                <div class="input-group input-group-dynamic">
+                    <div id="div_id_user" class="mb-3">
+                        <label for="id_user" class="form-label"> User </label>
+                        <select name="user" data-minimum-input-length="3" class="modelselect2 form-select" id="id_user" 
+                            data-autocomplete-light-language="en" data-autocomplete-light-url="{% url 'user-autocomplete' %}" 
+                            data-autocomplete-light-function="select2">
+                            <option value="" selected>---------</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="text-end">
+                    <button class="btn btn-link text-danger" type="button">Cancel</button>
+                    <button class="btn btn-sm btn-primary px-5" type="button">Save</button>
+                </div>
+            </div>
+        </form>
+    </div>
+ </div>

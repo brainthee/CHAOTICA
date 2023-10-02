@@ -1,0 +1,9 @@
+{% extends 'email_base.html' %}
+
+{% block title %}
+Membership update for {{ orgUnit.name }}.
+{% endblock title %}
+
+{% block content %}
+Your request to join the Organisational Unit {{ orgUnit.name }} has been denied. Please get in touch with a manager in that unit for more information.
+{% endblock content %}

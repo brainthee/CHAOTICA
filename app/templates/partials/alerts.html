@@ -1,0 +1,16 @@
+{% if not request.user.unit_memberships.all %}
+<div class="alert alert-phoenix-danger m-2 " role="alert">
+  <div class="row">
+    <div class="col-auto text-center">
+      You are not a member of any organisational units. Access to this system will be limited.
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% for message in messages %}
+<div class="alert alert-outline-{% if message.tags == "error" %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endfor %}

@@ -1,0 +1,31 @@
+{% load humanize %}
+{% load static %}
+<div class="col-12 col-sm-auto col-xl-12">
+    {% for link in phase.links.all %}         
+        <a href="{{ link.url }}" class="btn btn-phoenix-primary w-100" type="button">
+            {% if link.linkType == 1 %}
+                <span class="fab fa-gitlab me-2"></span>
+                GitLab: {{ link.title }}
+            {% elif link.linkType == 2 %}
+                <span class="fab fa-microsoft me-2"></span>
+                SharePoint: {{ link.title }}
+            {% elif link.linkType == 3 %}
+                <span class="far fa-comment-dots me-2"></span>
+                Teams: {{ link.title }}
+            {% elif link.linkType == 4 %}
+                <span class="far fa-calendar-alt me-2"></span>
+                Schedule: {{ link.title }}
+            {% elif link.linkType == 5 %}
+                <span class="fas fa-server me-2"></span>
+                Hosting: {{ link.title }}
+            {% else %}
+                {{ link.title }}
+            {% endif %}
+        </a>
+    {% empty %}
+        <a href="javascript:;" class="btn btn-phoenix-light w-100" type="button">
+            <span class="fas fa-minus-circle me-2"></span>
+            No associated links
+        </a>
+    {% endfor %}
+</div>

@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+{% load menu %}{% load static %}
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+
+{% block pageTitle %}Edit Phase{% endblock pageTitle %}
+{% block head_title %}Edit Phase{% endblock head_title %}
+
+
+{% block breadcrumbItem %}
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{% url 'job_list' %}">Jobs</a></li>
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{{ job.client.get_absolute_url }}">{{ phase.job.client }}</a></li>
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{{ phase.job.get_absolute_url }}">{{ phase.job.id }}:{{ phase.job.title }}</a></li>
+<li class="breadcrumb-item text-sm"><span class="opacity-50 text-dark">Phase</span></li>
+<li class="breadcrumb-item text-sm text-dark" aria-current="page">{{ phase.phase_number }}:{{ phase.title }}</li>
+<li class="breadcrumb-item text-sm text-dark active" aria-current="page">Edit</li>
+{% endblock breadcrumbItem %}
+
+{% block content %}
+<div class="mt-3">
+    <form method="post">
+        {% csrf_token %}
+        {{ form.media }}
+        <div class="row g-3 flex-between-end mb-5">
+            <div class="col-auto">
+                <h2 class="mb-2">Edit Phase</h2>
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-phoenix-secondary me-2 mb-2 mb-sm-0" type="button">Discard</button>
+                <button class="btn btn-outline-success mb-2 mb-sm-0" type="submit">Save</button>
+            </div>
+        </div>
+
+
+        <div class="row g-5">
+            <div class="col-12 col-xl-8">
+                <div class="row mb-6">
+                    <div class="col-12 col-xl-6">
+                        {{ form.phase_number|as_crispy_field }}
+                    </div>
+
+                    <div class="col-12 col-xl-6">
+                        {{ form.service|as_crispy_field }}
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    {{ form.title|as_crispy_field }}
+                </div>
+
+                <div class="mb-6">
+                    {{ form.description|as_crispy_field }}
+                </div>
+
+
+                <div class="row g-0">
+                    <div class="col-6">
+                        <h4 class="card-title m-3 mb-4">Logistics</h4>
+                        <div class="px-3">
+                            <div class="row">
+                                <div class="col-12 col-xl-6">
+                                    {{ form.is_testing_onsite|as_crispy_field }}
+                                </div>
+            
+                                <div class="col-12 col-xl-6">
+                                    {{ form.is_reporting_onsite|as_crispy_field }}
+                                </div>
+                            </div>    
+
+                            <div class="mb-6">
+                                {{ form.location|as_crispy_field }}
+                            </div>       
+
+                            <div class="row mb-6">
+                                <div class="col-12 col-xl-6">
+                                    {{ form.number_of_reports|as_crispy_field }}
+                                </div>
+            
+                                <div class="col-12 col-xl-6">
+                                    {{ form.report_to_be_left_on_client_site|as_crispy_field }}
+                                </div>
+                            </div>        
+                        </div>         
+                                
+                    </div>
+
+
+                    <div class="col-6">
+                        <h4 class="card-title m-3 mb-4">Requirements</h4>
+                        <div class="px-3">
+                            <div class="row">
+                                <div class="col-12 col-xl-6">
+                                    {{ form.test_target|as_crispy_field }}
+                                </div>
+            
+                                <div class="col-12 col-xl-6">
+                                    {{ form.prerequisites|as_crispy_field }}
+                                </div>
+                            </div>  
+                            <div class="row">
+                                <div class="col-12 col-xl-6">
+                                    {{ form.account_credentials|as_crispy_field }}
+                                </div>
+            
+                                <div class="col-12 col-xl-6">
+                                    {{ form.restrictions|as_crispy_field }}
+                                </div>
+                            </div>      
+
+                            <div class="row mb-6">
+                                <div class="col-12 col-xl-6">
+                                    {{ form.comm_reqs|as_crispy_field }}
+                                </div>
+            
+                                <div class="col-12 col-xl-6">
+                                    {{ form.scheduling_requirements|as_crispy_field }}
+                                </div>
+                            </div>        
+                        </div> 
+                    </div>
+
+                </div>
+                
+            </div>
+
+            <div class="col-12 col-xl-4">
+                <div class="row g-2">                
+
+                    <div class="col-12 col-xl-12">
+                        <div class="card mb-3">
+                            <div class="card-body p-0">
+                                <h4 class="card-title m-3 mb-4">Scoped Time</h4>
+                                <table class="table table-striped table-sm mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th class="col-form-label">Type</th>
+                                            <th class="col-form-label">Total Hours</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td class="ps-3 align-middle">Delivery</td>
+                                            <td class="pt-3 pe-3 align-middle">{{ form.delivery_hours|as_crispy_field }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="ps-3 align-middle">Reporting</td>
+                                            <td class="pt-3 pe-3 align-middle">{{ form.reporting_hours|as_crispy_field }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="ps-3 align-middle">Management</td>
+                                            <td class="pt-3 pe-3 align-middle">{{ form.mgmt_hours|as_crispy_field }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="ps-3 align-middle">QA</td>
+                                            <td class="pt-3 pe-3 align-middle">{{ form.qa_hours|as_crispy_field }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="ps-3 align-middle">Oversight</td>
+                                            <td class="pt-3 pe-3 align-middle">{{ form.oversight_hours|as_crispy_field }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="ps-3 align-middle">Debrief</td>
+                                            <td class="pt-3 pe-3 align-middle">{{ form.debrief_hours|as_crispy_field }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="ps-3 align-middle">Contingency</td>
+                                            <td class="pt-3 pe-3 align-middle">{{ form.contingency_hours|as_crispy_field }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="ps-3 align-middle">Other</td>
+                                            <td class="pt-3 pe-3 align-middle">{{ form.other_hours|as_crispy_field }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="col-12 col-xl-12">
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h4 class="card-title mb-4">Dates</h4>
+                                <div class="row gx-3">
+                                    <div class="col-12 col-sm-6 col-xl-12">
+                                        <div class="mb-4">
+                                            {{ form.start_date_set|as_crispy_field }}                                        
+                                        </div>
+                                    </div>
+                                    <div class="col-12 col-sm-6 col-xl-12">
+                                        <div class="mb-4">
+                                            {{ form.due_to_techqa_set|as_crispy_field }}                                        
+                                        </div>
+                                    </div>
+                                    <div class="col-12 col-sm-6 col-xl-12">
+                                        <div class="mb-4">
+                                            {{ form.due_to_presqa_set|as_crispy_field }}                                        
+                                        </div>
+                                    </div>
+                                    <div class="col-12 col-sm-6 col-xl-12">
+                                        <div class="mb-4">
+                                            {{ form.delivery_date_set|as_crispy_field }}                                        
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </form>
+</div>
+{% endblock content %}

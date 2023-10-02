@@ -1,0 +1,168 @@
+{% load humanize %}
+{% load static %}
+<div class="echart-doughnut-phase-time" style="min-height:320px"></div>
+
+   <table class="table align-items-center mb-0">
+      <tbody>
+         {% for key,scopedHrs in phase.get_all_total_scoped_by_type.items %}
+         {% if scopedHrs.hrs > 0 %}
+         <tr>
+            <td>
+               <div class="d-flex px-2 py-1">
+                  <div class="d-flex flex-column justify-content-center">
+                     <h6 class="mb-0 text-sm">{{ scopedHrs.type }}</h6>
+                  </div>
+               </div>
+            </td>
+            <td class="align-middle text-center text-sm">
+               <span class="text-xs font-weight-bold"> {{ scopedHrs.hrs }} Hrs </span>
+            </td>
+         </tr>
+         {% endif %}
+         {% endfor %}
+      </tbody>
+   </table>
+
+<script>
+
+
+
+  const doughnutRoundedChartInit = () => {
+    const { getColor, getData } = window.phoenix.utils;
+    const $chartEl = document.querySelector(
+      '.echart-doughnut-phase-time'
+    );
+
+    if ($chartEl) {
+      const userOptions = getData($chartEl, 'echarts');
+      const chart = window.echarts.init($chartEl);
+      const getDefaultOptions = () => ({
+        legend: {
+          orient: 'vertical',
+          left: 'left',
+          textStyle: {
+            color: getColor('gray-600')
+          }
+        },
+        series: [
+          {
+            type: 'pie',
+            radius: ['40%', '70%'],
+            center: window.innerWidth < 530 ? ['65%', '55%'] : ['50%', '55%'],
+            avoidLabelOverlap: false,
+            itemStyle: {
+              borderRadius: 10,
+              borderColor: getColor('gray-100'),
+              borderWidth: 2
+            },
+            label: {
+              show: false,
+              position: 'center'
+            },
+            labelLine: {
+              show: false
+            },
+            data: [
+              {
+                value: 1200,
+                name: 'Starter',
+                itemStyle: {
+                  color: getColor('primary')
+                }
+              },
+              {
+                value: 1000,
+                name: 'Basic',
+                itemStyle: {
+                  color: getColor('danger')
+                }
+              },
+              {
+                value: 800,
+                name: 'Optimal',
+                itemStyle: {
+                  color: getColor('info')
+                }
+              },
+              {
+                value: 600,
+                name: 'Business',
+                itemStyle: {
+                  color: getColor('success')
+                }
+              },
+              {
+                value: 400,
+                name: 'Premium',
+                itemStyle: {
+                  color: getColor('warning')
+                }
+              }
+            ]
+          }
+        ],
+        tooltip: {
+          trigger: 'item',
+          padding: [7, 10],
+          backgroundColor: getColor('gray-100'),
+          borderColor: getColor('gray-300'),
+          textStyle: { color: getColor('dark') },
+          borderWidth: 1,
+          transitionDuration: 0,
+          axisPointer: {
+            type: 'none'
+          }
+        }
+      });
+
+      const responsiveOptions = {
+        xs: {
+          series: [
+            {
+              center: ['65%', '55%']
+            }
+          ]
+        },
+        sm: {
+          series: [
+            {
+              center: ['50%', '55%']
+            }
+          ]
+        }
+      };
+
+      echartSetOption(chart, userOptions, getDefaultOptions, responsiveOptions);
+    }
+  };
+
+   // // Doughnut chart
+   // var ctx3 = document.getElementById("doughnut-chart").getContext("2d");
+
+   // new Chart(ctx3, {
+   //    type: "doughnut",
+   //    data: {
+   //    labels: [{% for key,scopedHrs in phase.get_all_total_scoped_by_type.items %}{% if scopedHrs.hrs > 0 %}'{{ scopedHrs.type }}'{% if not forloop.last %},{% endif %}{% endif %}{% endfor %}],
+   //    datasets: [{
+   //       label: "Time",
+   //       weight: 9,
+   //       cutout: 60,
+   //       tension: 0.9,
+   //       pointRadius: 2,
+   //       borderWidth: 2,
+   //       backgroundColor: ['#03A9F4', '#3A416F', '#fb8c00', '#a8b8d8', '#e91e63'],
+   //       data: [{% for key,scopedHrs in phase.get_all_total_scoped_by_type.items %}{% if scopedHrs.hrs > 0 %}{{ scopedHrs.hrs }}{% if not forloop.last %},{% endif %}{% endif %}{% endfor %}],
+   //       fill: false
+   //    }],
+   //    },
+   //    options: {
+   //       responsive: true,
+   //       maintainAspectRatio: false,
+   //       plugins: {
+   //             legend: {
+   //             display: false,
+   //             }
+   //       },
+   //    },
+   // });
+</script>

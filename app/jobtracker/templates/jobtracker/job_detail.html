@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+{% load menu %}{% load static %}
+
+{% block pageTitle %}Job{% endblock pageTitle %}
+{% block head_title %}{{ job }}{% endblock head_title %}
+
+
+{% block breadcrumbItem %}
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{% url 'job_list' %}">Jobs</a></li>
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{{ job.client.get_absolute_url }}">{{ job.client }}</a></li>
+<li class="breadcrumb-item text-sm text-dark active" aria-current="page">{{ job.id }}:{{ job.title }}</li>
+{% endblock breadcrumbItem %}
+
+{% block content_classes %}pt-15 px-0 {% endblock content_classes %}
+{% block breadcrumb_classes %}px-5{% endblock breadcrumb_classes %}
+
+{% block content %}
+
+<div class="mt-0 p-0 text-center">
+  {% include 'partials/job/warnings.html' %}
+</div>
+
+<div class="row px-5">
+  <div class="col-12">
+    <div class="row align-items-center justify-content-between g-3 mt-0 mb-0">
+      <div class="col-6 col-md-auto">
+        <h2 class="mb-2">
+          Job Detail
+        </h2>
+      </div>
+
+      <div class="col-md-auto">
+        <div class="d-flex">
+          {% include 'partials/job/status_buttons.html' %}
+
+          <button class="btn px-3 ms-3 btn-phoenix-secondary" type="button" data-bs-toggle="dropdown" 
+            data-boundary="window" aria-haspopup="true" aria-expanded="false" data-bs-reference="parent">
+            <span class="fa-solid fa-ellipsis"></span>
+          </button>
+          {% include 'partials/job/status_button_menu.html' %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row justify-content-between ms-3 me-3 g-3 mt-0 mb-0">
+  <div class="col-4">
+    <div class="card">
+      <div class="card-body">
+        <div class="row align-items-center g-3">
+          <div class="col-12 col-sm-auto flex-1">
+            <h3 class="fw-bolder mb-2 line-clamp-1">
+              {{ job.id }} - {{ job.title }}
+            </h3>
+
+            <table class="w-100 table-stats table-stats">
+              <tbody>
+                  <tr>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                  </tr>
+                  <tr>
+                    <td class="py-2">
+                        <div class="d-flex align-items-center">
+                          <div class="d-flex bg-info-100 rounded-circle flex-center me-3" style="width:24px; height:24px">
+        
+                          </div>
+                          <p class="fw-bold mb-0">Client</p>
+                        </div>
+                    </td>
+                    <td class="py-2 d-none d-sm-block pe-sm-2">:</td>
+                    <td class="py-2">
+                        <p class="ps-6 ps-sm-0 fw-semi-bold mb-0">
+                          <a href="{{ job.client.get_absolute_url }}">{{ job.client }}</a>
+                        </p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="py-2">
+                        <div class="d-flex align-items-center">
+                          <div class="d-flex bg-info-100 rounded-circle flex-center me-3" style="width:24px; height:24px">
+        
+                          </div>
+                          <p class="fw-bold mb-0">Status</p>
+                        </div>
+                    </td>
+                    <td class="py-2 d-none d-sm-block pe-sm-2">:</td>
+                    <td class="py-2">
+                        <p class="ps-6 ps-sm-0 fw-semi-bold mb-0">
+                          {% include 'partials/job/status_badge.html' %}
+                        </p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="py-2">
+                        <div class="d-flex align-items-center">
+                          <div class="d-flex bg-info-100 rounded-circle flex-center me-3" style="width:24px; height:24px">
+        
+                          </div>
+                          <p class="fw-bold mb-0">Revenue</p>
+                        </div>
+                    </td>
+                    <td class="py-2 d-none d-sm-block pe-sm-2">:</td>
+                    <td class="py-2">
+                        <p class="ps-6 ps-sm-0 fw-semi-bold mb-0">$1,500.00</p>
+                    </td>
+                  </tr>
+              </tbody>
+            </table>
+
+
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="col-8">
+    <div class="row">
+      <div class="col-12 ">
+        <div class="card theme-wizard mb-0">
+          <div class="card-header px-6 pt-1 pb-0 border-bottom-0">
+            {% include 'partials/job/progress_wizard.html' %}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="row pt-5 align-items-center">
+      {% include 'partials/job/widgets/dates.html' %}
+    </div>
+  </div>
+
+</div>
+
+
+<div class="row g-0 mt-3 border-1 border-top bg-light dark__bg-1100 h-100">
+  <div class="col-12 col-md-9 px-6 pt-3 border-1 border-end">
+
+    <div class="row mx-1">  
+      <ul class="nav nav-underline scrollbar flex-nowrap w-100 pb-1 mb-3" id="sectionNav" role="tablist" style="overflow-y: hidden;">
+        <li class="nav-item text-nowrap me-2" role="presentation">
+          <a class="nav-link active" id="general-tab" data-bs-toggle="tab" href="#general" role="tab" aria-controls="tab-general" aria-selected="true">
+            <span class="fa-solid fa-video me-2 tab-icon-color"></span>General
+          </a>
+        </li>
+        <li class="nav-item text-nowrap me-2" role="presentation">
+          <a class="nav-link" id="phases-tab" data-bs-toggle="tab" href="#phases" role="tab" aria-controls="tab-phases" aria-selected="false" tabindex="-1">
+            <span class="fa-solid fa-clipboard me-2 tab-icon-color"></span>Phases
+          </a>
+        </li>
+        <li class="nav-item text-nowrap me-2" role="presentation">
+          <a class="nav-link" id="gantt-tab" data-bs-toggle="tab" href="#gantt" role="tab" aria-controls="tab-gantt" aria-selected="false" tabindex="-1">
+            <span class="fa-solid fa-clipboard me-2 tab-icon-color"></span>Gantt
+          </a>
+        </li>
+        <li class="nav-item text-nowrap me-2" role="presentation">
+          <a class="nav-link" id="sales-tab" data-bs-toggle="tab" href="#sales" role="tab" aria-controls="tab-sales" aria-selected="false" tabindex="-1">
+            <span class="fa-solid fa-chart-line me-2 tab-icon-color"></span>Sales
+          </a>
+        </li>
+        <li class="nav-item text-nowrap me-2" role="presentation">
+          <a class="nav-link" id="notes-tab" data-bs-toggle="tab" href="#notes" role="tab" aria-controls="tab-notes" aria-selected="false">
+            <span class="fa-solid fa-square-check me-2 tab-icon-color"></span>Notes
+          </a>
+        </li>
+      </ul>
+
+      <div class="tab-content" id="myTabContent">
+        <div class="tab-pane fade active show" id="general" role="tabpanel" aria-labelledby="general-tab">
+          {% include 'partials/job/widgets/contacts.html' %}
+          <div id="scope-info">
+            {% if job.inScoping %}
+              {% include 'partials/job/forms/scope.html' %}
+            {% else %}
+              {% include 'partials/job/widgets/scope.html' %}
+            {% endif %}
+          </div>
+        </div>
+        <div class="tab-pane fade" id="phases" role="tabpanel" aria-labelledby="phases-tab">
+          {% include 'partials/job/widgets/phases.html' %}
+        </div>
+        <div class="tab-pane fade" id="gantt" role="tabpanel" aria-labelledby="gantt-tab">
+          {% include 'partials/job/widgets/gantt.html' %}
+        </div>
+        <div class="tab-pane fade" id="sales" role="tabpanel" aria-labelledby="sales-tab">
+          <div class="row mt-4">
+            {% include 'partials/job/widgets/sales_stats.html' %}
+          </div>
+          {% include 'partials/job/widgets/sales_summary.html' %}
+        </div>
+        <div class="tab-pane fade" id="notes" role="tabpanel" aria-labelledby="notes-tab">
+          {% include 'partials/job/widgets/notes.html' %}
+        </div>
+      </div>
+  
+    </div>
+  </div>
+
+  <div class="col-12 col-md-3 px-0 border-start-xxl border-300 border-top-0">
+    <div class="h-100">
+      <div class="bg-light dark__bg-1100 h-100">
+
+        <div class="p-3">
+          <h4 class="mb-3">Team</h4>
+          {% include 'partials/job/widgets/team_list.html' %}
+        </div>   
+
+        <div class="p-3">
+          <h4 class="mb-3">Links</h4>
+          {% include 'partials/job/widgets/links.html' %}
+        </div>   
+
+        <div class="p-3">
+          <h4 class="mb-3">Recent activity</h4>
+          {% include 'partials/job/widgets/activity.html' %}
+        </div>  
+    
+        
+      </div>
+
+    </div>
+  </div>
+</div>
+
+{% endblock content %}
+
+
+
+{% block footer_javascript_page %}
+<script>
+
+$("#scopeForm").dirty({preventLeaving: true});
+
+</script>
+{% endblock footer_javascript_page %}

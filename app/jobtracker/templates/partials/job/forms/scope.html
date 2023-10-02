@@ -1,0 +1,102 @@
+{% load crispy_forms_tags %}
+<div class="card mt-3">
+    <form method="post" action="{% url 'job_edit_scope' job.slug %}" id="scopeForm" class="scopeForm js-submit-modal-form">
+        <div class="card-header">
+            <div class="row">
+                <div class="col my-auto">
+                    <div class="h-100">
+                        <h5 class="mb-1 text-gradient text-primary">
+                        Scope
+                        </h5>
+                        Please ensure the scope is filled out as complete as possible.
+                    </div>
+                </div>
+                <div class="col-lg-4 text-end">
+                    <button type="submit" class="btn btn-phoenix-success btn-sm">Save</button> 
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+
+            {% csrf_token %}
+ 
+            <div class="row">
+                <div class="col-12">      
+                    <h6 class="text-start">Summary</h6>      
+                    {{ scopeInlineForm.scoping_information|as_crispy_field }}
+                </div>
+            </div>
+        
+            <div class="row mt-3">
+                <div class="col-12 col-md-3 position-relative">
+                    <h6 class="text-center ">Kit</h6>
+                    <ul class="list-group">
+                        <li class="list-group-item border-0 px-0">
+                            <div class="form-check ps-0">
+                                {{ scopeInlineForm.additional_kit_required|as_crispy_field }}
+                            </div>
+                            <div class="form-check ps-0">
+                                {{ scopeInlineForm.kit_sourced_by_client|as_crispy_field }}
+                            </div>
+                            <div class="form-check ps-0 border border-light border-1">
+                                {{ scopeInlineForm.additional_kit_info|as_crispy_field }}
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+        
+        
+                <div class="col-12 col-md-3 position-relative">
+                    <h6 class="text-center ">Job Detail</h6>
+                    <ul class="list-group">
+                        <li class="list-group-item border-0 px-0">
+                            <div class="form-check ps-0">
+                                {{ scopeInlineForm.is_time_limited|as_crispy_field }}
+                            </div>
+                            <div class="form-check ps-0">
+                                {{ scopeInlineForm.bespoke_project|as_crispy_field }}
+                            </div>
+                            <div class="form-check ps-0">
+                                {{ scopeInlineForm.report_to_third_party|as_crispy_field }}
+                            </div>
+                            <div class="form-check ps-0">
+                                {{ scopeInlineForm.retest_included|as_crispy_field }}
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="col-12 col-md-3 position-relative">        
+                    <h6 class="text-center ">High Risk</h6>
+                    <ul class="list-group">
+                        <li class="list-group-item border-0 px-0">
+                            <div class="form-check ps-0">
+                                {{ scopeInlineForm.technically_complex_test|as_crispy_field }}
+                            </div>
+                            <div class="form-check ps-0">
+                                {{ scopeInlineForm.high_risk|as_crispy_field }}
+                            </div>
+                            <div class="form-check ps-0 border border-light border-1">
+                                {{ scopeInlineForm.reasons_for_high_risk|as_crispy_field }}
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="col-12 col-md-3">        
+                    <h6 class="text-center ">Restrictions</h6>
+                    <ul class="list-group">
+                        <li class="list-group-item border-0 px-0">
+                            <div class="form-check ps-0">
+                                {{ scopeInlineForm.is_restricted|as_crispy_field }}
+                            </div>
+                            <div class="form-check ps-0">
+                                {{ scopeInlineForm.restricted_detail|as_crispy_field }}
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </form>
+  </div>

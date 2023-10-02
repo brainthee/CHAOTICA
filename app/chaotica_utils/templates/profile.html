@@ -1,0 +1,356 @@
+{% extends "base.html" %}
+{% load menu %}{% load static %}{% load crispy_forms_tags %}{% load skill_tags %}
+{% block pageTitle %}Profile{% endblock pageTitle %}
+{% block head_title %}Profile{% endblock head_title %}
+
+{% block breadcrumbItem %}
+<li class="breadcrumb-item text-sm">Users</li>
+<li class="breadcrumb-item text-sm text-dark active" aria-current="page">My Profile</li>
+{% endblock breadcrumbItem %}
+
+{% block content %}
+<div class="row pt-5 pb-2">
+   <div class="col-12">
+      <div class="card card-body" id="profile">
+         <div class="row justify-content-center align-items-center">
+            <div class="col-sm-auto col-4">
+               <div class="avatar avatar-xl position-relative">
+                  <img src="{{ user.get_avatar_url }}" alt="bruce" class="w-100 rounded-circle shadow-sm">
+               </div>
+            </div>
+            <div class="col-sm-auto col-8 my-auto">
+               <div class="h-100">
+                  <h5 class="mb-1 font-weight-bolder">
+                     {{ user.get_full_name }}
+                  </h5>
+                  <p class="mb-0 font-weight-normal text-sm">
+                     {{ user.job_title }}
+                  </p>
+               </div>
+            </div>
+            <div class="col-sm-auto ms-sm-auto mt-sm-0 mt-3 d-flex">
+            <a href="{% url 'user_profile' user.username %}"
+               class="btn btn-outline-success">
+               View Public Profile
+            </a>
+            </div>
+         </div>
+      </div>
+   </div>
+</div>
+
+<div class="row mt-4 mb-5">
+    <div class="col-lg-3">
+       <div class="card position-sticky top-0">
+          <ul class="nav flex-column bg-white border-radius-lg p-3">
+             <li class="nav-item pt-2">
+                <a class="nav-link text-dark d-flex" data-scroll="" href="#basic-info">
+                  <span class="fa fa-calendar me-sm-2 fs-1"></span>
+                  <span class="text-sm">Basic Info</span>
+                </a>
+             </li>
+             <li class="nav-item pt-2">
+                <a class="nav-link text-dark d-flex" data-scroll="" href="#skills">
+                  <span class="fab fa-readme me-sm-2 fs-1"></span>
+                  <span class="text-sm">Skills</span>
+                </a>
+             </li>
+             <li class="nav-item pt-2">
+                <a class="nav-link text-dark d-flex" data-scroll="" href="#notifications">
+                  <span class="fas fa-mail-bulk me-sm-2 fs-1"></span>
+                  <span class="text-sm">Notifications</span>
+                </a>
+             </li>
+             <li class="nav-item pt-2">
+                <a class="nav-link text-dark d-flex" data-scroll="" href="#feeds">
+                  <span class="far fa-calendar-plus me-sm-2 fs-1"></span>
+                  <span class="text-sm">Feeds URLs</span>
+                </a>
+             </li>
+          </ul>
+       </div>
+    </div>
+
+    <div class="col-lg-9 mt-lg-0">
+       <div class="card" id="basic-info">
+         {% include 'partials/profile/basic_profile_form.html' %}
+       </div>
+
+       <div class="card mt-4" id="skills">
+         <form method="post" class="skillsForm" action="{% url 'update_own_skills' %}">
+            {% csrf_token %}
+            <div class="card-header">
+               <h5>Skills</h5>
+               <p class="text-sm">Set the skills you have and the level of competency.</p>
+            </div>
+            <div class="card-body pt-0">
+                  <table class="table table-responsive mb-0">
+                     <thead>
+                        <tr>
+                           <th class="ps-1" colspan="4">
+                              <p class="mb-0">Capability</p>
+                           </th>
+                           <th class="ps-1" colspan="4">
+                              <p class="mb-0">Skill</p>
+                           </th>
+                           <th class="text-center">
+                              <p class="mb-0">No Experience</p>
+                           </th>
+                           <th class="text-center">
+                              <p class="mb-0">Can do with support</p>
+                           </th>
+                           <th class="text-center">
+                              <p class="mb-0">Can do alone</p>
+                           </th>
+                           <th class="text-center">
+                              <p class="mb-0">Specialist</p>
+                           </th>
+                        </tr>
+                     </thead>
+                     <tbody>
+                        {% for skill in skills %}
+                        {% get_user_skill request.user skill as userSkill %}
+                        <tr>
+                           <td class="ps-1" colspan="4">
+                              <div class="my-auto">
+                                 <span class="text-dark d-block text-sm">
+                                    {{ skill.category }}
+                                 </span>
+                              </div>
+                           </td>
+                           <td class="ps-1" colspan="4">
+                              <div class="my-auto">
+                                 <span class="text-xs font-weight-normal">
+                                    {{ skill.name }}
+                                 </span>
+                              </div>
+                           </td>
+                           <td>
+                              <div class="form-check form-switch mb-0 d-flex align-items-center justify-content-center">
+                                 <input class="form-check-input"
+                                    {% if not userSkill %}checked{% else %}{% endif %}
+                                    value="0"
+                                    checked type="radio" name="{{ skill.slug }}" id="{{ skill.slug }}">
+                              </div>
+                           </td>
+                           <td>
+                              <div class="form-check form-switch mb-0 d-flex align-items-center justify-content-center">
+                                 <input class="form-check-input" 
+                                 {% if userSkill.rating == 1 %}checked{% else %}{% endif %}
+                                    value="1"
+                                    type="radio" name="{{ skill.slug }}" id="{{ skill.slug }}">
+                              </div>
+                           </td>
+                           <td>
+                              <div class="form-check form-switch mb-0 d-flex align-items-center justify-content-center">
+                                 <input class="form-check-input" 
+                                 {% if userSkill.rating == 2 %}checked{% else %}{% endif %}
+                                    value="2"
+                                    type="radio" name="{{ skill.slug }}" id="{{ skill.slug }}">
+                              </div>
+                           </td>
+                           <td>
+                              <div class="form-check form-switch mb-0 d-flex align-items-center justify-content-center">
+                                 <input class="form-check-input" 
+                                 {% if userSkill.rating == 3 %}checked{% else %}{% endif %}
+                                    value="3"
+                                    type="radio" name="{{ skill.slug }}" id="{{ skill.slug }}">
+                              </div>
+                           </td>
+                        </tr>
+                        {% endfor %}
+                     </tbody>
+                  </table>
+            </div>
+         </form>
+      </div>
+
+       <div class="card mt-4" id="notifications">
+          <div class="card-header">
+             <h5>Notifications</h5>
+             <p class="text-sm">Choose how you receive notifications. These notification settings apply to the things you’re watching.</p>
+          </div>
+          <div class="card-body pt-0">
+            <table class="table mb-0">
+               <thead>
+                  <tr>
+                     <th class="ps-1" colspan="4">
+                        <p class="mb-0">Activity</p>
+                     </th>
+                     <th class="text-center">
+                        <p class="mb-0">Email</p>
+                     </th>
+                     <th class="text-center">
+                        <p class="mb-0">Push</p>
+                     </th>
+                     <th class="text-center">
+                        <p class="mb-0">SMS</p>
+                     </th>
+                  </tr>
+               </thead>
+               <tbody>
+                  <tr>
+                     <td class="ps-1" colspan="4">
+                        <div class="my-auto">
+                           <span class="text-dark d-block text-sm">Mentions</span>
+                           <span class="text-xs font-weight-normal">Notify when another user mentions you in a comment</span>
+                        </div>
+                     </td>
+                     <td>
+                        <div class="form-check form-switch mb-0 d-flex align-items-center justify-content-center">
+                           <input class="form-check-input" checked="" type="checkbox" id="flexSwitchCheckDefault11">
+                        </div>
+                     </td>
+                     <td>
+                        <div class="form-check form-switch mb-0 d-flex align-items-center justify-content-center">
+                           <input class="form-check-input" type="checkbox" id="flexSwitchCheckDefault12">
+                        </div>
+                     </td>
+                     <td>
+                        <div class="form-check form-switch mb-0 d-flex align-items-center justify-content-center">
+                           <input class="form-check-input" type="checkbox" id="flexSwitchCheckDefault13">
+                        </div>
+                     </td>
+                  </tr>
+                  <tr>
+                     <td class="ps-1" colspan="4">
+                        <div class="my-auto">
+                           <span class="text-dark d-block text-sm">Comments</span>
+                           <span class="text-xs font-weight-normal">Notify when another user comments your item.</span>
+                        </div>
+                     </td>
+                     <td>
+                        <div class="form-check form-switch mb-0 d-flex align-items-center justify-content-center">
+                           <input class="form-check-input" checked="" type="checkbox" id="flexSwitchCheckDefault14">
+                        </div>
+                     </td>
+                     <td>
+                        <div class="form-check form-switch mb-0 d-flex align-items-center justify-content-center">
+                           <input class="form-check-input" checked="" type="checkbox" id="flexSwitchCheckDefault15">
+                        </div>
+                     </td>
+                     <td>
+                        <div class="form-check form-switch mb-0 d-flex align-items-center justify-content-center">
+                           <input class="form-check-input" type="checkbox" id="flexSwitchCheckDefault16">
+                        </div>
+                     </td>
+                  </tr>
+                  <tr>
+                     <td class="ps-1" colspan="4">
+                        <div class="my-auto">
+                           <span class="text-dark d-block text-sm">Follows</span>
+                           <span class="text-xs font-weight-normal">Notify when another user follows you.</span>
+                        </div>
+                     </td>
+                     <td>
+                        <div class="form-check form-switch mb-0 d-flex align-items-center justify-content-center">
+                           <input class="form-check-input" type="checkbox" id="flexSwitchCheckDefault17">
+                        </div>
+                     </td>
+                     <td>
+                        <div class="form-check form-switch mb-0 d-flex align-items-center justify-content-center">
+                           <input class="form-check-input" checked="" type="checkbox" id="flexSwitchCheckDefault18">
+                        </div>
+                     </td>
+                     <td>
+                        <div class="form-check form-switch mb-0 d-flex align-items-center justify-content-center">
+                           <input class="form-check-input" type="checkbox" id="flexSwitchCheckDefault19">
+                        </div>
+                     </td>
+                  </tr>
+                  <tr>
+                     <td class="ps-1" colspan="4">
+                        <div class="my-auto">
+                           <p class="text-sm mb-0">Log in from a new device</p>
+                        </div>
+                     </td>
+                     <td>
+                        <div class="form-check form-switch mb-0 d-flex align-items-center justify-content-center">
+                           <input class="form-check-input" checked="" type="checkbox" id="flexSwitchCheckDefault20">
+                        </div>
+                     </td>
+                     <td>
+                        <div class="form-check form-switch mb-0 d-flex align-items-center justify-content-center">
+                           <input class="form-check-input" checked="" type="checkbox" id="flexSwitchCheckDefault21">
+                        </div>
+                     </td>
+                     <td>
+                        <div class="form-check form-switch mb-0 d-flex align-items-center justify-content-center">
+                           <input class="form-check-input" checked="" type="checkbox" id="flexSwitchCheckDefault22">
+                        </div>
+                     </td>
+                  </tr>
+               </tbody>
+            </table>
+          </div>
+       </div>
+
+       <div class="card mt-4" id="feeds">
+
+         <div class="card-header d-flex">
+            <h5>Feeds</h5>
+            <span class="badge badge-success ms-auto mb-auto">Enabled</span>
+         </div>
+
+         <div class="card-body">
+            <div class="d-flex">
+               <p class="my-auto">Calendar Subscription - Schedule</p>
+               <p class="text-secondary text-sm ms-auto my-auto me-3">
+                    {{ request.get_host }}{% url 'view_own_schedule_feed' request.user.schedule_feed_id %}
+                </p>
+               <button class="btn btn-sm btn-outline-dark mb-0" type="button">Reset</button>
+            </div>
+         </div>
+      </div>
+
+    </div>
+ </div>
+{% endblock content %}
+
+{% block footer_javascript_page %}
+<script>
+   // Update skills
+   var profileUpdateSkills = function() {
+      var form = $(".skillsForm");
+      $.ajax({
+         url: form.attr("action"),
+         data: form.serialize(),
+         type: form.attr("method"),
+         dataType: 'json',
+      });
+      return false;
+    };
+
+   $("#skills .form-check-input").change(profileUpdateSkills);
+
+
+   // Update basic profile info
+   var profileUpdateBasic = function() {
+      var form = $(".profileForm");
+      $.ajax({
+         url: form.attr("action"),
+         data: form.serialize(),
+         type: form.attr("method"),
+         dataType: 'json',
+         success: function(data) {
+            $("#basic-info").html(data.html_form);
+            $("#profileForm .form-control").change(profileUpdateBasic);
+            $("#profileForm .form-check-input").change(profileUpdateBasic);
+            // validate any changed fields for 2 seconds
+            for (let fieldKey = 0; fieldKey < data.changed_data.length; fieldKey++) {
+               fieldName = data.changed_data[fieldKey]
+               var changed_field = $('#id_'+fieldName);
+               changed_field.addClass('is-valid');
+               setTimeout(function() {
+                  changed_field.removeClass('is-valid');
+               }, 4000);
+            }
+         }
+      });
+      return false;
+   };
+
+   $("#profileForm .form-control").change(profileUpdateBasic);
+   $("#profileForm .form-check-input").change(profileUpdateBasic);
+</script>
+{% endblock footer_javascript_page %}

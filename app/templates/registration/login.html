@@ -1,0 +1,77 @@
+{% extends "../base_card.html" %}
+{% load widget_tweaks %}
+{% load i18n static %}
+{% load crispy_forms_tags %}
+
+{% block head_title %}Login{% endblock head_title %}
+
+{% block alerts %}
+  {% if form.errors %}
+  <div class="alert alert-outline-danger m-3" role="alert">
+      <strong>Danger!</strong> 
+      Your details were not recognised. 
+      Please try again.
+  </div>
+  {% endif %}
+{% endblock alerts %}
+
+{% block left_col_content %}
+
+<div class="auth-form-box">
+  <div class="text-center mb-7">
+    <a class="d-flex flex-center text-decoration-none mb-4" href="../../../index.html">
+      <div class="d-flex align-items-center fw-bolder fs-5 d-inline-block">
+        <img src="{% static 'assets/img/icons/logo.png' %}" alt="chaotica" width="58" />
+      </div>
+    </a>    
+    <h3 class="text-1000">Sign In</h3>
+    <p class="text-700">Get access to your account</p>
+  </div>
+
+  {% if azure_sso %}
+  <button class="btn btn-phoenix-secondary w-100 mb-3">
+    <span class="fab fa-microsoft text-danger me-2 fs--1"></span>Sign in with Microsoft
+  </button>
+
+  <div class="position-relative">
+    <hr class="bg-200 mt-5 mb-4" />
+    <div class="divider-content-center bg-white">or use email</div>
+  </div>
+  {% endif %}
+
+  <form id="login-form" method="post" role="form">
+    {% csrf_token %}
+
+    <div class="mb-3 text-start">
+      <label class="form-label" for="email">Username</label>
+      <div class="form-icon-container">
+        <input class="form-control form-icon-input" id="id_username" name="username" type="text" placeholder="username" />
+        <span class="fas fa-user text-900 fs--1 form-icon"></span>
+      </div>
+    </div>
+
+    <div class="mb-3 text-start">
+      <label class="form-label" for="password">Password</label>
+      <div class="form-icon-container">
+        <input class="form-control form-icon-input" id="id_password" name="password" type="password" placeholder="Password" />
+        <span class="fas fa-key text-900 fs--1 form-icon"></span>
+      </div>
+    </div>
+
+    <div class="row flex-between-center mb-7">
+      <div class="col-auto">
+        
+      </div>
+      <div class="col-auto"><a class="fs--1 fw-semi-bold" href="{% url 'password_reset' %}">Forgot Password?</a></div>
+    </div>
+
+    <button type="submit" value="Sign in" class="btn btn-primary w-100 mb-3">Sign In</button>
+    <input type="hidden" name="next" value="{{ next }}" />
+
+    <div class="text-center">
+      <a class="fs--1 fw-bold" href="{% url 'signup' %}">Create an account</a>
+    </div>
+
+  </form>
+</div>
+{% endblock left_col_content %}

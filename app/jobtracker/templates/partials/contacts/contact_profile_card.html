@@ -1,0 +1,22 @@
+{% load static %}
+<div class="text-center">
+  <h4>
+    {{ contactProfile.salutation }} {{ contactProfile.first_name }} {{ contactProfile.last_name }}
+  </h4>
+  <h6 class="mb-3 fw-semi-bold">
+    {{ contactProfile.jobtitle }}
+  </h6>
+</div>   
+<div class="bg-white">
+  <div class="d-flex justify-content-between">
+    <div class="d-flex">
+      <a class="btn btn-phoenix-secondary btn-icon btn-icon-lg me-2" href="tel:{{ contactProfile.phone }}">
+          <span class="fa-solid fa-phone"></span>
+      </a>
+    </div>
+    <a class="btn btn-phoenix-primary" href="mailto:{{ contactProfile.email }}">
+      <span class="fa-solid fa-envelope me-2"></span>
+      Send Email
+    </a>
+  </div>
+</div>

@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% load menu %}{% load static %}
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+
+{% block pageTitle %}New Client{% endblock pageTitle %}
+{% block head_title %}New Client{% endblock head_title %}
+
+
+{% block breadcrumbItem %}
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{% url 'client_list' %}">Clients</a></li>
+<li class="breadcrumb-item text-sm text-dark active" aria-current="page">New Client</li>
+{% endblock breadcrumbItem %}
+
+{% block content %}
+<div class="mt-3">
+    <form method="post">
+        {% csrf_token %}
+        {{ form.media }}
+
+        <div class="row g-3 flex-between-end mb-5">
+          <div class="col-auto">
+            <h2 class="mb-2">
+                {% if form.instance.pk %}
+                Edit Client
+                {% else %}
+                Add Client
+                {% endif %}         
+            </h2>
+          </div>
+          <div class="col-auto">
+            <button class="btn btn-phoenix-secondary me-2 mb-2 mb-sm-0" type="button">Discard</button>
+            <button class="btn btn-outline-success mb-2 mb-sm-0" type="submit">Save</button>
+          </div>
+        </div>
+
+        <div class="row g-5">
+            <div class="col-12 col-xl-8">
+
+    
+              <div class="row mb-6">
+                <div class="col-6">
+                  <h4 class="mb-3">Name</h4>    
+                  {{ form.name|as_crispy_field }}    
+                </div>
+                <div class="col-6">
+                  <h4 class="mb-3">Short Name</h4>    
+                  {{ form.short_name|as_crispy_field }}    
+                </div>
+              </div>
+
+              <h4 class="mb-3">Special Requirements</h4>
+              {{ form.specific_requirements|as_crispy_field }}              
+            </div>
+    
+            <div class="col-12 col-xl-4">
+              <div class="row g-2">
+                
+                <div class="col-12 col-xl-12">
+                  <div class="card mb-3">
+                    <div class="card-body">
+                      <div class="row gx-3">
+                        <div class="col-12 col-sm-6 col-xl-12">
+                          <div class="mb-4">
+                            <div class="d-flex flex-wrap mb-2">
+                              <h5 class="mb-0 text-1000 me-2">Account Managers</h5>
+                            </div>
+                            {{ form.account_managers|as_crispy_field }}
+                            
+                          </div>
+                        </div>
+                        <div class="col-12 col-sm-6 col-xl-12">
+                          <div class="mb-4">
+                            <div class="d-flex flex-wrap mb-2">
+                              <h5 class="mb-0 text-1000 me-2">Technical Account Managers</h5>
+                            </div>
+                            {{ form.tech_account_managers|as_crispy_field }}
+                            
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+              </div>
+            </div>
+          </div>
+    </form>
+</div>
+{% endblock content %}

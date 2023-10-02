@@ -1,0 +1,355 @@
+{% load widget_tweaks %}
+{% load humanize %}{% load static %}
+{% load i18n %}
+{% load menu %}{% generate_menu %}
+
+<!DOCTYPE html>
+<html lang="en-US" dir="ltr">
+
+  <head>
+    {% block head_meta %}
+      {% block head_meta_charset %}
+      <meta charset="utf-8">
+      {% endblock head_meta_charset %}
+      {% block head_meta_contentlanguage %}
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      {% endblock head_meta_contentlanguage %}
+      {% block head_meta_viewport %}
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      {% endblock head_meta_viewport %}
+
+    {% endblock head_meta %}
+
+
+    <!-- ===============================================-->
+    <!--    Document Title                              -->
+    <!-- ===============================================-->
+    <title>
+      {% block head_title %}{% endblock head_title %} | Chaotica
+    </title>
+    
+    <!-- ===============================================-->
+    <!--    Favicons/Theme                              -->
+    <!-- ===============================================-->
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static "assets/img/favicons/apple-touch-icon.png" %}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static "assets/img/favicons/favicon-32x32.png" %}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{% static "assets/img/favicons/favicon-16x16.png" %}">
+    <link rel="shortcut icon" type="image/x-icon" href="{% static "assets/img/favicons/favicon.ico" %}">
+    <link rel="manifest" href="{% static "assets/img/favicons/manifest.json" %}">
+    <meta name="msapplication-TileImage" content="{% static "assets/img/favicons/mstile-150x150.png" %}">
+    <meta name="theme-color" content="#ffffff">
+    <script>
+      document.documentElement.classList.add('dual-nav');
+    </script>
+
+    <!-- Font Awesome Icons -->
+    <script src="https://kit.fontawesome.com/795119481a.js" crossorigin="anonymous"></script>
+    <!-- JS bits -->
+    <script src="{% static "vendors/imagesloaded/imagesloaded.pkgd.min.js" %}"></script>
+    <script src="{% static "vendors/simplebar/simplebar.min.js" %}"></script>
+    <script>
+      {% include 'js/config.js' %}
+    </script>
+
+    <!-- ===============================================-->
+    <!--    Stylesheets-->
+    <!-- ===============================================-->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@300;400;600;700;800;900&amp;display=swap" rel="stylesheet">
+
+    <!-- ===============================================-->
+    <!--    Stylesheets-->
+    <!-- ===============================================-->
+    <link href="{% static "vendors/choices/choices.min.css" %}" rel="stylesheet">
+    <link href="{% static "vendors/dropzone/dropzone.min.css" %}" rel="stylesheet">
+    <link href="{% static "vendors/dhtmlx-gantt/dhtmlxgantt.css" %}" rel="stylesheet">
+    <link href="{% static "vendors/simplebar/simplebar.min.css" %}" rel="stylesheet">
+    <link href="{% static "vendors/flatpickr/flatpickr.min.css" %}" rel="stylesheet">
+    <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.8/css/line.css">
+    <link href="{% static "assets/css/theme-rtl.min.css" %}" type="text/css" rel="stylesheet" id="style-rtl">
+    <link href="{% static "assets/css/theme.min.css" %}" type="text/css" rel="stylesheet" id="style-default">
+    <link href="{% static "assets/css/user-rtl.min.css" %}" type="text/css" rel="stylesheet" id="user-style-rtl">
+    <link href="{% static "assets/css/user.min.css" %}" type="text/css" rel="stylesheet" id="user-style-default">
+    <script>
+      var phoenixIsRTL = window.config.config.phoenixIsRTL;
+      if (phoenixIsRTL) {
+        var linkDefault = document.getElementById('style-default');
+        var userLinkDefault = document.getElementById('user-style-default');
+        linkDefault.setAttribute('disabled', true);
+        userLinkDefault.setAttribute('disabled', true);
+        document.querySelector('html').setAttribute('dir', 'rtl');
+      } else {
+        var linkRTL = document.getElementById('style-rtl');
+        var userLinkRTL = document.getElementById('user-style-rtl');
+        linkRTL.setAttribute('disabled', true);
+        userLinkRTL.setAttribute('disabled', true);
+      }
+    </script>
+    <link href="{% static "vendors/leaflet/leaflet.css" %}" rel="stylesheet">
+    <link href="{% static "vendors/leaflet.markercluster/MarkerCluster.css" %}" rel="stylesheet">
+    <link href="{% static "vendors/leaflet.markercluster/MarkerCluster.Default.css" %}" rel="stylesheet">
+    <link href="{% static "assets/css/chaotica.css" %}" rel="stylesheet">
+
+
+    <!-- Select2 -->
+    <link href="{% static "admin/css/vendor/select2/select2.css" %}" type="text/css" media="screen" rel="stylesheet">
+    <link href="{% static "admin/css/autocomplete.css" %}" type="text/css" media="screen" rel="stylesheet">
+    <link href="{% static "autocomplete_light/select2.css" %}" type="text/css" media="screen" rel="stylesheet">        
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" type="text/css" media="screen" rel="stylesheet"/>
+    
+    <!-- jQuery -->
+    <script type="text/javascript" src="https://code.jquery.com/jquery-3.6.3.min.js"></script>
+    <script type="text/javascript" src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+    <script type="text/javascript" src="{% static "assets/js/jquery.dirty.js" %}"></script>
+
+    <!-- Misc Django JS's -->
+    <script src="{% static "admin/js/vendor/select2/select2.full.js" %}"></script>
+    <script src="{% static "autocomplete_light/autocomplete_light.js" %}"></script> 
+    <script src="{% static "autocomplete_light/select2.js" %}"></script>
+    <script src="{% static "autocomplete_light/i18n/en.js" %}"></script>
+
+    <!-- DataTables -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.css" />
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+    {% block head_css_section %}{% endblock head_css_section %}
+    {% block head_css_page %}{% endblock head_css_page %}
+
+          <!--   Core JS Files   -->
+    <script src="{% static "vendors/popper/popper.min.js" %}"></script>
+    <script src="{% static "vendors/bootstrap/bootstrap.min.js" %}"></script>
+    <script src="{% static "vendors/anchorjs/anchor.min.js" %}"></script>
+    <script src="{% static "vendors/dhtmlx-gantt/dhtmlxgantt.js" %}"></script>
+    <script src="{% static "vendors/is/is.min.js" %}"></script>
+    <script src="{% static "vendors/fontawesome/all.min.js" %}"></script>
+    <script src="{% static "vendors/lodash/lodash.min.js" %}"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=window.scroll"></script>
+    <!-- <script src="{% static "vendors/list.js/list.min.js" %}"></script> -->
+    <script src="{% static "vendors/feather-icons/feather.min.js" %}"></script>
+    <script src="{% static "vendors/dayjs/dayjs.min.js" %}"></script>
+    <script src="{% static "vendors/echarts/echarts.min.js" %}"></script>
+    <script src="{% static "vendors/dropzone/dropzone.min.js" %}"></script>
+    <script src="{% static "vendors/choices/choices.min.js" %}"></script>
+    <script src="{% static "vendors/leaflet/leaflet.js" %}"></script>
+    <script src="{% static "vendors/leaflet.markercluster/leaflet.markercluster.js" %}"></script>
+    <script src="{% static "vendors/leaflet.tilelayer.colorfilter/leaflet-tilelayer-colorfilter.min.js" %}"></script>
+    <script src="{% static "vendors/tinymce/tinymce.min.js" %}"></script>
+
+    <script src="{% static "assets/js/phoenix.js" %}"></script>
+    <script src="{% static "assets/js/ecommerce-dashboard.js" %}"></script>
+
+    <!-- Calendar -->
+    <script src="{% static "assets/js/fullcalendar-scheduler.js" %}"></script>
+  </head>
+
+<!-- core content -->
+<body class="{% block body_tags %}{% endblock body_tags %}">
+
+  <!-- Main content -->
+  {% block main_content %}
+  <main class="{% block main_content_tags %}main{% endblock main_content_tags %}" id="top">
+  
+    <!-- Top Bar -->
+    {% block top_bar %}
+    {% include 'partials/top_bar.html' %}  
+    {% endblock top_bar %}
+
+    <!-- Top Nav -->
+    {% block top_nav %}
+    {% include 'partials/top_nav.html' %}  
+    {% endblock top_nav %}
+    
+    <script>
+      var navbarVertical = document.querySelector('.navbar-vertical');
+      navbarVertical.remove();
+      dualNav.removeAttribute('style');
+    </script>
+
+    {% block modal %}
+    {% include 'partials/modal.html' %}
+    {% endblock modal %}
+
+    {% block page_content %}
+      {% block breadcrumbs %}
+        <div class="content pt-15 {% block content_classes %}{% endblock content_classes %}" {% if config.SITE_NOTICE_ENABLED %}style="margin-top: 2rem"{% endif %}>
+
+    {% include 'partials/alerts.html' %}
+          
+          <nav class="pt-1 text-600 {% block breadcrumb_classes %}{% endblock breadcrumb_classes %}" style="--phoenix-breadcrumb-divider: '&gt;&gt;';" aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+              <li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{% url 'home' %}">Home</a></li>
+              {% block breadcrumbItem %}
+              {% endblock breadcrumbItem %}
+            </ol>
+          </nav>
+        {% endblock breadcrumbs %}
+
+        {% block content %}
+            if you see this, something is wrong!
+        {% endblock content %}
+
+        {% block footer %}
+          {% include 'partials/footer.html' %}
+        {% endblock footer %}
+      </div>
+    {% endblock page_content %}
+
+    <script>
+      var navbarTopStyle = window.config.config.phoenixNavbarTopStyle;
+      var navbarTop = document.querySelector('.navbar-top');
+      if (navbarTopStyle === 'darker') {
+        navbarTop.classList.add('navbar-darker');
+      }
+
+      var navbarVerticalStyle = window.config.config.phoenixNavbarVerticalStyle;
+      var navbarVertical = document.querySelector('.navbar-vertical');
+      if (navbarVertical && navbarVerticalStyle === 'darker') {
+        navbarVertical.classList.add('navbar-darker');
+      }
+    </script>
+
+  </main>
+  {% endblock main_content %}    
+  <!-- ===============================================-->
+  <!--    End of Main Content                         -->
+  <!-- ===============================================-->
+
+  <!-- ===============================================-->
+  <!--    JavaScripts                                 -->
+  <!-- ===============================================-->
+  {% block footer_javascript %}
+    {% block footer_javascript_site %}
+
+    
+    {% if config.SNOW_ENABLED %}  
+    <!-- SNNOOOWWWW!! -->
+    <script src="{% static "assets/js/snow.js" %}"></script> 
+      {% endif %}
+      
+    <!-- Misc Django JS's -->
+    <!-- <script src="{% static "admin/js/vendor/select2/select2.full.js" %}"></script>
+    <script src="{% static "autocomplete_light/autocomplete_light.js" %}"></script> 
+    <script src="{% static "autocomplete_light/select2.js" %}"></script>
+    <script src="{% static "autocomplete_light/i18n/en.js" %}"></script> -->
+
+    <!-- VS Code -->
+    <!-- <script>
+      var require = { paths: { vs: '{% static "vendor/vs" %}' } };
+    </script>
+    <script src="{% static "vendor/vs/loader.js" %}"></script>
+    <script src="{% static "vendor/vs/editor/editor.main.nls.js" %}"></script>
+    <script src="{% static "vendor/vs/editor/editor.main.js" %}"></script> -->
+
+    <script>
+      {% include 'js/core.js' %}
+
+      {% if config.SNOW_ENABLED %}      
+      jQuery(document).ready(function($){
+        $(document).snowFlurry({
+          maxSize: 5,
+          numberOfFlakes: 50,
+          minSpeed: 10,
+          maxSpeed: 15,
+          color: '#fff',
+          timeout: 0
+        });
+      });
+      {% endif %}
+    </script>
+
+    {% endblock footer_javascript_site %}
+
+    {% block footer_javascript_section %}{% endblock footer_javascript_section %}
+    {% block footer_javascript_page %}{% endblock footer_javascript_page %}
+  {% endblock footer_javascript %} 
+</body>
+
+  <!-- 
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣶⣿⣿⣿⣿⣿⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣿⣿⣿⠿⠟⠛⠻⣿⠆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⣿⣆⣀⣀⠀⣿⠂⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⠻⣿⣿⣿⠅⠛⠋⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⢼⣿⣿⣿⣃⠠⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣟⡿⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣛⣛⣫⡄⠀⢸⣦⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⢀⣠⣴⣾⡆⠸⣿⣿⣿⡷⠂⠨⣿⣿⣿⣿⣶⣦⣤⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⣤⣾⣿⣿⣿⣿⡇⢀⣿⡿⠋⠁⢀⡶⠪⣉⢸⣿⣿⣿⣿⣿⣇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⢀⣿⣿⣿⣿⣿⣿⣿⣿⡏⢸⣿⣷⣿⣿⣷⣦⡙⣿⣿⣿⣿⣿⡏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠈⣿⣿⣿⣿⣿⣿⣿⣿⣇⢸⣿⣿⣿⣿⣿⣷⣦⣿⣿⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⢠⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⣠⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⢹⣿⣵⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣯⡁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+
+  We're no strangers to love
+  You know the rules and so do I
+  A full commitment's what I'm thinking of
+  You wouldn't get this from any other guy
+
+  I just wanna tell you how I'm feeling
+  Gotta make you understand
+
+  Never gonna give you up
+  Never gonna let you down
+  Never gonna run around and desert you
+  Never gonna make you cry
+  Never gonna say goodbye
+  Never gonna tell a lie and hurt you
+
+  We've known each other for so long
+  Your heart's been aching but you're too shy to say it
+  Inside we both know what's been going on
+  We know the game and we're gonna play it
+  And if you ask me how I'm feeling
+  Don't tell me you're too blind to see
+
+  Never gonna give you up
+  Never gonna let you down
+  Never gonna run around and desert you
+  Never gonna make you cry
+  Never gonna say goodbye
+  Never gonna tell a lie and hurt you
+
+  Never gonna give you up
+  Never gonna let you down
+  Never gonna run around and desert you
+  Never gonna make you cry
+  Never gonna say goodbye
+  Never gonna tell a lie and hurt you
+
+  Never gonna give, never gonna give
+  (Give you up)
+
+  We've known each other for so long
+  Your heart's been aching but you're too shy to say it
+  Inside we both know what's been going on
+  We know the game and we're gonna play it
+  I just wanna tell you how I'm feeling
+  Gotta make you understand
+
+  Never gonna give you up
+  Never gonna let you down
+  Never gonna run around and desert you
+  Never gonna make you cry
+  Never gonna say goodbye
+  Never gonna tell a lie and hurt you
+
+  Never gonna give you up
+  Never gonna let you down
+  Never gonna run around and desert you
+  Never gonna make you cry
+  Never gonna say goodbye
+  Never gonna tell a lie and hurt you
+
+  Never gonna give you up
+  Never gonna let you down
+  Never gonna run around and desert you
+  Never gonna make you cry
+  Never gonna say goodbye 
+-->
+</html>

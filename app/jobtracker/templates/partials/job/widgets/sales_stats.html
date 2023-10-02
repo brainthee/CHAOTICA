@@ -1,0 +1,58 @@
+
+<div class="card mb-5">
+    <div class="card-body">
+      <div class="row g-4 g-xl-1 g-xxl-3 justify-content-between">
+        <div class="col-sm-auto">
+          <div class="d-sm-block d-inline-flex d-md-flex flex-xl-column flex-xxl-row align-items-center align-items-xl-start align-items-xxl-center">
+            <div class="d-flex bg-success-100 rounded flex-center me-3 mb-sm-3 mb-md-0 mb-xl-3 mb-xxl-0" style="width:32px; height:32px">
+                <span class="text-success-600 dark__text-success-300" data-feather="dollar-sign" style="width:24px; height:24px"></span>
+            </div>
+            <div>
+              <p class="fw-bold mb-1">Deal Amount</p>
+              <h4 class="fw-bolder text-nowrap">
+                {{ job.revenue }}
+              </h4>
+            </div>
+          </div>
+        </div>
+        <div class="col-sm-auto">
+          <div class="d-sm-block d-inline-flex d-md-flex flex-xl-column flex-xxl-row align-items-center align-items-xl-start align-items-xxl-center border-start-sm ps-sm-5">
+            <div class="d-flex bg-info-100 rounded flex-center me-3 mb-sm-3 mb-md-0 mb-xl-3 mb-xxl-0" style="width:32px; height:32px">
+                <span class="text-info-600 dark__text-info-300" data-feather="code" style="width:24px; height:24px"></span>
+            </div>
+            <div>
+              <p class="fw-bold mb-1">Estimated Profit</p>
+              <h4 class="fw-bolder text-nowrap">
+                {% if job.profit_perc >= job.unit.targetProfit %}
+                <span class="text-success text-gradient">
+                    {{ job.profit_perc }}% 
+                </span>
+                {% elif job.profit_perc >= 0 %}
+                <span class="text-warning text-gradient">
+                    {{ job.profit_perc }}% 
+                </span>
+                {% else %}
+                <span class="text-danger text-gradient">
+                    {{ job.profit_perc }}% 
+                </span>
+                {% endif %}
+              </h4>
+            </div>
+          </div>
+        </div>
+        <div class="col-sm-auto">
+          <div class="d-sm-block d-inline-flex d-md-flex flex-xl-column flex-xxl-row align-items-center align-items-xl-start align-items-xxl-center border-start-sm ps-sm-5">
+            <div class="d-flex bg-primary-100 rounded flex-center me-3 mb-sm-3 mb-md-0 mb-xl-3 mb-xxl-0" style="width:32px; height:32px">
+                <span class="text-primary-600 dark__text-primary-300" data-feather="layout" style="width:24px; height:24px"></span>
+            </div>
+            <div>
+              <p class="fw-bold mb-1">Average Day Rate</p>
+              <h4 class="fw-bolder text-nowrap">
+                {{ job.average_day_rate }}
+              </h4>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>

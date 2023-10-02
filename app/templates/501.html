@@ -1,0 +1,16 @@
+{% extends "base_error.html" %}
+{% load widget_tweaks %}
+{% load i18n static %}
+
+{% block head_title %}Error 501{% endblock head_title %}
+{% block error_header %}
+Error 501
+{% endblock error_header %}
+
+{% block error_subheader %}
+Not implemented yet!
+{% endblock error_subheader %}
+
+{% block error_desc %}
+<img width="100%" class="pb-4" src="{% static 'assets/img/501.jpg' %}">
+{% endblock error_desc %}

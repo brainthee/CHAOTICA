@@ -1,0 +1,35 @@
+<ul class="dropdown-menu shadow dropdown-menu-down">    
+    <li>
+        <a href="{% url 'phase_update' phase.job.slug phase.slug %}" class="dropdown-item">
+            Edit Phase
+        </a>
+    </li>
+    {% if phase.status >= 1 %}
+    <li>
+        <a href="{% url 'phase_schedule' phase.job.slug phase.slug %}" class="dropdown-item text-success">
+            Manage Schedule
+        </a>
+    </li>
+    {% endif %}
+    <li>
+        <hr class="horizontal dark my-1">
+    </li>    
+    {% if phase.can_proceed_to_postponed %}
+        <li>
+            <button data-url="{% url 'phase_update_workflow' phase.job.slug phase.slug 14 %}" class="dropdown-item js-update-phase-workflow text-info" 
+                data-status="Postponed" data-status-id="14">Postpone Phase</button>
+        </li>
+    {% endif %}
+    {% if phase.can_proceed_to_cancelled %}
+        <li>
+            <button data-url="{% url 'phase_update_workflow' phase.job.slug phase.slug 13 %}" class="dropdown-item js-update-phase-workflow text-warning" 
+                data-status="Cancelled" data-status-id="13">Close as Cancelled</button>
+        </li>
+    {% endif %}
+    {% if phase.can_proceed_to_delete %}
+        <li>
+            <button data-url="{% url 'phase_update_workflow' phase.job.slug phase.slug 15 %}" class="dropdown-item js-update-phase-workflow text-danger" 
+                data-status="Deleted" data-status-id="15">Delete Phase</button>
+        </li>
+    {% endif %}
+</ul>

@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% load menu %}{% load static %}
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+
+{% block pageTitle %}New Job{% endblock pageTitle %}
+{% block head_title %}New Job{% endblock head_title %}
+
+
+{% block breadcrumbItem %}
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{% url 'job_list' %}">Jobs</a></li>
+<li class="breadcrumb-item text-sm text-dark active" aria-current="page">New Job</li>
+{% endblock breadcrumbItem %}
+
+{% block content %}
+<div class="mt-3">
+  <form method="post">
+    {% csrf_token %}
+    {{ form.media }}
+
+      <div class="row g-3 flex-between-end mb-5">
+        <div class="col-auto">
+          <h2 class="mb-2">Add a Job</h2>
+          <h5 class="text-700 fw-semi-bold">A piece of work....</h5>
+        </div>
+        <div class="col-auto">
+          <button class="btn btn-phoenix-secondary me-2 mb-2 mb-sm-0" type="button">Discard</button>
+          <button class="btn btn-outline-success mb-2 mb-sm-0" type="submit">Save</button>
+        </div>
+      </div>
+
+
+      <div class="row g-5">
+        <div class="col-12 col-xl-8">
+          <h4 class="mb-3">Title</h4>
+          {{ form.title|as_crispy_field }}
+          <div class="row mb-6">
+            <div class="col-12 col-xl-6">
+              <h4 class="mb-3">Client</h4>
+              {{ form.client|as_crispy_field }}
+
+            </div>
+
+            <div class="col-12 col-xl-6">
+              <h4 class="mb-3">Organisation Unit</h4>
+              {{ form.unit|as_crispy_field }}
+
+            </div>
+          </div>
+          <div class="mb-6">
+            <h4 class="mb-3">Overview</h4>
+              {{ form.scoping_information|as_crispy_field }}
+          </div>
+          
+        </div>
+
+        <div class="col-12 col-xl-4">
+          <div class="row g-2">
+            
+            <div class="col-12 col-xl-12">
+              <div class="card mb-3">
+                <div class="card-body">
+                  <h4 class="card-title mb-4">Sales Information</h4>
+                  <div class="row gx-3">
+                    <div class="col-12 col-sm-6 col-xl-12">
+                      <div class="mb-4">
+                        <div class="d-flex flex-wrap mb-2">
+                          <h5 class="mb-0 text-1000 me-2">Account Manager</h5>
+                        </div>
+                        {{ form.account_manager|as_crispy_field }}
+                        
+                      </div>
+                    </div>
+                    <div class="col-12 col-sm-6 col-xl-12">
+                      <div class="mb-4">
+                        <div class="d-flex flex-wrap mb-2">
+                          <h5 class="mb-0 text-1000 me-2">Revenue</h5>
+                        </div>
+                        {{ form.revenue|as_crispy_field }}
+                        
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-12 col-xl-12">
+              <div class="card mb-3">
+                <div class="card-body">
+                  <h4 class="card-title mb-4">Dates</h4>
+                  <div class="row gx-3">
+                    <div class="col-12 col-sm-6 col-xl-12">
+                      <div class="mb-4">
+                        <div class="d-flex flex-wrap mb-2">
+                          <h5 class="mb-0 text-1000 me-2">Desired Start</h5>
+                        </div>
+                        {{ form.start_date_set|as_crispy_field }}
+                    
+                      </div>
+                    </div>
+                    <div class="col-12 col-sm-6 col-xl-12">
+                      <div class="mb-4">
+                        <div class="d-flex flex-wrap mb-2">
+                          <h5 class="mb-0 text-1000 me-2">Desired Delivery</h5>
+                        </div>
+                        {{ form.delivery_date_set|as_crispy_field }}   
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+  </form>
+</div>
+
+{% endblock content %}

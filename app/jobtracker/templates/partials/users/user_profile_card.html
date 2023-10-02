@@ -1,0 +1,49 @@
+{% load static %}
+<div class="dropdown-menu avatar-dropdown-menu p-0 overflow-hidden" style="width: 320px;">
+    <div class="position-relative">
+      <div class="bg-holder z-index--1" style="background-image:url({% static 'assets/img/bg/bg-32.png' %});background-size: auto;">
+      </div>
+      <!--/.bg-holder-->
+
+      <div class="p-3">
+        <div class="text-center">
+            <div class="avatar avatar-xl status-{{ userProfile.get_current_status }} position-relative me-2 me-sm-0 me-xl-2 mb-2">
+                <img class="rounded-circle border border-white" src="{{ userProfile.get_avatar_url }}" alt="" />
+            </div>
+            <h6 class="text-white light">
+                {{ userProfile.get_full_name }}
+            </h6>
+            <p class="text-600 fw-semi-bold fs--2 mb-2">{{ userProfile.job_title }}</p>
+            <!-- <div class="d-flex flex-center mb-3">
+                <h6 class="text-white light mb-0">
+                    224
+                    <span class="fw-normal text-300">connections</span>
+                </h6>
+                <span class="fa-solid fa-circle text-700 mx-1" data-fa-transform="shrink-10 up-2"></span>
+                <h6 class="text-white light mb-0">
+                    23
+                    <span class="fw-normal text-300">mutual</span>
+                </h6>
+            </div> -->
+        </div>
+      </div>
+    </div>
+    <div class="bg-white">
+      <div class="p-3">
+        <div class="d-flex justify-content-between">
+          <div class="col">
+            <a class="btn btn-phoenix-secondary" href="{{ userProfile.get_absolute_url }}">
+              <span class="fa-solid fa-user me-2"></span>
+              View Profile
+            </a>
+          </div>
+          <div class="col">
+            <button class="btn btn-phoenix-primary">
+              <span class="fa-solid fa-envelope me-2"></span>
+              Send Email
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>

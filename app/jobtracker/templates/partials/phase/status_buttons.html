@@ -1,0 +1,94 @@
+<div class="w-100 d-grid " >
+    <div class="btn-group">
+    {% if phase.can_proceed_to_sched_confirmed %}
+        <button data-url="{% url 'phase_update_workflow' phase.job.slug phase.slug 3 %}" 
+            class="btn btn-outline-success js-update-phase-workflow" 
+            data-status="Scheduled" data-status-id="3">
+            Confirm Schedule
+            {% if not phase.can_to_sched_confirmed %}
+            <span class="ms-1 text-danger" data-feather="alert-triangle" style="height:12.8px;width:12.8px;"></span>
+            {% endif %} 
+        </button>
+    {% endif %}
+    {% if phase.can_proceed_to_not_ready %}
+        <button data-url="{% url 'phase_update_workflow' phase.job.slug phase.slug 5 %}" 
+            class="btn btn-outline-warning js-update-phase-workflow" 
+            data-status="Client Not Ready" data-status-id="5">
+            Client Not Ready
+            {% if not phase.can_to_not_ready %}
+            <span class="ms-1 text-danger" data-feather="alert-triangle" style="height:12.8px;width:12.8px;"></span>
+            {% endif %} 
+        </button>
+    {% endif %}
+    {% if phase.can_proceed_to_ready %}
+        <button data-url="{% url 'phase_update_workflow' phase.job.slug phase.slug 6 %}" 
+            class="btn btn-outline-info js-update-phase-workflow" 
+            data-status="Ready To Begin" data-status-id="6">
+            Ready To Begin
+            {% if not phase.can_to_ready %}
+            <span class="ms-1 text-danger" data-feather="alert-triangle" style="height:12.8px;width:12.8px;"></span>
+            {% endif %} 
+        </button>
+    {% endif %}
+    {% if phase.can_proceed_to_tech_qa %}
+        <button data-url="{% url 'phase_update_workflow' phase.job.slug phase.slug 8 %}" 
+            class="btn btn-outline-info js-update-phase-workflow" 
+            data-status="Tech QA" data-status-id="8">
+            Submit to Tech QA
+            {% if not phase.can_to_tech_qa %}
+            <span class="ms-1 text-danger" data-feather="alert-triangle" style="height:12.8px;width:12.8px;"></span>
+            {% endif %} 
+        </button>
+    {% endif %}
+    {% if phase.can_proceed_to_tech_qa_updates %}
+        <button data-url="{% url 'phase_update_workflow' phase.job.slug phase.slug 9 %}" 
+            class="btn btn-outline-info js-update-phase-workflow" 
+            data-status="Author Tech Updates" data-status-id="9">
+            Return for Author Updates
+            {% if not phase.can_to_tech_qa_updates %}
+            <span class="ms-1 text-danger" data-feather="alert-triangle" style="height:12.8px;width:12.8px;"></span>
+            {% endif %} 
+        </button>
+    {% endif %}
+    {% if phase.can_proceed_to_pres_qa %}
+        <button data-url="{% url 'phase_update_workflow' phase.job.slug phase.slug 10 %}" 
+            class="btn btn-outline-info js-update-phase-workflow" 
+            data-status="Pres QA" data-status-id="10">
+            Submit to Pres QA
+            {% if not phase.can_to_pres_qa %}
+            <span class="ms-1 text-danger" data-feather="alert-triangle" style="height:12.8px;width:12.8px;"></span>
+            {% endif %} 
+        </button>
+    {% endif %}
+    {% if phase.can_proceed_to_pres_qa_updates %}
+        <button data-url="{% url 'phase_update_workflow' phase.job.slug phase.slug 11 %}" 
+            class="btn btn-outline-info js-update-phase-workflow" 
+            data-status="Author Pres Updates" data-status-id="11">
+            Return for Author Updates
+            {% if not phase.can_to_pres_qa_updates %}
+            <span class="ms-1 text-danger" data-feather="alert-triangle" style="height:12.8px;width:12.8px;"></span>
+            {% endif %} 
+        </button>
+    {% endif %}
+    {% if phase.can_proceed_to_completed %}
+        <button data-url="{% url 'phase_update_workflow' phase.job.slug phase.slug 12 %}" 
+            class="btn btn-outline-success js-update-phase-workflow" 
+            data-status="Completed" data-status-id="12">
+            Completed
+            {% if not phase.can_to_completed %}
+            <span class="ms-1 text-danger" data-feather="alert-triangle" style="height:12.8px;width:12.8px;"></span>
+            {% endif %} 
+        </button>
+    {% endif %}   
+    {% if phase.can_proceed_to_delivered %}
+        <button data-url="{% url 'phase_update_workflow' phase.job.slug phase.slug 13 %}" 
+            class="btn btn-outline-success js-update-phase-workflow" 
+            data-status="Delivered" data-status-id="13">
+            Mark as Delivered
+            {% if not phase.can_to_delivered %}
+            <span class="ms-1 text-danger" data-feather="alert-triangle" style="height:12.8px;width:12.8px;"></span>
+            {% endif %} 
+        </button>
+    {% endif %}        
+    </div>
+</div>

@@ -1,0 +1,34 @@
+<table class="table datatable align-items-center mb-0">
+    <thead>
+      <tr>
+        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Member</th>
+        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Role</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for member in organisationalunit.members.all %}
+          <tr>
+              <td>
+                  {% include 'partials/users/user_table_display.html' with u=member.member %}
+              </td>   
+              <td>
+                  <p class="text-xs font-weight-normal mb-0">{% include 'partials/unit/role_badge.html' %}</p>
+              </td>        
+              <td class="align-end text-end">
+                  {% if request.user in organisationalunit.get_managers %}
+                  <button class="btn btn-link text-secondary ps-0 pe-2" id="navbarDropdownMenuLink" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                     <i class="fa fa-ellipsis-v text-lg" aria-hidden="true"></i>
+                  </button>
+                  <div class="dropdown-menu shadow dropdown-menu-end me-sm-n4 me-n3" aria-labelledby="navbarDropdownMenuLink" style="">
+                      {% if member.role == 0 %}
+                      <a class="dropdown-item text-warning js-load-modal-form" href="#" 
+                          data-url="{% url 'review_join_request' organisationalunit.slug member.pk %}">Review Join Request</a>                               
+                      {% endif %}
+                  </div>
+                  {% endif %}
+               </td>
+          </tr>
+      {% endfor %}        
+    </tbody>
+  </table>

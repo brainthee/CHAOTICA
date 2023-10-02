@@ -1,0 +1,42 @@
+{% load index %}
+<div class="card">
+    <div class="card-header pb-0">
+      <h4>Utilisation</h4>
+      <p>
+        Of the scoped hours, the following bars show how they are currently being utilised.
+      </p>
+    </div>
+    <div class="card-body pt-0">
+      <div class="row">
+        <div class="col position-relative">
+          {% for v,t in TimeSlotDeliveryRoles %}
+          {% get_slotType_usage_perc phase v as typePerc %}
+          {% get_total_scheduled_by_type phase v as totalScheduled %}
+          {% get_total_scoped_by_type phase v as totalScoped %}
+            {% if forloop.counter == 6 %}
+            <hr class="vertical mt-0 dark">
+            </div>
+            <div class="col">
+            {% endif %}
+            <div class="progress-wrapper">
+              <div class="progress-info">
+                <div class="progress-percentage row">
+                  <div class="col">
+                    <span class="text-sm font-weight-normal">{{ t }}</span>
+                  </div>
+                  <div class="col text-end">
+                    <span class="text-sm font-weight-normal">{{ totalScheduled }} of {{ totalScoped }}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="progress">
+                <div class="progress-bar bg-{% if typePerc > 100 %}danger{% elif typePerc == 100 and totalScoped > 0 %}success{% elif typePerc == 100 %}danger{% elif typePerc > 75 %}warning{% elif typePerc > 0.0 %}info{% else %}light{% endif %}"
+                    role="progressbar" aria-valuenow="{{ typePerc }}" aria-valuemin="0" 
+                    aria-valuemax="100" style="width: {{ typePerc }}%;"></div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>

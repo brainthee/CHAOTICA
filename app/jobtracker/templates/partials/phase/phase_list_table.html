@@ -1,0 +1,92 @@
+<table class="table datatable align-items-center mb-0">
+    <thead>
+        <tr>
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+            Title
+            </th>
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+            Service
+            </th>
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+            Lead
+            </th>
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+            Author
+            </th>
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+            Start
+            </th>
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+            Due to QA
+            </th>
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+            Delivery
+            </th>
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+            Scheduled
+            </th>
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+            Status
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for phase in phases %}
+    <tr>
+        <td>
+        <div class="d-flex px-2">
+            <div class="my-auto">
+            <a href="{{ phase.get_absolute_url }}">
+                {{ phase.phase_number }}:{{ phase.title }}
+            </a>
+            </div>
+        </div>
+        </td>
+        <td>{{ phase.service }}</td>
+        <td>
+        {% if phase.project_lead %}
+            {{ phase.project_lead }}
+        {% else %}
+        <a href="#" data-url="{% url 'assign_phase_field' phase.job.slug phase.slug 'project_lead' %}"  
+            class="text-primary text-gradient js-load-modal-form">
+            Assign
+        </a>
+        {% endif %}
+        </td>
+        <td>
+        {% if phase.report_author %}
+            {{ phase.report_author }}
+        {% else %}
+        <a href="#" data-url="{% url 'assign_phase_field' phase.job.slug phase.slug 'report_author' %}" 
+            class="text-primary text-gradient js-load-modal-form">
+            Assign
+        </a>
+        {% endif %}
+        </td>
+        <td>
+        {{ phase.start_date }}
+        </td>
+        <td>
+        {{ phase.due_to_techqa }}
+        </td>
+        <td>
+        {{ phase.delivery_date }}
+        </td>
+        <td>
+            <div class="d-flex align-items-center gap-3">
+                <div style="--phoenix-circle-progress-bar:50">
+                    <svg class="circle-progress-svg" width="54" height="54" viewBox="0 0 170 170">
+                        <circle class="progress-bar-rail" cx="60" cy="60" r="54" fill="none" stroke-linecap="round" stroke-width="12"></circle>
+                        <circle class="progress-bar-top" cx="60" cy="60" r="54" fill="none" stroke-linecap="round" stroke="#3874FF" stroke-width="12"></circle>
+                    </svg>
+                </div>
+                <h6 class="mb-0 text-900">Analysis</h6>
+            </div>
+        </td>
+        <td>
+        {% include 'partials/phase/status_badge.html' with badge_size='sm' %}
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>

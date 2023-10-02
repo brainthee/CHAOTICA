@@ -1,0 +1,23 @@
+<div class="card contact-bx item-content">
+    <div class="card-body user-profile p-3">
+       <div class="row">
+            <div class="col my-auto text-start">
+                <h6 class="mb-0">{{ contact.first_name }} {{ contact.last_name }}</h6>
+                <span class="mb-0 d-block">{{ contact.jobtitle }}</span>
+                <span class="text-primary d-block"><a href="{{ contact.company.get_absolute_url }}">{{ contact.company }}</a></span>
+            </div>
+            <div class="col-6 d-flex align-items-center justify-content-end text-end ">
+                <ul class="list-unstyled mb-0">
+                    <li>
+                        <a href="tel:{{ contact.phone }}">
+                        <i class="fas fa-phone-alt"></i> {{ contact.phone }}</a>
+                    </li>
+                    <li>
+                        <a href="mailto:{{ contact.email }}">
+                        <i class="fas fa-at"></i> {{ contact.email }}</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+ </div>

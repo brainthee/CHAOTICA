@@ -1,0 +1,54 @@
+{% load humanize %}{% load static %}
+<div class="row g-0">
+    <div class="col border-1  border-end p-2">
+        <div class="btn fs-0 fw-semi-bold d-flex flex-column d-xxl-inline-block">
+            <h6 class="fs-18 mb-0 font-w500 text-black">Start date</h6>
+            <span>
+                {% if job.start_date %}
+                    {{ job.start_date|naturalday }}
+                {% else %}
+                    <span class="fas fa-ellipsis-h"></span>
+                {% endif %}
+            </span>
+        </div>
+    </div>
+
+    <div class="col border-1 border-end p-2">
+        <div class="btn {% if job.isOverdue %}btn-outline-danger{% endif %} fs-0 fw-semi-bold d-flex flex-column d-xxl-inline-block">
+            <h6 class="fs-18 mb-0 font-w500 text-black">Due date</h6>
+            <span>
+                {% if job.delivery_date %}
+                    {{ job.delivery_date|naturalday }}
+                {% else %}
+                    <span class="fas fa-ellipsis-h"></span>
+                {% endif %}
+            </span>
+        </div>
+    </div>
+
+    <div class="col border-1 border-end p-2">
+        <div class="btn fs-0 fw-semi-bold d-flex flex-column d-xxl-inline-block">
+            <h6 class="fs-18 mb-0 font-w500 text-black">Scope Requested</h6>
+            <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ job.scoping_requested_on }}" >
+                {% if job.scoping_requested_on %}
+                    {{ job.scoping_requested_on|naturaltime }}
+                {% else %}
+                    <span class="fas fa-ellipsis-h"></span>
+                {% endif %}
+            </span>
+        </div>
+    </div>
+
+    <div class="col border-1 p-2">
+        <div class="btn fs-0 fw-semi-bold d-flex flex-column d-xxl-inline-block">
+            <h6 class="fs-18 mb-0 font-w500 text-black">Scope Completed</h6>
+            <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ job.scoping_completed_date }}" >
+                {% if job.scoping_completed_date %}
+                    {{ job.scoping_completed_date|naturaltime }}
+                {% else %}
+                    <span class="fas fa-ellipsis-h"></span>
+                {% endif %}
+            </span>
+        </div>
+    </div>
+</div>

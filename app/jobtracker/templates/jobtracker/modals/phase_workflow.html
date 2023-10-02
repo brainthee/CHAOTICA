@@ -1,0 +1,63 @@
+<div class="modal-dialog modal- modal-dialog-centered modal-" role="document">
+    <div class="modal-content {% if not canProceed %}shadow-danger{% endif %}">
+        <form method="post" action="{% url 'phase_update_workflow' phase.job.slug phase.slug newState %}" class="js-workflow-phase-form">
+            {% csrf_token %}            
+            <div class="modal-header {% if not canProceed %}bg-danger{% endif %}">
+                <h6 class="modal-title {% if not canProceed %}text-white{% endif %} font-weight-normal" 
+                    id="modal-title-default">
+                        Move to {{ newStateStr }}
+                </h6>
+                <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body ">
+                {% if not canProceed %}
+                    <p class="">Unable to proceed to <mark>{{ newStateStr }}</mark>. The following checks failed:</p>
+                    {% for message in messages %}
+                    {% if message.tags == "error" %}
+                    <div class="alert alert-outline-danger pt-2 pb-2">
+                        {{ message }}
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                {% else %}
+                    {% if tasks %}
+                    <p class="">Checklist:</p>
+                    <ul class="list-group mb-2">
+                        {% for task in tasks %}
+                        <li class="list-group-item pb-0">
+                            <div class="form-check ps-0">
+                                <input class="form-check-input" type="checkbox" value=""
+                                    id="fcustomCheck1" required>
+                                <label class="custom-control-label" for="customCheck1">
+                                    {{ task.task }}
+                                </label>
+                            </div>                            
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                    
+                    {% if messages %}
+                    <p class="">Note:</p>
+                    {% for message in messages %}
+                    {% if message.tags == "info" %}
+                    <div class="alert alert-outline-info pt-2 pb-2">
+                        {{ message }}
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                    {% endif %}
+                    <p>Are you sure you wish to progress to <mark>{{ newStateStr }}</mark>?</p>
+                {% endif %}
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light shadow-none mb-0" data-bs-dismiss="modal">Close</button>
+                {% if canProceed %}
+                <button type="submit" class="btn btn-phoenix-primary mb-0">Advance Status</button>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+ </div>

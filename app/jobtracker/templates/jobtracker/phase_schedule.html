@@ -1,0 +1,289 @@
+{% extends "base.html" %}
+{% load menu %}{% load static %}{% load crispy_forms_tags %}{% load index %}
+
+{% block pageTitle %}Phase{% endblock pageTitle %}
+{% block head_title %}{{ job }}{% endblock head_title %}
+
+
+{% block breadcrumbItem %}
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{% url 'job_list' %}">Jobs</a></li>
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{{ job.client.get_absolute_url }}">{{ phase.job.client }}</a></li>
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{{ phase.job.get_absolute_url }}">{{ phase.job.id }}:{{ phase.job.title }}</a></li>
+<li class="breadcrumb-item text-sm"><span class="opacity-50 text-dark">Phase</span></li>
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{{ phase.get_absolute_url }}">{{ phase.phase_number }}:{{ phase.title }}</a></li></li>
+<li class="breadcrumb-item text-sm text-dark active" aria-current="page">Schedule</li>
+{% endblock breadcrumbItem %}
+
+{% block content_classes %}px-0 {% endblock content_classes %}
+{% block breadcrumb_classes %}px-5{% endblock breadcrumb_classes %}
+
+{% block content %}
+
+<div class="mt-0 p-0 text-center">
+  {% include 'partials/job/warnings.html' %}
+  {% include 'partials/phase/warnings.html' %}
+</div>
+
+<div class="row ps-5 pe-4">
+  <div class="col-12">
+    <div class="row align-items-center justify-content-between mt-3 mb-0">
+      <div class="col-6 col-md-auto">
+        <h2 class="mb-2">
+          Phase Schedule
+        </h2>
+      </div>
+
+      <div class="col-md-auto">
+        <div class="d-flex">
+          {% include 'partials/phase/status_buttons.html' %}
+
+          <button class="btn px-3 ms-3 btn-phoenix-secondary" type="button" data-bs-toggle="dropdown" 
+            data-boundary="window" aria-haspopup="true" aria-expanded="false" data-bs-reference="parent">
+            <span class="fa-solid fa-ellipsis"></span>
+          </button>
+          {% include 'partials/phase/status_button_menu.html' %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+<div class="row justify-content-between mx-1 m-3">
+  <div class="col-4">
+    <div class="card">
+      <div class="card-body">
+        <div class="row align-items-center">
+          <div class="col-12 col-sm-auto flex-1">
+            <h3 class="fw-bolder mb-2 line-clamp-1">
+              {{ phase.phase_id }} - {{ phase.title }}
+            </h3>
+
+            <table class="w-100 table-stats table-stats">
+              <tbody>
+                  <tr><th></th><th></th><th></th></tr>
+                  <tr>
+                    <td class="py-2">
+                        <div class="d-flex align-items-center">
+                          <div class="d-flex bg-info-100 rounded-circle flex-center me-3" style="width:24px; height:24px">
+        
+                          </div>
+                          <p class="fw-bold mb-0">Client</p>
+                        </div>
+                    </td>
+                    <td class="py-2 d-none d-sm-block pe-sm-2">:</td>
+                    <td class="py-2">
+                        <p class="ps-6 ps-sm-0 fw-semi-bold mb-0">
+                          <a href="{{ job.client.get_absolute_url }}">{{ job.client }}</a>
+                        </p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="py-2">
+                        <div class="d-flex align-items-center">
+                          <div class="d-flex bg-info-100 rounded-circle flex-center me-3" style="width:24px; height:24px">
+        
+                          </div>
+                          <p class="fw-bold mb-0">Status</p>
+                        </div>
+                    </td>
+                    <td class="py-2 d-none d-sm-block pe-sm-2">:</td>
+                    <td class="py-2">
+                        <p class="ps-6 ps-sm-0 fw-semi-bold mb-0">
+                          {% include 'partials/phase/status_badge.html' %}
+                        </p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="py-2">
+                        <div class="d-flex align-items-center">
+                          <div class="d-flex bg-info-100 rounded-circle flex-center me-3" style="width:24px; height:24px">
+        
+                          </div>
+                          <p class="fw-bold mb-0">Job</p>
+                        </div>
+                    </td>
+                    <td class="py-2 d-none d-sm-block pe-sm-2">:</td>
+                    <td class="py-2">
+                        <p class="ps-6 ps-sm-0 fw-semi-bold mb-0">{{ job }}</p>
+                    </td>
+                  </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-8">
+    <div class="row">
+      <div class="col-12 ">
+        <div class="card theme-wizard mb-0" data-theme-wizard="data-theme-wizard">
+          <div class="card-header px-6 pt-1 pb-0 border-bottom-0">
+            {% include 'partials/phase/progress_wizard.html' %}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="row pt-5 align-items-center">
+      {% include 'partials/phase/widgets/dates.html' %}
+    </div>
+  </div>
+</div>
+
+
+
+<div class="row g-0 mt-3 border-1 border-top bg-light dark__bg-1100 h-100">
+  <div class="col-12 col-md-9 px-3 pt-3 border-1 border-end">
+
+    <div class="row">
+      <!-- Show the add slot panel -->
+      <div class="col-7">
+        {% include 'partials/phase/widgets/schedule_edit_panel.html' %}
+      </div>
+    </div>
+
+    <div class="card mt-3 card-calendar">
+      <div class="card-body p-3">
+        <div class="calendar" data-bs-toggle="calendar" id="calendar"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="col-12 col-md-3 px-0 border-start-xxl border-300 border-top-0">
+    <div class="h-100">
+      <div class="bg-light dark__bg-1100 h-100 p-3">
+        {% include 'partials/phase/widgets/schedule_util.html' %}                 
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+{% block footer_javascript_page %}
+<script>
+
+var containerEl = document.getElementById('external-events');
+var calendarEl = document.getElementById('calendar');
+
+if (containerEl) {
+    new FullCalendar.Draggable(containerEl, {
+        itemSelector: '.fc-event',
+        eventData: function(eventEl) {
+        return {
+            title: eventEl.innerText
+        };
+        }
+    });
+}
+
+var calendar = new FullCalendar.Calendar(calendarEl, {
+    initialView: 'resourceTimelineMonth',
+    themeSystem: 'bootstrap5',
+    headerToolbar: {
+        left: 'today prev,next',
+        center: 'title',
+        right: 'resourceTimelineTenDay,resourceTimelineMonth,resourceTimelineYear'
+    },
+    initialDate: '{% PyDateToJSDate phase.earliest_date %}',
+    scrollTime: '08:00',
+    aspectRatio: 1.75,
+    views: {
+        resourceTimelineTenDay: {
+            type: 'resourceTimeline',
+            duration: { days: 10 },
+            buttonText: '10 days'
+        }
+    },
+    resourceAreaHeaderContent: 'Users',
+    resources: '{% url 'view_phase_schedule_members' job.slug phase.slug %}',
+    events: '{% url 'view_phase_schedule_slots' job.slug phase.slug %}',
+    selectable: true,
+    select: function(info) {
+      // get the selection info
+      phasePk = $('#phaseSelect').find(":selected").val()
+      slotType = $('#typeSelect').find(":selected").val()      
+      onsiteCheck = $('#is_onsite').is(':checked')
+      csrf = $('form :input[name="csrfmiddlewaretoken"]');
+      if(slotType == 0) {
+        Swal.fire(
+          'No slot type selected',
+          'Please select a type before adding a slot.',
+          'warning'
+        );    
+      } else {
+        var slotData = {
+            "phase": {{ phase.pk }},
+            "slotType": slotType,
+            "start": info.start.toJSON(),
+            "end": info.end.toJSON(),
+            "is_onsite": onsiteCheck,
+            "user": info.resource.id,
+            "csrfmiddlewaretoken": csrf.val(),
+          };
+        $.ajax({
+          url: '{% url "change_job_schedule_slot" job.slug %}',
+          data: slotData,
+          type: "POST",
+          dataType: 'json',
+          success: function(data) {
+            if (data.form_is_valid) {
+
+              location.reload();
+            } else {
+              Swal.fire(
+                'Failed to add',
+                'Something went wrong. Please check the data entered.',
+                'warning'
+              );    
+            }
+          }
+        });
+      };
+    },
+    eventClick: function(info) {
+      info.jsEvent.preventDefault(); // don't let the browser navigate
+      // Show slot edit modal
+      if (info.event.url) {
+        $.ajax({
+            url: info.event.url,
+            type: 'get',
+            dataType: 'json',
+            success: function(data) {
+                $("#mainModalContent").html(data.html_form);
+                $("#mainModal").modal("show");
+            }
+        });
+      }
+    },
+    editable: true,
+    droppable: false,
+    nowIndicator: true,
+  });
+
+var addUser = function() {
+  var form = $(this);
+  userVal = $('#id_user').find(":selected").val()
+  userObj = $('#id_user').find(":selected").text()
+  if(userVal) {
+    calendar.addResource({
+      id: userVal,
+      title: userObj
+    });
+  } else {
+    Swal.fire(
+      'No User Selected!',
+      'Please select a user to add them to the resource table.',
+      'warning'
+    );    
+  }
+};
+
+$('#addUserToResource').click(addUser);
+
+calendar.render();
+</script>
+{% endblock footer_javascript_page %}

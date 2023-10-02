@@ -1,0 +1,102 @@
+<div class="d-flex align-items-center">
+  <span class="me-2 text-info" data-feather="users" style="min-height:24px; width:24px"></span>
+  <h4 class="text-600 mb-0">
+    Avg Tech Rating
+    <span class="rating text-end {% if feedback < 3 %}text-danger{% elif feedback == 3 %}text-warning{% elif feedback >= 4 %}text-success{% endif %}" 
+      data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ feedbackStr }}" >
+    {% include 'partials/feedback_stars.html' with feedback=request.user.get_average_techqa_feedback_tech %}
+    </span>
+  </h4>
+</div>
+<div class="pb-0 pt-4">
+  <div id="echarts-avg-tech-feedback" style="min-height:110px;width:100%;"></div>
+</div>
+
+
+{% block footer_javascript_page %}
+<script>
+  const { getColor, rgbaColor, getData } = window.phoenix.utils;
+  var chartDom = document.getElementById('echarts-avg-tech-feedback');
+
+  var chart = echarts.init(chartDom);
+  options = {
+    tooltip: {
+      trigger: 'axis',
+      padding: 10,
+      backgroundColor: getColor('gray-100'),
+      borderColor: getColor('gray-300'),
+      textStyle: { color: getColor('dark') },
+      borderWidth: 1,
+      transitionDuration: 0,
+      axisPointer: {
+        type: 'none'
+      },
+    },
+    xAxis: [
+      {
+        type: 'category',
+        position: 'bottom',
+        show: true,
+        data: {{ request.user.get_average_techqa_feedback_tech_12mo.months |safe }},
+        axisLabel: {
+          formatter: value => window.dayjs(value).format('MMM, YY'),
+          color: getColor('gray-800'),
+          align: 'right',
+          fontFamily: 'Nunito Sans',
+          fontWeight: 600,
+          fontSize: 12.8
+        },
+        axisLine: {
+          show: false
+        },
+        axisTick: {
+          show: true
+        },
+        splitLine: {
+          show: false
+        },
+        boundaryGap: false
+      }
+    ],
+    yAxis: {
+      show: false,
+      type: 'value',
+      boundaryGap: false
+    },
+    series: [
+      {
+        type: 'line',
+        data: {{ request.user.get_average_techqa_feedback_tech_12mo.data }},
+        lineStyle: {
+          width: 2,
+          color: getColor('info')
+        },
+        areaStyle: {
+          color: {
+            type: 'linear',
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
+            colorStops: [
+              {
+                offset: 0,
+                color: rgbaColor(getColor('info'), 0.2)
+              },
+              {
+                offset: 1,
+                color: rgbaColor(getColor('info'), 0)
+              }
+            ]
+          }
+        },
+        showSymbol: false,
+        symbol: 'circle'
+      }
+    ],
+    grid: { left: 0, right: 0, top: 5, bottom: 20 }
+  };
+  options && chart.setOption(options);
+
+</script>
+{% endblock footer_javascript_page %}

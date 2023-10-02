@@ -1,0 +1,60 @@
+<div class="w-100 d-grid " >
+    <div class="btn-group">
+        {% if job.can_proceed_to_pending_scope %}
+            <button data-url="{% url 'job_update_workflow' job.slug 1 %}" 
+                class="btn btn-outline-info js-update-job-workflow"
+                data-status="Pending Scoping" data-status-id="1">
+                Move to Pending Scoping
+                {% if not job.can_to_pending_scope %}
+                <span class="ms-1 text-danger" data-feather="alert-triangle" style="height:12.8px;width:12.8px;"></span>
+                {% endif %} 
+            </button>
+        {% endif %}
+        {% if job.can_proceed_to_scoping %}
+            <button data-url="{% url 'job_update_workflow' job.slug 2 %}" 
+                class="btn btn-outline-info js-update-job-workflow"
+                data-status="Scoping" data-status-id="2">
+                Move to Scoping
+                {% if not job.can_to_scoping %}
+                <span class="ms-1 text-danger" data-feather="alert-triangle" style="height:12.8px;width:12.8px;"></span>
+                {% endif %} 
+            </button>
+        {% endif %}
+        {% if job.can_proceed_to_additional_scope_req %}
+            <button data-url="{% url 'job_update_workflow' job.slug 3 %}" 
+                class="btn btn-outline-info js-update-job-workflow"
+                data-status="Additional Scoping Required" data-status-id="3">
+                Additional Scoping Required
+                {% if not job.can_to_additional_scope_req %}
+                <span class="ms-1 text-danger" data-feather="alert-triangle" style="height:12.8px;width:12.8px;"></span>
+                {% endif %} 
+            </button>
+        {% endif %}
+        {% if job.can_proceed_to_scope_pending_signoff %}
+            <button data-url="{% url 'job_update_workflow' job.slug 4 %}" 
+                class="btn btn-outline-info js-update-job-workflow"
+                data-status="Pending Scope Signoff" data-status-id="2">
+                Move to Signoff
+                {% if not job.can_to_scope_pending_signoff %}
+                <span class="ms-1 text-danger" data-feather="alert-triangle" style="height:12.8px;width:12.8px;"></span>
+                {% endif %} 
+            </button>
+        {% endif %}
+        {% if job.can_proceed_to_scope_complete %}
+            <button data-url="{% url 'job_update_workflow' job.slug 5 %}" 
+                class="btn btn-outline-info js-update-job-workflow"
+                data-status="Scoping Complete" data-status-id="4">
+                Signoff Scope
+                {% if not job.can_to_scope_complete %}
+                <span class="ms-1 text-danger" data-feather="alert-triangle" style="height:12.8px;width:12.8px;"></span>
+                {% endif %} 
+            </button>
+        {% endif %}
+        {% if job.status == 5 %}
+            <a href="{% url 'job_schedule' job.slug %}" 
+                class="btn btn-outline-success ">
+                Scheduling
+            </a>
+        {% endif %}
+    </div>
+</div>

@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% load menu %}{% load static %}
+
+{% block pageTitle %}Skills{% endblock pageTitle %}
+{% block head_title %}Skills{% endblock head_title %}
+
+{% block headerBlock_css %}mb-6{% endblock headerBlock_css %}
+
+{% block breadcrumbItem %}
+<li class="breadcrumb-item active" aria-current="page">Skills</li>
+{% endblock breadcrumbItem %}
+
+{% block content %}
+
+{% if request.user.show_help %}
+<div class="row">
+  <div class="col-lg-12 col-12 mt-4 mt-lg-0">
+{% include 'help/skill_list.html' %}
+  </div>
+</div>
+{% endif %}
+
+<div class="row mb-4 gx-6 gy-3 mt-2 align-items-center">
+  <div class="col-auto">
+    <h2 class="mb-0">Skills</h2>
+  </div>
+  <div class="col-auto">
+    <a class="btn btn-primary px-5" href="{% url 'skill_cat_create' %}">
+      <i class="fa-solid fa-plus me-2"></i>
+      New Skill Category
+    </a>
+  </div>
+</div>
+
+<div class="row">
+{% for category in categories %}
+  <div class="col-6 mb-3">
+     <div class="card">
+        <div class="card-header pb-2">
+            <div class="row justify-content-center align-items-center">
+               <div class="col-sm-auto col-8 my-auto">
+                  <h5>{{ category.name }}</h5>
+               </div>
+               <div class="col-sm-auto ms-sm-auto mb-3 my-auto d-flex">
+                  <a href="{% url 'skill_create' category.slug %}" 
+                     class="btn btn-sm btn-outline-success ms-auto">
+                     New Skill
+                  </a>
+               </div>
+            </div>
+        </div>
+        <div class="card-body p-0 ">
+            <div class="table-responsive scrollbar">
+               <table class="table fs--1 mb-0">
+                  <thead>
+                     <tr>
+                        <th class="sort border-end white-space-nowrap align-middle ps-3 text-uppercase text-700" scope="col" 
+                           data-sort="contact">
+                           Skill
+                        </th>
+                        <th class="sort border-end align-middle text-end px-3 text-uppercase text-700" scope="col" 
+                           data-sort="appointment">
+                           <div class="d-inline-flex flex-center">
+                              <span class="fa-solid fa-square fs--3 text-warning me-2" data-fa-transform="up-2"></span>
+                              <span class="mb-0 fs--1">With Support</span>
+                           </div>
+                        </th>
+                        <th class="sort border-end align-middle text-end px-3 text-uppercase text-700" scope="col" 
+                           data-sort="qualified">
+                           <div class="d-inline-flex flex-center">
+                              <span class="fa-solid fa-square fs--3 text-success-300 me-2" data-fa-transform="up-2"></span>
+                              <span class="mb-0 fs--1">Can Do Alone</span>
+                           </div>
+                        </th>
+                        <th class="sort border-end align-middle text-end px-3 text-uppercase text-700" scope="col" 
+                           data-sort="closed-won">
+                           <div class="d-inline-flex flex-center">
+                              <span class="fa-solid fa-square fs--3 text-primary me-2" data-fa-transform="up-2"></span>
+                              <span class="mb-0 fs--1">Specialist</span>
+                           </div>
+                        </th>
+                     </tr>
+                  </thead>
+                  <tbody>
+                     {% for skill in category.skills.all %}
+                        <tr class="">
+                           <td class="contact align-middle white-space-nowrap py-2 ps-3 px-3">
+                              <a class="fw-semi-bold" href="{{ skill.get_absolute_url }}">{{ skill.name }}</a>
+                           </td>
+                           <td class="appointment align-middle white-space-nowrap text-end fw-semi-bold text-900 py-2 px-3">
+                              {{ skill.get_users_can_do_with_support | length }}
+                           </td>
+                           <td class="qualified align-middle white-space-nowrap text-end fw-semi-bold text-900 py-2 px-3">
+                              {{ skill.get_users_can_do_alone | length }}
+                           </td>
+                           <td class="closed-won align-middle white-space-nowrap text-end fw-semi-bold text-900 py-2 px-3">
+                              {{ skill.get_users_specialist | length }}
+                           </td>
+                        </tr>
+                     {% endfor %}
+                  </tbody>
+               </table>
+             </div>
+         </div>
+     </div>
+  </div>
+
+{% empty %}
+
+<div class="alert alert-info text-white" role="alert">
+   <strong>No Categories!</strong> Add some to begin managing skills.
+</div>
+
+{% endfor %}
+</div>
+{% endblock content %}

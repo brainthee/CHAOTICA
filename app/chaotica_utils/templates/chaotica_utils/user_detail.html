@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% load menu %}{% load static %}
+
+{% block pageTitle %}{{ user.get_full_name }}{% endblock pageTitle %}
+{% block head_title %}{{ user.get_full_name }}{% endblock head_title %}
+
+{% block breadcrumbItem %}
+<li class="breadcrumb-item text-sm">Users</li>
+<li class="breadcrumb-item text-sm text-dark active" aria-current="page">{{ user.get_full_name }}</li>
+{% endblock breadcrumbItem %}
+
+{% block content %}
+<div class="row pt-5 pb-2">
+    <div class="col-12 col-xl-4">
+        <div class="card mb-3">
+            <div class="card-body d-flex flex-column justify-content-between pb-3">
+                <div class="row align-items-center g-5 mb-3 text-center text-sm-start">
+                    <div class="col-12 col-sm-auto mb-sm-2">
+                        <div class="avatar avatar-5xl">
+                            <img class="rounded-circle" src="{{ user.get_avatar_url }}" alt="" />
+                        </div>
+                    </div>
+                    <div class="col-12 col-sm-auto flex-1">
+                        <h3>{{ user.get_full_name }}</h3>
+                        <p class="text-800">{{ user.job_title }}</p>
+                        <div>
+                            <a class="me-2" href="#!">
+                                <span class="fab fa-linkedin-in text-400 hover-primary"></span>
+                            </a>
+                            <a class="me-2" href="#!">
+                                <span class="fab fa-facebook text-400 hover-primary"></span>
+                            </a>
+                            <a href="#!">
+                                <span class="fab fa-twitter text-400 hover-primary"></span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex flex-between-center border-top border-dashed border-300 pt-4">
+                    <div>
+                        <h6>Following</h6>
+                        <p class="fs-1 text-800 mb-0">297</p>
+                    </div>
+                    <div>
+                        <h6>Projects</h6>
+                        <p class="fs-1 text-800 mb-0">56</p>
+                    </div>
+                    <div>
+                        <h6>Completion</h6>
+                        <p class="fs-1 text-800 mb-0">97</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-xl-8">
+    
+        <div class="row g-6">
+            <div class="col-6">
+                {% include 'partials/profile/quals_card.html' %}         
+            </div>
+
+            <div class="col-6">
+                {% include 'partials/profile/utilisation.html' %}
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-12">
+                {% include 'partials/profile/skills_card.html' %} 
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock content %}

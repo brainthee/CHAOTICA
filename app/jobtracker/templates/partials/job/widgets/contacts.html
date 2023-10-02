@@ -1,0 +1,109 @@
+
+<div class="row">
+   <div class="col-4">
+      <div class="card">
+         <div class="card-header p-3">
+            <div class="row">
+               <div class="col-md-10 d-flex align-items-center">
+                  <h4 class="mb-0 text-gradient text-primary">
+                     Point of Contact
+                  </h4>
+               </div>
+               <div class="col-md-2 text-end">
+                  <a href="#" data-url="{% url 'assign_job_poc' job.slug %}" 
+                     class="text-dark js-load-modal-form">
+                     <span class="fa fa-pen"></span>
+                  </a>
+               </div>
+            </div>
+         </div>
+         <div class="card-body p-3">
+
+            {% if job.primary_client_poc %}
+            {% include 'partials/contacts/contact_profile_card.html' with contactProfile=job.primary_client_poc %}
+            {% else %}
+            No contact defined!
+            {% endif %}
+
+         </div>
+      </div>
+   </div>
+
+   <div class="col-8">
+      <div class="card">
+         <div class="card-header pe-0 pt-3 pb-1">
+            <div class="row">
+               <div class="col">
+                  <h4 class="mb-0 text-gradient text-primary">
+                     Additional Contacts
+                  </h4>
+               </div>
+               <div class="col-md-auto text-end">
+                  <button class="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal" type="button" data-bs-toggle="dropdown" data-boundary="window" aria-haspopup="true" aria-expanded="false" data-bs-reference="parent">
+                     <span class="fas fa-ellipsis-h fs--2"></span>
+                  </button>
+                  <div class="dropdown-menu dropdown-menu-end py-2">
+                     <a class="dropdown-item" href="#!">Add</a>
+                     <div class="dropdown-divider"></div>
+                     <a class="dropdown-item" href="#!">Email all job contacts</a>
+                  </div>
+               </div>
+            </div>
+         </div>
+         <div class="card-body p-0">
+            <div class=" px-1" id="additional_contacts" data-list='{"valueNames":["name","role",""],"page":3,"pagination":true}'>
+                  <table class="table fs--1 mb-0" >
+                     <thead>
+                        <tr>
+                           <th class="sort white-space-nowrap align-middle pe-3 ps-0 text-uppercase" 
+                              data-sort="name" style="width:20%; min-width:100px">Name</th>
+                           <th class="sort align-middle pe-6 text-uppercase"
+                              data-sort="role" style="width:20%; max-width:60px">Role</th>
+                           <th class="align-middle pe-0 text-end" 
+                              style="width:15%;"></th>
+                        </tr>
+                     </thead>
+                     <tbody class="list" id="additional_contacts-table-body">
+                        {% for contact in job.additional_contacts.all %}
+                        <tr>
+                           <td class="name align-middle white-space-nowrap py-0 ps-0">
+
+                              <a class="me-3 dropdown-toggle dropdown-caret-none d-inline-block" href="#" role="button" 
+                              data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+                                 <h6 class="mb-0 text-1000 fw-bold">
+                                    {{ contact.get_full_name }}
+                                 </h6>
+                              </a>
+                              <div class="dropdown-menu avatar-dropdown-menu p-0 overflow-hidden" style="width: 320px;">
+                                 <div class="position-relative p-3">
+                                    {% include 'partials/contacts/contact_profile_card.html' with contactProfile=contact %}
+                                 </div>
+                              </div>
+
+                           </td>
+                           <td class="role align-middle white-space-nowrap text-start fw-bold text-700 py-0 pe-6">
+                              {{ contact.jobtitle }}
+                           </td>
+                           <td class="align-middle text-end white-space-nowrap pe-0 action py-0">
+                              <div class="font-sans-serif btn-reveal-trigger position-static">
+                                 <button class="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal" type="button" data-bs-toggle="dropdown" data-boundary="window" aria-haspopup="true" aria-expanded="false" data-bs-reference="parent">
+                                    <span class="fas fa-ellipsis-h fs--2"></span>
+                                 </button>
+                                 <div class="dropdown-menu dropdown-menu-end py-2">
+                                    <a class="dropdown-item text-danger" href="#!">Remove</a>
+                                 </div>
+                              </div>
+                           </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                           <td colspan="3">No additional contacts defined</td>
+                        </tr>
+                        {% endfor %}
+                     </tbody>
+                  </table>
+            </div>
+         </div>
+      </div>
+   </div>
+</div>

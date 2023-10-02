@@ -1,0 +1,12 @@
+
+<div class="avatar-group avatar-group-dense">
+  {% for u in users %}
+  <a class="dropdown-toggle dropdown-caret-none d-inline-block" href="#" role="button" 
+    data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+    <div class="avatar avatar-s  rounded-circle">
+      <img class="rounded-circle " src="{{ u.get_avatar_url }}" alt="{{ u.get_full_name }}" />
+    </div>
+  </a>
+  {% include 'partials/users/user_profile_card.html' with userProfile=u %}
+  {% endfor %}
+</div>

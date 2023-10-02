@@ -1,0 +1,96 @@
+<ul class="nav justify-content-between ">
+
+    <li class="nav-item">
+        <a class="nav-link fw-semi-bold {% if job.status > 0 %}done complete{% else %}active{% endif %}" href="#">
+            <div class="text-center d-inline-block">
+                <span class="nav-item-circle-parent">
+                    <span class="nav-item-circle">
+                        <span class="fas fa-pen"></span>
+                    </span>
+                </span>
+                <span class="d-none d-md-block mt-1 fs--1">Draft</span>
+            </div>
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link fw-semi-bold {% if job.status > 3 %}done complete{% elif job.status < 4 and job.status > 1 %}active{% endif %}" href="#">
+            <div class="text-center d-inline-block">
+                <span class="nav-item-circle-parent">
+                    <span class="nav-item-circle">
+                        <span class="fas fa-microscope"></span>
+                    </span>
+                </span>
+                <span class="d-none d-md-block mt-1 fs--1">Scoping</span>
+            </div>
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link fw-semi-bold {% if job.status > 4 %}done complete{% elif job.status == 4 %}active{% endif %}" href="#">
+            <div class="text-center d-inline-block">
+                <span class="nav-item-circle-parent">
+                    <span class="nav-item-circle">
+                        <span class="fas fa-signature"></span>
+                    </span>
+                </span>
+                <span class="d-none d-md-block mt-1 fs--1">Signoff</span>
+            </div>
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link fw-semi-bold {% if job.status > 6 %}done complete{% elif job.status == 5 or job.status == 6 %}active{% endif %}" href="#">
+            <div class="text-center d-inline-block">
+                <span class="nav-item-circle-parent">
+                    <span class="nav-item-circle">
+                        <span class="fas fa-clock"></span>
+                    </span>
+                </span>
+                <span class="d-none d-md-block mt-1 fs--1">Pending Start</span>
+            </div>
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link fw-semi-bold {% if job.status > 7 %}done{% elif job.status == 7 %}active{% endif %}" href="#">
+            <div class="text-center d-inline-block">
+                <span class="nav-item-circle-parent">
+                    <span class="nav-item-circle">
+                        <span class="fas fa-person-running"></span>
+                    </span>
+                </span>
+                <span class="d-none d-md-block mt-1 fs--1">In Progress</span>
+            </div>
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link fw-semi-bold {% if job.status > 8 %}done{% elif job.status == 8 %}active{% endif %}" href="#">
+            <div class="text-center d-inline-block">
+                <span class="nav-item-circle-parent">
+                    <span class="nav-item-circle">
+                        <span class="fas fa-check"></span>
+                    </span>
+                </span>
+                <span class="d-none d-md-block mt-1 fs--1">Completed</span>
+            </div>
+        </a>
+    </li>
+
+    {% if job.status > 8 %}
+    <li class="nav-item">
+        <a class="nav-link fw-semi-bold {% if job.status > 8 %}done{% endif %}" href="#">
+            <div class="text-center d-inline-block">
+                <span class="nav-item-circle-parent">
+                    <span class="nav-item-circle">
+                        <span class="fas fa-triangle-exclamation"></span>
+                    </span>
+                </span>
+                <span class="d-none d-md-block mt-1 fs--1">{{ job.get_status_display }}</span>
+            </div>
+        </a>
+    </li>
+    {% endif %}
+    
+  </ul>

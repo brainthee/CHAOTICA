@@ -1,0 +1,30 @@
+{% load humanize %}{% load crispy_forms_tags %}{% load static %}
+<div class="card mt-3" id="notes">
+    <div class="card-header pb-0">
+        <div class="row align-items-center mb-3">
+            <div class="col-9">
+                <h5 class="mb-1 text-gradient text-primary">
+                    Notes
+                </h5>
+            </div>
+        </div>       
+    </div>       
+    <div class="card-body pt-0 pb-0">
+        <div class="mb-1">
+            <form method="POST" action="{% url 'phase_create_note' phase.job.slug phase.slug %}">
+                {% csrf_token %}
+                <div class="d-flex align-items-center">
+                    <a href="{{ user.get_absolute_url }}">
+                        <div class="avatar avatar-m  me-2">
+                        <img class="rounded-circle " src="{{ user.get_avatar_url }}" alt="">    
+                        </div>
+                    </a>
+                    <div class="flex-1 pt-3">
+                        {{ noteForm.content|as_crispy_field }}
+                    </div>
+                </div>
+            </form>
+            {% include 'partials/notes.html' with notes=phase.get_user_notes %}
+        </div>
+    </div>
+</div>

@@ -1,0 +1,150 @@
+{% load static %}
+<nav class="navbar navbar-top fixed-top navbar-expand-lg" id="dualNav" style="display:none;">
+  <div class="w-100">
+    {% if user.is_impersonate %}
+      <div class="alert m-0 py-2 alert-warning rounded-0 text-white" role="alert">
+        <div class="row">
+          <div class="col-auto text-start me-md-auto">
+            Viewing as user "{{ request.user }}"
+          </div>
+          <div class="col-auto text-end">
+            <a href="{% url 'impersonate-stop' %}" class="alert-link text-white">Stop Impersonation</a>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+          
+      {% if config.SITE_NOTICE_ENABLED %}
+      <div class="alert alert-{{ config.SITE_NOTICE_COLOUR }} text-white pt-2 pb-2 rounded-0 m-0" role="alert">
+        {{ config.SITE_NOTICE_MSG }}
+      </div>
+      {% endif %}
+    
+    <div class="d-flex flex-between-center dual-nav-first-layer">
+
+      <div class="navbar-logo">
+
+        <button class="btn navbar-toggler navbar-toggler-humburger-icon hover-bg-transparent" type="button" data-bs-toggle="collapse" data-bs-target="#navbarTopCollapse" aria-controls="navbarTopCollapse" aria-expanded="false" aria-label="Toggle Navigation"><span class="navbar-toggle-icon"><span class="toggle-line"></span></span></button>
+
+        <a class="navbar-brand me-1 me-sm-3" href="{% url 'home' %}">
+          <div class="d-flex align-items-center">
+            <div class="d-flex align-items-center">
+              <!-- <img src="{% static "assets/img/icons/logo.png" %}" alt="CHAOTICA" width="27" /> -->
+              <img src="{% static "assets/img/logos/chaotica.png" %}" alt="CHAOTICA" height="56" />
+              <!-- <p class="logo-text ms-2 d-none d-sm-block">Chaotica</p> -->
+            </div>
+          </div>
+        </a>
+
+      </div>
+
+      {% include 'partials/search.html' %}
+
+      <ul class="navbar-nav navbar-nav-icons flex-row">
+        <li class="nav-item">
+          <div class="theme-control-toggle fa-icon-wait px-2">
+            <input class="form-check-input ms-0 theme-control-toggle-input" type="checkbox" data-theme-control="phoenixTheme" value="dark" id="themeControlToggle" />
+            <label class="mb-0 theme-control-toggle-label theme-control-toggle-light" for="themeControlToggle" data-bs-toggle="tooltip" data-bs-placement="left" title="Switch theme">
+              <span class="icon" data-feather="moon"></span>
+            </label>
+            <label class="mb-0 theme-control-toggle-label theme-control-toggle-dark" for="themeControlToggle" data-bs-toggle="tooltip" data-bs-placement="left" title="Switch theme">
+              <span class="icon" data-feather="sun"></span>
+            </label>
+          </div>
+        </li>
+
+        <!-- Notification bell -->
+        <li class="nav-item dropdown">
+          <a class="nav-link" href="#" style="min-width: 2.5rem" 
+            role="button" data-bs-toggle="dropdown" aria-haspopup="true" 
+            aria-expanded="false" data-bs-auto-close="outside">
+            <span data-feather="bell" style="height:20px;width:20px;"></span>
+          </a>
+
+          <div class="dropdown-menu dropdown-menu-end notification-dropdown-menu py-0 shadow border border-300 navbar-dropdown-caret" id="navbarDropdownNotfication" aria-labelledby="navbarDropdownNotfication">
+            {% include 'partials/notifications.html' %}
+          </div>
+        </li>
+        
+        <li class="nav-item dropdown">
+          <a class="nav-link lh-1 pe-0" id="navbarDropdownUser" href="#!" role="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-haspopup="true" aria-expanded="false">
+            <div class="avatar avatar-l status-{{ request.user.get_current_status }}">
+              <img class="rounded-circle " src="{{ request.user.get_avatar_url }}" alt="" />
+            </div>
+          </a>
+          <div class="dropdown-menu dropdown-menu-end navbar-dropdown-caret py-0 dropdown-profile shadow border border-300" aria-labelledby="navbarDropdownUser">
+            <div class="card position-relative border-0">
+              <div class="card-body p-0 border-bottom">
+                <div class="text-center pt-2 pb-2">
+                  <h6 class="mt-2 text-black">{{ request.user.get_full_name }}</h6>
+                  <p class="text-600 fw-semi-bold fs--2 mb-2">{{ user.job_title }}</p>
+                </div>
+                <!-- <div class="mb-3 mx-3">
+                  <input class="form-control form-control-sm" id="statusUpdateInput" type="text" placeholder="Update your status" />
+                </div> -->
+              </div>
+              <div class="overflow-auto scrollbar" style="height: 10rem;">
+                <ul class="nav d-flex flex-column mb-2 pb-1">
+
+                {% for item in menus.user %}
+                  <li class="nav-item">
+                    <a class="nav-link px-3" href="{{ item.url }}">
+                      {% if item.icon %}
+                      <span class="me-2 text-900" data-feather="{{ item.icon }}"></span>
+                      {% endif %}
+                      <span>{{ item.title }}</span>
+                    </a>
+                  </li>
+                {% endfor %}
+                </ul>
+              </div>
+
+              <div class="card-footer p-0 border-top">
+                <div class="px-3 pt-2">
+                  <a class="btn btn-phoenix-secondary d-flex flex-center w-100" href="{% url 'logout' %}">
+                    <span class="me-2" data-feather="log-out"> </span>Sign out
+                  </a>
+                </div>
+                <div class="my-2 text-center fw-bold fs--2 text-600">
+                  <a class="text-600 me-1" href="#!">Privacy policy</a> &bull;
+                  <a class="text-600 mx-1" href="#!">Terms</a>&bull; 
+                  <a class="text-600 ms-1" href="#!">Cookies</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <div class="collapse navbar-collapse navbar-top-collapse justify-content-center" id="navbarTopCollapse">
+      <ul class="navbar-nav navbar-nav-top" data-dropdown-on-hover="data-dropdown-on-hover">
+
+        {% for item in menus.main %}
+        <li class="nav-item dropdown">
+          <a class="nav-link {% if item.selected %}active{% endif %} {% if item.children %}dropdown-toggle{% endif %} lh-1" href="{{ item.url }}" role="button" {% if item.children %}data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-haspopup="true" aria-expanded="false"{% endif %}>
+            {% if item.icon %}<span class="{% if item.icon_prefix %}{{ item.icon_prefix }}{% else %}fas fa-{% endif %}{{ item.icon }} fs-0 me-2 "></span>{% endif %}
+            {{ item.title }}
+          </a>
+          {% if item.children %}
+            <ul class="dropdown-menu navbar-dropdown-caret">
+            {% for childItem in item.children %}
+              <li>
+                <a class="dropdown-item {% if childItem.selected %}active{% endif %}" href="{{ childItem.url }}">
+                  <div class="dropdown-item-wrapper">
+                    {% if childItem.icon %}<span class="{% if childItem.icon_prefix %}{{ childItem.icon_prefix }}{% else %}fas fa-{% endif %}{{ childItem.icon }} fs-0 me-2 "></span>{% endif %}
+                    {{ childItem.title }}
+                  </div>
+                </a>
+              </li>
+            {% endfor %}
+            </ul>
+          {% endif %}
+        {% endfor %}
+
+      </ul>
+    </div>
+  </div>
+</nav>
+<!-- Not used - no vertical nav! -->
+<nav class="navbar navbar-vertical navbar-expand-lg"></nav>
