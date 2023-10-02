@@ -1,10 +1,12 @@
 # CHAOTICA
 
+[![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip) - **WARNING - THIS PROJECT IS IN EARLY STAGES. I DO NOT ADVISE YOU USE IT YET.**
+
 CHAOTICA stands for: **C**entralised **H**ub for **A**ssigning **O**perational **T**asks, **I**nteractive **C**alendaring and **A**lerts. Thanks ChatGPT for the backronym!
 
-An engagement life-cycle management tool
+It is a Django based engagement life-cycle management tool. Primaryily geared to security testing teams.
 
-Features:
+(Planned) Features:
 
 - Workflow tracking of engagements (jobs) from birth to death
 - Email/Teams alerts on status changes of jobs/phases
@@ -16,11 +18,20 @@ Features:
 - Organisational Unit concepts. Allows groups/units to operate independently but allows 'overlords' oversight and stats across teams
 - Team concepts - Allows grouping/membership of users (E.g. Amazon onboarded, NCSC approved people) scheduling/engagements can be enforced on member selection. 
 - Skill tracking
-- Import and Export of info to support data migration
+- Service tracking with skills definable (e.g. service X must have skill Y)
 
+## Installation
 
+There are no released versions yet. Eventually you will be able to pull the latest image from DockerHub.
 
-## CI/CD vars needed:
+## Contributing
+
+Pull requests are welcome. For major changes, please open an issue first
+to discuss what you would like to change.
+
+## Deployment
+
+### CI/CD vars needed:
 
 * `AWS_ACCESS_KEY_ID` -  AWS Access Key
 * `AWS_SECRET_ACCESS_KEY` -  AWS Secret Key
