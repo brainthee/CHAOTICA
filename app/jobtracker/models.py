@@ -1203,7 +1203,7 @@ class PhaseManager(models.Manager):
         # - Lead/Author of
         # - Scoped while before scoping approved
 
-        scheduled = self.filter(timeslots__user=user)
+        scheduled = self.filter(timeslots__user=user).distinct()
         matches = scheduled
         return matches
 
@@ -2173,7 +2173,7 @@ class TimeSlot(models.Model):
             return "#378006"
         else:
             if self.is_confirmed():
-                return "#FFC7CE" if self.is_onsite else "#1700b3"
+                return "#FFC7CE" if self.is_onsite else "#bdb3ff"
             else:
                 return "#E6B9B8" if self.is_onsite else "#95B3D7"
 

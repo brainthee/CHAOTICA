@@ -1,5 +1,5 @@
 # pull official base image
-FROM python:3-alpine
+FROM python:3.11-alpine
 
 EXPOSE 8000
 
@@ -15,7 +15,7 @@ ENV PYTHONUNBUFFERED 1
 
 # install db dependencies
 RUN apk update \
-    && apk add postgresql-dev gcc g++ python3-dev libffi-dev musl-dev pkgconfig mariadb-dev mariadb-connector-c-dev libmagic
+    && apk add postgresql-dev gcc g++ python3-dev libffi-dev musl-dev pkgconfig mariadb-dev mariadb-connector-c-dev libmagic libxml2-dev libxslt-dev
 
 # install dependencies
 RUN pip install --upgrade pip
