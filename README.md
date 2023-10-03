@@ -6,6 +6,8 @@ CHAOTICA stands for: **C**entralised **H**ub for **A**ssigning **O**perational *
 
 It is a Django based engagement life-cycle management tool. Primarily geared to security testing teams.
 
+![CHAOTICA Dashboard](media/../app/media/screenshots/dashboard.png "Dashboard")
+
 (Planned) Features:
 
 - Workflow tracking of engagements (jobs) from birth to death
