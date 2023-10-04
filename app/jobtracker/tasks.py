@@ -12,7 +12,7 @@ logger = get_task_logger("tasks")
 
 
 @shared_task(track_started=True)
-def task_progress_job_workflows(self):
+def task_progress_job_workflows():
     # Lets work through the different times we want to auto-progress!
 
     ## Move to checks if scheduling confirmed and < 5 days to start...
@@ -20,7 +20,7 @@ def task_progress_job_workflows(self):
     for phase in phasesToChecks:
         if phase.start_date:
             daysToStart = phase.start_date - date.today()
-            if daysToStart.days < 5:
+            if daysToStart.days < 7:
                 # Ok, we're in the time range... lets try and move!
                 if phase.can_to_pre_checks():
                     phase.to_pre_checks()

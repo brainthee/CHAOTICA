@@ -10,7 +10,7 @@ from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from chaotica_utils.views import log_system_activity, ChaoticaBaseView, pageDefaults
-from chaotica_utils.utils import SendUserNotification
+from chaotica_utils.utils import *
 from ..models import *
 from ..forms import *
 from ..tasks import *
@@ -46,7 +46,7 @@ def view_job_schedule_slots(request, slug):
 def view_job_schedule_members(request, slug):
     data = []
     job = get_object_or_404(Job, slug=slug)
-    scheduledUsers = job.get_scheduled_users()
+    scheduledUsers = job.team_scheduled()
     if scheduledUsers:
         for user in scheduledUsers:
             data.append({

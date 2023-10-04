@@ -1,8 +1,9 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin, GroupAdmin
+from guardian.admin import GuardedModelAdmin
 from .models import *
 
-class CustomUserAdmin(UserAdmin):
+class CustomUserAdmin(GuardedModelAdmin):
     fieldsets = (
         *UserAdmin.fieldsets,  # original form fieldsets, expanded
         (                      # new fieldset added on to the bottom

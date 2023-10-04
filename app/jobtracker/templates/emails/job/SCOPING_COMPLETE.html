@@ -1,0 +1,16 @@
+{% extends 'email_base.html' %}
+
+{% block title %}
+Welcome to {{ orgUnit.name }}.
+{% endblock title %}
+
+{% block content %}
+{{ membership.inviter.get_full_name }} has accepted your request to join the unit.
+{% endblock content %}
+
+{% block action_block %}
+<a href="{{ orgUnit.get_absolute_url }}" 
+  style="color: #ffffff; font-size: 16px; font-family: Helvetica, Arial, sans-serif; text-decoration: none; border-radius: 6px; line-height: 20px; display: block; font-weight: 700 !important; white-space: nowrap; background-color: #0d6efd; padding: 12px; border: 1px solid #0d6efd;">
+  Visit Unit
+</a>
+{% endblock action_block %}

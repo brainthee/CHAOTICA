@@ -8,6 +8,7 @@ from django.db.models import Q
 from django.utils import timezone
 import pandas as pd
 import holidays
+from pprint import pprint
 
 
 logger = get_task_logger("tasks")
@@ -30,4 +31,10 @@ def task_updateHolidays(self):
                 if subdiv not in dbDate.subdivs:
                     dbDate.subdivs.append(subdiv)
                     dbDate.save()
-        
+
+
+@shared_task(track_started=True, serializer="pickle")
+def task_send_notifications(notification, users_to_notify):
+    pprint(users_to_notify)
+    for u in users_to_notify:
+        notification.SendToUser(u)

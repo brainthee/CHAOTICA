@@ -14,7 +14,6 @@
           {% get_total_scheduled_by_type phase v as totalScheduled %}
           {% get_total_scoped_by_type phase v as totalScoped %}
             {% if forloop.counter == 6 %}
-            <hr class="vertical mt-0 dark">
             </div>
             <div class="col">
             {% endif %}
@@ -22,10 +21,11 @@
               <div class="progress-info">
                 <div class="progress-percentage row">
                   <div class="col">
-                    <span class="text-sm font-weight-normal">{{ t }}</span>
+                    <span class="fs--2 font-weight-normal">{{ t }}</span>
                   </div>
                   <div class="col text-end">
-                    <span class="text-sm font-weight-normal">{{ totalScheduled }} of {{ totalScoped }}</span>
+                    <!-- <span class="text-sm font-weight-normal">{{ totalScheduled }} of {{ totalScoped }}</span> -->
+                    <span class="fs--2 font-weight-normal">{{ typePerc }}%</span>
                   </div>
                 </div>
               </div>
