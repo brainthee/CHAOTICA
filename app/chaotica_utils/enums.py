@@ -143,6 +143,9 @@ class UnitRoles():
     SALES = 2
     SERVICE_DELIVERY = 3
     MANAGER = 4
+    TQA = 5
+    PQA = 6
+    SCOPER = 7
 
     def getRolesWithPermission(permission):
         allowedAddRoles = []
@@ -157,6 +160,9 @@ class UnitRoles():
         (SALES, "Sales"),
         (SERVICE_DELIVERY, "Service Delivery"),
         (MANAGER, "Manager"),
+        (TQA, "Tech QA'er"),
+        (PQA, "Pres QA'er"),
+        (SCOPER, "Scoper"),
     )
     BS_COLOURS = (
         (PENDING, "dark"),
@@ -164,6 +170,9 @@ class UnitRoles():
         (SALES, "success"),
         (SERVICE_DELIVERY, "info"),
         (MANAGER, "danger"),
+        (TQA, "info"),
+        (PQA, "info"),
+        (SCOPER, "info"),
     )
     PERMISSIONS = (
         (PENDING, [
@@ -174,22 +183,27 @@ class UnitRoles():
             # "jobtracker.view_job",
         ]),
         (SALES, [
-            # Job
-            "jobtracker.view_job", "jobtracker.add_job",          
+            "jobtracker.can_view_unit_jobs", "jobtracker.can_add_job",
         ]),
         (SERVICE_DELIVERY, [
             # OrganisationalUnit
             "jobtracker.assign_members_organisationalunit", 'jobtracker.view_users_schedule',
-            # Job
-            "jobtracker.view_job", "jobtracker.add_job", "jobtracker.scope_job",
         ]),
         (MANAGER, [
             # OrganisationalUnit
             "jobtracker.change_organisationalunit", "jobtracker.delete_organisationalunit",
             "jobtracker.assign_members_organisationalunit", 'jobtracker.view_users_schedule',
-            # Job
-            "jobtracker.view_job", "jobtracker.add_job", "jobtracker.change_job", 
-            "jobtracker.delete_job", "jobtracker.scope_job",
+            "jobtracker.can_scope_jobs", 'jobtracker.can_signoff_scopes',
+            "jobtracker.can_signoff_own_scopes", 'jobtracker.can_schedule_phases',
+        ]),
+        (TQA, [
+            "jobtracker.can_tqa_jobs", 
+        ]),
+        (PQA, [
+            "jobtracker.can_pqa_jobs", 
+        ]),
+        (SCOPER, [
+            "jobtracker.can_scope_jobs", "jobtracker.can_signoff_scopes", 
         ]),
     )
 

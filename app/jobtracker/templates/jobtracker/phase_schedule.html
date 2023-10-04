@@ -188,9 +188,26 @@ var calendar = new FullCalendar.Calendar(calendarEl, {
         center: 'title',
         right: 'resourceTimelineTenDay,resourceTimelineMonth,resourceTimelineYear'
     },
-    initialDate: '{% PyDateToJSDate phase.earliest_date %}',
-    scrollTime: '08:00',
+    initialDate: '{% PyDateToJSDate phase.earliest_scheduled_date %}',
     aspectRatio: 1.75,
+    eventAfterAllRender: function(view){
+            if ($("#calendar .fc-event").length > 0) {
+                var op = 999999;
+                $("#calendar .fc-content-col").each(function(index){
+                    if($(this).find('.fc-event:first').length > 0){
+                        var ot = $(this).find('.fc-event:first').position().top;
+                        if(ot < op){
+                            op=ot;
+                        }
+                    }
+                });
+                if( op < 999999){
+                    $("#calendar .fc-scroller").animate({
+                        scrollLeft: op
+                    }, 250);
+                }
+            }
+        },
     views: {
         resourceTimelineTenDay: {
             type: 'resourceTimeline',

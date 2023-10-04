@@ -212,9 +212,13 @@ class ChangeTimeSlotModalForm(forms.ModelForm):
             Div(Row(
                     Column(Div(FloatingField('phase'),
                             css_class="input-group input-group-dynamic")),
+                    Column(Div(Field('is_onsite'),
+                            css_class="input-group input-group-dynamic")),
+                ),
+                Row(
                     Column(Div(FloatingField('slotType'),
                             css_class="input-group input-group-dynamic")),
-                    Column(Div(Field('is_onsite'),
+                    Column(Div(FloatingField('deliveryRole'),
                             css_class="input-group input-group-dynamic")),
                 ),
                 Row(
@@ -238,6 +242,7 @@ class ChangeTimeSlotModalForm(forms.ModelForm):
             'user',
             'phase',
             'slotType',
+            'deliveryRole',
             'is_onsite',
             'start',
             'end',
@@ -264,7 +269,7 @@ class JobForm(forms.ModelForm):
         queryset=Client.objects.filter(account_managers__isnull=False),
         widget=autocomplete.ModelSelect2(),)
 
-    scoping_information = forms.CharField(
+    overview = forms.CharField(
         required=False,
         widget=forms.Textarea(
         attrs={
@@ -283,6 +288,7 @@ class JobForm(forms.ModelForm):
         self.fields['title'].label = ""
         self.fields['client'].label = ""
         self.fields['unit'].label = ""
+        self.fields['overview'].label = ""  
         self.fields['revenue'].label = ""  
         self.fields['account_manager'].label = ""  
         self.fields['dep_account_manager'].label = ""  
@@ -301,6 +307,7 @@ class JobForm(forms.ModelForm):
             "client", 
             "title", 
             "revenue", 
+            "overview", 
             "account_manager", 
             "dep_account_manager",
             "start_date_set",
@@ -395,7 +402,7 @@ class PhaseForm(forms.ModelForm):
 
 class ScopeInlineForm(forms.ModelForm):
 
-    scoping_information = forms.CharField(
+    overview = forms.CharField(
         required=False,
         label="",
         widget=forms.Textarea(
@@ -413,7 +420,7 @@ class ScopeInlineForm(forms.ModelForm):
     class Meta:
         model = Job
         fields = [
-            "scoping_information", 
+            "overview", 
             "additional_kit_required", 
             "kit_sourced_by_client", 
             "additional_kit_info",  
@@ -481,7 +488,7 @@ class ScopeForm(forms.ModelForm):
                         css_class='card-header'),
                     Div(
                         Row(
-                            Div(FloatingField('scoping_information'),
+                            Div(FloatingField('overview'),
                                 css_class="input-group input-group-dynamic"),
                         css_class="mx-3"),
                         css_class='card-body pt-3 px-0 pb-0'),
@@ -549,7 +556,7 @@ class ScopeForm(forms.ModelForm):
     class Meta:
         model = Job
         fields = [
-            "scoping_information", 
+            "overview", 
             "additional_kit_required", 
             "kit_sourced_by_client", 
             "additional_kit_info",  

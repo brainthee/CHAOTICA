@@ -28,6 +28,9 @@ def _process_assign_user(request, obj, prop, multiple=False, users=None):
             else:
                 setattr(obj, prop, form.cleaned_data['user'])
             
+            log_system_activity(obj, 
+                "Altered assigned user for "+obj._meta.get_field(prop).verbose_name.title(),
+                author=request.user)
             obj.save()
             data['form_is_valid'] = True
         else:
@@ -62,7 +65,10 @@ def _process_assign_contact(request, obj, prop, multiple=False, contacts=None):
                     getattr(obj, prop).add(user)
             else:
                 setattr(obj, prop, form.cleaned_data['contact'])
-            
+
+            log_system_activity(obj, 
+                "Altered contact information for "+obj._meta.get_field(prop).verbose_name.title(),
+                author=request.user)
             obj.save()
             data['form_is_valid'] = True
         else:

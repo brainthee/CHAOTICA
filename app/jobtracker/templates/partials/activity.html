@@ -25,7 +25,7 @@
                </p>
             </div>
             <h6 class="fs--2 fw-normal mb-3">
-               {% if activity.is_system_note %}
+               {% if activity.is_system_note and activity.author is None %}
                by <span class="fw-semi-bold">SYSTEM</span>
                {% else %}
                by <a class="fw-semi-bold" href="{{ activity.author.get_absolute_url }}">{{ activity.author }}</a>

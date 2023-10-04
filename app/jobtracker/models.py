@@ -6,9 +6,9 @@ from django.utils import timezone
 from django.utils.text import slugify
 from django.urls import reverse
 from simple_history.models import HistoricalRecords
-from django.db.models import Q, Sum
+from django.db.models import Q, Sum, Count
 from django.contrib.contenttypes.fields import GenericRelation
-from guardian.shortcuts import get_objects_for_user, assign_perm, remove_perm
+from guardian.shortcuts import get_objects_for_user, assign_perm, remove_perm, get_perms, get_user_perms
 from tinymce.models import HTMLField
 from lxml.html.clean import clean_html
 from phonenumber_field.modelfields import PhoneNumberField
@@ -21,6 +21,8 @@ from pprint import pprint
 import uuid, os, random
 from chaotica_utils.models import Note, User, UserCost
 from chaotica_utils.enums import *
+from chaotica_utils.tasks import *
+from chaotica_utils.utils import *
 from chaotica_utils.views import log_system_activity
 from datetime import time, timedelta
 from django.core.exceptions import ValidationError
@@ -416,14 +418,55 @@ class OrganisationalUnit(models.Model):
             # ('delete_organisationalunit', 'Delete Organisational Unit'),
             ## Extras
             ('assign_members_organisationalunit', 'Assign Members'),
-            ('view_users_schedule', 'View Members Schedule'),
+            ('can_view_unit_jobs', 'Can view jobs'),
+            ('can_add_job', 'Can add jobs'),
+
+            ('can_tqa_jobs', 'Can TQA jobs'),
+            ('can_pqa_jobs', 'Can PQA jobs'),
+
+            ('can_scope_jobs', 'Can scope jobs'),
             ('can_signoff_scopes', 'Can signoff scopes'),
             ('can_signoff_own_scopes', 'Can signoff own scopes'),
+
+            ('view_users_schedule', 'View Members Schedule'),
+            ('can_schedule_phases', 'Can schedule phases'),
         )
     
-
     def syncPermissions(self):
-        pass
+        for user in self.get_allMembers():
+            # Ensure the permissions are set right!
+            existing_perms = list(get_user_perms(user, self).values_list('codename', flat=True))
+            pprint(existing_perms)
+
+            expected_perms = []
+            # get a combined list of perms from their roles...
+            for ms in OrganisationalUnitMember.objects.filter(unit=self, member=user, left_date__isnull=True):
+                for rolePerm in UnitRoles.PERMISSIONS[ms.role][1]:
+                    if "." in rolePerm:
+                        cleanPerm = rolePerm.split('.')[1]
+                    else:
+                        cleanPerm = rolePerm
+                    if cleanPerm not in expected_perms:
+                        expected_perms.append(cleanPerm)
+
+            pprint(expected_perms)
+
+            if expected_perms:
+                # First lets add missing perms...
+                for new_perm in expected_perms:
+                    if new_perm not in existing_perms:
+                        assign_perm(new_perm, user, self)
+                
+                # Now lets remove old perms
+                for old_perm in existing_perms:
+                    if old_perm not in expected_perms:
+                        remove_perm(old_perm, user, self)
+            else:
+                if existing_perms:
+                    # We should not have any permissions! Clear them all
+                    for perm in existing_perms:
+                        remove_perm(perm, user, self)
+    
 
     def __str__(self):
         return self.name    
@@ -447,6 +490,16 @@ class OrganisationalUnit(models.Model):
             return User.objects.filter(pk__in=ids)
         else:
             return User.objects.none()
+          
+    def get_allMembers(self):
+        ids = []
+        for mgr in OrganisationalUnitMember.objects.filter(unit=self):
+            if mgr.member.pk not in ids:
+                ids.append(mgr.member.pk)
+        if ids:
+            return User.objects.filter(pk__in=ids)
+        else:
+            return User.objects.none()
         
     def get_absolute_url(self):
         if not self.slug:
@@ -464,7 +517,9 @@ class OrganisationalUnit(models.Model):
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.name)
-        saved = super().save(*args, **kwargs)        
+        super().save(*args, **kwargs)
+        # Resync permissions...
+        self.syncPermissions()
 
 
 class OrganisationalUnitMember(models.Model):
@@ -485,12 +540,23 @@ class OrganisationalUnitMember(models.Model):
     history = HistoricalRecords()
 
     class Meta:
-        ordering = ['-role', 'member']
+        ordering = ['member', '-role']
         get_latest_by = 'mod_date'
         
     @property
     def role_bs_colour(self):
         return UnitRoles.BS_COLOURS[self.role][1]
+    
+    def getActiveRoles(self):
+        return OrganisationalUnitMember.objects.filter(
+            unit=self.unit, member=self.member,
+            left_date__isnull=True,
+        )
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Lets resync the permissions!
+        self.unit.syncPermissions()
 
 class WorkflowTasks(models.Model):
     WF_JOB = 1
@@ -593,7 +659,7 @@ class Job(models.Model):
             return Decimal(0)
     
     def has_staff_with_missing_costs(self):
-        scheduled_users = self.get_scheduled_users()
+        scheduled_users = self.team_scheduled()
         if scheduled_users:
             for user in scheduled_users:
                 if user.current_cost() is None:
@@ -654,7 +720,7 @@ class Job(models.Model):
     reasons_for_high_risk = BleachField(null=True, blank=True)
 
     # Main info
-    scoping_information = BleachField(blank=True, null=True)
+    overview = BleachField(blank=True, null=True)
 
     # Dates
     scoping_requested_on = models.DateTimeField('Scoping requested on', null=True, blank=True)
@@ -690,8 +756,8 @@ class Job(models.Model):
             return self.start_date_set
         else:
             # Calculate start from first delivery slot
-            if TimeSlot.objects.filter(phase__job=self, slotType=TimeSlotDeliveryRole.DELIVERY).exists():
-                return TimeSlot.objects.filter(phase__job=self, slotType=TimeSlotDeliveryRole.DELIVERY).order_by('-start').first().start.date()
+            if TimeSlot.objects.filter(phase__job=self, deliveryRole=TimeSlotDeliveryRole.DELIVERY).exists():
+                return TimeSlot.objects.filter(phase__job=self, deliveryRole=TimeSlotDeliveryRole.DELIVERY).order_by('-start').first().start.date()
             else:
                 # No slots - return None
                 return None
@@ -702,8 +768,8 @@ class Job(models.Model):
             return self.delivery_date_set
         else:
             # Calculate start from first delivery slot
-            if TimeSlot.objects.filter(phase__job=self, slotType=TimeSlotDeliveryRole.REPORTING).exists():
-                return TimeSlot.objects.filter(phase__job=self, slotType=TimeSlotDeliveryRole.REPORTING).order_by('end').first().end.date() + timedelta(weeks=1)
+            if TimeSlot.objects.filter(phase__job=self, deliveryRole=TimeSlotDeliveryRole.REPORTING).exists():
+                return TimeSlot.objects.filter(phase__job=self, deliveryRole=TimeSlotDeliveryRole.REPORTING).order_by('end').first().end.date() + timedelta(weeks=1)
             else:
                 # No slots - return None
                 return None
@@ -714,6 +780,7 @@ class Job(models.Model):
     
     @property
     def inScoping(self):
+        pprint(self.status)
         return (self.status == JobStatuses.SCOPING or self.status == JobStatuses.SCOPING_ADDITIONAL_INFO_REQUIRED)
     
     def isOverdue(self):
@@ -742,7 +809,7 @@ class Job(models.Model):
         return round(totalScopedHrs / self.client.hours_in_day, 2)
         
 
-    def get_scheduled_users(self):
+    def team_scheduled(self):
         user_ids = TimeSlot.objects.filter(phase__job=self).values_list('user', flat=True).distinct()
         if user_ids:
             return User.objects.filter(pk__in=user_ids)
@@ -750,7 +817,7 @@ class Job(models.Model):
             return None
     
     def get_activeTimeSlotDeliveryRoles(self):
-        mySlots = TimeSlot.objects.filter(phase__job=self).values_list('slotType', flat=True).distinct()
+        mySlots = TimeSlot.objects.filter(phase__job=self).values_list('deliveryRole', flat=True).distinct()
         return mySlots
     
     def get_all_total_scheduled_by_type(self):
@@ -860,6 +927,16 @@ class Job(models.Model):
         log_system_activity(self, "Moved to "+JobStatuses.CHOICES[JobStatuses.PENDING_SCOPE][1])
         self.scoping_requested_on = timezone.now()
 
+        # Notify scoping team
+        perm = Permission.objects.get(codename="can_scope_jobs")
+        users_to_notify = self.unit.get_activeMembers().filter(Q(user_permissions=perm))
+        notice = AppNotification(
+            NotificationTypes.JOB, 
+            "Job Pending Scope", "A job has just been marked as ready to scope.", 
+            "emails/job/PENDING_SCOPE.html", job=self)
+        task_send_notifications.delay(notice, users_to_notify)
+
+
     def can_proceed_to_pending_scope(self):
         return can_proceed(self.to_pending_scope)
         
@@ -949,6 +1026,15 @@ class Job(models.Model):
         target=JobStatuses.PENDING_SCOPING_SIGNOFF)
     def to_scope_pending_signoff(self):
         log_system_activity(self, "Moved to "+JobStatuses.CHOICES[JobStatuses.PENDING_SCOPING_SIGNOFF][1])
+        
+        # Notify scoping team
+        perm = Permission.objects.get(codename="can_signoff_scopes")
+        users_to_notify = self.unit.get_activeMembers().filter(Q(user_permissions=perm))
+        notice = AppNotification(
+            NotificationTypes.JOB, 
+            "Job Scope Pending Signoff", "A job's scope is ready for signoff.", 
+            "emails/job/PENDING_SCOPING_SIGNOFF.html", job=self)
+        task_send_notifications.delay(notice, users_to_notify)
 
     def can_proceed_to_scope_pending_signoff(self):
         return can_proceed(self.to_scope_pending_signoff)
@@ -958,9 +1044,9 @@ class Job(models.Model):
         # Do logic checks
 
         ## Check fields are populated
-        if not self.scoping_information:
+        if not self.overview:
             if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "Scope description missing.")
+                messages.add_message(notifyRequest, messages.ERROR, "Job overview missing.")
             _canProceed = False
 
         if ((self.high_risk or self.technically_complex_test) and not self.reasons_for_high_risk):
@@ -1001,7 +1087,16 @@ class Job(models.Model):
         for phase in self.phases.all():
             if phase.can_to_pending_sched():
                 phase.to_pending_sched()
-                phase.save()
+                phase.save()        
+        
+        # Notify scheduling team
+        perm = Permission.objects.get(codename="can_schedule_phases")
+        users_to_notify = self.unit.get_activeMembers().filter(Q(user_permissions=perm))
+        notice = AppNotification(
+            NotificationTypes.JOB, 
+            "Job Ready to Schedule", "A job's scope has been signed off and is ready for scheduling.", 
+            "emails/job/SCOPING_COMPLETE.html", job=self)
+        task_send_notifications.delay(notice, users_to_notify)
 
     def can_proceed_to_scope_complete(self):
         return can_proceed(self.to_scope_complete)
@@ -1035,9 +1130,9 @@ class Job(models.Model):
                 _canProceed = False
 
         ## Check fields are populated
-        if not self.scoping_information:
+        if not self.overview:
             if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "Scope description missing.")
+                messages.add_message(notifyRequest, messages.ERROR, "Job overview missing.")
             _canProceed = False
 
         if ((self.high_risk or self.technically_complex_test) and not self.reasons_for_high_risk):
@@ -1267,7 +1362,7 @@ class Phase(models.Model):
     is_reporting_onsite = models.BooleanField('Reporting Onsite', default=False)
     location = BleachField('Onsite Location', blank=True, null=True)
     number_of_reports = models.IntegerField(
-        default=0,
+        default=1,
         help_text='If set to 0, this phase will not go through Technical or Presentation QA',
     )
     report_to_be_left_on_client_site = models.BooleanField(default=False)
@@ -1293,6 +1388,13 @@ class Phase(models.Model):
             # return today
             return timezone.now().today()
         
+    def earliest_scheduled_date(self):
+        # Calculate start from first delivery slot
+        if self.timeslots.filter(deliveryRole=TimeSlotDeliveryRole.DELIVERY).exists():
+            return self.timeslots.filter(deliveryRole=TimeSlotDeliveryRole.DELIVERY).order_by('-start').first().start.date()
+        else:
+            # return today
+            return timezone.now().today()        
 
     @property
     def start_date(self):
@@ -1300,8 +1402,8 @@ class Phase(models.Model):
             return self.start_date_set
         else:
             # Calculate start from first delivery slot
-            if self.timeslots.filter(slotType=TimeSlotDeliveryRole.DELIVERY).exists():
-                return self.timeslots.filter(slotType=TimeSlotDeliveryRole.DELIVERY).order_by('-start').first().start.date()
+            if self.timeslots.filter(deliveryRole=TimeSlotDeliveryRole.DELIVERY).exists():
+                return self.timeslots.filter(deliveryRole=TimeSlotDeliveryRole.DELIVERY).order_by('-start').first().start.date()
             else:
                 # No slots - return None
                 return None
@@ -1312,8 +1414,8 @@ class Phase(models.Model):
             return self.due_to_techqa_set
         else:
             # Calculate start from last delivery slot
-            if self.timeslots.filter(Q(slotType=TimeSlotDeliveryRole.REPORTING)|Q(slotType=TimeSlotDeliveryRole.DELIVERY)).exists():
-                return self.timeslots.filter(Q(slotType=TimeSlotDeliveryRole.REPORTING)|Q(slotType=TimeSlotDeliveryRole.DELIVERY)).order_by('end').first().end.date()
+            if self.timeslots.filter(Q(deliveryRole=TimeSlotDeliveryRole.REPORTING)|Q(deliveryRole=TimeSlotDeliveryRole.DELIVERY)).exists():
+                return self.timeslots.filter(Q(deliveryRole=TimeSlotDeliveryRole.REPORTING)|Q(deliveryRole=TimeSlotDeliveryRole.DELIVERY)).order_by('end').first().end.date()
             else:
                 # No slots - return None
                 return None
@@ -1324,8 +1426,8 @@ class Phase(models.Model):
             return self.due_to_presqa_set
         else:
             # Calculate start from last delivery slot
-            if self.timeslots.filter(Q(slotType=TimeSlotDeliveryRole.REPORTING)|Q(slotType=TimeSlotDeliveryRole.DELIVERY)).exists():
-                return self.timeslots.filter(Q(slotType=TimeSlotDeliveryRole.REPORTING)|Q(slotType=TimeSlotDeliveryRole.DELIVERY)).order_by('end').first().end.date() + timedelta(days=5)
+            if self.timeslots.filter(Q(deliveryRole=TimeSlotDeliveryRole.REPORTING)|Q(deliveryRole=TimeSlotDeliveryRole.DELIVERY)).exists():
+                return self.timeslots.filter(Q(deliveryRole=TimeSlotDeliveryRole.REPORTING)|Q(deliveryRole=TimeSlotDeliveryRole.DELIVERY)).order_by('end').first().end.date() + timedelta(days=5)
             else:
                 # No slots - return None
                 return None
@@ -1336,8 +1438,8 @@ class Phase(models.Model):
             return self.delivery_date_set
         else:
             # Calculate start from first delivery slot
-            if self.timeslots.filter(Q(slotType=TimeSlotDeliveryRole.REPORTING)|Q(slotType=TimeSlotDeliveryRole.DELIVERY)).exists():
-                return self.timeslots.filter(Q(slotType=TimeSlotDeliveryRole.REPORTING)|Q(slotType=TimeSlotDeliveryRole.DELIVERY)).order_by('end').first().end.date() + timedelta(weeks=1)
+            if self.timeslots.filter(Q(deliveryRole=TimeSlotDeliveryRole.REPORTING)|Q(deliveryRole=TimeSlotDeliveryRole.DELIVERY)).exists():
+                return self.timeslots.filter(Q(deliveryRole=TimeSlotDeliveryRole.REPORTING)|Q(deliveryRole=TimeSlotDeliveryRole.DELIVERY)).order_by('end').first().end.date() + timedelta(weeks=1)
             else:
                 # No slots - return None
                 return None
@@ -1456,7 +1558,7 @@ class Phase(models.Model):
             return ""
 
     # Gets scheduled users and assigned users (e.g. lead/author/qa etc)        
-    def get_users(self):
+    def team(self):
         ids = []
         for slot in TimeSlot.objects.filter(phase=self):
             if slot.user.pk not in ids:
@@ -1478,7 +1580,7 @@ class Phase(models.Model):
         else:
             return User.objects.none()
 
-    def get_scheduled_users(self):
+    def team_scheduled(self):
         scheduledUsersIDs = []
         for slot in TimeSlot.objects.filter(phase=self):
             if slot.user.pk not in scheduledUsersIDs:
@@ -1631,6 +1733,14 @@ class Phase(models.Model):
         if self.job.can_proceed_to_pending_start():
             self.job.to_pending_start()
             self.job.save()
+        
+        # Notify project team
+        users_to_notify = self.team()
+        notice = AppNotification(
+            NotificationTypes.PHASE, 
+            "Phase Update - Schedule Confirmed", "The schedule for this phase is confirmed.", 
+            "emails/phase/SCHEDULED_CONFIRMED.html", phase=self)
+        task_send_notifications.delay(notice, users_to_notify)
 
     def can_proceed_to_sched_confirmed(self):
         return can_proceed(self.to_sched_confirmed)
@@ -1677,6 +1787,14 @@ class Phase(models.Model):
         target=PhaseStatuses.PRE_CHECKS)
     def to_pre_checks(self):
         log_system_activity(self, "Moved to "+PhaseStatuses.CHOICES[PhaseStatuses.PRE_CHECKS][1])
+        
+        # Notify project team
+        users_to_notify = self.team()
+        notice = AppNotification(
+            NotificationTypes.PHASE, 
+            "Phase Update - Ready for Pre-Checks", "Ready for Pre-checks", 
+            "emails/phase/PRE_CHECKS.html", phase=self)
+        task_send_notifications.delay(notice, users_to_notify)
 
     def can_proceed_to_pre_checks(self):
         return can_proceed(self.to_pre_checks)
@@ -1698,6 +1816,14 @@ class Phase(models.Model):
         target=PhaseStatuses.CLIENT_NOT_READY)
     def to_not_ready(self):
         log_system_activity(self, "Moved to "+PhaseStatuses.CHOICES[PhaseStatuses.CLIENT_NOT_READY][1])
+        
+        # Notify project team
+        users_to_notify = self.team()
+        notice = AppNotification(
+            NotificationTypes.PHASE, 
+            "Phase Update - Client Not Ready", "Ready for Pre-checks", 
+            "emails/phase/CLIENT_NOT_READY.html", phase=self)
+        task_send_notifications.delay(notice, users_to_notify)
 
     def can_proceed_to_not_ready(self):
         return can_proceed(self.to_not_ready)
@@ -1720,6 +1846,14 @@ class Phase(models.Model):
     def to_ready(self):
         log_system_activity(self, "Moved to "+PhaseStatuses.CHOICES[PhaseStatuses.READY_TO_BEGIN][1])
         self.pre_consultancy_checks_date = timezone.now()
+        
+        # Notify project team
+        users_to_notify = self.team()
+        notice = AppNotification(
+            NotificationTypes.PHASE, 
+            "Phase Update - Ready To Begin!", "Checks have been carried out and the phase is ready to begin.", 
+            "emails/phase/READY_TO_BEGIN.html", phase=self)
+        task_send_notifications.delay(notice, users_to_notify)
 
     def can_proceed_to_ready(self):
         return can_proceed(self.to_ready)
@@ -1746,6 +1880,14 @@ class Phase(models.Model):
             if self.job.can_to_in_progress():
                 self.job.to_in_progress()
                 self.job.save()
+        
+        # Notify project team
+        users_to_notify = self.team()
+        notice = AppNotification(
+            NotificationTypes.PHASE, 
+            "Phase Update - In Progress", "The phase has started", 
+            "emails/phase/IN_PROGRESS.html", phase=self)
+        task_send_notifications.delay(notice, users_to_notify)
 
     def can_proceed_to_in_progress(self):
         return can_proceed(self.to_in_progress)
@@ -1768,6 +1910,18 @@ class Phase(models.Model):
         target=PhaseStatuses.QA_TECH)
     def to_tech_qa(self):
         log_system_activity(self, "Moved to "+PhaseStatuses.CHOICES[PhaseStatuses.QA_TECH][1])
+        
+        # Notify qa team
+        if not self.techqa_by:
+            perm = Permission.objects.get(codename="can_tqa_jobs")
+            users_to_notify = self.unit.get_activeMembers().filter(Q(user_permissions=perm))
+        else:
+            users_to_notify = User.objects.filter(pk=self.techqa_by.pk)
+        notice = AppNotification(
+            NotificationTypes.PHASE, 
+            "Phase Update - Ready for Tech QA", "The phase is ready for Technical QA", 
+            "emails/phase/QA_TECH.html", phase=self)
+        task_send_notifications.delay(notice, users_to_notify)
 
     def can_proceed_to_tech_qa(self):
         return can_proceed(self.to_tech_qa)
@@ -1820,6 +1974,13 @@ class Phase(models.Model):
         target=PhaseStatuses.QA_TECH_AUTHOR_UPDATES)
     def to_tech_qa_updates(self):
         log_system_activity(self, "Moved to "+PhaseStatuses.CHOICES[PhaseStatuses.QA_TECH_AUTHOR_UPDATES][1])
+        
+        users_to_notify = User.objects.filter(pk=self.report_author.pk)
+        notice = AppNotification(
+            NotificationTypes.PHASE, 
+            "Phase Update - Requires Author Updates", "The report for this phase requires author updates.", 
+            "emails/phase/QA_TECH_AUTHOR_UPDATES.html", phase=self)
+        task_send_notifications.delay(notice, users_to_notify)
 
     def can_proceed_to_tech_qa_updates(self):
         return can_proceed(self.to_tech_qa_updates)
@@ -1853,6 +2014,18 @@ class Phase(models.Model):
         target=PhaseStatuses.QA_PRES)
     def to_pres_qa(self):
         log_system_activity(self, "Moved to "+PhaseStatuses.CHOICES[PhaseStatuses.QA_PRES][1])
+        
+        # Notify qa team
+        if not self.presqa_by:
+            perm = Permission.objects.get(codename="can_pqa_jobs")
+            users_to_notify = self.unit.get_activeMembers().filter(Q(user_permissions=perm))
+        else:
+            users_to_notify = User.objects.filter(pk=self.presqa_by.pk)
+        notice = AppNotification(
+            NotificationTypes.PHASE, 
+            "Phase Update - Ready for Pres QA", "The phase is ready for Presentation QA", 
+            "emails/phase/QA_PRES.html", phase=self)
+        task_send_notifications.delay(notice, users_to_notify)
 
     def can_proceed_to_pres_qa(self):
         return can_proceed(self.to_pres_qa)
@@ -1896,6 +2069,13 @@ class Phase(models.Model):
         target=PhaseStatuses.QA_PRES_AUTHOR_UPDATES)
     def to_pres_qa_updates(self):
         log_system_activity(self, "Moved to "+PhaseStatuses.CHOICES[PhaseStatuses.QA_PRES_AUTHOR_UPDATES][1])
+        
+        users_to_notify = User.objects.filter(pk=self.report_author.pk)
+        notice = AppNotification(
+            NotificationTypes.PHASE, 
+            "Phase Update - Requires Author Updates", "The report for this phase requires author updates.", 
+            "emails/phase/QA_PRES_AUTHOR_UPDATES.html", phase=self)
+        task_send_notifications.delay(notice, users_to_notify)
 
     def can_proceed_to_pres_qa_updates(self):
         return can_proceed(self.to_pres_qa_updates)
@@ -1929,6 +2109,14 @@ class Phase(models.Model):
         target=PhaseStatuses.COMPLETED)
     def to_completed(self):
         log_system_activity(self, "Moved to "+PhaseStatuses.CHOICES[PhaseStatuses.DELIVERED][1])
+        
+        # Notify project team
+        users_to_notify = self.team()
+        notice = AppNotification(
+            NotificationTypes.PHASE, 
+            "Phase Update - Complete", "The phase is ready for delivery", 
+            "emails/phase/COMPLETED.html", phase=self)
+        task_send_notifications.delay(notice, users_to_notify)
 
     def can_proceed_to_completed(self):
         return can_proceed(self.to_completed)
@@ -2039,6 +2227,13 @@ class Phase(models.Model):
         target=PhaseStatuses.POSTPONED)
     def to_postponed(self):
         log_system_activity(self, "Moved to "+PhaseStatuses.CHOICES[PhaseStatuses.POSTPONED][1])
+        
+        users_to_notify = None
+        notice = AppNotification(
+            NotificationTypes.PHASE, 
+            "Phase Update - Postponed", "This phase has been postponed!", 
+            "emails/phase/POSTPONED.html", phase=self)
+        task_send_notifications.delay(notice, users_to_notify)
 
     def can_proceed_to_postponed(self):
         return can_proceed(self.to_postponed)

@@ -2,18 +2,23 @@
     <thead>
       <tr>
         <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Member</th>
-        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Role</th>
+        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Roles</th>
         <th></th>
       </tr>
     </thead>
     <tbody>
-      {% for member in organisationalunit.members.all %}
+      {% regroup organisationalunit.members.all by member as memberList %}
+      {% for member in memberList %}
           <tr>
               <td>
-                  {% include 'partials/users/user_table_display.html' with u=member.member %}
+                  {% include 'partials/users/user_table_display.html' with u=member.grouper %}
               </td>   
               <td>
-                  <p class="text-xs font-weight-normal mb-0">{% include 'partials/unit/role_badge.html' %}</p>
+                  <p class="text-xs font-weight-normal mb-0">
+                    {% for role in member.list %}
+                    {% include 'partials/unit/role_badge.html' %}
+                    {% endfor %}
+                  </p>
               </td>        
               <td class="align-end text-end">
                   {% if request.user in organisationalunit.get_managers %}
@@ -21,10 +26,13 @@
                      <i class="fa fa-ellipsis-v text-lg" aria-hidden="true"></i>
                   </button>
                   <div class="dropdown-menu shadow dropdown-menu-end me-sm-n4 me-n3" aria-labelledby="navbarDropdownMenuLink" style="">
-                      {% if member.role == 0 %}
+
+                      {% for memberRole in member.list %}
+                      {% if memberRole.role == 0 %}
                       <a class="dropdown-item text-warning js-load-modal-form" href="#" 
-                          data-url="{% url 'review_join_request' organisationalunit.slug member.pk %}">Review Join Request</a>                               
+                          data-url="{% url 'review_join_request' organisationalunit.slug memberRole.pk %}">Review Join Request</a>                               
                       {% endif %}
+                      {% endfor %}
                   </div>
                   {% endif %}
                </td>

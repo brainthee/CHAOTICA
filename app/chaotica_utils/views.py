@@ -25,7 +25,7 @@ from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.contrib import messages 
 from django.shortcuts import get_object_or_404
 from constance import config
-from .tasks import task_updateHolidays
+from .tasks import *
 from django.views.decorators.http import require_http_methods, require_safe
     
 
@@ -61,10 +61,12 @@ def trigger_error(request):
 
 @require_safe
 def test_notification(request):
-    SendUserNotification(
-        request.user, NotificationTypes.SYSTEM,
+    notice = AppNotification(
+        NotificationTypes.SYSTEM,
         "Test Notification", "This is a test notification. At ease.",
-        "emails/test_email.html")
+        "emails/test_email.html"
+    )
+    task_send_notifications.delay(notice, User.objects.filter(pk=request.user.pk))
     return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
 
@@ -374,9 +376,10 @@ class ChaoticaBaseAdminView(ChaoticaBaseView, UserPassesTestMixin):
         return self.request.user.groups.filter(name=settings.GLOBAL_GROUP_PREFIX+GlobalRoles.CHOICES[GlobalRoles.ADMIN][1])
 
 
-def log_system_activity(refObj, msg):
+def log_system_activity(refObj, msg, author=None):
     noteNote = Note(content=msg,
                  is_system_note=True,
+                 author=author,
                  content_object=refObj)
     noteNote.save()
 
@@ -499,7 +502,7 @@ def SiteSearch(request):
         if len(q) > 2:
             ## Jobs
             jobs_search = get_objects_for_user(request.user, 'jobtracker.view_job', Job.objects.all()).filter(
-                Q(title__icontains=q) | Q(scoping_information__icontains=q) | Q(slug__icontains=q)
+                Q(title__icontains=q) | Q(overview__icontains=q) | Q(slug__icontains=q)
                  | Q(id__icontains=q))
             context['search_jobs'] = jobs_search
             results_count = results_count + jobs_search.count()

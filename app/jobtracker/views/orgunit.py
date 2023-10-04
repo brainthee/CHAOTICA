@@ -10,7 +10,8 @@ from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from chaotica_utils.views import log_system_activity, ChaoticaBaseView, pageDefaults
-from chaotica_utils.utils import SendUserNotification
+from chaotica_utils.utils import *
+from chaotica_utils.tasks import *
 from ..models import *
 from ..forms import *
 from ..tasks import *
@@ -96,9 +97,11 @@ def OrganisationalUnit_review_join_request(request, slug, memberPK):
             membership.role = UnitRoles.CONSULTANT
             membership.save()
             # send a notification to the user
-            SendUserNotification(membership.member, NotificationTypes.ORGUNIT, 
+            notice = AppNotification(NotificationTypes.ORGUNIT, 
                                 "Membership Accepted", "Your request to join "+orgUnit.name+" has been accepted", 
                                 "emails/orgunit/accepted.html", orgUnit=orgUnit, membership=membership)
+            
+            task_send_notifications(notice, User.objects.filter(pk=membership.member.pk)).delay()
             data['form_is_valid'] = True
 
         elif request.POST.get('user_action') == "reject_action":
@@ -106,9 +109,11 @@ def OrganisationalUnit_review_join_request(request, slug, memberPK):
             messages.warning(request, "Removed request from "+membership.member.get_full_name())
             membership.delete()
             # send a notification to the user
-            SendUserNotification(membership.member, NotificationTypes.ORGUNIT, 
+            notice = AppNotification(NotificationTypes.ORGUNIT, 
                                 "Membership Rejected", "Your request to join "+orgUnit.name+" has been denied", 
                                 "emails/orgunit/rejected.html", orgUnit=orgUnit, membership=membership)
+            
+            task_send_notifications(notice, User.objects.filter(pk=membership.member.pk)).delay()
             data['form_is_valid'] = True
         else:
             # invalid choice...
