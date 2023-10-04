@@ -1,4 +1,4 @@
-name: Docker Image CI
+name: Publish Docker Images
 
 on:
   push:
@@ -6,18 +6,43 @@ on:
   pull_request:
     branches: [ "main" ]
 
+
 jobs:
-  build:
+  push_to_registries:
+    name: Push Docker image to multiple registries
     runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
     steps:
-    - uses: actions/checkout@v3
-      with:
-        context: app
-    - name: docker login
-      env:
-        DOCKER_USER: ${{secrets.DOCKER_USER}}
-        DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
-      run: |
-        docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
-    - name: Build the Docker image
-      run: docker build ./app --file ./app/Dockerfile --tag chaotica:$(date +%s) --tag chaotica:latest
+      - name: Check out the repo
+        uses: actions/checkout@v4
+      
+      - name: Log in to Docker Hub
+        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
+        with:
+          username: ${{ secrets.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      
+      - name: Log in to the Container registry
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
+        with:
+          images: |
+            brainthee/chaotica
+            ghcr.io/${{ github.repository }}
+      
+      - name: Build and push Docker images
+        uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
