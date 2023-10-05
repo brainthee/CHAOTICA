@@ -79,15 +79,14 @@ class AssignUserField(forms.Form):
         self.helper = FormHelper(self)
         # self.helper.form_tag = False
         self.fields['user'].help_text = None
-        self.fields['user'].label = None
-        self.helper.form_show_labels = False
+        self.fields['user'].label = "Add user to schedule"
+        # self.helper.form_show_labels = False
         self.helper.layout = Layout(
-            Row(
-                Column(Field('user'),),
-                Column(StrictButton('Add', id="addUserToResource",
-                    css_class="btn bg-gradient-success")
-                ),
-            ),
+            Column(
+                Field('user'),
+                StrictButton('Add', id="addUserToResource",
+                css_class="btn bg-gradient-success"),
+            css_class="d-flex flex-row"),
         )
 
 class AssignUser(forms.Form):
@@ -209,22 +208,18 @@ class ChangeTimeSlotModalForm(forms.ModelForm):
         self.fields['end'].widget = DateTimePickerInput()
         self.helper.layout = Layout(
             Field('user', type="hidden"),
-            Div(Row(
-                    Column(Div(FloatingField('phase'),
+            Field('phase', type="hidden"),
+            Div(
+                Row(
+                    Column(Div(FloatingField('deliveryRole'),
                             css_class="input-group input-group-dynamic")),
                     Column(Div(Field('is_onsite'),
                             css_class="input-group input-group-dynamic")),
                 ),
                 Row(
-                    Column(Div(FloatingField('slotType'),
+                    Column(Div(Field('start'),
                             css_class="input-group input-group-dynamic")),
-                    Column(Div(FloatingField('deliveryRole'),
-                            css_class="input-group input-group-dynamic")),
-                ),
-                Row(
-                    Column(Div(FloatingField('start'),
-                            css_class="input-group input-group-dynamic")),
-                    Column(Div(FloatingField('end'),
+                    Column(Div(Field('end'),
                             css_class="input-group input-group-dynamic")),
                 ),
                 css_class='card-body p-3'),
@@ -449,7 +444,7 @@ class PhaseDeliverInlineForm(forms.ModelForm):
             "linkTechData", 
             "linkReportData", 
             # "feedback_scope",  
-            "feedback_scope_correct", 
+            # "feedback_scope_correct", 
         ]
         
 

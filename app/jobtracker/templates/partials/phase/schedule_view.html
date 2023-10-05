@@ -1,0 +1,53 @@
+{% load menu %}{% load static %}{% load crispy_forms_tags %}{% load index %}
+<div class="card mt-3" id="basic-info">
+    <div class="card-header">
+       <div class="row">
+          <div class="col my-auto">
+             <div class="h-100">
+                <h5 class="mb-1 text-gradient text-primary">
+                   Phase Schedule
+                </h5>
+             </div>
+          </div>
+          <div class="col-lg-4 text-end">
+            <a href="{% url 'phase_schedule' phase.job.slug phase.slug %}" class="btn btn-phoenix-success">
+                Manage Schedule
+            </a> 
+          </div>
+       </div>
+    </div>
+    <div class="card-body pt-0">
+        <div class="calendar" data-bs-toggle="calendar" id="calendar"></div>        
+    </div>
+</div>
+
+<script>
+    var calendarEl = document.getElementById('calendar');
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'resourceTimelineMonth',
+        themeSystem: 'bootstrap5',
+        headerToolbar: {
+            left: 'today prev,next',
+            center: 'title',
+            right: 'resourceTimelineTenDay,resourceTimelineMonth,resourceTimelineYear'
+        },
+        initialDate: '{% PyDateToJSDate phase.earliest_scheduled_date %}',
+        aspectRatio: 1.75,
+        views: {
+            resourceTimelineTenDay: {
+                type: 'resourceTimeline',
+                duration: { days: 10 },
+                buttonText: '10 days'
+            }
+        },
+        resourceAreaHeaderContent: 'Users',
+        resources: '{% url 'view_phase_schedule_members' job.slug phase.slug %}',
+        events: '{% url 'view_phase_schedule_slots' job.slug phase.slug %}',
+        selectable: false,
+        editable: false,
+        droppable: false,
+        nowIndicator: true,
+    });
+
+    calendar.render();
+</script>

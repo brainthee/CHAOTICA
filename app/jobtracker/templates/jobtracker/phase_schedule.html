@@ -19,131 +19,11 @@
 
 {% block content %}
 
-<div class="mt-0 p-0 text-center">
-  {% include 'partials/job/warnings.html' %}
-  {% include 'partials/phase/warnings.html' %}
-</div>
-
-<div class="row ps-5 pe-4">
-  <div class="col-12">
-    <div class="row align-items-center justify-content-between mt-3 mb-0">
-      <div class="col-6 col-md-auto">
-        <h2 class="mb-2">
-          Phase Schedule
-        </h2>
-      </div>
-
-      <div class="col-md-auto">
-        <div class="d-flex">
-          {% include 'partials/phase/status_buttons.html' %}
-
-          <button class="btn px-3 ms-3 btn-phoenix-secondary" type="button" data-bs-toggle="dropdown" 
-            data-boundary="window" aria-haspopup="true" aria-expanded="false" data-bs-reference="parent">
-            <span class="fa-solid fa-ellipsis"></span>
-          </button>
-          {% include 'partials/phase/status_button_menu.html' %}
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-
-<div class="row justify-content-between mx-1 m-3">
-  <div class="col-4">
-    <div class="card">
-      <div class="card-body">
-        <div class="row align-items-center">
-          <div class="col-12 col-sm-auto flex-1">
-            <h3 class="fw-bolder mb-2 line-clamp-1">
-              {{ phase.phase_id }} - {{ phase.title }}
-            </h3>
-
-            <table class="w-100 table-stats table-stats">
-              <tbody>
-                  <tr><th></th><th></th><th></th></tr>
-                  <tr>
-                    <td class="py-2">
-                        <div class="d-flex align-items-center">
-                          <div class="d-flex bg-info-100 rounded-circle flex-center me-3" style="width:24px; height:24px">
-        
-                          </div>
-                          <p class="fw-bold mb-0">Client</p>
-                        </div>
-                    </td>
-                    <td class="py-2 d-none d-sm-block pe-sm-2">:</td>
-                    <td class="py-2">
-                        <p class="ps-6 ps-sm-0 fw-semi-bold mb-0">
-                          <a href="{{ job.client.get_absolute_url }}">{{ job.client }}</a>
-                        </p>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td class="py-2">
-                        <div class="d-flex align-items-center">
-                          <div class="d-flex bg-info-100 rounded-circle flex-center me-3" style="width:24px; height:24px">
-        
-                          </div>
-                          <p class="fw-bold mb-0">Status</p>
-                        </div>
-                    </td>
-                    <td class="py-2 d-none d-sm-block pe-sm-2">:</td>
-                    <td class="py-2">
-                        <p class="ps-6 ps-sm-0 fw-semi-bold mb-0">
-                          {% include 'partials/phase/status_badge.html' %}
-                        </p>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td class="py-2">
-                        <div class="d-flex align-items-center">
-                          <div class="d-flex bg-info-100 rounded-circle flex-center me-3" style="width:24px; height:24px">
-        
-                          </div>
-                          <p class="fw-bold mb-0">Job</p>
-                        </div>
-                    </td>
-                    <td class="py-2 d-none d-sm-block pe-sm-2">:</td>
-                    <td class="py-2">
-                        <p class="ps-6 ps-sm-0 fw-semi-bold mb-0">{{ job }}</p>
-                    </td>
-                  </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="col-8">
-    <div class="row">
-      <div class="col-12 ">
-        <div class="card theme-wizard mb-0" data-theme-wizard="data-theme-wizard">
-          <div class="card-header px-6 pt-1 pb-0 border-bottom-0">
-            {% include 'partials/phase/progress_wizard.html' %}
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="row pt-5 align-items-center">
-      {% include 'partials/phase/widgets/dates.html' %}
-    </div>
-  </div>
-</div>
-
+{% include 'partials/phase/page_header.html' %}
 
 
 <div class="row g-0 mt-3 border-1 border-top bg-light dark__bg-1100 h-100">
   <div class="col-12 col-md-9 px-3 pt-3 border-1 border-end">
-
-    <div class="row">
-      <!-- Show the add slot panel -->
-      <div class="col-7">
-        {% include 'partials/phase/widgets/schedule_edit_panel.html' %}
-      </div>
-    </div>
 
     <div class="card mt-3 card-calendar">
       <div class="card-body p-3">
@@ -154,20 +34,37 @@
   </div>
 
   <div class="col-12 col-md-3 px-0 border-start-xxl border-300 border-top-0">
-    <div class="h-100">
+
+    <div class="col-12 h-100">
       <div class="bg-light dark__bg-1100 h-100 p-3">
+        {% include 'partials/phase/widgets/schedule_add_user.html' %}
+        {% include 'partials/phase/widgets/schedule_slot_settings.html' %}
         {% include 'partials/phase/widgets/schedule_util.html' %}                 
       </div>
     </div>
+
   </div>
 </div>
 {% endblock content %}
 
 {% block footer_javascript_page %}
+<script id="resource_dropdown_menu" type="text/plain">
+  <a class="btn btn-sm dropdown-toggle dropdown-caret-none transition-none fs--2" type="button" data-bs-toggle="dropdown" data-boundary="window" aria-haspopup="true" aria-expanded="false" data-bs-reference="parent">
+    <span class="fas fa-ellipsis-h fs--2"></span>
+  </a>
+  <div class="dropdown-menu dropdown-menu-end py-2">
+    <a class="dropdown-item" data-url="{% url 'assign_phase_field' phase.job.slug phase.slug 'project_lead' %}" href="#!">Make Project Lead</a>
+    <a class="dropdown-item" data-url="{% url 'assign_phase_field' phase.job.slug phase.slug 'report_author' %}" href="#!">Make Report Author</a>
+    <div class="dropdown-divider"></div>
+    <a class="dropdown-item text-danger" href="#!">Remove</a>
+  </div>
+</script>
+
 <script>
 
 var containerEl = document.getElementById('external-events');
 var calendarEl = document.getElementById('calendar');
+var csrf = $('form :input[name="csrfmiddlewaretoken"]');
 
 if (containerEl) {
     new FullCalendar.Draggable(containerEl, {
@@ -190,24 +87,6 @@ var calendar = new FullCalendar.Calendar(calendarEl, {
     },
     initialDate: '{% PyDateToJSDate phase.earliest_scheduled_date %}',
     aspectRatio: 1.75,
-    eventAfterAllRender: function(view){
-            if ($("#calendar .fc-event").length > 0) {
-                var op = 999999;
-                $("#calendar .fc-content-col").each(function(index){
-                    if($(this).find('.fc-event:first').length > 0){
-                        var ot = $(this).find('.fc-event:first').position().top;
-                        if(ot < op){
-                            op=ot;
-                        }
-                    }
-                });
-                if( op < 999999){
-                    $("#calendar .fc-scroller").animate({
-                        scrollLeft: op
-                    }, 250);
-                }
-            }
-        },
     views: {
         resourceTimelineTenDay: {
             type: 'resourceTimeline',
@@ -224,7 +103,6 @@ var calendar = new FullCalendar.Calendar(calendarEl, {
       phasePk = $('#phaseSelect').find(":selected").val()
       slotType = $('#typeSelect').find(":selected").val()      
       onsiteCheck = $('#is_onsite').is(':checked')
-      csrf = $('form :input[name="csrfmiddlewaretoken"]');
       if(slotType == 0) {
         Swal.fire(
           'No slot type selected',
@@ -234,7 +112,8 @@ var calendar = new FullCalendar.Calendar(calendarEl, {
       } else {
         var slotData = {
             "phase": {{ phase.pk }},
-            "slotType": slotType,
+            "deliveryRole": slotType,
+            "slotType": 2,
             "start": info.start.toJSON(),
             "end": info.end.toJSON(),
             "is_onsite": onsiteCheck,
@@ -260,6 +139,87 @@ var calendar = new FullCalendar.Calendar(calendarEl, {
           }
         });
       };
+    },
+    resourceLabelDidMount: function(info) {
+      var questionMark = document.createElement('div');
+      questionMark.className = "d-inline"
+      questionMark.innerHTML = $("#resource_dropdown_menu").html();
+
+      info.el.querySelector('.fc-datagrid-cell-main')
+        .appendChild(questionMark);
+    },
+    eventDrop: function(info) {
+      if (!confirm("Are you sure about this change?")) {
+        info.revert();
+      } else {
+        // Save the change...
+        var slotData = {
+            "pk": info.event.id,
+            "start": info.event.start.toJSON(),
+            "end": info.event.end.toJSON(),
+            "deliveryRole": info.event.extendedProps.deliveryRole,
+            "slotType": info.event.extendedProps.slotType,
+            "user": info.event.extendedProps.userId,
+            "phase": info.event.extendedProps.phaseId,
+            "csrfmiddlewaretoken": csrf.val(),
+          };
+        if (info.newResource) {
+          slotData['user'] = info.newResource.id;
+        };
+        $.ajax({
+          url: '{% url "change_job_schedule_slot" job.slug %}/'+info.event.id,
+          data: slotData,
+          type: "POST",
+          dataType: 'json',
+          success: function(data) {
+            if (!data.form_is_valid) {
+              Swal.fire(
+                'Failed to modify',
+                'Something went wrong. Please check the data entered.',
+                'warning'
+              );    
+              info.revert();
+            } else {
+              calendar.refetchEvents();
+            }
+          }
+        });
+      }
+    },
+    eventResize: function(info) {
+      if (!confirm("Are you sure about this change?")) {
+        info.revert();
+      } else {
+        // Save the change...
+        var slotData = {
+            "pk": info.event.id,
+            "start": info.event.start.toJSON(),
+            "end": info.event.end.toJSON(),
+            "deliveryRole": info.event.extendedProps.deliveryRole,
+            "slotType": info.event.extendedProps.slotType,
+            "user": info.event.extendedProps.userId,
+            "phase": info.event.extendedProps.phaseId,
+            "csrfmiddlewaretoken": csrf.val(),
+          };
+        $.ajax({
+          url: '{% url "change_job_schedule_slot" job.slug %}/'+info.event.id,
+          data: slotData,
+          type: "POST",
+          dataType: 'json',
+          success: function(data) {
+            if (!data.form_is_valid) {
+              Swal.fire(
+                'Failed to modify',
+                'Something went wrong. Please check the data entered.',
+                'warning'
+              );    
+              info.revert();
+            } else {
+              calendar.refetchEvents();
+            }
+          }
+        });
+      }
     },
     eventClick: function(info) {
       info.jsEvent.preventDefault(); // don't let the browser navigate

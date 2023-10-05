@@ -140,6 +140,7 @@ def change_job_schedule_slot(request, slug, pk=None):
             data['form_is_valid'] = True
         else:
             data['form_is_valid'] = False
+            data['form_errors'] = form.errors
     else:
         # Send the modal
         form = ChangeTimeSlotModalForm(instance=slot, slug=slug)
