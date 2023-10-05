@@ -36,10 +36,15 @@ def view_phase_schedule_slots(request, jobSlug, slug):
     for slot in slots:
         title = str(phase)
         data.append({
+            "id": slot.pk,
             "title": title,
             "resourceId": slot.user.pk,
             "start": slot.start,
             "end": slot.end,
+            "deliveryRole": slot.deliveryRole,
+            "slotType": slot.slotType,
+            "userId": slot.user.pk,
+            "phaseId": slot.phase.pk,
             "url": reverse('change_job_schedule_slot', kwargs={"slug":job.slug, "pk":slot.pk}),
             "color": slot.slot_colour(),
         }
@@ -192,8 +197,7 @@ class PhaseScheduleView(PhaseBaseView, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super(PhaseScheduleView, self).get_context_data(**kwargs)
-        userSelect = AssignUserField()
-        context['userSelect'] = userSelect
+        context['userSelect'] = AssignUserField()
         context['TimeSlotDeliveryRoles'] = TimeSlotDeliveryRole.CHOICES
 
         typesInUse = context['phase'].get_all_total_scheduled_by_type()
@@ -245,7 +249,10 @@ def phase_edit_delivery(request, jobSlug, slug):
         form = PhaseDeliverInlineForm(request.POST, instance=phase)
         if form.is_valid():
             form.save()
-            return redirect('phase_detail', jobSlug, slug)        
+            return redirect('phase_detail', jobSlug, slug)    
+        else:
+            pprint(form.errors)
+            
     return HttpResponseBadRequest()
 
 @login_required

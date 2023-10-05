@@ -827,7 +827,7 @@ class Job(models.Model):
         return data
     
     def get_total_scheduled_by_type(self, slotType):
-        slots = TimeSlot.objects.filter(phase__job=self, slotType=slotType)
+        slots = TimeSlot.objects.filter(phase__job=self, deliveryType=slotType)
         total = 0.0
         for slot in slots:
             diff = slot.get_business_hours()
@@ -877,7 +877,7 @@ class Job(models.Model):
         if totalScoped == 0.0 and scheduled > 0.0:
             # Over scheduled and scope is zero
             return 100
-        return 100 * float(scheduled)/float(totalScoped)
+        return round(100 * float(scheduled)/float(totalScoped),2)
 
 
     def get_system_notes(self):
@@ -1651,7 +1651,7 @@ class Phase(models.Model):
         if totalScoped == 0.0 and scheduled > 0.0:
             # Over scheduled and scope is zero
             return 100
-        return 100 * float(scheduled)/float(totalScoped)
+        return round(100 * float(scheduled)/float(totalScoped),2)
     
 
     def get_user_notes(self):
@@ -1914,7 +1914,7 @@ class Phase(models.Model):
         # Notify qa team
         if not self.techqa_by:
             perm = Permission.objects.get(codename="can_tqa_jobs")
-            users_to_notify = self.unit.get_activeMembers().filter(Q(user_permissions=perm))
+            users_to_notify = self.job.unit.get_activeMembers().filter(Q(user_permissions=perm))
         else:
             users_to_notify = User.objects.filter(pk=self.techqa_by.pk)
         notice = AppNotification(
@@ -2018,7 +2018,7 @@ class Phase(models.Model):
         # Notify qa team
         if not self.presqa_by:
             perm = Permission.objects.get(codename="can_pqa_jobs")
-            users_to_notify = self.unit.get_activeMembers().filter(Q(user_permissions=perm))
+            users_to_notify = self.job.unit.get_activeMembers().filter(Q(user_permissions=perm))
         else:
             users_to_notify = User.objects.filter(pk=self.presqa_by.pk)
         notice = AppNotification(

@@ -24,16 +24,6 @@ class LinkType():
         (LN_HOSTING, 'Hosting'),
     )
 
-class TimeSlotType():
-    GENERIC = 0
-    INTERNAL = 1
-    DELIVERY = 2
-    CHOICES = (
-        (GENERIC, 'Generic'), # Blank slot effectively
-        (INTERNAL, 'Internal'),
-        (DELIVERY, 'Delivery'),
-    )
-
 class FeedbackType():
     SCOPE = 0
     TECH = 1
@@ -44,6 +34,16 @@ class FeedbackType():
         (TECH, 'Technical'),
         (PRES, 'Presentation'),
         (OTHER, 'Other'),
+    )
+
+class TimeSlotType():
+    GENERIC = 0
+    INTERNAL = 1
+    DELIVERY = 2
+    CHOICES = (
+        (GENERIC, 'Generic'), # Blank slot effectively
+        (INTERNAL, 'Internal'),
+        (DELIVERY, 'Delivery'),
     )
 
 class TimeSlotDeliveryRole():
