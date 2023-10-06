@@ -7,18 +7,20 @@
 {% block breadcrumbItem %}
 {% endblock breadcrumbItem %}
 
+{% block content_classes %}px-0 {% endblock content_classes %}
+{% block breadcrumb_classes %}px-5{% endblock breadcrumb_classes %}
+
 {% block content %}
 
 {% if setup_client or setup_unit or setup_service %}
 {% include 'partials/first_time_setup.html' %}
 {% endif %}
 
-<div class="row">
+<div class="row mt-3 px-5">
     {% include 'partials/consultant_stats.html' %}
-
 </div>
 
-<div class="row g-0 mt-3 border-top border-300">
+<div class="row mt-2 border-top border-300">
   <div class="col-sm-2">
     <div class="nav flex-sm-column border-end-sm border-300 fs--1 vertical-tab justify-content-between" role="tablist" aria-orientation="vertical">      
       

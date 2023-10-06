@@ -346,7 +346,7 @@ class Phase(models.Model):
         elif targetStatus == PhaseStatuses.QA_TECH:        
             # Notify qa team
             if not self.techqa_by:
-                users_to_notify = self.unit.get_active_members_with_perm("can_tqa_jobs")
+                users_to_notify = self.job.unit.get_active_members_with_perm("can_tqa_jobs")
             else:
                 users_to_notify = User.objects.filter(pk=self.techqa_by.pk)
             notice = AppNotification(
@@ -366,7 +366,7 @@ class Phase(models.Model):
         elif targetStatus == PhaseStatuses.QA_PRES:        
             # Notify qa team
             if not self.presqa_by:
-                users_to_notify = self.unit.get_active_members_with_perm("can_pqa_jobs")
+                users_to_notify = self.job.unit.get_active_members_with_perm("can_pqa_jobs")
             else:
                 users_to_notify = User.objects.filter(pk=self.presqa_by.pk)
             notice = AppNotification(
@@ -757,6 +757,18 @@ class Phase(models.Model):
     def can_to_tech_qa(self, notifyRequest=None):
         _canProceed = True
         # Do logic checks
+        if self.feedback_scope_correct is None:
+            if notifyRequest:
+                messages.add_message(notifyRequest, messages.ERROR, "Please report if the scope was correct")
+            _canProceed = False
+
+        if self.feedback_scope_correct is False:
+            # Check if there's any feedback since they've flagged it as wrong...
+            if not self.feedback_scope():
+                if notifyRequest:
+                    messages.add_message(notifyRequest, messages.ERROR, "Scope was incorrect but no feedback provided")
+                _canProceed = False
+
         if self.number_of_reports > 0:
             if not self.linkDeliverable:
                 if notifyRequest:
@@ -858,10 +870,12 @@ class Phase(models.Model):
 
         
         # Lets check feedback/ratings have been left!
-        if not self.feedback_techqa:
+        if not self.feedback_techqa():
             if notifyRequest:
                 messages.add_message(notifyRequest, messages.ERROR, "No Tech QA feedback has been left")
             _canProceed = False
+        
+        # Make sure a rating has been left
         if self.techqa_report_rating == None:
             if notifyRequest:
                 messages.add_message(notifyRequest, messages.ERROR, "No Tech QA rating has been left")
@@ -935,10 +949,11 @@ class Phase(models.Model):
 
         
             # Lets check feedback/ratings have been left!
-            if not self.feedback_presqa:
+            if not self.feedback_presqa():
                 if notifyRequest:
                     messages.add_message(notifyRequest, messages.ERROR, "No Pres QA feedback has been left")
                 _canProceed = False
+                
             if self.presqa_report_rating == None:
                 if notifyRequest:
                     messages.add_message(notifyRequest, messages.ERROR, "No Pres QA rating has been left")

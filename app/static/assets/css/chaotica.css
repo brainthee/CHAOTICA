@@ -1,5 +1,9 @@
 span.select2-container {
-    z-index:10050;
+  z-index:10050 !important;
+}
+
+div.content span.select2-container {
+  z-index:unset !important;
 }
 
 .select2-selection__rendered {
@@ -12,6 +16,9 @@ span.select2-container {
     height: 34px !important;
 }
 
+.row {
+  --phoenix-gutter-x: unset !important
+}
 
 .dataTables_wrapper .dataTables_length select {
     padding: 10px;

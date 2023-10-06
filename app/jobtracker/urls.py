@@ -46,7 +46,7 @@ urlpatterns = [
     path('job/<str:jobSlug>/phase/<str:slug>/feedback/scope', views.phase_feedback_scope, name='phase_feedback_scope'),
     path('job/<str:jobSlug>/phase/<str:slug>/rating/techqa', views.phase_rating_techqa, name='phase_rating_techqa'),
     path('job/<str:jobSlug>/phase/<str:slug>/rating/presqa', views.phase_rating_presqa, name='phase_rating_presqa'),
-    # path('job/<str:jobSlug>/phase/<str:slug>/rating/scope', views.phase_feedback_scope, name='phase_feedback_scope'),
+    path('job/<str:jobSlug>/phase/<str:slug>/rating/scope', views.phase_rating_scope, name='phase_rating_scope'),
     path('job/<str:jobSlug>/phase/<str:slug>/delete/', views.PhaseDeleteView.as_view(), name='phase_delete'),
 
     path('job/<str:jobSlug>/phase/<str:slug>/schedule/', views.PhaseScheduleView.as_view(), name='phase_schedule'),  

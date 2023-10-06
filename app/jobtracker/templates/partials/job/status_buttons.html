@@ -1,4 +1,4 @@
-<div class="w-100 d-grid " >
+<div class="d-grid">
     <div class="btn-group">
         {% if job.can_proceed_to_pending_scope %}
             <button data-url="{% url 'job_update_workflow' job.slug 1 %}" 

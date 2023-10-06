@@ -1,110 +1,103 @@
 {% load bleach_tags %}
 {% load crispy_forms_tags %}
-<div class="card mt-3" id="basic-info">
-   <div class="card-header">
-      <div class="row">
-         <div class="col my-auto">
-            <div class="h-100">
-               <h5 class="mb-1 text-gradient text-primary">
-                  Feedback
-               </h5>
+<div class="row">
+   <div class="g-3 col-4">   
+      <div class="card">
+         <div class="card-header row pb-0">
+            <div class="col-6">
+               <h5 class="mb-0">Scope</h5>
+            </div>
+            <div class="col-md-6 d-flex justify-content-end">
+               {% if phase.status == 7 %}
+               <form method="post" action="{% url 'phase_rating_scope' phase.job.slug phase.slug %}" id="techRating">
+                  {% csrf_token %}            
+                  <span class="form-check-label">Scope Correct: </span> 
+                  {{ feedbackForm.feedback_scope_correct|as_crispy_field }}
+               </form>
+
+               {% else %}
+               Scope Correct: {{ phase.feedback_scope_correct }}
+               {% endif %}
             </div>
          </div>
-         <div class="col-lg-4 text-end">
-
+         <div class="card-body">            
+            {% if phase.status == 7 %}
+               <!-- In Progress - allow leaving scope feedback -->
+               <a href="#" data-url="{% url 'phase_feedback_scope' phase.job.slug phase.slug %}" class="js-load-modal-form">Add Feedback</a>
+            {% endif %}
+            <div class="mt-2">
+               {% include 'partials/feedback_list.html' with feedbacks=phase.feedback_scope %}
+            </div>
          </div>
       </div>
    </div>
-   <div class="card-body pt-0">
 
-      <div class="row mt-2">
-         <div class="col-12">   
-            <div class="p-3">
-               <div class="row">
-                  <div class="col-12 col-md-6">
-                     <h6 class="mb-0">Scope</h6>
-                  </div>
-                  <div class="col-12 col-md-6 d-flex justify-content-end">
-                     <strong>Scope Correct: </strong> 
-                     {{ phase.get_feedback_scope_correct_display }}
-                  </div>
-               </div>
-
-               <div class="border border-cake mt-2 p-2">
-                  {% if phase.feedback_scope %}{{ phase.feedback_scope }}{% else %}&nbsp;{% endif %}  
-               </div>
+   <div class="g-3 col-4">   
+      <div class="card">
+         <div class="card-header row">
+            <div class="col-6">
+               <h5 class="mb-0">Tech QA</h5>
             </div>
-         </div>
-      </div>
-
-      <div class="row">
-         <div class="col-12 col-md-6 position-relative">   
-            <div class="p-3">
-               <div class="row">
-                  <div class="col-12 col-md-6">
-                     <h6 class="mb-0">Tech QA</h6>
-                  </div>
-                  <div class="col-12 col-md-6 d-flex justify-content-end">
-                     {% if phase.status == 8 %}
-                     <form method="post" action="{% url 'phase_rating_techqa' phase.job.slug phase.slug %}" id="techRating">
-                        {% csrf_token %}            
-                        {{ feedbackForm.techqa_report_rating|as_crispy_field }}
-                     </form>
-
-                     {% else %}
-                     {% include 'partials/feedback_stars.html' with feedback=phase.techqa_report_rating feedbackStr=phase.get_techqa_report_rating_display %}
-                     {% endif %}
-                  </div>
-               </div>
-               
+            <div class="col-6 d-flex justify-content-end">
                {% if phase.status == 8 %}
-                  <!-- In TechQA - allow leaving feedback -->
-                  <a href="#" data-url="{% url 'phase_feedback_techqa' phase.job.slug phase.slug %}" class="js-load-modal-form">Add Feedback</a>
+               <form method="post" action="{% url 'phase_rating_techqa' phase.job.slug phase.slug %}" id="techRating">
+                  {% csrf_token %}            
+                  {{ feedbackForm.techqa_report_rating|as_crispy_field }}
+               </form>
+
+               {% else %}
+               {% include 'partials/feedback_stars.html' with feedback=phase.techqa_report_rating feedbackStr=phase.get_techqa_report_rating_display %}
                {% endif %}
-               <div class="mt-2">
-                  {% include 'partials/feedback_list.html' with feedbacks=phase.feedback_techqa %}
-               </div>
             </div>
          </div>
-
-         <div class="col-12 col-md-6">   
-            <div class="p-3">
-               <div class="row">
-                  <div class="col-12 col-md-6">
-                     <h6 class="mb-0">Pres QA</h6>
-                  </div>
-                  <div class="col-12 col-md-6 d-flex justify-content-end">
-                     {% if phase.status == 10 %}
-                     <form method="post" action="{% url 'phase_rating_presqa' phase.job.slug phase.slug %}" id="techRating">
-                        {% csrf_token %}            
-                        {{ feedbackForm.presqa_report_rating|as_crispy_field }}
-                     </form>
-
-                     {% else %}
-                     {% include 'partials/feedback_stars.html' with feedback=phase.presqa_report_rating feedbackStr=phase.get_presqa_report_rating_display %}
-                     {% endif %}
-
-                     
-                  </div>
-               </div>
-               {% if phase.status == 10 %}
-                  <!-- In PresQA - allow leaving feedback -->
-                  <a href="#" data-url="{% url 'phase_feedback_presqa' phase.job.slug phase.slug %}" class="js-load-modal-form">Add Feedback</a>
-               {% endif %}
-               <div class="mt-2">
-                  {% include 'partials/feedback_list.html' with feedbacks=phase.feedback_presqa %}
-               </div>
+         <div class="card-body">               
+            {% if phase.status == 8 %}
+               <!-- In TechQA - allow leaving feedback -->
+               <a href="#" data-url="{% url 'phase_feedback_techqa' phase.job.slug phase.slug %}" class="js-load-modal-form">Add Feedback</a>
+            {% endif %}
+            <div class="mt-2">
+               {% include 'partials/feedback_list.html' with feedbacks=phase.feedback_techqa %}
             </div>
          </div>
       </div>
-
    </div>
- </div>
 
+   <div class="g-3 col-4">   
+      <div class="card">
+         <div class="card-header row">
+            <div class="col-6">
+               <h5 class="mb-0">Pres QA</h5>
+            </div>
+            <div class="col-6 d-flex justify-content-end">
+               {% if phase.status == 10 %}
+               <form method="post" action="{% url 'phase_rating_presqa' phase.job.slug phase.slug %}" id="techRating">
+                  {% csrf_token %}            
+                  {{ feedbackForm.presqa_report_rating|as_crispy_field }}
+               </form>
+
+               {% else %}
+               {% include 'partials/feedback_stars.html' with feedback=phase.presqa_report_rating feedbackStr=phase.get_presqa_report_rating_display %}
+               {% endif %}
+
+               
+            </div>
+         </div>
+         <div class="card-body">
+            {% if phase.status == 10 %}
+               <!-- In PresQA - allow leaving feedback -->
+               <a href="#" data-url="{% url 'phase_feedback_presqa' phase.job.slug phase.slug %}" class="js-load-modal-form">Add Feedback</a>
+            {% endif %}
+            <div class="mt-2">
+               {% include 'partials/feedback_list.html' with feedbacks=phase.feedback_presqa %}
+            </div>
+         </div>
+      </div>
+   </div>
+</div>
 
 {% block footer_javascript_page %}
 <script>
-   var updateTechRating = function() {
+   var updateRating = function() {
       var form = $("#techRating");
       $.ajax({
          url: form.attr("action"),
@@ -112,7 +105,7 @@
          type: form.attr("method"),
          dataType: 'json',
          success: function(data) {
-            $("#techRating .form-select").change(updateTechRating);
+            $("#techRating .form-select").change(updateRating);
             // validate any changed fields for 2 seconds
             for (let fieldKey = 0; fieldKey < data.changed_data.length; fieldKey++) {
                fieldName = data.changed_data[fieldKey]
@@ -127,6 +120,6 @@
       return false;
    };
 
-   $("#techRating .form-select").change(updateTechRating);
+   $("#techRating .form-select").change(updateRating);
 </script>
 {% endblock footer_javascript_page %}

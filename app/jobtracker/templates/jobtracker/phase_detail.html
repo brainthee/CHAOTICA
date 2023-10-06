@@ -19,8 +19,8 @@
 {% block content %}
 {% include 'partials/phase/page_header.html' %}
 
-<div class="row g-0 mt-3 border-1 border-top bg-light dark__bg-1100 h-100">
-  <div class="col-12 col-md-9 px-6 pt-3 border-1 border-end">
+<div class="row mt-3 border-1 border-top bg-light dark__bg-1100 h-100">
+  <div class="col-12 col-md-9 p-2 ps-6 border-1">
 
     <div class="row mx-1">  
       <ul class="nav nav-underline scrollbar flex-nowrap w-100 pb-1 mb-3" id="sectionNav" role="tablist" style="overflow-y: hidden;">
@@ -59,7 +59,7 @@
             {% include 'partials/phase/widgets/info.html' %}
           {% endif %}
         </div>
-        <div class="tab-pane fade active show" id="schedule" role="tabpanel" aria-labelledby="schedule-tab">
+        <div class="tab-pane fade" id="schedule" role="tabpanel" aria-labelledby="schedule-tab">
           {% include 'partials/phase/schedule_view.html' %}
           
         </div>
