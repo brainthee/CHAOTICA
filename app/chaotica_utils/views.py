@@ -35,10 +35,8 @@ def pageDefaults(request):
     context['notifications'] = Notification.objects.filter(user=request.user)
     context['config'] = config
 
-    myJobs = Job.objects.jobs_for_user(request.user)
-    context['myJobs'] = myJobs
-    myPhases = Phase.objects.phases_for_user(request.user)
-    context['myPhases'] = myPhases
+    context['myJobs'] = Job.objects.jobs_for_user(request.user)
+    context['myPhases'] = Phase.objects.phases_for_user(request.user)
     return context
 
 
@@ -394,7 +392,6 @@ def get_quote(request):
 @require_http_methods(["POST", "GET"])
 def signup(request):
     if request.user.is_authenticated:
-        pprint(request.user)
         return redirect('home')
     else:
         if request.method == 'POST':

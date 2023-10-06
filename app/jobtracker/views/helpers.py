@@ -3,6 +3,7 @@ from django.template import loader, Template as tmpl, Context
 from ..models import *
 from ..forms import *
 from ..tasks import *
+from chaotica_utils.views import log_system_activity
 import logging
 
 

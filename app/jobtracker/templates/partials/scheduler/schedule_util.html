@@ -1,0 +1,45 @@
+{% load menu %}{% load static %}{% load crispy_forms_tags %}{% load index %}
+<div class="card mb-3">
+    <div class="card-header pb-0">
+      <h4>Utilisation</h4>
+      <p>
+        Of the scoped hours, the following bars show how they are currently being utilised.
+      </p>
+    </div>
+    <div class="card-body pt-0">
+      <div class="row">
+          {% for v,t in TimeSlotDeliveryRoles %}
+          {% if v > 0 %}
+            {% get_total_scoped_by_type phase v as totalScoped %}
+            {% get_total_scheduled_by_type phase v as totalScheduled %}
+            {% get_slotType_usage_perc phase v as typePerc %}
+            <div class="col-6">
+              <div class="progress-wrapper" data-bs-toggle="tooltip" data-bs-placement="top"
+              title="Scheduled: {{ totalScheduled }}hrs | Scoped: {{ totalScoped }}hrs | Percentage Used: {{ typePerc }}%">
+                <div class="progress-info">
+                  <div class="progress-percentage row">
+                    <div class="col">
+                      <span class="fs--2 font-weight-normal">{{ t }}</span>
+                    </div>
+                    <div class="col text-end">
+                      <!-- Total Scheduled: {{ totalScheduled }}
+                          Total Scoped {{ totalScoped }} 
+                          Perc: {{ typePerc }} -->
+                      <span class="fs--2 font-weight-normal">{{ typePerc }}%</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="progress">
+                  <div class="progress-bar bg-{% if typePerc > 100 %}danger{% elif typePerc == 100 and totalScoped > 0 %}success{% elif typePerc == 100 %}danger{% elif typePerc > 75 %}warning{% elif typePerc > 0.0 %}info{% else %}light{% endif %}"
+                      role="progressbar" aria-valuenow="{{ typePerc }}" aria-valuemin="0" 
+                      aria-valuemax="100" style="width: {{ typePerc }}%;"></div>
+                </div>
+              </div>
+            </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>

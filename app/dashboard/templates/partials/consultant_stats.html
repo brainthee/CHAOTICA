@@ -32,7 +32,7 @@
                <div class="d-flex align-items-center mb-1">
                   <span class="fa-solid fa-microscope fs--1 me-2 text-info-300" data-fa-transform="up-2"></span>
                   <span class="mb-0 fs--1 text-900">Scoped</span></div>
-               <h3 class="fw-semi-bold ms-xl-3 ms-xxl-0 pe-md-2 pe-xxl-0 mb-0 mb-sm-3">220</h3>
+               <h3 class="fw-semi-bold ms-xl-3 ms-xxl-0 pe-md-2 pe-xxl-0 mb-0 mb-sm-3">{{ request.user.engagements_that_scoped.all |length }}</h3>
             </div>
          </div>
          <div class="col-6 col-xl-4">
@@ -40,7 +40,7 @@
                <div class="d-flex align-items-center mb-1">
                   <span class="fa-solid fa-glasses fs--1 me-2 text-danger-200" data-fa-transform="up-2"></span>
                   <span class="mb-0 fs--1 text-900">QA'd</span></div>
-               <h3 class="fw-semi-bold ms-xl-3 ms-xxl-0 pe-md-2 pe-xxl-0 mb-0 mb-sm-3">120</h3>
+               <h3 class="fw-semi-bold ms-xl-3 ms-xxl-0 pe-md-2 pe-xxl-0 mb-0 mb-sm-3">{{ request.user.techqaed_phases.all |length }}</h3>
             </div>
          </div>
          <div class="col-6 col-xl-4">

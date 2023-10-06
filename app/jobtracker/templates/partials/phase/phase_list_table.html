@@ -73,8 +73,8 @@
         {{ phase.delivery_date }}
         </td>
         <td>
-            <div class="d-flex align-items-center gap-3">
-                <div style="--phoenix-circle-progress-bar:50">
+            <div class="d-flex align-items-center">
+                <div style="--phoenix-circle-progress-bar:{{ phase.get_total_scheduled_perc }}">
                     <svg class="circle-progress-svg" width="54" height="54" viewBox="0 0 170 170">
                         <circle class="progress-bar-rail" cx="60" cy="60" r="54" fill="none" stroke-linecap="round" stroke-width="12"></circle>
                         <circle class="progress-bar-top" cx="60" cy="60" r="54" fill="none" stroke-linecap="round" stroke="#3874FF" stroke-width="12"></circle>

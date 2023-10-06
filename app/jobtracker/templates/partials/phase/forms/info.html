@@ -77,25 +77,25 @@
                         {{ infoForm.test_target|as_crispy_field }}
                     </div>           
                 </div>
-                <div class="col-12 col-md-6 position-relative">     
-                    <h6 class="mb-0">Communication Requirements</h6>
-                    <div class="border border-cake p-2">
-                        {{ infoForm.comm_reqs|as_crispy_field }}
-                    </div>
-                </div>
-            </div>
-
-            <div class="row mt-3">
                 <div class="col-12 col-md-6 position-relative">      
                     <h6 class="mb-0">Pre-Reqs</h6>
                     <div class="border border-cake p-2">
                         {{ infoForm.prerequisites|as_crispy_field }}
                     </div>
                 </div>
-                <div class="col-12 col-md-6 position-relative">       
-                    <h6 class="mb-0">Credentials</h6>
+            </div>
+
+            <div class="row mt-3">
+                <div class="col-12 col-md-6 position-relative">     
+                    <h6 class="mb-0">Communication Requirements</h6>
                     <div class="border border-cake p-2">
-                        {{ infoForm.account_credentials|as_crispy_field }}
+                        {{ infoForm.comm_reqs|as_crispy_field }}
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 position-relative">   
+                    <h6 class="mb-0">Scheduling Requirements</h6>
+                    <div class="border border-cake p-2">
+                        {{ infoForm.scheduling_requirements|as_crispy_field }}
                     </div>
                 </div>
             </div>
@@ -105,12 +105,6 @@
                     <h6 class="mb-0">Restrictions</h6>
                     <div class="border border-cake p-2">
                         {{ infoForm.restrictions|as_crispy_field }}
-                    </div>
-                </div>
-                <div class="col-12 col-md-6 position-relative">   
-                    <h6 class="mb-0">Scheduling Requirements</h6>
-                    <div class="border border-cake p-2">
-                        {{ infoForm.scheduling_requirements|as_crispy_field }}
                     </div>
                 </div>
             </div>

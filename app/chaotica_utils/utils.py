@@ -4,6 +4,7 @@ from django.template.loader import render_to_string
 from django.core.mail import send_mail
 from django.conf import settings as django_settings
 import json
+from pprint import pprint
 
 
 class AppNotification:
@@ -30,7 +31,7 @@ class AppNotification:
         self.send_inapp = send_inapp
         self.send_email = send_email
         self.context = {}
-        self.__dict__.update(kwargs)
+        self.context.update(kwargs)
 
     def toJson(self):
         return json.dumps(self, default=lambda o: o.__dict__)
@@ -53,6 +54,8 @@ class AppNotification:
             self.context['message'] = self.message
             self.context['icon'] = self.icon
             self.context['action_link'] = self.action_link
+            self.context['user'] = user
+            pprint(self.context)
             msg_html = render_to_string(self.email_template, self.context)
             send_mail(  
                 self.title, self.message, None, [user.email], html_message=msg_html,

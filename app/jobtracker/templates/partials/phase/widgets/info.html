@@ -88,25 +88,25 @@
                {% if phase.test_target %}{{ phase.test_target }}{% else %}&nbsp;{% endif %}  
             </div>           
          </div>
-         <div class="col-12 col-md-6 position-relative">     
-            <h6 class="mb-0">Communication Requirements</h6>
-            <div class="border border-cake p-2">
-               {% if phase.comm_reqs %}{{ phase.comm_reqs }}{% else %}&nbsp;{% endif %}  
-            </div>
-         </div>
-      </div>
-
-      <div class="row mt-3">
          <div class="col-12 col-md-6 position-relative">      
             <h6 class="mb-0">Pre-Reqs</h6>
             <div class="border border-cake p-2">
                {% if phase.prerequisites %}{{ phase.prerequisites }}{% else %}&nbsp;{% endif %}  
             </div>
          </div>
-         <div class="col-12 col-md-6 position-relative">       
-            <h6 class="mb-0">Credentials</h6>
+      </div>
+
+      <div class="row mt-3">
+         <div class="col-12 col-md-6 position-relative">     
+            <h6 class="mb-0">Communication Requirements</h6>
             <div class="border border-cake p-2">
-               {% if phase.account_credentials %}{{ phase.account_credentials }}{% else %}&nbsp;{% endif %}  
+               {% if phase.comm_reqs %}{{ phase.comm_reqs }}{% else %}&nbsp;{% endif %}  
+            </div>
+         </div>
+         <div class="col-12 col-md-6 position-relative">   
+            <h6 class="mb-0">Scheduling Requirements</h6>
+            <div class="border border-cake p-2">
+               {% if phase.scheduling_requirements %}{{ phase.scheduling_requirements }}{% else %}&nbsp;{% endif %}               
             </div>
          </div>
       </div>
@@ -116,12 +116,6 @@
             <h6 class="mb-0">Restrictions</h6>
             <div class="border border-cake p-2">
                {% if phase.restrictions %}{{ phase.restrictions }}{% else %}&nbsp;{% endif %}  
-            </div>
-         </div>
-         <div class="col-12 col-md-6 position-relative">   
-            <h6 class="mb-0">Scheduling Requirements</h6>
-            <div class="border border-cake p-2">
-               {% if phase.scheduling_requirements %}{{ phase.scheduling_requirements }}{% else %}&nbsp;{% endif %}               
             </div>
          </div>
       </div>

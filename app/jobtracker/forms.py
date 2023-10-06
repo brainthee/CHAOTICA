@@ -1,4 +1,5 @@
 from django import forms
+from django.urls import reverse
 from django.forms import modelformset_factory
 from .models import *
 from django.urls import reverse_lazy
@@ -209,6 +210,7 @@ class ChangeTimeSlotModalForm(forms.ModelForm):
         self.helper.layout = Layout(
             Field('user', type="hidden"),
             Field('phase', type="hidden"),
+            Field('slotType', type="hidden"),
             Div(
                 Row(
                     Column(Div(FloatingField('deliveryRole'),
@@ -233,6 +235,10 @@ class ChangeTimeSlotModalForm(forms.ModelForm):
 
     class Meta:
         model = TimeSlot
+        widgets = {
+          'start': DateTimePickerInput(),
+          'end': DateTimePickerInput(),
+        }
         fields = (
             'user',
             'phase',
@@ -279,7 +285,7 @@ class JobForm(forms.ModelForm):
         super(JobForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
         self.fields['unit'].queryset = OrganisationalUnit.objects.filter(
-            pk__in=self.user.unit_memberships.filter(role__in=UnitRoles.getRolesWithPermission('jobtracker.add_job')).values_list('unit').distinct())
+            pk__in=self.user.unit_memberships.filter(role__in=UnitRoles.getRolesWithPermission('jobtracker.can_add_job')).values_list('unit').distinct())
         self.fields['title'].label = ""
         self.fields['client'].label = ""
         self.fields['unit'].label = ""
@@ -369,7 +375,6 @@ class PhaseForm(forms.ModelForm):
             "service",
             "description",
             "test_target",
-            "account_credentials",
             "comm_reqs",
             "delivery_hours",
             "reporting_hours",

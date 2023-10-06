@@ -16,126 +16,7 @@
 
 {% block content %}
 
-<div class="mt-0 p-0 text-center">
-  {% include 'partials/job/warnings.html' %}
-</div>
-
-<div class="row px-5">
-  <div class="col-12">
-    <div class="row align-items-center justify-content-between g-3 mt-0 mb-0">
-      <div class="col-6 col-md-auto">
-        <h2 class="mb-2">
-          Job Detail
-        </h2>
-      </div>
-
-      <div class="col-md-auto">
-        <div class="d-flex">
-          {% include 'partials/job/status_buttons.html' %}
-
-          <button class="btn px-3 ms-3 btn-phoenix-secondary" type="button" data-bs-toggle="dropdown" 
-            data-boundary="window" aria-haspopup="true" aria-expanded="false" data-bs-reference="parent">
-            <span class="fa-solid fa-ellipsis"></span>
-          </button>
-          {% include 'partials/job/status_button_menu.html' %}
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="row justify-content-between ms-3 me-3 g-3 mt-0 mb-0">
-  <div class="col-4">
-    <div class="card">
-      <div class="card-body">
-        <div class="row align-items-center g-3">
-          <div class="col-12 col-sm-auto flex-1">
-            <h3 class="fw-bolder mb-2 line-clamp-1">
-              {{ job.id }} - {{ job.title }}
-            </h3>
-
-            <table class="w-100 table-stats table-stats">
-              <tbody>
-                  <tr>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                  </tr>
-                  <tr>
-                    <td class="py-2">
-                        <div class="d-flex align-items-center">
-                          <div class="d-flex bg-info-100 rounded-circle flex-center me-3" style="width:24px; height:24px">
-        
-                          </div>
-                          <p class="fw-bold mb-0">Client</p>
-                        </div>
-                    </td>
-                    <td class="py-2 d-none d-sm-block pe-sm-2">:</td>
-                    <td class="py-2">
-                        <p class="ps-6 ps-sm-0 fw-semi-bold mb-0">
-                          <a href="{{ job.client.get_absolute_url }}">{{ job.client }}</a>
-                        </p>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td class="py-2">
-                        <div class="d-flex align-items-center">
-                          <div class="d-flex bg-info-100 rounded-circle flex-center me-3" style="width:24px; height:24px">
-        
-                          </div>
-                          <p class="fw-bold mb-0">Status</p>
-                        </div>
-                    </td>
-                    <td class="py-2 d-none d-sm-block pe-sm-2">:</td>
-                    <td class="py-2">
-                        <p class="ps-6 ps-sm-0 fw-semi-bold mb-0">
-                          {% include 'partials/job/status_badge.html' %}
-                        </p>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td class="py-2">
-                        <div class="d-flex align-items-center">
-                          <div class="d-flex bg-info-100 rounded-circle flex-center me-3" style="width:24px; height:24px">
-        
-                          </div>
-                          <p class="fw-bold mb-0">Revenue</p>
-                        </div>
-                    </td>
-                    <td class="py-2 d-none d-sm-block pe-sm-2">:</td>
-                    <td class="py-2">
-                        <p class="ps-6 ps-sm-0 fw-semi-bold mb-0">$1,500.00</p>
-                    </td>
-                  </tr>
-              </tbody>
-            </table>
-
-
-
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </div>
-
-  <div class="col-8">
-    <div class="row">
-      <div class="col-12 ">
-        <div class="card theme-wizard mb-0">
-          <div class="card-header px-6 pt-1 pb-0 border-bottom-0">
-            {% include 'partials/job/progress_wizard.html' %}
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="row pt-5 align-items-center">
-      {% include 'partials/job/widgets/dates.html' %}
-    </div>
-  </div>
-
-</div>
-
+{% include 'partials/job/page_header.html' %}
 
 <div class="row g-0 mt-3 border-1 border-top bg-light dark__bg-1100 h-100">
   <div class="col-12 col-md-9 px-6 pt-3 border-1 border-end">
@@ -152,11 +33,11 @@
             <span class="fa-solid fa-clipboard me-2 tab-icon-color"></span>Phases
           </a>
         </li>
-        <li class="nav-item text-nowrap me-2" role="presentation">
+        <!-- <li class="nav-item text-nowrap me-2" role="presentation">
           <a class="nav-link" id="gantt-tab" data-bs-toggle="tab" href="#gantt" role="tab" aria-controls="tab-gantt" aria-selected="false" tabindex="-1">
             <span class="fa-solid fa-clipboard me-2 tab-icon-color"></span>Gantt
           </a>
-        </li>
+        </li> -->
         <li class="nav-item text-nowrap me-2" role="presentation">
           <a class="nav-link" id="sales-tab" data-bs-toggle="tab" href="#sales" role="tab" aria-controls="tab-sales" aria-selected="false" tabindex="-1">
             <span class="fa-solid fa-chart-line me-2 tab-icon-color"></span>Sales
@@ -183,9 +64,9 @@
         <div class="tab-pane fade" id="phases" role="tabpanel" aria-labelledby="phases-tab">
           {% include 'partials/job/widgets/phases.html' %}
         </div>
-        <div class="tab-pane fade" id="gantt" role="tabpanel" aria-labelledby="gantt-tab">
+        <!-- <div class="tab-pane fade" id="gantt" role="tabpanel" aria-labelledby="gantt-tab">
           {% include 'partials/job/widgets/gantt.html' %}
-        </div>
+        </div> -->
         <div class="tab-pane fade" id="sales" role="tabpanel" aria-labelledby="sales-tab">
           <div class="row mt-4">
             {% include 'partials/job/widgets/sales_stats.html' %}
