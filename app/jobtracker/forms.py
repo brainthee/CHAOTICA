@@ -441,6 +441,9 @@ class PhaseDeliverInlineForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(PhaseDeliverInlineForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
+        self.fields['linkDeliverable'].label = False
+        self.fields['linkTechData'].label = False
+        self.fields['linkReportData'].label = False
 
     class Meta:
         model = Phase
@@ -450,6 +453,20 @@ class PhaseDeliverInlineForm(forms.ModelForm):
             "linkReportData", 
             # "feedback_scope",  
             # "feedback_scope_correct", 
+        ]
+
+class PhaseScopeFeedbackInlineForm(forms.ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super(PhaseScopeFeedbackInlineForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.fields['feedback_scope_correct'].label = False
+
+    class Meta:
+        model = Phase
+        fields = [
+            # "feedback_scope",  
+            "feedback_scope_correct", 
         ]
         
 

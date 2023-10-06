@@ -1,27 +1,24 @@
 {% load menu %}{% load static %}{% load crispy_forms_tags %}{% load index %}
-<div class="card mt-3" id="basic-info">
-    <div class="card-header">
-       <div class="row">
-          <div class="col my-auto">
-             <div class="h-100">
-                <h5 class="mb-1 text-gradient text-primary">
-                   Phase Schedule
-                </h5>
-             </div>
-          </div>
-          <div class="col-lg-4 text-end">
-            <a href="{% url 'phase_schedule' phase.job.slug phase.slug %}" class="btn btn-phoenix-success">
-                Manage Schedule
-            </a> 
-          </div>
-       </div>
+
+
+<div class="row mb-3">
+    <div class="col my-auto">
     </div>
-    <div class="card-body pt-0">
-        <div class="calendar" data-bs-toggle="calendar" id="calendar"></div>        
+    <div class="col-lg-4 text-end">
+      <a href="{% url 'phase_schedule' phase.job.slug phase.slug %}" class="btn btn-phoenix-success">
+          Edit Schedule
+      </a> 
+    </div>
+</div>
+
+<div class="card vh-100 card-calendar">
+    <div class="card-body h-100 p-0">
+        <div class="calendar h-100" data-bs-toggle="calendar" id="calendar"></div>
     </div>
 </div>
 
 <script>
+document.addEventListener('DOMContentLoaded', function() {
     var calendarEl = document.getElementById('calendar');
     var calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'resourceTimelineMonth',
@@ -31,7 +28,10 @@
             center: 'title',
             right: 'resourceTimelineTenDay,resourceTimelineMonth,resourceTimelineYear'
         },
-        initialDate: '{% PyDateToJSDate phase.earliest_scheduled_date %}',
+        {% PyDateToJSDate phase.earliest_scheduled_date as earliest_scheduled_date %}
+        {% if earliest_scheduled_date %}
+        initialDate: '{{ earliest_scheduled_date }}',
+        {% endif %}
         aspectRatio: 1.75,
         views: {
             resourceTimelineTenDay: {
@@ -46,8 +46,9 @@
         selectable: false,
         editable: false,
         droppable: false,
-        nowIndicator: true,
+        nowIndicator: true
     });
 
     calendar.render();
+});
 </script>

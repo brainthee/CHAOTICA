@@ -1,4 +1,3 @@
-from .models import *
 from datetime import date, timedelta
 from celery import shared_task, current_task
 from celery import Celery
@@ -6,6 +5,8 @@ from celery.result import AsyncResult
 from celery.utils.log import get_task_logger
 from django.db.models import Q
 from django.utils import timezone
+from .enums import PhaseStatuses
+from .models.phase import Phase
 
 
 logger = get_task_logger("tasks")

@@ -127,6 +127,10 @@ class PhaseDetailView(PhaseBaseView, DetailView):
         context['infoForm'] = infoForm
         
         
+        if context['phase'].status == PhaseStatuses.IN_PROGRESS:
+            qaForm = PhaseScopeFeedbackInlineForm(instance=context['phase'])
+            context['feedbackForm'] = qaForm
+        
         if context['phase'].status == PhaseStatuses.QA_TECH:
             qaForm = PhaseTechQAInlineForm(instance=context['phase'])
             context['feedbackForm'] = qaForm
@@ -358,6 +362,29 @@ def phase_rating_presqa(request, jobSlug, slug):
             data['form_is_valid'] = False
     else:
         form = PhasePresQAInlineForm(instance=phase)
+
+    context = {'feedbackForm': form}
+    data['html_form'] = loader.render_to_string("partials/phase/widgets/feedback.html",
+                                                context,
+                                                request=request)
+    return JsonResponse(data)
+
+@login_required
+def phase_rating_scope(request, jobSlug, slug):
+    job = get_object_or_404(Job, slug=jobSlug)
+    phase = get_object_or_404(Phase, job=job, slug=slug)
+    
+    data = dict()
+    if request.method == 'POST':
+        form = PhaseScopeFeedbackInlineForm(request.POST, instance=phase)
+        if form.is_valid():
+            form.save()
+            data['form_is_valid'] = True
+            data['changed_data'] = form.changed_data
+        else:
+            data['form_is_valid'] = False
+    else:
+        form = PhaseScopeFeedbackInlineForm(instance=phase)
 
     context = {'feedbackForm': form}
     data['html_form'] = loader.render_to_string("partials/phase/widgets/feedback.html",

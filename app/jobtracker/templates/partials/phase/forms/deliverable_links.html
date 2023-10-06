@@ -5,9 +5,9 @@
             <div class="row">
                 <div class="col my-auto">
                     <div class="h-100">
-                    <h5 class="mb-1 text-gradient text-primary">
+                    <h4 class="mb-1 text-gradient text-primary">
                         Deliverables
-                    </h5>
+                    </h4>
                     </div>
                 </div>
                 <div class="col-lg-4 text-end">
@@ -15,66 +15,69 @@
                 </div>
             </div>
         </div>
-        <div class="card-body pt-0">
+        <div class="card-body p-3">
             {% csrf_token %}
 
+
             <div class="row">
-                <div class="col">
-                    <div class="input-group input-group-static">
-                        <div class="row w-100 ">
-                            <div class="col-10">
-                                {{ phaseDeliverInlineForm.linkDeliverable|as_crispy_field }}
-                            </div>
-                            <div class="col-2 text-end">
-                                {% if phase.linkDeliverable %}
-                                <a href="{{ phase.linkDeliverable }}" class="text-primary text-sm ms-auto icon-move-right my-auto">
-                                    Goto
-                                </a>
-                                {% endif %}
-                            </div>
+                <div class="input-group input-group-static">
+                    <div class="row w-100 ">
+                        <div class="col-9">
+                            <label>Link to deliverable</label>
                         </div>
+                        <div class="col-3 text-end">
+                        {% if phase.linkDeliverable %}
+                        <a href="{{ phase.linkDeliverable }}" class="text-sm ms-auto icon-move-right my-auto">
+                            Goto
+                        </a>
+                        {% endif %}
+                        </div>
+                    </div>
+                    <div class="row w-100 ">
+                    {{ phaseDeliverInlineForm.linkDeliverable|as_crispy_field }}
                     </div>
                 </div>
             </div>
 
-            <div class="row mt-4">
-                <div class="col">
-                    <div class="input-group input-group-static">
-                        <div class="row w-100 ">
-                            <div class="col-10">
-                                {{ phaseDeliverInlineForm.linkTechData|as_crispy_field }}
-                            </div>
-                            <div class="col-2 text-end">
-                                {% if phase.linkTechData %}
-                                <a href="{{ phase.linkTechData }}" class="text-primary text-sm ms-auto icon-move-right my-auto">
-                                    Goto
-                                </a>
-                                {% endif %}
-                            </div>
+            <div class="row">
+                <div class="input-group input-group-static">
+                    <div class="row w-100 ">
+                        <div class="col-9">
+                            <label>Link to Report Data</label>
                         </div>
+                        <div class="col-3 text-end">
+                        {% if phase.linkReportData %}
+                        <a href="{{ phase.linkReportData }}" class="text-sm ms-auto icon-move-right my-auto">
+                            Goto
+                        </a>
+                        {% endif %}
+                        </div>
+                    </div>
+                    <div class="row w-100 ">
+                    {{ phaseDeliverInlineForm.linkReportData|as_crispy_field }}
                     </div>
                 </div>
             </div>
 
-            <div class="row mt-4">
-                <div class="col">
-                    <div class="input-group input-group-static">
-                        <div class="row w-100 ">
-                            <div class="col-10">
-                                {{ phaseDeliverInlineForm.linkReportData|as_crispy_field }}
-                            </div>
-                            <div class="col-2 text-end">
-                                {% if phase.linkReportData %}
-                                <a href="{{ phase.linkReportData }}" class="text-primary text-sm ms-auto icon-move-right my-auto">
-                                    Goto
-                                </a>
-                                {% endif %}
-                            </div>
+            <div class="row">
+                <div class="input-group input-group-static">
+                    <div class="row w-100 ">
+                        <div class="col-9">
+                            <label>Link to Technical Data</label>
                         </div>
+                        <div class="col-3 text-end">
+                        {% if phase.linkTechData %}
+                        <a href="{{ phase.linkTechData }}" class="text-sm ms-auto icon-move-right my-auto">
+                            Goto
+                        </a>
+                        {% endif %}
+                        </div>
+                    </div>
+                    <div class="row w-100 ">
+                    {{ phaseDeliverInlineForm.linkTechData|as_crispy_field }}
                     </div>
                 </div>
             </div>
-
         </div>
    </form>
  </div>

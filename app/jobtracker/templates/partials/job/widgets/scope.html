@@ -15,138 +15,183 @@
       </div>
    </div>
    <div class="card-body">   
-      <div class="row">
-         <div class="col-12 col-md-3 position-relative">
-            <h6 class="text-center ">Kit</h6>
-            <ul class="list-group">
-               <li class="list-group-item border-0 px-0">
-                  <div class="form-check form-switch ps-0">
-                     <input class="form-check-input ms-auto" onclick="return false;" type="checkbox" 
-                        {% if job.additional_kit_required %}checked{% endif %}>
-                     <label class="form-check-label text-body ms-2 text-truncate mb-0">
-                        Additional Kit Required
-                     </label>
-                  </div>
-                  <div class="form-check form-switch ps-0">
-                     <input class="form-check-input ms-auto" onclick="return false;" type="checkbox" 
-                        {% if job.kit_sourced_by_client %}checked{% endif %}>
-                     <label class="form-check-label text-body ms-2 text-truncate mb-0">
-                        Sourced by Client
-                     </label>
-                  </div>
-                  <div class="form-check form-switch ps-0">
-                     <label class="form-check-label text-body text-truncate w-80 mb-0">
-                        Additional Kit Info:
-                     </label>
-
-                     <div class="border border-cake p-2">
-                        {{ job.additional_kit_info }}
-                     </div>
-                  </div>
-               </li>
-            </ul>
-         </div>
-
-
-         <div class="col-12 col-md-3 position-relative">
-            <h6 class="text-center ">Job Detail</h6>
-            <ul class="list-group">
-               <li class="list-group-item border-0 px-0">
-                  <div class="form-check form-switch ps-0">
-                     <input class="form-check-input ms-auto" onclick="return false;" type="checkbox" 
-                        {% if job.is_time_limited %}checked{% endif %}>
-                     <label class="form-check-label text-body ms-2 text-truncate mb-0">
-                        Time Limited
-                     </label>
-                  </div>
-                  <div class="form-check form-switch ps-0">
-                     <input class="form-check-input ms-auto" onclick="return false;" type="checkbox" 
-                        {% if job.bespoke_project %}checked{% endif %}>
-                     <label class="form-check-label text-body ms-2 text-truncate mb-0">
-                        Bespoke Project
-                     </label>
-                  </div>
-                  <div class="form-check form-switch ps-0">
-                     <input class="form-check-input ms-auto" onclick="return false;" type="checkbox" 
-                        {% if job.report_to_third_party %}checked{% endif %}>
-                     <label class="form-check-label text-body ms-2 text-truncate mb-0">
-                        Report to 3rd Party
-                     </label>
-                  </div>
-                  <div class="form-check form-switch ps-0">
-                     <input class="form-check-input ms-auto" onclick="return false;" type="checkbox" 
-                        {% if job.retest_included %}checked{% endif %}>
-                     <label class="form-check-label text-body ms-2 text-truncate mb-0">
-                        Retest Included
-                     </label>
-                  </div>
-               </li>
-            </ul>
-         </div>
-         
-         <div class="col-12 col-md-3 position-relative">        
-            <h6 class="text-center ">High Risk</h6>
-            <ul class="list-group">
-               <li class="list-group-item border-0 px-0">
-                  <div class="form-check form-switch ps-0">
-                     <input class="form-check-input ms-auto" onclick="return false;" type="checkbox" 
-                        {% if job.technically_complex_test %}checked{% endif %}>
-                     <label class="form-check-label text-body ms-2 text-truncate mb-0">
-                        Complex Test
-                     </label>
-                  </div>
-                  <div class="form-check form-switch ps-0">
-                     <input class="form-check-input ms-auto" onclick="return false;" type="checkbox" 
-                        {% if job.high_risk %}checked{% endif %}>
-                     <label class="form-check-label text-body ms-2 text-truncate mb-0">
-                        High Risk
-                     </label>
-                  </div>
-                  <div class="form-check form-switch ps-0">
-                     <label class="form-check-label text-body text-truncate w-80 mb-0">
-                        Reasons for high risk:
-                     </label>
-
-                     <div class="border border-cake p-2">
-                        {{ job.reasons_for_high_risk }}
-                     </div>
-                  </div>
-               </li>
-            </ul>
-         </div>
-         
-         <div class="col-12 col-md-3">        
-            <h6 class="text-center ">Restrictions</h6>
-            <ul class="list-group">
-               <li class="list-group-item border-0 px-0">
-                  <div class="form-check form-switch ps-0">
-                     <input class="form-check-input ms-auto" onclick="return false;" type="checkbox" 
-                        {% if job.is_restricted %}checked{% endif %}>
-                     <label class="form-check-label text-body ms-2 text-truncate mb-0">
-                        Is Restricted
-                     </label>
-                  </div>
-                  <div class="form-check ps-0">
-                     <span class="badge badge-phoenix badge-phoenix-{% if job.restricted_detail > 0 %}warning{% else %}secondary{% endif %}">
-                        {{ job.get_restricted_detail_display }}</span>
-                     <label class="form-check-label text-body ms-2 text-truncate mb-0">
-                        Protection Level
-                     </label>
-                  </div>
-               </li>
-            </ul>
-         </div>
-      </div>
-
-
-      <div class="row mt-3">
+      <div class="row mb-3">
          <div class="col-12">      
             <h6 class="text-start">Overview</h6>
             <div class="border border-cake p-2">
                {{ job.overview }}
             </div>
          </div>
-   </div>
+      </div>
+
+      <div class="row">
+         <div class="col-12 col-md-3 position-relative">
+            <h6 class="text-center ">Kit</h6>
+            <div class="row w-100">
+               <div class="col align-items-start">
+                  <label class="form-check-label text-body ms-2 text-truncate mb-0">
+                     Additional Kit Required
+                  </label>
+               </div>
+               <div class="col-sm-auto align-items-end form-switch ps-0">
+                  <input class="form-check-input ms-auto" onclick="return false;" type="checkbox" 
+                     {% if job.additional_kit_required %}checked{% endif %}>
+               </div>
+            </div>
+
+            <div class="row w-100">
+               <div class="col align-items-start">
+                  <label class="form-check-label text-body ms-2 text-truncate mb-0">
+                     Sourced by Client
+                  </label>
+               </div>
+               <div class="col-sm-auto align-items-end form-switch ps-0">
+                  <input class="form-check-input ms-auto" onclick="return false;" type="checkbox" 
+                     {% if job.kit_sourced_by_client %}checked{% endif %}>
+               </div>
+            </div>
+
+            <div class="row ps-2 w-100">
+               <div class="col align-items-start">
+                  <label class="form-check-label text-body text-truncate w-80 mb-0">
+                     Additional Kit Info:
+                  </label>
+               </div>
+            </div>
+            <div class="row ps-4 pe-3 w-100">
+               <div class="border border-cake p-2">
+                  {% if job.additional_kit_info %}
+                  {{ job.additional_kit_info }}
+                  {% else %}&nbsp;{% endif %}
+               </div>
+            </div>
+         </div>
+
+
+         <div class="col-12 col-md-3 position-relative">
+            <h6 class="text-center ">Job Detail</h6>
+
+            <div class="row w-100">
+               <div class="col align-items-start">
+                  <label class="form-check-label text-body ms-2 text-truncate mb-0">
+                     Time Limited
+                  </label>
+               </div>
+               <div class="col-sm-auto align-items-end form-switch ps-0">
+                  <input class="form-check-input ms-auto" onclick="return false;" type="checkbox" 
+                     {% if job.is_time_limited %}checked{% endif %}>
+               </div>
+            </div>
+
+            <div class="row w-100">
+               <div class="col align-items-start">
+                  <label class="form-check-label text-body ms-2 text-truncate mb-0">
+                     Bespoke Project
+                  </label>
+               </div>
+               <div class="col-sm-auto align-items-end form-switch ps-0">
+                  <input class="form-check-input ms-auto" onclick="return false;" type="checkbox" 
+                     {% if job.bespoke_project %}checked{% endif %}>
+               </div>
+            </div>
+
+            <div class="row w-100">
+               <div class="col align-items-start">
+                  <label class="form-check-label text-body ms-2 text-truncate mb-0">
+                     Report to 3rd Party
+                  </label>
+               </div>
+               <div class="col-sm-auto align-items-end form-switch ps-0">
+                  <input class="form-check-input ms-auto" onclick="return false;" type="checkbox" 
+                     {% if job.report_to_third_party %}checked{% endif %}>
+               </div>
+            </div>
+
+            <div class="row w-100">
+               <div class="col align-items-start">
+                  <label class="form-check-label text-body ms-2 text-truncate mb-0">
+                     Retest Included
+                  </label>
+               </div>
+               <div class="col-sm-auto align-items-end form-switch ps-0">
+                  <input class="form-check-input ms-auto" onclick="return false;" type="checkbox" 
+                     {% if job.retest_included %}checked{% endif %}>
+               </div>
+            </div>
+         </div>
+         
+         <div class="col-12 col-md-3 position-relative">        
+            <h6 class="text-center ">High Risk</h6>
+
+            <div class="row w-100">
+               <div class="col align-items-start">
+                  <label class="form-check-label text-body ms-2 text-truncate mb-0">
+                     Complex Test
+                  </label>
+               </div>
+               <div class="col-sm-auto align-items-end form-switch ps-0">
+                  <input class="form-check-input ms-auto" onclick="return false;" type="checkbox" 
+                     {% if job.technically_complex_test %}checked{% endif %}>
+               </div>
+            </div>
+
+
+            <div class="row w-100">
+               <div class="col align-items-start">
+                  <label class="form-check-label text-body ms-2 text-truncate mb-0">
+                     High Risk
+                  </label>
+               </div>
+               <div class="col-sm-auto align-items-end form-switch ps-0">
+                  <input class="form-check-input ms-auto" onclick="return false;" type="checkbox" 
+                     {% if job.high_risk %}checked{% endif %}>
+               </div>
+            </div>
+
+            <div class="row ps-2 w-100">
+               <div class="col align-items-start">
+                  <label class="form-check-label text-body text-truncate w-80 mb-0">
+                     Reasons for high risk:
+                  </label>
+               </div>
+            </div>
+            <div class="row ps-4 pe-3 w-100">
+               <div class="border border-cake p-2">
+                  {% if job.reasons_for_high_risk %}
+                  {{ job.reasons_for_high_risk }}
+                  {% else %}&nbsp;{% endif %}
+               </div>
+            </div>
+         </div>
+         
+         <div class="col-12 col-md-3">        
+            <h6 class="text-center ">Restrictions</h6>
+
+            <div class="row w-100">
+               <div class="col align-items-start">
+                  <label class="form-check-label text-body ms-2 text-truncate mb-0">
+                     Is Restricted
+                  </label>
+               </div>
+               <div class="col-sm-auto align-items-end form-switch ps-0">
+                  <input class="form-check-input ms-auto" onclick="return false;" type="checkbox" 
+                     {% if job.is_restricted %}checked{% endif %}>
+               </div>
+            </div>
+
+            <div class="row w-100">
+               <div class="col-5">
+                  <label class="form-check-label text-body ms-2 text-truncate mb-0">
+                     Protection <br />Level
+                  </label>
+               </div>
+               <div class="col justify-items-end align-items-center pe-0">
+                  <span class="badge badge-phoenix badge-phoenix-{% if job.restricted_detail > 0 %}warning{% else %}secondary{% endif %}">
+                     {{ job.get_restricted_detail_display }}</span>
+               </div>
+            </div>
+         </div>
+      </div>
 
    </div>
 </div>

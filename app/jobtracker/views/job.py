@@ -72,7 +72,7 @@ def assign_job_poc(request, slug):
 @permission_required('jobtracker.change_job', (Job, 'slug', 'slug'))
 def assign_job_field(request, slug, field):
     validFields = [
-        'account_manager', 'dept_account_manager',
+        'account_manager', 'dep_account_manager',
         'scoped_by', 'scoped_signed_off_by'
     ]
     job = get_object_or_404(Job, slug=slug)

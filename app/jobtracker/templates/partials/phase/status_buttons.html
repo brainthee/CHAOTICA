@@ -1,4 +1,4 @@
-<div class="w-100 d-grid " >
+<div class="d-grid">
     <div class="btn-group">
     {% if phase.can_proceed_to_sched_confirmed %}
         <button data-url="{% url 'phase_update_workflow' phase.job.slug phase.slug 3 %}" 

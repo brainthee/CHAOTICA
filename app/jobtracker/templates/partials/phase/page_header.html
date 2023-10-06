@@ -1,20 +1,23 @@
-
-<div class="mt-0 p-0 text-center">
-    {% include 'partials/job/warnings.html' %}
-    {% include 'partials/phase/warnings.html' %}
-</div>
-
 <div class="row ps-5 pe-4">
   <div class="col-12">
     <div class="row align-items-center justify-content-between mt-3 mb-0">
-      <div class="col-6 col-md-auto">
+      <div class="col-3">
         <h2 class="mb-2">
-          Phase Schedule
+          Phase Detail
         </h2>
       </div>
 
       <div class="col-md-auto">
         <div class="d-flex">
+          <div class="mt-0 p-0 text-center">
+            {% include 'partials/job/warnings.html' %}
+            {% include 'partials/phase/warnings.html' %}
+        </div>
+        </div>
+      </div>
+
+      <div class="col-3">
+        <div class="d-flex justify-content-end">
           {% include 'partials/phase/status_buttons.html' %}
 
           <button class="btn px-3 ms-3 btn-phoenix-secondary" type="button" data-bs-toggle="dropdown" 
@@ -26,12 +29,10 @@
       </div>
     </div>
   </div>
-</div>
+</div> 
   
-  
-  
-<div class="row justify-content-between mx-1 m-3">
-  <div class="col-4">
+<div class="row justify-content-between mx-1 my-3">
+  <div class="col-4 gx-3">
     <div class="card">
       <div class="card-body">
         <div class="row align-items-center">
@@ -44,49 +45,36 @@
               <tbody>
                   <tr><th></th><th></th><th></th></tr>
                   <tr>
-                    <td class="py-2">
-                        <div class="d-flex align-items-center">
-                          <div class="d-flex bg-info-100 rounded-circle flex-center me-3" style="width:24px; height:24px">
-        
-                          </div>
-                          <p class="fw-bold mb-0">Client</p>
-                        </div>
+                    <td class="">
+                        <p class="fw-bold mb-0">Job</p>
                     </td>
-                    <td class="py-2 d-none d-sm-block pe-sm-2">:</td>
-                    <td class="py-2">
+                    <td class=" d-none d-sm-block pe-sm-2">:</td>
+                    <td class="">
                         <p class="ps-6 ps-sm-0 fw-semi-bold mb-0">
-                          <a href="{{ job.client.get_absolute_url }}">{{ job.client }}</a>
+                          <a href="{{ job.get_absolute_url }}">{{ job }}</a>
                         </p>
                     </td>
                   </tr>
                   <tr>
-                    <td class="py-2">
-                        <div class="d-flex align-items-center">
-                          <div class="d-flex bg-info-100 rounded-circle flex-center me-3" style="width:24px; height:24px">
-        
-                          </div>
-                          <p class="fw-bold mb-0">Status</p>
-                        </div>
+                    <td class="">
+                        <p class="fw-bold mb-0">Service</p>
                     </td>
-                    <td class="py-2 d-none d-sm-block pe-sm-2">:</td>
-                    <td class="py-2">
+                    <td class=" d-none d-sm-block pe-sm-2">:</td>
+                    <td class="">
                         <p class="ps-6 ps-sm-0 fw-semi-bold mb-0">
+                          <a href="{{ phase.service.get_absolute_url }}">{{ phase.service }}</a>
+                        </p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="">
+                        <p class="fw-bold mb-0">Status</p>
+                    </td>
+                    <td class=" d-none d-sm-block pe-sm-2">:</td>
+                    <td class="">
+                        <h4 class="ps-6 ps-sm-0 mb-0">
                           {% include 'partials/phase/status_badge.html' %}
-                        </p>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td class="py-2">
-                        <div class="d-flex align-items-center">
-                          <div class="d-flex bg-info-100 rounded-circle flex-center me-3" style="width:24px; height:24px">
-        
-                          </div>
-                          <p class="fw-bold mb-0">Job</p>
-                        </div>
-                    </td>
-                    <td class="py-2 d-none d-sm-block pe-sm-2">:</td>
-                    <td class="py-2">
-                        <p class="ps-6 ps-sm-0 fw-semi-bold mb-0">{{ job }}</p>
+                        </h4>
                     </td>
                   </tr>
               </tbody>
@@ -97,17 +85,17 @@
     </div>
   </div>
 
-  <div class="col-8">
+  <div class="col-8 gx-3 ps-0">
     <div class="row">
       <div class="col-12 ">
-        <div class="card theme-wizard mb-0" data-theme-wizard="data-theme-wizard">
+        <div class="card theme-wizard mb-0">
           <div class="card-header px-6 pt-1 pb-0 border-bottom-0">
             {% include 'partials/phase/progress_wizard.html' %}
           </div>
         </div>
       </div>
     </div>
-    <div class="row pt-5 align-items-center">
+    <div class="row pt-2 align-items-center">
       {% include 'partials/phase/widgets/dates.html' %}
     </div>
   </div>

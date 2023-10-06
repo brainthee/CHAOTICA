@@ -55,7 +55,6 @@ class AppNotification:
             self.context['icon'] = self.icon
             self.context['action_link'] = self.action_link
             self.context['user'] = user
-            pprint(self.context)
             msg_html = render_to_string(self.email_template, self.context)
             send_mail(  
                 self.title, self.message, None, [user.email], html_message=msg_html,
