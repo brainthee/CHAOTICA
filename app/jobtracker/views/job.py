@@ -1,9 +1,11 @@
 from django.shortcuts import get_object_or_404, redirect
-from django.http import HttpResponse,HttpResponseRedirect, HttpResponseBadRequest, JsonResponse, HttpResponseForbidden, HttpResponseNotFound
-from django.template import loader, Template as tmpl, Context
-from guardian.decorators import permission_required_or_403
+from django.urls import reverse
+from django.http import HttpResponseRedirect, HttpResponseBadRequest, JsonResponse, HttpResponseForbidden, HttpResponseNotFound
+from django.template import loader
+from django.conf import settings
 from guardian.core import ObjectPermissionChecker
-from guardian.mixins import PermissionListMixin, PermissionRequiredMixin
+from guardian.shortcuts import get_objects_for_user
+from guardian.mixins import PermissionRequiredMixin
 from django.views import View
 from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
@@ -14,13 +16,10 @@ from chaotica_utils.utils import *
 from ..models import *
 from ..forms import *
 from ..tasks import *
+from ..enums import JobStatuses, TimeSlotDeliveryRole
 from .helpers import _process_assign_user, _process_assign_contact
 import logging
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required, permission_required
-from django.contrib import messages 
-from django.apps import apps
-import json
 
 
 logger = logging.getLogger(__name__)
@@ -215,9 +214,7 @@ class JobDetailView(PermissionRequiredMixin, JobBaseView, DetailView):
                         role__in=UnitRoles.getRolesWithPermission('jobtracker.view_job')).values_list('unit').distinct()
                         )
                 
-                if obj.unit in units:
-                    return None
-                elif checker.has_perm('view_job', obj):
+                if obj.unit in units or checker.has_perm('view_job', obj):
                     return None
             else:
                 from django.contrib.auth.views import redirect_to_login

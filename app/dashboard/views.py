@@ -1,13 +1,10 @@
-from django.shortcuts import get_object_or_404, redirect
-from django.http import HttpResponse,HttpResponseRedirect, HttpResponseBadRequest, JsonResponse, HttpResponseForbidden, HttpResponseNotFound
-from django.template import loader, Template as tmpl, Context
-from django.contrib.auth.decorators import login_required, permission_required
-from django.contrib import messages 
+from django.http import HttpResponse
+from django.template import loader
+from django.contrib.auth.decorators import login_required
 import logging
-from django.utils.safestring import mark_safe
-from datetime import datetime
-from jobtracker.models import *
-from chaotica_utils.models import *
+from jobtracker.models import Job
+from chaotica_utils.models import LeaveRequest
+from jobtracker.enums import JobStatuses
 from chaotica_utils.views import pageDefaults
 
 logger = logging.getLogger(__name__)

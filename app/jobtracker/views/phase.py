@@ -1,11 +1,8 @@
 from django.shortcuts import get_object_or_404, redirect
-from django.http import HttpResponse,HttpResponseRedirect, HttpResponseBadRequest, JsonResponse, HttpResponseForbidden, HttpResponseNotFound
-from django.template import loader, Template as tmpl, Context
-from guardian.decorators import permission_required_or_403
-from guardian.core import ObjectPermissionChecker
-from guardian.mixins import PermissionListMixin, PermissionRequiredMixin
+from django.urls import reverse
+from django.http import HttpResponseRedirect, HttpResponseBadRequest, JsonResponse
+from django.template import loader
 from django.views import View
-from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
@@ -14,13 +11,10 @@ from chaotica_utils.utils import *
 from ..models import *
 from ..forms import *
 from ..tasks import *
+from ..enums import FeedbackType, PhaseStatuses, TimeSlotDeliveryRole
 from .helpers import _process_assign_user
 import logging
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.decorators import login_required, permission_required
-from django.contrib import messages 
-from django.apps import apps
-import json
+from django.contrib.auth.decorators import login_required
 
 
 logger = logging.getLogger(__name__)
@@ -32,23 +26,8 @@ def view_phase_schedule_slots(request, jobSlug, slug):
     job = get_object_or_404(Job, slug=jobSlug)
     phase = get_object_or_404(Phase, job=job, slug=slug)
     slots = TimeSlot.objects.filter(phase=phase)
-    colour = "#378006"
     for slot in slots:
-        title = str(phase)
-        data.append({
-            "id": slot.pk,
-            "title": title,
-            "resourceId": slot.user.pk,
-            "start": slot.start,
-            "end": slot.end,
-            "deliveryRole": slot.deliveryRole,
-            "slotType": slot.slotType,
-            "userId": slot.user.pk,
-            "phaseId": slot.phase.pk,
-            "url": reverse('change_job_schedule_slot', kwargs={"slug":job.slug, "pk":slot.pk}),
-            "color": slot.slot_colour(),
-        }
-    )
+        data.append(slot.get_schedule_phase_json())
     return JsonResponse(data, safe=False)
 
 
@@ -249,11 +228,18 @@ def phase_edit_delivery(request, jobSlug, slug):
         form = PhaseDeliverInlineForm(request.POST, instance=phase)
         if form.is_valid():
             form.save()
+            data['form_is_valid'] = True
             return redirect('phase_detail', jobSlug, slug)    
         else:
-            pprint(form.errors)
-            
-    return HttpResponseBadRequest()
+            data['form_is_valid'] = False
+    else:
+        form = PhaseDeliverInlineForm(instance=phase)
+
+    context = {'form': form}
+    data['html_form'] = loader.render_to_string("jobtracker/modals/feedback_form.html",
+                                                context,
+                                                request=request)
+    return JsonResponse(data)
 
 @login_required
 def phase_feedback_techqa(request, jobSlug, slug):
@@ -507,13 +493,15 @@ def PhaseUpdateWorkflow(request, jobSlug, slug, newState):
         phase.save()
         log_system_activity(phase, "Moved to "+newStateStr)
         data['form_is_valid'] = True  # This is just to play along with the existing code
-
+    
+    tasks = WorkflowTasks.objects.filter(appliedModel=WorkflowTasks.WF_PHASE, status=newState)
     context = {
         'job': job,
         'phase': phase,
         'canProceed': canProceed,
         'newStateStr': newStateStr,
         'newState': newState,
+        'tasks': tasks,
         }
     data['html_form'] = loader.render_to_string('jobtracker/modals/phase_workflow.html',
                                                 context,

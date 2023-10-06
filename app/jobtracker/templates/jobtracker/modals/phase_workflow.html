@@ -22,12 +22,12 @@
                     {% endfor %}
                 {% else %}
                     {% if tasks %}
-                    <p class="">Checklist:</p>
+                    <p class="">Verify the following items to continue:</p>
                     <ul class="list-group mb-2">
                         {% for task in tasks %}
                         <li class="list-group-item pb-0">
                             <div class="form-check ps-0">
-                                <input class="form-check-input" type="checkbox" value=""
+                                <input class="form-check-input ms-0 me-2 " type="checkbox" value=""
                                     id="fcustomCheck1" required>
                                 <label class="custom-control-label" for="customCheck1">
                                     {{ task.task }}

@@ -35,6 +35,5 @@ def task_updateHolidays(self):
 
 @shared_task(track_started=True, serializer="pickle")
 def task_send_notifications(notification, users_to_notify):
-    pprint(users_to_notify)
     for u in users_to_notify:
         notification.SendToUser(u)

@@ -96,17 +96,7 @@
                                 <div class="col-12 col-xl-6">
                                     {{ form.prerequisites|as_crispy_field }}
                                 </div>
-                            </div>  
-                            <div class="row">
-                                <div class="col-12 col-xl-6">
-                                    {{ form.account_credentials|as_crispy_field }}
-                                </div>
-            
-                                <div class="col-12 col-xl-6">
-                                    {{ form.restrictions|as_crispy_field }}
-                                </div>
-                            </div>      
-
+                            </div>    
                             <div class="row mb-6">
                                 <div class="col-12 col-xl-6">
                                     {{ form.comm_reqs|as_crispy_field }}
@@ -115,7 +105,12 @@
                                 <div class="col-12 col-xl-6">
                                     {{ form.scheduling_requirements|as_crispy_field }}
                                 </div>
-                            </div>        
+                            </div>      
+                            <div class="row">            
+                                <div class="col-12 col-xl-6">
+                                    {{ form.restrictions|as_crispy_field }}
+                                </div>
+                            </div>     
                         </div> 
                     </div>
 

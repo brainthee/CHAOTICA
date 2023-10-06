@@ -1,10 +1,5 @@
-from django.shortcuts import get_object_or_404, redirect
-from django.http import HttpResponse,HttpResponseRedirect, HttpResponseBadRequest, JsonResponse, HttpResponseForbidden, HttpResponseNotFound
-from django.template import loader, Template as tmpl, Context
-from guardian.decorators import permission_required_or_403
-from guardian.core import ObjectPermissionChecker
-from guardian.mixins import PermissionListMixin, PermissionRequiredMixin
-from django.views import View
+from django.shortcuts import get_object_or_404
+from guardian.shortcuts import get_objects_for_user
 from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
@@ -15,11 +10,6 @@ from ..models import *
 from ..forms import *
 from ..tasks import *
 import logging
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.decorators import login_required, permission_required
-from django.contrib import messages 
-from django.apps import apps
-import json
 
 logger = logging.getLogger(__name__)
 
