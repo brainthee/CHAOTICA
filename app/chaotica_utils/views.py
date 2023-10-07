@@ -4,7 +4,7 @@ from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django.conf import settings as django_settings
 from django.template import loader, Template as tmpl, Context
-from django.http import HttpResponseForbidden, JsonResponse, HttpResponse, HttpResponseRedirect, Http404
+from django.http import HttpResponseForbidden, JsonResponse, HttpResponse, HttpResponseRedirect, Http404, HttpResponseBadRequest
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 import json, os, random
 from .forms import *
@@ -98,6 +98,7 @@ def request_leave(request):
             leave = form.save(commit=False)
             leave.user = request.user
             leave.save()
+            leave.send_request_notification()
             return HttpResponseRedirect(reverse('view_own_leave'))
     else:
         form = LeaveRequestForm()
@@ -111,9 +112,14 @@ def request_leave(request):
 @login_required
 @require_safe
 def manage_leave(request):
-    from jobtracker.models import Skill, UserSkill
     context = {}
-    leave_list = LeaveRequest.objects.filter()
+    from jobtracker.models.orgunit import OrganisationalUnit
+    unitsWithPerm = get_objects_for_user(request.user, "can_view_all_leave_requests", OrganisationalUnit)
+    leave_list = LeaveRequest.objects.filter(
+        Q(user__unit_memberships__unit__in=unitsWithPerm) | # Show leave requests for users we have permission over
+        Q(user__manager=request.user) | # where we're manager
+        Q(user__acting_manager=request.user) | # where we're acting manager
+        Q(user=request.user)) # and our own of course....
     context = {
         'leave_list': leave_list,
         }
@@ -121,6 +127,35 @@ def manage_leave(request):
     context = {**context, **pageDefaults(request)}
     return HttpResponse(template.render(context, request))
 
+@login_required
+def manage_leave_auth_request(request, pk):
+    leave = get_object_or_404(LeaveRequest, pk=pk)
+    # First, check we're allowed to process this...
+    if not leave.can_user_auth(request.user):
+        return HttpResponseForbidden()
+    
+    # Okay, lets go!    
+    data = dict()
+    if request.method == "POST":
+        # We need to check which button was pressed... accept or reject!
+        if request.POST.get('user_action') == "approve_action":
+            # Approve it!
+            leave.authorise(request.user)
+            data['form_is_valid'] = True
+
+        elif request.POST.get('user_action') == "reject_action":
+            # Decline!
+            leave.decline(request.user)
+            data['form_is_valid'] = True
+        else:
+            # invalid choice...
+            return HttpResponseBadRequest()
+
+    context = {'leave': leave,}
+    data['html_form'] = loader.render_to_string("modals/leave_auth.html",
+                                                context,
+                                                request=request)
+    return JsonResponse(data)
 
 @login_required
 @require_safe

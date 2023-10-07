@@ -24,6 +24,7 @@ urlpatterns = [
     path('leave/', views.view_own_leave, name='view_own_leave'),
     path('leave/request', views.request_leave, name='request_leave'),
     path('ops/leave/', views.manage_leave, name='manage_leave'),
+    path('ops/leave/<int:pk>/manage', views.manage_leave_auth_request, name='manage_leave_auth_request'),
     path('settings/', views.app_settings, name='app_settings'),
     path('settings/import', views.import_site_data, name='import_site_data'),
     path('settings/export', views.export_site_data, name='export_site_data'),

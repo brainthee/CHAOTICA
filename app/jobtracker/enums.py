@@ -40,10 +40,12 @@ class TimeSlotType():
     GENERIC = 0
     INTERNAL = 1
     DELIVERY = 2
+    LEAVE = 3
     CHOICES = (
         (GENERIC, 'Generic'), # Blank slot effectively
         (INTERNAL, 'Internal'),
         (DELIVERY, 'Delivery'),
+        (LEAVE, 'Leave'),
     )
 
 class TimeSlotDeliveryRole():

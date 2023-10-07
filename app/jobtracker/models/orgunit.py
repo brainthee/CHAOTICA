@@ -60,6 +60,8 @@ class OrganisationalUnit(models.Model):
             ('assign_members_organisationalunit', 'Assign Members'),
             ('can_view_unit_jobs', 'Can view jobs'),
             ('can_add_job', 'Can add jobs'),
+            ('can_view_all_leave_requests', 'Can view all leave for members of the unit'),
+            ('can_approve_leave_requests', 'Can approve leave requests'),
 
             ('can_tqa_jobs', 'Can TQA jobs'),
             ('can_pqa_jobs', 'Can PQA jobs'),

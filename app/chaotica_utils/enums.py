@@ -194,7 +194,7 @@ class UnitRoles():
             "jobtracker.change_organisationalunit", "jobtracker.delete_organisationalunit",
             "jobtracker.assign_members_organisationalunit", 'jobtracker.view_users_schedule',
             "jobtracker.can_scope_jobs", 'jobtracker.can_signoff_scopes',
-            "jobtracker.can_add_job",
+            "jobtracker.can_add_job", "jobtracker.can_approve_leave_requests", "jobtracker.can_view_all_leave_requests",
             "jobtracker.can_signoff_own_scopes", 'jobtracker.can_schedule_phases',
         ]),
         (TQA, [
