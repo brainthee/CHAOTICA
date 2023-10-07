@@ -22,6 +22,8 @@ from dateutil.relativedelta import *
 from phonenumber_field.modelfields import PhoneNumberField
 from django_countries.fields import CountryField
 from django.contrib.postgres.fields import ArrayField
+from .tasks import task_send_notifications
+from jobtracker.enums import TimeSlotType
 
 
 def get_sentinel_user():
@@ -319,4 +321,116 @@ class LeaveRequest(models.Model):
     
     def can_approve_by(self):
         # Update to reflect logic...
-        return User.objects.all()
+        userPKs = []
+        if self.user.manager:
+            userPKs.append(self.user.manager.pk)
+        if self.user.acting_manager:
+            userPKs.append(self.user.acting_manager.pk)
+        
+        if not userPKs:
+            # No managers - lets default to unit managers...
+            for membership in self.user.unit_memberships.all():
+                userPKs.append(membership.unit.get_active_members_with_perm("can_approve_leave_requests").values_list('pk', flat=True))
+        return User.objects.filter(pk__in=userPKs).distinct()
+    
+    def can_user_auth(self, user):
+        return user in self.can_approve_by()
+    
+    def send_request_notification(self):
+        from .utils import AppNotification
+        # Send a notice to... people?!
+        users_to_notify = self.can_approve_by()
+        notice = AppNotification(
+            NotificationTypes.PHASE, 
+            "Leave Requested - Please review", 
+            str(self.user)+" has requested leave. Please review the request", 
+            "emails/leave_auth.html", leave=self)
+        task_send_notifications.delay(notice, users_to_notify)
+
+    
+    def send_approved_notification(self):
+        from .utils import AppNotification
+        # Send a notice to... people?!
+        users_to_notify = [self.user]
+        notice = AppNotification(
+            NotificationTypes.PHASE, 
+            "Leave Approved", 
+            "Your leave has been approved!",
+            "emails/leave_approved.html", leave=self)
+        task_send_notifications.delay(notice, users_to_notify)
+
+    
+    def send_declined_notification(self):
+        from .utils import AppNotification
+        # Send a notice to... people?!
+        users_to_notify = [self.user]
+        notice = AppNotification(
+            NotificationTypes.PHASE, 
+            "Leave DECLINED", 
+            "Your leave has been declined. Please contact "+str(self.declined_by)+" for information.",
+            "emails/leave_declined.html", leave=self)
+        task_send_notifications.delay(notice, users_to_notify)
+
+    
+    def send_cancelled_notification(self):
+        from .utils import AppNotification
+        # Send a notice to... people?!
+        users_to_notify = [self.user]
+        notice = AppNotification(
+            NotificationTypes.PHASE, 
+            "Leave Cancelled", 
+            "You have cancelled your leave.",
+            "emails/leave_cancelled.html", leave=self)
+        task_send_notifications.delay(notice, users_to_notify)
+    
+
+    def authorise(self, approved_by):
+        from jobtracker.models.timeslot import TimeSlot
+        if self.cancelled:
+            # Can't auth at this stage
+            return False
+        if not self.authorised:
+            # Set our important fields
+            self.authorised = True
+            self.authorised_by = approved_by
+            self.authorised_on = timezone.now()
+            self.save()
+            # Lets add the timeslot...
+            ts, created = TimeSlot.objects.get_or_create(
+                user=self.user, start=self.start_date, end=self.end_date,
+                slotType=TimeSlotType.LEAVE
+            )
+            self.send_approved_notification()
+    
+
+    def decline(self, declined_by):
+        from jobtracker.models.timeslot import TimeSlot
+        if self.authorised or self.cancelled:
+            # Can't decline at this stage
+            return False
+        if not self.declined:
+            # Set our important fields
+            self.declined = True
+            self.declined_by = declined_by
+            self.declined_on = timezone.now()
+            self.save()
+            self.send_declined_notification()
+
+    
+    def cancel(self):
+        from jobtracker.models.timeslot import TimeSlot
+        if not self.cancelled:
+            # Set our important fields
+            self.cancelled = True
+            self.cancelled_on = timezone.now()
+            self.authorised = False
+            self.declined = False
+            self.save()
+            # Lets delete the timeslot...
+            if TimeSlot.objects.filter(
+                user=self.user, start=self.start_date, end=self.end_date,
+                slotType=TimeSlotType.LEAVE).exists():
+                TimeSlot.objects.filter(
+                user=self.user, start=self.start_date, end=self.end_date,
+                slotType=TimeSlotType.LEAVE).delete()
+            self.send_cancelled_notification()

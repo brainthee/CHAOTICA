@@ -30,7 +30,49 @@
 
 
       <div class="row g-5">
-        {% crispy form %}
+        <div class="col-12 col-xl-8 gx-5">
+          <h4 class="mb-3">Type of Leave</h4>
+          {{ form.type_of_leave|as_crispy_field }}
+
+          <div class="mt-3">
+            <h4 class="mb-3">Notes</h4>
+              {{ form.notes|as_crispy_field }}
+          </div>
+          
+        </div>
+
+        <div class="col-12 col-xl-4">
+          <div class="row g-2 pt-5">
+
+            <div class="col-12 col-xl-12">
+              <div class="card mb-3">
+                <div class="card-body">
+                  <h4 class="card-title mb-4">Dates</h4>
+                  <div class="row gx-3">
+                    <div class="col-12 col-sm-6 col-xl-12">
+                      <div class="mb-4">
+                        <div class="d-flex flex-wrap mb-2">
+                          <h5 class="mb-0 text-1000 me-2">Start</h5>
+                        </div>
+                        {{ form.start_date|as_crispy_field }}
+                    
+                      </div>
+                    </div>
+                    <div class="col-12 col-sm-6 col-xl-12">
+                      <div class="mb-4">
+                        <div class="d-flex flex-wrap mb-2">
+                          <h5 class="mb-0 text-1000 me-2">End</h5>
+                        </div>
+                        {{ form.end_date|as_crispy_field }}   
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
       </div>
   </form>
 </div>

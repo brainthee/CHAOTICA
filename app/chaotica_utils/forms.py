@@ -33,34 +33,35 @@ class LeaveRequestForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(LeaveRequestForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
+        self.fields['start_date'].label = False
+        self.fields['end_date'].label = False
+        self.fields['type_of_leave'].label = False
+        self.fields['notes'].label = False
         self.fields['start_date'].widget = DatePickerInput()
         self.fields['end_date'].widget = DatePickerInput()
-        self.helper.layout = Layout(
-            Row(
-                Column(Div(FloatingField('start_date'),
-                        css_class="input-group input-group-dynamic")),
-                Column(Div(FloatingField('end_date'),
-                        css_class="input-group input-group-dynamic")),
-            ),
-            Row(
-                Div(FloatingField('type_of_leave'),
-                        css_class="input-group input-group-dynamic"),
-            ),
-            Row(
-                Div(FloatingField('notes'),
-                        css_class="input-group input-group-dynamic"),
-            ),
-        )
-    
-    def clean(self):
-        cleaned_data = super().clean()
+
+
+    def clean_end_date(self):
+        cleaned_data = self.clean()
         start = cleaned_data.get("start_date")
         end = cleaned_data.get("end_date")
 
         if start > end:
-            raise ValidationError(
-                "The end date must occur after the start date."
-            )
+            self.add_error('end_date', "The end date is before the start date.")
+        return end
+
+
+    def clean_start_date(self):
+        cleaned_data = self.clean()
+        start = cleaned_data.get("start_date")
+        today = timezone.now()
+
+        if start < today:
+            self.add_error('start_date', "The start date is before today.")
+        return start
+    
+    # def clean(self):
+    #     cleaned_data = super().clean()
 
     class Meta:
         model = LeaveRequest
