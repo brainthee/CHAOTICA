@@ -21,11 +21,11 @@
 {% endif %}
 
 <div class="row mb-4 gx-6 gy-3 mt-2 align-items-center">
-  <div class="col-auto">
+  <div class="col">
     <h2 class="mb-0">Skills</h2>
   </div>
-  <div class="col-auto">
-    <a class="btn btn-primary px-5" href="{% url 'skill_cat_create' %}">
+  <div class="col-3 d-flex justify-content-end">
+    <a class="btn btn-phoenix-primary px-5" href="{% url 'skill_cat_create' %}">
       <i class="fa-solid fa-plus me-2"></i>
       New Skill Category
     </a>
@@ -43,7 +43,7 @@
                </div>
                <div class="col-sm-auto ms-sm-auto mb-3 my-auto d-flex">
                   <a href="{% url 'skill_create' category.slug %}" 
-                     class="btn btn-sm btn-outline-success ms-auto">
+                     class="btn btn-sm btn-phoenix-primary ms-auto">
                      New Skill
                   </a>
                </div>
@@ -107,7 +107,7 @@
 
 {% empty %}
 
-<div class="alert alert-info text-white" role="alert">
+<div class="alert alert-phoenix-info" role="alert">
    <strong>No Categories!</strong> Add some to begin managing skills.
 </div>
 

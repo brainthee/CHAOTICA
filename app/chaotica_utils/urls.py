@@ -20,9 +20,11 @@ urlpatterns = [
     # User CRUD
     path('users/', views.UserListView.as_view(), name='user_list'),
     path('notifications/', views.notifications_feed, name='notifications_feed'),
-    path('notifications/clear', views.notifications_mark_read, name='notifications_mark_read'),
+    path('notifications/<int:pk>/mark_read', views.notification_mark_read, name='notification_mark_read'),
+    path('notifications/mark_all_read', views.notifications_mark_read, name='notifications_mark_read'),
     path('leave/', views.view_own_leave, name='view_own_leave'),
     path('leave/request', views.request_leave, name='request_leave'),
+    path('leave/<int:pk>/cancel', views.cancel_own_leave, name='cancel_own_leave'),
     path('ops/leave/', views.manage_leave, name='manage_leave'),
     path('ops/leave/<int:pk>/manage', views.manage_leave_auth_request, name='manage_leave_auth_request'),
     path('settings/', views.app_settings, name='app_settings'),

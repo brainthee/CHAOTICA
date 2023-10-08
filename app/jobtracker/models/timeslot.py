@@ -73,10 +73,10 @@ class TimeSlot(models.Model):
         return data
     
     def get_business_hours(self):
-        startbday = time(9,0,0)
-        endbday = time(16,30,0) # 5:30pm - 1hr for lunch! :) 
+        # startbday = time(9,0,0)
+        # endbday = time(16,30,0) # 5:30pm - 1hr for lunch! :) 
         unit='hour'
-        hours = businessDuration(self.start, self.end, startbday, endbday, unit=unit)
+        hours = businessDuration(self.start, self.end, unit=unit)
         return hours
     
     def cost(self):

@@ -1,13 +1,12 @@
-<div class="col-3 mb-3">
-  <div class="card h-100 hover-actions-trigger">
+<div class="col-3 g-2 mb-3">
+  <div class="card h-100">
     <div class="card-body">
       <div class="d-flex align-items-center">
-        <h4 class="mb-2 line-clamp-1 lh-sm flex-1 me-5">{{ unit.name }}</h4>
-        <div class="hover-actions top-0 end-0 mt-4 me-4">
-          <a class="btn btn-primary btn-icon flex-shrink-0" href="{{ unit.get_absolute_url }}">
-            <span class="fa-solid fa-chevron-right"></span>
+        <h4 class="mb-2 line-clamp-1 lh-sm flex-1 me-5">
+          <a href="{{ unit.get_absolute_url }}">
+            {{ unit.name }}
           </a>
-        </div>
+        </h4>
       </div>
 
       <div class="d-flex align-items-center mb-2">
@@ -17,12 +16,15 @@
         </p>
       </div>
       <div class="d-flex d-lg-block d-xl-flex justify-content-between align-items-center mt-3">
-        {% include 'partials/users/user_group.html' with users=unit.get_activeMembers %}
-
+        <div class="mt-lg-3 mt-xl-0">
+          <i class="fa-solid fa-people-group me-1"></i>
+          <p class="d-inline-block fw-bold mb-0">{{ unit.get_activeMembers.all | length }}<span class="fw-normal">	Members</span></p>
+        </div>
         {% if request.user in unit.get_activeMembers.all %}
-        <span class="badge badge-phoenix fs--2 mb-4 badge-phoenix-success">Member</span>
+        <span class="badge badge-phoenix fs--2 mb-2 mt-2 badge-phoenix-success">Member</span>
         {% endif %}
-        <div class="mt-lg-3 mt-xl-0"> <i class="fa-solid fa-list-check me-1"></i>
+        <div class="mt-lg-3 mt-xl-0">
+          <i class="fa-solid fa-list-check me-1"></i>
           <p class="d-inline-block fw-bold mb-0">{{ unit.jobs.all | length }}<span class="fw-normal">	Jobs</span></p>
         </div>
       </div>

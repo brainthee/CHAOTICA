@@ -11,7 +11,7 @@
         {% for member in client.account_managers.all %}
         <div class="row d-flex ">
             <div class="col-lg-2 col-md-2 col-sm-3 col-4 text-center">
-                <a href="javascript:;" 
+                <a href="{{ member.get_absolute_url }}" 
                 data-bs-toggle="tooltip" data-bs-placement="top" title="{{ member.get_full_name }}" data-container="body" data-animation="true"
                 class="avatar avatar-lg rounded-circle border bg-gradient-primary">
                     <img alt="Image placeholder" class="p-1" src="{{ member.get_avatar_url }}">

@@ -28,6 +28,17 @@
         </div>
       </div>
 
+      {% if form.non_field_errors %}
+        <div class="non-field-errors">
+          {% for err in form.non_field_errors %}
+          <div class="alert alert-outline-danger d-flex align-items-center" role="alert">
+            <span class="fas fa-times-circle text-danger fs-3 me-3"></span>
+            <p class="mb-0 flex-1">{{ err }}</p>              
+          </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
 
       <div class="row g-5">
         <div class="col-12 col-xl-8 gx-5">

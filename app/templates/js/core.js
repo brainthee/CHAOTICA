@@ -165,4 +165,18 @@ $(function() {
     }
     }, period);
 
+    $(".notification_read").click(function() {
+        var btn = $(this);
+        $.ajax({
+            url: btn.attr("data-url"),
+            type: 'get',
+            dataType: 'json',
+            success: function(data) {
+                if (data.result) {
+                    location.reload();
+                }
+            }
+        });        
+    });
+
 });
