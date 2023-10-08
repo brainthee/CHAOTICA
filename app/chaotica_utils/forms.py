@@ -31,37 +31,33 @@ class CustomConfigForm(ConstanceForm):
 
 class LeaveRequestForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop('request', None)
         super(LeaveRequestForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
         self.fields['start_date'].label = False
         self.fields['end_date'].label = False
         self.fields['type_of_leave'].label = False
         self.fields['notes'].label = False
-        self.fields['start_date'].widget = DatePickerInput()
-        self.fields['end_date'].widget = DatePickerInput()
+        self.fields['start_date'].widget = DateTimePickerInput()
+        self.fields['end_date'].widget = DateTimePickerInput()
 
 
-    def clean_end_date(self):
-        cleaned_data = self.clean()
+    def clean(self):
+        cleaned_data = super().clean()
         start = cleaned_data.get("start_date")
         end = cleaned_data.get("end_date")
-
-        if start > end:
-            self.add_error('end_date', "The end date is before the start date.")
-        return end
-
-
-    def clean_start_date(self):
-        cleaned_data = self.clean()
-        start = cleaned_data.get("start_date")
         today = timezone.now()
+
+        if LeaveRequest.objects.filter(user=self.request.user, cancelled=False,
+            start_date__lte=end,
+            end_date__gte=start).exists():
+            self.add_error(None, "Unable to save. The dates overlap an existing leave request.")
 
         if start < today:
             self.add_error('start_date', "The start date is before today.")
-        return start
-    
-    # def clean(self):
-    #     cleaned_data = super().clean()
+
+        if start > end:
+            self.add_error('end_date', "The end date is before the start date.")
 
     class Meta:
         model = LeaveRequest
@@ -171,11 +167,17 @@ class ProfileBasicForm(forms.ModelForm):
                 Column(Div(FloatingField('job_title'),
                         css_class="input-group input-group-dynamic")),
             ),
+            Row(
+                Column(Div(FloatingField('contracted_leave'),
+                        css_class="input-group input-group-dynamic")),
+                Column(Div(Field('contracted_leave_renewal'),
+                        css_class="input-group input-group-dynamic")),
+            ),
         )
 
     class Meta:
         model = User
-        fields = ('first_name', 'last_name', 'email', 'phone_number', 'job_title', 'show_help', 'location', 'languages')
+        fields = ('first_name', 'last_name', 'email', 'phone_number', 'job_title', 'show_help', 'location', 'languages','contracted_leave', 'contracted_leave_renewal')
 
 class ImportSiteDataForm(forms.Form):
     importFile = forms.FileField(required=False, label='JSON Data')

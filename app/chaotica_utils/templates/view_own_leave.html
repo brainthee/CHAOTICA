@@ -12,12 +12,46 @@
 
 {% block content %}
 
-<div class="row mb-4 gx-6 gy-3 mt-2 align-items-center">
-  <div class="col-auto">
+<div class="row mb-2 gx-6 gy-3 mt-0 align-items-center">
+  <div class="col">
     <h2 class="mb-0">Leave Requests</h2>
   </div>
-  <div class="col-auto">
-    <a class="btn btn-primary px-5" href="{% url 'request_leave' %}">
+  <div class="col-6">
+    <div class="row w-100">
+      <div class="col-4">
+          <div class="d-flex flex-column flex-center align-items-sm-start flex-md-row justify-content-md-between flex-xxl-column p-3 ps-sm-3 ps-md-4 p-md-3 h-100 border-1 border-end">
+            <div class="d-flex align-items-center mb-1">
+              <span class="fa-solid fa-book-open fs--1 me-2 text-primary"></span>
+              <span class="mb-0 fs--1 text-900">Remaining Leave</span></div>
+              <h3 class="fw-semi-bold ms-xl-3 ms-xxl-0 pe-md-2 pe-xxl-0 mb-0 mb-sm-3">
+                {{ request.user.remaining_leave }}
+              </h3>
+          </div>
+      </div>
+      <div class="col-4">
+          <div class="d-flex flex-column flex-center align-items-sm-start flex-md-row justify-content-md-between flex-xxl-column p-3 ps-sm-3 ps-md-4 p-md-3 h-100 border-1 border-end-md-0 border-end-xl">
+            <div class="d-flex align-items-center mb-1">
+              <span class="fa-solid fa-briefcase fs--1 me-2 text-success" data-fa-transform="up-2"></span>
+              <span class="mb-0 fs--1 text-900">Pending Leave</span></div>
+              <h3 class="fw-semi-bold ms-xl-3 ms-xxl-0 pe-md-2 pe-xxl-0 mb-0 mb-sm-3">
+                {{ request.user.pending_leave }}
+              </h3>
+          </div>
+      </div>
+      <div class="col-4">
+          <div class="d-flex flex-column flex-center align-items-sm-start flex-md-row justify-content-md-between flex-xxl-column p-3 ps-sm-3 ps-md-4 p-md-3 h-100 border-1 border-end border-end-md border-end-xl-0">
+            <div class="d-flex align-items-center mb-1">
+              <span class="fa-solid fa-pen-nib fs--1 me-2 text-info" data-fa-transform="up-2"></span>
+              <span class="mb-0 fs--1 text-900">Total Leave</span></div>
+              <h3 class="fw-semi-bold ms-xl-3 ms-xxl-0 pe-md-2 pe-xxl-0 mb-0 mb-sm-3">
+                {{ request.user.contracted_leave }}
+              </h3>
+          </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-3 d-flex justify-content-end">
+    <a class="btn btn-phoenix-primary px-5" href="{% url 'request_leave' %}">
       <i class="fa-solid fa-plus me-2"></i>
       Request Leave
     </a>
@@ -36,6 +70,9 @@
           <th class="sort align-middle ps-3" scope="col" data-sort="start" style="width:10%;">
             End
           </th>
+          <th class="sort align-middle ps-3" scope="col" data-sort="start" style="width:10%;">
+            Days
+          </th>
           <th class="sort align-middle ps-3" scope="col" data-sort="unit" style="width:10%;">
             Type
           </th>
@@ -53,13 +90,15 @@
       {% for leave in leave_list %}
       <tr>
           <td class="align-middle time white-space-nowrap ps-0 projectName py-4">
-            <a class="fw-bold fs-0" href="{{ leave.get_absolute_url }}">
               {{ leave.start_date }}
-            </a>
           </td>
   
           <td class="align-middle white-space-nowrap unit ps-3 py-4">
               {{ leave.end_date }}
+          </td>
+  
+          <td class="align-middle white-space-nowrap unit ps-3 py-4">
+              {{ leave.affected_days }}
           </td>
   
           <td class="align-middle white-space-nowrap client ps-3 py-4">
@@ -74,31 +113,26 @@
   
           <td class="align-middle white-space-nowrap end ps-3 py-4">
             {% if leave.cancelled %}
-              Cancelled
+              <span class="badge badge-phoenix badge-phoenix-secondary">Cancelled</span>
             {% elif leave.declined %}
-              Declined
+              <span class="badge badge-phoenix badge-phoenix-danger">Declined</span>
             {% elif leave.authorised %}
-              Authorised
+              <span class="badge badge-phoenix badge-phoenix-success">Authorised</span>              
             {% else %}
-              Pending
+              <span class="badge badge-phoenix badge-phoenix-info">Pending</span>              
               {% if leave.requested_late %}
-                Late
+                <span class="badge badge-phoenix badge-phoenix-warning">Late</span>
               {% endif %}
             {% endif %}
           </td>
   
           <td class="align-middle text-end white-space-nowrap pe-0 action">
-            <!-- <div class="font-sans-serif btn-reveal-trigger position-static">
-              <button class="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal fs--2" type="button" data-bs-toggle="dropdown" data-boundary="window" aria-haspopup="true" aria-expanded="false" data-bs-reference="parent">
-                <span class="fas fa-ellipsis-h fs--2"></span>
+            {% if leave.can_cancel %}
+              <button class="btn btn-sm btn-phoenix-warning js-load-modal-form" 
+                data-url="{% url 'cancel_own_leave' leave.pk %}" type="button">
+                Cancel
               </button>
-              <div class="dropdown-menu dropdown-menu-end py-2">
-                <a class="dropdown-item" href="#!">View</a>
-                <a class="dropdown-item" href="#!">Export</a>
-                <div class="dropdown-divider"></div>
-                <a class="dropdown-item text-danger" href="#!">Remove</a>
-              </div>
-            </div> -->
+              {% endif %}
           </td>
         </tr>
       {% endfor %}        

@@ -13,7 +13,7 @@
             {% get_total_scoped_by_type phase v as totalScoped %}
             {% get_total_scheduled_by_type phase v as totalScheduled %}
             {% get_slotType_usage_perc phase v as typePerc %}
-            <div class="col-6">
+            <div class="col-6 gx-2">
               <div class="progress-wrapper" data-bs-toggle="tooltip" data-bs-placement="top"
               title="Scheduled: {{ totalScheduled }}hrs | Scoped: {{ totalScoped }}hrs | Percentage Used: {{ typePerc }}%">
                 <div class="progress-info">

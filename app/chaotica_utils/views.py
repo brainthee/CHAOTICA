@@ -93,7 +93,7 @@ def view_own_leave(request):
 @require_http_methods(["POST", "GET"])
 def request_leave(request):
     if request.method == "POST":
-        form = LeaveRequestForm(request.POST)
+        form = LeaveRequestForm(request.POST, request=request)
         if form.is_valid():
             leave = form.save(commit=False)
             leave.user = request.user
@@ -101,7 +101,7 @@ def request_leave(request):
             leave.send_request_notification()
             return HttpResponseRedirect(reverse('view_own_leave'))
     else:
-        form = LeaveRequestForm()
+        form = LeaveRequestForm(request=request)
     
     context = {'form': form}
     template = loader.get_template('forms/add_leave_form.html')
@@ -153,6 +153,32 @@ def manage_leave_auth_request(request, pk):
 
     context = {'leave': leave,}
     data['html_form'] = loader.render_to_string("modals/leave_auth.html",
+                                                context,
+                                                request=request)
+    return JsonResponse(data)
+
+@login_required
+def cancel_own_leave(request, pk):
+    leave = get_object_or_404(LeaveRequest, pk=pk, user=request.user)
+    
+    # Okay, lets go!    
+    data = dict()
+    if request.method == "POST":
+        # First, check we're allowed to process this...
+        if not leave.can_cancel():
+            return HttpResponseForbidden()
+        
+        # We need to check which button was pressed... accept or reject!
+        if request.POST.get('user_action') == "approve_action":
+            # Approve it!
+            leave.cancel()
+            data['form_is_valid'] = True
+        else:
+            # invalid choice...
+            return HttpResponseBadRequest()
+
+    context = {'leave': leave,}
+    data['html_form'] = loader.render_to_string("modals/leave_cancel.html",
                                                 context,
                                                 request=request)
     return JsonResponse(data)
@@ -236,6 +262,19 @@ def notifications_mark_read(request):
         'result': True
     }
     return JsonResponse(data, safe=False)
+
+
+@login_required
+@require_safe
+def notification_mark_read(request, pk):
+    notification = get_object_or_404(Notification, user=request.user, pk=pk, is_read=False)
+    notification.is_read = True
+    notification.save()
+    data = {
+        'result': True
+    }
+    return JsonResponse(data, safe=False)
+
 
 @login_required
 @require_safe

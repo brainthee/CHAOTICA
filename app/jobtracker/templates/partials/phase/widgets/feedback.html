@@ -2,12 +2,12 @@
 {% load crispy_forms_tags %}
 <div class="row">
    <div class="g-3 col-4">   
-      <div class="card">
+      <div class="card h-100">
          <div class="card-header row pb-0">
             <div class="col-6">
                <h5 class="mb-0">Scope</h5>
             </div>
-            <div class="col-md-6 d-flex justify-content-end">
+            <div class="col-md-6 d-flex mb-4 justify-content-end">
                {% if phase.status == 7 %}
                <form method="post" action="{% url 'phase_rating_scope' phase.job.slug phase.slug %}" id="techRating">
                   {% csrf_token %}            
@@ -16,7 +16,11 @@
                </form>
 
                {% else %}
-               Scope Correct: {{ phase.feedback_scope_correct }}
+                  {% if phase.feedback_scope_correct %}
+                  <span class="badge badge-phoenix badge-phoenix-success">Scope Correct</span>
+                  {% else %}
+                  <span class="badge badge-phoenix badge-phoenix-warning">Scope Incorrect</span>
+                  {% endif %}
                {% endif %}
             </div>
          </div>
@@ -33,7 +37,7 @@
    </div>
 
    <div class="g-3 col-4">   
-      <div class="card">
+      <div class="card h-100">
          <div class="card-header row">
             <div class="col-6">
                <h5 class="mb-0">Tech QA</h5>
@@ -63,7 +67,7 @@
    </div>
 
    <div class="g-3 col-4">   
-      <div class="card">
+      <div class="card h-100">
          <div class="card-header row">
             <div class="col-6">
                <h5 class="mb-0">Pres QA</h5>

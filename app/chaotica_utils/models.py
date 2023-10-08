@@ -17,13 +17,14 @@ from simple_history.models import HistoricalRecords
 import django.contrib.auth
 from decimal import *
 from django.utils import timezone
-from datetime import timedelta
+from datetime import timedelta, time, date
 from dateutil.relativedelta import *
 from phonenumber_field.modelfields import PhoneNumberField
 from django_countries.fields import CountryField
 from django.contrib.postgres.fields import ArrayField
 from .tasks import task_send_notifications
 from jobtracker.enums import TimeSlotType
+from business_duration import businessDuration
 
 
 def get_sentinel_user():
@@ -113,16 +114,61 @@ class User(AbstractUser):
     site_theme = models.CharField(verbose_name="Site Theme", max_length=20, default="light")
     schedule_feed_id = models.UUIDField(verbose_name="Calendar Feed Key", default=uuid.uuid4)
     groups = models.ManyToManyField(Group, verbose_name='groups',
-        blank=True, help_text='The groups this user belongs to. A user will '
-                                'get all permissions granted to each of '
-                                'their groups.',
-        related_name="user_set", related_query_name="user")
+            blank=True, help_text='The groups this user belongs to. A user will '
+                                    'get all permissions granted to each of '
+                                    'their groups.',
+            related_name="user_set", related_query_name="user")
     languages = models.ManyToManyField(Language, verbose_name='Languages', blank=True)
     profile_image = models.ImageField(default='default.jpg',  
                                      upload_to=get_media_image_file_path,)
+    contracted_leave = models.IntegerField(verbose_name="Contracted Leave", default=0)
+    contracted_leave_renewal = models.DateField(verbose_name="Contracted Leave", default=date(day=1, month=9, year=2023))
     
     class Meta:
         ordering = ['last_name']
+
+    def _get_last_leave_renewal_date(self):
+        today = timezone.now().date()
+        renewalDate = self.contracted_leave_renewal.replace(year=today.year)
+        if renewalDate < today:
+            return renewalDate
+        else:
+            return renewalDate.replace(year=today.year-1)
+
+    def _get_next_leave_renewal_date(self):
+        today = timezone.now().date()
+        renewalDate = self.contracted_leave_renewal.replace(year=today.year)
+        if renewalDate > today:
+            return renewalDate
+        else:
+            return renewalDate.replace(year=today.year+1)
+    
+    def remaining_leave(self):
+        return self.contracted_leave - self.pending_leave() - self.used_leave()
+
+    def pending_leave(self):
+        total = 0
+        for leave in LeaveRequest.objects.filter(
+            user=self, cancelled=False, authorised=True, 
+            start_date__gte=self._get_last_leave_renewal_date(),
+            end_date__lte=self._get_next_leave_renewal_date()).filter(
+            start_date__gte=timezone.now()):
+            total = total + leave.affected_days()
+        return total
+
+    def used_leave(self):
+        total = 0
+        for leave in LeaveRequest.objects.filter(
+            user=self, cancelled=False, authorised=True, 
+            start_date__gte=self._get_last_leave_renewal_date(),
+            end_date__lte=self._get_next_leave_renewal_date()).filter(
+            start_date__lte=timezone.now(),
+            end_date__lte=timezone.now()):
+            total = total + leave.affected_days()
+        return total
+    
+    def unread_notifications(self):
+        return Notification.objects.filter(user=self, is_read=False)
 
     def get_avatar_url(self):
         if self.profile_image:
@@ -316,8 +362,27 @@ class LeaveRequest(models.Model):
         on_delete=models.PROTECT,
     )
 
+    class Meta:
+        verbose_name = 'Leave Request'
+        ordering = ['start_date']
+
     def requested_late(self):
         return self.start_date < (self.requested_on + timedelta(days=settings.LEAVE_DAYS_NOTICE))
+    
+    def affected_days(self):
+        startbday = time(9,0,0)
+        endbday = time(16,30,0) # 5:30pm - 1hr for lunch! :) 
+        unit='day'
+        days = businessDuration(self.start_date, self.end_date, unit=unit)
+        return round(days, 2)
+    
+    def can_cancel(self):
+        # Only situ we can't cancel is if it's in the past or it's already cancelled.
+        if self.start_date < timezone.now():
+            return False
+        if self.cancelled:
+            return False
+        return True
     
     def can_approve_by(self):
         # Update to reflect logic...
@@ -334,53 +399,55 @@ class LeaveRequest(models.Model):
         return User.objects.filter(pk__in=userPKs).distinct()
     
     def can_user_auth(self, user):
+        if self.cancelled:
+            return False
         return user in self.can_approve_by()
     
     def send_request_notification(self):
-        from .utils import AppNotification
+        from .utils import AppNotification, ext_reverse
         # Send a notice to... people?!
         users_to_notify = self.can_approve_by()
         notice = AppNotification(
             NotificationTypes.PHASE, 
             "Leave Requested - Please review", 
             str(self.user)+" has requested leave. Please review the request", 
-            "emails/leave_auth.html", leave=self)
+            "emails/leave.html", action_link=ext_reverse(reverse('manage_leave')), leave=self)
         task_send_notifications.delay(notice, users_to_notify)
 
     
     def send_approved_notification(self):
-        from .utils import AppNotification
+        from .utils import AppNotification, ext_reverse
         # Send a notice to... people?!
         users_to_notify = [self.user]
         notice = AppNotification(
             NotificationTypes.PHASE, 
             "Leave Approved", 
             "Your leave has been approved!",
-            "emails/leave_approved.html", leave=self)
+            "emails/leave.html", action_link=ext_reverse(reverse('view_own_leave')), leave=self)
         task_send_notifications.delay(notice, users_to_notify)
 
     
     def send_declined_notification(self):
-        from .utils import AppNotification
+        from .utils import AppNotification, ext_reverse
         # Send a notice to... people?!
         users_to_notify = [self.user]
         notice = AppNotification(
             NotificationTypes.PHASE, 
             "Leave DECLINED", 
             "Your leave has been declined. Please contact "+str(self.declined_by)+" for information.",
-            "emails/leave_declined.html", leave=self)
+            "emails/leave.html", action_link=ext_reverse(reverse('view_own_leave')), leave=self)
         task_send_notifications.delay(notice, users_to_notify)
 
     
     def send_cancelled_notification(self):
-        from .utils import AppNotification
+        from .utils import AppNotification, ext_reverse
         # Send a notice to... people?!
         users_to_notify = [self.user]
         notice = AppNotification(
             NotificationTypes.PHASE, 
             "Leave Cancelled", 
             "You have cancelled your leave.",
-            "emails/leave_cancelled.html", leave=self)
+            "emails/leave.html", action_link=ext_reverse(reverse('view_own_leave')), leave=self)
         task_send_notifications.delay(notice, users_to_notify)
     
 

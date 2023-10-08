@@ -7,6 +7,13 @@ import json
 from pprint import pprint
 
 
+def ext_reverse(reversed_url):
+    return '{}://{}{}'.format(
+        django_settings.SITE_PROTO,
+        django_settings.SITE_DOMAIN,
+        reversed_url)
+
+
 class AppNotification:
     """_summary_
     This feels wrong...?
@@ -32,9 +39,6 @@ class AppNotification:
         self.send_email = send_email
         self.context = {}
         self.context.update(kwargs)
-
-    def toJson(self):
-        return json.dumps(self, default=lambda o: o.__dict__)
 
     def SendToUser(
             self,
