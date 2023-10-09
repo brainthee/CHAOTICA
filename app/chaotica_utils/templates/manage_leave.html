@@ -79,17 +79,20 @@
   
           <td class="align-middle white-space-nowrap end ps-3 py-4">
             {% if leave.cancelled %}
-              Cancelled
+              <span class="badge badge-phoenix badge-phoenix-secondary">Cancelled</span>
             {% elif leave.declined %}
-              Declined
+              <span class="badge badge-phoenix badge-phoenix-danger">Declined</span>
             {% elif leave.authorised %}
-              Authorised
+              <span class="badge badge-phoenix badge-phoenix-success">Authorised</span>              
             {% else %}
-              Pending
-              {% if leave.requested_late %}
-                Late
-              {% endif %}
+              <span class="badge badge-phoenix badge-phoenix-info">Pending</span>     
+            {% endif %}         
+            {% if leave.requested_late %}
+              <span class="badge badge-phoenix badge-phoenix-warning">Late</span>
             {% endif %}
+            {% if leave.overlaps_work %}
+              <span class="badge badge-phoenix badge-phoenix-warning">Overlaps Scheduled Work</span>
+            {% endif %}            
           </td>
   
           <td class="align-middle text-end white-space-nowrap pe-0 action">

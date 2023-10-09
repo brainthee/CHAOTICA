@@ -35,6 +35,11 @@
           </a>
         </li>
         <li class="nav-item text-nowrap me-2" role="presentation">
+          <a class="nav-link" id="dates-tab" data-bs-toggle="tab" href="#dates" role="tab" aria-controls="tab-dates" aria-selected="false" tabindex="-1">
+            <span class="fa-solid fa-clipboard me-2 tab-icon-color"></span>Dates
+          </a>
+        </li>
+        <li class="nav-item text-nowrap me-2" role="presentation">
           <a class="nav-link" id="deliverables-tab" data-bs-toggle="tab" href="#deliverables" role="tab" aria-controls="tab-deliverables" aria-selected="false" tabindex="-1">
             <span class="fa-solid fa-clipboard me-2 tab-icon-color"></span>Deliverables
           </a>
@@ -60,8 +65,10 @@
           {% endif %}
         </div>
         <div class="tab-pane fade" id="schedule" role="tabpanel" aria-labelledby="schedule-tab">
-          {% include 'partials/phase/schedule_view.html' %}
-          
+          {% include 'partials/phase/schedule_view.html' %}          
+        </div>
+        <div class="tab-pane fade" id="dates" role="tabpanel" aria-labelledby="dates-tab">
+          {% include 'partials/phase/dates_view.html' %}          
         </div>
         <div class="tab-pane fade" id="deliverables" role="tabpanel" aria-labelledby="deliverables-tab">    
           {% if phase.status == 7 %}

@@ -16,10 +16,12 @@
                </form>
 
                {% else %}
-                  {% if phase.feedback_scope_correct %}
+                  {% if phase.feedback_scope_correct == True %}
                   <span class="badge badge-phoenix badge-phoenix-success">Scope Correct</span>
-                  {% else %}
+                  {% elif phase.feedback_scope_correct == False %}
                   <span class="badge badge-phoenix badge-phoenix-warning">Scope Incorrect</span>
+                  {% else %}
+                  <span class="badge badge-phoenix badge-phoenix-secondary">No Feedback Yet</span>
                   {% endif %}
                {% endif %}
             </div>
@@ -29,9 +31,7 @@
                <!-- In Progress - allow leaving scope feedback -->
                <a href="#" data-url="{% url 'phase_feedback_scope' phase.job.slug phase.slug %}" class="js-load-modal-form">Add Feedback</a>
             {% endif %}
-            <div class="mt-2">
-               {% include 'partials/feedback_list.html' with feedbacks=phase.feedback_scope %}
-            </div>
+            {% include 'partials/feedback_list.html' with feedbacks=phase.feedback_scope %}
          </div>
       </div>
    </div>
@@ -43,25 +43,26 @@
                <h5 class="mb-0">Tech QA</h5>
             </div>
             <div class="col-6 d-flex justify-content-end">
-               {% if phase.status == 8 %}
-               <form method="post" action="{% url 'phase_rating_techqa' phase.job.slug phase.slug %}" id="techRating">
-                  {% csrf_token %}            
-                  {{ feedbackForm.techqa_report_rating|as_crispy_field }}
-               </form>
-
+               {% if phase.status == 9 %}
+                  <form method="post" action="{% url 'phase_rating_techqa' phase.job.slug phase.slug %}" id="techRating">
+                     {% csrf_token %}            
+                     {{ feedbackForm.techqa_report_rating|as_crispy_field }}
+                  </form>
                {% else %}
-               {% include 'partials/feedback_stars.html' with feedback=phase.techqa_report_rating feedbackStr=phase.get_techqa_report_rating_display %}
+                  {% if phase.techqa_report_rating == None %}
+                  <span class="badge badge-phoenix badge-phoenix-secondary">No Feedback Yet</span>
+                  {% else %}
+                  {% include 'partials/feedback_stars.html' with feedback=phase.techqa_report_rating feedbackStr=phase.get_techqa_report_rating_display %}
+                  {% endif %}
                {% endif %}
             </div>
          </div>
          <div class="card-body">               
-            {% if phase.status == 8 %}
+            {% if phase.status == 9 %}
                <!-- In TechQA - allow leaving feedback -->
                <a href="#" data-url="{% url 'phase_feedback_techqa' phase.job.slug phase.slug %}" class="js-load-modal-form">Add Feedback</a>
             {% endif %}
-            <div class="mt-2">
-               {% include 'partials/feedback_list.html' with feedbacks=phase.feedback_techqa %}
-            </div>
+            {% include 'partials/feedback_list.html' with feedbacks=phase.feedback_techqa %}
          </div>
       </div>
    </div>
@@ -73,27 +74,27 @@
                <h5 class="mb-0">Pres QA</h5>
             </div>
             <div class="col-6 d-flex justify-content-end">
-               {% if phase.status == 10 %}
+               {% if phase.status == 12 %}
                <form method="post" action="{% url 'phase_rating_presqa' phase.job.slug phase.slug %}" id="techRating">
                   {% csrf_token %}            
                   {{ feedbackForm.presqa_report_rating|as_crispy_field }}
                </form>
 
                {% else %}
-               {% include 'partials/feedback_stars.html' with feedback=phase.presqa_report_rating feedbackStr=phase.get_presqa_report_rating_display %}
-               {% endif %}
-
-               
+                  {% if phase.techqa_report_rating == None %}
+                  <span class="badge badge-phoenix badge-phoenix-secondary">No Feedback Yet</span>
+                  {% else %}
+                  {% include 'partials/feedback_stars.html' with feedback=phase.presqa_report_rating feedbackStr=phase.get_presqa_report_rating_display %}
+                  {% endif %}
+               {% endif %}               
             </div>
          </div>
          <div class="card-body">
-            {% if phase.status == 10 %}
+            {% if phase.status == 12 %}
                <!-- In PresQA - allow leaving feedback -->
                <a href="#" data-url="{% url 'phase_feedback_presqa' phase.job.slug phase.slug %}" class="js-load-modal-form">Add Feedback</a>
             {% endif %}
-            <div class="mt-2">
-               {% include 'partials/feedback_list.html' with feedbacks=phase.feedback_presqa %}
-            </div>
+            {% include 'partials/feedback_list.html' with feedbacks=phase.feedback_presqa %}
          </div>
       </div>
    </div>

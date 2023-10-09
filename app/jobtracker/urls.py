@@ -1,14 +1,18 @@
 from django.urls import path, include, re_path 
 from . import views
-from .feeds import ScheduleFeed
+from .feeds import ScheduleFeed, ScheduleFamilyFeed
 
 urlpatterns = [
+    path('schedule/feed/reset', views.reset_cal_feed, name='reset_cal_feed'),
+    path('schedule/feed/family/reset', views.reset_cal_family_feed, name='reset_cal_family_feed'),
+    path('schedule/feed/family/<str:calKey>', ScheduleFamilyFeed(), name='view_own_schedule_feed_family'),
     path('schedule/feed/<str:calKey>', ScheduleFeed(), name='view_own_schedule_feed'),
     path('schedule/timeslots', views.view_own_schedule_timeslots, name='view_own_schedule_timeslots'),
     path('scheduler/', views.view_scheduler, name='view_scheduler'),
     path('scheduler/members', views.view_scheduler_members, name='view_scheduler_members'),
     path('scheduler/events', views.view_scheduler_slots, name='view_scheduler_slots'),
     path('stats/', views.view_stats, name='view_stats'),
+    path('reports/', views.view_reports, name='view_reports'),
     path('tasks/', views.run_tasks, name='run_tasks'),
 
     # Job CRUD

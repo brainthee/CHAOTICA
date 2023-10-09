@@ -124,16 +124,18 @@ class PhaseStatuses():
     CLIENT_NOT_READY = 5
     READY_TO_BEGIN = 6
     IN_PROGRESS = 7
-    QA_TECH = 8
-    QA_TECH_AUTHOR_UPDATES = 9
-    QA_PRES = 10
-    QA_PRES_AUTHOR_UPDATES = 11
-    COMPLETED = 12
-    DELIVERED = 13
-    CANCELLED = 14
-    POSTPONED = 15
-    DELETED = 16
-    ARCHIVED = 17
+    PENDING_TQA = 8
+    QA_TECH = 9
+    QA_TECH_AUTHOR_UPDATES = 10
+    PENDING_PQA = 11
+    QA_PRES = 12
+    QA_PRES_AUTHOR_UPDATES = 13
+    COMPLETED = 14
+    DELIVERED = 15
+    CANCELLED = 16
+    POSTPONED = 17
+    DELETED = 18
+    ARCHIVED = 19
 
     CHOICES = (
         (DRAFT, "Draft"), # Initial State
@@ -144,8 +146,10 @@ class PhaseStatuses():
         (CLIENT_NOT_READY, "Client Not Ready"), # Manual - by consultant if not ready
         (READY_TO_BEGIN, "Ready to Begin"), # Manual - by consultant if ready
         (IN_PROGRESS, "In Progress"), # Automatic - on starting day
+        (PENDING_TQA, "Pending Technical QA"), # Manual - when testing is finished
         (QA_TECH, "Tech QA"), # Manual - when report finished
         (QA_TECH_AUTHOR_UPDATES, "Author Tech Updates"), # Manual
+        (PENDING_PQA, "Pending Presentation QA"), # Manual - when TQA is finished
         (QA_PRES, "Pres QA"), # Manual
         (QA_PRES_AUTHOR_UPDATES, "Author Pres Updates"), # Manual
         (COMPLETED, "Completed"), # Manual - when report done
@@ -164,8 +168,10 @@ class PhaseStatuses():
         (CLIENT_NOT_READY, "warning"),
         (READY_TO_BEGIN, "success"),
         (IN_PROGRESS, "danger"),
+        (PENDING_TQA, "secondary"),
         (QA_TECH, "info"),
         (QA_TECH_AUTHOR_UPDATES, "info"),
+        (PENDING_PQA, "secondary"),
         (QA_PRES, "info"),
         (QA_PRES_AUTHOR_UPDATES, "info"),
         (COMPLETED, "success"),
@@ -201,7 +207,7 @@ class RestrictedClassifications():
     )
 
 
-BOOL_CHOICES = ((True, 'Yes'), (False, 'No'))
+BOOL_CHOICES = ((None, ''), (True, 'Yes'), (False, 'No'))
 
 
 class TechQARatings():

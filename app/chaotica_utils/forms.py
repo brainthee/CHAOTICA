@@ -59,6 +59,14 @@ class LeaveRequestForm(forms.ModelForm):
         if start > end:
             self.add_error('end_date', "The end date is before the start date.")
 
+        # Now lets check if this takes us over our available leave
+        unit='day'
+        days = businessDuration(start, end, unit=unit)
+        requestedDays = round(days, 2)
+        availableDays = self.request.user.remaining_leave()
+        if requestedDays > availableDays:
+            self.add_error(None, "You have requested more days than your allocation ({} required, {} available)".format(str(requestedDays), str(availableDays)))
+
     class Meta:
         model = LeaveRequest
         fields = ('start_date', 'end_date', 'type_of_leave', 'notes',)

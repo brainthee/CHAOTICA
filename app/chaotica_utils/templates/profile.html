@@ -40,7 +40,7 @@
 </div>
 
 <div class="row mt-4 mb-5">
-    <div class="col-lg-3 g-2 ">
+    <div class="col-lg-3 g-2 mt-0">
        <div class="card position-sticky top-0">
           <ul class="nav flex-column bg-white border-radius-lg p-3">
              <li class="nav-item pt-2">
@@ -292,12 +292,19 @@
          </div>
 
          <div class="card-body">
-            <div class="d-flex">
+            <div class="d-flex mb-3">
                <p class="my-auto">Calendar Subscription - Schedule</p>
-               <p class="text-secondary text-sm ms-auto my-auto me-3">
-                    {{ request.get_host }}{% url 'view_own_schedule_feed' request.user.schedule_feed_id %}
+               <p class="font-monospace border border-cake text-sm ms-auto my-auto me-3 p-2">
+                    <a href="{{ feed_url }}">{{ feed_url }}</a>
                 </p>
-               <button class="btn btn-sm btn-outline-dark mb-0" type="button">Reset</button>
+               <button class="btn btn-sm btn-phoenix-danger mb-0 js-load-modal-form" data-url="{% url 'reset_cal_feed' %}" type="button">Reset</button>
+            </div>
+            <div class="d-flex">
+               <p class="my-auto">Calendar Subscription - Family Friendly</p>
+               <p class="font-monospace border border-cake text-sm ms-auto my-auto me-3 p-2">
+                    <a href="{{ feed_family_url }}">{{ feed_family_url }}</a>
+                </p>
+               <button class="btn btn-sm btn-phoenix-danger mb-0 js-load-modal-form" data-url="{% url 'reset_cal_family_feed' %}" type="button">Reset</button>
             </div>
          </div>
       </div>

@@ -293,14 +293,14 @@ class JobForm(forms.ModelForm):
         self.fields['revenue'].label = ""  
         self.fields['account_manager'].label = ""  
         self.fields['dep_account_manager'].label = ""  
-        self.fields['start_date_set'].label = ""  
-        self.fields['delivery_date_set'].label = ""  
+        self.fields['desired_start_date'].label = ""  
+        self.fields['desired_delivery_date'].label = ""  
 
     class Meta:
         model = Job
         widgets = {
-          'start_date_set': DatePickerInput(),
-          'delivery_date_set': DatePickerInput(),
+          'desired_start_date': DatePickerInput(),
+          'desired_delivery_date': DatePickerInput(),
           'unit': autocomplete.ModelSelect2(),
         }
         fields = [
@@ -311,8 +311,8 @@ class JobForm(forms.ModelForm):
             "overview", 
             "account_manager", 
             "dep_account_manager",
-            "start_date_set",
-            "delivery_date_set",
+            "desired_start_date",
+            "desired_delivery_date",
             ]
 
 # class TimeAllocationForm(FormHelper):
@@ -356,18 +356,18 @@ class PhaseForm(forms.ModelForm):
         self.fields['contingency_hours'].css_class = "mb-0"
         self.fields['other_hours'].label = False
 
-        self.fields['start_date_set'].widget = DatePickerInput()
+        self.fields['desired_start_date'].widget = DatePickerInput()
         self.fields['due_to_techqa_set'].widget = DatePickerInput()
         self.fields['due_to_presqa_set'].widget = DatePickerInput()
-        self.fields['delivery_date_set'].widget = DatePickerInput()
+        self.fields['desired_delivery_date'].widget = DatePickerInput()
 
     class Meta:
         model = Phase
         widgets = {
-          'start_date_set': DatePickerInput(),
+          'desired_start_date': DatePickerInput(),
           'due_to_techqa_set': DatePickerInput(),
           'due_to_presqa_set': DatePickerInput(),
-          'delivery_date_set': DatePickerInput(),
+          'desired_delivery_date': DatePickerInput(),
         }
         fields = [
             "phase_number",
@@ -384,10 +384,10 @@ class PhaseForm(forms.ModelForm):
             "debrief_hours",
             "contingency_hours",
             "other_hours",
-            "start_date_set",
+            "desired_start_date",
             "due_to_techqa_set",
             "due_to_presqa_set",
-            "delivery_date_set",
+            "desired_delivery_date",
 
             "is_testing_onsite",
             "is_reporting_onsite",
@@ -475,6 +475,7 @@ class PhaseTechQAInlineForm(forms.ModelForm):
         super(PhaseTechQAInlineForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
         self.fields['techqa_report_rating'].label = False
+        self.fields['techqa_report_rating'].required = False
 
     class Meta:
         model = Phase
@@ -633,37 +634,16 @@ class ClientContactForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(ClientContactForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
-        self.helper.layout = Layout(
-            Div(
-                Div(Row(
-                        Column(Div(FloatingField('salutation'),
-                                css_class="input-group input-group-dynamic")),
-                        Column(Div(FloatingField('first_name'),
-                                css_class="input-group input-group-dynamic")),
-                        Column(Div(FloatingField('last_name'),
-                                css_class="input-group input-group-dynamic")),
-                    ),
-                    Row(
-                        Column(Div(FloatingField('jobtitle'),
-                                css_class="input-group input-group-dynamic")),
-                        Column(Div(FloatingField('department'),
-                                css_class="input-group input-group-dynamic")),
-                    ),
-                    Row(
-                        Column(Div(FloatingField('phone'),
-                                css_class="input-group input-group-dynamic")),
-                        Column(Div(FloatingField('mobile'),
-                                css_class="input-group input-group-dynamic")),
-                        Column(Div(FloatingField('email'),
-                                css_class="input-group input-group-dynamic")),
-                    ),
-                    css_class='card-body pt-3'),
-                css_class="card mb-3"),
+        self.fields['salutation'].label = False
+        self.fields['first_name'].label = False
+        self.fields['last_name'].label = False
 
-            Div(StrictButton("Save", type="submit", 
-                    css_class="btn bg-gradient-success ms-auto mb-0"),
-                css_class="button-row d-flex mt-4"),
-        )
+        self.fields['jobtitle'].label = False
+        self.fields['department'].label = False
+
+        self.fields['phone'].label = False
+        self.fields['mobile'].label = False
+        self.fields['email'].label = False
 
     class Meta:
         model = Contact

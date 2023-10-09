@@ -54,8 +54,8 @@ class Job(models.Model):
     history = HistoricalRecords()
     data = JSONField(verbose_name="Data", null=True, blank=True, default=dict)
     notes = GenericRelation(Note)
-    start_date_set = models.DateField('Start Date', null=True, blank=True, help_text="If left blank, this will be automatically determined from scheduled slots")
-    delivery_date_set = models.DateField('Delivery date', null=True, blank=True, db_index=True, help_text="If left blank, this will be automatically determined from scheduled slots")
+    desired_start_date = models.DateField('Start Date', null=True, blank=True, help_text="If left blank, this will be automatically determined from scheduled slots")
+    desired_delivery_date = models.DateField('Delivery date', null=True, blank=True, db_index=True, help_text="If left blank, this will be automatically determined from scheduled slots")
     
     
     # Client fields
@@ -266,8 +266,8 @@ class Job(models.Model):
 
     def start_date(self):
         from ..models import TimeSlot
-        if self.start_date_set:
-            return self.start_date_set
+        if self.desired_start_date:
+            return self.desired_start_date
         else:
             # Calculate start from first delivery slot
             if TimeSlot.objects.filter(phase__job=self, deliveryRole=TimeSlotDeliveryRole.DELIVERY).exists():
@@ -279,8 +279,8 @@ class Job(models.Model):
             
     def delivery_date(self):
         from ..models import TimeSlot
-        if self.delivery_date_set:
-            return self.delivery_date_set
+        if self.desired_delivery_date:
+            return self.desired_delivery_date
         else:
             # Calculate start from first delivery slot
             if TimeSlot.objects.filter(phase__job=self, deliveryRole=TimeSlotDeliveryRole.REPORTING).exists():

@@ -26,8 +26,14 @@ def get_unit_role_display(role):
     return UnitRoles.CHOICES[role][1]
 
 @register.simple_tag
-def getRange(number):
-    return range(number)
+def getRangeFromZero(number):
+    rng = range(0, number, 1)
+    return rng
+
+@register.simple_tag
+def getRangeFromOne(number):
+    rng = range(1, number+1, 1)
+    return rng
 
 @register.simple_tag
 def PyDateToJSDate(date):

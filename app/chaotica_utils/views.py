@@ -197,6 +197,8 @@ def view_own_profile(request):
         'userSkills': userSkills,
         'languages': languages,
         'profileForm': profileForm,
+        'feed_url': ext_reverse(reverse('view_own_schedule_feed', kwargs={'calKey':request.user.schedule_feed_id})),
+        'feed_family_url': ext_reverse(reverse('view_own_schedule_feed_family', kwargs={'calKey':request.user.schedule_feed_family_id})),
         }
     template = loader.get_template('profile.html')
     context = {**context, **pageDefaults(request)}

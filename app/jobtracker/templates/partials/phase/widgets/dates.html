@@ -6,9 +6,9 @@
         <div class="btn w-100 fs-0 fw-semi-bold d-flex flex-column d-xxl-inline-block">
             <h6 class="fs-18 mb-0 font-w500 text-black">Checks Completed</h6>
             <span data-bs-toggle="tooltip" 
-                data-bs-placement="bottom" title="{{ phase.pre_consultancy_checks_date }}" >
-                {% if phase.pre_consultancy_checks_date %}
-                {{ phase.pre_consultancy_checks_date|naturaltime }}
+                data-bs-placement="bottom" title="{{ phase.pre_checks_done_date }}" >
+                {% if phase.pre_checks_done_date %}
+                {{ phase.pre_checks_done_date|naturaltime }}
                 {% else %}
                 <span class="fas fa-ellipsis-h"></span>
                 {% endif %}

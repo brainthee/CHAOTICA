@@ -16,19 +16,19 @@
     </li>    
     {% if phase.can_proceed_to_postponed %}
         <li>
-            <button data-url="{% url 'phase_update_workflow' phase.job.slug phase.slug 14 %}" class="dropdown-item js-update-phase-workflow text-info" 
+            <button data-url="{% url 'phase_update_workflow' phase.job.slug phase.slug 17 %}" class="dropdown-item js-update-phase-workflow text-info" 
                 data-status="Postponed" data-status-id="14">Postpone Phase</button>
         </li>
     {% endif %}
     {% if phase.can_proceed_to_cancelled %}
         <li>
-            <button data-url="{% url 'phase_update_workflow' phase.job.slug phase.slug 13 %}" class="dropdown-item js-update-phase-workflow text-warning" 
+            <button data-url="{% url 'phase_update_workflow' phase.job.slug phase.slug 16 %}" class="dropdown-item js-update-phase-workflow text-warning" 
                 data-status="Cancelled" data-status-id="13">Close as Cancelled</button>
         </li>
     {% endif %}
     {% if phase.can_proceed_to_delete %}
         <li>
-            <button data-url="{% url 'phase_update_workflow' phase.job.slug phase.slug 15 %}" class="dropdown-item js-update-phase-workflow text-danger" 
+            <button data-url="{% url 'phase_update_workflow' phase.job.slug phase.slug 18 %}" class="dropdown-item js-update-phase-workflow text-danger" 
                 data-status="Deleted" data-status-id="15">Delete Phase</button>
         </li>
     {% endif %}

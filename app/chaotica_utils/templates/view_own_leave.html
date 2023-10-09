@@ -119,11 +119,14 @@
             {% elif leave.authorised %}
               <span class="badge badge-phoenix badge-phoenix-success">Authorised</span>              
             {% else %}
-              <span class="badge badge-phoenix badge-phoenix-info">Pending</span>              
-              {% if leave.requested_late %}
-                <span class="badge badge-phoenix badge-phoenix-warning">Late</span>
-              {% endif %}
+              <span class="badge badge-phoenix badge-phoenix-info">Pending</span> 
+            {% endif %}             
+            {% if leave.requested_late %}
+              <span class="badge badge-phoenix badge-phoenix-warning">Late</span>
             {% endif %}
+            {% if leave.overlaps_work %}
+              <span class="badge badge-phoenix badge-phoenix-warning">Overlaps Scheduled Work</span>
+            {% endif %}       
           </td>
   
           <td class="align-middle text-end white-space-nowrap pe-0 action">

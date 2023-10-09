@@ -1,10 +1,15 @@
 <div class="d-flex align-items-center">
   <span class="me-2 text-info" data-feather="users" style="min-height:24px; width:24px"></span>
   <h4 class="text-600 mb-0">
-    Avg Tech Rating
-    <span class="rating text-end {% if feedback < 3 %}text-danger{% elif feedback == 3 %}text-warning{% elif feedback >= 4 %}text-success{% endif %}" 
-      data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ feedbackStr }}" >
-    {% include 'partials/feedback_stars.html' with feedback=request.user.get_average_techqa_feedback_tech %}
+    <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="Average score over the last 12 months">
+      Avg Tech Rating
+    </span>
+    {% with avg_tqa_rating=request.user.get_average_techqa_feedback_tech %}
+      <span class="rating text-end {% if avg_tqa_rating < 2 %}text-danger{% elif avg_tqa_rating < 3 %}text-warning{% elif avg_tqa_rating < 4 %}text-primary{% elif avg_tqa_rating >= 4 %}text-success{% endif %}" 
+        data-bs-toggle="tooltip" data-bs-placement="bottom" 
+        title="{% if avg_tqa_rating > 0 %}{{ avg_tqa_rating }}{% else %}No Data{% endif %}" >
+      {% include 'partials/feedback_stars.html' with feedback=avg_tqa_rating %}
+    {% endwith %}
     </span>
   </h4>
 </div>
@@ -12,8 +17,6 @@
   <div id="echarts-avg-tech-feedback" style="min-height:110px;width:100%;"></div>
 </div>
 
-
-{% block footer_javascript_page %}
 <script>
   const { getColor, rgbaColor, getData } = window.phoenix.utils;
   var chartDom = document.getElementById('echarts-avg-tech-feedback');
@@ -99,4 +102,3 @@
   options && chart.setOption(options);
 
 </script>
-{% endblock footer_javascript_page %}

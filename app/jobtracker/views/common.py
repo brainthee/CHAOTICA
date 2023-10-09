@@ -1,26 +1,14 @@
 from django.shortcuts import get_object_or_404, redirect
-from django.http import HttpResponse,HttpResponseRedirect, HttpResponseBadRequest, JsonResponse, HttpResponseForbidden, HttpResponseNotFound
-from django.template import loader, Template as tmpl, Context
-from guardian.decorators import permission_required_or_403
-from guardian.core import ObjectPermissionChecker
-from guardian.mixins import PermissionListMixin, PermissionRequiredMixin
-from django.views import View
-from django.views.generic.list import ListView
-from django.views.generic.detail import DetailView
-from django.views.generic.edit import CreateView, UpdateView, DeleteView
-from django.urls import reverse_lazy
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
+from django.template import loader
 from chaotica_utils.views import log_system_activity, ChaoticaBaseView, pageDefaults
 from chaotica_utils.utils import *
 from ..models import *
 from ..forms import *
 from ..tasks import *
 import logging
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.decorators import login_required, permission_required
-from django.contrib import messages 
-from django.apps import apps
-import json
-
+from django.contrib.auth.decorators import login_required
+import uuid
 
 logger = logging.getLogger(__name__)
 
@@ -45,11 +33,59 @@ def view_scheduler(request):
     context = {**context, **pageDefaults(request)}
     return HttpResponse(template.render(context, request))
 
+@login_required
+def reset_cal_feed(request):    
+    # Okay, lets go!    
+    data = dict()
+    if request.method == "POST":        
+        data['form_is_valid'] = False
+        # We need to check which button was pressed... accept or reject!
+        if request.POST.get('user_action') == "approve_action":
+            # Approve it!
+            request.user.schedule_feed_id = uuid.uuid4()
+            request.user.save()
+            data['form_is_valid'] = True
+            data['next'] = reverse('view_own_profile')        
+
+    context = {}
+    data['html_form'] = loader.render_to_string("modals/feed_reset.html",
+                                                context,
+                                                request=request)
+    return JsonResponse(data)
+
+
+@login_required
+def reset_cal_family_feed(request):    
+    # Okay, lets go!    
+    data = dict()
+    if request.method == "POST":        
+        data['form_is_valid'] = False
+        # We need to check which button was pressed... accept or reject!
+        if request.POST.get('user_action') == "approve_action":
+            # Approve it!
+            request.user.schedule_feed_family_id = uuid.uuid4()
+            request.user.save()
+            data['form_is_valid'] = True
+            data['next'] = reverse('view_own_profile')        
+
+    context = {}
+    data['html_form'] = loader.render_to_string("modals/feed_family_reset.html",
+                                                context,
+                                                request=request)
+    return JsonResponse(data)
 
 
 @login_required
 def view_stats(request):
     context = {}
     template = loader.get_template('stats.html')
+    context = {**context, **pageDefaults(request)}
+    return HttpResponse(template.render(context, request))
+
+
+@login_required
+def view_reports(request):
+    context = {}
+    template = loader.get_template('reports.html')
     context = {**context, **pageDefaults(request)}
     return HttpResponse(template.render(context, request))

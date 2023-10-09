@@ -5,7 +5,7 @@ from menu import Menu, MenuItem
 
 Menu.add_item("main", MenuItem("Jobs",
                                 reverse("job_list"),
-                                icon="swatchbook",
+                                icon="cubes",
                                 weight=1,
                                 ))
 
@@ -20,21 +20,11 @@ Menu.add_item("main", MenuItem("Clients",
                                 weight=3,
                                 ))
 
-rept_children = (
-    MenuItem("Statistics",
-            reverse("view_stats"),
-            icon="comment",
-             weight=10,),
-    MenuItem("Reports",
-            reverse("view_stats"),
-            icon="comment",
-             weight=10,),
-)
 
-Menu.add_item("main", MenuItem("Analysis",
-                               reverse("job_list"),
+Menu.add_item("main", MenuItem("Reporting",
+                               reverse("view_reports"),
                                weight=4,
-                               children=rept_children))
+                               icon="file-lines"))
 
 ops_children = (
     MenuItem("Skills",
@@ -50,7 +40,7 @@ ops_children = (
                 ),
     MenuItem("Manage Leave",
                 reverse("manage_leave"),
-                icon="laptop-code",
+                icon="person-walking-arrow-right",
                 weight=1,
                 ),
     MenuItem("Organisational Units",
@@ -62,6 +52,7 @@ ops_children = (
 Menu.add_item("main", MenuItem("Operations",
                                reverse("job_list"),
                                weight=10,
+                               icon="gears",
                                children=ops_children))
 
 
