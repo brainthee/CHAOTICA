@@ -339,7 +339,6 @@ def JobUpdateWorkflow(request, slug, newState):
     elif newState == JobStatuses.SCOPING:
         if job.can_to_scoping(request):
             if request.method == 'POST':
-
                 if not job.scoped_by.all():
                     if request.user.has_perm('scope_job'):
                         # No one is defined to scope and we have permission - auto add!

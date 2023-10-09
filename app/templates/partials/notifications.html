@@ -33,7 +33,7 @@
               <button class="btn fs--2 btn-sm dropdown-toggle dropdown-caret-none transition-none notification-dropdown-toggle" type="button" data-bs-toggle="dropdown" data-boundary="window" aria-haspopup="true" aria-expanded="false" data-bs-reference="parent"><span class="fas fa-ellipsis-h fs--2 text-900"></span></button>
               <div class="dropdown-menu dropdown-menu-end py-2">
                 <button class="dropdown-item notification_read" data-url="{% url 'notification_mark_read' notification.pk %}">
-                  Mark as unread
+                  Mark as read
                 </button>
                 {% if notification.link %}
                 <a class="dropdown-item" href="{{ notification.link }}">Go to action</a>

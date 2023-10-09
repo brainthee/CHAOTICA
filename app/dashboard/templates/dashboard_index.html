@@ -32,7 +32,7 @@
 
       <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center" 
         id="jobTab" data-bs-toggle="tab" data-bs-target="#jobTabContent" role="tab" aria-controls="jobTabContent" aria-selected="false">
-        <span class="fa fa-work_history me-sm-2 fs-1"></span>
+        <span class="fa fa-cubes me-sm-2 fs-1"></span>
         <span class="d-none d-sm-inline">My Jobs</span>
         {% if myJobs|length %}
         <span class="badge bg-primary-500 ms-2">{{ myJobs|length }}</span>
@@ -41,33 +41,35 @@
 
       <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center" 
         id="phasesTab" data-bs-toggle="tab" data-bs-target="#phasesTabContent" role="tab" aria-controls="phasesTabContent" aria-selected="false">
-        <span class="fa fa-work_history me-sm-2 fs-1"></span>
+        <span class="fa fa-cube me-sm-2 fs-1"></span>
         <span class="d-none d-sm-inline">My Phases</span>
         {% if myPhases|length %}
         <span class="badge bg-primary-500 ms-2">{{ myPhases|length }}</span>
         {% endif %}
       </a>
 
+      {% if request.user.can_scope %}
       <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center" 
         id="pendingScopeTab" data-bs-toggle="tab" data-bs-target="#pendingScopeTabContent" role="tab" aria-controls="pendingScopeTabContent" aria-selected="false">
-        <span class="fa fa-work_history me-sm-2 fs-1"></span>
+        <span class="fa fa-microscope me-sm-2 fs-1"></span>
         <span class="d-none d-sm-inline">Pending Scoping</span>
         {% if pendingScoping|length %}
         <span class="badge bg-primary-500 ms-2">{{ pendingScoping|length }}</span>
         {% endif %}
-      </a>              
+      </a>
+      {% endif %}
 
+      {% if request.user.can_signoff_scope %}
       <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center" 
         id="pendingSignoffTab" data-bs-toggle="tab" data-bs-target="#pendingSignoffTabContent" role="tab" aria-controls="pendingSignoffTabContent" aria-selected="false">
-        <span class="fa fa-work_history me-sm-2 fs-1"></span>
+        <span class="fa fa-signature me-sm-2 fs-1"></span>
         <span class="d-none d-sm-inline">Pending Signoff</span>
         {% if scopesToSignoff|length %}
         <span class="badge bg-primary-500 ms-2">{{ scopesToSignoff|length }}</span>
         {% endif %}
-      </a>              
+      </a>          
+      {% endif %}    
            
-
-
       {% if request.user.is_people_manager %}
       <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center" 
         id="teamTab" data-bs-toggle="tab" data-bs-target="#teamTabContent" role="tab" aria-controls="teamTabContent" aria-selected="false">
@@ -84,12 +86,11 @@
     
   </div>
 
-  <div class="col-sm-10">
-    <div class="tab-content py-3 ps-sm-4 h-100">
+  <div class="col-sm-10 ">
+    <div class="tab-content p-3 h-100">
 
       <div class="tab-pane fade active show" id="scheduleTabContent" role="tabpanel" aria-labelledby="#scheduleTab">
-        <h4 class="mb-3 d-sm-none">Schedule</h4>
-        
+        <h4 class="mb-3 d-sm-none">Schedule</h4>        
         <div class="card card-calendar">
           <div class="card-body p-3">
               <div class="calendar" data-bs-toggle="calendar" id="calendar"></div>                
@@ -98,8 +99,7 @@
       </div>
 
       <div class="tab-pane fade h-100" id="jobTabContent" role="tabpanel" aria-labelledby="jobTab">
-        <h4 class="mb-3 d-sm-none">My Jobs</h4>
-        
+        <h4 class="mb-3 d-sm-none">My Jobs</h4>        
         <div class="card card-calendar">
           <div class="p-3 bg-white border-top border-bottom border-200">
           {% include 'partials/job/job_list_table.html' with job_list=myJobs %}
@@ -108,8 +108,7 @@
       </div>
 
       <div class="tab-pane fade h-100" id="phasesTabContent" role="tabpanel" aria-labelledby="phasesTab">
-        <h4 class="mb-3 d-sm-none">My Phases</h4>
-        
+        <h4 class="mb-3 d-sm-none">My Phases</h4>        
         <div class="card card-calendar">
           <div class="p-3 bg-white border-top border-bottom border-200">
           {% include 'partials/phase/phase_list_table.html' with phases=myPhases %}
@@ -117,42 +116,43 @@
         </div>
       </div>
 
+      {% if request.user.can_scope %}
       <div class="tab-pane fade h-100" id="pendingScopeTabContent" role="tabpanel" aria-labelledby="pendingScopeTab">
-        <h4 class="mb-3 d-sm-none">Jobs Pending Scoping</h4>
-        
+        <h4 class="mb-3 d-sm-none">Jobs Pending Scoping</h4>        
         <div class="card card-calendar">
           <div class="p-3 bg-white border-top border-bottom border-200">
           {% include 'partials/job/job_list_table.html' with job_list=pendingScoping %}
           </div>
         </div>
       </div>
+      {% endif %}
 
+      {% if request.user.can_signoff_scope %}
       <div class="tab-pane fade h-100" id="pendingSignoffTabContent" role="tabpanel" aria-labelledby="pendingSignoffTab">
-        <h4 class="mb-3 d-sm-none">Jobs Pending Signoff</h4>
-        
+        <h4 class="mb-3 d-sm-none">Jobs Pending Signoff</h4>        
         <div class="card card-calendar">
           <div class="p-3 bg-white border-top border-bottom border-200">
           {% include 'partials/job/job_list_table.html' with job_list=scopesToSignoff %}
           </div>
         </div>
       </div>
+      {% endif %}
 
       {% if request.user.is_people_manager %}
       <div class="tab-pane fade h-100" id="teamTabContent" role="tabpanel" aria-labelledby="teamTab">
-        <h4 class="mb-3 d-sm-none">My Team</h4>
-        
+        <h4 class="mb-3 d-sm-none">My Team</h4>        
         <div class="card card-calendar">
           <div class="card-body p-3">
-                       Team
+            Team
           </div>
         </div>
       </div>
+
       <div class="tab-pane fade h-100" id="leaveTabContent" role="tabpanel" aria-labelledby="leaveTab">
-        <h4 class="mb-3 d-sm-none">Team Leave Requests</h4>
-        
+        <h4 class="mb-3 d-sm-none">Team Leave Requests</h4>        
         <div class="card card-calendar">
           <div class="card-body p-3">
-                       Team
+            Team
           </div>
         </div>
       </div>

@@ -93,7 +93,7 @@
                   <li class="nav-item">
                     <a class="nav-link px-3" href="{{ item.url }}">
                       {% if item.icon %}
-                      <span class="me-2 text-900" data-feather="{{ item.icon }}"></span>
+                      <span class="{% if item.icon_prefix %}{{ item.icon_prefix }}{% else %}fas fa-{% endif %}{{ item.icon }} fs-0 me-2 "></span>
                       {% endif %}
                       <span>{{ item.title }}</span>
                     </a>
@@ -135,7 +135,9 @@
               <li>
                 <a class="dropdown-item {% if childItem.selected %}active{% endif %}" href="{{ childItem.url }}">
                   <div class="dropdown-item-wrapper">
-                    {% if childItem.icon %}<span class="{% if childItem.icon_prefix %}{{ childItem.icon_prefix }}{% else %}fas fa-{% endif %}{{ childItem.icon }} fs-0 me-2 "></span>{% endif %}
+                    {% if childItem.icon %}
+                    <span class="{% if childItem.icon_prefix %}{{ childItem.icon_prefix }}{% else %}fas fa-{% endif %}{{ childItem.icon }} fs-0 me-2 "></span>
+                    {% endif %}
                     {{ childItem.title }}
                   </div>
                 </a>

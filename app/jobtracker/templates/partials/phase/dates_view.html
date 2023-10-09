@@ -1,0 +1,108 @@
+{% load menu %}{% load static %}{% load crispy_forms_tags %}{% load index %}{% load humanize %}
+
+<div class="card">
+    <div class="card-body pb-0">
+        <table class="table">
+            <thead>
+              <tr>
+                <th scope="col"></th>
+                <th scope="col">Expected</th>
+                <th scope="col">Actual</th>
+                <th scope="col"></th>
+              </tr>
+            </thead>
+            <tbody>
+                <tr>
+                  <th scope="row">
+                      Pre-checks Completed
+                  </th>
+                  <td>
+                      
+                  </td>
+                  <td>
+                    {{ phase.pre_checks_done_date }}
+                  </td>
+                  <td>
+  
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row">
+                      Started
+                  </th>
+                  <td>
+                    {{ phase.start_date }}
+                  </td>
+                  <td>
+                    {{ phase.actual_start_date }}
+                  </td>
+                  <td>
+  
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row">
+                      Sent to Technical QA
+                  </th>
+                  <td>
+                    {{ phase.due_to_techqa }}
+                  </td>
+                  <td>
+                    {{ phase.actual_sent_to_tqa_date }}
+                  </td>
+                  <td>
+                    {% if phase.is_tqa_late %}
+                    <span class="badge badge-phoenix badge-phoenix-warning ">Late</span>
+                    {% endif %}      
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row">
+                      Sent to Presentation QA
+                  </th>
+                  <td>
+                    {{ phase.due_to_presqa }}
+                  </td>
+                  <td>
+                    {{ phase.actual_sent_to_pqa_date }}
+                  </td>
+                  <td>
+                    {% if phase.is_pqa_late %}
+                    <span class="badge badge-phoenix badge-phoenix-warning ">Late</span>
+                    {% endif %}  
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row">
+                      Completed
+                  </th>
+                  <td>
+
+                  </td>
+                  <td>
+                    {{ phase.actual_completed_date }}
+                  </td>
+                  <td>
+  
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row">
+                      Delivered
+                  </th>
+                  <td>
+                    {{ phase.delivery_date }}
+                  </td>
+                  <td>
+                    {{ phase.actual_delivery_date }}
+                  </td>
+                  <td>
+                    {% if phase.is_delivery_late %}
+                    <span class="badge badge-phoenix badge-phoenix-warning ">Late</span>
+                    {% endif %}    
+                  </td>
+                </tr>
+            </tbody>
+          </table>
+    </div>
+</div>

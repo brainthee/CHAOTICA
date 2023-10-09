@@ -233,7 +233,7 @@ def phase_edit_delivery(request, jobSlug, slug):
         if form.is_valid():
             form.save()
             data['form_is_valid'] = True
-            return redirect('phase_detail', jobSlug, slug)    
+            return redirect('phase_detail', jobSlug, slug)
         else:
             data['form_is_valid'] = False
     else:
@@ -451,9 +451,22 @@ def PhaseUpdateWorkflow(request, jobSlug, slug, newState):
                 phase.to_in_progress()
         else:
             canProceed = False
+    elif newState == PhaseStatuses.PENDING_TQA:
+        if phase.can_to_pending_tech_qa(request):
+            if request.method == 'POST':
+                phase.to_pending_tech_qa()
+        else:
+            canProceed = False
     elif newState == PhaseStatuses.QA_TECH:
         if phase.can_to_tech_qa(request):
             if request.method == 'POST':
+                if request.user is not phase.techqa_by:
+                    if request.user.has_perm('can_tqa_jobs', phase.job.unit):
+                        # We're not the TQA'er but we can... lets overwrite...
+                        phase.techqa_by = request.user
+                        phase.save()
+                    else:
+                        return HttpResponseBadRequest()
                 phase.to_tech_qa()
         else:
             canProceed = False
@@ -463,9 +476,22 @@ def PhaseUpdateWorkflow(request, jobSlug, slug, newState):
                 phase.to_tech_qa_updates()
         else:
             canProceed = False
+    elif newState == PhaseStatuses.PENDING_PQA:
+        if phase.can_to_pending_pres_qa(request):
+            if request.method == 'POST':
+                phase.to_pending_pres_qa()
+        else:
+            canProceed = False
     elif newState == PhaseStatuses.QA_PRES:
         if phase.can_to_pres_qa(request):
             if request.method == 'POST':
+                if request.user is not phase.presqa_by:
+                    if request.user.has_perm('can_pqa_jobs', phase.job.unit):
+                        # We're not the TQA'er but we can... lets overwrite...
+                        phase.presqa_by = request.user
+                        phase.save()
+                    else:
+                        return HttpResponseBadRequest()
                 phase.to_pres_qa()
         else:
             canProceed = False

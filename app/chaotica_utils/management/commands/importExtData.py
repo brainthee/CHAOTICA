@@ -180,7 +180,7 @@ class Command(BaseCommand):
                     jobDb = Job.objects.create(
                         title=title,
                         external_id=id, client=clientDb,
-                        start_date_set=startD, delivery_date_set=endD,
+                        desired_start_date=startD, desired_delivery_date=endD,
                         unit=unitDb, account_manager=amDb,
                         created_by=amDb, primary_client_poc=pocDb,
                     )

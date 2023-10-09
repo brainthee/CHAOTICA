@@ -15,6 +15,9 @@ from django.urls import reverse
 from django.contrib.auth import get_user_model
 from simple_history.models import HistoricalRecords
 import django.contrib.auth
+from guardian.shortcuts import get_objects_for_user
+import inspect
+
 from decimal import *
 from django.utils import timezone
 from datetime import timedelta, time, date
@@ -113,6 +116,7 @@ class User(AbstractUser):
     show_help = models.BooleanField(verbose_name="Show Tips", help_text="Should help be shown", default=True)
     site_theme = models.CharField(verbose_name="Site Theme", max_length=20, default="light")
     schedule_feed_id = models.UUIDField(verbose_name="Calendar Feed Key", default=uuid.uuid4)
+    schedule_feed_family_id = models.UUIDField(verbose_name="Calendar Feed Family Key", default=uuid.uuid4)
     groups = models.ManyToManyField(Group, verbose_name='groups',
             blank=True, help_text='The groups this user belongs to. A user will '
                                     'get all permissions granted to each of '
@@ -126,6 +130,14 @@ class User(AbstractUser):
     
     class Meta:
         ordering = ['last_name']
+
+    def can_scope(self):
+        from jobtracker.models.orgunit import OrganisationalUnit
+        return get_objects_for_user(self, "can_scope_jobs", OrganisationalUnit)
+    
+    def can_signoff_scope(self):
+        from jobtracker.models.orgunit import OrganisationalUnit
+        return get_objects_for_user(self, "can_signoff_scopes", OrganisationalUnit)
 
     def _get_last_leave_renewal_date(self):
         today = timezone.now().date()
@@ -229,47 +241,66 @@ class User(AbstractUser):
             return '{} {}'.format(self.first_name, self.last_name)
         else:
             return '{}'.format(self.username)
-
-    def get_average_techqa_feedback_tech(self, fromRange=None, toRange=None):
-        myReports = self.phase_where_report_author.all()
-        totalReports = 0
-        totalScore = 0
-        if not toRange:
-            # Set to today
-            toRange = timezone.now().today().date()
-        if not fromRange:
-            # Set to previous 12m
-            fromRange = toRange - relativedelta(months=12)
+        
+    def get_average_qa_rating(self, qaField, 
+                            fromRange=timezone.now() - relativedelta(months=12), 
+                            toRange=timezone.now()):
+        myReports = self.phase_where_report_author.filter(
+            actual_completed_date__gte=fromRange, actual_completed_date__lte=toRange)
+        total_reports = myReports.count()
+        combined_score = 0
+        total_score = 0
+        
         for report in myReports:
             # check we've got rating!
-            if report.techqa_report_rating and report.presqa_report_rating:
-                # Check if in range
-                if report.delivery_date:
-                    if report.delivery_date > fromRange or fromRange == None:
-                        if report.delivery_date < toRange or toRange == None:
-                            # Include it!
-                            totalReports += 1
-                            totalScore = totalScore + report.techqa_report_rating
-        if totalReports > 0:
-            return totalScore / totalReports
-        else:
-            return 0
+            if getattr(report, qaField):
+                combined_score = combined_score + int(getattr(report, qaField))
+
+        if total_reports > 0:
+            total_score = combined_score / total_reports
         
-    def get_average_techqa_feedback_tech_12mo(self):
+        return total_score
+
+    def get_average_techqa_feedback_tech(self, 
+                                         fromRange=timezone.now() - relativedelta(months=12), 
+                                         toRange=timezone.now()):
+        return self.get_average_qa_rating("techqa_report_rating", fromRange, toRange)
+        
+
+    def get_average_presqa_feedback_tech(self, 
+                                         fromRange=timezone.now() - relativedelta(months=12), 
+                                         toRange=timezone.now()):
+        return self.get_average_qa_rating("presqa_report_rating", fromRange, toRange)
+    
+        
+    def get_average_qa_rating_12mo(self, qaField):
+        from chaotica_utils.utils import last_day_of_month
         # Get the last 12 months of tech feedback
         months = []
         data = []
-        today = timezone.now().today()
-        for i in range(12,0, -1):
+        today = timezone.now()
+        for i in range(12,-1, -1):
             month = today-relativedelta(months=i)
-            month = month+relativedelta(day=1)
-            months.append(str(month.date()))
-            data.append(random.randint(0,5))
+            startMonth = month+relativedelta(day=1)
+            endMonth = last_day_of_month(startMonth)
+            avg = self.get_average_qa_rating(qaField, fromRange=startMonth, toRange=endMonth)
+            months.append(str(startMonth.date()))
+            data.append(avg)
 
-        return {
+        data = {
             'months': months,
             'data': data,
         }
+        return data
+    
+        
+    def get_average_techqa_feedback_tech_12mo(self):
+        return self.get_average_qa_rating_12mo("techqa_report_rating")
+    
+        
+    def get_average_presqa_feedback_tech_12mo(self):
+        return self.get_average_qa_rating_12mo("presqa_report_rating")
+    
     
     def get_absolute_url(self):
         if self.email:
@@ -365,13 +396,27 @@ class LeaveRequest(models.Model):
     class Meta:
         verbose_name = 'Leave Request'
         ordering = ['start_date']
+    
+    def overlaps_work(self):
+        from jobtracker.models.timeslot import TimeSlot
+        return TimeSlot.objects.filter(user=self.user, slotType=TimeSlotType.DELIVERY,
+            start__lte=self.end_date,
+            end__gte=self.start_date).exists()
+    
+    def overlaps_confirmed_work(self):
+        from jobtracker.models.timeslot import TimeSlot
+        from jobtracker.enums import PhaseStatuses
+        return TimeSlot.objects.filter(user=self.user, slotType=TimeSlotType.DELIVERY,
+            phase__status__gte=PhaseStatuses.SCHEDULED_CONFIRMED, 
+            start__lte=self.end_date,
+            end__gte=self.start_date).exists()
 
     def requested_late(self):
         return self.start_date < (self.requested_on + timedelta(days=settings.LEAVE_DAYS_NOTICE))
     
     def affected_days(self):
-        startbday = time(9,0,0)
-        endbday = time(16,30,0) # 5:30pm - 1hr for lunch! :) 
+        # startbday = time(9,0,0)
+        # endbday = time(16,30,0) # 5:30pm - 1hr for lunch! :) 
         unit='day'
         days = businessDuration(self.start_date, self.end_date, unit=unit)
         return round(days, 2)

@@ -80,20 +80,22 @@ class Phase(models.Model):
     # Key Users
     report_author = models.ForeignKey(settings.AUTH_USER_MODEL,
         related_name='phase_where_report_author', null=True, blank=True,
-        limit_choices_to=models.Q(is_staff=True), on_delete=models.PROTECT,
+         on_delete=models.PROTECT,
     )
     project_lead = models.ForeignKey(settings.AUTH_USER_MODEL,
         related_name='phase_where_project_lead', null=True, blank=True,
-        limit_choices_to=models.Q(is_staff=True), on_delete=models.PROTECT,
+         on_delete=models.PROTECT,
     )
     techqa_by = models.ForeignKey(settings.AUTH_USER_MODEL,
         related_name='techqaed_phases', verbose_name='Tech QA by',
-        limit_choices_to=models.Q(is_staff=True), null=True, blank=True, on_delete=models.PROTECT,
+         null=True, blank=True, on_delete=models.PROTECT,
     )
     presqa_by = models.ForeignKey(settings.AUTH_USER_MODEL,
         related_name='presqaed_phases', verbose_name='Pres QA by',
-        limit_choices_to=models.Q(is_staff=True), null=True, blank=True, on_delete=models.PROTECT,
+         null=True, blank=True, on_delete=models.PROTECT,
     )
+    required_tqa_updates = models.BooleanField('Required TQA Updates', default=False)
+    required_pqa_updates = models.BooleanField('Required PQA Updates', default=False)
 
     # Logistics
     is_testing_onsite = models.BooleanField('Testing Onsite', default=False)
@@ -110,12 +112,23 @@ class Phase(models.Model):
     linkTechData = models.URLField(max_length=2000, default="", null=True, blank=True, verbose_name="Link to Technical Data")
     linkReportData = models.URLField(max_length=2000, default="", null=True, blank=True, verbose_name="Link to Report Data")
 
-    # dates
-    start_date_set = models.DateField('Start Date', null=True, blank=True, help_text="If left blank, this will be automatically determined from scheduled slots")
-    delivery_date_set = models.DateField('Delivery date', null=True, blank=True, db_index=True, help_text="If left blank, this will be automatically determined from scheduled slots")
-    
+    # Desirable dates
+    desired_start_date = models.DateField('Start Date', null=True, blank=True, help_text="If left blank, this will be automatically determined from scheduled slots")
+    desired_delivery_date = models.DateField('Delivery date', null=True, blank=True, db_index=True, help_text="If left blank, this will be automatically determined from scheduled slots")
+
     due_to_techqa_set = models.DateField('Due to Tech QA', null=True, blank=True, help_text="If left blank, this will be automatically determined from the end of last day of reporting")
     due_to_presqa_set = models.DateField('Due to Pres QA', null=True, blank=True, help_text="If left blank, this will be automatically determined from the end of last day of reporting plus QA days")
+
+    # Status Change Dates
+    actual_start_date = models.DateTimeField('Actual start date', null=True, blank=True, db_index=True)
+    actual_sent_to_tqa_date = models.DateTimeField('Actual sent to TQA date', null=True, blank=True, db_index=True)
+    actual_sent_to_pqa_date = models.DateTimeField('Actual sent to PQA date', null=True, blank=True, db_index=True)
+    actual_completed_date = models.DateTimeField('Actual completed date', null=True, blank=True, db_index=True)
+    actual_delivery_date = models.DateTimeField('Actual delivered date', null=True, blank=True, db_index=True)
+    
+    cancellation_date = models.DateTimeField(null=True, blank=True)
+    pre_checks_done_date = models.DateTimeField(null=True, blank=True)
+    status_changed_date = MonitorField(monitor='status')
 
     def earliest_date(self):
         if self.start_date:
@@ -136,8 +149,8 @@ class Phase(models.Model):
 
     @property
     def start_date(self):
-        if self.start_date_set:
-            return self.start_date_set
+        if self.desired_start_date:
+            return self.desired_start_date
         else:
             # Calculate start from first delivery slot
             if self.timeslots.filter(deliveryRole=TimeSlotDeliveryRole.DELIVERY).exists():
@@ -153,7 +166,7 @@ class Phase(models.Model):
         else:
             # Calculate start from last delivery slot
             if self.timeslots.filter(Q(deliveryRole=TimeSlotDeliveryRole.REPORTING)|Q(deliveryRole=TimeSlotDeliveryRole.DELIVERY)).exists():
-                return self.timeslots.filter(Q(deliveryRole=TimeSlotDeliveryRole.REPORTING)|Q(deliveryRole=TimeSlotDeliveryRole.DELIVERY)).order_by('end').first().end.date()
+                return self.timeslots.filter(Q(deliveryRole=TimeSlotDeliveryRole.REPORTING)|Q(deliveryRole=TimeSlotDeliveryRole.DELIVERY)).order_by('end').first().end
             else:
                 # No slots - return None
                 return None
@@ -165,58 +178,70 @@ class Phase(models.Model):
         else:
             # Calculate start from last delivery slot
             if self.timeslots.filter(Q(deliveryRole=TimeSlotDeliveryRole.REPORTING)|Q(deliveryRole=TimeSlotDeliveryRole.DELIVERY)).exists():
-                return self.timeslots.filter(Q(deliveryRole=TimeSlotDeliveryRole.REPORTING)|Q(deliveryRole=TimeSlotDeliveryRole.DELIVERY)).order_by('end').first().end.date() + timedelta(days=5)
+                return self.timeslots.filter(Q(deliveryRole=TimeSlotDeliveryRole.REPORTING)|Q(deliveryRole=TimeSlotDeliveryRole.DELIVERY)).order_by('end').first().end + timedelta(days=5)
             else:
                 # No slots - return None
                 return None
             
     @property
     def delivery_date(self):
-        if self.delivery_date_set:
-            return self.delivery_date_set
+        if self.desired_delivery_date:
+            return self.desired_delivery_date
         else:
             # Calculate start from first delivery slot
             if self.timeslots.filter(Q(deliveryRole=TimeSlotDeliveryRole.REPORTING)|Q(deliveryRole=TimeSlotDeliveryRole.DELIVERY)).exists():
-                return self.timeslots.filter(Q(deliveryRole=TimeSlotDeliveryRole.REPORTING)|Q(deliveryRole=TimeSlotDeliveryRole.DELIVERY)).order_by('end').first().end.date() + timedelta(weeks=1)
+                return self.timeslots.filter(Q(deliveryRole=TimeSlotDeliveryRole.REPORTING)|Q(deliveryRole=TimeSlotDeliveryRole.DELIVERY)).order_by('end').first().end + timedelta(weeks=1)
             else:
                 # No slots - return None
                 return None
     
     @property
     def is_delivery_late(self):
-        if self.status < PhaseStatuses.DELIVERED:
-            if self.number_of_reports > 0:
-                if self.due_to_techqa:
-                    if self.due_to_techqa < timezone.now().date():
-                        return True
+        # This relies on delivery_date being valid (which needs it manually set or a timeslot...)
+        if self.delivery_date:
+            # Two ways to be late - it's not delivered yet and it should have been...
+            if self.status < PhaseStatuses.DELIVERED:
+                if self.delivery_date < timezone.now():
+                    return True
+                        
+            # Or it was delivered but beyond the actual time and we still want to mark it as late
+            if self.actual_delivery_date and self.delivery_date < self.actual_delivery_date:
+                return True
         return False
     
     @property
     def is_tqa_late(self):
-        if self.status < PhaseStatuses.QA_TECH:
+        # This relies on due_to_techqa being valid (which needs it manually set or a timeslot...)
+        if self.due_to_techqa:
+            # Two ways to be late - it's not in tqa yet and it should have been...
             if self.number_of_reports > 0:
-                if self.due_to_techqa:
-                    if self.due_to_techqa < timezone.now().date():
+                if self.status < PhaseStatuses.QA_TECH:
+                    if self.due_to_techqa < timezone.now():
                         return True
+                        
+                # Or it was delivered but beyond the actual time and we still want to mark it as late
+                if self.actual_sent_to_tqa_date and self.due_to_techqa < self.actual_sent_to_tqa_date:
+                    return True
         return False
     
     @property
     def is_pqa_late(self):
-        if self.status < PhaseStatuses.QA_PRES:
+        # This relies on due_to_presqa being valid (which needs it manually set or a timeslot...)
+        if self.due_to_presqa:
+            # Two ways to be late - it's not in tqa yet and it should have been...
             if self.number_of_reports > 0:
-                if self.due_to_presqa:
-                    if self.due_to_presqa < timezone.now().date():
+                if self.status < PhaseStatuses.QA_PRES:
+                    if self.due_to_presqa < timezone.now():
                         return True
+                        
+                # Or it was delivered but beyond the actual time and we still want to mark it as late
+                if self.actual_sent_to_pqa_date and self.due_to_presqa < self.actual_sent_to_pqa_date:
+                    return True
         return False
-
-    # Status change dates
-    cancellation_date = models.DateTimeField(null=True, blank=True)
-    pre_consultancy_checks_date = models.DateTimeField(null=True, blank=True)
-    status_changed_date = MonitorField(monitor='status')
 
     # rating and feedback
     feedback_scope_correct = models.BooleanField('Was scope correct?', choices=BOOL_CHOICES,
-                                                     default=None, null=True, blank=False)
+                                                     default=None, null=True, blank=True)
     techqa_report_rating = models.IntegerField('Report rating by person doing tech QA', choices=TechQARatings.CHOICES,
                                                null=True, blank=True)
     presqa_report_rating = models.IntegerField('PresQA report rating', choices=PresQARatings.CHOICES, null=True,
@@ -343,7 +368,7 @@ class Phase(models.Model):
                 "emails/phase/IN_PROGRESS.html", phase=self)
             task_send_notifications.delay(notice, users_to_notify)
         
-        elif targetStatus == PhaseStatuses.QA_TECH:        
+        elif targetStatus == PhaseStatuses.PENDING_TQA:        
             # Notify qa team
             if not self.techqa_by:
                 users_to_notify = self.job.unit.get_active_members_with_perm("can_tqa_jobs")
@@ -354,6 +379,9 @@ class Phase(models.Model):
                 "Phase Update - Ready for Tech QA", "The phase is ready for Technical QA", 
                 "emails/phase/QA_TECH.html", phase=self)
             task_send_notifications.delay(notice, users_to_notify)
+
+        elif targetStatus == PhaseStatuses.QA_TECH:
+            pass
         
         elif targetStatus == PhaseStatuses.QA_TECH_AUTHOR_UPDATES:        
             users_to_notify = User.objects.filter(pk=self.report_author.pk)
@@ -363,7 +391,7 @@ class Phase(models.Model):
                 "emails/phase/QA_TECH_AUTHOR_UPDATES.html", phase=self)
             task_send_notifications.delay(notice, users_to_notify)
         
-        elif targetStatus == PhaseStatuses.QA_PRES:        
+        elif targetStatus == PhaseStatuses.PENDING_PQA:        
             # Notify qa team
             if not self.presqa_by:
                 users_to_notify = self.job.unit.get_active_members_with_perm("can_pqa_jobs")
@@ -374,6 +402,9 @@ class Phase(models.Model):
                 "Phase Update - Ready for Pres QA", "The phase is ready for Presentation QA", 
                 "emails/phase/QA_PRES.html", phase=self)
             task_send_notifications.delay(notice, users_to_notify)
+
+        elif targetStatus == PhaseStatuses.QA_PRES:
+            pass
         
         elif targetStatus == PhaseStatuses.QA_PRES_AUTHOR_UPDATES:        
             users_to_notify = User.objects.filter(pk=self.report_author.pk)
@@ -698,7 +729,7 @@ class Phase(models.Model):
         target=PhaseStatuses.READY_TO_BEGIN)
     def to_ready(self):
         log_system_activity(self, "Moved to "+PhaseStatuses.CHOICES[PhaseStatuses.READY_TO_BEGIN][1])
-        self.pre_consultancy_checks_date = timezone.now()
+        self.pre_checks_done_date = timezone.now()
         self.fire_status_notification(PhaseStatuses.READY_TO_BEGIN)
 
     def can_proceed_to_ready(self):
@@ -721,6 +752,7 @@ class Phase(models.Model):
         target=PhaseStatuses.IN_PROGRESS)
     def to_in_progress(self):
         log_system_activity(self, "Moved to "+PhaseStatuses.CHOICES[PhaseStatuses.IN_PROGRESS][1])
+        self.actual_start_date = timezone.now()
         # lets make sure our parent job is in progress now!
         if self.job.status == JobStatuses.PENDING_START:
             if self.job.can_to_in_progress():
@@ -743,18 +775,18 @@ class Phase(models.Model):
             _canProceed = False
         return _canProceed
 
-    # QA_TECH
-    @transition(field=status, source=[PhaseStatuses.IN_PROGRESS,
-        PhaseStatuses.QA_TECH_AUTHOR_UPDATES,],
-        target=PhaseStatuses.QA_TECH)
-    def to_tech_qa(self):
-        log_system_activity(self, "Moved to "+PhaseStatuses.CHOICES[PhaseStatuses.QA_TECH][1])
-        self.fire_status_notification(PhaseStatuses.QA_TECH)
+    # PENDING_TQA
+    @transition(field=status, source=[PhaseStatuses.IN_PROGRESS, PhaseStatuses.QA_TECH_AUTHOR_UPDATES],
+        target=PhaseStatuses.PENDING_TQA)
+    def to_pending_tech_qa(self):
+        log_system_activity(self, "Moved to "+PhaseStatuses.CHOICES[PhaseStatuses.PENDING_TQA][1])
+        self.actual_sent_to_tqa_date = timezone.now()
+        self.fire_status_notification(PhaseStatuses.PENDING_TQA)
 
-    def can_proceed_to_tech_qa(self):
-        return can_proceed(self.to_tech_qa)
+    def can_proceed_to_pending_tech_qa(self):
+        return can_proceed(self.to_pending_tech_qa)
         
-    def can_to_tech_qa(self, notifyRequest=None):
+    def can_to_pending_tech_qa(self, notifyRequest=None):
         _canProceed = True
         # Do logic checks
         if self.feedback_scope_correct is None:
@@ -788,18 +820,46 @@ class Phase(models.Model):
             if not self.linkDeliverable:
                 if notifyRequest:
                     messages.add_message(notifyRequest, messages.INFO, "Missing deliverable link. Is this intentional?")
-                _canProceed = False
 
             if not self.linkTechData:
                 if notifyRequest:
                     messages.add_message(notifyRequest, messages.INFO, "Missing technical data link. Is this intentional?")
-                _canProceed = False
 
             if not self.linkReportData:
                 if notifyRequest:
                     messages.add_message(notifyRequest, messages.INFO, "Missing report data link. Is this intentional?")
-                _canProceed = False
 
+        # Do general check
+        can_proceed_result = can_proceed(self.to_pending_tech_qa)
+        if not can_proceed_result:
+            if notifyRequest:
+                messages.add_message(notifyRequest, messages.ERROR, "Invalid state or permissions.")
+            _canProceed = False
+        return _canProceed
+    
+
+    # QA_TECH
+    @transition(field=status, source=[PhaseStatuses.PENDING_TQA,],
+        target=PhaseStatuses.QA_TECH)
+    def to_tech_qa(self):
+        log_system_activity(self, "Moved to "+PhaseStatuses.CHOICES[PhaseStatuses.QA_TECH][1])
+        self.fire_status_notification(PhaseStatuses.QA_TECH)
+
+    def can_proceed_to_tech_qa(self):
+        return can_proceed(self.to_tech_qa)
+        
+    def can_to_tech_qa(self, notifyRequest=None):
+        _canProceed = True
+        # Do logic checks
+        if notifyRequest:
+            if self.techqa_by is None or notifyRequest.user.pk is not self.techqa_by.pk:
+                # Check if we have tqa perm...
+                if notifyRequest.user.has_perm('can_tqa_jobs', self.job.unit):
+                    # Can TQA jobs - don't block but tell them this will update it to them...
+                    messages.add_message(notifyRequest, messages.INFO, "You're not assigned to Tech QA this report. If you continue, it will be assigned to you.")
+                else:
+                    messages.add_message(notifyRequest, messages.ERROR, "You're not assigned to Tech QA this report.")
+                    _canProceed = False
 
         # Do general check
         can_proceed_result = can_proceed(self.to_tech_qa)
@@ -814,6 +874,7 @@ class Phase(models.Model):
         target=PhaseStatuses.QA_TECH_AUTHOR_UPDATES)
     def to_tech_qa_updates(self):
         log_system_activity(self, "Moved to "+PhaseStatuses.CHOICES[PhaseStatuses.QA_TECH_AUTHOR_UPDATES][1])
+        self.required_tqa_updates = True
         self.fire_status_notification(PhaseStatuses.QA_TECH_AUTHOR_UPDATES)
 
     def can_proceed_to_tech_qa_updates(self):
@@ -842,33 +903,20 @@ class Phase(models.Model):
             _canProceed = False
         return _canProceed
 
-    # QA_PRES
-    @transition(field=status, source=[PhaseStatuses.QA_TECH,
-        PhaseStatuses.QA_PRES_AUTHOR_UPDATES],
-        target=PhaseStatuses.QA_PRES)
-    def to_pres_qa(self):
-        log_system_activity(self, "Moved to "+PhaseStatuses.CHOICES[PhaseStatuses.QA_PRES][1])
-        self.fire_status_notification(PhaseStatuses.QA_PRES)
+    # PENDING_PQA
+    @transition(field=status, source=[PhaseStatuses.QA_TECH,PhaseStatuses.QA_PRES_AUTHOR_UPDATES],
+        target=PhaseStatuses.PENDING_PQA)
+    def to_pending_pres_qa(self):
+        log_system_activity(self, "Moved to "+PhaseStatuses.CHOICES[PhaseStatuses.PENDING_PQA][1])
+        self.actual_sent_to_pqa_date = timezone.now()
+        self.fire_status_notification(PhaseStatuses.PENDING_PQA)
 
-    def can_proceed_to_pres_qa(self):
-        return can_proceed(self.to_pres_qa)
+    def can_proceed_to_pending_pres_qa(self):
+        return can_proceed(self.to_pending_pres_qa)
         
-    def can_to_pres_qa(self, notifyRequest=None):
+    def can_to_pending_pres_qa(self, notifyRequest=None):
         _canProceed = True
-        # Do logic checks
-        if not self.techqa_by:
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "No one assigned to Tech QA.")
-            _canProceed = False
-        else:
-            # Check if we're the person...
-            if notifyRequest:
-                if notifyRequest.user != self.techqa_by:
-                    # We're not the person doing the TQA!
-                    messages.add_message(notifyRequest, messages.ERROR, "Not assigned to Tech QA.")
-                    _canProceed = False
-
-        
+        # Do logic checks        
         # Lets check feedback/ratings have been left!
         if not self.feedback_techqa():
             if notifyRequest:
@@ -880,6 +928,37 @@ class Phase(models.Model):
             if notifyRequest:
                 messages.add_message(notifyRequest, messages.ERROR, "No Tech QA rating has been left")
             _canProceed = False
+
+        # Do general check
+        can_proceed_result = can_proceed(self.to_pending_pres_qa)
+        if not can_proceed_result:
+            if notifyRequest:
+                messages.add_message(notifyRequest, messages.ERROR, "Invalid state or permissions.")
+            _canProceed = False
+        return _canProceed
+
+    # QA_PRES
+    @transition(field=status, source=[PhaseStatuses.PENDING_PQA,],
+        target=PhaseStatuses.QA_PRES)
+    def to_pres_qa(self):
+        log_system_activity(self, "Moved to "+PhaseStatuses.CHOICES[PhaseStatuses.QA_PRES][1])
+        self.fire_status_notification(PhaseStatuses.QA_PRES)
+
+    def can_proceed_to_pres_qa(self):
+        return can_proceed(self.to_pres_qa)
+        
+    def can_to_pres_qa(self, notifyRequest=None):
+        _canProceed = True
+        # Do logic checks
+        if notifyRequest:
+            if self.presqa_by is None or notifyRequest.user.pk is not self.presqa_by.pk:
+                # Check if we have tqa perm...
+                if notifyRequest.user.has_perm('can_pqa_jobs', self.job.unit):
+                    # Can TQA jobs - don't block but tell them this will update it to them...
+                    messages.add_message(notifyRequest, messages.INFO, "You're not assigned to Pres QA this report. If you continue, it will be assigned to you.")
+                else:
+                    messages.add_message(notifyRequest, messages.ERROR, "You're not assigned to Pres QA this report.")
+                    _canProceed = False
 
         # Do general check
         can_proceed_result = can_proceed(self.to_pres_qa)
@@ -894,6 +973,7 @@ class Phase(models.Model):
         target=PhaseStatuses.QA_PRES_AUTHOR_UPDATES)
     def to_pres_qa_updates(self):
         log_system_activity(self, "Moved to "+PhaseStatuses.CHOICES[PhaseStatuses.QA_PRES_AUTHOR_UPDATES][1])
+        self.required_pqa_updates = True
         self.fire_status_notification(PhaseStatuses.QA_PRES_AUTHOR_UPDATES)
 
     def can_proceed_to_pres_qa_updates(self):
@@ -928,6 +1008,7 @@ class Phase(models.Model):
         target=PhaseStatuses.COMPLETED)
     def to_completed(self):
         log_system_activity(self, "Moved to "+PhaseStatuses.CHOICES[PhaseStatuses.DELIVERED][1])
+        self.actual_completed_date = timezone.now()
         self.fire_status_notification(PhaseStatuses.COMPLETED)
 
     def can_proceed_to_completed(self):
@@ -978,14 +1059,10 @@ class Phase(models.Model):
         target=PhaseStatuses.DELIVERED)
     def to_delivered(self):
         log_system_activity(self, "Moved to "+PhaseStatuses.CHOICES[PhaseStatuses.DELIVERED][1])
+        self.actual_delivery_date = timezone.now()
+
         # Ok, check if all phases have completed...
-        jobDone = True
-        for phase in self.job.phases.all():
-            if phase.pk != self.pk: # we know we're delivered...
-                if phase.status < PhaseStatuses.DELIVERED:
-                    jobDone = False
-                    
-        if jobDone:
+        if not self.job.phases.filter(status__lt=PhaseStatuses.DELIVERED).exclude(pk=self.pk).exists():
             if self.job.can_to_complete():
                 self.job.to_complete()
                 self.job.save()
@@ -1020,6 +1097,7 @@ class Phase(models.Model):
         target=PhaseStatuses.CANCELLED)
     def to_cancelled(self):
         log_system_activity(self, "Moved to "+PhaseStatuses.CHOICES[PhaseStatuses.CANCELLED][1])
+        self.cancellation_date = timezone.now()
         self.fire_status_notification(PhaseStatuses.CANCELLED)
 
     def can_proceed_to_cancelled(self):
