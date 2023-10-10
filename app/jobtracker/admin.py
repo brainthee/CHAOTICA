@@ -37,7 +37,7 @@ class SkillCategoryAdmin(admin.ModelAdmin):
 
 admin.site.register(Service)
 admin.site.register(TimeSlot)
-admin.site.register(WorkflowTasks)
+admin.site.register(WorkflowTask)
 admin.site.register(BillingCode)
 admin.site.register(Feedback)
 admin.site.register(Certification)

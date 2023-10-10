@@ -259,7 +259,7 @@ class Address(models.Model):
         )
 
 
-class WorkflowTasks(models.Model):
+class WorkflowTask(models.Model):
     WF_JOB = 1
     WF_PHASE = 2
     CHOICES = (
@@ -270,6 +270,14 @@ class WorkflowTasks(models.Model):
                             choices=CHOICES, default=WF_JOB)
     status = models.IntegerField(verbose_name="Status", default=0)
     task = models.CharField('Task', max_length=255)
+
+    def get_status_str(self):
+        if self.appliedModel == WorkflowTask.WF_JOB:
+            return JobStatuses.CHOICES[self.status][1]
+        elif self.appliedModel == WorkflowTask.WF_PHASE:
+            return PhaseStatuses.CHOICES[self.status][1]
+        else:
+            return self.status
 
 
 class Feedback(models.Model):

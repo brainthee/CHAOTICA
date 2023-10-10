@@ -126,7 +126,7 @@ class User(AbstractUser):
     profile_image = models.ImageField(default='default.jpg',  
                                      upload_to=get_media_image_file_path,)
     contracted_leave = models.IntegerField(verbose_name="Contracted Leave", default=0)
-    contracted_leave_renewal = models.DateField(verbose_name="Contracted Leave", default=date(day=1, month=9, year=2023))
+    contracted_leave_renewal = models.DateField(verbose_name="Leave Renewal Date", default=date(day=1, month=9, year=2023))
     
     class Meta:
         ordering = ['last_name']

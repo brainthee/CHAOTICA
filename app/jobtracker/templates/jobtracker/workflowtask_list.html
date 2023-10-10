@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% load menu %}{% load static %}
+
+{% block pageTitle %}Workflow Checklists{% endblock pageTitle %}
+{% block head_title %}Workflow Checklists{% endblock head_title %}
+
+{% block headerBlock_css %}mb-6{% endblock headerBlock_css %}
+
+{% block breadcrumbItem %}
+<li class="breadcrumb-item text-sm text-dark active" aria-current="page">Workflow Checklists</li>
+{% endblock breadcrumbItem %}
+
+{% block content %}
+
+{% if request.user.show_help %}
+<div class="row">
+  <div class="col-lg-12 col-12 mt-4 mt-lg-0">
+{% include 'help/WorkflowTask_list.html' %}
+  </div>
+</div>
+{% endif %}
+
+<div class="row mb-4 gx-6 gy-3 mt-2 align-items-center">
+  <div class="col">
+    <h2 class="mb-0">Workflow Checklists</h2>
+  </div>
+  <div class="col-4 d-flex justify-content-end">
+    <a class="btn btn-phoenix-primary px-3 me-3" href="{% url 'wf_task_create' 'job' %}">
+      <i class="fa-solid fa-plus me-2"></i>
+      Add Job Checklist Item
+    </a>
+    <a class="btn btn-phoenix-primary px-5" href="{% url 'wf_task_create' 'phase' %}">
+      <i class="fa-solid fa-plus me-2"></i>
+      Add Phase Checklist Item
+    </a>
+  </div>
+</div>
+
+
+<div class="mx-n4 px-3 py-3 mx-lg-n6 px-lg-6 bg-white border-top border-bottom border-200 position-relative top-1">
+  {% include 'partials/workflowtask/workflow_list_table.html' %}
+</div>
+
+{% endblock content %}

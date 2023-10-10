@@ -11,6 +11,7 @@ DEBUG = int(os.environ.get("DEBUG", default=0))
 MAINTENANCE_MODE = int(os.environ.get("MAINTENANCE_MODE", default=0))
 
 DJANGO_ENV = os.environ.get("DJANGO_ENV", default="Dev")
+DJANGO_VERSION = os.environ.get("DJANGO_VERSION", default="bleeding-edge")
 
 SENTRY_DSN = os.environ.get("SENTRY_DSN", default=None)
 

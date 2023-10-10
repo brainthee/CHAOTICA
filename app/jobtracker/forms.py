@@ -747,6 +747,31 @@ class ServiceForm(forms.ModelForm):
         fields = ["name", "owners", "skillsRequired", "skillsDesired"]
 
 
+class WFTaskForm(forms.ModelForm):
+    # owners = forms.ModelMultipleChoiceField(
+    #     required=False,
+    #     queryset=User.objects.filter(is_active=True),
+    #     widget=autocomplete.ModelSelect2Multiple(url='user-autocomplete',
+    #                                      attrs={
+    #                                          'data-minimum-input-length': 3,
+    #                                      },),)    
+    status = forms.IntegerField(
+        widget=forms.Select(),)
+
+    def __init__(self, *args, **kwargs):
+        status_choices = kwargs.pop('status_choices')
+        super(WFTaskForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+
+        self.fields['status'].widget.choices = status_choices
+        self.fields['status'].label = False
+        self.fields['task'].label = False
+
+    class Meta:
+        model = WorkflowTask
+        fields = ["status", "task"]
+
+
 class SkillForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):

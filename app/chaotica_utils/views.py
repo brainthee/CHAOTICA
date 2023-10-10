@@ -34,6 +34,8 @@ def pageDefaults(request):
     context = {}
     context['notifications'] = Notification.objects.filter(user=request.user)
     context['config'] = config
+    context['DJANGO_ENV'] = settings.DJANGO_ENV
+    context['DJANGO_VERSION'] = settings.DJANGO_VERSION
 
     context['myJobs'] = Job.objects.jobs_for_user(request.user)
     context['myPhases'] = Phase.objects.phases_for_user(request.user)
@@ -316,6 +318,12 @@ def update_own_skills(request):
         return HttpResponseRedirect(reverse('view_own_profile'))
     else:
         return HttpResponseRedirect(reverse('view_own_profile'))
+
+
+@login_required
+@require_http_methods(["POST", "GET"])
+def update_own_certs(request):
+    return HttpResponseBadRequest()
 
 
 @staff_member_required

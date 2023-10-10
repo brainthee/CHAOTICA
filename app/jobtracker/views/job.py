@@ -410,7 +410,7 @@ def JobUpdateWorkflow(request, slug, newState):
         job.save()
         data['form_is_valid'] = True  # This is just to play along with the existing code
     
-    tasks = WorkflowTasks.objects.filter(appliedModel=WorkflowTasks.WF_JOB, status=newState)
+    tasks = WorkflowTask.objects.filter(appliedModel=WorkflowTask.WF_JOB, status=newState)
     context = {
         'job': job,
         'canProceed': canProceed,

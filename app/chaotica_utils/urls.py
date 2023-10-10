@@ -34,6 +34,7 @@ urlpatterns = [
     path('profile/theme', views.update_own_theme, name='update_own_theme'),
     path('profile/update', views.update_own_profile, name='update_own_profile'),
     path('profile/update/skills', views.update_own_skills, name='update_own_skills'),    
+    path('profile/update/certs', views.update_own_certs, name='update_own_certs'),    
     path('profile/<str:username>', views.UserDetailView.as_view(), name='user_profile'),
     path('profile/<str:username>/update/', views.UserUpdateView.as_view(), name='user_update'),
     path('profile/<str:username>/assign_role/', views.user_assign_global_role, name='user_assign_global_role'),

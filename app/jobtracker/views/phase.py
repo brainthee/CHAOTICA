@@ -547,7 +547,7 @@ def PhaseUpdateWorkflow(request, jobSlug, slug, newState):
         log_system_activity(phase, "Moved to "+newStateStr)
         data['form_is_valid'] = True  # This is just to play along with the existing code
     
-    tasks = WorkflowTasks.objects.filter(appliedModel=WorkflowTasks.WF_PHASE, status=newState)
+    tasks = WorkflowTask.objects.filter(appliedModel=WorkflowTask.WF_PHASE, status=newState)
     context = {
         'job': job,
         'phase': phase,

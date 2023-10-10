@@ -37,7 +37,7 @@ class PhaseManager(models.Manager):
             Q(timeslots__user=user) | # Filter by scheduled
             Q(report_author=user) | # Filter for report author
             Q(project_lead=user)  # filter for lead
-            ).distinct()
+            ).exclude(Q(status=PhaseStatuses.CANCELLED)|Q(status=PhaseStatuses.DELETED)|Q(status=PhaseStatuses.ARCHIVED)).distinct()
         return matches
     
 

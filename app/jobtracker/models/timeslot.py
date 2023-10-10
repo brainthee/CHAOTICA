@@ -121,10 +121,16 @@ class TimeSlot(models.Model):
             return '{}: {}'.format(self.user.get_full_name(), self.start)
     
     def get_target_url(self):
-        if self.phase:
+        if self.slotType == TimeSlotType.DELIVERY and self.phase:
             return self.phase.get_absolute_url()
-        else:
-            return None
+        # Eventually return more useful URLs... but for now, return home.
+        # elif self.slotType == TimeSlotType.GENERIC:
+        #     return ext_reverse(reverse('home'))
+        # elif self.slotType == TimeSlotType.INTERNAL:
+        #     return ext_reverse(reverse('home'))
+        # elif self.slotType == TimeSlotType.LEAVE:
+        #     return ext_reverse(reverse('home'))
+        return ext_reverse(reverse('home'))
         
     def delete(self):
         phase = self.phase

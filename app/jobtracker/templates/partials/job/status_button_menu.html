@@ -12,8 +12,8 @@
     {% endif %}
     {% if job.can_proceed_to_delete %}
         <li>
-            <button data-url="{% url 'job_update_workflow' job.slug 9 %}" class="dropdown-item js-update-job-workflow text-danger" 
-                data-status="Deleted" data-status-id="9">Delete Engagement</button>
+            <button data-url="{% url 'job_update_workflow' job.slug 10 %}" class="dropdown-item js-update-job-workflow text-danger" 
+                data-status="Deleted" data-status-id="9">Delete Job</button>
         </li>
     {% endif %}
 </ul>

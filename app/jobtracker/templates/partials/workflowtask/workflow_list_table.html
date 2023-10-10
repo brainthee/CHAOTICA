@@ -1,0 +1,48 @@
+<div class="table-responsive scrollbar mx-n1 px-1">
+    <table class="table fs--1 datatable mb-0">
+      <thead>
+        <tr>
+            <th class="sort white-space-nowrap align-middle ps-0" scope="col" style="width:30%;">
+              Applied Against
+            </th>
+            <th class="sort white-space-nowrap align-middle ps-0" scope="col" style="width:30%;">
+              Target State
+            </th>
+            <th class="sort white-space-nowrap align-middle ps-0" scope="col" style="width:30%;">
+              Task
+            </th>
+            <th class="sort align-middle text-end" scope="col" style="width:10%;">
+            </th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for task in workflowtask_list %}
+      <tr>
+  
+        <td class="align-middle time white-space-nowrap ps-0">
+            {{ task.get_appliedModel_display }}
+        </td>
+  
+        <td class="align-middle time white-space-nowrap ps-0">
+            {{ task.get_status_str }}
+        </td>
+  
+        <td class="align-middle time white-space-nowrap ps-0">
+            {{ task.task }}
+        </td>
+  
+        <td class="align-middle text-end white-space-nowrap pe-0 action">
+          <a class="btn btn-sm btn-phoenix-primary js-load-modal-form" 
+            href="{% url 'wf_task_update' task.pk %}" type="button">
+            Edit
+          </a>
+          <a class="btn btn-sm btn-phoenix-warning js-load-modal-form" 
+            href="{% url 'wf_task_delete' task.pk %}" type="button">
+            Delete
+          </a>
+        </td>
+      </tr>
+      {% endfor %}        
+      </tbody>
+    </table>
+  </div>
