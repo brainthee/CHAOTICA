@@ -79,6 +79,12 @@ urlpatterns = [
     path('ops/service/<str:slug>/update/', views.ServiceUpdateView.as_view(), name='service_update'),
     path('ops/service/<str:slug>/delete/', views.ServiceDeleteView.as_view(), name='service_delete'),
 
+    # Checklists
+    path('ops/workflow_tasks/', views.WFTaskListView.as_view(), name='wf_tasks_list'),
+    path('ops/workflow_tasks/create/<str:targetType>', views.WFTaskCreateView.as_view(), name='wf_task_create'),
+    path('ops/workflow_tasks/<int:pk>/update/', views.WFTaskUpdateView.as_view(), name='wf_task_update'),
+    path('ops/workflow_tasks/<int:pk>/delete/', views.WFTaskDeleteView.as_view(), name='wf_task_delete'),
+
     # OrganisationalUnit CRUD
     path('ops/units/', views.OrganisationalUnitListView.as_view(), name='organisationalunit_list'),
     path('ops/unit/create/', views.OrganisationalUnitCreateView.as_view(), name='organisationalunit_create'),

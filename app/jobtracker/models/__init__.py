@@ -1,4 +1,4 @@
-from .common import Link, BillingCode, Service, Certification, UserCertification, Client, Contact, Address, WorkflowTasks, Feedback
+from .common import Link, BillingCode, Service, Certification, UserCertification, Client, Contact, Address, WorkflowTask, Feedback
 
 from .job import Job
 from .phase import Phase

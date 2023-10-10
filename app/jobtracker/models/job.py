@@ -36,7 +36,7 @@ class JobManager(models.Manager):
             Q(scoped_by__in=[user]) | # filter for scoped
             Q(account_manager=user) | # filter for account_manager
             Q(dep_account_manager=user)  # filter for dep_account_manager
-            ).distinct()
+            ).exclude(Q(status=JobStatuses.DELETED)|Q(status=JobStatuses.ARCHIVED)).distinct()
         return matches
     
 
@@ -448,29 +448,29 @@ class Job(models.Model):
     def can_proceed_to_pending_scope(self):
         return can_proceed(self.to_pending_scope)
         
-    def can_to_pending_scope(self, notifyRequest=None):
-        _canProceed = True
+    def can_to_pending_scope(self, notify_request=None):
+        _can_proceed = True
         # Do logic checks
         ## Check if we have an account manager
         if not self.account_manager:
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "No Account Manager assigned.")
-            _canProceed = False
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, "No Account Manager assigned.")
+            _can_proceed = False
 
         ## Check if we have a primary PoC
         if not self.primary_client_poc:
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "No Client Point of Contact assigned.")
-            _canProceed = False
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, "No Client Point of Contact assigned.")
+            _can_proceed = False
 
 
         # Do general check
         can_proceed_result = can_proceed(self.to_pending_scope)
         if not can_proceed_result:
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "Invalid state or permissions.")
-            _canProceed = False
-        return _canProceed
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, "Invalid state or permissions.")
+            _can_proceed = False
+        return _can_proceed
 
     # SCOPING
     @transition(field=status, source=[JobStatuses.PENDING_SCOPE,JobStatuses.SCOPING_COMPLETE],
@@ -482,31 +482,31 @@ class Job(models.Model):
     def can_proceed_to_scoping(self):
         return can_proceed(self.to_scoping)
         
-    def can_to_scoping(self, notifyRequest=None):
-        _canProceed = True
+    def can_to_scoping(self, notify_request=None):
+        _can_proceed = True
         # Do logic checks
         # If no person is defined as scoped by, warn we'll set ourselves
         if self.status == JobStatuses.SCOPING_COMPLETE:
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.INFO, 
+            if notify_request:
+                messages.add_message(notify_request, messages.INFO, 
                                      "The scope will need to be signed off again.")
 
         if not self.scoped_by.all():
-            if notifyRequest.user.has_perm('scope_job'):
-                if notifyRequest:
-                    messages.add_message(notifyRequest, messages.INFO, "No one assigned to scope. You will automatically be assigned to scope this job.")
+            if notify_request.user.has_perm('scope_job'):
+                if notify_request:
+                    messages.add_message(notify_request, messages.INFO, "No one assigned to scope. You will automatically be assigned to scope this job.")
             else:
-                if notifyRequest:
-                    messages.add_message(notifyRequest, messages.ERROR, "No one assigned to scope. You do not have permission to scope this job.")
-                _canProceed = False
+                if notify_request:
+                    messages.add_message(notify_request, messages.ERROR, "No one assigned to scope. You do not have permission to scope this job.")
+                _can_proceed = False
 
         # Do general check
         can_proceed_result = can_proceed(self.to_scoping)
         if not can_proceed_result:
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "Invalid state or permissions.")
-            _canProceed = False
-        return _canProceed
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, "Invalid state or permissions.")
+            _can_proceed = False
+        return _can_proceed
 
     # SCOPING_ADDITIONAL_INFO_REQUIRED
     @transition(field=status, source=JobStatuses.SCOPING,
@@ -518,17 +518,17 @@ class Job(models.Model):
     def can_proceed_to_additional_scope_req(self):
         return can_proceed(self.to_additional_scope_req)
         
-    def can_to_additional_scope_req(self, notifyRequest=None):
-        _canProceed = True
+    def can_to_additional_scope_req(self, notify_request=None):
+        _can_proceed = True
         # Do logic checks
 
         # Do general check
         can_proceed_result = can_proceed(self.to_additional_scope_req)
         if not can_proceed_result:
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "Invalid state or permissions.")
-            _canProceed = False
-        return _canProceed
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, "Invalid state or permissions.")
+            _can_proceed = False
+        return _can_proceed
 
     # PENDING_SCOPING_SIGNOFF
     @transition(field=status, 
@@ -541,39 +541,39 @@ class Job(models.Model):
     def can_proceed_to_scope_pending_signoff(self):
         return can_proceed(self.to_scope_pending_signoff)
         
-    def can_to_scope_pending_signoff(self, notifyRequest=None):
-        _canProceed = True
+    def can_to_scope_pending_signoff(self, notify_request=None):
+        _can_proceed = True
         # Do logic checks
 
         ## Check fields are populated
         if not self.overview:
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "Job overview missing.")
-            _canProceed = False
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, "Job overview missing.")
+            _can_proceed = False
 
         if ((self.high_risk or self.technically_complex_test) and not self.reasons_for_high_risk):
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "Flagged as complex or high risk but no detail entered.")
-            _canProceed = False
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, "Flagged as complex or high risk but no detail entered.")
+            _can_proceed = False
 
         if not self.phases.all():
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "No phases defined")
-            _canProceed = False
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, "No phases defined")
+            _can_proceed = False
 
         for phase in self.phases.all():
             if phase.get_total_scoped_hours() == Decimal(0.0):
-                if notifyRequest:
-                    messages.add_message(notifyRequest, messages.ERROR, "Phase with no hours: "+str(phase))
-                _canProceed = False
+                if notify_request:
+                    messages.add_message(notify_request, messages.ERROR, "Phase with no hours: "+str(phase))
+                _can_proceed = False
 
         # Do general check
         can_proceed_result = can_proceed(self.to_scope_pending_signoff)
         if not can_proceed_result:
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "Invalid state or permissions.")
-            _canProceed = False
-        return _canProceed
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, "Invalid state or permissions.")
+            _can_proceed = False
+        return _can_proceed
 
     # SCOPING_COMPLETE
     @transition(field=status, 
@@ -596,63 +596,63 @@ class Job(models.Model):
     def can_proceed_to_scope_complete(self):
         return can_proceed(self.to_scope_complete)
         
-    def can_to_scope_complete(self, notifyRequest=None):
-        _canProceed = True
+    def can_to_scope_complete(self, notify_request=None):
+        _can_proceed = True
         # Do logic checks
         #         
         ## TODO: Setup a `can_signoff_own_scopes` permission
-        if notifyRequest:
+        if notify_request:
             # We have a request, check if we've scoped it...
-            if notifyRequest.user.has_perm('can_signoff_scopes', self.unit):
-                if notifyRequest.user in self.scoped_by.all():
+            if notify_request.user.has_perm('can_signoff_scopes', self.unit):
+                if notify_request.user in self.scoped_by.all():
                     # Yup, we've scoped it - check for permission...
-                    if not notifyRequest.user.has_perm('can_signoff_own_scopes', self.unit):
-                        messages.add_message(notifyRequest, messages.ERROR, 
+                    if not notify_request.user.has_perm('can_signoff_own_scopes', self.unit):
+                        messages.add_message(notify_request, messages.ERROR, 
                                             "You do not have permission to sign off your own scope.")
-                        _canProceed = False
+                        _can_proceed = False
                     else:
                         # We can sign off our own scopes - warn!
-                        messages.add_message(notifyRequest, messages.INFO, 
+                        messages.add_message(notify_request, messages.INFO, 
                                             "Be aware - you are about to sign off your own scope!")
                 else:
-                    messages.add_message(notifyRequest, messages.INFO, 
+                    messages.add_message(notify_request, messages.INFO, 
                                         "This will assign you as approver to this scope")
 
             else:
                 # We don't have permission to signoff scopes!
-                messages.add_message(notifyRequest, messages.ERROR, 
+                messages.add_message(notify_request, messages.ERROR, 
                                     "You do not have permission to sign off scopes.")
-                _canProceed = False
+                _can_proceed = False
 
         ## Check fields are populated
         if not self.overview:
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "Job overview missing.")
-            _canProceed = False
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, "Job overview missing.")
+            _can_proceed = False
 
         if ((self.high_risk or self.technically_complex_test) and not self.reasons_for_high_risk):
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "Flagged as complex or high risk but no detail entered.")
-            _canProceed = False
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, "Flagged as complex or high risk but no detail entered.")
+            _can_proceed = False
 
         if not self.phases.all():
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "No phases defined")
-            _canProceed = False
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, "No phases defined")
+            _can_proceed = False
 
         for phase in self.phases.all():
             if phase.get_total_scoped_hours() == Decimal(0.0):
-                if notifyRequest:
-                    messages.add_message(notifyRequest, messages.ERROR, "Phase with no hours: "+str(phase))
-                _canProceed = False
+                if notify_request:
+                    messages.add_message(notify_request, messages.ERROR, "Phase with no hours: "+str(phase))
+                _can_proceed = False
 
         # Do general check
         can_proceed_result = can_proceed(self.to_scope_complete)
         if not can_proceed_result:
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "Invalid state or permissions.")
-            _canProceed = False
-        return _canProceed
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, "Invalid state or permissions.")
+            _can_proceed = False
+        return _can_proceed
 
     # PENDING_START
     @transition(field=status, source=JobStatuses.SCOPING_COMPLETE,
@@ -664,17 +664,17 @@ class Job(models.Model):
     def can_proceed_to_pending_start(self):
         return can_proceed(self.to_pending_start)
         
-    def can_to_pending_start(self, notifyRequest=None):
-        _canProceed = True
+    def can_to_pending_start(self, notify_request=None):
+        _can_proceed = True
         # Do logic checks
 
         # Do general check
         can_proceed_result = can_proceed(self.to_pending_start)
         if not can_proceed_result:
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "Invalid state or permissions.")
-            _canProceed = False
-        return _canProceed
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, "Invalid state or permissions.")
+            _can_proceed = False
+        return _can_proceed
 
     # IN_PROGRESS
     @transition(field=status, 
@@ -687,17 +687,17 @@ class Job(models.Model):
     def can_proceed_to_in_progress(self):
         return can_proceed(self.to_in_progress)
         
-    def can_to_in_progress(self, notifyRequest=None):
-        _canProceed = True
+    def can_to_in_progress(self, notify_request=None):
+        _can_proceed = True
         # Do logic checks
 
         # Do general check
         can_proceed_result = can_proceed(self.to_in_progress)
         if not can_proceed_result:
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "Invalid state or permissions.")
-            _canProceed = False
-        return _canProceed
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, "Invalid state or permissions.")
+            _can_proceed = False
+        return _can_proceed
 
     # COMPLETED
     @transition(field=status, source=JobStatuses.IN_PROGRESS,
@@ -709,17 +709,17 @@ class Job(models.Model):
     def can_proceed_to_complete(self):
         return can_proceed(self.to_complete)
         
-    def can_to_complete(self, notifyRequest=None):
-        _canProceed = True
+    def can_to_complete(self, notify_request=None):
+        _can_proceed = True
         # Do logic checks
 
         # Do general check
         can_proceed_result = can_proceed(self.to_complete)
         if not can_proceed_result:
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "Invalid state or permissions.")
-            _canProceed = False
-        return _canProceed
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, "Invalid state or permissions.")
+            _can_proceed = False
+        return _can_proceed
 
     # LOST
     @transition(field=status, 
@@ -734,17 +734,17 @@ class Job(models.Model):
     def can_proceed_to_lost(self):
         return can_proceed(self.to_lost)
         
-    def can_to_lost(self, notifyRequest=None):
-        _canProceed = True
+    def can_to_lost(self, notify_request=None):
+        _can_proceed = True
         # Do logic checks
 
         # Do general check
         can_proceed_result = can_proceed(self.to_lost)
         if not can_proceed_result:
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "Invalid state or permissions.")
-            _canProceed = False
-        return _canProceed
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, "Invalid state or permissions.")
+            _can_proceed = False
+        return _can_proceed
 
     # DELETED
     @transition(field=status, source="+",
@@ -752,21 +752,31 @@ class Job(models.Model):
     def to_delete(self):
         log_system_activity(self, "Moved to "+JobStatuses.CHOICES[JobStatuses.DELETED][1])
         self.fire_status_notification(JobStatuses.DELETED)
+        # Lets make all phases to cancelled.
+        for phase in self.phases.all():
+            if phase.can_to_deleted():
+                phase.to_deleted()
 
     def can_proceed_to_delete(self):
         return can_proceed(self.to_delete)
         
-    def can_to_delete(self, notifyRequest=None):
-        _canProceed = True
+    def can_to_delete(self, notify_request=None):
+        _can_proceed = True
         # Do logic checks
+        for phase in self.phases.all():
+            if not phase.can_to_deleted():
+                if notify_request:
+                    messages.add_message(notify_request, messages.ERROR, "One or more child phases can not be deleted.")
+                _can_proceed = False
+
 
         # Do general check
         can_proceed_result = can_proceed(self.to_delete)
         if not can_proceed_result:
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "Invalid state or permissions.")
-            _canProceed = False
-        return _canProceed
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, "Invalid state or permissions.")
+            _can_proceed = False
+        return _can_proceed
 
     # ARCHIVED
     @transition(field=status, source=[JobStatuses.COMPLETED,JobStatuses.LOST],
@@ -778,14 +788,14 @@ class Job(models.Model):
     def can_proceed_to_archive(self):
         return can_proceed(self.to_archive)
         
-    def can_to_archive(self, notifyRequest=None):
-        _canProceed = True
+    def can_to_archive(self, notify_request=None):
+        _can_proceed = True
         # Do logic checks
 
         # Do general check
         can_proceed_result = can_proceed(self.to_archive)
         if not can_proceed_result:
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "Invalid state or permissions.")
-            _canProceed = False
-        return _canProceed
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, "Invalid state or permissions.")
+            _can_proceed = False
+        return _can_proceed

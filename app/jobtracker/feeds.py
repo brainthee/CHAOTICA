@@ -2,6 +2,7 @@ from django_ical.views import ICalFeed
 from .models import TimeSlot
 from chaotica_utils.models import User
 from pprint import pprint
+from django.http import HttpResponseForbidden
 
 class ScheduleFeed(ICalFeed):
     """
@@ -15,7 +16,11 @@ class ScheduleFeed(ICalFeed):
         return kwargs['calKey']
 
     def items(self, calKey):
-        return TimeSlot.objects.filter(user__schedule_feed_id=calKey).order_by('-start')
+        # Lets check if the key is valid...
+        if User.objects.filter(schedule_feed_id=calKey).exists():
+            return TimeSlot.objects.filter(user__schedule_feed_id=calKey).order_by('-start')
+        else:
+            return TimeSlot.objects.none()
 
     def item_title(self, item):
         return str(item)
@@ -46,18 +51,27 @@ class ScheduleFamilyFeed(ICalFeed):
 
     def items(self, calKey):
         return TimeSlot.objects.filter(user__schedule_feed_family_id=calKey).order_by('-start')
-
-    def item_title(self, item):
+    
+    def _getEventTitle(self, item):
+        data = ""        
         if item.is_onsite:
-            return "Onsite"
+            data = "Onsite"
         else:
-            return "Remote"
+            data = "Remote"
 
-    def item_description(self, item):
         if item.is_confirmed:
-            return "Confirmed Work"
+            data = data + " - Confirmed"
         else:
-            return "Tentative"
+            data = data + " - Tentative"
+        
+        return data
+
+
+    def item_title(self, item):        
+        return self._getEventTitle(item)
+
+    def item_description(self, item):        
+        return self._getEventTitle(item)
 
     def item_start_datetime(self, item):
         return item.start
