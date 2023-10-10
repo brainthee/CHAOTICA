@@ -1,5 +1,6 @@
 # pull official base image
-FROM python:3.11-alpine
+FROM python:3.11-slim-bookworm
+LABEL maintainer="Adrian Lewis <brainthee@gmail.com>"
 
 EXPOSE 8000
 
@@ -13,9 +14,16 @@ WORKDIR /app
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
-# install db dependencies
-RUN apk update \
-    && apk add postgresql-dev gcc g++ python3-dev libffi-dev musl-dev pkgconfig mariadb-dev mariadb-connector-c-dev libmagic libxml2-dev libxslt-dev
+# install sys dependencies
+RUN apt-get update \
+  && apt-get upgrade -y \
+  && apt-get install -y gcc default-libmysqlclient-dev pkg-config libpq-dev \
+  && rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man \
+  && apt-get clean
+
+# RUN apk update \
+#     && apk add 
+#     postgresql-dev gcc g++ python3-dev libffi-dev musl-dev pkgconfig mariadb-dev mariadb-connector-c-dev libmagic libxml2-dev libxslt-dev
 
 # install dependencies
 RUN pip install --upgrade pip
