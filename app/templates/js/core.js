@@ -145,7 +145,7 @@ $(function() {
         timeoutID = setTimeout(() => search(value), 500)
     });
 
-    var polling = true;
+    var polling = {% if request.user.is_authenticated %}true{% else %}false{% endif %};
     var period = 60 * 1000; // every 60 seconds
 
     var interval = polling && setInterval(function() {

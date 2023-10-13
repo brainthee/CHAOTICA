@@ -372,34 +372,40 @@
 
    $("#skills .form-check-input").change(profileUpdateSkills);
 
+   $("#profileForm").dirty({preventLeaving: true});
 
    // Update basic profile info
    var profileUpdateBasic = function() {
-      var form = $(".profileForm");
+      var form = $("#profileForm");
+      var formData = new FormData(form[0]); //get data of form elements for submission
+
       $.ajax({
          url: form.attr("action"),
-         data: form.serialize(),
          type: form.attr("method"),
-         dataType: 'json',
+         data: formData,
+         enctype: 'multipart/form-data',
+         processData: false,  // Important!
+         contentType: false,
+         cache: false,
          success: function(data) {
             $("#basic-info").html(data.html_form);
-            $("#profileForm .form-control").change(profileUpdateBasic);
-            $("#profileForm .form-check-input").change(profileUpdateBasic);
-            // validate any changed fields for 2 seconds
-            for (let fieldKey = 0; fieldKey < data.changed_data.length; fieldKey++) {
-               fieldName = data.changed_data[fieldKey]
-               var changed_field = $('#id_'+fieldName);
-               changed_field.addClass('is-valid');
-               setTimeout(function() {
-                  changed_field.removeClass('is-valid');
-               }, 4000);
+            $(".js-save-profile").click(profileUpdateBasic);
+            if(data.form_is_valid) {
+               // validate any changed fields for 2 seconds
+               for (let fieldKey = 0; fieldKey < data.changed_data.length; fieldKey++) {
+                  fieldName = data.changed_data[fieldKey]
+                  var changed_field = $('#id_'+fieldName);
+                  changed_field.addClass('is-valid');
+                  setTimeout(function() {
+                     changed_field.removeClass('is-valid');
+                  }, 4000);
+               };
+               $("#profileForm").dirty("setAsClean");
             }
          }
       });
-      return false;
-   };
+    };
 
-   $("#profileForm .form-control").change(profileUpdateBasic);
-   $("#profileForm .form-check-input").change(profileUpdateBasic);
+    $(".js-save-profile").click(profileUpdateBasic);
 </script>
 {% endblock footer_javascript_page %}
