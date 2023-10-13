@@ -118,7 +118,7 @@ terraform/**/.terraform*
 
 .env
 
-app/media/uploads/
+app/media/
 app/staticfiles/
 
 app/.scannerwork/
