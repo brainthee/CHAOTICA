@@ -213,7 +213,7 @@ def update_own_profile(request):
     data = {}
     data['form_is_valid'] = False
     if request.method == "POST":
-        form = ProfileBasicForm(request.POST, instance=request.user)
+        form = ProfileBasicForm(request.POST, request.FILES, instance=request.user)
         if form.is_valid():
             form.save()
             data['form_is_valid'] = True
@@ -225,7 +225,7 @@ def update_own_profile(request):
     data['html_form'] = loader.render_to_string("partials/profile/basic_profile_form.html",
                                                 context,
                                                 request=request)
-
+    pprint(data)
     return JsonResponse(data)
 
 

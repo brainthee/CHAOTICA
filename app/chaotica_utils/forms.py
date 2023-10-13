@@ -9,6 +9,7 @@ from constance.forms import ConstanceForm
 from dal import autocomplete
 from django.conf import settings
 from bootstrap_datepicker_plus.widgets import TimePickerInput, DatePickerInput, DateTimePickerInput
+from django.core.files.images import get_image_dimensions
 
 
 class CustomConfigForm(ConstanceForm):
@@ -147,10 +148,16 @@ class ProfileForm(forms.Form):
 
 class ProfileBasicForm(forms.ModelForm):
 
+    profile_image = forms.FileField(
+        label="Profile Image",
+    )
+
     def __init__(self, *args, **kwargs):
         super(ProfileBasicForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
         self.helper.form_tag = False
+        self.fields['contracted_leave_renewal'].widget = DatePickerInput()
+        self.fields['show_help'].help_text = False
         
         self.helper.layout = Layout(
             Row(
@@ -168,24 +175,69 @@ class ProfileBasicForm(forms.ModelForm):
             Row(
                 Column(Div(FloatingField('phone_number'),
                         css_class="input-group input-group-dynamic")),
-                Column(Div(Field('languages'),
-                        css_class="input-group input-group-dynamic")),
-            ),
-            Row(
                 Column(Div(FloatingField('job_title'),
                         css_class="input-group input-group-dynamic")),
             ),
             Row(
-                Column(Div(FloatingField('contracted_leave'),
+                Column(Div(Field('profile_image'),
                         css_class="input-group input-group-dynamic")),
-                Column(Div(Field('contracted_leave_renewal'),
-                        css_class="input-group input-group-dynamic")),
+                Column(
+                    Row(
+                        Column(Div(Field('contracted_leave'),
+                                css_class="input-group input-group-dynamic")),
+                        Column(Div(Field('contracted_leave_renewal'),
+                                css_class="input-group input-group-dynamic")),
+                    ),
+                ),
+            ),
+            Row(
+                Column(Div(Field('languages'),
+                        css_class="")),
             ),
         )
 
     class Meta:
         model = User
-        fields = ('first_name', 'last_name', 'email', 'phone_number', 'job_title', 'show_help', 'location', 'languages','contracted_leave', 'contracted_leave_renewal')
+        widgets = {
+            'languages': autocomplete.ModelSelect2Multiple(),
+        }
+        fields = ('first_name', 'last_name', 'profile_image', 'email', 'phone_number', 'job_title', 'show_help', 'location', 'languages','contracted_leave', 'contracted_leave_renewal')
+
+
+    def clean_profile_image(self):
+        profile_image = self.cleaned_data['profile_image']
+
+        try:
+            w, h = get_image_dimensions(profile_image)
+
+            #validate dimensions
+            max_width = max_height = 500
+            if w and h:
+                if w > max_width or h > max_height:
+                    self.add_error("profile_image",
+                        'Please use an image that is '
+                        '%s x %s pixels or smaller.' % (max_width, max_height))
+
+            #validate content type
+            main, sub = profile_image.content_type.split('/')
+            if not (main == 'image' and sub in ['jpeg', 'pjpeg', 'gif', 'png']):
+               self.add_error("profile_image",'Please use a JPEG, '
+                    'GIF or PNG image.')
+
+            #validate file size
+            pprint(len(profile_image))
+            if len(profile_image) > (1024 * 1024):
+                self.add_error("profile_image",
+                    'Avatar file size may not exceed 1M.')
+
+        except AttributeError:
+            """
+            Handles case when we are updating the user profile
+            and do not supply a new avatar
+            """
+            pass
+
+        return profile_image
 
 class ImportSiteDataForm(forms.Form):
     importFile = forms.FileField(required=False, label='JSON Data')

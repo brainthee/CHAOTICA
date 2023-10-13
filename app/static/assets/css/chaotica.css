@@ -53,3 +53,7 @@ div.content span.select2-container {
 .fc-header-toolbar {
   margin: 1.5em !important;
 }
+
+.invalid-feedback {
+  display: initial;
+}

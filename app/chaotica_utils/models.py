@@ -87,10 +87,15 @@ class Group(django.contrib.auth.models.Group):
         else:
             return ""
         
+def get_media_profile_file_path(instance, filename):
+    ext = filename.split('.')[-1]
+    filename = "%s.%s" % (uuid.uuid4(), ext)
+    return os.path.join('profile_pics', filename)
+        
 def get_media_image_file_path(instance, filename):
     ext = filename.split('.')[-1]
     filename = "%s.%s" % (uuid.uuid4(), ext)
-    return os.path.join('media/images', filename)
+    return os.path.join('images', filename)
 
 class Language(models.Model):
     lang_code = models.CharField(max_length=10)
@@ -113,7 +118,7 @@ class User(AbstractUser):
     location = models.CharField(verbose_name="Location", max_length=255, null=True, blank=True, default="")
     external_id = models.CharField(verbose_name="External ID", db_index=True, max_length=255, null=True, blank=True, default="")
     phone_number = PhoneNumberField(blank=True)
-    show_help = models.BooleanField(verbose_name="Show Tips", help_text="Should help be shown", default=True)
+    show_help = models.BooleanField(verbose_name="Show Helpful Tips", help_text="Should help be shown", default=True)
     site_theme = models.CharField(verbose_name="Site Theme", max_length=20, default="light")
     schedule_feed_id = models.UUIDField(verbose_name="Calendar Feed Key", default=uuid.uuid4)
     schedule_feed_family_id = models.UUIDField(verbose_name="Calendar Feed Family Key", default=uuid.uuid4)
@@ -123,9 +128,9 @@ class User(AbstractUser):
                                     'their groups.',
             related_name="user_set", related_query_name="user")
     languages = models.ManyToManyField(Language, verbose_name='Languages', blank=True)
-    profile_image = models.ImageField(default='default.jpg',  
-                                     upload_to=get_media_image_file_path,)
-    contracted_leave = models.IntegerField(verbose_name="Contracted Leave", default=0)
+    profile_image = models.ImageField(blank=True,
+                                     upload_to=get_media_profile_file_path,)
+    contracted_leave = models.IntegerField(verbose_name="Contracted Days Leave", default=0)
     contracted_leave_renewal = models.DateField(verbose_name="Leave Renewal Date", default=date(day=1, month=9, year=2023))
     
     class Meta:
