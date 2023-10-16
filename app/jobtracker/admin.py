@@ -1,6 +1,7 @@
 from django.contrib import admin
-from .models import *
-from django.apps import apps
+from .models import Phase, Job, OrganisationalUnit, OrganisationalUnitMember, Skill, \
+    SkillCategory, Service, TimeSlot, WorkflowTask, BillingCode, \
+    Feedback, Certification, UserCertification, Client, Contact, UserSkill
 from import_export import resources
 from guardian.admin import GuardedModelAdmin
 from import_export.admin import ImportExportModelAdmin

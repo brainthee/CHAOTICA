@@ -29,9 +29,7 @@
         <a class="navbar-brand me-1 me-sm-3" href="{% url 'home' %}">
           <div class="d-flex align-items-center">
             <div class="d-flex align-items-center">
-              <!-- <img src="{% static "assets/img/icons/logo.png" %}" alt="CHAOTICA" width="27" /> -->
               <img src="{% static "assets/img/logos/chaotica.png" %}" alt="CHAOTICA" height="56" />
-              <!-- <p class="logo-text ms-2 d-none d-sm-block">Chaotica</p> -->
             </div>
           </div>
         </a>
@@ -82,9 +80,6 @@
                   <h6 class="mt-2 text-black">{{ request.user.get_full_name }}</h6>
                   <p class="text-600 fw-semi-bold fs--2 mb-2">{{ user.job_title }}</p>
                 </div>
-                <!-- <div class="mb-3 mx-3">
-                  <input class="form-control form-control-sm" id="statusUpdateInput" type="text" placeholder="Update your status" />
-                </div> -->
               </div>
               <div class="overflow-auto scrollbar" style="height: 10rem;">
                 <ul class="nav d-flex flex-column mb-2 pb-1">

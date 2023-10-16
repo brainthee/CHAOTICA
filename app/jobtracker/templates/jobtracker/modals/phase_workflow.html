@@ -1,9 +1,9 @@
 <div class="modal-dialog modal- modal-dialog-centered modal-" role="document">
-    <div class="modal-content {% if not canProceed %}shadow-danger{% endif %}">
+    <div class="modal-content {% if not can_proceed %}shadow-danger{% endif %}">
         <form method="post" action="{% url 'phase_update_workflow' phase.job.slug phase.slug new_state %}" class="js-workflow-phase-form">
             {% csrf_token %}            
-            <div class="modal-header {% if not canProceed %}bg-danger{% endif %}">
-                <h6 class="modal-title {% if not canProceed %}text-white{% endif %} font-weight-normal" 
+            <div class="modal-header {% if not can_proceed %}bg-danger{% endif %}">
+                <h6 class="modal-title {% if not can_proceed %}text-white{% endif %} font-weight-normal" 
                     id="modal-title-default">
                         Move to {{ new_state_str }}
                 </h6>
@@ -11,7 +11,7 @@
             </div>
 
             <div class="modal-body ">
-                {% if not canProceed %}
+                {% if not can_proceed %}
                     <p class="">Unable to proceed to <mark>{{ new_state_str }}</mark>. The following checks failed:</p>
                     {% for message in messages %}
                     {% if message.tags == "error" %}
@@ -54,7 +54,7 @@
             
             <div class="modal-footer">
                 <button type="button" class="btn btn-light shadow-none mb-0" data-bs-dismiss="modal">Close</button>
-                {% if canProceed %}
+                {% if can_proceed %}
                 <button type="submit" class="btn btn-phoenix-primary mb-0">Advance Status</button>
                 {% endif %}
             </div>

@@ -311,7 +311,7 @@ def update_own_skills(request):
             try:
                 skill = Skill.objects.get(slug=field)
                 value = int(request.POST.get(field))
-                skill, added = UserSkill.objects.get_or_create(
+                skill, _ = UserSkill.objects.get_or_create(
                     user=request.user, skill=skill)
                 if skill.rating != value:
                     skill.rating = value

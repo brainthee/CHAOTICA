@@ -1,5 +1,5 @@
 {% load index %}
-{% getRangeFromOne 5 as feedbackRange %}
+{% get_range_from_one 5 as feedbackRange %}
 {% for i in feedbackRange %}
 {% if feedback > i %}
     <span class="fa fa-xs fa-star "></span>

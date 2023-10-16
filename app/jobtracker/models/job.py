@@ -339,7 +339,7 @@ class Job(models.Model):
         return total_scoped
         
     
-    def get_slotType_usage_perc(self, slot_type):
+    def get_slot_type_usage_perc(self, slot_type):
         # First, get the total for the slotType
         total_scoped = self.get_total_scoped_by_type(slot_type)        
         # Now lets get the scheduled amount

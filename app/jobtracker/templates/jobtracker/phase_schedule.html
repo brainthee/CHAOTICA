@@ -85,7 +85,7 @@ var calendar = new FullCalendar.Calendar(calendarEl, {
         center: 'title',
         right: 'resourceTimelineTenDay,resourceTimelineMonth,resourceTimelineYear'
     },
-    {% PyDateToJSDate phase.earliest_scheduled_date as earliest_scheduled_date %}
+    {% py_date_to_js_date phase.earliest_scheduled_date as earliest_scheduled_date %}
     {% if earliest_scheduled_date %}
     initialDate: '{{ earliest_scheduled_date }}',
     {% endif %}

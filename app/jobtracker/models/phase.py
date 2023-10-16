@@ -488,7 +488,7 @@ class Phase(models.Model):
             }
         return data            
     
-    def get_slotType_usage_perc(self, slot_type):
+    def get_slot_type_usage_perc(self, slot_type):
         # First, get the total for the slot_type
         total_scoped = self.get_total_scoped_by_type(slot_type)
         # Now lets get the scheduled amount
@@ -523,7 +523,7 @@ class Phase(models.Model):
         super(Phase, self).save(*args, **kwargs)
 
     def get_absolute_url(self):
-        return reverse("phase_detail", kwargs={"slug": self.slug, "jobSlug": self.job.slug})
+        return reverse("phase_detail", kwargs={"slug": self.slug, "job_slug": self.job.slug})
     
     @property
     def status_bs_colour(self):

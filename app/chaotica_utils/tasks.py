@@ -25,7 +25,7 @@ def task_update_holidays(self):
         for subdiv in holiday_days.subdivisions:
             dates = holidays.CountryHoliday(country=country.country.code, subdiv=subdiv, years=years)
             for hol, desc in dates.items():
-                db_date, created = Holiday.objects.get_or_create(date=hol, country=country, reason=desc,)
+                db_date, _ = Holiday.objects.get_or_create(date=hol, country=country, reason=desc,)
                 if subdiv not in db_date.subdivs:
                     db_date.subdivs.append(subdiv)
                     db_date.save()

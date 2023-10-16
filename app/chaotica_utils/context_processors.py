@@ -1,9 +1,8 @@
 from django.conf import settings
 from .models import User
 from jobtracker.models import OrganisationalUnit, Client, Service
-import pprint
 
-def defaults(request):
+def defaults(_):
     new_install = User.objects.all().count() <= 1
     setup_unit = OrganisationalUnit.objects.all().count() == 0
     setup_client = Client.objects.all().count() == 0
