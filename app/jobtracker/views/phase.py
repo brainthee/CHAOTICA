@@ -6,7 +6,7 @@ from django.views import View
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
-from chaotica_utils.views import log_system_activity, ChaoticaBaseView, pageDefaults
+from chaotica_utils.views import log_system_activity, ChaoticaBaseView, page_defaults
 from chaotica_utils.utils import *
 from ..models import *
 from ..forms import *

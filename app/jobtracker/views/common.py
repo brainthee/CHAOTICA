@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404, redirect
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.template import loader
-from chaotica_utils.views import log_system_activity, ChaoticaBaseView, pageDefaults
+from chaotica_utils.views import log_system_activity, ChaoticaBaseView, page_defaults
 from chaotica_utils.utils import *
 from ..models import *
 from ..forms import *
@@ -30,7 +30,7 @@ def run_tasks(request):
 def view_scheduler(request):
     context = {}
     template = loader.get_template('scheduler.html')
-    context = {**context, **pageDefaults(request)}
+    context = {**context, **page_defaults(request)}
     return HttpResponse(template.render(context, request))
 
 @login_required
@@ -79,7 +79,7 @@ def reset_cal_family_feed(request):
 def view_stats(request):
     context = {}
     template = loader.get_template('stats.html')
-    context = {**context, **pageDefaults(request)}
+    context = {**context, **page_defaults(request)}
     return HttpResponse(template.render(context, request))
 
 
@@ -87,5 +87,5 @@ def view_stats(request):
 def view_reports(request):
     context = {}
     template = loader.get_template('reports.html')
-    context = {**context, **pageDefaults(request)}
+    context = {**context, **page_defaults(request)}
     return HttpResponse(template.render(context, request))

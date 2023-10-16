@@ -15,7 +15,7 @@ urlpatterns = [
     path('quote', views.get_quote, name='get_quote'),
     path('autocomplete/users', views.UserAutocomplete.as_view(), name='user-autocomplete'),
     # path('autocomplete/job', views.JobAutocomplete.as_view(), name='job-autocomplete'),
-    path('search', views.SiteSearch, name='search'),
+    path('search', views.site_search, name='search'),
 
     # User CRUD
     path('users/', views.UserListView.as_view(), name='user_list'),
@@ -28,8 +28,6 @@ urlpatterns = [
     path('ops/leave/', views.manage_leave, name='manage_leave'),
     path('ops/leave/<int:pk>/manage', views.manage_leave_auth_request, name='manage_leave_auth_request'),
     path('settings/', views.app_settings, name='app_settings'),
-    path('settings/import', views.import_site_data, name='import_site_data'),
-    path('settings/export', views.export_site_data, name='export_site_data'),
     path('profile/', views.view_own_profile, name='view_own_profile'),
     path('profile/theme', views.update_own_theme, name='update_own_theme'),
     path('profile/update', views.update_own_profile, name='update_own_profile'),
@@ -40,5 +38,5 @@ urlpatterns = [
     path('profile/<str:username>/assign_role/', views.user_assign_global_role, name='user_assign_global_role'),
     path('profile/<str:username>/delete/', views.UserDeleteView.as_view(), name='user_delete'),
 
-    path('tasks/updateHolidays', views.updateHolidays, name='updateHolidays'),
+    path('tasks/update_holidays', views.update_holidays, name='update_holidays'),
 ]
