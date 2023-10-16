@@ -1,9 +1,8 @@
 from django.contrib.auth import login, authenticate
-from django.contrib.auth.forms import UserCreationForm
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django.conf import settings as django_settings
-from django.template import loader, Template as tmpl, Context
+from django.template import loader
 from django.http import HttpResponseForbidden, JsonResponse, HttpResponse, HttpResponseRedirect, Http404, HttpResponseBadRequest
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 import json, os, random
@@ -12,13 +11,10 @@ from .models import *
 from .enums import *
 from .utils import *
 from dal import autocomplete
-from django.db.models import Q, Sum
-from django.utils.html import format_html
-from django.contrib.auth.decorators import login_required, permission_required
+from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.views import View
-from django.views.decorators.csrf import csrf_exempt
-from guardian.shortcuts import get_objects_for_user, assign_perm, remove_perm
+from guardian.shortcuts import get_objects_for_user
 from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
@@ -26,10 +22,10 @@ from django.contrib import messages
 from django.shortcuts import get_object_or_404
 from constance import config
 from .tasks import *
-from django.views.decorators.http import require_http_methods, require_safe
+from django.views.decorators.http import require_http_methods, require_safe, require_POST
     
 
-def pageDefaults(request):
+def page_defaults(request):
     from jobtracker.models import Job, Phase
     context = {}
     context['notifications'] = Notification.objects.filter(user=request.user)
@@ -48,15 +44,24 @@ def is_ajax(request):
 
 @login_required
 @require_safe
-def updateHolidays(request):
-    task_updateHolidays(request)
-    return HttpResponse("")
+def update_holidays(request):
+    task_update_holidays(request)
     return HttpResponseRedirect(reverse('home'))
 
 
 @require_safe
 def trigger_error(request):
+    """
+    Deliberately causes an error. Used to test error capturing
+
+    Args:
+        request (Request): A request object
+
+    Returns:
+        Exception: An error :)
+    """
     division_by_zero = 1 / 0
+    return division_by_zero
 
 
 @require_safe
@@ -80,14 +85,13 @@ def maintenance(request):
 @login_required
 @require_safe
 def view_own_leave(request):
-    from jobtracker.models import Skill, UserSkill
     context = {}
     leave_list = LeaveRequest.objects.filter(user=request.user)
     context = {
         'leave_list': leave_list,
         }
     template = loader.get_template('view_own_leave.html')
-    context = {**context, **pageDefaults(request)}
+    context = {**context, **page_defaults(request)}
     return HttpResponse(template.render(context, request))
 
 
@@ -107,7 +111,7 @@ def request_leave(request):
     
     context = {'form': form}
     template = loader.get_template('forms/add_leave_form.html')
-    context = {**context, **pageDefaults(request)}
+    context = {**context, **page_defaults(request)}
     return HttpResponse(template.render(context, request))
 
 
@@ -116,9 +120,9 @@ def request_leave(request):
 def manage_leave(request):
     context = {}
     from jobtracker.models.orgunit import OrganisationalUnit
-    unitsWithPerm = get_objects_for_user(request.user, "can_view_all_leave_requests", OrganisationalUnit)
+    units_with_perm = get_objects_for_user(request.user, "can_view_all_leave_requests", OrganisationalUnit)
     leave_list = LeaveRequest.objects.filter(
-        Q(user__unit_memberships__unit__in=unitsWithPerm) | # Show leave requests for users we have permission over
+        Q(user__unit_memberships__unit__in=units_with_perm) | # Show leave requests for users we have permission over
         Q(user__manager=request.user) | # where we're manager
         Q(user__acting_manager=request.user) | # where we're acting manager
         Q(user=request.user)) # and our own of course....
@@ -126,7 +130,7 @@ def manage_leave(request):
         'leave_list': leave_list,
         }
     template = loader.get_template('manage_leave.html')
-    context = {**context, **pageDefaults(request)}
+    context = {**context, **page_defaults(request)}
     return HttpResponse(template.render(context, request))
 
 @login_required
@@ -160,6 +164,7 @@ def manage_leave_auth_request(request, pk):
     return JsonResponse(data)
 
 @login_required
+@require_http_methods(["GET", "POST"])
 def cancel_own_leave(request, pk):
     leave = get_object_or_404(LeaveRequest, pk=pk, user=request.user)
     
@@ -192,23 +197,23 @@ def view_own_profile(request):
     context = {}
     skills = Skill.objects.all()
     languages = Language.objects.all()
-    userSkills = UserSkill.objects.filter(user=request.user)
-    profileForm = ProfileBasicForm(instance=request.user)
+    user_skills = UserSkill.objects.filter(user=request.user)
+    profile_form = ProfileBasicForm(instance=request.user)
     context = {
         'skills': skills, 
-        'userSkills': userSkills,
+        'userSkills': user_skills,
         'languages': languages,
-        'profileForm': profileForm,
+        'profileForm': profile_form,
         'feed_url': ext_reverse(reverse('view_own_schedule_feed', kwargs={'calKey':request.user.schedule_feed_id})),
         'feed_family_url': ext_reverse(reverse('view_own_schedule_feed_family', kwargs={'calKey':request.user.schedule_feed_family_id})),
         }
     template = loader.get_template('profile.html')
-    context = {**context, **pageDefaults(request)}
+    context = {**context, **page_defaults(request)}
     return HttpResponse(template.render(context, request))
 
 
 @login_required
-@require_http_methods(["POST", "GET"])
+@require_http_methods(["GET", "POST"])
 def update_own_profile(request):
     data = {}
     data['form_is_valid'] = False
@@ -284,8 +289,8 @@ def notification_mark_read(request, pk):
 def update_own_theme(request):
     if 'mode' in request.GET:
         mode = request.GET.get('mode', 'light')
-        validModes = ['dark', 'light']
-        if mode in validModes:
+        valid_modes = ['dark', 'light']
+        if mode in valid_modes:
             request.user.site_theme = mode
             request.user.save()
             return HttpResponse("OK")    
@@ -293,7 +298,7 @@ def update_own_theme(request):
 
 
 @login_required
-@require_http_methods(["POST", "GET"])
+@require_http_methods(["GET", "POST"])
 def update_own_skills(request):
     from jobtracker.models import Skill, UserSkill
     if request.method == "POST":
@@ -320,13 +325,13 @@ def update_own_skills(request):
 
 
 @login_required
-@require_http_methods(["POST", "GET"])
+@require_http_methods(["GET", "POST"])
 def update_own_certs(request):
     return HttpResponseBadRequest()
 
 
 @staff_member_required
-@require_http_methods(["POST", "GET"])
+@require_http_methods(["GET", "POST"])
 def app_settings(request):
     context = {}
     if request.method == "POST":
@@ -342,12 +347,12 @@ def app_settings(request):
 
     context = {'app_settings': form}
     template = loader.get_template('app_settings.html')
-    context = {**context, **pageDefaults(request)}
+    context = {**context, **page_defaults(request)}
     return HttpResponse(template.render(context, request))
 
 
 @staff_member_required
-@require_http_methods(["POST", "GET"])
+@require_http_methods(["GET", "POST"])
 def user_assign_global_role(request, username):
     user = get_object_or_404(User, username=username)
     data = dict()
@@ -366,45 +371,6 @@ def user_assign_global_role(request, username):
                                                 context,
                                                 request=request)
     return JsonResponse(data)
-
-
-@staff_member_required
-@require_http_methods(["POST", "GET"])
-def import_site_data(request):
-    return HttpResponseForbidden()
-    data = dict()
-    if request.method == 'POST':
-        form = ImportSiteDataForm(request.POST)
-        if form.is_valid():
-            # lets process the file!
-            importFile = request.FILES['importFile']
-            if importFile:
-                try:
-
-
-                    data['form_is_valid'] = True
-
-                except ValueError:
-                    data['form_is_valid'] = False
-                    messages.error(request, "File was not a valid JSON import")
-            else:
-                data['form_is_valid'] = False            
-        else:
-            data['form_is_valid'] = False
-    else:
-        form = ImportSiteDataForm()
-    
-    context = {'form': form,}
-    data['html_form'] = loader.render_to_string("modals/import_site_data.html",
-                                                context,
-                                                request=request)
-    return JsonResponse(data)
-
-
-@staff_member_required
-@require_http_methods(["GET"])
-def export_site_data(request):
-    return HttpResponseForbidden()
 
 
 class ChaoticaBaseView(LoginRequiredMixin, View):
@@ -432,7 +398,7 @@ class ChaoticaBaseView(LoginRequiredMixin, View):
     
     def get_context_data(self,*args, **kwargs):
         context = super(ChaoticaBaseView, self).get_context_data(*args,**kwargs)
-        context = {**context, **pageDefaults(self.request)}
+        context = {**context, **page_defaults(self.request)}
         return context
 
 
@@ -441,8 +407,6 @@ class ChaoticaBaseGlobalRoleView(ChaoticaBaseView, UserPassesTestMixin):
     role_required = None
 
     def test_func(self):
-        # Check if the user is in the global admin group
-        grp = Group.objects.get(name=settings.GLOBAL_GROUP_PREFIX+GlobalRoles.CHOICES[GlobalRoles.ADMIN][1])
         if self.role_required:
             return self.request.user.groups.filter(
                 name=settings.GLOBAL_GROUP_PREFIX+GlobalRoles.CHOICES[self.role_required][1]).exists()
@@ -457,12 +421,13 @@ class ChaoticaBaseAdminView(ChaoticaBaseView, UserPassesTestMixin):
         return self.request.user.groups.filter(name=settings.GLOBAL_GROUP_PREFIX+GlobalRoles.CHOICES[GlobalRoles.ADMIN][1])
 
 
-def log_system_activity(refObj, msg, author=None):
-    noteNote = Note(content=msg,
+def log_system_activity(ref_obj, msg, author=None):
+    new_note = Note(content=msg,
                  is_system_note=True,
                  author=author,
-                 content_object=refObj)
-    noteNote.save()
+                 content_object=ref_obj)
+    new_note.save()
+    return new_note
 
 
 @require_safe
@@ -571,59 +536,59 @@ class UserAutocomplete(autocomplete.Select2QuerySetView):
 
 
 @login_required
-def SiteSearch(request):
+@require_POST
+def site_search(request):
     data = {}
     context = {}
     q = request.POST.get('q', '').capitalize()
     results_count = 0
     from jobtracker.models import Job, Phase, Client, Service, Skill, BillingCode
-    if is_ajax(request):
-        if len(q) > 2:
-            ## Jobs
-            jobs_search = get_objects_for_user(request.user, 'jobtracker.view_job', Job.objects.all()).filter(
-                Q(title__icontains=q) | Q(overview__icontains=q) | Q(slug__icontains=q)
-                 | Q(id__icontains=q))
-            context['search_jobs'] = jobs_search
-            results_count = results_count + jobs_search.count()
+    if is_ajax(request) and len(q) > 2:
+        ## Jobs
+        jobs_search = get_objects_for_user(request.user, 'jobtracker.view_job', Job.objects.all()).filter(
+            Q(title__icontains=q) | Q(overview__icontains=q) | Q(slug__icontains=q)
+                | Q(id__icontains=q))
+        context['search_jobs'] = jobs_search
+        results_count = results_count + jobs_search.count()
 
-            ## Phases
-            phases_search = Phase.objects.filter(
-                Q(title__icontains=q) | Q(description__icontains=q) | Q(phase_id__icontains=q),
-                job__in=jobs_search,)
-            context['search_phases'] = phases_search
-            results_count = results_count + phases_search.count()
+        ## Phases
+        phases_search = Phase.objects.filter(
+            Q(title__icontains=q) | Q(description__icontains=q) | Q(phase_id__icontains=q),
+            job__in=jobs_search,)
+        context['search_phases'] = phases_search
+        results_count = results_count + phases_search.count()
 
-            ## Clients
-            cl_search = Client.objects.filter(
-                Q(name__icontains=q))
-            context['search_clients'] = cl_search
-            results_count = results_count + cl_search.count()
+        ## Clients
+        cl_search = Client.objects.filter(
+            Q(name__icontains=q))
+        context['search_clients'] = cl_search
+        results_count = results_count + cl_search.count()
 
-            ## BillingCodes
-            bc_search = BillingCode.objects.filter(
-                Q(code__icontains=q))
-            context['search_billingCodes'] = bc_search
-            results_count = results_count + bc_search.count()
+        ## BillingCodes
+        bc_search = BillingCode.objects.filter(
+            Q(code__icontains=q))
+        context['search_billingCodes'] = bc_search
+        results_count = results_count + bc_search.count()
 
-            ## Services
-            sv_search = Service.objects.filter(
-                Q(name__icontains=q))
-            context['search_services'] = sv_search
-            results_count = results_count + sv_search.count()
+        ## Services
+        sv_search = Service.objects.filter(
+            Q(name__icontains=q))
+        context['search_services'] = sv_search
+        results_count = results_count + sv_search.count()
 
-            ## Skills
-            sk_search = Skill.objects.filter(
-                Q(name__icontains=q))
-            context['search_skills'] = sk_search
-            results_count = results_count + sk_search.count()
+        ## Skills
+        sk_search = Skill.objects.filter(
+            Q(name__icontains=q))
+        context['search_skills'] = sk_search
+        results_count = results_count + sk_search.count()
 
-            ## Users
-            if request.user.is_superuser:
-                us_search = User.objects.filter(
-                    Q(username__icontains=q) | Q(first_name__icontains=q) | Q(last_name__icontains=q)
-                )
-                context['search_users'] = us_search
-                results_count = results_count + us_search.count()
+        ## Users
+        if request.user.is_superuser:
+            us_search = User.objects.filter(
+                Q(username__icontains=q) | Q(first_name__icontains=q) | Q(last_name__icontains=q)
+            )
+            context['search_users'] = us_search
+            results_count = results_count + us_search.count()
         
     context['results_count'] = results_count
     

@@ -15,7 +15,7 @@ logger = get_task_logger("tasks")
 
 
 @shared_task(track_started=True)
-def task_updateHolidays(self):
+def task_update_holidays(self):
     now = timezone.now().today()
     years = [now.year, now.year+1]
     # countries = ["UK"]
