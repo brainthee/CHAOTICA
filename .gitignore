@@ -122,3 +122,4 @@ app/media/
 app/staticfiles/
 
 app/.scannerwork/
+.vscode/settings.json
