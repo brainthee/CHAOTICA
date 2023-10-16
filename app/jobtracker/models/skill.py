@@ -1,11 +1,7 @@
 from django.db import models
-from ..enums import *
+from ..enums import UserSkillRatings
 from django.conf import settings
 from django.urls import reverse
-from pprint import pprint
-from chaotica_utils.enums import *
-from chaotica_utils.tasks import *
-from chaotica_utils.utils import *
 from django.utils.text import slugify
 
 class SkillCategory(models.Model):
@@ -18,17 +14,7 @@ class SkillCategory(models.Model):
     class Meta:
         verbose_name_plural = "Skill Categories"
         ordering = ['name']
-        permissions = (
-            ## Defaults
-            # ('view_skillcategory', 'View Skill Category'),
-            # ('add_skillcategory', 'Add Skill Category'),
-            # ('change_skillcategory', 'Change Skill Category'),
-            # ('delete_skillcategory', 'Delete Skill Category'),
-        )
-    
-
-    def syncPermissions(self):
-        pass
+        permissions = ()
 
     def save(self, *args, **kwargs):
         if not self.slug:

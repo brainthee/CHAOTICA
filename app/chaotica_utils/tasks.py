@@ -1,4 +1,3 @@
-from .models import *
 from datetime import date, timedelta
 from celery import shared_task, current_task
 from celery import Celery
@@ -16,10 +15,9 @@ logger = get_task_logger("tasks")
 
 @shared_task(track_started=True)
 def task_update_holidays(self):
+    from .models import Holiday, HolidayCountry
     now = timezone.now().today()
     years = [now.year, now.year+1]
-    # countries = ["UK"]
-    # countries = holidays.utils.list_supported_countries(include_aliases=False)
     countries = HolidayCountry.objects.all()
 
     for country in countries:
@@ -36,4 +34,4 @@ def task_update_holidays(self):
 @shared_task(track_started=True, serializer="pickle")
 def task_send_notifications(notification, users_to_notify):
     for u in users_to_notify:
-        notification.SendToUser(u)
+        notification.send_to_user(u)

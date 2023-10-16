@@ -1,5 +1,5 @@
 from django.db import models
-from ..enums import *
+from ..enums import JobStatuses, RestrictedClassifications, TimeSlotDeliveryRole
 from django_fsm import FSMIntegerField, transition, can_proceed
 from django.conf import settings
 from django.utils import timezone
@@ -10,12 +10,10 @@ from django.contrib.contenttypes.fields import GenericRelation
 from model_utils.fields import MonitorField
 from django.db.models import JSONField
 from django.contrib import messages
-from pprint import pprint
 import uuid
 from chaotica_utils.models import Note, User
-from chaotica_utils.enums import *
-from chaotica_utils.tasks import *
-from chaotica_utils.utils import *
+from chaotica_utils.tasks import task_send_notifications
+from chaotica_utils.utils import AppNotification, NotificationTypes
 from chaotica_utils.views import log_system_activity
 from datetime import timedelta
 from decimal import Decimal
@@ -41,6 +39,8 @@ class JobManager(models.Manager):
     
 
 class Job(models.Model):
+    STATE_ERROR = "Invalid state or permissions."
+
     objects = JobManager()
     unit = models.ForeignKey("OrganisationalUnit", related_name='jobs', on_delete=models.CASCADE)
     slug = models.UUIDField(default=uuid.uuid4, unique=True)
@@ -48,7 +48,7 @@ class Job(models.Model):
                             help_text="Current state of the job", protected=True,
                             choices=JobStatuses.CHOICES, default=JobStatuses.DRAFT)
     status_changed_date = MonitorField(monitor='status')
-    external_id = models.CharField(verbose_name="External ID", db_index=True, max_length=255, null=True, blank=True, default="")
+    external_id = models.CharField(verbose_name="External ID", db_index=True, max_length=255, blank=True, default="")
     id = models.AutoField(primary_key=True, verbose_name='Job ID')
     title = models.CharField('Job Title', max_length=250)
     history = HistoricalRecords()
@@ -72,23 +72,15 @@ class Job(models.Model):
     revenue = models.DecimalField(max_digits=10, decimal_places=2, default=0, null=True, blank=True,
         verbose_name="Sales Revenue", help_text="Cost of the job to the client")
     
-    
+        
     def staff_cost(self):
-        totalCost = 0
+        total_cost = 0
         # Ok, for each person... lets take their cost per hour and figure out staffing!
         from ..models import TimeSlot
         for slot in TimeSlot.objects.filter(phase__job=self):
             # lets add up the hours!
-            totalCost = totalCost + slot.cost()
-        return totalCost
-    
-    @property
-    def job_starts(self):
-        pass
-
-    @property
-    def job_ends(self):
-        pass
+            total_cost = total_cost + slot.cost()
+        return total_cost
 
     @property
     def profit_perc(self):
@@ -99,11 +91,11 @@ class Job(models.Model):
 
     @property
     def profit(self):
-        staffCost = self.staff_cost()
+        staff_cost = self.staff_cost()
         if self.revenue is not None:
-            return self.revenue - staffCost
+            return self.revenue - staff_cost
         else:
-            return 0 - staffCost
+            return 0 - staff_cost
     
     @property
     def average_day_rate(self):
@@ -187,32 +179,19 @@ class Job(models.Model):
         verbose_name = 'Job'
         ordering = ['id']
         permissions = (
-            ## Defaults
-            # ('view_job', 'View Job'),
-            # ('add_job', 'Add Job'),
-            # ('change_job', 'Change Job'),
-            # ('delete_job', 'Delete Job'),
-            ## Extras
             ('add_note', 'Can Add Note'),
             ('scope_job', 'Can Scope Job'),
             ('view_schedule', 'Can View Schedule'),
             ('change_schedule', 'Can Change Schedule'),
             ('assign_poc', 'Can assign Point of Contact'),
         )
-    
-
-    def syncPermissions(self):
-        # we don't do anything yet ;)
-        pass
 
     def __str__(self):
         return u'{client}/{id}'.format(client=self.client, id=self.id)
     
-    def fire_status_notification(self, targetStatus):
-        if targetStatus == JobStatuses.DRAFT:
-            pass        
+    def fire_status_notification(self, target_status):
 
-        elif targetStatus == JobStatuses.PENDING_SCOPE:
+        if target_status == JobStatuses.PENDING_SCOPE:
             # Notify scoping team
             users_to_notify = self.unit.get_active_members_with_perm("can_scope_jobs")
             notice = AppNotification(
@@ -220,14 +199,8 @@ class Job(models.Model):
                 "Job Pending Scope", "A job has just been marked as ready to scope.", 
                 "emails/job/PENDING_SCOPE.html", job=self)
             task_send_notifications.delay(notice, users_to_notify)
-
-        elif targetStatus == JobStatuses.SCOPING:
-            pass
         
-        elif targetStatus == JobStatuses.SCOPING_ADDITIONAL_INFO_REQUIRED:
-            pass
-        
-        elif targetStatus == JobStatuses.PENDING_SCOPING_SIGNOFF:        
+        elif target_status == JobStatuses.PENDING_SCOPING_SIGNOFF:        
             # Notify scoping team
             users_to_notify = self.unit.get_active_members_with_perm("can_signoff_scopes")
             notice = AppNotification(
@@ -236,7 +209,7 @@ class Job(models.Model):
                 "emails/job/PENDING_SCOPING_SIGNOFF.html", job=self)
             task_send_notifications.delay(notice, users_to_notify)
         
-        elif targetStatus == JobStatuses.SCOPING_COMPLETE:        
+        elif target_status == JobStatuses.SCOPING_COMPLETE:        
             # Notify scheduling team
             users_to_notify = self.unit.get_active_members_with_perm("can_schedule_phases")
             notice = AppNotification(
@@ -244,24 +217,6 @@ class Job(models.Model):
                 "Job Ready to Schedule", "A job's scope has been signed off and is ready for scheduling.", 
                 "emails/job/SCOPING_COMPLETE.html", job=self)
             task_send_notifications.delay(notice, users_to_notify)
-        
-        elif targetStatus == JobStatuses.PENDING_START:
-            pass
-        
-        elif targetStatus == JobStatuses.IN_PROGRESS:
-            pass
-        
-        elif targetStatus == JobStatuses.COMPLETED:
-            pass
-        
-        elif targetStatus == JobStatuses.LOST:
-            pass
-        
-        elif targetStatus == JobStatuses.DELETED:
-            pass
-        
-        elif targetStatus == JobStatuses.ARCHIVED:
-            pass
     
 
     def start_date(self):
@@ -311,16 +266,16 @@ class Job(models.Model):
     
     def get_total_scoped_hours(self):
         phases = self.phases.all()
-        totalScoped = Decimal(0.0)
+        total_scoped = Decimal(0.0)
         for phase in phases:
-            totalScoped = totalScoped + phase.get_total_scoped_hours()
-        return totalScoped
+            total_scoped = total_scoped + phase.get_total_scoped_hours()
+        return total_scoped
     
     
     def get_total_scoped_days(self):
-        totalScopedHrs = self.get_total_scoped_hours()
+        total_scoped_hrs = self.get_total_scoped_hours()
         # Lets get the hours, 
-        return round(totalScopedHrs / self.client.hours_in_day, 2)
+        return round(total_scoped_hrs / self.client.hours_in_day, 2)
         
 
     def team_scheduled(self):
@@ -333,8 +288,8 @@ class Job(models.Model):
     
     def get_activeTimeSlotDeliveryRoles(self):
         from ..models import TimeSlot
-        mySlots = TimeSlot.objects.filter(phase__job=self).values_list('deliveryRole', flat=True).distinct()
-        return mySlots
+        my_slots = TimeSlot.objects.filter(phase__job=self).values_list('deliveryRole', flat=True).distinct()
+        return my_slots
     
     def get_all_total_scheduled_by_type(self):
         data = dict()
@@ -342,9 +297,9 @@ class Job(models.Model):
             data[state[0]] = self.get_total_scheduled_by_type(state[0])
         return data
     
-    def get_total_scheduled_by_type(self, slotType):
+    def get_total_scheduled_by_type(self, slot_type):
         from ..models import TimeSlot
-        slots = TimeSlot.objects.filter(phase__job=self, deliveryRole=slotType)
+        slots = TimeSlot.objects.filter(phase__job=self, deliveryRole=slot_type)
         total = 0.0
         for slot in slots:
             diff = slot.get_business_hours()
@@ -360,41 +315,41 @@ class Job(models.Model):
             }
         return data
     
-    def get_total_scoped_by_type(self, slotType):
+    def get_total_scoped_by_type(self, slot_type):
         phases = self.phases.all()
-        totalScoped = Decimal(0.0)
+        total_scoped = Decimal(0.0)
         for phase in phases:
             # Ugly.... but yolo
-            if slotType == TimeSlotDeliveryRole.DELIVERY:
-                totalScoped = totalScoped + phase.delivery_hours
-            elif slotType == TimeSlotDeliveryRole.REPORTING:
-                totalScoped = totalScoped + phase.reporting_hours
-            elif slotType == TimeSlotDeliveryRole.MANAGEMENT:
-                totalScoped = totalScoped + phase.mgmt_hours
-            elif slotType == TimeSlotDeliveryRole.QA:
-                totalScoped = totalScoped + phase.qa_hours
-            elif slotType == TimeSlotDeliveryRole.OVERSIGHT:
-                totalScoped = totalScoped + phase.oversight_hours
-            elif slotType == TimeSlotDeliveryRole.DEBRIEF:
-                totalScoped = totalScoped + phase.debrief_hours
-            elif slotType == TimeSlotDeliveryRole.CONTINGENCY:
-                totalScoped = totalScoped + phase.contingency_hours
-            elif slotType == TimeSlotDeliveryRole.OTHER:
-                totalScoped = totalScoped + phase.other_hours
-        return totalScoped
+            if slot_type == TimeSlotDeliveryRole.DELIVERY:
+                total_scoped = total_scoped + phase.delivery_hours
+            elif slot_type == TimeSlotDeliveryRole.REPORTING:
+                total_scoped = total_scoped + phase.reporting_hours
+            elif slot_type == TimeSlotDeliveryRole.MANAGEMENT:
+                total_scoped = total_scoped + phase.mgmt_hours
+            elif slot_type == TimeSlotDeliveryRole.QA:
+                total_scoped = total_scoped + phase.qa_hours
+            elif slot_type == TimeSlotDeliveryRole.OVERSIGHT:
+                total_scoped = total_scoped + phase.oversight_hours
+            elif slot_type == TimeSlotDeliveryRole.DEBRIEF:
+                total_scoped = total_scoped + phase.debrief_hours
+            elif slot_type == TimeSlotDeliveryRole.CONTINGENCY:
+                total_scoped = total_scoped + phase.contingency_hours
+            elif slot_type == TimeSlotDeliveryRole.OTHER:
+                total_scoped = total_scoped + phase.other_hours
+        return total_scoped
         
     
-    def get_slotType_usage_perc(self, slotType):
+    def get_slotType_usage_perc(self, slot_type):
         # First, get the total for the slotType
-        totalScoped = self.get_total_scoped_by_type(slotType)        
+        total_scoped = self.get_total_scoped_by_type(slot_type)        
         # Now lets get the scheduled amount
-        scheduled = self.get_total_scheduled_by_type(slotType)
+        scheduled = self.get_total_scheduled_by_type(slot_type)
         if scheduled == 0.0:
             return 0
-        if totalScoped == 0.0 and scheduled > 0.0:
+        if total_scoped == 0.0 and scheduled > 0.0:
             # Over scheduled and scope is zero
             return 100
-        return round(100 * float(scheduled)/float(totalScoped),2)
+        return round(100 * float(scheduled)/float(total_scoped),2)
 
 
     def get_system_notes(self):
@@ -404,44 +359,16 @@ class Job(models.Model):
         return reverse('job_detail', kwargs={"slug": self.slug})
 
     def save(self, *args, **kwargs):        
-
-        # Commented this out for the moment. If implementing this - populate the allowed_fields_per_status
-        # beware - will need to ensure you allow for auto-changing fields
-        
-        # if self.pk is not None:
-        #     # Get which fields have changed
-        #     orig = Job.objects.get(pk=self.pk)
-        #     field_names = [field.name for field in Job._meta.fields]
-        #     changed_fields = {}
-        #     for field_name in field_names:
-        #         if getattr(orig, field_name) != getattr(self, field_name):
-        #             changed_fields[field_name] = field_name
-
-        #     # Now lets check if we're trying to change any fields which aren't allowed at this state.
-        #     allowed_fields_per_status = {
-        #         JobStatuses.DRAFT : [
-        #             'title'
-        #         ],
-        #         JobStatuses.PENDING_SCOPE : [
-        #             'title'
-        #         ],
-        #         JobStatuses.SCOPING : [
-        #             'title'
-        #         ],
-        #     }
-        #     for f in changed_fields:
-        #         if f not in allowed_fields_per_status[self.status]:
-        #             raise ValidationError("Current status does not allow that field to be changed")
-
         return super().save(*args, **kwargs)
     
     #### FSM Methods
+    MOVED_TO = "Moved to "
 
     # PENDING_SCOPE
     @transition(field=status, source=JobStatuses.DRAFT,
         target=JobStatuses.PENDING_SCOPE)
     def to_pending_scope(self):
-        log_system_activity(self, "Moved to "+JobStatuses.CHOICES[JobStatuses.PENDING_SCOPE][1])
+        log_system_activity(self, self.MOVED_TO + JobStatuses.CHOICES[JobStatuses.PENDING_SCOPE][1])
         self.scoping_requested_on = timezone.now()
         self.fire_status_notification(JobStatuses.PENDING_SCOPE)
 
@@ -468,7 +395,7 @@ class Job(models.Model):
         can_proceed_result = can_proceed(self.to_pending_scope)
         if not can_proceed_result:
             if notify_request:
-                messages.add_message(notify_request, messages.ERROR, "Invalid state or permissions.")
+                messages.add_message(notify_request, messages.ERROR, self.STATE_ERROR)
             _can_proceed = False
         return _can_proceed
 
@@ -476,7 +403,7 @@ class Job(models.Model):
     @transition(field=status, source=[JobStatuses.PENDING_SCOPE,JobStatuses.SCOPING_COMPLETE],
         target=JobStatuses.SCOPING)
     def to_scoping(self):
-        log_system_activity(self, "Moved to "+JobStatuses.CHOICES[JobStatuses.SCOPING][1])
+        log_system_activity(self, self.MOVED_TO + JobStatuses.CHOICES[JobStatuses.SCOPING][1])
         self.fire_status_notification(JobStatuses.SCOPING)
 
     def can_proceed_to_scoping(self):
@@ -504,7 +431,7 @@ class Job(models.Model):
         can_proceed_result = can_proceed(self.to_scoping)
         if not can_proceed_result:
             if notify_request:
-                messages.add_message(notify_request, messages.ERROR, "Invalid state or permissions.")
+                messages.add_message(notify_request, messages.ERROR, self.STATE_ERROR)
             _can_proceed = False
         return _can_proceed
 
@@ -512,7 +439,7 @@ class Job(models.Model):
     @transition(field=status, source=JobStatuses.SCOPING,
         target=JobStatuses.SCOPING_ADDITIONAL_INFO_REQUIRED)
     def to_additional_scope_req(self):
-        log_system_activity(self, "Moved to "+JobStatuses.CHOICES[JobStatuses.SCOPING_ADDITIONAL_INFO_REQUIRED][1])
+        log_system_activity(self, self.MOVED_TO + JobStatuses.CHOICES[JobStatuses.SCOPING_ADDITIONAL_INFO_REQUIRED][1])
         self.fire_status_notification(JobStatuses.SCOPING_ADDITIONAL_INFO_REQUIRED)
 
     def can_proceed_to_additional_scope_req(self):
@@ -526,7 +453,7 @@ class Job(models.Model):
         can_proceed_result = can_proceed(self.to_additional_scope_req)
         if not can_proceed_result:
             if notify_request:
-                messages.add_message(notify_request, messages.ERROR, "Invalid state or permissions.")
+                messages.add_message(notify_request, messages.ERROR, self.STATE_ERROR)
             _can_proceed = False
         return _can_proceed
 
@@ -535,7 +462,7 @@ class Job(models.Model):
         source=[JobStatuses.SCOPING, JobStatuses.SCOPING_ADDITIONAL_INFO_REQUIRED],
         target=JobStatuses.PENDING_SCOPING_SIGNOFF)
     def to_scope_pending_signoff(self):
-        log_system_activity(self, "Moved to "+JobStatuses.CHOICES[JobStatuses.PENDING_SCOPING_SIGNOFF][1])
+        log_system_activity(self, self.MOVED_TO + JobStatuses.CHOICES[JobStatuses.PENDING_SCOPING_SIGNOFF][1])
         self.fire_status_notification(JobStatuses.PENDING_SCOPING_SIGNOFF)
 
     def can_proceed_to_scope_pending_signoff(self):
@@ -571,7 +498,7 @@ class Job(models.Model):
         can_proceed_result = can_proceed(self.to_scope_pending_signoff)
         if not can_proceed_result:
             if notify_request:
-                messages.add_message(notify_request, messages.ERROR, "Invalid state or permissions.")
+                messages.add_message(notify_request, messages.ERROR, self.STATE_ERROR)
             _can_proceed = False
         return _can_proceed
 
@@ -580,7 +507,7 @@ class Job(models.Model):
         source=JobStatuses.PENDING_SCOPING_SIGNOFF,
         target=JobStatuses.SCOPING_COMPLETE)
     def to_scope_complete(self, user=None):
-        log_system_activity(self, "Moved to "+JobStatuses.CHOICES[JobStatuses.SCOPING_COMPLETE][1])
+        log_system_activity(self, self.MOVED_TO + JobStatuses.CHOICES[JobStatuses.SCOPING_COMPLETE][1])
         self.scoping_completed_date = timezone.now()
         if user:
             self.scoped_signed_off_by = user
@@ -650,7 +577,7 @@ class Job(models.Model):
         can_proceed_result = can_proceed(self.to_scope_complete)
         if not can_proceed_result:
             if notify_request:
-                messages.add_message(notify_request, messages.ERROR, "Invalid state or permissions.")
+                messages.add_message(notify_request, messages.ERROR, self.STATE_ERROR)
             _can_proceed = False
         return _can_proceed
 
@@ -658,7 +585,7 @@ class Job(models.Model):
     @transition(field=status, source=JobStatuses.SCOPING_COMPLETE,
         target=JobStatuses.PENDING_START)
     def to_pending_start(self):
-        log_system_activity(self, "Moved to "+JobStatuses.CHOICES[JobStatuses.PENDING_START][1])
+        log_system_activity(self, self.MOVED_TO + JobStatuses.CHOICES[JobStatuses.PENDING_START][1])
         self.fire_status_notification(JobStatuses.PENDING_START)
 
     def can_proceed_to_pending_start(self):
@@ -672,7 +599,7 @@ class Job(models.Model):
         can_proceed_result = can_proceed(self.to_pending_start)
         if not can_proceed_result:
             if notify_request:
-                messages.add_message(notify_request, messages.ERROR, "Invalid state or permissions.")
+                messages.add_message(notify_request, messages.ERROR, self.STATE_ERROR)
             _can_proceed = False
         return _can_proceed
 
@@ -681,7 +608,7 @@ class Job(models.Model):
         source=[JobStatuses.SCOPING_COMPLETE,JobStatuses.PENDING_START],
         target=JobStatuses.IN_PROGRESS)
     def to_in_progress(self):
-        log_system_activity(self, "Moved to "+JobStatuses.CHOICES[JobStatuses.IN_PROGRESS][1])
+        log_system_activity(self, self.MOVED_TO + JobStatuses.CHOICES[JobStatuses.IN_PROGRESS][1])
         self.fire_status_notification(JobStatuses.IN_PROGRESS)
 
     def can_proceed_to_in_progress(self):
@@ -695,7 +622,7 @@ class Job(models.Model):
         can_proceed_result = can_proceed(self.to_in_progress)
         if not can_proceed_result:
             if notify_request:
-                messages.add_message(notify_request, messages.ERROR, "Invalid state or permissions.")
+                messages.add_message(notify_request, messages.ERROR, self.STATE_ERROR)
             _can_proceed = False
         return _can_proceed
 
@@ -703,7 +630,7 @@ class Job(models.Model):
     @transition(field=status, source=JobStatuses.IN_PROGRESS,
         target=JobStatuses.COMPLETED)
     def to_complete(self):
-        log_system_activity(self, "Moved to "+JobStatuses.CHOICES[JobStatuses.COMPLETED][1])
+        log_system_activity(self, self.MOVED_TO + JobStatuses.CHOICES[JobStatuses.COMPLETED][1])
         self.fire_status_notification(JobStatuses.COMPLETED)
 
     def can_proceed_to_complete(self):
@@ -717,7 +644,7 @@ class Job(models.Model):
         can_proceed_result = can_proceed(self.to_complete)
         if not can_proceed_result:
             if notify_request:
-                messages.add_message(notify_request, messages.ERROR, "Invalid state or permissions.")
+                messages.add_message(notify_request, messages.ERROR, self.STATE_ERROR)
             _can_proceed = False
         return _can_proceed
 
@@ -728,7 +655,7 @@ class Job(models.Model):
             JobStatuses.PENDING_START],
         target=JobStatuses.LOST)
     def to_lost(self):
-        log_system_activity(self, "Moved to "+JobStatuses.CHOICES[JobStatuses.LOST][1])
+        log_system_activity(self, self.MOVED_TO + JobStatuses.CHOICES[JobStatuses.LOST][1])
         self.fire_status_notification(JobStatuses.LOST)
 
     def can_proceed_to_lost(self):
@@ -742,7 +669,7 @@ class Job(models.Model):
         can_proceed_result = can_proceed(self.to_lost)
         if not can_proceed_result:
             if notify_request:
-                messages.add_message(notify_request, messages.ERROR, "Invalid state or permissions.")
+                messages.add_message(notify_request, messages.ERROR, self.STATE_ERROR)
             _can_proceed = False
         return _can_proceed
 
@@ -750,7 +677,7 @@ class Job(models.Model):
     @transition(field=status, source="+",
         target=JobStatuses.DELETED)
     def to_delete(self):
-        log_system_activity(self, "Moved to "+JobStatuses.CHOICES[JobStatuses.DELETED][1])
+        log_system_activity(self, self.MOVED_TO + JobStatuses.CHOICES[JobStatuses.DELETED][1])
         self.fire_status_notification(JobStatuses.DELETED)
         # Lets make all phases to cancelled.
         for phase in self.phases.all():
@@ -774,7 +701,7 @@ class Job(models.Model):
         can_proceed_result = can_proceed(self.to_delete)
         if not can_proceed_result:
             if notify_request:
-                messages.add_message(notify_request, messages.ERROR, "Invalid state or permissions.")
+                messages.add_message(notify_request, messages.ERROR, self.STATE_ERROR)
             _can_proceed = False
         return _can_proceed
 
@@ -782,7 +709,7 @@ class Job(models.Model):
     @transition(field=status, source=[JobStatuses.COMPLETED,JobStatuses.LOST],
         target=JobStatuses.ARCHIVED)
     def to_archive(self):
-        log_system_activity(self, "Moved to "+JobStatuses.CHOICES[JobStatuses.ARCHIVED][1])
+        log_system_activity(self, self.MOVED_TO + JobStatuses.CHOICES[JobStatuses.ARCHIVED][1])
         self.fire_status_notification(JobStatuses.ARCHIVED)
 
     def can_proceed_to_archive(self):
@@ -796,6 +723,6 @@ class Job(models.Model):
         can_proceed_result = can_proceed(self.to_archive)
         if not can_proceed_result:
             if notify_request:
-                messages.add_message(notify_request, messages.ERROR, "Invalid state or permissions.")
+                messages.add_message(notify_request, messages.ERROR, self.STATE_ERROR)
             _can_proceed = False
         return _can_proceed

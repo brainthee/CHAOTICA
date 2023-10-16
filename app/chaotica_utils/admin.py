@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin, GroupAdmin
 from guardian.admin import GuardedModelAdmin
-from .models import *
+from .models import User, UserCost, Notification, Group, Language, LeaveRequest, HolidayCountry, Holiday
 
 class CustomUserAdmin(GuardedModelAdmin):
     fieldsets = (

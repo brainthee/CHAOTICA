@@ -6,7 +6,6 @@ from simple_history.models import HistoricalRecords
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db.models import JSONField
 from phone_field import PhoneField
-from pprint import pprint
 from chaotica_utils.models import Note
 from decimal import Decimal
 from django_bleach.models import BleachField
@@ -16,14 +15,17 @@ class Client(models.Model):
     name = models.CharField(max_length=255, unique=True, help_text="Legal name of the client")
     slug = models.SlugField(null=False, default='', unique=True)
     short_name = models.CharField(
-        max_length=100,
-        null=True, blank=True,
+        max_length=100, blank=True,
         help_text='To be used when referring to this client in documents such as proposals.'
     )
-    external_id = models.CharField(verbose_name="External ID", db_index=True, max_length=255, null=True, blank=True, default="")
-    hours_in_day = models.DecimalField(max_digits=3, decimal_places=1, default=Decimal(settings.DEFAULT_HOURS_IN_DAY),
-        verbose_name="Hours in Day", help_text="The number of billable hours in a day")
-    specific_requirements = BleachField(blank=True, null=True, help_text="Any special notes, e.g. certain individuals, onboarding required etc")
+    external_id = models.CharField(verbose_name="External ID", 
+                                   db_index=True, max_length=255, blank=True, default="")
+    hours_in_day = models.DecimalField(max_digits=3, decimal_places=1, 
+                                    default=Decimal(settings.DEFAULT_HOURS_IN_DAY),
+                                    verbose_name="Hours in Day", 
+                                    help_text="The number of billable hours in a day")
+    specific_requirements = BleachField(blank=True, null=True, 
+                                        help_text="Any special notes, e.g. certain individuals, onboarding required etc")
     history = HistoricalRecords()
     data = JSONField(verbose_name="Data", null=True, blank=True, default=dict)
     notes = GenericRelation(Note)
@@ -95,7 +97,7 @@ class Contact(models.Model):
 class Address(models.Model):
     street = models.CharField(max_length=250)
     city = models.CharField(max_length=250)
-    county = models.CharField(max_length=250, null=True, blank=True)
+    county = models.CharField(max_length=250, blank=True)
     postcode = models.CharField(max_length=25)
     country = models.CharField(max_length=50)
     history = HistoricalRecords()

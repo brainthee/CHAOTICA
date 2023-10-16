@@ -393,71 +393,71 @@ def phase_rating_scope(request, jobSlug, slug):
     return JsonResponse(data)
 
 @login_required
-def PhaseUpdateWorkflow(request, jobSlug, slug, newState):
+def PhaseUpdateWorkflow(request, jobSlug, slug, new_state):
     job = get_object_or_404(Job, slug=jobSlug)
     phase = get_object_or_404(Phase, job=job, slug=slug)
     data = dict()
-    newStateStr = None
+    new_state_str = None
     try:
         for state in PhaseStatuses.CHOICES:
-            if state[0] == newState:
-                newStateStr = state[1]
-        if newStateStr == None:
+            if state[0] == new_state:
+                new_state_str = state[1]
+        if new_state_str == None:
             raise TypeError()
     except Exception:
         return HttpResponseBadRequest()
     
     canProceed = True
         
-    if newState == PhaseStatuses.PENDING_SCHED:
+    if new_state == PhaseStatuses.PENDING_SCHED:
         if phase.can_to_pending_sched(request):
             if request.method == 'POST':
                 phase.to_pending_sched()
         else:
             canProceed = False
-    elif newState == PhaseStatuses.SCHEDULED_TENTATIVE:
+    elif new_state == PhaseStatuses.SCHEDULED_TENTATIVE:
         if phase.can_to_sched_tentative(request):
             if request.method == 'POST':
                 phase.to_sched_tentative()
         else:
             canProceed = False
-    elif newState == PhaseStatuses.SCHEDULED_CONFIRMED:
+    elif new_state == PhaseStatuses.SCHEDULED_CONFIRMED:
         if phase.can_to_sched_confirmed(request):
             if request.method == 'POST':
                 phase.to_sched_confirmed()
         else:
             canProceed = False
-    elif newState == PhaseStatuses.PRE_CHECKS:
+    elif new_state == PhaseStatuses.PRE_CHECKS:
         if phase.can_to_pre_checks(request):
             if request.method == 'POST':
                 phase.to_pre_checks()
         else:
             canProceed = False
-    elif newState == PhaseStatuses.CLIENT_NOT_READY:
+    elif new_state == PhaseStatuses.CLIENT_NOT_READY:
         if phase.can_to_not_ready(request):
             if request.method == 'POST':
                 phase.to_not_ready()
         else:
             canProceed = False
-    elif newState == PhaseStatuses.READY_TO_BEGIN:
+    elif new_state == PhaseStatuses.READY_TO_BEGIN:
         if phase.can_to_ready(request):
             if request.method == 'POST':
                 phase.to_ready()
         else:
             canProceed = False
-    elif newState == PhaseStatuses.IN_PROGRESS:
+    elif new_state == PhaseStatuses.IN_PROGRESS:
         if phase.can_to_in_progress(request):
             if request.method == 'POST':
                 phase.to_in_progress()
         else:
             canProceed = False
-    elif newState == PhaseStatuses.PENDING_TQA:
+    elif new_state == PhaseStatuses.PENDING_TQA:
         if phase.can_to_pending_tech_qa(request):
             if request.method == 'POST':
                 phase.to_pending_tech_qa()
         else:
             canProceed = False
-    elif newState == PhaseStatuses.QA_TECH:
+    elif new_state == PhaseStatuses.QA_TECH:
         if phase.can_to_tech_qa(request):
             if request.method == 'POST':
                 if request.user is not phase.techqa_by:
@@ -470,19 +470,19 @@ def PhaseUpdateWorkflow(request, jobSlug, slug, newState):
                 phase.to_tech_qa()
         else:
             canProceed = False
-    elif newState == PhaseStatuses.QA_TECH_AUTHOR_UPDATES:
+    elif new_state == PhaseStatuses.QA_TECH_AUTHOR_UPDATES:
         if phase.can_to_tech_qa_updates(request):
             if request.method == 'POST':
                 phase.to_tech_qa_updates()
         else:
             canProceed = False
-    elif newState == PhaseStatuses.PENDING_PQA:
+    elif new_state == PhaseStatuses.PENDING_PQA:
         if phase.can_to_pending_pres_qa(request):
             if request.method == 'POST':
                 phase.to_pending_pres_qa()
         else:
             canProceed = False
-    elif newState == PhaseStatuses.QA_PRES:
+    elif new_state == PhaseStatuses.QA_PRES:
         if phase.can_to_pres_qa(request):
             if request.method == 'POST':
                 if request.user is not phase.presqa_by:
@@ -495,43 +495,43 @@ def PhaseUpdateWorkflow(request, jobSlug, slug, newState):
                 phase.to_pres_qa()
         else:
             canProceed = False
-    elif newState == PhaseStatuses.QA_PRES_AUTHOR_UPDATES:
+    elif new_state == PhaseStatuses.QA_PRES_AUTHOR_UPDATES:
         if phase.can_to_pres_qa_updates(request):
             if request.method == 'POST':
                 phase.to_pres_qa_updates()
         else:
             canProceed = False
-    elif newState == PhaseStatuses.COMPLETED:
+    elif new_state == PhaseStatuses.COMPLETED:
         if phase.can_to_completed(request):
             if request.method == 'POST':
                 phase.to_completed()
         else:
             canProceed = False
-    elif newState == PhaseStatuses.DELIVERED:
+    elif new_state == PhaseStatuses.DELIVERED:
         if phase.can_to_delivered(request):
             if request.method == 'POST':
                 phase.to_delivered()
         else:
             canProceed = False
-    elif newState == PhaseStatuses.CANCELLED:
+    elif new_state == PhaseStatuses.CANCELLED:
         if phase.can_to_cancelled(request):
             if request.method == 'POST':
                 phase.to_cancelled()
         else:
             canProceed = False
-    elif newState == PhaseStatuses.POSTPONED:
+    elif new_state == PhaseStatuses.POSTPONED:
         if phase.can_to_postponed(request):
             if request.method == 'POST':
                 phase.to_postponed()
         else:
             canProceed = False
-    elif newState == PhaseStatuses.DELETED:
+    elif new_state == PhaseStatuses.DELETED:
         if phase.can_to_deleted(request):
             if request.method == 'POST':
                 phase.to_deleted()
         else:
             canProceed = False
-    elif newState == PhaseStatuses.ARCHIVED:
+    elif new_state == PhaseStatuses.ARCHIVED:
         if phase.can_to_archived(request):
             if request.method == 'POST':
                 phase.to_archived()
@@ -540,20 +540,20 @@ def PhaseUpdateWorkflow(request, jobSlug, slug, newState):
     else:
         return HttpResponseBadRequest()
 
-        # sendWebHookStatusAlert(redteam=rt, title="Engagement Status Changed", msg="Engagement "+rt.projectName+" status has changed to: "+str(dict(RTState.choices).get(newState)))
+        # sendWebHookStatusAlert(redteam=rt, title="Engagement Status Changed", msg="Engagement "+rt.projectName+" status has changed to: "+str(dict(RTState.choices).get(new_state)))
         
     if request.method == 'POST' and canProceed:
         phase.save()
-        log_system_activity(phase, "Moved to "+newStateStr)
+        log_system_activity(phase, "Moved to "+new_state_str)
         data['form_is_valid'] = True  # This is just to play along with the existing code
     
-    tasks = WorkflowTask.objects.filter(appliedModel=WorkflowTask.WF_PHASE, status=newState)
+    tasks = WorkflowTask.objects.filter(appliedModel=WorkflowTask.WF_PHASE, status=new_state)
     context = {
         'job': job,
         'phase': phase,
         'canProceed': canProceed,
-        'newStateStr': newStateStr,
-        'newState': newState,
+        'new_state_str': new_state_str,
+        'new_state': new_state,
         'tasks': tasks,
         }
     data['html_form'] = loader.render_to_string('jobtracker/modals/phase_workflow.html',

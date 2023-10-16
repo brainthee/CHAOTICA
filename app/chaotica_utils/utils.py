@@ -1,10 +1,8 @@
 from .models import User, Notification
-from .enums import *
+from .enums import NotificationTypes
 from django.template.loader import render_to_string
 from django.core.mail import send_mail
 from django.conf import settings as django_settings
-import json
-from pprint import pprint
 from datetime import timedelta
 
 
@@ -21,7 +19,7 @@ def last_day_of_month(any_day):
     return next_month - timedelta(days=next_month.day)
 
 class AppNotification:
-    """_summary_
+    """
     This feels wrong...?
     """
 
@@ -46,7 +44,7 @@ class AppNotification:
         self.context = {}
         self.context.update(kwargs)
 
-    def SendToUser(
+    def send_to_user(
             self,
             user: User, ) -> bool:
         # Lets see if we can do notifications

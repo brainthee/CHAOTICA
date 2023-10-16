@@ -1,10 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-from pprint import pprint
 from django.templatetags.static import static
 import uuid, os, random
 from .managers import SystemNoteManager
-from .enums import *
+from .enums import GlobalRoles, LeaveRequestTypes, NotificationTypes
 from jobtracker.enums import UserSkillRatings
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
@@ -14,10 +13,9 @@ from django.contrib.auth import get_user_model
 from simple_history.models import HistoricalRecords
 import django.contrib.auth
 from guardian.shortcuts import get_objects_for_user
-from decimal import *
 from django.utils import timezone
 from datetime import timedelta, date
-from dateutil.relativedelta import *
+from dateutil.relativedelta import relativedelta
 from phonenumber_field.modelfields import PhoneNumberField
 from django_countries.fields import CountryField
 from .tasks import task_send_notifications

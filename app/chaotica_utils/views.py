@@ -1,15 +1,18 @@
 from django.contrib.auth import login, authenticate
 from django.shortcuts import render, redirect
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 from django.conf import settings as django_settings
 from django.template import loader
+from django.utils import timezone
 from django.http import HttpResponseForbidden, JsonResponse, HttpResponse, HttpResponseRedirect, Http404, HttpResponseBadRequest
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 import json, os, random
-from .forms import *
-from .models import *
-from .enums import *
-from .utils import *
+from .forms import ChaoticaUserForm, LeaveRequestForm, ProfileBasicForm, CustomConfigForm, AssignRoleForm
+from .enums import GlobalRoles, NotificationTypes
+from .tasks import task_send_notifications
+from .models import Notification, User, Language, Note, LeaveRequest
+from .utils import ext_reverse, AppNotification
+from django.db.models import Q
 from dal import autocomplete
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
@@ -21,7 +24,7 @@ from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.contrib import messages 
 from django.shortcuts import get_object_or_404
 from constance import config
-from .tasks import *
+from .tasks import task_update_holidays
 from django.views.decorators.http import require_http_methods, require_safe, require_POST
     
 
@@ -30,8 +33,8 @@ def page_defaults(request):
     context = {}
     context['notifications'] = Notification.objects.filter(user=request.user)
     context['config'] = config
-    context['DJANGO_ENV'] = settings.DJANGO_ENV
-    context['DJANGO_VERSION'] = settings.DJANGO_VERSION
+    context['DJANGO_ENV'] = django_settings.DJANGO_ENV
+    context['DJANGO_VERSION'] = django_settings.DJANGO_VERSION
 
     context['myJobs'] = Job.objects.jobs_for_user(request.user)
     context['myPhases'] = Phase.objects.phases_for_user(request.user)
@@ -77,7 +80,7 @@ def test_notification(request):
 
 @require_safe
 def maintenance(request):
-    if not settings.MAINTENANCE_MODE:
+    if not django_settings.MAINTENANCE_MODE:
         return HttpResponseRedirect(reverse('home'))
     return render(request, 'maintenance.html')
 
@@ -343,10 +346,10 @@ def app_settings(request):
         return HttpResponseRedirect(reverse('app_settings'))
     else:
         # Send the modal
-        form = CustomConfigForm(initial=settings.CONSTANCE_CONFIG)
+        form = CustomConfigForm(initial=django_settings.CONSTANCE_CONFIG)
 
     context = {'app_settings': form}
-    template = loader.get_template('app_settings.html')
+    template = loader.get_template('app_django_settings.html')
     context = {**context, **page_defaults(request)}
     return HttpResponse(template.render(context, request))
 
@@ -409,7 +412,7 @@ class ChaoticaBaseGlobalRoleView(ChaoticaBaseView, UserPassesTestMixin):
     def test_func(self):
         if self.role_required:
             return self.request.user.groups.filter(
-                name=settings.GLOBAL_GROUP_PREFIX+GlobalRoles.CHOICES[self.role_required][1]).exists()
+                name=django_settings.GLOBAL_GROUP_PREFIX+GlobalRoles.CHOICES[self.role_required][1]).exists()
         else:
             return False
 
@@ -418,7 +421,7 @@ class ChaoticaBaseAdminView(ChaoticaBaseView, UserPassesTestMixin):
 
     def test_func(self):
         # Check if the user is in the global admin group
-        return self.request.user.groups.filter(name=settings.GLOBAL_GROUP_PREFIX+GlobalRoles.CHOICES[GlobalRoles.ADMIN][1])
+        return self.request.user.groups.filter(name=django_settings.GLOBAL_GROUP_PREFIX+GlobalRoles.CHOICES[GlobalRoles.ADMIN][1])
 
 
 def log_system_activity(ref_obj, msg, author=None):
@@ -515,24 +518,6 @@ class UserAutocomplete(autocomplete.Select2QuerySetView):
                 Q(first_name__icontains=self.q) |
                 Q(last_name__icontains=self.q), is_active=True).order_by('username')
         return qs
-
-    # def get_result_label(self, result):
-    #     return format_html('{} {}', result.first_name, result.last_name)
-
-
-# class JobAutocomplete(autocomplete.Select2QuerySetView):
-#     def get_queryset(self):
-#         # Don't forget to filter out results depending on the visitor !
-#         if not self.request.user.is_authenticated:
-#             return Job.objects.none()
-#         # TODO: Do permission checks...
-#         qs = Job.objects.all()
-#         if self.q:
-#             qs = qs.filter()
-#         return qs
-
-#     # def get_result_label(self, result):
-#     #     return format_html('{} {}', result.first_name, result.last_name)
 
 
 @login_required

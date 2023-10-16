@@ -7,8 +7,6 @@ from django.utils.text import slugify
 from django.urls import reverse
 from simple_history.models import HistoricalRecords
 from django.db.models import JSONField
-from pprint import pprint
-from decimal import Decimal
 from django_bleach.models import BleachField
 
 
@@ -33,13 +31,6 @@ class BillingCode(models.Model):
 
     class Meta:
         ordering = ['code']
-
-    def get_absolute_url(self):
-        kwargs = {
-            'code': self.code
-        }
-        return "#"
-        # return reverse('billingcode_detail', kwargs=kwargs)
 
 
 class Service(models.Model):
