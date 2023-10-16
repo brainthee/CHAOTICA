@@ -156,7 +156,7 @@
       description:
         'Sample example of a event with url. Click the event, will redirect to the given link.',
       className: 'text-success',
-      url: 'http://google.com'
+      url: 'https://google.com'
     },
     {
       title: 'Competition',
@@ -173,7 +173,7 @@
     },
     {
       title: 'Click for Google',
-      url: 'http://google.com/',
+      url: 'https://google.com/',
       start: `${currentYear}-${prevMonth}-10`,
       description:
         'Applications are open for the New Media Writing Prize 2020. The New Media Writing Prize (NMWP) showcases exciting and inventive stories and poetry that integrate a variety of formats, platforms, and digital media.',
