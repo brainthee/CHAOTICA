@@ -80,12 +80,12 @@ class Group(django.contrib.auth.models.Group):
         else:
             return ""
         
-def get_media_profile_file_path(instance, filename):
+def get_media_profile_file_path(_, filename):
     ext = filename.split('.')[-1]
     filename = "%s.%s" % (uuid.uuid4(), ext)
     return os.path.join('profile_pics', filename)
         
-def get_media_image_file_path(instance, filename):
+def get_media_image_file_path(_, filename):
     ext = filename.split('.')[-1]
     filename = "%s.%s" % (uuid.uuid4(), ext)
     return os.path.join('images', filename)
@@ -221,7 +221,7 @@ class User(AbstractUser):
             self.is_staff = True
             super().save(*args, **kwargs)
             # Make sure they are a global admin too!
-            g_admin, created = Group.objects.get_or_create(name=settings.GLOBAL_GROUP_PREFIX+GlobalRoles.CHOICES[GlobalRoles.ADMIN][1])
+            g_admin, _ = Group.objects.get_or_create(name=settings.GLOBAL_GROUP_PREFIX+GlobalRoles.CHOICES[GlobalRoles.ADMIN][1])
             self.groups.add(g_admin)
         return super().save(*args, **kwargs)
     
