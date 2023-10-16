@@ -571,7 +571,6 @@ class UserAutocomplete(autocomplete.Select2QuerySetView):
 
 
 @login_required
-@csrf_exempt
 def SiteSearch(request):
     data = {}
     context = {}
