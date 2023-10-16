@@ -17,13 +17,9 @@ ENV PYTHONUNBUFFERED 1
 # install sys dependencies
 RUN apt-get update \
   && apt-get upgrade -y \
-  && apt-get install -y gcc default-libmysqlclient-dev pkg-config libpq-dev \
+  && apt-get install -y --no-install-recommend gcc default-libmysqlclient-dev pkg-config libpq-dev \
   && rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man \
   && apt-get clean
-
-# RUN apk update \
-#     && apk add 
-#     postgresql-dev gcc g++ python3-dev libffi-dev musl-dev pkgconfig mariadb-dev mariadb-connector-c-dev libmagic libxml2-dev libxslt-dev
 
 # install dependencies
 RUN pip install --upgrade pip

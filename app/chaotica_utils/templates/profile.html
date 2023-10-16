@@ -61,12 +61,6 @@
                   <span class="text-sm">Certifications</span>
                 </a>
              </li>
-             <!-- <li class="nav-item pt-2">
-                <a class="nav-link text-dark d-flex" data-scroll="" href="#notifications">
-                  <span class="fas fa-mail-bulk me-sm-2 fs-1"></span>
-                  <span class="text-sm">Notifications</span>
-                </a>
-             </li> -->
              <li class="nav-item pt-2">
                 <a class="nav-link text-dark d-flex" data-scroll="" href="#feeds">
                   <span class="far fa-calendar-plus me-sm-2 fs-1"></span>
@@ -91,6 +85,7 @@
             </div>
             <div class="card-body pt-0">
                   <table class="table table-responsive mb-0">
+                     <caption>User's Skills</caption>
                      <thead>
                         <tr>
                            <th class="ps-1" colspan="4">
@@ -179,155 +174,36 @@
               <p class="text-sm">Set the skills you have and the level of competency.</p>
            </div>
            <div class="card-body pt-0">
-                 <table class="table table-responsive mb-0">
-                    <thead>
-                       <tr>
-                          <th class="ps-1" colspan="4">
-                             <p class="mb-0">Capability</p>
-                          </th>
-                          <th class="ps-1" colspan="4">
-                             <p class="mb-0">Skill</p>
-                          </th>
-                       </tr>
-                    </thead>
-                    <tbody>
-                       {% for skill in skills %}
-                       {% get_user_skill request.user skill as userSkill %}
-                       <tr>
-                          <td class="ps-1" colspan="4">
-                             <div class="my-auto">
-                                <span class="text-dark d-block text-sm">
-                                   {{ skill.category }}
-                                </span>
-                             </div>
-                          </td>
-                       </tr>
-                       {% endfor %}
-                    </tbody>
-                 </table>
+               <table class="table table-responsive mb-0">
+                  <caption>User's Skills</caption>
+                  <thead>
+                     <tr>
+                        <th class="ps-1" colspan="4">
+                           <p class="mb-0">Capability</p>
+                        </th>
+                        <th class="ps-1" colspan="4">
+                           <p class="mb-0">Skill</p>
+                        </th>
+                     </tr>
+                  </thead>
+                  <tbody>
+                     {% for skill in skills %}
+                     {% get_user_skill request.user skill as userSkill %}
+                     <tr>
+                        <td class="ps-1" colspan="4">
+                           <div class="my-auto">
+                              <span class="text-dark d-block text-sm">
+                                 {{ skill.category }}
+                              </span>
+                           </div>
+                        </td>
+                     </tr>
+                     {% endfor %}
+                  </tbody>
+               </table>
            </div>
         </form>
      </div>
-
-       <!-- <div class="card mt-4" id="notifications">
-          <div class="card-header">
-             <h5>Notifications</h5>
-             <p class="text-sm">Choose how you receive notifications. These notification settings apply to the things you’re watching.</p>
-          </div>
-          <div class="card-body pt-0">
-            <table class="table mb-0">
-               <thead>
-                  <tr>
-                     <th class="ps-1" colspan="4">
-                        <p class="mb-0">Activity</p>
-                     </th>
-                     <th class="text-center">
-                        <p class="mb-0">Email</p>
-                     </th>
-                     <th class="text-center">
-                        <p class="mb-0">Push</p>
-                     </th>
-                     <th class="text-center">
-                        <p class="mb-0">SMS</p>
-                     </th>
-                  </tr>
-               </thead>
-               <tbody>
-                  <tr>
-                     <td class="ps-1" colspan="4">
-                        <div class="my-auto">
-                           <span class="text-dark d-block text-sm">Mentions</span>
-                           <span class="text-xs font-weight-normal">Notify when another user mentions you in a comment</span>
-                        </div>
-                     </td>
-                     <td>
-                        <div class="form-check form-switch mb-0 d-flex align-items-center justify-content-center">
-                           <input class="form-check-input" checked="" type="checkbox" id="flexSwitchCheckDefault11">
-                        </div>
-                     </td>
-                     <td>
-                        <div class="form-check form-switch mb-0 d-flex align-items-center justify-content-center">
-                           <input class="form-check-input" type="checkbox" id="flexSwitchCheckDefault12">
-                        </div>
-                     </td>
-                     <td>
-                        <div class="form-check form-switch mb-0 d-flex align-items-center justify-content-center">
-                           <input class="form-check-input" type="checkbox" id="flexSwitchCheckDefault13">
-                        </div>
-                     </td>
-                  </tr>
-                  <tr>
-                     <td class="ps-1" colspan="4">
-                        <div class="my-auto">
-                           <span class="text-dark d-block text-sm">Comments</span>
-                           <span class="text-xs font-weight-normal">Notify when another user comments your item.</span>
-                        </div>
-                     </td>
-                     <td>
-                        <div class="form-check form-switch mb-0 d-flex align-items-center justify-content-center">
-                           <input class="form-check-input" checked="" type="checkbox" id="flexSwitchCheckDefault14">
-                        </div>
-                     </td>
-                     <td>
-                        <div class="form-check form-switch mb-0 d-flex align-items-center justify-content-center">
-                           <input class="form-check-input" checked="" type="checkbox" id="flexSwitchCheckDefault15">
-                        </div>
-                     </td>
-                     <td>
-                        <div class="form-check form-switch mb-0 d-flex align-items-center justify-content-center">
-                           <input class="form-check-input" type="checkbox" id="flexSwitchCheckDefault16">
-                        </div>
-                     </td>
-                  </tr>
-                  <tr>
-                     <td class="ps-1" colspan="4">
-                        <div class="my-auto">
-                           <span class="text-dark d-block text-sm">Follows</span>
-                           <span class="text-xs font-weight-normal">Notify when another user follows you.</span>
-                        </div>
-                     </td>
-                     <td>
-                        <div class="form-check form-switch mb-0 d-flex align-items-center justify-content-center">
-                           <input class="form-check-input" type="checkbox" id="flexSwitchCheckDefault17">
-                        </div>
-                     </td>
-                     <td>
-                        <div class="form-check form-switch mb-0 d-flex align-items-center justify-content-center">
-                           <input class="form-check-input" checked="" type="checkbox" id="flexSwitchCheckDefault18">
-                        </div>
-                     </td>
-                     <td>
-                        <div class="form-check form-switch mb-0 d-flex align-items-center justify-content-center">
-                           <input class="form-check-input" type="checkbox" id="flexSwitchCheckDefault19">
-                        </div>
-                     </td>
-                  </tr>
-                  <tr>
-                     <td class="ps-1" colspan="4">
-                        <div class="my-auto">
-                           <p class="text-sm mb-0">Log in from a new device</p>
-                        </div>
-                     </td>
-                     <td>
-                        <div class="form-check form-switch mb-0 d-flex align-items-center justify-content-center">
-                           <input class="form-check-input" checked="" type="checkbox" id="flexSwitchCheckDefault20">
-                        </div>
-                     </td>
-                     <td>
-                        <div class="form-check form-switch mb-0 d-flex align-items-center justify-content-center">
-                           <input class="form-check-input" checked="" type="checkbox" id="flexSwitchCheckDefault21">
-                        </div>
-                     </td>
-                     <td>
-                        <div class="form-check form-switch mb-0 d-flex align-items-center justify-content-center">
-                           <input class="form-check-input" checked="" type="checkbox" id="flexSwitchCheckDefault22">
-                        </div>
-                     </td>
-                  </tr>
-               </tbody>
-            </table>
-          </div>
-       </div> -->
 
        <div class="card mt-4" id="feeds">
          <div class="card-header d-flex">
