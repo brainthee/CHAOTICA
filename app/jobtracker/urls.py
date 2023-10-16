@@ -88,8 +88,8 @@ urlpatterns = [
     # OrganisationalUnit CRUD
     path('ops/units/', views.OrganisationalUnitListView.as_view(), name='organisationalunit_list'),
     path('ops/unit/create/', views.OrganisationalUnitCreateView.as_view(), name='organisationalunit_create'),
-    path('ops/unit/<str:slug>/join', views.OrganisationalUnit_join, name='organisationalunit_join'),
-    path('ops/unit/<str:slug>/review_join_request/<int:memberPK>', views.OrganisationalUnit_review_join_request, name='review_join_request'),
+    path('ops/unit/<str:slug>/join', views.organisationalunit_join, name='organisationalunit_join'),
+    path('ops/unit/<str:slug>/review_join_request/<int:member_pk>', views.organisationalunit_review_join_request, name='review_join_request'),
     path('ops/unit/<str:slug>/detail', views.OrganisationalUnitDetailView.as_view(), name='organisationalunit_detail'),
     path('ops/unit/<str:slug>/update/', views.OrganisationalUnitUpdateView.as_view(), name='organisationalunit_update'),
     path('ops/unit/<str:slug>/delete/', views.OrganisationalUnitDeleteView.as_view(), name='organisationalunit_delete'),

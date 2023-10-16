@@ -1,27 +1,19 @@
-from django.shortcuts import get_object_or_404, redirect
-from django.http import HttpResponse,HttpResponseRedirect, HttpResponseBadRequest, JsonResponse, HttpResponseForbidden, HttpResponseNotFound
-from django.template import loader, Template as tmpl, Context
-from guardian.decorators import permission_required_or_403
-from guardian.core import ObjectPermissionChecker
-from guardian.mixins import PermissionListMixin, PermissionRequiredMixin
-from django.views import View
+from django.shortcuts import get_object_or_404
+from django.http import HttpResponseBadRequest, JsonResponse
+from django.template import loader
 from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
-from chaotica_utils.views import log_system_activity, ChaoticaBaseView, page_defaults
-from chaotica_utils.utils import *
-from chaotica_utils.tasks import *
-from ..models import *
-from ..forms import *
-from ..tasks import *
-from .helpers import *
+from chaotica_utils.views import ChaoticaBaseView
+from chaotica_utils.utils import AppNotification, NotificationTypes
+from chaotica_utils.tasks import task_send_notifications
+from chaotica_utils.enums import UnitRoles
+from chaotica_utils.models import User
+from ..models import OrganisationalUnit, OrganisationalUnitMember
+from ..forms import OrganisationalUnitForm
 import logging
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib import messages 
-from django.apps import apps
-import json
 
 
 logger = logging.getLogger(__name__)
@@ -43,10 +35,10 @@ class OrganisationalUnitListView(OrganisationalUnitBaseView, ListView):
     Use the 'job_list' variable in the template
     to access all job objects"""
 
-def OrganisationalUnit_join(request, slug):
-    orgUnit = get_object_or_404(OrganisationalUnit, slug=slug)
+def organisationalunit_join(request, slug):
+    org_unit = get_object_or_404(OrganisationalUnit, slug=slug)
     # Lets check they aren't already a member!
-    if OrganisationalUnitMember.objects.filter(unit=orgUnit, member=request.user, left_date__isnull=True).exists():
+    if OrganisationalUnitMember.objects.filter(unit=org_unit, member=request.user, left_date__isnull=True).exists():
         # Already a current member!
         return HttpResponseBadRequest()
     
@@ -54,37 +46,37 @@ def OrganisationalUnit_join(request, slug):
     if request.method == "POST":
         # Lets assume they want to if it's a POST!
         # Lets add the membership...
-        membership = OrganisationalUnitMember.objects.create(unit=orgUnit, member=request.user)
+        membership = OrganisationalUnitMember.objects.create(unit=org_unit, member=request.user)
         if membership:
             # Ok, lets see if we need to make it pending...
-            if orgUnit.approval_required:
+            if org_unit.approval_required:
                 membership.role = UnitRoles.PENDING
-                messages.info(request, "Request to join unit "+orgUnit.name+" sent.")    
+                messages.info(request, "Request to join unit "+org_unit.name+" sent.")    
             else:
                 # Add ourselves as inviter!
                 membership.inviter = request.user     
-                messages.info(request, "Joined Unit "+orgUnit.name)       
+                messages.info(request, "Joined Unit "+org_unit.name)       
             membership.save()
             data['form_is_valid'] = True
         else:
             messages.error(request, "Error requesting membership. Please report this!")
             data['form_is_valid'] = False
 
-    context = {'orgUnit': orgUnit}
+    context = {'orgUnit': org_unit}
     data['html_form'] = loader.render_to_string("jobtracker/modals/organisationalunit_join.html",
                                                 context,
                                                 request=request)
     return JsonResponse(data)
 
 
-def OrganisationalUnit_review_join_request(request, slug, memberPK):
-    orgUnit = get_object_or_404(OrganisationalUnit, slug=slug)
+def organisationalunit_review_join_request(request, slug, member_pk):
+    org_unit = get_object_or_404(OrganisationalUnit, slug=slug)
     
     # Only pass if the membership is pending...
-    membership = get_object_or_404(OrganisationalUnitMember, unit=orgUnit, pk=memberPK, role=UnitRoles.PENDING)
+    membership = get_object_or_404(OrganisationalUnitMember, unit=org_unit, pk=member_pk, role=UnitRoles.PENDING)
     
     # Lets make sure our own membership is high enough level!
-    get_object_or_404(OrganisationalUnitMember, member=request.user, unit=orgUnit, 
+    get_object_or_404(OrganisationalUnitMember, member=request.user, unit=org_unit, 
                                       role=UnitRoles.MANAGER)
 
     # Okay, lets go!    
@@ -99,8 +91,8 @@ def OrganisationalUnit_review_join_request(request, slug, memberPK):
             membership.save()
             # send a notification to the user
             notice = AppNotification(NotificationTypes.ORGUNIT, 
-                                "Membership Accepted", "Your request to join "+orgUnit.name+" has been accepted", 
-                                "emails/orgunit/accepted.html", orgUnit=orgUnit, membership=membership)
+                                "Membership Accepted", "Your request to join "+org_unit.name+" has been accepted", 
+                                "emails/orgunit/accepted.html", orgUnit=org_unit, membership=membership)
             
             task_send_notifications.delay(notice, User.objects.filter(pk=membership.member.pk))
             data['form_is_valid'] = True
@@ -111,17 +103,16 @@ def OrganisationalUnit_review_join_request(request, slug, memberPK):
             membership.delete()
             # send a notification to the user
             notice = AppNotification(NotificationTypes.ORGUNIT, 
-                                "Membership Rejected", "Your request to join "+orgUnit.name+" has been denied", 
-                                "emails/orgunit/rejected.html", orgUnit=orgUnit, membership=membership)
+                                "Membership Rejected", "Your request to join "+org_unit.name+" has been denied", 
+                                "emails/orgunit/rejected.html", orgUnit=org_unit, membership=membership)
             
             task_send_notifications.delay(notice, User.objects.filter(pk=membership.member.pk))
             data['form_is_valid'] = True
         else:
             # invalid choice...
-            return HttpResponseBadRequest()
             data['form_is_valid'] = False
 
-    context = {'orgUnit': orgUnit, 'membership': membership}
+    context = {'orgUnit': org_unit, 'membership': membership}
     data['html_form'] = loader.render_to_string("jobtracker/modals/organisationalunit_review.html",
                                                 context,
                                                 request=request)
@@ -138,15 +129,15 @@ class OrganisationalUnitCreateView(OrganisationalUnitBaseView, CreateView):
 
     def form_valid(self, form):
         # ensure the lead has manager access
-        superResponse =  super(OrganisationalUnitCreateView, self).form_valid(form)
-        orgUnit = form.save()
-        membership, created = OrganisationalUnitMember.objects.get_or_create(
-            unit=orgUnit, member=orgUnit.lead, role=UnitRoles.MANAGER)
+        super_response =  super(OrganisationalUnitCreateView, self).form_valid(form)
+        org_unit = form.save()
+        OrganisationalUnitMember.objects.get_or_create(
+            unit=org_unit, member=org_unit.lead, role=UnitRoles.MANAGER)
         # Also add self in case we're not the lead
-        if self.request.user is not orgUnit.lead:
-            membership2, created2 = OrganisationalUnitMember.objects.get_or_create(
-                unit=orgUnit, member=self.request.user, role=UnitRoles.MANAGER)
-        return superResponse
+        if self.request.user is not org_unit.lead:
+            OrganisationalUnitMember.objects.get_or_create(
+                unit=org_unit, member=self.request.user, role=UnitRoles.MANAGER)
+        return super_response
 
 
 
