@@ -3,6 +3,7 @@
 <div class="echart-doughnut-phase-time" style="min-height:320px"></div>
 
    <table class="table align-items-center mb-0">
+    <caption>Scoped Time</caption>
       <tbody>
          {% for key,scopedHrs in phase.get_all_total_scoped_by_type.items %}
          {% if scopedHrs.hrs > 0 %}
