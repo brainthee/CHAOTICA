@@ -17,7 +17,7 @@ ENV PYTHONUNBUFFERED 1
 # install sys dependencies
 RUN apt-get update \
   && apt-get upgrade -y \
-  && apt-get install -y --no-install-recommend gcc default-libmysqlclient-dev pkg-config libpq-dev \
+  && apt-get install -y --no-install-recommends gcc default-libmysqlclient-dev pkg-config libpq-dev \
   && rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man \
   && apt-get clean
 
