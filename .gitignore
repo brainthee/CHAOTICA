@@ -123,3 +123,5 @@ app/staticfiles/
 
 app/.scannerwork/
 .vscode/settings.json
+
+.vscode/
