@@ -179,7 +179,7 @@ class JobBaseView(ChaoticaBaseView, View):
     def get_context_data(self, **kwargs):
         context = super(JobBaseView, self).get_context_data(**kwargs)
         note_form = AddNote()
-        context['noteForm'] = note_form
+        context['note_form'] = note_form
         return context
 
 

@@ -6,11 +6,9 @@ from django.views import View
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
-from chaotica_utils.views import log_system_activity, ChaoticaBaseView, page_defaults
-from chaotica_utils.utils import *
-from ..models import *
-from ..forms import *
-from ..tasks import *
+from chaotica_utils.views import log_system_activity, ChaoticaBaseView
+from ..models import Job, Phase, TimeSlot, WorkflowTask
+from ..forms import AddNote, AssignUserField, PhaseDeliverInlineForm, FeedbackForm, PhasePresQAInlineForm, PhaseScopeFeedbackInlineForm, PhaseTechQAInlineForm, PhaseForm
 from ..enums import FeedbackType, PhaseStatuses, TimeSlotDeliveryRole
 from .helpers import _process_assign_user
 import logging
@@ -21,9 +19,9 @@ logger = logging.getLogger(__name__)
 
 
 @login_required
-def view_phase_schedule_slots(request, jobSlug, slug):
+def view_phase_schedule_slots(request, job_slug, slug):
     data = []
-    job = get_object_or_404(Job, slug=jobSlug)
+    job = get_object_or_404(Job, slug=job_slug)
     phase = get_object_or_404(Phase, job=job, slug=slug)
     slots = TimeSlot.objects.filter(phase=phase)
     for slot in slots:
@@ -32,14 +30,13 @@ def view_phase_schedule_slots(request, jobSlug, slug):
 
 
 @login_required
-def view_phase_schedule_members(request, jobSlug, slug):
+def view_phase_schedule_members(request, job_slug, slug):
     data = []
-    job = get_object_or_404(Job, slug=jobSlug)
+    job = get_object_or_404(Job, slug=job_slug)
     phase = get_object_or_404(Phase, job=job, slug=slug)
-    scheduledUsers = phase.team()
-    if scheduledUsers:
-        for user in scheduledUsers:
-            userTitle = str(user)
+    scheduled_users = phase.team()
+    if scheduled_users:
+        for user in scheduled_users:
             role = ""
             if phase.project_lead == user:
                 if role:
@@ -61,11 +58,12 @@ def view_phase_schedule_members(request, jobSlug, slug):
                     role += ', PQA'
                 else:
                     role += 'PQA'
+            user_title = str(user)
             if role:
-                userTitle = userTitle+" ("+role+")"
+                user_title = user_title+" ("+role+")"
             data.append({
                 "id": user.pk,
-                "title": userTitle,
+                "title": user_title,
                 "role": role,
                 "businessHours": {
                     "startTime": job.unit.businessHours_startTime,
@@ -77,13 +75,13 @@ def view_phase_schedule_members(request, jobSlug, slug):
 
 
 @login_required
-def assign_phase_field(request, jobSlug, slug, field):
-    validFields = [
+def assign_phase_field(request, job_slug, slug, field):
+    valid_fields = [
         'project_lead', 'report_author',
         'techqa_by', 'presqa_by'
     ]
-    phase = get_object_or_404(Phase, slug=slug, job__slug=jobSlug)
-    if field in validFields:
+    phase = get_object_or_404(Phase, slug=slug, job__slug=job_slug)
+    if field in valid_fields:
         return _process_assign_user(request, phase, field)
     else:
         return HttpResponseBadRequest()
@@ -92,26 +90,26 @@ def assign_phase_field(request, jobSlug, slug, field):
 class PhaseBaseView(ChaoticaBaseView, View):
     model = Phase
     fields = '__all__'
-    jobSlug = None
+    job_slug = None
 
     def get_success_url(self):
         if 'slug' in self.kwargs:
             slug = self.kwargs['slug']
-            if 'jobSlug' in self.kwargs:
-                jobSlug = self.kwargs['jobSlug']
-                return reverse_lazy('phase_detail', kwargs={'jobSlug': jobSlug, 'slug': slug})
+            if 'job_slug' in self.kwargs:
+                job_slug = self.kwargs['job_slug']
+                return reverse_lazy('phase_detail', kwargs={'job_slug': job_slug, 'slug': slug})
         else:
-            if 'jobSlug' in self.kwargs:
-                jobSlug = self.kwargs['jobSlug']
-                return reverse_lazy('job_detail', kwargs={'slug': jobSlug})
+            if 'job_slug' in self.kwargs:
+                job_slug = self.kwargs['job_slug']
+                return reverse_lazy('job_detail', kwargs={'slug': job_slug})
 
     def get_context_data(self, **kwargs):
         context = super(PhaseBaseView, self).get_context_data(**kwargs)
-        if 'jobSlug' in self.kwargs:
-            context['job'] = get_object_or_404(Job, slug=self.kwargs['jobSlug'])
+        if 'job_slug' in self.kwargs:
+            context['job'] = get_object_or_404(Job, slug=self.kwargs['job_slug'])
 
-        noteForm = AddNote()
-        context['noteForm'] = noteForm
+        note_form = AddNote()
+        context['note_form'] = note_form
 
         return context
 
@@ -120,24 +118,24 @@ class PhaseDetailView(PhaseBaseView, DetailView):
     def get_context_data(self, **kwargs):
         context = super(PhaseDetailView, self).get_context_data(**kwargs)
         
-        deliverForm = PhaseDeliverInlineForm(instance=context['phase'])
-        context['phaseDeliverInlineForm'] = deliverForm
+        phase_deliver_inline_form = PhaseDeliverInlineForm(instance=context['phase'])
+        context['phase_deliver_inline_form'] = phase_deliver_inline_form
         
-        infoForm = PhaseForm(instance=context['phase'])
-        context['infoForm'] = infoForm
+        info_form = PhaseForm(instance=context['phase'])
+        context['info_form'] = info_form
         
-        
+        feedback_form = None
+
         if context['phase'].status == PhaseStatuses.IN_PROGRESS:
-            qaForm = PhaseScopeFeedbackInlineForm(instance=context['phase'])
-            context['feedbackForm'] = qaForm
+            feedback_form = PhaseScopeFeedbackInlineForm(instance=context['phase'])
         
         if context['phase'].status == PhaseStatuses.QA_TECH:
-            qaForm = PhaseTechQAInlineForm(instance=context['phase'])
-            context['feedbackForm'] = qaForm
+            feedback_form = PhaseTechQAInlineForm(instance=context['phase'])
         
         if context['phase'].status == PhaseStatuses.QA_PRES:
-            qaForm = PhasePresQAInlineForm(instance=context['phase'])
-            context['feedbackForm'] = qaForm
+            feedback_form = PhasePresQAInlineForm(instance=context['phase'])
+
+        context['feedback_form'] = feedback_form
 
         return context
 
@@ -147,31 +145,30 @@ class PhaseCreateView(PhaseBaseView, CreateView):
     fields = None
 
     def form_valid(self, form):
-        form.instance.job = Job.objects.get(slug=self.kwargs['jobSlug'])    
+        form.instance.job = Job.objects.get(slug=self.kwargs['job_slug'])    
         form.instance.save()
         log_system_activity(form.instance, "Created")    
         return super(PhaseCreateView, self).form_valid(form)
 
     def get_form_kwargs(self):
         kwargs = super(PhaseCreateView, self).get_form_kwargs()
-        if 'jobSlug' in self.kwargs:
-            kwargs['job'] = get_object_or_404(Job, slug=self.kwargs['jobSlug'])
+        if 'job_slug' in self.kwargs:
+            kwargs['job'] = get_object_or_404(Job, slug=self.kwargs['job_slug'])
         return kwargs
 
 @login_required
-def PhaseCreateNote(request, jobSlug, slug):
-    job = get_object_or_404(Job, slug=jobSlug)
+def phase_create_note(request, job_slug, slug):
+    job = get_object_or_404(Job, slug=job_slug)
     phase = get_object_or_404(Phase, job=job, slug=slug)
-    data = dict()
     if request.method == 'POST':
         form = AddNote(request.POST)
         if form.is_valid():
-            newNote = form.save(commit=False)
-            newNote.content_object = phase
-            newNote.author = request.user
-            newNote.is_system_note = False
-            newNote.save()      
-            return HttpResponseRedirect(reverse('phase_detail', kwargs={"jobSlug": jobSlug,"slug": slug})+"#notes")
+            new_note = form.save(commit=False)
+            new_note.content_object = phase
+            new_note.author = request.user
+            new_note.is_system_note = False
+            new_note.save()      
+            return HttpResponseRedirect(reverse('phase_detail', kwargs={"job_slug": job_slug,"slug": slug})+"#notes")
     return HttpResponseBadRequest()
 
 class PhaseScheduleView(PhaseBaseView, DetailView):
@@ -183,8 +180,8 @@ class PhaseScheduleView(PhaseBaseView, DetailView):
         context['userSelect'] = AssignUserField()
         context['TimeSlotDeliveryRoles'] = TimeSlotDeliveryRole.CHOICES
 
-        typesInUse = context['phase'].get_all_total_scheduled_by_type()
-        context['TimeSlotDeliveryRolesInUse'] = typesInUse
+        types_in_use = context['phase'].get_all_total_scheduled_by_type()
+        context['TimeSlotDeliveryRolesInUse'] = types_in_use
         return context
 
 class PhaseUpdateView(PhaseBaseView, UpdateView):
@@ -192,40 +189,17 @@ class PhaseUpdateView(PhaseBaseView, UpdateView):
     template_name = "jobtracker/phase_form.html"
     fields = None
 
-    # This is useful for formsets. Don't need it here any more but keep it just in case. 
-    # def get_context_data(self, **kwargs):
-    #     context = super(PhaseUpdateView, self).get_context_data(**kwargs)
-    #     context['timeAllocations'] = TimeAllocationFormSet(queryset=TimeAllocation.objects.filter(phase=context['phase']))
-    #     context['taHelper'] = TimeAllocationForm()
-    #     # context['form'] = PhaseForm()
-    #     return context
-
-    # def post(self, request, *args, **kwargs):
-    #     phase = get_object_or_404(Phase, slug=kwargs['slug'])
-    #     timeAllocations = TimeAllocationFormSet(request.POST)
-    #     form = PhaseForm(request.POST, instance=phase)
-    #     if timeAllocations.is_valid() and form.is_valid():
-    #         return self.form_valid(timeAllocations,form)
-
-    # def form_valid(self, timeAllocations,form):
-    #     phase = form.save()
-    #     instances = timeAllocations.save(commit=False)
-    #     for instance in instances:
-    #         instance.phase = phase
-    #         instance.save()
-    #     return HttpResponseRedirect(phase.get_absolute_url())
-
     def get_form_kwargs(self):
         kwargs = super(PhaseUpdateView, self).get_form_kwargs()
-        if 'jobSlug' in self.kwargs:
-            kwargs['job'] = get_object_or_404(Job, slug=self.kwargs['jobSlug'])
+        if 'job_slug' in self.kwargs:
+            kwargs['job'] = get_object_or_404(Job, slug=self.kwargs['job_slug'])
         return kwargs
 
 
 
 @login_required
-def phase_edit_delivery(request, jobSlug, slug):
-    job = get_object_or_404(Job, slug=jobSlug)
+def phase_edit_delivery(request, job_slug, slug):
+    job = get_object_or_404(Job, slug=job_slug)
     phase = get_object_or_404(Phase, job=job, slug=slug)
     data = dict()
     if request.method == 'POST':
@@ -233,7 +207,7 @@ def phase_edit_delivery(request, jobSlug, slug):
         if form.is_valid():
             form.save()
             data['form_is_valid'] = True
-            return redirect('phase_detail', jobSlug, slug)
+            return redirect('phase_detail', job_slug, slug)
         else:
             data['form_is_valid'] = False
     else:
@@ -246,8 +220,8 @@ def phase_edit_delivery(request, jobSlug, slug):
     return JsonResponse(data)
 
 @login_required
-def phase_feedback_techqa(request, jobSlug, slug):
-    job = get_object_or_404(Job, slug=jobSlug)
+def phase_feedback_techqa(request, job_slug, slug):
+    job = get_object_or_404(Job, slug=job_slug)
     phase = get_object_or_404(Phase, job=job, slug=slug)
     
     data = dict()
@@ -272,8 +246,8 @@ def phase_feedback_techqa(request, jobSlug, slug):
     return JsonResponse(data)
 
 @login_required
-def phase_feedback_presqa(request, jobSlug, slug):
-    job = get_object_or_404(Job, slug=jobSlug)
+def phase_feedback_presqa(request, job_slug, slug):
+    job = get_object_or_404(Job, slug=job_slug)
     phase = get_object_or_404(Phase, job=job, slug=slug)
     
     data = dict()
@@ -298,8 +272,8 @@ def phase_feedback_presqa(request, jobSlug, slug):
     return JsonResponse(data)
 
 @login_required
-def phase_feedback_scope(request, jobSlug, slug):
-    job = get_object_or_404(Job, slug=jobSlug)
+def phase_feedback_scope(request, job_slug, slug):
+    job = get_object_or_404(Job, slug=job_slug)
     phase = get_object_or_404(Phase, job=job, slug=slug)
     
     data = dict()
@@ -324,8 +298,8 @@ def phase_feedback_scope(request, jobSlug, slug):
     return JsonResponse(data)
 
 @login_required
-def phase_rating_techqa(request, jobSlug, slug):
-    job = get_object_or_404(Job, slug=jobSlug)
+def phase_rating_techqa(request, job_slug, slug):
+    job = get_object_or_404(Job, slug=job_slug)
     phase = get_object_or_404(Phase, job=job, slug=slug)
     
     data = dict()
@@ -340,15 +314,15 @@ def phase_rating_techqa(request, jobSlug, slug):
     else:
         form = PhaseTechQAInlineForm(instance=phase)
 
-    context = {'feedbackForm': form}
+    context = {'feedback_form': form}
     data['html_form'] = loader.render_to_string("partials/phase/widgets/feedback.html",
                                                 context,
                                                 request=request)
     return JsonResponse(data)
 
 @login_required
-def phase_rating_presqa(request, jobSlug, slug):
-    job = get_object_or_404(Job, slug=jobSlug)
+def phase_rating_presqa(request, job_slug, slug):
+    job = get_object_or_404(Job, slug=job_slug)
     phase = get_object_or_404(Phase, job=job, slug=slug)
     
     data = dict()
@@ -363,15 +337,15 @@ def phase_rating_presqa(request, jobSlug, slug):
     else:
         form = PhasePresQAInlineForm(instance=phase)
 
-    context = {'feedbackForm': form}
+    context = {'feedback_form': form}
     data['html_form'] = loader.render_to_string("partials/phase/widgets/feedback.html",
                                                 context,
                                                 request=request)
     return JsonResponse(data)
 
 @login_required
-def phase_rating_scope(request, jobSlug, slug):
-    job = get_object_or_404(Job, slug=jobSlug)
+def phase_rating_scope(request, job_slug, slug):
+    job = get_object_or_404(Job, slug=job_slug)
     phase = get_object_or_404(Phase, job=job, slug=slug)
     
     data = dict()
@@ -386,15 +360,15 @@ def phase_rating_scope(request, jobSlug, slug):
     else:
         form = PhaseScopeFeedbackInlineForm(instance=phase)
 
-    context = {'feedbackForm': form}
+    context = {'feedback_form': form}
     data['html_form'] = loader.render_to_string("partials/phase/widgets/feedback.html",
                                                 context,
                                                 request=request)
     return JsonResponse(data)
 
 @login_required
-def PhaseUpdateWorkflow(request, jobSlug, slug, new_state):
-    job = get_object_or_404(Job, slug=jobSlug)
+def phase_update_workflow(request, job_slug, slug, new_state):
+    job = get_object_or_404(Job, slug=job_slug)
     phase = get_object_or_404(Phase, job=job, slug=slug)
     data = dict()
     new_state_str = None
@@ -407,56 +381,56 @@ def PhaseUpdateWorkflow(request, jobSlug, slug, new_state):
     except Exception:
         return HttpResponseBadRequest()
     
-    canProceed = True
+    can_proceed = True
         
     if new_state == PhaseStatuses.PENDING_SCHED:
         if phase.can_to_pending_sched(request):
             if request.method == 'POST':
                 phase.to_pending_sched()
         else:
-            canProceed = False
+            can_proceed = False
     elif new_state == PhaseStatuses.SCHEDULED_TENTATIVE:
         if phase.can_to_sched_tentative(request):
             if request.method == 'POST':
                 phase.to_sched_tentative()
         else:
-            canProceed = False
+            can_proceed = False
     elif new_state == PhaseStatuses.SCHEDULED_CONFIRMED:
         if phase.can_to_sched_confirmed(request):
             if request.method == 'POST':
                 phase.to_sched_confirmed()
         else:
-            canProceed = False
+            can_proceed = False
     elif new_state == PhaseStatuses.PRE_CHECKS:
         if phase.can_to_pre_checks(request):
             if request.method == 'POST':
                 phase.to_pre_checks()
         else:
-            canProceed = False
+            can_proceed = False
     elif new_state == PhaseStatuses.CLIENT_NOT_READY:
         if phase.can_to_not_ready(request):
             if request.method == 'POST':
                 phase.to_not_ready()
         else:
-            canProceed = False
+            can_proceed = False
     elif new_state == PhaseStatuses.READY_TO_BEGIN:
         if phase.can_to_ready(request):
             if request.method == 'POST':
                 phase.to_ready()
         else:
-            canProceed = False
+            can_proceed = False
     elif new_state == PhaseStatuses.IN_PROGRESS:
         if phase.can_to_in_progress(request):
             if request.method == 'POST':
                 phase.to_in_progress()
         else:
-            canProceed = False
+            can_proceed = False
     elif new_state == PhaseStatuses.PENDING_TQA:
         if phase.can_to_pending_tech_qa(request):
             if request.method == 'POST':
                 phase.to_pending_tech_qa()
         else:
-            canProceed = False
+            can_proceed = False
     elif new_state == PhaseStatuses.QA_TECH:
         if phase.can_to_tech_qa(request):
             if request.method == 'POST':
@@ -469,19 +443,19 @@ def PhaseUpdateWorkflow(request, jobSlug, slug, new_state):
                         return HttpResponseBadRequest()
                 phase.to_tech_qa()
         else:
-            canProceed = False
+            can_proceed = False
     elif new_state == PhaseStatuses.QA_TECH_AUTHOR_UPDATES:
         if phase.can_to_tech_qa_updates(request):
             if request.method == 'POST':
                 phase.to_tech_qa_updates()
         else:
-            canProceed = False
+            can_proceed = False
     elif new_state == PhaseStatuses.PENDING_PQA:
         if phase.can_to_pending_pres_qa(request):
             if request.method == 'POST':
                 phase.to_pending_pres_qa()
         else:
-            canProceed = False
+            can_proceed = False
     elif new_state == PhaseStatuses.QA_PRES:
         if phase.can_to_pres_qa(request):
             if request.method == 'POST':
@@ -494,55 +468,55 @@ def PhaseUpdateWorkflow(request, jobSlug, slug, new_state):
                         return HttpResponseBadRequest()
                 phase.to_pres_qa()
         else:
-            canProceed = False
+            can_proceed = False
     elif new_state == PhaseStatuses.QA_PRES_AUTHOR_UPDATES:
         if phase.can_to_pres_qa_updates(request):
             if request.method == 'POST':
                 phase.to_pres_qa_updates()
         else:
-            canProceed = False
+            can_proceed = False
     elif new_state == PhaseStatuses.COMPLETED:
         if phase.can_to_completed(request):
             if request.method == 'POST':
                 phase.to_completed()
         else:
-            canProceed = False
+            can_proceed = False
     elif new_state == PhaseStatuses.DELIVERED:
         if phase.can_to_delivered(request):
             if request.method == 'POST':
                 phase.to_delivered()
         else:
-            canProceed = False
+            can_proceed = False
     elif new_state == PhaseStatuses.CANCELLED:
         if phase.can_to_cancelled(request):
             if request.method == 'POST':
                 phase.to_cancelled()
         else:
-            canProceed = False
+            can_proceed = False
     elif new_state == PhaseStatuses.POSTPONED:
         if phase.can_to_postponed(request):
             if request.method == 'POST':
                 phase.to_postponed()
         else:
-            canProceed = False
+            can_proceed = False
     elif new_state == PhaseStatuses.DELETED:
         if phase.can_to_deleted(request):
             if request.method == 'POST':
                 phase.to_deleted()
         else:
-            canProceed = False
+            can_proceed = False
     elif new_state == PhaseStatuses.ARCHIVED:
         if phase.can_to_archived(request):
             if request.method == 'POST':
                 phase.to_archived()
         else:
-            canProceed = False
+            can_proceed = False
     else:
         return HttpResponseBadRequest()
 
         # sendWebHookStatusAlert(redteam=rt, title="Engagement Status Changed", msg="Engagement "+rt.projectName+" status has changed to: "+str(dict(RTState.choices).get(new_state)))
         
-    if request.method == 'POST' and canProceed:
+    if request.method == 'POST' and can_proceed:
         phase.save()
         log_system_activity(phase, "Moved to "+new_state_str)
         data['form_is_valid'] = True  # This is just to play along with the existing code
@@ -551,7 +525,7 @@ def PhaseUpdateWorkflow(request, jobSlug, slug, new_state):
     context = {
         'job': job,
         'phase': phase,
-        'canProceed': canProceed,
+        'can_proceed': can_proceed,
         'new_state_str': new_state_str,
         'new_state': new_state,
         'tasks': tasks,

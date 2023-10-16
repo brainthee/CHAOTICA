@@ -1,6 +1,5 @@
 from django import template
-from chaotica_utils.enums import *
-from pprint import pprint
+from chaotica_utils.enums import UnitRoles
 import datetime
 
 register = template.Library()
@@ -10,34 +9,34 @@ def index(indexable, i):
     return indexable[i]
 
 @register.simple_tag
-def get_slotType_usage_perc(obj, slotType):
-    return obj.get_slotType_usage_perc(slotType)
+def get_slot_type_usage_perc(obj, slot_type):
+    return obj.get_slot_type_usage_perc(slot_type)
 
 @register.simple_tag
-def get_total_scheduled_by_type(obj, slotType):
-    return obj.get_total_scheduled_by_type(slotType)
+def get_total_scheduled_by_type(obj, slot_type):
+    return obj.get_total_scheduled_by_type(slot_type)
 
 @register.simple_tag
-def get_total_scoped_by_type(obj, slotType):
-    return obj.get_total_scoped_by_type(slotType)
+def get_total_scoped_by_type(obj, slot_type):
+    return obj.get_total_scoped_by_type(slot_type)
 
 @register.simple_tag
 def get_unit_role_display(role):
     return UnitRoles.CHOICES[role][1]
 
 @register.simple_tag
-def getRangeFromZero(number):
+def get_range_from_zero(number):
     rng = range(0, number, 1)
     return rng
 
 @register.simple_tag
-def getRangeFromOne(number):
+def get_range_from_one(number):
     rng = range(1, number+1, 1)
     return rng
 
 @register.simple_tag
-def PyDateToJSDate(date):
-    if type(date) == datetime.datetime:
+def py_date_to_js_date(date):
+    if isinstance(date, datetime.datetime):
         return str(date.strftime('%Y-%m-%d'))
     else:
         return ""

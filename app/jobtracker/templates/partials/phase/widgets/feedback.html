@@ -12,7 +12,7 @@
                <form method="post" action="{% url 'phase_rating_scope' phase.job.slug phase.slug %}" id="techRating">
                   {% csrf_token %}            
                   <span class="form-check-label">Scope Correct: </span> 
-                  {{ feedbackForm.feedback_scope_correct|as_crispy_field }}
+                  {{ feedback_form.feedback_scope_correct|as_crispy_field }}
                </form>
 
                {% else %}
@@ -46,7 +46,7 @@
                {% if phase.status == 9 %}
                   <form method="post" action="{% url 'phase_rating_techqa' phase.job.slug phase.slug %}" id="techRating">
                      {% csrf_token %}            
-                     {{ feedbackForm.techqa_report_rating|as_crispy_field }}
+                     {{ feedback_form.techqa_report_rating|as_crispy_field }}
                   </form>
                {% else %}
                   {% if phase.techqa_report_rating == None %}
@@ -77,7 +77,7 @@
                {% if phase.status == 12 %}
                <form method="post" action="{% url 'phase_rating_presqa' phase.job.slug phase.slug %}" id="techRating">
                   {% csrf_token %}            
-                  {{ feedbackForm.presqa_report_rating|as_crispy_field }}
+                  {{ feedback_form.presqa_report_rating|as_crispy_field }}
                </form>
 
                {% else %}

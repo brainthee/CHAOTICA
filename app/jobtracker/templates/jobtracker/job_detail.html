@@ -33,11 +33,6 @@
             <span class="fa-solid fa-clipboard me-2 tab-icon-color"></span>Phases
           </a>
         </li>
-        <!-- <li class="nav-item text-nowrap me-2" role="presentation">
-          <a class="nav-link" id="gantt-tab" data-bs-toggle="tab" href="#gantt" role="tab" aria-controls="tab-gantt" aria-selected="false" tabindex="-1">
-            <span class="fa-solid fa-clipboard me-2 tab-icon-color"></span>Gantt
-          </a>
-        </li> -->
         <li class="nav-item text-nowrap me-2" role="presentation">
           <a class="nav-link" id="sales-tab" data-bs-toggle="tab" href="#sales" role="tab" aria-controls="tab-sales" aria-selected="false" tabindex="-1">
             <span class="fa-solid fa-chart-line me-2 tab-icon-color"></span>Sales
@@ -64,9 +59,6 @@
         <div class="tab-pane fade" id="phases" role="tabpanel" aria-labelledby="phases-tab">
           {% include 'partials/job/widgets/phases.html' %}
         </div>
-        <!-- <div class="tab-pane fade" id="gantt" role="tabpanel" aria-labelledby="gantt-tab">
-          {% include 'partials/job/widgets/gantt.html' %}
-        </div> -->
         <div class="tab-pane fade" id="sales" role="tabpanel" aria-labelledby="sales-tab">
           <div class="row mt-4">
             {% include 'partials/job/widgets/sales_stats.html' %}

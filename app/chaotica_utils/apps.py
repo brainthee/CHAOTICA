@@ -18,7 +18,7 @@ def populate_groups():
     if table_exists("auth_permission") and Permission.objects.filter(codename="view_client").exists():
         # create default groups
         for global_role in GlobalRoles.CHOICES:
-            group, created = Group.objects.get_or_create(name=settings.GLOBAL_GROUP_PREFIX+global_role[1])
+            group, _ = Group.objects.get_or_create(name=settings.GLOBAL_GROUP_PREFIX+global_role[1])
             group.permissions.clear()
             for perm in GlobalRoles.PERMISSIONS[global_role[0]][1]: # how ugly!
                 try:

@@ -24,7 +24,7 @@
                 <div class="col-12">               
                     <h6 class="text-start">Description</h6>
                     <div class="border border-cake p-2">
-                    {{ infoForm.description|as_crispy_field }}
+                    {{ info_form.description|as_crispy_field }}
                     </div>
                 </div>
             </div>
@@ -38,15 +38,15 @@
                     <ul class="list-group">
                         <li class="list-group-item border-0 px-0">
                             <div class="form-check form-switch ps-0">
-                                {{ infoForm.is_testing_onsite|as_crispy_field }}
+                                {{ info_form.is_testing_onsite|as_crispy_field }}
                             </div>
                             <div class="form-check form-switch ps-0">
-                                {{ infoForm.is_reporting_onsite|as_crispy_field }}
+                                {{ info_form.is_reporting_onsite|as_crispy_field }}
                             </div>
                             <div class="form-check form-switch ps-0">
                                 <h6 class="text-start">Location</h6>
                                 <div class="border border-cake p-2">
-                                    {{ infoForm.location|as_crispy_field }}
+                                    {{ info_form.location|as_crispy_field }}
                                 </div>
                             </div>
                         </li>
@@ -59,10 +59,10 @@
                     <ul class="list-group">
                         <li class="list-group-item border-0 px-0">
                             <div class="form-check form-switch ps-0">
-                                {{ infoForm.number_of_reports|as_crispy_field }}
+                                {{ info_form.number_of_reports|as_crispy_field }}
                             </div>
                             <div class="form-check form-switch ps-0">
-                                {{ infoForm.report_to_be_left_on_client_site|as_crispy_field }}
+                                {{ info_form.report_to_be_left_on_client_site|as_crispy_field }}
                             </div>
                         </li>
                     </ul>
@@ -74,13 +74,13 @@
                 <div class="col-12 col-md-6 position-relative">  
                     <h6 class="mb-0">Target</h6>       
                     <div class="border border-cake p-2">
-                        {{ infoForm.test_target|as_crispy_field }}
+                        {{ info_form.test_target|as_crispy_field }}
                     </div>           
                 </div>
                 <div class="col-12 col-md-6 position-relative">      
                     <h6 class="mb-0">Pre-Reqs</h6>
                     <div class="border border-cake p-2">
-                        {{ infoForm.prerequisites|as_crispy_field }}
+                        {{ info_form.prerequisites|as_crispy_field }}
                     </div>
                 </div>
             </div>
@@ -89,13 +89,13 @@
                 <div class="col-12 col-md-6 position-relative">     
                     <h6 class="mb-0">Communication Requirements</h6>
                     <div class="border border-cake p-2">
-                        {{ infoForm.comm_reqs|as_crispy_field }}
+                        {{ info_form.comm_reqs|as_crispy_field }}
                     </div>
                 </div>
                 <div class="col-12 col-md-6 position-relative">   
                     <h6 class="mb-0">Scheduling Requirements</h6>
                     <div class="border border-cake p-2">
-                        {{ infoForm.scheduling_requirements|as_crispy_field }}
+                        {{ info_form.scheduling_requirements|as_crispy_field }}
                     </div>
                 </div>
             </div>
@@ -104,7 +104,7 @@
                 <div class="col-12 col-md-6 position-relative">    
                     <h6 class="mb-0">Restrictions</h6>
                     <div class="border border-cake p-2">
-                        {{ infoForm.restrictions|as_crispy_field }}
+                        {{ info_form.restrictions|as_crispy_field }}
                     </div>
                 </div>
             </div>
