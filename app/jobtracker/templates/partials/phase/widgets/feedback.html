@@ -113,7 +113,7 @@
             $("#techRating .form-select").change(updateRating);
             // validate any changed fields for 2 seconds
             for (let fieldKey = 0; fieldKey < data.changed_data.length; fieldKey++) {
-               fieldName = data.changed_data[fieldKey]
+               let fieldName = data.changed_data[fieldKey]
                var changed_field = $('#id_'+fieldName);
                changed_field.addClass('is-valid');
                setTimeout(function() {

@@ -1,5 +1,5 @@
 {% load static %}
-<nav class="navbar navbar-top fixed-top navbar-expand-lg" id="dualNav" style="display:none;">
+<nav class="navbar navbar-top fixed-top navbar-expand-lg" aria-labelledby="navbartop" id="dualNav" style="display:none;">
   <div class="w-100">
     {% if user.is_impersonate %}
       <div class="alert m-0 py-2 alert-warning rounded-0 text-white" role="alert">
@@ -151,4 +151,4 @@
   </div>
 </nav>
 <!-- Not used - no vertical nav! -->
-<nav class="navbar navbar-vertical navbar-expand-lg"></nav>
+<nav class="navbar navbar-vertical navbar-expand-lg" aria-labelledby="vertical-nav"></nav>

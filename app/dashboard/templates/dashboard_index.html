@@ -177,7 +177,7 @@ var calendar = new FullCalendar.Calendar(calendarEl, {
       center: 'title',
       right: 'dayGridMonth,timeGridWeek,timeGridDay'
     },
-    events: '{% url 'view_own_schedule_timeslots' %}',
+    events: "{% url 'view_own_schedule_timeslots' %}",
     selectable: true,
     editable: true,
     eventClick: function(info) {

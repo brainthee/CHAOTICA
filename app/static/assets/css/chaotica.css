@@ -21,10 +21,7 @@ div.content span.select2-container {
 }
 
 .dataTables_wrapper .dataTables_length select {
-    padding: 10px;
-}
-
-.dataTables_wrapper .dataTables_length select{
+  padding: 10px;
   height: 44px;
   border: none !important;
   overflow: hidden;
