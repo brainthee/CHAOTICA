@@ -109,19 +109,7 @@
 {% block footer_javascript_page %}
 <script>
 
-var containerEl = document.getElementById('external-events');
 var calendarEl = document.getElementById('calendar');
-
-if (containerEl) {
-    new FullCalendar.Draggable(containerEl, {
-        itemSelector: '.fc-event',
-        eventData: function(eventEl) {
-        return {
-            title: eventEl.innerText
-        };
-        }
-    });
-}
 
 var calendar = new FullCalendar.Calendar(calendarEl, {
     initialView: 'resourceTimelineMonth',
