@@ -1,12 +1,7 @@
-from random import randint
-
 from django.template import Template
 from django.template.loader import render_to_string
-from django.utils.safestring import SafeString
-from django.utils.text import slugify
-
-from crispy_forms.layout import Div, Field, LayoutObject, TemplateNameMixin
-from crispy_forms.utils import TEMPLATE_PACK, flatatt, render_field
+from crispy_forms.layout import TemplateNameMixin
+from crispy_forms.utils import TEMPLATE_PACK, flatatt
 
 class WizardButton(TemplateNameMixin):
 

@@ -1,16 +1,12 @@
 from django import forms
 from django.urls import reverse
-from django.forms import modelformset_factory
-from .models import *
-from django.urls import reverse_lazy
+from .models import Contact, Job, Feedback, TimeSlot, Client, Phase, OrganisationalUnit, Skill, Service, WorkflowTask, SkillCategory
 from chaotica_utils.models import Note, User
 from crispy_forms.helper import FormHelper
-from crispy_forms.bootstrap import FormActions,PrependedText, FieldWithButtons, StrictButton, InlineField, Accordion, AccordionGroup
-from crispy_forms.layout import Layout, Row, Column, Field, Div, Submit, Button, HTML
+from crispy_forms.bootstrap import StrictButton
+from crispy_forms.layout import Layout, Row, Column, Field, Div, HTML
 from crispy_bootstrap5.bootstrap5 import FloatingField
-from .crispy_elements import WizardButton
 from dal import autocomplete
-import pprint
 from chaotica_utils.enums import UnitRoles
 from bootstrap_datepicker_plus.widgets import TimePickerInput, DatePickerInput, DateTimePickerInput
 
@@ -78,10 +74,8 @@ class AssignUserField(forms.Form):
     def __init__(self, *args, **kwargs):
         super(AssignUserField, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
-        # self.helper.form_tag = False
         self.fields['user'].help_text = None
         self.fields['user'].label = "Add user to schedule"
-        # self.helper.form_show_labels = False
         self.helper.layout = Layout(
             Column(
                 Field('user'),
@@ -193,18 +187,18 @@ class FeedbackForm(forms.ModelForm):
 class ChangeTimeSlotModalForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         if 'slug' in kwargs:
-            slug = kwargs.pop('slug')
+            kwargs.pop('slug')
         super(ChangeTimeSlotModalForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
         for fieldname in self.fields:
             self.fields[fieldname].help_text = None
         self.fields['user'].widget = forms.HiddenInput()
         if self.instance.phase:
-            deleteButton = StrictButton("Delete", type="button", 
+            delete_button = StrictButton("Delete", type="button", 
                 data_url=reverse('job_slot_delete', kwargs={"slug":self.instance.phase.job.slug, "pk":self.instance.pk}),
                 css_class="btn btn-danger js-load-modal-form btn-outline-danger me-auto mb-0")
         else:
-            deleteButton = None
+            delete_button = None
         self.fields['start'].widget = DateTimePickerInput()
         self.fields['end'].widget = DateTimePickerInput()
         self.helper.layout = Layout(
@@ -226,7 +220,7 @@ class ChangeTimeSlotModalForm(forms.ModelForm):
                 ),
                 css_class='card-body p-3'),
             Div(
-                Div(deleteButton,
+                Div(delete_button,
                     StrictButton("Save", type="submit", 
                         css_class="btn bg-gradient-success ms-auto mb-0"),
                     css_class="button-row d-flex"),
@@ -314,19 +308,6 @@ class JobForm(forms.ModelForm):
             "desired_start_date",
             "desired_delivery_date",
             ]
-
-# class TimeAllocationForm(FormHelper):
-#     def __init__(self, *args, **kwargs):
-#         super().__init__(*args, **kwargs)
-#         self.form_method = 'post'
-#         self.layout = Layout(
-#             'allocationType',
-#             'hours',
-#         )
-#         self.render_required_fields = True
-#         self.template = 'bootstrap5/table_inline_formset.html'
-
-# TimeAllocationFormSet = modelformset_factory(TimeAllocation, fields=('allocationType','hours',),extra=1,)
 
 class PhaseForm(forms.ModelForm):
 
@@ -451,8 +432,6 @@ class PhaseDeliverInlineForm(forms.ModelForm):
             "linkDeliverable", 
             "linkTechData", 
             "linkReportData", 
-            # "feedback_scope",  
-            # "feedback_scope_correct", 
         ]
 
 class PhaseScopeFeedbackInlineForm(forms.ModelForm):
@@ -747,14 +726,7 @@ class ServiceForm(forms.ModelForm):
         fields = ["name", "owners", "skillsRequired", "skillsDesired"]
 
 
-class WFTaskForm(forms.ModelForm):
-    # owners = forms.ModelMultipleChoiceField(
-    #     required=False,
-    #     queryset=User.objects.filter(is_active=True),
-    #     widget=autocomplete.ModelSelect2Multiple(url='user-autocomplete',
-    #                                      attrs={
-    #                                          'data-minimum-input-length': 3,
-    #                                      },),)    
+class WFTaskForm(forms.ModelForm): 
     status = forms.IntegerField(
         widget=forms.Select(),)
 

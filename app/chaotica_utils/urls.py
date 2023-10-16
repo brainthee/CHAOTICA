@@ -1,7 +1,6 @@
 from django.urls import path, include, re_path 
 from . import views
 from django.contrib import admin
-from django.views.decorators.http import require_http_methods, require_safe
 
 
 urlpatterns = [

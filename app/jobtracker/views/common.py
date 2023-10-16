@@ -1,11 +1,8 @@
-from django.shortcuts import get_object_or_404, redirect
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
+from django.urls import reverse
 from django.template import loader
-from chaotica_utils.views import log_system_activity, ChaoticaBaseView, page_defaults
-from chaotica_utils.utils import *
-from ..models import *
-from ..forms import *
-from ..tasks import *
+from chaotica_utils.views import page_defaults
+from ..tasks import task_progress_job_workflows
 import logging
 from django.contrib.auth.decorators import login_required
 import uuid

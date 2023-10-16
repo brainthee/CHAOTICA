@@ -1,6 +1,7 @@
 from django.contrib.auth.forms import UserCreationForm
+from django.utils import timezone
 from django import forms
-from .models import *
+from .models import LeaveRequest, User, Group
 from crispy_forms.helper import FormHelper
 from crispy_forms.bootstrap import FormActions,PrependedText, FieldWithButtons, StrictButton, InlineField, Accordion, AccordionGroup
 from crispy_forms.layout import Layout, Row, Column, Field, Div, Submit, Button, HTML
@@ -10,6 +11,7 @@ from dal import autocomplete
 from django.conf import settings
 from bootstrap_datepicker_plus.widgets import TimePickerInput, DatePickerInput, DateTimePickerInput
 from django.core.files.images import get_image_dimensions
+from business_duration import businessDuration
 
 
 class CustomConfigForm(ConstanceForm):
@@ -63,10 +65,10 @@ class LeaveRequestForm(forms.ModelForm):
         # Now lets check if this takes us over our available leave
         unit='day'
         days = businessDuration(start, end, unit=unit)
-        requestedDays = round(days, 2)
-        availableDays = self.request.user.remaining_leave()
-        if requestedDays > availableDays:
-            self.add_error(None, "You have requested more days than your allocation ({} required, {} available)".format(str(requestedDays), str(availableDays)))
+        requested_days = round(days, 2)
+        available_days = self.request.user.remaining_leave()
+        if requested_days > available_days:
+            self.add_error(None, "You have requested more days than your allocation ({} required, {} available)".format(str(requested_days), str(available_days)))
 
     class Meta:
         model = LeaveRequest
@@ -212,11 +214,10 @@ class ProfileBasicForm(forms.ModelForm):
 
             #validate dimensions
             max_width = max_height = 500
-            if w and h:
-                if w > max_width or h > max_height:
-                    self.add_error("profile_image",
-                        'Please use an image that is '
-                        '%s x %s pixels or smaller.' % (max_width, max_height))
+            if (w and h) and (w > max_width or h > max_height):
+                self.add_error("profile_image",
+                    'Please use an image that is '
+                    '%s x %s pixels or smaller.' % (max_width, max_height))
 
             #validate content type
             main, sub = profile_image.content_type.split('/')
@@ -225,7 +226,6 @@ class ProfileBasicForm(forms.ModelForm):
                     'GIF or PNG image.')
 
             #validate file size
-            pprint(len(profile_image))
             if len(profile_image) > (1024 * 1024):
                 self.add_error("profile_image",
                     'Avatar file size may not exceed 1M.')

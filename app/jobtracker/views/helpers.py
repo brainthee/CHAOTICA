@@ -1,9 +1,9 @@
-from django.http import HttpResponse,HttpResponseRedirect, HttpResponseBadRequest, JsonResponse, HttpResponseForbidden, HttpResponseNotFound
-from django.template import loader, Template as tmpl, Context
-from ..models import *
-from ..forms import *
-from ..tasks import *
+from django.http import JsonResponse, HttpResponseForbidden
+from django.template import loader
+from ..models import Contact
+from ..forms import AssignMultipleUser, AssignUser, AssignMultipleContacts, AssignContact
 from chaotica_utils.views import log_system_activity
+from chaotica_utils.models import User
 import logging
 
 

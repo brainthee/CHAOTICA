@@ -1,12 +1,12 @@
-from django.urls import path, include, re_path 
+from django.urls import path
 from . import views
 from .feeds import ScheduleFeed, ScheduleFamilyFeed
 
 urlpatterns = [
     path('schedule/feed/reset', views.reset_cal_feed, name='reset_cal_feed'),
     path('schedule/feed/family/reset', views.reset_cal_family_feed, name='reset_cal_family_feed'),
-    path('schedule/feed/family/<str:calKey>', ScheduleFamilyFeed(), name='view_own_schedule_feed_family'),
-    path('schedule/feed/<str:calKey>', ScheduleFeed(), name='view_own_schedule_feed'),
+    path('schedule/feed/family/<str:cal_key>', ScheduleFamilyFeed(), name='view_own_schedule_feed_family'),
+    path('schedule/feed/<str:cal_key>', ScheduleFeed(), name='view_own_schedule_feed'),
     path('schedule/timeslots', views.view_own_schedule_timeslots, name='view_own_schedule_timeslots'),
     path('scheduler/', views.view_scheduler, name='view_scheduler'),
     path('scheduler/members', views.view_scheduler_members, name='view_scheduler_members'),
@@ -19,8 +19,8 @@ urlpatterns = [
     path('jobs/', views.JobListView.as_view(), name='job_list'),
     path('job/create/', views.JobCreateView.as_view(), name='job_create'),
     path('job/<str:slug>/', views.JobDetailView.as_view(), name='job_detail'),
-    path('job/<str:slug>/update/workflow/<int:newState>', views.JobUpdateWorkflow, name='job_update_workflow'),
-    path('job/<str:slug>/update/note', views.JobCreateNote, name='job_create_note'),
+    path('job/<str:slug>/update/workflow/<int:new_state>', views.job_update_workflow, name='job_update_workflow'),
+    path('job/<str:slug>/update/note', views.job_create_note, name='job_create_note'),
     path('job/<str:slug>/edit/scope', views.job_edit_scope, name='job_edit_scope'),
     path('job/<str:slug>/update/scope', views.JobUpdateScopeView.as_view(), name='job_update_scope'),
     path('job/<str:slug>/update/', views.JobUpdateView.as_view(), name='job_update'),
@@ -40,7 +40,7 @@ urlpatterns = [
     path('job/<str:jobSlug>/phase/create/', views.PhaseCreateView.as_view(), name='phase_create'),
     path('job/<str:jobSlug>/phase/<str:slug>/', views.PhaseDetailView.as_view(), name='phase_detail'),
     path('job/<str:jobSlug>/phase/<str:slug>/update/note', views.PhaseCreateNote, name='phase_create_note'),
-    path('job/<str:jobSlug>/phase/<str:slug>/update/workflow/<int:newState>', views.PhaseUpdateWorkflow, name='phase_update_workflow'),
+    path('job/<str:jobSlug>/phase/<str:slug>/update/workflow/<int:new_state>', views.PhaseUpdateWorkflow, name='phase_update_workflow'),
     path('job/<str:jobSlug>/phase/<str:slug>/update/', views.PhaseUpdateView.as_view(), name='phase_update'),
 
     path('job/<str:jobSlug>/phase/<str:slug>/edit/delivery', views.phase_edit_delivery, name='phase_edit_delivery'),

@@ -12,16 +12,13 @@ from model_utils.fields import MonitorField
 from django.db.models import JSONField
 from bs4 import BeautifulSoup
 from django.contrib import messages
-from pprint import pprint
-from chaotica_utils.models import Note, User, UserCost
-from chaotica_utils.enums import *
-from chaotica_utils.tasks import *
-from chaotica_utils.utils import *
+from chaotica_utils.models import Note, User
+from chaotica_utils.enums import NotificationTypes
+from chaotica_utils.tasks import task_send_notifications
+from chaotica_utils.utils import AppNotification
 from chaotica_utils.views import log_system_activity
 from datetime import timedelta
 from decimal import Decimal
-from django.contrib.auth.models import Permission
-from constance import config
 from django_bleach.models import BleachField
 from ..models.job import Job
 from ..enums import BOOL_CHOICES, TechQARatings, PresQARatings, FeedbackType, JobStatuses
@@ -136,7 +133,7 @@ class Phase(models.Model):
         elif self.job.start_date():
             return self.job.start_date()
         else:
-            # return today
+            # return today's date
             return timezone.now().today()
         
     def earliest_scheduled_date(self):
@@ -144,7 +141,7 @@ class Phase(models.Model):
         if self.timeslots.filter(deliveryRole=TimeSlotDeliveryRole.DELIVERY).exists():
             return self.timeslots.filter(deliveryRole=TimeSlotDeliveryRole.DELIVERY).order_by('-start').first().start.date()
         else:
-            # return today
+            # return today's date
             return timezone.now().today()        
 
     @property
@@ -247,14 +244,6 @@ class Phase(models.Model):
     presqa_report_rating = models.IntegerField('PresQA report rating', choices=PresQARatings.CHOICES, null=True,
                                                blank=True)
 
-    # # Feedback
-    # feedback_scope = models.ManyToManyField(Feedback, blank=True, null=True, 
-    #     related_name="scope_phases", on_delete=models.PROTECT, verbose_name='Scope Feedback')
-    # feedback_techqa = models.ManyToManyField(Feedback, blank=True, null=True, 
-    #     related_name="techqa_phases", on_delete=models.PROTECT, verbose_name='Tech QA Feedback')
-    # feedback_presqa = models.ManyToManyField(Feedback, blank=True, null=True, 
-    #     related_name="presqa_phases", on_delete=models.PROTECT, verbose_name='Pres QA Feedback')
-
     def feedback_scope(self):
         from ..models.common import Feedback
         return Feedback.objects.filter(phase=self, feedbackType=FeedbackType.SCOPE)
@@ -293,19 +282,8 @@ class Phase(models.Model):
         ordering = ('-job__id', 'phase_number')
         unique_together = ('job', 'phase_number')
         verbose_name = 'Phase'
-        permissions = (
-            ## Defaults
-            # ('view_phase', 'View Phase'),
-            # ('add_phase', 'Add Phase'),
-            # ('change_phase', 'Change Phase'),
-            # ('delete_phase', 'Delete Phase'),
-            ## Extras
-            # ('assign_members_job', 'Assign Members'),
-        )
+        permissions = ()
     
-
-    def syncPermissions(self):
-        pass
 
     def __str__(self):
         return u'{id}: {title}'.format(
@@ -313,17 +291,8 @@ class Phase(models.Model):
             title=self.title
         )
     
-    def fire_status_notification(self, targetStatus):
-        if targetStatus == PhaseStatuses.DRAFT:
-            pass        
-
-        elif targetStatus == PhaseStatuses.PENDING_SCHED:
-            pass
-
-        elif targetStatus == PhaseStatuses.SCHEDULED_TENTATIVE:
-            pass
-        
-        elif targetStatus == PhaseStatuses.SCHEDULED_CONFIRMED:        
+    def fire_status_notification(self, target_status):        
+        if target_status == PhaseStatuses.SCHEDULED_CONFIRMED:        
             # Notify project team
             users_to_notify = self.team()
             notice = AppNotification(
@@ -332,7 +301,7 @@ class Phase(models.Model):
                 "emails/phase/SCHEDULED_CONFIRMED.html", phase=self)
             task_send_notifications.delay(notice, users_to_notify)
         
-        elif targetStatus == PhaseStatuses.PRE_CHECKS:              
+        elif target_status == PhaseStatuses.PRE_CHECKS:              
             # Notify project team
             users_to_notify = self.team()
             notice = AppNotification(
@@ -341,7 +310,7 @@ class Phase(models.Model):
                 "emails/phase/PRE_CHECKS.html", phase=self)
             task_send_notifications.delay(notice, users_to_notify)
         
-        elif targetStatus == PhaseStatuses.CLIENT_NOT_READY:          
+        elif target_status == PhaseStatuses.CLIENT_NOT_READY:          
             # Notify project team
             users_to_notify = self.team()
             notice = AppNotification(
@@ -350,7 +319,7 @@ class Phase(models.Model):
                 "emails/phase/CLIENT_NOT_READY.html", phase=self)
             task_send_notifications.delay(notice, users_to_notify)
         
-        elif targetStatus == PhaseStatuses.READY_TO_BEGIN:        
+        elif target_status == PhaseStatuses.READY_TO_BEGIN:        
             # Notify project team
             users_to_notify = self.team()
             notice = AppNotification(
@@ -359,7 +328,7 @@ class Phase(models.Model):
                 "emails/phase/READY_TO_BEGIN.html", phase=self)
             task_send_notifications.delay(notice, users_to_notify)
         
-        elif targetStatus == PhaseStatuses.IN_PROGRESS:        
+        elif target_status == PhaseStatuses.IN_PROGRESS:        
             # Notify project team
             users_to_notify = self.team()
             notice = AppNotification(
@@ -368,7 +337,7 @@ class Phase(models.Model):
                 "emails/phase/IN_PROGRESS.html", phase=self)
             task_send_notifications.delay(notice, users_to_notify)
         
-        elif targetStatus == PhaseStatuses.PENDING_TQA:        
+        elif target_status == PhaseStatuses.PENDING_TQA:        
             # Notify qa team
             if not self.techqa_by:
                 users_to_notify = self.job.unit.get_active_members_with_perm("can_tqa_jobs")
@@ -379,11 +348,8 @@ class Phase(models.Model):
                 "Phase Update - Ready for Tech QA", "The phase is ready for Technical QA", 
                 "emails/phase/QA_TECH.html", phase=self)
             task_send_notifications.delay(notice, users_to_notify)
-
-        elif targetStatus == PhaseStatuses.QA_TECH:
-            pass
         
-        elif targetStatus == PhaseStatuses.QA_TECH_AUTHOR_UPDATES:        
+        elif target_status == PhaseStatuses.QA_TECH_AUTHOR_UPDATES:        
             users_to_notify = User.objects.filter(pk=self.report_author.pk)
             notice = AppNotification(
                 NotificationTypes.PHASE, 
@@ -391,7 +357,7 @@ class Phase(models.Model):
                 "emails/phase/QA_TECH_AUTHOR_UPDATES.html", phase=self)
             task_send_notifications.delay(notice, users_to_notify)
         
-        elif targetStatus == PhaseStatuses.PENDING_PQA:        
+        elif target_status == PhaseStatuses.PENDING_PQA:        
             # Notify qa team
             if not self.presqa_by:
                 users_to_notify = self.job.unit.get_active_members_with_perm("can_pqa_jobs")
@@ -402,11 +368,8 @@ class Phase(models.Model):
                 "Phase Update - Ready for Pres QA", "The phase is ready for Presentation QA", 
                 "emails/phase/QA_PRES.html", phase=self)
             task_send_notifications.delay(notice, users_to_notify)
-
-        elif targetStatus == PhaseStatuses.QA_PRES:
-            pass
         
-        elif targetStatus == PhaseStatuses.QA_PRES_AUTHOR_UPDATES:        
+        elif target_status == PhaseStatuses.QA_PRES_AUTHOR_UPDATES:        
             users_to_notify = User.objects.filter(pk=self.report_author.pk)
             notice = AppNotification(
                 NotificationTypes.PHASE, 
@@ -414,7 +377,7 @@ class Phase(models.Model):
                 "emails/phase/QA_PRES_AUTHOR_UPDATES.html", phase=self)
             task_send_notifications.delay(notice, users_to_notify)
         
-        elif targetStatus == PhaseStatuses.COMPLETED:        
+        elif target_status == PhaseStatuses.COMPLETED:        
             # Notify project team
             users_to_notify = self.team()
             notice = AppNotification(
@@ -423,25 +386,13 @@ class Phase(models.Model):
                 "emails/phase/COMPLETED.html", phase=self)
             task_send_notifications.delay(notice, users_to_notify)
         
-        elif targetStatus == PhaseStatuses.DELIVERED:
-            pass
-        
-        elif targetStatus == PhaseStatuses.CANCELLED:
-            pass
-        
-        elif targetStatus == PhaseStatuses.POSTPONED:            
+        elif target_status == PhaseStatuses.POSTPONED:            
             users_to_notify = None
             notice = AppNotification(
                 NotificationTypes.PHASE, 
                 "Phase Update - Postponed", "This phase has been postponed!", 
                 "emails/phase/POSTPONED.html", phase=self)
             task_send_notifications.delay(notice, users_to_notify)
-        
-        elif targetStatus == PhaseStatuses.DELETED:
-            pass
-        
-        elif targetStatus == PhaseStatuses.ARCHIVED:
-            pass
 
     
     def summary(self):
@@ -476,12 +427,12 @@ class Phase(models.Model):
 
     def team_scheduled(self):
         from ..models.timeslot import TimeSlot
-        scheduledUsersIDs = []
+        scheduled_users_ids = []
         for slot in TimeSlot.objects.filter(phase=self):
-            if slot.user.pk not in scheduledUsersIDs:
-                scheduledUsersIDs.append(slot.user.pk)
-        if scheduledUsersIDs:
-            return User.objects.filter(pk__in=scheduledUsersIDs)
+            if slot.user.pk not in scheduled_users_ids:
+                scheduled_users_ids.append(slot.user.pk)
+        if scheduled_users_ids:
+            return User.objects.filter(pk__in=scheduled_users_ids)
         else:
             return None
     
@@ -491,9 +442,9 @@ class Phase(models.Model):
             data[state[0]] = self.get_total_scheduled_by_type(state[0])
         return data
     
-    def get_total_scheduled_by_type(self, slotType):
+    def get_total_scheduled_by_type(self, slot_type):
         from ..models.timeslot import TimeSlot
-        slots = TimeSlot.objects.filter(phase=self, deliveryRole=slotType)
+        slots = TimeSlot.objects.filter(phase=self, deliveryRole=slot_type)
         total = 0.0
         for slot in slots:
             diff = slot.get_business_hours()
@@ -501,32 +452,32 @@ class Phase(models.Model):
         return total
     
     
-    def get_total_scoped_by_type(self, slotType):
-        totalScoped = Decimal(0.0)
+    def get_total_scoped_by_type(self, slot_type):
+        total_scoped = Decimal(0.0)
         # Ugly.... but yolo
-        if slotType == TimeSlotDeliveryRole.DELIVERY:
-            totalScoped = totalScoped + self.delivery_hours
-        elif slotType == TimeSlotDeliveryRole.REPORTING:
-            totalScoped = totalScoped + self.reporting_hours
-        elif slotType == TimeSlotDeliveryRole.MANAGEMENT:
-            totalScoped = totalScoped + self.mgmt_hours
-        elif slotType == TimeSlotDeliveryRole.QA:
-            totalScoped = totalScoped + self.qa_hours
-        elif slotType == TimeSlotDeliveryRole.OVERSIGHT:
-            totalScoped = totalScoped + self.oversight_hours
-        elif slotType == TimeSlotDeliveryRole.DEBRIEF:
-            totalScoped = totalScoped + self.debrief_hours
-        elif slotType == TimeSlotDeliveryRole.CONTINGENCY:
-            totalScoped = totalScoped + self.contingency_hours
-        elif slotType == TimeSlotDeliveryRole.OTHER:
-            totalScoped = totalScoped + self.other_hours
-        return totalScoped
+        if slot_type == TimeSlotDeliveryRole.DELIVERY:
+            total_scoped = total_scoped + self.delivery_hours
+        elif slot_type == TimeSlotDeliveryRole.REPORTING:
+            total_scoped = total_scoped + self.reporting_hours
+        elif slot_type == TimeSlotDeliveryRole.MANAGEMENT:
+            total_scoped = total_scoped + self.mgmt_hours
+        elif slot_type == TimeSlotDeliveryRole.QA:
+            total_scoped = total_scoped + self.qa_hours
+        elif slot_type == TimeSlotDeliveryRole.OVERSIGHT:
+            total_scoped = total_scoped + self.oversight_hours
+        elif slot_type == TimeSlotDeliveryRole.DEBRIEF:
+            total_scoped = total_scoped + self.debrief_hours
+        elif slot_type == TimeSlotDeliveryRole.CONTINGENCY:
+            total_scoped = total_scoped + self.contingency_hours
+        elif slot_type == TimeSlotDeliveryRole.OTHER:
+            total_scoped = total_scoped + self.other_hours
+        return total_scoped
     
     def get_total_scoped_hours(self):
-        totalScoped = Decimal(0.0)
+        total_scoped = Decimal(0.0)
         for state in TimeSlotDeliveryRole.CHOICES:
-            totalScoped = totalScoped + self.get_total_scoped_by_type(state[0])
-        return totalScoped
+            total_scoped = total_scoped + self.get_total_scoped_by_type(state[0])
+        return total_scoped
     
     def get_all_total_scoped_by_type(self):
         data = dict()
@@ -537,24 +488,24 @@ class Phase(models.Model):
             }
         return data            
     
-    def get_slotType_usage_perc(self, slotType):
-        # First, get the total for the slotType
-        totalScoped = self.get_total_scoped_by_type(slotType)
+    def get_slotType_usage_perc(self, slot_type):
+        # First, get the total for the slot_type
+        total_scoped = self.get_total_scoped_by_type(slot_type)
         # Now lets get the scheduled amount
-        scheduled = self.get_total_scheduled_by_type(slotType)
+        scheduled = self.get_total_scheduled_by_type(slot_type)
         if scheduled == 0.0:
             return 0
-        if totalScoped == 0.0 and scheduled > 0.0:
+        if total_scoped == 0.0 and scheduled > 0.0:
             # We've scoped 0 but scheduled. Lets make a superficial scope of 1 to show perc inc
-            totalScoped = 10
-        return round(100 * float(scheduled)/float(totalScoped),2)
+            total_scoped = 10
+        return round(100 * float(scheduled)/float(total_scoped),2)
     
     def get_total_scheduled_perc(self):
         total_hours = self.get_total_scoped_hours()
         if total_hours > 0:
             # get total scheduled hours...
-            totalScheduled = sum(self.get_all_total_scheduled_by_type().values())
-            return round(100 * float(totalScheduled)/float(total_hours),2)
+            total_scheduled = sum(self.get_all_total_scheduled_by_type().values())
+            return round(100 * float(total_scheduled)/float(total_hours),2)
         else:
             return 0    
 
@@ -578,6 +529,9 @@ class Phase(models.Model):
     def status_bs_colour(self):
         return PhaseStatuses.BS_COLOURS[self.status][1]
     
+    INVALID_STATE = "Invalid state or permissions."
+    MOVED_TO = "Moved to "
+    
     # PENDING_SCHED
     @transition(field=status, source=[PhaseStatuses.DRAFT, 
                                       PhaseStatuses.SCHEDULED_TENTATIVE,
@@ -585,55 +539,55 @@ class Phase(models.Model):
                                       PhaseStatuses.POSTPONED],
         target=PhaseStatuses.PENDING_SCHED)
     def to_pending_sched(self):
-        log_system_activity(self, "Moved to "+PhaseStatuses.CHOICES[PhaseStatuses.PENDING_SCHED][1])
+        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.PENDING_SCHED][1])
 
     def can_proceed_to_pending_sched(self):
         return can_proceed(self.to_pending_sched)
         
-    def can_to_pending_sched(self, notifyRequest=None):
-        _canProceed = True
+    def can_to_pending_sched(self, notify_request=None):
+        _can_proceed = True
         # Do logic checks
 
         # Do general check
         can_proceed_result = can_proceed(self.to_pending_sched)
         if not can_proceed_result:
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "Invalid state or permissions.")
-            _canProceed = False
-        return _canProceed
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, self.INVALID_STATE)
+            _can_proceed = False
+        return _can_proceed
 
     # SCHEDULED_TENTATIVE
     @transition(field=status, source=[PhaseStatuses.PENDING_SCHED,PhaseStatuses.SCHEDULED_CONFIRMED],
         target=PhaseStatuses.SCHEDULED_TENTATIVE)
     def to_sched_tentative(self):
-        log_system_activity(self, "Moved to "+PhaseStatuses.CHOICES[PhaseStatuses.SCHEDULED_TENTATIVE][1])
+        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.SCHEDULED_TENTATIVE][1])
         self.fire_status_notification(PhaseStatuses.SCHEDULED_TENTATIVE)
 
     def can_proceed_to_sched_tentative(self):
         return can_proceed(self.to_sched_tentative)
         
-    def can_to_sched_tentative(self, notifyRequest=None):
-        _canProceed = True
+    def can_to_sched_tentative(self, notify_request=None):
+        _can_proceed = True
         # Do logic checks
         # Check we've got slots! Can't move forward if no slots
         if not self.timeslots.all():
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "No scheduled timeslots.")
-            _canProceed = False
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, "No scheduled timeslots.")
+            _can_proceed = False
 
         # Do general check
         can_proceed_result = can_proceed(self.to_sched_tentative)
         if not can_proceed_result:
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "Invalid state or permissions.")
-            _canProceed = False
-        return _canProceed
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, self.INVALID_STATE)
+            _can_proceed = False
+        return _can_proceed
 
     # SCHEDULED_CONFIRMED
     @transition(field=status, source=[PhaseStatuses.PENDING_SCHED, PhaseStatuses.SCHEDULED_TENTATIVE],
         target=PhaseStatuses.SCHEDULED_CONFIRMED)
     def to_sched_confirmed(self):
-        log_system_activity(self, "Moved to "+PhaseStatuses.CHOICES[PhaseStatuses.SCHEDULED_CONFIRMED][1])
+        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.SCHEDULED_CONFIRMED][1])
         # Ok, lets update our parent job to pending_start!
         if self.job.can_proceed_to_pending_start():
             self.job.to_pending_start()
@@ -643,115 +597,114 @@ class Phase(models.Model):
     def can_proceed_to_sched_confirmed(self):
         return can_proceed(self.to_sched_confirmed)
         
-    def can_to_sched_confirmed(self, notifyRequest=None):
-        _canProceed = True
+    def can_to_sched_confirmed(self, notify_request=None):
+        _can_proceed = True
         # Do logic checks
         # Check we've got slots! Can't confirm if no slots...
         if not self.timeslots.all():
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "No scheduled timeslots.")
-            _canProceed = False
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, "No scheduled timeslots.")
+            _can_proceed = False
 
         if not self.project_lead:
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "No project lead.")
-            _canProceed = False
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, "No project lead.")
+            _can_proceed = False
 
         if not self.report_author and self.number_of_reports > 0:
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "More than one report required and no author defined.")
-            _canProceed = False
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, "More than one report required and no author defined.")
+            _can_proceed = False
 
-        if self.number_of_reports == 0:
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.INFO, "Beware - no reports required!")
+        if self.number_of_reports == 0 and notify_request:
+            messages.add_message(notify_request, messages.INFO, "Beware - no reports required!")
 
         if self.job.status < JobStatuses.SCOPING_COMPLETE:
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "Parent job not set to "+ JobStatuses.CHOICES[JobStatuses.SCOPING_COMPLETE][1])
-            _canProceed = False
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, "Parent job not set to "+ JobStatuses.CHOICES[JobStatuses.SCOPING_COMPLETE][1])
+            _can_proceed = False
 
 
         # Do general check
         can_proceed_result = can_proceed(self.to_sched_confirmed)
         if not can_proceed_result:
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "Invalid state or permissions.")
-            _canProceed = False
-        return _canProceed
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, self.INVALID_STATE)
+            _can_proceed = False
+        return _can_proceed
 
     # PRE_CHECKS
     @transition(field=status, source=[PhaseStatuses.SCHEDULED_CONFIRMED,],
         target=PhaseStatuses.PRE_CHECKS)
     def to_pre_checks(self):
-        log_system_activity(self, "Moved to "+PhaseStatuses.CHOICES[PhaseStatuses.PRE_CHECKS][1])
+        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.PRE_CHECKS][1])
         self.fire_status_notification(PhaseStatuses.PRE_CHECKS)
 
     def can_proceed_to_pre_checks(self):
         return can_proceed(self.to_pre_checks)
         
-    def can_to_pre_checks(self, notifyRequest=None):
-        _canProceed = True
+    def can_to_pre_checks(self, notify_request=None):
+        _can_proceed = True
         # Do logic checks
 
         # Do general check
         can_proceed_result = can_proceed(self.to_pre_checks)
         if not can_proceed_result:
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "Invalid state or permissions.")
-            _canProceed = False
-        return _canProceed
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, self.INVALID_STATE)
+            _can_proceed = False
+        return _can_proceed
 
     # CLIENT_NOT_READY
     @transition(field=status, source=[PhaseStatuses.PRE_CHECKS,],
         target=PhaseStatuses.CLIENT_NOT_READY)
     def to_not_ready(self):
-        log_system_activity(self, "Moved to "+PhaseStatuses.CHOICES[PhaseStatuses.CLIENT_NOT_READY][1])
+        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.CLIENT_NOT_READY][1])
         self.fire_status_notification(PhaseStatuses.CLIENT_NOT_READY)
 
     def can_proceed_to_not_ready(self):
         return can_proceed(self.to_not_ready)
         
-    def can_to_not_ready(self, notifyRequest=None):
-        _canProceed = True
+    def can_to_not_ready(self, notify_request=None):
+        _can_proceed = True
         # Do logic checks
 
         # Do general check
         can_proceed_result = can_proceed(self.to_not_ready)
         if not can_proceed_result:
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "Invalid state or permissions.")
-            _canProceed = False
-        return _canProceed
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, self.INVALID_STATE)
+            _can_proceed = False
+        return _can_proceed
 
     # READY_TO_BEGIN
     @transition(field=status, source=[PhaseStatuses.PRE_CHECKS,PhaseStatuses.CLIENT_NOT_READY],
         target=PhaseStatuses.READY_TO_BEGIN)
     def to_ready(self):
-        log_system_activity(self, "Moved to "+PhaseStatuses.CHOICES[PhaseStatuses.READY_TO_BEGIN][1])
+        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.READY_TO_BEGIN][1])
         self.pre_checks_done_date = timezone.now()
         self.fire_status_notification(PhaseStatuses.READY_TO_BEGIN)
 
     def can_proceed_to_ready(self):
         return can_proceed(self.to_ready)
         
-    def can_to_ready(self, notifyRequest=None):
-        _canProceed = True
+    def can_to_ready(self, notify_request=None):
+        _can_proceed = True
         # Do logic checks
 
         # Do general check
         can_proceed_result = can_proceed(self.to_ready)
         if not can_proceed_result:
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "Invalid state or permissions.")
-            _canProceed = False
-        return _canProceed
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, self.INVALID_STATE)
+            _can_proceed = False
+        return _can_proceed
 
     # IN_PROGRESS
     @transition(field=status, source=[PhaseStatuses.READY_TO_BEGIN,],
         target=PhaseStatuses.IN_PROGRESS)
     def to_in_progress(self):
-        log_system_activity(self, "Moved to "+PhaseStatuses.CHOICES[PhaseStatuses.IN_PROGRESS][1])
+        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.IN_PROGRESS][1])
         self.actual_start_date = timezone.now()
         # lets make sure our parent job is in progress now!
         if self.job.status == JobStatuses.PENDING_START:
@@ -763,302 +716,299 @@ class Phase(models.Model):
     def can_proceed_to_in_progress(self):
         return can_proceed(self.to_in_progress)
         
-    def can_to_in_progress(self, notifyRequest=None):
-        _canProceed = True
+    def can_to_in_progress(self, notify_request=None):
+        _can_proceed = True
         # Do logic checks
 
         # Do general check
         can_proceed_result = can_proceed(self.to_in_progress)
         if not can_proceed_result:
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "Invalid state or permissions.")
-            _canProceed = False
-        return _canProceed
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, self.INVALID_STATE)
+            _can_proceed = False
+        return _can_proceed
 
     # PENDING_TQA
     @transition(field=status, source=[PhaseStatuses.IN_PROGRESS, PhaseStatuses.QA_TECH_AUTHOR_UPDATES],
         target=PhaseStatuses.PENDING_TQA)
     def to_pending_tech_qa(self):
-        log_system_activity(self, "Moved to "+PhaseStatuses.CHOICES[PhaseStatuses.PENDING_TQA][1])
+        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.PENDING_TQA][1])
         self.actual_sent_to_tqa_date = timezone.now()
         self.fire_status_notification(PhaseStatuses.PENDING_TQA)
 
     def can_proceed_to_pending_tech_qa(self):
         return can_proceed(self.to_pending_tech_qa)
         
-    def can_to_pending_tech_qa(self, notifyRequest=None):
-        _canProceed = True
+    def can_to_pending_tech_qa(self, notify_request=None):
+        _can_proceed = True
         # Do logic checks
         if self.feedback_scope_correct is None:
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "Please report if the scope was correct")
-            _canProceed = False
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, "Please report if the scope was correct")
+            _can_proceed = False
 
         if self.feedback_scope_correct is False:
             # Check if there's any feedback since they've flagged it as wrong...
             if not self.feedback_scope():
-                if notifyRequest:
-                    messages.add_message(notifyRequest, messages.ERROR, "Scope was incorrect but no feedback provided")
-                _canProceed = False
+                if notify_request:
+                    messages.add_message(notify_request, messages.ERROR, "Scope was incorrect but no feedback provided")
+                _can_proceed = False
 
         if self.number_of_reports > 0:
             if not self.linkDeliverable:
-                if notifyRequest:
-                    messages.add_message(notifyRequest, messages.ERROR, "Missing deliverable link")
-                _canProceed = False
+                if notify_request:
+                    messages.add_message(notify_request, messages.ERROR, "Missing deliverable link")
+                _can_proceed = False
 
             if not self.linkTechData:
-                if notifyRequest:
-                    messages.add_message(notifyRequest, messages.ERROR, "Missing technical data link")
-                _canProceed = False
+                if notify_request:
+                    messages.add_message(notify_request, messages.ERROR, "Missing technical data link")
+                _can_proceed = False
 
             if not self.linkReportData:
-                if notifyRequest:
-                    messages.add_message(notifyRequest, messages.ERROR, "Missing report data link")
-                _canProceed = False
+                if notify_request:
+                    messages.add_message(notify_request, messages.ERROR, "Missing report data link")
+                _can_proceed = False
         else:
-            if not self.linkDeliverable:
-                if notifyRequest:
-                    messages.add_message(notifyRequest, messages.INFO, "Missing deliverable link. Is this intentional?")
+            if not self.linkDeliverable and notify_request:
+                messages.add_message(notify_request, messages.INFO, "Missing deliverable link. Is this intentional?")
 
-            if not self.linkTechData:
-                if notifyRequest:
-                    messages.add_message(notifyRequest, messages.INFO, "Missing technical data link. Is this intentional?")
+            if not self.linkTechData and notify_request:
+                messages.add_message(notify_request, messages.INFO, "Missing technical data link. Is this intentional?")
 
-            if not self.linkReportData:
-                if notifyRequest:
-                    messages.add_message(notifyRequest, messages.INFO, "Missing report data link. Is this intentional?")
+            if not self.linkReportData and notify_request:
+                messages.add_message(notify_request, messages.INFO, "Missing report data link. Is this intentional?")
 
         # Do general check
         can_proceed_result = can_proceed(self.to_pending_tech_qa)
         if not can_proceed_result:
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "Invalid state or permissions.")
-            _canProceed = False
-        return _canProceed
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, self.INVALID_STATE)
+            _can_proceed = False
+        return _can_proceed
     
 
     # QA_TECH
     @transition(field=status, source=[PhaseStatuses.PENDING_TQA,],
         target=PhaseStatuses.QA_TECH)
     def to_tech_qa(self):
-        log_system_activity(self, "Moved to "+PhaseStatuses.CHOICES[PhaseStatuses.QA_TECH][1])
+        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.QA_TECH][1])
         self.fire_status_notification(PhaseStatuses.QA_TECH)
 
     def can_proceed_to_tech_qa(self):
         return can_proceed(self.to_tech_qa)
         
-    def can_to_tech_qa(self, notifyRequest=None):
-        _canProceed = True
+    def can_to_tech_qa(self, notify_request=None):
+        _can_proceed = True
         # Do logic checks
-        if notifyRequest:
-            if self.techqa_by is None or notifyRequest.user.pk is not self.techqa_by.pk:
+        if notify_request:
+            if self.techqa_by is None or notify_request.user.pk is not self.techqa_by.pk:
                 # Check if we have tqa perm...
-                if notifyRequest.user.has_perm('can_tqa_jobs', self.job.unit):
+                if notify_request.user.has_perm('can_tqa_jobs', self.job.unit):
                     # Can TQA jobs - don't block but tell them this will update it to them...
-                    messages.add_message(notifyRequest, messages.INFO, "You're not assigned to Tech QA this report. If you continue, it will be assigned to you.")
+                    messages.add_message(notify_request, messages.INFO, "You're not assigned to Tech QA this report. If you continue, it will be assigned to you.")
                 else:
-                    messages.add_message(notifyRequest, messages.ERROR, "You're not assigned to Tech QA this report.")
-                    _canProceed = False
+                    messages.add_message(notify_request, messages.ERROR, "You're not assigned to Tech QA this report.")
+                    _can_proceed = False
 
         # Do general check
         can_proceed_result = can_proceed(self.to_tech_qa)
         if not can_proceed_result:
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "Invalid state or permissions.")
-            _canProceed = False
-        return _canProceed
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, self.INVALID_STATE)
+            _can_proceed = False
+        return _can_proceed
 
     # QA_TECH_AUTHOR_UPDATES
     @transition(field=status, source=[PhaseStatuses.QA_TECH,],
         target=PhaseStatuses.QA_TECH_AUTHOR_UPDATES)
     def to_tech_qa_updates(self):
-        log_system_activity(self, "Moved to "+PhaseStatuses.CHOICES[PhaseStatuses.QA_TECH_AUTHOR_UPDATES][1])
+        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.QA_TECH_AUTHOR_UPDATES][1])
         self.required_tqa_updates = True
         self.fire_status_notification(PhaseStatuses.QA_TECH_AUTHOR_UPDATES)
 
     def can_proceed_to_tech_qa_updates(self):
         return can_proceed(self.to_tech_qa_updates)
         
-    def can_to_tech_qa_updates(self, notifyRequest=None):
-        _canProceed = True
+    def can_to_tech_qa_updates(self, notify_request=None):
+        _can_proceed = True
         # Do logic checks
         if not self.techqa_by:
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "No one assigned to Tech QA.")
-            _canProceed = False  
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, "No one assigned to Tech QA.")
+            _can_proceed = False  
         else:
             # Check if we're the person...
-            if notifyRequest:
-                if notifyRequest.user != self.techqa_by:
+            if notify_request.user != self.techqa_by:
+                if notify_request:
                     # We're not the person doing the TQA!
-                    messages.add_message(notifyRequest, messages.ERROR, "Not assigned to Tech QA.")
-                    _canProceed = False      
+                    messages.add_message(notify_request, messages.ERROR, "Not assigned to Tech QA.")
+                _can_proceed = False      
 
         # Do general check
         can_proceed_result = can_proceed(self.to_tech_qa_updates)
         if not can_proceed_result:
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "Invalid state or permissions.")
-            _canProceed = False
-        return _canProceed
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, self.INVALID_STATE)
+            _can_proceed = False
+        return _can_proceed
 
     # PENDING_PQA
     @transition(field=status, source=[PhaseStatuses.QA_TECH,PhaseStatuses.QA_PRES_AUTHOR_UPDATES],
         target=PhaseStatuses.PENDING_PQA)
     def to_pending_pres_qa(self):
-        log_system_activity(self, "Moved to "+PhaseStatuses.CHOICES[PhaseStatuses.PENDING_PQA][1])
+        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.PENDING_PQA][1])
         self.actual_sent_to_pqa_date = timezone.now()
         self.fire_status_notification(PhaseStatuses.PENDING_PQA)
 
     def can_proceed_to_pending_pres_qa(self):
         return can_proceed(self.to_pending_pres_qa)
         
-    def can_to_pending_pres_qa(self, notifyRequest=None):
-        _canProceed = True
+    def can_to_pending_pres_qa(self, notify_request=None):
+        _can_proceed = True
         # Do logic checks        
         # Lets check feedback/ratings have been left!
         if not self.feedback_techqa():
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "No Tech QA feedback has been left")
-            _canProceed = False
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, "No Tech QA feedback has been left")
+            _can_proceed = False
         
         # Make sure a rating has been left
         if self.techqa_report_rating == None:
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "No Tech QA rating has been left")
-            _canProceed = False
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, "No Tech QA rating has been left")
+            _can_proceed = False
 
         # Do general check
         can_proceed_result = can_proceed(self.to_pending_pres_qa)
         if not can_proceed_result:
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "Invalid state or permissions.")
-            _canProceed = False
-        return _canProceed
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, self.INVALID_STATE)
+            _can_proceed = False
+        return _can_proceed
 
     # QA_PRES
     @transition(field=status, source=[PhaseStatuses.PENDING_PQA,],
         target=PhaseStatuses.QA_PRES)
     def to_pres_qa(self):
-        log_system_activity(self, "Moved to "+PhaseStatuses.CHOICES[PhaseStatuses.QA_PRES][1])
+        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.QA_PRES][1])
         self.fire_status_notification(PhaseStatuses.QA_PRES)
 
     def can_proceed_to_pres_qa(self):
         return can_proceed(self.to_pres_qa)
         
-    def can_to_pres_qa(self, notifyRequest=None):
-        _canProceed = True
+    def can_to_pres_qa(self, notify_request=None):
+        _can_proceed = True
         # Do logic checks
-        if notifyRequest:
-            if self.presqa_by is None or notifyRequest.user.pk is not self.presqa_by.pk:
+        if notify_request:
+            if self.presqa_by is None or notify_request.user.pk is not self.presqa_by.pk:
                 # Check if we have tqa perm...
-                if notifyRequest.user.has_perm('can_pqa_jobs', self.job.unit):
+                if notify_request.user.has_perm('can_pqa_jobs', self.job.unit):
                     # Can TQA jobs - don't block but tell them this will update it to them...
-                    messages.add_message(notifyRequest, messages.INFO, "You're not assigned to Pres QA this report. If you continue, it will be assigned to you.")
+                    messages.add_message(notify_request, messages.INFO, "You're not assigned to Pres QA this report. If you continue, it will be assigned to you.")
                 else:
-                    messages.add_message(notifyRequest, messages.ERROR, "You're not assigned to Pres QA this report.")
-                    _canProceed = False
+                    messages.add_message(notify_request, messages.ERROR, "You're not assigned to Pres QA this report.")
+                    _can_proceed = False
 
         # Do general check
         can_proceed_result = can_proceed(self.to_pres_qa)
         if not can_proceed_result:
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "Invalid state or permissions.")
-            _canProceed = False
-        return _canProceed
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, self.INVALID_STATE)
+            _can_proceed = False
+        return _can_proceed
 
     # QA_PRES_AUTHOR_UPDATES
     @transition(field=status, source=[PhaseStatuses.QA_PRES,],
         target=PhaseStatuses.QA_PRES_AUTHOR_UPDATES)
     def to_pres_qa_updates(self):
-        log_system_activity(self, "Moved to "+PhaseStatuses.CHOICES[PhaseStatuses.QA_PRES_AUTHOR_UPDATES][1])
+        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.QA_PRES_AUTHOR_UPDATES][1])
         self.required_pqa_updates = True
         self.fire_status_notification(PhaseStatuses.QA_PRES_AUTHOR_UPDATES)
 
     def can_proceed_to_pres_qa_updates(self):
         return can_proceed(self.to_pres_qa_updates)
         
-    def can_to_pres_qa_updates(self, notifyRequest=None):
-        _canProceed = True
+    def can_to_pres_qa_updates(self, notify_request=None):
+        _can_proceed = True
         # Do logic checks
         if not self.presqa_by:
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "No one assigned to Pres QA.")
-            _canProceed = False
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, "No one assigned to Pres QA.")
+            _can_proceed = False
         else:
             # Check if we're the person...
-            if notifyRequest:
-                if notifyRequest.user != self.presqa_by:
-                    # We're not the person doing the TQA!
-                    messages.add_message(notifyRequest, messages.ERROR, "Not assigned to Pres QA.")
-                    _canProceed = False
+            if notify_request.user != self.presqa_by:
+                # We're not the person doing the TQA!
+                if notify_request:
+                    messages.add_message(notify_request, messages.ERROR, "Not assigned to Pres QA.")
+                _can_proceed = False
 
         # Do general check
         can_proceed_result = can_proceed(self.to_pres_qa_updates)
         if not can_proceed_result:
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "Invalid state or permissions.")
-            _canProceed = False
-        return _canProceed
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, self.INVALID_STATE)
+            _can_proceed = False
+        return _can_proceed
 
     # COMPLETED
     @transition(field=status, source=[PhaseStatuses.QA_PRES,
         PhaseStatuses.IN_PROGRESS],
         target=PhaseStatuses.COMPLETED)
     def to_completed(self):
-        log_system_activity(self, "Moved to "+PhaseStatuses.CHOICES[PhaseStatuses.DELIVERED][1])
+        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.DELIVERED][1])
         self.actual_completed_date = timezone.now()
         self.fire_status_notification(PhaseStatuses.COMPLETED)
 
     def can_proceed_to_completed(self):
         return can_proceed(self.to_completed)
         
-    def can_to_completed(self, notifyRequest=None):
-        _canProceed = True
+    def can_to_completed(self, notify_request=None):
+        _can_proceed = True
         # Do logic checks
         if self.number_of_reports > 0:
             if self.status <= PhaseStatuses.QA_TECH:
-                if notifyRequest:
-                    messages.add_message(notifyRequest, messages.ERROR, "More than one report expected - must go through QA")
-                _canProceed = False
+                if notify_request:
+                    messages.add_message(notify_request, messages.ERROR, "More than one report expected - must go through QA")
+                _can_proceed = False
 
             if not self.presqa_by:
-                if notifyRequest:
-                    messages.add_message(notifyRequest, messages.ERROR, "No one assigned to Pres QA.")
-                _canProceed = False
+                if notify_request:
+                    messages.add_message(notify_request, messages.ERROR, "No one assigned to Pres QA.")
+                _can_proceed = False
 
         
             # Lets check feedback/ratings have been left!
             if not self.feedback_presqa():
-                if notifyRequest:
-                    messages.add_message(notifyRequest, messages.ERROR, "No Pres QA feedback has been left")
-                _canProceed = False
+                if notify_request:
+                    messages.add_message(notify_request, messages.ERROR, "No Pres QA feedback has been left")
+                _can_proceed = False
                 
             if self.presqa_report_rating == None:
-                if notifyRequest:
-                    messages.add_message(notifyRequest, messages.ERROR, "No Pres QA rating has been left")
-                _canProceed = False
+                if notify_request:
+                    messages.add_message(notify_request, messages.ERROR, "No Pres QA rating has been left")
+                _can_proceed = False
 
         else:
             # No reports - display a warning
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.INFO, 
+            if notify_request:
+                messages.add_message(notify_request, messages.INFO, 
                                     "Are you sure there is no report? This bypasses QA!")
 
         # Do general check
         can_proceed_result = can_proceed(self.to_completed)
         if not can_proceed_result:
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "Invalid state or permissions.")
-            _canProceed = False
-        return _canProceed
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, self.INVALID_STATE)
+            _can_proceed = False
+        return _can_proceed
 
     # DELIVERED
     @transition(field=status, source=PhaseStatuses.COMPLETED,
         target=PhaseStatuses.DELIVERED)
     def to_delivered(self):
-        log_system_activity(self, "Moved to "+PhaseStatuses.CHOICES[PhaseStatuses.DELIVERED][1])
+        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.DELIVERED][1])
         self.actual_delivery_date = timezone.now()
 
         # Ok, check if all phases have completed...
@@ -1077,87 +1027,87 @@ class Phase(models.Model):
             else:
                 return False
         
-    def can_to_delivered(self, notifyRequest=None):
-        _canProceed = True
+    def can_to_delivered(self, notify_request=None):
+        _can_proceed = True
         # Do logic checks
-        if notifyRequest:
-            messages.add_message(notifyRequest, messages.INFO, 
+        if notify_request:
+            messages.add_message(notify_request, messages.INFO, 
                                 "Are you sure all deliverables have been submitted to the client?")
 
         # Do general check
         can_proceed_result = can_proceed(self.to_delivered)
         if not can_proceed_result:
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "Invalid state or permissions.")
-            _canProceed = False
-        return _canProceed
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, self.INVALID_STATE)
+            _can_proceed = False
+        return _can_proceed
     
     # CANCELLED
     @transition(field=status, source="+",
         target=PhaseStatuses.CANCELLED)
     def to_cancelled(self):
-        log_system_activity(self, "Moved to "+PhaseStatuses.CHOICES[PhaseStatuses.CANCELLED][1])
+        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.CANCELLED][1])
         self.cancellation_date = timezone.now()
         self.fire_status_notification(PhaseStatuses.CANCELLED)
 
     def can_proceed_to_cancelled(self):
         return can_proceed(self.to_cancelled)
         
-    def can_to_cancelled(self, notifyRequest=None):
-        _canProceed = True
+    def can_to_cancelled(self, notify_request=None):
+        _can_proceed = True
         # Do logic checks
 
         # Do general check
         can_proceed_result = can_proceed(self.to_cancelled)
         if not can_proceed_result:
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "Invalid state or permissions.")
-            _canProceed = False
-        return _canProceed
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, self.INVALID_STATE)
+            _can_proceed = False
+        return _can_proceed
 
     # POSTPONED
     @transition(field=status, source="+",
         target=PhaseStatuses.POSTPONED)
     def to_postponed(self):
-        log_system_activity(self, "Moved to "+PhaseStatuses.CHOICES[PhaseStatuses.POSTPONED][1])
+        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.POSTPONED][1])
         self.fire_status_notification(PhaseStatuses.POSTPONED)
 
     def can_proceed_to_postponed(self):
         return can_proceed(self.to_postponed)
         
-    def can_to_postponed(self, notifyRequest=None):
-        _canProceed = True
+    def can_to_postponed(self, notify_request=None):
+        _can_proceed = True
         # Do logic checks
 
         # Do general check
         can_proceed_result = can_proceed(self.to_postponed)
         if not can_proceed_result:
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "Invalid state or permissions.")
-            _canProceed = False
-        return _canProceed
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, self.INVALID_STATE)
+            _can_proceed = False
+        return _can_proceed
 
     # DELETED
     @transition(field=status, source="+",
         target=PhaseStatuses.DELETED)
     def to_deleted(self):
-        log_system_activity(self, "Moved to "+PhaseStatuses.CHOICES[PhaseStatuses.DELETED][1])
+        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.DELETED][1])
         self.fire_status_notification(PhaseStatuses.DELETED)
 
     def can_proceed_to_deleted(self):
         return can_proceed(self.to_deleted)
         
-    def can_to_deleted(self, notifyRequest=None):
-        _canProceed = True
+    def can_to_deleted(self, notify_request=None):
+        _can_proceed = True
         # Do logic checks
 
         # Do general check
         can_proceed_result = can_proceed(self.to_deleted)
         if not can_proceed_result:
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "Invalid state or permissions.")
-            _canProceed = False
-        return _canProceed
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, self.INVALID_STATE)
+            _can_proceed = False
+        return _can_proceed
 
     # ARCHIVED
     @transition(field=status, source=[
@@ -1165,20 +1115,20 @@ class Phase(models.Model):
     ],
         target=PhaseStatuses.ARCHIVED)
     def to_archived(self):
-        log_system_activity(self, "Moved to "+PhaseStatuses.CHOICES[PhaseStatuses.ARCHIVED][1])
+        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.ARCHIVED][1])
         self.fire_status_notification(PhaseStatuses.ARCHIVED)
 
     def can_proceed_to_archived(self):
         return can_proceed(self.to_archived)
         
-    def can_to_archived(self, notifyRequest=None):
-        _canProceed = True
+    def can_to_archived(self, notify_request=None):
+        _can_proceed = True
         # Do logic checks
 
         # Do general check
         can_proceed_result = can_proceed(self.to_archived)
         if not can_proceed_result:
-            if notifyRequest:
-                messages.add_message(notifyRequest, messages.ERROR, "Invalid state or permissions.")
-            _canProceed = False
-        return _canProceed
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, self.INVALID_STATE)
+            _can_proceed = False
+        return _can_proceed

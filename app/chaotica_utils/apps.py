@@ -1,7 +1,7 @@
 from django.apps import AppConfig
 from django.db.models.signals import post_migrate
 from django.db import connections
-from .enums import *
+from .enums import GlobalRoles
 from django.conf import settings
 
 
@@ -17,10 +17,10 @@ def populate_groups():
 
     if table_exists("auth_permission") and Permission.objects.filter(codename="view_client").exists():
         # create default groups
-        for globalRole in GlobalRoles.CHOICES:
-            group, created = Group.objects.get_or_create(name=settings.GLOBAL_GROUP_PREFIX+globalRole[1])
+        for global_role in GlobalRoles.CHOICES:
+            group, created = Group.objects.get_or_create(name=settings.GLOBAL_GROUP_PREFIX+global_role[1])
             group.permissions.clear()
-            for perm in GlobalRoles.PERMISSIONS[globalRole[0]][1]: # how ugly!
+            for perm in GlobalRoles.PERMISSIONS[global_role[0]][1]: # how ugly!
                 try:
                     assign_perm(perm, group, None)
                 except Permission.DoesNotExist:

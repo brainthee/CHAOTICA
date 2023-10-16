@@ -1,9 +1,7 @@
 from django.urls import reverse
 from menu import Menu, MenuItem
-# from django.core.urlresolvers import resolve
-from .enums import *
+from .enums import GlobalRoles
 from django.conf import settings
-from pprint import pprint
 
 
 class RoleMenuItem(MenuItem):
@@ -16,13 +14,6 @@ class RoleMenuItem(MenuItem):
         else:
             self.visible = False
 
-# Example to use above
-# RoleMenuItem("Roles",
-#         reverse("view_scheduler"),
-#         icon="edit_calendar",
-#         weight=10,
-#         requiredRole=GlobalRoles.SALES_MGR,),
-
 Menu.add_item("user", MenuItem("Profile",
                                reverse('view_own_profile'),
                                icon="user",
@@ -32,11 +23,6 @@ Menu.add_item("user", MenuItem("Manage Annual Leave",
                                reverse('view_own_leave'),
                                icon="person-walking-arrow-right",
                                weight=1,))
-
-# Menu.add_item("user", MenuItem("Help",
-#                                reverse('help'),
-#                                icon="help-circle",
-#                                weight=1,))
 
 admin_children = (
     MenuItem("Users",

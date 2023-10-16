@@ -1,5 +1,3 @@
-
-
 class AddressTypes():
     BILLING, REGISTERED = range(0, 2)
     # make sure to add new items at end to not corrupt database!

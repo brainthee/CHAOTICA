@@ -1,8 +1,6 @@
 from django_ical.views import ICalFeed
 from .models import TimeSlot
 from chaotica_utils.models import User
-from pprint import pprint
-from django.http import HttpResponseForbidden
 
 class ScheduleFeed(ICalFeed):
     """
@@ -13,12 +11,12 @@ class ScheduleFeed(ICalFeed):
     file_name = "event.ics"
 
     def get_object(self, request, *args, **kwargs):
-        return kwargs['calKey']
+        return kwargs['cal_key']
 
-    def items(self, calKey):
+    def items(self, cal_key):
         # Lets check if the key is valid...
-        if User.objects.filter(schedule_feed_id=calKey).exists():
-            return TimeSlot.objects.filter(user__schedule_feed_id=calKey).order_by('-start')
+        if User.objects.filter(schedule_feed_id=cal_key).exists():
+            return TimeSlot.objects.filter(user__schedule_feed_id=cal_key).order_by('-start')
         else:
             return TimeSlot.objects.none()
 
@@ -47,10 +45,10 @@ class ScheduleFamilyFeed(ICalFeed):
     file_name = "event.ics"
 
     def get_object(self, request, *args, **kwargs):
-        return kwargs['calKey']
+        return kwargs['cal_key']
 
-    def items(self, calKey):
-        return TimeSlot.objects.filter(user__schedule_feed_family_id=calKey).order_by('-start')
+    def items(self, cal_key):
+        return TimeSlot.objects.filter(user__schedule_feed_family_id=cal_key).order_by('-start')
     
     def _getEventTitle(self, item):
         data = ""        

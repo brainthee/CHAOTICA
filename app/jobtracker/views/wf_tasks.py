@@ -7,7 +7,6 @@ from ..models import WorkflowTask
 from ..forms import WFTaskForm
 from ..enums import PhaseStatuses, JobStatuses
 import logging
-from pprint import pprint
 
 
 logger = logging.getLogger(__name__)

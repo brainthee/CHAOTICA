@@ -1,22 +1,16 @@
 from django.db import models
-from ..enums import *
 from django.conf import settings
 from django.utils.text import slugify
 from django.urls import reverse
 from simple_history.models import HistoricalRecords
 from guardian.shortcuts import assign_perm, remove_perm, get_user_perms, get_users_with_perms
 from django.db.models import JSONField
-from pprint import pprint
 import uuid, os, random
 from chaotica_utils.models import User
-from chaotica_utils.enums import *
-from chaotica_utils.tasks import *
-from chaotica_utils.utils import *
-from chaotica_utils.views import log_system_activity
+from chaotica_utils.enums import UnitRoles
 from decimal import Decimal
 from django.templatetags.static import static
 from django_bleach.models import BleachField
-
 
 
 def _default_business_days():
@@ -51,12 +45,6 @@ class OrganisationalUnit(models.Model):
     class Meta:
         ordering = ['name']
         permissions = (
-            ## Defaults
-            # ('view_organisationalunit', 'View Organisational Unit'),
-            # ('add_organisationalunit', 'Add Organisational Unit'),
-            # ('change_organisationalunit', 'Change Organisational Unit'),
-            # ('delete_organisationalunit', 'Delete Organisational Unit'),
-            ## Extras
             ('assign_members_organisationalunit', 'Assign Members'),
             ('can_view_unit_jobs', 'Can view jobs'),
             ('can_add_job', 'Can add jobs'),
@@ -82,13 +70,13 @@ class OrganisationalUnit(models.Model):
             expected_perms = []
             # get a combined list of perms from their roles...
             for ms in OrganisationalUnitMember.objects.filter(unit=self, member=user, left_date__isnull=True):
-                for rolePerm in UnitRoles.PERMISSIONS[ms.role][1]:
-                    if "." in rolePerm:
-                        cleanPerm = rolePerm.split('.')[1]
+                for role_perm in UnitRoles.PERMISSIONS[ms.role][1]:
+                    if "." in role_perm:
+                        clean_perm = role_perm.split('.')[1]
                     else:
-                        cleanPerm = rolePerm
-                    if cleanPerm not in expected_perms:
-                        expected_perms.append(cleanPerm)
+                        clean_perm = role_perm
+                    if clean_perm not in expected_perms:
+                        expected_perms.append(clean_perm)
 
             if expected_perms:
                 # First lets add missing perms...
@@ -131,8 +119,8 @@ class OrganisationalUnit(models.Model):
             return User.objects.none()
           
     def get_active_members_with_perm(self, permission_str, include_su=False):
-        # members = self.get_activeMembers()
-        return get_users_with_perms(self, with_superusers=include_su, only_with_perms_in=[permission_str])
+        members = self.get_activeMembers()
+        return get_users_with_perms(self, with_superusers=include_su, only_with_perms_in=[permission_str]).filter(pk__in=members).distinct()
           
     def get_allMembers(self):
         ids = []

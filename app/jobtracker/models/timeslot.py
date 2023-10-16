@@ -1,15 +1,11 @@
 from django.db import models
-from ..enums import *
+from django.urls import reverse
+from ..enums import TimeSlotDeliveryRole, TimeSlotType, PhaseStatuses
 from ..models.phase import Phase
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericRelation
-from pprint import pprint
 from chaotica_utils.models import Note, UserCost
-from chaotica_utils.enums import *
-from chaotica_utils.tasks import *
-from chaotica_utils.utils import *
-from chaotica_utils.views import log_system_activity
-from datetime import time
+from chaotica_utils.utils import ext_reverse
 from django.core.exceptions import ValidationError
 from business_duration import businessDuration
 from decimal import Decimal
@@ -73,8 +69,6 @@ class TimeSlot(models.Model):
         return data
     
     def get_business_hours(self):
-        # startbday = time(9,0,0)
-        # endbday = time(16,30,0) # 5:30pm - 1hr for lunch! :) 
         unit='hour'
         hours = businessDuration(self.start, self.end, unit=unit)
         return hours

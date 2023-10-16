@@ -2,7 +2,6 @@ from django.urls import reverse
 from menu import Menu, MenuItem
 
 
-
 Menu.add_item("main", MenuItem("Jobs",
                             reverse("job_list"),
                             icon="cubes",
