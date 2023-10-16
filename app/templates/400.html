@@ -3,10 +3,19 @@
 {% load i18n static %}
 
 {% block head_title %}Error 400{% endblock head_title %}
+
 {% block error_header %}
-Error 400
+Bad Request!
 {% endblock error_header %}
 
+{% block error_img_code %}
+{% static 'assets/img/spot-illustrations/400.png' %}
+{% endblock error_img_code %}
+
+{% block error_img_right %}
+{% static 'assets/img/400.jpg' %}
+{% endblock error_img_right %}
+
 {% block error_desc %}
-<img width="500px" class="pb-4" src="{% static 'assets/img/400.jpg' %}">
+It's not me. It's you. 
 {% endblock error_desc %}

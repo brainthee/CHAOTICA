@@ -285,7 +285,7 @@ class JobForm(forms.ModelForm):
         super(JobForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
         self.fields['unit'].queryset = OrganisationalUnit.objects.filter(
-            pk__in=self.user.unit_memberships.filter(role__in=UnitRoles.getRolesWithPermission('jobtracker.can_add_job')).values_list('unit').distinct())
+            pk__in=self.user.unit_memberships.filter(role__in=UnitRoles.get_roles_with_permission('jobtracker.can_add_job')).values_list('unit').distinct())
         self.fields['title'].label = ""
         self.fields['client'].label = ""
         self.fields['unit'].label = ""

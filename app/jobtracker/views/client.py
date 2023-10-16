@@ -1,22 +1,24 @@
+from guardian.mixins import PermissionRequiredMixin
 from django.shortcuts import get_object_or_404
 from guardian.shortcuts import get_objects_for_user
 from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
-from chaotica_utils.views import log_system_activity, ChaoticaBaseView, pageDefaults
-from chaotica_utils.utils import *
-from ..models import *
-from ..forms import *
-from ..tasks import *
+from chaotica_utils.views import ChaoticaBaseView
+from ..models import Client, Contact
+from ..forms import ClientForm, ClientContactForm
 import logging
 
 logger = logging.getLogger(__name__)
 
 
-class ClientBaseView(ChaoticaBaseView):
+class ClientBaseView(PermissionRequiredMixin, ChaoticaBaseView):
     model = Client
     fields = '__all__'
+    permission_required = 'jobtracker.view_client'
+    accept_global_perms = True
+    return_403 = True
 
     def get_success_url(self):
         if 'slug' in self.kwargs:
@@ -35,16 +37,20 @@ class ClientDetailView(ClientBaseView, DetailView):
     Use the 'job' variable in the template to access
     the specific job here and in the Views below"""
 
+    permission_required = 'jobtracker.view_client'
+
     def get_context_data(self, **kwargs):
         context = super(ClientDetailView, self).get_context_data(**kwargs)
         # get a list of jobs we're allowed to view...
-        myJobs = get_objects_for_user(self.request.user, 'jobtracker.view_job', context['client'].jobs.all())
-        context['allowedJobs'] = myJobs
+        my_jobs = get_objects_for_user(self.request.user, 'jobtracker.view_job', context['client'].jobs.all())
+        context['allowedJobs'] = my_jobs
         return context
 
 class ClientCreateView(ClientBaseView, CreateView):
     form_class = ClientForm
     fields = None
+
+    permission_required = 'jobtracker.add_client'
 
     def form_valid(self, form):
         form.instance.created_by = self.request.user
@@ -54,13 +60,21 @@ class ClientUpdateView(ClientBaseView, UpdateView):
     form_class = ClientForm
     fields = None
 
+    permission_required = 'jobtracker.change_client'
+
 class ClientDeleteView(ClientBaseView, DeleteView):
     """View to delete a job"""
+    permission_required = 'jobtracker.delete_client'
     
 
-class ClientContactBaseView(ChaoticaBaseView):
+
+
+class ClientContactBaseView(PermissionRequiredMixin, ChaoticaBaseView):
     model = Contact
     fields = '__all__'
+    permission_required = 'jobtracker.view_contact'
+    accept_global_perms = True
+    return_403 = True
 
     def get_context_data(self, **kwargs):
         context = super(ClientContactBaseView, self).get_context_data(**kwargs)

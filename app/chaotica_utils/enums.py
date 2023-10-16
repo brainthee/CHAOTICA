@@ -110,6 +110,7 @@ class GlobalRoles():
         ]),
         (SALES_MEMBER, [ 
             # Client
+            "jobtracker.view_client",
             "jobtracker.add_client",
             # Service
             "jobtracker.view_service",
@@ -123,6 +124,8 @@ class GlobalRoles():
             "jobtracker.view_certification", 'jobtracker.view_users_certification',
         ]),
         (USER, [            
+            # Client
+            "jobtracker.view_client",
             # Service
             "jobtracker.view_service",
             # SkillCategory
@@ -136,7 +139,7 @@ class GlobalRoles():
         ]),
     )
 
-# These permissions are applied against specific units. Desendant jobs will use these permissions too
+# These permissions are applied against specific units. Dependant jobs will use these permissions too
 class UnitRoles():
     PENDING = 0
     CONSULTANT = 1
@@ -147,12 +150,13 @@ class UnitRoles():
     PQA = 6
     SCOPER = 7
 
-    def getRolesWithPermission(permission):
-        allowedAddRoles = []
+    @staticmethod
+    def get_roles_with_permission(permission):
+        allowed_add_roles = []
         for role in UnitRoles.PERMISSIONS:
             if permission in role[1]:
-                allowedAddRoles.append(role[0])
-        return allowedAddRoles
+                allowed_add_roles.append(role[0])
+        return allowed_add_roles
     
     CHOICES = (
         (PENDING, "Pending Approval"),
@@ -165,8 +169,8 @@ class UnitRoles():
         (SCOPER, "Scoper"),
     )
     BS_COLOURS = (
-        (PENDING, "dark"),
-        (CONSULTANT, "secondary"),
+        (PENDING, "secondary"),
+        (CONSULTANT, "primary"),
         (SALES, "success"),
         (SERVICE_DELIVERY, "info"),
         (MANAGER, "danger"),
@@ -180,7 +184,7 @@ class UnitRoles():
         ]),
         (CONSULTANT, [
             # Job
-            # "jobtracker.view_job",
+            "jobtracker.view_job",
         ]),
         (SALES, [
             "jobtracker.can_view_unit_jobs", "jobtracker.can_add_job",

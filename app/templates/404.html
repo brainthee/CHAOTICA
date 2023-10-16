@@ -3,10 +3,21 @@
 {% load i18n static %}
 
 {% block head_title %}Error 404{% endblock head_title %}
+
 {% block error_header %}
-Error 404
+Page Missing!
 {% endblock error_header %}
 
+{% block error_img_code %}
+{% static 'assets/img/spot-illustrations/404.png' %}
+{% endblock error_img_code %}
+
+{% block error_img_right %}
+{% static 'assets/img/404.jpg' %}
+{% endblock error_img_right %}
+
 {% block error_desc %}
-<img width="500px" class="pb-4" src="{% static 'assets/img/404.jpg' %}">
+I can't find what you've requested.
+<br class="d-none d-sm-block" />
+I might not have it. But I also might, and you might not have permission. You'll never know.
 {% endblock error_desc %}

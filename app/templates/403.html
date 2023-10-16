@@ -3,14 +3,21 @@
 {% load i18n static %}
 
 {% block head_title %}Error 403{% endblock head_title %}
+
 {% block error_header %}
-Error 403
+Access Forbidden!
 {% endblock error_header %}
 
-{% block error_subheader %}
-Access Denied
-{% endblock error_subheader %}
+{% block error_img_code %}
+{% static 'assets/img/spot-illustrations/403.png' %}
+{% endblock error_img_code %}
+
+{% block error_img_right %}
+{% static 'assets/img/jurassic-park-403.gif' %}
+{% endblock error_img_right %}
 
 {% block error_desc %}
-<img width="500px" class="pb-4" src="{% static 'assets/img/jurassic-park-403.gif' %}">
+You don't have access to this. Did you expect to? 
+<br class="d-none d-sm-block" />
+You know what they say about assuming...
 {% endblock error_desc %}

@@ -194,7 +194,7 @@ class JobListView(JobBaseView, ListView):
         # - isn't archived
         # get our units 
         units = OrganisationalUnit.objects.filter(
-            pk__in=self.request.user.unit_memberships.filter(role__in=UnitRoles.getRolesWithPermission('jobtracker.view_job')).values_list('unit').distinct())
+            pk__in=self.request.user.unit_memberships.filter(role__in=UnitRoles.get_roles_with_permission('jobtracker.view_job')).values_list('unit').distinct())
         myJobs = get_objects_for_user(self.request.user, 'jobtracker.view_job')
         jobs = Job.objects.filter(Q(unit__in=units)|Q(pk__in=myJobs)).exclude(status=JobStatuses.DELETED).exclude(status=JobStatuses.ARCHIVED)
         return jobs
@@ -211,7 +211,7 @@ class JobDetailView(PermissionRequiredMixin, JobBaseView, DetailView):
             if self.request.user.is_authenticated:
                 units = OrganisationalUnit.objects.filter(
                     pk__in=self.request.user.unit_memberships.filter(
-                        role__in=UnitRoles.getRolesWithPermission('jobtracker.view_job')).values_list('unit').distinct()
+                        role__in=UnitRoles.get_roles_with_permission('jobtracker.view_job')).values_list('unit').distinct()
                         )
                 
                 if obj.unit in units or checker.has_perm('view_job', obj):

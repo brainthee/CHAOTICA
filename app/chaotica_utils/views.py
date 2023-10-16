@@ -225,7 +225,6 @@ def update_own_profile(request):
     data['html_form'] = loader.render_to_string("partials/profile/basic_profile_form.html",
                                                 context,
                                                 request=request)
-    pprint(data)
     return JsonResponse(data)
 
 
