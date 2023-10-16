@@ -105,7 +105,7 @@ AUTHENTICATION_BACKENDS = (
     'django_auth_adfs.backend.AdfsAuthCodeBackend',
 )
 
-GUARDIAN_RENDER_403 = True
+GUARDIAN_RAISE_403 = True
 GUARDIAN_TEMPLATE_403 = "403.html"
 
 SITE_DOMAIN = os.environ.get("SITE_DOMAIN", default="127.0.0.1:8000")

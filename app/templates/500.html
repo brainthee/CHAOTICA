@@ -3,14 +3,23 @@
 {% load i18n static %}
 
 {% block head_title %}Error 500{% endblock head_title %}
+
 {% block error_header %}
-Error 500
+Oops, my bad!
 {% endblock error_header %}
 
-{% block error_subheader %}
-My bad :(
-{% endblock error_subheader %}
+{% block error_img_code %}
+{% static 'assets/img/spot-illustrations/500.png' %}
+{% endblock error_img_code %}
+
+{% block error_img_right %}
+{% static 'assets/img/500.jpg' %}
+{% endblock error_img_right %}
 
 {% block error_desc %}
-<img width="500px" class="pb-4" src="{% static 'assets/img/500.jpg' %}">
+Sorry. I'm not the most amazing programmer.
+<br class="d-none d-sm-block" />
+But apparently when CHAOTICA crashes it's because of a flipped bit from a solar flare, not because of a bug.
+<br class="d-none d-sm-block" />
+P.s. there is a not zero chance this might be logged and fixed soon
 {% endblock error_desc %}

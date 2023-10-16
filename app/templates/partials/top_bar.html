@@ -124,26 +124,30 @@
       <ul class="navbar-nav navbar-nav-top" data-dropdown-on-hover="data-dropdown-on-hover">
 
         {% for item in menus.main %}
-        <li class="nav-item dropdown">
-          <a class="nav-link {% if item.selected %}active{% endif %} {% if item.children %}dropdown-toggle{% endif %} lh-1" href="{{ item.url }}" role="button" {% if item.children %}data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-haspopup="true" aria-expanded="false"{% endif %}>
-            {% if item.icon %}<span class="{% if item.icon_prefix %}{{ item.icon_prefix }}{% else %}fas fa-{% endif %}{{ item.icon }} fs-0 me-2 "></span>{% endif %}
-            {{ item.title }}
-          </a>
-          {% if item.children %}
-            <ul class="dropdown-menu navbar-dropdown-caret">
-            {% for childItem in item.children %}
-              <li>
-                <a class="dropdown-item {% if childItem.selected %}active{% endif %}" href="{{ childItem.url }}">
-                  <div class="dropdown-item-wrapper">
-                    {% if childItem.icon %}
-                    <span class="{% if childItem.icon_prefix %}{{ childItem.icon_prefix }}{% else %}fas fa-{% endif %}{{ childItem.icon }} fs-0 me-2 "></span>
-                    {% endif %}
-                    {{ childItem.title }}
-                  </div>
-                </a>
-              </li>
-            {% endfor %}
-            </ul>
+        {% if item.url == '#' and not item.children %}
+        <!-- Link ignored because no children and direct link -->
+        {% else %}
+          <li class="nav-item dropdown">
+            <a class="nav-link {% if item.selected %}active{% endif %} {% if item.children %}dropdown-toggle{% endif %} lh-1" href="{{ item.url }}" role="button" {% if item.children %}data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-haspopup="true" aria-expanded="false"{% endif %}>
+              {% if item.icon %}<span class="{% if item.icon_prefix %}{{ item.icon_prefix }}{% else %}fas fa-{% endif %}{{ item.icon }} fs-0 me-2 "></span>{% endif %}
+              {{ item.title }}
+            </a>
+            {% if item.children %}
+              <ul class="dropdown-menu navbar-dropdown-caret">
+              {% for childItem in item.children %}
+                <li>
+                  <a class="dropdown-item {% if childItem.selected %}active{% endif %}" href="{{ childItem.url }}">
+                    <div class="dropdown-item-wrapper">
+                      {% if childItem.icon %}
+                      <span class="{% if childItem.icon_prefix %}{{ childItem.icon_prefix }}{% else %}fas fa-{% endif %}{{ childItem.icon }} fs-0 me-2 "></span>
+                      {% endif %}
+                      {{ childItem.title }}
+                    </div>
+                  </a>
+                </li>
+              {% endfor %}
+              </ul>
+            {% endif %}
           {% endif %}
         {% endfor %}
 

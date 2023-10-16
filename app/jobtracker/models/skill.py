@@ -71,9 +71,6 @@ class Skill(models.Model):
             ('view_users_skill', 'View Users with Skill'),
         )    
 
-    def syncPermissions(self):
-        pass
-
     def get_users_can_do_alone(self):
         return UserSkill.objects.filter(skill=self, rating=UserSkillRatings.CAN_DO_ALONE)
 

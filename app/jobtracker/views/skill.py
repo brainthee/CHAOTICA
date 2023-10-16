@@ -1,34 +1,23 @@
-from django.shortcuts import get_object_or_404, redirect
-from django.http import HttpResponse,HttpResponseRedirect, HttpResponseBadRequest, JsonResponse, HttpResponseForbidden, HttpResponseNotFound
-from django.template import loader, Template as tmpl, Context
-from guardian.decorators import permission_required_or_403
-from guardian.core import ObjectPermissionChecker
-from guardian.mixins import PermissionListMixin, PermissionRequiredMixin
-from django.views import View
+from guardian.mixins import PermissionRequiredMixin
 from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
-from chaotica_utils.views import log_system_activity, ChaoticaBaseView, pageDefaults
-from chaotica_utils.utils import *
-from ..models import *
-from ..forms import *
-from ..tasks import *
-from .helpers import *
+from chaotica_utils.views import ChaoticaBaseView
+from ..models import Skill, SkillCategory
+from ..forms import SkillForm, SkillCatForm
 import logging
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.decorators import login_required, permission_required
-from django.contrib import messages 
-from django.apps import apps
-import json
 
 
 logger = logging.getLogger(__name__)
 
 
-class SkillBaseView(ChaoticaBaseView):
+class SkillBaseView(PermissionRequiredMixin, ChaoticaBaseView):
     model = Skill
     fields = '__all__'
+    permission_required = 'jobtracker.view_skill'
+    accept_global_perms = True
+    return_403 = True
     success_url = reverse_lazy('skill_list')
 
     def get_context_data(self, **kwargs):
@@ -42,14 +31,22 @@ class SkillListView(SkillBaseView, ListView):
     Use the 'job_list' variable in the template
     to access all job objects"""
 
-class SkillDetailView(SkillBaseView, DetailView):
+class SkillDetailView(SkillBaseView, PermissionRequiredMixin, DetailView):
     """View to list the details from one job.
     Use the 'job' variable in the template to access
     the specific job here and in the Views below"""
 
-class SkillCreateView(SkillBaseView, CreateView):
+    permission_required = 'jobtracker.view_skill'
+    accept_global_perms = True
+    return_403 = True
+
+class SkillCreateView(SkillBaseView, PermissionRequiredMixin, CreateView):
     form_class = SkillForm
     fields = None
+    permission_required = 'jobtracker.add_skill'
+    accept_global_perms = True
+    permission_object = Skill
+    return_403 = True
 
     def get_context_data(self, **kwargs):
         context = super(SkillCreateView, self).get_context_data(**kwargs)
@@ -61,26 +58,45 @@ class SkillCreateView(SkillBaseView, CreateView):
         form.instance.category = SkillCategory.objects.get(slug=self.kwargs['catSlug'])        
         return super(SkillCreateView, self).form_valid(form)
 
-class SkillUpdateView(SkillBaseView, UpdateView):
+class SkillUpdateView(SkillBaseView, PermissionRequiredMixin, UpdateView):
     form_class = SkillForm
     fields = None
+    permission_required = 'jobtracker.change_skill'
+    accept_global_perms = True
+    return_403 = True
 
-class SkillDeleteView(SkillBaseView, DeleteView):
+class SkillDeleteView(SkillBaseView, PermissionRequiredMixin, DeleteView):
     """View to delete a job"""
+    permission_required = 'jobtracker.delete_skill'
+    accept_global_perms = True
+    return_403 = True
     
 
-class SkillCatBaseView(ChaoticaBaseView):
+class SkillCatBaseView(PermissionRequiredMixin, ChaoticaBaseView):
     model = SkillCategory
     fields = '__all__'
+    permission_required = 'jobtracker.view_skillcategory'
+    return_403 = True
+    accept_global_perms = True
     success_url = reverse_lazy('skill_list')
 
-class SkillCatCreateView(SkillCatBaseView, CreateView):
+class SkillCatCreateView(SkillCatBaseView, PermissionRequiredMixin, CreateView):
     form_class = SkillCatForm
     fields = None
+    permission_required = 'jobtracker.add_skillcategory'
+    permission_object = SkillCategory
+    return_403 = True
+    accept_global_perms = True
 
-class SkillCatUpdateView(SkillCatBaseView, UpdateView):
+class SkillCatUpdateView(SkillCatBaseView, PermissionRequiredMixin, UpdateView):
     form_class = SkillCatForm
     fields = None
+    permission_required = 'jobtracker.change_skillcategory'
+    return_403 = True
+    accept_global_perms = True
 
-class SkillCatDeleteView(SkillCatBaseView, DeleteView):
+class SkillCatDeleteView(SkillCatBaseView, PermissionRequiredMixin, DeleteView):
     """View to delete a job"""
+    permission_required = 'jobtracker.delete_skillcategory'
+    return_403 = True
+    accept_global_perms = True

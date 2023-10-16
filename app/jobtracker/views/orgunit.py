@@ -84,7 +84,8 @@ def OrganisationalUnit_review_join_request(request, slug, memberPK):
     membership = get_object_or_404(OrganisationalUnitMember, unit=orgUnit, pk=memberPK, role=UnitRoles.PENDING)
     
     # Lets make sure our own membership is high enough level!
-    ourMembership = get_object_or_404(OrganisationalUnitMember, member=request.user, unit=orgUnit, role=UnitRoles.MANAGER)
+    get_object_or_404(OrganisationalUnitMember, member=request.user, unit=orgUnit, 
+                                      role=UnitRoles.MANAGER)
 
     # Okay, lets go!    
     data = dict()
@@ -101,7 +102,7 @@ def OrganisationalUnit_review_join_request(request, slug, memberPK):
                                 "Membership Accepted", "Your request to join "+orgUnit.name+" has been accepted", 
                                 "emails/orgunit/accepted.html", orgUnit=orgUnit, membership=membership)
             
-            task_send_notifications(notice, User.objects.filter(pk=membership.member.pk)).delay()
+            task_send_notifications.delay(notice, User.objects.filter(pk=membership.member.pk))
             data['form_is_valid'] = True
 
         elif request.POST.get('user_action') == "reject_action":
@@ -113,7 +114,7 @@ def OrganisationalUnit_review_join_request(request, slug, memberPK):
                                 "Membership Rejected", "Your request to join "+orgUnit.name+" has been denied", 
                                 "emails/orgunit/rejected.html", orgUnit=orgUnit, membership=membership)
             
-            task_send_notifications(notice, User.objects.filter(pk=membership.member.pk)).delay()
+            task_send_notifications.delay(notice, User.objects.filter(pk=membership.member.pk))
             data['form_is_valid'] = True
         else:
             # invalid choice...
