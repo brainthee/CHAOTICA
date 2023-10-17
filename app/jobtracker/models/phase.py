@@ -962,6 +962,8 @@ class Phase(models.Model):
         self.fire_status_notification(PhaseStatuses.COMPLETED)
 
     def can_proceed_to_completed(self):
+        if self.number_of_reports > 0 and self.status <= PhaseStatuses.QA_TECH:
+            return False
         return can_proceed(self.to_completed)
         
     def can_to_completed(self, notify_request=None):

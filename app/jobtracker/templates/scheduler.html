@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load menu %}
+{% load crispy_forms_tags %}
 
 {% block pageTitle %}Scheduler{% endblock pageTitle %}
 {% block head_title %}Scheduler{% endblock head_title %}
@@ -35,7 +36,7 @@
 
 
 <div class="row g-0 mt-3 border-1 border-top bg-light dark__bg-1100 h-100">
-  <div class="col-10 bg-white border-1 border-end">
+  <div class="col-9 bg-white min-vh-100 border-1 border-end">
 
     <div class="card-calendar min-vh-100">
       <div class="card-body p-0">
@@ -45,58 +46,12 @@
 
   </div>
 
-  <div class="col-2 px-0 border-start-xxl border-300 border-top-0">
+  <div class="col-3 px-0 border-start-xxl border-300 border-top-0">
     <div class="h-100">
       <div class="bg-light dark__bg-1100 h-100 p-3">
-
-                
-                <span class="fw-bold">Date Range</span>
-                <div class="input-group">
-                  <input class="form-control" type="text" aria-label="First name">
-                  <input class="form-control" type="text" aria-label="Last name">
-                </div>
-                
-                <div class="row">
-                  <div class="col-6">
-                    <div class="fw-bold">Skills</div>
-    
-                    <div class="mb-2">
-                      <div class="form-check mb-0">
-                        <input class="form-check-input mt-0" id="inStockInput" type="checkbox" name="color" checked>
-                        <label class="form-check-label d-block lh-sm fs-0 text-900 fw-normal mb-0" for="inStockInput">In stock</label>
-                      </div>
-                      <div class="form-check mb-0">
-                        <input class="form-check-input mt-0" id="preBookInput" type="checkbox" name="color">
-                        <label class="form-check-label d-block lh-sm fs-0 text-900 fw-normal mb-0" for="preBookInput">Pre-book</label>
-                      </div>
-                      <div class="form-check mb-0">
-                        <input class="form-check-input mt-0" id="outOfStockInput" type="checkbox" name="color">
-                        <label class="form-check-label d-block lh-sm fs-0 text-900 fw-normal mb-0" for="outOfStockInput">Out of stock</label>
-                      </div>
-                    </div>
-                    
-                  </div>
-                  <div class="col-6">
-                    <div class="fw-bold">Skills</div>
-    
-                    <div class="mb-2">
-                      <div class="form-check mb-0">
-                        <input class="form-check-input mt-0" id="inStockInput" type="checkbox" name="color" checked>
-                        <label class="form-check-label d-block lh-sm fs-0 text-900 fw-normal mb-0" for="inStockInput">In stock</label>
-                      </div>
-                      <div class="form-check mb-0">
-                        <input class="form-check-input mt-0" id="preBookInput" type="checkbox" name="color">
-                        <label class="form-check-label d-block lh-sm fs-0 text-900 fw-normal mb-0" for="preBookInput">Pre-book</label>
-                      </div>
-                      <div class="form-check mb-0">
-                        <input class="form-check-input mt-0" id="outOfStockInput" type="checkbox" name="color">
-                        <label class="form-check-label d-block lh-sm fs-0 text-900 fw-normal mb-0" for="outOfStockInput">Out of stock</label>
-                      </div>
-                    </div>
-                    
-                  </div>
-                </div>
-                
+        <div class="scrollbar" id="productFilterColumn">
+          {% crispy filterForm %}
+        </div>
 
       </div>
     </div>
@@ -131,49 +86,6 @@ var calendar = new FullCalendar.Calendar(calendarEl, {
     resourceAreaHeaderContent: 'Users',
     resources: "{% url 'view_scheduler_members' %}",
     events: "{% url 'view_scheduler_slots' %}",
-    // selectable: true,
-    // select: function(info) {
-    //   // get the selection info
-    //   phasePk = $('#phaseSelect').find(":selected").val()
-    //   slotType = $('#typeSelect').find(":selected").val()      
-    //   onsiteCheck = $('#is_onsite').is(':checked')
-    //   csrf = $('form :input[name="csrfmiddlewaretoken"]');
-    //   if(slotType == 0) {
-    //     Swal.fire(
-    //       'No slot type selected',
-    //       'Please select a type before adding a slot.',
-    //       'warning'
-    //     );    
-    //   } else {
-    //     var slotData = {
-    //         "phase": 0,
-    //         "slotType": slotType,
-    //         "start": info.start.toJSON(),
-    //         "end": info.end.toJSON(),
-    //         "is_onsite": onsiteCheck,
-    //         "user": info.resource.id,
-    //         "csrfmiddlewaretoken": csrf.val(),
-    //       };
-    //     $.ajax({
-    //       url: '',
-    //       data: slotData,
-    //       type: "POST",
-    //       dataType: 'json',
-    //       success: function(data) {
-    //         if (data.form_is_valid) {
-
-    //           location.reload();
-    //         } else {
-    //           Swal.fire(
-    //             'Failed to add',
-    //             'Something went wrong. Please check the data entered.',
-    //             'warning'
-    //           );    
-    //         }
-    //       }
-    //     });
-    //   };
-    // },
     eventClick: function(info) {
       info.jsEvent.preventDefault(); // don't let the browser navigate
       // Show slot edit modal
