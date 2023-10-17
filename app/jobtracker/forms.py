@@ -3,14 +3,61 @@ from django.urls import reverse
 from .models import Contact, Job, Feedback, TimeSlot, Client, Phase, OrganisationalUnit, Skill, Service, WorkflowTask, SkillCategory
 from chaotica_utils.models import Note, User
 from crispy_forms.helper import FormHelper
-from crispy_forms.bootstrap import StrictButton
-from crispy_forms.layout import Layout, Row, Column, Field, Div, HTML
+from crispy_forms.bootstrap import StrictButton, Accordion, AccordionGroup
+from crispy_forms.layout import Layout, Row, Column, Field, Div, HTML, Submit
 from crispy_bootstrap5.bootstrap5 import FloatingField
 from dal import autocomplete
 from chaotica_utils.enums import UnitRoles
 from bootstrap_datepicker_plus.widgets import TimePickerInput, DatePickerInput, DateTimePickerInput
 
 
+
+class SchedulerFilter(forms.Form):
+    skills = forms.ModelMultipleChoiceField(required=False,
+                                    queryset=Skill.objects.all(),
+                                    widget=autocomplete.ModelSelect2Multiple(),)
+    from_date = forms.DateField(required=False,
+                            widget=DatePickerInput(),)
+    to_date = forms.DateField(required=False,
+                            widget=DatePickerInput(),)
+
+    users = forms.ModelMultipleChoiceField(required=False,
+        queryset=User.objects.filter(is_active=True),
+        widget=autocomplete.ModelSelect2Multiple(url='user-autocomplete',
+                                         attrs={
+                                            'data-minimum-input-length': 3,
+                                         },),)
+    
+    def __init__(self, *args, **kwargs):
+        super(SchedulerFilter, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.helper.form_class = 'form-inline'
+        self.helper.layout = Layout(
+            Row(
+                Column(
+                    StrictButton("Reset", css_class="btn-phoenix-secondary"),
+                css_class="col"),
+                Column(
+                    Submit("apply", 'Apply', css_class="btn-phoenix-success"),
+                css_class="col-md-auto"),
+            ),
+            Accordion(
+                AccordionGroup('Date Filter',
+                    'from_date',
+                    'to_date',
+                css_class="d-flex input-group input-group-dynamic"),
+
+                AccordionGroup('User Filters',
+                    Field('skills', css_class="extra"),
+                    Field('users', css_class="extra"),
+                ),
+            ),
+        )
+
+    class Meta:
+        fields = ('skills', 'users',
+                  'from_date', 'to_date',)
+        
 
 
 class AssignContact(forms.Form):
@@ -732,6 +779,8 @@ class WFTaskForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         status_choices = kwargs.pop('status_choices')
+        if 'applied_model' in kwargs:
+            _ = kwargs.pop('applied_model')
         super(WFTaskForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
 

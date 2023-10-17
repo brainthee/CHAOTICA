@@ -20,6 +20,10 @@ div.content span.select2-container {
   --phoenix-gutter-x: unset !important
 }
 
+table caption {
+  display: none;
+}
+
 .dataTables_wrapper .dataTables_length select {
   padding: 10px;
   height: 44px;
