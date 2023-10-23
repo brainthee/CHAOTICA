@@ -6,7 +6,6 @@ from ..tasks import task_progress_job_workflows
 import logging
 from django.contrib.auth.decorators import login_required
 import uuid
-from ..forms import SchedulerFilter
 
 logger = logging.getLogger(__name__)
 
@@ -23,14 +22,6 @@ def run_tasks(request):
     """
     task_progress_job_workflows.delay()
     return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
-
-@login_required
-def view_scheduler(request):
-    context = {}
-    template = loader.get_template('scheduler.html')
-    context = {**context, **page_defaults(request)}
-    context['filterForm'] = SchedulerFilter()
-    return HttpResponse(template.render(context, request))
 
 @login_required
 def reset_cal_feed(request):    

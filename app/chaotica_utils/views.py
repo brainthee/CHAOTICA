@@ -236,9 +236,10 @@ def update_own_profile(request):
     return JsonResponse(data)
 
 
-@login_required
 @require_safe
 def notifications_feed(request):
+    if request.user.is_anonymous:
+        return HttpResponseForbidden()
     data = {}
     data['notifications'] = []
     notifications = Notification.objects.filter(user=request.user)

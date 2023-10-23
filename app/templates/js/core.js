@@ -190,8 +190,15 @@ $(function() {
             url: "{% url 'notifications_feed' %}",
             type: 'get',
             dataType: 'json',
-            success: function(data) {
-                $("#navbarDropdownNotfication").html(data.html_form);
+            statusCode: {
+                403: function() { 
+                    // Reload the page - we're prob logged out...
+                    window.location.reload();
+                },
+                200: function(data) {
+                    $("#navbarDropdownNotfication").html(data.html_form);             
+                }
+                //other codes. read the docs for more details
             },
         });
     } else {

@@ -4,7 +4,7 @@ from .models import Contact, Job, Feedback, TimeSlot, Client, Phase, Organisatio
 from chaotica_utils.models import Note, User
 from crispy_forms.helper import FormHelper
 from crispy_forms.bootstrap import StrictButton, Accordion, AccordionGroup
-from crispy_forms.layout import Layout, Row, Column, Field, Div, HTML, Submit
+from crispy_forms.layout import Layout, Row, Column, Field, Div, HTML, Submit, Reset
 from crispy_bootstrap5.bootstrap5 import FloatingField
 from dal import autocomplete
 from chaotica_utils.enums import UnitRoles
@@ -13,8 +13,17 @@ from bootstrap_datepicker_plus.widgets import TimePickerInput, DatePickerInput, 
 
 
 class SchedulerFilter(forms.Form):
-    skills = forms.ModelMultipleChoiceField(required=False,
+    skills_can_do_alone = forms.ModelMultipleChoiceField(required=False,
                                     queryset=Skill.objects.all(),
+                                    widget=autocomplete.ModelSelect2Multiple(),)
+    skills_can_do_support = forms.ModelMultipleChoiceField(required=False,
+                                    queryset=Skill.objects.all(),
+                                    widget=autocomplete.ModelSelect2Multiple(),)
+    skills_specialist = forms.ModelMultipleChoiceField(required=False,
+                                    queryset=Skill.objects.all(),
+                                    widget=autocomplete.ModelSelect2Multiple(),)
+    services = forms.ModelMultipleChoiceField(required=False,
+                                    queryset=Service.objects.all(),
                                     widget=autocomplete.ModelSelect2Multiple(),)
     from_date = forms.DateField(required=False,
                             widget=DatePickerInput(),)
@@ -31,11 +40,12 @@ class SchedulerFilter(forms.Form):
     def __init__(self, *args, **kwargs):
         super(SchedulerFilter, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
+        self.helper.form_method = 'get'
         self.helper.form_class = 'form-inline'
         self.helper.layout = Layout(
             Row(
                 Column(
-                    StrictButton("Reset", css_class="btn-phoenix-secondary"),
+                    Reset("reset", "Reset",  css_class="btn-phoenix-secondary"),
                 css_class="col"),
                 Column(
                     Submit("apply", 'Apply', css_class="btn-phoenix-success"),
@@ -45,17 +55,24 @@ class SchedulerFilter(forms.Form):
                 AccordionGroup('Date Filter',
                     'from_date',
                     'to_date',
-                css_class="d-flex input-group input-group-dynamic"),
-
-                AccordionGroup('User Filters',
-                    Field('skills', css_class="extra"),
+                ),
+                AccordionGroup('Skills Filter',
+                    Field('skills_specialist', css_class="extra"),
+                    Field('skills_can_do_alone', css_class="extra"),
+                    Field('skills_can_do_support', css_class="extra"),
+                ),
+                AccordionGroup('Users Filter',
                     Field('users', css_class="extra"),
+                ),
+                AccordionGroup('Service Filter',
+                    Field('services', css_class="extra"),
                 ),
             ),
         )
 
     class Meta:
-        fields = ('skills', 'users',
+        fields = ('skills_specialist', 'skills_can_do_alone', 'skills_can_do_support', 
+                  'users', 'services',
                   'from_date', 'to_date',)
         
 
@@ -229,6 +246,70 @@ class FeedbackForm(forms.ModelForm):
     class Meta:
         model = Feedback
         fields = ('body',)
+
+
+class CreateTimeSlotModalForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        start=None
+        if 'start' in kwargs:
+            start = kwargs.pop('start')
+        end=None
+        if 'end' in kwargs:
+            end = kwargs.pop('end')
+        resource_id=None
+        if 'resource_id' in kwargs:
+            resource_id = kwargs.pop('resource_id')
+        
+        super(CreateTimeSlotModalForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        for fieldname in self.fields:
+            self.fields[fieldname].help_text = None
+        self.fields['user'].widget = forms.HiddenInput()
+        self.fields['start'].widget = DateTimePickerInput()
+        self.fields['end'].widget = DateTimePickerInput()
+        self.fields['start'].initial = start
+        self.fields['end'].initial = end
+        self.fields['user'].initial = User.objects.get(pk=resource_id)
+        self.helper.layout = Layout(
+            Field('user', type="hidden"),
+            Field('phase', type="hidden"),
+            # Field('slotType', type="hidden"),
+            Div(
+                Row(
+                    Column(Div(FloatingField('slotType'),
+                            css_class="input-group input-group-dynamic")),
+                    # Column(Div(Field('is_onsite'),
+                    #         css_class="input-group input-group-dynamic")),
+                ),
+                Row(
+                    Column(Div(Field('start'),
+                            css_class="input-group input-group-dynamic")),
+                    Column(Div(Field('end'),
+                            css_class="input-group input-group-dynamic")),
+                ),
+                css_class='card-body p-3'),
+            Div(
+                Div(StrictButton("Save", type="submit", 
+                        css_class="btn bg-gradient-success ms-auto mb-0"),
+                    css_class="button-row d-flex"),
+                css_class="card-footer pt-0 p-3"),
+        )
+
+    class Meta:
+        model = TimeSlot
+        widgets = {
+          'start': DateTimePickerInput(),
+          'end': DateTimePickerInput(),
+        }
+        fields = (
+            'user',
+            'phase',
+            'slotType',
+            # 'deliveryRole',
+            'is_onsite',
+            'start',
+            'end',
+            )
 
 
 class ChangeTimeSlotModalForm(forms.ModelForm):

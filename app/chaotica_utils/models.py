@@ -204,7 +204,7 @@ class User(AbstractUser):
 
         slots = TimeSlot.objects.filter(user=self, start__gte=start, start__lte=end)
         for slot in slots:
-            data.append(slot.get_web_schedule_format())
+            data.append(slot.get_schedule_json())
         return data
     
     def is_people_manager(self):
@@ -259,13 +259,13 @@ class User(AbstractUser):
         
         return total_score
 
-    def get_average_techqa_feedback_tech(self, 
+    def get_average_techqa_feedback(self, 
                                          from_range=timezone.now() - relativedelta(months=12), 
                                          to_range=timezone.now()):
         return self.get_average_qa_rating("techqa_report_rating", from_range, to_range)
         
 
-    def get_average_presqa_feedback_tech(self, 
+    def get_average_presqa_feedback(self, 
                                          from_range=timezone.now() - relativedelta(months=12), 
                                          to_range=timezone.now()):
         return self.get_average_qa_rating("presqa_report_rating", from_range, to_range)
@@ -292,11 +292,11 @@ class User(AbstractUser):
         return data
     
         
-    def get_average_techqa_feedback_tech_12mo(self):
+    def get_average_techqa_feedback_12mo(self):
         return self.get_average_qa_rating_12mo("techqa_report_rating")
     
         
-    def get_average_presqa_feedback_tech_12mo(self):
+    def get_average_presqa_feedback_12mo(self):
         return self.get_average_qa_rating_12mo("presqa_report_rating")
     
     

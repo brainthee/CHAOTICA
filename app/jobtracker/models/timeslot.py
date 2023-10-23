@@ -38,17 +38,37 @@ class TimeSlot(models.Model):
             return self.phase.job.slug
         return None
     
-    def get_web_schedule_format(self, url=None):
+    
+    def get_schedule_title(self):
+        if self.slotType == TimeSlotType.GENERIC or \
+            self.slotType == TimeSlotType.INTERNAL or \
+            self.slotType == TimeSlotType.LEAVE:
+            return TimeSlotType.CHOICES[self.slotType][1]
+        else:
+            return str(self)
+    
+
+    def get_schedule_slot_colour(self):
+        if not self.phase:
+            # If no phase attached... always confirmed ;)
+            return "#378006"
+        else:
+            if self.is_confirmed():
+                return "#FFC7CE" if self.is_onsite else "#bdb3ff"
+            else:
+                return "#E6B9B8" if self.is_onsite else "#95B3D7"
+    
+    def get_schedule_json(self, url=None):
         if not url:
             url = self.get_target_url()
             
         return {
-            "title": str(self),
+            "title": self.get_schedule_title(),
             "resourceId": self.user.pk,
             "start": self.start,
             "end": self.end,
             "url": url,
-            "color": self.slot_colour(),
+            "color": self.get_schedule_slot_colour(),
         }
     
     def get_schedule_phase_json(self):
@@ -62,7 +82,7 @@ class TimeSlot(models.Model):
             "slotType": self.slotType,
             "userId": self.user.pk,
             "phaseId": self.phase.pk,
-            "color": self.slot_colour(),
+            "color": self.get_schedule_slot_colour(),
         }
         if self.phase:
             data['url'] = reverse('change_job_schedule_slot', kwargs={"slug":self.phase.job.slug, "pk":self.pk})
@@ -91,16 +111,6 @@ class TimeSlot(models.Model):
         else:
             # Phase attached - only proceed if scheduling confirmed on phase
             return self.phase.status >= PhaseStatuses.SCHEDULED_CONFIRMED
-    
-    def slot_colour(self):
-        if not self.phase:
-            # If no phase attached... always confirmed ;)
-            return "#378006"
-        else:
-            if self.is_confirmed():
-                return "#FFC7CE" if self.is_onsite else "#bdb3ff"
-            else:
-                return "#E6B9B8" if self.is_onsite else "#95B3D7"
 
 
     def __str__(self):
