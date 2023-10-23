@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load menu %}
+{% load menu %}{% load index %}
 {% load crispy_forms_tags %}
 
 {% block pageTitle %}Scheduler{% endblock pageTitle %}
@@ -50,9 +50,11 @@
     <div class="h-100">
       <div class="bg-light dark__bg-1100 h-100 p-3">
         <div class="scrollbar" id="productFilterColumn">
-          {% crispy filterForm %}
+          <div class="row mb-3">
+            <h4>Filtering</h4>
+            {% crispy filterForm %}
+          </div>
         </div>
-
       </div>
     </div>
   </div>
@@ -66,6 +68,13 @@
 
 var calendarEl = document.getElementById('calendar');
 
+const urlParams = new URLSearchParams(window.location.search).entries();
+
+var urlSearchParams = {}
+for(const entry of urlParams) {
+  urlSearchParams[entry[0]] = entry[1];
+}
+
 var calendar = new FullCalendar.Calendar(calendarEl, {
     initialView: 'resourceTimelineMonth',
     themeSystem: 'bootstrap5',
@@ -75,7 +84,10 @@ var calendar = new FullCalendar.Calendar(calendarEl, {
         right: 'resourceTimelineTenDay,resourceTimelineMonth,resourceTimelineYear'
     },
     scrollTime: '08:00',
-    // aspectRatio: 1.75,
+    {% py_date_to_js_date request.GET.from_date as from_date %}
+    {% if from_date %}
+    initialDate: '{{ from_date }}',
+    {% endif %}
     views: {
         resourceTimelineTenDay: {
             type: 'resourceTimeline',
@@ -83,9 +95,24 @@ var calendar = new FullCalendar.Calendar(calendarEl, {
             buttonText: '10 days'
         }
     },
+    displayEventTime: false,
     resourceAreaHeaderContent: 'Users',
-    resources: "{% url 'view_scheduler_members' %}",
-    events: "{% url 'view_scheduler_slots' %}",
+    resources: {
+        url: "{% url 'view_scheduler_members' %}",
+        method: 'GET',
+        extraParams: urlSearchParams,
+        failure: function() {
+          alert('there was an error while fetching resources!');
+        },
+    },
+    events: {
+        url: "{% url 'view_scheduler_slots' %}",
+        method: 'GET',
+        extraParams: urlSearchParams,
+        failure: function() {
+          alert('there was an error while fetching events!');
+        },
+    },
     eventClick: function(info) {
       info.jsEvent.preventDefault(); // don't let the browser navigate
       // Show slot edit modal
@@ -100,6 +127,24 @@ var calendar = new FullCalendar.Calendar(calendarEl, {
             }
         });
       }
+    },
+    selectable: true,
+    select: function(info) {
+      // get the selection info
+      start_date = info.start.toJSON();
+      end_date = info.end.toJSON();
+      resource_id = info.resource.id;
+      // Lets open a modal window to setup the    
+
+      $.ajax({
+          url: '{% url "create_scheduler_slot" %}?resource_id='+parseInt(resource_id)+'&start='+start_date+'&end='+end_date,
+          type: 'get',
+          dataType: 'json',
+          success: function(data) {
+              $("#mainModalContent").html(data.html_form);
+              $("#mainModal").modal("show");
+          }
+        });
     },
     editable: true,
     droppable: false,

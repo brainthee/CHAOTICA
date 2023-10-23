@@ -1,27 +1,27 @@
 <div class="d-flex align-items-center">
-  <span class="me-2 text-info" data-feather="users" style="min-height:24px; width:24px"></span>
+  <span class="me-2 text-primary" data-feather="users" style="min-height:24px; width:24px"></span>
   <h4 class="text-600 mb-0">
     <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="Average score over the last 12 months">
-      Average Tech Rating
+      Average Pres Rating
     </span>
-    {% with avg_tqa_rating=request.user.get_average_techqa_feedback %}
-      <span class="rating text-end {% if avg_tqa_rating < 2 %}text-danger{% elif avg_tqa_rating < 3 %}text-warning{% elif avg_tqa_rating < 4 %}text-primary{% elif avg_tqa_rating >= 4 %}text-success{% endif %}" 
+    {% with avg_pqa_rating=request.user.get_average_presqa_feedback %}
+      <span class="rating text-end {% if avg_pqa_rating < 2 %}text-danger{% elif avg_pqa_rating < 3 %}text-warning{% elif avg_pqa_rating < 4 %}text-primary{% elif avg_pqa_rating >= 4 %}text-success{% endif %}" 
         data-bs-toggle="tooltip" data-bs-placement="bottom" 
-        title="{% if avg_tqa_rating > 0 %}{{ avg_tqa_rating }}{% else %}No Data{% endif %}" >
-      {% include 'partials/feedback_stars.html' with feedback=avg_tqa_rating %}
+        title="{% if avg_pqa_rating > 0 %}{{ avg_pqa_rating }}{% else %}No Data{% endif %}" >
+      {% include 'partials/feedback_stars.html' with feedback=avg_pqa_rating %}
     {% endwith %}
     </span>
   </h4>
 </div>
 <div class="pb-0 pt-4">
-  <div id="echarts-avg-tech-feedback" style="min-height:110px;width:100%;"></div>
+  <div id="echarts-avg-pres-feedback" style="min-height:110px;width:100%;"></div>
 </div>
 
 <script>
-  var chartDom = document.getElementById('echarts-avg-tech-feedback');
+  var chartDomPres = document.getElementById('echarts-avg-pres-feedback');
 
-  var chart = echarts.init(chartDom);
-  options = {
+  var chartPres = echarts.init(chartDomPres);
+  optionsPres = {
     tooltip: {
       trigger: 'axis',
       padding: 10,
@@ -39,7 +39,7 @@
         type: 'category',
         position: 'bottom',
         show: true,
-        data: {{ request.user.get_average_techqa_feedback_12mo.months |safe }},
+        data: {{ request.user.get_average_presqa_feedback_12mo.months |safe }},
         axisLabel: {
           formatter: value => window.dayjs(value).format('MMM, YY'),
           color: getColor('gray-800'),
@@ -68,10 +68,10 @@
     series: [
       {
         type: 'line',
-        data: {{ request.user.get_average_techqa_feedback_12mo.data }},
+        data: {{ request.user.get_average_presqa_feedback_12mo.data }},
         lineStyle: {
           width: 2,
-          color: getColor('info')
+          color: getColor('primary')
         },
         areaStyle: {
           color: {
@@ -83,21 +83,21 @@
             colorStops: [
               {
                 offset: 0,
-                color: rgbaColor(getColor('info'), 0.2)
+                color: rgbaColor(getColor('primary'), 0.2)
               },
               {
                 offset: 1,
-                color: rgbaColor(getColor('info'), 0)
+                color: rgbaColor(getColor('primary'), 0)
               }
             ]
           }
         },
         showSymbol: false,
         symbol: 'circle'
-      }
+      },
     ],
     grid: { left: 0, right: 0, top: 5, bottom: 20 }
   };
-  options && chart.setOption(options);
+  optionsPres && chartPres.setOption(optionsPres);
 
 </script>

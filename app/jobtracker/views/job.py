@@ -33,7 +33,7 @@ def view_job_schedule_slots(request, slug):
     slots = TimeSlot.objects.filter(phase__job=job)
     for slot in slots:
         data.append(
-            slot.get_web_schedule_format(
+            slot.get_schedule_json(
                 url=reverse('change_job_schedule_slot', kwargs={"slug":job.slug, "pk":slot.pk})
             )
         )

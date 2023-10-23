@@ -36,7 +36,11 @@ def get_range_from_one(number):
 
 @register.simple_tag
 def py_date_to_js_date(date):
-    if isinstance(date, datetime.datetime):
-        return str(date.strftime('%Y-%m-%d'))
+    if date:
+        if isinstance(date, datetime.datetime):
+            return str(date.strftime('%Y-%m-%d'))
+        else:
+            # Try and convert it to a datetime...
+            return str(datetime.datetime.strptime(date, "%Y-%m-%d").strftime('%Y-%m-%d'))
     else:
         return ""
