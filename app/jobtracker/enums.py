@@ -1,11 +1,3 @@
-class AddressTypes():
-    BILLING, REGISTERED = range(0, 2)
-    # make sure to add new items at end to not corrupt database!
-    CHOICES = (
-        (BILLING, 'Billing address'),
-        (REGISTERED, 'Registered address'),
-    )
-
 class LinkType():
     LN_OTHER = 0
     LN_GITLABISSUE = 1
@@ -34,7 +26,86 @@ class FeedbackType():
         (OTHER, 'Other'),
     )
 
-class TimeSlotType():
+class AvailabilityType():
+    UNAVAILABLE = 0
+    AVAILABLE = 1
+    BUSY_INTERNAL = 2
+    BUSY_DELIVERY = 3
+    CHOICES = (
+        (UNAVAILABLE, "Unavailable"), # Person isn't available for anything. E.g. leave
+        (AVAILABLE, "Available"), # Available for anything (e.g. unassigned)
+        (BUSY_INTERNAL, "Busy - Internal"), # Busy on internal work
+        (BUSY_DELIVERY, "Busy - Delivery"), # Busy on client work
+    )
+
+class DefaultTimeSlotTypes():
+    BANK_HOL = 1
+    LEAVE = 2
+    SICK = 3
+    SELF_LEARNING = 4
+    TRAINING = 5
+    TRAINING_DELIVER = 6
+    UNASSIGNED = 7
+    DEFAULTS = [
+        {
+            'pk': BANK_HOL,
+            'name': "Bank Holiday", 
+            "built_in": True,
+            "is_delivery": False,
+            "is_working": False,
+            "availability": AvailabilityType.UNAVAILABLE
+        },
+        {
+            'pk': LEAVE, 
+            'name': "Annual Leave", 
+            "built_in": True, 
+            "is_delivery": False, 
+            "is_working": False,
+            "availability": AvailabilityType.UNAVAILABLE
+        },
+        {
+            'pk': SICK, 
+            'name': "Sick", 
+            "built_in": True, 
+            "is_delivery": False, 
+            "is_working": False,
+            "availability": AvailabilityType.UNAVAILABLE
+        },
+        {
+            'pk': SELF_LEARNING, 
+            'name': "Self-led Learning", 
+            "built_in": True, 
+            "is_delivery": False, 
+            "is_working": True,
+            "availability": AvailabilityType.BUSY_INTERNAL
+        },
+        {
+            'pk': TRAINING, 
+            'name': "Training", 
+            "built_in": True, 
+            "is_delivery": False, 
+            "is_working": True,
+            "availability": AvailabilityType.BUSY_INTERNAL
+        },
+        {
+            'pk': TRAINING_DELIVER, 
+            'name': "Training - Deliver", 
+            "built_in": True, 
+            "is_delivery": False, 
+            "is_working": True,
+            "availability": AvailabilityType.BUSY_INTERNAL
+        },
+        {
+            'pk': UNASSIGNED, 
+            'name': "Unassigned", 
+            "built_in": True, 
+            "is_delivery": False, 
+            "is_working": True,
+            "availability": AvailabilityType.AVAILABLE
+        },
+    ]
+
+class TimeSlotEnumType():
     GENERIC = 0
     INTERNAL = 1
     DELIVERY = 2

@@ -1,6 +1,6 @@
 from django.db import models
 from django.urls import reverse
-from ..enums import TimeSlotDeliveryRole, TimeSlotType, PhaseStatuses
+from ..enums import TimeSlotDeliveryRole, TimeSlotEnumType, PhaseStatuses, AvailabilityType
 from ..models.phase import Phase
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericRelation
@@ -11,6 +11,18 @@ from business_duration import businessDuration
 from decimal import Decimal
 
 
+class TimeSlotType(models.Model):
+    name = models.CharField(max_length=255, unique=True, verbose_name='Name')
+    built_in = models.BooleanField(verbose_name="Type is a default type", default=False)
+    is_delivery = models.BooleanField(verbose_name="Is a delivery type", default=False)
+    is_working = models.BooleanField(verbose_name="Is working", default=False)
+    availability = models.IntegerField(verbose_name="Availability", help_text="If resource is available or not",
+        choices=AvailabilityType.CHOICES, default=AvailabilityType.AVAILABLE)
+    
+    def __str__(self):
+        return "{} - ({})".format(self.name, self.get_availability_display())
+
+
 class TimeSlot(models.Model):
     start = models.DateTimeField()
     end = models.DateTimeField()
@@ -18,6 +30,10 @@ class TimeSlot(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL,
         limit_choices_to=(models.Q(is_active=True)),
         related_name="timeslots", on_delete=models.CASCADE,
+    )
+
+    slot_type = models.ForeignKey(TimeSlotType, related_name="timeslots",
+        null=True, blank=True, on_delete=models.CASCADE
     )
 
     phase = models.ForeignKey(Phase, related_name="timeslots",
@@ -30,7 +46,7 @@ class TimeSlot(models.Model):
         help_text="Is this slot onsite", default=False)
     
     slotType = models.IntegerField(verbose_name="Slot Type", help_text="Type of time",
-        choices=TimeSlotType.CHOICES, default=TimeSlotType.GENERIC)
+        choices=TimeSlotEnumType.CHOICES, default=TimeSlotEnumType.GENERIC)
     
     @property
     def slug(self):
@@ -40,10 +56,10 @@ class TimeSlot(models.Model):
     
     
     def get_schedule_title(self):
-        if self.slotType == TimeSlotType.GENERIC or \
-            self.slotType == TimeSlotType.INTERNAL or \
-            self.slotType == TimeSlotType.LEAVE:
-            return TimeSlotType.CHOICES[self.slotType][1]
+        if self.slotType == TimeSlotEnumType.GENERIC or \
+            self.slotType == TimeSlotEnumType.INTERNAL or \
+            self.slotType == TimeSlotEnumType.LEAVE:
+            return TimeSlotEnumType.CHOICES[self.slotType][1]
         else:
             return str(self)
     
@@ -127,14 +143,14 @@ class TimeSlot(models.Model):
             return '{}: {}'.format(self.user.get_full_name(), self.start)
     
     def get_target_url(self):
-        if self.slotType == TimeSlotType.DELIVERY and self.phase:
+        if self.slotType == TimeSlotEnumType.DELIVERY and self.phase:
             return self.phase.get_absolute_url()
         # Eventually return more useful URLs... but for now, return home.
-        # elif self.slotType == TimeSlotType.GENERIC:
+        # elif self.slotType == TimeSlotEnumType.GENERIC:
         #     return ext_reverse(reverse('home'))
-        # elif self.slotType == TimeSlotType.INTERNAL:
+        # elif self.slotType == TimeSlotEnumType.INTERNAL:
         #     return ext_reverse(reverse('home'))
-        # elif self.slotType == TimeSlotType.LEAVE:
+        # elif self.slotType == TimeSlotEnumType.LEAVE:
         #     return ext_reverse(reverse('home'))
         return ext_reverse(reverse('home'))
         
