@@ -7,11 +7,11 @@ from django.utils import timezone
 from django.http import HttpResponseForbidden, JsonResponse, HttpResponse, HttpResponseRedirect, Http404, HttpResponseBadRequest
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 import json, os, random
-from .forms import ChaoticaUserForm, LeaveRequestForm, ProfileBasicForm, CustomConfigForm, AssignRoleForm
+from .forms import ChaoticaUserForm, LeaveRequestForm, ProfileBasicForm, CustomConfigForm, AssignRoleForm, InviteUserForm
 from .enums import GlobalRoles, NotificationTypes
 from .tasks import task_send_notifications
-from .models import Notification, User, Language, Note, LeaveRequest
-from .utils import ext_reverse, AppNotification
+from .models import Notification, User, Language, Note, LeaveRequest, UserInvitation
+from .utils import ext_reverse, AppNotification, is_valid_uuid
 from django.db.models import Q
 from dal import autocomplete
 from django.contrib.auth.decorators import login_required
@@ -441,22 +441,78 @@ def get_quote(request):
     return JsonResponse(lines[random_index])
 
 
+@login_required
+@require_http_methods(["GET", "POST"])
+def user_invite(request):
+    data = {}
+    data['form_is_valid'] = False
+    if request.method == "POST":
+        form = InviteUserForm(request.POST)
+        if form.is_valid():
+            invite = form.save(commit=False)
+            invite.invited_by = request.user
+            invite.save()
+            invite.send_email()
+            data['form_is_valid'] = True
+    else:
+        form = InviteUserForm()
+    
+    context = {'form': form}
+    data['html_form'] = loader.render_to_string("modals/user_invite.html",
+                                                context,
+                                                request=request)
+    return JsonResponse(data)
+
+
 @require_http_methods(["POST", "GET"])
-def signup(request):
+def signup(request, invite_id=None):
     if request.user.is_authenticated:
         return redirect('home')
     else:
-        if request.method == 'POST':
-            form = ChaoticaUserForm(request.POST)
-            if form.is_valid():
-                form.save()
-                username = form.cleaned_data.get('username')
-                raw_password = form.cleaned_data.get('password1')
-                user = authenticate(username=username, password=raw_password)
-                login(request, user)
-                return redirect('home')
+        # Check if we're invite only...
+        if django_settings.USER_INVITE_ONLY:
+            if not invite_id or \
+                not is_valid_uuid(invite_id) or \
+                not UserInvitation.objects.filter(invite_id=invite_id).exists():
+                context = {}
+                template = loader.get_template('errors/invite_only.html')
+                return HttpResponse(template.render(context, request))
+            
+            invite = get_object_or_404(UserInvitation, invite_id=invite_id)
+            if invite.accepted:
+                # Already accepted - rendor an error page
+                context = {}
+                template = loader.get_template('errors/invite_used.html')
+                return HttpResponse(template.render(context, request))
+            elif invite.is_expired():
+                # Already accepted - rendor an error page
+                context = {}
+                template = loader.get_template('errors/invite_expired.html')
+                return HttpResponse(template.render(context, request))
+            else:
+                if request.method == 'POST':
+                    form = ChaoticaUserForm(request.POST, invite=invite)
+                else:
+                    form = ChaoticaUserForm(invite=invite)
+
         else:
-            form = ChaoticaUserForm()
+            # Invitation isn't required - self sign up!
+            if request.method == 'POST':
+                form = ChaoticaUserForm(request.POST)
+            else:
+                form = ChaoticaUserForm()
+
+        if request.method == 'POST' and form.is_valid():
+            form.save()
+            if invite:
+                invite.accepted = True
+                invite.save()
+            username = form.cleaned_data.get('username')
+            raw_password = form.cleaned_data.get('password1')
+            user = authenticate(username=username, password=raw_password)
+            login(request, user)
+            return redirect('home')
+
         return render(request, 'signup.html', {'form': form})
 
 

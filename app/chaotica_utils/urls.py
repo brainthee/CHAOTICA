@@ -4,7 +4,8 @@ from django.contrib import admin
 
 
 urlpatterns = [
-    re_path(r'^signup/$', views.signup, name='signup'),
+    path('signup/<str:invite_id>', views.signup, name='signup'),
+    path('signup/', views.signup, name='signup'),
     path("auth/", include("django.contrib.auth.urls")),
     path("admin/", admin.site.urls),
     path('debug/sentry', views.trigger_error, name="trigger_error"),
@@ -18,6 +19,7 @@ urlpatterns = [
 
     # User CRUD
     path('users/', views.UserListView.as_view(), name='user_list'),
+    path('users/invite', views.user_invite, name='user_invite'),
     path('notifications/', views.notifications_feed, name='notifications_feed'),
     path('notifications/<int:pk>/mark_read', views.notification_mark_read, name='notification_mark_read'),
     path('notifications/mark_all_read', views.notifications_mark_read, name='notifications_mark_read'),

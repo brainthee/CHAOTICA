@@ -20,16 +20,25 @@
 </div>
 {% endif %}
 
+
+<div class="row mb-4 gx-6 gy-3 mt-2 align-items-center">
+  <div class="col">
+    <h2 class="mb-0">Users</h2>
+  </div>
+  <div class="col-3 d-flex justify-content-end">
+
+    <button data-url="{% url 'user_invite' %}" 
+      class="btn btn-phoenix-primary js-load-modal-form">
+      <i class="fa-solid fa-plus me-2"></i>
+      Invite User
+    </button>
+
+  </div>
+</div>
+
 <div class="row my-3">
   <div class="col-12">
      <div class="card p-2">
-        <div class="card-header pb-2">
-            <div class="row justify-content-center align-items-center">
-               <div class="col-sm-auto col-8 my-auto">
-                  <h5>Users</h5>
-               </div>
-            </div>
-        </div>
         <div class="card-body py-2 ">
           <table class="table datatable align-items-center mb-0">
             <caption>User List</caption>

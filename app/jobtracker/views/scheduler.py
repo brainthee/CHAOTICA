@@ -1,5 +1,5 @@
 from django.shortcuts import get_object_or_404
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest
 from django.template import loader
 from django.views.generic.edit import DeleteView
 from django.urls import reverse_lazy
@@ -8,7 +8,7 @@ from chaotica_utils.views import ChaoticaBaseView
 from chaotica_utils.models import User
 from guardian.shortcuts import get_objects_for_user
 from ..models import Job, TimeSlot, UserSkill
-from ..forms import CreateTimeSlotModalForm, SchedulerFilter
+from ..forms import CreateTimeSlotModalForm, SchedulerFilter, ChangeTimeSlotDateModalForm
 from ..enums import UserSkillRatings
 import logging
 from django.contrib.auth.decorators import login_required
@@ -28,6 +28,7 @@ def view_scheduler(request):
 
 def _filter_users_on_query(request):
     from pprint import pprint
+    filterForm = SchedulerFilter(request.GET)
     users_pk = []
     for org_unit in get_objects_for_user(request.user, 'jobtracker.view_users_schedule'):
         for user in org_unit.get_activeMembers():
@@ -36,26 +37,33 @@ def _filter_users_on_query(request):
 
     users = User.objects.filter(pk__in=users_pk)
 
-    # Now lets apply the filters from the query...
+    if filterForm.is_valid():
+        # Now lets apply the filters from the query...
+        ## Filter users
+        users_q = filterForm.cleaned_data.get('users')
+        if users_q:
+            pprint(users_q)
+            users = users.filter(pk__in=users_q)
 
-    ## Filter users
-    users_q = request.GET.get('users', None)
-    if users_q:
-        pprint(users_q)
-        users = users.filter(pk__in=users_q)
+        ## Filter on skills
+        skills_specialist = filterForm.cleaned_data.get('skills_specialist')
+        if skills_specialist:
+            users = users.filter(skills__in=UserSkill.objects.filter(skill__in=skills_specialist, rating=UserSkillRatings.SPECIALIST))
 
-    ## Filter on skills
-    skills_specialist = request.GET.get('skills_specialist', None)
-    if skills_specialist:
-        users = users.filter(skills__in=UserSkill.objects.filter(skill__pk__in=skills_specialist, rating=UserSkillRatings.SPECIALIST))
+        skills_can_do_alone = filterForm.cleaned_data.get('skills_can_do_alone')
+        if skills_can_do_alone:
+            users = users.filter(skills__in=UserSkill.objects.filter(skill__in=skills_can_do_alone, rating=UserSkillRatings.CAN_DO_ALONE))
 
-    skills_can_do_alone = request.GET.get('skills_can_do_alone', None)
-    if skills_can_do_alone:
-        users = users.filter(skills__in=UserSkill.objects.filter(skill__pk__in=skills_can_do_alone, rating=UserSkillRatings.CAN_DO_ALONE))
-
-    skills_can_do_support = request.GET.get('skills_can_do_support', None)
-    if skills_can_do_support:
-        users = users.filter(skills__in=UserSkill.objects.filter(skill__pk__in=skills_can_do_support, rating=UserSkillRatings.CAN_DO_WITH_SUPPORT))
+        skills_can_do_support = filterForm.cleaned_data.get('skills_can_do_support')
+        if skills_can_do_support:
+            users = users.filter(skills__in=UserSkill.objects.filter(skill__in=skills_can_do_support, rating=UserSkillRatings.CAN_DO_WITH_SUPPORT))
+        
+        # Filter on service
+        # This is a bit mind bending. Of the service(s) selected, each will have some desired/needed skills
+        # We then need to select the users based off containing a skill in either desired or needed..
+        services = filterForm.cleaned_data.get('services')
+        for service in services:
+            users = users.filter(pk__in=service.users_can_conduct())
 
     return users
 
@@ -96,6 +104,32 @@ def view_own_schedule_timeslots(request):
         end=request.GET.get('end', None),
         )
     return JsonResponse(data, safe=False)
+
+
+# @permission_required('jobtracker.change_schedule', (Job, 'slug', 'slug'))
+def change_scheduler_slot_date(request, pk=None):
+    if not pk:
+        # We only do this because we want to generate the URL in JS land
+        return HttpResponseBadRequest()
+    slot = get_object_or_404(TimeSlot, pk=pk)
+    data = dict()
+    if request.method == "POST":
+        form = ChangeTimeSlotDateModalForm(request.POST, instance=slot)
+        if form.is_valid():
+            form.save()
+            data['form_is_valid'] = True
+        else:
+            data['form_is_valid'] = False
+            data['form_errors'] = form.errors
+    else:
+        # Send the modal
+        form = ChangeTimeSlotDateModalForm(instance=slot)
+
+    context = {'form': form}
+    data['html_form'] = loader.render_to_string("jobtracker/modals/job_slot.html",
+                                                context,
+                                                request=request)
+    return JsonResponse(data)
 
 
 @login_required

@@ -51,7 +51,7 @@
       <div class="bg-light dark__bg-1100 h-100 p-3">
         <div class="scrollbar" id="productFilterColumn">
           <div class="row mb-3">
-            <h4>Filtering</h4>
+            {% csrf_token %}
             {% crispy filterForm %}
           </div>
         </div>
@@ -67,6 +67,7 @@
 <script>
 
 var calendarEl = document.getElementById('calendar');
+var csrf = $('input[name="csrfmiddlewaretoken"]');
 
 const urlParams = new URLSearchParams(window.location.search).entries();
 
@@ -129,6 +130,10 @@ var calendar = new FullCalendar.Calendar(calendarEl, {
       }
     },
     selectable: true,
+    editable: true,
+    droppable: true,
+    nowIndicator: true,
+    timeZone: '{{ user.pref_timezone }}', // the default (unnecessary to specify)
     select: function(info) {
       // get the selection info
       start_date = info.start.toJSON();
@@ -146,9 +151,73 @@ var calendar = new FullCalendar.Calendar(calendarEl, {
           }
         });
     },
-    editable: true,
-    droppable: false,
-    nowIndicator: true,
+    eventDrop: function(info) {
+      if (!confirm("Are you sure about this change?")) {
+        info.revert();
+      } else {
+        // Save the change...
+        var slotData = {
+            "pk": info.event.id,
+            "start": info.event.start.toJSON(),
+            "end": info.event.end.toJSON(),
+            "user": info.event.extendedProps.userId,
+            "csrfmiddlewaretoken": csrf.val(),
+          };
+        if (info.newResource) {
+          slotData['user'] = info.newResource.id;
+        };
+        $.ajax({
+          url: '{% url "change_scheduler_slot_date" %}'+info.event.id,
+          data: slotData,
+          type: "POST",
+          dataType: 'json',
+          success: function(data) {
+            if (!data.form_is_valid) {
+              Swal.fire(
+                'Failed to modify',
+                'Something went wrong. Please check the data entered.',
+                'warning'
+              );    
+              info.revert();
+            } else {
+              calendar.refetchEvents();
+            }
+          }
+        });
+      }
+    },
+    eventResize: function(info) {
+      if (!confirm("Are you sure about this change?")) {
+        info.revert();
+      } else {
+        // Save the change...
+        var slotData = {
+            "pk": info.event.id,
+            "start": info.event.start.toJSON(),
+            "end": info.event.end.toJSON(),
+            "user": info.event.extendedProps.userId,
+            "csrfmiddlewaretoken": csrf.val(),
+          };
+        $.ajax({
+          url: '{% url "change_scheduler_slot_date" %}'+info.event.id,
+          data: slotData,
+          type: "POST",
+          dataType: 'json',
+          success: function(data) {
+            if (!data.form_is_valid) {
+              Swal.fire(
+                'Failed to modify',
+                'Something went wrong. Please check the data entered.',
+                'warning'
+              );    
+              info.revert();
+            } else {
+              location.reload();
+            }
+          }
+        });
+      }
+    },
   });
 
 calendar.render();

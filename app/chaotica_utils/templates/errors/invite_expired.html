@@ -1,0 +1,36 @@
+{% extends "base_card.html" %}
+{% load widget_tweaks %}
+{% load i18n static %}
+{% load crispy_forms_tags %}
+
+{% block head_title %}Invitation Expired{% endblock head_title %}
+
+
+{% block left_col_content %}
+
+
+<div class="auth-form-box">
+  <div class="text-center mb-7">
+    <a class="d-flex flex-center text-decoration-none mb-4" href="{% url 'home' %}">
+      <div class="d-flex align-items-center fw-bolder fs-5 d-inline-block">
+        <img src="{% static 'assets/img/icons/logo.png' %}" alt="chaotica" width="58" />
+      </div>
+    </a>    
+    <h3 class="text-1000">Sign Up</h3>
+    <p class="text-700">Create your account today</p>
+  </div>
+  
+
+  <div class="alert alert-outline-danger m-3 mb-7" role="alert">
+    Sorry, your invitation has expired.
+  </div>
+  
+  <div class="text-center">
+    <a class="fs--1 fw-bold" href="{% url 'login' %}">
+      Sign in to an existing account
+    </a>
+  </div>
+
+</div>
+
+{% endblock left_col_content %}
