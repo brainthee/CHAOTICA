@@ -7,5 +7,5 @@ from .phase import Phase
 
 from .skill import Skill, SkillCategory, UserSkill
 
-from .timeslot import TimeSlot
+from .timeslot import TimeSlot, TimeSlotType
 from .orgunit import OrganisationalUnit, OrganisationalUnitMember

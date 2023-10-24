@@ -20,7 +20,7 @@ from dateutil.relativedelta import relativedelta
 from phonenumber_field.modelfields import PhoneNumberField
 from django_countries.fields import CountryField
 from .tasks import task_send_notifications
-from jobtracker.enums import TimeSlotType
+from jobtracker.enums import TimeSlotEnumType
 from business_duration import businessDuration
 from django.template.loader import render_to_string
 from django.core.mail import send_mail
@@ -455,14 +455,14 @@ class LeaveRequest(models.Model):
     
     def overlaps_work(self):
         from jobtracker.models.timeslot import TimeSlot
-        return TimeSlot.objects.filter(user=self.user, slotType=TimeSlotType.DELIVERY,
+        return TimeSlot.objects.filter(user=self.user, slotType=TimeSlotEnumType.DELIVERY,
             start__lte=self.end_date,
             end__gte=self.start_date).exists()
     
     def overlaps_confirmed_work(self):
         from jobtracker.models.timeslot import TimeSlot
         from jobtracker.enums import PhaseStatuses
-        return TimeSlot.objects.filter(user=self.user, slotType=TimeSlotType.DELIVERY,
+        return TimeSlot.objects.filter(user=self.user, slotType=TimeSlotEnumType.DELIVERY,
             phase__status__gte=PhaseStatuses.SCHEDULED_CONFIRMED, 
             start__lte=self.end_date,
             end__gte=self.start_date).exists()
@@ -566,7 +566,7 @@ class LeaveRequest(models.Model):
             # Lets add the timeslot...
             TimeSlot.objects.get_or_create(
                 user=self.user, start=self.start_date, end=self.end_date,
-                slotType=TimeSlotType.LEAVE
+                slotType=TimeSlotEnumType.LEAVE
             )
             self.send_approved_notification()
     
@@ -597,8 +597,8 @@ class LeaveRequest(models.Model):
             # Lets delete the timeslot...
             if TimeSlot.objects.filter(
                 user=self.user, start=self.start_date, end=self.end_date,
-                slotType=TimeSlotType.LEAVE).exists():
+                slotType=TimeSlotEnumType.LEAVE).exists():
                 TimeSlot.objects.filter(
                 user=self.user, start=self.start_date, end=self.end_date,
-                slotType=TimeSlotType.LEAVE).delete()
+                slotType=TimeSlotEnumType.LEAVE).delete()
             self.send_cancelled_notification()
