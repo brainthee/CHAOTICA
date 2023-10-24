@@ -8,6 +8,7 @@ from jobtracker.enums import UserSkillRatings
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.conf import settings
+from django.db.models import Q
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 from simple_history.models import HistoricalRecords
@@ -21,6 +22,8 @@ from django_countries.fields import CountryField
 from .tasks import task_send_notifications
 from jobtracker.enums import TimeSlotType
 from business_duration import businessDuration
+from django.template.loader import render_to_string
+from django.core.mail import send_mail
 
 
 def get_sentinel_user():
@@ -100,6 +103,43 @@ class Language(models.Model):
 
     def __str__(self):
         return '{}'.format(self.display_name)
+    
+class UserInvitation(models.Model):
+    invited_email = models.EmailField(verbose_name="Email Address", max_length=255, unique=True)
+    accepted = models.BooleanField(verbose_name="Accepted", help_text="Has the invitation been accepted", default=False)
+    invite_id = models.UUIDField(verbose_name="Invitation ID", default=uuid.uuid4)
+    sent = models.DateTimeField(null=True, blank=True)
+    invited_by = models.ForeignKey(settings.AUTH_USER_MODEL,
+        related_name='users_invited',
+        null=True, blank=True,
+        on_delete=models.PROTECT,
+    )
+
+    def is_expired(self):
+        expiry_date = self.sent - timedelta(days=settings.USER_INVITE_EXPIRY)
+        return expiry_date <= timezone.now()    
+    
+    def get_absolute_url(self):
+        return reverse('signup', kwargs={'invite_id': self.invite_id})
+    
+    def send_email(self):
+        from .utils import ext_reverse
+        ## Email notification
+        context = {}
+        context['SITE_DOMAIN'] = settings.SITE_DOMAIN
+        context['SITE_PROTO'] = settings.SITE_PROTO
+        context['title'] = "You're invited to Chaotica"
+        context['message'] = "You've been invited to join Chaotica - (Centralised Hub for Assigning Operational Tasks, Interactive Calendaring and Alerts). Follow the link below to accept the invitation and setup your account."
+        context['action_link'] = ext_reverse(self.get_absolute_url())
+        msg_html = render_to_string("emails/user_invite.html", context)
+        send_mail(  
+            context['title'], context['message'], None, [self.invited_email], html_message=msg_html,
+        )
+
+        self.sent = timezone.now()
+        self.save()
+
+
 
 
 class User(AbstractUser):
@@ -107,6 +147,7 @@ class User(AbstractUser):
                             related_name="users_managed", null=True, blank=True)
     acting_manager = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET(get_sentinel_user),
                             related_name="users_acting_managed", null=True, blank=True)
+    pref_timezone = models.CharField(verbose_name="Time Zone", max_length=255, null=True, blank=True, default="UTC")
     job_title = models.CharField(verbose_name="Job Title", max_length=255, null=True, blank=True, default="")
     location = models.CharField(verbose_name="Location", max_length=255, null=True, blank=True, default="")
     external_id = models.CharField(verbose_name="External ID", db_index=True, max_length=255, null=True, blank=True, default="")
@@ -225,14 +266,34 @@ class User(AbstractUser):
             self.groups.add(g_admin)
         return super().save(*args, **kwargs)
     
+    def services_can_lead(self):
+        from jobtracker.models import Service
+
+        return Service.objects.filter(
+            Q(skillsRequired__in=self.get_skills_specialist()) |
+            Q(skillsRequired__in=self.get_skills_alone())
+        )
+    
+    def services_can_contribute(self):
+        from jobtracker.models import Service
+
+        return Service.objects.filter(
+            Q(skillsRequired__in=self.get_skills_specialist()) |
+            Q(skillsRequired__in=self.get_skills_alone()) |
+            Q(skillsRequired__in=self.get_skills_support())
+        )
+    
     def get_skills_specialist(self):
-        return self.skills.filter(rating=UserSkillRatings.SPECIALIST)
+        from jobtracker.models import Skill
+        return Skill.objects.filter(pk__in=self.skills.filter(rating=UserSkillRatings.SPECIALIST).values("skill")).distinct()
     
     def get_skills_alone(self):
-        return self.skills.filter(rating=UserSkillRatings.CAN_DO_ALONE)
+        from jobtracker.models import Skill
+        return Skill.objects.filter(pk__in=self.skills.filter(rating=UserSkillRatings.CAN_DO_ALONE).values("skill")).distinct()
     
     def get_skills_support(self):
-        return self.skills.filter(rating=UserSkillRatings.CAN_DO_WITH_SUPPORT)
+        from jobtracker.models import Skill
+        return Skill.objects.filter(pk__in=self.skills.filter(rating=UserSkillRatings.CAN_DO_WITH_SUPPORT).values("skill")).distinct()
     
     def __str__(self):
         if self.first_name and self.last_name:

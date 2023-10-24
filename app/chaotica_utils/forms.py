@@ -1,13 +1,14 @@
 from django.contrib.auth.forms import UserCreationForm
 from django.utils import timezone
 from django import forms
-from .models import LeaveRequest, User, Group
+from .models import LeaveRequest, User, Group, UserInvitation
 from crispy_forms.helper import FormHelper
 from crispy_forms.bootstrap import FormActions,PrependedText, FieldWithButtons, StrictButton, InlineField, Accordion, AccordionGroup
 from crispy_forms.layout import Layout, Row, Column, Field, Div, Submit, Button, HTML
 from crispy_bootstrap5.bootstrap5 import FloatingField
 from constance.forms import ConstanceForm
 from dal import autocomplete
+import pytz
 from django.conf import settings
 from bootstrap_datepicker_plus.widgets import TimePickerInput, DatePickerInput, DateTimePickerInput
 from django.core.files.images import get_image_dimensions
@@ -74,15 +75,41 @@ class LeaveRequestForm(forms.ModelForm):
         model = LeaveRequest
         fields = ('start_date', 'end_date', 'type_of_leave', 'notes',)
 
+class InviteUserForm(forms.ModelForm):
+    invited_email = forms.EmailField(required=True)
+
+    def __init__(self, *args, **kwargs):
+        super(InviteUserForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.helper.form_tag = False
+        self.helper.layout = Layout(
+            Row(
+                Div(FloatingField('invited_email'),
+                        css_class="input-group input-group-dynamic"),
+            ),
+            Div(StrictButton("Invite User", type="submit", 
+                    css_class="btn btn-primary w-100 mb-3"),
+                css_class="button-row d-flex mt-4"),
+        )
+
+    class Meta:
+        model = UserInvitation
+        fields = ('invited_email',)
+
+
 class ChaoticaUserForm(UserCreationForm):
     first_name = forms.CharField(max_length=30, required=True)
     last_name = forms.CharField(max_length=30, required=True)
     email = forms.EmailField(required=True)
 
     def __init__(self, *args, **kwargs):
+        self.invite = kwargs.pop('invite', None)
         super(ChaoticaUserForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
         self.fields['username'].widget.attrs.pop("autofocus", None)
+        if self.invite:
+            self.fields['email'].initial = self.invite.invited_email
+            self.fields['email'].disabled = True
         self.helper.layout = Layout(
             Row(
                 Column(Div(FloatingField('first_name'),
@@ -153,6 +180,9 @@ class ProfileBasicForm(forms.ModelForm):
     profile_image = forms.FileField(
         label="Profile Image",
     )
+    pref_timezone = forms.ChoiceField(
+        choices=[(x, x) for x in pytz.common_timezones],
+        widget=autocomplete.ModelSelect2())
 
     def __init__(self, *args, **kwargs):
         super(ProfileBasicForm, self).__init__(*args, **kwargs)
@@ -195,6 +225,8 @@ class ProfileBasicForm(forms.ModelForm):
             Row(
                 Column(Div(Field('languages'),
                         css_class="")),
+                Column(Div(Field('pref_timezone'),
+                        css_class="")),
             ),
         )
 
@@ -203,7 +235,7 @@ class ProfileBasicForm(forms.ModelForm):
         widgets = {
             'languages': autocomplete.ModelSelect2Multiple(),
         }
-        fields = ('first_name', 'last_name', 'profile_image', 'email', 'phone_number', 'job_title', 'show_help', 'location', 'languages','contracted_leave', 'contracted_leave_renewal')
+        fields = ('first_name', 'last_name', 'profile_image', 'pref_timezone', 'email', 'phone_number', 'job_title', 'show_help', 'location', 'languages','contracted_leave', 'contracted_leave_renewal')
 
 
     def clean_profile_image(self):

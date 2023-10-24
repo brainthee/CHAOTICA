@@ -13,13 +13,13 @@ from bootstrap_datepicker_plus.widgets import TimePickerInput, DatePickerInput, 
 
 
 class SchedulerFilter(forms.Form):
-    skills_can_do_alone = forms.ModelMultipleChoiceField(required=False,
+    skills_specialist = forms.ModelMultipleChoiceField(required=False, label="Specialist",
                                     queryset=Skill.objects.all(),
                                     widget=autocomplete.ModelSelect2Multiple(),)
-    skills_can_do_support = forms.ModelMultipleChoiceField(required=False,
+    skills_can_do_alone = forms.ModelMultipleChoiceField(required=False, label="Can Do Alone",
                                     queryset=Skill.objects.all(),
                                     widget=autocomplete.ModelSelect2Multiple(),)
-    skills_specialist = forms.ModelMultipleChoiceField(required=False,
+    skills_can_do_support = forms.ModelMultipleChoiceField(required=False, label="Can Do With Support",
                                     queryset=Skill.objects.all(),
                                     widget=autocomplete.ModelSelect2Multiple(),)
     services = forms.ModelMultipleChoiceField(required=False,
@@ -45,24 +45,24 @@ class SchedulerFilter(forms.Form):
         self.helper.layout = Layout(
             Row(
                 Column(
-                    Reset("reset", "Reset",  css_class="btn-phoenix-secondary"),
+                    # Reset("reset-button", "Reset",  css_class="btn-phoenix-secondary"),
                 css_class="col"),
                 Column(
                     Submit("apply", 'Apply', css_class="btn-phoenix-success"),
                 css_class="col-md-auto"),
             ),
             Accordion(
-                AccordionGroup('Date Filter',
-                    'from_date',
-                    'to_date',
+                # AccordionGroup('Date Filter',
+                #     'from_date',
+                #     'to_date',
+                # ),
+                AccordionGroup('Users Filter',
+                    Field('users', css_class="extra"),
                 ),
                 AccordionGroup('Skills Filter',
                     Field('skills_specialist', css_class="extra"),
                     Field('skills_can_do_alone', css_class="extra"),
                     Field('skills_can_do_support', css_class="extra"),
-                ),
-                AccordionGroup('Users Filter',
-                    Field('users', css_class="extra"),
                 ),
                 AccordionGroup('Service Filter',
                     Field('services', css_class="extra"),
@@ -307,6 +307,53 @@ class CreateTimeSlotModalForm(forms.ModelForm):
             'slotType',
             # 'deliveryRole',
             'is_onsite',
+            'start',
+            'end',
+            )
+
+
+class ChangeTimeSlotDateModalForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(ChangeTimeSlotDateModalForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        for fieldname in self.fields:
+            self.fields[fieldname].help_text = None
+        # if self.instance.phase:
+        #     delete_button = StrictButton("Delete", type="button", 
+        #         data_url=reverse('job_slot_delete', kwargs={"slug":self.instance.phase.job.slug, "pk":self.instance.pk}),
+        #         css_class="btn btn-danger js-load-modal-form btn-outline-danger me-auto mb-0")
+        # else:
+        #     delete_button = None
+        self.fields['user'].widget = forms.HiddenInput()
+        self.fields['start'].widget = DateTimePickerInput()
+        self.fields['end'].widget = DateTimePickerInput()
+        self.helper.layout = Layout(
+            Field('user', type="hidden"),
+            Div(
+                Row(
+                    Column(Div(Field('start'),
+                            css_class="input-group input-group-dynamic")),
+                    Column(Div(Field('end'),
+                            css_class="input-group input-group-dynamic")),
+                ),
+                css_class='card-body p-3'),
+            Div(
+                Div(
+                    # delete_button,
+                    StrictButton("Save", type="submit", 
+                        css_class="btn bg-gradient-success ms-auto mb-0"),
+                    css_class="button-row d-flex"),
+                css_class="card-footer pt-0 p-3"),
+        )
+
+    class Meta:
+        model = TimeSlot
+        widgets = {
+          'start': DateTimePickerInput(),
+          'end': DateTimePickerInput(),
+        }
+        fields = (
+            'user',
             'start',
             'end',
             )

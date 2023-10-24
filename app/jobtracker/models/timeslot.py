@@ -68,6 +68,8 @@ class TimeSlot(models.Model):
             "start": self.start,
             "end": self.end,
             "url": url,
+            "id": self.pk,
+            "userId": self.user.pk,
             "color": self.get_schedule_slot_colour(),
         }
     

@@ -75,6 +75,8 @@ CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 GLOBAL_GROUP_PREFIX = "Global: "
 DEFAULT_HOURS_IN_DAY = os.environ.get("DEFAULT_HOURS_IN_DAY", default=7.5)
 LEAVE_DAYS_NOTICE = os.environ.get("LEAVE_DAYS_NOTICE", default=14) # Two weeks notice
+USER_INVITE_EXPIRY = os.environ.get("USER_INVITE_EXPIRY", default=7)
+USER_INVITE_ONLY = os.environ.get("USER_INVITE_ONLY", default=True)
 
 CONSTANCE_BACKEND = 'constance.backends.database.DatabaseBackend'
 CONSTANCE_IGNORE_ADMIN_VERSION_CHECK = True

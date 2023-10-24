@@ -82,7 +82,9 @@
                     <td class="py-2 d-none d-sm-block pe-sm-2">:</td>
                     <td class="py-2">
                         <p class="ps-6 ps-sm-0 fw-semi-bold mb-0">
-                            
+                          {% for skill in service.skillsRequired.all %}
+                          {% include 'partials/skill/skill_badge.html' with skill=skill %}
+                          {% endfor %}                            
                         </p>
                     </td>
                   </tr>
@@ -98,7 +100,9 @@
                     <td class="py-2 d-none d-sm-block pe-sm-2">:</td>
                     <td class="py-2">
                         <p class="ps-6 ps-sm-0 fw-semi-bold mb-0">
-                            
+                          {% for skill in service.skillsDesired.all %}
+                          {% include 'partials/skill/skill_badge.html' with skill=skill %}
+                          {% endfor %}                                      
                         </p>
                     </td>
                   </tr>

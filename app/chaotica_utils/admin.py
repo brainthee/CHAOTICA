@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin, GroupAdmin
 from guardian.admin import GuardedModelAdmin
-from .models import User, UserCost, Notification, Group, Language, LeaveRequest, HolidayCountry, Holiday
+from .models import User, UserCost, UserInvitation, Notification, Group, Language, LeaveRequest, HolidayCountry, Holiday
 
 class CustomUserAdmin(GuardedModelAdmin):
     fieldsets = (
@@ -32,6 +32,10 @@ admin.site.register(User, CustomUserAdmin)
 @admin.register(UserCost)
 class UserCostAdmin(admin.ModelAdmin):
     list_display = ["user", "effective_from", "cost_per_hour"]
+
+@admin.register(UserInvitation)
+class UserCostAdmin(admin.ModelAdmin):
+    list_display = ["invited_email", "sent", "accepted", "invited_by"]
 
 
 @admin.register(Notification)

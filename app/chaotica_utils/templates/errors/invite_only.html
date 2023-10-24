@@ -3,29 +3,9 @@
 {% load i18n static %}
 {% load crispy_forms_tags %}
 
-{% block head_title %}Signup{% endblock head_title %}
-
-{% block alerts %}
-  {% if form.errors %}
-  {{ form.errors }}
-  <div class="alert alert-outline-danger m-3" role="alert">
-      <strong>Danger!</strong> 
-      There was a problem with your submission.
-  </div>
-  {% endif %}
-{% endblock alerts %}
+{% block head_title %}Invite Only{% endblock head_title %}
 
 {% block left_col_content %}
-
-{% if new_install %}
-<div class="alert alert-outline-info m-3" role="alert">
-  <strong>New Install</strong>
-  <p class="mb-0">
-    Welcome! Sign up for a new user account, you will automatically be given administrative privileges. 😀
-  </p>
-</div>
-{% endif %}
-
 
 <div class="auth-form-box">
   <div class="text-center mb-7">
@@ -38,7 +18,9 @@
     <p class="text-700">Create your account today</p>
   </div>
   
-  {% crispy form %}
+  <div class="alert alert-outline-warning mb-7" role="alert">
+    Sorry, this instance is invite only.
+  </div>
   
 <div class="text-center">
   <a class="fs--1 fw-bold" href="{% url 'login' %}">

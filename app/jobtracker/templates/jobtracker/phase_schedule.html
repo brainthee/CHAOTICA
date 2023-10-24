@@ -97,6 +97,7 @@ var calendar = new FullCalendar.Calendar(calendarEl, {
             buttonText: '10 days'
         }
     },
+    timeZone: '{{ user.pref_timezone }}', // the default (unnecessary to specify)
     resourceAreaHeaderContent: 'Users',
     displayEventTime: false,
     resources: '{% url 'view_phase_schedule_members' job.slug phase.slug %}',

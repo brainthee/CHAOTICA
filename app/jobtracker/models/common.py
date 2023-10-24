@@ -1,13 +1,15 @@
 from django.db import models
-from ..enums import JobStatuses, PhaseStatuses, FeedbackType, LinkType
-from ..models.skill import Skill
+from ..enums import JobStatuses, PhaseStatuses, FeedbackType, LinkType, UserSkillRatings
+from ..models.skill import Skill, UserSkill
 from ..models.phase import Phase
 from django.conf import settings
+from django.db.models import Q
 from django.utils.text import slugify
 from django.urls import reverse
 from simple_history.models import HistoricalRecords
 from django.db.models import JSONField
 from django_bleach.models import BleachField
+from chaotica_utils.models import User
 
 
 class Link(models.Model):
@@ -53,6 +55,23 @@ class Service(models.Model):
     
     def __str__(self):
         return self.name
+    
+    def users_can_conduct(self):
+        # Return users who have a userskill 
+        return User.objects.filter(
+            skills__in=UserSkill.objects.filter(
+                Q(rating=UserSkillRatings.CAN_DO_ALONE) | 
+                Q(rating=UserSkillRatings.CAN_DO_WITH_SUPPORT) | 
+                Q(rating=UserSkillRatings.SPECIALIST),
+                skill__in=self.skillsRequired.all()))
+    
+    def users_can_lead(self):
+        # Return users who have a userskill 
+        return User.objects.filter(
+            skills__in=UserSkill.objects.filter(
+                Q(rating=UserSkillRatings.CAN_DO_ALONE) | 
+                Q(rating=UserSkillRatings.SPECIALIST),
+                skill__in=self.skillsRequired.all()))
         
     def get_absolute_url(self):
         if not self.slug:

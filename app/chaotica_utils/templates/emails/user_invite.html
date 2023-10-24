@@ -1,0 +1,16 @@
+{% extends 'email_base.html' %}
+
+{% block title %}
+You're invited to Chaotica
+{% endblock title %}
+
+{% block content %}
+You've been invited to join Chaotica - (Centralised Hub for Assigning Operational Tasks, Interactive Calendaring and Alerts). Follow the link below to accept the invitation and setup your account.
+{% endblock content %}
+
+{% block action_block %}
+<a href="{{ action_link }}" 
+  style="color: #ffffff; font-size: 16px; font-family: Helvetica, Arial, sans-serif; text-decoration: none; border-radius: 6px; line-height: 20px; display: block; font-weight: 700 !important; white-space: nowrap; background-color: #0d6efd; padding: 12px; border: 1px solid #0d6efd;">
+  Accept Invitation
+</a>
+{% endblock action_block %}
