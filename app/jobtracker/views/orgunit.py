@@ -94,7 +94,7 @@ def organisationalunit_review_join_request(request, slug, member_pk):
                                 "Membership Accepted", "Your request to join "+org_unit.name+" has been accepted", 
                                 "emails/orgunit/accepted.html", orgUnit=org_unit, membership=membership)
             
-            task_send_notifications.delay(notice, User.objects.filter(pk=membership.member.pk))
+            task_send_notifications(notice, User.objects.filter(pk=membership.member.pk))
             data['form_is_valid'] = True
 
         elif request.POST.get('user_action') == "reject_action":
@@ -106,7 +106,7 @@ def organisationalunit_review_join_request(request, slug, member_pk):
                                 "Membership Rejected", "Your request to join "+org_unit.name+" has been denied", 
                                 "emails/orgunit/rejected.html", orgUnit=org_unit, membership=membership)
             
-            task_send_notifications.delay(notice, User.objects.filter(pk=membership.member.pk))
+            task_send_notifications(notice, User.objects.filter(pk=membership.member.pk))
             data['form_is_valid'] = True
         else:
             # invalid choice...

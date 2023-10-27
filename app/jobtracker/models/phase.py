@@ -299,7 +299,7 @@ class Phase(models.Model):
                 NotificationTypes.PHASE, 
                 "Phase Update - Schedule Confirmed", "The schedule for this phase is confirmed.", 
                 "emails/phase/SCHEDULED_CONFIRMED.html", phase=self)
-            task_send_notifications.delay(notice, users_to_notify)
+            task_send_notifications(notice, users_to_notify)
         
         elif target_status == PhaseStatuses.PRE_CHECKS:              
             # Notify project team
@@ -308,7 +308,7 @@ class Phase(models.Model):
                 NotificationTypes.PHASE, 
                 "Phase Update - Ready for Pre-Checks", "Ready for Pre-checks", 
                 "emails/phase/PRE_CHECKS.html", phase=self)
-            task_send_notifications.delay(notice, users_to_notify)
+            task_send_notifications(notice, users_to_notify)
         
         elif target_status == PhaseStatuses.CLIENT_NOT_READY:          
             # Notify project team
@@ -317,7 +317,7 @@ class Phase(models.Model):
                 NotificationTypes.PHASE, 
                 "Phase Update - Client Not Ready", "Ready for Pre-checks", 
                 "emails/phase/CLIENT_NOT_READY.html", phase=self)
-            task_send_notifications.delay(notice, users_to_notify)
+            task_send_notifications(notice, users_to_notify)
         
         elif target_status == PhaseStatuses.READY_TO_BEGIN:        
             # Notify project team
@@ -326,7 +326,7 @@ class Phase(models.Model):
                 NotificationTypes.PHASE, 
                 "Phase Update - Ready To Begin!", "Checks have been carried out and the phase is ready to begin.", 
                 "emails/phase/READY_TO_BEGIN.html", phase=self)
-            task_send_notifications.delay(notice, users_to_notify)
+            task_send_notifications(notice, users_to_notify)
         
         elif target_status == PhaseStatuses.IN_PROGRESS:        
             # Notify project team
@@ -335,7 +335,7 @@ class Phase(models.Model):
                 NotificationTypes.PHASE, 
                 "Phase Update - In Progress", "The phase has started", 
                 "emails/phase/IN_PROGRESS.html", phase=self)
-            task_send_notifications.delay(notice, users_to_notify)
+            task_send_notifications(notice, users_to_notify)
         
         elif target_status == PhaseStatuses.PENDING_TQA:        
             # Notify qa team
@@ -347,7 +347,7 @@ class Phase(models.Model):
                 NotificationTypes.PHASE, 
                 "Phase Update - Ready for Tech QA", "The phase is ready for Technical QA", 
                 "emails/phase/QA_TECH.html", phase=self)
-            task_send_notifications.delay(notice, users_to_notify)
+            task_send_notifications(notice, users_to_notify)
         
         elif target_status == PhaseStatuses.QA_TECH_AUTHOR_UPDATES:        
             users_to_notify = User.objects.filter(pk=self.report_author.pk)
@@ -355,7 +355,7 @@ class Phase(models.Model):
                 NotificationTypes.PHASE, 
                 "Phase Update - Requires Author Updates", "The report for this phase requires author updates.", 
                 "emails/phase/QA_TECH_AUTHOR_UPDATES.html", phase=self)
-            task_send_notifications.delay(notice, users_to_notify)
+            task_send_notifications(notice, users_to_notify)
         
         elif target_status == PhaseStatuses.PENDING_PQA:        
             # Notify qa team
@@ -367,7 +367,7 @@ class Phase(models.Model):
                 NotificationTypes.PHASE, 
                 "Phase Update - Ready for Pres QA", "The phase is ready for Presentation QA", 
                 "emails/phase/QA_PRES.html", phase=self)
-            task_send_notifications.delay(notice, users_to_notify)
+            task_send_notifications(notice, users_to_notify)
         
         elif target_status == PhaseStatuses.QA_PRES_AUTHOR_UPDATES:        
             users_to_notify = User.objects.filter(pk=self.report_author.pk)
@@ -375,7 +375,7 @@ class Phase(models.Model):
                 NotificationTypes.PHASE, 
                 "Phase Update - Requires Author Updates", "The report for this phase requires author updates.", 
                 "emails/phase/QA_PRES_AUTHOR_UPDATES.html", phase=self)
-            task_send_notifications.delay(notice, users_to_notify)
+            task_send_notifications(notice, users_to_notify)
         
         elif target_status == PhaseStatuses.COMPLETED:        
             # Notify project team
@@ -384,7 +384,7 @@ class Phase(models.Model):
                 NotificationTypes.PHASE, 
                 "Phase Update - Complete", "The phase is ready for delivery", 
                 "emails/phase/COMPLETED.html", phase=self)
-            task_send_notifications.delay(notice, users_to_notify)
+            task_send_notifications(notice, users_to_notify)
         
         elif target_status == PhaseStatuses.POSTPONED:            
             users_to_notify = None
@@ -392,7 +392,7 @@ class Phase(models.Model):
                 NotificationTypes.PHASE, 
                 "Phase Update - Postponed", "This phase has been postponed!", 
                 "emails/phase/POSTPONED.html", phase=self)
-            task_send_notifications.delay(notice, users_to_notify)
+            task_send_notifications(notice, users_to_notify)
 
     
     def summary(self):

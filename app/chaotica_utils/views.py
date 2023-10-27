@@ -50,7 +50,7 @@ def is_ajax(request):
 def update_holidays(request):
     task_update_holidays()
     return HttpResponse()
-    task_update_holidays.delay()
+    task_update_holidays()
     return HttpResponseRedirect(reverse('home'))
 
 
@@ -76,7 +76,7 @@ def test_notification(request):
         "Test Notification", "This is a test notification. At ease.",
         "emails/test_email.html"
     )
-    task_send_notifications.delay(notice, User.objects.filter(pk=request.user.pk))
+    task_send_notifications(notice, User.objects.filter(pk=request.user.pk))
     return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
 

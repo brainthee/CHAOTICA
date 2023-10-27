@@ -554,7 +554,7 @@ class LeaveRequest(models.Model):
             "Leave Requested - Please review", 
             str(self.user)+" has requested leave. Please review the request", 
             self.EMAIL_TEMPLATE, action_link=ext_reverse(reverse('manage_leave')), leave=self)
-        task_send_notifications.delay(notice, users_to_notify)
+        task_send_notifications(notice, users_to_notify)
 
     
     def send_approved_notification(self):
@@ -566,7 +566,7 @@ class LeaveRequest(models.Model):
             "Leave Approved", 
             "Your leave has been approved!",
             self.EMAIL_TEMPLATE, action_link=ext_reverse(reverse('view_own_leave')), leave=self)
-        task_send_notifications.delay(notice, users_to_notify)
+        task_send_notifications(notice, users_to_notify)
 
     
     def send_declined_notification(self):
@@ -578,7 +578,7 @@ class LeaveRequest(models.Model):
             "Leave DECLINED", 
             "Your leave has been declined. Please contact "+str(self.declined_by)+" for information.",
             self.EMAIL_TEMPLATE, action_link=ext_reverse(reverse('view_own_leave')), leave=self)
-        task_send_notifications.delay(notice, users_to_notify)
+        task_send_notifications(notice, users_to_notify)
 
     
     def send_cancelled_notification(self):
@@ -590,7 +590,7 @@ class LeaveRequest(models.Model):
             "Leave Cancelled", 
             "You have cancelled your leave.",
             self.EMAIL_TEMPLATE, action_link=ext_reverse(reverse('view_own_leave')), leave=self)
-        task_send_notifications.delay(notice, users_to_notify)
+        task_send_notifications(notice, users_to_notify)
     
 
     def authorise(self, approved_by):
