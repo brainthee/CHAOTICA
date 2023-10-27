@@ -20,7 +20,7 @@ def run_tasks(request):
     Returns:
         HttpResponse: A redirect
     """
-    task_progress_job_workflows.delay()
+    task_progress_job_workflows()
     return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
 @login_required

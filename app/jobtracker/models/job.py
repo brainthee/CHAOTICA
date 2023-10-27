@@ -198,7 +198,7 @@ class Job(models.Model):
                 NotificationTypes.JOB, 
                 "Job Pending Scope", "A job has just been marked as ready to scope.", 
                 "emails/job/PENDING_SCOPE.html", job=self)
-            task_send_notifications.delay(notice, users_to_notify)
+            task_send_notifications(notice, users_to_notify)
         
         elif target_status == JobStatuses.PENDING_SCOPING_SIGNOFF:        
             # Notify scoping team
@@ -207,7 +207,7 @@ class Job(models.Model):
                 NotificationTypes.JOB, 
                 "Job Scope Pending Signoff", "A job's scope is ready for signoff.", 
                 "emails/job/PENDING_SCOPING_SIGNOFF.html", job=self)
-            task_send_notifications.delay(notice, users_to_notify)
+            task_send_notifications(notice, users_to_notify)
         
         elif target_status == JobStatuses.SCOPING_COMPLETE:        
             # Notify scheduling team
@@ -216,7 +216,7 @@ class Job(models.Model):
                 NotificationTypes.JOB, 
                 "Job Ready to Schedule", "A job's scope has been signed off and is ready for scheduling.", 
                 "emails/job/SCOPING_COMPLETE.html", job=self)
-            task_send_notifications.delay(notice, users_to_notify)
+            task_send_notifications(notice, users_to_notify)
     
 
     def start_date(self):
