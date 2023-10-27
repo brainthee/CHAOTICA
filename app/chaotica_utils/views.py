@@ -468,6 +468,7 @@ def user_invite(request):
 
 @require_http_methods(["POST", "GET"])
 def signup(request, invite_id=None):
+    invite = None
     if request.user.is_authenticated:
         return redirect('home')
     else:
