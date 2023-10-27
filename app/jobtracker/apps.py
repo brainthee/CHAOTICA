@@ -12,8 +12,12 @@ def populate_timeslot_types():
 
     if table_exists("jobtracker_timeslottype"):
         for default_type in DefaultTimeSlotTypes.DEFAULTS:
-            tst, _ = TimeSlotType.objects.get_or_create(
-                **default_type)
+            instance, created = TimeSlotType.objects.get_or_create(
+                pk=default_type['pk'], defaults=default_type)
+            if not created:
+                for attr, value in default_type.items(): 
+                    setattr(instance, attr, value)
+                instance.save()
     
 
 class JobtrackerConfig(AppConfig):

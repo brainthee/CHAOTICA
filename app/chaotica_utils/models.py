@@ -4,7 +4,6 @@ from django.templatetags.static import static
 import uuid, os, random
 from .managers import SystemNoteManager
 from .enums import GlobalRoles, LeaveRequestTypes, NotificationTypes
-from jobtracker.enums import UserSkillRatings
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.conf import settings
@@ -20,7 +19,7 @@ from dateutil.relativedelta import relativedelta
 from phonenumber_field.modelfields import PhoneNumberField
 from django_countries.fields import CountryField
 from .tasks import task_send_notifications
-from jobtracker.enums import TimeSlotEnumType
+from jobtracker.enums import DefaultTimeSlotTypes, UserSkillRatings
 from business_duration import businessDuration
 from django.template.loader import render_to_string
 from django.core.mail import send_mail
@@ -150,6 +149,7 @@ class User(AbstractUser):
     pref_timezone = models.CharField(verbose_name="Time Zone", max_length=255, null=True, blank=True, default="UTC")
     job_title = models.CharField(verbose_name="Job Title", max_length=255, null=True, blank=True, default="")
     location = models.CharField(verbose_name="Location", max_length=255, null=True, blank=True, default="")
+    country = CountryField(default="GB")
     external_id = models.CharField(verbose_name="External ID", db_index=True, max_length=255, null=True, blank=True, default="")
     phone_number = PhoneNumberField(blank=True)
     show_help = models.BooleanField(verbose_name="Show Helpful Tips", help_text="Should help be shown", default=True)
@@ -233,17 +233,48 @@ class User(AbstractUser):
         # Used to decorate avatars
         return "online"
     
-    def get_timeslots(self, start=None, end=None):
+    def get_timeslots(self, start=None, end=None, phase_focus=None):
         from jobtracker.models import TimeSlot
+        from .utils import fullcalendar_to_datetime
         data = []
 
         today = timezone.now().today()
         start_of_week = today - timedelta(days = today.weekday())
         end_of_week = start_of_week + timedelta(days = 6)
+
+        if start:
+            start = fullcalendar_to_datetime(start)
+        if end:
+            end = fullcalendar_to_datetime(end)
+            
         start = start or start_of_week
         end = end or end_of_week
 
         slots = TimeSlot.objects.filter(user=self, start__gte=start, start__lte=end)
+        for slot in slots:
+            slot_json = slot.get_schedule_json()
+            if phase_focus and slot.phase != phase_focus:
+                slot_json['display'] = "background"
+            data.append(slot_json)
+        return data
+    
+    def get_holidays(self, start=None, end=None):
+        from .utils import fullcalendar_to_datetime
+        data = []
+
+        today = timezone.now().today()
+        start_of_week = today - timedelta(days = today.weekday())
+        end_of_week = start_of_week + timedelta(days = 6)
+
+        if start:
+            start = fullcalendar_to_datetime(start)
+        if end:
+            end = fullcalendar_to_datetime(end)
+
+        start = start or start_of_week
+        end = end or end_of_week
+
+        slots = Holiday.objects.filter(country__country=self.country, date__gte=start.date(), date__lte=end.date())
         for slot in slots:
             data.append(slot.get_schedule_json())
         return data
@@ -410,6 +441,16 @@ class Holiday(models.Model):
 
     def __str__(self):
         return '{} ({})'.format(str(self.reason), str(self.country))
+    
+    def get_schedule_json(self):            
+        return {
+            "title": "{} ({})".format(self.reason, str(self.country)),
+            "start": self.date,
+            "end": self.date,
+            "allDay": True,
+            "display": "background",
+            "id": self.pk,
+        }
 
     class Meta:
         ordering = ['-date',]
@@ -454,15 +495,15 @@ class LeaveRequest(models.Model):
         ordering = ['start_date']
     
     def overlaps_work(self):
-        from jobtracker.models.timeslot import TimeSlot
-        return TimeSlot.objects.filter(user=self.user, slotType=TimeSlotEnumType.DELIVERY,
+        from jobtracker.models.timeslot import TimeSlotType, TimeSlot
+        return TimeSlot.objects.filter(user=self.user, slot_type=TimeSlotType.get_builtin_object(DefaultTimeSlotTypes.DELIVERY),
             start__lte=self.end_date,
             end__gte=self.start_date).exists()
     
     def overlaps_confirmed_work(self):
-        from jobtracker.models.timeslot import TimeSlot
+        from jobtracker.models.timeslot import TimeSlotType, TimeSlot
         from jobtracker.enums import PhaseStatuses
-        return TimeSlot.objects.filter(user=self.user, slotType=TimeSlotEnumType.DELIVERY,
+        return TimeSlot.objects.filter(user=self.user, slot_type=TimeSlotType.get_builtin_object(DefaultTimeSlotTypes.DELIVERY),
             phase__status__gte=PhaseStatuses.SCHEDULED_CONFIRMED, 
             start__lte=self.end_date,
             end__gte=self.start_date).exists()
@@ -553,7 +594,7 @@ class LeaveRequest(models.Model):
     
 
     def authorise(self, approved_by):
-        from jobtracker.models.timeslot import TimeSlot
+        from jobtracker.models.timeslot import TimeSlot, TimeSlotType
         if self.cancelled:
             # Can't auth at this stage
             return False
@@ -566,7 +607,7 @@ class LeaveRequest(models.Model):
             # Lets add the timeslot...
             TimeSlot.objects.get_or_create(
                 user=self.user, start=self.start_date, end=self.end_date,
-                slotType=TimeSlotEnumType.LEAVE
+                slot_type=TimeSlotType.get_builtin_object(DefaultTimeSlotTypes.LEAVE)
             )
             self.send_approved_notification()
     
@@ -586,7 +627,7 @@ class LeaveRequest(models.Model):
 
     
     def cancel(self):
-        from jobtracker.models.timeslot import TimeSlot
+        from jobtracker.models.timeslot import TimeSlot, TimeSlotType
         if not self.cancelled:
             # Set our important fields
             self.cancelled = True
@@ -595,10 +636,9 @@ class LeaveRequest(models.Model):
             self.declined = False
             self.save()
             # Lets delete the timeslot...
-            if TimeSlot.objects.filter(
-                user=self.user, start=self.start_date, end=self.end_date,
-                slotType=TimeSlotEnumType.LEAVE).exists():
-                TimeSlot.objects.filter(
-                user=self.user, start=self.start_date, end=self.end_date,
-                slotType=TimeSlotEnumType.LEAVE).delete()
+            if TimeSlot.objects.filter(user=self.user, start=self.start_date, end=self.end_date,
+                slot_type=TimeSlotType.get_builtin_object(DefaultTimeSlotTypes.LEAVE)).exists():
+                
+                TimeSlot.objects.filter(user=self.user, start=self.start_date, end=self.end_date,
+                slot_type=TimeSlotType.get_builtin_object(DefaultTimeSlotTypes.LEAVE)).delete()
             self.send_cancelled_notification()

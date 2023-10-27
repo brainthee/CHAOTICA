@@ -4,31 +4,36 @@ from celery import Celery
 from celery.result import AsyncResult
 from celery.utils.log import get_task_logger
 from django.db.models import Q
+from django_countries import countries
 from django.utils import timezone
 import pandas as pd
 import holidays
-from pprint import pprint
 
 
 logger = get_task_logger("tasks")
 
 
 @shared_task(track_started=True)
-def task_update_holidays(self):
+def task_update_holidays():
     from .models import Holiday, HolidayCountry
     now = timezone.now().today()
     years = [now.year, now.year+1]
-    countries = HolidayCountry.objects.all()
+    # Lets make sure our countries list is up to date...
+    for code, name in list(countries):
+        HolidayCountry.objects.get_or_create(country=code)
 
-    for country in countries:
-        holiday_days = holidays.CountryHoliday(country.country.code)
-        for subdiv in holiday_days.subdivisions:
-            dates = holidays.CountryHoliday(country=country.country.code, subdiv=subdiv, years=years)
-            for hol, desc in dates.items():
-                db_date, _ = Holiday.objects.get_or_create(date=hol, country=country, reason=desc,)
-                if subdiv not in db_date.subdivs:
-                    db_date.subdivs.append(subdiv)
-                    db_date.save()
+    for country in HolidayCountry.objects.all():
+        try:
+            holiday_days = holidays.CountryHoliday(country.country.code)
+            for subdiv in holiday_days.subdivisions:
+                dates = holidays.CountryHoliday(country=country.country.code, subdiv=subdiv, years=years)
+                for hol, desc in dates.items():
+                    db_date, _ = Holiday.objects.get_or_create(date=hol, country=country, reason=desc,)
+                    if subdiv not in db_date.subdivs:
+                        db_date.subdivs.append(subdiv)
+                        db_date.save()
+        except NotImplementedError:
+            pass
 
 
 @shared_task(track_started=True, serializer="pickle")

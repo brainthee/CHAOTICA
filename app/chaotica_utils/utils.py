@@ -5,6 +5,19 @@ from django.core.mail import send_mail
 from django.conf import settings as django_settings
 from datetime import timedelta
 from uuid import UUID
+import re
+from datetime import datetime
+
+
+def fullcalendar_to_datetime(date):
+    # 2023-10-23T00:00:00+01:00
+    # 2023-10-23T00:00:00+01:00
+    # 2023-10-30T00:00:00Z
+    # 2023-10-30T00:00:00Z
+    datetime_pattern = re.compile(r'(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})')
+    dt_format = '%Y-%m-%dT%H:%M:%S'
+    return datetime.strptime(datetime_pattern.search(date).group(), dt_format)
+
 
 def is_valid_uuid(uuid_to_test, version=4):
     """

@@ -6,7 +6,7 @@ CHAOTICA stands for: **C**entralised **H**ub for **A**ssigning **O**perational *
 
 It is a Django based engagement life-cycle management tool. Primarily geared to security testing teams.
 
-![CHAOTICA Dashboard](media/../app/media/screenshots/dashboard.png "Dashboard")
+![CHAOTICA Dashboard](media/screenshots/dashboard.png "Dashboard")
 
 (Planned) Features:
 
@@ -25,6 +25,8 @@ It is a Django based engagement life-cycle management tool. Primarily geared to 
 ## Roadmap
 
 In time, this will outline what should be expected for version 1 and what will be added later on.
+
+- Combine all scheduling functionality in to the core scheduler (currently delivery is handled separately). This is dependant on figuring out a neat UI to handle delivery and non-delivery timeslots.
 
 ## Support
 

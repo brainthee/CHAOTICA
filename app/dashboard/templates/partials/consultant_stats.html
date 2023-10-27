@@ -1,64 +1,59 @@
 
-<h3>Your Stats</h3>
 <div class="row align-items-center align-content-between">
-   <div class="col-sm-7 col-md-8 col-xxl-8 mb-md-3 mb-lg-0">
-      <div class="row g-0">
-         <div class="col-xxl-6 col-md-4">
-            <div class="d-flex flex-column flex-center align-items-sm-start flex-md-row justify-content-md-between flex-xxl-column p-3 ps-sm-3 ps-md-4 p-md-3 h-100 border-1 border-bottom border-end">
-               <div class="d-flex align-items-center mb-1">
-                  <span class="fa-solid fa-book-open fs--1 me-2 text-primary"></span>
-                  <span class="mb-0 fs--1 text-900">Jobs Participated</span></div>
-               <h3 class="fw-semi-bold ms-xl-3 ms-xxl-0 pe-md-2 pe-xxl-0 mb-0 mb-sm-3">{{ request.user.jobs.all |length }}</h3>
-            </div>
-         </div>
-         <div class="col-xxl-6 col-md-4">
-            <div class="d-flex flex-column flex-center align-items-sm-start flex-md-row justify-content-md-between flex-xxl-column p-3 ps-sm-3 ps-md-4 p-md-3 h-100 border-1 border-bottom border-end-md-0 border-end-xl">
-               <div class="d-flex align-items-center mb-1">
-                  <span class="fa-solid fa-briefcase fs--1 me-2 text-success" data-fa-transform="up-2"></span>
-                  <span class="mb-0 fs--1 text-900">Jobs Led</span></div>
-               <h3 class="fw-semi-bold ms-xl-3 ms-xxl-0 pe-md-2 pe-xxl-0 mb-0 mb-sm-3">{{ request.user.phase_where_project_lead.all |length }}</h3>
-            </div>
-         </div>
-         <div class="col-xxl-6 col-md-4">
-            <div class="d-flex flex-column flex-center align-items-sm-start flex-md-row justify-content-md-between flex-xxl-column p-3 ps-sm-3 ps-md-4 p-md-3 h-100 border-1 border-bottom border-end border-end-md border-end-xl-0">
-               <div class="d-flex align-items-center mb-1">
-                  <span class="fa-solid fa-pen-nib fs--1 me-2 text-info" data-fa-transform="up-2"></span>
-                  <span class="mb-0 fs--1 text-900">Reports Authored</span></div>
-               <h3 class="fw-semi-bold ms-xl-3 ms-xxl-0 pe-md-2 pe-xxl-0 mb-0 mb-sm-3">{{ request.user.phase_where_report_author.all |length }}</h3>
-            </div>
-         </div>
-         <div class="col-xxl-6 col-md-4">
-            <div class="d-flex flex-column flex-center align-items-sm-start flex-md-row justify-content-md-between flex-xxl-column p-3 ps-sm-3 ps-md-4 p-md-3 h-100 border-1 border-end-xl border-bottom border-bottom-xl-0">
-               <div class="d-flex align-items-center mb-1">
-                  <span class="fa-solid fa-microscope fs--1 me-2 text-info-300" data-fa-transform="up-2"></span>
-                  <span class="mb-0 fs--1 text-900">Scoped</span></div>
-               <h3 class="fw-semi-bold ms-xl-3 ms-xxl-0 pe-md-2 pe-xxl-0 mb-0 mb-sm-3">{{ request.user.engagements_that_scoped.all |length }}</h3>
-            </div>
-         </div>
-         <div class="col-xxl-6 col-md-4">
-            <div class="d-flex flex-column flex-center align-items-sm-start flex-md-row justify-content-md-between flex-xxl-column p-3 ps-sm-3 ps-md-4 p-md-3 h-100 border-1 border-end">
-               <div class="d-flex align-items-center mb-1">
-                  <span class="fa-solid fa-glasses fs--1 me-2 text-danger-200" data-fa-transform="up-2"></span>
-                  <span class="mb-0 fs--1 text-900">QA'd</span></div>
-               <h3 class="fw-semi-bold ms-xl-3 ms-xxl-0 pe-md-2 pe-xxl-0 mb-0 mb-sm-3">{{ request.user.techqaed_phases.all |length }}</h3>
-            </div>
-         </div>
-         <div class="col-xxl-6 col-md-4">
-            <div class="d-flex flex-column flex-center align-items-sm-start flex-md-row justify-content-md-between flex-xxl-column p-3 ps-sm-3 ps-md-4 p-md-3 h-100 border-1">
+   <div class="col-6">
+      <div class="d-flex flex-column flex-center align-items-sm-start flex-md-row justify-content-md-between flex-xxl-column p-3 ps-sm-3 ps-md-4 p-md-3 h-100 border-1 border-bottom border-end">
+         <div class="d-flex align-items-center mb-1">
+            <span class="fa-solid fa-book-open fs--1 me-2 text-primary"></span>
+            <span class="mb-0 fs--1 text-900">Jobs Participated</span></div>
+         <h3 class="fw-light ms-xl-3 ms-xxl-0 pe-md-2 pe-xxl-0 mb-0 mb-sm-3">{{ request.user.jobs.all |length }}</h3>
+      </div>
+   </div>
+   <div class="col-6">
+      <div class="d-flex flex-column flex-center align-items-sm-start flex-md-row justify-content-md-between flex-xxl-column p-3 ps-sm-3 ps-md-4 p-md-3 h-100 border-1 border-bottom border-end">
+         <div class="d-flex align-items-center mb-1">
+            <span class="fa-solid fa-briefcase fs--1 me-2 text-success" data-fa-transform="up-2"></span>
+            <span class="mb-0 fs--1 text-900">Jobs Led</span></div>
+         <h3 class="fw-light ms-xl-3 ms-xxl-0 pe-md-2 pe-xxl-0 mb-0 mb-sm-3">{{ request.user.phase_where_project_lead.all |length }}</h3>
+      </div>
+   </div>
+   <div class="col-6">
+      <div class="d-flex flex-column flex-center align-items-sm-start flex-md-row justify-content-md-between flex-xxl-column p-3 ps-sm-3 ps-md-4 p-md-3 h-100 border-1 border-bottom border-end">
+         <div class="d-flex align-items-center mb-1">
+            <span class="fa-solid fa-pen-nib fs--1 me-2 text-info" data-fa-transform="up-2"></span>
+            <span class="mb-0 fs--1 text-900">Reports Authored</span></div>
+         <h3 class="fw-light ms-xl-3 ms-xxl-0 pe-md-2 pe-xxl-0 mb-0 mb-sm-3">{{ request.user.phase_where_report_author.all |length }}</h3>
+      </div>
+   </div>
+   <div class="col-6">
+      <div class="d-flex flex-column flex-center align-items-sm-start flex-md-row justify-content-md-between flex-xxl-column p-3 ps-sm-3 ps-md-4 p-md-3 h-100 border-1 border-bottom border-end">
+         <div class="d-flex align-items-center mb-1">
+            <span class="fa-solid fa-microscope fs--1 me-2 text-info-300" data-fa-transform="up-2"></span>
+            <span class="mb-0 fs--1 text-900">Scoped</span></div>
+         <h3 class="fw-light ms-xl-3 ms-xxl-0 pe-md-2 pe-xxl-0 mb-0 mb-sm-3">{{ request.user.engagements_that_scoped.all |length }}</h3>
+      </div>
+   </div>
+   <div class="col-6">
+      <div class="d-flex flex-column flex-center align-items-sm-start flex-md-row justify-content-md-between flex-xxl-column p-3 ps-sm-3 ps-md-4 p-md-3 h-100 border-1 border-bottom border-end">
+         <div class="d-flex align-items-center mb-1">
+            <span class="fa-solid fa-glasses fs--1 me-2 text-danger-200" data-fa-transform="up-2"></span>
+            <span class="mb-0 fs--1 text-900">QA'd</span></div>
+         <h3 class="fw-light ms-xl-3 ms-xxl-0 pe-md-2 pe-xxl-0 mb-0 mb-sm-3">{{ request.user.techqaed_phases.all |length }}</h3>
+      </div>
+   </div>
+   <div class="col-6">
+      <div class="d-flex flex-column flex-center align-items-sm-start flex-md-row justify-content-md-between flex-xxl-column p-3 ps-sm-3 ps-md-4 p-md-3 h-100 border-1">
 
-            </div>
-         </div>
       </div>
    </div>
 </div>
+
 <script>
   const { getColor, rgbaColor, getData } = window.phoenix.utils;
 </script>
-<div class="row align-items-center align-content-between">
-   <div class="col-sm-12 col-md-6 col-xxl-6 mt-3 my-sm-0">
-      {% include 'partials/tech_feedback_card.html' %}
-   </div>
-   <div class="col-sm-12 col-md-6 col-xxl-6 mt-3 my-sm-0">
-      {% include 'partials/pres_feedback_card.html' %}
-   </div>
- </div>
+
+<div class="row">
+   {% include 'partials/tech_feedback_card.html' %}
+</div>
+<div class="row">
+   {% include 'partials/pres_feedback_card.html' %}
+</div>

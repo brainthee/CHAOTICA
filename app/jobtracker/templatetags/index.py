@@ -39,6 +39,8 @@ def py_date_to_js_date(date):
     if date:
         if isinstance(date, datetime.datetime):
             return str(date.strftime('%Y-%m-%d'))
+        elif isinstance(date, datetime.date):
+            return str(date.strftime('%Y-%m-%d'))
         else:
             # Try and convert it to a datetime...
             return str(datetime.datetime.strptime(date, "%Y-%m-%d").strftime('%Y-%m-%d'))
