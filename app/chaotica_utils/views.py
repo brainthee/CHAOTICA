@@ -471,8 +471,9 @@ def signup(request, invite_id=None):
     if request.user.is_authenticated:
         return redirect('home')
     else:
+        new_install = User.objects.all().count() <= 1
         # Check if we're invite only...
-        if django_settings.USER_INVITE_ONLY:
+        if django_settings.USER_INVITE_ONLY and not new_install:
             if not invite_id or \
                 not is_valid_uuid(invite_id) or \
                 not UserInvitation.objects.filter(invite_id=invite_id).exists():
