@@ -1,8 +1,8 @@
 from django.core.management.base import BaseCommand
 from chaotica_utils.models import User, Group, UserSkillRatings
-from jobtracker.models import TimeSlot, Service, Job, Phase, OrganisationalUnit, Client, Contact, Skill, SkillCategory, OrganisationalUnitMember, UserCertification, UserSkill, Certification
+from jobtracker.models import TimeSlot, TimeSlotType, Service, Job, Phase, OrganisationalUnit, Client, Contact, Skill, SkillCategory, OrganisationalUnitMember, UserCertification, UserSkill, Certification
 from chaotica_utils.enums import UnitRoles
-from jobtracker.enums import TimeSlotDeliveryRole, TimeSlotEnumType
+from jobtracker.enums import TimeSlotDeliveryRole, DefaultTimeSlotTypes
 from django.conf import settings
 import json, random
 from faker import Faker
@@ -223,9 +223,9 @@ class Command(BaseCommand):
                                                         user=usr, phase=phase).exists():
                                 # add a slot
                                 TimeSlot.objects.create(start=ass['starts_at'], end=ass['ends_at'],
-                                                               deliveryRole=TimeSlotDeliveryRole.DELIVERY,
-                                                               slotType=TimeSlotEnumType.DELIVERY,
-                                                                user=usr, phase=phase)
+                                                        deliveryRole=TimeSlotDeliveryRole.DELIVERY,
+                                                        slot_type=TimeSlotType.get_builtin_object(DefaultTimeSlotTypes.DELIVERY),
+                                                        user=usr, phase=phase)
 
 
                 self.stdout.write(

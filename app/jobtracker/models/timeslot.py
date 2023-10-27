@@ -1,6 +1,6 @@
 from django.db import models
 from django.urls import reverse
-from ..enums import TimeSlotDeliveryRole, TimeSlotEnumType, PhaseStatuses, AvailabilityType
+from ..enums import TimeSlotDeliveryRole, PhaseStatuses, AvailabilityType, DefaultTimeSlotTypes
 from ..models.phase import Phase
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericRelation
@@ -15,12 +15,25 @@ class TimeSlotType(models.Model):
     name = models.CharField(max_length=255, unique=True, verbose_name='Name')
     built_in = models.BooleanField(verbose_name="Type is a default type", default=False)
     is_delivery = models.BooleanField(verbose_name="Is a delivery type", default=False)
-    is_working = models.BooleanField(verbose_name="Is working", default=False)
+    is_working = models.BooleanField(verbose_name="Is Working", default=False)
+    is_assignable = models.BooleanField(verbose_name="Is Assignable", default=True)
     availability = models.IntegerField(verbose_name="Availability", help_text="If resource is available or not",
         choices=AvailabilityType.CHOICES, default=AvailabilityType.AVAILABLE)
     
     def __str__(self):
         return "{} - ({})".format(self.name, self.get_availability_display())
+
+    class Meta:
+        verbose_name_plural = "Timeslot Types"
+        ordering = ['name']
+    
+    @classmethod
+    def get_builtin_object(cls, object_pk=DefaultTimeSlotTypes.UNASSIGNED):
+        return TimeSlotType.objects.get(pk=object_pk)
+    
+    @classmethod
+    def get_default_slot_type(cls):
+        return DefaultTimeSlotTypes.UNASSIGNED
 
 
 class TimeSlot(models.Model):
@@ -32,8 +45,8 @@ class TimeSlot(models.Model):
         related_name="timeslots", on_delete=models.CASCADE,
     )
 
-    slot_type = models.ForeignKey(TimeSlotType, related_name="timeslots",
-        null=True, blank=True, on_delete=models.CASCADE
+    slot_type = models.ForeignKey(TimeSlotType, related_name="timeslots", on_delete=models.CASCADE,
+        default=TimeSlotType.get_default_slot_type,
     )
 
     phase = models.ForeignKey(Phase, related_name="timeslots",
@@ -45,23 +58,17 @@ class TimeSlot(models.Model):
     is_onsite = models.BooleanField(verbose_name="Is onsite", 
         help_text="Is this slot onsite", default=False)
     
-    slotType = models.IntegerField(verbose_name="Slot Type", help_text="Type of time",
-        choices=TimeSlotEnumType.CHOICES, default=TimeSlotEnumType.GENERIC)
-    
     @property
     def slug(self):
         if self.phase:
             return self.phase.job.slug
         return None
     
-    
     def get_schedule_title(self):
-        if self.slotType == TimeSlotEnumType.GENERIC or \
-            self.slotType == TimeSlotEnumType.INTERNAL or \
-            self.slotType == TimeSlotEnumType.LEAVE:
-            return TimeSlotEnumType.CHOICES[self.slotType][1]
-        else:
+        if self.slot_type == TimeSlotType.get_builtin_object(DefaultTimeSlotTypes.DELIVERY):
             return str(self)
+        else:
+            return self.slot_type.name
     
 
     def get_schedule_slot_colour(self):
@@ -78,16 +85,22 @@ class TimeSlot(models.Model):
         if not url:
             url = self.get_target_url()
             
-        return {
+        data = {
+            "id": self.pk,
             "title": self.get_schedule_title(),
             "resourceId": self.user.pk,
             "start": self.start,
             "end": self.end,
+            "slot_type_ID": self.slot_type.pk,
+            "slot_type_name": self.slot_type.name,
             "url": url,
-            "id": self.pk,
             "userId": self.user.pk,
             "color": self.get_schedule_slot_colour(),
         }
+        if self.phase:
+            data['deliveryRole'] = self.deliveryRole
+            data['phaseId'] = self.phase.pk
+        return data
     
     def get_schedule_phase_json(self):
         data = {
@@ -97,7 +110,8 @@ class TimeSlot(models.Model):
             "start": self.start,
             "end": self.end,
             "deliveryRole": self.deliveryRole,
-            "slotType": self.slotType,
+            "slot_type_ID": self.slot_type.pk,
+            "slot_type_name": self.slot_type.name,
             "userId": self.user.pk,
             "phaseId": self.phase.pk,
             "color": self.get_schedule_slot_colour(),
@@ -132,26 +146,21 @@ class TimeSlot(models.Model):
 
 
     def __str__(self):
+        # There is no rhyme or reason for this...
         if self.phase:
             confirmed = "Confirmed" if self.is_confirmed() else "Tentative"
             onsite = ", Onsite" if self.is_onsite else ""
             if self.deliveryRole > TimeSlotDeliveryRole.NA:
-                return '{}: {} ({}{})'.format(str(self.phase), self.get_slotType_display(), confirmed, onsite)
+                return '{}: {} ({}{})'.format(str(self.phase), self.slot_type.name, confirmed, onsite)
             else:
-                return '{} ({}{})'.format(str(self.phase), confirmed, onsite)
+                return '{} ({}{})'.format(str(self.phase.get_id()), confirmed, onsite)
         else:
-            return '{}: {}'.format(self.user.get_full_name(), self.start)
+            return '{}: {} ({})'.format(self.user.get_full_name(), self.slot_type.name, self.start)
     
     def get_target_url(self):
-        if self.slotType == TimeSlotEnumType.DELIVERY and self.phase:
+        if self.slot_type == TimeSlotType.get_builtin_object(DefaultTimeSlotTypes.DELIVERY) and self.phase:
             return self.phase.get_absolute_url()
         # Eventually return more useful URLs... but for now, return home.
-        # elif self.slotType == TimeSlotEnumType.GENERIC:
-        #     return ext_reverse(reverse('home'))
-        # elif self.slotType == TimeSlotEnumType.INTERNAL:
-        #     return ext_reverse(reverse('home'))
-        # elif self.slotType == TimeSlotEnumType.LEAVE:
-        #     return ext_reverse(reverse('home'))
         return ext_reverse(reverse('home'))
         
     def delete(self):

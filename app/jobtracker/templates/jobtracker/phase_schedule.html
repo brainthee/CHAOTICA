@@ -85,10 +85,10 @@ var calendar = new FullCalendar.Calendar(calendarEl, {
         center: 'title',
         right: 'resourceTimelineTenDay,resourceTimelineMonth,resourceTimelineYear'
     },
-    {% py_date_to_js_date phase.earliest_scheduled_date as earliest_scheduled_date %}
-    {% if earliest_scheduled_date %}
+    // {% py_date_to_js_date phase.earliest_scheduled_date as earliest_scheduled_date %}
+    // {% if earliest_scheduled_date %}
     initialDate: '{{ earliest_scheduled_date }}',
-    {% endif %}
+    // {% endif %}
     aspectRatio: 1.75,
     views: {
         resourceTimelineTenDay: {
@@ -100,8 +100,9 @@ var calendar = new FullCalendar.Calendar(calendarEl, {
     timeZone: '{{ user.pref_timezone }}', // the default (unnecessary to specify)
     resourceAreaHeaderContent: 'Users',
     displayEventTime: false,
-    resources: '{% url 'view_phase_schedule_members' job.slug phase.slug %}',
-    events: '{% url 'view_phase_schedule_slots' job.slug phase.slug %}',
+    refetchResourcesOnNavigate: true,
+    resources: "{% url 'view_phase_schedule_members' job.slug phase.slug %}",
+    events: "{% url 'view_phase_schedule_slots' job.slug phase.slug %}",
     selectable: true,
     select: function(info) {
       // get the selection info
@@ -116,9 +117,9 @@ var calendar = new FullCalendar.Calendar(calendarEl, {
         );    
       } else {
         var slotData = {
-            "phase": {{ phase.pk }},
+            "phase": "{{ phase.pk }}",
             "deliveryRole": slotType,
-            "slotType": 2,
+            "slot_type": 8, // Matches to DefaultTimeSlotTypes.DELIVERY
             "start": info.start.toJSON(),
             "end": info.end.toJSON(),
             "is_onsite": onsiteCheck,
@@ -132,7 +133,6 @@ var calendar = new FullCalendar.Calendar(calendarEl, {
           dataType: 'json',
           success: function(data) {
             if (data.form_is_valid) {
-
               location.reload();
             } else {
               Swal.fire(
@@ -154,77 +154,90 @@ var calendar = new FullCalendar.Calendar(calendarEl, {
         .appendChild(questionMark);
     },
     eventDrop: function(info) {
-      if (!confirm("Are you sure about this change?")) {
-        info.revert();
-      } else {
-        // Save the change...
-        var slotData = {
-            "pk": info.event.id,
-            "start": info.event.start.toJSON(),
-            "end": info.event.end.toJSON(),
-            "deliveryRole": info.event.extendedProps.deliveryRole,
-            "slotType": info.event.extendedProps.slotType,
-            "user": info.event.extendedProps.userId,
-            "phase": info.event.extendedProps.phaseId,
-            "csrfmiddlewaretoken": csrf.val(),
+      Swal.fire({
+        title: 'Do you want to save the changes?',
+        showCancelButton: true,
+        confirmButtonText: 'Save',
+      }).then((result) => {
+        if (result.isConfirmed) {    
+          // Save the change...
+          var slotData = {
+              "pk": info.event.id,
+              "start": info.event.start.toJSON(),
+              "end": info.event.end.toJSON(),
+              "deliveryRole": info.event.extendedProps.deliveryRole,
+              "slotType": info.event.extendedProps.slotType,
+              "user": info.event.extendedProps.userId,
+              "phase": info.event.extendedProps.phaseId,
+              "csrfmiddlewaretoken": csrf.val(),
+            };
+          if (info.newResource) {
+            slotData['user'] = info.newResource.id;
           };
-        if (info.newResource) {
-          slotData['user'] = info.newResource.id;
-        };
-        $.ajax({
-          url: '{% url "change_job_schedule_slot" job.slug %}/'+info.event.id,
-          data: slotData,
-          type: "POST",
-          dataType: 'json',
-          success: function(data) {
-            if (!data.form_is_valid) {
-              Swal.fire(
-                'Failed to modify',
-                'Something went wrong. Please check the data entered.',
-                'warning'
-              );    
-              info.revert();
-            } else {
-              calendar.refetchEvents();
+          $.ajax({
+            url: '{% url "change_job_schedule_slot" job.slug %}/'+info.event.id,
+            data: slotData,
+            type: "POST",
+            dataType: 'json',
+            success: function(data) {
+              if (!data.form_is_valid) {
+                Swal.fire(
+                  'Failed to modify',
+                  'Something went wrong. Please check the data entered.',
+                  'warning'
+                );    
+                info.revert();
+              } else {
+                calendar.refetchEvents();
+              }
             }
-          }
-        });
-      }
+          });
+        } else {
+          info.revert();
+        }
+      });
+
     },
     eventResize: function(info) {
-      if (!confirm("Are you sure about this change?")) {
-        info.revert();
-      } else {
-        // Save the change...
-        var slotData = {
-            "pk": info.event.id,
-            "start": info.event.start.toJSON(),
-            "end": info.event.end.toJSON(),
-            "deliveryRole": info.event.extendedProps.deliveryRole,
-            "slotType": info.event.extendedProps.slotType,
-            "user": info.event.extendedProps.userId,
-            "phase": info.event.extendedProps.phaseId,
-            "csrfmiddlewaretoken": csrf.val(),
-          };
-        $.ajax({
-          url: '{% url "change_job_schedule_slot" job.slug %}/'+info.event.id,
-          data: slotData,
-          type: "POST",
-          dataType: 'json',
-          success: function(data) {
-            if (!data.form_is_valid) {
-              Swal.fire(
-                'Failed to modify',
-                'Something went wrong. Please check the data entered.',
-                'warning'
-              );    
-              info.revert();
-            } else {
-              location.reload();
+      Swal.fire({
+        title: 'Do you want to save the changes?',
+        showCancelButton: true,
+        confirmButtonText: 'Save',
+      }).then((result) => {
+        if (result.isConfirmed) {  
+          // Save the change...
+          var slotData = {
+              "pk": info.event.id,
+              "start": info.event.start.toJSON(),
+              "end": info.event.end.toJSON(),
+              "deliveryRole": info.event.extendedProps.deliveryRole,
+              "slotType": info.event.extendedProps.slotType,
+              "user": info.event.extendedProps.userId,
+              "phase": info.event.extendedProps.phaseId,
+              "csrfmiddlewaretoken": csrf.val(),
+            };
+          $.ajax({
+            url: '{% url "change_job_schedule_slot" job.slug %}/'+info.event.id,
+            data: slotData,
+            type: "POST",
+            dataType: 'json',
+            success: function(data) {
+              if (!data.form_is_valid) {
+                Swal.fire(
+                  'Failed to modify',
+                  'Something went wrong. Please check the data entered.',
+                  'warning'
+                );    
+                info.revert();
+              } else {
+                location.reload();
+              }
             }
-          }
-        });
-      }
+          });
+        } else {
+          info.revert();
+        }
+      });
     },
     eventClick: function(info) {
       info.jsEvent.preventDefault(); // don't let the browser navigate

@@ -23,9 +23,12 @@ def view_phase_schedule_slots(request, job_slug, slug):
     data = []
     job = get_object_or_404(Job, slug=job_slug)
     phase = get_object_or_404(Phase, job=job, slug=slug)
+    phase_members = phase.team()
     slots = TimeSlot.objects.filter(phase=phase)
-    for slot in slots:
-        data.append(slot.get_schedule_phase_json())
+    for member_slot in phase_members:
+        data = data + member_slot.get_timeslots(
+            start=request.GET.get('start', None),
+            end=request.GET.get('end', None),phase_focus=phase)
     return JsonResponse(data, safe=False)
 
 

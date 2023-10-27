@@ -1,6 +1,6 @@
 from django import forms
 from django.urls import reverse
-from .models import Contact, Job, Feedback, TimeSlot, Client, Phase, OrganisationalUnit, Skill, Service, WorkflowTask, SkillCategory
+from .models import Contact, Job, Feedback, TimeSlot, TimeSlotType, Client, Phase, OrganisationalUnit, Skill, Service, WorkflowTask, SkillCategory
 from chaotica_utils.models import Note, User
 from crispy_forms.helper import FormHelper
 from crispy_forms.bootstrap import StrictButton, Accordion, AccordionGroup
@@ -248,7 +248,7 @@ class FeedbackForm(forms.ModelForm):
         fields = ('body',)
 
 
-class CreateTimeSlotModalForm(forms.ModelForm):
+class NonDeliveryTimeSlotModalForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         start=None
         if 'start' in kwargs:
@@ -260,23 +260,25 @@ class CreateTimeSlotModalForm(forms.ModelForm):
         if 'resource_id' in kwargs:
             resource_id = kwargs.pop('resource_id')
         
-        super(CreateTimeSlotModalForm, self).__init__(*args, **kwargs)
+        super(NonDeliveryTimeSlotModalForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
         for fieldname in self.fields:
             self.fields[fieldname].help_text = None
         self.fields['user'].widget = forms.HiddenInput()
         self.fields['start'].widget = DateTimePickerInput()
         self.fields['end'].widget = DateTimePickerInput()
-        self.fields['start'].initial = start
-        self.fields['end'].initial = end
-        self.fields['user'].initial = User.objects.get(pk=resource_id)
+        if not self.instance.pk:
+            self.fields['start'].initial = start
+            self.fields['end'].initial = end
+            self.fields['user'].initial = User.objects.get(pk=resource_id)
+        self.fields['slot_type'].queryset = TimeSlotType.objects.filter(is_assignable=True)
         self.helper.layout = Layout(
             Field('user', type="hidden"),
             Field('phase', type="hidden"),
-            # Field('slotType', type="hidden"),
+            # Field('slot_type', type="hidden"),
             Div(
                 Row(
-                    Column(Div(FloatingField('slotType'),
+                    Column(Div(FloatingField('slot_type'),
                             css_class="input-group input-group-dynamic")),
                     # Column(Div(Field('is_onsite'),
                     #         css_class="input-group input-group-dynamic")),
@@ -304,7 +306,7 @@ class CreateTimeSlotModalForm(forms.ModelForm):
         fields = (
             'user',
             'phase',
-            'slotType',
+            'slot_type',
             # 'deliveryRole',
             'is_onsite',
             'start',
@@ -359,27 +361,30 @@ class ChangeTimeSlotDateModalForm(forms.ModelForm):
             )
 
 
-class ChangeTimeSlotModalForm(forms.ModelForm):
+class DeliveryChangeTimeSlotModalForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         if 'slug' in kwargs:
             kwargs.pop('slug')
-        super(ChangeTimeSlotModalForm, self).__init__(*args, **kwargs)
+        super(DeliveryChangeTimeSlotModalForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
         for fieldname in self.fields:
             self.fields[fieldname].help_text = None
         self.fields['user'].widget = forms.HiddenInput()
+        
         if self.instance.phase:
             delete_button = StrictButton("Delete", type="button", 
                 data_url=reverse('job_slot_delete', kwargs={"slug":self.instance.phase.job.slug, "pk":self.instance.pk}),
-                css_class="btn btn-danger js-load-modal-form btn-outline-danger me-auto mb-0")
+                css_class="btn js-load-modal-form btn-outline-danger me-auto mb-0")
         else:
             delete_button = None
+
         self.fields['start'].widget = DateTimePickerInput()
         self.fields['end'].widget = DateTimePickerInput()
+        # self.fields['user'].disabled = True
+        # self.fields['phase'].disabled = True
         self.helper.layout = Layout(
             Field('user', type="hidden"),
             Field('phase', type="hidden"),
-            Field('slotType', type="hidden"),
             Div(
                 Row(
                     Column(Div(FloatingField('deliveryRole'),
@@ -411,7 +416,6 @@ class ChangeTimeSlotModalForm(forms.ModelForm):
         fields = (
             'user',
             'phase',
-            'slotType',
             'deliveryRole',
             'is_onsite',
             'start',

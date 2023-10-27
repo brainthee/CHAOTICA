@@ -14,6 +14,7 @@ class CustomUserAdmin(GuardedModelAdmin):
                     'acting_manager',
                     'profile_image',
                     'location',
+                    'country',
                     'phone_number',
                     'languages',
                     'job_title',
@@ -47,4 +48,8 @@ admin.site.register(Group, GroupAdmin)
 admin.site.register(Language)
 admin.site.register(LeaveRequest)
 admin.site.register(HolidayCountry)
-admin.site.register(Holiday)
+
+@admin.register(Holiday)
+class HolidayAdmin(admin.ModelAdmin):
+    list_display = ["country", "date", "reason"]
+    list_filter = ["country"]

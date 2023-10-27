@@ -21,6 +21,10 @@
         <h2 class="mb-2">
           Scheduler
         </h2>
+        <p>
+          The scheduler can be used to view the schedule and edit non-delivery timeslots. 
+          For now; to edit delivery timeslots; use the scheduler within the job.
+        </p>
       </div>
 
       <div class="col-md-auto">
@@ -75,6 +79,7 @@ var urlSearchParams = {}
 for(const entry of urlParams) {
   urlSearchParams[entry[0]] = entry[1];
 }
+// var scrollTime = moment().format("YYYY-MM-DD");
 
 var calendar = new FullCalendar.Calendar(calendarEl, {
     initialView: 'resourceTimelineMonth',
@@ -84,11 +89,10 @@ var calendar = new FullCalendar.Calendar(calendarEl, {
         center: 'title',
         right: 'resourceTimelineTenDay,resourceTimelineMonth,resourceTimelineYear'
     },
-    scrollTime: '08:00',
-    {% py_date_to_js_date request.GET.from_date as from_date %}
-    {% if from_date %}
+    // {% py_date_to_js_date request.GET.from_date as from_date %}
+    // {% if from_date %}
     initialDate: '{{ from_date }}',
-    {% endif %}
+    // {% endif %}
     views: {
         resourceTimelineTenDay: {
             type: 'resourceTimeline',
@@ -97,37 +101,63 @@ var calendar = new FullCalendar.Calendar(calendarEl, {
         }
     },
     displayEventTime: false,
+    refetchResourcesOnNavigate: true,
     resourceAreaHeaderContent: 'Users',
     resources: {
         url: "{% url 'view_scheduler_members' %}",
         method: 'GET',
         extraParams: urlSearchParams,
         failure: function() {
-          alert('there was an error while fetching resources!');
+          Swal.fire({
+            icon: 'error',
+            title: 'Oops...',
+            text: 'Something went wrong getting scheduler members!',
+          })
         },
     },
-    events: {
-        url: "{% url 'view_scheduler_slots' %}",
-        method: 'GET',
-        extraParams: urlSearchParams,
-        failure: function() {
-          alert('there was an error while fetching events!');
+    eventSources: [
+      //   {
+      //     url: "{% url 'view_scheduler_slots' %}",
+      //     method: 'GET',
+      //     extraParams: urlSearchParams,
+      //     failure: function() {
+      //       Swal.fire({
+      //         icon: 'error',
+      //         title: 'Oops...',
+      //         text: 'Something went wrong getting scheduler events!',
+      //       })
+      //     },
+      // }
+        function(info, successCallback, failureCallback) {
+          // lets get members
+          superagent.get("{% url 'view_scheduler_slots' %}")
+            .type('json')
+            .query({
+              start: info.start.toJSON(),
+              end: info.end.toJSON()
+            })
+            .end(function(err, res) {
+
+              if (err) {
+                failureCallback(err);
+              } else {
+                successCallback(res.body)
+              }
+            })
         },
-    },
+    ],
     eventClick: function(info) {
       info.jsEvent.preventDefault(); // don't let the browser navigate
       // Show slot edit modal
-      if (info.event.url) {
-        $.ajax({
-            url: info.event.url,
-            type: 'get',
-            dataType: 'json',
-            success: function(data) {
-                $("#mainModalContent").html(data.html_form);
-                $("#mainModal").modal("show");
-            }
-        });
-      }
+      $.ajax({
+          url: '{% url "change_scheduler_slot" %}'+info.event.id,
+          type: 'get',
+          dataType: 'json',
+          success: function(data) {
+              $("#mainModalContent").html(data.html_form);
+              $("#mainModal").modal("show");
+          }
+      });
     },
     selectable: true,
     editable: true,
@@ -152,74 +182,87 @@ var calendar = new FullCalendar.Calendar(calendarEl, {
         });
     },
     eventDrop: function(info) {
-      if (!confirm("Are you sure about this change?")) {
-        info.revert();
-      } else {
-        // Save the change...
-        var slotData = {
-            "pk": info.event.id,
-            "start": info.event.start.toJSON(),
-            "end": info.event.end.toJSON(),
-            "user": info.event.extendedProps.userId,
-            "csrfmiddlewaretoken": csrf.val(),
+      Swal.fire({
+        title: 'Do you want to save the changes?',
+        showCancelButton: true,
+        confirmButtonText: 'Save',
+      }).then((result) => {
+        if (result.isConfirmed) {
+          // Save the change...
+          var slotData = {
+              "pk": info.event.id,
+              "start": info.event.start.toJSON(),
+              "end": info.event.end.toJSON(),
+              "user": info.event.extendedProps.userId,
+              "csrfmiddlewaretoken": csrf.val(),
+            };
+          if (info.newResource) {
+            slotData['user'] = info.newResource.id;
           };
-        if (info.newResource) {
-          slotData['user'] = info.newResource.id;
-        };
-        $.ajax({
-          url: '{% url "change_scheduler_slot_date" %}'+info.event.id,
-          data: slotData,
-          type: "POST",
-          dataType: 'json',
-          success: function(data) {
-            if (!data.form_is_valid) {
-              Swal.fire(
-                'Failed to modify',
-                'Something went wrong. Please check the data entered.',
-                'warning'
-              );    
-              info.revert();
-            } else {
-              calendar.refetchEvents();
+          $.ajax({
+            url: '{% url "change_scheduler_slot_date" %}'+info.event.id,
+            data: slotData,
+            type: "POST",
+            dataType: 'json',
+            success: function(data) {
+              if (!data.form_is_valid) {
+                Swal.fire(
+                  'Failed to modify',
+                  'Something went wrong. Please check the data entered.',
+                  'warning'
+                );    
+                info.revert();
+              } else {
+                calendar.refetchEvents();
+              }
             }
-          }
-        });
-      }
+          });
+        } else {
+          info.revert();
+        }
+      });
     },
     eventResize: function(info) {
-      if (!confirm("Are you sure about this change?")) {
-        info.revert();
-      } else {
-        // Save the change...
-        var slotData = {
-            "pk": info.event.id,
-            "start": info.event.start.toJSON(),
-            "end": info.event.end.toJSON(),
-            "user": info.event.extendedProps.userId,
-            "csrfmiddlewaretoken": csrf.val(),
-          };
-        $.ajax({
-          url: '{% url "change_scheduler_slot_date" %}'+info.event.id,
-          data: slotData,
-          type: "POST",
-          dataType: 'json',
-          success: function(data) {
-            if (!data.form_is_valid) {
-              Swal.fire(
-                'Failed to modify',
-                'Something went wrong. Please check the data entered.',
-                'warning'
-              );    
-              info.revert();
-            } else {
-              location.reload();
+      Swal.fire({
+        title: 'Do you want to save the changes?',
+        showCancelButton: true,
+        confirmButtonText: 'Save',
+      }).then((result) => {
+        if (result.isConfirmed) {          
+          // Save the change...
+          var slotData = {
+              "pk": info.event.id,
+              "start": info.event.start.toJSON(),
+              "end": info.event.end.toJSON(),
+              "user": info.event.extendedProps.userId,
+              "csrfmiddlewaretoken": csrf.val(),
+            };
+          $.ajax({
+            url: '{% url "change_scheduler_slot_date" %}'+info.event.id,
+            data: slotData,
+            type: "POST",
+            dataType: 'json',
+            success: function(data) {
+              if (!data.form_is_valid) {
+                Swal.fire(
+                  'Failed to modify',
+                  'Something went wrong. Please check the data entered.',
+                  'warning'
+                );    
+                info.revert();
+              } else {
+                location.reload();
+              }
             }
-          }
-        });
-      }
+          });
+        } else {
+          info.revert();
+        }
+      });
     },
   });
 
 calendar.render();
+
 </script>
 {% endblock footer_javascript_page %}

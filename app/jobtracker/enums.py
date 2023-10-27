@@ -46,12 +46,19 @@ class DefaultTimeSlotTypes():
     TRAINING = 5
     TRAINING_DELIVER = 6
     UNASSIGNED = 7
+    DELIVERY = 8
+    CATCHUP = 9
+    CONFERENCE = 10
+    INTERNAL_PROJECT = 11
+    SERVICE_DEVELOPMENT = 12
+    INTERVIEW = 13
     DEFAULTS = [
         {
             'pk': BANK_HOL,
             'name': "Bank Holiday", 
             "built_in": True,
             "is_delivery": False,
+            "is_assignable": False,
             "is_working": False,
             "availability": AvailabilityType.UNAVAILABLE
         },
@@ -60,6 +67,7 @@ class DefaultTimeSlotTypes():
             'name': "Annual Leave", 
             "built_in": True, 
             "is_delivery": False, 
+            "is_assignable": True,
             "is_working": False,
             "availability": AvailabilityType.UNAVAILABLE
         },
@@ -68,6 +76,7 @@ class DefaultTimeSlotTypes():
             'name': "Sick", 
             "built_in": True, 
             "is_delivery": False, 
+            "is_assignable": True,
             "is_working": False,
             "availability": AvailabilityType.UNAVAILABLE
         },
@@ -76,6 +85,7 @@ class DefaultTimeSlotTypes():
             'name': "Self-led Learning", 
             "built_in": True, 
             "is_delivery": False, 
+            "is_assignable": True,
             "is_working": True,
             "availability": AvailabilityType.BUSY_INTERNAL
         },
@@ -84,6 +94,7 @@ class DefaultTimeSlotTypes():
             'name': "Training", 
             "built_in": True, 
             "is_delivery": False, 
+            "is_assignable": True,
             "is_working": True,
             "availability": AvailabilityType.BUSY_INTERNAL
         },
@@ -92,6 +103,7 @@ class DefaultTimeSlotTypes():
             'name': "Training - Deliver", 
             "built_in": True, 
             "is_delivery": False, 
+            "is_assignable": True,
             "is_working": True,
             "availability": AvailabilityType.BUSY_INTERNAL
         },
@@ -100,22 +112,65 @@ class DefaultTimeSlotTypes():
             'name': "Unassigned", 
             "built_in": True, 
             "is_delivery": False, 
+            "is_assignable": True,
             "is_working": True,
             "availability": AvailabilityType.AVAILABLE
         },
+        {
+            'pk': DELIVERY, 
+            'name': "Delivery", 
+            "built_in": True, 
+            "is_delivery": True, 
+            "is_assignable": False, # No - this should be used only when booking through a phase
+            "is_working": True,
+            "availability": AvailabilityType.BUSY_DELIVERY
+        },
+        {
+            'pk': CATCHUP, 
+            'name': "Catchup", 
+            "built_in": True, 
+            "is_delivery": False, 
+            "is_assignable": True,
+            "is_working": True,
+            "availability": AvailabilityType.BUSY_INTERNAL
+        },
+        {
+            'pk': CONFERENCE, 
+            'name': "Conference", 
+            "built_in": True, 
+            "is_delivery": False, 
+            "is_assignable": True,
+            "is_working": True,
+            "availability": AvailabilityType.BUSY_INTERNAL
+        },
+        {
+            'pk': INTERNAL_PROJECT, 
+            'name': "Internal Project", 
+            "built_in": True, 
+            "is_delivery": False, 
+            "is_assignable": True,
+            "is_working": True,
+            "availability": AvailabilityType.BUSY_INTERNAL
+        },
+        {
+            'pk': SERVICE_DEVELOPMENT, 
+            'name': "Service Development", 
+            "built_in": True, 
+            "is_delivery": False, 
+            "is_assignable": True,
+            "is_working": True,
+            "availability": AvailabilityType.BUSY_INTERNAL
+        },
+        {
+            'pk': INTERVIEW, 
+            'name': "Interview", 
+            "built_in": True, 
+            "is_delivery": False, 
+            "is_assignable": True,
+            "is_working": True,
+            "availability": AvailabilityType.BUSY_INTERNAL
+        },
     ]
-
-class TimeSlotEnumType():
-    GENERIC = 0
-    INTERNAL = 1
-    DELIVERY = 2
-    LEAVE = 3
-    CHOICES = (
-        (GENERIC, 'Generic'), # Blank slot effectively
-        (INTERNAL, 'Internal'),
-        (DELIVERY, 'Delivery'),
-        (LEAVE, 'Leave'),
-    )
 
 class TimeSlotDeliveryRole():
     NA = 0
@@ -126,6 +181,7 @@ class TimeSlotDeliveryRole():
     OVERSIGHT = 5
     DEBRIEF = 6
     CONTINGENCY = 7
+    SHADOW = 8
     OTHER = 8
     CHOICES = (
         (NA, 'None'),
@@ -136,6 +192,7 @@ class TimeSlotDeliveryRole():
         (OVERSIGHT, 'Oversight'),
         (DEBRIEF, 'Debrief'),
         (CONTINGENCY, 'Contingency'),
+        (SHADOW, 'Shadowing'),
         (OTHER, 'Other'),
     )
     REQUIRED_ALLOCATIONS = (DELIVERY, QA)

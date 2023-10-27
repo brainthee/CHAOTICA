@@ -48,7 +48,9 @@ def is_ajax(request):
 @login_required
 @require_safe
 def update_holidays(request):
-    task_update_holidays(request)
+    task_update_holidays()
+    return HttpResponse()
+    task_update_holidays.delay()
     return HttpResponseRedirect(reverse('home'))
 
 

@@ -4,15 +4,16 @@
     <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="Average score over the last 12 months">
       Average Pres Rating
     </span>
-    {% with avg_pqa_rating=request.user.get_average_presqa_feedback %}
-      <span class="rating text-end {% if avg_pqa_rating < 2 %}text-danger{% elif avg_pqa_rating < 3 %}text-warning{% elif avg_pqa_rating < 4 %}text-primary{% elif avg_pqa_rating >= 4 %}text-success{% endif %}" 
-        data-bs-toggle="tooltip" data-bs-placement="bottom" 
-        title="{% if avg_pqa_rating > 0 %}{{ avg_pqa_rating }}{% else %}No Data{% endif %}" >
-      {% include 'partials/feedback_stars.html' with feedback=avg_pqa_rating %}
-    {% endwith %}
-    </span>
   </h4>
 </div>
+{% with avg_pqa_rating=request.user.get_average_presqa_feedback %}
+  <span class="rating text-end {% if avg_pqa_rating < 2 %}text-danger{% elif avg_pqa_rating < 3 %}text-warning{% elif avg_pqa_rating < 4 %}text-primary{% elif avg_pqa_rating >= 4 %}text-success{% endif %}" 
+    data-bs-toggle="tooltip" data-bs-placement="bottom" 
+    title="{% if avg_pqa_rating > 0 %}{{ avg_pqa_rating }}{% else %}No Data{% endif %}" >
+  {% include 'partials/feedback_stars.html' with feedback=avg_pqa_rating %}
+  </span>
+{% endwith %}
+
 <div class="pb-0 pt-4">
   <div id="echarts-avg-pres-feedback" style="min-height:110px;width:100%;"></div>
 </div>

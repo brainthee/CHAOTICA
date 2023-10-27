@@ -8,7 +8,7 @@ from chaotica_utils.views import ChaoticaBaseView
 from chaotica_utils.models import User
 from guardian.shortcuts import get_objects_for_user
 from ..models import Job, TimeSlot, UserSkill
-from ..forms import CreateTimeSlotModalForm, SchedulerFilter, ChangeTimeSlotDateModalForm
+from ..forms import NonDeliveryTimeSlotModalForm, SchedulerFilter, ChangeTimeSlotDateModalForm, DeliveryChangeTimeSlotModalForm
 from ..enums import UserSkillRatings
 import logging
 from django.contrib.auth.decorators import login_required
@@ -27,7 +27,6 @@ def view_scheduler(request):
 
 
 def _filter_users_on_query(request):
-    from pprint import pprint
     filterForm = SchedulerFilter(request.GET)
     users_pk = []
     for org_unit in get_objects_for_user(request.user, 'jobtracker.view_users_schedule'):
@@ -42,7 +41,6 @@ def _filter_users_on_query(request):
         ## Filter users
         users_q = filterForm.cleaned_data.get('users')
         if users_q:
-            pprint(users_q)
             users = users.filter(pk__in=users_q)
 
         ## Filter on skills
@@ -75,8 +73,10 @@ def view_scheduler_slots(request):
     for user in scheduled_users:
         data = data + user.get_timeslots(
             start=request.GET.get('start', None),
-            end=request.GET.get('end', None),
-            )
+            end=request.GET.get('end', None),)
+        data = data + user.get_holidays(
+            start=request.GET.get('start', None),
+            end=request.GET.get('end', None),)
     return JsonResponse(data, safe=False)
 
 
@@ -86,20 +86,30 @@ def view_scheduler_members(request):
     scheduled_users = _filter_users_on_query(request)
     for user in scheduled_users:
         user_title = str(user)
+        main_org = user.unit_memberships.first()
         data.append({
             "id": user.pk,
             "title": user_title,
-            # "businessHours": {
-            #     "startTime": org_unit.businessHours_startTime,
-            #     "endTime": org_unit.businessHours_endTime,
-            #     "daysOfWeek": org_unit.businessHours_days,
-            # }
+            "businessHours": {
+                "startTime": main_org.unit.businessHours_startTime,
+                "endTime": main_org.unit.businessHours_endTime,
+                "daysOfWeek": main_org.unit.businessHours_days,
+            }
         })
     return JsonResponse(data, safe=False)
+
 
 @login_required
 def view_own_schedule_timeslots(request):
     data = request.user.get_timeslots(
+        start=request.GET.get('start', None),
+        end=request.GET.get('end', None),
+        )
+    return JsonResponse(data, safe=False)
+
+@login_required
+def view_schedule_holidays(request):
+    data = request.user.get_holidays(
         start=request.GET.get('start', None),
         end=request.GET.get('end', None),
         )
@@ -132,6 +142,32 @@ def change_scheduler_slot_date(request, pk=None):
     return JsonResponse(data)
 
 
+# @permission_required('jobtracker.change_schedule', (Job, 'slug', 'slug'))
+def change_scheduler_slot(request, pk=None):
+    if not pk:
+        # We only do this because we want to generate the URL in JS land
+        return HttpResponseBadRequest()
+    slot = get_object_or_404(TimeSlot, pk=pk)
+    data = dict()
+    if request.method == "POST":
+        form = NonDeliveryTimeSlotModalForm(request.POST, instance=slot)
+        if form.is_valid():
+            form.save()
+            data['form_is_valid'] = True
+        else:
+            data['form_is_valid'] = False
+            data['form_errors'] = form.errors
+    else:
+        # Send the modal
+        form = NonDeliveryTimeSlotModalForm(instance=slot)
+
+    context = {'form': form}
+    data['html_form'] = loader.render_to_string("jobtracker/modals/job_slot.html",
+                                                context,
+                                                request=request)
+    return JsonResponse(data)
+
+
 @login_required
 def create_scheduler_slot(request):
     data = dict()
@@ -140,14 +176,14 @@ def create_scheduler_slot(request):
     resource_id = request.GET.get('resource_id', None)
 
     if request.method == 'POST':
-        form = CreateTimeSlotModalForm(request.POST, start=start, end=end, resource_id=resource_id)
+        form = NonDeliveryTimeSlotModalForm(request.POST, start=start, end=end, resource_id=resource_id)
         if form.is_valid():
             form.save()
             data['form_is_valid'] = True
         else:
             data['form_is_valid'] = False
     else:
-        form = CreateTimeSlotModalForm(start=start, end=end, resource_id=resource_id)
+        form = NonDeliveryTimeSlotModalForm(start=start, end=end, resource_id=resource_id)
 
     context = {'form': form}
     data['html_form'] = loader.render_to_string("jobtracker/modals/job_slot_create.html",
@@ -162,8 +198,11 @@ class SlotDeleteView(ChaoticaBaseView, DeleteView):
     template_name = "jobtracker/modals/job_slot_delete.html"  
 
     def get_success_url(self):
-        slug = self.kwargs['slug']
-        return reverse_lazy('job_schedule', kwargs={'slug': slug})
+        if "slug" in self.kwargs:
+            slug = self.kwargs['slug']
+            return reverse_lazy('job_schedule', kwargs={'slug': slug})
+        else:
+            return reverse_lazy('view_scheduler')
 
     def get_context_data(self, **kwargs):
         context = super(SlotDeleteView, self).get_context_data(**kwargs)
