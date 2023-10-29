@@ -53,7 +53,7 @@ class Notification(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     timestamp = models.DateTimeField(auto_now_add=True)
     title = models.CharField(max_length=255, default="")
-    icon = models.CharField(max_length=255, blank=True, default="")
+    icon = models.CharField(max_length=255, blank=True, null=True, default="")
     message = models.TextField(default="")
     link = models.URLField(blank=True, null=True)
     is_read = models.BooleanField(default=False)
