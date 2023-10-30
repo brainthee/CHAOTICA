@@ -115,7 +115,7 @@ class UserInvitation(models.Model):
     )
 
     def is_expired(self):
-        expiry_date = self.sent - timedelta(days=settings.USER_INVITE_EXPIRY)
+        expiry_date = self.sent + timedelta(days=settings.USER_INVITE_EXPIRY)
         return expiry_date <= timezone.now()    
     
     def get_absolute_url(self):
