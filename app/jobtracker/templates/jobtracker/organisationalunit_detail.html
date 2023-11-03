@@ -4,7 +4,6 @@
 {% block pageTitle %}{{ organisationalunit }}{% endblock pageTitle %}
 {% block head_title %}{{ organisationalunit }}{% endblock head_title %}
 
-{% get_obj_perms request.user for organisationalunit as "unit_perms" %}
 
 {% block breadcrumbItem %}
 <li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{% url 'organisationalunit_list' %}">Organisational Units</a></li>
@@ -15,6 +14,7 @@
 {% block breadcrumb_classes %}px-5{% endblock breadcrumb_classes %}
 
 {% block content %}
+{% get_obj_perms request.user for organisationalunit as "unit_perms" %}
 
 <div class="row px-5">
   <div class="col-12">
@@ -27,10 +27,10 @@
 
       <div class="col-md-auto">
         <div class="d-flex">
-          {% if 'assign_members_organisationalunit' in unit_perms %}
-            <a href="{% url 'organisationalunit_update' organisationalunit.slug %}" 
-                class="btn btn-outline-success ms-2">
-            Invite Member
+          {% if 'manage_members' in unit_perms %}
+            <a href="#" data-url="{% url 'organisationalunit_add' organisationalunit.slug %}" 
+                class="btn btn-outline-success js-load-modal-form ms-2">
+            Add Member
             </a>
           {% endif %}
           

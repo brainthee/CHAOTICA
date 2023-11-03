@@ -54,7 +54,7 @@ class GlobalRoles():
             "jobtracker.delete_skill", 'jobtracker.view_users_skill',
             # OrganisationalUnit
             "jobtracker.view_organisationalunit", "jobtracker.add_organisationalunit", "jobtracker.change_organisationalunit", 
-            "jobtracker.delete_organisationalunit", 'jobtracker.assign_members_organisationalunit', 'jobtracker.view_users_schedule',
+            "jobtracker.delete_organisationalunit", 'jobtracker.manage_members', 'jobtracker.view_users_schedule',
             # Certification
             "jobtracker.view_certification", "jobtracker.add_certification", "jobtracker.change_certification", 
             "jobtracker.delete_certification", 'jobtracker.view_users_certification',
@@ -191,12 +191,12 @@ class UnitRoles():
         ]),
         (SERVICE_DELIVERY, [
             # OrganisationalUnit
-            "jobtracker.assign_members_organisationalunit", 'jobtracker.view_users_schedule',
+            "jobtracker.manage_members", 'jobtracker.view_users_schedule',
         ]),
         (MANAGER, [
             # OrganisationalUnit
             "jobtracker.change_organisationalunit", "jobtracker.delete_organisationalunit",
-            "jobtracker.assign_members_organisationalunit", 'jobtracker.view_users_schedule',
+            "jobtracker.manage_members", 'jobtracker.view_users_schedule',
             "jobtracker.can_scope_jobs", 'jobtracker.can_signoff_scopes',
             "jobtracker.can_add_job", "jobtracker.can_approve_leave_requests", "jobtracker.can_view_all_leave_requests",
             "jobtracker.can_signoff_own_scopes", 'jobtracker.can_schedule_phases',

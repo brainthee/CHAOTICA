@@ -1,32 +1,28 @@
-<div class="row ps-5 pe-4">
-    <div class="col-12">
-        <div class="row align-items-center justify-content-between mt-3 mb-0">
-            <div class="col-6 col-md-auto">
-                <h2 class="mb-2">
-                Job Detail
-                </h2>
+<div class="row ps-5 pe-4 align-items-center justify-content-between mt-3 mb-0">
+    <div class="col">
+        <h2 class="mb-2">
+        Job Detail
+        </h2>
+    </div>
+
+    <div class="col-md-auto">
+        <div class="d-flex">
+            <div class="mt-0 p-0 text-center">
+                {% include 'partials/job/warnings.html' %}
             </div>
-
-            <div class="col-md-auto">
-                <div class="d-flex">
-                    <div class="mt-0 p-0 text-center">
-                        {% include 'partials/job/warnings.html' %}
-                    </div>
-                </div>
-            </div>
+        </div>
+    </div>
 
 
-            <div class="col-md-auto">
-                <div class="d-flex">
-                {% include 'partials/job/status_buttons.html' %}
+    <div class="col-3">
+        <div class="d-flex">
+        {% include 'partials/job/status_buttons.html' %}
 
-                <button class="btn px-3 ms-3 btn-phoenix-secondary" type="button" data-bs-toggle="dropdown" 
-                    data-boundary="window" aria-haspopup="true" aria-expanded="false" data-bs-reference="parent">
-                    <span class="fa-solid fa-ellipsis"></span>
-                </button>
-                {% include 'partials/job/status_button_menu.html' %}
-                </div>
-            </div>
+        <button class="btn px-3 ms-3 btn-phoenix-secondary" type="button" data-bs-toggle="dropdown" 
+            data-boundary="window" aria-haspopup="true" aria-expanded="false" data-bs-reference="parent">
+            <span class="fa-solid fa-ellipsis"></span>
+        </button>
+        {% include 'partials/job/status_button_menu.html' %}
         </div>
     </div>
 </div>

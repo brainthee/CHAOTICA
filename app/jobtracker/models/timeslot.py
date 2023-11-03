@@ -84,7 +84,7 @@ class TimeSlot(models.Model):
     def get_schedule_json(self, url=None):
         if not url:
             url = self.get_target_url()
-            
+                        
         data = {
             "id": self.pk,
             "title": self.get_schedule_title(),
@@ -100,6 +100,7 @@ class TimeSlot(models.Model):
         if self.phase:
             data['deliveryRole'] = self.deliveryRole
             data['phaseId'] = self.phase.pk
+            data['editURL'] = reverse('change_job_schedule_slot', kwargs={"slug":self.phase.job.slug, "pk":self.pk})
         return data
     
     def get_schedule_phase_json(self):

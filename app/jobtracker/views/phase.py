@@ -389,49 +389,49 @@ def phase_update_workflow(request, job_slug, slug, new_state):
     if new_state == PhaseStatuses.PENDING_SCHED:
         if phase.can_to_pending_sched(request):
             if request.method == 'POST':
-                phase.to_pending_sched()
+                phase.to_pending_sched(request.user)
         else:
             can_proceed = False
     elif new_state == PhaseStatuses.SCHEDULED_TENTATIVE:
         if phase.can_to_sched_tentative(request):
             if request.method == 'POST':
-                phase.to_sched_tentative()
+                phase.to_sched_tentative(request.user)
         else:
             can_proceed = False
     elif new_state == PhaseStatuses.SCHEDULED_CONFIRMED:
         if phase.can_to_sched_confirmed(request):
             if request.method == 'POST':
-                phase.to_sched_confirmed()
+                phase.to_sched_confirmed(request.user)
         else:
             can_proceed = False
     elif new_state == PhaseStatuses.PRE_CHECKS:
         if phase.can_to_pre_checks(request):
             if request.method == 'POST':
-                phase.to_pre_checks()
+                phase.to_pre_checks(request.user)
         else:
             can_proceed = False
     elif new_state == PhaseStatuses.CLIENT_NOT_READY:
         if phase.can_to_not_ready(request):
             if request.method == 'POST':
-                phase.to_not_ready()
+                phase.to_not_ready(request.user)
         else:
             can_proceed = False
     elif new_state == PhaseStatuses.READY_TO_BEGIN:
         if phase.can_to_ready(request):
             if request.method == 'POST':
-                phase.to_ready()
+                phase.to_ready(request.user)
         else:
             can_proceed = False
     elif new_state == PhaseStatuses.IN_PROGRESS:
         if phase.can_to_in_progress(request):
             if request.method == 'POST':
-                phase.to_in_progress()
+                phase.to_in_progress(request.user)
         else:
             can_proceed = False
     elif new_state == PhaseStatuses.PENDING_TQA:
         if phase.can_to_pending_tech_qa(request):
             if request.method == 'POST':
-                phase.to_pending_tech_qa()
+                phase.to_pending_tech_qa(request.user)
         else:
             can_proceed = False
     elif new_state == PhaseStatuses.QA_TECH:
@@ -444,19 +444,19 @@ def phase_update_workflow(request, job_slug, slug, new_state):
                         phase.save()
                     else:
                         return HttpResponseBadRequest()
-                phase.to_tech_qa()
+                phase.to_tech_qa(request.user)
         else:
             can_proceed = False
     elif new_state == PhaseStatuses.QA_TECH_AUTHOR_UPDATES:
         if phase.can_to_tech_qa_updates(request):
             if request.method == 'POST':
-                phase.to_tech_qa_updates()
+                phase.to_tech_qa_updates(request.user)
         else:
             can_proceed = False
     elif new_state == PhaseStatuses.PENDING_PQA:
         if phase.can_to_pending_pres_qa(request):
             if request.method == 'POST':
-                phase.to_pending_pres_qa()
+                phase.to_pending_pres_qa(request.user)
         else:
             can_proceed = False
     elif new_state == PhaseStatuses.QA_PRES:
@@ -469,49 +469,49 @@ def phase_update_workflow(request, job_slug, slug, new_state):
                         phase.save()
                     else:
                         return HttpResponseBadRequest()
-                phase.to_pres_qa()
+                phase.to_pres_qa(request.user)
         else:
             can_proceed = False
     elif new_state == PhaseStatuses.QA_PRES_AUTHOR_UPDATES:
         if phase.can_to_pres_qa_updates(request):
             if request.method == 'POST':
-                phase.to_pres_qa_updates()
+                phase.to_pres_qa_updates(request.user)
         else:
             can_proceed = False
     elif new_state == PhaseStatuses.COMPLETED:
         if phase.can_to_completed(request):
             if request.method == 'POST':
-                phase.to_completed()
+                phase.to_completed(request.user)
         else:
             can_proceed = False
     elif new_state == PhaseStatuses.DELIVERED:
         if phase.can_to_delivered(request):
             if request.method == 'POST':
-                phase.to_delivered()
+                phase.to_delivered(request.user)
         else:
             can_proceed = False
     elif new_state == PhaseStatuses.CANCELLED:
         if phase.can_to_cancelled(request):
             if request.method == 'POST':
-                phase.to_cancelled()
+                phase.to_cancelled(request.user)
         else:
             can_proceed = False
     elif new_state == PhaseStatuses.POSTPONED:
         if phase.can_to_postponed(request):
             if request.method == 'POST':
-                phase.to_postponed()
+                phase.to_postponed(request.user)
         else:
             can_proceed = False
     elif new_state == PhaseStatuses.DELETED:
         if phase.can_to_deleted(request):
             if request.method == 'POST':
-                phase.to_deleted()
+                phase.to_deleted(request.user)
         else:
             can_proceed = False
     elif new_state == PhaseStatuses.ARCHIVED:
         if phase.can_to_archived(request):
             if request.method == 'POST':
-                phase.to_archived()
+                phase.to_archived(request.user)
         else:
             can_proceed = False
     else:
@@ -521,7 +521,6 @@ def phase_update_workflow(request, job_slug, slug, new_state):
         
     if request.method == 'POST' and can_proceed:
         phase.save()
-        log_system_activity(phase, "Moved to "+new_state_str)
         data['form_is_valid'] = True  # This is just to play along with the existing code
     
     tasks = WorkflowTask.objects.filter(appliedModel=WorkflowTask.WF_PHASE, status=new_state)

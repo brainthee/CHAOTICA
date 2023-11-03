@@ -106,7 +106,6 @@ class ChaoticaUserForm(UserCreationForm):
         self.invite = kwargs.pop('invite', None)
         super(ChaoticaUserForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
-        self.fields['username'].widget.attrs.pop("autofocus", None)
         if self.invite:
             self.fields['email'].initial = self.invite.invited_email
             self.fields['email'].disabled = True
@@ -116,10 +115,6 @@ class ChaoticaUserForm(UserCreationForm):
                         css_class="input-group input-group-dynamic")),
                 Column(Div(FloatingField('last_name'),
                         css_class="input-group input-group-dynamic")),
-            ),
-            Row(
-                Div(FloatingField('username'),
-                        css_class="input-group input-group-dynamic"),
             ),
             Row(
                 Div(FloatingField('email'),
@@ -138,10 +133,7 @@ class ChaoticaUserForm(UserCreationForm):
 
     class Meta:
         model = User
-        fields = ('username', 'first_name', 'last_name', 'email', 'password1', 'password2' )
-        help_texts = {
-            'username': None,
-        }
+        fields = ('first_name', 'last_name', 'email', 'password1', 'password2' )
         widgets = {
             'first_name': forms.TextInput(attrs={'autofocus': True}),
         }
@@ -170,10 +162,7 @@ class ProfileForm(forms.Form):
 
     class Meta:
         model = User
-        fields = ('username', 'first_name', 'last_name', 'email', 'password1', 'password2' )
-        help_texts = {
-            'username': None,
-        }
+        fields = ('first_name', 'last_name', 'email', 'password1', 'password2' )
 
 class ProfileBasicForm(forms.ModelForm):
 

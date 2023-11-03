@@ -43,7 +43,7 @@ class Command(BaseCommand):
 
                     db_user, _ = User.objects.get_or_create(
                         external_id=str(j_user['id']), first_name=name[0], last_name=name[1], 
-                        email=prof['mail'], username=prof['mail'])
+                        email=prof['mail'], email=prof['mail'])
                     
                     self.stdout.write(
                         self.style.NOTICE('Created user: "' +db_user.first_name+" "+db_user.last_name+'"')

@@ -11,7 +11,7 @@ from chaotica_utils.tasks import task_send_notifications
 from chaotica_utils.enums import UnitRoles
 from chaotica_utils.models import User
 from ..models import OrganisationalUnit, OrganisationalUnitMember
-from ..forms import OrganisationalUnitForm
+from ..forms import OrganisationalUnitForm, OrganisationalUnitMemberForm
 import logging
 from django.contrib import messages 
 
@@ -34,6 +34,41 @@ class OrganisationalUnitListView(OrganisationalUnitBaseView, ListView):
     """View to list all jobs.
     Use the 'job_list' variable in the template
     to access all job objects"""
+
+    
+def organisationalunit_add(request, slug):
+    org_unit = get_object_or_404(OrganisationalUnit, slug=slug)
+    # Check we have permission to add...
+    # TODO
+
+    data = dict()
+    if request.method == "POST":
+        form = OrganisationalUnitMemberForm(request.POST, org_unit=org_unit)
+        if form.is_valid():
+            membership = form.save(commit=False)
+            if membership:
+                # Ok, lets see if we need to make it pending...
+                if org_unit.approval_required:
+                    membership.role = UnitRoles.PENDING
+                    messages.info(request, "Request to join unit "+org_unit.name+" sent.")    
+                else:
+                    # Add ourselves as inviter!
+                    membership.inviter = request.user     
+                    messages.info(request, "Joined Unit "+org_unit.name)       
+                membership.save()
+                data['form_is_valid'] = True
+        else:
+            messages.error(request, "Error requesting membership. Please report this!")
+            data['form_is_valid'] = False
+    else:
+        form = OrganisationalUnitMemberForm(org_unit=org_unit)
+
+
+    context = {'orgUnit': org_unit, 'form': form}
+    data['html_form'] = loader.render_to_string("jobtracker/modals/organisationalunit_add.html",
+                                                context,
+                                                request=request)
+    return JsonResponse(data)
 
 def organisationalunit_join(request, slug):
     org_unit = get_object_or_404(OrganisationalUnit, slug=slug)

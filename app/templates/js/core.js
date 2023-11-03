@@ -33,6 +33,14 @@ function setRequestHeader(){
     });
 }
 
+// $(document).ready(function() {        
+//     $('#mainModal').on('shown.bs.modal', function (e) {
+//         $('.modelselect2').select2({
+//             dropdownParent: $('#mainModal .modal-content')
+//         });
+//     });
+// });
+
 $(function() {
 
     new DataTable('table.datatable', {

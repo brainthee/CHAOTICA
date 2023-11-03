@@ -34,10 +34,10 @@ urlpatterns = [
     path('profile/update', views.update_own_profile, name='update_own_profile'),
     path('profile/update/skills', views.update_own_skills, name='update_own_skills'),    
     path('profile/update/certs', views.update_own_certs, name='update_own_certs'),    
-    path('profile/<str:username>', views.UserDetailView.as_view(), name='user_profile'),
-    path('profile/<str:username>/update/', views.UserUpdateView.as_view(), name='user_update'),
-    path('profile/<str:username>/assign_role/', views.user_assign_global_role, name='user_assign_global_role'),
-    path('profile/<str:username>/delete/', views.UserDeleteView.as_view(), name='user_delete'),
+    path('profile/<str:email>', views.UserDetailView.as_view(), name='user_profile'),
+    path('profile/<str:email>/update/', views.UserUpdateView.as_view(), name='user_update'),
+    path('profile/<str:email>/assign_role/', views.user_assign_global_role, name='user_assign_global_role'),
+    path('profile/<str:email>/delete/', views.UserDeleteView.as_view(), name='user_delete'),
 
     path('tasks/update_holidays', views.update_holidays, name='update_holidays'),
 ]

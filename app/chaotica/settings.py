@@ -41,8 +41,8 @@ AUTH_ADFS = {
     'CLIENT_ID': os.environ.get("ADFS_CLIENT_ID", default="xx"),
     'CLIENT_SECRET': os.environ.get("ADFS_CLIENT_SECRET", default="xx"),
     'CLAIM_MAPPING': {'first_name': 'given_name',
-                      'last_name': 'family_name',
-                      'email': 'upn'},
+                      'last_name': 'family_name'},
+    'USERNAME_CLAIM': {'email': 'upn'},
     'GROUPS_CLAIM': None,
     'MIRROR_GROUPS': False,
     'USERNAME_CLAIM': 'upn',
@@ -77,6 +77,8 @@ DEFAULT_HOURS_IN_DAY = os.environ.get("DEFAULT_HOURS_IN_DAY", default=7.5)
 LEAVE_DAYS_NOTICE = os.environ.get("LEAVE_DAYS_NOTICE", default=14) # Two weeks notice
 USER_INVITE_EXPIRY = os.environ.get("USER_INVITE_EXPIRY", default=7)
 USER_INVITE_ONLY = os.environ.get("USER_INVITE_ONLY", default=True)
+JOB_ID_START = os.environ.get("JOB_ID_START", default=2500)
+PHASE_ID_START = os.environ.get("PHASE_ID_START", default=1)
 
 CONSTANCE_BACKEND = 'constance.backends.database.DatabaseBackend'
 CONSTANCE_IGNORE_ADMIN_VERSION_CHECK = True

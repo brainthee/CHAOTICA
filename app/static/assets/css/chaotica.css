@@ -1,5 +1,6 @@
 span.select2-container {
   z-index:10050 !important;
+  min-width: unset !important;
 }
 
 div.content span.select2-container {
