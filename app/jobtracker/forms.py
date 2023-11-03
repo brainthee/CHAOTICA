@@ -1,6 +1,6 @@
 from django import forms
 from django.urls import reverse
-from .models import Contact, Job, Feedback, TimeSlot, TimeSlotType, Client, Phase, OrganisationalUnit, Skill, Service, WorkflowTask, SkillCategory
+from .models import Contact, Job, Feedback, TimeSlot, TimeSlotType, Client, Phase, OrganisationalUnit, OrganisationalUnitMember, Skill, Service, WorkflowTask, SkillCategory
 from chaotica_utils.models import Note, User
 from crispy_forms.helper import FormHelper
 from crispy_forms.bootstrap import StrictButton, Accordion, AccordionGroup
@@ -97,7 +97,7 @@ class AssignContact(forms.Form):
 
             Div(
                 Div(StrictButton("Save", type="submit", 
-                    css_class="btn bg-gradient-success ms-auto mb-0"),
+                    css_class="btn btn-outline-phoenix-success ms-auto mb-0"),
                 css_class="button-row d-flex mt-4"),
             css_class="modal-footer"),
         )
@@ -122,7 +122,7 @@ class AssignMultipleContacts(forms.Form):
 
             Div(
                 Div(StrictButton("Save", type="submit", 
-                    css_class="btn bg-gradient-success ms-auto mb-0"),
+                    css_class="btn btn-outline-phoenix-success ms-auto mb-0"),
                 css_class="button-row d-flex mt-4"),
             css_class="modal-footer"),
         )
@@ -139,13 +139,11 @@ class AssignUserField(forms.Form):
         super(AssignUserField, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
         self.fields['user'].help_text = None
-        self.fields['user'].label = "Add user to schedule"
+        self.fields['user'].label = False
         self.helper.layout = Layout(
-            Column(
                 Field('user'),
                 StrictButton('Add', id="addUserToResource",
-                css_class="btn bg-gradient-success"),
-            css_class="d-flex flex-row"),
+                css_class="btn btn-outline-phoenix-success"),
         )
 
 class AssignUser(forms.Form):
@@ -175,7 +173,7 @@ class AssignUser(forms.Form):
 
             Div(
                 Div(StrictButton("Save", type="submit", 
-                    css_class="btn bg-gradient-success ms-auto mb-0"),
+                    css_class="btn btn-outline-phoenix-success ms-auto mb-0"),
                 css_class="button-row d-flex mt-4"),
             css_class="modal-footer"),
         )
@@ -205,7 +203,7 @@ class AssignMultipleUser(forms.Form):
 
             Div(
                 Div(StrictButton("Save", type="submit", 
-                    css_class="btn bg-gradient-success ms-auto mb-0"),
+                    css_class="btn btn-outline-phoenix-success ms-auto mb-0"),
                 css_class="button-row d-flex mt-4"),
             css_class="modal-footer"),
         )
@@ -292,7 +290,7 @@ class NonDeliveryTimeSlotModalForm(forms.ModelForm):
                 css_class='card-body p-3'),
             Div(
                 Div(StrictButton("Save", type="submit", 
-                        css_class="btn bg-gradient-success ms-auto mb-0"),
+                        css_class="btn btn-outline-phoenix-success ms-auto mb-0"),
                     css_class="button-row d-flex"),
                 css_class="card-footer pt-0 p-3"),
         )
@@ -343,7 +341,7 @@ class ChangeTimeSlotDateModalForm(forms.ModelForm):
                 Div(
                     # delete_button,
                     StrictButton("Save", type="submit", 
-                        css_class="btn bg-gradient-success ms-auto mb-0"),
+                        css_class="btn btn-outline-phoenix-success ms-auto mb-0"),
                     css_class="button-row d-flex"),
                 css_class="card-footer pt-0 p-3"),
         )
@@ -402,7 +400,7 @@ class DeliveryChangeTimeSlotModalForm(forms.ModelForm):
             Div(
                 Div(delete_button,
                     StrictButton("Save", type="submit", 
-                        css_class="btn bg-gradient-success ms-auto mb-0"),
+                        css_class="btn btn-outline-phoenix-success ms-auto mb-0"),
                     css_class="button-row d-flex"),
                 css_class="card-footer pt-0 p-3"),
         )
@@ -461,6 +459,7 @@ class JobForm(forms.ModelForm):
             pk__in=self.user.unit_memberships.filter(role__in=UnitRoles.get_roles_with_permission('jobtracker.can_add_job')).values_list('unit').distinct())
         self.fields['title'].label = ""
         self.fields['client'].label = ""
+        self.fields['external_id'].label = ""
         self.fields['unit'].label = ""
         self.fields['overview'].label = ""  
         self.fields['revenue'].label = ""  
@@ -480,13 +479,14 @@ class JobForm(forms.ModelForm):
             "unit", 
             "client", 
             "title", 
+            "external_id",
             "revenue", 
             "overview", 
             "account_manager", 
             "dep_account_manager",
             "desired_start_date",
             "desired_delivery_date",
-            ]
+        ]
 
 class PhaseForm(forms.ModelForm):
 
@@ -725,7 +725,7 @@ class ScopeForm(forms.ModelForm):
                     css_class="card mb-3"),
 
             Div(StrictButton("Save", type="submit", 
-                    css_class="btn bg-gradient-success ms-auto mb-0"),
+                    css_class="btn btn-outline-phoenix-success ms-auto mb-0"),
                 css_class="button-row d-flex mt-4"),
         )
 
@@ -815,6 +815,33 @@ class ClientContactForm(forms.ModelForm):
             "mobile", 
             "email",
         ]
+
+
+class OrganisationalUnitMemberForm(forms.ModelForm):
+    member = forms.ModelChoiceField(
+        queryset=User.objects.filter(is_active=True),
+        widget=autocomplete.ModelSelect2(url='user-autocomplete',
+                                         attrs={
+                                             'data-minimum-input-length': 3,
+                                         },),)
+
+    def __init__(self, *args, **kwargs):
+        org_unit = kwargs.pop('org_unit', None)
+        super(OrganisationalUnitMemberForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        # self.helper.form_tag = False
+        self.helper.layout = Layout(
+            Field('member'),
+        )
+        # self.fields['name'].label = False
+        # self.fields['description'].label = False
+        # self.fields['special_requirements'].label = False
+        self.fields['member'].label = False
+
+    class Meta:
+        model = OrganisationalUnitMember
+        fields = ["member", 
+                ]
 
 
 class OrganisationalUnitForm(forms.ModelForm):

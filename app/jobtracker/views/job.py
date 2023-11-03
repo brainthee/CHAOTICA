@@ -251,7 +251,7 @@ class JobCreateView(JobBaseView, CreateView):
     def form_valid(self, form):
         form.instance.created_by = self.request.user
         form.instance.save()
-        log_system_activity(form.instance, "Created Job")
+        log_system_activity(form.instance, "Created Job", author=form.instance.created_by)
         return super().form_valid(form)
     
 
@@ -299,8 +299,7 @@ class JobScheduleView(PermissionRequiredMixin, JobBaseView, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super(JobScheduleView, self).get_context_data(**kwargs)
-        user_select = AssignUserField()
-        context['userSelect'] = user_select
+        context['userSelect'] = AssignUserField()
         context['TimeSlotDeliveryRoles'] = TimeSlotDeliveryRole.CHOICES
 
         types_in_use = context['job'].get_all_total_scheduled_by_type()
@@ -333,7 +332,7 @@ def job_update_workflow(request, slug, new_state):
     if new_state == JobStatuses.PENDING_SCOPE:
         if job.can_to_pending_scope(request):
             if request.method == 'POST':
-                job.to_pending_scope()
+                job.to_pending_scope(request.user)
         else:
             can_proceed = False
     elif new_state == JobStatuses.SCOPING:
@@ -344,61 +343,61 @@ def job_update_workflow(request, slug, new_state):
                         # No one is defined to scope and we have permission - auto add!
                         job.scoped_by.add(request.user)
                         job.save()
-                job.to_scoping()
+                job.to_scoping(request.user)
         else:
             can_proceed = False
     elif new_state == JobStatuses.SCOPING_ADDITIONAL_INFO_REQUIRED:
         if job.can_to_additional_scope_req(request):
             if request.method == 'POST':
-                job.to_additional_scope_req()
+                job.to_additional_scope_req(request.user)
         else:
             can_proceed = False
     elif new_state == JobStatuses.PENDING_SCOPING_SIGNOFF:
         if job.can_to_scope_pending_signoff(request):
             if request.method == 'POST':
-                job.to_scope_pending_signoff()
+                job.to_scope_pending_signoff(request.user)
         else:
             can_proceed = False
     elif new_state == JobStatuses.SCOPING_COMPLETE:
         if job.can_to_scope_complete(request):
             if request.method == 'POST':
-                job.to_scope_complete(user=request.user)
+                job.to_scope_complete(request.user)
         else:
             can_proceed = False
     elif new_state == JobStatuses.PENDING_START:
         if job.can_to_pending_start(request):
             if request.method == 'POST':
-                job.to_pending_start()
+                job.to_pending_start(request.user)
         else:
             can_proceed = False
     elif new_state == JobStatuses.IN_PROGRESS:
         if job.can_to_in_progress(request):
             if request.method == 'POST':
-                job.to_in_progress()
+                job.to_in_progress(request.user)
         else:
             can_proceed = False
     elif new_state == JobStatuses.COMPLETED:
         if job.can_to_complete(request):
             if request.method == 'POST':
-                job.to_complete()
+                job.to_complete(request.user)
         else:
             can_proceed = False
     elif new_state == JobStatuses.LOST:
         if job.can_to_lost(request):
             if request.method == 'POST':
-                job.to_lost()
+                job.to_lost(request.user)
         else:
             can_proceed = False
     elif new_state == JobStatuses.DELETED:
         if job.can_to_delete(request):
             if request.method == 'POST':
-                job.to_delete()
+                job.to_delete(request.user)
         else:
             can_proceed = False
     elif new_state == JobStatuses.ARCHIVED:
         if job.can_to_archive(request):
             if request.method == 'POST':
-                job.to_archive()
+                job.to_archive(request.user)
         else:
             can_proceed = False
     else:

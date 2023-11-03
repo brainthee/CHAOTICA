@@ -54,7 +54,7 @@ class Phase(models.Model):
     history = HistoricalRecords()
     data = JSONField(verbose_name="Data", null=True, blank=True, default=dict)
     notes = GenericRelation(Note)
-    status = FSMIntegerField(choices=PhaseStatuses.CHOICES, db_index=True, default=PhaseStatuses.DRAFT, protected=True)
+    status = FSMIntegerField(choices=PhaseStatuses.CHOICES, db_index=True, default=PhaseStatuses.DRAFT)
 
     # Phase info
     phase_number = models.IntegerField(db_index=True)
@@ -257,14 +257,14 @@ class Phase(models.Model):
         return Feedback.objects.filter(phase=self, feedbackType=FeedbackType.PRES)
 
     # Scoped Time
-    delivery_hours = models.DecimalField('Delivery Hours', max_digits=4, default=0, decimal_places=2, )    
-    reporting_hours = models.DecimalField('Reporting Hours', max_digits=4, default=0, decimal_places=2, )   
-    mgmt_hours = models.DecimalField('Management Hours', max_digits=4, default=0, decimal_places=2, )   
-    qa_hours = models.DecimalField('QA Hours', max_digits=4, default=0, decimal_places=2, )   
-    oversight_hours = models.DecimalField('Oversight Hours', max_digits=4, default=0, decimal_places=2, )   
-    debrief_hours = models.DecimalField('Debrief Hours', max_digits=4, default=0, decimal_places=2, )   
-    contingency_hours = models.DecimalField('Contingency Hours', max_digits=4, default=0, decimal_places=2, )   
-    other_hours = models.DecimalField('Other Hours', max_digits=4, default=0, decimal_places=2, )   
+    delivery_hours = models.DecimalField('Delivery Hours', max_digits=6, default=0, decimal_places=2, )    
+    reporting_hours = models.DecimalField('Reporting Hours', max_digits=6, default=0, decimal_places=2, )   
+    mgmt_hours = models.DecimalField('Management Hours', max_digits=6, default=0, decimal_places=2, )   
+    qa_hours = models.DecimalField('QA Hours', max_digits=6, default=0, decimal_places=2, )   
+    oversight_hours = models.DecimalField('Oversight Hours', max_digits=6, default=0, decimal_places=2, )   
+    debrief_hours = models.DecimalField('Debrief Hours', max_digits=6, default=0, decimal_places=2, )   
+    contingency_hours = models.DecimalField('Contingency Hours', max_digits=6, default=0, decimal_places=2, )   
+    other_hours = models.DecimalField('Other Hours', max_digits=6, default=0, decimal_places=2, )   
 
     # change control
     last_modified = models.DateTimeField(auto_now=True)
@@ -538,8 +538,8 @@ class Phase(models.Model):
                                       PhaseStatuses.SCHEDULED_CONFIRMED,
                                       PhaseStatuses.POSTPONED],
         target=PhaseStatuses.PENDING_SCHED)
-    def to_pending_sched(self):
-        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.PENDING_SCHED][1])
+    def to_pending_sched(self, user=None):
+        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.PENDING_SCHED][1], author=user)
 
     def can_proceed_to_pending_sched(self):
         return can_proceed(self.to_pending_sched)
@@ -559,8 +559,8 @@ class Phase(models.Model):
     # SCHEDULED_TENTATIVE
     @transition(field=status, source=[PhaseStatuses.PENDING_SCHED,PhaseStatuses.SCHEDULED_CONFIRMED],
         target=PhaseStatuses.SCHEDULED_TENTATIVE)
-    def to_sched_tentative(self):
-        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.SCHEDULED_TENTATIVE][1])
+    def to_sched_tentative(self, user=None):
+        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.SCHEDULED_TENTATIVE][1], author=user)
         self.fire_status_notification(PhaseStatuses.SCHEDULED_TENTATIVE)
 
     def can_proceed_to_sched_tentative(self):
@@ -586,8 +586,8 @@ class Phase(models.Model):
     # SCHEDULED_CONFIRMED
     @transition(field=status, source=[PhaseStatuses.PENDING_SCHED, PhaseStatuses.SCHEDULED_TENTATIVE],
         target=PhaseStatuses.SCHEDULED_CONFIRMED)
-    def to_sched_confirmed(self):
-        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.SCHEDULED_CONFIRMED][1])
+    def to_sched_confirmed(self, user=None):
+        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.SCHEDULED_CONFIRMED][1], author=user)
         # Ok, lets update our parent job to pending_start!
         if self.job.can_proceed_to_pending_start():
             self.job.to_pending_start()
@@ -636,8 +636,8 @@ class Phase(models.Model):
     # PRE_CHECKS
     @transition(field=status, source=[PhaseStatuses.SCHEDULED_CONFIRMED,],
         target=PhaseStatuses.PRE_CHECKS)
-    def to_pre_checks(self):
-        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.PRE_CHECKS][1])
+    def to_pre_checks(self, user=None):
+        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.PRE_CHECKS][1], author=user)
         self.fire_status_notification(PhaseStatuses.PRE_CHECKS)
 
     def can_proceed_to_pre_checks(self):
@@ -658,8 +658,8 @@ class Phase(models.Model):
     # CLIENT_NOT_READY
     @transition(field=status, source=[PhaseStatuses.PRE_CHECKS,],
         target=PhaseStatuses.CLIENT_NOT_READY)
-    def to_not_ready(self):
-        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.CLIENT_NOT_READY][1])
+    def to_not_ready(self, user=None):
+        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.CLIENT_NOT_READY][1], author=user)
         self.fire_status_notification(PhaseStatuses.CLIENT_NOT_READY)
 
     def can_proceed_to_not_ready(self):
@@ -680,8 +680,8 @@ class Phase(models.Model):
     # READY_TO_BEGIN
     @transition(field=status, source=[PhaseStatuses.PRE_CHECKS,PhaseStatuses.CLIENT_NOT_READY],
         target=PhaseStatuses.READY_TO_BEGIN)
-    def to_ready(self):
-        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.READY_TO_BEGIN][1])
+    def to_ready(self, user=None):
+        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.READY_TO_BEGIN][1], author=user)
         self.pre_checks_done_date = timezone.now()
         self.fire_status_notification(PhaseStatuses.READY_TO_BEGIN)
 
@@ -703,8 +703,8 @@ class Phase(models.Model):
     # IN_PROGRESS
     @transition(field=status, source=[PhaseStatuses.READY_TO_BEGIN,],
         target=PhaseStatuses.IN_PROGRESS)
-    def to_in_progress(self):
-        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.IN_PROGRESS][1])
+    def to_in_progress(self, user=None):
+        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.IN_PROGRESS][1], author=user)
         self.actual_start_date = timezone.now()
         # lets make sure our parent job is in progress now!
         if self.job.status == JobStatuses.PENDING_START:
@@ -731,8 +731,8 @@ class Phase(models.Model):
     # PENDING_TQA
     @transition(field=status, source=[PhaseStatuses.IN_PROGRESS, PhaseStatuses.QA_TECH_AUTHOR_UPDATES],
         target=PhaseStatuses.PENDING_TQA)
-    def to_pending_tech_qa(self):
-        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.PENDING_TQA][1])
+    def to_pending_tech_qa(self, user=None):
+        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.PENDING_TQA][1], author=user)
         self.actual_sent_to_tqa_date = timezone.now()
         self.fire_status_notification(PhaseStatuses.PENDING_TQA)
 
@@ -791,8 +791,8 @@ class Phase(models.Model):
     # QA_TECH
     @transition(field=status, source=[PhaseStatuses.PENDING_TQA,],
         target=PhaseStatuses.QA_TECH)
-    def to_tech_qa(self):
-        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.QA_TECH][1])
+    def to_tech_qa(self, user=None):
+        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.QA_TECH][1], author=user)
         self.fire_status_notification(PhaseStatuses.QA_TECH)
 
     def can_proceed_to_tech_qa(self):
@@ -822,8 +822,8 @@ class Phase(models.Model):
     # QA_TECH_AUTHOR_UPDATES
     @transition(field=status, source=[PhaseStatuses.QA_TECH,],
         target=PhaseStatuses.QA_TECH_AUTHOR_UPDATES)
-    def to_tech_qa_updates(self):
-        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.QA_TECH_AUTHOR_UPDATES][1])
+    def to_tech_qa_updates(self, user=None):
+        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.QA_TECH_AUTHOR_UPDATES][1], author=user)
         self.required_tqa_updates = True
         self.fire_status_notification(PhaseStatuses.QA_TECH_AUTHOR_UPDATES)
 
@@ -856,8 +856,8 @@ class Phase(models.Model):
     # PENDING_PQA
     @transition(field=status, source=[PhaseStatuses.QA_TECH,PhaseStatuses.QA_PRES_AUTHOR_UPDATES],
         target=PhaseStatuses.PENDING_PQA)
-    def to_pending_pres_qa(self):
-        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.PENDING_PQA][1])
+    def to_pending_pres_qa(self, user=None):
+        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.PENDING_PQA][1], author=user)
         self.actual_sent_to_pqa_date = timezone.now()
         self.fire_status_notification(PhaseStatuses.PENDING_PQA)
 
@@ -890,8 +890,8 @@ class Phase(models.Model):
     # QA_PRES
     @transition(field=status, source=[PhaseStatuses.PENDING_PQA,],
         target=PhaseStatuses.QA_PRES)
-    def to_pres_qa(self):
-        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.QA_PRES][1])
+    def to_pres_qa(self, user=None):
+        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.QA_PRES][1], author=user)
         self.fire_status_notification(PhaseStatuses.QA_PRES)
 
     def can_proceed_to_pres_qa(self):
@@ -921,8 +921,8 @@ class Phase(models.Model):
     # QA_PRES_AUTHOR_UPDATES
     @transition(field=status, source=[PhaseStatuses.QA_PRES,],
         target=PhaseStatuses.QA_PRES_AUTHOR_UPDATES)
-    def to_pres_qa_updates(self):
-        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.QA_PRES_AUTHOR_UPDATES][1])
+    def to_pres_qa_updates(self, user=None):
+        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.QA_PRES_AUTHOR_UPDATES][1], author=user)
         self.required_pqa_updates = True
         self.fire_status_notification(PhaseStatuses.QA_PRES_AUTHOR_UPDATES)
 
@@ -956,8 +956,8 @@ class Phase(models.Model):
     @transition(field=status, source=[PhaseStatuses.QA_PRES,
         PhaseStatuses.IN_PROGRESS],
         target=PhaseStatuses.COMPLETED)
-    def to_completed(self):
-        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.DELIVERED][1])
+    def to_completed(self, user=None):
+        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.DELIVERED][1], author=user)
         self.actual_completed_date = timezone.now()
         self.fire_status_notification(PhaseStatuses.COMPLETED)
 
@@ -1009,8 +1009,8 @@ class Phase(models.Model):
     # DELIVERED
     @transition(field=status, source=PhaseStatuses.COMPLETED,
         target=PhaseStatuses.DELIVERED)
-    def to_delivered(self):
-        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.DELIVERED][1])
+    def to_delivered(self, user=None):
+        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.DELIVERED][1], author=user)
         self.actual_delivery_date = timezone.now()
 
         # Ok, check if all phases have completed...
@@ -1047,8 +1047,8 @@ class Phase(models.Model):
     # CANCELLED
     @transition(field=status, source="+",
         target=PhaseStatuses.CANCELLED)
-    def to_cancelled(self):
-        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.CANCELLED][1])
+    def to_cancelled(self, user=None):
+        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.CANCELLED][1], author=user)
         self.cancellation_date = timezone.now()
         self.fire_status_notification(PhaseStatuses.CANCELLED)
 
@@ -1070,8 +1070,8 @@ class Phase(models.Model):
     # POSTPONED
     @transition(field=status, source="+",
         target=PhaseStatuses.POSTPONED)
-    def to_postponed(self):
-        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.POSTPONED][1])
+    def to_postponed(self, user=None):
+        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.POSTPONED][1], author=user)
         self.fire_status_notification(PhaseStatuses.POSTPONED)
 
     def can_proceed_to_postponed(self):
@@ -1092,8 +1092,8 @@ class Phase(models.Model):
     # DELETED
     @transition(field=status, source="+",
         target=PhaseStatuses.DELETED)
-    def to_deleted(self):
-        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.DELETED][1])
+    def to_deleted(self, user=None):
+        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.DELETED][1], author=user)
         self.fire_status_notification(PhaseStatuses.DELETED)
 
     def can_proceed_to_deleted(self):
@@ -1116,8 +1116,8 @@ class Phase(models.Model):
         PhaseStatuses.DELIVERED, PhaseStatuses.DELETED, PhaseStatuses.CANCELLED
     ],
         target=PhaseStatuses.ARCHIVED)
-    def to_archived(self):
-        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.ARCHIVED][1])
+    def to_archived(self, user=None):
+        log_system_activity(self, self.MOVED_TO+PhaseStatuses.CHOICES[PhaseStatuses.ARCHIVED][1], author=user)
         self.fire_status_notification(PhaseStatuses.ARCHIVED)
 
     def can_proceed_to_archived(self):

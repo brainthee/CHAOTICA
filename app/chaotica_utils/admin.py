@@ -3,9 +3,14 @@ from django.contrib.auth.admin import UserAdmin, GroupAdmin
 from guardian.admin import GuardedModelAdmin
 from .models import User, UserCost, UserInvitation, Notification, Group, Language, LeaveRequest, HolidayCountry, Holiday
 
-class CustomUserAdmin(GuardedModelAdmin):
+class CustomUserAdmin(GuardedModelAdmin):    
     fieldsets = (
-        *UserAdmin.fieldsets,  # original form fieldsets, expanded
+        # *UserAdmin.fieldsets,  # original form fieldsets, expanded
+
+        (None, {
+            'classes': ('wide',),
+            'fields': ('email', 'first_name', 'last_name'),
+        }),
         (                      # new fieldset added on to the bottom
             'Extra Fields',  # group heading of your choice; set to None for a blank space instead of a header
             {

@@ -26,7 +26,7 @@ from django.core.mail import send_mail
 
 
 def get_sentinel_user():
-    return get_user_model().objects.get_or_create(username='deleted')[0]
+    return get_user_model().objects.get_or_create(email='deleted@chaotica.app')[0]
 
 
 class Note(models.Model):
@@ -142,6 +142,12 @@ class UserInvitation(models.Model):
 
 
 class User(AbstractUser):
+    # Fields to enforce email as the auth field
+    username = None
+    email = models.EmailField('Email Address', unique=True)
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = []
+
     manager = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET(get_sentinel_user),
                             related_name="users_managed", null=True, blank=True)
     acting_manager = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET(get_sentinel_user),
@@ -330,7 +336,7 @@ class User(AbstractUser):
         if self.first_name and self.last_name:
             return '{} {}'.format(self.first_name, self.last_name)
         else:
-            return '{}'.format(self.username)
+            return '{}'.format(self.email)
         
     def get_average_qa_rating(self, qa_field, 
                             from_range=timezone.now() - relativedelta(months=12), 
@@ -394,7 +400,7 @@ class User(AbstractUser):
     
     def get_absolute_url(self):
         if self.email:
-            return reverse('user_profile', kwargs={'username': self.username})
+            return reverse('user_profile', kwargs={'email': self.email})
         else:
             return None
     

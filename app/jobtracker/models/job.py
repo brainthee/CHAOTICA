@@ -42,14 +42,18 @@ class Job(models.Model):
     STATE_ERROR = "Invalid state or permissions."
 
     objects = JobManager()
+
+    # IDs
+    id = models.IntegerField(editable=False, verbose_name='Job ID')
+    db_id = models.AutoField(primary_key=True, editable=False, verbose_name='Database ID')
+    slug = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, db_index=True)
+
     unit = models.ForeignKey("OrganisationalUnit", related_name='jobs', on_delete=models.CASCADE)
-    slug = models.UUIDField(default=uuid.uuid4, unique=True)
     status = FSMIntegerField(verbose_name="Job Status",
-                            help_text="Current state of the job", protected=True,
+                            help_text="Current state of the job", 
                             choices=JobStatuses.CHOICES, default=JobStatuses.DRAFT)
     status_changed_date = MonitorField(monitor='status')
     external_id = models.CharField(verbose_name="External ID", db_index=True, max_length=255, blank=True, default="")
-    id = models.AutoField(primary_key=True, verbose_name='Job ID')
     title = models.CharField('Job Title', max_length=250)
     history = HistoricalRecords()
     data = JSONField(verbose_name="Data", null=True, blank=True, default=dict)
@@ -358,7 +362,20 @@ class Job(models.Model):
     def get_absolute_url(self):
         return reverse('job_detail', kwargs={"slug": self.slug})
 
-    def save(self, *args, **kwargs):        
+    def save(self, *args, **kwargs):
+        # This means that the model isn't saved to the database yet
+        if self._state.adding:
+            # Get the maximum display_id value from the database
+            last_id = Job.objects.all().aggregate(largest=models.Max('id'))['largest']
+
+            # aggregate can return None! Check it first.
+            # If it isn't none, just use the last ID specified (which should be the greatest) and add one to it
+            if last_id is not None:
+                self.id = last_id + 1
+            else:
+                # We haven't got any other jobs so lets just start from the default
+                self.id = int(settings.JOB_ID_START) + 1
+
         return super().save(*args, **kwargs)
     
     #### FSM Methods
@@ -367,8 +384,8 @@ class Job(models.Model):
     # PENDING_SCOPE
     @transition(field=status, source=JobStatuses.DRAFT,
         target=JobStatuses.PENDING_SCOPE)
-    def to_pending_scope(self):
-        log_system_activity(self, self.MOVED_TO + JobStatuses.CHOICES[JobStatuses.PENDING_SCOPE][1])
+    def to_pending_scope(self, user=None):
+        log_system_activity(self, self.MOVED_TO + JobStatuses.CHOICES[JobStatuses.PENDING_SCOPE][1], author=user)
         self.scoping_requested_on = timezone.now()
         self.fire_status_notification(JobStatuses.PENDING_SCOPE)
 
@@ -402,8 +419,8 @@ class Job(models.Model):
     # SCOPING
     @transition(field=status, source=[JobStatuses.PENDING_SCOPE,JobStatuses.SCOPING_COMPLETE],
         target=JobStatuses.SCOPING)
-    def to_scoping(self):
-        log_system_activity(self, self.MOVED_TO + JobStatuses.CHOICES[JobStatuses.SCOPING][1])
+    def to_scoping(self, user=None):
+        log_system_activity(self, self.MOVED_TO + JobStatuses.CHOICES[JobStatuses.SCOPING][1], author=user)
         self.fire_status_notification(JobStatuses.SCOPING)
 
     def can_proceed_to_scoping(self):
@@ -438,8 +455,8 @@ class Job(models.Model):
     # SCOPING_ADDITIONAL_INFO_REQUIRED
     @transition(field=status, source=JobStatuses.SCOPING,
         target=JobStatuses.SCOPING_ADDITIONAL_INFO_REQUIRED)
-    def to_additional_scope_req(self):
-        log_system_activity(self, self.MOVED_TO + JobStatuses.CHOICES[JobStatuses.SCOPING_ADDITIONAL_INFO_REQUIRED][1])
+    def to_additional_scope_req(self, user=None):
+        log_system_activity(self, self.MOVED_TO + JobStatuses.CHOICES[JobStatuses.SCOPING_ADDITIONAL_INFO_REQUIRED][1], author=user)
         self.fire_status_notification(JobStatuses.SCOPING_ADDITIONAL_INFO_REQUIRED)
 
     def can_proceed_to_additional_scope_req(self):
@@ -461,8 +478,8 @@ class Job(models.Model):
     @transition(field=status, 
         source=[JobStatuses.SCOPING, JobStatuses.SCOPING_ADDITIONAL_INFO_REQUIRED],
         target=JobStatuses.PENDING_SCOPING_SIGNOFF)
-    def to_scope_pending_signoff(self):
-        log_system_activity(self, self.MOVED_TO + JobStatuses.CHOICES[JobStatuses.PENDING_SCOPING_SIGNOFF][1])
+    def to_scope_pending_signoff(self, user=None):
+        log_system_activity(self, self.MOVED_TO + JobStatuses.CHOICES[JobStatuses.PENDING_SCOPING_SIGNOFF][1], author=user)
         self.fire_status_notification(JobStatuses.PENDING_SCOPING_SIGNOFF)
 
     def can_proceed_to_scope_pending_signoff(self):
@@ -507,7 +524,7 @@ class Job(models.Model):
         source=JobStatuses.PENDING_SCOPING_SIGNOFF,
         target=JobStatuses.SCOPING_COMPLETE)
     def to_scope_complete(self, user=None):
-        log_system_activity(self, self.MOVED_TO + JobStatuses.CHOICES[JobStatuses.SCOPING_COMPLETE][1])
+        log_system_activity(self, self.MOVED_TO + JobStatuses.CHOICES[JobStatuses.SCOPING_COMPLETE][1], author=user)
         self.scoping_completed_date = timezone.now()
         if user:
             self.scoped_signed_off_by = user
@@ -584,8 +601,8 @@ class Job(models.Model):
     # PENDING_START
     @transition(field=status, source=JobStatuses.SCOPING_COMPLETE,
         target=JobStatuses.PENDING_START)
-    def to_pending_start(self):
-        log_system_activity(self, self.MOVED_TO + JobStatuses.CHOICES[JobStatuses.PENDING_START][1])
+    def to_pending_start(self, user=None):
+        log_system_activity(self, self.MOVED_TO + JobStatuses.CHOICES[JobStatuses.PENDING_START][1], author=user)
         self.fire_status_notification(JobStatuses.PENDING_START)
 
     def can_proceed_to_pending_start(self):
@@ -607,8 +624,8 @@ class Job(models.Model):
     @transition(field=status, 
         source=[JobStatuses.SCOPING_COMPLETE,JobStatuses.PENDING_START],
         target=JobStatuses.IN_PROGRESS)
-    def to_in_progress(self):
-        log_system_activity(self, self.MOVED_TO + JobStatuses.CHOICES[JobStatuses.IN_PROGRESS][1])
+    def to_in_progress(self, user=None):
+        log_system_activity(self, self.MOVED_TO + JobStatuses.CHOICES[JobStatuses.IN_PROGRESS][1], author=user)
         self.fire_status_notification(JobStatuses.IN_PROGRESS)
 
     def can_proceed_to_in_progress(self):
@@ -629,8 +646,8 @@ class Job(models.Model):
     # COMPLETED
     @transition(field=status, source=JobStatuses.IN_PROGRESS,
         target=JobStatuses.COMPLETED)
-    def to_complete(self):
-        log_system_activity(self, self.MOVED_TO + JobStatuses.CHOICES[JobStatuses.COMPLETED][1])
+    def to_complete(self, user=None):
+        log_system_activity(self, self.MOVED_TO + JobStatuses.CHOICES[JobStatuses.COMPLETED][1], author=user)
         self.fire_status_notification(JobStatuses.COMPLETED)
 
     def can_proceed_to_complete(self):
@@ -654,8 +671,8 @@ class Job(models.Model):
             JobStatuses.SCOPING_ADDITIONAL_INFO_REQUIRED,JobStatuses.SCOPING_COMPLETE,
             JobStatuses.PENDING_START],
         target=JobStatuses.LOST)
-    def to_lost(self):
-        log_system_activity(self, self.MOVED_TO + JobStatuses.CHOICES[JobStatuses.LOST][1])
+    def to_lost(self, user=None):
+        log_system_activity(self, self.MOVED_TO + JobStatuses.CHOICES[JobStatuses.LOST][1], author=user)
         self.fire_status_notification(JobStatuses.LOST)
 
     def can_proceed_to_lost(self):
@@ -676,8 +693,8 @@ class Job(models.Model):
     # DELETED
     @transition(field=status, source="+",
         target=JobStatuses.DELETED)
-    def to_delete(self):
-        log_system_activity(self, self.MOVED_TO + JobStatuses.CHOICES[JobStatuses.DELETED][1])
+    def to_delete(self, user=None):
+        log_system_activity(self, self.MOVED_TO + JobStatuses.CHOICES[JobStatuses.DELETED][1], author=user)
         self.fire_status_notification(JobStatuses.DELETED)
         # Lets make all phases to cancelled.
         for phase in self.phases.all():
@@ -708,8 +725,8 @@ class Job(models.Model):
     # ARCHIVED
     @transition(field=status, source=[JobStatuses.COMPLETED,JobStatuses.LOST],
         target=JobStatuses.ARCHIVED)
-    def to_archive(self):
-        log_system_activity(self, self.MOVED_TO + JobStatuses.CHOICES[JobStatuses.ARCHIVED][1])
+    def to_archive(self, user=None):
+        log_system_activity(self, self.MOVED_TO + JobStatuses.CHOICES[JobStatuses.ARCHIVED][1], author=user)
         self.fire_status_notification(JobStatuses.ARCHIVED)
 
     def can_proceed_to_archive(self):

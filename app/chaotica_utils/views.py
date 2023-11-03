@@ -13,6 +13,8 @@ from .tasks import task_send_notifications
 from .models import Notification, User, Language, Note, LeaveRequest, UserInvitation
 from .utils import ext_reverse, AppNotification, is_valid_uuid
 from django.db.models import Q
+from django.db.models import Value as V
+from django.db.models.functions import Concat
 from dal import autocomplete
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
@@ -359,8 +361,8 @@ def app_settings(request):
 
 @staff_member_required
 @require_http_methods(["GET", "POST"])
-def user_assign_global_role(request, username):
-    user = get_object_or_404(User, username=username)
+def user_assign_global_role(request, email):
+    user = get_object_or_404(User, email=email)
     data = dict()
     if request.method == 'POST':
         form = AssignRoleForm(request.POST, instance=user)
@@ -511,9 +513,9 @@ def signup(request, invite_id=None):
             if invite:
                 invite.accepted = True
                 invite.save()
-            username = form.cleaned_data.get('username')
+            email = form.cleaned_data.get('email')
             raw_password = form.cleaned_data.get('password1')
-            user = authenticate(username=username, password=raw_password)
+            user = authenticate(email=email, password=raw_password)
             login(request, user)
             return redirect('home')
 
@@ -531,7 +533,7 @@ class UserBaseView(ChaoticaBaseGlobalRoleView):
         return context
 
     def get_queryset(self) :
-        queryset = User.objects.all().exclude(username="AnonymousUser")
+        queryset = User.objects.all().exclude(email="AnonymousUser")
         return queryset
 
 class UserListView(UserBaseView, ListView):
@@ -542,8 +544,8 @@ class UserListView(UserBaseView, ListView):
 class UserDetailView(UserBaseView, DetailView):
 
     def get_object(self, queryset=None):
-        if self.kwargs.get('username'):
-            return get_object_or_404(User, username=self.kwargs.get('username'))
+        if self.kwargs.get('email'):
+            return get_object_or_404(User, email=self.kwargs.get('email'))
         else:
             raise Http404()
 
@@ -572,12 +574,13 @@ class UserAutocomplete(autocomplete.Select2QuerySetView):
         if not self.request.user.is_authenticated:
             return User.objects.none()
         # TODO: Do permission checks...
-        qs = User.objects.all()
+        qs = User.objects.all().annotate(full_name=Concat('first_name', V(' '), 'last_name'))
         if self.q:
             qs = qs.filter(
-                Q(username__icontains=self.q) |
+                Q(email__icontains=self.q) |
+                Q(full_name__icontains=self.q) |
                 Q(first_name__icontains=self.q) |
-                Q(last_name__icontains=self.q), is_active=True).order_by('username')
+                Q(last_name__icontains=self.q), is_active=True).order_by('email')
         return qs
 
 
@@ -631,7 +634,7 @@ def site_search(request):
         ## Users
         if request.user.is_superuser:
             us_search = User.objects.filter(
-                Q(username__icontains=q) | Q(first_name__icontains=q) | Q(last_name__icontains=q)
+                Q(email__icontains=q) | Q(first_name__icontains=q) | Q(last_name__icontains=q)
             )
             context['search_users'] = us_search
             results_count = results_count + us_search.count()

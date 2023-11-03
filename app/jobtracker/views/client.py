@@ -6,7 +6,7 @@ from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from chaotica_utils.views import ChaoticaBaseView
-from ..models import Client, Contact
+from ..models import Client, Contact, OrganisationalUnit
 from ..forms import ClientForm, ClientContactForm
 import logging
 
@@ -51,6 +51,8 @@ class ClientCreateView(ClientBaseView, CreateView):
     fields = None
 
     permission_required = 'jobtracker.add_client'
+    accept_global_perms = True
+    permission_object = OrganisationalUnit
 
     def form_valid(self, form):
         form.instance.created_by = self.request.user

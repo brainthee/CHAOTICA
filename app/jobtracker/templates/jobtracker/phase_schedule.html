@@ -242,9 +242,9 @@ var calendar = new FullCalendar.Calendar(calendarEl, {
     eventClick: function(info) {
       info.jsEvent.preventDefault(); // don't let the browser navigate
       // Show slot edit modal
-      if (info.event.url) {
+      if (info.event.extendedProps.editURL) {
         $.ajax({
-            url: info.event.url,
+            url: info.event.extendedProps.editURL,
             type: 'get',
             dataType: 'json',
             success: function(data) {
