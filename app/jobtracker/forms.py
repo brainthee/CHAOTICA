@@ -57,15 +57,15 @@ class SchedulerFilter(forms.Form):
                 #     'to_date',
                 # ),
                 AccordionGroup('Users Filter',
-                    Field('users', css_class="extra"),
+                    Field('users', css_class="extra", style="width: 100%;"),
                 ),
                 AccordionGroup('Skills Filter',
-                    Field('skills_specialist', css_class="extra"),
-                    Field('skills_can_do_alone', css_class="extra"),
-                    Field('skills_can_do_support', css_class="extra"),
+                    Field('skills_specialist', css_class="extra", style="width: 100%;"),
+                    Field('skills_can_do_alone', css_class="extra", style="width: 100%;"),
+                    Field('skills_can_do_support', css_class="extra", style="width: 100%;"),
                 ),
                 AccordionGroup('Service Filter',
-                    Field('services', css_class="extra"),
+                    Field('services', css_class="extra", style="width: 100%;"),
                 ),
             ),
         )
@@ -141,7 +141,7 @@ class AssignUserField(forms.Form):
         self.fields['user'].help_text = None
         self.fields['user'].label = False
         self.helper.layout = Layout(
-                Field('user'),
+                Field('user', style="width: 100%;"),
                 StrictButton('Add', id="addUserToResource",
                 css_class="btn btn-outline-phoenix-success"),
         )
@@ -166,7 +166,7 @@ class AssignUser(forms.Form):
         self.helper.layout = Layout(
             Div(
                 Row(
-                    Div(Field('user'),
+                    Div(Field('user', style="width: 100%;"),
                         css_class="input-group input-group-dynamic")
                 ),
                 css_class='modal-body p-3'),
@@ -196,7 +196,7 @@ class AssignMultipleUser(forms.Form):
         self.helper.layout = Layout(
             Div(
                 Row(
-                    Div(Field('users'),
+                    Div(Field('users', style="width: 100%;"),
                         css_class="input-group input-group-dynamic")
                 ),
                 css_class='modal-body pt-3'),
@@ -831,7 +831,7 @@ class OrganisationalUnitMemberForm(forms.ModelForm):
         self.helper = FormHelper(self)
         # self.helper.form_tag = False
         self.helper.layout = Layout(
-            Field('member'),
+            Field('member', style="width: 100%;"),
         )
         # self.fields['name'].label = False
         # self.fields['description'].label = False
