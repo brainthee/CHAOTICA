@@ -829,7 +829,7 @@ class OrganisationalUnitMemberForm(forms.ModelForm):
         org_unit = kwargs.pop('org_unit', None)
         super(OrganisationalUnitMemberForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
-        # self.helper.form_tag = False
+        self.helper.form_tag = False
         self.helper.layout = Layout(
             Field('member', style="width: 100%;"),
         )
