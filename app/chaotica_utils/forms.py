@@ -145,6 +145,9 @@ class AssignRoleForm(forms.ModelForm):
         self.helper = FormHelper(self)
         self.fields['groups'].queryset = Group.objects.filter(name__startswith=settings.GLOBAL_GROUP_PREFIX)
         self.helper.form_tag = False
+        self.helper.layout = Layout(
+            Field("groups", style="width: 100%;"),
+        )
 
     class Meta:
         model = User
