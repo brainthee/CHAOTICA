@@ -9,7 +9,17 @@ class CustomUserAdmin(GuardedModelAdmin):
 
         (None, {
             'classes': ('wide',),
-            'fields': ('email', 'first_name', 'last_name'),
+            'fields': (
+                'email', 
+                'first_name', 
+                'last_name',
+                'is_active',
+                'is_staff',
+                'is_superuser',
+                'date_joined',
+                'last_login',
+                'groups',
+            ),
         }),
         (                      # new fieldset added on to the bottom
             'Extra Fields',  # group heading of your choice; set to None for a blank space instead of a header
