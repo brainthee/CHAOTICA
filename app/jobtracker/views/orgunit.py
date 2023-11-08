@@ -46,7 +46,9 @@ def organisationalunit_add(request, slug):
         form = OrganisationalUnitMemberForm(request.POST, org_unit=org_unit)
         if form.is_valid():
             membership = form.save(commit=False)
+            membership.unit = org_unit
             if membership:
+
                 # Ok, lets see if we need to make it pending...
                 if org_unit.approval_required:
                     membership.role = UnitRoles.PENDING
