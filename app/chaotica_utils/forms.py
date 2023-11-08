@@ -171,6 +171,7 @@ class ProfileBasicForm(forms.ModelForm):
 
     profile_image = forms.FileField(
         label="Profile Image",
+        required=False,
     )
     pref_timezone = forms.ChoiceField(
         choices=[(x, x) for x in pytz.common_timezones],

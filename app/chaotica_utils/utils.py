@@ -7,6 +7,30 @@ from datetime import timedelta
 from uuid import UUID
 import re
 from datetime import datetime
+from .enums import GlobalRoles
+from menu import MenuItem
+from django.conf import settings
+
+
+class RoleMenuItem(MenuItem):
+    """Custom MenuItem that checks permissions based on the view associated
+    with a URL"""
+    def check(self, request):
+        if self.requiredRole:
+             self.visible = request.user.groups.filter(
+                 name=settings.GLOBAL_GROUP_PREFIX+GlobalRoles.CHOICES[self.requiredRole][1]).exists()
+        else:
+            self.visible = False
+
+
+class PermMenuItem(MenuItem):
+    """Custom MenuItem that checks permissions based on the view associated
+    with a URL"""
+    def check(self, request):
+        if self.perm and request.user:
+             self.visible = request.user.has_perm(self.perm)
+        else:
+            self.visible = False
 
 
 def fullcalendar_to_datetime(date):

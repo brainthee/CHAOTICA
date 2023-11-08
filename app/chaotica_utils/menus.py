@@ -1,18 +1,8 @@
 from django.urls import reverse
 from menu import Menu, MenuItem
 from .enums import GlobalRoles
-from django.conf import settings
+from .utils import RoleMenuItem
 
-
-class RoleMenuItem(MenuItem):
-    """Custom MenuItem that checks permissions based on the view associated
-    with a URL"""
-    def check(self, request):
-        if self.requiredRole:
-             self.visible = request.user.groups.filter(
-                 name=settings.GLOBAL_GROUP_PREFIX+GlobalRoles.CHOICES[self.requiredRole][1]).exists()
-        else:
-            self.visible = False
 
 Menu.add_item("user", MenuItem("Profile",
                                reverse('view_own_profile'),
