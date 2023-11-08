@@ -231,8 +231,7 @@ class User(AbstractUser):
         if self.profile_image:
             return self.profile_image.url
         else:
-            rand = random.randint(1,5)
-            return static('assets/img/team-{}.jpg'.format(rand))
+            return static('assets/img/team/avatar-rounded.webp')
     
     def get_current_status(self):
         # online, offline, away, do-not-disturb
