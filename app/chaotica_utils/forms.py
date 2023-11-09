@@ -30,6 +30,10 @@ class CustomConfigForm(ConstanceForm):
                 Column(Div(FloatingField('SITE_NOTICE_MSG'),
                         css_class="input-group input-group-dynamic")),
             ),
+            Row(
+                Column(Div(Field('SNOW_ENABLED'),
+                        css_class="input-group input-group-dynamic")),
+            ),
         )
 
 
