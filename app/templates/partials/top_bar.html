@@ -39,6 +39,16 @@
       {% include 'partials/search.html' %}
 
       <ul class="navbar-nav navbar-nav-icons flex-row">
+
+        {% if config.SNOW_ENABLED %}  
+        <li class="nav-item">
+          <div class="form-check mt-2 form-switch align-middle">
+            <input class="form-check-input" id="snowControl" type="checkbox" />
+            <label class="form-check-label" for="snowControl">Snow</label>
+          </div>
+        </li>
+        {% endif %}
+
         <li class="nav-item">
           <div class="theme-control-toggle fa-icon-wait px-2">
             <input class="form-check-input ms-0 theme-control-toggle-input" type="checkbox" data-theme-control="phoenixTheme" value="dark" id="themeControlToggle" />

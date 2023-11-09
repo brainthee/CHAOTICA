@@ -343,7 +343,7 @@ def update_own_certs(request):
 def app_settings(request):
     context = {}
     if request.method == "POST":
-        form = CustomConfigForm(request.POST)
+        form = CustomConfigForm(request.POST, initial=config.CONSTANCE_CONFIG)
         if form.is_valid():
             form.save()
         else:
@@ -351,10 +351,10 @@ def app_settings(request):
         return HttpResponseRedirect(reverse('app_settings'))
     else:
         # Send the modal
-        form = CustomConfigForm(initial=django_settings.CONSTANCE_CONFIG)
+        form = CustomConfigForm(initial=config.CONSTANCE_CONFIG)
 
     context = {'app_settings': form}
-    template = loader.get_template('app_django_settings.html')
+    template = loader.get_template('app_settings.html')
     context = {**context, **page_defaults(request)}
     return HttpResponse(template.render(context, request))
 

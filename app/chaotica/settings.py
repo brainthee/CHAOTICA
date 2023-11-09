@@ -97,6 +97,7 @@ CONSTANCE_ADDITIONAL_FIELDS = {
 }
 
 CONSTANCE_CONFIG = {
+    'SNOW_ENABLED': (False, 'Should it snow?'),
     'SITE_NOTICE_ENABLED': (False, 'Show a site wide notice'),
     'SITE_NOTICE_MSG': ('', 'Message to display across the site'),
     'SITE_NOTICE_COLOUR': ('primary', 'Select the alert colour of the site notice', 'notice_colour'),
@@ -222,6 +223,7 @@ TEMPLATES = [
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
+                "constance.context_processors.config",
                 "django.template.context_processors.debug",
                 "django.template.context_processors.request",
                 'django.template.context_processors.static',

@@ -174,11 +174,11 @@
     {% endblock modal %}
 
     {% block page_content %}
-      {% block breadcrumbs %}
         <div class="content pt-15 {% block content_classes %}{% endblock content_classes %}" {% if config.SITE_NOTICE_ENABLED %}style="margin-top: 2rem"{% endif %}>
 
-    {% include 'partials/alerts.html' %}
+        {% include 'partials/alerts.html' %}
           
+        {% block breadcrumbs %}
           <nav class="pt-1 text-600 {% block breadcrumb_classes %}{% endblock breadcrumb_classes %}" style="--phoenix-breadcrumb-divider: '&gt;&gt;';" aria-label="breadcrumb">
             <ol class="breadcrumb mb-0">
               <li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{% url 'home' %}">Home</a></li>
@@ -223,30 +223,31 @@
   <!-- ===============================================-->
   {% block footer_javascript %}
     {% block footer_javascript_site %}
-
+    <script>
+      {% include 'js/core.js' %}
+    </script>
     
     {% if config.SNOW_ENABLED %}  
     <!-- SNNOOOWWWW!! -->
     <script src="{% static "assets/js/snow.js" %}"></script> 
-      {% endif %}
-
     <script>
-      {% include 'js/core.js' %}
-
-      {% if config.SNOW_ENABLED %}      
       jQuery(document).ready(function($){
-        $(document).snowFlurry({
-          maxSize: 5,
-          numberOfFlakes: 50,
-          minSpeed: 10,
-          maxSpeed: 15,
-          color: '#fff',
-          timeout: 0
+        $('#snowControl').change(function() {
+            if(this.checked) {
+              $('body').flurry();
+            } else {   
+              $('body').flurry('destroy');
+            } 
+            localStorage.showSnow = $(this).prop("checked");
         });
+        var data = localStorage.showSnow;
+        if ((data == "true") || (data === undefined)) {
+          $("#snowControl").prop( "checked", true );
+          $("#snowControl").trigger("change");
+        }
       });
-      {% endif %}
     </script>
-
+    {% endif %}
     {% endblock footer_javascript_site %}
 
     {% block footer_javascript_section %}{% endblock footer_javascript_section %}
