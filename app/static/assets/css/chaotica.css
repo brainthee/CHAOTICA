@@ -1,3 +1,9 @@
+html.holodeck {
+  -webkit-filter: grayscale(100%);
+  -moz-filter: grayscale(100%);
+  filter: grayscale(100%);
+}
+
 span.select2-container {
   z-index:10050 !important;
   min-width: unset !important;
