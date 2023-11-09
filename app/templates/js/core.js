@@ -1,3 +1,5 @@
+{% load static %}
+
 // Function to GET csrftoken from Cookie
 function getCookie(name) {
     var cookieValue = null;
@@ -230,4 +232,56 @@ $(function() {
         });        
     });
 
+});
+
+  
+jQuery(document).ready(function($){
+
+    var data = localStorage.safetyProtocols;
+    if (data == "true") {
+        $("html").addClass("holodeck");
+    }
+
+    onKonamiCode(function () {
+        var audioElement = document.createElement('audio');
+        audioElement.setAttribute('src', "{% static 'assets/data/holodeck-laugh.mp3' %}");
+        audioElement.play();
+
+
+        var data = localStorage.safetyProtocols;
+        var spTitlePrefix = "Disengaging"
+        if (data == "true") {
+            $("html").removeClass("holodeck");
+            localStorage.safetyProtocols = "";
+            spTitlePrefix = "Engaging"
+        } else {
+            $("html").addClass("holodeck");
+            localStorage.safetyProtocols = "true";
+        }
+        
+        let timerInterval;
+        Swal.fire({
+        title: "Warning",
+        html: spTitlePrefix+" holodeck safety protocols...",
+        timer: 10000,
+        backdrop: `
+            rgba(0,0,123,0.4)
+            url("{% static 'assets/img/Chaotical.jpg' %}")
+            100%
+        `,
+        timerProgressBar: true,
+        didOpen: () => {
+            Swal.showLoading();
+        },
+        willClose: () => {
+            clearInterval(timerInterval);
+        }
+        }).then((result) => {
+        /* Read more about handling dismissals below */
+        if (result.dismiss === Swal.DismissReason.timer) {
+            console.log("I was closed by the timer");
+        }
+        });
+
+    });
 });
