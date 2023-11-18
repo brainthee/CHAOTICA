@@ -2,6 +2,7 @@ from django import forms
 from django.urls import reverse
 from .models import Contact, Job, Feedback, TimeSlot, TimeSlotType, Client, Phase, OrganisationalUnit, OrganisationalUnitMember, Skill, Service, WorkflowTask, SkillCategory
 from chaotica_utils.models import Note, User
+from .enums import DefaultTimeSlotTypes
 from crispy_forms.helper import FormHelper
 from crispy_forms.bootstrap import StrictButton, Accordion, AccordionGroup
 from crispy_forms.layout import Layout, Row, Column, Field, Div, HTML, Submit, Reset
@@ -356,18 +357,49 @@ class ChangeTimeSlotDateModalForm(forms.ModelForm):
             'user',
             'start',
             'end',
-            )
+        )
 
 
 class DeliveryChangeTimeSlotModalForm(forms.ModelForm):
+    phase = forms.ModelChoiceField(
+        queryset=Phase.objects.filter(),
+        widget=autocomplete.ModelSelect2(
+            url='phase-autocomplete',
+            attrs={
+                'data-minimum-input-length': 3,
+            },),)
+    
     def __init__(self, *args, **kwargs):
-        if 'slug' in kwargs:
-            kwargs.pop('slug')
+        if 'phase' in kwargs:
+            phase = kwargs.pop('phase')
+        else:
+            phase = None
+        if 'user' in kwargs:
+            user = kwargs.pop('user')
+        else:
+            user = None
+        if 'start' in kwargs:
+            start = kwargs.pop('start')
+        else:
+            start = None
+        if 'end' in kwargs:
+            end = kwargs.pop('end')
+        else:
+            end = None
         super(DeliveryChangeTimeSlotModalForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
         for fieldname in self.fields:
             self.fields[fieldname].help_text = None
         self.fields['user'].widget = forms.HiddenInput()
+        if user:
+            self.fields['user'].initial = user
+        
+        self.fields['slot_type'].widget = forms.HiddenInput()
+        self.fields['slot_type'].initial = TimeSlotType.get_builtin_object(DefaultTimeSlotTypes.DELIVERY)
+        self.fields['slot_type'].disabled = True
+
+        if phase:
+            self.fields['phase'].disabled = True
         
         if self.instance.phase:
             delete_button = StrictButton("Delete", type="button", 
@@ -377,12 +409,18 @@ class DeliveryChangeTimeSlotModalForm(forms.ModelForm):
             delete_button = None
 
         self.fields['start'].widget = DateTimePickerInput()
+        if start:
+            self.fields['start'].initial = start
+
         self.fields['end'].widget = DateTimePickerInput()
-        # self.fields['user'].disabled = True
-        # self.fields['phase'].disabled = True
+        if end:
+            self.fields['end'].initial = end
+            
         self.helper.layout = Layout(
-            Field('user', type="hidden"),
-            Field('phase', type="hidden"),
+            Row(
+            Field('user'),),
+            Row(
+            Field('phase', css_class="w-100"),),
             Div(
                 Row(
                     Column(Div(FloatingField('deliveryRole'),
@@ -414,11 +452,12 @@ class DeliveryChangeTimeSlotModalForm(forms.ModelForm):
         fields = (
             'user',
             'phase',
+            'slot_type',
             'deliveryRole',
             'is_onsite',
             'start',
             'end',
-            )
+        )
 
 
 class JobForm(forms.ModelForm):

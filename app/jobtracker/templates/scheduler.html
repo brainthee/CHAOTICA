@@ -166,20 +166,85 @@ var calendar = new FullCalendar.Calendar(calendarEl, {
     timeZone: '{{ user.pref_timezone }}', // the default (unnecessary to specify)
     select: function(info) {
       // get the selection info
-      start_date = info.start.toJSON();
-      end_date = info.end.toJSON();
-      resource_id = info.resource.id;
-      // Lets open a modal window to setup the    
-
-      $.ajax({
-          url: '{% url "create_scheduler_slot" %}?resource_id='+parseInt(resource_id)+'&start='+start_date+'&end='+end_date,
-          type: 'get',
-          dataType: 'json',
-          success: function(data) {
-              $("#mainModalContent").html(data.html_form);
-              $("#mainModal").modal("show");
-          }
-        });
+      // https://swisnl.github.io/jQuery-contextMenu/
+      $.contextMenu({
+        selector: '.fc-scroller', 
+        trigger: 'none',
+        build: function($triggerElement, e){
+          return {
+            callback: function(key, options) {
+      
+                start_date = info.start.toJSON();
+                end_date = info.end.toJSON();
+                resource_id = info.resource.id;
+                // Lets open a modal window to setup the   
+                switch(key) {
+                  case "assign_phase":
+                    $.ajax({
+                      url: '{% url "create_scheduler_phase_slot" %}?resource_id='+parseInt(resource_id)+'&start='+start_date+'&end='+end_date,
+                      type: 'get',
+                      dataType: 'json',
+                      success: function(data) {
+                          $("#mainModalContent").html(data.html_form);
+                          $("#mainModal").modal("show");
+                      }
+                    });
+                    break;
+                  case "assign_internal":
+                    $.ajax({
+                      url: '{% url "create_scheduler_internal_slot" %}?resource_id='+parseInt(resource_id)+'&start='+start_date+'&end='+end_date,
+                      type: 'get',
+                      dataType: 'json',
+                      success: function(data) {
+                          $("#mainModalContent").html(data.html_form);
+                          $("#mainModal").modal("show");
+                      }
+                    });
+                    break;
+                  case "add_comment":
+                    $.ajax({
+                      url: '{% url "create_scheduler_comment" %}?resource_id='+parseInt(resource_id)+'&start='+start_date+'&end='+end_date,
+                      type: 'get',
+                      dataType: 'json',
+                      success: function(data) {
+                          $("#mainModalContent").html(data.html_form);
+                          $("#mainModal").modal("show");
+                      }
+                    });
+                    break;
+                  case "clear":
+                    $.ajax({
+                      url: '{% url "clear_scheduler_range" %}?resource_id='+parseInt(resource_id)+'&start='+start_date+'&end='+end_date,
+                      type: 'get',
+                      dataType: 'json',
+                      success: function(data) {
+                          $("#mainModalContent").html(data.html_form);
+                          $("#mainModal").modal("show");
+                      }
+                    });
+                    break;
+                } 
+                // Swal.fire({
+                //   title: "clicked: " + key,
+                //   icon: "success",
+                // });
+                // Destroy the menu so we have a fresh one next time
+                $('.fc-scroller').contextMenu('destroy');
+            },
+            position: function(opt, x, y){
+                opt.$menu.css({top: info.jsEvent.y, left: info.jsEvent.x});
+            },
+            items: {
+                "assign_phase": {name: "Assign phase", icon: "fas fa-cubes fs-0 me-2"},
+                "assign_internal": {name: "Assign internal", icon: "fas fa-cubes fs-0 me-2"},
+                // "assign_task": {name: "Assign task", icon: "fas fa-checkboard fs-0 me-2"},
+                "add_comment": {name: "Add Comment", icon: "fas fa-comment fs-0 me-2"},
+                "clear": {name: "Clear Range", icon: "fas fa-wipe fs-0 me-2"},
+            }
+          };
+        }
+      });
+      $('.fc-scroller').contextMenu();
     },
     eventDrop: function(info) {
       Swal.fire({
