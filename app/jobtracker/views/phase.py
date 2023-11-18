@@ -3,6 +3,9 @@ from django.urls import reverse
 from django.http import HttpResponseRedirect, HttpResponseBadRequest, JsonResponse
 from django.template import loader
 from django.views import View
+from django.db.models import Q, CharField, ExpressionWrapper
+from django.db.models import Value as V
+from django.db.models.functions import Concat
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
@@ -12,6 +15,7 @@ from ..forms import AddNote, AssignUserField, PhaseDeliverInlineForm, FeedbackFo
 from ..enums import FeedbackType, PhaseStatuses, TimeSlotDeliveryRole
 from .helpers import _process_assign_user
 import logging
+from dal import autocomplete
 from django.contrib.auth.decorators import login_required
 
 
@@ -30,6 +34,20 @@ def view_phase_schedule_slots(request, job_slug, slug):
             start=request.GET.get('start', None),
             end=request.GET.get('end', None),phase_focus=phase)
     return JsonResponse(data, safe=False)
+
+
+class PhaseAutocomplete(autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        # Don't forget to filter out results depending on the visitor !
+        if not self.request.user.is_authenticated:
+            return Phase.objects.none()
+        # TODO: Do permission checks...
+        qs = Phase.objects.all().annotate(full_phase_id=ExpressionWrapper(Concat('job__id', V('-'), 'phase_number'), output_field=CharField()))
+        if self.q:
+            qs = qs.filter(
+                # Q(email__icontains=self.q) |
+                Q(full_phase_id__icontains=self.q))
+        return qs
 
 
 @login_required

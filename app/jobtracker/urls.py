@@ -17,7 +17,10 @@ urlpatterns = [
     path('scheduler/timeslot/change_date/', views.change_scheduler_slot_date, name='change_scheduler_slot_date'),
     path('scheduler/timeslot/change_date/<int:pk>', views.change_scheduler_slot_date, name='change_scheduler_slot_date'),
     path('scheduler/timeslots', views.view_scheduler_slots, name='view_scheduler_slots'),
-    path('scheduler/timeslots/create', views.create_scheduler_slot, name='create_scheduler_slot'),
+    path('scheduler/timeslots/comment/create', views.create_scheduler_comment, name='create_scheduler_comment'),
+    path('scheduler/timeslots/phase/create', views.create_scheduler_phase_slot, name='create_scheduler_phase_slot'),
+    path('scheduler/timeslots/internal/create', views.create_scheduler_internal_slot, name='create_scheduler_internal_slot'),
+    path('scheduler/timeslots/clear_range', views.clear_scheduler_range, name='clear_scheduler_range'),    
     path('stats/', views.view_stats, name='view_stats'),
     path('reports/', views.view_reports, name='view_reports'),
     path('tasks/', views.run_tasks, name='run_tasks'),
@@ -44,6 +47,7 @@ urlpatterns = [
     path('job/<str:slug>/assign/<str:field>', views.assign_job_field, name='assign_job_field'),
 
     # Phase CRUD
+    path('autocomplete/phases', views.PhaseAutocomplete.as_view(), name='phase-autocomplete'),
     path('job/<str:job_slug>/phase/create/', views.PhaseCreateView.as_view(), name='phase_create'),
     path('job/<str:job_slug>/phase/<str:slug>/', views.PhaseDetailView.as_view(), name='phase_detail'),
     path('job/<str:job_slug>/phase/<str:slug>/update/note', views.phase_create_note, name='phase_create_note'),

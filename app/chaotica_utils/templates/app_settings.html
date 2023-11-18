@@ -15,8 +15,8 @@
   This functionality is not yet complete. Do not use!
 </div>
 <div class="row mb-5">
-    <div class="col-lg-3">
-       <div class="card position-sticky top-1">
+    <div class="col-lg-3 g-2">
+       <div class="card position-sticky">
           <ul class="nav flex-column bg-white border-radius-lg p-3">
              <li class="nav-item">
                 <a class="nav-link text-dark d-flex" data-scroll="" href="#app-settings">
@@ -33,7 +33,7 @@
           </ul>
        </div>
     </div>
-    <div class="col-lg-9 mt-lg-0 mt-4">      
+    <div class="col-lg-9 g-2">      
 
       <div class="card" id="app-settings">
         <form method="post" action="{{ request.get_full_path }}" enctype="multipart/form-data">
@@ -56,10 +56,20 @@
 
             </div>
           </div>
-          <div class="card-body pt-0">
+          <div class="card-body">
             {% crispy app_settings %}
           </div>
          </form>
+       </div>
+
+
+      <div class="card mt-4" id="feeds">
+          <div class="card-header">
+            <h5>Data Import</h5>
+          </div>
+          <div class="card-body pt-0">
+            
+          </div>
        </div>
     </div>
  </div>

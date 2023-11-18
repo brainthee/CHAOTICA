@@ -26,6 +26,8 @@ from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.contrib import messages 
 from django.shortcuts import get_object_or_404
 from constance import config
+from constance.forms import ConstanceForm
+from constance.utils import get_values
 from .tasks import task_update_holidays
 from django.views.decorators.http import require_http_methods, require_safe, require_POST
     
@@ -341,17 +343,19 @@ def update_own_certs(request):
 @staff_member_required
 @require_http_methods(["GET", "POST"])
 def app_settings(request):
+    from pprint import pprint
     context = {}
     if request.method == "POST":
-        form = CustomConfigForm(request.POST, initial=config.CONSTANCE_CONFIG)
+        form = ConstanceForm(request.POST.copy())
         if form.is_valid():
             form.save()
         else:
+            pprint(form.errors)
             messages.error(request, "Form is invalid")
         return HttpResponseRedirect(reverse('app_settings'))
     else:
         # Send the modal
-        form = CustomConfigForm(initial=config.CONSTANCE_CONFIG)
+        form = ConstanceForm(initial=get_values())
 
     context = {'app_settings': form}
     template = loader.get_template('app_settings.html')

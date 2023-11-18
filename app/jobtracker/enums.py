@@ -112,7 +112,7 @@ class DefaultTimeSlotTypes():
             'name': "Unassigned", 
             "built_in": True, 
             "is_delivery": False, 
-            "is_assignable": True,
+            "is_assignable": False,
             "is_working": True,
             "availability": AvailabilityType.AVAILABLE
         },

@@ -7,7 +7,7 @@ from chaotica_utils.views import page_defaults
 from chaotica_utils.views import ChaoticaBaseView
 from chaotica_utils.models import User
 from guardian.shortcuts import get_objects_for_user
-from ..models import Job, TimeSlot, UserSkill
+from ..models import Job, TimeSlot, UserSkill, Phase
 from ..forms import NonDeliveryTimeSlotModalForm, SchedulerFilter, ChangeTimeSlotDateModalForm, DeliveryChangeTimeSlotModalForm
 from ..enums import UserSkillRatings
 import logging
@@ -169,7 +169,88 @@ def change_scheduler_slot(request, pk=None):
 
 
 @login_required
-def create_scheduler_slot(request):
+def create_scheduler_internal_slot(request):
+    data = dict()
+    start = request.GET.get('start', None)
+    end = request.GET.get('end', None)
+    resource_id = request.GET.get('resource_id', None)
+
+    if request.method == 'POST':
+        form = NonDeliveryTimeSlotModalForm(request.POST, start=start, end=end, resource_id=resource_id)
+        if form.is_valid():
+            form.save()
+            data['form_is_valid'] = True
+        else:
+            data['form_is_valid'] = False
+    else:
+        form = NonDeliveryTimeSlotModalForm(start=start, end=end, resource_id=resource_id)
+
+    context = {'form': form}
+    data['html_form'] = loader.render_to_string("jobtracker/modals/job_slot_create.html",
+                                                context,
+                                                request=request)
+    return JsonResponse(data)
+
+
+@login_required
+def create_scheduler_phase_slot(request):
+    data = dict()
+    start = request.GET.get('start', None)
+    end = request.GET.get('end', None)
+    resource_id = request.GET.get('resource_id', None)
+    if resource_id:
+        user = get_object_or_404(User, pk=resource_id)
+    else:
+        user = None
+    phase_id = request.GET.get('phase_id', None)
+    if phase_id:
+        phase = get_object_or_404(Phase, pk=phase_id)
+    else:
+        phase = None
+
+    if request.method == 'POST':
+        form = DeliveryChangeTimeSlotModalForm(request.POST, start=start, end=end, user=user, phase=phase)
+        if form.is_valid():
+            form.save()
+            data['form_is_valid'] = True
+        else:
+            data['form_is_valid'] = False
+    else:
+        form = DeliveryChangeTimeSlotModalForm(start=start, end=end, user=user, phase=phase)
+
+    context = {'form': form}
+    data['html_form'] = loader.render_to_string("jobtracker/modals/job_slot_create.html",
+                                                context,
+                                                request=request)
+    return JsonResponse(data)
+
+
+@login_required
+def create_scheduler_comment(request):
+    data = dict()
+    start = request.GET.get('start', None)
+    end = request.GET.get('end', None)
+    resource_id = request.GET.get('resource_id', None)
+
+    if request.method == 'POST':
+        form = NonDeliveryTimeSlotModalForm(request.POST, start=start, end=end, resource_id=resource_id)
+        if form.is_valid():
+            form.save()
+            data['form_is_valid'] = True
+        else:
+            data['form_is_valid'] = False
+    else:
+        form = NonDeliveryTimeSlotModalForm(start=start, end=end, resource_id=resource_id)
+
+    context = {'form': form}
+    data['html_form'] = loader.render_to_string("jobtracker/modals/job_slot_create.html",
+                                                context,
+                                                request=request)
+    return JsonResponse(data)
+
+
+@login_required
+def clear_scheduler_range(request):
     data = dict()
     start = request.GET.get('start', None)
     end = request.GET.get('end', None)

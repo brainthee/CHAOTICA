@@ -237,34 +237,34 @@ class ProfileBasicForm(forms.ModelForm):
 
     def clean_profile_image(self):
         profile_image = self.cleaned_data['profile_image']
+        if profile_image:
+            try:
+                w, h = get_image_dimensions(profile_image)
 
-        try:
-            w, h = get_image_dimensions(profile_image)
+                #validate dimensions
+                max_width = max_height = 500
+                if (w and h) and (w > max_width or h > max_height):
+                    self.add_error("profile_image",
+                        'Please use an image that is '
+                        '%s x %s pixels or smaller.' % (max_width, max_height))
 
-            #validate dimensions
-            max_width = max_height = 500
-            if (w and h) and (w > max_width or h > max_height):
-                self.add_error("profile_image",
-                    'Please use an image that is '
-                    '%s x %s pixels or smaller.' % (max_width, max_height))
+                #validate content type
+                main, sub = profile_image.content_type.split('/')
+                if not (main == 'image' and sub in ['jpeg', 'pjpeg', 'gif', 'png']):
+                    self.add_error("profile_image",'Please use a JPEG, '
+                            'GIF or PNG image.')
 
-            #validate content type
-            main, sub = profile_image.content_type.split('/')
-            if not (main == 'image' and sub in ['jpeg', 'pjpeg', 'gif', 'png']):
-               self.add_error("profile_image",'Please use a JPEG, '
-                    'GIF or PNG image.')
+                #validate file size
+                if len(profile_image) > (1024 * 1024):
+                    self.add_error("profile_image",
+                        'Avatar file size may not exceed 1M.')
 
-            #validate file size
-            if len(profile_image) > (1024 * 1024):
-                self.add_error("profile_image",
-                    'Avatar file size may not exceed 1M.')
-
-        except AttributeError:
-            """
-            Handles case when we are updating the user profile
-            and do not supply a new avatar
-            """
-            pass
+            except AttributeError:
+                """
+                Handles case when we are updating the user profile
+                and do not supply a new avatar
+                """
+                pass
 
         return profile_image
 
