@@ -1,16 +1,18 @@
 {% extends 'email_base.html' %}
 
 {% block title %}
-In Progress...
+{{ title }}
 {% endblock title %}
 
 {% block content %}
-{{ phase }} has moved to In Progress. Please get in touch with the project team for further updates.
+{{ message }}
 {% endblock content %}
 
 {% block action_block %}
-<a href="{{ phase.get_absolute_url }}" 
+{% if action_link %}
+<a href="{{ action_link }}" 
   style="color: #ffffff; font-size: 16px; font-family: Helvetica, Arial, sans-serif; text-decoration: none; border-radius: 6px; line-height: 20px; display: block; font-weight: 700 !important; white-space: nowrap; background-color: #0d6efd; padding: 12px; border: 1px solid #0d6efd;">
-  Visit Phase
+  Visit Job
 </a>
+{% endif %}
 {% endblock action_block %}

@@ -15,7 +15,7 @@ from django.urls import reverse_lazy
 from chaotica_utils.views import log_system_activity, ChaoticaBaseView
 from chaotica_utils.enums import UnitRoles
 from ..models import Job, TimeSlot, TimeSlotType, OrganisationalUnit, WorkflowTask, Contact
-from ..forms import ScopeInlineForm, DeliveryChangeTimeSlotModalForm, AddNote, JobForm, AssignUserField, ScopeForm
+from ..forms import ScopeInlineForm, DeliveryTimeSlotModalForm, AddNote, JobForm, AssignUserField, ScopeForm
 from ..enums import JobStatuses, TimeSlotDeliveryRole, DefaultTimeSlotTypes
 from .helpers import _process_assign_user, _process_assign_contact
 import logging
@@ -25,6 +25,13 @@ from django.contrib.auth.decorators import login_required, permission_required
 logger = logging.getLogger(__name__)
 
 # TODO: setup events for schedule so it comes back with member's only 
+
+
+@login_required
+def view_job_schedule_gantt_data(request, slug):
+    job = get_object_or_404(Job, slug=slug)
+    return JsonResponse(job.get_gantt_json(), safe=False)
+
 
 @login_required
 @permission_required('jobtracker.view_schedule', (Job, 'slug', 'slug'))
@@ -132,7 +139,7 @@ def change_job_schedule_slot(request, slug, pk=None):
         slot = get_object_or_404(TimeSlot, pk=pk, phase__job=job)
     data = dict()
     if request.method == "POST":
-        form = DeliveryChangeTimeSlotModalForm(request.POST, instance=slot, slug=slug)
+        form = DeliveryTimeSlotModalForm(request.POST, instance=slot, slug=slug)
         if form.is_valid():
             slot = form.save(commit=False)
             slot.slot_type = TimeSlotType.get_builtin_object(DefaultTimeSlotTypes.DELIVERY)
@@ -143,7 +150,7 @@ def change_job_schedule_slot(request, slug, pk=None):
             data['form_errors'] = form.errors
     else:
         # Send the modal
-        form = DeliveryChangeTimeSlotModalForm(instance=slot, slug=slug)
+        form = DeliveryTimeSlotModalForm(instance=slot, slug=slug)
 
     context = {'form': form, 'job': job}
     data['html_form'] = loader.render_to_string("jobtracker/modals/job_slot.html",

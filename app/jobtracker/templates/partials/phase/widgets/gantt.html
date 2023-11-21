@@ -4,7 +4,7 @@
     <div class="col my-auto">
     </div>
     <div class="col-lg-4 text-end">
-      <a href="{% url 'job_schedule' job.slug %}" class="btn btn-phoenix-success">
+      <a href="{% url 'phase_schedule' phase.job.slug phase.slug %}" class="btn btn-phoenix-success">
           Edit Schedule
       </a> 
     </div>
@@ -23,10 +23,8 @@
 			return "weekend"
 		}
 	};
-	gantt.config.work_time = true;
 	gantt.config.min_column_width = 20;
 	gantt.config.duration_unit = "hour";
-	gantt.config.scale_height = 20 * 3;
 	gantt.templates.parse_date = function(date) { 
 		return new Date(date);
 	};
@@ -46,5 +44,5 @@
 	gantt.config.readonly = true;
 	gantt.init(gantt_chart);
 	gantt.config.date_format = "%Y-%m-%d";
-	gantt.load("{% url 'view_job_schedule_gantt_data' slug=job.slug %}", "json");
+	gantt.load("{% url 'view_phase_schedule_gantt_data' job_slug=phase.job.slug slug=phase.slug %}", "json");
 </script>

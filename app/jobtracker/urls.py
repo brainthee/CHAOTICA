@@ -36,6 +36,7 @@ urlpatterns = [
     path('job/<str:slug>/update/', views.JobUpdateView.as_view(), name='job_update'),
     path('job/<str:slug>/delete/', views.JobDeleteView.as_view(), name='job_delete'),
     path('job/<str:slug>/schedule/', views.JobScheduleView.as_view(), name='job_schedule'),   
+    path('job/<str:slug>/schedule/gantt', views.view_job_schedule_gantt_data, name='view_job_schedule_gantt_data'),
     path('job/<str:slug>/schedule/members', views.view_job_schedule_members, name='view_job_schedule_members'), 
     path('job/<str:slug>/schedule/slots', views.view_job_schedule_slots, name='view_job_schedule_slots'),
 
@@ -65,6 +66,7 @@ urlpatterns = [
     path('job/<str:job_slug>/phase/<str:slug>/delete/', views.PhaseDeleteView.as_view(), name='phase_delete'),
 
     path('job/<str:job_slug>/phase/<str:slug>/schedule/', views.PhaseScheduleView.as_view(), name='phase_schedule'),  
+    path('job/<str:job_slug>/phase/<str:slug>/schedule/gantt', views.view_phase_schedule_gantt_data, name='view_phase_schedule_gantt_data'),
     path('job/<str:job_slug>/phase/<str:slug>/schedule/slots', views.view_phase_schedule_slots, name='view_phase_schedule_slots'),
     path('job/<str:job_slug>/phase/<str:slug>/schedule/members', views.view_phase_schedule_members, name='view_phase_schedule_members'),
 
