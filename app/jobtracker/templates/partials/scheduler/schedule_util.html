@@ -1,45 +1,70 @@
 {% load menu %}{% load static %}{% load crispy_forms_tags %}{% load index %}
 <div class="card mb-3">
-    <div class="card-header pb-0">
-      <h4>Utilisation</h4>
-      <p>
-        Of the scoped hours, the following bars show how they are currently being utilised.
-      </p>
-    </div>
-    <div class="card-body pt-0">
-      <div class="row">
-          {% for v,t in TimeSlotDeliveryRoles %}
-          {% if v > 0 %}
-            {% get_total_scoped_by_type phase v as totalScoped %}
-            {% get_total_scheduled_by_type phase v as totalScheduled %}
-            {% get_slot_type_usage_perc phase v as typePerc %}
-            <div class="col-6 gx-2">
-              <div class="progress-wrapper" data-bs-toggle="tooltip" data-bs-placement="top"
-              title="Scheduled: {{ totalScheduled }}hrs | Scoped: {{ totalScoped }}hrs | Percentage Used: {{ typePerc }}%">
-                <div class="progress-info">
-                  <div class="progress-percentage row">
-                    <div class="col">
-                      <span class="fs--2 font-weight-normal">{{ t }}</span>
-                    </div>
-                    <div class="col text-end">
-                      <!-- Total Scheduled: {{ totalScheduled }}
-                          Total Scoped {{ totalScoped }} 
-                          Perc: {{ typePerc }} -->
-                      <span class="fs--2 font-weight-normal">{{ typePerc }}%</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="progress">
-                  <div class="progress-bar bg-{% if typePerc > 100 %}danger{% elif typePerc == 100 and totalScoped > 0 %}success{% elif typePerc == 100 %}danger{% elif typePerc > 75 %}warning{% elif typePerc > 0.0 %}info{% else %}light{% endif %}"
-                      role="progressbar" aria-valuenow="{{ typePerc }}" aria-valuemin="0" 
-                      aria-valuemax="100" style="width: {{ typePerc }}%;"></div>
-                </div>
-              </div>
-            </div>
+  <div class="card-header">
+    <h4>Utilisation</h4>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-sm fs--1 mb-0">
+        <thead>
+          <tr>
+            {% if not phase %}
+            <th class="sort border-top ps-1" data-sort="name">Phase</th>
             {% endif %}
-          {% endfor %}
-        </div>
-      </div>
+            <th class="sort border-top" data-sort="email">Type</th>
+            <th class="sort border-top" data-sort="age">Scoped</th>
+            <th class="sort border-top" data-sort="age">Scheduled</th>
+            <th class="sort text-end align-middle pe-1 border-top" scope="col">Util</th>
+          </tr>
+        </thead>
+        <tbody class="list ">
+          {% if phase %}
+            <!-- Only show a single phase -->
+
+              {% for v,t in TimeSlotDeliveryRoles %}
+              {% if v > 0 %}
+                {% get_total_scoped_by_type phase v as totalScoped %}
+                {% get_total_scheduled_by_type phase v as totalScheduled %}
+                {% get_slot_type_usage_perc phase v as typePerc %}
+                {% if totalScheduled > 0 or totalScoped > 0 %}
+                  <tr class="table-{% if typePerc > 100 %}danger{% elif typePerc == 100 and totalScoped > 0 %}success{% elif typePerc == 100 %}danger{% elif typePerc > 75 %}warning{% elif typePerc > 0.0 %}info{% else %}light{% endif %}">
+                    <td class="align-middle ps-1">{{ t }}</td>
+                    <td class="align-middle">{{ totalScoped }}hrs</td>
+                    <td class="align-middle">{{ totalScheduled }}hrs</td>
+                    <td class="align-end text-end pe-1">
+                      {{ typePerc }}%
+                    </td>
+                  </tr>
+                {% endif %}
+              {% endif %}
+            {% endfor %}
+          {% else %}
+            <!-- Do this for every phase -->
+            {% for j_phase in job.phases.all %}
+
+              {% for v,t in TimeSlotDeliveryRoles %}
+                {% if v > 0 %}
+                  {% get_total_scoped_by_type j_phase v as totalScoped %}
+                  {% get_total_scheduled_by_type j_phase v as totalScheduled %}
+                  {% get_slot_type_usage_perc j_phase v as typePerc %}
+                  {% if totalScheduled > 0 or totalScoped > 0 %}
+                    <tr class="table-{% if typePerc > 100 %}danger{% elif typePerc == 100 and totalScoped > 0 %}success{% elif typePerc == 100 %}danger{% elif typePerc > 75 %}warning{% elif typePerc > 0.0 %}info{% else %}light{% endif %}">
+                      <td class="align-start ps-1">{{ j_phase.get_id }}</td>
+                      <td class="align-middle">{{ t }}</td>
+                      <td class="align-middle">{{ totalScoped }}hrs</td>
+                      <td class="align-middle">{{ totalScheduled }}hrs</td>
+                      <td class="align-end text-end pe-1">
+                        {{ typePerc }}%
+                      </td>
+                    </tr>
+                  {% endif %}
+                {% endif %}
+              {% endfor %}
+
+            {% endfor %}
+          {% endif %}
+        </tbody>
+      </table>
     </div>
   </div>
+</div>

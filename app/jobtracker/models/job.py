@@ -194,32 +194,36 @@ class Job(models.Model):
         return u'{client}/{id}'.format(client=self.client, id=self.id)
     
     def fire_status_notification(self, target_status):
+        email_template = "emails/job_content.html"
 
         if target_status == JobStatuses.PENDING_SCOPE:
             # Notify scoping team
             users_to_notify = self.unit.get_active_members_with_perm("can_scope_jobs")
             notice = AppNotification(
                 NotificationTypes.JOB, 
-                "Job Pending Scope", "A job has just been marked as ready to scope.", 
-                "emails/job/PENDING_SCOPE.html", job=self)
+                "Job Pending Scope", 
+                "{job} has just been marked as ready to scope.".format(job=self), 
+                email_template, action_link=self.get_absolute_url(), job=self)
             task_send_notifications(notice, users_to_notify)
         
-        elif target_status == JobStatuses.PENDING_SCOPING_SIGNOFF:        
+        elif target_status == JobStatuses.PENDING_SCOPING_SIGNOFF:
             # Notify scoping team
             users_to_notify = self.unit.get_active_members_with_perm("can_signoff_scopes")
             notice = AppNotification(
                 NotificationTypes.JOB, 
-                "Job Scope Pending Signoff", "A job's scope is ready for signoff.", 
-                "emails/job/PENDING_SCOPING_SIGNOFF.html", job=self)
+                "Job Scope Pending Signoff", 
+                "{job} is ready for scope signoff.".format(job=self), 
+                email_template, action_link=self.get_absolute_url(), job=self)
             task_send_notifications(notice, users_to_notify)
         
-        elif target_status == JobStatuses.SCOPING_COMPLETE:        
+        elif target_status == JobStatuses.SCOPING_COMPLETE:
             # Notify scheduling team
             users_to_notify = self.unit.get_active_members_with_perm("can_schedule_phases")
             notice = AppNotification(
                 NotificationTypes.JOB, 
-                "Job Ready to Schedule", "A job's scope has been signed off and is ready for scheduling.", 
-                "emails/job/SCOPING_COMPLETE.html", job=self)
+                "Job Ready to Schedule", 
+                "The scope for {job} has been signed off and is ready for scheduling.".format(job=self), 
+                email_template, action_link=self.get_absolute_url(), job=self)
             task_send_notifications(notice, users_to_notify)
     
 
@@ -280,8 +284,48 @@ class Job(models.Model):
         total_scoped_hrs = self.get_total_scoped_hours()
         # Lets get the hours, 
         return round(total_scoped_hrs / self.client.hours_in_day, 2)
-        
+    
+    def get_gantt_json(self):
+        tasks = []
+        for phase in self.phases.all():
+            tasks.append({
+                "id": phase.phase_id,
+                "text": str(phase),
+                "open": True
+            })
+            for d in phase.get_gantt_json()["tasks"]:
+                d["parent"] = phase.phase_id
+                d["text"] = d["delivery_role"]
+                tasks.append(d)
+        data = {
+            "tasks": tasks,
+        }
+        return data
 
+    # Gets scheduled users and assigned users (e.g. lead/author/qa etc)        
+    def team(self):
+        ids = []
+        for phase in self.phases.all():
+            for phase_user_id in phase.team_pks():
+                if phase_user_id not in ids:
+                    ids.append(phase_user_id)
+
+        if self.created_by and self.created_by.pk not in ids:
+                ids.append(self.created_by.pk)
+        if self.account_manager and self.account_manager.pk not in ids:
+                ids.append(self.account_manager.pk)
+        if self.dep_account_manager and self.dep_account_manager.pk not in ids:
+                ids.append(self.dep_account_manager.pk)
+        for scoper in self.scoped_by.all():
+            if scoper and scoper.pk not in ids:
+                    ids.append(scoper.pk)
+        if self.scoped_signed_off_by and self.scoped_signed_off_by.pk not in ids:
+                ids.append(self.scoped_signed_off_by.pk)
+        if ids:
+            return User.objects.filter(pk__in=ids)
+        else:
+            return User.objects.none()
+        
     def team_scheduled(self):
         from ..models import TimeSlot
         user_ids = TimeSlot.objects.filter(phase__job=self).values_list('user', flat=True).distinct()

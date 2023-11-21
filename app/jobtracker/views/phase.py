@@ -23,12 +23,17 @@ logger = logging.getLogger(__name__)
 
 
 @login_required
+def view_phase_schedule_gantt_data(request, job_slug, slug):
+    job = get_object_or_404(Job, slug=job_slug)
+    phase = get_object_or_404(Phase, job=job, slug=slug)    
+    return JsonResponse(phase.get_gantt_json(), safe=False)
+
+@login_required
 def view_phase_schedule_slots(request, job_slug, slug):
     data = []
     job = get_object_or_404(Job, slug=job_slug)
     phase = get_object_or_404(Phase, job=job, slug=slug)
     phase_members = phase.team()
-    slots = TimeSlot.objects.filter(phase=phase)
     for member_slot in phase_members:
         data = data + member_slot.get_timeslots(
             start=request.GET.get('start', None),

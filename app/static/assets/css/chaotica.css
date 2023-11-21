@@ -130,6 +130,13 @@ Do Force select2 to be phoenix compat
 
 
 
+.weekend {
+  background: #f4f7f4;
+}
+
+.gantt_selected .weekend {
+  background: #f7eb91;
+}
 
 
 

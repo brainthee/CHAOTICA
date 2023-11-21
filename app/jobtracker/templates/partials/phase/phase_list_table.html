@@ -1,32 +1,32 @@
-<table class="table datatable align-items-center mb-0">
+<table class="table table-responsive datatable align-items-center mb-0">
     <caption>Phases</caption>
     <thead>
         <tr>
-            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder ">
             Title
             </th>
-            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder  ps-2">
             Service
             </th>
-            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder  ps-2">
             Lead
             </th>
-            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder  ps-2">
             Author
             </th>
-            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder  ps-2">
             Start
             </th>
-            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder  ps-2">
             QA
             </th>
-            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder  ps-2">
             Delivery
             </th>
-            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder  ps-2">
             Scheduled
             </th>
-            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+            <th scope="col" style="width:10%;" class="text-uppercase col-1 text-secondary text-xxs font-weight-bolder  ps-2">
             Status
             </th>
         </tr>
@@ -46,20 +46,20 @@
         <td>{{ phase.service }}</td>
         <td>
         {% if phase.project_lead %}
-            {{ phase.project_lead }}
+            {% include 'partials/users/user_link.html' with user_profile=phase.project_lead %}
         {% else %}
         <a href="#" data-url="{% url 'assign_phase_field' phase.job.slug phase.slug 'project_lead' %}"  
-            class="text-primary text-gradient js-load-modal-form">
+            class="text-danger js-load-modal-form">
             Assign
         </a>
         {% endif %}
         </td>
         <td>
         {% if phase.report_author %}
-            {{ phase.report_author }}
+            {% include 'partials/users/user_link.html' with user_profile=phase.report_author %}
         {% else %}
         <a href="#" data-url="{% url 'assign_phase_field' phase.job.slug phase.slug 'report_author' %}" 
-            class="text-primary text-gradient js-load-modal-form">
+            class="text-danger js-load-modal-form">
             Assign
         </a>
         {% endif %}
@@ -74,14 +74,7 @@
         {{ phase.delivery_date }}
         </td>
         <td>
-            <div class="d-flex align-items-center">
-                <div style="--phoenix-circle-progress-bar:{{ phase.get_total_scheduled_perc }}">
-                    <svg class="circle-progress-svg" width="54" height="54" viewBox="0 0 170 170">
-                        <circle class="progress-bar-rail" cx="60" cy="60" r="54" fill="none" stroke-linecap="round" stroke-width="12"></circle>
-                        <circle class="progress-bar-top" cx="60" cy="60" r="54" fill="none" stroke-linecap="round" stroke="#3874FF" stroke-width="12"></circle>
-                    </svg>
-                </div>
-            </div>
+            {% include 'partials/phase/widgets/scheduled_progress_bar.html' %}
         </td>
         <td>
         {% include 'partials/phase/status_badge.html' with badge_size='sm' %}

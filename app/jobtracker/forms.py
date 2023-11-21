@@ -26,6 +26,10 @@ class SchedulerFilter(forms.Form):
     services = forms.ModelMultipleChoiceField(required=False,
                                     queryset=Service.objects.all(),
                                     widget=autocomplete.ModelSelect2Multiple(),)
+    
+    services = forms.ModelMultipleChoiceField(required=False,
+                                    queryset=Service.objects.all(),
+                                    widget=autocomplete.ModelSelect2Multiple(),)
     from_date = forms.DateField(required=False,
                             widget=DatePickerInput(),)
     to_date = forms.DateField(required=False,
@@ -47,10 +51,10 @@ class SchedulerFilter(forms.Form):
             Row(
                 Column(
                     # Reset("reset-button", "Reset",  css_class="btn-phoenix-secondary"),
-                css_class="col"),
+                    css_class="col"),
                 Column(
                     Submit("apply", 'Apply', css_class="btn-phoenix-success"),
-                css_class="col-md-auto"),
+                    css_class="col-md-auto"),
             ),
             Accordion(
                 # AccordionGroup('Date Filter',
@@ -167,8 +171,7 @@ class AssignUser(forms.Form):
         self.helper.layout = Layout(
             Div(
                 Row(
-                    Div(Field('user', style="width: 100%;"),
-                        css_class="input-group input-group-dynamic")
+                    Field('user', style="width: 100%;"),
                 ),
                 css_class='modal-body p-3'),
 
@@ -197,8 +200,7 @@ class AssignMultipleUser(forms.Form):
         self.helper.layout = Layout(
             Div(
                 Row(
-                    Div(Field('users', style="width: 100%;"),
-                        css_class="input-group input-group-dynamic")
+                    Field('users', style="width: 100%;"),
                 ),
                 css_class='modal-body pt-3'),
 
@@ -263,7 +265,15 @@ class NonDeliveryTimeSlotModalForm(forms.ModelForm):
         self.helper = FormHelper(self)
         for fieldname in self.fields:
             self.fields[fieldname].help_text = None
+        if self.instance.pk:
+            delete_button = StrictButton("Delete", type="button", 
+                data_url=reverse('delete_scheduler_slot', kwargs={"pk":self.instance.pk}),
+                css_class="btn js-load-modal-form btn-outline-phoenix-danger me-auto mb-0")
+        else:
+            delete_button = None
         self.fields['user'].widget = forms.HiddenInput()
+        self.fields['user'].disabled = True
+        self.fields['phase'].disabled = True
         self.fields['start'].widget = DateTimePickerInput()
         self.fields['end'].widget = DateTimePickerInput()
         if not self.instance.pk:
@@ -272,15 +282,12 @@ class NonDeliveryTimeSlotModalForm(forms.ModelForm):
             self.fields['user'].initial = User.objects.get(pk=resource_id)
         self.fields['slot_type'].queryset = TimeSlotType.objects.filter(is_assignable=True)
         self.helper.layout = Layout(
-            Field('user', type="hidden"),
+            Field('user', style="width: 100%;"),
             Field('phase', type="hidden"),
-            # Field('slot_type', type="hidden"),
             Div(
                 Row(
                     Column(Div(FloatingField('slot_type'),
                             css_class="input-group input-group-dynamic")),
-                    # Column(Div(Field('is_onsite'),
-                    #         css_class="input-group input-group-dynamic")),
                 ),
                 Row(
                     Column(Div(Field('start'),
@@ -290,7 +297,9 @@ class NonDeliveryTimeSlotModalForm(forms.ModelForm):
                 ),
                 css_class='card-body p-3'),
             Div(
-                Div(StrictButton("Save", type="submit", 
+                Div(
+                    delete_button,
+                    StrictButton("Save", type="submit", 
                         css_class="btn btn-outline-phoenix-success ms-auto mb-0"),
                     css_class="button-row d-flex"),
                 css_class="card-footer pt-0 p-3"),
@@ -312,6 +321,122 @@ class NonDeliveryTimeSlotModalForm(forms.ModelForm):
             'end',
             )
 
+
+class DeliveryTimeSlotModalForm(forms.ModelForm):
+    phase = forms.ModelChoiceField(
+        queryset=Phase.objects.filter(),
+        widget=autocomplete.ModelSelect2(
+            url='phase-autocomplete',
+            attrs={
+                'data-minimum-input-length': 3,
+            },),)
+    
+    def __init__(self, *args, **kwargs):
+        if 'phase' in kwargs:
+            phase = kwargs.pop('phase')
+        else:
+            phase = None
+        if 'job' in kwargs:
+            job = kwargs.pop('job')
+        else:
+            job = None
+        if 'user' in kwargs:
+            user = kwargs.pop('user')
+        else:
+            user = None
+        if 'start' in kwargs:
+            start = kwargs.pop('start')
+        else:
+            start = None
+        if 'end' in kwargs:
+            end = kwargs.pop('end')
+        else:
+            end = None
+        super(DeliveryTimeSlotModalForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        for fieldname in self.fields:
+            self.fields[fieldname].help_text = None
+        self.fields['user'].widget = forms.HiddenInput()
+        if user:
+            self.fields['user'].initial = user
+            self.fields['user'].disabled = user
+        
+        self.fields['slot_type'].widget = forms.HiddenInput()
+        self.fields['slot_type'].initial = TimeSlotType.get_builtin_object(DefaultTimeSlotTypes.DELIVERY)
+        self.fields['slot_type'].disabled = True
+
+        if phase:
+            self.fields['phase'].disabled = True
+            self.fields['phase'].initial = phase
+        else:
+            if job:
+                phases = Phase.objects.filter(job=job)
+                from pprint import pprint
+                pprint(phases)
+                self.fields['phase'].widget = autocomplete.ModelSelect2()
+                self.fields['phase'].queryset = phases
+        
+        if self.instance.phase:
+            delete_button = StrictButton("Delete", type="button", 
+                data_url=reverse('job_slot_delete', kwargs={"slug":self.instance.phase.job.slug, "pk":self.instance.pk}),
+                css_class="btn js-load-modal-form btn-outline-phoenix-danger me-auto mb-0")
+
+            goto_button = HTML("<a href='"+reverse('phase_detail', kwargs={"job_slug":self.instance.phase.job.slug, "slug":self.instance.phase.slug})+"' class='btn btn-outline-phoenix-secondary'>Goto Phase</a>")
+        else:
+            goto_button = None
+            delete_button = None
+
+        self.fields['start'].widget = DateTimePickerInput()
+        if start:
+            self.fields['start'].initial = start
+
+        self.fields['end'].widget = DateTimePickerInput()
+        if end:
+            self.fields['end'].initial = end
+            
+        self.helper.layout = Layout(
+            Div(
+                Row(
+                    Field('phase', style="width: 100%;"),
+                    Field('user', style="width: 100%;"),
+                    ),
+                Row(
+                    Column(Div(FloatingField('deliveryRole'),
+                            css_class="input-group input-group-dynamic")),
+                    Column(Div(Field('is_onsite'),
+                            css_class="input-group input-group-dynamic")),
+                    ),
+                Row(
+                    Column(Div(Field('start'),
+                            css_class="input-group input-group-dynamic")),
+                    Column(Div(Field('end'),
+                            css_class="input-group input-group-dynamic")),
+                    ),
+                css_class='card-body p-3'),
+            Div(
+                Div(delete_button,
+                    goto_button,
+                    StrictButton("Save", type="submit", 
+                        css_class="btn btn-outline-phoenix-success ms-auto mb-0"),
+                    css_class="button-row d-flex"),
+                css_class="card-footer pt-0 p-3"),
+        )
+
+    class Meta:
+        model = TimeSlot
+        widgets = {
+          'start': DateTimePickerInput(),
+          'end': DateTimePickerInput(),
+        }
+        fields = (
+            'user',
+            'phase',
+            'slot_type',
+            'deliveryRole',
+            'is_onsite',
+            'start',
+            'end',
+        )
 
 class ChangeTimeSlotDateModalForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
@@ -355,106 +480,6 @@ class ChangeTimeSlotDateModalForm(forms.ModelForm):
         }
         fields = (
             'user',
-            'start',
-            'end',
-        )
-
-
-class DeliveryChangeTimeSlotModalForm(forms.ModelForm):
-    phase = forms.ModelChoiceField(
-        queryset=Phase.objects.filter(),
-        widget=autocomplete.ModelSelect2(
-            url='phase-autocomplete',
-            attrs={
-                'data-minimum-input-length': 3,
-            },),)
-    
-    def __init__(self, *args, **kwargs):
-        if 'phase' in kwargs:
-            phase = kwargs.pop('phase')
-        else:
-            phase = None
-        if 'user' in kwargs:
-            user = kwargs.pop('user')
-        else:
-            user = None
-        if 'start' in kwargs:
-            start = kwargs.pop('start')
-        else:
-            start = None
-        if 'end' in kwargs:
-            end = kwargs.pop('end')
-        else:
-            end = None
-        super(DeliveryChangeTimeSlotModalForm, self).__init__(*args, **kwargs)
-        self.helper = FormHelper(self)
-        for fieldname in self.fields:
-            self.fields[fieldname].help_text = None
-        self.fields['user'].widget = forms.HiddenInput()
-        if user:
-            self.fields['user'].initial = user
-        
-        self.fields['slot_type'].widget = forms.HiddenInput()
-        self.fields['slot_type'].initial = TimeSlotType.get_builtin_object(DefaultTimeSlotTypes.DELIVERY)
-        self.fields['slot_type'].disabled = True
-
-        if phase:
-            self.fields['phase'].disabled = True
-        
-        if self.instance.phase:
-            delete_button = StrictButton("Delete", type="button", 
-                data_url=reverse('job_slot_delete', kwargs={"slug":self.instance.phase.job.slug, "pk":self.instance.pk}),
-                css_class="btn js-load-modal-form btn-outline-danger me-auto mb-0")
-        else:
-            delete_button = None
-
-        self.fields['start'].widget = DateTimePickerInput()
-        if start:
-            self.fields['start'].initial = start
-
-        self.fields['end'].widget = DateTimePickerInput()
-        if end:
-            self.fields['end'].initial = end
-            
-        self.helper.layout = Layout(
-            Row(
-            Field('user'),),
-            Row(
-            Field('phase', css_class="w-100"),),
-            Div(
-                Row(
-                    Column(Div(FloatingField('deliveryRole'),
-                            css_class="input-group input-group-dynamic")),
-                    Column(Div(Field('is_onsite'),
-                            css_class="input-group input-group-dynamic")),
-                ),
-                Row(
-                    Column(Div(Field('start'),
-                            css_class="input-group input-group-dynamic")),
-                    Column(Div(Field('end'),
-                            css_class="input-group input-group-dynamic")),
-                ),
-                css_class='card-body p-3'),
-            Div(
-                Div(delete_button,
-                    StrictButton("Save", type="submit", 
-                        css_class="btn btn-outline-phoenix-success ms-auto mb-0"),
-                    css_class="button-row d-flex"),
-                css_class="card-footer pt-0 p-3"),
-        )
-
-    class Meta:
-        model = TimeSlot
-        widgets = {
-          'start': DateTimePickerInput(),
-          'end': DateTimePickerInput(),
-        }
-        fields = (
-            'user',
-            'phase',
-            'slot_type',
-            'deliveryRole',
-            'is_onsite',
             'start',
             'end',
         )

@@ -67,7 +67,7 @@ class DefaultTimeSlotTypes():
             'name': "Annual Leave", 
             "built_in": True, 
             "is_delivery": False, 
-            "is_assignable": True,
+            "is_assignable": False,
             "is_working": False,
             "availability": AvailabilityType.UNAVAILABLE
         },
@@ -288,9 +288,9 @@ class PhaseStatuses():
     BS_COLOURS = (
         (DRAFT, "secondary"),
         (PENDING_SCHED, "secondary"),
-        (SCHEDULED_TENTATIVE, "secondary"),
-        (SCHEDULED_CONFIRMED, "secondary"),
-        (PRE_CHECKS, "secondary"),
+        (SCHEDULED_TENTATIVE, "warning"),
+        (SCHEDULED_CONFIRMED, "success"),
+        (PRE_CHECKS, "primary"),
         (CLIENT_NOT_READY, "warning"),
         (READY_TO_BEGIN, "success"),
         (IN_PROGRESS, "danger"),

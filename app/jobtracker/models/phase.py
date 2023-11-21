@@ -291,14 +291,16 @@ class Phase(models.Model):
             title=self.title
         )
     
-    def fire_status_notification(self, target_status):        
+    def fire_status_notification(self, target_status):   
+        email_template = "emails/phase_content.html"     
         if target_status == PhaseStatuses.SCHEDULED_CONFIRMED:        
             # Notify project team
             users_to_notify = self.team()
             notice = AppNotification(
                 NotificationTypes.PHASE, 
-                "Phase Update - Schedule Confirmed", "The schedule for this phase is confirmed.", 
-                "emails/phase/SCHEDULED_CONFIRMED.html", phase=self)
+                "Phase Update - Schedule Confirmed", 
+                "The schedule for {phase} is confirmed.".format(phase=self),
+                email_template, action_link=self.get_absolute_url(), phase=self)
             task_send_notifications(notice, users_to_notify)
         
         elif target_status == PhaseStatuses.PRE_CHECKS:              
@@ -306,8 +308,9 @@ class Phase(models.Model):
             users_to_notify = self.team()
             notice = AppNotification(
                 NotificationTypes.PHASE, 
-                "Phase Update - Ready for Pre-Checks", "Ready for Pre-checks", 
-                "emails/phase/PRE_CHECKS.html", phase=self)
+                "Phase Update - Ready for Pre-Checks", 
+                "{phase} is ready for Pre-checks".format(phase=self),
+                email_template, action_link=self.get_absolute_url(), phase=self)
             task_send_notifications(notice, users_to_notify)
         
         elif target_status == PhaseStatuses.CLIENT_NOT_READY:          
@@ -315,8 +318,9 @@ class Phase(models.Model):
             users_to_notify = self.team()
             notice = AppNotification(
                 NotificationTypes.PHASE, 
-                "Phase Update - Client Not Ready", "Ready for Pre-checks", 
-                "emails/phase/CLIENT_NOT_READY.html", phase=self)
+                "Phase Update - Client Not Ready", 
+                "{phase} has been marked as 'Client Not Ready'!".format(phase=self),
+                email_template, action_link=self.get_absolute_url(), phase=self)
             task_send_notifications(notice, users_to_notify)
         
         elif target_status == PhaseStatuses.READY_TO_BEGIN:        
@@ -324,8 +328,9 @@ class Phase(models.Model):
             users_to_notify = self.team()
             notice = AppNotification(
                 NotificationTypes.PHASE, 
-                "Phase Update - Ready To Begin!", "Checks have been carried out and the phase is ready to begin.", 
-                "emails/phase/READY_TO_BEGIN.html", phase=self)
+                "Phase Update - Ready To Begin!", 
+                "Checks have been carried out and {phase} is ready to begin.".format(phase=self),
+                email_template, action_link=self.get_absolute_url(), phase=self)
             task_send_notifications(notice, users_to_notify)
         
         elif target_status == PhaseStatuses.IN_PROGRESS:        
@@ -333,8 +338,9 @@ class Phase(models.Model):
             users_to_notify = self.team()
             notice = AppNotification(
                 NotificationTypes.PHASE, 
-                "Phase Update - In Progress", "The phase has started", 
-                "emails/phase/IN_PROGRESS.html", phase=self)
+                "Phase Update - In Progress", 
+                "{phase} has started".format(phase=self),
+                email_template, action_link=self.get_absolute_url(), phase=self)
             task_send_notifications(notice, users_to_notify)
         
         elif target_status == PhaseStatuses.PENDING_TQA:        
@@ -345,16 +351,18 @@ class Phase(models.Model):
                 users_to_notify = User.objects.filter(pk=self.techqa_by.pk)
             notice = AppNotification(
                 NotificationTypes.PHASE, 
-                "Phase Update - Ready for Tech QA", "The phase is ready for Technical QA", 
-                "emails/phase/QA_TECH.html", phase=self)
+                "Phase Update - Ready for Tech QA", 
+                "{phase} is ready for Technical QA".format(phase=self),
+                email_template, action_link=self.get_absolute_url(), phase=self)
             task_send_notifications(notice, users_to_notify)
         
         elif target_status == PhaseStatuses.QA_TECH_AUTHOR_UPDATES:        
             users_to_notify = User.objects.filter(pk=self.report_author.pk)
             notice = AppNotification(
                 NotificationTypes.PHASE, 
-                "Phase Update - Requires Author Updates", "The report for this phase requires author updates.", 
-                "emails/phase/QA_TECH_AUTHOR_UPDATES.html", phase=self)
+                "Phase Update - Requires Author Updates", 
+                "The report for {phase} requires technical updates.".format(phase=self),
+                email_template, action_link=self.get_absolute_url(), phase=self)
             task_send_notifications(notice, users_to_notify)
         
         elif target_status == PhaseStatuses.PENDING_PQA:        
@@ -365,16 +373,18 @@ class Phase(models.Model):
                 users_to_notify = User.objects.filter(pk=self.presqa_by.pk)
             notice = AppNotification(
                 NotificationTypes.PHASE, 
-                "Phase Update - Ready for Pres QA", "The phase is ready for Presentation QA", 
-                "emails/phase/QA_PRES.html", phase=self)
+                "Phase Update - Ready for Pres QA", 
+                "{phase} is ready for Presentation QA".format(phase=self),
+                email_template, action_link=self.get_absolute_url(), phase=self)
             task_send_notifications(notice, users_to_notify)
         
         elif target_status == PhaseStatuses.QA_PRES_AUTHOR_UPDATES:        
             users_to_notify = User.objects.filter(pk=self.report_author.pk)
             notice = AppNotification(
                 NotificationTypes.PHASE, 
-                "Phase Update - Requires Author Updates", "The report for this phase requires author updates.", 
-                "emails/phase/QA_PRES_AUTHOR_UPDATES.html", phase=self)
+                "Phase Update - Requires Author Updates", 
+                "The report for {phase} requires presentation updates.".format(phase=self),
+                email_template, action_link=self.get_absolute_url(), phase=self)
             task_send_notifications(notice, users_to_notify)
         
         elif target_status == PhaseStatuses.COMPLETED:        
@@ -382,16 +392,18 @@ class Phase(models.Model):
             users_to_notify = self.team()
             notice = AppNotification(
                 NotificationTypes.PHASE, 
-                "Phase Update - Complete", "The phase is ready for delivery", 
-                "emails/phase/COMPLETED.html", phase=self)
+                "Phase Update - Complete", 
+                "{phase} is ready for delivery".format(phase=self),
+                email_template, action_link=self.get_absolute_url(), phase=self)
             task_send_notifications(notice, users_to_notify)
         
         elif target_status == PhaseStatuses.POSTPONED:            
             users_to_notify = None
             notice = AppNotification(
                 NotificationTypes.PHASE, 
-                "Phase Update - Postponed", "This phase has been postponed!", 
-                "emails/phase/POSTPONED.html", phase=self)
+                "Phase Update - Postponed", 
+                "{phase} has been postponed!".format(phase=self),
+                email_template, action_link=self.get_absolute_url(), phase=self)
             task_send_notifications(notice, users_to_notify)
 
     
@@ -404,9 +416,36 @@ class Phase(models.Model):
             return text
         else:
             return ""
+    
+
+    def get_gantt_json(self):
+        tasks = []
+        from ..models.timeslot import TimeSlot
+        for slot in TimeSlot.objects.filter(phase=self):
+            user_text = str(slot.user)
+            if slot.is_onsite:
+                user_text = user_text + " (Onsite)"
+            info = {
+                "id": slot.pk,
+                "user_id": slot.user.pk,
+                "user": user_text,
+                "slot_type_ID": slot.slot_type.pk,
+                "slot_type_name": slot.slot_type.name,
+                "delivery_role_id": slot.deliveryRole,
+                "delivery_role": slot.get_deliveryRole_display(),
+                "text": str(slot.phase.get_id())+" ("+str(slot.get_deliveryRole_display())+")",
+                "start_date": slot.start.date(),
+                "end_date": slot.end.date(),
+            }
+            tasks.append(info)
+        data = {
+            "tasks": tasks,
+        }
+        return data
+
 
     # Gets scheduled users and assigned users (e.g. lead/author/qa etc)        
-    def team(self):
+    def team_pks(self):
         from ..models.timeslot import TimeSlot
         ids = []
         for slot in TimeSlot.objects.filter(phase=self):
@@ -420,19 +459,22 @@ class Phase(models.Model):
                 ids.append(self.techqa_by.pk)
         if self.presqa_by and self.presqa_by.pk not in ids:
                 ids.append(self.presqa_by.pk)
+        return ids
+    
+
+    # Gets scheduled users and assigned users (e.g. lead/author/qa etc)        
+    def team(self):
+        ids = self.team_pks()
         if ids:
             return User.objects.filter(pk__in=ids)
         else:
             return User.objects.none()
 
     def team_scheduled(self):
-        from ..models.timeslot import TimeSlot
-        scheduled_users_ids = []
-        for slot in TimeSlot.objects.filter(phase=self):
-            if slot.user.pk not in scheduled_users_ids:
-                scheduled_users_ids.append(slot.user.pk)
-        if scheduled_users_ids:
-            return User.objects.filter(pk__in=scheduled_users_ids)
+        from ..models import TimeSlot
+        user_ids = TimeSlot.objects.filter(phase=self).values_list('user', flat=True).distinct()
+        if user_ids:
+            return User.objects.filter(pk__in=user_ids)
         else:
             return None
     
@@ -451,6 +493,11 @@ class Phase(models.Model):
             total = total + diff
         return total
     
+    def get_total_scheduled_hours(self):
+        total_scheduled = Decimal(0.0)
+        for _,sch_hrs in self.get_all_total_scheduled_by_type().items():
+            total_scheduled = total_scheduled + Decimal(sch_hrs)
+        return total_scheduled    
     
     def get_total_scoped_by_type(self, slot_type):
         total_scoped = Decimal(0.0)

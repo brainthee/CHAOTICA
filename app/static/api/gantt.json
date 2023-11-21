@@ -1,0 +1,45 @@
+{
+	"data": [
+	{
+		"id": 18,
+		"start_date": "2018-04-05 00:00:00",
+		"duration": 5,
+		"text": "Task #2.1",
+		"progress": 0.3,
+		"sortorder": 39.999999994179,
+		"open": true
+	}, {
+		"id": 19,
+		"start_date": "2018-03-05 00:00:00",
+		"duration": 6,
+		"text": "Task #2.2",
+		"progress": 0.6,
+		"sortorder": 29.999999995343,
+		"open": true
+	}, {
+		"id": 117,
+		"start_date": "2018-04-05 00:00:00",
+		"duration": 6,
+		"text": "Task #2.2",
+		"progress": 0.6,
+		"sortorder": 29.999999995343,
+		"open": true
+	}, {
+		"id": 20,
+		"start_date": "2018-04-05 00:00:00",
+		"duration": 4,
+		"text": "Task #2.3",
+		"progress": 0.512605,
+		"sortorder": 39.999999995343,
+		"open": true
+	}, {
+		"id": 21,
+		"start_date": "2018-04-05 00:00:00",
+		"duration": 6,
+		"text": "Task #2.4",
+		"progress": 0.7,
+		"sortorder": 39.999999993015,
+		"open": true
+	}
+]
+}

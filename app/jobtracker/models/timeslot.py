@@ -63,9 +63,22 @@ class TimeSlot(models.Model):
         if self.phase:
             return self.phase.job.slug
         return None
+
+    def __str__(self):
+        # There is no rhyme or reason for this...
+        if self.phase:
+            tentative = "Tentative" if not self.is_confirmed() else ""
+            onsite = ", Onsite" if self.is_onsite else ""
+            extra = "({}{})".format(tentative, onsite) if tentative or onsite else ""
+            return '{}: {} {}'.format(str(self.phase.get_id()), self.slot_type.name, extra)
+        else:
+            return '{}: {} ({})'.format(self.user.get_full_name(), self.slot_type.name, self.start)        
+    
+    def is_delivery(self):
+        return self.slot_type == TimeSlotType.get_builtin_object(DefaultTimeSlotTypes.DELIVERY)
     
     def get_schedule_title(self):
-        if self.slot_type == TimeSlotType.get_builtin_object(DefaultTimeSlotTypes.DELIVERY):
+        if self.is_delivery():
             return str(self)
         else:
             return self.slot_type.name
@@ -80,6 +93,7 @@ class TimeSlot(models.Model):
                 return "#FFC7CE" if self.is_onsite else "#bdb3ff"
             else:
                 return "#E6B9B8" if self.is_onsite else "#95B3D7"
+    
     
     def get_schedule_json(self, url=None):
         if not url:
@@ -103,29 +117,19 @@ class TimeSlot(models.Model):
             data['editURL'] = reverse('change_job_schedule_slot', kwargs={"slug":self.phase.job.slug, "pk":self.pk})
         return data
     
-    def get_schedule_phase_json(self):
-        data = {
-            "id": self.pk,
-            "title": str(self.get_deliveryRole_display()),
-            "resourceId": self.user.pk,
-            "start": self.start,
-            "end": self.end,
-            "deliveryRole": self.deliveryRole,
-            "slot_type_ID": self.slot_type.pk,
-            "slot_type_name": self.slot_type.name,
-            "userId": self.user.pk,
-            "phaseId": self.phase.pk,
-            "color": self.get_schedule_slot_colour(),
-        }
-        if self.phase:
-            data['url'] = reverse('change_job_schedule_slot', kwargs={"slug":self.phase.job.slug, "pk":self.pk})
-        return data
-    
+
     def get_business_hours(self):
         unit='hour'
-        hours = businessDuration(self.start, self.end, unit=unit)
+        org = self.user.unit_memberships.first()
+        if org:
+            hours = businessDuration(self.start, self.end, unit=unit,
+                                     starttime=org.unit.businessHours_startTime,
+                                     endtime=org.unit.businessHours_endTime)
+        else:
+            hours = businessDuration(self.start, self.end, unit=unit)
         return hours
     
+
     def cost(self):
         # Only support a single cost field at the moment... :(
         if UserCost.objects.filter(user=self.user).exists():
@@ -144,25 +148,14 @@ class TimeSlot(models.Model):
         else:
             # Phase attached - only proceed if scheduling confirmed on phase
             return self.phase.status >= PhaseStatuses.SCHEDULED_CONFIRMED
-
-
-    def __str__(self):
-        # There is no rhyme or reason for this...
-        if self.phase:
-            confirmed = "Confirmed" if self.is_confirmed() else "Tentative"
-            onsite = ", Onsite" if self.is_onsite else ""
-            if self.deliveryRole > TimeSlotDeliveryRole.NA:
-                return '{}: {} ({}{})'.format(str(self.phase), self.slot_type.name, confirmed, onsite)
-            else:
-                return '{} ({}{})'.format(str(self.phase.get_id()), confirmed, onsite)
-        else:
-            return '{}: {} ({})'.format(self.user.get_full_name(), self.slot_type.name, self.start)
     
+
     def get_target_url(self):
-        if self.slot_type == TimeSlotType.get_builtin_object(DefaultTimeSlotTypes.DELIVERY) and self.phase:
+        if self.is_delivery() and self.phase:
             return self.phase.get_absolute_url()
         # Eventually return more useful URLs... but for now, return home.
         return ext_reverse(reverse('home'))
+    
         
     def delete(self):
         phase = self.phase
@@ -174,6 +167,7 @@ class TimeSlot(models.Model):
                 if phase.can_to_pending_sched():
                     phase.to_pending_sched()
                     phase.save()
+
 
     def save(self, *args, **kwargs):
         if self.start > self.end:
