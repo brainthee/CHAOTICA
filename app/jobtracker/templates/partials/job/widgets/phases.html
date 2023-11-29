@@ -9,7 +9,7 @@
            </div>
         </div>
         <div class="col-lg-4 text-end">
-           {% if job.status == 2 or job.status == 3 %}
+           {% if job.status < 8 %}
            <a href="{% url 'phase_create' job.slug %}" class="btn btn-phoenix-success btn-sm">
               Add Phase
            </a>
