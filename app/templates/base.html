@@ -238,8 +238,17 @@
     <script>
       jQuery(document).ready(function($){
         $('#snowControl').change(function() {
+            // Check if in light or dark
+            const phoenixTheme = window.config.config;
+            if (phoenixTheme.phoenixTheme == "light") {
+              flakeColor = "#a2d2df";
+            } else {
+              flakeColor = "white";
+            }
             if(this.checked) {
-              $('body').flurry();
+              $('body').flurry({
+                color: flakeColor,
+              });
             } else {   
               $('body').flurry('destroy');
             } 
