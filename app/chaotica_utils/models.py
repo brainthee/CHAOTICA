@@ -129,7 +129,7 @@ class UserInvitation(models.Model):
         context['SITE_PROTO'] = settings.SITE_PROTO
         context['title'] = "You're invited to Chaotica"
         context['message'] = "You've been invited to join Chaotica - (Centralised Hub for Assigning Operational Tasks, Interactive Calendaring and Alerts). Follow the link below to accept the invitation and setup your account."
-        context['action_link'] = self.get_absolute_url()
+        context['action_link'] = ext_reverse(self.get_absolute_url())
         msg_html = render_to_string("emails/user_invite.html", context)
         send_mail(  
             context['title'], context['message'], None, [self.invited_email], html_message=msg_html,
