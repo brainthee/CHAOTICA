@@ -58,6 +58,11 @@ table caption {
   color: rgb(204, 204, 0);
 }
 
+table.dataTable.no-footer {
+  border-bottom: unset !important;
+  border-bottom-color: rgba(0, 0, 0, 0.3) !important;
+}
+
 .fc-header-toolbar {
   margin: 1.5em !important;
 }
