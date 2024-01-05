@@ -68,6 +68,22 @@ class Client(models.Model):
         return super().save(*args, **kwargs)
 
 
+class FrameworkAgreement(models.Model):
+    name = models.CharField(max_length=200, blank=True)
+    start_date = models.DateField('Start Date')
+    end_date = models.DateField('End Date')
+    total_days = models.IntegerField('Total Days')
+    associated_jobs = models.ManyToManyField("Job",
+        related_name='framework', verbose_name="Associated Jobs", blank=True)
+
+    def __str__(self):
+        return '{} ({}-{})'.format(
+            self.name, self.start_date, self.end_date)
+    
+    def days_remaining(self):
+        return 0
+
+
 class Contact(models.Model):
     salutation = models.CharField(max_length=10, blank=True)
     first_name = models.CharField(max_length=200, blank=True)
