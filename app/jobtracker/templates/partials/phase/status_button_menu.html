@@ -32,4 +32,10 @@
                 data-status="Deleted" data-status-id="15">Delete Phase</button>
         </li>
     {% endif %}
+    <li>
+        <button data-url="{% url 'phase_refire_notifications' phase.job.slug phase.slug %}" class="dropdown-item js-update-phase-workflow text-info">
+            Fire Notifications
+        </button>
+    </li>
+    
 </ul>
