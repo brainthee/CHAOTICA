@@ -291,6 +291,9 @@ class Phase(models.Model):
             title=self.title
         )
     
+    def refire_status_notification(self):
+        self.fire_status_notification(self.status)
+    
     def fire_status_notification(self, target_status):   
         email_template = "emails/phase_content.html"     
         if target_status == PhaseStatuses.SCHEDULED_CONFIRMED:        
@@ -298,7 +301,7 @@ class Phase(models.Model):
             users_to_notify = self.team()
             notice = AppNotification(
                 NotificationTypes.PHASE, 
-                "Phase Update - Schedule Confirmed", 
+                "Phase Update - {phase} - Schedule Confirmed".format(phase=self),
                 "The schedule for {phase} is confirmed.".format(phase=self),
                 email_template, action_link=self.get_absolute_url(), phase=self)
             task_send_notifications(notice, users_to_notify)
@@ -308,7 +311,7 @@ class Phase(models.Model):
             users_to_notify = self.team()
             notice = AppNotification(
                 NotificationTypes.PHASE, 
-                "Phase Update - Ready for Pre-Checks", 
+                "Phase Update - {phase} - Ready for Pre-Checks".format(phase=self),
                 "{phase} is ready for Pre-checks".format(phase=self),
                 email_template, action_link=self.get_absolute_url(), phase=self)
             task_send_notifications(notice, users_to_notify)
@@ -318,7 +321,7 @@ class Phase(models.Model):
             users_to_notify = self.team()
             notice = AppNotification(
                 NotificationTypes.PHASE, 
-                "Phase Update - Client Not Ready", 
+                "Phase Update - {phase} - Client Not Ready".format(phase=self),
                 "{phase} has been marked as 'Client Not Ready'!".format(phase=self),
                 email_template, action_link=self.get_absolute_url(), phase=self)
             task_send_notifications(notice, users_to_notify)
@@ -328,7 +331,7 @@ class Phase(models.Model):
             users_to_notify = self.team()
             notice = AppNotification(
                 NotificationTypes.PHASE, 
-                "Phase Update - Ready To Begin!", 
+                "Phase Update - {phase} - Ready To Begin!".format(phase=self),
                 "Checks have been carried out and {phase} is ready to begin.".format(phase=self),
                 email_template, action_link=self.get_absolute_url(), phase=self)
             task_send_notifications(notice, users_to_notify)
@@ -338,7 +341,7 @@ class Phase(models.Model):
             users_to_notify = self.team()
             notice = AppNotification(
                 NotificationTypes.PHASE, 
-                "Phase Update - In Progress", 
+                "Phase Update - {phase} - In Progress".format(phase=self),
                 "{phase} has started".format(phase=self),
                 email_template, action_link=self.get_absolute_url(), phase=self)
             task_send_notifications(notice, users_to_notify)
@@ -351,7 +354,7 @@ class Phase(models.Model):
                 users_to_notify = User.objects.filter(pk=self.techqa_by.pk)
             notice = AppNotification(
                 NotificationTypes.PHASE, 
-                "Phase Update - Ready for Tech QA", 
+                "Phase Update - {phase} - Ready for Tech QA".format(phase=self),
                 "{phase} is ready for Technical QA".format(phase=self),
                 email_template, action_link=self.get_absolute_url(), phase=self)
             task_send_notifications(notice, users_to_notify)
@@ -360,7 +363,7 @@ class Phase(models.Model):
             users_to_notify = User.objects.filter(pk=self.report_author.pk)
             notice = AppNotification(
                 NotificationTypes.PHASE, 
-                "Phase Update - Requires Author Updates", 
+                "Phase Update - {phase} - Requires Author Updates".format(phase=self),
                 "The report for {phase} requires technical updates.".format(phase=self),
                 email_template, action_link=self.get_absolute_url(), phase=self)
             task_send_notifications(notice, users_to_notify)
@@ -373,7 +376,7 @@ class Phase(models.Model):
                 users_to_notify = User.objects.filter(pk=self.presqa_by.pk)
             notice = AppNotification(
                 NotificationTypes.PHASE, 
-                "Phase Update - Ready for Pres QA", 
+                "Phase Update - {phase} - Ready for Pres QA".format(phase=self),
                 "{phase} is ready for Presentation QA".format(phase=self),
                 email_template, action_link=self.get_absolute_url(), phase=self)
             task_send_notifications(notice, users_to_notify)
@@ -382,7 +385,7 @@ class Phase(models.Model):
             users_to_notify = User.objects.filter(pk=self.report_author.pk)
             notice = AppNotification(
                 NotificationTypes.PHASE, 
-                "Phase Update - Requires Author Updates", 
+                "Phase Update - {phase} - Requires Author Updates".format(phase=self),
                 "The report for {phase} requires presentation updates.".format(phase=self),
                 email_template, action_link=self.get_absolute_url(), phase=self)
             task_send_notifications(notice, users_to_notify)
@@ -392,7 +395,7 @@ class Phase(models.Model):
             users_to_notify = self.team()
             notice = AppNotification(
                 NotificationTypes.PHASE, 
-                "Phase Update - Complete", 
+                "Phase Update - {phase} - Complete".format(phase=self),
                 "{phase} is ready for delivery".format(phase=self),
                 email_template, action_link=self.get_absolute_url(), phase=self)
             task_send_notifications(notice, users_to_notify)
@@ -401,7 +404,7 @@ class Phase(models.Model):
             users_to_notify = None
             notice = AppNotification(
                 NotificationTypes.PHASE, 
-                "Phase Update - Postponed", 
+                "Phase Update - {phase} - Postponed".format(phase=self),
                 "{phase} has been postponed!".format(phase=self),
                 email_template, action_link=self.get_absolute_url(), phase=self)
             task_send_notifications(notice, users_to_notify)
