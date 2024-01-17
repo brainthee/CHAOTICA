@@ -3,10 +3,9 @@ from menu import Menu, MenuItem
 from chaotica_utils.utils import PermMenuItem
 
 
-Menu.add_item("main", PermMenuItem("Jobs",
+Menu.add_item("main", MenuItem("Jobs",
                             reverse("job_list"),
                             icon="cubes",
-                            perm='jobtracker.view_job',
                             weight=1,))
 
 Menu.add_item("main", PermMenuItem("Scheduler",
@@ -20,7 +19,6 @@ Menu.add_item("main", PermMenuItem("Clients",
                             icon="handshake",
                             perm='jobtracker.view_client',
                             weight=3,))
-
 
 Menu.add_item("main", PermMenuItem("Reporting",
                             reverse("view_reports"),
