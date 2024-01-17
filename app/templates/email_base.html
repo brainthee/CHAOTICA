@@ -80,7 +80,9 @@
                                       </tbody>
                                     </table>
                                     <p class="" style="line-height: 24px; font-size: 16px; width: 100%; margin: 0;" align="left">
-                                      Hello {{ user }},
+                                    {% block greeting %}
+                                    Hello {{ user }},
+                                    {% endblock greeting %}
                                     </p>
                                     <p class="" style="line-height: 24px; font-size: 16px; width: 100%; margin: 0;" align="left">
                                     {% block content %}
@@ -142,7 +144,9 @@
                             </table>
                             {% block footer %}
                               <div class="text-muted text-center text-sm">
-                                This is an automated email. To control your notification preferences, edit your profile in the application.
+                                <i>
+                                  This is an automated email. To control your notification preferences, edit your profile in the application. If you're concerned this is a phish, get in touch with your team leads to verify first.
+                                </i>
                               </div>
                             {% endblock footer %}
                             <table class="s-6 w-full" role="presentation" border="0" cellpadding="0" cellspacing="0" style="width: 100%;" width="100%">
