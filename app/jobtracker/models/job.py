@@ -153,6 +153,10 @@ class Job(models.Model):
         limit_choices_to=models.Q(is_active=True), null=True, blank=True,
         on_delete=models.PROTECT)
     
+    # Services that may be required - only used at draft and scoping stage
+    indicative_services = models.ManyToManyField(
+        "Service", blank=True)
+    
     # General engagement info
     additional_kit_required = models.BooleanField('Additional kit required', default=False)
     additional_kit_info = BleachField(null=True, blank=True)
