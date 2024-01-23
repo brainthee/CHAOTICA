@@ -1,4 +1,4 @@
-<p align="center"> <img src="https://raw.githubusercontent.com/brainthee/CHAOTICA/main/media/Logo%20Files/For%20Web/png/Color%20logo%20-%20no%20background.png"/></p>
+<p align="center"> <img src="https://raw.githubusercontent.com/brainthee/CHAOTICA/main/media/logo_nobg.png"/></p>
 
 [![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip) - **WARNING - THIS PROJECT IS IN EARLY STAGES. I DO NOT ADVISE YOU USE IT YET.**
 

@@ -51,6 +51,7 @@ urlpatterns = [
     path('autocomplete/phases', views.PhaseAutocomplete.as_view(), name='phase-autocomplete'),
     path('job/<str:job_slug>/phase/create/', views.PhaseCreateView.as_view(), name='phase_create'),
     path('job/<str:job_slug>/phase/<str:slug>/', views.PhaseDetailView.as_view(), name='phase_detail'),
+    path('job/<str:job_slug>/phase/<str:slug>/fire_notifications', views.phase_refire_notifications, name='phase_refire_notifications'),
     path('job/<str:job_slug>/phase/<str:slug>/update/note', views.phase_create_note, name='phase_create_note'),
     path('job/<str:job_slug>/phase/<str:slug>/update/workflow/<int:new_state>', views.phase_update_workflow, name='phase_update_workflow'),
     path('job/<str:job_slug>/phase/<str:slug>/update/', views.PhaseUpdateView.as_view(), name='phase_update'),
