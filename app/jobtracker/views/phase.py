@@ -183,6 +183,14 @@ class PhaseCreateView(PhaseBaseView, CreateView):
         return kwargs
 
 @login_required
+def phase_refire_notifications(request, job_slug, slug):
+    job = get_object_or_404(Job, slug=job_slug)
+    phase = get_object_or_404(Phase, job=job, slug=slug)
+    phase.refire_status_notification()
+    return HttpResponseRedirect(reverse('phase_detail', kwargs={"job_slug": job_slug,"slug": slug}))
+
+
+@login_required
 def phase_create_note(request, job_slug, slug):
     job = get_object_or_404(Job, slug=job_slug)
     phase = get_object_or_404(Phase, job=job, slug=slug)

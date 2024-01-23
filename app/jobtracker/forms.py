@@ -493,6 +493,11 @@ class JobForm(forms.ModelForm):
                                              'data-minimum-input-length': 3,
                                          },),)
     
+    indicative_services = forms.ModelMultipleChoiceField(
+        required=False,
+        queryset=Service.objects.filter(),
+        widget=autocomplete.ModelSelect2Multiple(),)
+    
     dep_account_manager = forms.ModelChoiceField(
         required=False,
         queryset=User.objects.filter(is_active=True),
@@ -523,6 +528,7 @@ class JobForm(forms.ModelForm):
             pk__in=self.user.unit_memberships.filter(role__in=UnitRoles.get_roles_with_permission('jobtracker.can_add_job')).values_list('unit').distinct())
         self.fields['title'].label = ""
         self.fields['client'].label = ""
+        self.fields['indicative_services'].label = ""  
         self.fields['external_id'].label = ""
         self.fields['unit'].label = ""
         self.fields['overview'].label = ""  
@@ -542,6 +548,7 @@ class JobForm(forms.ModelForm):
         fields = [
             "unit", 
             "client", 
+            "indicative_services",
             "title", 
             "external_id",
             "revenue", 

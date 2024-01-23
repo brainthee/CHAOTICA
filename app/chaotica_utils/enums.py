@@ -184,13 +184,14 @@ class UnitRoles():
         ]),
         (CONSULTANT, [
             # Job
-            "jobtracker.view_job",
+            "jobtracker.can_view_unit_jobs",
         ]),
         (SALES, [
             "jobtracker.can_view_unit_jobs", "jobtracker.can_add_job",
         ]),
         (SERVICE_DELIVERY, [
             # OrganisationalUnit
+            "jobtracker.can_view_unit_jobs",
             "jobtracker.manage_members", 'jobtracker.view_users_schedule',
         ]),
         (MANAGER, [
