@@ -1,11 +1,15 @@
 {% extends 'email_base.html' %}
 
 {% block title %}
-You're invited to Chaotica
+You're invited to CHAOTICA
 {% endblock title %}
 
+{% block greeting %}
+Hello,
+{% endblock greeting %}
+
 {% block content %}
-You've been invited to join Chaotica - (Centralised Hub for Assigning Operational Tasks, Interactive Calendaring and Alerts). Follow the link below to accept the invitation and setup your account.
+You've been invited to join CHAOTICA - <i>(Centralised Hub for Assigning Operational Tasks, Interactive Calendaring and Alerts)</i>. Follow the link below to accept the invitation and setup your account. 
 {% endblock content %}
 
 {% block action_block %}
