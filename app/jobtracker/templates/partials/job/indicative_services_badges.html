@@ -1,0 +1,3 @@
+{% for service in job.indicative_services.all %}
+<span class="badge badge-phoenix badge-phoenix-info"><a class="link-info" href="{{ service.get_absolute_url }}">{{ service.name }}</a></span>
+{% endfor %}
