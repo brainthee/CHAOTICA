@@ -78,7 +78,7 @@ def test_notification(request):
     notice = AppNotification(
         NotificationTypes.SYSTEM,
         "Test Notification", "This is a test notification. At ease.",
-        "emails/test_email.html"
+        "emails/test_email.html", None, reverse('home')
     )
     task_send_notifications(notice, User.objects.filter(pk=request.user.pk))
     return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
