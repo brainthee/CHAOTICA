@@ -48,6 +48,16 @@ class SchedulerFilter(forms.Form):
         self.helper.form_method = 'get'
         self.helper.form_class = 'form-inline'
         self.helper.layout = Layout(
+
+            Div(
+                HTML("<h5 class=\"setting-panel-item-title\">Date Range</h5>"),
+                Row(
+                    Field('from_date', css_class="extra", style="width: 100%;"),
+                    Field('to_date', css_class="extra", style="width: 100%;"),
+                ),
+                css_class="setting-panel-item",
+            ),
+
             Div(
                 HTML("<h5 class=\"setting-panel-item-title\">Users</h5>"),
                 Row(

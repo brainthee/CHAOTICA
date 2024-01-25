@@ -139,8 +139,6 @@ class UserInvitation(models.Model):
         self.save()
 
 
-
-
 class User(AbstractUser):
     # Fields to enforce email as the auth field
     username = None
@@ -170,7 +168,7 @@ class User(AbstractUser):
     languages = models.ManyToManyField(Language, verbose_name='Languages', blank=True)
     profile_image = models.ImageField(blank=True,
                                      upload_to=get_media_profile_file_path,)
-    contracted_leave = models.IntegerField(verbose_name="Contracted Days Leave", default=0)
+    contracted_leave = models.IntegerField(verbose_name="Contracted Days Leave", default=25)
     contracted_leave_renewal = models.DateField(verbose_name="Leave Renewal Date", default=date(day=1, month=9, year=2023))
     
     class Meta:
