@@ -9,6 +9,7 @@ from chaotica_utils.utils import ext_reverse
 from django.core.exceptions import ValidationError
 from business_duration import businessDuration
 from decimal import Decimal
+from simple_history.models import HistoricalRecords
 
 
 class TimeSlotType(models.Model):
@@ -40,6 +41,7 @@ class TimeSlot(models.Model):
     start = models.DateTimeField()
     end = models.DateTimeField()
     notes = GenericRelation(Note)
+    history = HistoricalRecords()
     user = models.ForeignKey(settings.AUTH_USER_MODEL,
         limit_choices_to=(models.Q(is_active=True)),
         related_name="timeslots", on_delete=models.CASCADE,
