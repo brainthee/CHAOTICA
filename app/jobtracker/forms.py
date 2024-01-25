@@ -48,30 +48,33 @@ class SchedulerFilter(forms.Form):
         self.helper.form_method = 'get'
         self.helper.form_class = 'form-inline'
         self.helper.layout = Layout(
-            Row(
-                Column(
-                    # Reset("reset-button", "Reset",  css_class="btn-phoenix-secondary"),
-                    css_class="col"),
-                Column(
-                    Submit("apply", 'Apply', css_class="btn-phoenix-success"),
-                    css_class="col-md-auto"),
-            ),
-            Accordion(
-                # AccordionGroup('Date Filter',
-                #     'from_date',
-                #     'to_date',
-                # ),
-                AccordionGroup('Users Filter',
-                    Field('users', css_class="extra", style="width: 100%;"),
+            Div(
+                HTML("<h5 class=\"setting-panel-item-title\">Users</h5>"),
+                Row(
+                    Field('users', style="width: 100%;"),
                 ),
-                AccordionGroup('Skills Filter',
+                css_class="setting-panel-item",
+            ),
+
+            Div(
+                HTML("<h5 class=\"setting-panel-item-title\">Skills</h5>"),
+                Row(
                     Field('skills_specialist', css_class="extra", style="width: 100%;"),
                     Field('skills_can_do_alone', css_class="extra", style="width: 100%;"),
                     Field('skills_can_do_support', css_class="extra", style="width: 100%;"),
                 ),
-                AccordionGroup('Service Filter',
-                    Field('services', css_class="extra", style="width: 100%;"),
+                css_class="setting-panel-item",
+            ),
+
+            Div(
+                HTML("<h5 class=\"setting-panel-item-title\">Service</h5>"),
+                Row(
+                    Field('services', style="width: 100%;"),
                 ),
+                css_class="setting-panel-item",
+            ),
+            Row(
+                Submit("apply", 'Apply', css_class="btn-phoenix-success d-grid mb-3 mt-5"),
             ),
         )
 
