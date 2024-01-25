@@ -186,6 +186,9 @@ class ProfileBasicForm(forms.ModelForm):
         self.helper = FormHelper(self)
         self.helper.form_tag = False
         self.fields['contracted_leave_renewal'].widget = DatePickerInput()
+
+        self.fields['contracted_leave_renewal'].disabled = True
+        self.fields['contracted_leave'].disabled = True
         self.fields['show_help'].help_text = False
         
         self.helper.layout = Layout(
@@ -210,6 +213,10 @@ class ProfileBasicForm(forms.ModelForm):
             Row(
                 Column(Div(Field('profile_image'),
                         css_class="input-group input-group-dynamic")),
+                Column(Div(Field('languages'),
+                        css_class="")),
+            ),
+            Row(
                 Column(
                     Row(
                         Column(Div(Field('contracted_leave'),
@@ -218,10 +225,6 @@ class ProfileBasicForm(forms.ModelForm):
                                 css_class="input-group input-group-dynamic")),
                     ),
                 ),
-            ),
-            Row(
-                Column(Div(Field('languages'),
-                        css_class="")),
                 Column(Div(Field('pref_timezone'),
                         css_class="")),
             ),
