@@ -878,6 +878,9 @@ class ClientForm(forms.ModelForm):
 class ClientContactForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
+        client=None
+        if 'client' in kwargs:
+            client = kwargs.pop('client')
         super(ClientContactForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
         self.fields['salutation'].label = False
