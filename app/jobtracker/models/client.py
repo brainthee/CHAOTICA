@@ -22,11 +22,13 @@ class Client(models.Model):
     external_id = models.CharField(verbose_name="External ID", 
                                    db_index=True, max_length=255, blank=True, default="")
     hours_in_day = models.DecimalField(max_digits=3, decimal_places=1, 
-                                    default=Decimal(config.DEFAULT_HOURS_IN_DAY),
+                                    default=Decimal(settings.DEFAULT_HOURS_IN_DAY),
                                     verbose_name="Hours in Day", 
                                     help_text="The number of billable hours in a day")
     specific_requirements = BleachField(blank=True, null=True, 
                                         help_text="Any special notes, e.g. certain individuals, onboarding required etc")
+    specific_reporting_requirements = BleachField(blank=True, null=True, 
+                                        help_text="Any special reporting requirements")
     history = HistoricalRecords()
     data = JSONField(verbose_name="Data", null=True, blank=True, default=dict)
     notes = GenericRelation(Note)
