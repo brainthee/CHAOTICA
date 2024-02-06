@@ -346,7 +346,7 @@ def app_settings(request):
     from pprint import pprint
     context = {}
     if request.method == "POST":
-        form = ConstanceForm(initial=get_values())
+        form = CustomConfigForm(initial=get_values())
 
         for key in form.fields:
             pprint(key)
@@ -363,7 +363,7 @@ def app_settings(request):
         return HttpResponseRedirect(reverse('app_settings'))
     else:
         # Send the modal
-        form = ConstanceForm(initial=get_values())
+        form = CustomConfigForm(initial=get_values())
 
     context = {'app_settings': form}
     template = loader.get_template('app_settings.html')
