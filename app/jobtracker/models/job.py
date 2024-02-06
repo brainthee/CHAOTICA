@@ -18,6 +18,7 @@ from chaotica_utils.views import log_system_activity
 from datetime import timedelta
 from decimal import Decimal
 from django_bleach.models import BleachField
+from constance import config
 
 
 class JobManager(models.Manager):    
@@ -422,7 +423,7 @@ class Job(models.Model):
                 self.id = last_id + 1
             else:
                 # We haven't got any other jobs so lets just start from the default
-                self.id = int(settings.JOB_ID_START) + 1
+                self.id = int(config.JOB_ID_START) + 1
 
         return super().save(*args, **kwargs)
     

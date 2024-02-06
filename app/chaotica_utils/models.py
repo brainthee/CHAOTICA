@@ -21,6 +21,7 @@ from django_countries.fields import CountryField
 from .tasks import task_send_notifications
 from jobtracker.enums import DefaultTimeSlotTypes, UserSkillRatings
 from business_duration import businessDuration
+from constance import config
 from django.template.loader import render_to_string
 from django.core.mail import send_mail
 
@@ -115,7 +116,7 @@ class UserInvitation(models.Model):
     )
 
     def is_expired(self):
-        expiry_date = self.sent + timedelta(days=settings.USER_INVITE_EXPIRY)
+        expiry_date = self.sent + timedelta(days=config.USER_INVITE_EXPIRY)
         return expiry_date <= timezone.now()    
     
     def get_absolute_url(self):
@@ -519,7 +520,7 @@ class LeaveRequest(models.Model):
             end__gte=self.start_date).exists()
 
     def requested_late(self):
-        return self.start_date < (self.requested_on + timedelta(days=settings.LEAVE_DAYS_NOTICE))
+        return self.start_date < (self.requested_on + timedelta(days=config.LEAVE_DAYS_NOTICE))
     
     def affected_days(self):
         unit='day'

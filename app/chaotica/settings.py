@@ -73,12 +73,33 @@ CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 
 
 GLOBAL_GROUP_PREFIX = "Global: "
-DEFAULT_HOURS_IN_DAY = os.environ.get("DEFAULT_HOURS_IN_DAY", default=7.5)
-LEAVE_DAYS_NOTICE = os.environ.get("LEAVE_DAYS_NOTICE", default=14) # Two weeks notice
-USER_INVITE_EXPIRY = os.environ.get("USER_INVITE_EXPIRY", default=7)
-USER_INVITE_ONLY = os.environ.get("USER_INVITE_ONLY", default=True)
-JOB_ID_START = os.environ.get("JOB_ID_START", default=2500)
-PHASE_ID_START = os.environ.get("PHASE_ID_START", default=1)
+
+
+CONSTANCE_CONFIG = {
+    # Feature Flags
+    'ADFS_ENABLED': (False, 'Should we allow ADFS login? Ensure there is a valid configuration!'),
+    'REGISTRATION_ENABLED': (True, 'Should we allow self-registration?'),
+    # Invite
+    'INVITE_ENABLED': (True, 'Should we allow inviting users?'),
+    'USER_INVITE_EXPIRY': (7, 'How long until invites expire'),
+
+    # Phase ID settings
+    'JOB_ID_START': (2500, 'Where to start Job IDs'),
+    # 'PHASE_ID_START': (1, 'Where Phase IDs start'),
+
+    # Work settings
+    'DEFAULT_HOURS_IN_DAY': (7.5, 'Default hours in a work day'),
+    'LEAVE_DAYS_NOTICE': (14, 'How many days notice for Annual Leave submissions?'),
+
+    # Theme/Look settings
+    'SNOW_ENABLED': (False, 'Should it snow?'),
+    'KONAMI_ENABLED': (True, 'Should the Konami easter-egg be enabled?'),
+
+    # Site Notice
+    'SITE_NOTICE_ENABLED': (False, 'Show a site wide notice'),
+    'SITE_NOTICE_MSG': ('', 'Message to display across the site'),
+    'SITE_NOTICE_COLOUR': ('primary', 'Select the alert colour of the site notice', 'notice_colour'),
+}
 
 CONSTANCE_BACKEND = 'constance.backends.database.DatabaseBackend'
 CONSTANCE_IGNORE_ADMIN_VERSION_CHECK = True
@@ -94,13 +115,6 @@ CONSTANCE_ADDITIONAL_FIELDS = {
             ("warning", "Warning"),
         ),
     }],
-}
-
-CONSTANCE_CONFIG = {
-    'SNOW_ENABLED': (False, 'Should it snow?'),
-    'SITE_NOTICE_ENABLED': (False, 'Show a site wide notice'),
-    'SITE_NOTICE_MSG': ('', 'Message to display across the site'),
-    'SITE_NOTICE_COLOUR': ('primary', 'Select the alert colour of the site notice', 'notice_colour'),
 }
 
 

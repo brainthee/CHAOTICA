@@ -26,7 +26,7 @@ from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.contrib import messages 
 from django.shortcuts import get_object_or_404
 from constance import config
-from constance.forms import ConstanceForm
+from constance.admin import ConstanceForm
 from constance.utils import get_values
 from .tasks import task_update_holidays
 from django.views.decorators.http import require_http_methods, require_safe, require_POST
@@ -343,19 +343,21 @@ def update_own_certs(request):
 @staff_member_required
 @require_http_methods(["GET", "POST"])
 def app_settings(request):
-    from pprint import pprint
     context = {}
     if request.method == "POST":
-        form = ConstanceForm(request.POST.copy())
-        if form.is_valid():
-            form.save()
-        else:
-            pprint(form.errors)
-            messages.error(request, "Form is invalid")
+        form = CustomConfigForm(initial=get_values())
+
+        for key in form.fields:
+            value = request.POST.get(key)
+            if key != "version" and key in form.fields:
+                field = form.fields[key]
+                clean_value = field.clean(field.to_python(value))
+                setattr(config, key, clean_value)
+
         return HttpResponseRedirect(reverse('app_settings'))
     else:
         # Send the modal
-        form = ConstanceForm(initial=get_values())
+        form = CustomConfigForm(initial=get_values())
 
     context = {'app_settings': form}
     template = loader.get_template('app_settings.html')
@@ -452,6 +454,8 @@ def get_quote(request):
 @login_required
 @require_http_methods(["GET", "POST"])
 def user_invite(request):
+    if not config.INVITE_ENABLED:
+        return HttpResponseForbidden()
     data = {}
     data['form_is_valid'] = False
     if request.method == "POST":
@@ -479,38 +483,43 @@ def signup(request, invite_id=None):
         return redirect('home')
     else:
         new_install = User.objects.all().count() <= 1
-        # Check if we're invite only...
-        if django_settings.USER_INVITE_ONLY and not new_install:
-            if not invite_id or \
-                not is_valid_uuid(invite_id) or \
-                not UserInvitation.objects.filter(invite_id=invite_id).exists():
-                context = {}
-                template = loader.get_template('errors/invite_only.html')
-                return HttpResponse(template.render(context, request))
-            
-            invite = get_object_or_404(UserInvitation, invite_id=invite_id)
-            if invite.accepted:
-                # Already accepted - rendor an error page
-                context = {}
-                template = loader.get_template('errors/invite_used.html')
-                return HttpResponse(template.render(context, request))
-            elif invite.is_expired():
-                # Already accepted - rendor an error page
-                context = {}
-                template = loader.get_template('errors/invite_expired.html')
-                return HttpResponse(template.render(context, request))
-            else:
-                if request.method == 'POST':
-                    form = ChaoticaUserForm(request.POST, invite=invite)
-                else:
-                    form = ChaoticaUserForm(invite=invite)
-
-        else:
-            # Invitation isn't required - self sign up!
+        # Ok, despite everything, if it's a new install... lets go!
+        if new_install:
             if request.method == 'POST':
                 form = ChaoticaUserForm(request.POST)
             else:
                 form = ChaoticaUserForm()
+        else:
+            if invite_id and is_valid_uuid(invite_id) and UserInvitation.objects.filter(invite_id=invite_id).exists():
+                # Valid invite
+                invite = get_object_or_404(UserInvitation, invite_id=invite_id)
+                if invite.accepted:
+                    # Already accepted - rendor an error page
+                    context = {}
+                    template = loader.get_template('errors/invite_used.html')
+                    return HttpResponse(template.render(context, request))
+                elif invite.is_expired():
+                    # Already accepted - rendor an error page
+                    context = {}
+                    template = loader.get_template('errors/invite_expired.html')
+                    return HttpResponse(template.render(context, request))
+                else:
+                    if request.method == 'POST':
+                        form = ChaoticaUserForm(request.POST, invite=invite)
+                    else:
+                        form = ChaoticaUserForm(invite=invite)
+            else:
+                # Invalid invite (non existant or invalid - doesn't matter for our purpose)
+                if config.REGISTRATION_ENABLED:
+                    if request.method == 'POST':
+                        form = ChaoticaUserForm(request.POST)
+                    else:
+                        form = ChaoticaUserForm()
+                else:
+                    # Return registration disabled error
+                    context = {}
+                    template = loader.get_template('errors/registration_disabled.html')
+                    return HttpResponse(template.render(context, request))
 
         if request.method == 'POST' and form.is_valid():
             form.save()
