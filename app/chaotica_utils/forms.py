@@ -22,6 +22,20 @@ class CustomConfigForm(ConstanceForm):
         super(CustomConfigForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
         self.helper.form_tag = False
+        # self.helper.layout = Layout(
+        #     Row(
+        #         Column(Div(Field('SITE_NOTICE_ENABLED'),
+        #                 css_class="input-group input-group-dynamic")),
+        #         Column(Div(FloatingField('SITE_NOTICE_COLOUR'),
+        #                 css_class="input-group input-group-dynamic")),
+        #         Column(Div(FloatingField('SITE_NOTICE_MSG'),
+        #                 css_class="input-group input-group-dynamic")),
+        #     ),
+        #     Row(
+        #         Column(Div(Field('SNOW_ENABLED'),
+        #                 css_class="input-group input-group-dynamic")),
+        #     ),
+        # )
 
 
 class LeaveRequestForm(forms.ModelForm):
