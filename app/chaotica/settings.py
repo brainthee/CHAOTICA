@@ -97,6 +97,9 @@ CONSTANCE_ADDITIONAL_FIELDS = {
 }
 
 CONSTANCE_CONFIG = {
+    'ADFS_ENABLED': (False, 'Should we allow ADFS login? Ensure there is a valid configuration!'),
+    'REGISTRATION_ENABLED': (False, 'Should we allow self-registration?'),
+    'INVITE_ENABLED': (False, 'Should we allow inviting users?'),
     'SNOW_ENABLED': (False, 'Should it snow?'),
     'SITE_NOTICE_ENABLED': (False, 'Show a site wide notice'),
     'SITE_NOTICE_MSG': ('', 'Message to display across the site'),

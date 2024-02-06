@@ -26,7 +26,7 @@ from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.contrib import messages 
 from django.shortcuts import get_object_or_404
 from constance import config
-from constance.forms import ConstanceForm
+from constance.admin import ConstanceForm
 from constance.utils import get_values
 from .tasks import task_update_holidays
 from django.views.decorators.http import require_http_methods, require_safe, require_POST
@@ -346,12 +346,20 @@ def app_settings(request):
     from pprint import pprint
     context = {}
     if request.method == "POST":
-        form = ConstanceForm(request.POST.copy())
-        if form.is_valid():
-            form.save()
-        else:
-            pprint(form.errors)
-            messages.error(request, "Form is invalid")
+        form = ConstanceForm(initial=get_values())
+
+        for key in form.fields:
+            pprint(key)
+            value = request.POST.get(key)
+            pprint(value)
+
+            if key != "version" and key in form.fields:
+                field = form.fields[key]
+                pprint(field)
+                clean_value = field.clean(field.to_python(value))
+                pprint(clean_value)
+                setattr(config, key, clean_value)
+
         return HttpResponseRedirect(reverse('app_settings'))
     else:
         # Send the modal
