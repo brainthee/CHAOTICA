@@ -75,6 +75,8 @@ CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 GLOBAL_GROUP_PREFIX = "Global: "
 
 
+DEFAULT_HOURS_IN_DAY = os.environ.get("DEFAULT_HOURS_IN_DAY", default=7.5)
+
 CONSTANCE_CONFIG = {
     # Feature Flags
     'ADFS_ENABLED': (False, 'Should we allow ADFS login? Ensure there is a valid configuration!'),
