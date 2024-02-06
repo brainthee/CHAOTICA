@@ -846,6 +846,15 @@ class ClientForm(forms.ModelForm):
             'rows': 5,
         },),
     )    
+    specific_reporting_requirements = forms.CharField(
+        required=False,
+        widget=forms.Textarea(
+        attrs={
+            'class': "tinymce",
+            'data-tinymce': '{"height":"15rem","placeholder":"Write an special requirements of this team here..."}',
+            'rows': 5,
+        },),
+    )    
     account_managers = forms.ModelMultipleChoiceField(
         queryset=User.objects.filter(is_active=True),
         widget=autocomplete.ModelSelect2Multiple(url='user-autocomplete',
@@ -867,12 +876,13 @@ class ClientForm(forms.ModelForm):
         self.fields['name'].label = False
         self.fields['short_name'].label = False
         self.fields['specific_requirements'].label = False
+        self.fields['specific_reporting_requirements'].label = False
         self.fields['account_managers'].label = False
         self.fields['tech_account_managers'].label = False
 
     class Meta:
         model = Client
-        fields = ["name", "short_name", "specific_requirements", "account_managers", "tech_account_managers"]
+        fields = ["name", "short_name", "specific_reporting_requirements", "specific_requirements", "account_managers", "tech_account_managers"]
 
 
 class ClientContactForm(forms.ModelForm):
