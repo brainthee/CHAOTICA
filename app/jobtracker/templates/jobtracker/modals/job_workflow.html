@@ -46,6 +46,14 @@
                         </div>
                         {% endfor %}
                     {% endif %}
+
+                    {% if fyi %}
+                    <p class="">{{ fyi }}</p>
+                    <div class="alert alert-outline-info pt-2 pb-2">
+                        {{ fyi_content }}
+                    </div>
+                    {% endif %}
+                    
                     <p>Are you sure you wish to progress to <mark>{{ new_state_str }}</mark>?</p>
                 {% endif %}
             </div>
