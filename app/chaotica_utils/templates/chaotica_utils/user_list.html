@@ -26,12 +26,13 @@
     <h2 class="mb-0">Users</h2>
   </div>
   <div class="col-3 d-flex justify-content-end">
-
+{% if config.INVITE_ENABLED %}
     <button data-url="{% url 'user_invite' %}" 
       class="btn btn-phoenix-primary js-load-modal-form">
       <i class="fa-solid fa-plus me-2"></i>
       Invite User
     </button>
+    {% endif %}
 
   </div>
 </div>

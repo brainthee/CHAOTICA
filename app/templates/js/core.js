@@ -234,7 +234,7 @@ $(function() {
 
 });
 
-  
+{% if config.KONAMI_ENABLED %}
 jQuery(document).ready(function($){
 
     var data = localStorage.safetyProtocols;
@@ -285,3 +285,4 @@ jQuery(document).ready(function($){
 
     });
 });
+{% endif %}

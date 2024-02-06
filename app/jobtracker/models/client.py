@@ -9,6 +9,7 @@ from phone_field import PhoneField
 from chaotica_utils.models import Note
 from decimal import Decimal
 from django_bleach.models import BleachField
+from constance import config
 
 
 class Client(models.Model):
@@ -21,7 +22,7 @@ class Client(models.Model):
     external_id = models.CharField(verbose_name="External ID", 
                                    db_index=True, max_length=255, blank=True, default="")
     hours_in_day = models.DecimalField(max_digits=3, decimal_places=1, 
-                                    default=Decimal(settings.DEFAULT_HOURS_IN_DAY),
+                                    default=Decimal(config.DEFAULT_HOURS_IN_DAY),
                                     verbose_name="Hours in Day", 
                                     help_text="The number of billable hours in a day")
     specific_requirements = BleachField(blank=True, null=True, 

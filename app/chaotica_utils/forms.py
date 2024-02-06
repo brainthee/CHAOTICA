@@ -10,6 +10,7 @@ from crispy_bootstrap5.bootstrap5 import FloatingField
 from constance.admin import ConstanceForm
 from dal import autocomplete
 import pytz
+from constance import config
 from django.conf import settings
 from bootstrap_datepicker_plus.widgets import TimePickerInput, DatePickerInput, DateTimePickerInput
 from django.core.files.images import get_image_dimensions
@@ -22,20 +23,61 @@ class CustomConfigForm(ConstanceForm):
         super(CustomConfigForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
         self.helper.form_tag = False
-        # self.helper.layout = Layout(
-        #     Row(
-        #         Column(Div(Field('SITE_NOTICE_ENABLED'),
-        #                 css_class="input-group input-group-dynamic")),
-        #         Column(Div(FloatingField('SITE_NOTICE_COLOUR'),
-        #                 css_class="input-group input-group-dynamic")),
-        #         Column(Div(FloatingField('SITE_NOTICE_MSG'),
-        #                 css_class="input-group input-group-dynamic")),
-        #     ),
-        #     Row(
-        #         Column(Div(Field('SNOW_ENABLED'),
-        #                 css_class="input-group input-group-dynamic")),
-        #     ),
-        # )
+        self.fields['REGISTRATION_ENABLED'].help_text = settings.CONSTANCE_CONFIG['REGISTRATION_ENABLED'][1]
+        self.fields['INVITE_ENABLED'].help_text = settings.CONSTANCE_CONFIG['INVITE_ENABLED'][1]
+        self.fields['USER_INVITE_EXPIRY'].help_text = settings.CONSTANCE_CONFIG['USER_INVITE_EXPIRY'][1]
+        self.fields['DEFAULT_HOURS_IN_DAY'].help_text = settings.CONSTANCE_CONFIG['DEFAULT_HOURS_IN_DAY'][1]
+        self.fields['LEAVE_DAYS_NOTICE'].help_text = settings.CONSTANCE_CONFIG['LEAVE_DAYS_NOTICE'][1]
+        self.fields['JOB_ID_START'].help_text = settings.CONSTANCE_CONFIG['JOB_ID_START'][1]
+        self.fields['SNOW_ENABLED'].help_text = settings.CONSTANCE_CONFIG['SNOW_ENABLED'][1]
+        self.fields['KONAMI_ENABLED'].help_text = settings.CONSTANCE_CONFIG['KONAMI_ENABLED'][1]
+        self.fields['SITE_NOTICE_ENABLED'].help_text = settings.CONSTANCE_CONFIG['SITE_NOTICE_ENABLED'][1]
+        self.fields['SITE_NOTICE_COLOUR'].help_text = settings.CONSTANCE_CONFIG['SITE_NOTICE_COLOUR'][1]
+        self.fields['SITE_NOTICE_MSG'].help_text = settings.CONSTANCE_CONFIG['SITE_NOTICE_MSG'][1]
+        self.helper.layout = Layout(
+            Row(
+                Column(
+                    HTML('<h4 class="mb-4">User Settings</h4>'),
+                    Div(Field('REGISTRATION_ENABLED'),
+                        css_class="input-group input-group-dynamic"),
+                    Div(Field('INVITE_ENABLED'),
+                        css_class="input-group input-group-dynamic"),
+                    Div(FloatingField('USER_INVITE_EXPIRY'),
+                        css_class="input-group input-group-dynamic"),
+                ),
+                Column(
+                    HTML('<h4 class="mb-4">Work Settings</h4>'),
+                    Div(FloatingField('DEFAULT_HOURS_IN_DAY'),
+                        css_class="input-group input-group-dynamic"),
+                    Div(FloatingField('LEAVE_DAYS_NOTICE'),
+                        css_class="input-group input-group-dynamic"),
+                ),
+            ),
+            Row(
+                Column(
+                    HTML('<h4 class="mb-4">Phase Settings</h4>'),
+                    Div(FloatingField('JOB_ID_START'),
+                        css_class="input-group input-group-dynamic"),
+                ),
+
+                Column(
+                    HTML('<h4 class="mb-4">Theme Settings</h4>'),
+                    Div(Field('SNOW_ENABLED'),
+                        css_class="input-group input-group-dynamic"),
+                    Div(Field('KONAMI_ENABLED'),
+                        css_class="input-group input-group-dynamic"),
+                ),
+            ),
+            Row(
+                HTML('<h4 class="mb-4">Site Notice</h4>'),
+                Column(Div(Field('SITE_NOTICE_ENABLED'),
+                        css_class="input-group input-group-dynamic")),
+                Column(Div(FloatingField('SITE_NOTICE_COLOUR'),
+                        css_class="input-group input-group-dynamic")),
+                Column(Div(FloatingField('SITE_NOTICE_MSG'),
+                        css_class="input-group input-group-dynamic")),
+            ),
+        )
 
 
 class LeaveRequestForm(forms.ModelForm):
