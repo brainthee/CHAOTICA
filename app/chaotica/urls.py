@@ -25,6 +25,7 @@ from django.contrib.auth import views as auth_views
 urlpatterns = [
     re_path(r'^$', lambda r: HttpResponseRedirect('dashboard/'), name='home'),
     re_path(r'^dashboard/', include('dashboard.urls')),
+    path('oauth2/', include('django_auth_adfs.urls')),
     re_path(r'', include('chaotica_utils.urls')),
     re_path(r'', include('jobtracker.urls')),
 ]

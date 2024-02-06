@@ -11,23 +11,27 @@
 {% endblock breadcrumbItem %}
 
 {% block content %}
-<div class="alert alert-danger text-white">
-  This functionality is not yet complete. Do not use!
-</div>
+
 <div class="row mb-5">
     <div class="col-lg-3 g-2">
        <div class="card position-sticky">
           <ul class="nav flex-column bg-white border-radius-lg p-3">
              <li class="nav-item">
-                <a class="nav-link text-dark d-flex" data-scroll="" href="#app-settings">
-                <i class="material-icons text-lg me-2"></i>
+                <a class="nav-link d-flex" data-scroll="" href="#app-settings">
+                  <span class="fa fa-cog text-dark me-sm-2 fs-1"></span>
                 <span class="text-sm">App Settings</span>
                 </a>
              </li>
              <li class="nav-item pt-2">
-                <a class="nav-link text-dark d-flex" data-scroll="" href="#feeds">
-                <i class="material-icons text-lg me-2"></i>
-                <span class="text-sm">Data Import/Export</span>
+                <a class="nav-link d-flex" data-scroll="" href="#import">
+                  <span class="fa fa-upload text-dark me-sm-2 fs-1"></span>
+                <span class="text-sm">Data Import</span>
+                </a>
+             </li>
+             <li class="nav-item pt-2">
+                <a class="nav-link d-flex" data-scroll="" href="#export">
+                  <span class="fa fa-download text-dark me-sm-2 fs-1"></span>
+                <span class="text-sm">Data Export</span>
                 </a>
              </li>
           </ul>
@@ -43,10 +47,8 @@
               <div class="col-auto my-auto">
                   <div class="h-100">
                       <h5>Application Settings</h5>
+                      <span class="text-700 lh-sm mb-0">These options control site wide settings</span>
                   </div>
-              </div>
-              <div class="col-auto mt-2">
-                  
               </div>
               <div class="col-lg-4 col-md-6 my-sm-auto text-end ms-sm-auto me-sm-0 mx-auto mt-3">
                   <button type="submit" class="btn btn-outline-success ms-auto">
@@ -63,13 +65,26 @@
        </div>
 
 
-      <div class="card mt-4" id="feeds">
-          <div class="card-header">
-            <h5>Data Import</h5>
-          </div>
-          <div class="card-body pt-0">
-            
-          </div>
+       <div class="card mt-4" id="import">
+           <div class="card-header">
+             <h5>Data Import</h5>
+             <span class="text-700 lh-sm mb-0">Import JSON or CSV data</span>
+           </div>
+           <div class="card-body">
+            <div class="alert mt-3 alert-phoenix-warning" role="alert">This feature is still under development</div>       
+           </div>
+       </div>
+
+
+       <div class="card mt-4" id="export">
+           <div class="card-header">
+             <h5>Data Export</h5>
+             <span class="text-700 lh-sm mb-0">Export all site data to JSON</span>
+           </div>
+           <div class="card-body">
+            <div class="alert mt-3 alert-phoenix-warning" role="alert">This feature is still under development</div>  
+             
+           </div>
        </div>
     </div>
  </div>

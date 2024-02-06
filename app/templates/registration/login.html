@@ -28,10 +28,10 @@
     <p class="text-700">Get access to your account</p>
   </div>
 
-  {% if azure_sso %}
-  <button class="btn btn-phoenix-secondary w-100 mb-3">
-    <span class="fab fa-microsoft text-danger me-2 fs--1"></span>Sign in with Microsoft
-  </button>
+  {% if config.ADFS_ENABLED %}  
+  <a class="btn btn-phoenix-secondary w-100 mb-3" href="{% url 'django_auth_adfs:login' %}">
+    <span class="fab fa-microsoft text-primary me-2 fs--1"></span>Sign in with Microsoft
+  </a>
 
   <div class="position-relative">
     <hr class="bg-200 mt-5 mb-4" />
@@ -68,9 +68,11 @@
     <button type="submit" value="Sign in" class="btn btn-primary w-100 mb-3">Sign In</button>
     <input type="hidden" name="next" value="{{ next }}" />
 
+    {% if config.REGISTRATION_ENABLED %}
     <div class="text-center">
       <a class="fs--1 fw-bold" href="{% url 'signup' %}">Create an account</a>
     </div>
+    {% endif %}
 
   </form>
 </div>
