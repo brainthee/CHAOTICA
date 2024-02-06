@@ -68,9 +68,11 @@
     <button type="submit" value="Sign in" class="btn btn-primary w-100 mb-3">Sign In</button>
     <input type="hidden" name="next" value="{{ next }}" />
 
+    {% if config.REGISTRATION_ENABLED %}
     <div class="text-center">
       <a class="fs--1 fw-bold" href="{% url 'signup' %}">Create an account</a>
     </div>
+    {% endif %}
 
   </form>
 </div>
