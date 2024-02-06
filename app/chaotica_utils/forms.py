@@ -6,7 +6,8 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.bootstrap import FormActions,PrependedText, FieldWithButtons, StrictButton, InlineField, Accordion, AccordionGroup
 from crispy_forms.layout import Layout, Row, Column, Field, Div, Submit, Button, HTML
 from crispy_bootstrap5.bootstrap5 import FloatingField
-from constance.forms import ConstanceForm
+# from constance.forms import ConstanceForm
+from constance.admin import ConstanceForm
 from dal import autocomplete
 import pytz
 from django.conf import settings
@@ -21,20 +22,6 @@ class CustomConfigForm(ConstanceForm):
         super(CustomConfigForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
         self.helper.form_tag = False
-        self.helper.layout = Layout(
-            Row(
-                Column(Div(Field('SITE_NOTICE_ENABLED'),
-                        css_class="input-group input-group-dynamic")),
-                Column(Div(FloatingField('SITE_NOTICE_COLOUR'),
-                        css_class="input-group input-group-dynamic")),
-                Column(Div(FloatingField('SITE_NOTICE_MSG'),
-                        css_class="input-group input-group-dynamic")),
-            ),
-            Row(
-                Column(Div(Field('SNOW_ENABLED'),
-                        css_class="input-group input-group-dynamic")),
-            ),
-        )
 
 
 class LeaveRequestForm(forms.ModelForm):
@@ -190,6 +177,7 @@ class ProfileBasicForm(forms.ModelForm):
         self.fields['contracted_leave_renewal'].disabled = True
         self.fields['contracted_leave'].disabled = True
         self.fields['show_help'].help_text = False
+        self.fields['email'].disabled = True
         
         self.helper.layout = Layout(
             Row(
