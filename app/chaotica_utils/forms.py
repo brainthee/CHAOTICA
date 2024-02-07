@@ -69,14 +69,23 @@ class CustomConfigForm(ConstanceForm):
                         css_class="input-group input-group-dynamic"),
                 ),
             ),
+
             Row(
-                HTML('<h4 class="mb-4">Site Notice</h4>'),
-                Column(Div(Field('SITE_NOTICE_ENABLED'),
-                        css_class="input-group input-group-dynamic")),
-                Column(Div(FloatingField('SITE_NOTICE_COLOUR'),
-                        css_class="input-group input-group-dynamic")),
-                Column(Div(FloatingField('SITE_NOTICE_MSG'),
-                        css_class="input-group input-group-dynamic")),
+                Column(
+                    HTML('<h4 class="mb-4">Auth Settings</h4>'),
+                    Div(Field('ADFS_ENABLED'),
+                        css_class="input-group input-group-dynamic"),
+                ),
+
+                Column(
+                    HTML('<h4 class="mb-4">Site Notice</h4>'),
+                    Div(Field('SITE_NOTICE_ENABLED'),
+                            css_class="input-group input-group-dynamic"),
+                    Div(FloatingField('SITE_NOTICE_COLOUR'),
+                            css_class="input-group input-group-dynamic"),
+                    Div(FloatingField('SITE_NOTICE_MSG'),
+                            css_class="input-group input-group-dynamic"),
+                ),
             ),
         )
 

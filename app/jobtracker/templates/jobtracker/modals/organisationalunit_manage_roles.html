@@ -7,28 +7,18 @@
             <div class="modal-header">
                 <h6 class="modal-title" 
                     id="modal-title-default">
-                        Join Organisation Unit
+                    Manage Roles
                 </h6>
                 <button type="button" class="btn-close" 
                     data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p>Are you sure you wish to join this unit?</p>
-
-                <p>
-                    {% if orgUnit.approval_required %}
-                    Your request will be reviewed before access is granted.
-                    {% else %}
-                    Approval is not required so your membership will be added straight away.
-                    {% endif %}
-                <p>
+                <p>Select the roles you wish {{ membership.member.get_full_name }} to have in {{ orgUnit.name }}</p>
+                
+            {% crispy form %}
             </div>
             <div class="modal-footer">
-                {% if orgUnit.approval_required %}
-                <button type="submit" class="btn btn-phoenix-warning mb-0">Request Membership</button>
-                {% else %}
-                <button type="submit" class="btn btn-phoenix-success mb-0">Join</button>
-                {% endif %}
+                <button type="submit" class="btn btn-phoenix-success mb-0">Save</button>
                 <button type="button" class="btn btn-light shadow-none mb-0" data-bs-dismiss="modal">Close</button>
             </div>
         </form>
