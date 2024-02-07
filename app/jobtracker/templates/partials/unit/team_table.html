@@ -26,13 +26,18 @@
                   <button class="btn btn-link text-secondary ps-0 pe-2" id="navbarDropdownMenuLink" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                      <i class="fa fa-ellipsis-v text-lg" aria-hidden="true"></i>
                   </button>
-                  <div class="dropdown-menu shadow dropdown-menu-end me-sm-n4 me-n3" aria-labelledby="navbarDropdownMenuLink">
-                      {% for memberRole in member.list %}
+                  <div class="dropdown-menu shadow dropdown-menu-end me-sm-n4 me-n3" aria-labelledby="navbarDropdownMenuLink">     
+                    {% for memberRole in member.list %}
+
+                      <a class="dropdown-item text-primary js-load-modal-form" href="#" 
+                        data-url="{% url 'organisationalunit_manage_roles' organisationalunit.slug memberRole.pk %}">
+                        Manage Roles
+                      </a>   
                       {% if memberRole.role == 0 %}
                       <a class="dropdown-item text-warning js-load-modal-form" href="#" 
-                          data-url="{% url 'review_join_request' organisationalunit.slug memberRole.pk %}">Review Join Request</a>                               
+                          data-url="{% url 'review_join_request' organisationalunit.slug memberRole.pk %}">Review Join Request</a>    
                       {% endif %}
-                      {% endfor %}
+                    {% endfor %}
                   </div>
                   {% endif %}
                </td>
