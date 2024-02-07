@@ -49,7 +49,6 @@ def organisationalunit_add(request, slug):
             membership = form.save(commit=False)
             membership.unit = org_unit
             if membership:
-
                 # Ok, lets see if we need to make it pending...
                 if org_unit.approval_required:
                     membership.role = UnitRoles.PENDING
@@ -112,6 +111,11 @@ def organisationalunit_manage_roles(request, slug, member_pk):
     # Lets make sure our own membership is high enough level!
     get_object_or_404(OrganisationalUnitMember, member=request.user, unit=org_unit, 
                                       role=UnitRoles.MANAGER)
+    
+    # Silly thing... lets not be able to modify our own account!
+    if OrganisationalUnitMember.objects.filter(member=request.user, pk=member_pk).exists():
+        # Naughty naughty...
+        return HttpResponseBadRequest()
 
     # Okay, lets go!    
     data = dict()
