@@ -42,6 +42,17 @@ def page_defaults(request):
 
     context['myJobs'] = Job.objects.jobs_for_user(request.user)
     context['myPhases'] = Phase.objects.phases_for_user(request.user)
+
+    # Lets add prompts/messages if we need to...
+    # Prompt for skills review...
+    days_since_updated = (timezone.now() - request.user.skills_last_updated()).days
+    if days_since_updated > config.SKILLS_REVIEW_DAYS:
+        messages.info(request=request, message="It's time to review your skills! Please visit your Profile page")
+    
+    if request.user.profile_last_updated:
+        days_since_profile_updated = (timezone.now().date() - request.user.profile_last_updated).days
+        if days_since_profile_updated > config.PROFILE_REVIEW_DAYS:
+            messages.info(request=request, message="It's time to review your profile! Please visit your Profile page")
     return context
 
 
@@ -229,7 +240,9 @@ def update_own_profile(request):
     if request.method == "POST":
         form = ProfileBasicForm(request.POST, request.FILES, instance=request.user)
         if form.is_valid():
-            form.save()
+            obj = form.save()
+            obj.profile_last_updated = timezone.now().today()
+            obj.save()
             data['form_is_valid'] = True
             data['changed_data'] = form.changed_data
     else:

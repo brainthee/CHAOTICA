@@ -171,9 +171,19 @@ class User(AbstractUser):
                                      upload_to=get_media_profile_file_path,)
     contracted_leave = models.IntegerField(verbose_name="Contracted Days Leave", default=25)
     contracted_leave_renewal = models.DateField(verbose_name="Leave Renewal Date", default=date(day=1, month=9, year=2023))
+
+    profile_last_updated = models.DateField(verbose_name="Profile Last Updated", blank=True, null=True)
     
     class Meta:
         ordering = ['last_name']
+
+    
+    def skills_last_updated(self):
+        if self.skills.all().count():
+            return self.skills.order_by('-last_updated_on').first().last_updated_on
+        else:
+            return None
+        
 
     def can_scope(self):
         from jobtracker.models.orgunit import OrganisationalUnit
