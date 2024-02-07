@@ -928,6 +928,24 @@ class OrganisationalUnitMemberForm(forms.ModelForm):
         fields = ["member", 
                 ]
 
+class OrganisationalUnitMemberRolesForm(forms.ModelForm):
+    # role = forms.ModelChoiceField(
+    #     queryset=User.objects.filter(is_active=True),
+    #     widget=autocomplete.ModelSelect2(),)
+
+    def __init__(self, *args, **kwargs):
+        org_unit = kwargs.pop('org_unit', None)
+        super(OrganisationalUnitMemberRolesForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.helper.form_tag = False
+        self.helper.layout = Layout(
+            Field('role', style="width: 100%;"),
+        )
+
+    class Meta:
+        model = OrganisationalUnitMember
+        fields = ["role", ]
+
 
 class OrganisationalUnitForm(forms.ModelForm):
     description = forms.CharField(

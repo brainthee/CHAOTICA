@@ -1,0 +1,26 @@
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+<div class="modal-dialog modal- modal-dialog-centered" role="document">
+    <div class="modal-content">
+        <form method="post" action="{{ request.get_full_path }}" class="js-submit-modal-form">
+            {% csrf_token %}            
+            <div class="modal-header">
+                <h6 class="modal-title" 
+                    id="modal-title-default">
+                    Manage Roles
+                </h6>
+                <button type="button" class="btn-close" 
+                    data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Select the roles you wish {{ membership.member.get_full_name }} to have in {{ orgUnit.name }}</p>
+                
+            {% crispy form %}
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-phoenix-success mb-0">Save</button>
+                <button type="button" class="btn btn-light shadow-none mb-0" data-bs-dismiss="modal">Close</button>
+            </div>
+        </form>
+    </div>
+ </div>
