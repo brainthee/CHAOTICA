@@ -257,14 +257,14 @@ class Phase(models.Model):
         return Feedback.objects.filter(phase=self, feedbackType=FeedbackType.PRES)
 
     # Scoped Time
-    delivery_hours = models.DecimalField('Delivery Hours', max_digits=6, default=0, decimal_places=2, )    
-    reporting_hours = models.DecimalField('Reporting Hours', max_digits=6, default=0, decimal_places=2, )   
-    mgmt_hours = models.DecimalField('Management Hours', max_digits=6, default=0, decimal_places=2, )   
-    qa_hours = models.DecimalField('QA Hours', max_digits=6, default=0, decimal_places=2, )   
-    oversight_hours = models.DecimalField('Oversight Hours', max_digits=6, default=0, decimal_places=2, )   
-    debrief_hours = models.DecimalField('Debrief Hours', max_digits=6, default=0, decimal_places=2, )   
-    contingency_hours = models.DecimalField('Contingency Hours', max_digits=6, default=0, decimal_places=2, )   
-    other_hours = models.DecimalField('Other Hours', max_digits=6, default=0, decimal_places=2, )   
+    delivery_hours = models.DecimalField('Delivery Hours', max_digits=6, default=0, decimal_places=3, )    
+    reporting_hours = models.DecimalField('Reporting Hours', max_digits=6, default=0, decimal_places=3, )   
+    mgmt_hours = models.DecimalField('Management Hours', max_digits=6, default=0, decimal_places=3, )   
+    qa_hours = models.DecimalField('QA Hours', max_digits=6, default=0, decimal_places=3, )   
+    oversight_hours = models.DecimalField('Oversight Hours', max_digits=6, default=0, decimal_places=3, )   
+    debrief_hours = models.DecimalField('Debrief Hours', max_digits=6, default=0, decimal_places=3, )   
+    contingency_hours = models.DecimalField('Contingency Hours', max_digits=6, default=0, decimal_places=3, )   
+    other_hours = models.DecimalField('Other Hours', max_digits=6, default=0, decimal_places=3, )   
 
     # change control
     last_modified = models.DateTimeField(auto_now=True)
