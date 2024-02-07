@@ -180,15 +180,33 @@ var calendar = new FullCalendar.Calendar(calendarEl, {
       {
         url: "{% url 'view_own_schedule_timeslots' %}",
         method: 'GET',
-        failure: function() {
-          alert('there was an error while fetching events!');
+        failure: function(res) {
+          if(res.response.redirected) {
+            // Reload the page - we're prob logged out...
+            window.location.reload();
+          } else {
+            Swal.fire({
+              icon: 'error',
+              title: 'Oops...',
+              text: 'Something went wrong getting scheduled events!',
+            })
+          }
         },
       },
       {
         url: "{% url 'view_schedule_holidays' %}",
         method: 'GET',
-        failure: function() {
-          alert('there was an error while fetching holidays!');
+        failure: function(res) {
+          if(res.response.redirected) {
+            // Reload the page - we're prob logged out...
+            window.location.reload();
+          } else {
+            Swal.fire({
+              icon: 'error',
+              title: 'Oops...',
+              text: 'Something went wrong getting scheduled holidays!',
+            })
+          }
         },
       },
     ],
