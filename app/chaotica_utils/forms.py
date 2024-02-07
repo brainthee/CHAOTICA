@@ -23,17 +23,10 @@ class CustomConfigForm(ConstanceForm):
         super(CustomConfigForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
         self.helper.form_tag = False
-        self.fields['REGISTRATION_ENABLED'].help_text = settings.CONSTANCE_CONFIG['REGISTRATION_ENABLED'][1]
-        self.fields['INVITE_ENABLED'].help_text = settings.CONSTANCE_CONFIG['INVITE_ENABLED'][1]
-        self.fields['USER_INVITE_EXPIRY'].help_text = settings.CONSTANCE_CONFIG['USER_INVITE_EXPIRY'][1]
-        self.fields['DEFAULT_HOURS_IN_DAY'].help_text = settings.CONSTANCE_CONFIG['DEFAULT_HOURS_IN_DAY'][1]
-        self.fields['LEAVE_DAYS_NOTICE'].help_text = settings.CONSTANCE_CONFIG['LEAVE_DAYS_NOTICE'][1]
-        self.fields['JOB_ID_START'].help_text = settings.CONSTANCE_CONFIG['JOB_ID_START'][1]
-        self.fields['SNOW_ENABLED'].help_text = settings.CONSTANCE_CONFIG['SNOW_ENABLED'][1]
-        self.fields['KONAMI_ENABLED'].help_text = settings.CONSTANCE_CONFIG['KONAMI_ENABLED'][1]
-        self.fields['SITE_NOTICE_ENABLED'].help_text = settings.CONSTANCE_CONFIG['SITE_NOTICE_ENABLED'][1]
-        self.fields['SITE_NOTICE_COLOUR'].help_text = settings.CONSTANCE_CONFIG['SITE_NOTICE_COLOUR'][1]
-        self.fields['SITE_NOTICE_MSG'].help_text = settings.CONSTANCE_CONFIG['SITE_NOTICE_MSG'][1]
+        for field in self.fields:
+            if field in settings.CONSTANCE_CONFIG:
+                self.fields[field].help_text = settings.CONSTANCE_CONFIG[field][1]
+                
         self.helper.layout = Layout(
             Row(
                 Column(
@@ -57,6 +50,14 @@ class CustomConfigForm(ConstanceForm):
                 Column(
                     HTML('<h4 class="mb-4">Phase Settings</h4>'),
                     Div(FloatingField('JOB_ID_START'),
+                        css_class="input-group input-group-dynamic"),
+                ),
+
+                Column(
+                    HTML('<h4 class="mb-4">Reminder Settings</h4>'),
+                    Div(Field('SKILLS_REVIEW_DAYS'),
+                        css_class="input-group input-group-dynamic"),
+                    Div(Field('PROFILE_REVIEW_DAYS'),
                         css_class="input-group input-group-dynamic"),
                 ),
 

@@ -85,6 +85,10 @@ CONSTANCE_CONFIG = {
     'INVITE_ENABLED': (True, 'Should we allow inviting users?'),
     'USER_INVITE_EXPIRY': (7, 'How long until invites expire'),
 
+    # Skills refresher
+    'SKILLS_REVIEW_DAYS': (31, 'How many days we should prompt users to review their skills'),
+    'PROFILE_REVIEW_DAYS': (182, 'How many days we should prompt users to review their profile'),
+
     # Phase ID settings
     'JOB_ID_START': (2500, 'Where to start Job IDs'),
     # 'PHASE_ID_START': (1, 'Where Phase IDs start'),
