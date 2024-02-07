@@ -18,6 +18,7 @@ class CustomUserAdmin(GuardedModelAdmin):
                 'is_superuser',
                 'date_joined',
                 'last_login',
+                'profile_last_updated',
                 'groups',
             ),
         }),
