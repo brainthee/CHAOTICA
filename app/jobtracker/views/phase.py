@@ -167,7 +167,7 @@ class PhaseDetailView(PhaseBaseView, DetailView):
 
 class PhaseCreateView(PhaseBaseView, CreateView):
     form_class = PhaseForm
-    template_name = "jobtracker/phase_form_create.html"
+    template_name = "jobtracker/phase_form.html"
     fields = None
 
     def get(self, request, *args, **kwargs):
