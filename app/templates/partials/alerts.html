@@ -9,7 +9,7 @@
 {% endif %}
 
 {% for message in messages %}
-<div class="alert mt-3 alert-phoenix-{% if message.tags == "error" %}danger{% else %}{{ message.tags }}{% endif %} show" role="alert">
+<div class="alert m-2 alert-phoenix-{% if message.tags == "error" %}danger{% else %}{{ message.tags }}{% endif %} show" role="alert">
     {{ message }}
 </div>
 {% endfor %}
