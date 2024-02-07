@@ -2,7 +2,7 @@ from django import forms
 from django.urls import reverse
 from .models import Contact, Job, Feedback, TimeSlot, TimeSlotType, Client, Phase, OrganisationalUnit, OrganisationalUnitMember, Skill, Service, WorkflowTask, SkillCategory
 from chaotica_utils.models import Note, User
-from .enums import DefaultTimeSlotTypes
+from .enums import DefaultTimeSlotTypes, JobStatuses, PhaseStatuses
 from crispy_forms.helper import FormHelper
 from crispy_forms.bootstrap import StrictButton, Accordion, AccordionGroup
 from crispy_forms.layout import Layout, Row, Column, Field, Div, HTML, Submit, Reset
@@ -541,19 +541,15 @@ class JobForm(forms.ModelForm):
         self.user = kwargs.pop('user')  # To get request.user. Do not use kwargs.pop('user', None) due to potential security hole
         super(JobForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
+        # Set fields not in CHANGEABLE_FIELDS to readonly
+        for field in self.fields:
+            self.fields[field].label = ""
+            if field not in JobStatuses.CHANGEABLE_FIELDS[self.instance.status][1]:
+                self.fields[field].disabled = True
+
         self.fields['unit'].queryset = OrganisationalUnit.objects.filter(
             pk__in=self.user.unit_memberships.filter(role__in=UnitRoles.get_roles_with_permission('jobtracker.can_add_job')).values_list('unit').distinct())
-        self.fields['title'].label = ""
-        self.fields['client'].label = ""
-        self.fields['indicative_services'].label = ""  
-        self.fields['external_id'].label = ""
-        self.fields['unit'].label = ""
-        self.fields['overview'].label = ""  
-        self.fields['revenue'].label = ""  
-        self.fields['account_manager'].label = ""  
-        self.fields['dep_account_manager'].label = ""  
-        self.fields['desired_start_date'].label = ""  
-        self.fields['desired_delivery_date'].label = ""  
+
 
     class Meta:
         model = Job
@@ -562,19 +558,7 @@ class JobForm(forms.ModelForm):
           'desired_delivery_date': DatePickerInput(),
           'unit': autocomplete.ModelSelect2(),
         }
-        fields = [
-            "unit", 
-            "client", 
-            "indicative_services",
-            "title", 
-            "external_id",
-            "revenue", 
-            "overview", 
-            "account_manager", 
-            "dep_account_manager",
-            "desired_start_date",
-            "desired_delivery_date",
-        ]
+        exclude = []
 
 class PhaseForm(forms.ModelForm):
 
@@ -592,18 +576,17 @@ class PhaseForm(forms.ModelForm):
             job = kwargs.pop('job')
         super(PhaseForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
+        # Set fields not in CHANGEABLE_FIELDS to readonly
+        for field in self.fields:
+            if field.endswith("hours"):
+                # Hide labels for the *hours fields as we render them nicer in a table
+                self.fields[field].label = ""
+            if field not in PhaseStatuses.CHANGEABLE_FIELDS[self.instance.status][1]:
+                self.fields[field].disabled = True
+
         if job:
             self.fields['phase_number'].initial = Phase.objects.filter(job=job).count() + 1
-        self.fields['delivery_hours'].label = False
-        self.fields['reporting_hours'].label = False
-        self.fields['mgmt_hours'].label = False
-        self.fields['qa_hours'].label = False
-        self.fields['oversight_hours'].label = False
-        self.fields['debrief_hours'].label = False
-        self.fields['contingency_hours'].label = False
         self.fields['contingency_hours'].css_class = "mb-0"
-        self.fields['other_hours'].label = False
-
         self.fields['desired_start_date'].widget = DatePickerInput()
         self.fields['due_to_techqa_set'].widget = DatePickerInput()
         self.fields['due_to_presqa_set'].widget = DatePickerInput()
@@ -617,35 +600,36 @@ class PhaseForm(forms.ModelForm):
           'due_to_presqa_set': DatePickerInput(),
           'desired_delivery_date': DatePickerInput(),
         }
-        fields = [
-            "phase_number",
-            "title",
-            "service",
-            "description",
-            "test_target",
-            "comm_reqs",
-            "delivery_hours",
-            "reporting_hours",
-            "mgmt_hours",
-            "qa_hours",
-            "oversight_hours",
-            "debrief_hours",
-            "contingency_hours",
-            "other_hours",
-            "desired_start_date",
-            "due_to_techqa_set",
-            "due_to_presqa_set",
-            "desired_delivery_date",
+        exclude = []
+        # fields = [
+        #     "phase_number",
+        #     "title",
+        #     "service",
+        #     "description",
+        #     "test_target",
+        #     "comm_reqs",
+        #     "delivery_hours",
+        #     "reporting_hours",
+        #     "mgmt_hours",
+        #     "qa_hours",
+        #     "oversight_hours",
+        #     "debrief_hours",
+        #     "contingency_hours",
+        #     "other_hours",
+        #     "desired_start_date",
+        #     "due_to_techqa_set",
+        #     "due_to_presqa_set",
+        #     "desired_delivery_date",
 
-            "is_testing_onsite",
-            "is_reporting_onsite",
-            "number_of_reports",
-            "report_to_be_left_on_client_site",
-            "location",
-            "restrictions",
-            "scheduling_requirements",
-            "prerequisites",
-            ]
+        #     "is_testing_onsite",
+        #     "is_reporting_onsite",
+        #     "number_of_reports",
+        #     "report_to_be_left_on_client_site",
+        #     "location",
+        #     "restrictions",
+        #     "scheduling_requirements",
+        #     "prerequisites",
+        #     ]
         
 
 class ScopeInlineForm(forms.ModelForm):
