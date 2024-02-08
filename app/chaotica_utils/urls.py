@@ -38,6 +38,7 @@ urlpatterns = [
     path('profile/<str:email>/update/', views.UserUpdateView.as_view(), name='user_update'),
     path('profile/<str:email>/assign_role/', views.user_assign_global_role, name='user_assign_global_role'),
     path('profile/<str:email>/delete/', views.UserDeleteView.as_view(), name='user_delete'),
+    path('profile/<str:email>/manage/', views.user_manage, name='user_manage'),
 
     path('tasks/update_holidays', views.update_holidays, name='update_holidays'),
 ]

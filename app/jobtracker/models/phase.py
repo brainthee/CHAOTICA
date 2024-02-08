@@ -2,6 +2,7 @@ from django.db import models
 from jobtracker.enums import TimeSlotDeliveryRole, PhaseStatuses
 from django_fsm import FSMIntegerField, transition, can_proceed
 from django.conf import settings
+from constance import config
 from django.utils import timezone
 from django.utils.text import slugify
 from django.urls import reverse
@@ -266,6 +267,12 @@ class Phase(models.Model):
     contingency_hours = models.DecimalField('Contingency Hours', max_digits=6, default=0, decimal_places=3, )   
     other_hours = models.DecimalField('Other Hours', max_digits=6, default=0, decimal_places=3, )   
 
+    # notification fields
+    notifications_workflow_last_fired = models.DateTimeField(blank=True, null=True)
+    notifications_late_tqa_last_fired = models.DateTimeField(blank=True, null=True)
+    notifications_late_pqa_last_fired = models.DateTimeField(blank=True, null=True)
+    notifications_late_delivery_last_fired = models.DateTimeField(blank=True, null=True)
+
     # change control
     last_modified = models.DateTimeField(auto_now=True)
     last_modified_by = models.ForeignKey(settings.AUTH_USER_MODEL, 
@@ -290,9 +297,86 @@ class Phase(models.Model):
             id=self.get_id(),
             title=self.title
         )
+
+    ###########################################
+    ## Notifications
+    ###########################################
+
+    ## Late to TQA
+    def fire_late_to_tqa_notification(self):
+        email_template = "emails/phase_content.html"
+        now = timezone.now()
+
+        if self.is_tqa_late and (self.status == PhaseStatuses.IN_PROGRESS or self.status == PhaseStatuses.PENDING_TQA):
+            # check if we should or not...
+            time_since = now - self.notifications_late_tqa_last_fired
+            hours_since = time_since.days * 24 + time_since.seconds/3600
+            if not self.notifications_late_tqa_last_fired or hours_since > config.TQA_LATE_HOURS:
+                # Ok, either it's been greater than config.TQA_LATE_HOURS or we haven't sent it...
+                # We should tell the team!
+                users_to_notify = self.team()
+                notice = AppNotification(
+                    NotificationTypes.PHASE, 
+                    "{phase} - is late to Tech QA".format(phase=self),
+                    "{phase} is late to Technical QA. Please ensure you communicate with the team when it will be ready.".format(phase=self),
+                    email_template, action_link=self.get_absolute_url(), phase=self)
+                task_send_notifications(notice, users_to_notify)
+                log_system_activity(self, "Sent TQA late notification")
+                self.notifications_late_tqa_last_fired = now
+                self.save()
+
+
+    ## Late to PQA
+    def fire_late_to_pqa_notification(self):
+        email_template = "emails/phase_content.html"     
+        now = timezone.now()
+
+        if self.is_pqa_late and (self.status == PhaseStatuses.PENDING_PQA or self.status == PhaseStatuses.QA_TECH or self.status == PhaseStatuses.QA_TECH_AUTHOR_UPDATES):
+            # check if we should or not...
+            time_since = now - self.notifications_late_pqa_last_fired
+            hours_since = time_since.days * 24 + time_since.seconds/3600
+            if not self.notifications_late_pqa_last_fired or hours_since > config.PQA_LATE_HOURS:
+                # Ok, either it's been greater than config.PQA_LATE_HOURS or we haven't sent it...
+                # We should tell the team!
+                users_to_notify = self.team()
+                notice = AppNotification(
+                    NotificationTypes.PHASE, 
+                    "{phase} - is late to Pres QA".format(phase=self),
+                    "{phase} is late to Presentation QA. Please ensure you communicate with the team when it will be ready.".format(phase=self),
+                    email_template, action_link=self.get_absolute_url(), phase=self)
+                task_send_notifications(notice, users_to_notify)
+                log_system_activity(self, "Sent PQA late notification")
+                self.notifications_late_pqa_last_fired = now
+                self.save()
+
+
+    ## Late to Delivery
+    def fire_late_to_delivery_notification(self):
+        email_template = "emails/phase_content.html"     
+        now = timezone.now()
+
+        if self.is_delivery_late:
+            # check if we should or not...
+            time_since = now - self.notifications_late_delivery_last_fired
+            hours_since = time_since.days * 24 + time_since.seconds/3600
+            if not self.notifications_late_delivery_last_fired or hours_since > config.DELIVERY_LATE_HOURS:
+                # Ok, either it's been greater than config.PQA_LATE_HOURS or we haven't sent it...
+                # We should tell the team!
+                users_to_notify = self.team()
+                notice = AppNotification(
+                    NotificationTypes.PHASE, 
+                    "{phase} - is late to Delivery".format(phase=self),
+                    "{phase} is late to Delivery. Please ensure you communicate with the team when it will be ready.".format(phase=self),
+                    email_template, action_link=self.get_absolute_url(), phase=self)
+                task_send_notifications(notice, users_to_notify)
+                log_system_activity(self, "Sent Delivery late notification")
+                self.notifications_late_delivery_last_fired = now
+                self.save()
+
     
     def refire_status_notification(self):
         self.fire_status_notification(self.status)
+
     
     def fire_status_notification(self, target_status):   
         email_template = "emails/phase_content.html"     
@@ -454,6 +538,10 @@ class Phase(models.Model):
         for slot in TimeSlot.objects.filter(phase=self):
             if slot.user.pk not in ids:
                 ids.append(slot.user.pk)
+        if self.job.account_manager and self.job.account_manager.pk not in ids:
+                ids.append(self.job.account_manager.pk)
+        if self.job.dep_account_manager and self.job.dep_account_manager.pk not in ids:
+                ids.append(self.job.dep_account_manager.pk)
         if self.project_lead and self.project_lead.pk not in ids:
                 ids.append(self.project_lead.pk)
         if self.report_author and self.report_author.pk not in ids:
@@ -467,6 +555,11 @@ class Phase(models.Model):
 
     # Gets scheduled users and assigned users (e.g. lead/author/qa etc)        
     def team(self):
+        """Gets scheduled users as well as specifically assigned users (lead, author, QA, Account Manager(s))
+
+        Returns:
+            User: List of Users
+        """
         ids = self.team_pks()
         if ids:
             return User.objects.filter(pk__in=ids)
