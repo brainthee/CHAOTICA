@@ -27,7 +27,7 @@ admin_children = (
         reverse("admin:index"),
         icon="wrench",
         weight=10,),
-    MenuItem("Run Tasks",
+    MenuItem("Run Background Tasks",
         reverse("run_tasks"),
         check=lambda request: request.user.is_superuser,
         icon="list-check",

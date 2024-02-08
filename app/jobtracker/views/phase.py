@@ -14,6 +14,9 @@ from ..models import Job, Phase, TimeSlot, WorkflowTask
 from ..forms import AddNote, AssignUserField, PhaseDeliverInlineForm, FeedbackForm, PhasePresQAInlineForm, PhaseScopeFeedbackInlineForm, PhaseTechQAInlineForm, PhaseForm
 from ..enums import FeedbackType, PhaseStatuses, TimeSlotDeliveryRole, JobStatuses
 from .helpers import _process_assign_user
+from chaotica_utils.tasks import task_send_notifications
+from chaotica_utils.utils import AppNotification
+from chaotica_utils.enums import NotificationTypes
 import logging
 from dal import autocomplete
 from django.contrib.auth.decorators import login_required
@@ -213,7 +216,17 @@ def phase_create_note(request, job_slug, slug):
             new_note.content_object = phase
             new_note.author = request.user
             new_note.is_system_note = False
-            new_note.save()      
+            new_note.save()
+            # Lets send a notification to everyone except us
+            users_to_notify = phase.team().exclude(pk=request.user.pk)
+            email_template = "emails/phase_content.html"     
+            notice = AppNotification(
+                NotificationTypes.PHASE, 
+                "{phase} - Note added to phase".format(phase=phase),
+                "A note has been added: {msg}.".format(msg=new_note.msg),
+                email_template, action_link=phase.get_absolute_url()+"#notes", phase=phase)
+            task_send_notifications(notice, users_to_notify)
+
             return HttpResponseRedirect(reverse('phase_detail', kwargs={"job_slug": job_slug,"slug": slug})+"#notes")
     return HttpResponseBadRequest()
 

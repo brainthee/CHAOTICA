@@ -176,6 +176,9 @@ class User(AbstractUser):
     
     class Meta:
         ordering = ['last_name']
+        permissions = (
+            ('manage_user', 'Can manage the user'),
+        )    
 
     
     def skills_last_updated(self):
@@ -241,6 +244,19 @@ class User(AbstractUser):
             return self.profile_image.url
         else:
             return static('assets/img/team/avatar-rounded.webp')
+    
+    
+    def get_absolute_url(self):
+        if self.email:
+            return reverse('user_profile', kwargs={'email': self.email})
+        else:
+            return None
+        
+    def get_manage_url(self):
+        if self.email:
+            return reverse('user_manage', kwargs={'email': self.email})
+        else:
+            return None
     
     def get_current_status(self):
         # online, offline, away, do-not-disturb
@@ -413,12 +429,6 @@ class User(AbstractUser):
         return self.get_average_qa_rating_12mo("presqa_report_rating")
     
     
-    def get_absolute_url(self):
-        if self.email:
-            return reverse('user_profile', kwargs={'email': self.email})
-        else:
-            return None
-    
     def current_cost(self):
         if self.costs.all().exists():
             return self.costs.all().last()
@@ -585,7 +595,7 @@ class LeaveRequest(models.Model):
         notice = AppNotification(
             NotificationTypes.PHASE, 
             "Leave Approved", 
-            "Your leave has been approved!",
+            "Your leave ({start_date} - {end_date}) has been approved!".format(start_date=self.start_date, end_date=self.end_date),
             self.EMAIL_TEMPLATE, action_link=ext_reverse(reverse('view_own_leave')), leave=self)
         task_send_notifications(notice, users_to_notify)
 
@@ -597,7 +607,7 @@ class LeaveRequest(models.Model):
         notice = AppNotification(
             NotificationTypes.PHASE, 
             "Leave DECLINED", 
-            "Your leave has been declined. Please contact "+str(self.declined_by)+" for information.",
+            "Your leave ({start_date} - {end_date}) has been declined. Please contact {declined_by} for information.".format(start_date=self.start_date, end_date=self.end_date, declined_by=self.declined_by),
             self.EMAIL_TEMPLATE, action_link=ext_reverse(reverse('view_own_leave')), leave=self)
         task_send_notifications(notice, users_to_notify)
 
@@ -609,7 +619,7 @@ class LeaveRequest(models.Model):
         notice = AppNotification(
             NotificationTypes.PHASE, 
             "Leave Cancelled", 
-            "You have cancelled your leave.",
+            "You have cancelled your leave ({start_date} - {end_date}).".format(start_date=self.start_date, end_date=self.end_date),
             self.EMAIL_TEMPLATE, action_link=ext_reverse(reverse('view_own_leave')), leave=self)
         task_send_notifications(notice, users_to_notify)
     
