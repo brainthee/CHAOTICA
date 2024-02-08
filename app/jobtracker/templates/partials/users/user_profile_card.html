@@ -6,13 +6,13 @@
 
     <div class="p-3">
       <div class="text-center">
-          <div class="avatar avatar-xl status-{{ user_profile.get_current_status }} position-relative me-2 me-sm-0 me-xl-2 mb-2">
-              <img class="rounded-circle border border-white" src="{{ user_profile.get_avatar_url }}" alt="" />
+          <div class="avatar avatar-xl status-{{ userProfile.get_current_status }} position-relative me-2 me-sm-0 me-xl-2 mb-2">
+              <img class="rounded-circle border border-white" src="{{ userProfile.get_avatar_url }}" alt="" />
           </div>
           <h6 class="text-white light">
-              {{ user_profile.get_full_name }}
+              {{ userProfile.get_full_name }}
           </h6>
-          <p class="text-600 fw-semi-bold fs--2 mb-2">{{ user_profile.job_title }}</p>
+          <p class="text-600 fw-semi-bold fs--2 mb-2">{{ userProfile.job_title }}</p>
 
       </div>
     </div>
@@ -21,7 +21,7 @@
     <div class="p-3">
       <div class="d-flex justify-content-between">
         <div class="col">
-          <a class="btn btn-phoenix-secondary" href="{{ user_profile.get_absolute_url }}">
+          <a class="btn btn-phoenix-secondary" href="{{ userProfile.get_absolute_url }}">
             <span class="fa-solid fa-user me-2"></span>
             View Profile
           </a>

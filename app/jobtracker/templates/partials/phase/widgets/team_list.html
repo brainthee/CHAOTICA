@@ -1,183 +1,198 @@
 {% load static %}
 <ul class="list-group">
-   <!-- Account Manager -->
-   <div class="d-flex align-items-center mb-3 mb-md-0 mb-xl-3">
-      {% if job.account_manager %}
-      <a class="me-3 dropdown-toggle dropdown-caret-none d-inline-block" href="#" role="button" 
-         data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
-         <div class="avatar avatar-xl rounded-circle">
-            <img class="rounded-circle " src="{{ job.account_manager.get_avatar_url }}" alt="" />
-         </div>
-      </a>
-      {% include 'partials/users/user_profile_card.html' with userProfile=job.account_manager %}
-      {% else %}
-      <div class="avatar avatar-xl me-3">
-         <span class="rounded-circle fs-4 fas fa-user-slash"></span>
-      </div>
-      {% endif %}
-      <div>
-         <h5>
-         {% if job.account_manager %}{{ job.account_manager.get_full_name }}{% else %}None Assigned{% endif %}
-         </h5>
-
-         <a class="text-800 dropdown-toggle js-load-modal-form text-decoration-none dropdown-caret-none" 
-            data-url="{% url 'assign_job_field' job.slug 'account_manager' %}" href="#!">
-            Account Manager
-            <span class="fa-solid fa-caret-down text-800 fs--1 ms-2"></span>
-         </a>
-      </div>
-   </div>
-
-   <!-- Deputy Account Manager -->
-   <div class="d-flex align-items-center mb-3 mb-md-0 mb-xl-3">
-      {% if job.dep_account_manager %}
-         <a class="me-3 dropdown-toggle dropdown-caret-none d-inline-block" href="#" role="button" 
-            data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
-            <div class="avatar avatar-xl rounded-circle">
-               <img class="rounded-circle " src="{{ job.dep_account_manager.get_avatar_url }}" alt="" />
+   <div class="row">
+      <div class="col-6 text-center">
+         <!-- Account Manager -->
+         <div class="align-items-center mb-3 mb-md-0 mb-xl-3">
+            {% if job.account_manager %}
+            <a class="me-3 dropdown-toggle dropdown-caret-none d-inline-block" href="#" role="button" 
+               data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+               <div class="avatar avatar-xl rounded-circle">
+                  <img class="rounded-circle " src="{{ job.account_manager.get_avatar_url }}" alt="" />
+               </div>
+            </a>
+            {% include 'partials/users/user_profile_card.html' with userProfile=job.account_manager %}
+            {% else %}
+            <div class="avatar avatar-xl me-3">
+               <span class="rounded-circle fs-4 fas fa-user-slash"></span>
             </div>
-         </a>
-         {% include 'partials/users/user_profile_card.html' with userProfile=job.dep_account_manager %}
-      {% else %}
-         <div class="avatar avatar-xl me-3">
-            <span class="rounded-circle fs-4 fas fa-user-slash"></span>
+            {% endif %}
          </div>
-      {% endif %}
-      <div>
-         <h5>
-         {% if job.dep_account_manager %}{{ job.dep_account_manager.get_full_name }}{% else %}None Assigned{% endif %}
-         </h5>
-         <a class="text-800 dropdown-toggle js-load-modal-form text-decoration-none dropdown-caret-none" 
-            data-url="{% url 'assign_job_field' job.slug 'dep_account_manager' %}" href="#!">
-            Deputy Account Manager
-            <span class="fa-solid fa-caret-down text-800 fs--1 ms-2"></span>
-         </a>
+         <div>
+            <h5>
+            {% if job.account_manager %}{{ job.account_manager.get_full_name }}{% else %}None Assigned{% endif %}
+            </h5>
+
+            <a class="text-800 dropdown-toggle js-load-modal-form text-decoration-none dropdown-caret-none" 
+               data-url="{% url 'assign_job_field' job.slug 'account_manager' %}" href="#!">
+               Manager
+               <span class="fa-solid fa-caret-down text-800 fs--1 ms-2"></span>
+            </a>
+         </div>
+      </div>
+      <div class="col-6 text-center">
+         <!-- Deputy Account Manager -->
+         <div class="align-items-center mb-3 mb-md-0 mb-xl-3">
+            {% if job.dep_account_manager %}
+               <a class="me-3 dropdown-toggle dropdown-caret-none d-inline-block" href="#" role="button" 
+                  data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+                  <div class="avatar avatar-xl rounded-circle">
+                     <img class="rounded-circle " src="{{ job.dep_account_manager.get_avatar_url }}" alt="" />
+                  </div>
+               </a>
+               {% include 'partials/users/user_profile_card.html' with userProfile=job.dep_account_manager %}
+            {% else %}
+               <div class="avatar avatar-xl me-3">
+                  <span class="rounded-circle fs-4 fas fa-user-slash"></span>
+               </div>
+            {% endif %}
+         </div>
+         <div>
+            <h5>
+            {% if job.dep_account_manager %}{{ job.dep_account_manager.get_full_name }}{% else %}None Assigned{% endif %}
+            </h5>
+            <a class="text-800 dropdown-toggle js-load-modal-form text-decoration-none dropdown-caret-none" 
+               data-url="{% url 'assign_job_field' job.slug 'dep_account_manager' %}" href="#!">
+               Deputy Manager
+               <span class="fa-solid fa-caret-down text-800 fs--1 ms-2"></span>
+            </a>
+         </div>
       </div>
    </div>
 
-
-   <!-- Project Lead -->
-   <div class="d-flex align-items-center mb-3 mb-md-0 mb-xl-3">
-      {% if phase.project_lead %}
-         <a class="me-3 dropdown-toggle dropdown-caret-none d-inline-block" href="#" role="button" 
-            data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
-            <div class="avatar avatar-xl rounded-circle">
-               <img class="rounded-circle " src="{{ phase.project_lead.get_avatar_url }}" alt="" />
+   <div class="row mt-3">
+      <div class="col-6 text-center">
+         <!-- Project Lead -->
+         <div class="align-items-center mb-3 mb-md-0 mb-xl-3">
+            {% if phase.project_lead %}
+               <a class="me-3 dropdown-toggle dropdown-caret-none d-inline-block" href="#" role="button" 
+                  data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+                  <div class="avatar avatar-xl rounded-circle">
+                     <img class="rounded-circle " src="{{ phase.project_lead.get_avatar_url }}" alt="" />
+                  </div>
+               </a>
+               {% include 'partials/users/user_profile_card.html' with userProfile=phase.project_lead %}
+            {% else %}
+               <div class="avatar avatar-xl me-3">
+                  <span class="rounded-circle fs-4 fas fa-user-slash"></span>
+               </div>
+            {% endif %}
+            <div>
+               <h5>
+               {% if phase.project_lead %}{{ phase.project_lead.get_full_name }}{% else %}None Assigned{% endif %}
+               </h5>
+               <a class="text-800 dropdown-toggle js-load-modal-form text-decoration-none dropdown-caret-none" 
+                  data-url="{% url 'assign_phase_field' job.slug phase.slug 'project_lead' %}" href="#!">
+                  Project Lead
+                  <span class="fa-solid fa-caret-down text-800 fs--1 ms-2"></span>
+               </a>
             </div>
-         </a>
-         {% include 'partials/users/user_profile_card.html' with userProfile=phase.project_lead %}
-      {% else %}
-         <div class="avatar avatar-xl me-3">
-            <span class="rounded-circle fs-4 fas fa-user-slash"></span>
          </div>
-      {% endif %}
-      <div>
-         <h5>
-         {% if phase.project_lead %}{{ phase.project_lead.get_full_name }}{% else %}None Assigned{% endif %}
-         </h5>
-         <a class="text-800 dropdown-toggle js-load-modal-form text-decoration-none dropdown-caret-none" 
-            data-url="{% url 'assign_phase_field' job.slug phase.slug 'project_lead' %}" href="#!">
-            Project Lead
-            <span class="fa-solid fa-caret-down text-800 fs--1 ms-2"></span>
-         </a>
+      </div>
+      <div class="col-6 text-center">
+         <!-- Report Author -->
+         <div class="align-items-center mb-3 mb-md-0 mb-xl-3">
+            {% if phase.report_author %}
+               <a class="me-3 dropdown-toggle dropdown-caret-none d-inline-block" href="#" role="button" 
+                  data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+                  <div class="avatar avatar-xl rounded-circle">
+                     <img class="rounded-circle " src="{{ phase.report_author.get_avatar_url }}" alt="" />
+                  </div>
+               </a>
+               {% include 'partials/users/user_profile_card.html' with userProfile=phase.report_author %}
+            {% else %}
+               <div class="avatar avatar-xl me-3">
+                  <span class="rounded-circle fs-4 fas fa-user-slash"></span>
+               </div>
+            {% endif %}
+            <div>
+               <h5>
+               {% if phase.report_author %}{{ phase.report_author.get_full_name }}{% else %}None Assigned{% endif %}
+               </h5>
+               <a class="text-800 dropdown-toggle js-load-modal-form text-decoration-none dropdown-caret-none" 
+                  data-url="{% url 'assign_phase_field' job.slug phase.slug 'report_author' %}" href="#!">
+                  Report Author
+                  <span class="fa-solid fa-caret-down text-800 fs--1 ms-2"></span>
+               </a>
+            </div>
+         </div>
       </div>
    </div>
 
-
-   <!-- Project Members -->
-   <div class="d-flex align-items-center mb-3 mb-md-0 mb-xl-3">
-      <div class="avatar avatar-xl me-3">
-         <span class="rounded-circle fas fs-4 fa-users"></span>
-      </div>
-      <div>
-         <h5>
-            {% include 'partials/users/user_group.html' with users=job.scoped_by.all %}
-         </h5>
+   <div class="row mt-3">
+      <!-- Project Members -->
+      <div class="align-items-center mb-3 mb-md-0 mb-xl-3">
+         <div class="avatar avatar-xl me-3">
+            <span class="rounded-circle fas fs-4 fa-users"></span>
+         </div>
          <a class="text-800 dropdown-toggle text-decoration-none dropdown-caret-none"  href="#!">
             Scheduled
             <span class="fa-solid fa-caret-down text-800 fs--1 ms-2"></span>
          </a>
       </div>
-   </div>
-
-   <!-- Report Author -->
-   <div class="d-flex align-items-center mb-3 mb-md-0 mb-xl-3">
-      {% if phase.report_author %}
-         <a class="me-3 dropdown-toggle dropdown-caret-none d-inline-block" href="#" role="button" 
-            data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
-            <div class="avatar avatar-xl rounded-circle">
-               <img class="rounded-circle " src="{{ phase.report_author.get_avatar_url }}" alt="" />
-            </div>
-         </a>
-         {% include 'partials/users/user_profile_card.html' with userProfile=phase.report_author %}
-      {% else %}
-         <div class="avatar avatar-xl me-3">
-            <span class="rounded-circle fs-4 fas fa-user-slash"></span>
-         </div>
-      {% endif %}
       <div>
          <h5>
-         {% if phase.report_author %}{{ phase.report_author.get_full_name }}{% else %}None Assigned{% endif %}
+            {% include 'partials/users/user_group.html' with users=job.scoped_by.all %}
          </h5>
-         <a class="text-800 dropdown-toggle js-load-modal-form text-decoration-none dropdown-caret-none" 
-            data-url="{% url 'assign_phase_field' job.slug phase.slug 'report_author' %}" href="#!">
-            Report Author
-            <span class="fa-solid fa-caret-down text-800 fs--1 ms-2"></span>
-         </a>
       </div>
    </div>
 
-   <!-- TechQA -->
-   <div class="d-flex align-items-center mb-3 mb-md-0 mb-xl-3">
-      {% if phase.techqa_by %}
-         <a class="me-3 dropdown-toggle dropdown-caret-none d-inline-block" href="#" role="button" 
-            data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
-            <div class="avatar avatar-xl rounded-circle">
-               <img class="rounded-circle " src="{{ phase.techqa_by.get_avatar_url }}" alt="" />
-            </div>
-         </a>
-         {% include 'partials/users/user_profile_card.html' with userProfile=phase.techqa_by %}
-      {% else %}
-         <div class="avatar avatar-xl me-3">
-            <span class="rounded-circle fs-4 fas fa-user-slash"></span>
+   <div class="row mt-3">
+      <div class="col-6 text-center">
+         <!-- TechQA -->
+         <div class="align-items-center mb-3 mb-md-0 mb-xl-3">
+            {% if phase.techqa_by %}
+               <a class="me-3 dropdown-toggle dropdown-caret-none d-inline-block" href="#" role="button" 
+                  data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+                  <div class="avatar avatar-xl rounded-circle">
+                     <img class="rounded-circle " src="{{ phase.techqa_by.get_avatar_url }}" alt="" />
+                  </div>
+               </a>
+               {% include 'partials/users/user_profile_card.html' with userProfile=phase.techqa_by %}
+            {% else %}
+               <div class="avatar avatar-xl me-3">
+                  <span class="rounded-circle fs-4 fas fa-user-slash"></span>
+               </div>
+            {% endif %}
          </div>
-      {% endif %}
-      <div>
-         <h5>
-         {% if phase.techqa_by %}{{ phase.techqa_by.get_full_name }}{% else %}None Assigned{% endif %}
-         </h5>
-         <a class="text-800 dropdown-toggle js-load-modal-form text-decoration-none dropdown-caret-none" 
-            data-url="{% url 'assign_phase_field' job.slug phase.slug 'techqa_by' %}" href="#!">
-            Tech QA
-            <span class="fa-solid fa-caret-down text-800 fs--1 ms-2"></span>
-         </a>
+         <div>
+            <h5>
+            {% if phase.techqa_by %}{{ phase.techqa_by.get_full_name }}{% else %}None Assigned{% endif %}
+            </h5>
+            <a class="text-800 dropdown-toggle js-load-modal-form text-decoration-none dropdown-caret-none" 
+               data-url="{% url 'assign_phase_field' job.slug phase.slug 'techqa_by' %}" href="#!">
+               Tech QA
+               <span class="fa-solid fa-caret-down text-800 fs--1 ms-2"></span>
+            </a>
+         </div>
       </div>
-   </div>
-
-   <!-- PresQA -->
-   <div class="d-flex align-items-center mb-3 mb-md-0 mb-xl-3">
-      {% if phase.presqa_by %}
-         <a class="me-3 dropdown-toggle dropdown-caret-none d-inline-block" href="#" role="button" 
-            data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
-            <div class="avatar avatar-xl rounded-circle">
-               <img class="rounded-circle " src="{{ phase.presqa_by.get_avatar_url }}" alt="" />
-            </div>
-         </a>
-         {% include 'partials/users/user_profile_card.html' with userProfile=phase.presqa_by %}
-      {% else %}
-         <div class="avatar avatar-xl me-3">
-            <span class="rounded-circle fs-4 fas fa-user-slash"></span>
+      <div class="col-6 text-center">
+         <!-- PresQA -->
+         <div class="align-items-center mb-3 mb-md-0 mb-xl-3">
+            {% if phase.presqa_by %}
+               <a class="me-3 dropdown-toggle dropdown-caret-none d-inline-block" href="#" role="button" 
+                  data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+                  <div class="avatar avatar-xl rounded-circle">
+                     <img class="rounded-circle " src="{{ phase.presqa_by.get_avatar_url }}" alt="" />
+                  </div>
+               </a>
+               {% include 'partials/users/user_profile_card.html' with userProfile=phase.presqa_by %}
+            {% else %}
+               <div class="avatar avatar-xl me-3">
+                  <span class="fs-4 fas fa-user-slash"></span>
+               </div>
+            {% endif %}
          </div>
-      {% endif %}
-      <div>
-         <h5>
-         {% if phase.presqa_by %}{{ phase.presqa_by.get_full_name }}{% else %}None Assigned{% endif %}
-         </h5>
-         <a class="text-800 dropdown-toggle js-load-modal-form text-decoration-none dropdown-caret-none" 
-            data-url="{% url 'assign_phase_field' job.slug phase.slug 'presqa_by' %}" href="#!">
-            Pres QA
-            <span class="fa-solid fa-caret-down text-800 fs--1 ms-2"></span>
-         </a>
+         <div>
+            <h5>
+            {% if phase.presqa_by %}{{ phase.presqa_by.get_full_name }}{% else %}None Assigned{% endif %}
+            </h5>
+            <a class="text-800 dropdown-toggle js-load-modal-form text-decoration-none dropdown-caret-none" 
+               data-url="{% url 'assign_phase_field' job.slug phase.slug 'presqa_by' %}" href="#!">
+               Pres QA
+               <span class="fa-solid fa-caret-down text-800 fs--1 ms-2"></span>
+            </a>
+         </div>
       </div>
    </div>
 </ul>

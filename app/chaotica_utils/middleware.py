@@ -1,4 +1,4 @@
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponseForbidden, JsonResponse, HttpResponse, HttpResponseRedirect, Http404, HttpResponseBadRequest
 from django.utils.deprecation import MiddlewareMixin
 from django.shortcuts import reverse, redirect
 from .models import User
@@ -7,6 +7,7 @@ from django.conf import settings
 from constance import config
 from django.contrib import messages 
 from django.contrib.messages import get_messages
+
 
 class HealthCheckMiddleware(MiddlewareMixin):
     def process_request(self, request):
@@ -22,20 +23,32 @@ class NewInstallMiddleware(MiddlewareMixin):
             '/static',
             '/admin'
         ]
-        excluded_urls = [
+        new_install_excluded_urls = [
             '/signup/',
             '/quote',
         ]
         for path in excluded_paths:
             if request.path.startswith(path):
                 return
+        
+        # Check if local login is disabled
+        if not config.LOCAL_LOGIN_ENABLED:
+            if request.method == "POST" and request.path == "/auth/login/":
+                # Nuh huh!
+                return HttpResponseForbidden()
+        
+        # Check if it's a new install and we should force signup
         if new_install and not request.user.is_authenticated:
-            if request.path not in excluded_urls:
+            if request.path not in new_install_excluded_urls:
                 # Redirect to signup page...
                 return HttpResponseRedirect(reverse('signup'))
+        
+        # Check if we should force a profile complete (aka first login)
         excluded_profile_urls = [
             '/profile/',
             '/profile/update',
+            '/oauth2/logout',
+            '/auth/logout/'
         ]
         if request.user.is_authenticated and not request.user.profile_last_updated:
             msg = "You must first update your profile!"
@@ -43,6 +56,7 @@ class NewInstallMiddleware(MiddlewareMixin):
                 messages.warning(request=request, message=msg)
             if request.path not in excluded_profile_urls:
                 return HttpResponseRedirect(reverse('view_own_profile'))
+
 
 class MaintenanceModeMiddleware:
     def __init__(self, get_response):

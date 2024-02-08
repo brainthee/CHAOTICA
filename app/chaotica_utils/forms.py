@@ -30,12 +30,8 @@ class CustomConfigForm(ConstanceForm):
         self.helper.layout = Layout(
             Row(
                 Column(
-                    HTML('<h4 class="mb-4">User Settings</h4>'),
-                    Div(Field('REGISTRATION_ENABLED'),
-                        css_class="input-group input-group-dynamic"),
-                    Div(Field('INVITE_ENABLED'),
-                        css_class="input-group input-group-dynamic"),
-                    Div(FloatingField('USER_INVITE_EXPIRY'),
+                    HTML('<h4 class="mb-4">ID Settings</h4>'),
+                    Div(FloatingField('JOB_ID_START'),
                         css_class="input-group input-group-dynamic"),
                 ),
                 Column(
@@ -47,11 +43,6 @@ class CustomConfigForm(ConstanceForm):
                 ),
             ),
             Row(
-                Column(
-                    HTML('<h4 class="mb-4">Phase Settings</h4>'),
-                    Div(FloatingField('JOB_ID_START'),
-                        css_class="input-group input-group-dynamic"),
-                ),
 
                 Column(
                     HTML('<h4 class="mb-4">Reminder Settings</h4>'),
@@ -74,6 +65,14 @@ class CustomConfigForm(ConstanceForm):
                 Column(
                     HTML('<h4 class="mb-4">Auth Settings</h4>'),
                     Div(Field('ADFS_ENABLED'),
+                        css_class="input-group input-group-dynamic"),
+                    Div(Field('LOCAL_LOGIN_ENABLED'),
+                        css_class="input-group input-group-dynamic"),
+                    Div(Field('REGISTRATION_ENABLED'),
+                        css_class="input-group input-group-dynamic"),
+                    Div(Field('INVITE_ENABLED'),
+                        css_class="input-group input-group-dynamic"),
+                    Div(FloatingField('USER_INVITE_EXPIRY'),
                         css_class="input-group input-group-dynamic"),
                 ),
 

@@ -81,6 +81,7 @@ CONSTANCE_CONFIG = {
     # Feature Flags
     'ADFS_ENABLED': (False, 'Should we allow ADFS login? Ensure there is a valid configuration!'),
     'REGISTRATION_ENABLED': (True, 'Should we allow self-registration?'),
+    'LOCAL_LOGIN_ENABLED': (True, 'Should we allow logging in via local user?'),
     # Invite
     'INVITE_ENABLED': (True, 'Should we allow inviting users?'),
     'USER_INVITE_EXPIRY': (7, 'How long until invites expire'),
