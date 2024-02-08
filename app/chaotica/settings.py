@@ -94,6 +94,11 @@ CONSTANCE_CONFIG = {
     'JOB_ID_START': (2500, 'Where to start Job IDs'),
     # 'PHASE_ID_START': (1, 'Where Phase IDs start'),
 
+    # Notification Settings
+    'TQA_LATE_HOURS': (24, 'How many hours before sending another late to TQA notficiation'),
+    'PQA_LATE_HOURS': (24, 'How many hours before sending another late to PQA notficiation'),
+    'DELIVERY_LATE_HOURS': (24, 'How many hours before sending another late to Delivery notficiation'),
+
     # Work settings
     'DEFAULT_HOURS_IN_DAY': (7.5, 'Default hours in a work day'),
     'LEAVE_DAYS_NOTICE': (14, 'How many days notice for Annual Leave submissions?'),
