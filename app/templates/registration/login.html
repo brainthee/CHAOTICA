@@ -32,13 +32,16 @@
   <a class="btn btn-phoenix-secondary w-100 mb-3" href="{% url 'django_auth_adfs:login' %}">
     <span class="fab fa-microsoft text-primary me-2 fs--1"></span>Sign in with Microsoft
   </a>
+  {% endif %}
 
+  {% if config.ADFS_ENABLED and config.LOCAL_LOGIN_ENABLED %}
   <div class="position-relative">
     <hr class="bg-200 mt-5 mb-4" />
     <div class="divider-content-center bg-white">or use email</div>
   </div>
   {% endif %}
 
+  {% if config.LOCAL_LOGIN_ENABLED %}
   <form id="login-form" method="post" role="form">
     {% csrf_token %}
 
@@ -66,6 +69,8 @@
     </div>
 
     <button type="submit" value="Sign in" class="btn btn-primary w-100 mb-3">Sign In</button>
+    {% endif %}
+    
     <input type="hidden" name="next" value="{{ next }}" />
 
     {% if config.REGISTRATION_ENABLED %}
