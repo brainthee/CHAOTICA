@@ -6,6 +6,7 @@ from jobtracker.models import Job
 from chaotica_utils.models import LeaveRequest
 from jobtracker.enums import JobStatuses
 from chaotica_utils.views import page_defaults
+from django.db.models import Q
 from django.views.decorators.http import require_safe
 
 logger = logging.getLogger(__name__)
