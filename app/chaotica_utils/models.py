@@ -176,6 +176,9 @@ class User(AbstractUser):
     
     class Meta:
         ordering = ['last_name']
+        permissions = (
+            ('manage_user', 'Can manage the user'),
+        )    
 
     
     def skills_last_updated(self):
@@ -241,6 +244,19 @@ class User(AbstractUser):
             return self.profile_image.url
         else:
             return static('assets/img/team/avatar-rounded.webp')
+    
+    
+    def get_absolute_url(self):
+        if self.email:
+            return reverse('user_profile', kwargs={'email': self.email})
+        else:
+            return None
+        
+    def get_manage_url(self):
+        if self.email:
+            return reverse('user_manage', kwargs={'email': self.email})
+        else:
+            return None
     
     def get_current_status(self):
         # online, offline, away, do-not-disturb
@@ -412,12 +428,6 @@ class User(AbstractUser):
     def get_average_presqa_feedback_12mo(self):
         return self.get_average_qa_rating_12mo("presqa_report_rating")
     
-    
-    def get_absolute_url(self):
-        if self.email:
-            return reverse('user_profile', kwargs={'email': self.email})
-        else:
-            return None
     
     def current_cost(self):
         if self.costs.all().exists():

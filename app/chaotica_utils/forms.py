@@ -223,6 +223,81 @@ class ProfileForm(forms.Form):
         model = User
         fields = ('first_name', 'last_name', 'email', 'password1', 'password2' )
 
+class ManageUserForm(forms.ModelForm):
+    manager = forms.ModelChoiceField(
+        queryset=User.objects.filter(is_active=True),
+        required=False,
+        widget=autocomplete.ModelSelect2(url='user-autocomplete',
+                                         attrs={
+                                             'data-minimum-input-length': 3,
+                                         },),)
+    
+    acting_manager = forms.ModelChoiceField(
+        queryset=User.objects.filter(is_active=True),
+        required=False,
+        widget=autocomplete.ModelSelect2(url='user-autocomplete',
+                                         attrs={
+                                             'data-minimum-input-length': 3,
+                                         },),)
+    
+    def __init__(self, *args, **kwargs):
+        super(ManageUserForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.helper.form_tag = False
+
+        self.helper.layout = Layout(
+            Row(
+                Column(Div(FloatingField('first_name'),
+                        css_class="input-group input-group-dynamic")),
+                Column(Div(FloatingField('last_name'),
+                        css_class="input-group input-group-dynamic")),
+            ),
+            Row(
+                Column(Div(FloatingField('email'),
+                        css_class="input-group input-group-dynamic")),
+                Column(Div(FloatingField('location'),
+                        css_class="input-group input-group-dynamic")),
+            ),
+            Row(
+                Column(Div(FloatingField('phone_number'),
+                        css_class="input-group input-group-dynamic")),
+                Column(Div(FloatingField('job_title'),
+                        css_class="input-group input-group-dynamic")),
+            ),
+            Row(
+                Column(Div(Field('profile_image'),
+                        css_class="input-group input-group-dynamic")),
+                Column(Div(Field('languages'),
+                        css_class="")),
+            ),
+            Row(
+                Column(
+                    Row(
+                        Column(Div(Field('contracted_leave'),
+                                css_class="input-group input-group-dynamic")),
+                        Column(Div(Field('contracted_leave_renewal'),
+                                css_class="input-group input-group-dynamic")),
+                    ),
+                ),
+                Column(Div(Field('pref_timezone'),
+                        css_class="")),
+            ),
+            Row(
+                Column(Div(Field('manager'),
+                        css_class="")),
+                Column(Div(Field('acting_manager'),
+                        css_class="")),
+            ),
+        )
+
+    class Meta:
+        model = User
+        widgets = {
+            'languages': autocomplete.ModelSelect2Multiple(),
+        }
+        fields = ('first_name', 'last_name', "manager", "acting_manager", 'profile_image', 'pref_timezone', 'email', 'phone_number', 'job_title', 'show_help', 'location', 'languages','contracted_leave', 'contracted_leave_renewal')
+
+
 class ProfileBasicForm(forms.ModelForm):
 
     profile_image = forms.FileField(

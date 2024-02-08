@@ -58,6 +58,8 @@ class GlobalRoles():
             # Certification
             "jobtracker.view_certification", "jobtracker.add_certification", "jobtracker.change_certification", 
             "jobtracker.delete_certification", 'jobtracker.view_users_certification',
+            # Users
+            "jobtracker.manage_user",
 
         ]),
         (DELIVERY_MGR, [
@@ -77,6 +79,8 @@ class GlobalRoles():
             # Certification
             "jobtracker.view_certification", "jobtracker.add_certification", "jobtracker.change_certification", 
             "jobtracker.delete_certification", 'jobtracker.view_users_certification',
+            # Users
+            "jobtracker.manage_user",
         ]),
         (SERVICE_DELIVERY, [
             # Client
