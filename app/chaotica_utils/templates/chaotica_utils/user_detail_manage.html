@@ -1,36 +1,17 @@
 {% extends "base.html" %}
 {% load menu %}{% load static %}
+{% load crispy_forms_tags %}
 
 {% block pageTitle %}{{ user.get_full_name }}{% endblock pageTitle %}
 {% block head_title %}{{ user.get_full_name }}{% endblock head_title %}
 
 {% block breadcrumbItem %}
-<li class="breadcrumb-item text-sm">Users</li>
-<li class="breadcrumb-item text-sm text-dark active" aria-current="page">{{ user.get_full_name }}</li>
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{% url 'user_list' %}">Users</a></li>
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{{ user.get_absolute_url }}">{{ user.get_full_name }}</a></li>
+<li class="breadcrumb-item text-sm text-dark active" aria-current="page">Manage</li>
 {% endblock breadcrumbItem %}
 
 {% block content %}
-<div class="row pb-2">
-   <div class="col-12 g-2 ">
-      <div class="" id="profile">
-         <div class="row justify-content-center align-items-center">
-            <div class="col-sm-auto col-4">
-            </div>
-            <div class="col-sm-auto col-8 my-auto">
-            </div>
-            <div class="col-sm-auto ms-sm-auto mt-sm-0 mt-3 d-flex">
-            {% if user.manager == request.user or user.acting_manager == request.user or perms.chaotica_utils.manage_user %}
-               <a href="{% url 'user_manage' user.email %}"
-                  class="btn btn-phoenix-secondary">
-                  Manage User
-               </a>
-            {% endif %}
-            </div>
-         </div>
-      </div>
-   </div>
-</div>
-
 <div class="row pt-5 pb-2 g-2">
     <div class="col-12 g-2 col-xl-4">
         <div class="card mb-3">
@@ -81,22 +62,30 @@
         </div>
     </div>
 
-    <div class="col-12 g-2 col-xl-8">
-    
-        <div class="row g-6">
-            <div class="col-6">
-                {% include 'partials/profile/quals_card.html' %}         
-            </div>
-
-            <div class="col-6">
-                {% include 'partials/profile/utilisation.html' %}
-            </div>
-        </div>
-
-        <div class="row mb-3">
-            <div class="col-12">
-                {% include 'partials/profile/services_card.html' %} 
-            </div>
+    <div class="col-12 g-2 col-xl-8">    
+        <div class="card">
+            <form method="post" id="profileForm" class="profileForm js-submit-modal-form" 
+            enctype='multipart/form-data' action="{% url 'user_manage' user.email %}">
+                {% csrf_token %}
+                {{ form.media }}
+                <div class="card-header p-3">
+                    <div class="row justify-content-between align-items-center">
+                        <div class="col-3">
+                            <h5>Manage Profile Info</h5>
+                        </div>
+                        <div class="col-auto justify-content-between align-items-center">
+                        </div>
+                        <div class="col-3 d-flex justify-content-end">
+                            <button class="btn btn-sm btn-phoenix-success mb-0" type="submit">
+                            Save
+                            </button>            
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">      
+                {% crispy form %}
+                </div>
+            </form>
         </div>
     </div>
 </div>

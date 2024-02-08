@@ -7,7 +7,7 @@ from django.utils import timezone
 from django.http import HttpResponseForbidden, JsonResponse, HttpResponse, HttpResponseRedirect, Http404, HttpResponseBadRequest
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 import json, os, random
-from .forms import ChaoticaUserForm, LeaveRequestForm, ProfileBasicForm, CustomConfigForm, AssignRoleForm, InviteUserForm
+from .forms import ChaoticaUserForm, LeaveRequestForm, ProfileBasicForm, ManageUserForm, CustomConfigForm, AssignRoleForm, InviteUserForm
 from .enums import GlobalRoles, NotificationTypes
 from .tasks import task_send_notifications
 from .models import Notification, User, Language, Note, LeaveRequest, UserInvitation
@@ -26,7 +26,6 @@ from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.contrib import messages 
 from django.shortcuts import get_object_or_404
 from constance import config
-from constance.admin import ConstanceForm
 from constance.utils import get_values
 from .tasks import task_update_holidays
 from django.views.decorators.http import require_http_methods, require_safe, require_POST
@@ -379,6 +378,30 @@ def app_settings(request):
     template = loader.get_template('app_settings.html')
     context = {**context, **page_defaults(request)}
     return HttpResponse(template.render(context, request))
+
+
+@require_http_methods(["GET", "POST"])
+def user_manage(request, email):
+    user = get_object_or_404(User, email=email)
+    context = {}
+    # We want to either be their LM or have appropriate global perms...
+    if request.user == user.manager or request.user == user.acting_manager or request.user.has_perm("manage_user"):
+        if request.method == "POST":
+            form = ManageUserForm(request.POST, instance=user)
+            if form.is_valid():
+                form.save()
+        else:
+            # Send the modal
+            form = ManageUserForm(instance=user)
+
+        context = {'form': form, 'user': user}
+        template = loader.get_template('chaotica_utils/user_detail_manage.html')
+        context = {**context, **page_defaults(request)}
+        return HttpResponse(template.render(context, request))
+    else:
+        # We don't have permission to manage this user...
+        return HttpResponseForbidden()
+
 
 
 @staff_member_required
