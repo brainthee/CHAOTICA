@@ -33,7 +33,7 @@ class OrganisationalUnit(models.Model):
         verbose_name="Target Profit", help_text="The % target profit for this unit")
     businessHours_startTime = models.TimeField('Start Time', default='09:00:00')
     businessHours_endTime = models.TimeField('End Time', default='17:30:00')
-    businessHours_days = JSONField(verbose_name="Days", null=True, blank=True, default=_default_business_days, help_text="An int array with the numbers equaling the day of the week. Sunday == 0, Monday == 2 etc")
+    businessHours_days = JSONField(verbose_name="Days", null=True, blank=True, default=_default_business_days, help_text="An int array with the numbers equaling the day of the week. Sunday == 0, Monday == 1 etc")
     approval_required = models.BooleanField('Approval Required', default=True, help_text="Approval by a Manager is required to join the unit")
     special_requirements = BleachField(blank=True, null=True)
     history = HistoricalRecords()

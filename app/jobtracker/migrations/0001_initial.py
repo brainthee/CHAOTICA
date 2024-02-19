@@ -546,7 +546,7 @@ class Migration(migrations.Migration):
                     models.JSONField(
                         blank=True,
                         default=jobtracker.models.orgunit._default_business_days,
-                        help_text="An int array with the numbers equaling the day of the week. Sunday == 0, Monday == 2 etc",
+                        help_text="An int array with the numbers equaling the day of the week. Sunday == 0, Monday == 1 etc",
                         null=True,
                         verbose_name="Days",
                     ),
