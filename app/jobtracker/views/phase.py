@@ -175,8 +175,6 @@ class PhaseCreateView(PhaseBaseView, CreateView):
 
     def get(self, request, *args, **kwargs):
         # Check if the job is in the right stage!
-        from pprint import pprint
-        pprint(self.kwargs)
         if 'job_slug' in self.kwargs:
             job = get_object_or_404(Job, slug=self.kwargs['job_slug'])
             if job.status <= JobStatuses.PENDING_SCOPE or job.status >= JobStatuses.COMPLETED:

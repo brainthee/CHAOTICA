@@ -105,6 +105,8 @@ class Job(models.Model):
     
     @property
     def average_day_rate(self):
+        if not self.revenue:
+            return Decimal(0)
         # Calculate profit and return as a Decimal
         # Profit is calculated as basically revenue - costs
         days = self.get_total_scoped_days()
