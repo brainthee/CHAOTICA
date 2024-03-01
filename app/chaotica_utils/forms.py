@@ -8,6 +8,7 @@ from crispy_forms.layout import Layout, Row, Column, Field, Div, Submit, Button,
 from crispy_bootstrap5.bootstrap5 import FloatingField
 # from constance.forms import ConstanceForm
 from constance.admin import ConstanceForm
+from .impex.baseImporter import BaseImporter
 from dal import autocomplete
 import pytz
 from constance import config
@@ -400,24 +401,34 @@ class ProfileBasicForm(forms.ModelForm):
         return profile_image
 
 class ImportSiteDataForm(forms.Form):
-    importFile = forms.FileField(required=False, label='JSON Data')
+    importFiles = forms.FileField(label='Data')
+    importType = forms.ChoiceField(choices=[
+        ("SmartSheetCSVImporter", "SmartSheet Project CSV"),
+        ("ResourceManagerUserImporter", "Resource Manager User JSONs"),
+        ])
+
     def __init__(self, *args, **kwargs):
         super(ImportSiteDataForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
+        self.helper.form_tag = False
         self.helper.layout = Layout(
             Div(
                 Row(
-                    Div(Field('importFile'),
+                    Div(Field('importType'),
+                        css_class="input-group input-group-dynamic")
+                ),
+                Row(
+                    Div(Field('importFiles', multiple=True),
                         css_class="input-group input-group-dynamic")
                 ),
                 css_class='modal-body pt-3'),
 
             Div(
                 Div(StrictButton("Import", type="submit", 
-                    css_class="btn bg-gradient-success ms-auto mb-0"),
+                    css_class="btn btn-phoenix-warning ms-auto mb-0"),
                 css_class="button-row d-flex mt-4"),
             css_class="modal-footer"),
         )
 
     class Meta:
-        fields = ('importFile')
+        fields = ('importType', 'importFiles')

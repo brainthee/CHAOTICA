@@ -7,7 +7,7 @@ from django.utils import timezone
 from django.http import HttpResponseForbidden, JsonResponse, HttpResponse, HttpResponseRedirect, Http404, HttpResponseBadRequest
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 import json, os, random
-from .forms import ChaoticaUserForm, LeaveRequestForm, ProfileBasicForm, ManageUserForm, CustomConfigForm, AssignRoleForm, InviteUserForm
+from .forms import ChaoticaUserForm, ImportSiteDataForm, LeaveRequestForm, ProfileBasicForm, ManageUserForm, CustomConfigForm, AssignRoleForm, InviteUserForm
 from .enums import GlobalRoles, NotificationTypes
 from .tasks import task_send_notifications
 from .models import Notification, User, Language, Note, LeaveRequest, UserInvitation
@@ -360,24 +360,84 @@ def update_own_certs(request):
 def app_settings(request):
     context = {}
     if request.method == "POST":
-        form = CustomConfigForm(initial=get_values())
+        settings_form = CustomConfigForm(initial=get_values())
 
-        for key in form.fields:
+        for key in settings_form.fields:
             value = request.POST.get(key)
-            if key != "version" and key in form.fields:
-                field = form.fields[key]
+            if key != "version" and key in settings_form.fields:
+                field = settings_form.fields[key]
                 clean_value = field.clean(field.to_python(value))
                 setattr(config, key, clean_value)
 
         return HttpResponseRedirect(reverse('app_settings'))
     else:
         # Send the modal
-        form = CustomConfigForm(initial=get_values())
+        settings_form = CustomConfigForm(initial=get_values())
+        import_form = ImportSiteDataForm()
 
-    context = {'app_settings': form}
+    context = {'settings_form': settings_form, 
+               'import_form': import_form}
     template = loader.get_template('app_settings.html')
     context = {**context, **page_defaults(request)}
     return HttpResponse(template.render(context, request))
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def settings_import_data(request):
+    data = {}
+    data['form_is_valid'] = False
+    job_output = ""
+
+    if request.method == "POST":
+        form = ImportSiteDataForm(request.POST, request.FILES)
+        if form.is_valid():
+            files = request.FILES.getlist('importFiles')
+            if form.cleaned_data['importType'] == "SmartSheetCSVImporter":
+                from .impex.importers.smartsheets import SmartSheetCSVImporter
+                importer = SmartSheetCSVImporter()
+                job_output = importer.import_data(files)
+            elif form.cleaned_data['importType'] == "ResourceManagerUserImporter":
+                from .impex.importers.resourcemanager import ResourceManagerUserImporter
+                importer = ResourceManagerUserImporter()
+                job_output = importer.import_data(files)
+
+            data['form_is_valid'] = True
+    else:
+        form = ImportSiteDataForm()
+    
+    context = {'import_form': form, 'job_output': job_output,}
+    context = {**context, **page_defaults(request)}
+    template = loader.get_template('forms/import_data_form.html')
+    # data['html_form'] = loader.render_to_string("forms/import_data_form.html",
+    #                                             context,
+    #                                             request=request)
+    # return JsonResponse(data)
+    return HttpResponse(template.render(context, request))
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def settings_export_data(request):
+    return HttpResponseForbidden()
+    data = {}
+    data['form_is_valid'] = False
+    if request.method == "POST":
+        form = ProfileBasicForm(request.POST, request.FILES, instance=request.user)
+        if form.is_valid():
+            obj = form.save()
+            obj.profile_last_updated = timezone.now().today()
+            obj.save()
+            data['form_is_valid'] = True
+            data['changed_data'] = form.changed_data
+    else:
+        form = ProfileBasicForm(instance=request.user)
+    
+    context = {'profileForm': form}
+    data['html_form'] = loader.render_to_string("partials/profile/basic_profile_form.html",
+                                                context,
+                                                request=request)
+    return JsonResponse(data)
 
 
 @require_http_methods(["GET", "POST"])
@@ -614,7 +674,6 @@ class UserUpdateView(UserBaseView, UpdateView):
 
 class UserDeleteView(UserBaseView, DeleteView):
     """View to delete a job"""
-
 
 ######################################
 # Autocomplete fields
