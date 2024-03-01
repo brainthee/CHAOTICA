@@ -541,9 +541,11 @@ class JobForm(forms.ModelForm):
     )    
 
     def __init__(self, *args, **kwargs):
+        self.created_by = kwargs['initial']['created_by']
         self.user = kwargs.pop('user')  # To get request.user. Do not use kwargs.pop('user', None) due to potential security hole
         super(JobForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
+
         # Set fields not in CHANGEABLE_FIELDS to readonly
         for field in self.fields:
             self.fields[field].label = ""
@@ -561,7 +563,7 @@ class JobForm(forms.ModelForm):
           'desired_delivery_date': DatePickerInput(),
           'unit': autocomplete.ModelSelect2(),
         }
-        exclude = []
+        exclude = ['created_by']
 
 class PhaseForm(forms.ModelForm):
 
@@ -586,9 +588,9 @@ class PhaseForm(forms.ModelForm):
                 self.fields[field].label = ""
             if field not in PhaseStatuses.CHANGEABLE_FIELDS[self.instance.status][1]:
                 self.fields[field].disabled = True
-
         if job:
             self.fields['phase_number'].initial = Phase.objects.filter(job=job).count() + 1
+
         self.fields['contingency_hours'].css_class = "mb-0"
         self.fields['desired_start_date'].widget = DatePickerInput()
         self.fields['due_to_techqa_set'].widget = DatePickerInput()
@@ -603,7 +605,7 @@ class PhaseForm(forms.ModelForm):
           'due_to_presqa_set': DatePickerInput(),
           'desired_delivery_date': DatePickerInput(),
         }
-        exclude = []
+        exclude = ['slug', 'phase_id', 'job']
         # fields = [
         #     "phase_number",
         #     "title",
