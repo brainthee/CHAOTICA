@@ -1,6 +1,6 @@
 from django.db import models
 from django.conf import settings
-from django.utils.text import slugify
+from chaotica_utils.utils import unique_slug_generator
 from django.urls import reverse
 from simple_history.models import HistoricalRecords
 from guardian.shortcuts import assign_perm, remove_perm, get_user_perms, get_users_with_perms
@@ -11,6 +11,7 @@ from chaotica_utils.enums import UnitRoles
 from decimal import Decimal
 from django.templatetags.static import static
 from django_bleach.models import BleachField
+from django.db.models.functions import Lower
 
 
 def _default_business_days():
@@ -43,7 +44,7 @@ class OrganisationalUnit(models.Model):
                             on_delete=models.CASCADE)
 
     class Meta:
-        ordering = ['name']
+        ordering = [Lower('name')]
         permissions = (
             ('manage_members', 'Assign Members'),
             ('can_view_unit_jobs', 'Can view jobs'),
@@ -138,7 +139,7 @@ class OrganisationalUnit(models.Model):
         
     def get_absolute_url(self):
         if not self.slug:
-            self.slug = slugify(self.name)
+            self.slug = unique_slug_generator(self, self.name)
             self.save()
         return reverse('organisationalunit_detail', kwargs={"slug": self.slug})
     
@@ -151,7 +152,7 @@ class OrganisationalUnit(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.name)
+            self.slug = unique_slug_generator(self, self.name)
         super().save(*args, **kwargs)
         # Resync permissions...
         self.syncPermissions()

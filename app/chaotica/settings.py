@@ -74,6 +74,7 @@ CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 
 GLOBAL_GROUP_PREFIX = "Global: "
 
+DATA_UPLOAD_MAX_NUMBER_FILES = 5000
 
 DEFAULT_HOURS_IN_DAY = os.environ.get("DEFAULT_HOURS_IN_DAY", default=7.5)
 

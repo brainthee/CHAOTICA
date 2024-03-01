@@ -16,6 +16,7 @@ from guardian.shortcuts import get_objects_for_user
 from django.utils import timezone
 from datetime import timedelta, date
 from dateutil.relativedelta import relativedelta
+from django.db.models.functions import Lower
 from phonenumber_field.modelfields import PhoneNumberField
 from django_countries.fields import CountryField
 from .tasks import task_send_notifications
@@ -98,7 +99,7 @@ class Language(models.Model):
     display_name = models.CharField(max_length=255)
 
     class Meta:
-        ordering = ['display_name']
+        ordering = [Lower('display_name')]
         unique_together = ['lang_code', 'display_name']
 
     def __str__(self):
@@ -175,7 +176,7 @@ class User(AbstractUser):
     profile_last_updated = models.DateField(verbose_name="Profile Last Updated", blank=True, null=True)
     
     class Meta:
-        ordering = ['last_name']
+        ordering = [Lower('last_name'), Lower('first_name')]
         permissions = (
             ('manage_user', 'Can manage the user'),
         )    
@@ -458,7 +459,7 @@ class HolidayCountry(models.Model):
     country = CountryField()
 
     class Meta:
-        ordering = ['country',]
+        ordering = [Lower('country')]
     
     def __str__(self):
         return '{}'.format(str(self.country.name))

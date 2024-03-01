@@ -8,7 +8,7 @@ from chaotica_utils.views import page_defaults
 from chaotica_utils.views import ChaoticaBaseView
 from chaotica_utils.models import User
 from guardian.shortcuts import get_objects_for_user
-from ..models import Job, TimeSlot, UserSkill, Phase
+from ..models import Job, TimeSlot, UserSkill, Phase, OrganisationalUnitMember
 from ..forms import NonDeliveryTimeSlotModalForm, SchedulerFilter, ChangeTimeSlotDateModalForm, DeliveryTimeSlotModalForm
 from ..enums import UserSkillRatings
 import logging
@@ -32,13 +32,27 @@ def _filter_users_on_query(request):
     filter_form = SchedulerFilter(request.GET)
     # Starting users filter
     users_pk = []
+    # This pre-loads which users we can see the schedule of. 
+    # It's actually not ideal because if we view a job/phase, 
+    # but say we don't have permission to see the schedule of someone - we can't see a complete schedule for that job
     for org_unit in get_objects_for_user(request.user, 'jobtracker.view_users_schedule'):
         for user in org_unit.get_activeMembers():
             if user.pk not in users_pk:
                 users_pk.append(user.pk)
 
     query = Q(is_active=True)
-    query.add(Q(pk__in=users_pk), Q.AND)
+       
+    # If we're passed a job/phase ID - filter on that.
+    if request.GET.get('job'):
+        job = get_object_or_404(Job, pk=int(request.GET.get('job')))
+        if request.GET.get('phase'):
+            phase = get_object_or_404(Phase, job=job, pk=int(request.GET.get('phase')))
+            query.add(Q(pk__in=phase.team()),Q.AND)
+        else:
+            # get the team for the whole job...
+            query.add(Q(pk__in=job.team()),Q.AND)
+    else:
+        query.add(Q(pk__in=users_pk), Q.AND)
 
     if filter_form.is_valid():
         # Now lets apply the filters from the query...
@@ -46,6 +60,12 @@ def _filter_users_on_query(request):
         users_q = filter_form.cleaned_data.get('users')
         if users_q:
             query.add(Q(pk__in=users_q), Q.AND)
+
+        ## Filter org unit
+        org_units = filter_form.cleaned_data.get('org_units')
+        if org_units:
+            query.add(Q(unit_memberships__in=OrganisationalUnitMember.objects.filter(unit__in=org_units, 
+                                            )),Q.AND)
 
         ## Filter on skills
         skills_specialist = filter_form.cleaned_data.get('skills_specialist')
@@ -69,16 +89,6 @@ def _filter_users_on_query(request):
         services = filter_form.cleaned_data.get('services')
         for service in services:
             query.add(Q(pk__in=service.users_can_conduct()),Q.AND)
-        
-        # If we're passed a job/phase ID - filter on that.
-        if request.GET.get('job'):
-            job = get_object_or_404(Job, pk=int(request.GET.get('job')))
-            if request.GET.get('phase'):
-                phase = get_object_or_404(Phase, job=job, pk=int(request.GET.get('phase')))
-                query.add(Q(pk__in=phase.team()),Q.AND)
-            else:
-                # get the team for the whole job...
-                query.add(Q(pk__in=job.team()),Q.AND)
 
 
     if request.GET.get('include_user'):
@@ -101,7 +111,6 @@ def view_scheduler_slots(request):
             phase_focus = get_object_or_404(Phase, job=job, pk=int(request.GET.get('phase')))
         else:
             phase_focus = job
-            
     for user in filtered_users:
         data = data + user.get_timeslots(
             start=request.GET.get('start', None),
@@ -126,6 +135,10 @@ def view_scheduler_members(request):
                 "startTime": main_org.unit.businessHours_startTime,
                 "endTime": main_org.unit.businessHours_endTime,
                 "daysOfWeek": main_org.unit.businessHours_days,
+            } if main_org else {
+                "startTime": "",
+                "endTime": "",
+                "daysOfWeek": "",
             }
         })
     return JsonResponse(data, safe=False)
