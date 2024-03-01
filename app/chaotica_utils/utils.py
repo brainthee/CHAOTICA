@@ -8,8 +8,32 @@ from uuid import UUID
 import re
 from datetime import datetime
 from .enums import GlobalRoles
+from django.utils.text import slugify
 from menu import MenuItem
 from django.conf import settings
+
+
+def unique_slug_generator(instance, value=None):
+    """Creates a unique slug
+
+    Args:
+        instance (_type_): _description_
+        value (_type_, optional): _description_. Defaults to None.
+
+    Returns:
+        _type_: _description_
+    """
+    slug = slugify(value)
+    new_slug = slug
+    Klass = instance.__class__
+    numb = 1
+    while Klass.objects.filter(slug=new_slug).exists():
+        new_slug = "{slug}-{num}".format(
+            slug=slug,
+            num=numb
+        )
+        numb += 1
+    return new_slug
 
 
 class RoleMenuItem(MenuItem):

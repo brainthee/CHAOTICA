@@ -10,6 +10,7 @@ from django.core.exceptions import ValidationError
 from business_duration import businessDuration
 from decimal import Decimal
 from simple_history.models import HistoricalRecords
+from django.db.models.functions import Lower
 
 
 class TimeSlotType(models.Model):
@@ -26,7 +27,7 @@ class TimeSlotType(models.Model):
 
     class Meta:
         verbose_name_plural = "Timeslot Types"
-        ordering = ['name']
+        ordering = [Lower('name')]
     
     @classmethod
     def get_builtin_object(cls, object_pk=DefaultTimeSlotTypes.UNASSIGNED):

@@ -23,13 +23,15 @@ class SchedulerFilter(forms.Form):
     skills_can_do_support = forms.ModelMultipleChoiceField(required=False, label="Can Do With Support",
                                     queryset=Skill.objects.all(),
                                     widget=autocomplete.ModelSelect2Multiple(),)
-    services = forms.ModelMultipleChoiceField(required=False,
-                                    queryset=Service.objects.all(),
-                                    widget=autocomplete.ModelSelect2Multiple(),)
     
     services = forms.ModelMultipleChoiceField(required=False,
                                     queryset=Service.objects.all(),
                                     widget=autocomplete.ModelSelect2Multiple(),)
+    
+    org_units = forms.ModelMultipleChoiceField(required=False,
+                                    queryset=OrganisationalUnit.objects.all(),
+                                    widget=autocomplete.ModelSelect2Multiple(),)
+    
     from_date = forms.DateField(required=False,
                             widget=DatePickerInput(),)
     to_date = forms.DateField(required=False,
@@ -66,6 +68,7 @@ class SchedulerFilter(forms.Form):
                 HTML("<h5 class=\"setting-panel-item-title\">Users</h5>"),
                 Row(
                     Field('users', style="width: 100%;"),
+                    Field('org_units', style="width: 100%;")
                 ),
                 css_class="setting-panel-item",
             ),
@@ -94,7 +97,7 @@ class SchedulerFilter(forms.Form):
 
     class Meta:
         fields = ('skills_specialist', 'skills_can_do_alone', 'skills_can_do_support', 
-                  'users', 'services',
+                  'users', 'services', 'org_units',
                   'from_date', 'to_date',)
         
 

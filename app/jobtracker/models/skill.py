@@ -1,8 +1,9 @@
 from django.db import models
 from ..enums import UserSkillRatings
+from chaotica_utils.utils import unique_slug_generator
 from django.conf import settings
 from django.urls import reverse
-from django.utils.text import slugify
+from django.db.models.functions import Lower
 
 class SkillCategory(models.Model):
     name = models.CharField(max_length=200)
@@ -13,18 +14,15 @@ class SkillCategory(models.Model):
 
     class Meta:
         verbose_name_plural = "Skill Categories"
-        ordering = ['name']
+        ordering = [Lower('name')]
         permissions = ()
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.name)
+            self.slug = unique_slug_generator(self, self.name)
         return super().save(*args, **kwargs)
 
     def get_absolute_url(self):
-        if not self.slug:
-            self.slug = slugify(self.name)
-            self.save()
         return reverse("skillcategory_detail", kwargs={"slug": self.slug})
 
 
@@ -35,7 +33,7 @@ class Skill(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.category.name+"-"+self.name)
+            self.slug = unique_slug_generator(self, self.category.name+"-"+self.name)
         return super().save(*args, **kwargs)
 
     def __unicode__(self):
@@ -45,7 +43,7 @@ class Skill(models.Model):
         return '%s - %s' % (self.category, self.name)
 
     class Meta:
-        ordering = ['category', 'name']
+        ordering = [Lower('category'), Lower('name')]
         unique_together = (('category', 'name'), )
         permissions = (
             ## Defaults
@@ -68,7 +66,7 @@ class Skill(models.Model):
 
     def get_absolute_url(self):
         if not self.slug:
-            self.slug = slugify(self.name)
+            self.slug = unique_slug_generator(self, self.name)
             self.save()
         return reverse("skill_detail", kwargs={"slug": self.slug})
 

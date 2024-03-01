@@ -4,11 +4,12 @@ from ..models.skill import Skill, UserSkill
 from ..models.phase import Phase
 from django.conf import settings
 from django.db.models import Q
-from django.utils.text import slugify
+from chaotica_utils.utils import unique_slug_generator
 from django.urls import reverse
 from simple_history.models import HistoricalRecords
 from django.db.models import JSONField
 from django_bleach.models import BleachField
+from django.db.models.functions import Lower
 from chaotica_utils.models import User
 
 
@@ -32,7 +33,7 @@ class BillingCode(models.Model):
         return self.code
 
     class Meta:
-        ordering = ['code']
+        ordering = [Lower('code')]
 
 
 class Service(models.Model):
@@ -48,7 +49,7 @@ class Service(models.Model):
     data = JSONField(verbose_name="Data", null=True, blank=True, default=dict)
 
     class Meta:
-        ordering = ['name']
+        ordering = [Lower('name')]
         permissions = (
             ('assign_to_phase', 'Assign To Phase'),
         )
@@ -75,13 +76,13 @@ class Service(models.Model):
         
     def get_absolute_url(self):
         if not self.slug:
-            self.slug = slugify(self.name)
+            self.slug = unique_slug_generator(self, self.name)
             self.save()
         return reverse('service_detail', kwargs={"slug": self.slug})
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.name)
+            self.slug = unique_slug_generator(self, self.name)
         return super().save(*args, **kwargs)
 
 
@@ -91,14 +92,14 @@ class Certification(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.name)
+            self.slug = unique_slug_generator(self, self.name)
         return super().save(*args, **kwargs)
 
     def __str__(self):
         return '%s' % (self.name)
 
     class Meta:
-        ordering = ['name']
+        ordering = [Lower('name')]
         unique_together = (('name'), )
         permissions = (
             ('view_users_certification', 'View Users with Certification'),
