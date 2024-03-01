@@ -245,7 +245,9 @@ class JobCreateView(JobBaseView, CreateView):
     form_class = JobForm
     fields = None
 
-    # Permissions are handled in the unit selection box... weirdly!
+    def get_initial(self):
+        self.initial.update({ 'created_by': self.request.user })
+        return self.initial
 
     def get_success_url(self):
         return reverse_lazy('job_detail', kwargs={'slug': self.object.slug})
