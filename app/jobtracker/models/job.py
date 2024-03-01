@@ -10,6 +10,7 @@ from django.contrib.contenttypes.fields import GenericRelation
 from model_utils.fields import MonitorField
 from django.db.models import JSONField
 from django.contrib import messages
+from django.db.models.functions import Lower
 import uuid
 from chaotica_utils.models import Note, User
 from chaotica_utils.tasks import task_send_notifications

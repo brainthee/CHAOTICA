@@ -7,7 +7,7 @@
 
 
 {% block breadcrumbItem %}
-<li class="breadcrumb-item text-sm text-dark active" aria-current="page">Profile</li>
+<li class="breadcrumb-item text-sm text-dark active" aria-current="page">Settings</li>
 {% endblock breadcrumbItem %}
 
 {% block content %}
@@ -59,7 +59,7 @@
             </div>
           </div>
           <div class="card-body">
-            {% crispy app_settings %}
+            {% crispy settings_form %}
           </div>
          </form>
        </div>
@@ -71,7 +71,13 @@
              <span class="text-700 lh-sm mb-0">Import JSON or CSV data</span>
            </div>
            <div class="card-body">
-            <div class="alert mt-3 alert-phoenix-warning" role="alert">This feature is still under development</div>       
+            <div class="alert mt-3 alert-phoenix-warning" role="alert">
+              Please review the code in <code>/app/chaotica_utils/impex/</code> before using this. It's very alpha quality and very specific to early needs
+            </div>  
+            <form method="post" action="{% url 'settings_import_data' %}" enctype="multipart/form-data">
+                {% csrf_token %}     
+                {% crispy import_form %}    
+            </form>
            </div>
        </div>
 

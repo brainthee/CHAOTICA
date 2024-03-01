@@ -1,6 +1,6 @@
 from django.db import models
 from django.conf import settings
-from django.utils.text import slugify
+from chaotica_utils.utils import unique_slug_generator
 from django.urls import reverse
 from simple_history.models import HistoricalRecords
 from django.contrib.contenttypes.fields import GenericRelation
@@ -10,6 +10,7 @@ from chaotica_utils.models import Note
 from decimal import Decimal
 from django_bleach.models import BleachField
 from constance import config
+from django.db.models.functions import Lower
 
 
 class Client(models.Model):
@@ -43,7 +44,7 @@ class Client(models.Model):
         limit_choices_to=models.Q(is_active=True), blank=True)
 
     class Meta:
-        ordering = ['name']
+        ordering = [Lower('name')]
         permissions = (
             ('assign_account_managers_client', 'Assign Account Managers'),
         )
@@ -54,7 +55,7 @@ class Client(models.Model):
         
     def get_absolute_url(self):
         if not self.slug:
-            self.slug = slugify(self.name)
+            self.slug = unique_slug_generator(self, self.name)
             self.save()
         return reverse('client_detail', kwargs={"slug": self.slug})
     
@@ -67,7 +68,7 @@ class Client(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.name)
+            self.slug = unique_slug_generator(self, self.name)
         return super().save(*args, **kwargs)
 
 

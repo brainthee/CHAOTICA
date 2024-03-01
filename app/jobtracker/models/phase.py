@@ -4,7 +4,7 @@ from django_fsm import FSMIntegerField, transition, can_proceed
 from django.conf import settings
 from constance import config
 from django.utils import timezone
-from django.utils.text import slugify
+from chaotica_utils.utils import unique_slug_generator
 from django.urls import reverse
 from simple_history.models import HistoricalRecords
 from django.db.models import Q
@@ -21,6 +21,7 @@ from chaotica_utils.views import log_system_activity
 from datetime import timedelta
 from decimal import Decimal
 from django_bleach.models import BleachField
+from django.db.models.functions import Lower
 from ..models.job import Job
 from ..enums import BOOL_CHOICES, TechQARatings, PresQARatings, FeedbackType, JobStatuses
 
@@ -58,7 +59,7 @@ class Phase(models.Model):
     status = FSMIntegerField(choices=PhaseStatuses.CHOICES, db_index=True, default=PhaseStatuses.DRAFT)
 
     # Phase info
-    phase_number = models.IntegerField(db_index=True)
+    phase_number = models.IntegerField(db_index=True, default=0)
     title = models.CharField(max_length=200)
 
     # General test info
@@ -199,7 +200,7 @@ class Phase(models.Model):
         if self.delivery_date:
             # Two ways to be late - it's not delivered yet and it should have been...
             if self.status < PhaseStatuses.DELIVERED:
-                if self.delivery_date < timezone.now():
+                if self.delivery_date < timezone.now().today().date():
                     return True
                         
             # Or it was delivered but beyond the actual time and we still want to mark it as late
@@ -214,7 +215,7 @@ class Phase(models.Model):
             # Two ways to be late - it's not in tqa yet and it should have been...
             if self.number_of_reports > 0:
                 if self.status < PhaseStatuses.QA_TECH:
-                    if self.due_to_techqa < timezone.now():
+                    if self.due_to_techqa < timezone.now().today().date():
                         return True
                         
                 # Or it was delivered but beyond the actual time and we still want to mark it as late
@@ -229,7 +230,7 @@ class Phase(models.Model):
             # Two ways to be late - it's not in tqa yet and it should have been...
             if self.number_of_reports > 0:
                 if self.status < PhaseStatuses.QA_PRES:
-                    if self.due_to_presqa < timezone.now():
+                    if self.due_to_presqa < timezone.now().today().date():
                         return True
                         
                 # Or it was delivered but beyond the actual time and we still want to mark it as late
@@ -333,8 +334,10 @@ class Phase(models.Model):
 
         if self.is_pqa_late and (self.status == PhaseStatuses.PENDING_PQA or self.status == PhaseStatuses.QA_TECH or self.status == PhaseStatuses.QA_TECH_AUTHOR_UPDATES):
             # check if we should or not...
-            time_since = now - self.notifications_late_pqa_last_fired
-            hours_since = time_since.days * 24 + time_since.seconds/3600
+            hours_since = 0
+            if self.notifications_late_pqa_last_fired:
+                time_since = now - self.notifications_late_pqa_last_fired
+                hours_since = time_since.days * 24 + time_since.seconds/3600
             if not self.notifications_late_pqa_last_fired or hours_since > config.PQA_LATE_HOURS:
                 # Ok, either it's been greater than config.PQA_LATE_HOURS or we haven't sent it...
                 # We should tell the team!
@@ -659,10 +662,13 @@ class Phase(models.Model):
         return self.notes.filter(is_system_note=True)
 
     def save(self, *args, **kwargs):
+        if not self.phase_number:
+            self.phase_number = self.job.phases.all().count() + 1
         if not self.phase_id:
             self.phase_id = self.get_id()
+        # lets increment the phase_number
         if not self.slug:
-            self.slug = slugify(str(self.phase_id)+self.title)
+            self.slug = unique_slug_generator(self, str(self.phase_id)+self.title)
         super(Phase, self).save(*args, **kwargs)
 
     def get_absolute_url(self):
