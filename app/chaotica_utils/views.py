@@ -521,7 +521,10 @@ class ChaoticaBaseGlobalRoleView(ChaoticaBaseView, UserPassesTestMixin):
 
     def test_func(self):
         if self.role_required:
-            return self.request.user.groups.filter(
+            if self.role_required == "*":
+                return self.request.user.groups.filter().exists()
+            else:
+                return self.request.user.groups.filter(
                 name=django_settings.GLOBAL_GROUP_PREFIX+GlobalRoles.CHOICES[self.role_required][1]).exists()
         else:
             return False
@@ -654,6 +657,7 @@ class UserListView(UserBaseView, ListView):
     to access all job objects"""
 
 class UserDetailView(UserBaseView, DetailView):
+    role_required = "*" # Allow all users with a role to view "public profiles"
 
     def get_object(self, queryset=None):
         if self.kwargs.get('email'):
@@ -702,45 +706,52 @@ def site_search(request):
     context = {}
     q = request.POST.get('q', '').capitalize()
     results_count = 0
-    from jobtracker.models import Job, Phase, Client, Service, Skill, BillingCode
+    from jobtracker.models import Job, Phase, Client, Service, Skill, BillingCode, Certification
     if is_ajax(request) and len(q) > 2:
         ## Jobs
-        jobs_search = get_objects_for_user(request.user, 'jobtracker.view_job', Job.objects.all()).filter(
+        jobs_search = get_objects_for_user(request.user, 'jobtracker.view_job', Job).filter(
             Q(title__icontains=q) | Q(overview__icontains=q) | Q(slug__icontains=q)
                 | Q(id__icontains=q))
         context['search_jobs'] = jobs_search
         results_count = results_count + jobs_search.count()
 
         ## Phases
+        allowed_jobs = get_objects_for_user(request.user, 'jobtracker.view_job', Job)
         phases_search = Phase.objects.filter(
             Q(title__icontains=q) | Q(description__icontains=q) | Q(phase_id__icontains=q),
-            job__in=jobs_search,)
+            job__in=allowed_jobs,)
         context['search_phases'] = phases_search
         results_count = results_count + phases_search.count()
 
         ## Clients
-        cl_search = Client.objects.filter(
-            Q(name__icontains=q))
+        cl_search = get_objects_for_user(request.user, 'jobtracker.view_client', Client).filter(
+                        Q(name__icontains=q))
         context['search_clients'] = cl_search
         results_count = results_count + cl_search.count()
 
         ## BillingCodes
-        bc_search = BillingCode.objects.filter(
+        bc_search = get_objects_for_user(request.user, 'jobtracker.view_billingcode', BillingCode).filter(
             Q(code__icontains=q))
         context['search_billingCodes'] = bc_search
         results_count = results_count + bc_search.count()
 
         ## Services
-        sv_search = Service.objects.filter(
+        sv_search = get_objects_for_user(request.user, 'jobtracker.view_service', Service).filter(
             Q(name__icontains=q))
         context['search_services'] = sv_search
         results_count = results_count + sv_search.count()
 
         ## Skills
-        sk_search = Skill.objects.filter(
+        sk_search = get_objects_for_user(request.user, 'jobtracker.view_skill', Skill).filter(
             Q(name__icontains=q))
         context['search_skills'] = sk_search
         results_count = results_count + sk_search.count()
+
+        ## Certifications
+        cert_search = get_objects_for_user(request.user, 'jobtracker.view_certification', Certification).filter(
+            Q(name__icontains=q))
+        context['search_certs'] = cert_search
+        results_count = results_count + cert_search.count()
 
         ## Users
         if request.user.is_superuser:

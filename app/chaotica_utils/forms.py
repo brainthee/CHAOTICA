@@ -31,8 +31,14 @@ class CustomConfigForm(ConstanceForm):
         self.helper.layout = Layout(
             Row(
                 Column(
-                    HTML('<h4 class="mb-4">ID Settings</h4>'),
+                    HTML('<h4 class="mb-4">Job/Phase Settings</h4>'),
                     Div(FloatingField('JOB_ID_START'),
+                        css_class="input-group input-group-dynamic"),
+                    Div(FloatingField('TQA_LATE_HOURS'),
+                        css_class="input-group input-group-dynamic"),
+                    Div(FloatingField('PQA_LATE_HOURS'),
+                        css_class="input-group input-group-dynamic"),
+                    Div(FloatingField('DELIVERY_LATE_HOURS'),
                         css_class="input-group input-group-dynamic"),
                 ),
                 Column(

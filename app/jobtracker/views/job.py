@@ -4,6 +4,7 @@ from django.http import HttpResponseRedirect, HttpResponseBadRequest, JsonRespon
 from django.template import loader
 from django.db.models import Q
 from django.conf import settings
+from django.contrib.auth.mixins import UserPassesTestMixin
 from guardian.core import ObjectPermissionChecker
 from guardian.shortcuts import get_objects_for_user
 from guardian.mixins import PermissionRequiredMixin
@@ -193,7 +194,14 @@ class JobBaseView(ChaoticaBaseView, View):
         return context
 
 
-class JobListView(JobBaseView, ListView):
+class JobListView(JobBaseView, UserPassesTestMixin, ListView):
+
+    # We only want to allow you to view if you have a role!
+    def test_func(self):
+        from pprint import pprint
+        pprint(self.request.user.groups.all())
+        return self.request.user.groups.all()
+
     def get_queryset(self):
         # Only return jobs with:
         # - permission
