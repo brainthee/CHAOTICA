@@ -221,7 +221,7 @@ def phase_create_note(request, job_slug, slug):
             notice = AppNotification(
                 NotificationTypes.PHASE, 
                 "{phase} - Note added to phase".format(phase=phase),
-                "A note has been added: {msg}.".format(msg=new_note.msg),
+                "A note has been added: {msg}.".format(msg=new_note.content),
                 email_template, action_link=phase.get_absolute_url()+"#notes", phase=phase)
             task_send_notifications(notice, users_to_notify)
 
