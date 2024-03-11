@@ -364,7 +364,10 @@ class ProfileBasicForm(forms.ModelForm):
         widgets = {
             'languages': autocomplete.ModelSelect2Multiple(),
         }
-        fields = ('first_name', 'last_name', 'profile_image', 'pref_timezone', 'email', 'phone_number', 'job_title', 'show_help', 'location', 'languages','contracted_leave', 'contracted_leave_renewal')
+        fields = (
+            'first_name', 'last_name', 'profile_image', 'pref_timezone', 
+            'email', 'phone_number', 'job_title', 'show_help', 'location', 
+            'languages','contracted_leave', 'contracted_leave_renewal')
 
 
     def clean_profile_image(self):

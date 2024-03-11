@@ -4,27 +4,25 @@
     <thead>
       <tr>
         <th class="sort white-space-nowrap align-middle ps-0" scope="col" data-sort="projectName" style="width:30%;">
-          PROJECT
+          Name
         </th>
         <th class="sort align-middle ps-3" scope="col" data-sort="unit" style="width:10%;">
-          UNIT
+          Unit
         </th>
         <th class="sort align-middle ps-3" scope="col" data-sort="client" style="width:10%;">
-          CLIENT
+          Client
         </th>
         <th class="sort align-middle ps-3" scope="col" data-sort="start" style="width:10%;">
-          START DATE
+          Start
         </th>
         <th class="sort align-middle ps-3" scope="col" data-sort="deadline" style="width:15%;">
-          END DATE
+          End
         </th>
         <th class="sort align-middle ps-3" scope="col" data-sort="task" style="width:12%;">
-          PHASES
+          Phases
         </th>
         <th class="sort align-middle text-end" scope="col" data-sort="statuses" style="width:10%;">
-          STATUS
-        </th>
-        <th class="sort align-middle text-end" scope="col" style="width:10%;">
+          Status
         </th>
       </tr>
     </thead>
@@ -64,9 +62,6 @@
 
       <td class="align-middle white-space-nowrap text-end statuses">  
         {% include 'partials/job/status_badge.html' with badge_size='sm' %}
-      </td>
-
-      <td class="align-middle text-end white-space-nowrap pe-0 action">
       </td>
       </tr>
     {% endfor %}        
