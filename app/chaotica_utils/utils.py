@@ -41,8 +41,11 @@ class RoleMenuItem(MenuItem):
     with a URL"""
     def check(self, request):
         if self.requiredRole:
-             self.visible = request.user.groups.filter(
-                 name=settings.GLOBAL_GROUP_PREFIX+GlobalRoles.CHOICES[self.requiredRole][1]).exists()
+            if self.requiredRole == "*":
+                self.visible = request.user.groups.filter().exists()
+            else:
+                self.visible = request.user.groups.filter(
+                    name=settings.GLOBAL_GROUP_PREFIX+GlobalRoles.CHOICES[self.requiredRole][1]).exists()
         else:
             self.visible = False
 
