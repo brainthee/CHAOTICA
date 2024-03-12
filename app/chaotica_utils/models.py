@@ -179,6 +179,8 @@ class User(AbstractUser):
         ordering = [Lower('last_name'), Lower('first_name')]
         permissions = (
             ('manage_user', 'Can manage the user'),
+            ('impersonate_users', 'Can impersonate other users'),
+            ('manage_site_settings', 'Can change site settings'),
         )    
 
     

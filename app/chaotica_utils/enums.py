@@ -59,7 +59,7 @@ class GlobalRoles():
             "jobtracker.view_certification", "jobtracker.add_certification", "jobtracker.change_certification", 
             "jobtracker.delete_certification", 'jobtracker.view_users_certification',
             # Users
-            "jobtracker.manage_user",
+            "chaotica_utils.manage_user", "chaotica_utils.impersonate_users", "chaotica_utils.manage_site_settings"
 
         ]),
         (DELIVERY_MGR, [
