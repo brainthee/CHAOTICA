@@ -20,6 +20,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.views import View
 from guardian.shortcuts import get_objects_for_user
+from guardian.decorators import permission_required_or_403
 from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
@@ -374,7 +375,7 @@ def update_own_certs(request):
     return HttpResponseBadRequest()
 
 
-@staff_member_required
+@permission_required_or_403('chaotica_utils.manage_site_settings')
 @require_http_methods(["GET", "POST"])
 def app_settings(request):
     context = {}
@@ -483,7 +484,7 @@ def user_manage(request, email):
 
 
 
-@staff_member_required
+@permission_required_or_403('chaotica_utils.manage_user')
 @require_http_methods(["GET", "POST"])
 def user_assign_global_role(request, email):
     user = get_object_or_404(User, email=email)
