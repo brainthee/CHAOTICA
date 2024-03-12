@@ -6,8 +6,6 @@ from django.contrib import admin
 urlpatterns = [
     path('signup/<str:invite_id>', views.signup, name='signup'),
     path('signup/', views.signup, name='signup'),
-    path("auth/", include("django.contrib.auth.urls")),
-    path("admin/", admin.site.urls),
     path('debug/sentry', views.trigger_error, name="trigger_error"),
     path('debug/test_notification', views.test_notification, name="test_notification"),
     path('maintenance/', views.maintenance, name='maintenance'),
