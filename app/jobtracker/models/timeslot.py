@@ -3,6 +3,7 @@ from django.urls import reverse
 from ..enums import TimeSlotDeliveryRole, PhaseStatuses, AvailabilityType, DefaultTimeSlotTypes
 from ..models.phase import Phase
 from django.conf import settings
+from constance import config
 from django.contrib.contenttypes.fields import GenericRelation
 from chaotica_utils.models import Note, UserCost
 from chaotica_utils.utils import ext_reverse
@@ -90,12 +91,12 @@ class TimeSlot(models.Model):
     def get_schedule_slot_colour(self):
         if not self.phase:
             # If no phase attached... always confirmed ;)
-            return "#378006"
+            return config.SCHEDULE_COLOR_INTERNAL
         else:
             if self.is_confirmed():
-                return "#FFC7CE" if self.is_onsite else "#bdb3ff"
+                return config.SCHEDULE_COLOR_PHASE_CONFIRMED_AWAY if self.is_onsite else config.SCHEDULE_COLOR_PHASE_CONFIRMED
             else:
-                return "#E6B9B8" if self.is_onsite else "#95B3D7"
+                return config.SCHEDULE_COLOR_PHASE_AWAY if self.is_onsite else config.SCHEDULE_COLOR_PHASE
     
     
     def get_schedule_json(self, url=None):
