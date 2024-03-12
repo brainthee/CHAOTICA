@@ -67,7 +67,6 @@ def is_ajax(request):
 def update_holidays(request):
     task_update_holidays()
     return HttpResponse()
-    task_update_holidays()
     return HttpResponseRedirect(reverse('home'))
 
 
@@ -88,6 +87,15 @@ def trigger_error(request):
 
 @require_safe
 def test_notification(request):
+    """
+    Sends a test notification
+
+    Args:
+        request (Request): A request object
+
+    Returns:
+        HttpResponseRedirect: Redirect to the referer
+    """
     notice = AppNotification(
         NotificationTypes.SYSTEM,
         "Test Notification", "This is a test notification. At ease.",
@@ -99,9 +107,20 @@ def test_notification(request):
 
 @require_safe
 def maintenance(request):
+    """
+    Displays a maintenance page if we're in maintenance mode
+
+    Args:
+        request (Request): A request object
+
+    Returns:
+        HttpResponseRedirect, HttpResponse: Either the page or a redirect to home
+    """
     if not django_settings.MAINTENANCE_MODE:
         return HttpResponseRedirect(reverse('home'))
-    return render(request, 'maintenance.html')
+    template = loader.get_template('maintenance.html')
+    context = {}
+    return HttpResponse(template.render(context, request))
 
 
 @login_required
