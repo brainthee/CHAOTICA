@@ -48,7 +48,8 @@ class NewInstallMiddleware(MiddlewareMixin):
             '/profile/',
             '/profile/update',
             '/oauth2/logout',
-            '/auth/logout/'
+            '/auth/logout/',
+            '/impersonate/stop/' # Allow us to stop impersonating even if profile needs updating
         ]
         if request.user.is_authenticated and not request.user.profile_last_updated:
             msg = "You must first update your profile!"

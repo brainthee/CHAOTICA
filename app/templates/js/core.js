@@ -149,6 +149,7 @@ $(function() {
     $(".js-update-job-workflow").click(loadWorkflowConf);
     $(".js-update-phase-workflow").click(loadWorkflowConf);
     $(".js-load-modal-form").click(loadForm);
+    $(".datatable").on("click", ".js-load-modal-form", loadForm);
     $("#mainModal").on("submit", ".js-workflow-phase-form", saveForm);
     $("#mainModal").on("submit", ".js-workflow-job-form", saveForm);
     $("#mainModal").on("submit", ".js-submit-modal-form", saveForm);

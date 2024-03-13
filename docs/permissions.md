@@ -19,7 +19,7 @@ Site wide roles determine what a user can do across the site at a higher level. 
 - Sales Manager
 - Sales Member
 - User
-- Anonymous
+- Anonymous - not directly used
 
 ### Global: Admin
 

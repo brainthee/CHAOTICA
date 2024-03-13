@@ -1,6 +1,6 @@
 from django import forms
 from django.urls import reverse
-from .models import Contact, Job, Feedback, TimeSlot, TimeSlotType, Client, Phase, OrganisationalUnit, OrganisationalUnitMember, Skill, Service, WorkflowTask, SkillCategory
+from .models import Contact, Job, Certification, Feedback, TimeSlot, TimeSlotType, Client, Phase, OrganisationalUnit, OrganisationalUnitMember, Skill, Service, WorkflowTask, SkillCategory
 from chaotica_utils.models import Note, User
 from .enums import DefaultTimeSlotTypes, JobStatuses, PhaseStatuses
 from crispy_forms.helper import FormHelper
@@ -1004,6 +1004,19 @@ class OrganisationalUnitForm(forms.ModelForm):
           'businessHours_startTime': TimePickerInput(),
           'businessHours_endTime': TimePickerInput(),
         }
+
+
+class CertificationForm(forms.ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super(CertificationForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.fields['name'].label = False
+        
+
+    class Meta:
+        model = Certification
+        fields = ["name"]
 
 
 class ServiceForm(forms.ModelForm):

@@ -120,4 +120,11 @@ urlpatterns = [
     path('ops/skill_category/<str:catSlug>/create/', views.SkillCreateView.as_view(), name='skill_create'),
     path('ops/skill_category/<str:slug>/update/', views.SkillCatUpdateView.as_view(), name='skill_cat_update'),
     path('ops/skill_category/<str:slug>/delete/', views.SkillCatDeleteView.as_view(), name='skill_cat_delete'),
+
+    # Certifications CRUD
+    path('ops/certifications/', views.CertificationListView.as_view(), name='certification_list'),
+    path('ops/certification/create/', views.CertificationCreateView.as_view(), name='certification_create'),
+    path('ops/certification/<str:slug>/', views.CertificationDetailView.as_view(), name='certification_detail'),
+    path('ops/certification/<str:slug>/update/', views.CertificationUpdateView.as_view(), name='certification_update'),
+    path('ops/certification/<str:slug>/delete/', views.CertificationDeleteView.as_view(), name='certification_delete'),
 ]
