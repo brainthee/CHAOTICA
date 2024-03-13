@@ -10,53 +10,60 @@
 {% endblock breadcrumbItem %}
 
 {% block content %}
-<div class="row pb-2">
-   <div class="col-12 g-2 ">
-      <div class="" id="profile">
-         <div class="row justify-content-center align-items-center">
-            <div class="col-sm-auto col-4">
-            </div>
-            <div class="col-sm-auto col-8 my-auto">
-            </div>
-            <div class="col-sm-auto ms-sm-auto mt-sm-0 mt-3 d-flex">
-            {% if user.manager == request.user or user.acting_manager == request.user or perms.chaotica_utils.manage_user %}
-               <a href="{% url 'user_manage' user.email %}"
-                  class="btn btn-phoenix-secondary">
-                  Manage User
-               </a>
-            {% endif %}
-            </div>
-         </div>
-      </div>
-   </div>
-</div>
+{% if not user.is_active %}
+    <div class="alert alert-phoenix-warning d-flex mt-2 mb-0 align-items-center" role="alert">
+        <span class="fas fa-info-circle text-warning fs-5 me-3"></span>
+        <p class="mb-0 flex-1">
+            User is disabled
+        </p>
+    </div>
+{% endif %}
 
 <div class="row pt-5 pb-2 g-2">
     <div class="col-12 g-2 col-xl-4">
         <div class="card mb-3">
             <div class="card-body d-flex flex-column justify-content-between pb-3">
-                <div class="row align-items-center g-5 mb-3 text-center text-sm-start">
-                    <div class="col-12 col-sm-auto mb-sm-2">
-                        <div class="avatar avatar-5xl">
-                            <img class="rounded-circle" src="{{ user.get_avatar_url }}" alt="" />
+                <div class="m-2 position-absolute top-0 end-0">
+                    {% include 'partials/user/user_manage_menu.html' with u=user %}
+                </div>
+
+                <div class="position-relative">
+                    <div class="p-3 pb-0">
+                        <div class="text-center row align-items-center">
+                            <div class="col-4">
+                                <div class="avatar avatar-4xl status-{{ user.get_current_status }} position-relative me-2 me-sm-0 me-xl-2 mb-2">
+                                    <img class="rounded-circle border border-light-subtle" src="{{ user.get_avatar_url }}" alt="" />
+                                </div>                                
+                            </div>
+                            <div class="col-8 text-start">
+                                <h3 class="">
+                                    {{ user.get_full_name }}
+                                </h3>
+                                <p class="text-opacity-50 fw-semibold fs-10 mb-2">
+                                    {{ user.job_title }}
+                                </p>                                
+                            </div>
                         </div>
                     </div>
-                    <div class="col-12 col-sm-auto flex-1">
-                        <h3>{{ user.get_full_name }}</h3>
-                        <p class="text-800">{{ user.job_title }}</p>
-                        <div>
-                            <a class="me-2" href="#!">
-                                <span class="fab fa-linkedin-in text-400 hover-primary"></span>
+                </div>
+                <div class="bg-body-emphasis">
+                    <div class="p-3 border-bottom border-translucent">
+                        <div class="d-flex justify-content-between">
+                            <a class="btn btn-phoenix-secondary"
+                            href="{{ user.get_absolute_url }}">
+                            <span class="fa-solid fa-id-card"></span>
+                            Profile
                             </a>
-                            <a class="me-2" href="#!">
-                                <span class="fab fa-facebook text-400 hover-primary"></span>
-                            </a>
-                            <a href="#!">
-                                <span class="fab fa-twitter text-400 hover-primary"></span>
+                            <a class="btn btn-phoenix-primary"
+                            href="mailto:{{ user.email }}">
+                            <span class="fa-solid fa-envelope me-2"></span>
+                            Email
                             </a>
                         </div>
                     </div>
                 </div>
+
+                
                 <div class="d-flex flex-between-center border-top border-dashed border-300 pt-4">
                     <div>
                         <h6>Following</h6>
@@ -74,11 +81,6 @@
             </div>
         </div>
 
-        <div class="row mb-3">
-            <div class="col-12">
-                {% include 'partials/profile/skills_card.html' %} 
-            </div>
-        </div>
     </div>
 
     <div class="col-12 g-2 col-xl-8">
@@ -94,9 +96,15 @@
         </div>
 
         <div class="row mb-3">
-            <div class="col-12">
-                {% include 'partials/profile/services_card.html' %} 
-            </div>
+
+            {% include 'partials/profile/skills_card.html' %} 
+                
+        </div>
+
+        <div class="row mb-3">
+
+            {% include 'partials/profile/services_card.html' %} 
+                
         </div>
     </div>
 </div>
