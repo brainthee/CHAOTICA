@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% load menu %}{% load static %}
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+
+{% block pageTitle %}Client Framework Agreement{% endblock pageTitle %}
+{% block head_title %}Client Framework Agreement{% endblock head_title %}
+
+
+{% block breadcrumbItem %}
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{% url 'client_list' %}">Clients</a></li>
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{{ frameworkagreement.client.get_absolute_url }}">{{ client }}</a></li>
+<li class="breadcrumb-item text-sm opacity-50 text-dark" aria-current="page">Framework Agreements</li>
+<li class="breadcrumb-item text-sm text-dark active" aria-current="page">{{ frameworkagreement.name }}</li>
+{% endblock breadcrumbItem %}
+
+{% block content %}
+<div class="mt-3">
+    <div class="row g-3 flex-between-end mb-5">
+      <div class="col-auto">
+        <h2 class="mb-2">
+            Client Framework Agreement
+        </h2>
+      </div>
+      <div class="col-auto">
+        <a class="btn btn-phoenix-danger me-2 mb-2 mb-sm-0" href="{% url 'client_framework_delete' frameworkagreement.client.slug frameworkagreement.pk %}">Delete</a>
+        <a class="btn btn-outline-primary mb-2 mb-sm-0" href="{% url 'client_framework_update' frameworkagreement.client.slug frameworkagreement.pk %}">Edit</a>
+      </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12 col-xl-8 g-2 ">
+          <h4 class="mb-3">Name</h4>
+          {{ frameworkagreement.name }}
+
+          <div class="row mb-6">
+            <div class="col-12 col-xl-6">
+              <h4 class="mb-3">Start Date</h4>
+              {{ frameworkagreement.start_date }}
+            </div>
+            <div class="col-12 col-xl-6">
+              <h4 class="mb-3">End Date</h4>
+              {{ frameworkagreement.end_date }}
+            </div>
+          </div>      
+        </div>
+
+        <div class="col-12 col-xl-4">
+          <div class="row g-2">
+            
+            <div class="col-12 g-2 col-xl-12">
+              <div class="card mb-3">
+                <div class="card-body">
+
+                    <div class="row gx-3">
+                      <div class="col-12 col-sm-6 col-xl-12">
+                        <div class="mb-4">
+                          <div class="d-flex flex-wrap mb-2">
+                            <h5 class="mb-0 text-1000 me-2">Total Days</h5>
+                          </div>
+                          {{ frameworkagreement.total_days }}                          
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="row gx-3">
+                      <div class="col-6">
+                        <div class="mb-4">
+                          <div class="d-flex flex-wrap mb-2">
+                            <h5 class="mb-0 text-1000 me-2">Allow Over Allocation</h5>
+                          </div>
+                          {{ frameworkagreement.allow_over_allocation }}                          
+                        </div>
+                      </div>
+                      <div class="col-6">
+                        <div class="mb-4">
+                          <div class="d-flex flex-wrap mb-2">
+                            <h5 class="mb-0 text-1000 me-2">Closed</h5>
+                          </div>
+                          {{ frameworkagreement.closed }}
+                          
+                        </div>
+                      </div>
+                    </div>
+
+                </div>
+              </div>
+            </div>
+            
+          </div>
+        </div>
+      </div>
+</div>
+{% endblock content %}

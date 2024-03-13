@@ -76,23 +76,41 @@ class FrameworkAgreement(models.Model):
     client = models.ForeignKey(Client, related_name="framework_agreements", on_delete=models.CASCADE)
     name = models.CharField(max_length=200, blank=True)
     start_date = models.DateField('Start Date')
-    end_date = models.DateField('End Date')
+    end_date = models.DateField('End Date', null=True, blank=True)
 
     total_days = models.IntegerField('Total Days')
     allow_over_allocation = models.BooleanField('Allow Over Allocation', default=True)
+    closed = models.BooleanField('Closed', default=False)
     associated_jobs = models.ManyToManyField("Job",
         related_name='framework', verbose_name="Associated Jobs", blank=True)
 
     class Meta:
         ordering = [Lower('name')]
-        unique_together = ['client', 'name']        
+        unique_together = ['client', 'name']     
+        
+    def get_absolute_url(self):
+        return reverse('client_framework_detail', kwargs={"client_slug": self.client.slug, "pk": self.pk})   
 
     def __str__(self):
         return '{} ({}-{})'.format(
             self.name, self.start_date, self.end_date)
     
     def days_remaining(self):
+        days_allocated = self.days_allocated()
+        return self.total_days - days_allocated
+    
+    def days_allocated(self):
         return 0
+    
+    def perc_allocated(self):
+        if self.total_days:
+            return round((self.days_allocated() / self.total_days) * 100, 2)
+        else:
+            return 0
+    
+    def is_over_allocated(self):
+        days_allocated = self.days_allocated()
+        return (days_allocated > self.total_days)
 
 
 class Contact(models.Model):

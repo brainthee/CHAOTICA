@@ -1,6 +1,6 @@
 from .common import Link, BillingCode, Service, Certification, UserCertification, WorkflowTask, Feedback
 
-from .client import Client, Contact, Address
+from .client import Client, Contact, Address, FrameworkAgreement
 
 from .job import Job
 from .phase import Phase
