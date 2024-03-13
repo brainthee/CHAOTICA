@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load menu %}{% load static %}{% load crispy_forms_tags %}{% load skill_tags %}
+{% load menu %}{% load static %}{% load crispy_forms_tags %}{% load skill_tags %}{% load humanize %}
 {% block pageTitle %}Profile{% endblock pageTitle %}
 {% block head_title %}Profile{% endblock head_title %}
 
@@ -29,10 +29,10 @@
                </div>
             </div>
             <div class="col-sm-auto ms-sm-auto mt-sm-0 mt-3 d-flex">
-            <a href="{% url 'user_profile' user.username %}"
-               class="btn btn-outline-success">
-               View Public Profile
-            </a>
+               <a href="{% url 'user_profile' user.email %}"
+                  class="btn btn-outline-success">
+                  View Public Profile
+               </a>
             </div>
          </div>
       </div>
@@ -80,16 +80,30 @@
          <form method="post" class="skillsForm" action="{% url 'update_own_skills' %}">
             {% csrf_token %}
             <div class="card-header">
-               <h5>Skills</h5>
-               <p class="text-sm">Set the skills you have and the level of competency.</p>
+
+               <div class="row justify-content-between align-items-center">
+                  <div class="col">
+                     <h5>Skills</h5>
+                     <p class="text-sm mb-0">Showcase your skillset. Values are automatically saved.</p>
+                  </div>
+                  <div class="col-3 d-flex flex-column align-items-end">
+                     <span class="badge badge-phoenix badge-phoenix-secondary">
+                        {{ request.user.skills_last_updated | naturalday}}
+                     </span>      
+                     <span class="fs-10 text-opacity-60 fw-semibold">
+                        Last Updated
+                     </span>    
+                  </div>
+               </div>
+               
             </div>
-            <div class="card-body pt-0">
+            <div class="card-body p-0">
                   <table class="table table-responsive mb-0">
                      <caption>User's Skills</caption>
                      <thead>
                         <tr>
                            <th class="ps-1" colspan="4">
-                              <p class="mb-0">Capability</p>
+                              <p class="mb-0 ps-2">Capability</p>
                            </th>
                            <th class="ps-1" colspan="4">
                               <p class="mb-0">Skill</p>
@@ -104,7 +118,7 @@
                               <p class="mb-0">Can do alone</p>
                            </th>
                            <th class="text-center">
-                              <p class="mb-0">Specialist</p>
+                              <p class="mb-0 pe-2">Specialist</p>
                            </th>
                         </tr>
                      </thead>
@@ -112,7 +126,7 @@
                         {% for skill in skills %}
                         {% get_user_skill request.user skill as userSkill %}
                         <tr>
-                           <td class="ps-1" colspan="4">
+                           <td class="ps-2" colspan="4">
                               <div class="my-auto">
                                  <span class="text-dark d-block text-sm">
                                     {{ skill.category }}
@@ -171,31 +185,32 @@
            {% csrf_token %}
            <div class="card-header">
               <h5>Certifications</h5>
-              <p class="text-sm">Set the skills you have and the level of competency.</p>
+              <p class="text-sm mb-0">Show your achievements!</p>
            </div>
-           <div class="card-body pt-0">
+           <div class="card-body p-0">
                <table class="table table-responsive mb-0">
-                  <caption>User's Skills</caption>
+                  <caption>User's Certifications</caption>
                   <thead>
                      <tr>
-                        <th class="ps-1" colspan="4">
-                           <p class="mb-0">Capability</p>
+                        <th class="ps-2" colspan="4">
+                           <p class="mb-0">Certification</p>
                         </th>
                         <th class="ps-1" colspan="4">
-                           <p class="mb-0">Skill</p>
+                           <p class="mb-0"></p>
                         </th>
                      </tr>
                   </thead>
                   <tbody>
-                     {% for skill in skills %}
-                     {% get_user_skill request.user skill as userSkill %}
+                     {% for cert in request.user.certifications.all %}
                      <tr>
-                        <td class="ps-1" colspan="4">
+                        <td class="ps-2" colspan="4">
                            <div class="my-auto">
                               <span class="text-dark d-block text-sm">
-                                 {{ skill.category }}
+                                 {{ cert.certification }}
                               </span>
                            </div>
+                        </td>
+                        <td class="ps-1" colspan="4">
                         </td>
                      </tr>
                      {% endfor %}
@@ -211,19 +226,37 @@
          </div>
 
          <div class="card-body">
-            <div class="d-flex mb-3">
-               <p class="my-auto">Calendar Subscription - Schedule</p>
-               <p class="font-monospace border border-cake text-sm ms-auto my-auto me-3 p-2">
-                    <a href="{{ feed_url }}">{{ feed_url }}</a>
-                </p>
-               <button class="btn btn-sm btn-phoenix-danger mb-0 js-load-modal-form" data-url="{% url 'reset_cal_feed' %}" type="button">Reset</button>
+            <div class="row mb-2">
+               <div class="col-2">
+                  <p class="my-auto">
+                     Calendar Subscription <br />
+                     Schedule
+                  </p>
+               </div>
+               <div class="col d-flex">
+                  <p class="font-monospace border border-cake text-sm ms-auto my-auto me-3 p-2">
+                       <a href="{{ feed_url }}">{{ feed_url }}</a>
+                   </p>
+               </div>
+               <div class="col-1 d-flex justify-content-end">
+                  <button class="btn btn-sm btn-phoenix-danger mb-0 js-load-modal-form" data-url="{% url 'reset_cal_feed' %}" type="button">Reset</button>
+               </div>
             </div>
-            <div class="d-flex">
-               <p class="my-auto">Calendar Subscription - Family Friendly</p>
-               <p class="font-monospace border border-cake text-sm ms-auto my-auto me-3 p-2">
-                    <a href="{{ feed_family_url }}">{{ feed_family_url }}</a>
-                </p>
-               <button class="btn btn-sm btn-phoenix-danger mb-0 js-load-modal-form" data-url="{% url 'reset_cal_family_feed' %}" type="button">Reset</button>
+            <div class="row mb-2">
+               <div class="col-2">
+                  <p class="my-auto">
+                     Calendar Subscription <br />
+                     Family Friendly
+                  </p>
+               </div>
+               <div class="col d-flex">
+                  <p class="font-monospace border border-cake text-sm ms-auto my-auto me-3 p-2">
+                     <a href="{{ feed_family_url }}">{{ feed_family_url }}</a>
+                   </p>
+               </div>
+               <div class="col-1 d-flex justify-content-end">
+                  <button class="btn btn-sm btn-phoenix-danger mb-0 js-load-modal-form" data-url="{% url 'reset_cal_family_feed' %}" type="button">Reset</button>
+               </div>
             </div>
          </div>
       </div>

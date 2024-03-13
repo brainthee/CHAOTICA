@@ -9,6 +9,18 @@ def index(indexable, i):
     return indexable[i]
 
 @register.simple_tag
+def get_objects_for_user(user, perms, obj):
+    from guardian.shortcuts import get_objects_for_user
+    return get_objects_for_user(user, perms, obj)
+
+@register.simple_tag
+def get_phases_for_user(user, phases):
+    from guardian.shortcuts import get_objects_for_user
+    from ..models import Job
+    my_jobs = get_objects_for_user(user, "jobtracker.view_job", Job)
+    return phases.filter(job__in=my_jobs)
+
+@register.simple_tag
 def get_slot_type_usage_perc(obj, slot_type):
     return obj.get_slot_type_usage_perc(slot_type)
 

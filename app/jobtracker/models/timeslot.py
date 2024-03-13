@@ -3,12 +3,15 @@ from django.urls import reverse
 from ..enums import TimeSlotDeliveryRole, PhaseStatuses, AvailabilityType, DefaultTimeSlotTypes
 from ..models.phase import Phase
 from django.conf import settings
+from constance import config
 from django.contrib.contenttypes.fields import GenericRelation
 from chaotica_utils.models import Note, UserCost
 from chaotica_utils.utils import ext_reverse
 from django.core.exceptions import ValidationError
 from business_duration import businessDuration
 from decimal import Decimal
+from simple_history.models import HistoricalRecords
+from django.db.models.functions import Lower
 
 
 class TimeSlotType(models.Model):
@@ -25,7 +28,7 @@ class TimeSlotType(models.Model):
 
     class Meta:
         verbose_name_plural = "Timeslot Types"
-        ordering = ['name']
+        ordering = [Lower('name')]
     
     @classmethod
     def get_builtin_object(cls, object_pk=DefaultTimeSlotTypes.UNASSIGNED):
@@ -40,6 +43,7 @@ class TimeSlot(models.Model):
     start = models.DateTimeField()
     end = models.DateTimeField()
     notes = GenericRelation(Note)
+    history = HistoricalRecords()
     user = models.ForeignKey(settings.AUTH_USER_MODEL,
         limit_choices_to=(models.Q(is_active=True)),
         related_name="timeslots", on_delete=models.CASCADE,
@@ -87,12 +91,12 @@ class TimeSlot(models.Model):
     def get_schedule_slot_colour(self):
         if not self.phase:
             # If no phase attached... always confirmed ;)
-            return "#378006"
+            return config.SCHEDULE_COLOR_INTERNAL
         else:
             if self.is_confirmed():
-                return "#FFC7CE" if self.is_onsite else "#bdb3ff"
+                return config.SCHEDULE_COLOR_PHASE_CONFIRMED_AWAY if self.is_onsite else config.SCHEDULE_COLOR_PHASE_CONFIRMED
             else:
-                return "#E6B9B8" if self.is_onsite else "#95B3D7"
+                return config.SCHEDULE_COLOR_PHASE_AWAY if self.is_onsite else config.SCHEDULE_COLOR_PHASE
     
     
     def get_schedule_json(self, url=None):

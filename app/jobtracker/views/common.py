@@ -2,7 +2,7 @@ from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.urls import reverse
 from django.template import loader
 from chaotica_utils.views import page_defaults
-from ..tasks import task_progress_job_workflows
+from ..tasks import task_progress_workflows, task_fire_job_notifications
 import logging
 from django.contrib.auth.decorators import login_required
 import uuid
@@ -20,7 +20,8 @@ def run_tasks(request):
     Returns:
         HttpResponse: A redirect
     """
-    task_progress_job_workflows()
+    task_progress_workflows()
+    task_fire_job_notifications()
     return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
 @login_required

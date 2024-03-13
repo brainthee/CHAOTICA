@@ -132,9 +132,24 @@ $(function() {
         return false;
     };
 
+    var readNotifications = function() {
+        var btn = $(this);
+        $.ajax({
+            url: btn.attr("data-url"),
+            type: 'get',
+            dataType: 'json',
+            success: function(data) {
+                if (data.result) {
+                    location.reload();
+                }
+            }
+        });        
+    };
+
     $(".js-update-job-workflow").click(loadWorkflowConf);
     $(".js-update-phase-workflow").click(loadWorkflowConf);
     $(".js-load-modal-form").click(loadForm);
+    $(".datatable").on("click", ".js-load-modal-form", loadForm);
     $("#mainModal").on("submit", ".js-workflow-phase-form", saveForm);
     $("#mainModal").on("submit", ".js-workflow-job-form", saveForm);
     $("#mainModal").on("submit", ".js-submit-modal-form", saveForm);
@@ -206,7 +221,8 @@ $(function() {
                     window.location.reload();
                 },
                 200: function(data) {
-                    $("#navbarDropdownNotfication").html(data.html_form);             
+                    $("#navbarDropdownNotfication").html(data.html_form);    
+                    $(".notification_read").click(readNotifications);         
                 }
                 //other codes. read the docs for more details
             },
@@ -216,25 +232,13 @@ $(function() {
         clearInterval(interval);
         }
     }
-    }, period);
+    }, period); 
 
-    $(".notification_read").click(function() {
-        var btn = $(this);
-        $.ajax({
-            url: btn.attr("data-url"),
-            type: 'get',
-            dataType: 'json',
-            success: function(data) {
-                if (data.result) {
-                    location.reload();
-                }
-            }
-        });        
-    });
+    $(".notification_read").click(readNotifications);
 
 });
 
-  
+{% if config.KONAMI_ENABLED %}
 jQuery(document).ready(function($){
 
     var data = localStorage.safetyProtocols;
@@ -285,3 +289,4 @@ jQuery(document).ready(function($){
 
     });
 });
+{% endif %}

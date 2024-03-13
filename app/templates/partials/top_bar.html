@@ -109,9 +109,13 @@
 
               <div class="card-footer p-0 border-top">
                 <div class="px-3 pt-2">
-                  <a class="btn btn-phoenix-secondary d-flex flex-center w-100" href="{% url 'logout' %}">
-                    <span class="me-2" data-feather="log-out"> </span>Sign out
-                  </a>
+                  <form method="post" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button class="btn btn-phoenix-secondary d-flex flex-center w-100" type="submit">                      
+                      <span class="me-2" data-feather="log-out"> </span>
+                      Sign out
+                    </button>
+                  </form>
                 </div>
                 <div class="my-2 text-center fw-bold fs--2 text-600">
                   <a class="text-600 me-1" href="#!">Privacy policy</a> &bull;

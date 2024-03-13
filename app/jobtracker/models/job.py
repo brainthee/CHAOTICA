@@ -10,6 +10,7 @@ from django.contrib.contenttypes.fields import GenericRelation
 from model_utils.fields import MonitorField
 from django.db.models import JSONField
 from django.contrib import messages
+from django.db.models.functions import Lower
 import uuid
 from chaotica_utils.models import Note, User
 from chaotica_utils.tasks import task_send_notifications
@@ -18,6 +19,7 @@ from chaotica_utils.views import log_system_activity
 from datetime import timedelta
 from decimal import Decimal
 from django_bleach.models import BleachField
+from constance import config
 
 
 class JobManager(models.Manager):    
@@ -103,6 +105,8 @@ class Job(models.Model):
     
     @property
     def average_day_rate(self):
+        if not self.revenue:
+            return Decimal(0)
         # Calculate profit and return as a Decimal
         # Profit is calculated as basically revenue - costs
         days = self.get_total_scoped_days()
@@ -422,7 +426,7 @@ class Job(models.Model):
                 self.id = last_id + 1
             else:
                 # We haven't got any other jobs so lets just start from the default
-                self.id = int(settings.JOB_ID_START) + 1
+                self.id = int(config.JOB_ID_START) + 1
 
         return super().save(*args, **kwargs)
     

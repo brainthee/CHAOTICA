@@ -26,12 +26,13 @@
     <h2 class="mb-0">Users</h2>
   </div>
   <div class="col-3 d-flex justify-content-end">
-
+{% if config.INVITE_ENABLED %}
     <button data-url="{% url 'user_invite' %}" 
       class="btn btn-phoenix-primary js-load-modal-form">
       <i class="fa-solid fa-plus me-2"></i>
       Invite User
     </button>
+    {% endif %}
 
   </div>
 </div>
@@ -61,9 +62,12 @@
             </thead>
             <tbody>
             {% for u in user_list %}
-              <tr>
+              <tr {% if not u.is_active %}class="table-secondary"{% endif %}>
                 <td>
                   {{ u }}
+                  {% if not u.is_active %}
+                  <span class="badge badge-phoenix badge-phoenix-warning">DISABLED</span>
+                  {% endif %}
                 </td>
                 <td>
                   <div class="d-flex px-2">
@@ -92,18 +96,7 @@
                     </p>
                 </td>        
                 <td class="align-end text-end">
-                    <button class="btn btn-link text-secondary ps-0 pe-2" id="navbarDropdownMenuLink" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                      <i class="fa fa-ellipsis-v text-lg" aria-hidden="true"></i>
-                    </button>
-                    <div class="dropdown-menu shadow dropdown-menu-end me-sm-n4 me-n3" aria-labelledby="navbarDropdownMenuLink">
-                      <a class="dropdown-item text-warning" href="{% url 'impersonate-start' u.id %}">Impersonate</a>
-                      <button class="dropdown-item text-primary js-load-modal-form" 
-                        data-url="{% url 'user_assign_global_role' u.email %}" href="#!">Assign Global Role</button>
-                      
-                      
-                      <a class="dropdown-item " href="{{ u.get_absolute_url }}">View Profile</a>
-                      
-                    </div>
+                  {% include 'partials/user/user_manage_menu.html' with u=u %}
                 </td>
               </tr>
             {% endfor %}        

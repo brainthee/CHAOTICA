@@ -40,7 +40,7 @@
 
 
 <div class="row g-0 mt-3 border-1 border-top bg-light dark__bg-1100 h-100">
-  <div class="col-9 bg-white min-vh-100 border-1 border-end">
+  <div class="col-12 bg-white min-vh-100 border-1 border-end">
 
     <div class="card-calendar min-vh-100">
       <div class="card-body p-0">
@@ -49,22 +49,52 @@
     </div>
 
   </div>
-
-  <div class="col-3 px-0 border-start-xxl border-300 border-top-0">
-    <div class="h-100">
-      <div class="bg-light dark__bg-1100 h-100 p-3">
-        <div class="scrollbar" id="productFilterColumn">
-          <div class="row mb-3">
-            {% csrf_token %}
-            {% crispy filter_form %}
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
 </div>
 
 {% endblock content %}
+
+{% block offcanvas %}
+
+<div class="offcanvas offcanvas-end settings-panel border-0" id="settings-offcanvas" tabindex="-1" aria-labelledby="settings-offcanvas">
+  <div class="offcanvas-header align-items-start border-bottom flex-column">
+    <div class="pt-1 w-100 mb-3 d-flex justify-content-between align-items-start">
+      <div>
+        <h5 class="mb-2 me-2 lh-sm">
+          <span class="fas fa-palette me-2 fs-0"></span>
+          Filter Schedule</h5>
+        <p class="mb-0 fs--1">Use the filters below to refine resources displayed</p>
+      </div>
+      <button class="btn p-1 fw-bolder" type="button" data-bs-dismiss="offcanvas" aria-label="Close"><span class="fas fa-times fs-0"> </span></button>
+    </div>
+    <button class="btn btn-phoenix-secondary w-100" data-theme-control="reset"><span class="fas fa-arrows-rotate me-2 fs--2"></span>Reset to default</button>
+  </div>
+  <div class="offcanvas-body scrollbar px-card" id="themeController">
+
+    {% csrf_token %}
+    {% crispy filter_form %}
+
+    <!-- <div class="border rounded-3 p-4 setting-panel-item bg-white">
+      <div class="d-flex justify-content-between align-items-center">
+        <h5 class="setting-panel-item-title mb-1">RTL </h5>
+        <div class="form-check form-switch mb-0">
+          <input class="form-check-input ms-auto" type="checkbox" data-theme-control="phoenixIsRTL" />
+        </div>
+      </div>
+      <p class="mb-0 text-700">Change text direction</p>
+    </div> -->    
+  </div>
+</div>
+<a class="card setting-toggle" href="#settings-offcanvas" data-bs-toggle="offcanvas">
+  <div class="card-body d-flex align-items-center px-2 py-1">
+    <div class="position-relative rounded-start" style="height:34px;width:28px">
+      <div class="settings-popover">
+          <span class="fa-solid fa-filter">
+        </span>
+      </div>
+    </div><small class="text-uppercase text-700 fw-bold py-2 pe-2 ps-1 rounded-end">Filter</small>
+  </div>
+</a>
+{% endblock offcanvas %}
 
 
 {% block footer_javascript_page %}

@@ -16,11 +16,13 @@ from guardian.shortcuts import get_objects_for_user
 from django.utils import timezone
 from datetime import timedelta, date
 from dateutil.relativedelta import relativedelta
+from django.db.models.functions import Lower
 from phonenumber_field.modelfields import PhoneNumberField
 from django_countries.fields import CountryField
 from .tasks import task_send_notifications
 from jobtracker.enums import DefaultTimeSlotTypes, UserSkillRatings
 from business_duration import businessDuration
+from constance import config
 from django.template.loader import render_to_string
 from django.core.mail import send_mail
 
@@ -97,7 +99,7 @@ class Language(models.Model):
     display_name = models.CharField(max_length=255)
 
     class Meta:
-        ordering = ['display_name']
+        ordering = [Lower('display_name')]
         unique_together = ['lang_code', 'display_name']
 
     def __str__(self):
@@ -115,7 +117,7 @@ class UserInvitation(models.Model):
     )
 
     def is_expired(self):
-        expiry_date = self.sent + timedelta(days=settings.USER_INVITE_EXPIRY)
+        expiry_date = self.sent + timedelta(days=config.USER_INVITE_EXPIRY)
         return expiry_date <= timezone.now()    
     
     def get_absolute_url(self):
@@ -137,8 +139,6 @@ class UserInvitation(models.Model):
 
         self.sent = timezone.now()
         self.save()
-
-
 
 
 class User(AbstractUser):
@@ -170,11 +170,26 @@ class User(AbstractUser):
     languages = models.ManyToManyField(Language, verbose_name='Languages', blank=True)
     profile_image = models.ImageField(blank=True,
                                      upload_to=get_media_profile_file_path,)
-    contracted_leave = models.IntegerField(verbose_name="Contracted Days Leave", default=0)
+    contracted_leave = models.IntegerField(verbose_name="Contracted Days Leave", default=25)
     contracted_leave_renewal = models.DateField(verbose_name="Leave Renewal Date", default=date(day=1, month=9, year=2023))
+
+    profile_last_updated = models.DateField(verbose_name="Profile Last Updated", blank=True, null=True)
     
     class Meta:
-        ordering = ['last_name']
+        ordering = [Lower('last_name'), Lower('first_name')]
+        permissions = (
+            ('manage_user', 'Can manage the user'),
+            ('impersonate_users', 'Can impersonate other users'),
+            ('manage_site_settings', 'Can change site settings'),
+        )    
+
+    
+    def skills_last_updated(self):
+        if self.skills.all().count():
+            return self.skills.order_by('-last_updated_on').first().last_updated_on
+        else:
+            return None
+        
 
     def can_scope(self):
         from jobtracker.models.orgunit import OrganisationalUnit
@@ -232,6 +247,19 @@ class User(AbstractUser):
             return self.profile_image.url
         else:
             return static('assets/img/team/avatar-rounded.webp')
+    
+    
+    def get_absolute_url(self):
+        if self.email:
+            return reverse('user_profile', kwargs={'email': self.email})
+        else:
+            return None
+        
+    def get_manage_url(self):
+        if self.email:
+            return reverse('user_manage', kwargs={'email': self.email})
+        else:
+            return None
     
     def get_current_status(self):
         # online, offline, away, do-not-disturb
@@ -404,12 +432,6 @@ class User(AbstractUser):
         return self.get_average_qa_rating_12mo("presqa_report_rating")
     
     
-    def get_absolute_url(self):
-        if self.email:
-            return reverse('user_profile', kwargs={'email': self.email})
-        else:
-            return None
-    
     def current_cost(self):
         if self.costs.all().exists():
             return self.costs.all().last()
@@ -439,7 +461,7 @@ class HolidayCountry(models.Model):
     country = CountryField()
 
     class Meta:
-        ordering = ['country',]
+        ordering = [Lower('country')]
     
     def __str__(self):
         return '{}'.format(str(self.country.name))
@@ -521,7 +543,7 @@ class LeaveRequest(models.Model):
             end__gte=self.start_date).exists()
 
     def requested_late(self):
-        return self.start_date < (self.requested_on + timedelta(days=settings.LEAVE_DAYS_NOTICE))
+        return self.start_date < (self.requested_on + timedelta(days=config.LEAVE_DAYS_NOTICE))
     
     def affected_days(self):
         unit='day'
@@ -576,7 +598,7 @@ class LeaveRequest(models.Model):
         notice = AppNotification(
             NotificationTypes.PHASE, 
             "Leave Approved", 
-            "Your leave has been approved!",
+            "Your leave ({start_date} - {end_date}) has been approved!".format(start_date=self.start_date, end_date=self.end_date),
             self.EMAIL_TEMPLATE, action_link=ext_reverse(reverse('view_own_leave')), leave=self)
         task_send_notifications(notice, users_to_notify)
 
@@ -588,7 +610,7 @@ class LeaveRequest(models.Model):
         notice = AppNotification(
             NotificationTypes.PHASE, 
             "Leave DECLINED", 
-            "Your leave has been declined. Please contact "+str(self.declined_by)+" for information.",
+            "Your leave ({start_date} - {end_date}) has been declined. Please contact {declined_by} for information.".format(start_date=self.start_date, end_date=self.end_date, declined_by=self.declined_by),
             self.EMAIL_TEMPLATE, action_link=ext_reverse(reverse('view_own_leave')), leave=self)
         task_send_notifications(notice, users_to_notify)
 
@@ -600,7 +622,7 @@ class LeaveRequest(models.Model):
         notice = AppNotification(
             NotificationTypes.PHASE, 
             "Leave Cancelled", 
-            "You have cancelled your leave.",
+            "You have cancelled your leave ({start_date} - {end_date}).".format(start_date=self.start_date, end_date=self.end_date),
             self.EMAIL_TEMPLATE, action_link=ext_reverse(reverse('view_own_leave')), leave=self)
         task_send_notifications(notice, users_to_notify)
     

@@ -58,6 +58,8 @@ class GlobalRoles():
             # Certification
             "jobtracker.view_certification", "jobtracker.add_certification", "jobtracker.change_certification", 
             "jobtracker.delete_certification", 'jobtracker.view_users_certification',
+            # Users
+            "chaotica_utils.manage_user", "chaotica_utils.impersonate_users", "chaotica_utils.manage_site_settings"
 
         ]),
         (DELIVERY_MGR, [
@@ -77,13 +79,15 @@ class GlobalRoles():
             # Certification
             "jobtracker.view_certification", "jobtracker.add_certification", "jobtracker.change_certification", 
             "jobtracker.delete_certification", 'jobtracker.view_users_certification',
+            # Users
+            "jobtracker.manage_user",
         ]),
         (SERVICE_DELIVERY, [
             # Client
             "jobtracker.view_client", "jobtracker.add_client", "jobtracker.change_client", 
             "jobtracker.delete_client", "jobtracker.assign_account_managers_client",
             # Service
-            "jobtracker.view_service", 'jobtracker.assign_to_phase',
+            "jobtracker.view_service",
             # SkillCategory
             "jobtracker.view_skillcategory",
             # Skill
@@ -106,7 +110,7 @@ class GlobalRoles():
             # OrganisationalUnit
             "jobtracker.view_organisationalunit",
             # Certification
-            "jobtracker.view_certification",
+            "jobtracker.view_certification", 'jobtracker.view_users_certification',
         ]),
         (SALES_MEMBER, [ 
             # Client
@@ -131,11 +135,11 @@ class GlobalRoles():
             # SkillCategory
             "jobtracker.view_skillcategory",
             # Skill
-            "jobtracker.view_skill",
+            "jobtracker.view_skill", 'jobtracker.view_users_skill',
             # OrganisationalUnit
             "jobtracker.view_organisationalunit",
             # Certification
-            "jobtracker.view_certification",
+            "jobtracker.view_certification", 'jobtracker.view_users_certification',
         ]),
     )
 
@@ -196,6 +200,7 @@ class UnitRoles():
         ]),
         (MANAGER, [
             # OrganisationalUnit
+            "jobtracker.can_view_unit_jobs",
             "jobtracker.change_organisationalunit", "jobtracker.delete_organisationalunit",
             "jobtracker.manage_members", 'jobtracker.view_users_schedule',
             "jobtracker.can_scope_jobs", 'jobtracker.can_signoff_scopes',
