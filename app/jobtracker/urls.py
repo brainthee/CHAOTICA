@@ -80,11 +80,17 @@ urlpatterns = [
     path('client/<str:slug>/update/', views.ClientUpdateView.as_view(), name='client_update'),
     path('client/<str:slug>/delete/', views.ClientDeleteView.as_view(), name='client_delete'),
 
-    # Client CRUD
+    # Client Contact CRUD
     path('client/<str:client_slug>/contact/create/', views.ClientContactCreateView.as_view(), name='client_contact_create'),
     path('client/<str:client_slug>/contact/<int:pk>/', views.ClientContactDetailView.as_view(), name='client_contact_detail'),
     path('client/<str:client_slug>/contact/<int:pk>/update/', views.ClientContactUpdateView.as_view(), name='client_contact_update'),
     path('client/<str:client_slug>/contact/<int:pk>/delete/', views.ClientContactDeleteView.as_view(), name='client_contact_delete'),
+
+    # Client framework CRUD
+    path('client/<str:client_slug>/framework/create/', views.ClientFrameworkCreateView.as_view(), name='client_framework_create'),
+    path('client/<str:client_slug>/framework/<int:pk>/', views.ClientFrameworkDetailView.as_view(), name='client_framework_detail'),
+    path('client/<str:client_slug>/framework/<int:pk>/update/', views.ClientFrameworkUpdateView.as_view(), name='client_framework_update'),
+    path('client/<str:client_slug>/framework/<int:pk>/delete/', views.ClientFrameworkDeleteView.as_view(), name='client_framework_delete'),
 
     # Service CRUD
     path('ops/services/', views.ServiceListView.as_view(), name='service_list'),

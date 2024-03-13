@@ -1,6 +1,6 @@
 from django import forms
 from django.urls import reverse
-from .models import Contact, Job, Certification, Feedback, TimeSlot, TimeSlotType, Client, Phase, OrganisationalUnit, OrganisationalUnitMember, Skill, Service, WorkflowTask, SkillCategory
+from .models import Contact, FrameworkAgreement, Job, Certification, Feedback, TimeSlot, TimeSlotType, Client, Phase, OrganisationalUnit, OrganisationalUnitMember, Skill, Service, WorkflowTask, SkillCategory
 from chaotica_utils.models import Note, User
 from .enums import DefaultTimeSlotTypes, JobStatuses, PhaseStatuses
 from crispy_forms.helper import FormHelper
@@ -541,7 +541,8 @@ class JobForm(forms.ModelForm):
     )    
 
     def __init__(self, *args, **kwargs):
-        self.created_by = kwargs['initial']['created_by']
+        # if not self.created_by:
+        #     self.created_by = kwargs['initial']['created_by']
         self.user = kwargs.pop('user')  # To get request.user. Do not use kwargs.pop('user', None) due to potential security hole
         super(JobForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
@@ -904,6 +905,38 @@ class ClientContactForm(forms.ModelForm):
             "phone", 
             "mobile", 
             "email",
+        ]
+
+class ClientFrameworkForm(forms.ModelForm):
+    start_date = forms.DateField(required=False,
+                            widget=DatePickerInput(),)
+    end_date = forms.DateField(required=False,
+                            widget=DatePickerInput(),)
+
+    def __init__(self, *args, **kwargs):
+        client=None
+        if 'client' in kwargs:
+            client = kwargs.pop('client')
+        super(ClientFrameworkForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.fields['name'].label = False
+        self.fields['start_date'].label = False
+        self.fields['end_date'].label = False
+
+        self.fields['total_days'].label = False
+
+        self.fields['allow_over_allocation'].label = False
+        self.fields['closed'].label = False
+
+    class Meta:
+        model = FrameworkAgreement
+        fields = [
+            "name", 
+            "start_date", 
+            "end_date",
+            "total_days", 
+            "allow_over_allocation", 
+            "closed", 
         ]
 
 

@@ -249,7 +249,7 @@ class JobDetailView(PermissionRequiredMixin, JobBaseView, DetailView):
 
 
 class JobCreateView(JobBaseView, CreateView):
-    template_name = "jobtracker/job_form_create.html"
+    template_name = "jobtracker/job_form.html"
     form_class = JobForm
     fields = None
 
@@ -275,7 +275,7 @@ class JobCreateView(JobBaseView, CreateView):
 class JobUpdateView(PermissionRequiredMixin, JobBaseView, UpdateView):
     permission_required = 'jobtracker.change_job'
     return_403 = True
-    template_name = "jobtracker/job_form_edit.html"
+    template_name = "jobtracker/job_form.html"
     form_class = JobForm
     fields = None
     """View to update a job"""
