@@ -12,8 +12,11 @@ from django.urls import reverse_lazy
 from chaotica_utils.views import log_system_activity, ChaoticaBaseView
 from ..models import Job, Phase, TimeSlot, WorkflowTask
 from ..forms import AddNote, AssignUserField, PhaseDeliverInlineForm, FeedbackForm, PhasePresQAInlineForm, PhaseScopeFeedbackInlineForm, PhaseTechQAInlineForm, PhaseForm
-from ..enums import FeedbackType, PhaseStatuses, TimeSlotDeliveryRole
+from ..enums import FeedbackType, PhaseStatuses, TimeSlotDeliveryRole, JobStatuses
 from .helpers import _process_assign_user
+from chaotica_utils.tasks import task_send_notifications
+from chaotica_utils.utils import AppNotification
+from chaotica_utils.enums import NotificationTypes
 import logging
 from dal import autocomplete
 from django.contrib.auth.decorators import login_required
@@ -167,8 +170,18 @@ class PhaseDetailView(PhaseBaseView, DetailView):
 
 class PhaseCreateView(PhaseBaseView, CreateView):
     form_class = PhaseForm
-    template_name = "jobtracker/phase_form_create.html"
+    template_name = "jobtracker/phase_form.html"
     fields = None
+
+    def get(self, request, *args, **kwargs):
+        # Check if the job is in the right stage!
+        if 'job_slug' in self.kwargs:
+            job = get_object_or_404(Job, slug=self.kwargs['job_slug'])
+            if job.status <= JobStatuses.PENDING_SCOPE or job.status >= JobStatuses.COMPLETED:
+                # Outside approved range - lets nuke the call
+                return HttpResponseBadRequest()
+
+        return super().get(request, *args, **kwargs)
 
     def form_valid(self, form):
         form.instance.job = Job.objects.get(slug=self.kwargs['job_slug'])    
@@ -201,7 +214,17 @@ def phase_create_note(request, job_slug, slug):
             new_note.content_object = phase
             new_note.author = request.user
             new_note.is_system_note = False
-            new_note.save()      
+            new_note.save()
+            # Lets send a notification to everyone except us
+            users_to_notify = phase.team().exclude(pk=request.user.pk)
+            email_template = "emails/phase_content.html"     
+            notice = AppNotification(
+                NotificationTypes.PHASE, 
+                "{phase} - Note added to phase".format(phase=phase),
+                "A note has been added: {msg}.".format(msg=new_note.content),
+                email_template, action_link=phase.get_absolute_url()+"#notes", phase=phase)
+            task_send_notifications(notice, users_to_notify)
+
             return HttpResponseRedirect(reverse('phase_detail', kwargs={"job_slug": job_slug,"slug": slug})+"#notes")
     return HttpResponseBadRequest()
 
@@ -405,6 +428,7 @@ def phase_update_workflow(request, job_slug, slug, new_state):
     job = get_object_or_404(Job, slug=job_slug)
     phase = get_object_or_404(Phase, job=job, slug=slug)
     data = dict()
+    context = {}
     new_state_str = None
     try:
         for state in PhaseStatuses.CHOICES:
@@ -451,6 +475,9 @@ def phase_update_workflow(request, job_slug, slug, new_state):
         if phase.can_to_ready(request):
             if request.method == 'POST':
                 phase.to_ready(request.user)
+            if phase.prerequisites:
+                context['fyi'] = "Please be aware of the following pre-requisites:"
+                context['fyi_content'] = phase.prerequisites
         else:
             can_proceed = False
     elif new_state == PhaseStatuses.IN_PROGRESS:
@@ -463,6 +490,9 @@ def phase_update_workflow(request, job_slug, slug, new_state):
         if phase.can_to_pending_tech_qa(request):
             if request.method == 'POST':
                 phase.to_pending_tech_qa(request.user)
+            if phase.job.client.specific_reporting_requirements:
+                context['fyi'] = "Please be aware of the following reporting requirements:"
+                context['fyi_content'] = phase.job.client.specific_reporting_requirements
         else:
             can_proceed = False
     elif new_state == PhaseStatuses.QA_TECH:
@@ -476,18 +506,27 @@ def phase_update_workflow(request, job_slug, slug, new_state):
                     else:
                         return HttpResponseBadRequest()
                 phase.to_tech_qa(request.user)
+            if phase.job.client.specific_reporting_requirements:
+                context['fyi'] = "Please be aware of the following reporting requirements:"
+                context['fyi_content'] = phase.job.client.specific_reporting_requirements
         else:
             can_proceed = False
     elif new_state == PhaseStatuses.QA_TECH_AUTHOR_UPDATES:
         if phase.can_to_tech_qa_updates(request):
             if request.method == 'POST':
                 phase.to_tech_qa_updates(request.user)
+            if phase.job.client.specific_reporting_requirements:
+                context['fyi'] = "Please be aware of the following reporting requirements:"
+                context['fyi_content'] = phase.job.client.specific_reporting_requirements
         else:
             can_proceed = False
     elif new_state == PhaseStatuses.PENDING_PQA:
         if phase.can_to_pending_pres_qa(request):
             if request.method == 'POST':
                 phase.to_pending_pres_qa(request.user)
+            if phase.job.client.specific_reporting_requirements:
+                context['fyi'] = "Please be aware of the following reporting requirements:"
+                context['fyi_content'] = phase.job.client.specific_reporting_requirements
         else:
             can_proceed = False
     elif new_state == PhaseStatuses.QA_PRES:
@@ -501,12 +540,18 @@ def phase_update_workflow(request, job_slug, slug, new_state):
                     else:
                         return HttpResponseBadRequest()
                 phase.to_pres_qa(request.user)
+            if phase.job.client.specific_reporting_requirements:
+                context['fyi'] = "Please be aware of the following reporting requirements:"
+                context['fyi_content'] = phase.job.client.specific_reporting_requirements
         else:
             can_proceed = False
     elif new_state == PhaseStatuses.QA_PRES_AUTHOR_UPDATES:
         if phase.can_to_pres_qa_updates(request):
             if request.method == 'POST':
                 phase.to_pres_qa_updates(request.user)
+            if phase.job.client.specific_reporting_requirements:
+                context['fyi'] = "Please be aware of the following reporting requirements:"
+                context['fyi_content'] = phase.job.client.specific_reporting_requirements
         else:
             can_proceed = False
     elif new_state == PhaseStatuses.COMPLETED:
@@ -555,14 +600,13 @@ def phase_update_workflow(request, job_slug, slug, new_state):
         data['form_is_valid'] = True  # This is just to play along with the existing code
     
     tasks = WorkflowTask.objects.filter(appliedModel=WorkflowTask.WF_PHASE, status=new_state)
-    context = {
-        'job': job,
-        'phase': phase,
-        'can_proceed': can_proceed,
-        'new_state_str': new_state_str,
-        'new_state': new_state,
-        'tasks': tasks,
-        }
+
+    context['job'] = job
+    context['phase'] = phase
+    context['can_proceed'] = can_proceed
+    context['new_state_str'] = new_state_str
+    context['new_state'] = new_state
+    context['tasks'] = tasks
     data['html_form'] = loader.render_to_string('jobtracker/modals/phase_workflow.html',
                                                 context,
                                                 request=request)

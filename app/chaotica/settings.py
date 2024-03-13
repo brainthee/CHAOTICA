@@ -73,16 +73,62 @@ CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 
 
 GLOBAL_GROUP_PREFIX = "Global: "
+
+DATA_UPLOAD_MAX_NUMBER_FILES = 5000
+
 DEFAULT_HOURS_IN_DAY = os.environ.get("DEFAULT_HOURS_IN_DAY", default=7.5)
-LEAVE_DAYS_NOTICE = os.environ.get("LEAVE_DAYS_NOTICE", default=14) # Two weeks notice
-USER_INVITE_EXPIRY = os.environ.get("USER_INVITE_EXPIRY", default=7)
-USER_INVITE_ONLY = os.environ.get("USER_INVITE_ONLY", default=True)
-JOB_ID_START = os.environ.get("JOB_ID_START", default=2500)
-PHASE_ID_START = os.environ.get("PHASE_ID_START", default=1)
+
+CONSTANCE_CONFIG = {
+    # Feature Flags
+    'ADFS_ENABLED': (False, 'Should we allow ADFS login? Ensure there is a valid configuration!'),
+    'REGISTRATION_ENABLED': (True, 'Should we allow self-registration?'),
+    'LOCAL_LOGIN_ENABLED': (True, 'Should we allow logging in via local user?'),
+    # Invite
+    'INVITE_ENABLED': (True, 'Should we allow inviting users?'),
+    'USER_INVITE_EXPIRY': (7, 'How long until invites expire'),
+
+    # Skills refresher
+    'SKILLS_REVIEW_DAYS': (31, 'How many days we should prompt users to review their skills'),
+    'PROFILE_REVIEW_DAYS': (182, 'How many days we should prompt users to review their profile'),
+
+    # Phase ID settings
+    'JOB_ID_START': (2500, 'Where to start Job IDs'),
+    # 'PHASE_ID_START': (1, 'Where Phase IDs start'),
+
+    # Notification Settings
+    'TQA_LATE_HOURS': (24, 'How many hours before sending another late to TQA notficiation'),
+    'PQA_LATE_HOURS': (24, 'How many hours before sending another late to PQA notficiation'),
+    'DELIVERY_LATE_HOURS': (24, 'How many hours before sending another late to Delivery notficiation'),
+
+    # Work settings
+    'DEFAULT_HOURS_IN_DAY': (7.5, 'Default hours in a work day'),
+    'LEAVE_DAYS_NOTICE': (14, 'How many days notice for Annual Leave submissions?'),
+
+    # Theme/Look settings
+    'SNOW_ENABLED': (False, 'Should it snow?'),
+    'KONAMI_ENABLED': (True, 'Should the Konami easter-egg be enabled?'),
+
+    # Site Notice
+    'SITE_NOTICE_ENABLED': (False, 'Show a site wide notice'),
+    'SITE_NOTICE_MSG': ('', 'Message to display across the site'),
+    'SITE_NOTICE_COLOUR': ('primary', 'Select the alert colour of the site notice', 'notice_colour'),
+
+    # Schedule Colours
+    'SCHEDULE_COLOR_AVAILABLE': ('#E224A3', 'Colour to show available in the schedule', 'colour_picker'),
+    'SCHEDULE_COLOR_UNAVAILABLE': ('#E224A3', 'Colour to show available in the schedule', 'colour_picker'),
+    'SCHEDULE_COLOR_INTERNAL': ('#E224A3', 'Colour to show available in the schedule', 'colour_picker'),
+    'SCHEDULE_COLOR_PHASE_CONFIRMED': ('#E224A3', 'Colour to show available in the schedule', 'colour_picker'),
+    'SCHEDULE_COLOR_PHASE_CONFIRMED_AWAY': ('#E224A3', 'Colour to show available in the schedule', 'colour_picker'),
+    'SCHEDULE_COLOR_PHASE': ('#E224A3', 'Colour to show available in the schedule', 'colour_picker'),
+    'SCHEDULE_COLOR_PHASE_AWAY': ('#E224A3', 'Colour to show available in the schedule', 'colour_picker'),
+}
 
 CONSTANCE_BACKEND = 'constance.backends.database.DatabaseBackend'
 CONSTANCE_IGNORE_ADMIN_VERSION_CHECK = True
 CONSTANCE_ADDITIONAL_FIELDS = {
+    'image_field': ['django.forms.ImageField', {}],
+    'colour_picker': ['django.forms.CharField', {
+        'widget': 'colorfield.widgets.ColorWidget',}],
     'notice_colour': ['django.forms.fields.ChoiceField', {
         'widget': 'django.forms.Select',
         'choices': (
@@ -94,13 +140,6 @@ CONSTANCE_ADDITIONAL_FIELDS = {
             ("warning", "Warning"),
         ),
     }],
-}
-
-CONSTANCE_CONFIG = {
-    'SNOW_ENABLED': (False, 'Should it snow?'),
-    'SITE_NOTICE_ENABLED': (False, 'Show a site wide notice'),
-    'SITE_NOTICE_MSG': ('', 'Message to display across the site'),
-    'SITE_NOTICE_COLOUR': ('primary', 'Select the alert colour of the site notice', 'notice_colour'),
 }
 
 
@@ -133,6 +172,7 @@ DEFAULT_APPS = [
     'dal',
     'dal_select2',
     'django.contrib.admin',
+    'django.contrib.admindocs',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -141,6 +181,7 @@ DEFAULT_APPS = [
     'django.contrib.humanize',
 ]
 THIRD_PARTY_APPS = [
+    'colorfield',
     'constance',
     'django_auth_adfs',
     'menu',

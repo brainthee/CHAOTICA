@@ -6,9 +6,12 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.bootstrap import FormActions,PrependedText, FieldWithButtons, StrictButton, InlineField, Accordion, AccordionGroup
 from crispy_forms.layout import Layout, Row, Column, Field, Div, Submit, Button, HTML
 from crispy_bootstrap5.bootstrap5 import FloatingField
-from constance.forms import ConstanceForm
+# from constance.forms import ConstanceForm
+from constance.admin import ConstanceForm
+from .impex.baseImporter import BaseImporter
 from dal import autocomplete
 import pytz
+from constance import config
 from django.conf import settings
 from bootstrap_datepicker_plus.widgets import TimePickerInput, DatePickerInput, DateTimePickerInput
 from django.core.files.images import get_image_dimensions
@@ -21,18 +24,96 @@ class CustomConfigForm(ConstanceForm):
         super(CustomConfigForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
         self.helper.form_tag = False
+        for field in self.fields:
+            if field in settings.CONSTANCE_CONFIG:
+                self.fields[field].help_text = settings.CONSTANCE_CONFIG[field][1]
+                
         self.helper.layout = Layout(
             Row(
-                Column(Div(Field('SITE_NOTICE_ENABLED'),
-                        css_class="input-group input-group-dynamic")),
-                Column(Div(FloatingField('SITE_NOTICE_COLOUR'),
-                        css_class="input-group input-group-dynamic")),
-                Column(Div(FloatingField('SITE_NOTICE_MSG'),
-                        css_class="input-group input-group-dynamic")),
+                Column(
+                    HTML('<h4 class="mb-4">Job/Phase Settings</h4>'),
+                    Div(FloatingField('JOB_ID_START'),
+                        css_class="input-group input-group-dynamic"),
+                    Div(FloatingField('TQA_LATE_HOURS'),
+                        css_class="input-group input-group-dynamic"),
+                    Div(FloatingField('PQA_LATE_HOURS'),
+                        css_class="input-group input-group-dynamic"),
+                    Div(FloatingField('DELIVERY_LATE_HOURS'),
+                        css_class="input-group input-group-dynamic"),
+                ),
+                Column(
+                    HTML('<h4 class="mb-4">Work Settings</h4>'),
+                    Div(FloatingField('DEFAULT_HOURS_IN_DAY'),
+                        css_class="input-group input-group-dynamic"),
+                    Div(FloatingField('LEAVE_DAYS_NOTICE'),
+                        css_class="input-group input-group-dynamic"),
+                ),
             ),
             Row(
-                Column(Div(Field('SNOW_ENABLED'),
-                        css_class="input-group input-group-dynamic")),
+
+                Column(
+                    HTML('<h4 class="mb-4">Reminder Settings</h4>'),
+                    Div(Field('SKILLS_REVIEW_DAYS'),
+                        css_class="input-group input-group-dynamic"),
+                    Div(Field('PROFILE_REVIEW_DAYS'),
+                        css_class="input-group input-group-dynamic"),
+                ),
+
+                Column(
+                    HTML('<h4 class="mb-4">Theme Settings</h4>'),
+                    Div(Field('SNOW_ENABLED'),
+                        css_class="input-group input-group-dynamic"),
+                    Div(Field('KONAMI_ENABLED'),
+                        css_class="input-group input-group-dynamic"),
+                ),
+            ),
+
+            Row(
+                Column(
+                    HTML('<h4 class="mb-4">Auth Settings</h4>'),
+                    Div(Field('ADFS_ENABLED'),
+                        css_class="input-group input-group-dynamic"),
+                    Div(Field('LOCAL_LOGIN_ENABLED'),
+                        css_class="input-group input-group-dynamic"),
+                    Div(Field('REGISTRATION_ENABLED'),
+                        css_class="input-group input-group-dynamic"),
+                    Div(Field('INVITE_ENABLED'),
+                        css_class="input-group input-group-dynamic"),
+                    Div(FloatingField('USER_INVITE_EXPIRY'),
+                        css_class="input-group input-group-dynamic"),
+                ),
+
+                Column(
+                    HTML('<h4 class="mb-4">Site Notice</h4>'),
+                    Div(Field('SITE_NOTICE_ENABLED'),
+                            css_class="input-group input-group-dynamic"),
+                    Div(FloatingField('SITE_NOTICE_COLOUR'),
+                            css_class="input-group input-group-dynamic"),
+                    Div(FloatingField('SITE_NOTICE_MSG'),
+                            css_class="input-group input-group-dynamic"),
+                ),
+            ),
+            Row(
+                HTML('<h4 class="mb-4">Schedule Colours</h4>'),
+                Column(
+                    Div(Field('SCHEDULE_COLOR_AVAILABLE'),
+                        css_class="input-group input-group-dynamic"),
+                    Div(Field('SCHEDULE_COLOR_UNAVAILABLE'),
+                        css_class="input-group input-group-dynamic"),
+                    Div(Field('SCHEDULE_COLOR_INTERNAL'),
+                        css_class="input-group input-group-dynamic"),
+                ),
+
+                Column(
+                    Div(Field('SCHEDULE_COLOR_PHASE'),
+                        css_class="input-group input-group-dynamic"),
+                    Div(Field('SCHEDULE_COLOR_PHASE_CONFIRMED'),
+                        css_class="input-group input-group-dynamic"),
+                    Div(Field('SCHEDULE_COLOR_PHASE_AWAY'),
+                        css_class="input-group input-group-dynamic"),
+                    Div(Field('SCHEDULE_COLOR_PHASE_CONFIRMED_AWAY'),
+                        css_class="input-group input-group-dynamic"),
+                ),
             ),
         )
 
@@ -171,6 +252,81 @@ class ProfileForm(forms.Form):
         model = User
         fields = ('first_name', 'last_name', 'email', 'password1', 'password2' )
 
+class ManageUserForm(forms.ModelForm):
+    manager = forms.ModelChoiceField(
+        queryset=User.objects.filter(is_active=True),
+        required=False,
+        widget=autocomplete.ModelSelect2(url='user-autocomplete',
+                                         attrs={
+                                             'data-minimum-input-length': 3,
+                                         },),)
+    
+    acting_manager = forms.ModelChoiceField(
+        queryset=User.objects.filter(is_active=True),
+        required=False,
+        widget=autocomplete.ModelSelect2(url='user-autocomplete',
+                                         attrs={
+                                             'data-minimum-input-length': 3,
+                                         },),)
+    
+    def __init__(self, *args, **kwargs):
+        super(ManageUserForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.helper.form_tag = False
+
+        self.helper.layout = Layout(
+            Row(
+                Column(Div(FloatingField('first_name'),
+                        css_class="input-group input-group-dynamic")),
+                Column(Div(FloatingField('last_name'),
+                        css_class="input-group input-group-dynamic")),
+            ),
+            Row(
+                Column(Div(FloatingField('email'),
+                        css_class="input-group input-group-dynamic")),
+                Column(Div(FloatingField('location'),
+                        css_class="input-group input-group-dynamic")),
+            ),
+            Row(
+                Column(Div(FloatingField('phone_number'),
+                        css_class="input-group input-group-dynamic")),
+                Column(Div(FloatingField('job_title'),
+                        css_class="input-group input-group-dynamic")),
+            ),
+            Row(
+                Column(Div(Field('profile_image'),
+                        css_class="input-group input-group-dynamic")),
+                Column(Div(Field('languages'),
+                        css_class="")),
+            ),
+            Row(
+                Column(
+                    Row(
+                        Column(Div(Field('contracted_leave'),
+                                css_class="input-group input-group-dynamic")),
+                        Column(Div(Field('contracted_leave_renewal'),
+                                css_class="input-group input-group-dynamic")),
+                    ),
+                ),
+                Column(Div(Field('pref_timezone'),
+                        css_class="")),
+            ),
+            Row(
+                Column(Div(Field('manager'),
+                        css_class="")),
+                Column(Div(Field('acting_manager'),
+                        css_class="")),
+            ),
+        )
+
+    class Meta:
+        model = User
+        widgets = {
+            'languages': autocomplete.ModelSelect2Multiple(),
+        }
+        fields = ('first_name', 'last_name', "manager", "acting_manager", 'profile_image', 'pref_timezone', 'email', 'phone_number', 'job_title', 'show_help', 'location', 'languages','contracted_leave', 'contracted_leave_renewal')
+
+
 class ProfileBasicForm(forms.ModelForm):
 
     profile_image = forms.FileField(
@@ -186,7 +342,11 @@ class ProfileBasicForm(forms.ModelForm):
         self.helper = FormHelper(self)
         self.helper.form_tag = False
         self.fields['contracted_leave_renewal'].widget = DatePickerInput()
+
+        self.fields['contracted_leave_renewal'].disabled = True
+        self.fields['contracted_leave'].disabled = True
         self.fields['show_help'].help_text = False
+        self.fields['email'].disabled = True
         
         self.helper.layout = Layout(
             Row(
@@ -210,6 +370,10 @@ class ProfileBasicForm(forms.ModelForm):
             Row(
                 Column(Div(Field('profile_image'),
                         css_class="input-group input-group-dynamic")),
+                Column(Div(Field('languages'),
+                        css_class="")),
+            ),
+            Row(
                 Column(
                     Row(
                         Column(Div(Field('contracted_leave'),
@@ -218,10 +382,6 @@ class ProfileBasicForm(forms.ModelForm):
                                 css_class="input-group input-group-dynamic")),
                     ),
                 ),
-            ),
-            Row(
-                Column(Div(Field('languages'),
-                        css_class="")),
                 Column(Div(Field('pref_timezone'),
                         css_class="")),
             ),
@@ -232,7 +392,10 @@ class ProfileBasicForm(forms.ModelForm):
         widgets = {
             'languages': autocomplete.ModelSelect2Multiple(),
         }
-        fields = ('first_name', 'last_name', 'profile_image', 'pref_timezone', 'email', 'phone_number', 'job_title', 'show_help', 'location', 'languages','contracted_leave', 'contracted_leave_renewal')
+        fields = (
+            'first_name', 'last_name', 'profile_image', 'pref_timezone', 
+            'email', 'phone_number', 'job_title', 'show_help', 'location', 
+            'languages','contracted_leave', 'contracted_leave_renewal')
 
 
     def clean_profile_image(self):
@@ -269,24 +432,34 @@ class ProfileBasicForm(forms.ModelForm):
         return profile_image
 
 class ImportSiteDataForm(forms.Form):
-    importFile = forms.FileField(required=False, label='JSON Data')
+    importFiles = forms.FileField(label='Data')
+    importType = forms.ChoiceField(choices=[
+        ("SmartSheetCSVImporter", "SmartSheet Project CSV"),
+        ("ResourceManagerUserImporter", "Resource Manager User JSONs"),
+        ])
+
     def __init__(self, *args, **kwargs):
         super(ImportSiteDataForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
+        self.helper.form_tag = False
         self.helper.layout = Layout(
             Div(
                 Row(
-                    Div(Field('importFile'),
+                    Div(Field('importType'),
+                        css_class="input-group input-group-dynamic")
+                ),
+                Row(
+                    Div(Field('importFiles', multiple=True),
                         css_class="input-group input-group-dynamic")
                 ),
                 css_class='modal-body pt-3'),
 
             Div(
                 Div(StrictButton("Import", type="submit", 
-                    css_class="btn bg-gradient-success ms-auto mb-0"),
+                    css_class="btn btn-phoenix-warning ms-auto mb-0"),
                 css_class="button-row d-flex mt-4"),
             css_class="modal-footer"),
         )
 
     class Meta:
-        fields = ('importFile')
+        fields = ('importType', 'importFiles')

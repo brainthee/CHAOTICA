@@ -7,7 +7,7 @@ from django.utils import timezone
 from django.http import HttpResponseForbidden, JsonResponse, HttpResponse, HttpResponseRedirect, Http404, HttpResponseBadRequest
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 import json, os, random
-from .forms import ChaoticaUserForm, LeaveRequestForm, ProfileBasicForm, CustomConfigForm, AssignRoleForm, InviteUserForm
+from .forms import ChaoticaUserForm, ImportSiteDataForm, LeaveRequestForm, ProfileBasicForm, ManageUserForm, CustomConfigForm, AssignRoleForm, InviteUserForm
 from .enums import GlobalRoles, NotificationTypes
 from .tasks import task_send_notifications
 from .models import Notification, User, Language, Note, LeaveRequest, UserInvitation
@@ -20,13 +20,13 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.views import View
 from guardian.shortcuts import get_objects_for_user
+from guardian.decorators import permission_required_or_403
 from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.contrib import messages 
 from django.shortcuts import get_object_or_404
 from constance import config
-from constance.forms import ConstanceForm
 from constance.utils import get_values
 from .tasks import task_update_holidays
 from django.views.decorators.http import require_http_methods, require_safe, require_POST
@@ -42,6 +42,20 @@ def page_defaults(request):
 
     context['myJobs'] = Job.objects.jobs_for_user(request.user)
     context['myPhases'] = Phase.objects.phases_for_user(request.user)
+
+    # Lets add prompts/messages if we need to...
+    # Prompt for skills review...
+    if request.user.skills_last_updated():
+        days_since_updated = (timezone.now() - request.user.skills_last_updated()).days
+        if days_since_updated > config.SKILLS_REVIEW_DAYS:
+            messages.info(request=request, message="It's time to review your skills! Please visit your Profile page")
+    else:
+        messages.info(request=request, message="Make sure you remember to populate your skills! Please visit your Profile page")
+    
+    if request.user.profile_last_updated:
+        days_since_profile_updated = (timezone.now().date() - request.user.profile_last_updated).days
+        if days_since_profile_updated > config.PROFILE_REVIEW_DAYS:
+            messages.info(request=request, message="It's time to review your profile! Please visit your Profile page")
     return context
 
 
@@ -54,7 +68,6 @@ def is_ajax(request):
 def update_holidays(request):
     task_update_holidays()
     return HttpResponse()
-    task_update_holidays()
     return HttpResponseRedirect(reverse('home'))
 
 
@@ -75,6 +88,15 @@ def trigger_error(request):
 
 @require_safe
 def test_notification(request):
+    """
+    Sends a test notification
+
+    Args:
+        request (Request): A request object
+
+    Returns:
+        HttpResponseRedirect: Redirect to the referer
+    """
     notice = AppNotification(
         NotificationTypes.SYSTEM,
         "Test Notification", "This is a test notification. At ease.",
@@ -86,9 +108,20 @@ def test_notification(request):
 
 @require_safe
 def maintenance(request):
+    """
+    Displays a maintenance page if we're in maintenance mode
+
+    Args:
+        request (Request): A request object
+
+    Returns:
+        HttpResponseRedirect, HttpResponse: Either the page or a redirect to home
+    """
     if not django_settings.MAINTENANCE_MODE:
         return HttpResponseRedirect(reverse('home'))
-    return render(request, 'maintenance.html')
+    template = loader.get_template('maintenance.html')
+    context = {}
+    return HttpResponse(template.render(context, request))
 
 
 @login_required
@@ -106,7 +139,7 @@ def view_own_leave(request):
 
 @login_required
 @require_http_methods(["POST", "GET"])
-def request_leave(request):
+def request_own_leave(request):
     if request.method == "POST":
         form = LeaveRequestForm(request.POST, request=request)
         if form.is_valid():
@@ -229,7 +262,9 @@ def update_own_profile(request):
     if request.method == "POST":
         form = ProfileBasicForm(request.POST, request.FILES, instance=request.user)
         if form.is_valid():
-            form.save()
+            obj = form.save()
+            obj.profile_last_updated = timezone.now().today()
+            obj.save()
             data['form_is_valid'] = True
             data['changed_data'] = form.changed_data
     else:
@@ -340,30 +375,145 @@ def update_own_certs(request):
     return HttpResponseBadRequest()
 
 
-@staff_member_required
+@permission_required_or_403('chaotica_utils.manage_site_settings')
 @require_http_methods(["GET", "POST"])
 def app_settings(request):
-    from pprint import pprint
     context = {}
     if request.method == "POST":
-        form = ConstanceForm(request.POST.copy())
-        if form.is_valid():
-            form.save()
-        else:
-            pprint(form.errors)
-            messages.error(request, "Form is invalid")
+        settings_form = CustomConfigForm(initial=get_values())
+
+        for key in settings_form.fields:
+            value = request.POST.get(key)
+            if key != "version" and key in settings_form.fields:
+                field = settings_form.fields[key]
+                clean_value = field.clean(field.to_python(value))
+                setattr(config, key, clean_value)
+
         return HttpResponseRedirect(reverse('app_settings'))
     else:
         # Send the modal
-        form = ConstanceForm(initial=get_values())
+        settings_form = CustomConfigForm(initial=get_values())
+        import_form = ImportSiteDataForm()
 
-    context = {'app_settings': form}
+    context = {'settings_form': settings_form, 
+               'import_form': import_form}
     template = loader.get_template('app_settings.html')
     context = {**context, **page_defaults(request)}
     return HttpResponse(template.render(context, request))
 
 
-@staff_member_required
+@login_required
+@require_http_methods(["GET", "POST"])
+def settings_import_data(request):
+    data = {}
+    data['form_is_valid'] = False
+    job_output = ""
+
+    if request.method == "POST":
+        form = ImportSiteDataForm(request.POST, request.FILES)
+        if form.is_valid():
+            files = request.FILES.getlist('importFiles')
+            if form.cleaned_data['importType'] == "SmartSheetCSVImporter":
+                from .impex.importers.smartsheets import SmartSheetCSVImporter
+                importer = SmartSheetCSVImporter()
+                job_output = importer.import_data(files)
+            elif form.cleaned_data['importType'] == "ResourceManagerUserImporter":
+                from .impex.importers.resourcemanager import ResourceManagerUserImporter
+                importer = ResourceManagerUserImporter()
+                job_output = importer.import_data(files)
+
+            data['form_is_valid'] = True
+    else:
+        form = ImportSiteDataForm()
+    
+    context = {'import_form': form, 'job_output': job_output,}
+    context = {**context, **page_defaults(request)}
+    template = loader.get_template('forms/import_data_form.html')
+    # data['html_form'] = loader.render_to_string("forms/import_data_form.html",
+    #                                             context,
+    #                                             request=request)
+    # return JsonResponse(data)
+    return HttpResponse(template.render(context, request))
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def settings_export_data(request):
+    return HttpResponseForbidden()
+    data = {}
+    data['form_is_valid'] = False
+    if request.method == "POST":
+        form = ProfileBasicForm(request.POST, request.FILES, instance=request.user)
+        if form.is_valid():
+            obj = form.save()
+            obj.profile_last_updated = timezone.now().today()
+            obj.save()
+            data['form_is_valid'] = True
+            data['changed_data'] = form.changed_data
+    else:
+        form = ProfileBasicForm(instance=request.user)
+    
+    context = {'profileForm': form}
+    data['html_form'] = loader.render_to_string("partials/profile/basic_profile_form.html",
+                                                context,
+                                                request=request)
+    return JsonResponse(data)
+
+
+@require_http_methods(["GET", "POST"])
+# This is what we're doing in effect but we're doing it in the view
+# @permission_required_or_403("chaotica_utils.manage_user")
+def user_manage(request, email):
+    user = get_object_or_404(User, email=email)
+    context = {}
+    # We want to either be their LM or have appropriate global perms...
+    if request.user == user.manager or request.user == user.acting_manager or request.user.has_perm("manage_user"):
+        if request.method == "POST":
+            form = ManageUserForm(request.POST, instance=user)
+            if form.is_valid():
+                form.save()
+        else:
+            # Send the modal
+            form = ManageUserForm(instance=user)
+
+        context = {'form': form, 'user': user}
+        template = loader.get_template('chaotica_utils/user_detail_manage.html')
+        context = {**context, **page_defaults(request)}
+        return HttpResponse(template.render(context, request))
+    else:
+        # We don't have permission to manage this user...
+        return HttpResponseForbidden()
+    
+
+@permission_required_or_403("chaotica_utils.manage_user")
+@require_http_methods(["GET", "POST"])
+def user_manage_status(request, email, state):
+    if state not in ['activate', 'deactivate']:
+        return HttpResponseBadRequest()
+    
+    u = get_object_or_404(User, email=email)
+    data = dict()
+    if request.method == "POST":
+        if u.is_active and state == 'deactivate':
+            u.is_active = False
+            u.save()
+            data['form_is_valid'] = True
+        elif not u.is_active and state == 'activate':
+            u.is_active = True
+            u.save()            
+            data['form_is_valid'] = True
+        else:
+            data['form_is_valid'] = False
+
+    context = {'u': u,
+               'state': state}
+    data['html_form'] = loader.render_to_string("modals/user_manage_status.html",
+                                                context,
+                                                request=request)
+    return JsonResponse(data)
+
+
+@permission_required_or_403('chaotica_utils.manage_user')
 @require_http_methods(["GET", "POST"])
 def user_assign_global_role(request, email):
     user = get_object_or_404(User, email=email)
@@ -420,7 +570,10 @@ class ChaoticaBaseGlobalRoleView(ChaoticaBaseView, UserPassesTestMixin):
 
     def test_func(self):
         if self.role_required:
-            return self.request.user.groups.filter(
+            if self.role_required == "*":
+                return self.request.user.groups.filter().exists()
+            else:
+                return self.request.user.groups.filter(
                 name=django_settings.GLOBAL_GROUP_PREFIX+GlobalRoles.CHOICES[self.role_required][1]).exists()
         else:
             return False
@@ -452,6 +605,8 @@ def get_quote(request):
 @login_required
 @require_http_methods(["GET", "POST"])
 def user_invite(request):
+    if not config.INVITE_ENABLED:
+        return HttpResponseForbidden()
     data = {}
     data['form_is_valid'] = False
     if request.method == "POST":
@@ -479,38 +634,43 @@ def signup(request, invite_id=None):
         return redirect('home')
     else:
         new_install = User.objects.all().count() <= 1
-        # Check if we're invite only...
-        if django_settings.USER_INVITE_ONLY and not new_install:
-            if not invite_id or \
-                not is_valid_uuid(invite_id) or \
-                not UserInvitation.objects.filter(invite_id=invite_id).exists():
-                context = {}
-                template = loader.get_template('errors/invite_only.html')
-                return HttpResponse(template.render(context, request))
-            
-            invite = get_object_or_404(UserInvitation, invite_id=invite_id)
-            if invite.accepted:
-                # Already accepted - rendor an error page
-                context = {}
-                template = loader.get_template('errors/invite_used.html')
-                return HttpResponse(template.render(context, request))
-            elif invite.is_expired():
-                # Already accepted - rendor an error page
-                context = {}
-                template = loader.get_template('errors/invite_expired.html')
-                return HttpResponse(template.render(context, request))
-            else:
-                if request.method == 'POST':
-                    form = ChaoticaUserForm(request.POST, invite=invite)
-                else:
-                    form = ChaoticaUserForm(invite=invite)
-
-        else:
-            # Invitation isn't required - self sign up!
+        # Ok, despite everything, if it's a new install... lets go!
+        if new_install:
             if request.method == 'POST':
                 form = ChaoticaUserForm(request.POST)
             else:
                 form = ChaoticaUserForm()
+        else:
+            if invite_id and is_valid_uuid(invite_id) and UserInvitation.objects.filter(invite_id=invite_id).exists():
+                # Valid invite
+                invite = get_object_or_404(UserInvitation, invite_id=invite_id)
+                if invite.accepted:
+                    # Already accepted - rendor an error page
+                    context = {}
+                    template = loader.get_template('errors/invite_used.html')
+                    return HttpResponse(template.render(context, request))
+                elif invite.is_expired():
+                    # Already accepted - rendor an error page
+                    context = {}
+                    template = loader.get_template('errors/invite_expired.html')
+                    return HttpResponse(template.render(context, request))
+                else:
+                    if request.method == 'POST':
+                        form = ChaoticaUserForm(request.POST, invite=invite)
+                    else:
+                        form = ChaoticaUserForm(invite=invite)
+            else:
+                # Invalid invite (non existant or invalid - doesn't matter for our purpose)
+                if config.REGISTRATION_ENABLED:
+                    if request.method == 'POST':
+                        form = ChaoticaUserForm(request.POST)
+                    else:
+                        form = ChaoticaUserForm()
+                else:
+                    # Return registration disabled error
+                    context = {}
+                    template = loader.get_template('errors/registration_disabled.html')
+                    return HttpResponse(template.render(context, request))
 
         if request.method == 'POST' and form.is_valid():
             form.save()
@@ -546,6 +706,7 @@ class UserListView(UserBaseView, ListView):
     to access all job objects"""
 
 class UserDetailView(UserBaseView, DetailView):
+    role_required = "*" # Allow all users with a role to view "public profiles"
 
     def get_object(self, queryset=None):
         if self.kwargs.get('email'):
@@ -566,7 +727,6 @@ class UserUpdateView(UserBaseView, UpdateView):
 
 class UserDeleteView(UserBaseView, DeleteView):
     """View to delete a job"""
-
 
 ######################################
 # Autocomplete fields
@@ -595,45 +755,52 @@ def site_search(request):
     context = {}
     q = request.POST.get('q', '').capitalize()
     results_count = 0
-    from jobtracker.models import Job, Phase, Client, Service, Skill, BillingCode
+    from jobtracker.models import Job, Phase, Client, Service, Skill, BillingCode, Certification
     if is_ajax(request) and len(q) > 2:
         ## Jobs
-        jobs_search = get_objects_for_user(request.user, 'jobtracker.view_job', Job.objects.all()).filter(
+        jobs_search = get_objects_for_user(request.user, 'jobtracker.view_job', Job).filter(
             Q(title__icontains=q) | Q(overview__icontains=q) | Q(slug__icontains=q)
                 | Q(id__icontains=q))
         context['search_jobs'] = jobs_search
         results_count = results_count + jobs_search.count()
 
         ## Phases
+        allowed_jobs = get_objects_for_user(request.user, 'jobtracker.view_job', Job)
         phases_search = Phase.objects.filter(
             Q(title__icontains=q) | Q(description__icontains=q) | Q(phase_id__icontains=q),
-            job__in=jobs_search,)
+            job__in=allowed_jobs,)
         context['search_phases'] = phases_search
         results_count = results_count + phases_search.count()
 
         ## Clients
-        cl_search = Client.objects.filter(
-            Q(name__icontains=q))
+        cl_search = get_objects_for_user(request.user, 'jobtracker.view_client', Client).filter(
+                        Q(name__icontains=q))
         context['search_clients'] = cl_search
         results_count = results_count + cl_search.count()
 
         ## BillingCodes
-        bc_search = BillingCode.objects.filter(
+        bc_search = get_objects_for_user(request.user, 'jobtracker.view_billingcode', BillingCode).filter(
             Q(code__icontains=q))
         context['search_billingCodes'] = bc_search
         results_count = results_count + bc_search.count()
 
         ## Services
-        sv_search = Service.objects.filter(
+        sv_search = get_objects_for_user(request.user, 'jobtracker.view_service', Service).filter(
             Q(name__icontains=q))
         context['search_services'] = sv_search
         results_count = results_count + sv_search.count()
 
         ## Skills
-        sk_search = Skill.objects.filter(
+        sk_search = get_objects_for_user(request.user, 'jobtracker.view_skill', Skill).filter(
             Q(name__icontains=q))
         context['search_skills'] = sk_search
         results_count = results_count + sk_search.count()
+
+        ## Certifications
+        cert_search = get_objects_for_user(request.user, 'jobtracker.view_certification', Certification).filter(
+            Q(name__icontains=q))
+        context['search_certs'] = cert_search
+        results_count = results_count + cert_search.count()
 
         ## Users
         if request.user.is_superuser:

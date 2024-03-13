@@ -2,8 +2,9 @@ from django.db import models
 from jobtracker.enums import TimeSlotDeliveryRole, PhaseStatuses
 from django_fsm import FSMIntegerField, transition, can_proceed
 from django.conf import settings
+from constance import config
 from django.utils import timezone
-from django.utils.text import slugify
+from chaotica_utils.utils import unique_slug_generator
 from django.urls import reverse
 from simple_history.models import HistoricalRecords
 from django.db.models import Q
@@ -20,6 +21,7 @@ from chaotica_utils.views import log_system_activity
 from datetime import timedelta
 from decimal import Decimal
 from django_bleach.models import BleachField
+from django.db.models.functions import Lower
 from ..models.job import Job
 from ..enums import BOOL_CHOICES, TechQARatings, PresQARatings, FeedbackType, JobStatuses
 
@@ -57,7 +59,7 @@ class Phase(models.Model):
     status = FSMIntegerField(choices=PhaseStatuses.CHOICES, db_index=True, default=PhaseStatuses.DRAFT)
 
     # Phase info
-    phase_number = models.IntegerField(db_index=True)
+    phase_number = models.IntegerField(db_index=True, default=0)
     title = models.CharField(max_length=200)
 
     # General test info
@@ -163,7 +165,7 @@ class Phase(models.Model):
         else:
             # Calculate start from last delivery slot
             if self.timeslots.filter(Q(deliveryRole=TimeSlotDeliveryRole.REPORTING)|Q(deliveryRole=TimeSlotDeliveryRole.DELIVERY)).exists():
-                return self.timeslots.filter(Q(deliveryRole=TimeSlotDeliveryRole.REPORTING)|Q(deliveryRole=TimeSlotDeliveryRole.DELIVERY)).order_by('end').first().end
+                return (self.timeslots.filter(Q(deliveryRole=TimeSlotDeliveryRole.REPORTING)|Q(deliveryRole=TimeSlotDeliveryRole.DELIVERY)).order_by('end').first().end).date()
             else:
                 # No slots - return None
                 return None
@@ -175,7 +177,7 @@ class Phase(models.Model):
         else:
             # Calculate start from last delivery slot
             if self.timeslots.filter(Q(deliveryRole=TimeSlotDeliveryRole.REPORTING)|Q(deliveryRole=TimeSlotDeliveryRole.DELIVERY)).exists():
-                return self.timeslots.filter(Q(deliveryRole=TimeSlotDeliveryRole.REPORTING)|Q(deliveryRole=TimeSlotDeliveryRole.DELIVERY)).order_by('end').first().end + timedelta(days=5)
+                return (self.timeslots.filter(Q(deliveryRole=TimeSlotDeliveryRole.REPORTING)|Q(deliveryRole=TimeSlotDeliveryRole.DELIVERY)).order_by('end').first().end + timedelta(days=5)).date()
             else:
                 # No slots - return None
                 return None
@@ -187,7 +189,7 @@ class Phase(models.Model):
         else:
             # Calculate start from first delivery slot
             if self.timeslots.filter(Q(deliveryRole=TimeSlotDeliveryRole.REPORTING)|Q(deliveryRole=TimeSlotDeliveryRole.DELIVERY)).exists():
-                return self.timeslots.filter(Q(deliveryRole=TimeSlotDeliveryRole.REPORTING)|Q(deliveryRole=TimeSlotDeliveryRole.DELIVERY)).order_by('end').first().end + timedelta(weeks=1)
+                return (self.timeslots.filter(Q(deliveryRole=TimeSlotDeliveryRole.REPORTING)|Q(deliveryRole=TimeSlotDeliveryRole.DELIVERY)).order_by('end').first().end + timedelta(weeks=1)).date()
             else:
                 # No slots - return None
                 return None
@@ -198,7 +200,7 @@ class Phase(models.Model):
         if self.delivery_date:
             # Two ways to be late - it's not delivered yet and it should have been...
             if self.status < PhaseStatuses.DELIVERED:
-                if self.delivery_date < timezone.now():
+                if self.delivery_date < timezone.now().today().date():
                     return True
                         
             # Or it was delivered but beyond the actual time and we still want to mark it as late
@@ -213,7 +215,7 @@ class Phase(models.Model):
             # Two ways to be late - it's not in tqa yet and it should have been...
             if self.number_of_reports > 0:
                 if self.status < PhaseStatuses.QA_TECH:
-                    if self.due_to_techqa < timezone.now():
+                    if self.due_to_techqa < timezone.now().today().date():
                         return True
                         
                 # Or it was delivered but beyond the actual time and we still want to mark it as late
@@ -228,7 +230,7 @@ class Phase(models.Model):
             # Two ways to be late - it's not in tqa yet and it should have been...
             if self.number_of_reports > 0:
                 if self.status < PhaseStatuses.QA_PRES:
-                    if self.due_to_presqa < timezone.now():
+                    if self.due_to_presqa < timezone.now().today().date():
                         return True
                         
                 # Or it was delivered but beyond the actual time and we still want to mark it as late
@@ -257,14 +259,20 @@ class Phase(models.Model):
         return Feedback.objects.filter(phase=self, feedbackType=FeedbackType.PRES)
 
     # Scoped Time
-    delivery_hours = models.DecimalField('Delivery Hours', max_digits=6, default=0, decimal_places=2, )    
-    reporting_hours = models.DecimalField('Reporting Hours', max_digits=6, default=0, decimal_places=2, )   
-    mgmt_hours = models.DecimalField('Management Hours', max_digits=6, default=0, decimal_places=2, )   
-    qa_hours = models.DecimalField('QA Hours', max_digits=6, default=0, decimal_places=2, )   
-    oversight_hours = models.DecimalField('Oversight Hours', max_digits=6, default=0, decimal_places=2, )   
-    debrief_hours = models.DecimalField('Debrief Hours', max_digits=6, default=0, decimal_places=2, )   
-    contingency_hours = models.DecimalField('Contingency Hours', max_digits=6, default=0, decimal_places=2, )   
-    other_hours = models.DecimalField('Other Hours', max_digits=6, default=0, decimal_places=2, )   
+    delivery_hours = models.DecimalField('Delivery Hours', max_digits=6, default=0, decimal_places=3, )    
+    reporting_hours = models.DecimalField('Reporting Hours', max_digits=6, default=0, decimal_places=3, )   
+    mgmt_hours = models.DecimalField('Management Hours', max_digits=6, default=0, decimal_places=3, )   
+    qa_hours = models.DecimalField('QA Hours', max_digits=6, default=0, decimal_places=3, )   
+    oversight_hours = models.DecimalField('Oversight Hours', max_digits=6, default=0, decimal_places=3, )   
+    debrief_hours = models.DecimalField('Debrief Hours', max_digits=6, default=0, decimal_places=3, )   
+    contingency_hours = models.DecimalField('Contingency Hours', max_digits=6, default=0, decimal_places=3, )   
+    other_hours = models.DecimalField('Other Hours', max_digits=6, default=0, decimal_places=3, )   
+
+    # notification fields
+    notifications_workflow_last_fired = models.DateTimeField(blank=True, null=True)
+    notifications_late_tqa_last_fired = models.DateTimeField(blank=True, null=True)
+    notifications_late_pqa_last_fired = models.DateTimeField(blank=True, null=True)
+    notifications_late_delivery_last_fired = models.DateTimeField(blank=True, null=True)
 
     # change control
     last_modified = models.DateTimeField(auto_now=True)
@@ -290,9 +298,88 @@ class Phase(models.Model):
             id=self.get_id(),
             title=self.title
         )
+
+    ###########################################
+    ## Notifications
+    ###########################################
+
+    ## Late to TQA
+    def fire_late_to_tqa_notification(self):
+        email_template = "emails/phase_content.html"
+        now = timezone.now()
+
+        if self.is_tqa_late and (self.status == PhaseStatuses.IN_PROGRESS or self.status == PhaseStatuses.PENDING_TQA):
+            # check if we should or not...
+            time_since = now - self.notifications_late_tqa_last_fired
+            hours_since = time_since.days * 24 + time_since.seconds/3600
+            if not self.notifications_late_tqa_last_fired or hours_since > config.TQA_LATE_HOURS:
+                # Ok, either it's been greater than config.TQA_LATE_HOURS or we haven't sent it...
+                # We should tell the team!
+                users_to_notify = self.team()
+                notice = AppNotification(
+                    NotificationTypes.PHASE, 
+                    "{phase} - is late to Tech QA".format(phase=self),
+                    "{phase} is late to Technical QA. Please ensure you communicate with the team when it will be ready.".format(phase=self),
+                    email_template, action_link=self.get_absolute_url(), phase=self)
+                task_send_notifications(notice, users_to_notify)
+                log_system_activity(self, "Sent TQA late notification")
+                self.notifications_late_tqa_last_fired = now
+                self.save()
+
+
+    ## Late to PQA
+    def fire_late_to_pqa_notification(self):
+        email_template = "emails/phase_content.html"     
+        now = timezone.now()
+
+        if self.is_pqa_late and (self.status == PhaseStatuses.PENDING_PQA or self.status == PhaseStatuses.QA_TECH or self.status == PhaseStatuses.QA_TECH_AUTHOR_UPDATES):
+            # check if we should or not...
+            hours_since = 0
+            if self.notifications_late_pqa_last_fired:
+                time_since = now - self.notifications_late_pqa_last_fired
+                hours_since = time_since.days * 24 + time_since.seconds/3600
+            if not self.notifications_late_pqa_last_fired or hours_since > config.PQA_LATE_HOURS:
+                # Ok, either it's been greater than config.PQA_LATE_HOURS or we haven't sent it...
+                # We should tell the team!
+                users_to_notify = self.team()
+                notice = AppNotification(
+                    NotificationTypes.PHASE, 
+                    "{phase} - is late to Pres QA".format(phase=self),
+                    "{phase} is late to Presentation QA. Please ensure you communicate with the team when it will be ready.".format(phase=self),
+                    email_template, action_link=self.get_absolute_url(), phase=self)
+                task_send_notifications(notice, users_to_notify)
+                log_system_activity(self, "Sent PQA late notification")
+                self.notifications_late_pqa_last_fired = now
+                self.save()
+
+
+    ## Late to Delivery
+    def fire_late_to_delivery_notification(self):
+        email_template = "emails/phase_content.html"     
+        now = timezone.now()
+
+        if self.is_delivery_late:
+            # check if we should or not...
+            time_since = now - self.notifications_late_delivery_last_fired
+            hours_since = time_since.days * 24 + time_since.seconds/3600
+            if not self.notifications_late_delivery_last_fired or hours_since > config.DELIVERY_LATE_HOURS:
+                # Ok, either it's been greater than config.PQA_LATE_HOURS or we haven't sent it...
+                # We should tell the team!
+                users_to_notify = self.team()
+                notice = AppNotification(
+                    NotificationTypes.PHASE, 
+                    "{phase} - is late to Delivery".format(phase=self),
+                    "{phase} is late to Delivery. Please ensure you communicate with the team when it will be ready.".format(phase=self),
+                    email_template, action_link=self.get_absolute_url(), phase=self)
+                task_send_notifications(notice, users_to_notify)
+                log_system_activity(self, "Sent Delivery late notification")
+                self.notifications_late_delivery_last_fired = now
+                self.save()
+
     
     def refire_status_notification(self):
         self.fire_status_notification(self.status)
+
     
     def fire_status_notification(self, target_status):   
         email_template = "emails/phase_content.html"     
@@ -454,6 +541,10 @@ class Phase(models.Model):
         for slot in TimeSlot.objects.filter(phase=self):
             if slot.user.pk not in ids:
                 ids.append(slot.user.pk)
+        if self.job.account_manager and self.job.account_manager.pk not in ids:
+                ids.append(self.job.account_manager.pk)
+        if self.job.dep_account_manager and self.job.dep_account_manager.pk not in ids:
+                ids.append(self.job.dep_account_manager.pk)
         if self.project_lead and self.project_lead.pk not in ids:
                 ids.append(self.project_lead.pk)
         if self.report_author and self.report_author.pk not in ids:
@@ -467,6 +558,11 @@ class Phase(models.Model):
 
     # Gets scheduled users and assigned users (e.g. lead/author/qa etc)        
     def team(self):
+        """Gets scheduled users as well as specifically assigned users (lead, author, QA, Account Manager(s))
+
+        Returns:
+            User: List of Users
+        """
         ids = self.team_pks()
         if ids:
             return User.objects.filter(pk__in=ids)
@@ -566,10 +662,13 @@ class Phase(models.Model):
         return self.notes.filter(is_system_note=True)
 
     def save(self, *args, **kwargs):
+        if not self.phase_number:
+            self.phase_number = self.job.phases.all().count() + 1
         if not self.phase_id:
             self.phase_id = self.get_id()
+        # lets increment the phase_number
         if not self.slug:
-            self.slug = slugify(str(self.phase_id)+self.title)
+            self.slug = unique_slug_generator(self, str(self.phase_id)+self.title)
         super(Phase, self).save(*args, **kwargs)
 
     def get_absolute_url(self):

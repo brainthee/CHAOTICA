@@ -1,8 +1,8 @@
 from django import forms
 from django.urls import reverse
-from .models import Contact, Job, Feedback, TimeSlot, TimeSlotType, Client, Phase, OrganisationalUnit, OrganisationalUnitMember, Skill, Service, WorkflowTask, SkillCategory
+from .models import Contact, Job, Certification, Feedback, TimeSlot, TimeSlotType, Client, Phase, OrganisationalUnit, OrganisationalUnitMember, Skill, Service, WorkflowTask, SkillCategory
 from chaotica_utils.models import Note, User
-from .enums import DefaultTimeSlotTypes
+from .enums import DefaultTimeSlotTypes, JobStatuses, PhaseStatuses
 from crispy_forms.helper import FormHelper
 from crispy_forms.bootstrap import StrictButton, Accordion, AccordionGroup
 from crispy_forms.layout import Layout, Row, Column, Field, Div, HTML, Submit, Reset
@@ -23,13 +23,15 @@ class SchedulerFilter(forms.Form):
     skills_can_do_support = forms.ModelMultipleChoiceField(required=False, label="Can Do With Support",
                                     queryset=Skill.objects.all(),
                                     widget=autocomplete.ModelSelect2Multiple(),)
-    services = forms.ModelMultipleChoiceField(required=False,
-                                    queryset=Service.objects.all(),
-                                    widget=autocomplete.ModelSelect2Multiple(),)
     
     services = forms.ModelMultipleChoiceField(required=False,
                                     queryset=Service.objects.all(),
                                     widget=autocomplete.ModelSelect2Multiple(),)
+    
+    org_units = forms.ModelMultipleChoiceField(required=False,
+                                    queryset=OrganisationalUnit.objects.all(),
+                                    widget=autocomplete.ModelSelect2Multiple(),)
+    
     from_date = forms.DateField(required=False,
                             widget=DatePickerInput(),)
     to_date = forms.DateField(required=False,
@@ -48,36 +50,54 @@ class SchedulerFilter(forms.Form):
         self.helper.form_method = 'get'
         self.helper.form_class = 'form-inline'
         self.helper.layout = Layout(
-            Row(
-                Column(
-                    # Reset("reset-button", "Reset",  css_class="btn-phoenix-secondary"),
-                    css_class="col"),
-                Column(
-                    Submit("apply", 'Apply', css_class="btn-phoenix-success"),
-                    css_class="col-md-auto"),
-            ),
-            Accordion(
-                # AccordionGroup('Date Filter',
-                #     'from_date',
-                #     'to_date',
-                # ),
-                AccordionGroup('Users Filter',
-                    Field('users', css_class="extra", style="width: 100%;"),
+
+            Div(
+                HTML("<h5 class=\"setting-panel-item-title\">Date Range</h5>"),
+                Row(
+                    Column(
+                        Field('from_date',),
+                    css_class="me-3"),
+                    Column(
+                        Field('to_date',),                        
+                    ),
                 ),
-                AccordionGroup('Skills Filter',
+                css_class="setting-panel-item",
+            ),
+
+            Div(
+                HTML("<h5 class=\"setting-panel-item-title\">Users</h5>"),
+                Row(
+                    Field('users', style="width: 100%;"),
+                    Field('org_units', style="width: 100%;")
+                ),
+                css_class="setting-panel-item",
+            ),
+
+            Div(
+                HTML("<h5 class=\"setting-panel-item-title\">Skills</h5>"),
+                Row(
                     Field('skills_specialist', css_class="extra", style="width: 100%;"),
                     Field('skills_can_do_alone', css_class="extra", style="width: 100%;"),
                     Field('skills_can_do_support', css_class="extra", style="width: 100%;"),
                 ),
-                AccordionGroup('Service Filter',
-                    Field('services', css_class="extra", style="width: 100%;"),
+                css_class="setting-panel-item",
+            ),
+
+            Div(
+                HTML("<h5 class=\"setting-panel-item-title\">Service</h5>"),
+                Row(
+                    Field('services', style="width: 100%;"),
                 ),
+                css_class="setting-panel-item",
+            ),
+            Row(
+                Submit("apply", 'Apply', css_class="btn-phoenix-success d-grid mb-3 mt-5"),
             ),
         )
 
     class Meta:
         fields = ('skills_specialist', 'skills_can_do_alone', 'skills_can_do_support', 
-                  'users', 'services',
+                  'users', 'services', 'org_units',
                   'from_date', 'to_date',)
         
 
@@ -521,22 +541,20 @@ class JobForm(forms.ModelForm):
     )    
 
     def __init__(self, *args, **kwargs):
+        self.created_by = kwargs['initial']['created_by']
         self.user = kwargs.pop('user')  # To get request.user. Do not use kwargs.pop('user', None) due to potential security hole
         super(JobForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
+
+        # Set fields not in CHANGEABLE_FIELDS to readonly
+        for field in self.fields:
+            self.fields[field].label = ""
+            if field not in JobStatuses.CHANGEABLE_FIELDS[self.instance.status][1]:
+                self.fields[field].disabled = True
+
         self.fields['unit'].queryset = OrganisationalUnit.objects.filter(
             pk__in=self.user.unit_memberships.filter(role__in=UnitRoles.get_roles_with_permission('jobtracker.can_add_job')).values_list('unit').distinct())
-        self.fields['title'].label = ""
-        self.fields['client'].label = ""
-        self.fields['indicative_services'].label = ""  
-        self.fields['external_id'].label = ""
-        self.fields['unit'].label = ""
-        self.fields['overview'].label = ""  
-        self.fields['revenue'].label = ""  
-        self.fields['account_manager'].label = ""  
-        self.fields['dep_account_manager'].label = ""  
-        self.fields['desired_start_date'].label = ""  
-        self.fields['desired_delivery_date'].label = ""  
+
 
     class Meta:
         model = Job
@@ -545,19 +563,7 @@ class JobForm(forms.ModelForm):
           'desired_delivery_date': DatePickerInput(),
           'unit': autocomplete.ModelSelect2(),
         }
-        fields = [
-            "unit", 
-            "client", 
-            "indicative_services",
-            "title", 
-            "external_id",
-            "revenue", 
-            "overview", 
-            "account_manager", 
-            "dep_account_manager",
-            "desired_start_date",
-            "desired_delivery_date",
-        ]
+        exclude = ['created_by']
 
 class PhaseForm(forms.ModelForm):
 
@@ -575,18 +581,17 @@ class PhaseForm(forms.ModelForm):
             job = kwargs.pop('job')
         super(PhaseForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
+        # Set fields not in CHANGEABLE_FIELDS to readonly
+        for field in self.fields:
+            if field.endswith("hours"):
+                # Hide labels for the *hours fields as we render them nicer in a table
+                self.fields[field].label = ""
+            if field not in PhaseStatuses.CHANGEABLE_FIELDS[self.instance.status][1]:
+                self.fields[field].disabled = True
         if job:
             self.fields['phase_number'].initial = Phase.objects.filter(job=job).count() + 1
-        self.fields['delivery_hours'].label = False
-        self.fields['reporting_hours'].label = False
-        self.fields['mgmt_hours'].label = False
-        self.fields['qa_hours'].label = False
-        self.fields['oversight_hours'].label = False
-        self.fields['debrief_hours'].label = False
-        self.fields['contingency_hours'].label = False
-        self.fields['contingency_hours'].css_class = "mb-0"
-        self.fields['other_hours'].label = False
 
+        self.fields['contingency_hours'].css_class = "mb-0"
         self.fields['desired_start_date'].widget = DatePickerInput()
         self.fields['due_to_techqa_set'].widget = DatePickerInput()
         self.fields['due_to_presqa_set'].widget = DatePickerInput()
@@ -600,35 +605,36 @@ class PhaseForm(forms.ModelForm):
           'due_to_presqa_set': DatePickerInput(),
           'desired_delivery_date': DatePickerInput(),
         }
-        fields = [
-            "phase_number",
-            "title",
-            "service",
-            "description",
-            "test_target",
-            "comm_reqs",
-            "delivery_hours",
-            "reporting_hours",
-            "mgmt_hours",
-            "qa_hours",
-            "oversight_hours",
-            "debrief_hours",
-            "contingency_hours",
-            "other_hours",
-            "desired_start_date",
-            "due_to_techqa_set",
-            "due_to_presqa_set",
-            "desired_delivery_date",
+        exclude = ['slug', 'phase_id', 'job']
+        # fields = [
+        #     "phase_number",
+        #     "title",
+        #     "service",
+        #     "description",
+        #     "test_target",
+        #     "comm_reqs",
+        #     "delivery_hours",
+        #     "reporting_hours",
+        #     "mgmt_hours",
+        #     "qa_hours",
+        #     "oversight_hours",
+        #     "debrief_hours",
+        #     "contingency_hours",
+        #     "other_hours",
+        #     "desired_start_date",
+        #     "due_to_techqa_set",
+        #     "due_to_presqa_set",
+        #     "desired_delivery_date",
 
-            "is_testing_onsite",
-            "is_reporting_onsite",
-            "number_of_reports",
-            "report_to_be_left_on_client_site",
-            "location",
-            "restrictions",
-            "scheduling_requirements",
-            "prerequisites",
-            ]
+        #     "is_testing_onsite",
+        #     "is_reporting_onsite",
+        #     "number_of_reports",
+        #     "report_to_be_left_on_client_site",
+        #     "location",
+        #     "restrictions",
+        #     "scheduling_requirements",
+        #     "prerequisites",
+        #     ]
         
 
 class ScopeInlineForm(forms.ModelForm):
@@ -829,6 +835,15 @@ class ClientForm(forms.ModelForm):
             'rows': 5,
         },),
     )    
+    specific_reporting_requirements = forms.CharField(
+        required=False,
+        widget=forms.Textarea(
+        attrs={
+            'class': "tinymce",
+            'data-tinymce': '{"height":"15rem","placeholder":"Write an special requirements of this team here..."}',
+            'rows': 5,
+        },),
+    )    
     account_managers = forms.ModelMultipleChoiceField(
         queryset=User.objects.filter(is_active=True),
         widget=autocomplete.ModelSelect2Multiple(url='user-autocomplete',
@@ -850,17 +865,21 @@ class ClientForm(forms.ModelForm):
         self.fields['name'].label = False
         self.fields['short_name'].label = False
         self.fields['specific_requirements'].label = False
+        self.fields['specific_reporting_requirements'].label = False
         self.fields['account_managers'].label = False
         self.fields['tech_account_managers'].label = False
 
     class Meta:
         model = Client
-        fields = ["name", "short_name", "specific_requirements", "account_managers", "tech_account_managers"]
+        fields = ["name", "short_name", "specific_reporting_requirements", "specific_requirements", "account_managers", "tech_account_managers"]
 
 
 class ClientContactForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
+        client=None
+        if 'client' in kwargs:
+            client = kwargs.pop('client')
         super(ClientContactForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
         self.fields['salutation'].label = False
@@ -913,6 +932,24 @@ class OrganisationalUnitMemberForm(forms.ModelForm):
         model = OrganisationalUnitMember
         fields = ["member", 
                 ]
+
+class OrganisationalUnitMemberRolesForm(forms.ModelForm):
+    # role = forms.ModelChoiceField(
+    #     queryset=User.objects.filter(is_active=True),
+    #     widget=autocomplete.ModelSelect2(),)
+
+    def __init__(self, *args, **kwargs):
+        org_unit = kwargs.pop('org_unit', None)
+        super(OrganisationalUnitMemberRolesForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.helper.form_tag = False
+        self.helper.layout = Layout(
+            Field('role', style="width: 100%;"),
+        )
+
+    class Meta:
+        model = OrganisationalUnitMember
+        fields = ["role", ]
 
 
 class OrganisationalUnitForm(forms.ModelForm):
@@ -967,6 +1004,19 @@ class OrganisationalUnitForm(forms.ModelForm):
           'businessHours_startTime': TimePickerInput(),
           'businessHours_endTime': TimePickerInput(),
         }
+
+
+class CertificationForm(forms.ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super(CertificationForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.fields['name'].label = False
+        
+
+    class Meta:
+        model = Certification
+        fields = ["name"]
 
 
 class ServiceForm(forms.ModelForm):

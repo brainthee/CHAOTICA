@@ -59,6 +59,9 @@
         },
         displayEventTime: false,
         refetchResourcesOnNavigate: true,
+        contentHeight: 'auto',
+        stickyFooterScrollbar : true,
+        // resourceAreaWidth: '',
         resourceAreaHeaderContent: 'Users',
         resources: {
             url: "{% url 'view_scheduler_members' %}",
@@ -135,6 +138,7 @@
           // https://swisnl.github.io/jQuery-contextMenu/
           $.contextMenu({
             selector: '.fc-scroller', 
+            zIndex: 10,
             trigger: 'none',
             build: function($triggerElement, e){
               return {

@@ -1,7 +1,7 @@
 from django.urls import reverse
 from menu import Menu, MenuItem
 from .enums import GlobalRoles
-from .utils import RoleMenuItem
+from .utils import RoleMenuItem, PermMenuItem
 
 
 Menu.add_item("user", MenuItem("Profile",
@@ -15,27 +15,30 @@ Menu.add_item("user", MenuItem("Manage Annual Leave",
                                weight=1,))
 
 admin_children = (
-    MenuItem("Users",
+    PermMenuItem("Users",
         reverse("user_list"),
         icon="user-group",
+        perm="chaotica_utils.manage_user",
         weight=10,),
-    MenuItem("Settings",
+    PermMenuItem("Settings",
         reverse("app_settings"),
         icon="sliders",
+        perm="chaotica_utils.manage_site_settings",
+        weight=10,),
+    PermMenuItem("Run Background Tasks",
+        reverse("run_tasks"),
+        icon="list-check",
+        perm="chaotica_utils.manage_site_settings",
+        weight=10,),
+    PermMenuItem("Send Test Notification",
+        reverse("test_notification"),
+        icon="envelope-open-text",
+        perm="chaotica_utils.manage_site_settings",
         weight=10,),
     MenuItem("Django Admin",
         reverse("admin:index"),
         icon="wrench",
-        weight=10,),
-    MenuItem("Run Tasks",
-        reverse("run_tasks"),
         check=lambda request: request.user.is_superuser,
-        icon="list-check",
-        weight=10,),
-    MenuItem("Test Notification",
-        reverse("test_notification"),
-        check=lambda request: request.user.is_superuser,
-        icon="envelope-open-text",
         weight=10,),
 )
 

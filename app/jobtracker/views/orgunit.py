@@ -11,7 +11,7 @@ from chaotica_utils.tasks import task_send_notifications
 from chaotica_utils.enums import UnitRoles
 from chaotica_utils.models import User
 from ..models import OrganisationalUnit, OrganisationalUnitMember
-from ..forms import OrganisationalUnitForm, OrganisationalUnitMemberForm
+from ..forms import OrganisationalUnitForm, OrganisationalUnitMemberForm, OrganisationalUnitMemberRolesForm
 import logging
 from django.contrib import messages 
 
@@ -39,7 +39,8 @@ class OrganisationalUnitListView(OrganisationalUnitBaseView, ListView):
 def organisationalunit_add(request, slug):
     org_unit = get_object_or_404(OrganisationalUnit, slug=slug)
     # Check we have permission to add...
-    # TODO
+    get_object_or_404(OrganisationalUnitMember, member=request.user, unit=org_unit, 
+                                      role=UnitRoles.MANAGER)
 
     data = dict()
     if request.method == "POST":
@@ -48,7 +49,6 @@ def organisationalunit_add(request, slug):
             membership = form.save(commit=False)
             membership.unit = org_unit
             if membership:
-
                 # Ok, lets see if we need to make it pending...
                 if org_unit.approval_required:
                     membership.role = UnitRoles.PENDING
@@ -105,6 +105,37 @@ def organisationalunit_join(request, slug):
                                                 request=request)
     return JsonResponse(data)
 
+def organisationalunit_manage_roles(request, slug, member_pk):
+    org_unit = get_object_or_404(OrganisationalUnit, slug=slug)
+    membership = get_object_or_404(OrganisationalUnitMember, unit=org_unit, pk=member_pk)
+    # Lets make sure our own membership is high enough level!
+    get_object_or_404(OrganisationalUnitMember, member=request.user, unit=org_unit, 
+                                      role=UnitRoles.MANAGER)
+    
+    # Silly thing... lets not be able to modify our own account!
+    if OrganisationalUnitMember.objects.filter(member=request.user, pk=member_pk).exists():
+        # Naughty naughty...
+        return HttpResponseBadRequest()
+
+    # Okay, lets go!    
+    data = dict()
+    if request.method == "POST":
+        form = OrganisationalUnitMemberRolesForm(request.POST, instance=membership, org_unit=org_unit)
+        if form.is_valid():
+            membership = form.save()
+            data['form_is_valid'] = True
+        else:
+            messages.error(request, "Error requesting membership. Please report this!")
+            data['form_is_valid'] = False
+    else:
+        form = OrganisationalUnitMemberRolesForm(instance=membership, org_unit=org_unit)
+
+
+    context = {'orgUnit': org_unit, 'membership': membership, 'form': form}
+    data['html_form'] = loader.render_to_string("jobtracker/modals/organisationalunit_manage_roles.html",
+                                                context,
+                                                request=request)
+    return JsonResponse(data)
 
 def organisationalunit_review_join_request(request, slug, member_pk):
     org_unit = get_object_or_404(OrganisationalUnit, slug=slug)

@@ -108,6 +108,23 @@
       {% endfor %}
     </div>
     {% endif %}
+
+    {% if search_certs %}
+    <hr class="text-200 my-0" />
+    <h6 class="dropdown-header text-1000 fs--1 border-bottom border-200 py-2 lh-sm">Certifications</h6>
+    <div class="py-2">
+      {% for cert in search_certs %}
+      <a class="dropdown-item" href="{{ cert.get_absolute_url }}">
+        <div class="d-flex align-items-center">
+          <div class="fw-normal text-1000 title">
+            <span class="fab fa-readme-code text-900" data-fa-transform="shrink-2"></span>
+            {{ cert }}
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
     
     {% if search_users %}
     <hr class="text-200 my-0" />
@@ -115,7 +132,7 @@
     <div class="py-2">
       {% for usr in search_users %}
       <a class="dropdown-item py-2 d-flex align-items-center" href="{{ usr.get_absolute_url }}">
-        <div class="avatar avatar-l status-online  me-2 text-900">
+        <div class="avatar avatar-l status-{{ usr.get_current_status }}  me-2 text-900">
           <img class="rounded-circle " src="{{ usr.get_avatar_url }}" alt="" />
         </div>
         <div class="flex-1">

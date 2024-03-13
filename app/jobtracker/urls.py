@@ -81,10 +81,10 @@ urlpatterns = [
     path('client/<str:slug>/delete/', views.ClientDeleteView.as_view(), name='client_delete'),
 
     # Client CRUD
-    path('client/<str:slug>/contact/create/', views.ClientContactCreateView.as_view(), name='client_contact_create'),
-    path('client/<str:slug>/contact/<int:pk>/', views.ClientContactDetailView.as_view(), name='client_contact_detail'),
-    path('client/<str:slug>/contact/<int:pk>/update/', views.ClientContactUpdateView.as_view(), name='client_contact_update'),
-    path('client/<str:slug>/contact/<int:pk>/delete/', views.ClientContactDeleteView.as_view(), name='client_contact_delete'),
+    path('client/<str:client_slug>/contact/create/', views.ClientContactCreateView.as_view(), name='client_contact_create'),
+    path('client/<str:client_slug>/contact/<int:pk>/', views.ClientContactDetailView.as_view(), name='client_contact_detail'),
+    path('client/<str:client_slug>/contact/<int:pk>/update/', views.ClientContactUpdateView.as_view(), name='client_contact_update'),
+    path('client/<str:client_slug>/contact/<int:pk>/delete/', views.ClientContactDeleteView.as_view(), name='client_contact_delete'),
 
     # Service CRUD
     path('ops/services/', views.ServiceListView.as_view(), name='service_list'),
@@ -105,6 +105,7 @@ urlpatterns = [
     path('ops/unit/<str:slug>/members/add', views.organisationalunit_add, name='organisationalunit_add'),
     path('ops/unit/<str:slug>/members/join', views.organisationalunit_join, name='organisationalunit_join'),
     path('ops/unit/<str:slug>/members/review/<int:member_pk>', views.organisationalunit_review_join_request, name='review_join_request'),
+    path('ops/unit/<str:slug>/members/manage_roles/<int:member_pk>', views.organisationalunit_manage_roles, name='organisationalunit_manage_roles'),
     path('ops/unit/<str:slug>/detail', views.OrganisationalUnitDetailView.as_view(), name='organisationalunit_detail'),
     path('ops/unit/<str:slug>/update/', views.OrganisationalUnitUpdateView.as_view(), name='organisationalunit_update'),
     path('ops/unit/<str:slug>/delete/', views.OrganisationalUnitDeleteView.as_view(), name='organisationalunit_delete'),
@@ -119,4 +120,11 @@ urlpatterns = [
     path('ops/skill_category/<str:catSlug>/create/', views.SkillCreateView.as_view(), name='skill_create'),
     path('ops/skill_category/<str:slug>/update/', views.SkillCatUpdateView.as_view(), name='skill_cat_update'),
     path('ops/skill_category/<str:slug>/delete/', views.SkillCatDeleteView.as_view(), name='skill_cat_delete'),
+
+    # Certifications CRUD
+    path('ops/certifications/', views.CertificationListView.as_view(), name='certification_list'),
+    path('ops/certification/create/', views.CertificationCreateView.as_view(), name='certification_create'),
+    path('ops/certification/<str:slug>/', views.CertificationDetailView.as_view(), name='certification_detail'),
+    path('ops/certification/<str:slug>/update/', views.CertificationUpdateView.as_view(), name='certification_update'),
+    path('ops/certification/<str:slug>/delete/', views.CertificationDeleteView.as_view(), name='certification_delete'),
 ]

@@ -1,4 +1,5 @@
 from django.contrib import admin
+from simple_history.admin import SimpleHistoryAdmin
 from .models import Phase, Job, OrganisationalUnit, OrganisationalUnitMember, Skill, \
     SkillCategory, Service, TimeSlot, WorkflowTask, BillingCode, \
     Feedback, Certification, UserCertification, Client, Contact, UserSkill, TimeSlotType
@@ -38,7 +39,7 @@ class SkillCategoryAdmin(admin.ModelAdmin):
 
 admin.site.register(TimeSlotType)
 admin.site.register(Service)
-admin.site.register(TimeSlot)
+admin.site.register(TimeSlot, SimpleHistoryAdmin)
 admin.site.register(WorkflowTask)
 admin.site.register(BillingCode)
 admin.site.register(Feedback)
