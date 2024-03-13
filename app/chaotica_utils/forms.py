@@ -31,8 +31,14 @@ class CustomConfigForm(ConstanceForm):
         self.helper.layout = Layout(
             Row(
                 Column(
-                    HTML('<h4 class="mb-4">ID Settings</h4>'),
+                    HTML('<h4 class="mb-4">Job/Phase Settings</h4>'),
                     Div(FloatingField('JOB_ID_START'),
+                        css_class="input-group input-group-dynamic"),
+                    Div(FloatingField('TQA_LATE_HOURS'),
+                        css_class="input-group input-group-dynamic"),
+                    Div(FloatingField('PQA_LATE_HOURS'),
+                        css_class="input-group input-group-dynamic"),
+                    Div(FloatingField('DELIVERY_LATE_HOURS'),
                         css_class="input-group input-group-dynamic"),
                 ),
                 Column(
@@ -85,6 +91,28 @@ class CustomConfigForm(ConstanceForm):
                             css_class="input-group input-group-dynamic"),
                     Div(FloatingField('SITE_NOTICE_MSG'),
                             css_class="input-group input-group-dynamic"),
+                ),
+            ),
+            Row(
+                HTML('<h4 class="mb-4">Schedule Colours</h4>'),
+                Column(
+                    Div(Field('SCHEDULE_COLOR_AVAILABLE'),
+                        css_class="input-group input-group-dynamic"),
+                    Div(Field('SCHEDULE_COLOR_UNAVAILABLE'),
+                        css_class="input-group input-group-dynamic"),
+                    Div(Field('SCHEDULE_COLOR_INTERNAL'),
+                        css_class="input-group input-group-dynamic"),
+                ),
+
+                Column(
+                    Div(Field('SCHEDULE_COLOR_PHASE'),
+                        css_class="input-group input-group-dynamic"),
+                    Div(Field('SCHEDULE_COLOR_PHASE_CONFIRMED'),
+                        css_class="input-group input-group-dynamic"),
+                    Div(Field('SCHEDULE_COLOR_PHASE_AWAY'),
+                        css_class="input-group input-group-dynamic"),
+                    Div(Field('SCHEDULE_COLOR_PHASE_CONFIRMED_AWAY'),
+                        css_class="input-group input-group-dynamic"),
                 ),
             ),
         )

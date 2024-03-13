@@ -112,11 +112,23 @@ CONSTANCE_CONFIG = {
     'SITE_NOTICE_ENABLED': (False, 'Show a site wide notice'),
     'SITE_NOTICE_MSG': ('', 'Message to display across the site'),
     'SITE_NOTICE_COLOUR': ('primary', 'Select the alert colour of the site notice', 'notice_colour'),
+
+    # Schedule Colours
+    'SCHEDULE_COLOR_AVAILABLE': ('#E224A3', 'Colour to show available in the schedule', 'colour_picker'),
+    'SCHEDULE_COLOR_UNAVAILABLE': ('#E224A3', 'Colour to show available in the schedule', 'colour_picker'),
+    'SCHEDULE_COLOR_INTERNAL': ('#E224A3', 'Colour to show available in the schedule', 'colour_picker'),
+    'SCHEDULE_COLOR_PHASE_CONFIRMED': ('#E224A3', 'Colour to show available in the schedule', 'colour_picker'),
+    'SCHEDULE_COLOR_PHASE_CONFIRMED_AWAY': ('#E224A3', 'Colour to show available in the schedule', 'colour_picker'),
+    'SCHEDULE_COLOR_PHASE': ('#E224A3', 'Colour to show available in the schedule', 'colour_picker'),
+    'SCHEDULE_COLOR_PHASE_AWAY': ('#E224A3', 'Colour to show available in the schedule', 'colour_picker'),
 }
 
 CONSTANCE_BACKEND = 'constance.backends.database.DatabaseBackend'
 CONSTANCE_IGNORE_ADMIN_VERSION_CHECK = True
 CONSTANCE_ADDITIONAL_FIELDS = {
+    'image_field': ['django.forms.ImageField', {}],
+    'colour_picker': ['django.forms.CharField', {
+        'widget': 'colorfield.widgets.ColorWidget',}],
     'notice_colour': ['django.forms.fields.ChoiceField', {
         'widget': 'django.forms.Select',
         'choices': (
@@ -160,6 +172,7 @@ DEFAULT_APPS = [
     'dal',
     'dal_select2',
     'django.contrib.admin',
+    'django.contrib.admindocs',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -168,6 +181,7 @@ DEFAULT_APPS = [
     'django.contrib.humanize',
 ]
 THIRD_PARTY_APPS = [
+    'colorfield',
     'constance',
     'django_auth_adfs',
     'menu',
