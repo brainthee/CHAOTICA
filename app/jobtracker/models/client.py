@@ -73,12 +73,19 @@ class Client(models.Model):
 
 
 class FrameworkAgreement(models.Model):
+    client = models.ForeignKey(Client, related_name="framework_agreements", on_delete=models.CASCADE)
     name = models.CharField(max_length=200, blank=True)
     start_date = models.DateField('Start Date')
     end_date = models.DateField('End Date')
+
     total_days = models.IntegerField('Total Days')
+    allow_over_allocation = models.BooleanField('Allow Over Allocation', default=True)
     associated_jobs = models.ManyToManyField("Job",
         related_name='framework', verbose_name="Associated Jobs", blank=True)
+
+    class Meta:
+        ordering = [Lower('name')]
+        unique_together = ['client', 'name']        
 
     def __str__(self):
         return '{} ({}-{})'.format(
