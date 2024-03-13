@@ -139,7 +139,7 @@ def view_own_leave(request):
 
 @login_required
 @require_http_methods(["POST", "GET"])
-def request_leave(request):
+def request_own_leave(request):
     if request.method == "POST":
         form = LeaveRequestForm(request.POST, request=request)
         if form.is_valid():
@@ -461,6 +461,8 @@ def settings_export_data(request):
 
 
 @require_http_methods(["GET", "POST"])
+# This is what we're doing in effect but we're doing it in the view
+# @permission_required_or_403("chaotica_utils.manage_user")
 def user_manage(request, email):
     user = get_object_or_404(User, email=email)
     context = {}
@@ -481,7 +483,34 @@ def user_manage(request, email):
     else:
         # We don't have permission to manage this user...
         return HttpResponseForbidden()
+    
 
+@permission_required_or_403("chaotica_utils.manage_user")
+@require_http_methods(["GET", "POST"])
+def user_manage_status(request, email, state):
+    if state not in ['activate', 'deactivate']:
+        return HttpResponseBadRequest()
+    
+    u = get_object_or_404(User, email=email)
+    data = dict()
+    if request.method == "POST":
+        if u.is_active and state == 'deactivate':
+            u.is_active = False
+            u.save()
+            data['form_is_valid'] = True
+        elif not u.is_active and state == 'activate':
+            u.is_active = True
+            u.save()            
+            data['form_is_valid'] = True
+        else:
+            data['form_is_valid'] = False
+
+    context = {'u': u,
+               'state': state}
+    data['html_form'] = loader.render_to_string("modals/user_manage_status.html",
+                                                context,
+                                                request=request)
+    return JsonResponse(data)
 
 
 @permission_required_or_403('chaotica_utils.manage_user')

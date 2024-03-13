@@ -2,7 +2,7 @@
     <div class="modal-content {% if not can_proceed %}shadow-danger{% endif %}">
         <form method="post" action="{% url 'job_update_workflow' job.slug new_state %}" class="js-workflow-job-form">
             {% csrf_token %}    
-            <div class="modal-header {% if not can_proceed %}bg-danger{% endif %}">
+            <div class="modal-header bg-gradient {% if not can_proceed %}bg-danger{% endif %}">
                 <h6 class="modal-title {% if not can_proceed %}text-white{% endif %} font-weight-normal" 
                     id="modal-title-default">
                         Move to {{ new_state_str }}

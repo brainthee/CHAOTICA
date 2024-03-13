@@ -1,0 +1,42 @@
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+<div class="modal-dialog modal- modal-dialog-centered modal-" role="document">
+    <div class="modal-content">
+        <form method="post" action="{{ request.get_full_path }}" class="js-submit-modal-form">
+            {% csrf_token %}            
+            <div class="modal-header bg-gradient bg-warning">
+                <h6 class="modal-title text-white font-weight-normal" 
+                    id="modal-title-default">
+                        {% if state == 'activate' %}
+                        Activate User
+                        {% else %}
+                        Deactivate User
+                        {% endif %}
+                </h6>
+                <button type="button" class="btn-close text-dark" 
+                    data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>
+                    {% if u.is_active %}
+                        {% if state == 'activate' %}
+                            The account <code>{{ u }}</code> is already active.
+                        {% else %}
+                            Are you sure you wish to <span class="text-danger">deactivate</span> the account <code>{{ u }}</code>?
+                        {% endif %}
+                    {% else %}
+                        {% if state == 'deactivate' %}
+                            The account <code>{{ u }}</code> is already deactive.
+                        {% else %}
+                            Are you sure you wish to <span class="text-success">activate</span> the account <code>{{ u }}</code>?
+                        {% endif %}
+                    {% endif %}
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-phoenix-danger mb-0">Save</button>
+                <button type="button" class="btn btn-light shadow-none mb-0" data-bs-dismiss="modal">Close</button>
+            </div>
+        </form>
+    </div>
+ </div>
