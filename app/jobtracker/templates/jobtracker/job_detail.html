@@ -45,7 +45,11 @@
         </li>
         <li class="nav-item text-nowrap me-2" role="presentation">
           <a class="nav-link" id="notes-tab" data-bs-toggle="tab" href="#notes" role="tab" aria-controls="tab-notes" aria-selected="false">
-            <span class="fa-solid fa-square-check me-2 tab-icon-color"></span>Notes
+            <span class="fa-solid fa-square-check me-2 tab-icon-color"></span>
+            Notes
+            <span class="badge bg-secondary ms-2">
+              {{ job.get_user_notes | length }}
+            </span>
           </a>
         </li>
       </ul>

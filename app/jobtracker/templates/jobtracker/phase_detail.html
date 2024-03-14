@@ -54,7 +54,7 @@
             <span class="fa-solid fa-square-check me-2 tab-icon-color"></span>
             Notes
             <span class="badge bg-secondary ms-2">
-              {{ phase.notes.all | length }}
+              {{ phase.get_user_notes | length }}
             </span>
           </a>
         </li>

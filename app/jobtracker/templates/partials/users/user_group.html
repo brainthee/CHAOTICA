@@ -1,9 +1,9 @@
 
-<div class="avatar-group avatar-group-dense">
+<div class="avatar-group">
   {% for u in users %}
   <a class="dropdown-toggle dropdown-caret-none d-inline-block" href="#" role="button" 
     data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside"
-    >
+    data-bs-placement="top" title="{{ u.get_full_name }}">
     <div class="avatar avatar-m  rounded-circle">
       <img class="rounded-circle " src="{{ u.get_avatar_url }}" alt="{{ u.get_full_name }}" />
     </div>

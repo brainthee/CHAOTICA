@@ -28,14 +28,16 @@
 </div>
   
 <div class="row justify-content-between mx-1 my-3">
-    <div class="col-4 gx-3 ">
-        <div class="card">
+    <div class="col-4 gx-3 d-flex align-items-stretch">
+        <div class="card w-100">
             <div class="card-body">
                 <div class="row align-items-center ">
-                    <div class="col-12 col-sm-auto flex-1">
-                        <h3 class="fw-bolder mb-2 line-clamp-1">
-                            {{ job.id }} - {{ job.title }}
-                        </h3>
+                    <h3 class="fw-bolder mb-2 line-clamp-1">
+                        {{ job.id }} - {{ job.title }}
+                    </h3>
+                </div>
+                <div class="row">
+                    <div class="col-6 flex-1">
                         <table class="w-100 table-stats table-stats">
                             <caption>Job Info</caption>
                             <thead>
@@ -68,6 +70,21 @@
                                         </p>
                                     </td>
                                 </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="col-6 flex-1">
+                        <table class="w-100 table-stats table-stats">
+                            <caption>Job Info 2</caption>
+                            <thead>
+                              <tr>
+                                <th class="w-25" scope="col"></th>
+                                <th class="" scope="col"></th>
+                                <th class="w-75" scope="col"></th>
+                              </tr>
+                            </thead>
+                            <tbody>
                                 <tr>
                                     <td class="">
                                         <p class="fw-bold mb-0">Status</p>
@@ -79,22 +96,10 @@
                                         </h4>
                                     </td>
                                 </tr>
-                                <tr>
-                                    <td class="">
-                                        <p class="fw-bold mb-0" data-bs-toggle="tooltip" data-bs-placement="top" title="Services flagged for awareness in scoping">
-                                            Indicative Services
-                                        </p>
-                                    </td>
-                                    <td class=" d-none d-sm-block pe-sm-2">:</td>
-                                    <td class="">
-                                        <h4 class="ps-6 ps-sm-0 mb-0">
-                                          {% include 'partials/job/indicative_services_badges.html' %}
-                                        </h4>
-                                    </td>
-                                </tr>
                             </tbody>
                         </table>
                     </div>
+
                 </div>
             </div>
         </div>
