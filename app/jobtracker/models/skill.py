@@ -2,6 +2,7 @@ from django.db import models
 from ..enums import UserSkillRatings
 from chaotica_utils.utils import unique_slug_generator
 from django.conf import settings
+from django.db.models import Q
 from django.urls import reverse
 from django.db.models.functions import Lower
 
@@ -15,7 +16,38 @@ class SkillCategory(models.Model):
     class Meta:
         verbose_name_plural = "Skill Categories"
         ordering = [Lower('name')]
-        permissions = ()
+        permissions = ()    
+
+    def get_users_can_do_alone(self):
+        return UserSkill.objects.filter(skill__in=self.skills.all(), rating=UserSkillRatings.CAN_DO_ALONE)
+
+    def get_users_can_do_with_support(self):
+        return UserSkill.objects.filter(skill__in=self.skills.all(), rating=UserSkillRatings.CAN_DO_WITH_SUPPORT)
+
+    def get_users_specialist(self):
+        return UserSkill.objects.filter(skill__in=self.skills.all(), rating=UserSkillRatings.SPECIALIST)
+
+    def get_users_breakdown_perc(self):
+        total_users = self.get_users().count()
+        data = {}
+        data['total_users'] = total_users
+        if total_users > 0:
+            data['can_do_with_support'] = round((self.get_users_can_do_with_support().count() / total_users) * 100, 2)
+            data['can_do_alone'] = round((self.get_users_can_do_alone().count() / total_users) * 100, 2)
+            data['specialist'] = round((self.get_users_specialist().count() / total_users) * 100, 2)
+        else:
+            data['can_do_with_support'] = 0
+            data['can_do_alone'] = 0
+            data['specialist'] = 0
+        return data
+
+
+    def get_users(self):
+        return UserSkill.objects.filter(
+            Q(rating=UserSkillRatings.CAN_DO_ALONE) | 
+            Q(rating=UserSkillRatings.CAN_DO_WITH_SUPPORT) | 
+            Q(rating=UserSkillRatings.SPECIALIST),
+            skill__in=self.skills.all())
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -63,6 +95,13 @@ class Skill(models.Model):
 
     def get_users_specialist(self):
         return UserSkill.objects.filter(skill=self, rating=UserSkillRatings.SPECIALIST)
+
+    def get_users(self):
+        return UserSkill.objects.filter(
+            Q(rating=UserSkillRatings.CAN_DO_ALONE) | 
+            Q(rating=UserSkillRatings.CAN_DO_WITH_SUPPORT) | 
+            Q(rating=UserSkillRatings.SPECIALIST),
+            skill=self)
 
     def get_absolute_url(self):
         if not self.slug:

@@ -3,8 +3,13 @@
 {% load widget_tweaks %}
 {% load crispy_forms_tags %}
 
-{% block pageTitle %}New Job{% endblock pageTitle %}
-{% block head_title %}New Job{% endblock head_title %}
+{% block pageTitle %}
+{% if form.instance.pk %}Edit{% else %}Add {% endif %} Job
+{% endblock pageTitle %}
+
+{% block head_title %}
+{% if form.instance.pk %}Edit{% else %}Add {% endif %} Job
+{% endblock head_title %}
 
 
 {% block breadcrumbItem %}

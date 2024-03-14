@@ -18,7 +18,7 @@
       </tr>
     </thead>
     <tbody class="list" id="purchasers-sellers-body">
-     {% for user in skill.users.all %}
+     {% for user in skill.get_users %}
         <tr class="hover-actions-trigger btn-reveal-trigger position-static">
             <td class="align-middle white-space-nowrap fw-semi-bold text-1100 ps-4 py-0">
                 {% include 'partials/users/user_table_display.html' with u=user.user %}
@@ -34,7 +34,7 @@
                 {% endif %}
             </td>        
             <td class="align-middle white-space-nowrap ps-4 fw-semi-bold text-900 py-0">
-                x
+                
             </td>    
             <td class="align-middle white-space-nowrap text-end pe-0 ps-4">
             </td>

@@ -101,6 +101,33 @@ class SchedulerFilter(forms.Form):
                   'from_date', 'to_date',)
         
 
+class AssignJobFramework(forms.ModelForm):
+    associated_framework = forms.ModelChoiceField(required=False,
+                                     queryset=FrameworkAgreement.objects.all(),)
+    
+    def __init__(self, *args, **kwargs):
+        super(AssignJobFramework, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.fields['associated_framework'].queryset = FrameworkAgreement.objects.filter(client=self.instance.client)
+        self.helper.layout = Layout(
+            Div(
+                Row(
+                    Div(Field('associated_framework'),
+                        css_class="input-group input-group-dynamic")
+                ),
+                css_class='modal-body pt-3'),
+
+            Div(
+                Div(StrictButton("Save", type="submit", 
+                    css_class="btn btn-outline-phoenix-success ms-auto mb-0"),
+                css_class="button-row d-flex"),
+            css_class="modal-footer"),
+        )
+
+    class Meta:
+        model = Job
+        fields = ('associated_framework',)
+
 
 class AssignContact(forms.Form):
     contact = forms.ModelChoiceField(required=False,
@@ -123,7 +150,7 @@ class AssignContact(forms.Form):
             Div(
                 Div(StrictButton("Save", type="submit", 
                     css_class="btn btn-outline-phoenix-success ms-auto mb-0"),
-                css_class="button-row d-flex mt-4"),
+                css_class="button-row d-flex"),
             css_class="modal-footer"),
         )
 
@@ -148,7 +175,7 @@ class AssignMultipleContacts(forms.Form):
             Div(
                 Div(StrictButton("Save", type="submit", 
                     css_class="btn btn-outline-phoenix-success ms-auto mb-0"),
-                css_class="button-row d-flex mt-4"),
+                css_class="button-row d-flex"),
             css_class="modal-footer"),
         )
 
@@ -198,7 +225,7 @@ class AssignUser(forms.Form):
             Div(
                 Div(StrictButton("Save", type="submit", 
                     css_class="btn btn-outline-phoenix-success ms-auto mb-0"),
-                css_class="button-row d-flex mt-4"),
+                css_class="button-row d-flex"),
             css_class="modal-footer"),
         )
 
@@ -227,7 +254,7 @@ class AssignMultipleUser(forms.Form):
             Div(
                 Div(StrictButton("Save", type="submit", 
                     css_class="btn btn-outline-phoenix-success ms-auto mb-0"),
-                css_class="button-row d-flex mt-4"),
+                css_class="button-row d-flex"),
             css_class="modal-footer"),
         )
 
@@ -804,7 +831,7 @@ class ScopeForm(forms.ModelForm):
 
             Div(StrictButton("Save", type="submit", 
                     css_class="btn btn-outline-phoenix-success ms-auto mb-0"),
-                css_class="button-row d-flex mt-4"),
+                css_class="button-row d-flex"),
         )
 
     class Meta:

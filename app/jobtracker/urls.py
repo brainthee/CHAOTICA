@@ -44,7 +44,8 @@ urlpatterns = [
     path('job/<str:slug>/schedule/slot/<int:pk>', views.change_job_schedule_slot, name='change_job_schedule_slot'),
     path('job/<str:slug>/schedule/slot/<int:pk>/delete', views.SlotDeleteView.as_view(), name='job_slot_delete'),
 
-    path('job/<str:slug>/assign/primay_poc', views.assign_job_poc, name='assign_job_poc'),
+    path('job/<str:slug>/assign/framework', views.assign_job_framework, name='assign_job_framework'),
+    path('job/<str:slug>/assign/primay_poc', views.assign_job_poc, name='assign_job_poc'),    
     path('job/<str:slug>/assign/<str:field>', views.assign_job_field, name='assign_job_field'),
 
     # Phase CRUD
