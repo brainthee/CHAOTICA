@@ -1,5 +1,6 @@
 from django.db import models
 from ..enums import JobStatuses, RestrictedClassifications, TimeSlotDeliveryRole
+from ..models.client import FrameworkAgreement
 from django_fsm import FSMIntegerField, transition, can_proceed
 from django.conf import settings
 from django.utils import timezone
@@ -71,6 +72,11 @@ class Job(models.Model):
     additional_contacts = models.ManyToManyField(
         "Contact",
         related_name='jobs_contact_for', blank=True)
+    associated_framework = models.ForeignKey(
+        FrameworkAgreement,
+        related_name='associated_jobs',
+        null=True, blank=True,
+        on_delete=models.PROTECT)
     
     # Sales fields
     charge_codes = models.ManyToManyField("BillingCode",
@@ -195,7 +201,9 @@ class Job(models.Model):
             ('scope_job', 'Can Scope Job'),
             ('view_schedule', 'Can View Schedule'),
             ('change_schedule', 'Can Change Schedule'),
+            ('update_workflow', 'Can Update the workflow'),
             ('assign_poc', 'Can assign Point of Contact'),
+            ('assign_framework', 'Can assign a framework agreement'),
         )
 
     def __str__(self):

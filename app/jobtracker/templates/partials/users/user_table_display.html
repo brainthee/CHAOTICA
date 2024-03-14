@@ -7,10 +7,16 @@
         </div>
         <div class="col">
             <div class="row">
-                <a class="me-3 d-inline-block" href="{{ u.get_absolute_url }}">
+                <a class="me-3" href="{{ u.get_absolute_url }}">
                     {{ u.get_full_name }}
                 </a>
+                {% for unitMembership in u.unit_memberships.all %}
+                <a href="{{ unitMembership.unit.get_absolute_url }}">
+                    {% include 'partials/unit/unit_badge_role_colour.html' with unitMembership=unitMembership %}
+                </a>
+                {% endfor %}
             </div>
+
             <div class="row">
                 <p class="mb-0 text-xs">{{ u.job_title }}</p>
             </div>        

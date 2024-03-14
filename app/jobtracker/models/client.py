@@ -81,8 +81,6 @@ class FrameworkAgreement(models.Model):
     total_days = models.IntegerField('Total Days')
     allow_over_allocation = models.BooleanField('Allow Over Allocation', default=True)
     closed = models.BooleanField('Closed', default=False)
-    associated_jobs = models.ManyToManyField("Job",
-        related_name='framework', verbose_name="Associated Jobs", blank=True)
 
     class Meta:
         ordering = [Lower('name')]
