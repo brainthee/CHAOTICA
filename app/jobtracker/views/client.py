@@ -6,8 +6,8 @@ from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
-from ..models import Client, Contact, OrganisationalUnit
-from ..forms import ClientForm, ClientContactForm
+from ..models import Client, Contact, FrameworkAgreement, OrganisationalUnit
+from ..forms import ClientForm, ClientContactForm, ClientFrameworkForm
 import logging
 
 logger = logging.getLogger(__name__)
@@ -133,4 +133,83 @@ class ClientContactUpdateView(ClientContactBaseView, UpdateView):
     fields = None
 
 class ClientContactDeleteView(ClientContactBaseView, DeleteView):
-    """View to delete a job"""
+    def get_success_url(self):
+        if 'client_slug' in self.kwargs:
+            client_slug = self.kwargs['client_slug']
+
+        if client_slug:
+            return reverse_lazy('client_detail', kwargs={'slug': client_slug})            
+        else:
+            return reverse_lazy('client_list')
+
+
+
+class ClientFrameworkBaseView(PermissionRequiredMixin, ChaoticaBaseView):
+    model = FrameworkAgreement
+    fields = '__all__'
+    client_slug = None
+    permission_required = 'jobtracker.view_framework'
+    accept_global_perms = True
+    return_403 = True
+
+    def get_success_url(self):
+        pk = None
+        if 'pk' in self.kwargs:
+            pk = self.kwargs['pk']
+        if 'client_slug' in self.kwargs:
+            client_slug = self.kwargs['client_slug']
+        
+        if client_slug and pk:
+            return reverse_lazy('client_framework_detail', kwargs={'client_slug': client_slug, 'pk': pk})
+        elif client_slug:
+            return reverse_lazy('client_detail', kwargs={'slug': client_slug})            
+        else:
+            return reverse_lazy('client_list')
+
+    def get_context_data(self, **kwargs):
+        context = super(ClientFrameworkBaseView, self).get_context_data(**kwargs)
+        if 'client_slug' in self.kwargs:
+            context['client'] = get_object_or_404(Client, slug=self.kwargs['client_slug'])
+        return context
+
+class ClientFrameworkListView(ClientFrameworkBaseView, ListView):
+    """View to list all jobs.
+    Use the 'job_list' variable in the template
+    to access all job objects"""
+
+class ClientFrameworkDetailView(ClientFrameworkBaseView, DetailView):
+    """View to list the details from one job.
+    Use the 'job' variable in the template to access
+    the specific job here and in the Views below"""
+
+class ClientFrameworkCreateView(ClientFrameworkBaseView, CreateView):
+    form_class = ClientFrameworkForm
+    fields = None
+    permission_object = None
+    permission_required = 'jobtracker.add_framework'
+
+    def form_valid(self, form):
+        form.instance.client = Client.objects.get(slug=self.kwargs['client_slug'])
+        form.instance.save()
+        log_system_activity(form.instance, "Created")
+        return super(ClientFrameworkCreateView, self).form_valid(form)
+
+    def get_form_kwargs(self):
+        kwargs = super(ClientFrameworkCreateView, self).get_form_kwargs()
+        if 'client_slug' in self.kwargs:
+            kwargs['client'] = get_object_or_404(Client, slug=self.kwargs['client_slug'])
+        return kwargs
+
+class ClientFrameworkUpdateView(ClientFrameworkBaseView, UpdateView):
+    form_class = ClientFrameworkForm
+    fields = None
+
+class ClientFrameworkDeleteView(ClientFrameworkBaseView, DeleteView):
+    def get_success_url(self):
+        if 'client_slug' in self.kwargs:
+            client_slug = self.kwargs['client_slug']
+
+        if client_slug:
+            return reverse_lazy('client_detail', kwargs={'slug': client_slug})            
+        else:
+            return reverse_lazy('client_list')

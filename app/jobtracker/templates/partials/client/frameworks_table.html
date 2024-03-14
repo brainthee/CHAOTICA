@@ -1,0 +1,61 @@
+<table class="table align-items-center mb-0">
+    <caption>Framework Agreement List</caption>
+    <thead>
+        <tr>
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Name</th>
+            <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Start</th>
+            <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">End</th>
+            <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Usage</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for framework in frameworks %}
+        <tr>
+            <td>
+                <h6 class="mb-0 text-xs">
+                    <a href="{{ framework.get_absolute_url }}">
+                        {{ framework.name }}
+                    </a>
+
+                    {% if framework.closed %}
+                    <span class="badge badge-phoenix badge-phoenix-secondary">
+                        Closed
+                    </span>
+                    {% endif %}
+                    {% if framework.is_over_allocated %}
+                    <span class="badge badge-phoenix badge-phoenix-danger">
+                        Over Allocated
+                    </span>
+                    {% endif %}
+                </h6>
+            </td>
+            <td class="align-middle text-center text-sm">
+                <p class="text-xs text-secondary mb-0">
+                    {{ framework.start_date }}
+                </p>
+            </td>
+            <td class="align-middle text-center text-sm">
+                <p class="text-xs text-secondary mb-0">
+                    {{ framework.end_date }}
+                </p>
+            </td>
+            <td class="align-middle text-center text-sm">                
+                <p class="text-body-secondary fs-10 mb-0">
+                    {{ framework.days_allocated }} / {{ framework.total_days }}
+                </p>
+                <div class="progress" style="height:3px;">
+                    <div class="progress-bar bg-{% if framework.closed %}secondary{% elif framework.days_remaining > framework.total_days %}danger{% else %}success{% endif %}" style="width: {{ framework.perc_allocated }}%" role="progressbar" 
+                        aria-valuenow="{{ framework.days_allocated }}" aria-valuemin="0" aria-valuemax="{{ framework.total_days }}">
+                    </div>
+                </div>           
+            </td>
+        </tr>
+    {% empty %}
+        <tr>
+            <td colspan="3">
+                <p class="text-xs text-secondary mb-0">No frameworks found</p>  
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
