@@ -4,9 +4,9 @@ from guardian.admin import GuardedModelAdmin
 from .models import User, UserCost, UserInvitation, Notification, Group, Language, LeaveRequest, HolidayCountry, Holiday
 
 class CustomUserAdmin(GuardedModelAdmin):    
+    list_display = ["email", "first_name", "last_name", "is_active"]
     fieldsets = (
         # *UserAdmin.fieldsets,  # original form fieldsets, expanded
-
         (None, {
             'classes': ('wide',),
             'fields': (

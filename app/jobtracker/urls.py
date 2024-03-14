@@ -44,7 +44,8 @@ urlpatterns = [
     path('job/<str:slug>/schedule/slot/<int:pk>', views.change_job_schedule_slot, name='change_job_schedule_slot'),
     path('job/<str:slug>/schedule/slot/<int:pk>/delete', views.SlotDeleteView.as_view(), name='job_slot_delete'),
 
-    path('job/<str:slug>/assign/primay_poc', views.assign_job_poc, name='assign_job_poc'),
+    path('job/<str:slug>/assign/framework', views.assign_job_framework, name='assign_job_framework'),
+    path('job/<str:slug>/assign/primay_poc', views.assign_job_poc, name='assign_job_poc'),    
     path('job/<str:slug>/assign/<str:field>', views.assign_job_field, name='assign_job_field'),
 
     # Phase CRUD
@@ -80,11 +81,17 @@ urlpatterns = [
     path('client/<str:slug>/update/', views.ClientUpdateView.as_view(), name='client_update'),
     path('client/<str:slug>/delete/', views.ClientDeleteView.as_view(), name='client_delete'),
 
-    # Client CRUD
+    # Client Contact CRUD
     path('client/<str:client_slug>/contact/create/', views.ClientContactCreateView.as_view(), name='client_contact_create'),
     path('client/<str:client_slug>/contact/<int:pk>/', views.ClientContactDetailView.as_view(), name='client_contact_detail'),
     path('client/<str:client_slug>/contact/<int:pk>/update/', views.ClientContactUpdateView.as_view(), name='client_contact_update'),
     path('client/<str:client_slug>/contact/<int:pk>/delete/', views.ClientContactDeleteView.as_view(), name='client_contact_delete'),
+
+    # Client framework CRUD
+    path('client/<str:client_slug>/framework/create/', views.ClientFrameworkCreateView.as_view(), name='client_framework_create'),
+    path('client/<str:client_slug>/framework/<int:pk>/', views.ClientFrameworkDetailView.as_view(), name='client_framework_detail'),
+    path('client/<str:client_slug>/framework/<int:pk>/update/', views.ClientFrameworkUpdateView.as_view(), name='client_framework_update'),
+    path('client/<str:client_slug>/framework/<int:pk>/delete/', views.ClientFrameworkDeleteView.as_view(), name='client_framework_delete'),
 
     # Service CRUD
     path('ops/services/', views.ServiceListView.as_view(), name='service_list'),

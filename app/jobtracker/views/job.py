@@ -7,6 +7,7 @@ from django.conf import settings
 from django.contrib.auth.mixins import UserPassesTestMixin
 from guardian.core import ObjectPermissionChecker
 from guardian.shortcuts import get_objects_for_user
+from guardian.decorators import permission_required_or_403
 from guardian.mixins import PermissionRequiredMixin
 from django.views import View
 from django.views.generic.list import ListView
@@ -15,12 +16,12 @@ from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from chaotica_utils.views import log_system_activity, ChaoticaBaseView
 from chaotica_utils.enums import UnitRoles
-from ..models import Job, TimeSlot, TimeSlotType, OrganisationalUnit, WorkflowTask, Contact
-from ..forms import ScopeInlineForm, DeliveryTimeSlotModalForm, AddNote, JobForm, AssignUserField, ScopeForm
+from ..models import Job, TimeSlot, TimeSlotType, OrganisationalUnit, WorkflowTask, Contact, FrameworkAgreement
+from ..forms import ScopeInlineForm, DeliveryTimeSlotModalForm, AddNote, JobForm, AssignUserField, ScopeForm, AssignJobFramework
 from ..enums import JobStatuses, TimeSlotDeliveryRole, DefaultTimeSlotTypes
 from .helpers import _process_assign_user, _process_assign_contact
 import logging
-from django.contrib.auth.decorators import login_required, permission_required
+from django.contrib.auth.decorators import login_required
 
 
 logger = logging.getLogger(__name__)
@@ -28,14 +29,13 @@ logger = logging.getLogger(__name__)
 # TODO: setup events for schedule so it comes back with member's only 
 
 
-@login_required
+@permission_required_or_403('jobtracker.view_schedule', (Job, 'slug', 'slug'))
 def view_job_schedule_gantt_data(request, slug):
     job = get_object_or_404(Job, slug=slug)
     return JsonResponse(job.get_gantt_json(), safe=False)
 
 
-@login_required
-@permission_required('jobtracker.view_schedule', (Job, 'slug', 'slug'))
+@permission_required_or_403('jobtracker.view_schedule', (Job, 'slug', 'slug'))
 def view_job_schedule_slots(request, slug):
     data = []
     job = get_object_or_404(Job, slug=slug)
@@ -49,8 +49,7 @@ def view_job_schedule_slots(request, slug):
     return JsonResponse(data, safe=False)
 
 
-@login_required
-@permission_required('jobtracker.view_schedule', (Job, 'slug', 'slug'))
+@permission_required_or_403('jobtracker.view_schedule', (Job, 'slug', 'slug'))
 def view_job_schedule_members(request, slug):
     data = []
     job = get_object_or_404(Job, slug=slug)
@@ -69,16 +68,35 @@ def view_job_schedule_members(request, slug):
     return JsonResponse(data, safe=False)
 
 
-@login_required
-@permission_required('jobtracker.assign_poc', (Job, 'slug', 'slug'))
+@permission_required_or_403('jobtracker.assign_framework', (Job, 'slug', 'slug'))
+def assign_job_framework(request, slug):
+    job = get_object_or_404(Job, slug=slug)
+    data = dict()
+    if request.method == 'POST':
+        form = AssignJobFramework(request.POST, instance=job)
+        if form.is_valid():
+            form.save()
+            data['form_is_valid'] = True
+        else:
+            data['form_is_valid'] = False
+    else:
+        form = AssignJobFramework(instance=job)
+    
+    context = {'form': form, 'job': job,}
+    data['html_form'] = loader.render_to_string("modals/assign_job_framework.html",
+                                                context,
+                                                request=request)
+    return JsonResponse(data)
+
+
+@permission_required_or_403('jobtracker.assign_poc', (Job, 'slug', 'slug'))
 def assign_job_poc(request, slug):
     job = get_object_or_404(Job, slug=slug)
     contacts = Contact.objects.filter(company=job.client)
     return _process_assign_contact(request, job, 'primary_client_poc', contacts=contacts)
 
 
-@login_required
-@permission_required('jobtracker.change_job', (Job, 'slug', 'slug'))
+@permission_required_or_403('jobtracker.change_job', (Job, 'slug', 'slug'))
 def assign_job_field(request, slug, field):
     valid_fields = [
         'account_manager', 'dep_account_manager',
@@ -94,15 +112,13 @@ def assign_job_field(request, slug, field):
         return HttpResponseBadRequest()
 
 
-@login_required
-@permission_required('jobtracker.change_job', (Job, 'slug', 'slug'))
+@permission_required_or_403('jobtracker.change_job', (Job, 'slug', 'slug'))
 def assign_job_scoped(request, slug):
     job = get_object_or_404(Job, slug=slug)
     return _process_assign_user(request, job, 'scoped_by', multiple=True)
 
 
-@login_required
-@permission_required('jobtracker.scope_job', (Job, 'slug', 'slug'))
+@permission_required_or_403('jobtracker.scope_job', (Job, 'slug', 'slug'))
 def job_edit_scope(request, slug):
     is_ajax = False
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
@@ -132,7 +148,7 @@ def job_edit_scope(request, slug):
     return JsonResponse(data)
 
 
-@permission_required('jobtracker.change_schedule', (Job, 'slug', 'slug'))
+@permission_required_or_403('jobtracker.change_schedule', (Job, 'slug', 'slug'))
 def change_job_schedule_slot(request, slug, pk=None):
     job = get_object_or_404(Job, slug=slug)
     slot = None
@@ -160,8 +176,7 @@ def change_job_schedule_slot(request, slug, pk=None):
     return JsonResponse(data)
 
 
-@login_required
-@permission_required('jobtracker.add_note', (Job, 'slug', 'slug'))
+@permission_required_or_403('jobtracker.add_note', (Job, 'slug', 'slug'))
 def job_create_note(request, slug):
     job = get_object_or_404(Job, slug=slug)
     if request.method == 'POST':
@@ -215,7 +230,6 @@ class JobListView(JobBaseView, UserPassesTestMixin, ListView):
         return jobs
 
 
-# @permission_required('jobtracker.view_job', (Job, 'slug', 'slug'))
 class JobDetailView(PermissionRequiredMixin, JobBaseView, DetailView):
     permission_required = 'jobtracker.view_job'
 
@@ -248,8 +262,12 @@ class JobDetailView(PermissionRequiredMixin, JobBaseView, DetailView):
         return context
 
 
-class JobCreateView(JobBaseView, CreateView):
-    template_name = "jobtracker/job_form_create.html"
+class JobCreateView(PermissionRequiredMixin, JobBaseView, CreateView):
+    permission_required = 'jobtracker.add_job'
+    accept_global_perms = True
+    return_403 = True
+    permission_object = Job
+    template_name = "jobtracker/job_form.html"
     form_class = JobForm
     fields = None
 
@@ -275,7 +293,7 @@ class JobCreateView(JobBaseView, CreateView):
 class JobUpdateView(PermissionRequiredMixin, JobBaseView, UpdateView):
     permission_required = 'jobtracker.change_job'
     return_403 = True
-    template_name = "jobtracker/job_form_edit.html"
+    template_name = "jobtracker/job_form.html"
     form_class = JobForm
     fields = None
     """View to update a job"""
@@ -330,7 +348,7 @@ class JobDeleteView(PermissionRequiredMixin, JobBaseView, DeleteView):
     """View to delete a job"""
         
 
-@login_required
+@permission_required_or_403('jobtracker.update_workflow', (Job, 'slug', 'slug'))
 def job_update_workflow(request, slug, new_state):
     job = get_object_or_404(Job, slug=slug)
     data = dict()

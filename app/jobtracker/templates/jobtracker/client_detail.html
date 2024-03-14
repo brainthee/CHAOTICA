@@ -93,6 +93,11 @@
                     </a>
                 </li>
                 <li class="nav-item text-nowrap me-2" role="presentation">
+                    <a class="nav-link" id="frameworks-tab" data-bs-toggle="tab" href="#frameworks" role="tab" aria-controls="tab-frameworks" aria-selected="false" tabindex="-1">
+                        <span class="fa-solid fa-clipboard me-2 tab-icon-color"></span>Framework Agreements
+                    </a>
+                </li>
+                <li class="nav-item text-nowrap me-2" role="presentation">
                     <a class="nav-link" id="jobs-tab" data-bs-toggle="tab" href="#jobs" role="tab" aria-controls="tab-jobs" aria-selected="false" tabindex="-1">
                     <span class="fa-solid fa-clipboard me-2 tab-icon-color"></span>Jobs
                     </a>
@@ -119,7 +124,28 @@
                     </div>
                     <div class="row">
                         <div class="col-12">
-                            {% include 'partials/contact_table.html' with contacts=client.contacts.all %}
+                            {% include 'partials/client/contact_table.html' with contacts=client.contacts.all %}
+                        </div>
+                    </div>                    
+                </div>
+
+                <div class="tab-pane fade" id="frameworks" role="tabpanel" aria-labelledby="frameworks-tab">
+                    <div class="row gx-4 mb-0">
+                        <div class="col-auto my-auto">
+                            <div class="h-100">
+                                <h5>Framework Agreements</h5>
+                            </div>
+                        </div>
+                        <div class="col-lg-4 col-md-6 my-sm-auto text-end ms-sm-auto me-sm-0 mx-auto mt-3">
+                            <a href="{% url 'client_framework_create' client.slug %}" 
+                                class="btn btn-phoenix-primary ms-auto">
+                            Add Framework Agreement
+                            </a>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12">
+                            {% include 'partials/client/frameworks_table.html' with frameworks=client.framework_agreements.all %}
                         </div>
                     </div>                    
                 </div>
