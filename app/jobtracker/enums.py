@@ -565,3 +565,36 @@ class UserSkillRatings():
         (CAN_DO_ALONE, 'Can do alone'),
         (SPECIALIST, 'Specialist'),
     )
+
+
+class QualificationStatus():
+    UNKNOWN = 0
+    REVOKED = 1
+    SUSPENDED = 2
+    IN_PROGRESS = 3
+    PENDING = 4
+    ATTEMPTED = 5
+    AWARDED = 6
+    LAPSED = 7
+
+    CHOICES = (
+        (UNKNOWN, 'Unknown'),
+        (REVOKED, 'Revoked'),
+        (SUSPENDED, 'Suspended'),
+        (IN_PROGRESS, 'In Progress'),
+        (PENDING, 'Pending'),
+        (ATTEMPTED, 'Attempted'),
+        (AWARDED, 'Awarded'),
+        (LAPSED, 'Lapsed'),
+    )
+
+    BS_COLOURS = (
+        (UNKNOWN, "secondary"),
+        (REVOKED, "danger"),
+        (SUSPENDED, "danger"),
+        (IN_PROGRESS, "primary"),
+        (PENDING, "primary"),
+        (ATTEMPTED, "warning"),
+        (AWARDED, "success"),
+        (LAPSED, "secondary"),
+    )

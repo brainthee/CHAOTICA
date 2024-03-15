@@ -8,7 +8,7 @@ from pprint import pprint
 from chaotica_utils.models import User, Group, UserSkillRatings
 from chaotica_utils.enums import UnitRoles
 from jobtracker.enums import TimeSlotDeliveryRole, DefaultTimeSlotTypes
-from jobtracker.models import TimeSlot, TimeSlotType, Service, Job, Phase, OrganisationalUnit, Client, Contact, Skill, SkillCategory, OrganisationalUnitMember, UserCertification, UserSkill, Certification
+from jobtracker.models import TimeSlot, TimeSlotType, Service, Job, Phase, OrganisationalUnit, Client, Contact, Skill, SkillCategory, OrganisationalUnitMember, UserSkill
 
 class SmartSheetCSVImporter(BaseImporter):
 

@@ -55,9 +55,9 @@ class GlobalRoles():
             # OrganisationalUnit
             "jobtracker.view_organisationalunit", "jobtracker.add_organisationalunit", "jobtracker.change_organisationalunit", 
             "jobtracker.delete_organisationalunit", 'jobtracker.manage_members', 'jobtracker.view_users_schedule',
-            # Certification
-            "jobtracker.view_certification", "jobtracker.add_certification", "jobtracker.change_certification", 
-            "jobtracker.delete_certification", 'jobtracker.view_users_certification',
+            # qualification
+            "jobtracker.view_qualification", "jobtracker.add_qualification", "jobtracker.change_qualification", 
+            "jobtracker.delete_qualification", 'jobtracker.view_users_qualification',
             # Users
             "chaotica_utils.manage_user", "chaotica_utils.impersonate_users", "chaotica_utils.manage_site_settings"
 
@@ -76,9 +76,9 @@ class GlobalRoles():
             "jobtracker.delete_skill", 'jobtracker.view_users_skill',
             # OrganisationalUnit
             "jobtracker.view_organisationalunit", 'jobtracker.view_users_schedule',
-            # Certification
-            "jobtracker.view_certification", "jobtracker.add_certification", "jobtracker.change_certification", 
-            "jobtracker.delete_certification", 'jobtracker.view_users_certification',
+            # qualification
+            "jobtracker.view_qualification", "jobtracker.add_qualification", "jobtracker.change_qualification", 
+            "jobtracker.delete_qualification", 'jobtracker.view_users_qualification',
             # Users
             "jobtracker.manage_user",
         ]),
@@ -94,8 +94,8 @@ class GlobalRoles():
             "jobtracker.view_skill", 'jobtracker.view_users_skill',
             # OrganisationalUnit
             "jobtracker.view_organisationalunit", 'jobtracker.view_users_schedule',
-            # Certification
-            "jobtracker.view_certification", 'jobtracker.view_users_certification',
+            # qualification
+            "jobtracker.view_qualification", 'jobtracker.view_users_qualification',
         ]),
         (SALES_MGR, [ 
             # Client
@@ -109,8 +109,8 @@ class GlobalRoles():
             "jobtracker.view_skill", 'jobtracker.view_users_skill',
             # OrganisationalUnit
             "jobtracker.view_organisationalunit",
-            # Certification
-            "jobtracker.view_certification", 'jobtracker.view_users_certification',
+            # qualification
+            "jobtracker.view_qualification", 'jobtracker.view_users_qualification',
         ]),
         (SALES_MEMBER, [ 
             # Client
@@ -124,8 +124,8 @@ class GlobalRoles():
             "jobtracker.view_skill", 'jobtracker.view_users_skill',
             # OrganisationalUnit
             "jobtracker.view_organisationalunit",
-            # Certification
-            "jobtracker.view_certification", 'jobtracker.view_users_certification',
+            # qualification
+            "jobtracker.view_qualification", 'jobtracker.view_users_qualification',
         ]),
         (USER, [            
             # Client
@@ -138,8 +138,8 @@ class GlobalRoles():
             "jobtracker.view_skill", 'jobtracker.view_users_skill',
             # OrganisationalUnit
             "jobtracker.view_organisationalunit",
-            # Certification
-            "jobtracker.view_certification", 'jobtracker.view_users_certification',
+            # qualification
+            "jobtracker.view_qualification", 'jobtracker.view_users_qualification',
         ]),
     )
 

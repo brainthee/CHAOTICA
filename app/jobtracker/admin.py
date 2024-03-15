@@ -2,7 +2,9 @@ from django.contrib import admin
 from simple_history.admin import SimpleHistoryAdmin
 from .models import Phase, Job, OrganisationalUnit, OrganisationalUnitMember, Skill, \
     SkillCategory, Service, TimeSlot, WorkflowTask, BillingCode, \
-    Feedback, Certification, UserCertification, Client, Contact, FrameworkAgreement, \
+    Feedback, Client, Contact, FrameworkAgreement, \
+    Qualification, QualificationRecord, QualificationTag, AwardingBody, \
+    Accreditation, \
     UserSkill, TimeSlotType
 from import_export import resources
 from guardian.admin import GuardedModelAdmin
@@ -44,8 +46,10 @@ admin.site.register(TimeSlot, SimpleHistoryAdmin)
 admin.site.register(WorkflowTask)
 admin.site.register(BillingCode)
 admin.site.register(Feedback)
-admin.site.register(Certification)
-admin.site.register(UserCertification)
+
+admin.site.register(AwardingBody)
+admin.site.register(Qualification)
+admin.site.register(QualificationRecord)
 
 #### Skill
 class SkillResource(resources.ModelResource):

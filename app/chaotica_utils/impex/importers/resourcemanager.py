@@ -9,7 +9,7 @@ from pprint import pprint
 from chaotica_utils.models import User, Group, UserSkillRatings
 from chaotica_utils.enums import UnitRoles
 from jobtracker.enums import TimeSlotDeliveryRole, DefaultTimeSlotTypes
-from jobtracker.models import TimeSlot, TimeSlotType, Service, Job, Phase, OrganisationalUnit, Client, Contact, Skill, SkillCategory, OrganisationalUnitMember, UserCertification, UserSkill, Certification
+from jobtracker.models import TimeSlot, TimeSlotType, Service, Job, Phase, OrganisationalUnit, Client, Contact, Skill, SkillCategory, OrganisationalUnitMember, UserSkill
 
 class ResourceManagerUserImporter(BaseImporter):
 
@@ -105,14 +105,14 @@ class ResourceManagerUserImporter(BaseImporter):
                             OrganisationalUnitMember.objects.create(
                                 member=db_user, unit=org_unit, role=org_role)
 
-                if custom_field['custom_field_name']=="Certifications":
-                    cert = custom_field['value']
-                    # get cert
-                    if cert:
-                        if Certification.objects.filter(name=cert).exists():
-                            db_cert = Certification.objects.get(name=cert)
-                            if not UserCertification.objects.filter(certification=db_cert, user=db_user).exists():
-                                UserCertification.objects.create(certification=db_cert, user=db_user)
+                # if custom_field['custom_field_name']=="Certifications":
+                #     cert = custom_field['value']
+                #     # get cert
+                #     if cert:
+                #         if Certification.objects.filter(name=cert).exists():
+                #             db_cert = Certification.objects.get(name=cert)
+                #             if not UserCertification.objects.filter(certification=db_cert, user=db_user).exists():
+                #                 UserCertification.objects.create(certification=db_cert, user=db_user)
 
                 elif custom_field['custom_field_name'].startswith('Skills -'):
                     # Sort the skill..

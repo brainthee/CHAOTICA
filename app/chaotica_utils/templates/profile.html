@@ -56,12 +56,6 @@
                 </a>
              </li>
              <li class="nav-item pt-2">
-                <a class="nav-link text-dark d-flex" data-scroll="" href="#certs">
-                  <span class="fa-solid fa-stamp me-sm-2 fs-1"></span>
-                  <span class="text-sm">Certifications</span>
-                </a>
-             </li>
-             <li class="nav-item pt-2">
                 <a class="nav-link text-dark d-flex" data-scroll="" href="#feeds">
                   <span class="far fa-calendar-plus me-sm-2 fs-1"></span>
                   <span class="text-sm">Feeds</span>
@@ -180,45 +174,6 @@
          </form>
       </div>
 
-      <div class="card mt-4" id="certs">
-        <form method="post" class="certsForm" action="{% url 'update_own_certs' %}">
-           {% csrf_token %}
-           <div class="card-header">
-              <h5>Certifications</h5>
-              <p class="text-sm mb-0">Show your achievements!</p>
-           </div>
-           <div class="card-body p-0">
-               <table class="table table-responsive mb-0">
-                  <caption>User's Certifications</caption>
-                  <thead>
-                     <tr>
-                        <th class="ps-2" colspan="4">
-                           <p class="mb-0">Certification</p>
-                        </th>
-                        <th class="ps-1" colspan="4">
-                           <p class="mb-0"></p>
-                        </th>
-                     </tr>
-                  </thead>
-                  <tbody>
-                     {% for cert in request.user.certifications.all %}
-                     <tr>
-                        <td class="ps-2" colspan="4">
-                           <div class="my-auto">
-                              <span class="text-dark d-block text-sm">
-                                 {{ cert.certification }}
-                              </span>
-                           </div>
-                        </td>
-                        <td class="ps-1" colspan="4">
-                        </td>
-                     </tr>
-                     {% endfor %}
-                  </tbody>
-               </table>
-           </div>
-        </form>
-     </div>
 
        <div class="card mt-4" id="feeds">
          <div class="card-header d-flex">

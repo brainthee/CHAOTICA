@@ -86,47 +86,6 @@ class Service(models.Model):
         return super().save(*args, **kwargs)
 
 
-class Certification(models.Model):
-    name = models.CharField(max_length=200)
-    slug = models.SlugField(null=False, default='', unique=True)
-
-    def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = unique_slug_generator(self, self.name)
-        return super().save(*args, **kwargs)
-
-    def __str__(self):
-        return '%s' % (self.name)
-
-    class Meta:
-        ordering = [Lower('name')]
-        unique_together = (('name'), )
-        permissions = (
-            ('view_users_certification', 'View Users with Certification'),
-        )
-
-
-class UserCertification(models.Model):
-    certification = models.ForeignKey(Certification, related_name='users', on_delete=models.PROTECT)
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        limit_choices_to=(
-            models.Q(is_active=True)
-        ),
-        on_delete=models.CASCADE,
-        related_name="certifications",
-    )
-    last_updated_on = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return u'%s %s - %s' % (self.user.first_name, self.user.last_name,
-                                    self.certification)
-
-    class Meta:
-        ordering = ['certification', 'user', ]
-        unique_together = (('user', 'certification',),)
-
-
 class WorkflowTask(models.Model):
     WF_JOB = 1
     WF_PHASE = 2

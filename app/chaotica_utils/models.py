@@ -266,6 +266,10 @@ class User(AbstractUser):
         # Used to decorate avatars
         return "online"
     
+    def get_jobs(self):
+        from jobtracker.models import Job
+        return Job.objects.jobs_for_user(self)
+    
     def get_timeslots(self, start=None, end=None, phase_focus=None):
         from jobtracker.models import TimeSlot
         from .utils import fullcalendar_to_datetime
@@ -401,6 +405,15 @@ class User(AbstractUser):
                                          from_range=timezone.now() - relativedelta(months=12), 
                                          to_range=timezone.now()):
         return self.get_average_qa_rating("presqa_report_rating", from_range, to_range)
+    
+    
+    def get_average_qa_rating_12mo(self):
+        tqa = self.get_average_techqa_feedback_12mo()
+        pqa = self.get_average_presqa_feedback_12mo()
+        if tqa > 0 and pqa > 0:
+            return (tqa + pqa) /2
+        else:
+            return 0
     
         
     def get_average_qa_rating_12mo(self, qa_field):

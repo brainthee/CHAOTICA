@@ -1,6 +1,6 @@
 from django import forms
 from django.urls import reverse
-from .models import Contact, FrameworkAgreement, Job, Certification, Feedback, TimeSlot, TimeSlotType, Client, Phase, OrganisationalUnit, OrganisationalUnitMember, Skill, Service, WorkflowTask, SkillCategory
+from .models import Contact, FrameworkAgreement, Job, Qualification, QualificationRecord, AwardingBody, Feedback, TimeSlot, TimeSlotType, Client, Phase, OrganisationalUnit, OrganisationalUnitMember, Skill, Service, WorkflowTask, SkillCategory
 from chaotica_utils.models import Note, User
 from .enums import DefaultTimeSlotTypes, JobStatuses, PhaseStatuses
 from crispy_forms.helper import FormHelper
@@ -1066,16 +1066,90 @@ class OrganisationalUnitForm(forms.ModelForm):
         }
 
 
-class CertificationForm(forms.ModelForm):
+class QualificationForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
-        super(CertificationForm, self).__init__(*args, **kwargs)
+        super(QualificationForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
         self.fields['name'].label = False
+        self.fields['short_name'].label = False
+        self.fields['url'].label = False
+        self.fields['guidance_url'].label = False
+        self.fields['validity_period'].label = False
+        self.fields['tags'].label = False
         
 
     class Meta:
-        model = Certification
+        model = Qualification
+        fields = ["name", "short_name", "tags", "validity_period", "url", "guidance_url"]
+
+
+class OwnQualificationRecordForm(forms.ModelForm):
+
+    qualification = forms.ModelChoiceField(
+        required=False,
+        queryset=Qualification.objects.all(),
+        widget=autocomplete.ModelSelect2(
+                                         attrs={
+                                             'data-minimum-input-length': 3,
+                                         },),)
+    
+    attempt_date = forms.DateField(required=False,
+                            widget=DatePickerInput(),)
+    awarded_date = forms.DateField(required=False,
+                            widget=DatePickerInput(),)
+    lapse_date = forms.DateField(required=False,
+                            widget=DatePickerInput(),)
+    
+    def __init__(self, *args, **kwargs):
+        super(OwnQualificationRecordForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.helper.layout = Layout(
+            Div(
+                Row(
+                    Column(Field('qualification', style="width: 100%;")),
+                ),
+                Row(
+                    Column(Div(FloatingField('status'),
+                            css_class="input-group input-group-dynamic")),
+                ),
+                Row(
+                    Column(Div(Field('attempt_date'),
+                            css_class="input-group input-group-dynamic")),
+                    Column(Div(Field('awarded_date'),
+                            css_class="input-group input-group-dynamic")),
+                    Column(Div(Field('lapse_date'),
+                            css_class="input-group input-group-dynamic")),
+                ),
+                css_class='card-body p-3'),
+            Div(
+                Div(
+                    StrictButton("Save", type="submit", 
+                        css_class="btn btn-outline-phoenix-success ms-auto mb-0"),
+                    css_class="button-row d-flex"),
+                css_class="card-footer pt-0 p-3"),
+        )
+        
+
+    class Meta:
+        model = QualificationRecord
+        fields = ["qualification", 
+                  "status", 
+                  "attempt_date",
+                  "awarded_date", 
+                  "lapse_date", ]
+
+
+
+class AwardingBodyForm(forms.ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super(AwardingBodyForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.fields['name'].label = False
+
+    class Meta:
+        model = AwardingBody
         fields = ["name"]
 
 
