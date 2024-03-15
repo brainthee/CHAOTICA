@@ -14,7 +14,7 @@
     <div class="alert alert-phoenix-warning d-flex mt-2 mb-0 align-items-center" role="alert">
         <span class="fas fa-info-circle text-warning fs-5 me-3"></span>
         <p class="mb-0 flex-1">
-            User is disabled
+            User is inactive
         </p>
     </div>
 {% endif %}
@@ -66,38 +66,63 @@
                 
                 <div class="d-flex flex-between-center border-top border-dashed border-300 pt-4">
                     <div>
-                        <h6>Following</h6>
-                        <p class="fs-1 text-800 mb-0">297</p>
+                        <h6>Avg Rating</h6>
+                        <div class="text-600 mb-0">
+                            {% with avg_qa_rating=user.get_average_qa_rating_12mo %}
+                            <span class="rating text-end {% if avg_qa_rating < 2 %}text-danger{% elif avg_qa_rating < 3 %}text-warning{% elif avg_qa_rating < 4 %}text-primary{% elif avg_qa_rating >= 4 %}text-success{% endif %}" 
+                                data-bs-toggle="tooltip" data-bs-placement="bottom" 
+                                title="{% if avg_qa_rating > 0 %}{{ avg_qa_rating }}{% else %}No Data{% endif %}" >
+                              {% include 'partials/feedback_stars.html' with feedback=avg_qa_rating %}
+                            </span>
+                            {% endwith %}
+                        </div>
                     </div>
                     <div>
-                        <h6>Projects</h6>
-                        <p class="fs-1 text-800 mb-0">56</p>
+                        <h6>Jobs</h6>
+                        <p class="fs-1 text-800 mb-0">{{ user.get_jobs | length }}</p>
                     </div>
                     <div>
-                        <h6>Completion</h6>
-                        <p class="fs-1 text-800 mb-0">97</p>
+                        <h6>Reports</h6>
+                        <p class="fs-1 text-800 mb-0">{{ user.phase_where_report_author.all | length }}</p>
                     </div>
+                </div>
+                <div class="border-top border-dashed border-300 pt-4"></div>
+                <div class="mb-4">
+                    <div class="d-flex align-items-center mb-1">
+                        <span class="me-2 fas fa-certificate">  </span>
+                        <h5 class="text-body-highlight mb-0">Qualifications</h5>
+                    </div>
+                    <ul class="list-group align-items-center list-group-flush">
+                        {% for record in user.qualifications.all %}
+                        <li class="list-group-item">
+                            <a href="{{ record.qualification.get_absolute_url }}">
+                                <span class="badge badge-phoenix badge-phoenix-{{ record.status_bs_colour }} me-2 mb-1 text-wrap">
+                                    {{ record.qualification.awarding_body }} - {{ record.qualification }} ({{ record.get_status_display }})
+                                </span>            
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+
                 </div>
             </div>
         </div>
 
     </div>
 
-    <div class="col-12 g-2 col-xl-8">
+    <div class="col-12 g-2 col-xl-8 ps-3 pt-3">
     
-        <div class="row g-6">
+        <div class="row">
             <div class="col-6">
-                {% include 'partials/profile/quals_card.html' %}         
+                {% include 'partials/profile/skills_card.html' %} 
             </div>
 
-            <div class="col-6">
+            <div class="col-6 ps-3">
                 {% include 'partials/profile/utilisation.html' %}
             </div>
         </div>
 
         <div class="row mb-3">
-
-            {% include 'partials/profile/skills_card.html' %} 
                 
         </div>
 

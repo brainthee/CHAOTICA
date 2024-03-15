@@ -3,13 +3,13 @@
 {% load widget_tweaks %}
 {% load crispy_forms_tags %}
 
-{% block pageTitle %}Service Management{% endblock pageTitle %}
-{% block head_title %}Service Management{% endblock head_title %}
+{% block pageTitle %}Qualification Management{% endblock pageTitle %}
+{% block head_title %}Qualification Management{% endblock head_title %}
 
 
 {% block breadcrumbItem %}
-<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{% url 'service_list' %}">Services</a></li>
-<li class="breadcrumb-item text-sm text-dark active" aria-current="page">New Service</li>
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{% url 'qualification_list' %}">Qualifications</a></li>
+<li class="breadcrumb-item text-sm text-dark active" aria-current="page">New Qualification</li>
 {% endblock breadcrumbItem %}
 
 {% block content %}
@@ -22,9 +22,9 @@
       <div class="col-auto">
         <h2 class="mb-2">
             {% if form.instance.pk %}
-            Edit Service
+            Edit Qualification
             {% else %}
-            Add Service
+            Add Qualification
             {% endif %}            
         </h2>
       </div>
@@ -37,16 +37,29 @@
 
     <div class="row">
       <div class="col-12 col-xl-8 g-2 ">
-        
-        <h4 class="mb-3">Name</h4>
-        {{ form.name|as_crispy_field }}
+        <div class="row mb-6">
+          <div class="col-12 col-xl-6">
+            <h4 class="mb-3">Name</h4>
+            {{ form.name|as_crispy_field }}
+          </div>
+
+          <div class="col-12 col-xl-6">
+            <h4 class="mb-3">Code/Short Name</h4>
+            {{ form.short_name|as_crispy_field }}
+          </div>
+        </div>      
 
         <div class="row mb-6">
           <div class="col-12 col-xl-6">
-            <h4 class="mb-3">Service Owners</h4>
-            {{ form.owners|as_crispy_field }}
+            <h4 class="mb-3">Link to Qualification</h4>
+            {{ form.url|as_crispy_field }}
           </div>
-        </div>        
+
+          <div class="col-12 col-xl-6">
+            <h4 class="mb-3">Link to Guidance</h4>
+            {{ form.guidance_url|as_crispy_field }}
+          </div>
+        </div>       
       </div>
 
       <div class="col-12 col-xl-4">
@@ -55,32 +68,24 @@
             <div class="card mb-3">
               <div class="card-body">
                 <div class="row gx-3">
+
                   <div class="col-12 col-sm-6 col-xl-12">
                     <div class="mb-4">
                       <div class="d-flex flex-wrap mb-2">
-                        <h5 class="mb-0 text-1000 me-2">Required Skills</h5>
+                        <h5 class="mb-0 text-1000 me-2">Validity Period</h5>
                       </div>
-                      {{ form.skillsRequired|as_crispy_field }}
-                      
+                      {{ form.validity_period|as_crispy_field }}                    
                     </div>
                   </div>
-                  <div class="col-12 col-sm-6 col-xl-12">
-                    <div class="mb-4">
-                      <div class="d-flex flex-wrap mb-2">
-                        <h5 class="mb-0 text-1000 me-2">Desired Skills</h5>
-                      </div>
-                      {{ form.skillsDesired|as_crispy_field }}
-                      
-                    </div>
-                  </div>
+                  
                 </div>
               </div>
             </div>
-          </div>
-          
+          </div>        
         </div>
       </div>
     </div>
+
   </form>
 </div>
 {% endblock content %}

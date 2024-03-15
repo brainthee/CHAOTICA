@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 {% load menu %}{% load static %}
 
-{% block pageTitle %}{{ certification }}{% endblock pageTitle %}
-{% block head_title %}{{ certification }}{% endblock head_title %}
+{% block pageTitle %}{{ qualification }}{% endblock pageTitle %}
+{% block head_title %}{{ qualification }}{% endblock head_title %}
 
 
 {% block breadcrumbItem %}
-<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{% url 'certification_list' %}">Certifications</a></li>
-<li class="breadcrumb-item text-sm text-dark active" aria-current="page">{{ certification.name }}</li>
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{% url 'qualification_list' %}">Qualifications</a></li>
+<li class="breadcrumb-item text-sm text-dark active" aria-current="page">{{ qualification.name }}</li>
 {% endblock breadcrumbItem %}
 
 {% block content_classes %}pt-15 px-0 {% endblock content_classes %}
@@ -20,13 +20,13 @@
     <div class="row align-items-center justify-content-between g-3 mt-0 mb-0">
       <div class="col-6 col-md-auto">
         <h2 class="mb-2">
-          Certification Detail
+          Qualification Detail
         </h2>
       </div>
 
       <div class="col-md-auto">
         <div class="d-flex">
-            <a href="{% url 'certification_update' certification.slug %}" class="btn btn-outline-secondary ms-auto">
+            <a href="{% url 'qualification_update' qualification.awarding_body.slug qualification.slug %}" class="btn btn-outline-secondary ms-auto">
             Edit
             </a>
         </div>
@@ -37,32 +37,15 @@
 
 
 <div class="row justify-content-between ms-3 me-3 g-3 mt-0 mb-0">
-  <div class="col-4">
+  <div class="col-6">
     <div class="card">
       <div class="card-body">
+
         <div class="row align-items-center g-3">
-          <div class="col-12 col-sm-auto flex-1">
+          <div class="col-12 ">
             <h3 class="fw-bolder mb-2 line-clamp-1">
-                {{ certification.name }}
+              {{ qualification.awarding_body }} {{ qualification }}
             </h3>
-
-            <table class="w-100 table-stats table-stats">
-              <caption>Service Info</caption>
-              <tbody>
-                  <tr>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                  </tr>
-                  <tr>
-                  </tr>
-                  <tr>
-                  </tr>
-                  <tr>
-                  </tr>
-              </tbody>
-            </table>
-
           </div>
         </div>
 
@@ -70,10 +53,7 @@
     </div>
   </div>
 
-  <div class="col-4">    
-  </div>
-
-  <div class="col-4">
+  <div class="col-6">
   </div>
 </div>
 

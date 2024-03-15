@@ -1,0 +1,40 @@
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+<div class="modal-dialog modal- modal-dialog-centered modal-" role="document">
+    <div class="modal-content">
+        <form method="post" action="{{ request.get_full_path }}" class="js-submit-modal-form">
+            {% csrf_token %}            
+            <div class="modal-header">
+                <h6 class="modal-title font-weight-normal" 
+                    id="modal-title-default">
+                        {% if form.instance.pk %}
+                        Edit Qualification
+                        {% else %}
+                        Add Qualification
+                        {% endif %}      
+                </h6>
+                <button type="button" class="btn-close text-dark" 
+                    data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <ul class="errorlist">
+                {% if form.non_field_errors %}
+                    <li>{{ form.non_field_errors }}</li>
+                {% endif %}
+                {% for field in form %}
+                    {% if field.errors %}
+                        <li>
+                            {{ field.label }}
+                            <ul class="errorlist">
+                            {% for error in field.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                            </ul>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+
+            {% crispy form %}
+        </form>
+    </div>
+ </div>

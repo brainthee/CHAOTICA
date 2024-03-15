@@ -27,9 +27,6 @@ urlpatterns = [
     path('notifications/mark_all_read', views.notifications_mark_read, name='notifications_mark_read'),
 
     # Annual Leave
-    path('leave/', views.view_own_leave, name='view_own_leave'),
-    path('leave/request', views.request_own_leave, name='request_own_leave'),
-    path('leave/<int:pk>/cancel', views.cancel_own_leave, name='cancel_own_leave'),
     path('ops/leave/', views.manage_leave, name='manage_leave'),
     path('ops/leave/<int:pk>/manage', views.manage_leave_auth_request, name='manage_leave_auth_request'),
 
@@ -44,6 +41,9 @@ urlpatterns = [
     path('profile/update', views.update_own_profile, name='update_own_profile'),
     path('profile/update/skills', views.update_own_skills, name='update_own_skills'),    
     path('profile/update/certs', views.update_own_certs, name='update_own_certs'),    
+    path('profile/leave/', views.view_own_leave, name='view_own_leave'),
+    path('profile/leave/request', views.request_own_leave, name='request_own_leave'),
+    path('profile/leave/<int:pk>/cancel', views.cancel_own_leave, name='cancel_own_leave'),
 
     # Other user profile bits
     path('profile/<str:email>', views.UserDetailView.as_view(), name='user_profile'),

@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% load menu %}{% load static %}
+
+{% block pageTitle %}My Qualifications{% endblock pageTitle %}
+{% block head_title %}My Qualifications{% endblock head_title %}
+
+{% block headerBlock_css %}mb-6{% endblock headerBlock_css %}
+
+{% block breadcrumbItem %}
+<li class="breadcrumb-item active" aria-current="page">My Qualifications</li>
+{% endblock breadcrumbItem %}
+
+{% block content %}
+
+<div class="row mb-2 gx-6 gy-3 mt-0 align-items-center">
+  <div class="col">
+    <h2 class="mb-0">My Qualifications</h2>
+  </div>
+  <div class="col-6">
+
+
+  </div>
+  <div class="col-3 d-flex justify-content-end">
+    <button class="btn btn-phoenix-primary px-5 js-load-modal-form" data-url="{% url 'add_own_qualification' %}">
+      <i class="fa-solid fa-plus me-2"></i>
+      Add Qualification
+    </button>
+  </div>
+</div>
+
+<div class="mx-n4 px-3 py-3 mx-lg-n6 px-lg-6 bg-white border-top border-bottom border-200 position-relative top-1">
+
+  <div class="table-responsive scrollbar mx-n1 px-1">
+    <table class="table table-sm fs--1 datatable mb-0">
+      <caption>Qualification List</caption>
+      <thead>
+        <tr>
+          <th class="sort align-middle ps-3" scope="col" data-sort="awarding_body" style="width:10%;">
+            Awarding Body
+          </th>
+          <th class="sort align-middle ps-3" scope="col" data-sort="name" style="width:10%;">
+            Name
+          </th>
+          <th class="sort align-middle ps-3" scope="col" data-sort="awarded" style="width:10%;">
+            Awarded Date
+          </th>
+          <th class="sort align-middle ps-3" scope="col" data-sort="lapse" style="width:15%;">
+            Lapse Date
+          </th>
+          <th class="sort align-middle ps-3" scope="col" data-sort="status" style="width:10%;">
+            Status
+          </th>
+          <th class="sort align-end text-end" scope="col" style="width:10%;">
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for record in qualificationrecord_list %}
+      <tr>
+          <td class="align-middle time white-space-nowrap ps-0 projectName py-4">
+              {{ record.qualification.awarding_body }}
+          </td>
+  
+          <td class="align-middle white-space-nowrap unit ps-3 py-4">
+              {{ record.qualification }}
+          </td>
+  
+          <td class="align-middle white-space-nowrap unit ps-3 py-4">
+              {{ record.awarded_date }}
+          </td>
+  
+          <td class="align-middle white-space-nowrap client ps-3 py-4">
+              {{ record.lapse_date }}
+          </td>
+  
+          <td class="align-middle white-space-nowrap end ps-3 py-4">
+            {% include 'partials/qualification/qualification_record_status_badge.html' with record=record %}
+          </td>
+  
+          <td class="align-middle text-end white-space-nowrap pe-0 action">
+            <button class="btn btn-sm btn-phoenix-primary js-load-modal-form" 
+              data-url="{% url 'update_own_qualification' record.pk %}" type="button">
+              Edit
+            </button>
+          </td>
+        </tr>
+      {% endfor %}        
+      </tbody>
+    </table>
+  </div>
+  
+</div>
+
+{% endblock content %}  

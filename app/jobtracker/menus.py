@@ -3,6 +3,12 @@ from menu import Menu, MenuItem
 from chaotica_utils.utils import PermMenuItem, RoleMenuItem
 
 
+Menu.add_item("user", MenuItem("My Qualifications",
+                               reverse('view_own_qualifications'),
+                               icon="certificate",
+                               weight=1,))
+
+
 Menu.add_item("main", RoleMenuItem("Jobs",
                             reverse("job_list"),
                             icon="cubes",
@@ -41,12 +47,18 @@ ops_children = (
                 icon="laptop-code",
                 weight=1,
                 ),
-    PermMenuItem("Certifications",
-                reverse("certification_list"),
-                perm='jobtracker.view_certification',
+    PermMenuItem("Qualifications",
+                reverse("qualification_list"),
+                perm='jobtracker.view_qualification',
                 icon="certificate",
                 weight=1,
                 ),
+    # PermMenuItem("Accreditation",
+    #             reverse("qualification_list"),
+    #             perm='jobtracker.view_qualification',
+    #             icon="certificate",
+    #             weight=1,
+    #             ),
     PermMenuItem("Workflow Checklists",
                 reverse("wf_tasks_list"),
                 perm='jobtracker.view_workflowtask',

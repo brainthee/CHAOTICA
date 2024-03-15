@@ -9,6 +9,7 @@ from .orgunit import *
 
 from .scheduler import *
 from .service import *
-from .certification import *
+from .qualification import *
+from .own import *
 from .skill import *
 from .wf_tasks import *

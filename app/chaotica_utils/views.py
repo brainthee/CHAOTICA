@@ -755,7 +755,7 @@ def site_search(request):
     context = {}
     q = request.POST.get('q', '').capitalize()
     results_count = 0
-    from jobtracker.models import Job, Phase, Client, Service, Skill, BillingCode, Certification
+    from jobtracker.models import Job, Phase, Client, Service, Skill, BillingCode, Qualification, Accreditation
     if is_ajax(request) and len(q) > 2:
         ## Jobs
         jobs_search = get_objects_for_user(request.user, 'jobtracker.view_job', Job).filter(
@@ -796,11 +796,17 @@ def site_search(request):
         context['search_skills'] = sk_search
         results_count = results_count + sk_search.count()
 
-        ## Certifications
-        cert_search = get_objects_for_user(request.user, 'jobtracker.view_certification', Certification).filter(
+        ## Qualifications
+        qual_search = get_objects_for_user(request.user, 'jobtracker.view_qualification', Qualification).filter(
             Q(name__icontains=q))
-        context['search_certs'] = cert_search
-        results_count = results_count + cert_search.count()
+        context['search_quals'] = qual_search
+        results_count = results_count + qual_search.count()
+
+        ## Accreditation
+        accred_search = get_objects_for_user(request.user, 'jobtracker.view_accredication', Accreditation).filter(
+            Q(name__icontains=q))
+        context['search_accred'] = accred_search
+        results_count = results_count + accred_search.count()
 
         ## Users
         if request.user.is_superuser:

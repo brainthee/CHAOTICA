@@ -3,6 +3,18 @@ from . import views
 from .feeds import ScheduleFeed, ScheduleFamilyFeed
 
 urlpatterns = [
+
+    # Extra profile bits
+    path('profile/qualifications/', views.OwnQualificationRecordListView.as_view(), name='view_own_qualifications'),
+    path('profile/qualifications/add', views.add_own_qualification, name='add_own_qualification'),
+    path('profile/qualifications/<int:pk>/update', views.update_own_qualification, name='update_own_qualification'),
+
+    # Misc
+    path('stats/', views.view_stats, name='view_stats'),
+    path('reports/', views.view_reports, name='view_reports'),
+    path('tasks/', views.run_tasks, name='run_tasks'),
+
+    # Scheduler
     path('schedule/feed/reset', views.reset_cal_feed, name='reset_cal_feed'),
     path('schedule/feed/family/reset', views.reset_cal_family_feed, name='reset_cal_family_feed'),
     path('schedule/feed/family/<str:cal_key>', ScheduleFamilyFeed(), name='view_own_schedule_feed_family'),
@@ -21,9 +33,6 @@ urlpatterns = [
     path('scheduler/timeslots/phase/create', views.create_scheduler_phase_slot, name='create_scheduler_phase_slot'),
     path('scheduler/timeslots/internal/create', views.create_scheduler_internal_slot, name='create_scheduler_internal_slot'),
     path('scheduler/timeslots/clear_range', views.clear_scheduler_range, name='clear_scheduler_range'),    
-    path('stats/', views.view_stats, name='view_stats'),
-    path('reports/', views.view_reports, name='view_reports'),
-    path('tasks/', views.run_tasks, name='run_tasks'),
 
     # Job CRUD
     path('jobs/', views.JobListView.as_view(), name='job_list'),
@@ -128,10 +137,12 @@ urlpatterns = [
     path('ops/skill_category/<str:slug>/update/', views.SkillCatUpdateView.as_view(), name='skill_cat_update'),
     path('ops/skill_category/<str:slug>/delete/', views.SkillCatDeleteView.as_view(), name='skill_cat_delete'),
 
-    # Certifications CRUD
-    path('ops/certifications/', views.CertificationListView.as_view(), name='certification_list'),
-    path('ops/certification/create/', views.CertificationCreateView.as_view(), name='certification_create'),
-    path('ops/certification/<str:slug>/', views.CertificationDetailView.as_view(), name='certification_detail'),
-    path('ops/certification/<str:slug>/update/', views.CertificationUpdateView.as_view(), name='certification_update'),
-    path('ops/certification/<str:slug>/delete/', views.CertificationDeleteView.as_view(), name='certification_delete'),
+    # Qualifications CRUD
+    path('ops/qualifications/', views.QualificationListView.as_view(), name='qualification_list'),
+    path('ops/qualifications/awardingbody/create/', views.QualificationAwardingBodyCreateView.as_view(), name='qualification_awardingbody_create'),
+    path('ops/qualification/<str:bodySlug>/create', views.QualificationCreateView.as_view(), name='qualification_create'),
+    path('ops/qualification/<str:bodySlug>/<str:slug>', views.QualificationDetailView.as_view(), name='qualification_detail'),
+    path('ops/qualification/<str:bodySlug>/<str:slug>/update/', views.QualificationUpdateView.as_view(), name='qualification_update'),
+    path('ops/qualification/<str:bodySlug>/<str:slug>/delete/', views.QualificationDeleteView.as_view(), name='qualification_delete'),
+    
 ]
