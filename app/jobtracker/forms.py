@@ -1,7 +1,10 @@
 from django import forms
 from django.urls import reverse
-from .models import Contact, FrameworkAgreement, Job, Qualification, QualificationRecord, AwardingBody, Feedback, TimeSlot, TimeSlotType, Client, Phase, OrganisationalUnit, OrganisationalUnitMember, Skill, Service, WorkflowTask, SkillCategory
+from .models import Contact, FrameworkAgreement, Job, Qualification, QualificationRecord, AwardingBody, Feedback, \
+    TimeSlot, TimeSlotType, Client, Phase, OrganisationalUnit, OrganisationalUnitMember, Skill, \
+        Service, WorkflowTask, SkillCategory, BillingCode, BillingCodeAssociation
 from chaotica_utils.models import Note, User
+from django.db.models import Q
 from .enums import DefaultTimeSlotTypes, JobStatuses, PhaseStatuses
 from crispy_forms.helper import FormHelper
 from crispy_forms.bootstrap import StrictButton, Accordion, AccordionGroup
@@ -127,6 +130,34 @@ class AssignJobFramework(forms.ModelForm):
     class Meta:
         model = Job
         fields = ('associated_framework',)
+        
+
+class AssignBillingCodeFramework(forms.ModelForm):
+    code = forms.ModelChoiceField(required=False,
+                                     queryset=BillingCode.objects.all(),)
+    
+    def __init__(self, *args, **kwargs):
+        super(AssignBillingCodeFramework, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.fields['code'].queryset = BillingCode.objects.filter(Q(client=self.instance.client) | Q(client__isnull=True))
+        self.helper.layout = Layout(
+            Div(
+                Row(
+                    Div(Field('code'),
+                        css_class="input-group input-group-dynamic")
+                ),
+                css_class='modal-body pt-3'),
+
+            Div(
+                Div(StrictButton("Save", type="submit", 
+                    css_class="btn btn-outline-phoenix-success ms-auto mb-0"),
+                css_class="button-row d-flex"),
+            css_class="modal-footer"),
+        )
+
+    class Meta:
+        model = BillingCodeAssociation
+        fields = ('code',)
 
 
 class AssignContact(forms.Form):
@@ -1151,6 +1182,32 @@ class AwardingBodyForm(forms.ModelForm):
     class Meta:
         model = AwardingBody
         fields = ["name"]
+
+
+class BillingCodeForm(forms.ModelForm):
+    client = forms.ModelChoiceField(
+        required=False,
+        queryset=Client.objects.filter(), # TODO: Update to only filter clients we have permission for...
+        widget=autocomplete.ModelSelect2(
+                                         attrs={
+                                             'data-minimum-input-length': 3,
+                                         },),)
+
+    def __init__(self, *args, **kwargs):
+        super(BillingCodeForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.fields['code'].label = False
+        self.fields['client'].label = False
+
+        # self.fields['is_chargeable'].label = False
+        # self.fields['is_recoverable'].label = False
+        # self.fields['is_closed'].label = False
+        self.fields['region'].label = False
+        
+
+    class Meta:
+        model = BillingCode
+        fields = ["code", "client", "is_chargeable", "is_recoverable", "is_closed", "region"]
 
 
 class ServiceForm(forms.ModelForm):
