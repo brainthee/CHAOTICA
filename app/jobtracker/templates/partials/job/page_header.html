@@ -70,6 +70,19 @@
                                         </p>
                                     </td>
                                 </tr>
+                                <tr>
+                                    <td class="">
+                                        <p class="fw-bold mb-0">Codes</p>
+                                    </td>
+                                    <td class=" d-none d-sm-block pe-sm-2">:</td>
+                                    <td class="">
+                                        <div class="d-flex">
+                                            {% for billingcode in job.billing_codes.all %}
+                                                {% include 'partials/billingcode/billingcode_badge.html' with billingcode=billingcode %}
+                                            {% endfor %}
+                                        </div>
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>

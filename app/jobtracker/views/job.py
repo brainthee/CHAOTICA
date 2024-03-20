@@ -17,7 +17,7 @@ from django.urls import reverse_lazy
 from chaotica_utils.views import log_system_activity, ChaoticaBaseView
 from chaotica_utils.enums import UnitRoles
 from ..models import Job, TimeSlot, TimeSlotType, OrganisationalUnit, WorkflowTask, Contact, FrameworkAgreement
-from ..forms import ScopeInlineForm, DeliveryTimeSlotModalForm, AddNote, JobForm, AssignUserField, ScopeForm, AssignJobFramework
+from ..forms import ScopeInlineForm, DeliveryTimeSlotModalForm, AssignBillingCodeFramework, AddNote, JobForm, AssignUserField, ScopeForm, AssignJobFramework
 from ..enums import JobStatuses, TimeSlotDeliveryRole, DefaultTimeSlotTypes
 from .helpers import _process_assign_user, _process_assign_contact
 import logging
@@ -84,6 +84,27 @@ def assign_job_framework(request, slug):
     
     context = {'form': form, 'job': job,}
     data['html_form'] = loader.render_to_string("modals/assign_job_framework.html",
+                                                context,
+                                                request=request)
+    return JsonResponse(data)
+
+
+@permission_required_or_403('jobtracker.assign_billingcodes', (Job, 'slug', 'slug'))
+def assign_job_billingcodes(request, slug):
+    job = get_object_or_404(Job, slug=slug)
+    data = dict()
+    if request.method == 'POST':
+        form = AssignBillingCodeFramework(request.POST, instance=job)
+        if form.is_valid():
+            form.save()
+            data['form_is_valid'] = True
+        else:
+            data['form_is_valid'] = False
+    else:
+        form = AssignBillingCodeFramework(instance=job)
+    
+    context = {'form': form, 'job': job,}
+    data['html_form'] = loader.render_to_string("modals/assign_job_billingcodes.html",
                                                 context,
                                                 request=request)
     return JsonResponse(data)

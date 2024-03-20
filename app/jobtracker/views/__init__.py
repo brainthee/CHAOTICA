@@ -5,6 +5,7 @@ from .job import *
 from .phase import *
 
 from .client import *
+from .billingcodes import *
 from .orgunit import *
 
 from .scheduler import *

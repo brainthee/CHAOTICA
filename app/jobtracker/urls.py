@@ -54,6 +54,7 @@ urlpatterns = [
     path('job/<str:slug>/schedule/slot/<int:pk>/delete', views.SlotDeleteView.as_view(), name='job_slot_delete'),
 
     path('job/<str:slug>/assign/framework', views.assign_job_framework, name='assign_job_framework'),
+    path('job/<str:slug>/assign/billingcodes', views.assign_job_billingcodes, name='assign_job_billingcodes'),
     path('job/<str:slug>/assign/primay_poc', views.assign_job_poc, name='assign_job_poc'),    
     path('job/<str:slug>/assign/<str:field>', views.assign_job_field, name='assign_job_field'),
 
@@ -101,6 +102,13 @@ urlpatterns = [
     path('client/<str:client_slug>/framework/<int:pk>/', views.ClientFrameworkDetailView.as_view(), name='client_framework_detail'),
     path('client/<str:client_slug>/framework/<int:pk>/update/', views.ClientFrameworkUpdateView.as_view(), name='client_framework_update'),
     path('client/<str:client_slug>/framework/<int:pk>/delete/', views.ClientFrameworkDeleteView.as_view(), name='client_framework_delete'),
+
+    # Billing Code CRUD
+    path('ops/billingcodes/', views.BillingCodeListView.as_view(), name='billingcode_list'),
+    path('ops/billingcode/create/', views.BillingCodeCreateView.as_view(), name='billingcode_create'),
+    path('ops/billingcode/<str:code>/', views.BillingCodeDetailView.as_view(), name='billingcode_detail'),
+    path('ops/billingcode/<str:code>/update/', views.BillingCodeUpdateView.as_view(), name='billingcode_update'),
+    path('ops/billingcode/<str:code>/delete/', views.BillingCodeDeleteView.as_view(), name='billingcode_delete'),
 
     # Service CRUD
     path('ops/services/', views.ServiceListView.as_view(), name='service_list'),
