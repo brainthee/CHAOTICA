@@ -2,7 +2,7 @@ from .common import Link, Service, WorkflowTask, Feedback
 from .financial import BillingCode
 from .client import Client, Contact, Address, FrameworkAgreement
 
-from .job import Job
+from .job import Job, JobSupportTeamRole
 from .phase import Phase
 
 from .skill import Skill, SkillCategory, UserSkill

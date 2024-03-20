@@ -45,6 +45,12 @@ urlpatterns = [
     path('job/<str:slug>/update/scope', views.JobUpdateScopeView.as_view(), name='job_update_scope'),
     path('job/<str:slug>/update/', views.JobUpdateView.as_view(), name='job_update'),
     path('job/<str:slug>/delete/', views.JobDeleteView.as_view(), name='job_delete'),
+
+    path('job/<str:slug>/support/add', views.job_support_team_add, name='job_support_team_add'),
+    path('job/<str:slug>/support/<int:pk>/edit', views.job_support_team_edit, name='job_support_team_edit'),
+    path('job/<str:slug>/support/<int:pk>/mark_used', views.job_support_team_mark_used, name='job_support_team_mark_used'),
+    path('job/<str:slug>/support/<int:pk>/delete', views.job_support_team_delete, name='job_support_team_delete'),
+
     path('job/<str:slug>/schedule/', views.JobScheduleView.as_view(), name='job_schedule'),   
     path('job/<str:slug>/schedule/gantt', views.view_job_schedule_gantt_data, name='view_job_schedule_gantt_data'),
     path('job/<str:slug>/schedule/members', views.view_job_schedule_members, name='view_job_schedule_members'), 
