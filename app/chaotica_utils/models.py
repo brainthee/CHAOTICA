@@ -146,6 +146,7 @@ class User(AbstractUser):
     username = None
     email = models.EmailField('Email Address', unique=True)
     USERNAME_FIELD = 'email'
+    EMAIL_FIELD = 'email'
     REQUIRED_FIELDS = []
 
     manager = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET(get_sentinel_user),

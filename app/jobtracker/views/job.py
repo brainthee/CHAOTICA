@@ -14,14 +14,15 @@ from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
+from dal import autocomplete
 from chaotica_utils.views import log_system_activity, ChaoticaBaseView
 from chaotica_utils.enums import UnitRoles
-from ..models import Job, TimeSlot, TimeSlotType, OrganisationalUnit, WorkflowTask, Contact, FrameworkAgreement
-from ..forms import ScopeInlineForm, DeliveryTimeSlotModalForm, AddNote, JobForm, AssignUserField, ScopeForm, AssignJobFramework
+from ..models import Job, BillingCode, TimeSlot, TimeSlotType, OrganisationalUnit, WorkflowTask, Contact, FrameworkAgreement
+from ..forms import ScopeInlineForm, DeliveryTimeSlotModalForm, AddNote, JobForm, AssignUserField, ScopeForm, AssignJobFramework, AssignJobBillingCode
 from ..enums import JobStatuses, TimeSlotDeliveryRole, DefaultTimeSlotTypes
 from .helpers import _process_assign_user, _process_assign_contact
 import logging
-from django.contrib.auth.decorators import login_required
+from django.utils.html import format_html
 
 
 logger = logging.getLogger(__name__)
@@ -84,6 +85,27 @@ def assign_job_framework(request, slug):
     
     context = {'form': form, 'job': job,}
     data['html_form'] = loader.render_to_string("modals/assign_job_framework.html",
+                                                context,
+                                                request=request)
+    return JsonResponse(data)
+
+
+@permission_required_or_403('jobtracker.assign_billingcodes', (Job, 'slug', 'slug'))
+def assign_job_billingcodes(request, slug):
+    job = get_object_or_404(Job, slug=slug)
+    data = dict()
+    if request.method == 'POST':
+        form = AssignJobBillingCode(request.POST, instance=job)
+        if form.is_valid():
+            form.save()
+            data['form_is_valid'] = True
+        else:
+            data['form_is_valid'] = False
+    else:
+        form = AssignJobBillingCode(instance=job)
+    
+    context = {'form': form, 'job': job,}
+    data['html_form'] = loader.render_to_string("modals/assign_job_billingcodes.html",
                                                 context,
                                                 request=request)
     return JsonResponse(data)
@@ -456,3 +478,32 @@ def job_update_workflow(request, slug, new_state):
                                                 context,
                                                 request=request)
     return JsonResponse(data)
+
+
+################################################
+## Job Autocompletes
+################################################
+
+
+class JobBillingCodeAutocomplete(autocomplete.Select2QuerySetView):
+
+    def get_queryset(self):
+        if not self.request.user.is_authenticated:
+            return BillingCode.objects.none()
+        
+        job_slug = self.forwarded.get('slug', None)
+        if not job_slug:
+            return BillingCode.objects.none()
+        
+        # TODO: return only if job allowed
+        job = Job.objects.get(slug=job_slug)
+
+        qs = BillingCode.objects.filter(Q(client=job.client) | Q(client__isnull=True))
+
+        if self.q:
+            qs = qs.filter(code__istartswith=self.q)
+
+        return qs
+    
+    def get_result_label(self, result):
+        return result.get_html_label()

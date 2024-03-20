@@ -1,0 +1,10 @@
+<a href="{{ billingcode.get_absolute_url }}">
+    <span class="badge badge-phoenix badge-phoenix-{{ billingcode.get_state_bscolour }}"
+    data-bs-toggle="tooltip" data-bs-placement="top" 
+    title="{% if billingcode.client %}Client: {{ billingcode.client }}{% endif %}
+    {% if billingcode.is_closed %} (Closed){% else %}
+    {% if billingcode.is_internal %}Internal{% elif billingcode.is_chargeable %} (Chargable){% else %} (Not Chargable){% endif %}
+    {% endif %}">
+        {{ billingcode.code }}
+    </span>
+</a>
