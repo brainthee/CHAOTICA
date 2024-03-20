@@ -95,7 +95,45 @@
         </div>   
 
         <div class="p-3">
-          <h4 class="mb-3">Links</h4>
+          <div class="row">
+              <div class="col-md-10 d-flex align-items-center">
+                <h4 class="mb-3">Support</h4>
+              </div>
+              <div class="col-md-2 text-end">
+                <div class="btn-reveal-trigger position-static">
+                  <button class="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal fs-10" 
+                      type="button" data-bs-toggle="dropdown" data-boundary="window" aria-haspopup="true" aria-expanded="false" 
+                      data-bs-reference="parent">
+                      <span class="fas fa-ellipsis-h fs-10"></span>
+                  </button>              
+                  <div class="dropdown-menu shadow dropdown-menu-end me-sm-n4 me-n3" aria-labelledby="navbarDropdownMenuLink">     
+                     <button class="dropdown-item js-load-modal-form" 
+                        data-url="{% url 'job_support_team_add' job.slug %}">
+                        Add Support Role
+                     </button>
+                     <button class="dropdown-item text-primary js-load-modal-form" 
+                        data-url="">
+                        Bulk Import
+                     </button>
+                  </div>
+                </div>
+              </div>
+          </div>
+          {% include 'partials/job/widgets/supportteam_list.html' %}
+        </div>   
+
+        <div class="p-3">
+          <div class="row">
+              <div class="col-md-10 d-flex align-items-center">
+                <h4 class="mb-3">Links</h4>
+              </div>
+              <div class="col-md-2 text-end">
+                  <a href="#" data-url="{% url 'assign_job_poc' job.slug %}" 
+                    class="text-dark js-load-modal-form">
+                    <span class="fa fa-plus"></span>
+                  </a>
+              </div>
+          </div>
           {% include 'partials/job/widgets/links.html' %}
         </div>   
 
