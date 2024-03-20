@@ -70,6 +70,10 @@
                         </div>
                         
                         <div class="form-check form-switch">
+                          {{ form.is_internal|as_crispy_field }}
+                        </div>
+                        
+                        <div class="form-check form-switch">
                           {{ form.is_closed|as_crispy_field }}
                         </div>
   

@@ -1,7 +1,7 @@
 from django.contrib import admin
 from simple_history.admin import SimpleHistoryAdmin
 from .models import Phase, Job, OrganisationalUnit, OrganisationalUnitMember, Skill, \
-    SkillCategory, Service, TimeSlot, WorkflowTask, BillingCode, BillingCodeAssociation, \
+    SkillCategory, Service, TimeSlot, WorkflowTask, BillingCode, \
     Feedback, Client, Contact, FrameworkAgreement, \
     Qualification, QualificationRecord, QualificationTag, AwardingBody, \
     Accreditation, \
@@ -45,7 +45,6 @@ admin.site.register(Service)
 admin.site.register(TimeSlot, SimpleHistoryAdmin)
 admin.site.register(WorkflowTask)
 admin.site.register(BillingCode)
-admin.site.register(BillingCodeAssociation)
 admin.site.register(Feedback)
 
 admin.site.register(AwardingBody)

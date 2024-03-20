@@ -37,7 +37,7 @@
                     </h3>
                 </div>
                 <div class="row">
-                    <div class="col-6 flex-1">
+                    <div class="col-6">
                         <table class="w-100 table-stats table-stats">
                             <caption>Job Info</caption>
                             <thead>
@@ -77,8 +77,10 @@
                                     <td class=" d-none d-sm-block pe-sm-2">:</td>
                                     <td class="">
                                         <div class="d-flex">
-                                            {% for billingcode in job.billing_codes.all %}
+                                            {% for billingcode in job.charge_codes.all %}
+                                            <div class="m-1">
                                                 {% include 'partials/billingcode/billingcode_badge.html' with billingcode=billingcode %}
+                                            </div>
                                             {% endfor %}
                                         </div>
                                     </td>
@@ -87,7 +89,7 @@
                         </table>
                     </div>
 
-                    <div class="col-6 flex-1">
+                    <div class="col-6">
                         <table class="w-100 table-stats table-stats">
                             <caption>Job Info 2</caption>
                             <thead>

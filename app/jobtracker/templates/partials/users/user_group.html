@@ -1,6 +1,7 @@
 
 <div class="avatar-group">
   {% for u in users %}
+  {% if u %}
   <a class="dropdown-toggle dropdown-caret-none d-inline-block" href="#" role="button" 
     data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside"
     data-bs-placement="top" title="{{ u.get_full_name }}">
@@ -9,5 +10,6 @@
     </div>
   </a>
   {% include 'partials/users/user_profile_card.html' with userProfile=u %}
+  {% endif %}
   {% endfor %}
 </div>

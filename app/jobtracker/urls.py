@@ -36,6 +36,7 @@ urlpatterns = [
 
     # Job CRUD
     path('jobs/', views.JobListView.as_view(), name='job_list'),
+    path('jobs/autocomplete/billingcodes', views.JobBillingCodeAutocomplete.as_view(), name='job_autocomplete_billingcodes'),
     path('job/create/', views.JobCreateView.as_view(), name='job_create'),
     path('job/<str:slug>/', views.JobDetailView.as_view(), name='job_detail'),
     path('job/<str:slug>/update/workflow/<int:new_state>', views.job_update_workflow, name='job_update_workflow'),

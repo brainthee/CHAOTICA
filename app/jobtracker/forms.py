@@ -2,7 +2,7 @@ from django import forms
 from django.urls import reverse
 from .models import Contact, FrameworkAgreement, Job, Qualification, QualificationRecord, AwardingBody, Feedback, \
     TimeSlot, TimeSlotType, Client, Phase, OrganisationalUnit, OrganisationalUnitMember, Skill, \
-        Service, WorkflowTask, SkillCategory, BillingCode, BillingCodeAssociation
+        Service, WorkflowTask, SkillCategory, BillingCode
 from chaotica_utils.models import Note, User
 from django.db.models import Q
 from .enums import DefaultTimeSlotTypes, JobStatuses, PhaseStatuses
@@ -10,7 +10,7 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.bootstrap import StrictButton, Accordion, AccordionGroup
 from crispy_forms.layout import Layout, Row, Column, Field, Div, HTML, Submit, Reset
 from crispy_bootstrap5.bootstrap5 import FloatingField
-from dal import autocomplete
+from dal import autocomplete, forward
 from chaotica_utils.enums import UnitRoles
 from bootstrap_datepicker_plus.widgets import TimePickerInput, DatePickerInput, DateTimePickerInput
 
@@ -132,18 +132,26 @@ class AssignJobFramework(forms.ModelForm):
         fields = ('associated_framework',)
         
 
-class AssignBillingCodeFramework(forms.ModelForm):
-    code = forms.ModelChoiceField(required=False,
-                                     queryset=BillingCode.objects.all(),)
+class AssignJobBillingCode(forms.ModelForm):
+    charge_codes = forms.ModelMultipleChoiceField(required=False,
+        queryset=BillingCode.objects.filter(),
+        widget=autocomplete.ModelSelect2Multiple(
+            url='job_autocomplete_billingcodes',
+            attrs={'data-html': True},
+            forward=['slug']
+        ))
     
     def __init__(self, *args, **kwargs):
-        super(AssignBillingCodeFramework, self).__init__(*args, **kwargs)
+        super(AssignJobBillingCode, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
-        self.fields['code'].queryset = BillingCode.objects.filter(Q(client=self.instance.client) | Q(client__isnull=True))
+        self.fields["charge_codes"].widget.forward=[
+            forward.Const(str(self.instance.slug), 'slug'),
+        ]
         self.helper.layout = Layout(
             Div(
                 Row(
-                    Div(Field('code'),
+                    Div(
+                        Field('charge_codes', style="width: 100%;"),
                         css_class="input-group input-group-dynamic")
                 ),
                 css_class='modal-body pt-3'),
@@ -156,8 +164,8 @@ class AssignBillingCodeFramework(forms.ModelForm):
         )
 
     class Meta:
-        model = BillingCodeAssociation
-        fields = ('code',)
+        model = Job
+        fields = ('charge_codes',)
 
 
 class AssignContact(forms.Form):
@@ -1207,7 +1215,7 @@ class BillingCodeForm(forms.ModelForm):
 
     class Meta:
         model = BillingCode
-        fields = ["code", "client", "is_chargeable", "is_recoverable", "is_closed", "region"]
+        fields = ["code", "client", "is_chargeable", "is_recoverable", "is_internal", "is_closed", "region"]
 
 
 class ServiceForm(forms.ModelForm):
