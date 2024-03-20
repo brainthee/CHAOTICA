@@ -37,7 +37,7 @@
                     </h3>
                 </div>
                 <div class="row">
-                    <div class="col-6 flex-1">
+                    <div class="col-6">
                         <table class="w-100 table-stats table-stats">
                             <caption>Job Info</caption>
                             <thead>
@@ -70,11 +70,26 @@
                                         </p>
                                     </td>
                                 </tr>
+                                <tr>
+                                    <td class="">
+                                        <p class="fw-bold mb-0">Codes</p>
+                                    </td>
+                                    <td class=" d-none d-sm-block pe-sm-2">:</td>
+                                    <td class="">
+                                        <div class="d-flex">
+                                            {% for billingcode in job.charge_codes.all %}
+                                            <div class="m-1">
+                                                {% include 'partials/billingcode/billingcode_badge.html' with billingcode=billingcode %}
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
 
-                    <div class="col-6 flex-1">
+                    <div class="col-6">
                         <table class="w-100 table-stats table-stats">
                             <caption>Job Info 2</caption>
                             <thead>

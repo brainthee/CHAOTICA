@@ -4,6 +4,13 @@
             Edit Job
         </a>
     </li>
+    <li>
+        <button data-url="{% url 'assign_job_billingcodes' job.slug %}" 
+            class="dropdown-item js-load-modal-form" 
+            data-status="Lost" data-status-id="8">
+                Assign Billing Codes
+        </button>
+    </li>
     {% if job.can_proceed_to_lost %}
         <li>
             <button data-url="{% url 'job_update_workflow' job.slug 8 %}" class="dropdown-item js-update-job-workflow text-warning" 

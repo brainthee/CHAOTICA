@@ -23,19 +23,6 @@ class Link(models.Model):
         return self.url
 
 
-class BillingCode(models.Model):
-    code = models.CharField(verbose_name="Code", max_length=255, unique=True)
-    is_chargeable = models.BooleanField(default=False)
-    is_recoverable = models.BooleanField(default=False)
-    is_closed = models.BooleanField(default=False)
-
-    def __str__(self):
-        return self.code
-
-    class Meta:
-        ordering = [Lower('code')]
-
-
 class Service(models.Model):
     name = models.CharField(max_length=200, unique=True)
     slug = models.SlugField(null=False, default='', unique=True)

@@ -1,5 +1,5 @@
-from .common import Link, BillingCode, Service, WorkflowTask, Feedback
-
+from .common import Link, Service, WorkflowTask, Feedback
+from .financial import BillingCode
 from .client import Client, Contact, Address, FrameworkAgreement
 
 from .job import Job

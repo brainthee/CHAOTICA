@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% load menu %}{% load index %}{% load static %}
+
+{% block pageTitle %}{{ billingcode }}{% endblock pageTitle %}
+{% block head_title %}{{ billingcode }}{% endblock head_title %}
+
+
+{% block breadcrumbItem %}
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{% url 'billingcode_list' %}">Billing Codes</a></li>
+<li class="breadcrumb-item text-sm text-dark active" aria-current="page">{{ billingcode }}</li>
+{% endblock breadcrumbItem %}
+
+{% block content_classes %}pt-15 px-0 {% endblock content_classes %}
+{% block breadcrumb_classes %}px-5{% endblock breadcrumb_classes %}
+
+{% block content %}
+
+<div class="row px-5">
+  <div class="col-12">
+    <div class="row align-items-center justify-content-between g-3 mt-0 mb-0">
+      <div class="col-3">
+        <h2 class="mb-2">
+            Billing Code Detail
+        </h2>
+      </div>
+
+      <div class="col-md-auto">
+        <div class="d-flex">
+            <a href="{% url 'billingcode_update' billingcode.code %}" class="btn btn-outline-secondary ms-auto">
+            Edit
+            </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div class="row justify-content-between ms-3 me-3 g-3 mt-0 mb-0">
+  <div class="col-4">
+    <div class="card">
+      <div class="card-body">
+        <div class="row align-items-center g-3">
+          <div class="col-12 col-sm-auto flex-1">
+            <h3 class="fw-bolder mb-2 line-clamp-1">
+              {{ billingcode }}
+              {% if billingcode.is_closed %}
+                <span class="badge badge-phoenix badge-phoenix-danger">
+                  Closed
+                </span>
+              {% endif %}
+            </h3>
+          </div>
+        </div>
+        <div class="row align-items-center g-3">
+          <div class="col-6 flex-1">
+
+            <table class="w-100 table-stats table-stats">
+              <caption>Billing Code Info</caption>
+              <tbody>
+                  <tr>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                  </tr>
+                  <tr>
+                    <td class="py-2">
+                        <p class="fw-bold mb-0">Is Internal</p>
+                    </td>
+                    <td class="py-2 d-none d-sm-block pe-sm-2">:</td>
+                    <td class="py-2">
+                        <p class="ps-6 ps-sm-0 fw-semi-bold mb-0">
+                          {% if billingcode.is_internal %}
+                          <span class="badge badge-phoenix badge-phoenix-success">Yes</span>
+                          {% else %}
+                          <span class="badge badge-phoenix badge-phoenix-secondary">No</span>
+                          {% endif %}
+                        </p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="py-2">
+                        <p class="fw-bold mb-0">Is Chargable</p>
+                    </td>
+                    <td class="py-2 d-none d-sm-block pe-sm-2">:</td>
+                    <td class="py-2">
+                        <p class="ps-6 ps-sm-0 fw-semi-bold mb-0">
+                          {% if billingcode.is_chargeable %}
+                          <span class="badge badge-phoenix badge-phoenix-success">Yes</span>
+                          {% else %}
+                          <span class="badge badge-phoenix badge-phoenix-secondary">No</span>
+                          {% endif %}
+                        </p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="py-2">
+                        <p class="fw-bold mb-0">Is Recoverable</p>
+                    </td>
+                    <td class="py-2 d-none d-sm-block pe-sm-2">:</td>
+                    <td class="py-2">
+                        <p class="ps-6 ps-sm-0 fw-semi-bold mb-0">
+                          {% if billingcode.is_recoverable %}
+                          <span class="badge badge-phoenix badge-phoenix-success">Yes</span>
+                          {% else %}
+                          <span class="badge badge-phoenix badge-phoenix-secondary">No</span>
+                          {% endif %}
+                        </p>
+                    </td>
+                  </tr>
+                  
+              </tbody>
+            </table>
+
+          </div>
+
+          <div class="col-6 flex-1">
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="col-4">
+  </div>
+
+  <div class="col-4">
+  </div>
+</div>
+
+
+<div class="row g-0 mt-3 border-1 border-top bg-light dark__bg-1100 h-100">
+    <div class="col-12 px-6 pt-3 border-1 border-end">
+
+        <div class="row mx-1">  
+            <ul class="nav nav-underline scrollbar flex-nowrap w-100 pb-1 mb-3" id="sectionNav" role="tablist" style="overflow-y: hidden;">
+                <li class="nav-item text-nowrap me-2" role="presentation">
+                    <a class="nav-link active" id="jobs-tab" data-bs-toggle="tab" href="#jobs" role="tab" aria-controls="tab-jobs" aria-selected="true">
+                    <span class="fa-solid fa-video me-2 tab-icon-color"></span>Jobs
+                    </a>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="myTabContent">
+                <div class="tab-pane fade active show" id="jobs" role="tabpanel" aria-labelledby="jobs-tab">
+                  {% include 'partials/job/job_list_table.html' with job_list=billingcode.jobs.all %}
+                </div>
+            </div>        
+        </div>
+    </div>
+</div>
+
+{% endblock content %}
+
+
