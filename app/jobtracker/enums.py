@@ -198,6 +198,19 @@ class TimeSlotDeliveryRole():
     REQUIRED_ALLOCATIONS = (DELIVERY, QA)
 
 
+class JobSupportRole():
+    OTHER = 0
+    COMMERCIAL = 1
+    QA = 1
+    SCOPE = 2
+    CHOICES = (
+        (OTHER, 'Other'),
+        (COMMERCIAL, 'Commercial'),
+        (QA, 'QA'),
+        (SCOPE, 'Scope'),
+    )
+
+
 class JobStatuses():
     DRAFT = 0
     PENDING_SCOPE = 1

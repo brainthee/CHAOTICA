@@ -1,5 +1,5 @@
 from django.db import models
-from ..enums import JobStatuses, RestrictedClassifications, TimeSlotDeliveryRole
+from ..enums import JobStatuses, RestrictedClassifications, TimeSlotDeliveryRole, JobSupportRole
 from ..models.client import FrameworkAgreement
 from django_fsm import FSMIntegerField, transition, can_proceed
 from django.conf import settings
@@ -803,3 +803,24 @@ class Job(models.Model):
                 messages.add_message(notify_request, messages.ERROR, self.STATE_ERROR)
             _can_proceed = False
         return _can_proceed
+
+
+class JobSupportTeamRole(models.Model):
+    job = models.ForeignKey(Job,
+        on_delete=models.CASCADE,
+        related_name="supporting_team")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL,
+        related_name='job_support_roles', null=True, blank=True,
+        on_delete=models.CASCADE,
+    )
+    role = models.IntegerField(verbose_name="Role",
+                        choices=JobSupportRole.CHOICES, default=JobSupportRole.OTHER)    
+    allocated_hours = models.FloatField(verbose_name="Allocated Hours", help_text="Hours allocated to this person", default=0.0,)    
+    billed_hours = models.FloatField(verbose_name="Billed Hours", help_text="Hours actually billed from the allocated amount", default=0.0,)
+    history = HistoricalRecords()
+
+    def used_perc(self):
+        if self.allocated_hours > 0.0:
+            return round(100 * self.billed_hours/self.allocated_hours,2)
+        else:
+            return 0.0
