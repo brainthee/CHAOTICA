@@ -1,0 +1,69 @@
+{% load static %}
+<div class="table-responsive scrollbar">
+   <table class="table fs-10 mb-0">
+     <thead>
+       <tr>
+         <th class="sort border-top border-translucent ps-0 align-middle" scope="col" data-sort="country" style="width:30%">Person</th>
+         <th class="sort border-top border-translucent align-middle" scope="col" data-sort="users" style="width:30%">Role</th>
+         <th class="sort border-top border-translucent text-end align-middle" scope="col" data-sort="transactions" style="width:10%">Allocated</th>
+         <th class="sort border-top border-translucent text-end align-middle" scope="col" data-sort="revenue" style="width:10%">Used</th>
+         <th class="sort border-top border-translucent text-end align-middle" scope="col" data-sort="revenue" style="width:10%"></th>
+       </tr>
+     </thead>
+     <tbody class="list" id="table-regions-by-revenue">
+         {% for support_role in job.supporting_team.all %}
+            <tr>
+               <td class="white-space-nowrap ps-0" style="width:32%">
+                  {% include 'partials/users/user_table_display.html' with notitle=1 noorg=1 u=support_role.user %}
+               </td>
+               <td class="align-middle" style="width:30%">
+                  <span class="text-body-tertiary fw-semibold ms-2">
+                     {{ support_role.get_role_display }}
+                  </span>
+               </td>
+               <td class="align-middle text-end" style="width:10%">
+                  <span class="text-body-tertiary fw-semibold ms-2">
+                     {{ support_role.allocated_hours }}hrs
+                  </span>
+               </td>
+               <td class="align-middle text-end" style="width:10%">
+                  <span class="text-body-tertiary fw-semibold ms-2">
+                     {{ support_role.used_perc }}%
+                  </span>
+               </td>
+               <td class="align-middle text-end" style="width:10%">
+
+                  <div class="btn-reveal-trigger position-static">
+                     <button class="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal fs-10" 
+                         type="button" data-bs-toggle="dropdown" data-boundary="window" aria-haspopup="true" aria-expanded="false" 
+                         data-bs-reference="parent">
+                         <span class="fas fa-ellipsis-h fs-10"></span>
+                     </button>
+                 
+                     <div class="dropdown-menu shadow dropdown-menu-end me-sm-n4 me-n3" aria-labelledby="navbarDropdownMenuLink">     
+                        <button class="dropdown-item js-load-modal-form" 
+                           data-url="{% url 'job_support_team_edit' slug=support_role.job.slug pk=support_role.pk %}">
+                           Edit
+                        </button>
+                        <button class="dropdown-item text-success js-load-modal-form" 
+                           data-url="{% url 'job_support_team_mark_used' slug=support_role.job.slug pk=support_role.pk %}">
+                           Mark Used
+                        </button>
+                        <button class="dropdown-item text-warning js-load-modal-form" 
+                           data-url="{% url 'job_support_team_delete' slug=support_role.job.slug pk=support_role.pk %}">
+                           Delete                           
+                        </button>
+                     </div>
+                 </div>
+
+               </td>
+            </tr>
+         {% endfor %}
+      </tbody>
+   </table>
+   {% if not job.supporting_team.all %}
+   <div class="alert mt-2 alert-phoenix-info" role="alert">
+      No support team allocated
+   </div>
+   {% endif %}
+ </div>

@@ -1,6 +1,6 @@
 from django import forms
 from django.urls import reverse
-from .models import Contact, FrameworkAgreement, Job, Qualification, QualificationRecord, AwardingBody, Feedback, \
+from .models import Contact, FrameworkAgreement, Job, JobSupportTeamRole, Qualification, QualificationRecord, AwardingBody, Feedback, \
     TimeSlot, TimeSlotType, Client, Phase, OrganisationalUnit, OrganisationalUnitMember, Skill, \
         Service, WorkflowTask, SkillCategory, BillingCode
 from chaotica_utils.models import Note, User
@@ -1294,3 +1294,39 @@ class SkillCatForm(forms.ModelForm):
     class Meta:
         model = SkillCategory
         fields = ["name"]
+        
+
+class JobSupportTeamRoleForm(forms.ModelForm):    
+    def __init__(self, *args, **kwargs):
+        super(JobSupportTeamRoleForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.helper.layout = Layout(
+            Div(
+                Row(
+                    Div(Field('user'),
+                        css_class="input-group input-group-dynamic")
+                ),
+                Row(
+                    Div(Field('role'),
+                        css_class="input-group input-group-dynamic")
+                ),
+                Row(
+                    Column(
+                        Div(Field('allocated_hours'),
+                            css_class="input-group input-group-dynamic")),
+                    Column(
+                        Div(Field('billed_hours'),
+                            css_class="input-group input-group-dynamic")),
+                ),
+                css_class='modal-body pt-3'),
+
+            Div(
+                Div(StrictButton("Save", type="submit", 
+                    css_class="btn btn-outline-phoenix-success ms-auto mb-0"),
+                css_class="button-row d-flex"),
+            css_class="modal-footer"),
+        )
+
+    class Meta:
+        model = JobSupportTeamRole
+        fields = ('user', 'role', 'allocated_hours', 'billed_hours')

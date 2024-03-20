@@ -1,6 +1,6 @@
 from django.contrib import admin
 from simple_history.admin import SimpleHistoryAdmin
-from .models import Phase, Job, OrganisationalUnit, OrganisationalUnitMember, Skill, \
+from .models import Phase, Job, JobSupportTeamRole, OrganisationalUnit, OrganisationalUnitMember, Skill, \
     SkillCategory, Service, TimeSlot, WorkflowTask, BillingCode, \
     Feedback, Client, Contact, FrameworkAgreement, \
     Qualification, QualificationRecord, QualificationTag, AwardingBody, \
@@ -21,6 +21,9 @@ class PhasesInline(admin.StackedInline):
 @admin.register(Job)
 class JobAdmin(admin.ModelAdmin):
     inlines = [PhasesInline]
+
+
+admin.site.register(JobSupportTeamRole)
 
 
 class OrganisationalUnitMemberInline(admin.TabularInline):

@@ -17,8 +17,8 @@ from django.urls import reverse_lazy
 from dal import autocomplete
 from chaotica_utils.views import log_system_activity, ChaoticaBaseView
 from chaotica_utils.enums import UnitRoles
-from ..models import Job, BillingCode, TimeSlot, TimeSlotType, OrganisationalUnit, WorkflowTask, Contact, FrameworkAgreement
-from ..forms import ScopeInlineForm, DeliveryTimeSlotModalForm, AddNote, JobForm, AssignUserField, ScopeForm, AssignJobFramework, AssignJobBillingCode
+from ..models import Job, JobSupportTeamRole, BillingCode, TimeSlot, TimeSlotType, OrganisationalUnit, WorkflowTask, Contact, FrameworkAgreement
+from ..forms import ScopeInlineForm, DeliveryTimeSlotModalForm, AddNote, JobForm, AssignUserField, ScopeForm, AssignJobFramework, AssignJobBillingCode, JobSupportTeamRoleForm
 from ..enums import JobStatuses, TimeSlotDeliveryRole, DefaultTimeSlotTypes
 from .helpers import _process_assign_user, _process_assign_contact
 import logging
@@ -193,6 +193,103 @@ def change_job_schedule_slot(request, slug, pk=None):
 
     context = {'form': form, 'job': job}
     data['html_form'] = loader.render_to_string("jobtracker/modals/job_slot.html",
+                                                context,
+                                                request=request)
+    return JsonResponse(data)
+
+
+
+@permission_required_or_403('jobtracker.change_schedule', (Job, 'slug', 'slug'))
+def job_support_team_add(request, slug):
+    job = get_object_or_404(Job, slug=slug)
+    data = dict()
+    if request.method == "POST":
+        form = JobSupportTeamRoleForm(request.POST)
+        if form.is_valid():
+            role = form.save(commit=False)
+            role.job = job
+            role.save()
+            log_system_activity(job, "{user} added with {hrs}hrs as {role} support role.".format(
+                user=role.user, hrs=str(role.allocated_hours), role=role.get_role_display()), author=request.user)
+            data['form_is_valid'] = True
+        else:
+            data['form_is_valid'] = False
+            data['form_errors'] = form.errors
+    else:
+        # Send the modal
+        form = JobSupportTeamRoleForm()
+
+    context = {'form': form, 'job': job}
+    data['html_form'] = loader.render_to_string("jobtracker/modals/job_support_team_form.html",
+                                                context,
+                                                request=request)
+    return JsonResponse(data)
+
+
+@permission_required_or_403('jobtracker.change_schedule', (Job, 'slug', 'slug'))
+def job_support_team_edit(request, slug, pk):
+    job = get_object_or_404(Job, slug=slug)
+    support_role = get_object_or_404(JobSupportTeamRole, pk=pk, job=job)
+    data = dict()
+    if request.method == "POST":
+        form = JobSupportTeamRoleForm(request.POST, instance=support_role)
+        if form.is_valid():
+            role = form.save()
+            log_system_activity(job, "{user} updated with {hrs}hrs as {role} support role.".format(
+                user=role.user, hrs=str(role.allocated_hours), role=role.get_role_display()), author=request.user)
+            data['form_is_valid'] = True
+        else:
+            data['form_is_valid'] = False
+            data['form_errors'] = form.errors
+    else:
+        # Send the modal
+        form = JobSupportTeamRoleForm(instance=support_role)
+
+    context = {'form': form, 'job': job}
+    data['html_form'] = loader.render_to_string("jobtracker/modals/job_support_team_form.html",
+                                                context,
+                                                request=request)
+    return JsonResponse(data)
+
+
+@permission_required_or_403('jobtracker.change_schedule', (Job, 'slug', 'slug'))
+def job_support_team_mark_used(request, slug, pk):
+    job = get_object_or_404(Job, slug=slug)
+    support_role = get_object_or_404(JobSupportTeamRole, pk=pk, job=job)
+    data = dict()
+    if request.method == "POST":
+        if request.POST.get('user_action') == "approve_action":
+            support_role.billed_hours = support_role.allocated_hours
+            support_role.save()
+            log_system_activity(job, "{user} support allocation marked as used.".format(
+                user=support_role.user), author=request.user)
+            data['form_is_valid'] = True
+        else:
+            data['form_is_valid'] = False
+
+    context = {'job': job, 'instance': support_role}
+    data['html_form'] = loader.render_to_string("jobtracker/modals/job_support_team_mark_used.html",
+                                                context,
+                                                request=request)
+    return JsonResponse(data)
+
+
+@permission_required_or_403('jobtracker.change_schedule', (Job, 'slug', 'slug'))
+def job_support_team_delete(request, slug, pk):
+    job = get_object_or_404(Job, slug=slug)
+    support_role = get_object_or_404(JobSupportTeamRole, pk=pk, job=job)
+    data = dict()
+    if request.method == "POST":
+        if request.POST.get('user_action') == "approve_action":
+            support_role.delete()
+            log_system_activity(job, "{user} deleted from support role.".format(
+                user=support_role.user), author=request.user)
+            data['form_is_valid'] = True
+        else:
+            data['form_is_valid'] = False
+
+    context = {'job': job, 'instance': support_role}
+    data['html_form'] = loader.render_to_string("jobtracker/modals/job_support_team_delete.html",
                                                 context,
                                                 request=request)
     return JsonResponse(data)
