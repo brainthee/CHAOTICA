@@ -1,11 +1,7 @@
 {% load static %}
-
+{% if userProfile %}
 <div class="dropdown-menu avatar-dropdown-menu p-0 overflow-hidden" style="width: 320px;">
   <div class="position-relative">
-    <!-- <div class="bg-holder" 
-      style="background-image:url({% static 'assets/img/bg/bg-32.png' %});background-size: auto;">
-    </div> -->
-     <!--/.bg-holder-->
     <div class="p-3 pb-0">
       <div class="text-end">
         {% include 'partials/user/user_manage_menu.html' with u=userProfile %}
@@ -66,3 +62,4 @@
      </ul>
   </div>
 </div>
+{% endif %}

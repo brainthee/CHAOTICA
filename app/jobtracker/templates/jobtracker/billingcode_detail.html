@@ -50,14 +50,33 @@
                 </span>
               {% endif %}
             </h3>
+          </div>
+        </div>
+        <div class="row align-items-center g-3">
+          <div class="col-6 flex-1">
 
             <table class="w-100 table-stats table-stats">
-              <caption>Service Info</caption>
+              <caption>Billing Code Info</caption>
               <tbody>
                   <tr>
                     <th></th>
                     <th></th>
                     <th></th>
+                  </tr>
+                  <tr>
+                    <td class="py-2">
+                        <p class="fw-bold mb-0">Is Internal</p>
+                    </td>
+                    <td class="py-2 d-none d-sm-block pe-sm-2">:</td>
+                    <td class="py-2">
+                        <p class="ps-6 ps-sm-0 fw-semi-bold mb-0">
+                          {% if billingcode.is_internal %}
+                          <span class="badge badge-phoenix badge-phoenix-success">Yes</span>
+                          {% else %}
+                          <span class="badge badge-phoenix badge-phoenix-secondary">No</span>
+                          {% endif %}
+                        </p>
+                    </td>
                   </tr>
                   <tr>
                     <td class="py-2">
@@ -93,6 +112,9 @@
               </tbody>
             </table>
 
+          </div>
+
+          <div class="col-6 flex-1">
           </div>
         </div>
 
