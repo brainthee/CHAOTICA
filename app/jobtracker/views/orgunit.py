@@ -10,10 +10,13 @@ from chaotica_utils.utils import AppNotification, NotificationTypes
 from chaotica_utils.tasks import task_send_notifications
 from chaotica_utils.enums import UnitRoles
 from chaotica_utils.models import User
-from ..models import OrganisationalUnit, OrganisationalUnitMember
+from ..models import OrganisationalUnit, OrganisationalUnitMember, OrganisationalUnitRole
+from .. decorators import unit_permission_required_or_403
 from ..forms import OrganisationalUnitForm, OrganisationalUnitMemberForm, OrganisationalUnitMemberRolesForm
 import logging
 from django.contrib import messages 
+from guardian.decorators import permission_required_or_403
+from guardian.mixins import PermissionRequiredMixin
 
 
 logger = logging.getLogger(__name__)
@@ -22,6 +25,8 @@ logger = logging.getLogger(__name__)
 class OrganisationalUnitBaseView(ChaoticaBaseView):
     model = OrganisationalUnit
     fields = '__all__'
+    accept_global_perms = True
+    return_403 = True
 
     def get_success_url(self):
         if 'slug' in self.kwargs:
@@ -30,17 +35,51 @@ class OrganisationalUnitBaseView(ChaoticaBaseView):
         else:
             return reverse_lazy('organisationalunit_list')
 
-class OrganisationalUnitListView(OrganisationalUnitBaseView, ListView):
-    """View to list all jobs.
-    Use the 'job_list' variable in the template
-    to access all job objects"""
+class OrganisationalUnitListView(PermissionRequiredMixin, OrganisationalUnitBaseView, ListView):
+    permission_required = 'jobtracker.view_organisationalunit'
 
+
+class OrganisationalUnitDetailView(PermissionRequiredMixin, OrganisationalUnitBaseView, DetailView):
+    permission_required = 'jobtracker.view_organisationalunit'
+    accept_global_perms = True
+
+
+class OrganisationalUnitDeleteView(PermissionRequiredMixin, OrganisationalUnitBaseView, DeleteView):
+    permission_required = 'jobtracker.delete_organisationalunit'
+
+
+class OrganisationalUnitUpdateView(PermissionRequiredMixin, OrganisationalUnitBaseView, UpdateView):
+    permission_required = 'jobtracker.change_organisationalunit'
+    form_class = OrganisationalUnitForm
+    fields = None
+
+
+class OrganisationalUnitCreateView(PermissionRequiredMixin, OrganisationalUnitBaseView, CreateView):
+    permission_required = 'jobtracker.add_organisationalunit'
+    permission_object = OrganisationalUnit
+    form_class = OrganisationalUnitForm
+    fields = None
+
+    def form_valid(self, form):
+        # ensure the lead has manager access
+        super_response =  super(OrganisationalUnitCreateView, self).form_valid(form)
+        org_unit = form.save()
+        management_role = OrganisationalUnitRole.objects.filter(manage_role=True).first()
+        lead, _ = OrganisationalUnitMember.objects.get_or_create(
+            unit=org_unit, member=org_unit.lead)
+        lead.roles.add(management_role)
+        # Also add self in case we're not the lead
+        if self.request.user is not org_unit.lead:
+            r_user, _ = OrganisationalUnitMember.objects.get_or_create(
+                unit=org_unit, member=self.request.user)
+            r_user.roles.add(management_role)
+        return super_response
     
+
+
+@permission_required_or_403('jobtracker.manage_members', (OrganisationalUnit, 'slug', 'slug'))
 def organisationalunit_add(request, slug):
     org_unit = get_object_or_404(OrganisationalUnit, slug=slug)
-    # Check we have permission to add...
-    get_object_or_404(OrganisationalUnitMember, member=request.user, unit=org_unit, 
-                                      role=UnitRoles.MANAGER)
 
     data = dict()
     if request.method == "POST":
@@ -51,7 +90,6 @@ def organisationalunit_add(request, slug):
             if membership:
                 # Ok, lets see if we need to make it pending...
                 if org_unit.approval_required:
-                    membership.role = UnitRoles.PENDING
                     messages.info(request, "Request to join unit "+org_unit.name+" sent.")    
                 else:
                     # Add ourselves as inviter!
@@ -72,6 +110,7 @@ def organisationalunit_add(request, slug):
                                                 request=request)
     return JsonResponse(data)
 
+
 def organisationalunit_join(request, slug):
     org_unit = get_object_or_404(OrganisationalUnit, slug=slug)
     # Lets check they aren't already a member!
@@ -87,7 +126,7 @@ def organisationalunit_join(request, slug):
         if membership:
             # Ok, lets see if we need to make it pending...
             if org_unit.approval_required:
-                membership.role = UnitRoles.PENDING
+                membership.roles.add = OrganisationalUnitRole.objects.get(pk=0)
                 messages.info(request, "Request to join unit "+org_unit.name+" sent.")    
             else:
                 # Add ourselves as inviter!
@@ -105,12 +144,11 @@ def organisationalunit_join(request, slug):
                                                 request=request)
     return JsonResponse(data)
 
+
+@unit_permission_required_or_403('jobtracker.manage_members', (OrganisationalUnit, 'slug', 'slug'))
 def organisationalunit_manage_roles(request, slug, member_pk):
     org_unit = get_object_or_404(OrganisationalUnit, slug=slug)
     membership = get_object_or_404(OrganisationalUnitMember, unit=org_unit, pk=member_pk)
-    # Lets make sure our own membership is high enough level!
-    get_object_or_404(OrganisationalUnitMember, member=request.user, unit=org_unit, 
-                                      role=UnitRoles.MANAGER)
     
     # Silly thing... lets not be able to modify our own account!
     if OrganisationalUnitMember.objects.filter(member=request.user, pk=member_pk).exists():
@@ -137,15 +175,13 @@ def organisationalunit_manage_roles(request, slug, member_pk):
                                                 request=request)
     return JsonResponse(data)
 
+
+@unit_permission_required_or_403('jobtracker.manage_members', (OrganisationalUnit, 'slug', 'slug'))
 def organisationalunit_review_join_request(request, slug, member_pk):
     org_unit = get_object_or_404(OrganisationalUnit, slug=slug)
     
     # Only pass if the membership is pending...
-    membership = get_object_or_404(OrganisationalUnitMember, unit=org_unit, pk=member_pk, role=UnitRoles.PENDING)
-    
-    # Lets make sure our own membership is high enough level!
-    get_object_or_404(OrganisationalUnitMember, member=request.user, unit=org_unit, 
-                                      role=UnitRoles.MANAGER)
+    membership = get_object_or_404(OrganisationalUnitMember, unit=org_unit, pk=member_pk, roles=None)
 
     # Okay, lets go!    
     data = dict()
@@ -155,7 +191,8 @@ def organisationalunit_review_join_request(request, slug, member_pk):
             # Approve it!
             messages.info(request, "Accepted request from "+membership.member.get_full_name())
             membership.inviter = request.user
-            membership.role = UnitRoles.CONSULTANT
+            default_role = OrganisationalUnitRole.objects.filter(default_role=True).first()
+            membership.roles.add(default_role)
             membership.save()
             # send a notification to the user
             notice = AppNotification(NotificationTypes.ORGUNIT, 
@@ -185,34 +222,3 @@ def organisationalunit_review_join_request(request, slug, member_pk):
                                                 context,
                                                 request=request)
     return JsonResponse(data)
-
-class OrganisationalUnitDetailView(OrganisationalUnitBaseView, DetailView):
-    """View to list the details from one job.
-    Use the 'job' variable in the template to access
-    the specific job here and in the Views below"""
-
-class OrganisationalUnitCreateView(OrganisationalUnitBaseView, CreateView):
-    form_class = OrganisationalUnitForm
-    fields = None
-
-    def form_valid(self, form):
-        # ensure the lead has manager access
-        super_response =  super(OrganisationalUnitCreateView, self).form_valid(form)
-        org_unit = form.save()
-        OrganisationalUnitMember.objects.get_or_create(
-            unit=org_unit, member=org_unit.lead, role=UnitRoles.MANAGER)
-        # Also add self in case we're not the lead
-        if self.request.user is not org_unit.lead:
-            OrganisationalUnitMember.objects.get_or_create(
-                unit=org_unit, member=self.request.user, role=UnitRoles.MANAGER)
-        return super_response
-
-
-
-class OrganisationalUnitUpdateView(OrganisationalUnitBaseView, UpdateView):
-    form_class = OrganisationalUnitForm
-    fields = None
-
-class OrganisationalUnitDeleteView(OrganisationalUnitBaseView, DeleteView):
-    """View to delete a job"""
-    

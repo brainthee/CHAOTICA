@@ -803,7 +803,7 @@ def site_search(request):
         results_count = results_count + qual_search.count()
 
         ## Accreditation
-        accred_search = get_objects_for_user(request.user, 'jobtracker.view_accredication', Accreditation).filter(
+        accred_search = get_objects_for_user(request.user, 'jobtracker.view_accreditation', Accreditation).filter(
             Q(name__icontains=q))
         context['search_accred'] = accred_search
         results_count = results_count + accred_search.count()

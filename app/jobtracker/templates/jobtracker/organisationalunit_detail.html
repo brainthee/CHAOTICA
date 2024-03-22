@@ -34,7 +34,7 @@
             </a>
           {% endif %}
           
-            {% if request.user in organisationalunit.get_managers %}
+            {% if 'change_organisationalunit' in unit_perms %}
             <a href="{% url 'organisationalunit_update' organisationalunit.slug %}" 
                 class="btn btn-outline-secondary ms-2">
             Edit
@@ -118,7 +118,9 @@
                 </div>
 
                 <div class="tab-pane fade" id="jobs" role="tabpanel" aria-labelledby="jobs-tab">
+                  {% if 'can_view_jobs' in unit_perms %}
                     {% include 'partials/job/job_list_table.html' with job_list=organisationalunit.jobs.all %}
+                    {% endif %}
                 </div>
 
                 <div class="tab-pane fade" id="stats" role="tabpanel" aria-labelledby="stats-tab">

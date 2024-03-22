@@ -125,6 +125,23 @@
       {% endfor %}
     </div>
     {% endif %}
+
+    {% if search_accred %}
+    <hr class="text-200 my-0" />
+    <h6 class="dropdown-header text-1000 fs--1 border-bottom border-200 py-2 lh-sm">Accreditations</h6>
+    <div class="py-2">
+      {% for accred in search_accred %}
+      <a class="dropdown-item" href="{{ accred.get_absolute_url }}">
+        <div class="d-flex align-items-center">
+          <div class="fw-normal text-1000 title">
+            <span class="fab fa-readme-code text-900" data-fa-transform="shrink-2"></span>
+            {{ accred }}
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
     
     {% if search_users %}
     <hr class="text-200 my-0" />
