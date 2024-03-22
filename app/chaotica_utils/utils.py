@@ -130,7 +130,8 @@ class AppNotification:
         self.message = message
         self.email_template = email_template
         self.icon = icon
-        self.action_link = ext_reverse(action_link)
+        if action_link:
+            self.action_link = ext_reverse(action_link)
         self.send_inapp = send_inapp
         self.send_email = send_email
         self.context = {}

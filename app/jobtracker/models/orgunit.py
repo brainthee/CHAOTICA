@@ -47,24 +47,38 @@ class OrganisationalUnit(models.Model):
         ordering = [Lower('name')]
         permissions = (
             ('manage_members', 'Assign Members'),
-            ('can_view_unit_jobs', 'Can view jobs'),
-            ('can_add_job', 'Can add jobs'),
-            ('can_view_all_leave_requests', 'Can view all leave for members of the unit'),
-            ('can_approve_leave_requests', 'Can approve leave requests'),
 
-            ('can_tqa_jobs', 'Can TQA jobs'),
-            ('can_pqa_jobs', 'Can PQA jobs'),
+            # Job permissions
+            ('can_view_jobs', 'Can view jobs'),
+            ('can_add_job', 'Can add jobs'),
+            ('can_update_job', 'Can update jobs'),
+            ('can_refire_notifications_job', 'Can refire notifications for jobs'),
+            ('can_delete_job', 'Can delete jobs'),
+            ('can_add_note_job', 'Can add a note to jobs'),
+            ('can_assign_poc_job', 'Can assign a Point of Contact to jobs'),
+            ('can_manage_framework_job', 'Can assign a Point of Contact to jobs'),
+
+            ('can_add_phases', 'Can add phases'),
+            ('can_delete_phases', 'Can add phases'),
+            
+
+            ('can_schedule_job', 'Can schedule phases'),
+            ('view_users_schedule', 'View Members Schedule'),
+            ('view_job_schedule', "View a Job's Schedule"),
 
             ('can_scope_jobs', 'Can scope jobs'),
             ('can_signoff_scopes', 'Can signoff scopes'),
             ('can_signoff_own_scopes', 'Can signoff own scopes'),
 
-            ('view_users_schedule', 'View Members Schedule'),
-            ('can_schedule_phases', 'Can schedule phases'),
+            ('can_tqa_jobs', 'Can TQA jobs'),
+            ('can_pqa_jobs', 'Can PQA jobs'),
+
+            # Leave
+            ('can_view_all_leave_requests', 'Can view all leave for members of the unit'),
+            ('can_approve_leave_requests', 'Can approve leave requests'),
         )
     
-    def syncPermissions(self):
-        from pprint import pprint
+    def sync_permissions(self):
         for user in self.get_allMembers():
             # Ensure the permissions are set right!
             existing_perms = list(get_user_perms(user, self).values_list('codename', flat=True))
@@ -155,7 +169,7 @@ class OrganisationalUnit(models.Model):
             self.slug = unique_slug_generator(self, self.name)
         super().save(*args, **kwargs)
         # Resync permissions...
-        self.syncPermissions()
+        self.sync_permissions()
 
 
 class OrganisationalUnitMember(models.Model):
@@ -192,4 +206,4 @@ class OrganisationalUnitMember(models.Model):
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         # Lets resync the permissions!
-        self.unit.syncPermissions()
+        self.unit.sync_permissions()

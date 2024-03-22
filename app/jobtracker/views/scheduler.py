@@ -161,7 +161,7 @@ def view_schedule_holidays(request):
     return JsonResponse(data, safe=False)
 
 
-# @permission_required('jobtracker.change_schedule', (Job, 'slug', 'slug'))
+# @permission_required('jobtracker.can_schedule_job', (Job, 'slug', 'slug'))
 def change_scheduler_slot_date(request, pk=None):
     if not pk:
         # We only do this because we want to generate the URL in JS land
@@ -187,7 +187,7 @@ def change_scheduler_slot_date(request, pk=None):
     return JsonResponse(data)
 
 
-# @permission_required('jobtracker.change_schedule', (Job, 'slug', 'slug'))
+# @permission_required('jobtracker.can_schedule_job', (Job, 'slug', 'slug'))
 def change_scheduler_slot(request, pk=None):
     if not pk:
         # We only do this because we want to generate the URL in JS land
@@ -267,10 +267,22 @@ def create_scheduler_phase_slot(request):
         phase = None
 
     if request.method == 'POST':
+        force = request.POST.get('force', None)
         form = DeliveryTimeSlotModalForm(request.POST, start=start, end=end, user=user, phase=phase, job=job)
         if form.is_valid():
-            form.save()
-            data['form_is_valid'] = True
+            slot = form.save(commit=False)
+            slots = slot.overlapping_slots()
+            if slots and not force:
+                # Overlapping slots!
+                data['form_is_valid'] = False
+                data['logic_checks_failed'] = True
+                data['logic_checks_can_bypass'] = True
+                data['logic_checks_feedback'] = loader.render_to_string("partials/scheduler/logicchecks/overlaps.html",
+                                                { "slot": slot, "overlapping_slots": slots},
+                                                request=request)
+            else:
+                slot.save()
+                data['form_is_valid'] = True
         else:
             data['form_is_valid'] = False
     else:

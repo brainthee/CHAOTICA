@@ -3,6 +3,7 @@ from django.urls import reverse
 from ..enums import TimeSlotDeliveryRole, PhaseStatuses, AvailabilityType, DefaultTimeSlotTypes
 from ..models.phase import Phase
 from django.conf import settings
+from django.db.models import Q
 from constance import config
 from django.contrib.contenttypes.fields import GenericRelation
 from chaotica_utils.models import Note, UserCost
@@ -78,9 +79,11 @@ class TimeSlot(models.Model):
         else:
             return '{}: {} ({})'.format(self.user.get_full_name(), self.slot_type.name, self.start)        
     
+
     def is_delivery(self):
         return self.slot_type == TimeSlotType.get_builtin_object(DefaultTimeSlotTypes.DELIVERY)
     
+
     def get_schedule_title(self):
         if self.is_delivery():
             return str(self)
@@ -98,6 +101,10 @@ class TimeSlot(models.Model):
             else:
                 return config.SCHEDULE_COLOR_PHASE_AWAY if self.is_onsite else config.SCHEDULE_COLOR_PHASE
     
+    def overlapping_slots(self):
+        # Returns all slots that overlap this user
+        return TimeSlot.objects.filter(user=self.user).filter(
+            end__gte=self.start, start__lte=self.end).exclude(pk=self.pk)
     
     def get_schedule_json(self, url=None):
         if not url:

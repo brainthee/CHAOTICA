@@ -1,6 +1,6 @@
 from django.http import JsonResponse, HttpResponseForbidden
 from django.template import loader
-from ..models import Contact
+from ..models import Contact, Job, Phase
 from ..forms import AssignMultipleUser, AssignUser, AssignMultipleContacts, AssignContact
 from chaotica_utils.views import log_system_activity
 from chaotica_utils.models import User
@@ -11,8 +11,6 @@ logger = logging.getLogger(__name__)
 
 def _process_assign_user(request, obj, prop, multiple=False, users=None):
     data = dict()
-    if not request.user.has_perm('change_job', obj):
-        return HttpResponseForbidden()
     if users is None:
         users = User.objects.filter(is_active=True)
     if request.method == 'POST':

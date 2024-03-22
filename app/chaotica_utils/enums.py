@@ -153,6 +153,7 @@ class UnitRoles():
     TQA = 5
     PQA = 6
     SCOPER = 7
+    SUPERSCOPER = 8
 
     @staticmethod
     def get_roles_with_permission(permission):
@@ -171,6 +172,7 @@ class UnitRoles():
         (TQA, "Tech QA'er"),
         (PQA, "Pres QA'er"),
         (SCOPER, "Scoper"),
+        (SUPERSCOPER, "Super Scoper"),
     )
     BS_COLOURS = (
         (PENDING, "secondary"),
@@ -181,6 +183,7 @@ class UnitRoles():
         (TQA, "info"),
         (PQA, "info"),
         (SCOPER, "info"),
+        (SUPERSCOPER, "info"),
     )
     PERMISSIONS = (
         (PENDING, [
@@ -188,24 +191,64 @@ class UnitRoles():
         ]),
         (CONSULTANT, [
             # Job
-            "jobtracker.can_view_unit_jobs",
+            "jobtracker.can_view_jobs",
+            "jobtracker.view_job_schedule",
+            "jobtracker.can_update_job",
+            "jobtracker.can_add_note_job",
+            "jobtracker.view_users_schedule",
         ]),
         (SALES, [
-            "jobtracker.can_view_unit_jobs", "jobtracker.can_add_job",
+            "jobtracker.can_view_jobs", 
+            "jobtracker.view_job_schedule",
+            "jobtracker.can_update_job",
+            "jobtracker.can_add_note_job",
+            "jobtracker.view_users_schedule",
+
+            "jobtracker.can_add_job",
+            "jobtracker.can_assign_poc_job",
+            "jobtracker.can_manage_framework_job",
         ]),
         (SERVICE_DELIVERY, [
-            # OrganisationalUnit
-            "jobtracker.can_view_unit_jobs",
-            "jobtracker.manage_members", 'jobtracker.view_users_schedule',
+            "jobtracker.can_view_jobs", 
+            "jobtracker.view_job_schedule",
+            "jobtracker.can_update_job",
+            "jobtracker.can_add_note_job",
+            "jobtracker.view_users_schedule",
+            "jobtracker.can_refire_notifications_job",
+            
+            "jobtracker.can_schedule_job",
+            "jobtracker.manage_members",
         ]),
         (MANAGER, [
-            # OrganisationalUnit
-            "jobtracker.can_view_unit_jobs",
-            "jobtracker.change_organisationalunit", "jobtracker.delete_organisationalunit",
-            "jobtracker.manage_members", 'jobtracker.view_users_schedule',
-            "jobtracker.can_scope_jobs", 'jobtracker.can_signoff_scopes',
-            "jobtracker.can_add_job", "jobtracker.can_approve_leave_requests", "jobtracker.can_view_all_leave_requests",
-            "jobtracker.can_signoff_own_scopes", 'jobtracker.can_schedule_phases',
+            "jobtracker.can_view_jobs", 
+            "jobtracker.view_job_schedule",
+            "jobtracker.can_update_job",
+            "jobtracker.can_add_note_job",
+            "jobtracker.can_refire_notifications_job",
+            "jobtracker.view_users_schedule",
+            
+            # Org Unit
+            "jobtracker.change_organisationalunit", 
+            "jobtracker.delete_organisationalunit",
+            "jobtracker.manage_members", 
+            
+            # Extras
+            "jobtracker.can_scope_jobs", 
+            "jobtracker.can_assign_poc_job",
+            "jobtracker.can_manage_framework_job",
+            'jobtracker.can_signoff_scopes',
+            "jobtracker.can_add_job", 
+            "jobtracker.can_delete_job", 
+            "jobtracker.can_add_phases",
+            "jobtracker.can_delete_phases",
+            "jobtracker.can_refire_notifications_job",
+            # Leave
+            "jobtracker.can_approve_leave_requests", 
+            "jobtracker.can_view_all_leave_requests",
+            # Scope
+            "jobtracker.can_signoff_own_scopes", 
+            # Scheduling
+            'jobtracker.can_schedule_job', 
         ]),
         (TQA, [
             "jobtracker.can_tqa_jobs", 
@@ -214,7 +257,15 @@ class UnitRoles():
             "jobtracker.can_pqa_jobs", 
         ]),
         (SCOPER, [
-            "jobtracker.can_scope_jobs", "jobtracker.can_signoff_scopes", 
+            "jobtracker.can_scope_jobs", 
+            "jobtracker.can_signoff_scopes", 
+            "jobtracker.can_add_phases",
+            "jobtracker.can_delete_phases",
+        ]),
+        (SUPERSCOPER, [
+            "jobtracker.can_scope_jobs", 
+            "jobtracker.can_signoff_scopes", 
+            "can_signoff_own_scopes", 
         ]),
     )
 
