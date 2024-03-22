@@ -45,8 +45,13 @@
             right: 'resourceTimelineTenDay,resourceTimelineMonth,resourceTimelineYear'
         },
         // {% py_date_to_js_date request.GET.from_date as from_date %}
+        // {% if earliest_scheduled_date %}
+        // {% py_date_to_js_date earliest_scheduled_date as earliest_scheduled_date_js %}
+        initialDate: '{{ earliest_scheduled_date_js }}',
+        // {% else %}
         // {% if from_date %}
         initialDate: '{{ from_date }}',
+        // {% endif %}
         // {% endif %}
         nowIndicator: true,
         timeZone: '{{ user.pref_timezone }}', // the default (unnecessary to specify)

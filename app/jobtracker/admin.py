@@ -4,7 +4,7 @@ from .models import Phase, Job, JobSupportTeamRole, OrganisationalUnit, Organisa
     SkillCategory, Service, TimeSlot, WorkflowTask, BillingCode, \
     Feedback, Client, Contact, FrameworkAgreement, \
     Qualification, QualificationRecord, QualificationTag, AwardingBody, \
-    Accreditation, \
+    Accreditation, OrganisationalUnitRole, \
     UserSkill, TimeSlotType
 from import_export import resources
 from guardian.admin import GuardedModelAdmin
@@ -49,10 +49,12 @@ admin.site.register(TimeSlot, SimpleHistoryAdmin)
 admin.site.register(WorkflowTask)
 admin.site.register(BillingCode)
 admin.site.register(Feedback)
+admin.site.register(OrganisationalUnitRole)
 
 admin.site.register(AwardingBody)
 admin.site.register(Qualification)
 admin.site.register(QualificationRecord)
+admin.site.register(Accreditation)
 
 #### Skill
 class SkillResource(resources.ModelResource):

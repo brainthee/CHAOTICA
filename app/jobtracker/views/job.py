@@ -342,10 +342,8 @@ class JobListView(JobBaseView, UserPassesTestMixin, ListView):
         # - isn't deleted
         # - isn't archived
         # get our units 
-        units = OrganisationalUnit.objects.filter(
-            pk__in=self.request.user.unit_memberships.filter(role__in=UnitRoles.get_roles_with_permission('jobtracker.can_view_jobs')).values_list('unit').distinct())
-        my_jobs = get_objects_for_user(self.request.user, 'jobtracker.view_job')
-        jobs = Job.objects.filter(Q(unit__in=units)|Q(pk__in=my_jobs)).exclude(status=JobStatuses.DELETED).exclude(status=JobStatuses.ARCHIVED)
+        units = get_objects_for_user(self.request.user, 'jobtracker.can_view_jobs', klass=OrganisationalUnit)
+        jobs = Job.objects.filter(Q(unit__in=units)).exclude(status=JobStatuses.DELETED).exclude(status=JobStatuses.ARCHIVED)
         return jobs
 
 

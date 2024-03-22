@@ -196,8 +196,10 @@ class UnitRoles():
             "jobtracker.can_update_job",
             "jobtracker.can_add_note_job",
             "jobtracker.view_users_schedule",
+            "jobtracker.view_organisationalunit",            
         ]),
         (SALES, [
+            "jobtracker.view_organisationalunit",   
             "jobtracker.can_view_jobs", 
             "jobtracker.view_job_schedule",
             "jobtracker.can_update_job",
@@ -209,6 +211,7 @@ class UnitRoles():
             "jobtracker.can_manage_framework_job",
         ]),
         (SERVICE_DELIVERY, [
+            "jobtracker.view_organisationalunit",   
             "jobtracker.can_view_jobs", 
             "jobtracker.view_job_schedule",
             "jobtracker.can_update_job",
@@ -228,6 +231,7 @@ class UnitRoles():
             "jobtracker.view_users_schedule",
             
             # Org Unit
+            "jobtracker.view_organisationalunit",   
             "jobtracker.change_organisationalunit", 
             "jobtracker.delete_organisationalunit",
             "jobtracker.manage_members", 

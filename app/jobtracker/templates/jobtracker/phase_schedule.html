@@ -30,7 +30,6 @@
         <div class="calendar" data-bs-toggle="calendar" id="calendar"></div>
       </div>
     </div>
-
   </div>
 
   <div class="col-12 col-md-3 px-0 border-start-xxl border-300 border-top-0">
@@ -48,7 +47,7 @@
 
 {% block footer_javascript_page %}
 
-{% include 'js/scheduler_init.html' %}
+{% include 'js/scheduler_init.html' with earliest_scheduled_date=earliest_scheduled_date %}
 
 calendar.render();
 </script>

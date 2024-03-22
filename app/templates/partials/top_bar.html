@@ -61,6 +61,32 @@
           </div>
         </li>
 
+        <li class="nav-item dropdown">
+          <a class="nav-link" id="navbarDropdownNindeDots" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" data-bs-auto-close="outside" aria-expanded="true">
+            <span class="fas fa-plus fs-0 me-2 "></span>
+          </a>
+          <div class="dropdown-menu dropdown-menu-end navbar-dropdown-caret py-0 dropdown-nine-dots shadow border" aria-labelledby="navbarDropdownNindeDots" data-bs-popper="static">
+            <div class="card bg-body-emphasis position-relative border-0">
+              <div class="card-body pt-3 px-3 pb-0 overflow-auto scrollbar" style="height: 20rem;">
+
+                <ul class="nav d-flex flex-column mb-2 pb-1">
+
+                  {% for item in menus.add %}
+                    <li class="nav-item">
+                      <a class="nav-link px-3" href="{{ item.url }}">
+                        {% if item.icon %}
+                        <span class="{% if item.icon_prefix %}{{ item.icon_prefix }}{% else %}fas fa-{% endif %}{{ item.icon }} fs-0 me-2 "></span>
+                        {% endif %}
+                        <span>{{ item.title }}</span>
+                      </a>
+                    </li>
+                  {% endfor %}
+                  </ul>
+              </div>
+            </div>
+          </div>
+        </li>
+
         <!-- Notification bell -->
         <li class="nav-item dropdown">
           <a class="nav-link position-relative" href="#" style="min-width: 2.5rem" 
