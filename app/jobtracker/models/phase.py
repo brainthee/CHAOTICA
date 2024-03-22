@@ -24,9 +24,18 @@ from django_bleach.models import BleachField
 from django.db.models.functions import Lower
 from ..models.job import Job
 from ..enums import BOOL_CHOICES, TechQARatings, PresQARatings, FeedbackType, JobStatuses
+from guardian.shortcuts import get_objects_for_user
 
 
 class PhaseManager(models.Manager):
+
+    def phases_with_unit_permission(self, user, perm):
+        from ..models import OrganisationalUnit
+        units = get_objects_for_user(user, perm, klass=OrganisationalUnit)
+
+        matches = self.filter(Q(job__unit__in=units)).exclude(job__status=JobStatuses.DELETED).exclude(job__status=JobStatuses.ARCHIVED)
+        return matches
+    
     def phases_for_user(self, user):
         # Job's we're interested in:
         # - Scheduled on
@@ -392,6 +401,9 @@ class Phase(models.Model):
                 "The schedule for {phase} is confirmed.".format(phase=self),
                 email_template, action_link=self.get_absolute_url(), phase=self)
             task_send_notifications(notice, users_to_notify)
+            # Lets also update the audit log
+            for user in users_to_notify:
+                log_system_activity(self, "Schedule Confirmed notification sent to {target}".format(target=user.email))
         
         elif target_status == PhaseStatuses.PRE_CHECKS:              
             # Notify project team
@@ -402,6 +414,9 @@ class Phase(models.Model):
                 "{phase} is ready for Pre-checks".format(phase=self),
                 email_template, action_link=self.get_absolute_url(), phase=self)
             task_send_notifications(notice, users_to_notify)
+            # Lets also update the audit log
+            for user in users_to_notify:
+                log_system_activity(self, "Pre-Checks notification sent to {target}".format(target=user.email))
         
         elif target_status == PhaseStatuses.CLIENT_NOT_READY:          
             # Notify project team
@@ -412,6 +427,9 @@ class Phase(models.Model):
                 "{phase} has been marked as 'Client Not Ready'!".format(phase=self),
                 email_template, action_link=self.get_absolute_url(), phase=self)
             task_send_notifications(notice, users_to_notify)
+            # Lets also update the audit log
+            for user in users_to_notify:
+                log_system_activity(self, "Client Not Ready notification sent to {target}".format(target=user.email))
         
         elif target_status == PhaseStatuses.READY_TO_BEGIN:        
             # Notify project team
@@ -422,6 +440,9 @@ class Phase(models.Model):
                 "Checks have been carried out and {phase} is ready to begin.".format(phase=self),
                 email_template, action_link=self.get_absolute_url(), phase=self)
             task_send_notifications(notice, users_to_notify)
+            # Lets also update the audit log
+            for user in users_to_notify:
+                log_system_activity(self, "Ready to Begin notification sent to {target}".format(target=user.email))
         
         elif target_status == PhaseStatuses.IN_PROGRESS:        
             # Notify project team
@@ -432,6 +453,9 @@ class Phase(models.Model):
                 "{phase} has started".format(phase=self),
                 email_template, action_link=self.get_absolute_url(), phase=self)
             task_send_notifications(notice, users_to_notify)
+            # Lets also update the audit log
+            for user in users_to_notify:
+                log_system_activity(self, "In Progress notification sent to {target}".format(target=user.email))
         
         elif target_status == PhaseStatuses.PENDING_TQA:        
             # Notify qa team
@@ -445,6 +469,9 @@ class Phase(models.Model):
                 "{phase} is ready for Technical QA".format(phase=self),
                 email_template, action_link=self.get_absolute_url(), phase=self)
             task_send_notifications(notice, users_to_notify)
+            # Lets also update the audit log
+            for user in users_to_notify:
+                log_system_activity(self, "Ready for TQA notification sent to {target}".format(target=user.email))
         
         elif target_status == PhaseStatuses.QA_TECH_AUTHOR_UPDATES:        
             users_to_notify = User.objects.filter(pk=self.report_author.pk)
@@ -454,6 +481,9 @@ class Phase(models.Model):
                 "The report for {phase} requires technical updates.".format(phase=self),
                 email_template, action_link=self.get_absolute_url(), phase=self)
             task_send_notifications(notice, users_to_notify)
+            # Lets also update the audit log
+            for user in users_to_notify:
+                log_system_activity(self, "Requires Author Updates notification sent to {target}".format(target=user.email))
         
         elif target_status == PhaseStatuses.PENDING_PQA:        
             # Notify qa team
@@ -467,6 +497,9 @@ class Phase(models.Model):
                 "{phase} is ready for Presentation QA".format(phase=self),
                 email_template, action_link=self.get_absolute_url(), phase=self)
             task_send_notifications(notice, users_to_notify)
+            # Lets also update the audit log
+            for user in users_to_notify:
+                log_system_activity(self, "Ready for PQA notification sent to {target}".format(target=user.email))
         
         elif target_status == PhaseStatuses.QA_PRES_AUTHOR_UPDATES:        
             users_to_notify = User.objects.filter(pk=self.report_author.pk)
@@ -476,6 +509,9 @@ class Phase(models.Model):
                 "The report for {phase} requires presentation updates.".format(phase=self),
                 email_template, action_link=self.get_absolute_url(), phase=self)
             task_send_notifications(notice, users_to_notify)
+            # Lets also update the audit log
+            for user in users_to_notify:
+                log_system_activity(self, "Requires Author Updates notification sent to {target}".format(target=user.email))
         
         elif target_status == PhaseStatuses.COMPLETED:        
             # Notify project team
@@ -486,6 +522,9 @@ class Phase(models.Model):
                 "{phase} is ready for delivery".format(phase=self),
                 email_template, action_link=self.get_absolute_url(), phase=self)
             task_send_notifications(notice, users_to_notify)
+            # Lets also update the audit log
+            for user in users_to_notify:
+                log_system_activity(self, "Completed notification sent to {target}".format(target=user.email))
         
         elif target_status == PhaseStatuses.POSTPONED:            
             users_to_notify = None
@@ -495,6 +534,9 @@ class Phase(models.Model):
                 "{phase} has been postponed!".format(phase=self),
                 email_template, action_link=self.get_absolute_url(), phase=self)
             task_send_notifications(notice, users_to_notify)
+            # Lets also update the audit log
+            for user in users_to_notify:
+                log_system_activity(self, "Postponed notification sent to {target}".format(target=user.email))
 
     
     def summary(self):

@@ -21,9 +21,18 @@ from datetime import timedelta
 from decimal import Decimal
 from django_bleach.models import BleachField
 from constance import config
+from guardian.shortcuts import get_objects_for_user
 
 
-class JobManager(models.Manager):    
+class JobManager(models.Manager):   
+
+    def jobs_with_unit_permission(self, user, perm):
+        from ..models import OrganisationalUnit
+        units = get_objects_for_user(user, perm, klass=OrganisationalUnit)
+
+        matches = self.filter(Q(unit__in=units)).exclude(status=JobStatuses.DELETED).exclude(status=JobStatuses.ARCHIVED)
+        return matches
+     
     def jobs_for_user(self, user):
         # Job's we're interested in:
         # - Scheduled on
@@ -196,15 +205,6 @@ class Job(models.Model):
     class Meta:
         verbose_name = 'Job'
         ordering = ['id']
-        permissions = (
-            ('add_note', 'Can Add Note'),
-            ('scope_job', 'Can Scope Job'),
-            ('view_schedule', 'Can View Schedule'),
-            ('change_schedule', 'Can Change Schedule'),
-            ('update_workflow', 'Can Update the workflow'),
-            ('assign_poc', 'Can assign Point of Contact'),
-            ('assign_framework', 'Can assign a framework agreement'),
-        )
 
     def __str__(self):
         return u'{client}/{id}'.format(client=self.client, id=self.id)
@@ -221,6 +221,9 @@ class Job(models.Model):
                 "{job} has just been marked as ready to scope.".format(job=self), 
                 email_template, action_link=self.get_absolute_url(), job=self)
             task_send_notifications(notice, users_to_notify)
+            # Lets also update the audit log
+            for user in users_to_notify:
+                log_system_activity(self, "Pending Scope notification sent to {target}".format(target=user.email))
         
         elif target_status == JobStatuses.PENDING_SCOPING_SIGNOFF:
             # Notify scoping team
@@ -231,16 +234,22 @@ class Job(models.Model):
                 "{job} is ready for scope signoff.".format(job=self), 
                 email_template, action_link=self.get_absolute_url(), job=self)
             task_send_notifications(notice, users_to_notify)
+            # Lets also update the audit log
+            for user in users_to_notify:
+                log_system_activity(self, "Pending Scope Signoff notification sent to {target}".format(target=user.email))
         
         elif target_status == JobStatuses.SCOPING_COMPLETE:
             # Notify scheduling team
-            users_to_notify = self.unit.get_active_members_with_perm("can_schedule_phases")
+            users_to_notify = self.unit.get_active_members_with_perm("can_schedule_job")
             notice = AppNotification(
                 NotificationTypes.JOB, 
                 "Job Ready to Schedule", 
                 "The scope for {job} has been signed off and is ready for scheduling.".format(job=self), 
                 email_template, action_link=self.get_absolute_url(), job=self)
             task_send_notifications(notice, users_to_notify)
+            # Lets also update the audit log
+            for user in users_to_notify:
+                log_system_activity(self, "Scope Complete notification sent to {target}".format(target=user.email))
     
 
     def start_date(self):

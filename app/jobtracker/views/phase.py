@@ -20,18 +20,21 @@ from chaotica_utils.enums import NotificationTypes
 import logging
 from dal import autocomplete
 from django.contrib.auth.decorators import login_required
+from ..decorators import unit_permission_required_or_403
+from ..mixins import UnitPermissionRequiredMixin
 
 
 logger = logging.getLogger(__name__)
 
 
-@login_required
+@unit_permission_required_or_403('jobtracker.view_job_schedule', (Phase, 'slug', 'slug'))
 def view_phase_schedule_gantt_data(request, job_slug, slug):
     job = get_object_or_404(Job, slug=job_slug)
     phase = get_object_or_404(Phase, job=job, slug=slug)    
     return JsonResponse(phase.get_gantt_json(), safe=False)
 
-@login_required
+
+@unit_permission_required_or_403('jobtracker.view_job_schedule', (Phase, 'slug', 'slug'))
 def view_phase_schedule_slots(request, job_slug, slug):
     data = []
     job = get_object_or_404(Job, slug=job_slug)
@@ -49,8 +52,7 @@ class PhaseAutocomplete(autocomplete.Select2QuerySetView):
         # Don't forget to filter out results depending on the visitor !
         if not self.request.user.is_authenticated:
             return Phase.objects.none()
-        # TODO: Do permission checks...
-        qs = Phase.objects.all().annotate(full_phase_id=ExpressionWrapper(Concat('job__id', V('-'), 'phase_number'), output_field=CharField()))
+        qs = Phase.objects.phases_with_unit_permission(self.request.user, "jobtracker.can_view_jobs").annotate(full_phase_id=ExpressionWrapper(Concat('job__id', V('-'), 'phase_number'), output_field=CharField()))
         if self.q:
             qs = qs.filter(
                 # Q(email__icontains=self.q) |
@@ -58,7 +60,7 @@ class PhaseAutocomplete(autocomplete.Select2QuerySetView):
         return qs
 
 
-@login_required
+@unit_permission_required_or_403('jobtracker.view_job_schedule', (Phase, 'slug', 'slug'))
 def view_phase_schedule_members(request, job_slug, slug):
     data = []
     job = get_object_or_404(Job, slug=job_slug)
@@ -103,7 +105,7 @@ def view_phase_schedule_members(request, job_slug, slug):
     return JsonResponse(data, safe=False)
 
 
-@login_required
+@unit_permission_required_or_403('jobtracker.can_update_job', (Phase, 'slug', 'slug'))
 def assign_phase_field(request, job_slug, slug, field):
     valid_fields = [
         'project_lead', 'report_author',
@@ -142,7 +144,8 @@ class PhaseBaseView(ChaoticaBaseView, View):
 
         return context
 
-class PhaseDetailView(PhaseBaseView, DetailView):
+class PhaseDetailView(UnitPermissionRequiredMixin, PhaseBaseView, DetailView):
+    permission_required = 'jobtracker.can_view_jobs'
 
     def get_context_data(self, **kwargs):
         context = super(PhaseDetailView, self).get_context_data(**kwargs)
@@ -168,7 +171,8 @@ class PhaseDetailView(PhaseBaseView, DetailView):
 
         return context
 
-class PhaseCreateView(PhaseBaseView, CreateView):
+class PhaseCreateView(UnitPermissionRequiredMixin, PhaseBaseView, CreateView):
+    permission_required = 'jobtracker.can_add_phases'
     form_class = PhaseForm
     template_name = "jobtracker/phase_form.html"
     fields = None
@@ -195,7 +199,8 @@ class PhaseCreateView(PhaseBaseView, CreateView):
             kwargs['job'] = get_object_or_404(Job, slug=self.kwargs['job_slug'])
         return kwargs
 
-@login_required
+
+@unit_permission_required_or_403('jobtracker.can_refire_notifications_job', (Phase, 'slug', 'slug'))
 def phase_refire_notifications(request, job_slug, slug):
     job = get_object_or_404(Job, slug=job_slug)
     phase = get_object_or_404(Phase, job=job, slug=slug)
@@ -203,7 +208,7 @@ def phase_refire_notifications(request, job_slug, slug):
     return HttpResponseRedirect(reverse('phase_detail', kwargs={"job_slug": job_slug,"slug": slug}))
 
 
-@login_required
+@unit_permission_required_or_403('jobtracker.can_add_note_job', (Phase, 'slug', 'slug'))
 def phase_create_note(request, job_slug, slug):
     job = get_object_or_404(Job, slug=job_slug)
     phase = get_object_or_404(Phase, job=job, slug=slug)
@@ -228,9 +233,10 @@ def phase_create_note(request, job_slug, slug):
             return HttpResponseRedirect(reverse('phase_detail', kwargs={"job_slug": job_slug,"slug": slug})+"#notes")
     return HttpResponseBadRequest()
 
-class PhaseScheduleView(PhaseBaseView, DetailView):
+class PhaseScheduleView(UnitPermissionRequiredMixin, PhaseBaseView, DetailView):
     """ Renders the schedule for the job """
     template_name = "jobtracker/phase_schedule.html"
+    permission_required = 'jobtracker.view_job_schedule'
 
     def get_context_data(self, **kwargs):
         context = super(PhaseScheduleView, self).get_context_data(**kwargs)
@@ -241,7 +247,8 @@ class PhaseScheduleView(PhaseBaseView, DetailView):
         context['TimeSlotDeliveryRolesInUse'] = types_in_use
         return context
 
-class PhaseUpdateView(PhaseBaseView, UpdateView):
+class PhaseUpdateView(UnitPermissionRequiredMixin, PhaseBaseView, UpdateView):
+    permission_required = 'jobtracker.can_update_job'
     form_class = PhaseForm
     template_name = "jobtracker/phase_form.html"
     fields = None
@@ -253,8 +260,7 @@ class PhaseUpdateView(PhaseBaseView, UpdateView):
         return kwargs
 
 
-
-@login_required
+@unit_permission_required_or_403('jobtracker.can_update_job', (Phase, 'slug', 'slug'))
 def phase_edit_delivery(request, job_slug, slug):
     job = get_object_or_404(Job, slug=job_slug)
     phase = get_object_or_404(Phase, job=job, slug=slug)
@@ -276,7 +282,8 @@ def phase_edit_delivery(request, job_slug, slug):
                                                 request=request)
     return JsonResponse(data)
 
-@login_required
+
+@unit_permission_required_or_403('jobtracker.can_tqa_jobs', (Phase, 'slug', 'slug'))
 def phase_feedback_techqa(request, job_slug, slug):
     job = get_object_or_404(Job, slug=job_slug)
     phase = get_object_or_404(Phase, job=job, slug=slug)
@@ -302,7 +309,8 @@ def phase_feedback_techqa(request, job_slug, slug):
                                                 request=request)
     return JsonResponse(data)
 
-@login_required
+
+@unit_permission_required_or_403('jobtracker.can_pqa_jobs', (Phase, 'slug', 'slug'))
 def phase_feedback_presqa(request, job_slug, slug):
     job = get_object_or_404(Job, slug=job_slug)
     phase = get_object_or_404(Phase, job=job, slug=slug)
@@ -328,7 +336,8 @@ def phase_feedback_presqa(request, job_slug, slug):
                                                 request=request)
     return JsonResponse(data)
 
-@login_required
+
+@unit_permission_required_or_403('jobtracker.can_update_job', (Phase, 'slug', 'slug'))
 def phase_feedback_scope(request, job_slug, slug):
     job = get_object_or_404(Job, slug=job_slug)
     phase = get_object_or_404(Phase, job=job, slug=slug)
@@ -354,7 +363,8 @@ def phase_feedback_scope(request, job_slug, slug):
                                                 request=request)
     return JsonResponse(data)
 
-@login_required
+
+@unit_permission_required_or_403('jobtracker.can_tqa_jobs', (Phase, 'slug', 'slug'))
 def phase_rating_techqa(request, job_slug, slug):
     job = get_object_or_404(Job, slug=job_slug)
     phase = get_object_or_404(Phase, job=job, slug=slug)
@@ -377,7 +387,8 @@ def phase_rating_techqa(request, job_slug, slug):
                                                 request=request)
     return JsonResponse(data)
 
-@login_required
+
+@unit_permission_required_or_403('jobtracker.can_pqa_jobs', (Phase, 'slug', 'slug'))
 def phase_rating_presqa(request, job_slug, slug):
     job = get_object_or_404(Job, slug=job_slug)
     phase = get_object_or_404(Phase, job=job, slug=slug)
@@ -400,7 +411,8 @@ def phase_rating_presqa(request, job_slug, slug):
                                                 request=request)
     return JsonResponse(data)
 
-@login_required
+
+@unit_permission_required_or_403('jobtracker.can_update_job', (Phase, 'slug', 'slug'))
 def phase_rating_scope(request, job_slug, slug):
     job = get_object_or_404(Job, slug=job_slug)
     phase = get_object_or_404(Phase, job=job, slug=slug)
@@ -423,7 +435,8 @@ def phase_rating_scope(request, job_slug, slug):
                                                 request=request)
     return JsonResponse(data)
 
-@login_required
+
+@unit_permission_required_or_403('jobtracker.can_update_job', (Phase, 'slug', 'slug'))
 def phase_update_workflow(request, job_slug, slug, new_state):
     job = get_object_or_404(Job, slug=job_slug)
     phase = get_object_or_404(Phase, job=job, slug=slug)
@@ -612,5 +625,6 @@ def phase_update_workflow(request, job_slug, slug, new_state):
                                                 request=request)
     return JsonResponse(data)
 
-class PhaseDeleteView(PhaseBaseView, DeleteView):
+class PhaseDeleteView(UnitPermissionRequiredMixin, PhaseBaseView, DeleteView):
+    permission_required = 'jobtracker.can_delete_phases'
     """View to delete a job"""    

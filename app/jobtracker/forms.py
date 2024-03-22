@@ -170,8 +170,9 @@ class AssignJobBillingCode(forms.ModelForm):
 
 class AssignContact(forms.Form):
     contact = forms.ModelChoiceField(required=False,
-                                     queryset=Contact.objects.all(),)
+                                     queryset=Contact.objects.none(),)
     def __init__(self, *args, **kwargs):
+        contacts = None
         if 'contacts' in kwargs:
             contacts = kwargs.pop('contacts')
         super(AssignContact, self).__init__(*args, **kwargs)
@@ -192,6 +193,9 @@ class AssignContact(forms.Form):
                 css_class="button-row d-flex"),
             css_class="modal-footer"),
         )
+
+    class Meta:
+        fields = ('contact',)
 
 class AssignMultipleContacts(forms.Form):
     contacts = forms.ModelMultipleChoiceField(required=False,
