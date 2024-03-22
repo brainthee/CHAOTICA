@@ -10,4 +10,4 @@ from .qualification import QualificationTag, Qualification, QualificationRecord,
 from .accreditation import Accreditation
 
 from .timeslot import TimeSlot, TimeSlotType
-from .orgunit import OrganisationalUnit, OrganisationalUnitMember
+from .orgunit import OrganisationalUnit, OrganisationalUnitMember, OrganisationalUnitRole

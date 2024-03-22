@@ -150,7 +150,7 @@ class Phase(models.Model):
     def earliest_scheduled_date(self):
         # Calculate start from first delivery slot
         if self.timeslots.filter(deliveryRole=TimeSlotDeliveryRole.DELIVERY).exists():
-            return self.timeslots.filter(deliveryRole=TimeSlotDeliveryRole.DELIVERY).order_by('-start').first().start.date()
+            return self.timeslots.filter(deliveryRole=TimeSlotDeliveryRole.DELIVERY).order_by('start').first().start.date()
         else:
             # return today's date
             return timezone.now().today()        

@@ -242,6 +242,7 @@ class PhaseScheduleView(UnitPermissionRequiredMixin, PhaseBaseView, DetailView):
         context = super(PhaseScheduleView, self).get_context_data(**kwargs)
         context['userSelect'] = AssignUserField()
         context['TimeSlotDeliveryRoles'] = TimeSlotDeliveryRole.CHOICES
+        context['earliest_scheduled_date'] = context['phase'].earliest_scheduled_date()
 
         types_in_use = context['phase'].get_all_total_scheduled_by_type()
         context['TimeSlotDeliveryRolesInUse'] = types_in_use

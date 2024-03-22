@@ -132,6 +132,8 @@ class AppNotification:
         self.icon = icon
         if action_link:
             self.action_link = ext_reverse(action_link)
+        else:
+            self.action_link = None
         self.send_inapp = send_inapp
         self.send_email = send_email
         self.context = {}
