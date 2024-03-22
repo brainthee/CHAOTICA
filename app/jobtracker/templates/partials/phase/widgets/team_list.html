@@ -112,22 +112,6 @@
       </div>
    </div>
 
-   <div class="row pt-3 border-bottom align-items-center">
-      <!-- Project Members -->
-         <div class="col-2 align-items-center">
-            <div class="avatar avatar-xl">
-               <span class="rounded-circle fas fs-4 text-400 fa-users"></span>
-            </div>
-            <a class="text-800 dropdown-toggle text-decoration-none dropdown-caret-none"  href="#!">
-               Scheduled
-            </a>       
-         </div>
-         
-         <div class="col-10">
-            {% include 'partials/users/user_group.html' with users=phase.team_scheduled.all %}
-         </div>
-   </div>
-
    <div class="row">
       <!-- TechQA -->
       <div class="col-6 pt-3 border-end text-center">
@@ -182,5 +166,21 @@
             </a>
          </div>
       </div>
+   </div>
+
+   <div class="row pt-3 border-top border-bottom text-center align-items-center">
+      <!-- Project Members -->
+      <h5>Scheduled</h5>
+         
+         {% for u in phase.team_scheduled.all %}
+         <div class="d-flex mb-2 align-items-center position-relative">
+            <div class="avatar avatar-m me-3">
+               <img class="rounded-circle avatar-placeholder" src="{{ u.get_avatar_url }}" alt="">
+            </div>
+            <a class="fw-bold stretched-link" href="{{ u.get_absolute_url }}">
+               {{ u }}
+            </a>
+         </div>
+         {% endfor %}
    </div>
 </ul>

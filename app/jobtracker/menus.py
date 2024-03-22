@@ -3,6 +3,14 @@ from menu import Menu, MenuItem
 from chaotica_utils.utils import PermMenuItem, RoleMenuItem
 
 
+
+Menu.add_item("add", RoleMenuItem("Add Job",
+                            reverse("job_create"),
+                            icon="cubes",
+                            requiredRole='*', # Any role will do!
+                            weight=1,))
+
+
 Menu.add_item("user", MenuItem("My Qualifications",
                                reverse('view_own_qualifications'),
                                icon="certificate",

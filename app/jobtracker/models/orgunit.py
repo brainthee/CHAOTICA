@@ -12,6 +12,7 @@ from decimal import Decimal
 from django.templatetags.static import static
 from django_bleach.models import BleachField
 from django.db.models.functions import Lower
+from django.contrib.auth.models import Permission
 
 
 def _default_business_days():
@@ -86,13 +87,10 @@ class OrganisationalUnit(models.Model):
             expected_perms = []
             # get a combined list of perms from their roles...
             for ms in OrganisationalUnitMember.objects.filter(unit=self, member=user, left_date__isnull=True):
-                for role_perm in UnitRoles.PERMISSIONS[ms.role][1]:
-                    if "." in role_perm:
-                        clean_perm = role_perm.split('.')[1]
-                    else:
-                        clean_perm = role_perm
-                    if clean_perm not in expected_perms:
-                        expected_perms.append(clean_perm)
+                perm_objs = Permission.objects.filter(pk__in=ms.roles.all().values_list('permissions').distinct())
+                for role_perm in perm_objs:
+                    if role_perm.codename not in expected_perms:
+                        expected_perms.append(role_perm.codename)
 
             if expected_perms:
                 # First lets add missing perms...
@@ -172,6 +170,21 @@ class OrganisationalUnit(models.Model):
         self.sync_permissions()
 
 
+class OrganisationalUnitRole(models.Model):
+    name = models.CharField(verbose_name="Name", max_length=255, unique=True)
+    bs_colour = models.CharField(verbose_name="Bootstrap Colour", max_length=255, default="info")
+    default_role = models.BooleanField('Default Role', default=False)
+    manage_role = models.BooleanField('Manager Role', default=False)
+    permissions = models.ManyToManyField(Permission )
+    history = HistoricalRecords()
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        ordering = ['name', ]
+    
+
 class OrganisationalUnitMember(models.Model):
     unit = models.ForeignKey(OrganisationalUnit, on_delete=models.CASCADE, related_name='members')
     member = models.ForeignKey(settings.AUTH_USER_MODEL,
@@ -182,26 +195,24 @@ class OrganisationalUnitMember(models.Model):
                                 related_name="unitmember_invites",
                                 null=True,
                                 blank=True)
-    role = models.IntegerField(verbose_name="Role",
-                        choices=UnitRoles.CHOICES, default=UnitRoles.CONSULTANT)
+    roles = models.ManyToManyField(OrganisationalUnitRole, verbose_name="Roles", blank=True)
     add_date = models.DateTimeField(verbose_name="Date Added", help_text="Date the user was added to the unit", auto_now_add=True)
     mod_date = models.DateTimeField(verbose_name="Date Modified", help_text="Last date the membership was modified", auto_now=True)
     left_date = models.DateTimeField(verbose_name="Date Left", help_text="Date the user left the group", null=True, blank=True)
     history = HistoricalRecords()
 
+
     class Meta:
-        ordering = ['member', '-role']
+        ordering = ['member', ]
         get_latest_by = 'mod_date'
-        
-    @property
-    def role_bs_colour(self):
-        return UnitRoles.BS_COLOURS[self.role][1]
+
     
     def getActiveRoles(self):
         return OrganisationalUnitMember.objects.filter(
             unit=self.unit, member=self.member,
             left_date__isnull=True,
         )
+
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)

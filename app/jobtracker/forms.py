@@ -2,7 +2,7 @@ from django import forms
 from django.urls import reverse
 from .models import Contact, FrameworkAgreement, Job, JobSupportTeamRole, Qualification, QualificationRecord, AwardingBody, Feedback, \
     TimeSlot, TimeSlotType, Client, Phase, OrganisationalUnit, OrganisationalUnitMember, Skill, \
-        Service, WorkflowTask, SkillCategory, BillingCode
+        Service, WorkflowTask, SkillCategory, BillingCode, OrganisationalUnitRole
 from chaotica_utils.models import Note, User
 from django.db.models import Q
 from .enums import DefaultTimeSlotTypes, JobStatuses, PhaseStatuses
@@ -1037,9 +1037,9 @@ class OrganisationalUnitMemberForm(forms.ModelForm):
                 ]
 
 class OrganisationalUnitMemberRolesForm(forms.ModelForm):
-    # role = forms.ModelChoiceField(
-    #     queryset=User.objects.filter(is_active=True),
-    #     widget=autocomplete.ModelSelect2(),)
+    roles = forms.ModelMultipleChoiceField(
+                queryset=OrganisationalUnitRole.objects.all(),
+                widget=autocomplete.ModelSelect2Multiple(),)
 
     def __init__(self, *args, **kwargs):
         org_unit = kwargs.pop('org_unit', None)
@@ -1047,12 +1047,12 @@ class OrganisationalUnitMemberRolesForm(forms.ModelForm):
         self.helper = FormHelper(self)
         self.helper.form_tag = False
         self.helper.layout = Layout(
-            Field('role', style="width: 100%;"),
+            Field('roles', style="width: 100%;"),
         )
 
     class Meta:
         model = OrganisationalUnitMember
-        fields = ["role", ]
+        fields = ["roles", ]
 
 
 class OrganisationalUnitForm(forms.ModelForm):
