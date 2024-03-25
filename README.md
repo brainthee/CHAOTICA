@@ -1,12 +1,12 @@
 <p align="center"> <img src="https://raw.githubusercontent.com/brainthee/CHAOTICA/main/media/logo_nobg.png"/></p>
 
-[![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip) - **WARNING - THIS PROJECT IS IN EARLY STAGES. I DO NOT ADVISE YOU USE IT YET.**
+[![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 
 CHAOTICA stands for: **C**entralised **H**ub for **A**ssigning **O**perational **T**asks, **I**nteractive **C**alendaring and **A**lerts. Thanks ChatGPT for the backronym!
 
 It is a Django based engagement life-cycle management tool. Primarily geared to security testing teams.
 
-![CHAOTICA Dashboard](media/screenshots/dashboard.png "Dashboard")
+<img src="https://raw.githubusercontent.com/brainthee/CHAOTICA/main/media/screenshots/dashboard.png"/>
 
 (Planned) Features:
 
@@ -21,6 +21,10 @@ It is a Django based engagement life-cycle management tool. Primarily geared to 
 - Skill tracking
 - Service tracking with skills definable (e.g. service X must have skill Y)
 - "other" schedule tracking. E.g. Annual Leave, Internal development, shadowing etc.
+
+## Documentation
+
+Latest documentation can be found at [https://docs.chaotica.app/en/latest/](https://docs.chaotica.app/en/latest/)
 
 ## Roadmap
 
