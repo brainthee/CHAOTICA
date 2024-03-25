@@ -21,7 +21,7 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-        
+
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
@@ -35,4 +35,4 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-          repository: user/app
+          repository: ${{ secrets.DOCKERHUB_USERNAME }}/chaotica
