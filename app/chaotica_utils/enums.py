@@ -155,6 +155,73 @@ class UnitRoles():
     SCOPER = 7
     SUPERSCOPER = 8
 
+
+    DEFAULTS = [
+        {
+            'pk': PENDING,
+            'name': "Pending Approval", 
+            "bs_colour": "secondary",
+            "default_role": False,
+            "manage_role": False,
+        },
+        {
+            'pk': CONSULTANT,
+            'name': "Consultant", 
+            "bs_colour": "primary",
+            "default_role": True,
+            "manage_role": False,
+        },
+        {
+            'pk': SALES,
+            'name': "Sales", 
+            "bs_colour": "success",
+            "default_role": False,
+            "manage_role": False,
+        },
+        {
+            'pk': SERVICE_DELIVERY,
+            'name': "Service Delivery", 
+            "bs_colour": "info",
+            "default_role": False,
+            "manage_role": False,
+        },
+        {
+            'pk': MANAGER,
+            'name': "Manager", 
+            "bs_colour": "danger",
+            "default_role": False,
+            "manage_role": True,
+        },
+        {
+            'pk': TQA,
+            'name': "Tech QA'er", 
+            "bs_colour": "info",
+            "default_role": False,
+            "manage_role": False,
+        },
+        {
+            'pk': PQA,
+            'name': "Pres QA'er", 
+            "bs_colour": "info",
+            "default_role": False,
+            "manage_role": False,
+        },
+        {
+            'pk': SCOPER,
+            'name': "Scoper", 
+            "bs_colour": "info",
+            "default_role": False,
+            "manage_role": False,
+        },
+        {
+            'pk': SUPERSCOPER,
+            'name': "Super Scoper", 
+            "bs_colour": "info",
+            "default_role": False,
+            "manage_role": False,
+        },        
+    ]
+
     @staticmethod
     def get_roles_with_permission(permission):
         allowed_add_roles = []
@@ -163,28 +230,6 @@ class UnitRoles():
                 allowed_add_roles.append(role[0])
         return allowed_add_roles
     
-    CHOICES = (
-        (PENDING, "Pending Approval"),
-        (CONSULTANT, "Consultant"),
-        (SALES, "Sales"),
-        (SERVICE_DELIVERY, "Service Delivery"),
-        (MANAGER, "Manager"),
-        (TQA, "Tech QA'er"),
-        (PQA, "Pres QA'er"),
-        (SCOPER, "Scoper"),
-        (SUPERSCOPER, "Super Scoper"),
-    )
-    BS_COLOURS = (
-        (PENDING, "secondary"),
-        (CONSULTANT, "primary"),
-        (SALES, "success"),
-        (SERVICE_DELIVERY, "info"),
-        (MANAGER, "danger"),
-        (TQA, "info"),
-        (PQA, "info"),
-        (SCOPER, "info"),
-        (SUPERSCOPER, "info"),
-    )
     PERMISSIONS = (
         (PENDING, [
             # None

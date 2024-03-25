@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, Permission
 from django.templatetags.static import static
 import uuid, os, random
 from .managers import SystemNoteManager
@@ -12,7 +12,7 @@ from django.urls import reverse
 from django.contrib.auth import get_user_model
 from simple_history.models import HistoricalRecords
 import django.contrib.auth
-from guardian.shortcuts import get_objects_for_user
+from guardian.shortcuts import get_objects_for_user, assign_perm
 from django.utils import timezone
 from datetime import timedelta, date
 from dateutil.relativedelta import relativedelta
@@ -83,6 +83,21 @@ class Group(django.contrib.auth.models.Group):
             return GlobalRoles.BS_COLOURS[val][1]
         else:
             return ""
+        
+    def sync_global_permissions(self):
+        for global_role in GlobalRoles.CHOICES:
+            if self.name == settings.GLOBAL_GROUP_PREFIX+global_role[1]:
+                # Ok, we match a global role..
+                self.permissions.clear()
+                for perm in GlobalRoles.PERMISSIONS[global_role[0]][1]: # how ugly!
+                    try:
+                        assign_perm(perm, self, None)
+                    except Permission.DoesNotExist:
+                        pass # ignore this for the moment!
+                return True
+
+        # If we reach this; this group isn't matched with a global role in code
+        return False
         
 def get_media_profile_file_path(_, filename):
     ext = filename.split('.')[-1]

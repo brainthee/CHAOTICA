@@ -59,6 +59,7 @@ et-xmlfile==1.1.0
 Faker==24.1.0
 faker-microservice==2.0.0
 graphviz==0.20.1
+gunicorn==21.2.0
 holidays==0.44
 icalendar==5.0.11
 idna==3.6
@@ -77,6 +78,7 @@ pillow==10.2.0
 pip-tools==7.4.1
 prompt-toolkit==3.0.43
 psycopg2==2.9.9
+psycopg2-binary==2.9.9
 pycparser==2.21
 pydantic==2.6.3
 pydantic_core==2.16.3
