@@ -1,6 +1,5 @@
 from django.apps import AppConfig
 from django.db import connections
-from .enums import DefaultTimeSlotTypes
 
 
 def table_exists(table_name: str) -> bool:
@@ -9,15 +8,17 @@ def table_exists(table_name: str) -> bool:
 
 def populate_timeslot_types():
     from .models import TimeSlotType
+    from .enums import DefaultTimeSlotTypes
 
     if table_exists("jobtracker_timeslottype"):
-        for default_type in DefaultTimeSlotTypes.DEFAULTS:
-            instance, created = TimeSlotType.objects.get_or_create(
-                pk=default_type['pk'], defaults=default_type)
-            if not created:
-                for attr, value in default_type.items(): 
-                    setattr(instance, attr, value)
-                instance.save()
+        if not TimeSlotType.objects.all().count(): # Don't run if we already have types in the DB
+            for default_type in DefaultTimeSlotTypes.DEFAULTS:
+                instance, created = TimeSlotType.objects.get_or_create(
+                    pk=default_type['pk'], defaults=default_type)
+                if created:
+                    for attr, value in default_type.items(): 
+                        setattr(instance, attr, value)
+                    instance.save()
 
 
 def populate_default_unit_roles():
@@ -26,18 +27,15 @@ def populate_default_unit_roles():
     from django.contrib.auth.models import Permission
 
     if table_exists("jobtracker_organisationalunitrole"):
-        if not OrganisationalUnitRole.objects.all().count():
-            for role in UnitRoles.CHOICES:
+        if not OrganisationalUnitRole.objects.all().count(): # Don't run if we already have roles in the DB
+            for role in UnitRoles.DEFAULTS:
                 instance, created = OrganisationalUnitRole.objects.get_or_create(
-                    pk=role[0], name=role[1])
+                    pk=role['pk'], name=role['name'])
                 if created:
-                    if instance.name == "Manager":
-                        # Make it manager
-                        instance.manage_role = True
-                    if instance.name == "Consultant":
-                        instance.default_role = True
-                    instance.bs_colour = UnitRoles.BS_COLOURS[role[0]][1]
-                    for perm in UnitRoles.PERMISSIONS[role[0]][1]:
+                    for attr, value in role.items(): 
+                        setattr(instance, attr, value)
+
+                    for perm in UnitRoles.PERMISSIONS[role['pk']][1]:
                         permission = Permission.objects.get(codename=perm.split(".")[1])
                         instance.permissions.add(permission)
                     instance.save()
