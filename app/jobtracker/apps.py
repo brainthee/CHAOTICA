@@ -37,7 +37,10 @@ def populate_default_unit_roles():
 
                     for perm in UnitRoles.PERMISSIONS[role['pk']][1]:
                         if perm:
-                            permission = Permission.objects.get(codename=perm.split(".")[1])
+                            codeword = perm
+                            if "." in perm:
+                                codeword = perm.split(".")[1]
+                            permission = Permission.objects.get(codename=codeword)
                             instance.permissions.add(permission)
                     instance.save()
     

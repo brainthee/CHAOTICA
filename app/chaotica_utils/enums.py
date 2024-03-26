@@ -314,7 +314,7 @@ class UnitRoles():
         (SUPERSCOPER, [
             "jobtracker.can_scope_jobs", 
             "jobtracker.can_signoff_scopes", 
-            "can_signoff_own_scopes", 
+            "jobtracker.can_signoff_own_scopes", 
         ]),
     )
 

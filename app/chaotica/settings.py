@@ -331,7 +331,7 @@ USE_TZ = True
 
 USE_S3 = os.environ.get('USE_S3', default=False)
 
-if USE_S3:
+if USE_S3 == "1" or USE_S3:
     # aws settings
     AWS_ACCESS_KEY_ID = os.getenv('AWS_STORAGE_ACCESS_KEY_ID')
     AWS_SECRET_ACCESS_KEY = os.getenv('AWS_STORAGE_SECRET_ACCESS_KEY')
