@@ -266,6 +266,9 @@ class UnitRoles():
             
             "jobtracker.can_schedule_job",
             "jobtracker.manage_members",
+            # Leave
+            "jobtracker.can_approve_leave_requests", 
+            "jobtracker.can_view_all_leave_requests",
         ]),
         (MANAGER, [
             "jobtracker.can_view_jobs", 
