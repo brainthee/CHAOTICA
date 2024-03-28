@@ -29,6 +29,8 @@ def populate_default_unit_roles():
     if table_exists("jobtracker_organisationalunitrole"):
         if not OrganisationalUnitRole.objects.all().count(): # Don't run if we already have roles in the DB
             for role in UnitRoles.DEFAULTS:
+                if role['pk'] == 0:
+                    continue
                 instance, created = OrganisationalUnitRole.objects.get_or_create(
                     pk=role['pk'], name=role['name'])
                 if created:
