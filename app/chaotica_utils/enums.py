@@ -154,6 +154,7 @@ class UnitRoles():
     PQA = 6
     SCOPER = 7
     SUPERSCOPER = 8
+    SCHEDULER = 9
 
 
     DEFAULTS = [
@@ -220,6 +221,14 @@ class UnitRoles():
             "default_role": False,
             "manage_role": False,
         },        
+        {
+            'pk': SCHEDULER,
+            'name': "Scheduler", 
+            "bs_colour": "info",
+            "default_role": False,
+            "manage_role": False,
+        },        
+        
     ]
 
     @staticmethod
@@ -318,6 +327,11 @@ class UnitRoles():
             "jobtracker.can_scope_jobs", 
             "jobtracker.can_signoff_scopes", 
             "jobtracker.can_signoff_own_scopes", 
+        ]),
+        (SCHEDULER, [
+            'jobtracker.can_schedule_job', 
+            "jobtracker.view_job_schedule",
+            "jobtracker.view_users_schedule",
         ]),
     )
 
