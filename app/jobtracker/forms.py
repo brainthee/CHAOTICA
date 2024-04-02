@@ -624,7 +624,7 @@ class JobForm(forms.ModelForm):
                 self.fields[field].disabled = True
 
         self.fields['unit'].queryset = OrganisationalUnit.objects.filter(
-            pk__in=self.user.unit_memberships.filter(role__in=UnitRoles.get_roles_with_permission('jobtracker.can_add_job')).values_list('unit').distinct())
+            pk__in=self.user.unit_memberships.filter(roles__in=UnitRoles.get_roles_with_permission('jobtracker.can_add_job')).values_list('unit').distinct())
 
 
     class Meta:
