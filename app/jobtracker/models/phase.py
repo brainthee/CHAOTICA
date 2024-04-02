@@ -319,8 +319,10 @@ class Phase(models.Model):
 
         if self.is_tqa_late and (self.status == PhaseStatuses.IN_PROGRESS or self.status == PhaseStatuses.PENDING_TQA):
             # check if we should or not...
-            time_since = now - self.notifications_late_tqa_last_fired
-            hours_since = time_since.days * 24 + time_since.seconds/3600
+            hours_since = 0
+            if self.notifications_late_tqa_last_fired:
+                time_since = now - self.notifications_late_tqa_last_fired
+                hours_since = time_since.days * 24 + time_since.seconds/3600
             if not self.notifications_late_tqa_last_fired or hours_since > config.TQA_LATE_HOURS:
                 # Ok, either it's been greater than config.TQA_LATE_HOURS or we haven't sent it...
                 # We should tell the team!
@@ -343,6 +345,7 @@ class Phase(models.Model):
 
         if self.is_pqa_late and (self.status == PhaseStatuses.PENDING_PQA or self.status == PhaseStatuses.QA_TECH or self.status == PhaseStatuses.QA_TECH_AUTHOR_UPDATES):
             # check if we should or not...
+            should_send = False
             hours_since = 0
             if self.notifications_late_pqa_last_fired:
                 time_since = now - self.notifications_late_pqa_last_fired
@@ -369,8 +372,10 @@ class Phase(models.Model):
 
         if self.is_delivery_late:
             # check if we should or not...
-            time_since = now - self.notifications_late_delivery_last_fired
-            hours_since = time_since.days * 24 + time_since.seconds/3600
+            hours_since = 0
+            if self.notifications_late_delivery_last_fired:
+                time_since = now - self.notifications_late_delivery_last_fired
+                hours_since = time_since.days * 24 + time_since.seconds/3600
             if not self.notifications_late_delivery_last_fired or hours_since > config.DELIVERY_LATE_HOURS:
                 # Ok, either it's been greater than config.PQA_LATE_HOURS or we haven't sent it...
                 # We should tell the team!
