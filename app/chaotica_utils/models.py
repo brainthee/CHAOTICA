@@ -613,50 +613,46 @@ class LeaveRequest(models.Model):
     EMAIL_TEMPLATE = "emails/leave.html"
     
     def send_request_notification(self):
-        from .utils import AppNotification, ext_reverse
         # Send a notice to... people?!
         users_to_notify = self.can_approve_by()
         notice = AppNotification(
             NotificationTypes.PHASE, 
             "Leave Requested - Please review", 
             str(self.user)+" has requested leave. Please review the request", 
-            self.EMAIL_TEMPLATE, action_link=ext_reverse(reverse('manage_leave')), leave=self)
+            self.EMAIL_TEMPLATE, action_link=reverse('manage_leave'), leave=self)
         task_send_notifications(notice, users_to_notify)
 
     
     def send_approved_notification(self):
-        from .utils import AppNotification, ext_reverse
         # Send a notice to... people?!
         users_to_notify = [self.user]
         notice = AppNotification(
             NotificationTypes.PHASE, 
             "Leave Approved", 
             "Your leave ({start_date} - {end_date}) has been approved!".format(start_date=self.start_date, end_date=self.end_date),
-            self.EMAIL_TEMPLATE, action_link=ext_reverse(reverse('view_own_leave')), leave=self)
+            self.EMAIL_TEMPLATE, action_link=reverse('view_own_leave'), leave=self)
         task_send_notifications(notice, users_to_notify)
 
     
     def send_declined_notification(self):
-        from .utils import AppNotification, ext_reverse
         # Send a notice to... people?!
         users_to_notify = [self.user]
         notice = AppNotification(
             NotificationTypes.PHASE, 
             "Leave DECLINED", 
             "Your leave ({start_date} - {end_date}) has been declined. Please contact {declined_by} for information.".format(start_date=self.start_date, end_date=self.end_date, declined_by=self.declined_by),
-            self.EMAIL_TEMPLATE, action_link=ext_reverse(reverse('view_own_leave')), leave=self)
+            self.EMAIL_TEMPLATE, action_link=reverse('view_own_leave'), leave=self)
         task_send_notifications(notice, users_to_notify)
 
     
     def send_cancelled_notification(self):
-        from .utils import AppNotification, ext_reverse
         # Send a notice to... people?!
         users_to_notify = [self.user]
         notice = AppNotification(
             NotificationTypes.PHASE, 
             "Leave Cancelled", 
             "You have cancelled your leave ({start_date} - {end_date}).".format(start_date=self.start_date, end_date=self.end_date),
-            self.EMAIL_TEMPLATE, action_link=ext_reverse(reverse('view_own_leave')), leave=self)
+            self.EMAIL_TEMPLATE, action_link=reverse('view_own_leave'), leave=self)
         task_send_notifications(notice, users_to_notify)
     
 

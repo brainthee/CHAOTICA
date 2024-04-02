@@ -131,7 +131,13 @@ class AppNotification:
         self.email_template = email_template
         self.icon = icon
         if action_link:
-            self.action_link = ext_reverse(action_link)
+            # Check if it needs to be made external
+            if not action_link.startswith('{}://{}'.format(
+                django_settings.SITE_PROTO,
+                django_settings.SITE_DOMAIN)):
+                self.action_link = ext_reverse(action_link)
+            else:
+                self.action_link = action_link
         else:
             self.action_link = None
         self.send_inapp = send_inapp
