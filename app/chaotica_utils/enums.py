@@ -43,6 +43,12 @@ class GlobalRoles():
             # Client
             "jobtracker.view_client", "jobtracker.add_client", "jobtracker.change_client", 
             "jobtracker.delete_client", "jobtracker.assign_account_managers_client",
+            # Client Frameworks
+            "jobtracker.view_frameworkagreement", "jobtracker.add_frameworkagreement", 
+            "jobtracker.change_frameworkagreement", "jobtracker.delete_frameworkagreement", 
+            # Client Contacts
+            "jobtracker.view_contact", "jobtracker.add_contact", 
+            "jobtracker.change_contact", "jobtracker.delete_contact", 
             # Service
             "jobtracker.view_service", "jobtracker.add_service", "jobtracker.change_service", 
             "jobtracker.delete_service",             
@@ -75,6 +81,10 @@ class GlobalRoles():
         (DELIVERY_MGR, [
             # Client
             "jobtracker.view_client", 
+            # Client Frameworks
+            "jobtracker.view_frameworkagreement",
+            # Client Contacts
+            "jobtracker.view_contact",
             # Service
             "jobtracker.view_service", "jobtracker.add_service", "jobtracker.change_service", 
             "jobtracker.delete_service", 
@@ -103,6 +113,11 @@ class GlobalRoles():
             # Client
             "jobtracker.view_client", "jobtracker.add_client", "jobtracker.change_client", 
             "jobtracker.delete_client", "jobtracker.assign_account_managers_client",
+            # Client Frameworks
+            "jobtracker.view_frameworkagreement", "jobtracker.add_frameworkagreement",
+            "jobtracker.change_frameworkagreement", "jobtracker.delete_frameworkagreement",
+            # Client Contacts
+            "jobtracker.view_contact", 
             # Service
             "jobtracker.view_service",
             # SkillCategory
@@ -124,6 +139,12 @@ class GlobalRoles():
             # Client
             "jobtracker.view_client", "jobtracker.add_client", "jobtracker.change_client", 
             "jobtracker.delete_client", "jobtracker.assign_account_managers_client",
+            # Client Frameworks
+            "jobtracker.view_frameworkagreement", "jobtracker.add_frameworkagreement", 
+            "jobtracker.change_frameworkagreement", "jobtracker.delete_frameworkagreement", 
+            # Client Contacts
+            "jobtracker.view_contact", "jobtracker.add_contact", 
+            "jobtracker.change_contact", "jobtracker.delete_contact", 
             # Service
             "jobtracker.view_service",
             # SkillCategory
@@ -142,6 +163,11 @@ class GlobalRoles():
             # Client
             "jobtracker.view_client",
             "jobtracker.add_client",
+            # Client Frameworks
+            "jobtracker.view_frameworkagreement", "jobtracker.add_frameworkagreement",
+            # Client Contacts
+            "jobtracker.view_contact", "jobtracker.add_contact", 
+            "jobtracker.change_contact", "jobtracker.delete_contact", 
             # Service
             "jobtracker.view_service",
             # SkillCategory
@@ -158,6 +184,10 @@ class GlobalRoles():
         (USER, [            
             # Client
             "jobtracker.view_client",
+            # Client Frameworks
+            "jobtracker.view_frameworkagreement",
+            # Client Contacts
+            "jobtracker.view_contact",
             # Service
             "jobtracker.view_service",
             # SkillCategory
@@ -292,7 +322,7 @@ class UnitRoles():
 
             "jobtracker.can_add_job",
             "jobtracker.can_assign_poc_job",
-            "jobtracker.can_manage_framework_job",
+            "jobtracker.can_manage_frameworkagreement_job",
         ]),
         (SERVICE_DELIVERY, [
             "jobtracker.view_organisationalunit",   
@@ -326,7 +356,7 @@ class UnitRoles():
             # Extras
             "jobtracker.can_scope_jobs", 
             "jobtracker.can_assign_poc_job",
-            "jobtracker.can_manage_framework_job",
+            "jobtracker.can_manage_frameworkagreement_job",
             'jobtracker.can_signoff_scopes',
             "jobtracker.can_add_job", 
             "jobtracker.can_delete_job", 
