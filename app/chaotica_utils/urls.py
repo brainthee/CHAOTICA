@@ -55,4 +55,5 @@ urlpatterns = [
 
     # Tasks
     path('tasks/update_holidays', views.update_holidays, name='update_holidays'),
+    path('tasks/sync_global_permissions', views.sync_global_permissions, name='sync_global_permissions'),
 ]

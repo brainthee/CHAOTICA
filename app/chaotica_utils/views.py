@@ -9,7 +9,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 import json, os, random
 from .forms import ChaoticaUserForm, ImportSiteDataForm, LeaveRequestForm, ProfileBasicForm, ManageUserForm, CustomConfigForm, AssignRoleForm, InviteUserForm
 from .enums import GlobalRoles, NotificationTypes
-from .tasks import task_send_notifications
+from .tasks import task_send_notifications, task_sync_global_permissions
 from .models import Notification, User, Language, Note, LeaveRequest, UserInvitation
 from .utils import ext_reverse, AppNotification, is_valid_uuid
 from django.db.models import Q
@@ -64,9 +64,19 @@ def is_ajax(request):
 
 
 @login_required
+@staff_member_required
 @require_safe
 def update_holidays(request):
     task_update_holidays()
+    return HttpResponse()
+    return HttpResponseRedirect(reverse('home'))
+
+
+@login_required
+@staff_member_required
+@require_safe
+def sync_global_permissions(request):
+    task_sync_global_permissions()
     return HttpResponse()
     return HttpResponseRedirect(reverse('home'))
 
@@ -159,6 +169,7 @@ def request_own_leave(request):
 
 @login_required
 @require_safe
+@permission_required_or_403("chaotica_utils.manage_leave")
 def manage_leave(request):
     context = {}
     from jobtracker.models.orgunit import OrganisationalUnit
@@ -176,6 +187,7 @@ def manage_leave(request):
     return HttpResponse(template.render(context, request))
 
 @login_required
+@permission_required_or_403("chaotica_utils.manage_leave")
 def manage_leave_auth_request(request, pk):
     leave = get_object_or_404(LeaveRequest, pk=pk)
     # First, check we're allowed to process this...
@@ -467,7 +479,9 @@ def user_manage(request, email):
     user = get_object_or_404(User, email=email)
     context = {}
     # We want to either be their LM or have appropriate global perms...
-    if request.user == user.manager or request.user == user.acting_manager or request.user.has_perm("manage_user"):
+    if request.user == user.manager or \
+       request.user == user.acting_manager or \
+       request.user.has_perm("chaotica_utils.manage_user"):
         if request.method == "POST":
             form = ManageUserForm(request.POST, instance=user)
             if form.is_valid():
@@ -482,7 +496,11 @@ def user_manage(request, email):
         return HttpResponse(template.render(context, request))
     else:
         # We don't have permission to manage this user...
-        return HttpResponseForbidden()
+        if request.user == user:
+            # We can't manage ourselves! Redirect to our own profile
+            return HttpResponseRedirect(reverse('view_own_profile'))
+        else:
+            return HttpResponseForbidden()
     
 
 @permission_required_or_403("chaotica_utils.manage_user")

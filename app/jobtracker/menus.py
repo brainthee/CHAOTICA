@@ -23,10 +23,10 @@ Menu.add_item("main", RoleMenuItem("Jobs",
                             requiredRole='*', # Any role will do!
                             weight=1,))
 
-Menu.add_item("main", PermMenuItem("Scheduler",
+Menu.add_item("main", MenuItem("Scheduler",
                             reverse("view_scheduler"),
                             icon="calendar",
-                            perm='jobtracker.view_scheduler',
+                            # perm='jobtracker.view_scheduler',
                             weight=2,))
 
 Menu.add_item("main", PermMenuItem("Clients",
@@ -35,10 +35,10 @@ Menu.add_item("main", PermMenuItem("Clients",
                             perm='jobtracker.view_client',
                             weight=3,))
 
-Menu.add_item("main", PermMenuItem("Reporting",
+Menu.add_item("main", MenuItem("Reporting",
                             reverse("view_reports"),
                             weight=4,
-                            perm='jobtracker.view_report',
+                            # perm='jobtracker.view_report',
                             icon="file-lines"))
 
 ops_children = (
@@ -76,7 +76,7 @@ ops_children = (
     PermMenuItem("Manage Leave",
                 reverse("manage_leave"),
                 icon="person-walking-arrow-right",
-                perm='jobtracker.manage_leave',
+                perm='chaotica_utils.manage_leave',
                 weight=1,
                 ),
     PermMenuItem("Billing Codes",

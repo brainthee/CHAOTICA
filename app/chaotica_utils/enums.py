@@ -58,6 +58,16 @@ class GlobalRoles():
             # qualification
             "jobtracker.view_qualification", "jobtracker.add_qualification", "jobtracker.change_qualification", 
             "jobtracker.delete_qualification", 'jobtracker.view_users_qualification',
+            # Workflow tracking,
+            "jobtracker.view_workflowtask", 
+            "jobtracker.add_workflowtask", 
+            "jobtracker.change_workflowtask", 
+            "jobtracker.delete_workflowtask", 
+            # Leave
+            "chaotica_utils.manage_leave",
+            # Billing Codes
+            "jobtracker.view_billingcode", "jobtracker.add_billingcode", 
+            "jobtracker.change_billingcode", "jobtracker.delete_billingcode", 
             # Users
             "chaotica_utils.manage_user", "chaotica_utils.impersonate_users", "chaotica_utils.manage_site_settings"
 
@@ -76,11 +86,18 @@ class GlobalRoles():
             "jobtracker.delete_skill", 'jobtracker.view_users_skill',
             # OrganisationalUnit
             "jobtracker.view_organisationalunit", 'jobtracker.view_users_schedule',
+            # Workflow tracking,
+            "jobtracker.view_workflowtask", 
             # qualification
             "jobtracker.view_qualification", "jobtracker.add_qualification", "jobtracker.change_qualification", 
             "jobtracker.delete_qualification", 'jobtracker.view_users_qualification',
             # Users
             "jobtracker.manage_user",
+            # Billing Codes
+            "jobtracker.view_billingcode", "jobtracker.add_billingcode", 
+            "jobtracker.change_billingcode", "jobtracker.delete_billingcode", 
+            # Leave
+            "chaotica_utils.manage_leave",
         ]),
         (SERVICE_DELIVERY, [
             # Client
@@ -92,10 +109,16 @@ class GlobalRoles():
             "jobtracker.view_skillcategory",
             # Skill
             "jobtracker.view_skill", 'jobtracker.view_users_skill',
+            # Workflow tracking,
+            "jobtracker.view_workflowtask", 
             # OrganisationalUnit
             "jobtracker.view_organisationalunit", 'jobtracker.view_users_schedule',
             # qualification
             "jobtracker.view_qualification", 'jobtracker.view_users_qualification',
+            # Leave
+            "chaotica_utils.manage_leave",
+            # Billing Codes
+            "jobtracker.view_billingcode", "jobtracker.add_billingcode", 
         ]),
         (SALES_MGR, [ 
             # Client
@@ -111,6 +134,9 @@ class GlobalRoles():
             "jobtracker.view_organisationalunit",
             # qualification
             "jobtracker.view_qualification", 'jobtracker.view_users_qualification',
+            # Billing Codes
+            "jobtracker.view_billingcode", "jobtracker.add_billingcode", 
+            "jobtracker.change_billingcode", "jobtracker.delete_billingcode", 
         ]),
         (SALES_MEMBER, [ 
             # Client
@@ -126,6 +152,8 @@ class GlobalRoles():
             "jobtracker.view_organisationalunit",
             # qualification
             "jobtracker.view_qualification", 'jobtracker.view_users_qualification',
+            # Billing Codes
+            "jobtracker.view_billingcode", "jobtracker.add_billingcode", 
         ]),
         (USER, [            
             # Client
@@ -140,6 +168,8 @@ class GlobalRoles():
             "jobtracker.view_organisationalunit",
             # qualification
             "jobtracker.view_qualification", 'jobtracker.view_users_qualification',
+            # Billing Codes
+            "jobtracker.view_billingcode", 
         ]),
     )
 

@@ -40,3 +40,10 @@ def task_update_holidays():
 def task_send_notifications(notification, users_to_notify):
     for u in users_to_notify:
         notification.send_to_user(u)
+
+
+@shared_task(track_started=True, serializer="pickle")
+def task_sync_global_permissions():
+    from .models import Group
+    for group in Group.objects.all():
+        group.sync_global_permissions()
