@@ -132,8 +132,11 @@ class UserInvitation(models.Model):
     )
 
     def is_expired(self):
+        return self.expiry_date() <= timezone.now()    
+
+    def expiry_date(self):
         expiry_date = self.sent + timedelta(days=config.USER_INVITE_EXPIRY)
-        return expiry_date <= timezone.now()    
+        return expiry_date
     
     def get_absolute_url(self):
         return reverse('signup', kwargs={'invite_id': self.invite_id})

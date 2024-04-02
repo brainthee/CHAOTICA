@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load menu %}{% load static %}
+{% load menu %}{% load static %}{% load humanize %}
 
 {% block pageTitle %}Users{% endblock pageTitle %}
 {% block head_title %}Users{% endblock head_title %}
@@ -37,6 +37,58 @@
   </div>
 </div>
 
+{% if invite_list %}
+<div class="row my-3">
+  <div class="col-12">
+     <div class="card p-2">
+        <div class="card-header">
+          <h4>Pending Invites</h4>
+        </div>
+        <div class="card-body py-2 ">
+          <table class="table datatable align-items-center mb-0">
+            <caption>Pending Invites</caption>
+            <thead>
+              <tr>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+                    E-mail
+                </th>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+                    Invited
+                </th>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+                    Sent by
+                </th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+            {% for u in invite_list %}
+              <tr>
+                <td>
+                  {{ u.invited_email }}
+                  {% if u.is_expired %}
+                  <span class="badge badge-phoenix-warning">Expired</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {{ u.sent }} (expires {{ u.expiry_date|naturaltime }})
+                </td>   
+                <td>
+                  {{ u.invited_by }}
+                </td>        
+                <td class="align-end text-end">
+                </td>
+              </tr>
+            {% endfor %}        
+            </tbody>
+          </table>
+
+        </div>
+     </div>
+  </div>
+</div>
+{% endif %}
+
 <div class="row my-3">
   <div class="col-12">
      <div class="card p-2">
@@ -57,7 +109,25 @@
                 <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
                     Global Roles
                 </th>
-                <th></th>
+                <th>
+                  <div class="btn-reveal-trigger position-static">
+                    <button class="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal fs-10" 
+                        type="button" data-bs-toggle="dropdown" data-boundary="window" aria-haspopup="true" aria-expanded="false" 
+                        data-bs-reference="parent">
+                        <span class="fas fa-ellipsis-h fs-10"></span>
+                    </button>
+                
+                    <div class="dropdown-menu shadow dropdown-menu-end me-sm-n4 me-n3" aria-labelledby="navbarDropdownMenuLink">     
+                      <a class="dropdown-item " href="#">
+                          Resend Invite
+                      </a>
+                      <button class="dropdown-item text-warning js-load-modal-form" 
+                          data-url="#">
+                          Revoke Invite
+                      </button>     
+                    </div>
+                  </div>
+                </th>
               </tr>
             </thead>
             <tbody>
