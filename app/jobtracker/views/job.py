@@ -360,17 +360,20 @@ class JobDetailView(UnitPermissionRequiredMixin, JobBaseView, DetailView):
         return context
 
 
-# We don't set a permission on this page other than login required
-# because permissions are effectively set by the unit queryset.
-# class JobCreateView(UnitPermissionRequiredMixin, JobBaseView, CreateView):
-class JobCreateView(JobBaseView, LoginRequiredMixin, CreateView):
-    # permission_required = 'jobtracker.can_add_job'
-    # accept_global_perms = True
-    # return_403 = True
-    # permission_object = OrganisationalUnit
+class JobCreateView(UnitPermissionRequiredMixin, JobBaseView, CreateView):
+    permission_required = 'jobtracker.can_add_job'
+    return_403 = True
     template_name = "jobtracker/job_form.html"
     form_class = JobForm
     fields = None
+
+    def get_permission_object(self):
+        orgs = OrganisationalUnit.objects.filter(
+                pk__in=self.request.user.unit_memberships.filter(
+                    roles__in=UnitRoles.get_roles_with_permission('jobtracker.can_add_job')
+                ).values_list('unit').distinct()
+            ).first() # return any - it doesn't matter here!
+        return orgs
 
     def get_initial(self):
         self.initial.update({ 'created_by': self.request.user })

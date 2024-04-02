@@ -173,9 +173,16 @@ class PhaseDetailView(UnitPermissionRequiredMixin, PhaseBaseView, DetailView):
 
 class PhaseCreateView(UnitPermissionRequiredMixin, PhaseBaseView, CreateView):
     permission_required = 'jobtracker.can_add_phases'
+    return_403 = True
     form_class = PhaseForm
     template_name = "jobtracker/phase_form.html"
     fields = None
+
+    def get_permission_object(self):
+        if 'job_slug' in self.kwargs:
+            job = get_object_or_404(Job, slug=self.kwargs['job_slug'])
+            return job.unit
+        return None
 
     def get(self, request, *args, **kwargs):
         # Check if the job is in the right stage!
