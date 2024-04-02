@@ -4,7 +4,7 @@ from django.http import HttpResponseRedirect, HttpResponseBadRequest, JsonRespon
 from django.template import loader
 from django.db.models import Q
 from django.conf import settings
-from django.contrib.auth.mixins import UserPassesTestMixin
+from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
 from guardian.core import ObjectPermissionChecker
 from guardian.shortcuts import get_objects_for_user
 from guardian.decorators import permission_required_or_403
@@ -360,11 +360,14 @@ class JobDetailView(UnitPermissionRequiredMixin, JobBaseView, DetailView):
         return context
 
 
-class JobCreateView(UnitPermissionRequiredMixin, JobBaseView, CreateView):
-    permission_required = 'jobtracker.can_add_job'
-    accept_global_perms = True
-    return_403 = True
-    permission_object = Job
+# We don't set a permission on this page other than login required
+# because permissions are effectively set by the unit queryset.
+# class JobCreateView(UnitPermissionRequiredMixin, JobBaseView, CreateView):
+class JobCreateView(JobBaseView, LoginRequiredMixin, CreateView):
+    # permission_required = 'jobtracker.can_add_job'
+    # accept_global_perms = True
+    # return_403 = True
+    # permission_object = OrganisationalUnit
     template_name = "jobtracker/job_form.html"
     form_class = JobForm
     fields = None

@@ -78,8 +78,10 @@ class OrganisationalUnit(models.Model):
             ('can_view_all_leave_requests', 'Can view all leave for members of the unit'),
             ('can_approve_leave_requests', 'Can approve leave requests'),
         )
-    
+                
+
     def sync_permissions(self):
+        from pprint import pprint
         for user in self.get_allMembers():
             # Ensure the permissions are set right!
             existing_perms = list(get_user_perms(user, self).values_list('codename', flat=True))
@@ -96,7 +98,7 @@ class OrganisationalUnit(models.Model):
                 # First lets add missing perms...
                 for new_perm in expected_perms:
                     if new_perm not in existing_perms:
-                        # pprint("Add new perm: "+str(new_perm))
+                        pprint("Add new perm: "+str(new_perm))
                         assign_perm(new_perm, user, self)
                 
                 # Now lets remove old perms
@@ -183,6 +185,25 @@ class OrganisationalUnitRole(models.Model):
 
     class Meta:
         ordering = ['name', ]
+
+
+    def sync_default_permissions(self):
+        for role in UnitRoles.DEFAULTS:
+            if self.pk == role['pk']:                
+                self.permissions.clear()
+                for perm in UnitRoles.PERMISSIONS[role['pk']][1]:
+                    if perm:
+                        codeword = perm
+                        if "." in perm:
+                            codeword = perm.split(".")[1]
+                        if Permission.objects.filter(codename=codeword).exists():
+                            permission = Permission.objects.get(codename=codeword)
+                            self.permissions.add(permission)
+                self.save()
+                return True
+
+        # If we reach this; this role isn't matched in code
+        return False
     
 
 class OrganisationalUnitMember(models.Model):
