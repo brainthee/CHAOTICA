@@ -47,3 +47,20 @@ def task_sync_global_permissions():
     from .models import Group
     for group in Group.objects.all():
         group.sync_global_permissions()
+
+
+@shared_task(track_started=True, serializer="pickle")
+def task_sync_role_permissions_to_default():
+    from jobtracker.models import OrganisationalUnitRole, OrganisationalUnit
+    for unit in OrganisationalUnitRole.objects.all():
+        unit.sync_default_permissions()
+    # Now lets clean up the units
+    for unit in OrganisationalUnit.objects.all():
+        unit.sync_permissions()
+
+
+@shared_task(track_started=True, serializer="pickle")
+def task_sync_role_permissions():
+    from jobtracker.models import OrganisationalUnit
+    for unit in OrganisationalUnit.objects.all():
+        unit.sync_permissions()

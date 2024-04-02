@@ -358,7 +358,7 @@ class UnitRoles():
             "jobtracker.can_assign_poc_job",
             "jobtracker.can_manage_frameworkagreement_job",
             'jobtracker.can_signoff_scopes',
-            "jobtracker.can_add_job", 
+            "jobtracker.can_add_job",
             "jobtracker.can_delete_job", 
             "jobtracker.can_add_phases",
             "jobtracker.can_delete_phases",

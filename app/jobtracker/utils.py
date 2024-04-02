@@ -24,7 +24,7 @@ def get_unit_40x_or_None(request, perms, obj=None, login_url=None,
     # as ``obj`` defaults to None
 
     has_permissions = False
-    # global perms check first (if accept_global_perms)
+    # global perms check first (if accept_global_perms)    
     if accept_global_perms:
         has_permissions = all(request.user.has_perm(perm) for perm in perms)
     # if still no permission granted, try obj perms

@@ -9,7 +9,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 import json, os, random
 from .forms import ChaoticaUserForm, ImportSiteDataForm, LeaveRequestForm, ProfileBasicForm, ManageUserForm, CustomConfigForm, AssignRoleForm, InviteUserForm
 from .enums import GlobalRoles, NotificationTypes
-from .tasks import task_send_notifications, task_sync_global_permissions
+from .tasks import task_send_notifications, task_sync_global_permissions, task_sync_role_permissions, task_sync_role_permissions_to_default
 from .models import Notification, User, Language, Note, LeaveRequest, UserInvitation
 from .utils import ext_reverse, AppNotification, is_valid_uuid
 from django.db.models import Q
@@ -77,6 +77,24 @@ def update_holidays(request):
 @require_safe
 def sync_global_permissions(request):
     task_sync_global_permissions()
+    return HttpResponse()
+    return HttpResponseRedirect(reverse('home'))
+
+
+@login_required
+@staff_member_required
+@require_safe
+def sync_role_permissions_to_default(request):
+    task_sync_role_permissions_to_default()
+    return HttpResponse()
+    return HttpResponseRedirect(reverse('home'))
+
+
+@login_required
+@staff_member_required
+@require_safe
+def sync_role_permissions(request):
+    task_sync_role_permissions()
     return HttpResponse()
     return HttpResponseRedirect(reverse('home'))
 
