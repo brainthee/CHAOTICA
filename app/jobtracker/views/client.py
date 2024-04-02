@@ -99,22 +99,21 @@ class ClientContactBaseView(PermissionRequiredMixin, ChaoticaBaseView):
             context['client'] = get_object_or_404(Client, slug=self.kwargs['client_slug'])
         return context
 
-class ClientContactListView(ClientContactBaseView, ListView):
+class ClientContactListView(ClientContactBaseView, PermissionRequiredMixin, ListView):
     """View to list all jobs.
     Use the 'job_list' variable in the template
     to access all job objects"""
 
-class ClientContactDetailView(ClientContactBaseView, DetailView):
+class ClientContactDetailView(ClientContactBaseView, PermissionRequiredMixin, DetailView):
     """View to list the details from one job.
     Use the 'job' variable in the template to access
     the specific job here and in the Views below"""
 
-class ClientContactCreateView(ClientContactBaseView, CreateView):
+class ClientContactCreateView(ClientContactBaseView, PermissionRequiredMixin, CreateView):
     form_class = ClientContactForm
     fields = None
-    permission_object = None
+    permission_object = Contact
     permission_required = 'jobtracker.add_contact'
-    # permission_required = None
 
     def form_valid(self, form):
         form.instance.company = Client.objects.get(slug=self.kwargs['client_slug'])
@@ -128,11 +127,11 @@ class ClientContactCreateView(ClientContactBaseView, CreateView):
             kwargs['client'] = get_object_or_404(Client, slug=self.kwargs['client_slug'])
         return kwargs
 
-class ClientContactUpdateView(ClientContactBaseView, UpdateView):
+class ClientContactUpdateView(ClientContactBaseView, PermissionRequiredMixin, UpdateView):
     form_class = ClientContactForm
     fields = None
 
-class ClientContactDeleteView(ClientContactBaseView, DeleteView):
+class ClientContactDeleteView(ClientContactBaseView, PermissionRequiredMixin, DeleteView):
     def get_success_url(self):
         if 'client_slug' in self.kwargs:
             client_slug = self.kwargs['client_slug']
@@ -148,7 +147,7 @@ class ClientFrameworkBaseView(PermissionRequiredMixin, ChaoticaBaseView):
     model = FrameworkAgreement
     fields = '__all__'
     client_slug = None
-    permission_required = 'jobtracker.view_framework'
+    permission_required = 'jobtracker.view_frameworkagreement'
     accept_global_perms = True
     return_403 = True
 
@@ -172,21 +171,24 @@ class ClientFrameworkBaseView(PermissionRequiredMixin, ChaoticaBaseView):
             context['client'] = get_object_or_404(Client, slug=self.kwargs['client_slug'])
         return context
 
-class ClientFrameworkListView(ClientFrameworkBaseView, ListView):
+class ClientFrameworkListView(ClientFrameworkBaseView, PermissionRequiredMixin, ListView):
     """View to list all jobs.
     Use the 'job_list' variable in the template
     to access all job objects"""
 
-class ClientFrameworkDetailView(ClientFrameworkBaseView, DetailView):
+class ClientFrameworkDetailView(ClientFrameworkBaseView, PermissionRequiredMixin, DetailView):
     """View to list the details from one job.
     Use the 'job' variable in the template to access
     the specific job here and in the Views below"""
 
-class ClientFrameworkCreateView(ClientFrameworkBaseView, CreateView):
+class ClientFrameworkCreateView(ClientFrameworkBaseView, PermissionRequiredMixin, CreateView):
     form_class = ClientFrameworkForm
     fields = None
-    permission_object = None
-    permission_required = 'jobtracker.add_framework'
+
+    permission_required = 'jobtracker.add_frameworkagreement'
+    accept_global_perms = True
+    permission_object = FrameworkAgreement
+    return_403 = True
 
     def form_valid(self, form):
         form.instance.client = Client.objects.get(slug=self.kwargs['client_slug'])
@@ -200,11 +202,20 @@ class ClientFrameworkCreateView(ClientFrameworkBaseView, CreateView):
             kwargs['client'] = get_object_or_404(Client, slug=self.kwargs['client_slug'])
         return kwargs
 
-class ClientFrameworkUpdateView(ClientFrameworkBaseView, UpdateView):
+class ClientFrameworkUpdateView(ClientFrameworkBaseView, PermissionRequiredMixin, UpdateView):
     form_class = ClientFrameworkForm
     fields = None
 
-class ClientFrameworkDeleteView(ClientFrameworkBaseView, DeleteView):
+    permission_required = 'jobtracker.change_frameworkagreement'
+    accept_global_perms = True
+    return_403 = True
+
+class ClientFrameworkDeleteView(ClientFrameworkBaseView, PermissionRequiredMixin, DeleteView):
+
+    permission_required = 'jobtracker.delete_frameworkagreement'
+    accept_global_perms = True
+    return_403 = True
+
     def get_success_url(self):
         if 'client_slug' in self.kwargs:
             client_slug = self.kwargs['client_slug']
