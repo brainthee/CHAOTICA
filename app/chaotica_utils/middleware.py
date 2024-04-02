@@ -47,6 +47,7 @@ class NewInstallMiddleware(MiddlewareMixin):
         excluded_profile_urls = [
             '/profile/',
             '/profile/update',
+            '/profile/update/skills',
             '/oauth2/logout',
             '/auth/logout/',
             '/impersonate/stop/' # Allow us to stop impersonating even if profile needs updating
