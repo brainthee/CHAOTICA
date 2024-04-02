@@ -705,6 +705,12 @@ class UserListView(UserBaseView, ListView):
     Use the 'job_list' variable in the template
     to access all job objects"""
 
+    def get_context_data(self, **kwargs):
+        context = super(UserBaseView, self).get_context_data(**kwargs)
+        invite_list = UserInvitation.objects.filter(accepted=False)
+        context['invite_list'] = invite_list
+        return context
+
 class UserDetailView(UserBaseView, DetailView):
     role_required = "*" # Allow all users with a role to view "public profiles"
 
