@@ -25,6 +25,7 @@ from business_duration import businessDuration
 from constance import config
 from django.template.loader import render_to_string
 from django.core.mail import send_mail
+from django.utils.timezone import is_aware, make_aware
 
 
 def get_sentinel_user():
@@ -292,17 +293,11 @@ class User(AbstractUser):
     
     def get_timeslots(self, start=None, end=None, phase_focus=None):
         from jobtracker.models import TimeSlot
-        from .utils import fullcalendar_to_datetime
         data = []
 
         today = timezone.now().today()
         start_of_week = today - timedelta(days = today.weekday())
         end_of_week = start_of_week + timedelta(days = 6)
-
-        if start:
-            start = fullcalendar_to_datetime(start)
-        if end:
-            end = fullcalendar_to_datetime(end)
             
         start = start or start_of_week
         end = end or end_of_week
@@ -323,17 +318,11 @@ class User(AbstractUser):
         return data
     
     def get_holidays(self, start=None, end=None):
-        from .utils import fullcalendar_to_datetime
         data = []
 
         today = timezone.now().today()
         start_of_week = today - timedelta(days = today.weekday())
         end_of_week = start_of_week + timedelta(days = 6)
-
-        if start:
-            start = fullcalendar_to_datetime(start)
-        if end:
-            end = fullcalendar_to_datetime(end)
 
         start = start or start_of_week
         end = end or end_of_week

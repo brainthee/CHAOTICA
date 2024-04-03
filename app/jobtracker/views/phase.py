@@ -22,6 +22,8 @@ from dal import autocomplete
 from django.contrib.auth.decorators import login_required
 from ..decorators import unit_permission_required_or_403
 from ..mixins import UnitPermissionRequiredMixin
+from chaotica_utils.utils import clean_date, clean_int, clean_datetime, clean_duration, clean_time, clean_fullcalendar_datetime
+
 
 
 logger = logging.getLogger(__name__)
@@ -39,11 +41,12 @@ def view_phase_schedule_slots(request, job_slug, slug):
     data = []
     job = get_object_or_404(Job, slug=job_slug)
     phase = get_object_or_404(Phase, job=job, slug=slug)
+    start = clean_date(request.GET.get('start', None))
+    end = clean_date(request.GET.get('end', None))
     phase_members = phase.team()
     for member_slot in phase_members:
         data = data + member_slot.get_timeslots(
-            start=request.GET.get('start', None),
-            end=request.GET.get('end', None),phase_focus=phase)
+            start=start, end=end,phase_focus=phase)
     return JsonResponse(data, safe=False)
 
 

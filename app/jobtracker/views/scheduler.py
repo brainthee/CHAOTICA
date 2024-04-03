@@ -13,6 +13,7 @@ from ..forms import NonDeliveryTimeSlotModalForm, SchedulerFilter, ChangeTimeSlo
 from ..enums import UserSkillRatings
 import logging
 from django.contrib.auth.decorators import login_required
+from chaotica_utils.utils import clean_date, clean_int, clean_datetime, clean_duration, clean_time, clean_fullcalendar_datetime
 
 
 logger = logging.getLogger(__name__)
@@ -28,7 +29,6 @@ def view_scheduler(request):
 
 
 def _filter_users_on_query(request):
-    from pprint import pprint
     filter_form = SchedulerFilter(request.GET)
     # Starting users filter
     users_pk = []
@@ -43,10 +43,12 @@ def _filter_users_on_query(request):
     query = Q(is_active=True)
        
     # If we're passed a job/phase ID - filter on that.
-    if request.GET.get('job'):
-        job = get_object_or_404(Job, pk=int(request.GET.get('job')))
-        if request.GET.get('phase'):
-            phase = get_object_or_404(Phase, job=job, pk=int(request.GET.get('phase')))
+    job_id = clean_int(request.GET.get('job', None))
+    phase_id = clean_int(request.GET.get('phase', None))
+    if job_id:
+        job = get_object_or_404(Job, pk=job_id)
+        if phase_id:
+            phase = get_object_or_404(Phase, job=job, pk=phase_id)
             query.add(Q(pk__in=phase.team()),Q.AND)
         else:
             # get the team for the whole job...
@@ -91,8 +93,8 @@ def _filter_users_on_query(request):
             query.add(Q(pk__in=service.users_can_conduct()),Q.AND)
 
 
-    if request.GET.get('include_user'):
-        extra_user = int(request.GET.get('include_user'))
+    extra_user = clean_int(request.GET.get('include_user', None))
+    if extra_user:
         if extra_user:
             query.add(Q(pk__in=[extra_user,]), Q.OR)
 
@@ -105,19 +107,25 @@ def view_scheduler_slots(request):
     filtered_users = _filter_users_on_query(request)
     phase_focus = None
 
-    if request.GET.get('job'):
-        job = get_object_or_404(Job, pk=int(request.GET.get('job')))
-        if request.GET.get('phase'):
-            phase_focus = get_object_or_404(Phase, job=job, pk=int(request.GET.get('phase')))
+    # Change FullCalendar format to DateTime
+    start = clean_fullcalendar_datetime(request.GET.get('start', None))
+    end = clean_fullcalendar_datetime(request.GET.get('end', None))
+    job_id = clean_int(request.GET.get('job', None))
+    phase_id = clean_int(request.GET.get('phase', None))
+
+    if job_id:
+        job = get_object_or_404(Job, pk=job_id)
+        if phase_id:
+            phase_focus = get_object_or_404(Phase, job=job, pk=phase_id)
         else:
             phase_focus = job
     for user in filtered_users:
         data = data + user.get_timeslots(
-            start=request.GET.get('start', None),
-            end=request.GET.get('end', None), phase_focus=phase_focus)
+            start=start,
+            end=end, phase_focus=phase_focus)
         data = data + user.get_holidays(
-            start=request.GET.get('start', None),
-            end=request.GET.get('end', None),)
+            start=start,
+            end=end,)
     return JsonResponse(data, safe=False)
 
 
@@ -146,18 +154,20 @@ def view_scheduler_members(request):
 
 @login_required
 def view_own_schedule_timeslots(request):
+    # Change FullCalendar format to DateTime
+    start = clean_fullcalendar_datetime(request.GET.get('start', None))
+    end = clean_fullcalendar_datetime(request.GET.get('end', None))
     data = request.user.get_timeslots(
-        start=request.GET.get('start', None),
-        end=request.GET.get('end', None),
-        )
+        start=start, end=end,)
     return JsonResponse(data, safe=False)
 
 @login_required
 def view_schedule_holidays(request):
+    # Change FullCalendar format to DateTime
+    start = clean_fullcalendar_datetime(request.GET.get('start', None))
+    end = clean_fullcalendar_datetime(request.GET.get('end', None))
     data = request.user.get_holidays(
-        start=request.GET.get('start', None),
-        end=request.GET.get('end', None),
-        )
+        start=start, end=end,)
     return JsonResponse(data, safe=False)
 
 
@@ -222,9 +232,9 @@ def change_scheduler_slot(request, pk=None):
 @login_required
 def create_scheduler_internal_slot(request):
     data = dict()
-    start = request.GET.get('start', None)
-    end = request.GET.get('end', None)
-    resource_id = request.GET.get('resource_id', None)
+    start = clean_datetime(request.GET.get('start', None))
+    end = clean_datetime(request.GET.get('end', None))
+    resource_id = clean_int(request.GET.get('resource_id', None))
 
     if request.method == 'POST':
         form = NonDeliveryTimeSlotModalForm(request.POST, start=start, end=end, resource_id=resource_id)
@@ -246,18 +256,19 @@ def create_scheduler_internal_slot(request):
 @login_required
 def create_scheduler_phase_slot(request):
     data = dict()
-    start = request.GET.get('start', None)
-    end = request.GET.get('end', None)
-    resource_id = request.GET.get('resource_id', None)
+    start = clean_datetime(request.GET.get('start', None))
+    end = clean_datetime(request.GET.get('end', None))
+    resource_id = clean_int(request.GET.get('resource_id', None))
+    job_id = clean_int(request.GET.get('job', None))
+    phase_id = clean_int(request.GET.get('phase', None))
+
     if resource_id:
         user = get_object_or_404(User, pk=resource_id)
     else:
         user = None
 
-    job_id = request.GET.get('job', None)
     if job_id:
         job = get_object_or_404(Job, pk=job_id)
-        phase_id = request.GET.get('phase', None)
         if phase_id:
             phase = get_object_or_404(Phase, pk=phase_id)
         else:
@@ -298,9 +309,9 @@ def create_scheduler_phase_slot(request):
 @login_required
 def create_scheduler_comment(request):
     data = dict()
-    start = request.GET.get('start', None)
-    end = request.GET.get('end', None)
-    resource_id = request.GET.get('resource_id', None)
+    start = clean_datetime(request.GET.get('start', None))
+    end = clean_datetime(request.GET.get('end', None))
+    resource_id = clean_int(request.GET.get('resource_id', None))
 
     if request.method == 'POST':
         form = NonDeliveryTimeSlotModalForm(request.POST, start=start, end=end, resource_id=resource_id)
@@ -322,9 +333,9 @@ def create_scheduler_comment(request):
 @login_required
 def clear_scheduler_range(request):
     data = dict()
-    start = request.GET.get('start', None)
-    end = request.GET.get('end', None)
-    resource_id = request.GET.get('resource_id', None)
+    start = clean_datetime(request.GET.get('start', None))
+    end = clean_datetime(request.GET.get('end', None))
+    resource_id = clean_int(request.GET.get('resource_id', None))
 
     if request.method == 'POST':
         form = NonDeliveryTimeSlotModalForm(request.POST, start=start, end=end, resource_id=resource_id)

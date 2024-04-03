@@ -293,6 +293,9 @@ DATABASES = {
         "HOST": os.environ.get("RDS_HOSTNAME", "127.0.0.1"),
         "PORT": os.environ.get("RDS_PORT", "13306"),
         "DEFAULT-CHARACTER-SET": 'utf8',
+        # 'OPTIONS': {
+        #     "init_command": "SET GLOBAL max_connections = 100000",
+        # }
     }
 }
 
