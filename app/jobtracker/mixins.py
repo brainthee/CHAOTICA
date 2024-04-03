@@ -2,8 +2,21 @@ from guardian.mixins import PermissionRequiredMixin
 from django.core.exceptions import PermissionDenied
 from .utils import get_unit_40x_or_None
 
+from django.contrib.auth.decorators import login_required, REDIRECT_FIELD_NAME
+from django.conf import settings
+
 
 class UnitPermissionRequiredMixin(PermissionRequiredMixin):
+    # We also want to check we're logged in first!
+
+    redirect_field_name = REDIRECT_FIELD_NAME
+    login_url = settings.LOGIN_URL
+
+    def dispatch(self, request, *args, **kwargs):
+        return login_required(redirect_field_name=self.redirect_field_name,
+                              login_url=self.login_url)(
+            super().dispatch
+        )(request, *args, **kwargs)
 
     def check_permissions(self, request):
         """
