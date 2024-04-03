@@ -235,16 +235,18 @@ def create_scheduler_internal_slot(request):
     start = clean_datetime(request.GET.get('start', None))
     end = clean_datetime(request.GET.get('end', None))
     resource_id = clean_int(request.GET.get('resource_id', None))
+    if resource_id:
+        resource = get_object_or_404(User, pk=resource_id)
 
     if request.method == 'POST':
-        form = NonDeliveryTimeSlotModalForm(request.POST, start=start, end=end, resource_id=resource_id)
+        form = NonDeliveryTimeSlotModalForm(request.POST, start=start, end=end, resource=resource)
         if form.is_valid():
             form.save()
             data['form_is_valid'] = True
         else:
             data['form_is_valid'] = False
     else:
-        form = NonDeliveryTimeSlotModalForm(start=start, end=end, resource_id=resource_id)
+        form = NonDeliveryTimeSlotModalForm(start=start, end=end, resource=resource)
 
     context = {'form': form}
     data['html_form'] = loader.render_to_string("jobtracker/modals/job_slot_create.html",
@@ -312,16 +314,18 @@ def create_scheduler_comment(request):
     start = clean_datetime(request.GET.get('start', None))
     end = clean_datetime(request.GET.get('end', None))
     resource_id = clean_int(request.GET.get('resource_id', None))
+    if resource_id:
+        resource = get_object_or_404(User, pk=resource_id)
 
     if request.method == 'POST':
-        form = NonDeliveryTimeSlotModalForm(request.POST, start=start, end=end, resource_id=resource_id)
+        form = NonDeliveryTimeSlotModalForm(request.POST, start=start, end=end, resource=resource)
         if form.is_valid():
             form.save()
             data['form_is_valid'] = True
         else:
             data['form_is_valid'] = False
     else:
-        form = NonDeliveryTimeSlotModalForm(start=start, end=end, resource_id=resource_id)
+        form = NonDeliveryTimeSlotModalForm(start=start, end=end, resource=resource)
 
     context = {'form': form}
     data['html_form'] = loader.render_to_string("jobtracker/modals/job_slot_create.html",
@@ -336,16 +340,18 @@ def clear_scheduler_range(request):
     start = clean_datetime(request.GET.get('start', None))
     end = clean_datetime(request.GET.get('end', None))
     resource_id = clean_int(request.GET.get('resource_id', None))
+    if resource_id:
+        resource = get_object_or_404(User, pk=resource_id)
 
     if request.method == 'POST':
-        form = NonDeliveryTimeSlotModalForm(request.POST, start=start, end=end, resource_id=resource_id)
+        form = NonDeliveryTimeSlotModalForm(request.POST, start=start, end=end, resource=resource)
         if form.is_valid():
             form.save()
             data['form_is_valid'] = True
         else:
             data['form_is_valid'] = False
     else:
-        form = NonDeliveryTimeSlotModalForm(start=start, end=end, resource_id=resource_id)
+        form = NonDeliveryTimeSlotModalForm(start=start, end=end, resource=resource)
 
     context = {'form': form}
     data['html_form'] = loader.render_to_string("jobtracker/modals/job_slot_create.html",

@@ -347,9 +347,9 @@ class NonDeliveryTimeSlotModalForm(forms.ModelForm):
         end=None
         if 'end' in kwargs:
             end = kwargs.pop('end')
-        resource_id=None
-        if 'resource_id' in kwargs:
-            resource_id = kwargs.pop('resource_id')
+        resource=None
+        if 'resource' in kwargs:
+            resource = kwargs.pop('resource')
         
         super(NonDeliveryTimeSlotModalForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
@@ -369,7 +369,7 @@ class NonDeliveryTimeSlotModalForm(forms.ModelForm):
         if not self.instance.pk:
             self.fields['start'].initial = start
             self.fields['end'].initial = end
-            self.fields['user'].initial = User.objects.get(pk=resource_id)
+            self.fields['user'].initial = resource
         self.fields['slot_type'].queryset = TimeSlotType.objects.filter(is_assignable=True)
         self.helper.layout = Layout(
             Field('user', style="width: 100%;"),
