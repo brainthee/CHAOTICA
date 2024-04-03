@@ -6,6 +6,7 @@ from ..tasks import task_progress_workflows, task_fire_job_notifications
 import logging
 from django.contrib.auth.decorators import login_required
 import uuid
+from django.contrib import messages
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +23,8 @@ def run_tasks(request):
     """
     task_progress_workflows()
     task_fire_job_notifications()
-    return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+    messages.success(request, "Background tasks triggered")    
+    return HttpResponseRedirect(reverse('home'))
 
 @login_required
 def reset_cal_feed(request):    
