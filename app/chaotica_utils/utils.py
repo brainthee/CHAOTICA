@@ -3,14 +3,16 @@ from .enums import NotificationTypes
 from django.template.loader import render_to_string
 from django.core.mail import send_mail
 from django.conf import settings as django_settings
-from datetime import timedelta
+from datetime import timedelta, datetime
 from uuid import UUID
 import re
-from datetime import datetime
 from .enums import GlobalRoles
 from django.utils.text import slugify
 from menu import MenuItem
 from django.conf import settings
+from django.core.exceptions import SuspiciousOperation
+from django.utils.dateparse import parse_date, parse_datetime, parse_duration, parse_time
+from django.utils.timezone import is_aware, make_aware
 
 
 def unique_slug_generator(instance, value=None):
@@ -60,14 +62,85 @@ class PermMenuItem(MenuItem):
             self.visible = False
 
 
-def fullcalendar_to_datetime(date):
+def clean_fullcalendar_datetime(date):
     # 2023-10-23T00:00:00+01:00
     # 2023-10-23T00:00:00+01:00
     # 2023-10-30T00:00:00Z
     # 2023-10-30T00:00:00Z
-    datetime_pattern = re.compile(r'(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})')
-    dt_format = '%Y-%m-%dT%H:%M:%S'
-    return datetime.strptime(datetime_pattern.search(date).group(), dt_format)
+    if date == None:
+        return None
+    try:
+        datetime_pattern = re.compile(r'(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})')
+        dt_format = '%Y-%m-%dT%H:%M:%S'
+        ret = datetime.strptime(datetime_pattern.search(date).group(), dt_format)  
+        if not is_aware(ret):
+            ret = make_aware(ret)
+        return ret
+    except ValueError:
+        raise SuspiciousOperation()
+
+
+def clean_int(value):
+    """
+    Tries to convert the value to an int and raises SuspiciousOperation if it fails
+    """
+    if value == None:
+        return None
+    try:
+        return int(value)
+    except ValueError:
+        raise SuspiciousOperation()
+
+
+def clean_date(value):
+    """
+    Tries to convert the value to a Date and raises SuspiciousOperation if it fails
+    """
+    if value == None:
+        return None
+    try:
+        return parse_date(value)
+    except ValueError:
+        raise SuspiciousOperation()
+
+
+def clean_datetime(value):
+    """
+    Tries to convert the value to a DateTime and raises SuspiciousOperation if it fails
+    """
+    if value == None:
+        return None
+    try:
+        ret = parse_datetime(value)
+        if not is_aware(ret):
+            ret = make_aware(ret)
+        return ret
+    except ValueError:
+        raise SuspiciousOperation()
+
+
+def clean_time(value):
+    """
+    Tries to convert the value to a Time and raises SuspiciousOperation if it fails
+    """
+    if value == None:
+        return None
+    try:
+        return parse_time(value)
+    except ValueError:
+        raise SuspiciousOperation()
+
+
+def clean_duration(value):
+    """
+    Tries to convert the value to a Duration and raises SuspiciousOperation if it fails
+    """
+    if value == None:
+        return None
+    try:
+        return parse_duration(value)
+    except ValueError:
+        raise SuspiciousOperation()
 
 
 def is_valid_uuid(uuid_to_test, version=4):
