@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% load menu %}{% load static %}
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+
+{% block pageTitle %}Delete Skill{% endblock pageTitle %}
+{% block head_title %}Delete Skill{% endblock head_title %}
+
+{% block breadcrumbItem %}
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{% url 'skill_list' %}">Skills</a></li>
+<li class="breadcrumb-item text-sm opacity-50 text-dark">{{ skill.category }}</li>
+<li class="breadcrumb-item text-sm opacity-50 text-dark" aria-current="page">{{ skill.name }}</li>
+<li class="breadcrumb-item text-sm text-dark active" aria-current="page">Delete Skill</li>
+{% endblock breadcrumbItem %}
+
+{% block content %}
+<div class="mt-3">
+  <form method="post">
+    {% csrf_token %}
+    {{ form.media }}
+
+    <div class="row g-3 flex-between-end mb-5">
+      <div class="col-auto">
+        <h2 class="mb-2">
+            {% if form.instance.pk %}
+            Delete Skiill
+            {% endif %}            
+        </h2>
+      </div>
+      <div class="col-auto">
+        <button class="btn btn-phoenix-secondary me-2 mb-2 mb-sm-0" type="button">Discard</button>
+        <button class="btn btn-outline-danger mb-2 mb-sm-0" type="submit">Delete</button>
+      </div>
+    </div>
+
+    {{ form.errors }}
+
+
+    <div class="row">
+        <div class="col-12 col-xl-8 g-2 ">
+            <h4 class="mb-3">Are you sure you wish to delete this skill?</h4>      
+        </div>
+        <div class="col-12 col-xl-4">
+        </div>
+      </div>
+
+
+  </form>
+</div>
+{% endblock content %}
