@@ -213,7 +213,7 @@ class Phase(models.Model):
                     return True
                         
             # Or it was delivered but beyond the actual time and we still want to mark it as late
-            if self.actual_delivery_date and self.delivery_date < self.actual_delivery_date:
+            if self.actual_delivery_date and self.delivery_date < self.actual_delivery_date.date():
                 return True
         return False
     
@@ -228,7 +228,7 @@ class Phase(models.Model):
                         return True
                         
                 # Or it was delivered but beyond the actual time and we still want to mark it as late
-                if self.actual_sent_to_tqa_date and self.due_to_techqa < self.actual_sent_to_tqa_date:
+                if self.actual_sent_to_tqa_date and self.due_to_techqa < self.actual_sent_to_tqa_date.date():
                     return True
         return False
     
@@ -243,7 +243,7 @@ class Phase(models.Model):
                         return True
                         
                 # Or it was delivered but beyond the actual time and we still want to mark it as late
-                if self.actual_sent_to_pqa_date and self.due_to_presqa < self.actual_sent_to_pqa_date:
+                if self.actual_sent_to_pqa_date and self.due_to_presqa < self.actual_sent_to_pqa_date.date():
                     return True
         return False
 
