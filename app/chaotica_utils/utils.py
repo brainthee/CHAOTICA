@@ -76,7 +76,7 @@ def clean_fullcalendar_datetime(date):
         if not is_aware(ret):
             ret = make_aware(ret)
         return ret
-    except ValueError:
+    except (ValueError, AttributeError):
         raise SuspiciousOperation()
 
 
