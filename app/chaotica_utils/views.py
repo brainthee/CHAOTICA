@@ -309,12 +309,12 @@ def update_own_profile(request):
 
 @require_safe
 def notifications_feed(request):
-    if request.user.is_anonymous:
-        return HttpResponseForbidden()
     data = {}
     data['notifications'] = []
-    notifications = Notification.objects.filter(user=request.user)
-    if is_ajax(request):
+    notifications = Notification.objects.none()
+    
+    if request.user.is_authenticated and is_ajax(request):
+        notifications = Notification.objects.filter(user=request.user)
         for notice in notifications:
             data['notifications'].append({
                 "title": notice.title,
@@ -325,13 +325,12 @@ def notifications_feed(request):
                 "url": notice.link,
             }
         )    
-        context = {'notifications': notifications,}
-        data['html_form'] = loader.render_to_string("partials/notifications.html",
-                                                    context,
-                                                    request=request)
-        return JsonResponse(data)
-    else:
-        return HttpResponseForbidden()
+            
+    context = {'notifications': notifications,}
+    data['html_form'] = loader.render_to_string("partials/notifications.html",
+                                                context,
+                                                request=request)
+    return JsonResponse(data)
 
 
 @login_required
