@@ -978,8 +978,7 @@ class ClientContactForm(forms.ModelForm):
         ]
 
 class ClientFrameworkForm(forms.ModelForm):
-    start_date = forms.DateField(required=False,
-                            widget=DatePickerInput(),)
+    start_date = forms.DateField(widget=DatePickerInput(),)
     end_date = forms.DateField(required=False,
                             widget=DatePickerInput(),)
 
@@ -989,14 +988,17 @@ class ClientFrameworkForm(forms.ModelForm):
             client = kwargs.pop('client')
         super(ClientFrameworkForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
+        self.fields['name'].required = True
+        self.fields['start_date'].required = True
+        self.fields['total_days'].required = True
         self.fields['name'].label = False
         self.fields['start_date'].label = False
         self.fields['end_date'].label = False
 
         self.fields['total_days'].label = False
 
-        self.fields['allow_over_allocation'].label = False
-        self.fields['closed'].label = False
+        # self.fields['allow_over_allocation'].label = True
+        # self.fields['closed'].label = False
 
     class Meta:
         model = FrameworkAgreement

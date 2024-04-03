@@ -75,18 +75,10 @@
                       <div class="col-6">
                         <div class="mb-4">
                           <div class="d-flex flex-wrap mb-2">
-                            <h5 class="mb-0 text-1000 me-2">Allow Over Allocation</h5>
+                            <h5 class="mb-0 text-1000 me-2">Options</h5>
                           </div>
-                          {{ form.allow_over_allocation|as_crispy_field }}                          
-                        </div>
-                      </div>
-                      <div class="col-6">
-                        <div class="mb-4">
-                          <div class="d-flex flex-wrap mb-2">
-                            <h5 class="mb-0 text-1000 me-2">Closed</h5>
-                          </div>
-                          {{ form.closed|as_crispy_field }}
-                          
+                          {{ form.allow_over_allocation|as_crispy_field }}       
+                          {{ form.closed|as_crispy_field }}                   
                         </div>
                       </div>
                     </div>
