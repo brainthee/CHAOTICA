@@ -40,7 +40,7 @@ class RoleMenuItem(MenuItem):
     """Custom MenuItem that checks permissions based on the view associated
     with a URL"""
     def check(self, request):
-        if self.requiredRole:
+        if self.requiredRole and request.user.is_authenticated:
             if self.requiredRole == "*":
                 self.visible = request.user.groups.filter().exists()
             else:
@@ -54,7 +54,7 @@ class PermMenuItem(MenuItem):
     """Custom MenuItem that checks permissions based on the view associated
     with a URL"""
     def check(self, request):
-        if self.perm and request.user:
+        if self.perm and request.user.is_authenticated:
              self.visible = request.user.has_perm(self.perm)
         else:
             self.visible = False
