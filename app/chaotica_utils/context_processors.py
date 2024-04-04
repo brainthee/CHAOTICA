@@ -1,4 +1,2 @@
-
-
 def defaults(_):
     return {}
