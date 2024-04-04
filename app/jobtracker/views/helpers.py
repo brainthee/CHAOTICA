@@ -1,6 +1,6 @@
-from django.http import JsonResponse, HttpResponseForbidden
+from django.http import JsonResponse
 from django.template import loader
-from ..models import Contact, Job, Phase
+from ..models import Contact
 from ..forms import (
     AssignMultipleUser,
     AssignUser,

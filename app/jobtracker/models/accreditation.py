@@ -1,16 +1,6 @@
 from django.db import models
-from ..enums import JobStatuses, PhaseStatuses, FeedbackType, LinkType, UserSkillRatings
-from ..models.skill import Skill, UserSkill
-from ..models.phase import Phase
-from django.conf import settings
-from django.db.models import Q
 from chaotica_utils.utils import unique_slug_generator
-from django.urls import reverse
-from simple_history.models import HistoricalRecords
-from django.db.models import JSONField
-from django_bleach.models import BleachField
 from django.db.models.functions import Lower
-from chaotica_utils.models import User
 
 
 class Accreditation(models.Model):

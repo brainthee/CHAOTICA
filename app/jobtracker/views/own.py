@@ -1,8 +1,6 @@
 from guardian.mixins import PermissionRequiredMixin
 from django.views.generic.list import ListView
-from django.views.generic.detail import DetailView
-from django.views.generic.edit import CreateView, UpdateView, DeleteView
-from django.urls import reverse_lazy
+from django.views.generic.edit import CreateView
 from chaotica_utils.views import ChaoticaBaseView
 from ..models import QualificationRecord
 from ..forms import OwnQualificationRecordForm

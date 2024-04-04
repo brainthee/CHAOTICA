@@ -10,7 +10,7 @@ from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from chaotica_utils.views import log_system_activity, ChaoticaBaseView
-from ..models import Job, Phase, TimeSlot, WorkflowTask
+from ..models import Job, Phase, WorkflowTask
 from ..forms import (
     AddNote,
     AssignUserField,
@@ -28,16 +28,10 @@ from chaotica_utils.utils import AppNotification
 from chaotica_utils.enums import NotificationTypes
 import logging
 from dal import autocomplete
-from django.contrib.auth.decorators import login_required
 from ..decorators import unit_permission_required_or_403
 from ..mixins import UnitPermissionRequiredMixin
 from chaotica_utils.utils import (
     clean_date,
-    clean_int,
-    clean_datetime,
-    clean_duration,
-    clean_time,
-    clean_fullcalendar_datetime,
 )
 
 

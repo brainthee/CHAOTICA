@@ -8,7 +8,6 @@ from ..enums import (
 )
 from ..models.phase import Phase
 from django.conf import settings
-from django.db.models import Q
 from constance import config
 from django.contrib.contenttypes.fields import GenericRelation
 from chaotica_utils.models import Note, UserCost

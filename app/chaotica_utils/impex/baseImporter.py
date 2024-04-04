@@ -1,5 +1,4 @@
 from abc import ABCMeta, abstractmethod
-from collections import defaultdict
 
 
 class BaseImporter:

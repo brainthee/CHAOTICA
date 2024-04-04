@@ -18,7 +18,6 @@ from .models import (
     FrameworkAgreement,
     Qualification,
     QualificationRecord,
-    QualificationTag,
     AwardingBody,
     Accreditation,
     OrganisationalUnitRole,

@@ -1,7 +1,6 @@
 from django.db import models
 from ..enums import QualificationStatus
 from django.conf import settings
-from django.db.models import Q
 from chaotica_utils.utils import unique_slug_generator
 from django.utils import timezone
 from django.urls import reverse

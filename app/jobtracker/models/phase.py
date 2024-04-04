@@ -21,7 +21,6 @@ from chaotica_utils.views import log_system_activity
 from datetime import timedelta
 from decimal import Decimal
 from django_bleach.models import BleachField
-from django.db.models.functions import Lower
 from ..models.job import Job
 from ..enums import (
     BOOL_CHOICES,

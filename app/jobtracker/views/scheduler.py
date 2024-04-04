@@ -19,11 +19,8 @@ from ..enums import UserSkillRatings
 import logging
 from django.contrib.auth.decorators import login_required
 from chaotica_utils.utils import (
-    clean_date,
     clean_int,
     clean_datetime,
-    clean_duration,
-    clean_time,
     clean_fullcalendar_datetime,
 )
 
