@@ -19,8 +19,8 @@ logger = logging.getLogger(__name__)
 
 class OwnQualificationRecordBaseView(PermissionRequiredMixin, ChaoticaBaseView):
     model = QualificationRecord
-    fields = '__all__'
-    permission_required = 'jobtracker.view_qualification'
+    fields = "__all__"
+    permission_required = "jobtracker.view_qualification"
     accept_global_perms = True
     return_403 = True
 
@@ -30,7 +30,7 @@ class OwnQualificationRecordListView(OwnQualificationRecordBaseView, ListView):
     Use the 'job_list' variable in the template
     to access all job objects"""
 
-    def get_queryset(self) :
+    def get_queryset(self):
         queryset = QualificationRecord.objects.filter(user=self.request.user)
         return queryset
 
@@ -45,10 +45,12 @@ class OwnQualificationRecordListView(OwnQualificationRecordBaseView, ListView):
 #     return_403 = True
 
 
-class OwnQualificationRecordCreateView(OwnQualificationRecordBaseView, PermissionRequiredMixin, CreateView):
+class OwnQualificationRecordCreateView(
+    OwnQualificationRecordBaseView, PermissionRequiredMixin, CreateView
+):
     form_class = OwnQualificationRecordForm
     fields = None
-    permission_required = 'jobtracker.add_qualification'
+    permission_required = "jobtracker.add_qualification"
     accept_global_perms = True
     permission_object = QualificationRecord
     return_403 = True
@@ -59,19 +61,21 @@ class OwnQualificationRecordCreateView(OwnQualificationRecordBaseView, Permissio
 def add_own_qualification(request):
     data = dict()
     if request.method == "POST":
-        form = OwnQualificationRecordForm(request.POST, )
+        form = OwnQualificationRecordForm(
+            request.POST,
+        )
         if form.is_valid():
             record = form.save(commit=False)
             record.user = request.user
             record.save()
-            data['form_is_valid'] = True
+            data["form_is_valid"] = True
     else:
         form = OwnQualificationRecordForm()
-    
-    context = {'form': form}
-    data['html_form'] = loader.render_to_string("jobtracker/modals/qualificationrecord_form.html",
-                                                context,
-                                                request=request)
+
+    context = {"form": form}
+    data["html_form"] = loader.render_to_string(
+        "jobtracker/modals/qualificationrecord_form.html", context, request=request
+    )
     return JsonResponse(data)
 
 
@@ -86,16 +90,22 @@ def update_own_qualification(request, pk):
             updated_record = form.save(commit=False)
             updated_record.user = request.user
             # Check if the awarded_date has changed
-            if "awarded_date" in form.changed_data and updated_record.qualification.validity_period:
-                updated_record.lapse_date = (updated_record.awarded_date + updated_record.qualification.validity_period)
+            if (
+                "awarded_date" in form.changed_data
+                and updated_record.qualification.validity_period
+            ):
+                updated_record.lapse_date = (
+                    updated_record.awarded_date
+                    + updated_record.qualification.validity_period
+                )
 
             updated_record.save()
-            data['form_is_valid'] = True
+            data["form_is_valid"] = True
     else:
         form = OwnQualificationRecordForm(instance=record)
-    
-    context = {'form': form}
-    data['html_form'] = loader.render_to_string("jobtracker/modals/qualificationrecord_form.html",
-                                                context,
-                                                request=request)
+
+    context = {"form": form}
+    data["html_form"] = loader.render_to_string(
+        "jobtracker/modals/qualificationrecord_form.html", context, request=request
+    )
     return JsonResponse(data)

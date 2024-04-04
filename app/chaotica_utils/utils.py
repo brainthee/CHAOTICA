@@ -11,7 +11,12 @@ from django.utils.text import slugify
 from menu import MenuItem
 from django.conf import settings
 from django.core.exceptions import SuspiciousOperation
-from django.utils.dateparse import parse_date, parse_datetime, parse_duration, parse_time
+from django.utils.dateparse import (
+    parse_date,
+    parse_datetime,
+    parse_duration,
+    parse_time,
+)
 from django.utils.timezone import is_aware, make_aware
 
 
@@ -30,10 +35,7 @@ def unique_slug_generator(instance, value=None):
     Klass = instance.__class__
     numb = 1
     while Klass.objects.filter(slug=new_slug).exists():
-        new_slug = "{slug}-{num}".format(
-            slug=slug,
-            num=numb
-        )
+        new_slug = "{slug}-{num}".format(slug=slug, num=numb)
         numb += 1
     return new_slug
 
@@ -41,13 +43,16 @@ def unique_slug_generator(instance, value=None):
 class RoleMenuItem(MenuItem):
     """Custom MenuItem that checks permissions based on the view associated
     with a URL"""
+
     def check(self, request):
         if self.requiredRole and request.user.is_authenticated:
             if self.requiredRole == "*":
                 self.visible = request.user.groups.filter().exists()
             else:
                 self.visible = request.user.groups.filter(
-                    name=settings.GLOBAL_GROUP_PREFIX+GlobalRoles.CHOICES[self.requiredRole][1]).exists()
+                    name=settings.GLOBAL_GROUP_PREFIX
+                    + GlobalRoles.CHOICES[self.requiredRole][1]
+                ).exists()
         else:
             self.visible = False
 
@@ -55,9 +60,10 @@ class RoleMenuItem(MenuItem):
 class PermMenuItem(MenuItem):
     """Custom MenuItem that checks permissions based on the view associated
     with a URL"""
+
     def check(self, request):
         if self.perm and request.user.is_authenticated:
-             self.visible = request.user.has_perm(self.perm)
+            self.visible = request.user.has_perm(self.perm)
         else:
             self.visible = False
 
@@ -70,9 +76,9 @@ def clean_fullcalendar_datetime(date):
     if date == None:
         return None
     try:
-        datetime_pattern = re.compile(r'(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})')
-        dt_format = '%Y-%m-%dT%H:%M:%S'
-        ret = datetime.strptime(datetime_pattern.search(date).group(), dt_format)  
+        datetime_pattern = re.compile(r"(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})")
+        dt_format = "%Y-%m-%dT%H:%M:%S"
+        ret = datetime.strptime(datetime_pattern.search(date).group(), dt_format)
         if not is_aware(ret):
             ret = make_aware(ret)
         return ret
@@ -146,16 +152,16 @@ def clean_duration(value):
 def is_valid_uuid(uuid_to_test, version=4):
     """
     Check if uuid_to_test is a valid UUID.
-    
+
      Parameters
     ----------
     uuid_to_test : str
     version : {1, 2, 3, 4}
-    
+
      Returns
     -------
     `True` if uuid_to_test is a valid UUID, otherwise `False`.
-    
+
      Examples
     --------
     >>> is_valid_uuid('c9bf9e57-1685-4c89-bafb-ff5af830be8a')
@@ -163,7 +169,7 @@ def is_valid_uuid(uuid_to_test, version=4):
     >>> is_valid_uuid('c9bf9e58')
     False
     """
-    
+
     try:
         uuid_obj = UUID(uuid_to_test, version=version)
     except ValueError:
@@ -172,10 +178,10 @@ def is_valid_uuid(uuid_to_test, version=4):
 
 
 def ext_reverse(reversed_url):
-    return '{}://{}{}'.format(
-        django_settings.SITE_PROTO,
-        django_settings.SITE_DOMAIN,
-        reversed_url)
+    return "{}://{}{}".format(
+        django_settings.SITE_PROTO, django_settings.SITE_DOMAIN, reversed_url
+    )
+
 
 def last_day_of_month(any_day):
     # The day 28 exists in every month. 4 days later, it's always next month
@@ -183,20 +189,24 @@ def last_day_of_month(any_day):
     # subtracting the number of the current day brings us back one month
     return next_month - timedelta(days=next_month.day)
 
+
 class AppNotification:
     """
     This feels wrong...?
     """
 
-    def __init__(self,
-        notification_type: NotificationTypes, 
-        title: str, message: str, 
-        email_template: str, 
-        icon: str=None,
-        action_link: str=None,
-        send_inapp: bool=True,
-        send_email: bool=True,
-        **kwargs):
+    def __init__(
+        self,
+        notification_type: NotificationTypes,
+        title: str,
+        message: str,
+        email_template: str,
+        icon: str = None,
+        action_link: str = None,
+        send_inapp: bool = True,
+        send_email: bool = True,
+        **kwargs
+    ):
 
         self.type = notification_type
         self.title = title
@@ -205,9 +215,11 @@ class AppNotification:
         self.icon = icon
         if action_link:
             # Check if it needs to be made external
-            if not action_link.startswith('{}://{}'.format(
-                django_settings.SITE_PROTO,
-                django_settings.SITE_DOMAIN)):
+            if not action_link.startswith(
+                "{}://{}".format(
+                    django_settings.SITE_PROTO, django_settings.SITE_DOMAIN
+                )
+            ):
                 self.action_link = ext_reverse(action_link)
             else:
                 self.action_link = action_link
@@ -219,25 +231,34 @@ class AppNotification:
         self.context.update(kwargs)
 
     def send_to_user(
-            self,
-            user: User, ) -> bool:
+        self,
+        user: User,
+    ) -> bool:
         # Lets see if we can do notifications
         ## In-app notification
         if self.send_inapp:
-            Notification.objects.create(user=user, title=self.title, 
-                                        message=self.message, 
-                                        icon=self.icon, link=self.action_link)
+            Notification.objects.create(
+                user=user,
+                title=self.title,
+                message=self.message,
+                icon=self.icon,
+                link=self.action_link,
+            )
 
         ## Email notification
         if self.send_email:
-            self.context['SITE_DOMAIN'] = django_settings.SITE_DOMAIN
-            self.context['SITE_PROTO'] = django_settings.SITE_PROTO
-            self.context['title'] = self.title
-            self.context['message'] = self.message
-            self.context['icon'] = self.icon
-            self.context['action_link'] = self.action_link
-            self.context['user'] = user
+            self.context["SITE_DOMAIN"] = django_settings.SITE_DOMAIN
+            self.context["SITE_PROTO"] = django_settings.SITE_PROTO
+            self.context["title"] = self.title
+            self.context["message"] = self.message
+            self.context["icon"] = self.icon
+            self.context["action_link"] = self.action_link
+            self.context["user"] = user
             msg_html = render_to_string(self.email_template, self.context)
-            send_mail(  
-                self.title, self.message, None, [user.email], html_message=msg_html,
+            send_mail(
+                self.title,
+                self.message,
+                None,
+                [user.email],
+                html_message=msg_html,
             )

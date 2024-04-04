@@ -23,18 +23,19 @@ def task_progress_workflows():
                 if phase.can_to_pre_checks():
                     phase.to_pre_checks()
                     phase.save()
-    
+
     # Lets see if we can auto-start any phases!
     for phase in Phase.objects.filter(status=PhaseStatuses.READY_TO_BEGIN):
         if phase.start_date and date.today() >= phase.start_date:
-                # Ok, today is the day!
-                if phase.can_to_in_progress():
-                    phase.to_in_progress()
-                    phase.save()
-    
+            # Ok, today is the day!
+            if phase.can_to_in_progress():
+                phase.to_in_progress()
+                phase.save()
+
     # Lets see if we can archive any?
     for phase in Phase.objects.filter(
-        Q(status=PhaseStatuses.DELIVERED) | Q(status=PhaseStatuses.CANCELLED)):
+        Q(status=PhaseStatuses.DELIVERED) | Q(status=PhaseStatuses.CANCELLED)
+    ):
         if phase.can_to_archived():
             phase.to_archived()
             phase.save()
@@ -47,21 +48,32 @@ def task_fire_job_notifications():
     # - Report late to PQA
     # - Report late to Delivery
     # - Precons Due
-    
+
     ## Report late to TQA
-    for phase in Phase.objects.filter(Q(status=PhaseStatuses.IN_PROGRESS) | Q(status=PhaseStatuses.PENDING_TQA)):
+    for phase in Phase.objects.filter(
+        Q(status=PhaseStatuses.IN_PROGRESS) | Q(status=PhaseStatuses.PENDING_TQA)
+    ):
         if phase.is_tqa_late:
             # Ok, it's late. Lets fire a notification!
             phase.fire_late_to_tqa_notification()
-    
+
     ## Report late to PQA
-    for phase in Phase.objects.filter(Q(status=PhaseStatuses.PENDING_PQA) | Q(status=PhaseStatuses.QA_TECH) | Q(status=PhaseStatuses.QA_TECH_AUTHOR_UPDATES)):
-        if phase.is_pqa_late:        
+    for phase in Phase.objects.filter(
+        Q(status=PhaseStatuses.PENDING_PQA)
+        | Q(status=PhaseStatuses.QA_TECH)
+        | Q(status=PhaseStatuses.QA_TECH_AUTHOR_UPDATES)
+    ):
+        if phase.is_pqa_late:
             # Ok, it's late. Lets fire a notification!
             phase.fire_late_to_pqa_notification()
-    
+
     ## Report late to PQA
-    for phase in Phase.objects.filter(Q(status=PhaseStatuses.PENDING_PQA) | Q(status=PhaseStatuses.QA_PRES) | Q(status=PhaseStatuses.QA_PRES_AUTHOR_UPDATES) | Q(status=PhaseStatuses.COMPLETED)):
-        if phase.is_delivery_late:        
+    for phase in Phase.objects.filter(
+        Q(status=PhaseStatuses.PENDING_PQA)
+        | Q(status=PhaseStatuses.QA_PRES)
+        | Q(status=PhaseStatuses.QA_PRES_AUTHOR_UPDATES)
+        | Q(status=PhaseStatuses.COMPLETED)
+    ):
+        if phase.is_delivery_late:
             # Ok, it's late. Lets fire a notification!
             phase.fire_late_to_delivery_notification()

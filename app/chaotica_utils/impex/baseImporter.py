@@ -1,7 +1,8 @@
 from abc import ABCMeta, abstractmethod
 from collections import defaultdict
 
-class BaseImporter():
+
+class BaseImporter:
     __metaclass__ = ABCMeta
 
     @abstractmethod

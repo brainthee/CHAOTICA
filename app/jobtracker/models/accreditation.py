@@ -15,7 +15,7 @@ from chaotica_utils.models import User
 
 class Accreditation(models.Model):
     name = models.CharField(max_length=200)
-    slug = models.SlugField(null=False, default='', unique=True)
+    slug = models.SlugField(null=False, default="", unique=True)
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -23,11 +23,9 @@ class Accreditation(models.Model):
         return super().save(*args, **kwargs)
 
     def __str__(self):
-        return '%s' % (self.name)
+        return "%s" % (self.name)
 
     class Meta:
-        ordering = [Lower('name')]
-        unique_together = (('name'), )
-        permissions = (
-            ('view_users_accreditations', 'View Users with Accreditation'),
-        )
+        ordering = [Lower("name")]
+        unique_together = (("name"),)
+        permissions = (("view_users_accreditations", "View Users with Accreditation"),)

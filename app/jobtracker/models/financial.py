@@ -13,7 +13,13 @@ from django.template.loader import render_to_string
 
 class BillingCode(models.Model):
     code = models.CharField(verbose_name="Code", max_length=255, unique=True)
-    client = models.ForeignKey('Client', on_delete=models.CASCADE, blank=True, null=True, related_name='billing_codes')
+    client = models.ForeignKey(
+        "Client",
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        related_name="billing_codes",
+    )
     is_chargeable = models.BooleanField(default=False)
     is_recoverable = models.BooleanField(default=False)
     is_internal = models.BooleanField(default=False)
@@ -25,12 +31,13 @@ class BillingCode(models.Model):
             return "{code} ({client})".format(code=self.code, client=self.client)
         else:
             return self.code
-    
+
     def get_html_label(self):
-        rendered = render_to_string("partials/billingcode/billingcode_badge.html",
-                                    {"billingcode": self})
+        rendered = render_to_string(
+            "partials/billingcode/billingcode_badge.html", {"billingcode": self}
+        )
         return rendered
-    
+
     def get_state_bscolour(self):
         if self.is_closed:
             return "secondary"
@@ -40,20 +47,21 @@ class BillingCode(models.Model):
             return "success"
         else:
             return "info"
-    
+
     def jobs(self):
         from ..models import Job
+
         if self.associations.all().count():
-            assoc_ids = self.associations.filter().values_list('job_id', flat=True)
+            assoc_ids = self.associations.filter().values_list("job_id", flat=True)
             return Job.objects.filter(id__in=assoc_ids)
         else:
             return Job.objects.none()
 
     class Meta:
-        ordering = [Lower('code')]
-        
+        ordering = [Lower("code")]
+
     def get_absolute_url(self):
-        return reverse('billingcode_detail', kwargs={"code": self.code})
+        return reverse("billingcode_detail", kwargs={"code": self.code})
 
 
 # class BillingCodeAssociation(models.Model):

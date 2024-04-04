@@ -1,7 +1,12 @@
 from django.http import JsonResponse, HttpResponseForbidden
 from django.template import loader
 from ..models import Contact, Job, Phase
-from ..forms import AssignMultipleUser, AssignUser, AssignMultipleContacts, AssignContact
+from ..forms import (
+    AssignMultipleUser,
+    AssignUser,
+    AssignMultipleContacts,
+    AssignContact,
+)
 from chaotica_utils.views import log_system_activity
 from chaotica_utils.models import User
 import logging
@@ -9,11 +14,12 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 def _process_assign_user(request, obj, prop, multiple=False, users=None):
     data = dict()
     if users is None:
         users = User.objects.filter(is_active=True)
-    if request.method == 'POST':
+    if request.method == "POST":
         if multiple:
             form = AssignMultipleUser(request.POST, users=users)
         else:
@@ -22,28 +28,35 @@ def _process_assign_user(request, obj, prop, multiple=False, users=None):
         if form.is_valid():
             if multiple:
                 getattr(obj, prop).clear()
-                for user in form.cleaned_data['users']:
+                for user in form.cleaned_data["users"]:
                     getattr(obj, prop).add(user)
             else:
-                setattr(obj, prop, form.cleaned_data['user'])
-            
-            log_system_activity(obj, 
-                "Altered assigned user for "+obj._meta.get_field(prop).verbose_name.title(),
-                author=request.user)
+                setattr(obj, prop, form.cleaned_data["user"])
+
+            log_system_activity(
+                obj,
+                "Altered assigned user for "
+                + obj._meta.get_field(prop).verbose_name.title(),
+                author=request.user,
+            )
             obj.save()
-            data['form_is_valid'] = True
+            data["form_is_valid"] = True
         else:
-            data['form_is_valid'] = False
+            data["form_is_valid"] = False
     else:
         if multiple:
             form = AssignMultipleUser(users=users)
         else:
             form = AssignUser(users=users)
-    
-    context = {'form': form, 'obj': obj, 'field': obj._meta.get_field(prop).verbose_name.title(),}
-    data['html_form'] = loader.render_to_string("modals/assign_user_modal.html",
-                                                context,
-                                                request=request)
+
+    context = {
+        "form": form,
+        "obj": obj,
+        "field": obj._meta.get_field(prop).verbose_name.title(),
+    }
+    data["html_form"] = loader.render_to_string(
+        "modals/assign_user_modal.html", context, request=request
+    )
     return JsonResponse(data)
 
 
@@ -51,7 +64,7 @@ def _process_assign_contact(request, obj, prop, multiple=False, contacts=None):
     data = dict()
     if contacts is None:
         contacts = Contact.objects.all()
-    if request.method == 'POST':
+    if request.method == "POST":
         if multiple:
             form = AssignMultipleContacts(request.POST, contacts=contacts)
         else:
@@ -60,26 +73,33 @@ def _process_assign_contact(request, obj, prop, multiple=False, contacts=None):
         if form.is_valid():
             if multiple:
                 getattr(obj, prop).clear()
-                for user in form.cleaned_data['contacts']:
+                for user in form.cleaned_data["contacts"]:
                     getattr(obj, prop).add(user)
             else:
-                setattr(obj, prop, form.cleaned_data['contact'])
+                setattr(obj, prop, form.cleaned_data["contact"])
 
-            log_system_activity(obj, 
-                "Altered contact information for "+obj._meta.get_field(prop).verbose_name.title(),
-                author=request.user)
+            log_system_activity(
+                obj,
+                "Altered contact information for "
+                + obj._meta.get_field(prop).verbose_name.title(),
+                author=request.user,
+            )
             obj.save()
-            data['form_is_valid'] = True
+            data["form_is_valid"] = True
         else:
-            data['form_is_valid'] = False
+            data["form_is_valid"] = False
     else:
         if multiple:
             form = AssignMultipleContacts(contacts=contacts)
         else:
             form = AssignContact(contacts=contacts)
-    
-    context = {'form': form, 'obj': obj, 'field': obj._meta.get_field(prop).verbose_name.title(),}
-    data['html_form'] = loader.render_to_string("modals/assign_contact_modal.html",
-                                                context,
-                                                request=request)
+
+    context = {
+        "form": form,
+        "obj": obj,
+        "field": obj._meta.get_field(prop).verbose_name.title(),
+    }
+    data["html_form"] = loader.render_to_string(
+        "modals/assign_contact_modal.html", context, request=request
+    )
     return JsonResponse(data)
