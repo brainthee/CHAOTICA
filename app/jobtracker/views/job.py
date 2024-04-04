@@ -1,6 +1,11 @@
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
-from django.http import HttpResponseRedirect, HttpResponseBadRequest, JsonResponse, HttpResponseForbidden
+from django.http import (
+    HttpResponseRedirect,
+    HttpResponseBadRequest,
+    JsonResponse,
+    HttpResponseForbidden,
+)
 from django.template import loader
 from django.db.models import Q
 from django.conf import settings
@@ -19,8 +24,28 @@ from django.urls import reverse_lazy
 from dal import autocomplete
 from chaotica_utils.views import log_system_activity, ChaoticaBaseView
 from chaotica_utils.enums import UnitRoles
-from ..models import Job, JobSupportTeamRole, BillingCode, TimeSlot, TimeSlotType, OrganisationalUnit, WorkflowTask, Contact, FrameworkAgreement
-from ..forms import ScopeInlineForm, DeliveryTimeSlotModalForm, AddNote, JobForm, AssignUserField, ScopeForm, AssignJobFramework, AssignJobBillingCode, JobSupportTeamRoleForm
+from ..models import (
+    Job,
+    JobSupportTeamRole,
+    BillingCode,
+    TimeSlot,
+    TimeSlotType,
+    OrganisationalUnit,
+    WorkflowTask,
+    Contact,
+    FrameworkAgreement,
+)
+from ..forms import (
+    ScopeInlineForm,
+    DeliveryTimeSlotModalForm,
+    AddNote,
+    JobForm,
+    AssignUserField,
+    ScopeForm,
+    AssignJobFramework,
+    AssignJobBillingCode,
+    JobSupportTeamRoleForm,
+)
 from ..enums import JobStatuses, TimeSlotDeliveryRole, DefaultTimeSlotTypes
 from .helpers import _process_assign_user, _process_assign_contact
 import logging
@@ -29,16 +54,16 @@ from django.utils.html import format_html
 
 logger = logging.getLogger(__name__)
 
-# TODO: setup events for schedule so it comes back with member's only 
+# TODO: setup events for schedule so it comes back with member's only
 
 
-@unit_permission_required_or_403('jobtracker.view_job_schedule', (Job, 'slug', 'slug'))
+@unit_permission_required_or_403("jobtracker.view_job_schedule", (Job, "slug", "slug"))
 def view_job_schedule_gantt_data(request, slug):
     job = get_object_or_404(Job, slug=slug)
     return JsonResponse(job.get_gantt_json(), safe=False)
 
 
-@unit_permission_required_or_403('jobtracker.view_job_schedule', (Job, 'slug', 'slug'))
+@unit_permission_required_or_403("jobtracker.view_job_schedule", (Job, "slug", "slug"))
 def view_job_schedule_slots(request, slug):
     data = []
     job = get_object_or_404(Job, slug=slug)
@@ -46,85 +71,103 @@ def view_job_schedule_slots(request, slug):
     for slot in slots:
         data.append(
             slot.get_schedule_json(
-                url=reverse('change_job_schedule_slot', kwargs={"slug":job.slug, "pk":slot.pk})
+                url=reverse(
+                    "change_job_schedule_slot", kwargs={"slug": job.slug, "pk": slot.pk}
+                )
             )
         )
     return JsonResponse(data, safe=False)
 
 
-@unit_permission_required_or_403('jobtracker.view_job_schedule', (Job, 'slug', 'slug'))
+@unit_permission_required_or_403("jobtracker.view_job_schedule", (Job, "slug", "slug"))
 def view_job_schedule_members(request, slug):
     data = []
     job = get_object_or_404(Job, slug=slug)
     scheduled_users = job.team_scheduled()
     if scheduled_users:
         for user in scheduled_users:
-            data.append({
-                "id": user.pk,
-                "title": str(user),
-                "businessHours": {
-                    "startTime": job.unit.businessHours_startTime,
-                    "endTime": job.unit.businessHours_endTime,
-                    "daysOfWeek": job.unit.businessHours_days,
+            data.append(
+                {
+                    "id": user.pk,
+                    "title": str(user),
+                    "businessHours": {
+                        "startTime": job.unit.businessHours_startTime,
+                        "endTime": job.unit.businessHours_endTime,
+                        "daysOfWeek": job.unit.businessHours_days,
+                    },
                 }
-            })
+            )
     return JsonResponse(data, safe=False)
 
 
-@unit_permission_required_or_403('jobtracker.can_manage_framework_job', (Job, 'slug', 'slug'))
+@unit_permission_required_or_403(
+    "jobtracker.can_manage_framework_job", (Job, "slug", "slug")
+)
 def assign_job_framework(request, slug):
     job = get_object_or_404(Job, slug=slug)
     data = dict()
-    if request.method == 'POST':
+    if request.method == "POST":
         form = AssignJobFramework(request.POST, instance=job)
         if form.is_valid():
             form.save()
-            data['form_is_valid'] = True
+            data["form_is_valid"] = True
         else:
-            data['form_is_valid'] = False
+            data["form_is_valid"] = False
     else:
         form = AssignJobFramework(instance=job)
-    
-    context = {'form': form, 'job': job,}
-    data['html_form'] = loader.render_to_string("modals/assign_job_framework.html",
-                                                context,
-                                                request=request)
+
+    context = {
+        "form": form,
+        "job": job,
+    }
+    data["html_form"] = loader.render_to_string(
+        "modals/assign_job_framework.html", context, request=request
+    )
     return JsonResponse(data)
 
 
-@unit_permission_required_or_403('jobtracker.assign_billingcodes', (Job, 'slug', 'slug'))
+@unit_permission_required_or_403(
+    "jobtracker.assign_billingcodes", (Job, "slug", "slug")
+)
 def assign_job_billingcodes(request, slug):
     job = get_object_or_404(Job, slug=slug)
     data = dict()
-    if request.method == 'POST':
+    if request.method == "POST":
         form = AssignJobBillingCode(request.POST, instance=job)
         if form.is_valid():
             form.save()
-            data['form_is_valid'] = True
+            data["form_is_valid"] = True
         else:
-            data['form_is_valid'] = False
+            data["form_is_valid"] = False
     else:
         form = AssignJobBillingCode(instance=job)
-    
-    context = {'form': form, 'job': job,}
-    data['html_form'] = loader.render_to_string("modals/assign_job_billingcodes.html",
-                                                context,
-                                                request=request)
+
+    context = {
+        "form": form,
+        "job": job,
+    }
+    data["html_form"] = loader.render_to_string(
+        "modals/assign_job_billingcodes.html", context, request=request
+    )
     return JsonResponse(data)
 
 
-@unit_permission_required_or_403('jobtracker.can_assign_poc_job', (Job, 'slug', 'slug'))
+@unit_permission_required_or_403("jobtracker.can_assign_poc_job", (Job, "slug", "slug"))
 def assign_job_poc(request, slug):
     job = get_object_or_404(Job, slug=slug)
     contacts = Contact.objects.filter(company=job.client)
-    return _process_assign_contact(request, job, 'primary_client_poc', contacts=contacts)
+    return _process_assign_contact(
+        request, job, "primary_client_poc", contacts=contacts
+    )
 
 
-@unit_permission_required_or_403('jobtracker.can_update_job', (Job, 'slug', 'slug'))
+@unit_permission_required_or_403("jobtracker.can_update_job", (Job, "slug", "slug"))
 def assign_job_field(request, slug, field):
     valid_fields = [
-        'account_manager', 'dep_account_manager',
-        'scoped_by', 'scoped_signed_off_by'
+        "account_manager",
+        "dep_account_manager",
+        "scoped_by",
+        "scoped_signed_off_by",
     ]
     job = get_object_or_404(Job, slug=slug)
     if field in valid_fields:
@@ -136,43 +179,47 @@ def assign_job_field(request, slug, field):
         return HttpResponseBadRequest()
 
 
-@unit_permission_required_or_403('jobtracker.can_update_job', (Job, 'slug', 'slug'))
+@unit_permission_required_or_403("jobtracker.can_update_job", (Job, "slug", "slug"))
 def assign_job_scoped(request, slug):
     job = get_object_or_404(Job, slug=slug)
-    return _process_assign_user(request, job, 'scoped_by', multiple=True)
+    return _process_assign_user(request, job, "scoped_by", multiple=True)
 
 
-@unit_permission_required_or_403('jobtracker.can_scope_jobs', (Job, 'slug', 'slug'))
+@unit_permission_required_or_403("jobtracker.can_scope_jobs", (Job, "slug", "slug"))
 def job_edit_scope(request, slug):
     is_ajax = False
-    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
         is_ajax = True
-    
+
     job = get_object_or_404(Job, slug=slug)
     data = {}
-    data['form_is_valid'] = False
-    if request.method == 'POST':
+    data["form_is_valid"] = False
+    if request.method == "POST":
         form = ScopeInlineForm(request.POST, instance=job)
         if form.is_valid():
             job = form.save()
             # add activity logs
-            data['form_is_valid'] = True
-            data['changed_data'] = form.changed_data
-            log_system_activity(job, "Scope edited ("+', '.join(form.changed_data)+")")
+            data["form_is_valid"] = True
+            data["changed_data"] = form.changed_data
+            log_system_activity(
+                job, "Scope edited (" + ", ".join(form.changed_data) + ")"
+            )
             if not is_ajax:
-                return HttpResponseRedirect(reverse('job_detail', kwargs={'slug': slug}))
+                return HttpResponseRedirect(
+                    reverse("job_detail", kwargs={"slug": slug})
+                )
     else:
-        form = ScopeInlineForm(instance=job)  
-    
-    context = {'scopeInlineForm': form, 'job': job}
-    data['html_form'] = loader.render_to_string("partials/job/forms/scope.html",
-                                                context,
-                                                request=request)
+        form = ScopeInlineForm(instance=job)
+
+    context = {"scopeInlineForm": form, "job": job}
+    data["html_form"] = loader.render_to_string(
+        "partials/job/forms/scope.html", context, request=request
+    )
 
     return JsonResponse(data)
 
 
-@unit_permission_required_or_403('jobtracker.can_schedule_job', (Job, 'slug', 'slug'))
+@unit_permission_required_or_403("jobtracker.can_schedule_job", (Job, "slug", "slug"))
 def change_job_schedule_slot(request, slug, pk=None):
     job = get_object_or_404(Job, slug=slug)
     slot = None
@@ -183,25 +230,26 @@ def change_job_schedule_slot(request, slug, pk=None):
         form = DeliveryTimeSlotModalForm(request.POST, instance=slot, slug=slug)
         if form.is_valid():
             slot = form.save(commit=False)
-            slot.slot_type = TimeSlotType.get_builtin_object(DefaultTimeSlotTypes.DELIVERY)
+            slot.slot_type = TimeSlotType.get_builtin_object(
+                DefaultTimeSlotTypes.DELIVERY
+            )
             slot.save()
-            data['form_is_valid'] = True
+            data["form_is_valid"] = True
         else:
-            data['form_is_valid'] = False
-            data['form_errors'] = form.errors
+            data["form_is_valid"] = False
+            data["form_errors"] = form.errors
     else:
         # Send the modal
         form = DeliveryTimeSlotModalForm(instance=slot, slug=slug)
 
-    context = {'form': form, 'job': job}
-    data['html_form'] = loader.render_to_string("jobtracker/modals/job_slot.html",
-                                                context,
-                                                request=request)
+    context = {"form": form, "job": job}
+    data["html_form"] = loader.render_to_string(
+        "jobtracker/modals/job_slot.html", context, request=request
+    )
     return JsonResponse(data)
 
 
-
-@unit_permission_required_or_403('jobtracker.can_schedule_job', (Job, 'slug', 'slug'))
+@unit_permission_required_or_403("jobtracker.can_schedule_job", (Job, "slug", "slug"))
 def job_support_team_add(request, slug):
     job = get_object_or_404(Job, slug=slug)
     data = dict()
@@ -211,24 +259,31 @@ def job_support_team_add(request, slug):
             role = form.save(commit=False)
             role.job = job
             role.save()
-            log_system_activity(job, "{user} added with {hrs}hrs as {role} support role.".format(
-                user=role.user, hrs=str(role.allocated_hours), role=role.get_role_display()), author=request.user)
-            data['form_is_valid'] = True
+            log_system_activity(
+                job,
+                "{user} added with {hrs}hrs as {role} support role.".format(
+                    user=role.user,
+                    hrs=str(role.allocated_hours),
+                    role=role.get_role_display(),
+                ),
+                author=request.user,
+            )
+            data["form_is_valid"] = True
         else:
-            data['form_is_valid'] = False
-            data['form_errors'] = form.errors
+            data["form_is_valid"] = False
+            data["form_errors"] = form.errors
     else:
         # Send the modal
         form = JobSupportTeamRoleForm()
 
-    context = {'form': form, 'job': job}
-    data['html_form'] = loader.render_to_string("jobtracker/modals/job_support_team_form.html",
-                                                context,
-                                                request=request)
+    context = {"form": form, "job": job}
+    data["html_form"] = loader.render_to_string(
+        "jobtracker/modals/job_support_team_form.html", context, request=request
+    )
     return JsonResponse(data)
 
 
-@unit_permission_required_or_403('jobtracker.can_schedule_job', (Job, 'slug', 'slug'))
+@unit_permission_required_or_403("jobtracker.can_schedule_job", (Job, "slug", "slug"))
 def job_support_team_edit(request, slug, pk):
     job = get_object_or_404(Job, slug=slug)
     support_role = get_object_or_404(JobSupportTeamRole, pk=pk, job=job)
@@ -237,70 +292,85 @@ def job_support_team_edit(request, slug, pk):
         form = JobSupportTeamRoleForm(request.POST, instance=support_role)
         if form.is_valid():
             role = form.save()
-            log_system_activity(job, "{user} updated with {hrs}hrs as {role} support role.".format(
-                user=role.user, hrs=str(role.allocated_hours), role=role.get_role_display()), author=request.user)
-            data['form_is_valid'] = True
+            log_system_activity(
+                job,
+                "{user} updated with {hrs}hrs as {role} support role.".format(
+                    user=role.user,
+                    hrs=str(role.allocated_hours),
+                    role=role.get_role_display(),
+                ),
+                author=request.user,
+            )
+            data["form_is_valid"] = True
         else:
-            data['form_is_valid'] = False
-            data['form_errors'] = form.errors
+            data["form_is_valid"] = False
+            data["form_errors"] = form.errors
     else:
         # Send the modal
         form = JobSupportTeamRoleForm(instance=support_role)
 
-    context = {'form': form, 'job': job}
-    data['html_form'] = loader.render_to_string("jobtracker/modals/job_support_team_form.html",
-                                                context,
-                                                request=request)
+    context = {"form": form, "job": job}
+    data["html_form"] = loader.render_to_string(
+        "jobtracker/modals/job_support_team_form.html", context, request=request
+    )
     return JsonResponse(data)
 
 
-@unit_permission_required_or_403('jobtracker.can_schedule_job', (Job, 'slug', 'slug'))
+@unit_permission_required_or_403("jobtracker.can_schedule_job", (Job, "slug", "slug"))
 def job_support_team_mark_used(request, slug, pk):
     job = get_object_or_404(Job, slug=slug)
     support_role = get_object_or_404(JobSupportTeamRole, pk=pk, job=job)
     data = dict()
     if request.method == "POST":
-        if request.POST.get('user_action') == "approve_action":
+        if request.POST.get("user_action") == "approve_action":
             support_role.billed_hours = support_role.allocated_hours
             support_role.save()
-            log_system_activity(job, "{user} support allocation marked as used.".format(
-                user=support_role.user), author=request.user)
-            data['form_is_valid'] = True
+            log_system_activity(
+                job,
+                "{user} support allocation marked as used.".format(
+                    user=support_role.user
+                ),
+                author=request.user,
+            )
+            data["form_is_valid"] = True
         else:
-            data['form_is_valid'] = False
+            data["form_is_valid"] = False
 
-    context = {'job': job, 'instance': support_role}
-    data['html_form'] = loader.render_to_string("jobtracker/modals/job_support_team_mark_used.html",
-                                                context,
-                                                request=request)
+    context = {"job": job, "instance": support_role}
+    data["html_form"] = loader.render_to_string(
+        "jobtracker/modals/job_support_team_mark_used.html", context, request=request
+    )
     return JsonResponse(data)
 
 
-@unit_permission_required_or_403('jobtracker.can_schedule_job', (Job, 'slug', 'slug'))
+@unit_permission_required_or_403("jobtracker.can_schedule_job", (Job, "slug", "slug"))
 def job_support_team_delete(request, slug, pk):
     job = get_object_or_404(Job, slug=slug)
     support_role = get_object_or_404(JobSupportTeamRole, pk=pk, job=job)
     data = dict()
     if request.method == "POST":
-        if request.POST.get('user_action') == "approve_action":
+        if request.POST.get("user_action") == "approve_action":
             support_role.delete()
-            log_system_activity(job, "{user} deleted from support role.".format(
-                user=support_role.user), author=request.user)
-            data['form_is_valid'] = True
+            log_system_activity(
+                job,
+                "{user} deleted from support role.".format(user=support_role.user),
+                author=request.user,
+            )
+            data["form_is_valid"] = True
         else:
-            data['form_is_valid'] = False
+            data["form_is_valid"] = False
 
-    context = {'job': job, 'instance': support_role}
-    data['html_form'] = loader.render_to_string("jobtracker/modals/job_support_team_delete.html",
-                                                context,
-                                                request=request)
+    context = {"job": job, "instance": support_role}
+    data["html_form"] = loader.render_to_string(
+        "jobtracker/modals/job_support_team_delete.html", context, request=request
+    )
     return JsonResponse(data)
 
 
-@unit_permission_required_or_403('jobtracker.can_add_note_job', (Job, 'slug', 'slug'))
+@unit_permission_required_or_403("jobtracker.can_add_note_job", (Job, "slug", "slug"))
 def job_create_note(request, slug):
     job = get_object_or_404(Job, slug=slug)
-    if request.method == 'POST':
+    if request.method == "POST":
         form = AddNote(request.POST)
         if form.is_valid():
             new_note = form.save(commit=False)
@@ -308,25 +378,27 @@ def job_create_note(request, slug):
             new_note.author = request.user
             new_note.is_system_note = False
             new_note.save()
-            return HttpResponseRedirect(reverse('job_detail', kwargs={"slug": slug})+"#notes")
+            return HttpResponseRedirect(
+                reverse("job_detail", kwargs={"slug": slug}) + "#notes"
+            )
     return HttpResponseBadRequest()
 
 
 class JobBaseView(ChaoticaBaseView, View):
     model = Job
-    fields = '__all__'
+    fields = "__all__"
 
     def get_success_url(self):
-        if 'slug' in self.kwargs:
-            slug = self.kwargs['slug']
-            return reverse_lazy('job_detail', kwargs={'slug': slug})
+        if "slug" in self.kwargs:
+            slug = self.kwargs["slug"]
+            return reverse_lazy("job_detail", kwargs={"slug": slug})
         else:
-            return reverse_lazy('job_list')
+            return reverse_lazy("job_list")
 
     def get_context_data(self, **kwargs):
         context = super(JobBaseView, self).get_context_data(**kwargs)
         note_form = AddNote()
-        context['note_form'] = note_form
+        context["note_form"] = note_form
         return context
 
 
@@ -341,27 +413,33 @@ class JobListView(JobBaseView, UserPassesTestMixin, ListView):
         # - permission
         # - isn't deleted
         # - isn't archived
-        # get our units 
-        units = get_objects_for_user(self.request.user, 'jobtracker.can_view_jobs', klass=OrganisationalUnit)
-        jobs = Job.objects.filter(Q(unit__in=units)).exclude(status=JobStatuses.DELETED).exclude(status=JobStatuses.ARCHIVED)
+        # get our units
+        units = get_objects_for_user(
+            self.request.user, "jobtracker.can_view_jobs", klass=OrganisationalUnit
+        )
+        jobs = (
+            Job.objects.filter(Q(unit__in=units))
+            .exclude(status=JobStatuses.DELETED)
+            .exclude(status=JobStatuses.ARCHIVED)
+        )
         return jobs
 
 
 class JobDetailView(UnitPermissionRequiredMixin, JobBaseView, DetailView):
-    permission_required = 'jobtracker.can_view_jobs'
+    permission_required = "jobtracker.can_view_jobs"
     return_403 = True
 
     def get_context_data(self, **kwargs):
         context = super(JobDetailView, self).get_context_data(**kwargs)
-        
-        scope_inline_form = ScopeInlineForm(instance=context['job'])
-        context['scopeInlineForm'] = scope_inline_form
+
+        scope_inline_form = ScopeInlineForm(instance=context["job"])
+        context["scopeInlineForm"] = scope_inline_form
 
         return context
 
 
 class JobCreateView(UnitPermissionRequiredMixin, JobBaseView, CreateView):
-    permission_required = 'jobtracker.can_add_job'
+    permission_required = "jobtracker.can_add_job"
     return_403 = True
     template_name = "jobtracker/job_form.html"
     form_class = JobForm
@@ -369,33 +447,37 @@ class JobCreateView(UnitPermissionRequiredMixin, JobBaseView, CreateView):
 
     def get_permission_object(self):
         orgs = OrganisationalUnit.objects.filter(
-                pk__in=self.request.user.unit_memberships.filter(
-                    roles__in=UnitRoles.get_roles_with_permission('jobtracker.can_add_job')
-                ).values_list('unit').distinct()
-            ).first() # return any - it doesn't matter here!
+            pk__in=self.request.user.unit_memberships.filter(
+                roles__in=UnitRoles.get_roles_with_permission("jobtracker.can_add_job")
+            )
+            .values_list("unit")
+            .distinct()
+        ).first()  # return any - it doesn't matter here!
         return orgs
 
     def get_initial(self):
-        self.initial.update({ 'created_by': self.request.user })
+        self.initial.update({"created_by": self.request.user})
         return self.initial
 
     def get_success_url(self):
-        return reverse_lazy('job_detail', kwargs={'slug': self.object.slug})
+        return reverse_lazy("job_detail", kwargs={"slug": self.object.slug})
 
     def get_form_kwargs(self):
         kwargs = super(JobCreateView, self).get_form_kwargs()
-        kwargs.update({'user': self.request.user})
+        kwargs.update({"user": self.request.user})
         return kwargs
 
     def form_valid(self, form):
         form.instance.created_by = self.request.user
         form.instance.save()
-        log_system_activity(form.instance, "Created Job", author=form.instance.created_by)
+        log_system_activity(
+            form.instance, "Created Job", author=form.instance.created_by
+        )
         return super().form_valid(form)
-    
+
 
 class JobUpdateView(UnitPermissionRequiredMixin, JobBaseView, UpdateView):
-    permission_required = 'jobtracker.can_update_job'
+    permission_required = "jobtracker.can_update_job"
     return_403 = True
     template_name = "jobtracker/job_form.html"
     form_class = JobForm
@@ -404,7 +486,7 @@ class JobUpdateView(UnitPermissionRequiredMixin, JobBaseView, UpdateView):
 
     def get_form_kwargs(self):
         kwargs = super(JobUpdateView, self).get_form_kwargs()
-        kwargs.update({'user': self.request.user})
+        kwargs.update({"user": self.request.user})
         return kwargs
 
     def form_valid(self, form):
@@ -413,7 +495,7 @@ class JobUpdateView(UnitPermissionRequiredMixin, JobBaseView, UpdateView):
 
 
 class JobUpdateScopeView(UnitPermissionRequiredMixin, JobBaseView, UpdateView):
-    permission_required = 'jobtracker.can_scope_jobs'
+    permission_required = "jobtracker.can_scope_jobs"
     return_403 = True
     model = Job
     template_name = "jobtracker/job_form_scope.html"
@@ -422,37 +504,37 @@ class JobUpdateScopeView(UnitPermissionRequiredMixin, JobBaseView, UpdateView):
 
     def get_form_kwargs(self):
         kwargs = super(JobUpdateView, self).get_form_kwargs()
-        kwargs.update({'user': self.request.user})
+        kwargs.update({"user": self.request.user})
         return kwargs
 
     def form_valid(self, form):
         log_system_activity(form.instance, "Scope Updated")
-        return super().form_valid(form)    
+        return super().form_valid(form)
 
 
 class JobScheduleView(UnitPermissionRequiredMixin, JobBaseView, DetailView):
-    permission_required = 'jobtracker.view_job_schedule'
+    permission_required = "jobtracker.view_job_schedule"
     return_403 = True
     """ Renders the schedule for the job """
     template_name = "jobtracker/job_schedule.html"
 
     def get_context_data(self, **kwargs):
         context = super(JobScheduleView, self).get_context_data(**kwargs)
-        context['userSelect'] = AssignUserField()
-        context['TimeSlotDeliveryRoles'] = TimeSlotDeliveryRole.CHOICES
+        context["userSelect"] = AssignUserField()
+        context["TimeSlotDeliveryRoles"] = TimeSlotDeliveryRole.CHOICES
 
-        types_in_use = context['job'].get_all_total_scheduled_by_type()
-        context['TimeSlotDeliveryRolesInUse'] = types_in_use
+        types_in_use = context["job"].get_all_total_scheduled_by_type()
+        context["TimeSlotDeliveryRolesInUse"] = types_in_use
         return context
-    
+
 
 class JobDeleteView(UnitPermissionRequiredMixin, JobBaseView, DeleteView):
-    permission_required = 'jobtracker.can_delete_job'
+    permission_required = "jobtracker.can_delete_job"
     return_403 = True
     """View to delete a job"""
-        
 
-@unit_permission_required_or_403('jobtracker.can_update_job', (Job, 'slug', 'slug'))
+
+@unit_permission_required_or_403("jobtracker.can_update_job", (Job, "slug", "slug"))
 def job_update_workflow(request, slug, new_state):
     job = get_object_or_404(Job, slug=slug)
     data = dict()
@@ -465,20 +547,20 @@ def job_update_workflow(request, slug, new_state):
             raise TypeError()
     except Exception:
         return HttpResponseBadRequest()
-    
+
     can_proceed = True
-        
+
     if new_state == JobStatuses.PENDING_SCOPE:
         if job.can_to_pending_scope(request):
-            if request.method == 'POST':
+            if request.method == "POST":
                 job.to_pending_scope(request.user)
         else:
             can_proceed = False
     elif new_state == JobStatuses.SCOPING:
         if job.can_to_scoping(request):
-            if request.method == 'POST':
+            if request.method == "POST":
                 if not job.scoped_by.all():
-                    if request.user.has_perm('scope_job'):
+                    if request.user.has_perm("scope_job"):
                         # No one is defined to scope and we have permission - auto add!
                         job.scoped_by.add(request.user)
                         job.save()
@@ -487,55 +569,55 @@ def job_update_workflow(request, slug, new_state):
             can_proceed = False
     elif new_state == JobStatuses.SCOPING_ADDITIONAL_INFO_REQUIRED:
         if job.can_to_additional_scope_req(request):
-            if request.method == 'POST':
+            if request.method == "POST":
                 job.to_additional_scope_req(request.user)
         else:
             can_proceed = False
     elif new_state == JobStatuses.PENDING_SCOPING_SIGNOFF:
         if job.can_to_scope_pending_signoff(request):
-            if request.method == 'POST':
+            if request.method == "POST":
                 job.to_scope_pending_signoff(request.user)
         else:
             can_proceed = False
     elif new_state == JobStatuses.SCOPING_COMPLETE:
         if job.can_to_scope_complete(request):
-            if request.method == 'POST':
+            if request.method == "POST":
                 job.to_scope_complete(request.user)
         else:
             can_proceed = False
     elif new_state == JobStatuses.PENDING_START:
         if job.can_to_pending_start(request):
-            if request.method == 'POST':
+            if request.method == "POST":
                 job.to_pending_start(request.user)
         else:
             can_proceed = False
     elif new_state == JobStatuses.IN_PROGRESS:
         if job.can_to_in_progress(request):
-            if request.method == 'POST':
+            if request.method == "POST":
                 job.to_in_progress(request.user)
         else:
             can_proceed = False
     elif new_state == JobStatuses.COMPLETED:
         if job.can_to_complete(request):
-            if request.method == 'POST':
+            if request.method == "POST":
                 job.to_complete(request.user)
         else:
             can_proceed = False
     elif new_state == JobStatuses.LOST:
         if job.can_to_lost(request):
-            if request.method == 'POST':
+            if request.method == "POST":
                 job.to_lost(request.user)
         else:
             can_proceed = False
     elif new_state == JobStatuses.DELETED:
         if job.can_to_delete(request):
-            if request.method == 'POST':
+            if request.method == "POST":
                 job.to_delete(request.user)
         else:
             can_proceed = False
     elif new_state == JobStatuses.ARCHIVED:
         if job.can_to_archive(request):
-            if request.method == 'POST':
+            if request.method == "POST":
                 job.to_archive(request.user)
         else:
             can_proceed = False
@@ -543,22 +625,26 @@ def job_update_workflow(request, slug, new_state):
         return HttpResponseBadRequest()
 
         # sendWebHookStatusAlert(redteam=rt, title="Engagement Status Changed", msg="Engagement "+rt.projectName+" status has changed to: "+str(dict(RTState.choices).get(new_state)))
-        
-    if request.method == 'POST' and can_proceed:
+
+    if request.method == "POST" and can_proceed:
         job.save()
-        data['form_is_valid'] = True  # This is just to play along with the existing code
-    
-    tasks = WorkflowTask.objects.filter(appliedModel=WorkflowTask.WF_JOB, status=new_state)
+        data["form_is_valid"] = (
+            True  # This is just to play along with the existing code
+        )
+
+    tasks = WorkflowTask.objects.filter(
+        appliedModel=WorkflowTask.WF_JOB, status=new_state
+    )
     context = {
-        'job': job,
-        'can_proceed': can_proceed,
-        'new_state_str': new_state_str,
-        'new_state': new_state,
-        'tasks': tasks,
-        }
-    data['html_form'] = loader.render_to_string('jobtracker/modals/job_workflow.html',
-                                                context,
-                                                request=request)
+        "job": job,
+        "can_proceed": can_proceed,
+        "new_state_str": new_state_str,
+        "new_state": new_state,
+        "tasks": tasks,
+    }
+    data["html_form"] = loader.render_to_string(
+        "jobtracker/modals/job_workflow.html", context, request=request
+    )
     return JsonResponse(data)
 
 
@@ -572,11 +658,11 @@ class JobBillingCodeAutocomplete(autocomplete.Select2QuerySetView):
     def get_queryset(self):
         if not self.request.user.is_authenticated:
             return BillingCode.objects.none()
-        
-        job_slug = self.forwarded.get('slug', None)
+
+        job_slug = self.forwarded.get("slug", None)
         if not job_slug:
             return BillingCode.objects.none()
-        
+
         # TODO: return only if job allowed
         job = Job.objects.get(slug=job_slug)
 
@@ -586,6 +672,6 @@ class JobBillingCodeAutocomplete(autocomplete.Select2QuerySetView):
             qs = qs.filter(code__istartswith=self.q)
 
         return qs
-    
+
     def get_result_label(self, result):
         return result.get_html_label()

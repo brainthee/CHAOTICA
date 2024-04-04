@@ -10,5 +10,7 @@ def redirect_if_authenticated(redirect_to):
             if request.user.is_authenticated:
                 return HttpResponseRedirect(redirect_to)
             return function(*args, **kwargs)
+
         return wrapper
+
     return inner_function

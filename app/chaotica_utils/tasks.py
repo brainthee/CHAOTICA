@@ -16,8 +16,9 @@ logger = get_task_logger("tasks")
 @shared_task(track_started=True)
 def task_update_holidays():
     from .models import Holiday, HolidayCountry
+
     now = timezone.now().today()
-    years = [now.year, now.year+1]
+    years = [now.year, now.year + 1]
     # Lets make sure our countries list is up to date...
     for code, name in list(countries):
         HolidayCountry.objects.get_or_create(country=code)
@@ -26,9 +27,15 @@ def task_update_holidays():
         try:
             holiday_days = holidays.CountryHoliday(country.country.code)
             for subdiv in holiday_days.subdivisions:
-                dates = holidays.CountryHoliday(country=country.country.code, subdiv=subdiv, years=years)
+                dates = holidays.CountryHoliday(
+                    country=country.country.code, subdiv=subdiv, years=years
+                )
                 for hol, desc in dates.items():
-                    db_date, _ = Holiday.objects.get_or_create(date=hol, country=country, reason=desc,)
+                    db_date, _ = Holiday.objects.get_or_create(
+                        date=hol,
+                        country=country,
+                        reason=desc,
+                    )
                     if subdiv not in db_date.subdivs:
                         db_date.subdivs.append(subdiv)
                         db_date.save()
@@ -45,6 +52,7 @@ def task_send_notifications(notification, users_to_notify):
 @shared_task(track_started=True, serializer="pickle")
 def task_sync_global_permissions():
     from .models import Group
+
     for group in Group.objects.all():
         group.sync_global_permissions()
 
@@ -52,6 +60,7 @@ def task_sync_global_permissions():
 @shared_task(track_started=True, serializer="pickle")
 def task_sync_role_permissions_to_default():
     from jobtracker.models import OrganisationalUnitRole, OrganisationalUnit
+
     for unit in OrganisationalUnitRole.objects.all():
         unit.sync_default_permissions()
     # Now lets clean up the units
@@ -62,5 +71,6 @@ def task_sync_role_permissions_to_default():
 @shared_task(track_started=True, serializer="pickle")
 def task_sync_role_permissions():
     from jobtracker.models import OrganisationalUnit
+
     for unit in OrganisationalUnit.objects.all():
         unit.sync_permissions()

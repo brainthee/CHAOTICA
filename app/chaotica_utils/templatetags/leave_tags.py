@@ -1,5 +1,7 @@
 from django import template
+
 register = template.Library()
+
 
 @register.simple_tag
 def can_auth(leave, user):

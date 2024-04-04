@@ -3,6 +3,7 @@ from django.template.loader import render_to_string
 from crispy_forms.layout import TemplateNameMixin
 from crispy_forms.utils import TEMPLATE_PACK, flatatt
 
+
 class WizardButton(TemplateNameMixin):
 
     template = "%s/layout/button.html"

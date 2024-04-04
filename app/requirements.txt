@@ -3,6 +3,7 @@ annotated-types==0.6.0
 asgiref==3.7.2
 beautifulsoup4==4.12.3
 billiard==4.2.0
+black==24.3.0
 bleach==5.0.0
 boto3==1.34.60
 botocore==1.34.60
@@ -67,15 +68,18 @@ jmespath==1.0.1
 kombu==5.3.5
 lxml==5.1.0
 MarkupPy==1.14
+mypy-extensions==1.0.0
 mysqlclient==2.2.4
 numpy==1.26.4
 odfpy==1.4.1
 openpyxl==3.1.2
 packaging==24.0
 pandas==2.2.1
+pathspec==0.12.1
 phonenumbers==8.13.31
 pillow==10.2.0
 pip-tools==7.4.1
+platformdirs==4.2.0
 prompt-toolkit==3.0.43
 psycopg2==2.9.9
 psycopg2-binary==2.9.9
