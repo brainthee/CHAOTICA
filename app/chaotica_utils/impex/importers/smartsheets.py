@@ -5,8 +5,7 @@ from django.utils import timezone
 from datetime import time
 from io import StringIO
 from pprint import pprint
-from chaotica_utils.models import User, Group, UserSkillRatings
-from chaotica_utils.enums import UnitRoles
+from chaotica_utils.models import User
 from jobtracker.enums import TimeSlotDeliveryRole, DefaultTimeSlotTypes
 from jobtracker.models import (
     TimeSlot,
@@ -16,11 +15,6 @@ from jobtracker.models import (
     Phase,
     OrganisationalUnit,
     Client,
-    Contact,
-    Skill,
-    SkillCategory,
-    OrganisationalUnitMember,
-    UserSkill,
 )
 
 

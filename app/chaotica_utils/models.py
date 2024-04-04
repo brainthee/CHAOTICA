@@ -1,7 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, Permission
 from django.templatetags.static import static
-import uuid, os, random
+import uuid
+import os
 from .managers import SystemNoteManager
 from .enums import GlobalRoles, LeaveRequestTypes, NotificationTypes
 from django.contrib.contenttypes.models import ContentType
@@ -25,7 +26,6 @@ from business_duration import businessDuration
 from constance import config
 from django.template.loader import render_to_string
 from django.core.mail import send_mail
-from django.utils.timezone import is_aware, make_aware
 
 
 def get_sentinel_user():
@@ -834,7 +834,7 @@ class LeaveRequest(models.Model):
             self.send_approved_notification()
 
     def decline(self, declined_by):
-        from jobtracker.models.timeslot import TimeSlot
+        pass
 
         if self.authorised or self.cancelled:
             # Can't decline at this stage

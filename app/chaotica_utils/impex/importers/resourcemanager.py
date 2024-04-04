@@ -1,6 +1,7 @@
 from chaotica_utils.impex.baseImporter import BaseImporter
 from structlog import wrap_logger
-import logging, json, re
+import logging
+import json
 from django.utils import timezone
 from django.conf import settings
 from datetime import time
@@ -8,16 +9,8 @@ from io import StringIO
 from pprint import pprint
 from chaotica_utils.models import User, Group, UserSkillRatings
 from chaotica_utils.enums import UnitRoles
-from jobtracker.enums import TimeSlotDeliveryRole, DefaultTimeSlotTypes
 from jobtracker.models import (
-    TimeSlot,
-    TimeSlotType,
-    Service,
-    Job,
-    Phase,
     OrganisationalUnit,
-    Client,
-    Contact,
     Skill,
     SkillCategory,
     OrganisationalUnitMember,

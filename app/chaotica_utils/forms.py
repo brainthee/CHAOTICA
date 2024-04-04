@@ -4,26 +4,17 @@ from django import forms
 from .models import LeaveRequest, User, Group, UserInvitation
 from crispy_forms.helper import FormHelper
 from crispy_forms.bootstrap import (
-    FormActions,
-    PrependedText,
-    FieldWithButtons,
     StrictButton,
-    InlineField,
-    Accordion,
-    AccordionGroup,
 )
-from crispy_forms.layout import Layout, Row, Column, Field, Div, Submit, Button, HTML
+from crispy_forms.layout import Layout, Row, Column, Field, Div, HTML
 from crispy_bootstrap5.bootstrap5 import FloatingField
 
 # from constance.forms import ConstanceForm
 from constance.admin import ConstanceForm
-from .impex.baseImporter import BaseImporter
 from dal import autocomplete
 import pytz
-from constance import config
 from django.conf import settings
 from bootstrap_datepicker_plus.widgets import (
-    TimePickerInput,
     DatePickerInput,
     DateTimePickerInput,
 )
@@ -630,7 +621,6 @@ class ProfileBasicForm(forms.ModelForm):
                 Handles case when we are updating the user profile
                 and do not supply a new avatar
                 """
-                pass
 
         return profile_image
 

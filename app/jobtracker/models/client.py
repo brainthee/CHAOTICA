@@ -9,7 +9,6 @@ from phone_field import PhoneField
 from chaotica_utils.models import Note
 from decimal import Decimal
 from django_bleach.models import BleachField
-from constance import config
 from django.db.models.functions import Lower
 
 

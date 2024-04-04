@@ -4,17 +4,12 @@ from django.http import (
     HttpResponseRedirect,
     HttpResponseBadRequest,
     JsonResponse,
-    HttpResponseForbidden,
 )
 from django.template import loader
 from django.db.models import Q
-from django.conf import settings
-from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
-from guardian.core import ObjectPermissionChecker
+from django.contrib.auth.mixins import UserPassesTestMixin
 from guardian.shortcuts import get_objects_for_user
-from guardian.decorators import permission_required_or_403
 from ..decorators import unit_permission_required_or_403
-from guardian.mixins import PermissionRequiredMixin
 from ..mixins import UnitPermissionRequiredMixin
 from django.views import View
 from django.views.generic.list import ListView
@@ -33,7 +28,6 @@ from ..models import (
     OrganisationalUnit,
     WorkflowTask,
     Contact,
-    FrameworkAgreement,
 )
 from ..forms import (
     ScopeInlineForm,
@@ -49,7 +43,6 @@ from ..forms import (
 from ..enums import JobStatuses, TimeSlotDeliveryRole, DefaultTimeSlotTypes
 from .helpers import _process_assign_user, _process_assign_contact
 import logging
-from django.utils.html import format_html
 
 
 logger = logging.getLogger(__name__)

@@ -1,10 +1,7 @@
 from django.http import (
     HttpResponseForbidden,
-    JsonResponse,
     HttpResponse,
     HttpResponseRedirect,
-    Http404,
-    HttpResponseBadRequest,
 )
 from django.utils.deprecation import MiddlewareMixin
 from django.shortcuts import reverse, redirect

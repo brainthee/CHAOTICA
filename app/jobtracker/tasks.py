@@ -4,7 +4,6 @@ from celery.utils.log import get_task_logger
 from django.db.models import Q
 from .enums import PhaseStatuses
 from .models.phase import Phase
-from django.utils import timezone
 
 
 logger = get_task_logger("tasks")

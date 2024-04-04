@@ -1,12 +1,7 @@
-from datetime import date, timedelta
-from celery import shared_task, current_task
-from celery import Celery
-from celery.result import AsyncResult
+from celery import shared_task
 from celery.utils.log import get_task_logger
-from django.db.models import Q
 from django_countries import countries
 from django.utils import timezone
-import pandas as pd
 import holidays
 
 

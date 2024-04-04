@@ -8,7 +8,6 @@ from django.urls import reverse_lazy
 from chaotica_utils.views import ChaoticaBaseView
 from chaotica_utils.utils import AppNotification, NotificationTypes
 from chaotica_utils.tasks import task_send_notifications
-from chaotica_utils.enums import UnitRoles
 from chaotica_utils.models import User
 from ..models import (
     OrganisationalUnit,

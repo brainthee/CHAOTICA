@@ -23,11 +23,10 @@ from .models import (
     OrganisationalUnitRole,
 )
 from chaotica_utils.models import Note, User
-from django.db.models import Q
 from .enums import DefaultTimeSlotTypes, JobStatuses, PhaseStatuses
 from crispy_forms.helper import FormHelper
-from crispy_forms.bootstrap import StrictButton, Accordion, AccordionGroup
-from crispy_forms.layout import Layout, Row, Column, Field, Div, HTML, Submit, Reset
+from crispy_forms.bootstrap import StrictButton
+from crispy_forms.layout import Layout, Row, Column, Field, Div, HTML, Submit
 from crispy_bootstrap5.bootstrap5 import FloatingField
 from dal import autocomplete, forward
 from chaotica_utils.enums import UnitRoles

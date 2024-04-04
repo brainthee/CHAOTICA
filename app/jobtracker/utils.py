@@ -7,7 +7,6 @@ from django.http import HttpResponseForbidden, HttpResponseNotFound
 from django.shortcuts import render
 from guardian.conf import settings as guardian_settings
 from .models import Job, Phase, OrganisationalUnit
-from chaotica_utils.enums import UnitRoles
 
 logger = logging.getLogger(__name__)
 abspath = lambda *p: os.path.abspath(os.path.join(*p))
