@@ -1,0 +1,2 @@
+* * * * * exec /bin/bash -c ". /run/supervisord.env; cd /app; python3 ./manage.py runcrons >> /app/cron.sourced_environment.log"
+

@@ -79,9 +79,32 @@ class Notification(models.Model):
     message = models.TextField(default="")
     link = models.URLField(blank=True, null=True)
     is_read = models.BooleanField(default=False)
+    email_template = models.CharField(max_length=255, default="")
+    is_emailed = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["-timestamp"]
+
+    def send_email(self):
+        context = {}
+        context["SITE_DOMAIN"] = settings.SITE_DOMAIN
+        context["SITE_PROTO"] = settings.SITE_PROTO
+        context["title"] = self.title
+        context["message"] = self.message
+        context["icon"] = self.icon
+        context["action_link"] = self.link
+        context["user"] = self.user
+        msg_html = render_to_string(self.email_template, context)
+        if send_mail(
+                self.title,
+                self.message,
+                None,
+                [self.user.email],
+                html_message=msg_html,
+            ) > 0:
+            self.is_emailed = True
+            self.save()
+
 
 
 class Group(django.contrib.auth.models.Group):
@@ -753,6 +776,7 @@ class LeaveRequest(models.Model):
     EMAIL_TEMPLATE = "emails/leave.html"
 
     def send_request_notification(self):
+        from chaotica_utils.utils import AppNotification
         # Send a notice to... people?!
         users_to_notify = self.can_approve_by()
         notice = AppNotification(
@@ -766,6 +790,7 @@ class LeaveRequest(models.Model):
         task_send_notifications(notice, users_to_notify)
 
     def send_approved_notification(self):
+        from chaotica_utils.utils import AppNotification
         # Send a notice to... people?!
         users_to_notify = [self.user]
         notice = AppNotification(
@@ -781,6 +806,7 @@ class LeaveRequest(models.Model):
         task_send_notifications(notice, users_to_notify)
 
     def send_declined_notification(self):
+        from chaotica_utils.utils import AppNotification
         # Send a notice to... people?!
         users_to_notify = [self.user]
         notice = AppNotification(
@@ -798,6 +824,7 @@ class LeaveRequest(models.Model):
         task_send_notifications(notice, users_to_notify)
 
     def send_cancelled_notification(self):
+        from chaotica_utils.utils import AppNotification
         # Send a notice to... people?!
         users_to_notify = [self.user]
         notice = AppNotification(

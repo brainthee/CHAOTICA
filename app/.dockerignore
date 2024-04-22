@@ -1,3 +1,5 @@
 .venv
 .git
 .gitignore
+db.sqlite3
+.scannerwork

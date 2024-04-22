@@ -1,6 +1,4 @@
-{!README.md!}
-
-# Welcome to CHAOTICA's documentation!
+# Introduction
 
 CHAOTICA stands for: **C**entralised **H**ub for **A**ssigning **O**perational **T**asks, **I**nteractive **C**alendaring and **A**lerts. Thanks ChatGPT for the backronym!
 
