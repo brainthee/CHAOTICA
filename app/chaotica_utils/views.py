@@ -104,7 +104,7 @@ def is_ajax(request):
 @staff_member_required
 @require_safe
 def update_holidays(request):
-    task_update_holidays()
+    task_update_holidays.do(request)
     return HttpResponse()
     return HttpResponseRedirect(reverse("home"))
 

@@ -2,7 +2,9 @@ from pathlib import Path
 import os
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
+from dotenv import load_dotenv
 
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -71,18 +73,6 @@ EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", default=True)
 DEFAULT_FROM_EMAIL = os.environ.get(
     "DEFAULT_FROM_EMAIL", default="CHAOTICA <notifications@chaotica.app>"
 )
-
-# Celery Configuration Options
-CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", default="amqp://localhost")
-CELERY_ACCEPT_CONTENT = ["json", "pickle"]
-CELERY_TASK_SERIALIZER = "json"
-CELERY_RESULT_SERIALIZER = "json"
-CELERY_TIMEZONE = os.environ.get("TZ", default="Europe/London")
-CELERY_TASK_TRACK_STARTED = True
-CELERY_TASK_TIME_LIMIT = 30 * 60
-CELERY_RESULT_BACKEND = "django-db"
-CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
-
 
 GLOBAL_GROUP_PREFIX = "Global: "
 
@@ -254,8 +244,6 @@ THIRD_PARTY_APPS = [
     "tinymce",
     "django_bleach",
     "django_fsm",
-    "django_celery_results",
-    "django_celery_beat",
     "phonenumber_field",
     "simple_history",
     "rest_framework",
@@ -266,6 +254,7 @@ THIRD_PARTY_APPS = [
     "bootstrap_datepicker_plus",
     "location_field.apps.DefaultConfig",
     "storages",
+    "django_cron",
 ]
 LOCAL_APPS = [
     "chaotica_utils",
@@ -304,6 +293,17 @@ BLEACH_ALLOWED_STYLES = [
 # Which protocols (and pseudo-protocols) are allowed in 'src' attributes
 # (assuming src is an allowed attribute)
 BLEACH_ALLOWED_PROTOCOLS = ["http", "https", "data"]
+
+CRON_CLASSES = [
+    "chaotica_utils.tasks.task_update_holidays",
+    "chaotica_utils.tasks.task_send_email_notifications",
+    "chaotica_utils.tasks.task_sync_global_permissions",
+    "chaotica_utils.tasks.task_sync_role_permissions_to_default",
+    "chaotica_utils.tasks.task_sync_role_permissions",
+
+    "jobtracker.tasks.task_progress_workflows",
+    "jobtracker.tasks.task_fire_job_notifications",
+]
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (

@@ -1773,6 +1773,7 @@ class Migration(migrations.Migration):
                         auto_created=True,
                         primary_key=True,
                         serialize=False,
+                        default=1,
                         verbose_name="ID",
                     ),
                 ),

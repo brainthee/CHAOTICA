@@ -1,6 +1,7 @@
 #!/bin/sh
 
 cd /app 
+env > /run/chaotica.env
 
 if [ "$DATABASE" = "postgres" ]
 then
@@ -13,7 +14,8 @@ then
     echo "PostgreSQL started"
 fi
 
-python3 manage.py migrate --noinput
-python3 manage.py collectstatic --noinput
+sudo -Eu chaotica -- python3 manage.py migrate --noinput
+sudo -Eu chaotica -- python3 manage.py collectstatic --noinput
+sudo -Eu chaotica -- /usr/bin/crontab /crontab.txt
 
 exec "$@"
