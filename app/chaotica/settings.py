@@ -52,7 +52,7 @@ AUTH_ADFS = {
     "GROUPS_CLAIM": None,
     "MIRROR_GROUPS": False,
     "USERNAME_CLAIM": "upn",
-    "TENANT_ID": os.environ.get("ADFS_TENANT", default="xx"),
+    "TENANT_ID": os.environ.get("ADFS_TENANT_ID", default="xx"),
     "RELYING_PARTY_ID": os.environ.get("ADFS_CLIENT_ID", default="xx"),
     "LOGIN_EXEMPT_URLS": [
         "quote",
