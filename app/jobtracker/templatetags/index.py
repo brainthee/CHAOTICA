@@ -59,6 +59,12 @@ def get_range_from_one(number):
 
 
 @register.simple_tag
+def get_range_from_zero(number):
+    rng = range(0, number + 1, 1)
+    return rng
+
+
+@register.simple_tag
 def py_date_to_js_date(date):
     if date:
         if isinstance(date, datetime.datetime):

@@ -250,14 +250,14 @@ class Job(models.Model):
 
     # General engagement info
     additional_kit_required = models.BooleanField(
-        "Additional kit required", default=False
+        "Additional kit required", null=True
     )
     additional_kit_info = BleachField(null=True, blank=True)
     kit_sourced_by_client = models.BooleanField(default=False)
 
     # Restrictions
     is_restricted = models.BooleanField(
-        "Is the engagement Protectively Marked", default=False
+        "Is the engagement Protectively Marked", null=True
     )
     restricted_detail = models.IntegerField(
         "GSC level", choices=RestrictedClassifications.CHOICES, null=True, blank=True

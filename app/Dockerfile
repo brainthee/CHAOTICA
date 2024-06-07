@@ -4,7 +4,6 @@ LABEL maintainer="Adrian Lewis <brainthee@gmail.com>"
 
 ARG UID=1000
 ARG GID=1000
-EXPOSE 8000
 
 # set environment variables
 ENV DEBIAN_FRONTEND noninteractive
@@ -14,6 +13,9 @@ ENV PYTHONPATH .
 ENV PIP_DISABLE_PIP_VERSION_CHECK 1
 ENV LANG C.UTF-8
 ENV LC_ALL C.UTF-8
+# set default port for gunicorn
+ENV PORT=8000
+EXPOSE ${PORT}
 
 # set work directory
 WORKDIR /app
