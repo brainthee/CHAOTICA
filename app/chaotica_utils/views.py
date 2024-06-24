@@ -377,7 +377,11 @@ def notifications_feed(request):
     data["notifications"] = []
     notifications = Notification.objects.none()
 
-    if request.user.is_authenticated and is_ajax(request):
+    if not request.user.is_authenticated:
+        # Return an explicit 403 error to allow JS to redir
+        return HttpResponseForbidden()
+
+    if is_ajax(request):
         notifications = Notification.objects.filter(user=request.user)
         for notice in notifications:
             data["notifications"].append(
