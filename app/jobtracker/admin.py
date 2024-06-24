@@ -59,24 +59,58 @@ class OrganisationalUnitAdmin(GuardedModelAdmin):
 class SkillInline(admin.TabularInline):
     model = Skill
     extra = 1
-
-
-@admin.register(SkillCategory)
-class SkillCategoryAdmin(admin.ModelAdmin):
+class SkillCategoryResource(resources.ModelResource):
+    class Meta:
+        model = SkillCategory
+class SkillCategoryAdmin(ImportExportModelAdmin):
+    resource_classes = [SkillCategoryResource]
     inlines = [SkillInline]
+admin.site.register(SkillCategory, SkillCategoryAdmin)
 
 
 admin.site.register(TimeSlotType)
-admin.site.register(Service)
+
+
+class ServiceResource(resources.ModelResource):
+    class Meta:
+        model = Service
+class ServiceAdmin(ImportExportModelAdmin):
+    resource_classes = [ServiceResource]
+admin.site.register(Service, ServiceAdmin)
+
 admin.site.register(TimeSlot, SimpleHistoryAdmin)
 admin.site.register(WorkflowTask)
 admin.site.register(BillingCode)
 admin.site.register(Feedback)
 admin.site.register(OrganisationalUnitRole)
 
-admin.site.register(AwardingBody)
+#### Quals
+class AwardingBodyResource(resources.ModelResource):
+    class Meta:
+        model = AwardingBody
+class AwardingBodyAdmin(ImportExportModelAdmin):
+    resource_classes = [AwardingBodyResource]
+admin.site.register(AwardingBody, AwardingBodyAdmin)
+
+class QualificationResource(resources.ModelResource):
+    class Meta:
+        model = Qualification
+class QualificationAdmin(ImportExportModelAdmin):
+    resource_classes = [QualificationResource]
 admin.site.register(Qualification)
+
+class QualificationRecordResource(resources.ModelResource):
+    class Meta:
+        model = QualificationRecord
+class QualificationRecordAdmin(ImportExportModelAdmin):
+    resource_classes = [QualificationRecordResource]
 admin.site.register(QualificationRecord)
+
+class AccreditationResource(resources.ModelResource):
+    class Meta:
+        model = Accreditation
+class AccreditationAdmin(ImportExportModelAdmin):
+    resource_classes = [AccreditationResource]
 admin.site.register(Accreditation)
 
 
