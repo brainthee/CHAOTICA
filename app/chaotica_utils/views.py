@@ -49,6 +49,7 @@ from django.contrib import messages
 from django.shortcuts import get_object_or_404
 from constance import config
 from constance.utils import get_values
+import datetime
 from .tasks import task_update_holidays
 from django.views.decorators.http import (
     require_http_methods,
@@ -63,6 +64,12 @@ def page_defaults(request):
     context = {}
     context["notifications"] = Notification.objects.filter(user=request.user)
     context["config"] = config
+    if django_settings.CHAOTICA_BIRTHDAY.month == datetime.date.today().month and \
+        django_settings.CHAOTICA_BIRTHDAY.day == datetime.date.today().day:
+        
+        context["IS_APP_BIRTHDAY"] = True
+        context["CHAOTICA_BIRTHDAY_YEARS_OLD"] = datetime.date.today().year - django_settings.CHAOTICA_BIRTHDAY.year
+        
     context["DJANGO_ENV"] = django_settings.DJANGO_ENV
     context["DJANGO_VERSION"] = django_settings.DJANGO_VERSION
 

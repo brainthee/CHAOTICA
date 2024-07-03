@@ -3,6 +3,7 @@ import os
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
 from dotenv import load_dotenv
+import datetime
 
 load_dotenv()
 
@@ -73,6 +74,10 @@ EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", default=True)
 DEFAULT_FROM_EMAIL = os.environ.get(
     "DEFAULT_FROM_EMAIL", default="CHAOTICA <notifications@chaotica.app>"
 )
+
+# Development on CHAOTICA started on this day (in a private repo)
+# CHAOTICA_BIRTHDAY = datetime.date(2023, 8, 4)
+CHAOTICA_BIRTHDAY = datetime.date(2023, 6, 21)
 
 GLOBAL_GROUP_PREFIX = "Global: "
 
