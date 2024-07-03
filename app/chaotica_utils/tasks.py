@@ -1,7 +1,36 @@
 from django_cron import CronJobBase, Schedule
+from django.core import management
 from django_countries import countries
+from django.conf import settings as django_settings
 from django.utils import timezone
 import holidays
+
+
+class task_backup_site(CronJobBase):
+    # We want high resiliance so frequent backups!
+    RUN_AT_TIMES = [
+        '6:00', 
+        '8:00', 
+        '9:00', 
+        '10:00', 
+        '11:00', 
+        '12:00', 
+        '13:00', 
+        '14:00', 
+        '15:00', 
+        '16:00', 
+        '17:00', 
+        '18:00', 
+        '19:00', 
+        '21:00', 
+        '00:00' # 'just cause!
+    ]
+    schedule = Schedule(run_at_times=RUN_AT_TIMES)
+    code = 'chaotica_utils.task_backup_site'
+
+    def do(self):
+        if django_settings.DBBACKUP_ENABLED == "1" or django_settings.DBBACKUP_ENABLED:
+            management.call_command('dbbackup')
 
 
 class task_update_holidays(CronJobBase):
