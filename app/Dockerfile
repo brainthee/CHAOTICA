@@ -26,7 +26,7 @@ RUN apt-get upgrade -y
 RUN apt-get install -y build-essential git procps gcc sudo cron
 RUN apt-get install -y python3 python3-dev python3-setuptools
 RUN apt-get install -y python3-pip python3-virtualenv
-RUN apt-get install -y default-libmysqlclient-dev pkg-config libpq-dev 
+RUN apt-get install -y default-libmysqlclient-dev pkg-config libpq-dev mariadb-client
 RUN apt-get install -y nginx supervisor
 
 # Cleanup
