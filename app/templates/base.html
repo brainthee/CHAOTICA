@@ -137,6 +137,7 @@
     <script src="{% static "vendors/leaflet.markercluster/leaflet.markercluster.js" %}"></script>
     <script src="{% static "vendors/leaflet.tilelayer.colorfilter/leaflet-tilelayer-colorfilter.min.js" %}"></script>
     <script src="{% static "vendors/tinymce/tinymce.min.js" %}"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
 
     <script src="{% static "assets/js/phoenix.js" %}"></script>
     <script src="{% static "assets/js/ecommerce-dashboard.js" %}"></script>
@@ -266,6 +267,69 @@
       });
     </script>
     {% endif %}
+
+    {% if IS_APP_BIRTHDAY %}
+    <!-- It's the app's birthday today! Woo! -->
+    <script src="{% static "assets/js/snow.js" %}"></script> 
+    <script>
+      jQuery(document).ready(function($){            
+        var showBirthday = localStorage.showBirthday;
+        if ((showBirthday == "true") || (showBirthday === undefined)) {
+          $('body').flurry({
+            character: ["~"],
+            color: ["#55476A", "#AE3D63", "#DB3853", "#F45C44", "#F8B646"],
+            speed: 2000,
+            height: 480,
+            frequency: 60,
+            small: 12,
+            large: 50,
+            rotation: 90,
+            rotationVariance: 20,
+            startRotation: 90,
+            wind: 10,
+            windVariance: 100,
+            opacityEasing: "cubic-bezier(1,0,.96,.9)"
+          });                  
+          // localStorage.showBirthday = "false";  
+          let timerInterval;
+          Swal.fire({
+            title: "Happy Birthday CHAOTICA!",
+            html: `
+              CHAOTICA turns {{ CHAOTICA_BIRTHDAY_YEARS_OLD }} today!. 
+              <p class="text-secondary fst-italic fs-6">Don't worry though... I'll only show this once <br />🥳🥳🥳</p>
+            `,
+            showClass: {
+              popup: `
+                animate__animated
+                animate__tada
+              `
+            },
+            hideClass: {
+              popup: `
+                animate__animated
+                animate__fadeOutDown
+                animate__faster              `
+            },
+            timer: 15000,
+            timerProgressBar: true,
+            didOpen: () => {
+              Swal.showLoading();
+              const timer = Swal.getPopup().querySelector("b");
+              timerInterval = setInterval(() => {
+                timer.textContent = `${Swal.getTimerLeft()}`;
+              }, 100);
+            },
+            willClose: () => {
+              clearInterval(timerInterval);
+            }
+          }).then((result) => {
+            $('body').flurry('destroy');
+          });
+        }
+      });
+    </script>
+    {% endif %}
+    
     {% endblock footer_javascript_site %}
 
     {% block footer_javascript_section %}{% endblock footer_javascript_section %}
