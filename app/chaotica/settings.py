@@ -260,6 +260,7 @@ THIRD_PARTY_APPS = [
     "location_field.apps.DefaultConfig",
     "storages",
     "django_cron",
+    'dbbackup',  # django-dbbackup
 ]
 LOCAL_APPS = [
     "chaotica_utils",
@@ -299,12 +300,15 @@ BLEACH_ALLOWED_STYLES = [
 # (assuming src is an allowed attribute)
 BLEACH_ALLOWED_PROTOCOLS = ["http", "https", "data"]
 
+DJANGO_CRON_DELETE_LOGS_OLDER_THAN = 14
 CRON_CLASSES = [
     "chaotica_utils.tasks.task_update_holidays",
     "chaotica_utils.tasks.task_send_email_notifications",
     "chaotica_utils.tasks.task_sync_global_permissions",
     "chaotica_utils.tasks.task_sync_role_permissions_to_default",
     "chaotica_utils.tasks.task_sync_role_permissions",
+
+    "chaotica_utils.tasks.task_backup_site",
 
     "jobtracker.tasks.task_progress_workflows",
     "jobtracker.tasks.task_fire_job_notifications",
@@ -406,6 +410,24 @@ USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 
+# Backups
+DBBACKUP_CLEANUP_KEEP = os.environ.get("DBBACKUP_CLEANUP_KEEP", default=60)
+DBBACKUP_CLEANUP_KEEP_MEDIA = os.environ.get("DBBACKUP_CLEANUP_KEEP_MEDIA", default=60)
+
+DBBACKUP_ENABLED = os.environ.get("DBBACKUP_ENABLED", default=False)
+if DBBACKUP_ENABLED == "1" or DBBACKUP_ENABLED:
+    DBBACKUP_STORAGE = os.environ.get("DBBACKUP_STORAGE", default='django.core.files.storage.FileSystemStorage')
+    if "FileSystemStorage" in DBBACKUP_STORAGE:
+        DBBACKUP_STORAGE_OPTIONS = {
+            'location': os.environ.get("DBBACKUP_FS_LOCATION", default='')
+        }
+    if "S3Boto3Storage" in DBBACKUP_STORAGE:
+        DBBACKUP_STORAGE_OPTIONS = {
+            'access_key': os.environ.get("DBBACKUP_S3_AKEY", default=''),
+            'secret_key': os.environ.get("DBBACKUP_S3_SKEY", default=''),
+            'bucket_name': os.environ.get("DBBACKUP_S3_BUCKET_NAME", default=''),
+            'default_acl': os.environ.get("DBBACKUP_S3_DEFAULT_ACL", default=''),
+        }
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/

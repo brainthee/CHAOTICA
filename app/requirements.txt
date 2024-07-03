@@ -10,7 +10,7 @@ boto3==1.34.60
 botocore==1.34.60
 bs4==0.0.2
 build==1.1.1
-business-duration==0.66
+business_duration==0.66
 celery==5.3.6
 certifi==2024.2.2
 cffi==1.16.0
@@ -36,6 +36,7 @@ django-constance==3.1.0
 django-countries==7.5.1
 django-crispy-forms==2.1
 django-cron==0.6.0
+django-dbbackup==4.1.0
 django-filter==24.1
 django-fsm==2.8.1
 django-guardian==2.4.0
