@@ -440,13 +440,23 @@ if USE_S3 == "1" or USE_S3:
     AWS_SECRET_ACCESS_KEY = os.getenv("AWS_STORAGE_SECRET_ACCESS_KEY")
     AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME")
     AWS_DEFAULT_ACL = "public-read"
-    AWS_S3_CUSTOM_DOMAIN = f"{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com"
     AWS_S3_OBJECT_PARAMETERS = {"CacheControl": "max-age=86400"}
-    DEFAULT_FILE_STORAGE = "storages.backends.s3.S3Storage"
-    # s3 static settings
+    if os.getenv("AWS_STORAGE_CLOUDFRONT_DOMAIN", None):
+        # Use CloudFront
+        AWS_S3_CUSTOM_DOMAIN = os.getenv("AWS_STORAGE_CLOUDFRONT_DOMAIN", None)
+        DEFAULT_FILE_STORAGE = 'chaotica.storage.MediaStorage'
+        STATICFILES_STORAGE = 'chaotica.storage.StaticStorage'
+        
+        AWS_CLOUDFRONT_KEY = os.environ.get('AWS_STORAGE_CLOUDFRONT_KEY', None).encode('ascii') 
+        AWS_CLOUDFRONT_KEY_ID = os.environ.get('AWS_STORAGE_CLOUDFRONT_KEY_ID', None)
+    else:
+        # Use S3 directly
+        AWS_S3_CUSTOM_DOMAIN = f"{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com"
+        DEFAULT_FILE_STORAGE = "storages.backends.s3.S3Storage"
+        STATICFILES_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+
     MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/media/"
     STATIC_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/static/"
-    STATICFILES_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
 else:
     MEDIA_URL = "/media/"
     MEDIA_ROOT = os.path.join(BASE_DIR, "mediafiles")
