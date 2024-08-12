@@ -4,6 +4,8 @@ import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
 from dotenv import load_dotenv
 import datetime
+import base64
+
 
 load_dotenv()
 
@@ -441,19 +443,22 @@ if USE_S3 == "1" or USE_S3:
     AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME")
     AWS_DEFAULT_ACL = "public-read"
     AWS_S3_OBJECT_PARAMETERS = {"CacheControl": "max-age=86400"}
+    STATICFILES_LOCATION = 'static'  # staticfiles will be in 'static'
+    AWS_S3_SIGNATURE_VERSION = 's3v4'
+
     if os.getenv("AWS_STORAGE_CLOUDFRONT_DOMAIN", None):
         # Use CloudFront
         AWS_S3_CUSTOM_DOMAIN = os.getenv("AWS_STORAGE_CLOUDFRONT_DOMAIN", None)
-        DEFAULT_FILE_STORAGE = 'chaotica.storage.MediaStorage'
-        STATICFILES_STORAGE = 'chaotica.storage.StaticStorage'
         
-        AWS_CLOUDFRONT_KEY = os.environ.get('AWS_STORAGE_CLOUDFRONT_KEY', None).encode('ascii') 
-        AWS_CLOUDFRONT_KEY_ID = os.environ.get('AWS_STORAGE_CLOUDFRONT_KEY_ID', None)
+        AWS_CLOUDFRONT_KEY = base64.b64decode(os.environ.get('AWS_CLOUDFRONT_KEY', None))
+        AWS_CLOUDFRONT_KEY_ID = os.environ.get('AWS_CLOUDFRONT_KEY_ID', None)
+        DEFAULT_FILE_STORAGE = 'chaotica.custom_storages.MediaStorage'
+        STATICFILES_STORAGE = 'chaotica.custom_storages.StaticStorage'
     else:
         # Use S3 directly
         AWS_S3_CUSTOM_DOMAIN = f"{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com"
-        DEFAULT_FILE_STORAGE = "storages.backends.s3.S3Storage"
-        STATICFILES_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+    DEFAULT_FILE_STORAGE = "storages.backends.s3.S3Storage"
+    STATICFILES_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
 
     MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/media/"
     STATIC_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/static/"
