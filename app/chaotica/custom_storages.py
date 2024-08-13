@@ -8,9 +8,9 @@ class StaticStorage(S3Boto3Storage):
         kwargs['custom_domain'] = settings.AWS_S3_CUSTOM_DOMAIN
         super(StaticStorage, self).__init__(*args, **kwargs)
 
-# class MediaStorage(S3Boto3Storage):
-#     location = settings.MEDIAFILES_LOCATION
+class MediaStorage(S3Boto3Storage):
+    location = settings.MEDIAFILES_LOCATION
 
-#     def __init__(self, *args, **kwargs):
-#         kwargs['custom_domain'] = settings.AWS_S3_CUSTOM_DOMAIN
-#         super(MediaStorage, self).__init__(*args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        kwargs['custom_domain'] = settings.AWS_S3_CUSTOM_DOMAIN
+        super(MediaStorage, self).__init__(*args, **kwargs)
