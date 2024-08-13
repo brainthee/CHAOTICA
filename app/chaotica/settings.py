@@ -454,11 +454,13 @@ if USE_S3 == "1" or USE_S3:
         AWS_CLOUDFRONT_KEY_ID = os.environ.get('AWS_CLOUDFRONT_KEY_ID', None)
         DEFAULT_FILE_STORAGE = 'chaotica.custom_storages.MediaStorage'
         STATICFILES_STORAGE = 'chaotica.custom_storages.StaticStorage'
+        STATICFILES_LOCATION = "static"
+        MEDIAFILES_LOCATION = "media"
     else:
         # Use S3 directly
         AWS_S3_CUSTOM_DOMAIN = f"{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com"
-    DEFAULT_FILE_STORAGE = "storages.backends.s3.S3Storage"
-    STATICFILES_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+        DEFAULT_FILE_STORAGE = "storages.backends.s3.S3Storage"
+        STATICFILES_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
 
     MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/media/"
     STATIC_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/static/"
