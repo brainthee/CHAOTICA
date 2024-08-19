@@ -6,6 +6,12 @@
         <th class="sort white-space-nowrap align-middle ps-0" scope="col" data-sort="projectName" style="width:30%;">
           Name
         </th>
+        <th class="sort white-space-nowrap align-middle ps-0" scope="col" data-sort="projectDesc">
+          Description
+        </th>
+        <th class="sort white-space-nowrap align-middle ps-0" scope="col" data-sort="projectLink" style="width:10%;">
+          Link
+        </th>
         <th class="sort align-middle text-end" scope="col" style="width:10%;">
         </th>
       </tr>
@@ -18,6 +24,18 @@
         <a class="fw-bold fs-0" href="{{ service.get_absolute_url }}">
           {{ service.name }}
         </a>
+      </td>
+
+      <td class="align-middle time white-space-nowrap ps-0 projectDesc">
+        {% if service.description %}
+          {{ service.description }}
+        {% endif %}
+      </td>
+
+      <td class="align-middle time white-space-nowrap ps-0 projectLink">
+        {% if service.link %}
+        <a href="{{ service.link }}">More Info</a>
+        {% endif %}
       </td>
 
       <td class="align-middle text-end white-space-nowrap pe-0 action">

@@ -42,11 +42,12 @@
         {{ form.name|as_crispy_field }}
 
         <div class="row mb-6">
-          <div class="col-12 col-xl-6">
-            <h4 class="mb-3">Service Owners</h4>
-            {{ form.owners|as_crispy_field }}
+          <div class="col-12">
+            <h4 class="mb-3">Description</h4>
+            {{ form.description|as_crispy_field }}
           </div>
-        </div>        
+        </div>    
+      
       </div>
 
       <div class="col-12 col-xl-4">
@@ -54,11 +55,35 @@
           <div class="col-12 g-2 col-xl-12">
             <div class="card mb-3">
               <div class="card-body">
+
                 <div class="row gx-3">
                   <div class="col-12 col-sm-6 col-xl-12">
                     <div class="mb-4">
                       <div class="d-flex flex-wrap mb-2">
-                        <h5 class="mb-0 text-1000 me-2">Required Skills</h5>
+                        <h5 class="mb-0 text-1000 me-2">Service Owners</h5>
+                      </div>
+                      {{ form.owners|as_crispy_field }}
+                      
+                    </div>
+                  </div>
+
+                  <div class="col-12 col-sm-6 col-xl-12">
+                    <div class="mb-4">
+                      <div class="d-flex flex-wrap mb-2">
+                        <h5 class="mb-0 text-1000 me-2">Service Information</h5>
+                      </div>
+                      {{ form.link|as_crispy_field }}
+                      
+                    </div>
+                  </div>
+                </div>
+
+                <div class="row gx-3">
+                  <h4 class="text-center">Skills</h4>
+                  <div class="col-12 col-sm-6 col-xl-12">
+                    <div class="mb-4">
+                      <div class="d-flex flex-wrap mb-2">
+                        <h6 class="mb-0 text-1000 me-2">Required</h6>
                       </div>
                       {{ form.skillsRequired|as_crispy_field }}
                       
@@ -67,13 +92,14 @@
                   <div class="col-12 col-sm-6 col-xl-12">
                     <div class="mb-4">
                       <div class="d-flex flex-wrap mb-2">
-                        <h5 class="mb-0 text-1000 me-2">Desired Skills</h5>
+                        <h6 class="mb-0 text-1000 me-2">Desired</h6>
                       </div>
                       {{ form.skillsDesired|as_crispy_field }}
                       
                     </div>
                   </div>
                 </div>
+
               </div>
             </div>
           </div>

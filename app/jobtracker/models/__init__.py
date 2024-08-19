@@ -1,4 +1,5 @@
-from .common import Link, Service, WorkflowTask, Feedback
+from .common import Link, WorkflowTask, Feedback
+from .service import Service
 from .financial import BillingCode
 from .client import Client, Contact, Address, FrameworkAgreement
 
