@@ -328,7 +328,7 @@ def view_own_profile(request):
     from jobtracker.models import Skill, UserSkill
 
     context = {}
-    skills = Skill.objects.all()
+    skills = Skill.objects.all().order_by('category', 'name')
     languages = Language.objects.all()
     user_skills = UserSkill.objects.filter(user=request.user)
     profile_form = ProfileBasicForm(instance=request.user)
