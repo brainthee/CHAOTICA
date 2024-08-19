@@ -1605,14 +1605,16 @@ class ServiceForm(forms.ModelForm):
         super(ServiceForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
         self.fields["name"].label = False
-        self.fields["owners"].label = False
+        self.fields["description"].label = False
 
+        self.fields["owners"].label = False
+        self.fields["link"].label = False
         self.fields["skillsRequired"].label = False
         self.fields["skillsDesired"].label = False
 
     class Meta:
         model = Service
-        fields = ["name", "owners", "skillsRequired", "skillsDesired"]
+        fields = ["name", "owners", "description", "link", "skillsRequired", "skillsDesired"]
 
 
 class WFTaskForm(forms.ModelForm):

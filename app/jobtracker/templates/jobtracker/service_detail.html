@@ -60,6 +60,22 @@
                           <div class="d-flex bg-info-100 rounded-circle flex-center me-3" style="width:24px; height:24px">
         
                           </div>
+                          <p class="fw-bold mb-0">Service Link</p>
+                        </div>
+                    </td>
+                    <td class="py-2 d-none d-sm-block pe-sm-2">:</td>
+                    <td class="py-2">                          
+                      {% if service.link %}
+                      <a href="{{ service.link }}">{{ service.link }}</a>
+                      {% endif %}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="py-2">
+                        <div class="d-flex align-items-center">
+                          <div class="d-flex bg-info-100 rounded-circle flex-center me-3" style="width:24px; height:24px">
+        
+                          </div>
                           <p class="fw-bold mb-0">Service Owners</p>
                         </div>
                     </td>
@@ -117,7 +133,21 @@
   </div>
 
   <div class="col-4">
-    
+    <div class="card">
+      <div class="card-body">
+        <div class="row align-items-center g-3">
+          <div class="col-12 col-sm-auto flex-1">
+            <h3 class="fw-bolder mb-2 line-clamp-1">
+                Description
+            </h3>
+            {% if service.description %}
+              {{ service.description }}
+            {% endif %}
+          </div>
+        </div>
+
+      </div>
+    </div>
   </div>
 
   <div class="col-4">
