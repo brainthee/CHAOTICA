@@ -92,84 +92,78 @@
                
             </div>
             <div class="card-body p-0">
-                  <table class="table table-responsive mb-0">
-                     <caption>User's Skills</caption>
-                     <thead>
-                        <tr>
-                           <th class="ps-1" colspan="4">
-                              <p class="mb-0 ps-2">Capability</p>
-                           </th>
-                           <th class="ps-1" colspan="4">
-                              <p class="mb-0">Skill</p>
-                           </th>
-                           <th class="text-center">
-                              <p class="mb-0">No Experience</p>
-                           </th>
-                           <th class="text-center">
-                              <p class="mb-0">Can do with support</p>
-                           </th>
-                           <th class="text-center">
-                              <p class="mb-0">Can do alone</p>
-                           </th>
-                           <th class="text-center">
-                              <p class="mb-0 pe-2">Specialist</p>
-                           </th>
-                        </tr>
-                     </thead>
-                     <tbody>
-                        {% for skill in skills %}
-                        {% get_user_skill request.user skill as userSkill %}
-                        <tr>
-                           <td class="ps-2" colspan="4">
-                              <div class="my-auto">
-                                 <span class="text-dark d-block text-sm">
-                                    {{ skill.category }}
-                                 </span>
-                              </div>
-                           </td>
-                           <td class="ps-1" colspan="4">
-                              <div class="my-auto">
-                                 <span class="text-xs font-weight-normal">
-                                    {{ skill.name }}
-                                 </span>
-                              </div>
-                           </td>
-                           <td>
-                              <div class="form-check form-switch mb-0 d-flex align-items-center justify-content-center">
-                                 <input class="form-check-input"
-                                    {% if not userSkill %}checked{% else %}{% endif %}
-                                    value="0"
-                                    checked type="radio" name="{{ skill.slug }}" id="{{ skill.slug }}">
-                              </div>
-                           </td>
-                           <td>
-                              <div class="form-check form-switch mb-0 d-flex align-items-center justify-content-center">
-                                 <input class="form-check-input" 
-                                 {% if userSkill.rating == 1 %}checked{% else %}{% endif %}
-                                    value="1"
-                                    type="radio" name="{{ skill.slug }}" id="{{ skill.slug }}">
-                              </div>
-                           </td>
-                           <td>
-                              <div class="form-check form-switch mb-0 d-flex align-items-center justify-content-center">
-                                 <input class="form-check-input" 
-                                 {% if userSkill.rating == 2 %}checked{% else %}{% endif %}
-                                    value="2"
-                                    type="radio" name="{{ skill.slug }}" id="{{ skill.slug }}">
-                              </div>
-                           </td>
-                           <td>
-                              <div class="form-check form-switch mb-0 d-flex align-items-center justify-content-center">
-                                 <input class="form-check-input" 
-                                 {% if userSkill.rating == 3 %}checked{% else %}{% endif %}
-                                    value="3"
-                                    type="radio" name="{{ skill.slug }}" id="{{ skill.slug }}">
-                              </div>
-                           </td>
-                        </tr>
-                        {% endfor %}
-                     </tbody>
-                  </table>
+               {% regroup skills by category as skillCategories %}
+               {% for category in skillCategories %}
+               <h4 class="ps-3 mt-4 mb-3 text-body-secondary" >{{ category.grouper }}</h4>
+               <table class="table table-responsive mb-0">
+                  <caption>User's Skills</caption>
+                  <thead>
+                     <tr>
+                        <th scope="col" class="col ps-1">
+                           <p class="mb-0">Skill</p>
+                        </th>
+                        <th scope="col" class="col-2 text-center">
+                           <p class="mb-0">No Experience</p>
+                        </th>
+                        <th scope="col" class="col-2 text-center">
+                           <p class="mb-0">Can do with support</p>
+                        </th>
+                        <th scope="col" class="col-2 text-center">
+                           <p class="mb-0">Can do alone</p>
+                        </th>
+                        <th scope="col" class="col-2 text-center">
+                           <p class="mb-0 pe-2">Specialist</p>
+                        </th>
+                     </tr>
+                  </thead>
+                  <tbody>
+                     {% for skill in category.list %}
+                     {% get_user_skill request.user skill as userSkill %}
+                     <tr>
+                        <td class="ps-1">
+                           <div class="my-auto">
+                              <span class="text-xs font-weight-normal">
+                                 <a href="{{ skill.get_absolute_url }}">{{ skill.name }}</a>
+                              </span>
+                           </div>
+                        </td>
+                        <td>
+                           <div class="form-check form-switch mb-0 d-flex align-items-center justify-content-center">
+                              <input class="form-check-input"
+                                 {% if not userSkill %}checked{% else %}{% endif %}
+                                 value="0"
+                                 checked type="radio" name="{{ skill.slug }}" id="{{ skill.slug }}">
+                           </div>
+                        </td>
+                        <td>
+                           <div class="form-check form-switch mb-0 d-flex align-items-center justify-content-center">
+                              <input class="form-check-input" 
+                              {% if userSkill.rating == 1 %}checked{% else %}{% endif %}
+                                 value="1"
+                                 type="radio" name="{{ skill.slug }}" id="{{ skill.slug }}">
+                           </div>
+                        </td>
+                        <td>
+                           <div class="form-check form-switch mb-0 d-flex align-items-center justify-content-center">
+                              <input class="form-check-input" 
+                              {% if userSkill.rating == 2 %}checked{% else %}{% endif %}
+                                 value="2"
+                                 type="radio" name="{{ skill.slug }}" id="{{ skill.slug }}">
+                           </div>
+                        </td>
+                        <td>
+                           <div class="form-check form-switch mb-0 d-flex align-items-center justify-content-center">
+                              <input class="form-check-input" 
+                              {% if userSkill.rating == 3 %}checked{% else %}{% endif %}
+                                 value="3"
+                                 type="radio" name="{{ skill.slug }}" id="{{ skill.slug }}">
+                           </div>
+                        </td>
+                     </tr>
+                     {% endfor %}
+                  </tbody>
+               </table>
+               {% endfor %}
             </div>
          </form>
       </div>
