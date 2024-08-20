@@ -1,130 +1,125 @@
-{% extends "base.html" %}
-{% load menu %}{% load static %}
+{% extends 'base.html' %}
+{% load menu %}
+{% load static %}
 
-{% block pageTitle %}Skills{% endblock pageTitle %}
-{% block head_title %}Skills{% endblock head_title %}
+{% block pageTitle %}
+  Skills
+{% endblock %}
+{% block head_title %}
+  Skills
+{% endblock %}
 
-{% block headerBlock_css %}mb-6{% endblock headerBlock_css %}
+{% block headerBlock_css %}
+  mb-6
+{% endblock %}
 
 {% block breadcrumbItem %}
-<li class="breadcrumb-item active" aria-current="page">Skills</li>
-{% endblock breadcrumbItem %}
+  <li class="breadcrumb-item active" aria-current="page">Skills</li>
+{% endblock %}
 
 {% block content %}
+  {% if request.user.show_help %}
+    <div class="row">
+      <div class="col-lg-12 col-12 mt-4 mt-lg-0">
+        {% include 'help/skill_list.html' %}
+      </div>
+    </div>
+  {% endif %}
 
-{% if request.user.show_help %}
-<div class="row">
-  <div class="col-lg-12 col-12 mt-4 mt-lg-0">
-{% include 'help/skill_list.html' %}
+  <div class="row mb-4 gx-6 gy-3 mt-2 align-items-center">
+    <div class="col">
+      <h2 class="mb-0">Skills</h2>
+    </div>
+    <div class="col-3 d-flex justify-content-end">
+      <a class="btn btn-phoenix-primary px-5" href="{% url 'skill_cat_create' %}">
+        <i class="fa-solid fa-plus me-2"></i>
+        New Skill Category
+      </a>
+    </div>
   </div>
-</div>
-{% endif %}
 
-<div class="row mb-4 gx-6 gy-3 mt-2 align-items-center">
-  <div class="col">
-    <h2 class="mb-0">Skills</h2>
-  </div>
-  <div class="col-3 d-flex justify-content-end">
-    <a class="btn btn-phoenix-primary px-5" href="{% url 'skill_cat_create' %}">
-      <i class="fa-solid fa-plus me-2"></i>
-      New Skill Category
-    </a>
-  </div>
-</div>
-
-<div class="row">
-{% for category in categories %}
-  <div class="col-6 mb-3 g-2">
-     <div class="card">
-        <div class="card-header py-3 px-0 pb-0">
+  <div class="row">
+    {% for category in categories %}
+      <div class="col-6 mb-3 g-2">
+        <div class="card">
+          <div class="card-header py-3 px-0 pb-0">
             <div class="row px-3 justify-content-center align-items-center">
-               <div class="col-sm-auto col-8 my-auto">
-                  <h5>{{ category.name }}</h5>
-               </div>
-               <div class="col-sm-auto ms-sm-auto mb-3 my-auto d-flex">
-                  <a href="{% url 'skill_create' category.slug %}" 
-                     class="btn btn-sm btn-phoenix-primary ms-auto">
-                     New Skill
-                  </a>
-               </div>
+              <div class="col-sm-auto col-8 my-auto">
+                <h5>{{ category.name }}</h5>
+              </div>
+
+              <div class="col-sm-auto ms-sm-auto mb-3 my-auto d-flex">
+               <button class="btn btn-sm btn-phoenix-secondary bg-body-emphasis bg-body-hover action-btn" type="button" data-bs-toggle="dropdown" data-boundary="window" aria-haspopup="true" aria-expanded="false" data-bs-reference="parent">
+                  <span class="fas fa-ellipsis-h" data-fa-transform="shrink-2"></span>
+               </button>
+               <ul class="dropdown-menu dropdown-menu-end" style="">
+                  <li>
+                     <a href="{% url 'skill_create' category.slug %}" class="dropdown-item">New Skill</a>
+                  </li>
+                  <li>
+                     <a href="{% url 'skill_cat_update' category.slug %}" class="dropdown-item">Edit Category</a>
+                  </li>
+                  <li>
+                     <a href="{% url 'skill_cat_delete' category.slug %}" class="dropdown-item text-danger">Delete Category</a>
+                  </li>
+               </ul>
+              </div>
             </div>
 
             <div class="progress rounded-0" style="height: 10px">
-               <div class="progress-bar bg-warning" 
-                  style="width: {{ category.get_users_breakdown_perc.can_do_with_support }}%">
-               </div>
-               <div class="progress-bar bg-success"
-                  style="width: {{ category.get_users_breakdown_perc.can_do_alone }}%">
-               </div>
-               <div class="progress-bar bg-primary"
-                  style="width: {{ category.get_users_breakdown_perc.specialist }}%">
-               </div>
+              <div class="progress-bar bg-warning" style="width: {{ category.get_users_breakdown_perc.can_do_with_support }}%"></div>
+              <div class="progress-bar bg-success" style="width: {{ category.get_users_breakdown_perc.can_do_alone }}%"></div>
+              <div class="progress-bar bg-primary" style="width: {{ category.get_users_breakdown_perc.specialist }}%"></div>
             </div>
-
-        </div>
-        <div class="card-body p-0 ">
+          </div>
+          <div class="card-body p-0">
             <div class="table-responsive scrollbar">
-               <table class="table fs--1 mb-0">
-                  <caption>Skill List</caption>
-                  <thead>
-                     <tr>
-                        <th class="sort border-end white-space-nowrap align-middle ps-3 text-uppercase text-700" scope="col" 
-                           data-sort="contact">
-                           Skill
-                        </th>
-                        <th class="sort border-end align-middle text-end px-3 text-uppercase text-700" scope="col" 
-                           data-sort="appointment">
-                           <div class="d-inline-flex flex-center">
-                              <span class="fa-solid fa-square fs--3 text-warning me-2" data-fa-transform="up-2"></span>
-                              <span class="mb-0 fs--1">With Support</span>
-                           </div>
-                        </th>
-                        <th class="sort border-end align-middle text-end px-3 text-uppercase text-700" scope="col" 
-                           data-sort="qualified">
-                           <div class="d-inline-flex flex-center">
-                              <span class="fa-solid fa-square fs--3 text-success-300 me-2" data-fa-transform="up-2"></span>
-                              <span class="mb-0 fs--1">Can Do Alone</span>
-                           </div>
-                        </th>
-                        <th class="sort border-end align-middle text-end px-3 text-uppercase text-700" scope="col" 
-                           data-sort="closed-won">
-                           <div class="d-inline-flex flex-center">
-                              <span class="fa-solid fa-square fs--3 text-primary me-2" data-fa-transform="up-2"></span>
-                              <span class="mb-0 fs--1">Specialist</span>
-                           </div>
-                        </th>
-                     </tr>
-                  </thead>
-                  <tbody>
-                     {% for skill in category.skills.all %}
-                        <tr class="">
-                           <td class="contact align-middle white-space-nowrap py-2 ps-3 px-3">
-                              <a class="fw-semi-bold" href="{{ skill.get_absolute_url }}">{{ skill.name }}</a>
-                           </td>
-                           <td class="appointment align-middle white-space-nowrap text-end fw-semi-bold text-900 py-2 px-3">
-                              {{ skill.get_users_can_do_with_support | length }}
-                           </td>
-                           <td class="qualified align-middle white-space-nowrap text-end fw-semi-bold text-900 py-2 px-3">
-                              {{ skill.get_users_can_do_alone | length }}
-                           </td>
-                           <td class="closed-won align-middle white-space-nowrap text-end fw-semi-bold text-900 py-2 px-3">
-                              {{ skill.get_users_specialist | length }}
-                           </td>
-                        </tr>
-                     {% endfor %}
-                  </tbody>
-               </table>
-             </div>
-         </div>
-     </div>
+              <table class="table fs--1 mb-0">
+                <caption>Skill List</caption>
+                <thead>
+                  <tr>
+                    <th class="sort border-end white-space-nowrap align-middle ps-3 text-uppercase text-700" scope="col" data-sort="contact">Skill</th>
+                    <th class="sort border-end align-middle text-end px-3 text-uppercase text-700" scope="col" data-sort="appointment">
+                      <div class="d-inline-flex flex-center">
+                        <span class="fa-solid fa-square fs--3 text-warning me-2" data-fa-transform="up-2"></span>
+                        <span class="mb-0 fs--1">With Support</span>
+                      </div>
+                    </th>
+                    <th class="sort border-end align-middle text-end px-3 text-uppercase text-700" scope="col" data-sort="qualified">
+                      <div class="d-inline-flex flex-center">
+                        <span class="fa-solid fa-square fs--3 text-success-300 me-2" data-fa-transform="up-2"></span>
+                        <span class="mb-0 fs--1">Can Do Alone</span>
+                      </div>
+                    </th>
+                    <th class="sort border-end align-middle text-end px-3 text-uppercase text-700" scope="col" data-sort="closed-won">
+                      <div class="d-inline-flex flex-center">
+                        <span class="fa-solid fa-square fs--3 text-primary me-2" data-fa-transform="up-2"></span>
+                        <span class="mb-0 fs--1">Specialist</span>
+                      </div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for skill in category.skills.all %}
+                    <tr class="">
+                      <td class="contact align-middle white-space-nowrap py-2 ps-3 px-3">
+                        <a class="fw-semi-bold" href="{{ skill.get_absolute_url }}">{{ skill.name }}</a>
+                      </td>
+                      <td class="appointment align-middle white-space-nowrap text-end fw-semi-bold text-900 py-2 px-3">{{ skill.get_users_can_do_with_support|length }}</td>
+                      <td class="qualified align-middle white-space-nowrap text-end fw-semi-bold text-900 py-2 px-3">{{ skill.get_users_can_do_alone|length }}</td>
+                      <td class="closed-won align-middle white-space-nowrap text-end fw-semi-bold text-900 py-2 px-3">{{ skill.get_users_specialist|length }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% empty %}
+      <div class="alert alert-phoenix-info" role="alert">
+        <strong>No Categories!</strong> Add some to begin managing skills.
+      </div>
+    {% endfor %}
   </div>
-
-{% empty %}
-
-<div class="alert alert-phoenix-info" role="alert">
-   <strong>No Categories!</strong> Add some to begin managing skills.
-</div>
-
-{% endfor %}
-</div>
-{% endblock content %}
+{% endblock %}
