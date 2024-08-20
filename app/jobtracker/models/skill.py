@@ -133,7 +133,7 @@ class Skill(models.Model):
 
 
 class UserSkill(models.Model):
-    skill = models.ForeignKey(Skill, related_name="users", on_delete=models.PROTECT)
+    skill = models.ForeignKey(Skill, related_name="users", on_delete=models.CASCADE)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         limit_choices_to=(models.Q(is_active=True)),
