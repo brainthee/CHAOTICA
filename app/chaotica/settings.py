@@ -96,6 +96,9 @@ CONSTANCE_CONFIG = {
     ),
     "REGISTRATION_ENABLED": (True, "Should we allow self-registration?"),
     "LOCAL_LOGIN_ENABLED": (True, "Should we allow logging in via local user?"),
+    # Support
+    "SUPPORT_DOC_URL": ("https://docs.chaotica.app/en/latest/", "URL to Documentation"),
+    "SUPPORT_MAILBOX": ("https://github.com/brainthee/CHAOTICA/issues", "URL to request support"),
     # Invite
     "INVITE_ENABLED": (True, "Should we allow inviting users?"),
     "USER_INVITE_EXPIRY": (7, "How long until invites expire"),
