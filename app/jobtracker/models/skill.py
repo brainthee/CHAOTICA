@@ -9,6 +9,7 @@ from django.db.models.functions import Lower
 
 class SkillCategory(models.Model):
     name = models.CharField(max_length=200)
+    description = models.TextField(help_text="A short description of the category", default="")
     slug = models.SlugField(null=False, default="", unique=True)
 
     def __str__(self):
@@ -73,6 +74,7 @@ class SkillCategory(models.Model):
 
 class Skill(models.Model):
     name = models.CharField(max_length=200)
+    description = models.TextField(help_text="A short description of the skill", default="")
     category = models.ForeignKey(
         SkillCategory, related_name="skills", on_delete=models.CASCADE
     )

@@ -1,32 +1,38 @@
-{% extends "base.html" %}
-{% load menu %}{% load static %}
+{% extends 'base.html' %}
+{% load menu %}
+{% load static %}
 {% load widget_tweaks %}
 {% load crispy_forms_tags %}
 
-{% block pageTitle %}Skill Category{% endblock pageTitle %}
-{% block head_title %}Skill Category{% endblock head_title %}
-
+{% block pageTitle %}
+  Skill Category
+{% endblock %}
+{% block head_title %}
+  Skill Category
+{% endblock %}
 
 {% block breadcrumbItem %}
-<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{% url 'skill_list' %}">Skills</a></li>
-<li class="breadcrumb-item text-sm text-dark active" aria-current="page">Category</li>
-{% endblock breadcrumbItem %}
+  <li class="breadcrumb-item text-sm">
+    <a class="opacity-50 text-dark" href="{% url 'skill_list' %}">Skills</a>
+  </li>
+  <li class="breadcrumb-item text-sm text-dark active" aria-current="page">Category</li>
+{% endblock %}
 
 {% block content %}
-<div class="mt-3">
-  <form method="post">
-    {% csrf_token %}
-    {{ form.media }}
+  <div class="mt-3">
+    <form method="post">
+      {% csrf_token %}
+      {{ form.media }}
 
       <div class="row g-3 flex-between-end mb-5">
         <div class="col-auto">
-            <h2 class="mb-2">
-                {% if form.instance.pk %}
-                Edit Skill Category
-                {% else %}
-                Add New Skill Category
-                {% endif %}
-            </h2>
+          <h2 class="mb-2">
+            {% if form.instance.pk %}
+              Edit Skill Category
+            {% else %}
+              Add New Skill Category
+            {% endif %}
+          </h2>
         </div>
         <div class="col-auto">
           <button class="btn btn-phoenix-secondary me-2 mb-2 mb-sm-0" type="button">Discard</button>
@@ -34,14 +40,19 @@
         </div>
       </div>
 
-
       <div class="row g-5">
         <div class="col-12 col-xl-8">
           <h4 class="mb-3">Name</h4>
-          {{ form.name|as_crispy_field }}      
+          {{ form.name|as_crispy_field }}
         </div>
       </div>
-  </form>
-</div>
 
-{% endblock content %}
+      <div class="row g-5">
+        <div class="col-12 col-xl-8">
+          <h4 class="mb-3">Description</h4>
+          {{ form.description|as_crispy_field }}
+        </div>
+      </div>
+    </form>
+  </div>
+{% endblock %}

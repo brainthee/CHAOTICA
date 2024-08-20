@@ -1614,7 +1614,14 @@ class ServiceForm(forms.ModelForm):
 
     class Meta:
         model = Service
-        fields = ["name", "owners", "description", "link", "skillsRequired", "skillsDesired"]
+        fields = [
+            "name",
+            "owners",
+            "description",
+            "link",
+            "skillsRequired",
+            "skillsDesired",
+        ]
 
 
 class WFTaskForm(forms.ModelForm):
@@ -1644,10 +1651,11 @@ class SkillForm(forms.ModelForm):
         super(SkillForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
         self.fields["name"].label = False
+        self.fields["description"].label = False
 
     class Meta:
         model = Skill
-        fields = ["name"]
+        fields = ["name", "description"]
 
 
 class SkillCatForm(forms.ModelForm):
@@ -1656,10 +1664,11 @@ class SkillCatForm(forms.ModelForm):
         super(SkillCatForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
         self.fields["name"].label = False
+        self.fields["description"].label = False
 
     class Meta:
         model = SkillCategory
-        fields = ["name"]
+        fields = ["name", "description"]
 
 
 class JobSupportTeamRoleForm(forms.ModelForm):
