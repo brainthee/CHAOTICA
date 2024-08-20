@@ -1,175 +1,150 @@
-{% extends "base.html" %}
-{% load menu %}{% load static %}
+{% extends 'base.html' %}
+{% load menu %}
+{% load static %}
 
-{% block pageTitle %}{{ skill }}{% endblock pageTitle %}
-{% block head_title %}{{ skill }}{% endblock head_title %}
-
+{% block pageTitle %}
+  {{ skill }}
+{% endblock %}
+{% block head_title %}
+  {{ skill }}
+{% endblock %}
 
 {% block breadcrumbItem %}
-<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{% url 'skill_list' %}">Skills</a></li>
-<li class="breadcrumb-item text-sm opacity-50 text-dark">{{ skill.category }}</li>
-<li class="breadcrumb-item text-sm text-dark active" aria-current="page">{{ skill.name }}</li>
-{% endblock breadcrumbItem %}
+  <li class="breadcrumb-item text-sm">
+    <a class="opacity-50 text-dark" href="{% url 'skill_list' %}">Skills</a>
+  </li>
+  <li class="breadcrumb-item text-sm opacity-50 text-dark">{{ skill.category }}</li>
+  <li class="breadcrumb-item text-sm text-dark active" aria-current="page">{{ skill.name }}</li>
+{% endblock %}
 
-{% block content_classes %}pt-15 px-0 {% endblock content_classes %}
-{% block breadcrumb_classes %}px-5{% endblock breadcrumb_classes %}
+{% block content_classes %}
+  pt-15 px-0
+{% endblock %}
+{% block breadcrumb_classes %}
+  px-5
+{% endblock %}
 
 {% block content %}
-
-<div class="row px-5">
-  <div class="col-12">
-    <div class="row align-items-center justify-content-between g-3 mt-0 mb-0">
-      <div class="col-6 col-md-auto">
-        <h2 class="mb-2">
-            Skill Detail
-        </h2>
-      </div>
-
-      <div class="col-md-auto">
-        <div class="d-flex">
-            <a href="{% url 'skill_update' skill.slug %}" class="btn btn-outline-secondary ms-auto">
-            Edit
-            </a>
+  <div class="row px-5">
+    <div class="col-12">
+      <div class="row align-items-center justify-content-between g-3 mt-0 mb-0">
+        <div class="col-6 col-md-auto">
+          <h2 class="mb-2">Skill Detail</h2>
         </div>
-      </div>
-    </div>
-  </div>
-</div>
 
-
-<div class="row justify-content-between ms-3 me-3 g-3 mt-0 mb-0">
-  <div class="col-4">
-    <div class="card">
-      <div class="card-body">
-        <div class="row align-items-center g-3">
-          <div class="col-12 col-sm-auto flex-1">
-            <h3 class="fw-bolder mb-2 line-clamp-1">
-                {{ skill.name }}
-            </h3>
-
-            <table class="w-100 table-stats table-stats">
-              <caption>Skill Info</caption>
-              <tbody>
-                  <tr>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                  </tr>
-                  <tr>
-                    <td class="py-2">
-                        <div class="d-flex align-items-center">
-                          <div class="d-flex bg-info-100 rounded-circle flex-center me-3" style="width:24px; height:24px">
-        
-                          </div>
-                          <p class="fw-bold mb-0">Category</p>
-                        </div>
-                    </td>
-                    <td class="py-2 d-none d-sm-block pe-sm-2">:</td>
-                    <td class="py-2">
-                        <p class="ps-6 ps-sm-0 fw-semi-bold mb-0">
-                          {{ skill.category }}
-                        </p>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td class="py-2">
-                        <div class="d-flex align-items-center">
-                          <div class="d-flex bg-info-100 rounded-circle flex-center me-3" style="width:24px; height:24px">
-        
-                          </div>
-                          <p class="fw-bold mb-0">Services Required For</p>
-                        </div>
-                    </td>
-                    <td class="py-2 d-none d-sm-block pe-sm-2">:</td>
-                    <td class="py-2">
-                        <p class="ps-6 ps-sm-0 fw-semi-bold mb-0">
-                            
-                        </p>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td class="py-2">
-                        <div class="d-flex align-items-center">
-                          <div class="d-flex bg-info-100 rounded-circle flex-center me-3" style="width:24px; height:24px">
-        
-                          </div>
-                          <p class="fw-bold mb-0">Services Desired For</p>
-                        </div>
-                    </td>
-                    <td class="py-2 d-none d-sm-block pe-sm-2">:</td>
-                    <td class="py-2">
-                        <p class="ps-6 ps-sm-0 fw-semi-bold mb-0">
-                            
-                        </p>
-                    </td>
-                  </tr>
-              </tbody>
-            </table>
-
-
-
+        <div class="col-md-auto">
+          <div class="d-flex">
+            {% if perms.chaotica.change_skill %}
+            <a href="{% url 'skill_update' skill.slug %}" class="btn btn-outline-secondary ms-auto m-1">Edit</a>
+            {% endif %}
+            {% if perms.chaotica.delete_skill %}
+            <a href="{% url 'skill_delete' skill.slug %}" class="btn btn-outline-danger ms-auto m-1">Delete</a>  
+            {% endif %}          
           </div>
         </div>
-
       </div>
     </div>
   </div>
 
-  <div class="col-4">
-    
-  </div>
+  <div class="row justify-content-between ms-3 me-3 g-3 mt-0 mb-0">
+    <div class="col-4">
+      <div class="card">
+        <div class="card-body">
+          <div class="row align-items-center g-3">
+            <div class="col-12 col-sm-auto flex-1">
+              <h3 class="fw-bolder mb-2 line-clamp-1">{{ skill.name }}</h3>
 
-  <div class="col-4">
-    <div id="skill-team-breakdown-chart" style="min-height:200px"></div>
-  </div>
-</div>
-
-
-<div class="row g-0 mt-3 border-1 border-top bg-light dark__bg-1100 h-100">
-    <div class="col-12 px-6 pt-3 border-1 border-end">
-
-        <div class="row mx-1">  
-            <ul class="nav nav-underline scrollbar flex-nowrap w-100 pb-1 mb-3" id="sectionNav" role="tablist" style="overflow-y: hidden;">
-                <li class="nav-item text-nowrap me-2" role="presentation">
-                    <a class="nav-link active" id="team-tab" data-bs-toggle="tab" href="#team" role="tab" aria-controls="tab-team" aria-selected="true">
-                    <span class="fa-solid fa-video me-2 tab-icon-color"></span>Team
-                    </a>
-                </li>
-                <li class="nav-item text-nowrap me-2" role="presentation">
-                    <a class="nav-link" id="services-tab" data-bs-toggle="tab" href="#services" role="tab" aria-controls="tab-services" aria-selected="false" tabindex="-1">
-                    <span class="fa-solid fa-clipboard me-2 tab-icon-color"></span>Services
-                    </a>
-                </li>
-                <li class="nav-item text-nowrap me-2" role="presentation">
-                    <a class="nav-link" id="engagements-tab" data-bs-toggle="tab" href="#engagements" role="tab" aria-controls="tab-engagements" aria-selected="false" tabindex="-1">
-                    <span class="fa-solid fa-clipboard me-2 tab-icon-color"></span>Previous Engagements
-                    </a>
-                </li>
-            </ul>
-
-            <div class="tab-content" id="myTabContent">
-                <div class="tab-pane fade active show" id="team" role="tabpanel" aria-labelledby="team-tab">
-                    <h4 class="mb-3">Members with this skill</h4>
-                    {% include 'partials/skill/user_skill_table.html' %}
-                </div>
-
-                <div class="tab-pane fade" id="services" role="tabpanel" aria-labelledby="services-tab">
-                </div>
-
-                <div class="tab-pane fade" id="engagements" role="tabpanel" aria-labelledby="engagements-tab">
-                </div>
+              <table class="w-100 table-stats table-stats">
+                <caption>Skill Info</caption>
+                <tbody>
+                  <tr>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                  </tr>
+                  <tr>
+                    <td class="py-2">
+                      <div class="d-flex align-items-center">
+                        <div class="d-flex bg-info-100 rounded-circle flex-center me-3" style="width:24px; height:24px"></div>
+                        <p class="fw-bold mb-0">Category</p>
+                      </div>
+                    </td>
+                    <td class="py-2 d-none d-sm-block pe-sm-2">:</td>
+                    <td class="py-2">
+                      <p class="ps-6 ps-sm-0 fw-semi-bold mb-0">{{ skill.category }}</p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="py-2">
+                      <div class="d-flex align-items-center">
+                        <div class="d-flex bg-info-100 rounded-circle flex-center me-3" style="width:24px; height:24px"></div>
+                        <p class="fw-bold mb-0">Services Required For</p>
+                      </div>
+                    </td>
+                    <td class="py-2 d-none d-sm-block pe-sm-2">:</td>
+                    <td class="py-2">
+                      <p class="ps-6 ps-sm-0 fw-semi-bold mb-0"></p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="py-2">
+                      <div class="d-flex align-items-center">
+                        <div class="d-flex bg-info-100 rounded-circle flex-center me-3" style="width:24px; height:24px"></div>
+                        <p class="fw-bold mb-0">Services Desired For</p>
+                      </div>
+                    </td>
+                    <td class="py-2 d-none d-sm-block pe-sm-2">:</td>
+                    <td class="py-2">
+                      <p class="ps-6 ps-sm-0 fw-semi-bold mb-0"></p>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-        
+          </div>
         </div>
+      </div>
     </div>
-</div>
 
-{% endblock content %}
+    <div class="col-4"></div>
 
+    <div class="col-4">
+      <div id="skill-team-breakdown-chart" style="min-height:200px"></div>
+    </div>
+  </div>
 
+  <div class="row g-0 mt-3 border-1 border-top bg-light dark__bg-1100 h-100">
+    <div class="col-12 px-6 pt-3 border-1 border-end">
+      <div class="row mx-1">
+        <ul class="nav nav-underline scrollbar flex-nowrap w-100 pb-1 mb-3" id="sectionNav" role="tablist" style="overflow-y: hidden;">
+          <li class="nav-item text-nowrap me-2" role="presentation">
+            <a class="nav-link active" id="team-tab" data-bs-toggle="tab" href="#team" role="tab" aria-controls="tab-team" aria-selected="true"><span class="fa-solid fa-video me-2 tab-icon-color"></span>Team</a>
+          </li>
+          <li class="nav-item text-nowrap me-2" role="presentation">
+            <a class="nav-link" id="services-tab" data-bs-toggle="tab" href="#services" role="tab" aria-controls="tab-services" aria-selected="false" tabindex="-1"><span class="fa-solid fa-clipboard me-2 tab-icon-color"></span>Services</a>
+          </li>
+          <li class="nav-item text-nowrap me-2" role="presentation">
+            <a class="nav-link" id="engagements-tab" data-bs-toggle="tab" href="#engagements" role="tab" aria-controls="tab-engagements" aria-selected="false" tabindex="-1"><span class="fa-solid fa-clipboard me-2 tab-icon-color"></span>Previous Engagements</a>
+          </li>
+        </ul>
+
+        <div class="tab-content" id="myTabContent">
+          <div class="tab-pane fade active show" id="team" role="tabpanel" aria-labelledby="team-tab">
+            <h4 class="mb-3">Members with this skill</h4>
+            {% include 'partials/skill/user_skill_table.html' %}
+          </div>
+
+          <div class="tab-pane fade" id="services" role="tabpanel" aria-labelledby="services-tab"></div>
+
+          <div class="tab-pane fade" id="engagements" role="tabpanel" aria-labelledby="engagements-tab"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
 
 {% block footer_javascript_page %}
-<script>
+  <script>
   const { getColor, rgbaColor, getData } = window.phoenix.utils;
   var chartDom = document.getElementById('skill-team-breakdown-chart');
 
@@ -235,4 +210,4 @@
   options && chart.setOption(options);
 
 </script>
-{% endblock footer_javascript_page %}
+{% endblock %}
