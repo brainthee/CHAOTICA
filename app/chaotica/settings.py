@@ -40,6 +40,7 @@ ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", default="* web").split(" 
 USE_X_FORWARDED_HOST = bool(os.environ.get("USE_X_FORWARDED_HOST", default=True))
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 CSRF_COOKIE_SECURE = bool(os.environ.get("CSRF_COOKIE_SECURE", default=False))
+SESSION_COOKIE_SAMESITE = os.environ.get("SESSION_COOKIE_SAMESITE", default="None")
 SESSION_COOKIE_SECURE = bool(os.environ.get("SESSION_COOKIE_SECURE", default=False))
 SESSION_EXPIRE_AT_BROWSER_CLOSE = bool(
     os.environ.get("SESSION_EXPIRE_AT_BROWSER_CLOSE", default=True)
