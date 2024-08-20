@@ -94,7 +94,8 @@
             <div class="card-body p-0">
                {% regroup skills by category as skillCategories %}
                {% for category in skillCategories %}
-               <h4 class="ps-3 mt-4 mb-3 text-body-secondary" >{{ category.grouper }}</h4>
+               <h4 class="ps-3 mt-4 text-body-secondary" >{{ category.grouper }}</h4>
+               <p class="ps-3 mb-3 text-body-tertiary lh-sm mb-1">{{ category.grouper.description }}</p>
                <table class="table table-responsive mb-0">
                   <caption>User's Skills</caption>
                   <thead>
@@ -106,10 +107,10 @@
                            <p class="mb-0">No Experience</p>
                         </th>
                         <th scope="col" class="col-2 text-center">
-                           <p class="mb-0">Can do with support</p>
+                           <p class="mb-0">Require Support</p>
                         </th>
                         <th scope="col" class="col-2 text-center">
-                           <p class="mb-0">Can do alone</p>
+                           <p class="mb-0">Independent</p>
                         </th>
                         <th scope="col" class="col-2 text-center">
                            <p class="mb-0 pe-2">Specialist</p>
@@ -124,6 +125,11 @@
                            <div class="my-auto">
                               <span class="text-xs font-weight-normal">
                                  <a href="{{ skill.get_absolute_url }}">{{ skill.name }}</a>
+                                 {% if skill.description %}
+                                 <span class="fa fa-circle-question me-sm-2 fs--1" 
+                                 data-bs-toggle="tooltip" data-bs-placement="top" title="{{ skill.description }}"
+                                 aria-hidden="true"></span>
+                                 {% endif %}
                               </span>
                            </div>
                         </td>

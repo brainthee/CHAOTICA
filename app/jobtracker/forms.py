@@ -46,13 +46,13 @@ class SchedulerFilter(forms.Form):
     )
     skills_can_do_alone = forms.ModelMultipleChoiceField(
         required=False,
-        label="Can Do Alone",
+        label="Independent",
         queryset=Skill.objects.all(),
         widget=autocomplete.ModelSelect2Multiple(),
     )
     skills_can_do_support = forms.ModelMultipleChoiceField(
         required=False,
-        label="Can Do With Support",
+        label="Require Support",
         queryset=Skill.objects.all(),
         widget=autocomplete.ModelSelect2Multiple(),
     )

@@ -827,8 +827,8 @@ class UserSkillRatings:
     SPECIALIST = 3
     CHOICES = (
         (NO_EXPERIENCE, "No experience"),
-        (CAN_DO_WITH_SUPPORT, "Can do with support"),
-        (CAN_DO_ALONE, "Can do alone"),
+        (CAN_DO_WITH_SUPPORT, "Require Support"),
+        (CAN_DO_ALONE, "Independent"),
         (SPECIALIST, "Specialist"),
     )
 
