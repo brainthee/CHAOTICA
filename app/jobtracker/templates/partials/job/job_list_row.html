@@ -1,0 +1,29 @@
+<tr>
+  <td class="align-middle time white-space-nowrap ps-0 projectName py-4">
+    <a class="fw-bold fs-0" href="{{ job.get_absolute_url }}">{{ job.title }}</a>
+  </td>
+
+  <td class="align-middle white-space-nowrap unit ps-3 py-4">
+    <a class="fw-bold fs-0" href="{{ job.unit.get_absolute_url }}">{{ job.unit }}</a>
+  </td>
+
+  <td class="align-middle white-space-nowrap client ps-3 py-4">
+    <a class="fw-bold fs-0" href="{{ job.client.get_absolute_url }}">{{ job.client }}</a>
+  </td>
+
+  <td class="align-middle white-space-nowrap start ps-3 py-4">
+    <p class="mb-0 fs--1 text-900">{{ job.start_date }}</p>
+  </td>
+
+  <td class="align-middle white-space-nowrap end ps-3 py-4">
+    <p class="mb-0 fs--1 text-900">{{ job.delivery_date }}</p>
+  </td>
+
+  <td class="align-middle white-space-nowrap phases ps-3 py-4">
+    <p class="fw-bo text-900 fs--1 mb-0">{{ job.phases.all|length }}</p>
+  </td>
+
+  <td class="align-middle white-space-nowrap text-end statuses">
+    {% include 'partials/job/status_badge.html' with badge_size='sm' %}
+  </td>
+</tr>

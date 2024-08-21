@@ -285,7 +285,7 @@ class Job(models.Model):
 
     class Meta:
         verbose_name = "Job"
-        ordering = ["id"]
+        ordering = ["-id"]
 
     def __str__(self):
         return "{client}/{id}".format(client=self.client, id=self.id)
