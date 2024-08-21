@@ -39,9 +39,12 @@ SECRET_KEY = os.environ.get(
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", default="* web").split(" ")
 USE_X_FORWARDED_HOST = bool(os.environ.get("USE_X_FORWARDED_HOST", default=True))
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-CSRF_COOKIE_SECURE = bool(os.environ.get("CSRF_COOKIE_SECURE", default=False))
-SESSION_COOKIE_SAMESITE = os.environ.get("SESSION_COOKIE_SAMESITE", default="None")
-SESSION_COOKIE_SECURE = bool(os.environ.get("SESSION_COOKIE_SECURE", default=False))
+# These 4 options should not be set in dev envs
+if DJANGO_ENV != "Dev":
+    CSRF_COOKIE_SECURE = bool(os.environ.get("CSRF_COOKIE_SECURE", default=True))
+    CSRF_COOKIE_SAMESITE = os.environ.get("CSRF_COOKIE_SAMESITE", default="None")
+    SESSION_COOKIE_SAMESITE = os.environ.get("SESSION_COOKIE_SAMESITE", default="None")
+    SESSION_COOKIE_SECURE = bool(os.environ.get("SESSION_COOKIE_SECURE", default=True))
 SESSION_EXPIRE_AT_BROWSER_CLOSE = bool(
     os.environ.get("SESSION_EXPIRE_AT_BROWSER_CLOSE", default=True)
 )
@@ -84,7 +87,7 @@ CHAOTICA_BIRTHDAY = datetime.date(2023, 6, 21)
 
 GLOBAL_GROUP_PREFIX = "Global: "
 
-DATA_UPLOAD_MAX_NUMBER_FILES = 5000
+DATA_UPLOAD_MAX_NUMBER_FILES = 10000
 
 DEFAULT_HOURS_IN_DAY = os.environ.get("DEFAULT_HOURS_IN_DAY", default=7.5)
 
@@ -325,8 +328,17 @@ REST_FRAMEWORK = {
         "rest_framework.authentication.TokenAuthentication",
         "rest_framework.authentication.SessionAuthentication",
     ),
+    'DEFAULT_RENDERER_CLASSES': (
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
+        'rest_framework_datatables.renderers.DatatablesRenderer',
+    ),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
-    "DEFAULT_FILTER_BACKENDS": ("django_filters.rest_framework.DjangoFilterBackend",),
+    "DEFAULT_FILTER_BACKENDS": (
+        'rest_framework_datatables.filters.DatatablesFilterBackend',
+    ),
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework_datatables.pagination.DatatablesPageNumberPagination',
+    'PAGE_SIZE': 25
 }
 
 MIDDLEWARE = [

@@ -1,9 +1,18 @@
-from django.urls import path
+from django.urls import include, path
 from . import views
 from .feeds import ScheduleFeed, ScheduleFamilyFeed
+from rest_framework import routers
+
+router = routers.DefaultRouter()
+router.register(r'users', views.UserViewSet, basename="user")
+router.register(r'jobs', views.JobViewSet, basename="job")
+router.register(r'orgunit', views.OrganisationalUnitViewSet, basename="organisationalunit")
+router.register(r'client', views.ClientViewSet, basename="client")
 
 urlpatterns = [
     # Extra profile bits
+    path('api/', include(router.urls)),
+    path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     path(
         "profile/qualifications/",
         views.OwnQualificationRecordListView.as_view(),

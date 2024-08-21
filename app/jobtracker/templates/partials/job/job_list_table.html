@@ -1,70 +1,17 @@
 <div class="table-responsive scrollbar mx-n1 px-1">
-  <table class="table table-sm fs--1 datatable mb-0">
+  <table class="table table-sm fs--1 mb-0" id="jobTableAjax">
     <caption>Jobs</caption>
     <thead>
       <tr>
-        <th class="sort white-space-nowrap align-middle ps-0" scope="col" data-sort="projectName" style="width:30%;">
-          Name
-        </th>
-        <th class="sort align-middle ps-3" scope="col" data-sort="unit" style="width:10%;">
-          Unit
-        </th>
-        <th class="sort align-middle ps-3" scope="col" data-sort="client" style="width:10%;">
-          Client
-        </th>
-        <th class="sort align-middle ps-3" scope="col" data-sort="start" style="width:10%;">
-          Start
-        </th>
-        <th class="sort align-middle ps-3" scope="col" data-sort="deadline" style="width:15%;">
-          End
-        </th>
-        <th class="sort align-middle ps-3" scope="col" data-sort="task" style="width:12%;">
-          Phases
-        </th>
-        <th class="sort align-middle text-end" scope="col" data-sort="statuses" style="width:10%;">
-          Status
-        </th>
+        <th class="sort align-middle ps-0" scope="col" data-data="id">ID</th>
+        <th class="sort white-space-nowrap align-middle ps-3" scope="col" data-data="title" style="width:30%;">Name</th>
+        <th class="sort align-middle ps-3" scope="col" data-data="unit" style="width:10%;">Unit</th>
+        <th class="sort align-middle ps-3" scope="col" data-data="client" style="width:10%;">Client</th>
+        <th class="sort align-middle ps-3" scope="col" data-data="start_date" style="width:10%;">Start</th>
+        <th class="sort align-middle ps-3" scope="col" data-data="delivery_date" style="width:15%;">End</th>
+        <th class="sort align-middle ps-3" scope="col" data-data="phases" style="width:12%;">Phases</th>
+        <th class="sort align-middle text-end" scope="col" data-data="status" style="width:10%;">Status</th>
       </tr>
     </thead>
-    <tbody>
-    {% for job in job_list %}
-    <tr>
-
-      <td class="align-middle time white-space-nowrap ps-0 projectName py-4">
-        <a class="fw-bold fs-0" href="{{ job.get_absolute_url }}">
-          {{ job.title }}
-        </a>
-      </td>
-
-      <td class="align-middle white-space-nowrap unit ps-3 py-4">
-        <a class="fw-bold fs-0" href="{{ job.unit.get_absolute_url }}">
-          {{ job.unit }}
-        </a>
-      </td>
-
-      <td class="align-middle white-space-nowrap client ps-3 py-4">
-        <a class="fw-bold fs-0" href="{{ job.client.get_absolute_url }}">
-          {{ job.client }}
-        </a>
-      </td>
-
-      <td class="align-middle white-space-nowrap start ps-3 py-4">
-        <p class="mb-0 fs--1 text-900">{{ job.start_date }}</p>
-      </td>
-
-      <td class="align-middle white-space-nowrap end ps-3 py-4">
-        <p class="mb-0 fs--1 text-900">{{ job.delivery_date }}</p>
-      </td>
-
-      <td class="align-middle white-space-nowrap phases ps-3 py-4">
-        <p class="fw-bo text-900 fs--1 mb-0">{{ job.phases.all|length }}</p>
-      </td>
-
-      <td class="align-middle white-space-nowrap text-end statuses">  
-        {% include 'partials/job/status_badge.html' with badge_size='sm' %}
-      </td>
-      </tr>
-    {% endfor %}        
-    </tbody>
   </table>
 </div>
