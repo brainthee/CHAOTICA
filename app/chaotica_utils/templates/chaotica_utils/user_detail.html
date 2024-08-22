@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% load menu %}{% load static %}
 
-{% block pageTitle %}{{ user.get_full_name }}{% endblock pageTitle %}
-{% block head_title %}{{ user.get_full_name }}{% endblock head_title %}
+{% block pageTitle %}{{ user }}{% endblock pageTitle %}
+{% block head_title %}{{ user }}{% endblock head_title %}
 
 {% block breadcrumbItem %}
 <li class="breadcrumb-item text-sm">Users</li>
-<li class="breadcrumb-item text-sm text-dark active" aria-current="page">{{ user.get_full_name }}</li>
+<li class="breadcrumb-item text-sm text-dark active" aria-current="page">{{ user }}</li>
 {% endblock breadcrumbItem %}
 
 {% block content %}
@@ -37,7 +37,7 @@
                             </div>
                             <div class="col-8 text-start">
                                 <h3 class="">
-                                    {{ user.get_full_name }}
+                                    {{ user }}
                                 </h3>
                                 <p class="text-opacity-50 fw-semibold fs-10 mb-2">
                                     {{ user.job_title }}
