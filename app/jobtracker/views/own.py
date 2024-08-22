@@ -15,12 +15,9 @@ from django.views.decorators.http import require_http_methods
 logger = logging.getLogger(__name__)
 
 
-class OwnQualificationRecordBaseView(PermissionRequiredMixin, ChaoticaBaseView):
+class OwnQualificationRecordBaseView( ChaoticaBaseView):
     model = QualificationRecord
     fields = "__all__"
-    permission_required = "jobtracker.view_qualification"
-    accept_global_perms = True
-    return_403 = True
 
 
 class OwnQualificationRecordListView(OwnQualificationRecordBaseView, ListView):
