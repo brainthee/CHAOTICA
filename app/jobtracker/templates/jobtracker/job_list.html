@@ -44,12 +44,7 @@
 {% endblock %}
 
 {% block footer_javascript_page %}
-  <script>
-    if ( $.fn.dataTable.isDataTable( '#jobTableAjax' ) ) {
-      table = $('#jobTableAjax').DataTable();
-      table.destroy();
-    }
-    
+  <script>    
     $('#jobTableAjax').DataTable({
       "retrieve": true,
       "serverSide": true,

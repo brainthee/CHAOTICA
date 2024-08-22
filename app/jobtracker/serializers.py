@@ -18,9 +18,34 @@ class OrganisationalUnitSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class ClientSerializer(serializers.HyperlinkedModelSerializer):
+    name_link =  serializers.SerializerMethodField()
+    status_display  =  serializers.SerializerMethodField()
+    jobs_count = serializers.IntegerField(source="jobs.count", read_only=True)
+    ams_display  =  serializers.SerializerMethodField()
+    tams_display  =  serializers.SerializerMethodField()
+
+    def get_name_link(self, client):
+         return format_html("<a class='fw-bold fs-0' href='{}'>{}</a>", client.get_absolute_url(), client.name)
+
+    def get_status_display(self, client):
+        return format_html("<span class='badge badge-phoenix badge-phoenix-{}'>{}</span>", 
+                           "success" if client.is_ready_for_jobs else "warning",
+                           "Ready" if client.is_ready_for_jobs else "Not Ready")
+
+    def get_ams_display(self, client):
+        return loader.render_to_string(
+            "partials/users/user_group.html", { "users": client.account_managers.all }
+        )
+    
+    def get_tams_display(self, client):
+        return loader.render_to_string(
+            "partials/users/user_group.html", { "users": client.tech_account_managers.all }
+        )
+
     class Meta:
         model = Client
-        fields = ['name']
+        fields = ['name', 'name_link', 'ams_display', 'tams_display', 'jobs_count', 'status_display']
+
 
 class JobSerializer(serializers.HyperlinkedModelSerializer):
     title_link =  serializers.SerializerMethodField()
@@ -31,21 +56,19 @@ class JobSerializer(serializers.HyperlinkedModelSerializer):
 
 
     def get_title_link(self, job):
-         return format_html("<a class='fw-bold fs-0' href='{}'>{}</a>", job.get_absolute_url(), job.title)
+        return format_html("<a class='fw-bold fs-0' href='{}'>{}</a>", job.get_absolute_url(), job.title)
 
     def get_status_display(self, job):
-        context = dict()
-        context = { "job": job }
         status_display = loader.render_to_string(
-            "partials/job/status_badge.html", context
+            "partials/job/status_badge.html", { "job": job }
         )
         return status_display
 
     def get_unit_link(self, job):
-         return format_html("<a class='fw-bold fs-0' href='{}'>{}</a>", job.unit.get_absolute_url(), job.unit)
+        return format_html("<a class='fw-bold fs-0' href='{}'>{}</a>", job.unit.get_absolute_url(), job.unit)
 
     def get_client_link(self, job):
-         return format_html("<a class='fw-bold fs-0' href='{}'>{}</a>", job.client.get_absolute_url(), job.client)
+        return format_html("<a class='fw-bold fs-0' href='{}'>{}</a>", job.client.get_absolute_url(), job.client)
 
     class Meta:
         model = Job

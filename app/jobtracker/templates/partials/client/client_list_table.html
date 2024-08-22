@@ -1,61 +1,13 @@
 <div class="table-responsive scrollbar mx-n1 px-1">
-  <table class="table table-sm fs--1 datatable mb-0">
+  <table class="table table-sm fs--1 mb-0" id="clientTableAjax">
     <caption>Client List</caption>
     <thead>
       <tr>
-        <th class="sort white-space-nowrap align-middle ps-0" scope="col" data-sort="name" style="width:30%;">
-          Name
-        </th>
-        <th class="sort align-middle ps-3" scope="col" data-sort="sector" style="width:10%;">
-          Sector
-        </th>
-        <th class="sort align-middle ps-3" scope="col" data-sort="am" style="width:10%;">
-          Account Managers
-        </th>
-        <th class="sort align-middle ps-3" scope="col" data-sort="tam" style="width:10%;">
-          Technical Account Managers
-        </th>
-        <th class="sort align-middle ps-3" scope="col" data-sort="status" style="width:15%;">
-          Status
-        </th>
-        <th class="sort align-middle text-end" scope="col" style="width:10%;">
-        </th>
+        <th class="sort white-space-nowrap align-middle ps-0" scope="col" data-data="name_link" style="width:30%;">Name</th>
+        <th class="sort align-middle ps-3" scope="col" data-data="ams" style="width:10%;">Account Managers</th>
+        <th class="sort align-middle ps-3" scope="col" data-data="tams" style="width:10%;">Technical Account Managers</th>
+        <th class="sort align-middle ps-3" scope="col" data-data="status" style="width:15%;">Status</th>
       </tr>
     </thead>
-    <tbody>
-    {% for client in client_list %}
-    <tr>
-
-      <td class="align-middle time white-space-nowrap ps-0 projectName">
-        <a class="fw-bold fs-0" href="{{ client.get_absolute_url }}">
-          {{ client }}
-        </a>
-      </td>
-
-      <td class="align-middle white-space-nowrap unit ps-3">
-        {{ client.sector }}
-      </td>
-
-      <td class="align-middle white-space-nowrap client ps-3">
-        {% include 'partials/users/user_group.html' with users=client.account_managers.all %}
-      </td>
-
-      <td class="align-middle white-space-nowrap start ps-3">
-        {% include 'partials/users/user_group.html' with users=client.tech_account_managers.all %}
-      </td>
-
-      <td class="align-middle white-space-nowrap end ps-3">
-        {% if client.is_ready_for_jobs %}
-        <span class="badge badge-warning">Ready</span>
-        {% else %}
-        <span class="badge badge-warning">Not Ready</span>
-        {% endif %}
-      </td>
-
-      <td class="align-middle text-end white-space-nowrap pe-0 action">
-      </td>
-      </tr>
-    {% endfor %}        
-    </tbody>
   </table>
 </div>

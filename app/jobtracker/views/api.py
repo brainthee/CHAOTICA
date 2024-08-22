@@ -1,14 +1,10 @@
 from chaotica_utils.models import User
-from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from guardian.shortcuts import get_objects_for_user
 from ..models import Job, OrganisationalUnit, Client
-from ..enums import JobStatuses, TimeSlotDeliveryRole, DefaultTimeSlotTypes
-from rest_framework import permissions, viewsets, filters
-from rest_framework.response import Response
+from ..enums import JobStatuses
+from rest_framework import permissions, viewsets
 from django_filters.rest_framework import DjangoFilterBackend
-
-
 from ..serializers import *
 
 
@@ -49,6 +45,8 @@ class ClientViewSet(viewsets.ModelViewSet):
     serializer_class = ClientSerializer
     permission_classes = [permissions.IsAuthenticated]
     http_method_names = ['get', 'head']
+    filter_backends = [DjangoFilterBackend]
+    search_fields = ['name']
 
     def get_queryset(self):
         queryset = get_objects_for_user(
@@ -61,7 +59,6 @@ class JobViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows groups to be viewed or edited.
     """
-    queryset = Job.objects.all()
     serializer_class = JobSerializer
     permission_classes = [permissions.IsAuthenticated]
     http_method_names = ['get', 'head']
