@@ -1446,7 +1446,7 @@ class QualificationForm(forms.ModelForm):
 class OwnQualificationRecordForm(forms.ModelForm):
 
     qualification = forms.ModelChoiceField(
-        required=False,
+        required=True,
         queryset=Qualification.objects.all(),
         widget=autocomplete.ModelSelect2(
             attrs={
