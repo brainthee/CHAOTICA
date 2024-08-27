@@ -63,7 +63,7 @@ class OrganisationalUnit(models.Model):
     lead = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         related_name="units_lead",
-        default=1,
+        null=True,
         on_delete=models.CASCADE,
     )
 
