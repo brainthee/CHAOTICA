@@ -399,11 +399,12 @@ class User(AbstractUser):
             return reverse("user_manage", kwargs={"email": self.email})
         else:
             return None
-
-    def get_current_status(self):
-        # online, offline, away, do-not-disturb
-        # Used to decorate avatars
-        return "online"
+    
+    # We're not going to use this... maybe?
+    # def get_current_status(self):
+    #     # online, offline, away, do-not-disturb
+    #     # Used to decorate avatars
+    #     return "online"
 
     def get_jobs(self):
         from jobtracker.models import Job

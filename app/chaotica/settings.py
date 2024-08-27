@@ -531,8 +531,8 @@ EXPLORER_SQL_BLACKLIST = (
     "GRANT",
     "REVOKE",
 )
-EXPLORER_PERMISSION_VIEW = lambda r: r.user.is_staff
-EXPLORER_PERMISSION_CHANGE = lambda r: r.user.is_staff
+EXPLORER_PERMISSION_VIEW = lambda r: r.user.is_superuser
+EXPLORER_PERMISSION_CHANGE = lambda r: r.user.is_superuser
 EXPLORER_DATA_EXPORTERS = [
     ("csv", "explorer.exporters.CSVExporter"),
     ("excel", "explorer.exporters.ExcelExporter"),
