@@ -1,0 +1,66 @@
+version: "3.8"
+
+services:
+  web:
+    image: brainthee/chaotica:latest
+    command: gunicorn chaotica.wsgi:application --bind 0.0.0.0:8000
+    volumes:
+      - static_volume:/app/staticfiles
+      - media_volume:/app/mediafiles
+    expose:
+      - 8000
+    environment:
+      - DEBUG=0 # Set to 1 to enable Django's Debug mode
+      - SECRET_KEY=CHANGE_ME # No really - change it!
+      - DJANGO_ENV=dev
+      - DJANGO_VERSION=latest
+      # - SENTRY_DSN= # The DSN if you're using Sentry to monitor errors
+      # - DJANGO_ALLOWED_HOSTS=
+      # - SITE_DOMAIN=
+      # - SITE_PROTO=
+      - TZ=Europe/London
+
+      - SQL_ENGINE=django.db.backends.postgresql # The database engine to use. If blank, uses SQLite
+      # Be sure to match these to the vars in the DB service below
+      - RDS_DB_NAME=chaotica
+      - RDS_USERNAME=chaotica
+      - RDS_PASSWORD=Hunter2 # Change this if in production...
+      - RDS_HOSTNAME=db
+      - RDS_PORT=5432      
+      # - EMAIL_BACKEND= # Uses console if blank
+      # - EMAIL_HOST=
+      # - EMAIL_PORT=587
+      # - EMAIL_HOST_USER=
+      # - EMAIL_HOST_PASSWORD=
+      # - CELERY_BROKER_URL:
+      # - USE_S3=0 # Set to 1 and populate the bits below to use S3 for static/media
+      # - AWS_STORAGE_ACCESS_KEY_ID=
+      # - AWS_STORAGE_SECRET_ACCESS_KEY=
+      # - AWS_STORAGE_BUCKET_NAME:
+    depends_on:
+      - db
+
+  db:
+    image: postgres:15
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_DB=chaotica
+      - POSTGRES_USER=chaotica
+      - POSTGRES_PASSWORD=Hunter2
+
+  nginx:
+    image: nginx
+    volumes:
+      - static_volume:/app/staticfiles
+      - media_volume:/app/mediafiles
+      - ./nginx.conf:/etc/nginx/conf.d/chaotica.conf
+    ports:
+      - 1338:80
+    depends_on:
+      - web
+
+volumes:
+  postgres_data:
+  static_volume:
+  media_volume:
