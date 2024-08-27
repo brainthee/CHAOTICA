@@ -78,6 +78,7 @@ class Phase(models.Model):
     # misc fields
     history = HistoricalRecords()
     data = JSONField(verbose_name="Data", null=True, blank=True, default=dict)
+    is_imported = models.BooleanField(default=False)
     notes = GenericRelation(Note)
     status = FSMIntegerField(
         choices=PhaseStatuses.CHOICES, db_index=True, default=PhaseStatuses.DRAFT
@@ -95,7 +96,7 @@ class Phase(models.Model):
         related_name="phases",
         on_delete=models.PROTECT,
     )
-    description = BleachField(blank=True, null=True)
+    description = BleachField(blank=True, null=True, default="")
 
     # Requirements
     test_target = BleachField("Test Target URL/IPs/Scope", blank=True, null=True)
@@ -146,7 +147,7 @@ class Phase(models.Model):
     # Logistics
     is_testing_onsite = models.BooleanField("Testing Onsite", default=False)
     is_reporting_onsite = models.BooleanField("Reporting Onsite", default=False)
-    location = BleachField("Onsite Location", blank=True, null=True)
+    location = BleachField("Onsite Location", blank=True, null=True, default="")
     number_of_reports = models.IntegerField(
         default=1,
         help_text="If set to 0, this phase will not go through Technical or Presentation QA",
@@ -957,7 +958,7 @@ class Phase(models.Model):
         total_scheduled = Decimal(0.0)
         for _, sch_hrs in self.get_all_total_scheduled_by_type().items():
             total_scheduled = total_scheduled + Decimal(sch_hrs)
-        return total_scheduled
+        return round(total_scheduled, 2)
 
     def get_total_scoped_by_type(self, slot_type):
         total_scoped = Decimal(0.0)
@@ -984,7 +985,7 @@ class Phase(models.Model):
         total_scoped = Decimal(0.0)
         for state in TimeSlotDeliveryRole.CHOICES:
             total_scoped = total_scoped + self.get_total_scoped_by_type(state[0])
-        return total_scoped
+        return round(total_scoped,2)
 
     def get_all_total_scoped_by_type(self):
         data = dict()

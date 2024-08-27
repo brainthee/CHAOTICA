@@ -1,2 +1,3 @@
-<a class="dropdown-toggle dropdown-caret-none" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">{{ user_profile }}</a>
-{% include 'partials/users/user_profile_card.html' %}
+<a class="" href="{{ user_profile.get_absolute_url }}">{{ user_profile }}</a>
+{% comment %} <a class="dropdown-toggle dropdown-caret-none" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">{{ user_profile }}</a> {% endcomment %}
+{% comment %} {% include 'partials/users/user_profile_card.html' %} {% endcomment %}

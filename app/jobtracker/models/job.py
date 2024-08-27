@@ -87,6 +87,7 @@ class Job(models.Model):
         default=JobStatuses.DRAFT,
     )
     status_changed_date = MonitorField(monitor="status")
+    is_imported = models.BooleanField(default=False)
     external_id = models.CharField(
         verbose_name="External ID",
         db_index=True,

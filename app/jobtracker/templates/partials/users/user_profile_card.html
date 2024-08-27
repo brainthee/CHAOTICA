@@ -29,13 +29,6 @@
         </div>
       </div>
       <ul class="nav d-flex flex-column py-3 border-bottom">
-        {% comment %} <li class="nav-item">
-          <a class="nav-link px-3 d-flex flex-between-center" href="#!">
-            <span class="me-2 text-body d-inline-block" data-feather="clipboard"></span>
-            <span class="text-body-highlight flex-1">Assigned Jobs</span>
-            <span class="fa-solid fa-chevron-right fs-11"></span>
-          </a>
-        </li> {% endcomment %}
         <li class="nav-item">
           <a class="nav-link px-3 d-flex flex-between-center" href="{% url 'view_scheduler' %}?users={{ userProfile.id }}">
             <span class="me-2 text-body" data-feather="pie-chart"></span>

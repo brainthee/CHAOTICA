@@ -53,7 +53,7 @@
     </li>
 
     <li class="nav-item">
-        <a class="nav-link fw-semi-bold {% if job.status > 7 %}done{% elif job.status == 7 %}active{% endif %}" href="#">
+        <a class="nav-link fw-semi-bold {% if job.status > 7 %}done complete{% elif job.status == 7 %}active{% endif %}" href="#">
             <div class="text-center d-inline-block">
                 <span class="nav-item-circle-parent">
                     <span class="nav-item-circle">
@@ -66,7 +66,7 @@
     </li>
 
     <li class="nav-item">
-        <a class="nav-link fw-semi-bold {% if job.status > 8 %}done{% elif job.status == 8 %}active{% endif %}" href="#">
+        <a class="nav-link fw-semi-bold {% if job.status >= 8 %}done complete{% endif %}" href="#">
             <div class="text-center d-inline-block">
                 <span class="nav-item-circle-parent">
                     <span class="nav-item-circle">
@@ -80,7 +80,7 @@
 
     {% if job.status > 8 %}
     <li class="nav-item">
-        <a class="nav-link fw-semi-bold {% if job.status > 8 %}done{% endif %}" href="#">
+        <a class="nav-link fw-semi-bold {% if job.status > 8 %}done complete{% endif %}" href="#">
             <div class="text-center d-inline-block">
                 <span class="nav-item-circle-parent">
                     <span class="nav-item-circle">
