@@ -63,6 +63,18 @@ class Client(models.Model):
         blank=True,
     )
 
+    onboarding_required = models.BooleanField(
+        default=False,
+        help_text="If enabled, only onboarded users can be scheduled on jobs for this client.",
+    )
+    onboarded_users = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        help_text="Users who have been onboarded",
+        related_name="onboarded_to",
+        verbose_name="Onboarded Users",
+        blank=True,
+    )
+
     class Meta:
         ordering = [Lower("name")]
         permissions = (("assign_account_managers_client", "Assign Account Managers"),)
