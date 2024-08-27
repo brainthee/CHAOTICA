@@ -36,6 +36,9 @@ SECRET_KEY = os.environ.get(
     default="this-aint-secure-honest-f7r-nrel3@s^c5gl!%l8-i)eeea++xm_(qpl+!=$1$_40nh=ym",
 )
 
+SITE_DOMAIN = os.environ.get("SITE_DOMAIN", default="127.0.0.1:8000")
+SITE_PROTO = os.environ.get("SITE_PROTO", default="http")
+
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", default="* web").split(" ")
 USE_X_FORWARDED_HOST = bool(os.environ.get("USE_X_FORWARDED_HOST", default=True))
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
@@ -49,6 +52,10 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = bool(
     os.environ.get("SESSION_EXPIRE_AT_BROWSER_CLOSE", default=True)
 )
 SESSION_COOKIE_AGE = int(os.environ.get("SESSION_COOKIE_AGE", default=60 * 60 * 12))
+
+CORS_ALLOWED_ORIGINS = [
+    "{}://{}".format(SITE_PROTO, SITE_DOMAIN),
+]
 
 AUTH_ADFS = {
     "AUDIENCE": os.environ.get("ADFS_CLIENT_ID", default="xx"),
@@ -219,8 +226,6 @@ AUTHENTICATION_BACKENDS = (
 GUARDIAN_RAISE_403 = True
 GUARDIAN_TEMPLATE_403 = "403.html"
 
-SITE_DOMAIN = os.environ.get("SITE_DOMAIN", default="127.0.0.1:8000")
-SITE_PROTO = os.environ.get("SITE_PROTO", default="http")
 AUTH_USER_MODEL = "chaotica_utils.User"
 LOGIN_URL = "/auth/login/"
 LOGIN_REDIRECT_URL = "/"
@@ -271,6 +276,7 @@ THIRD_PARTY_APPS = [
     "storages",
     "django_cron",
     'dbbackup',  # django-dbbackup
+    "corsheaders",
 ]
 LOCAL_APPS = [
     "chaotica_utils",
@@ -344,6 +350,7 @@ REST_FRAMEWORK = {
 
 MIDDLEWARE = [
     "chaotica_utils.middleware.HealthCheckMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -465,14 +472,16 @@ if USE_S3 == "1" or USE_S3:
 
     if os.getenv("AWS_STORAGE_CLOUDFRONT_DOMAIN", None):
         # Use CloudFront
-        AWS_S3_CUSTOM_DOMAIN = os.getenv("AWS_STORAGE_CLOUDFRONT_DOMAIN", None)
-        
+        AWS_S3_CUSTOM_DOMAIN = os.getenv("AWS_STORAGE_CLOUDFRONT_DOMAIN", None)        
         AWS_CLOUDFRONT_KEY = base64.b64decode(os.environ.get('AWS_CLOUDFRONT_KEY', None))
         AWS_CLOUDFRONT_KEY_ID = os.environ.get('AWS_CLOUDFRONT_KEY_ID', None)
         DEFAULT_FILE_STORAGE = 'chaotica.custom_storages.MediaStorage'
         STATICFILES_STORAGE = 'chaotica.custom_storages.StaticStorage'
         STATICFILES_LOCATION = "static"
         MEDIAFILES_LOCATION = "media"
+        CORS_ALLOWED_ORIGINS.append(
+            "https://{}".format(AWS_S3_CUSTOM_DOMAIN)
+        )
     else:
         # Use S3 directly
         AWS_S3_CUSTOM_DOMAIN = f"{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com"
