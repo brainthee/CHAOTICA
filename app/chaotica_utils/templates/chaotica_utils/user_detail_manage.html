@@ -2,12 +2,12 @@
 {% load menu %}{% load static %}
 {% load crispy_forms_tags %}
 
-{% block pageTitle %}{{ user.get_full_name }}{% endblock pageTitle %}
-{% block head_title %}{{ user.get_full_name }}{% endblock head_title %}
+{% block pageTitle %}{{ user }}{% endblock pageTitle %}
+{% block head_title %}{{ user }}{% endblock head_title %}
 
 {% block breadcrumbItem %}
 <li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{% url 'user_list' %}">Users</a></li>
-<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{{ user.get_absolute_url }}">{{ user.get_full_name }}</a></li>
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{{ user.get_absolute_url }}">{{ user }}</a></li>
 <li class="breadcrumb-item text-sm text-dark active" aria-current="page">Manage</li>
 {% endblock breadcrumbItem %}
 
@@ -23,7 +23,7 @@
                         </div>
                     </div>
                     <div class="col-12 col-sm-auto flex-1">
-                        <h3>{{ user.get_full_name }}</h3>
+                        <h3>{{ user }}</h3>
                         <p class="text-800">{{ user.job_title }}</p>
                         <div>
                             <a class="me-2" href="#!">

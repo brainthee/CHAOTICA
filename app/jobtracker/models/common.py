@@ -76,4 +76,4 @@ class Feedback(models.Model):
         permissions = ()
 
     def __str__(self):
-        return "Feedback {} by {}".format(self.body, self.author.get_full_name())
+        return "Feedback {} by {}".format(self.body, self.author)

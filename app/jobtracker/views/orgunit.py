@@ -233,7 +233,7 @@ def organisationalunit_review_join_request(request, slug, member_pk):
         if request.POST.get("user_action") == "approve_action":
             # Approve it!
             messages.info(
-                request, "Accepted request from " + membership.member.get_full_name()
+                request, "Accepted request from " + str(membership.member)
             )
             membership.inviter = request.user
             default_role = OrganisationalUnitRole.objects.filter(
@@ -259,7 +259,7 @@ def organisationalunit_review_join_request(request, slug, member_pk):
         elif request.POST.get("user_action") == "reject_action":
             # remove it!
             messages.warning(
-                request, "Removed request from " + membership.member.get_full_name()
+                request, "Removed request from " + str(membership.member)
             )
             membership.delete()
             # send a notification to the user

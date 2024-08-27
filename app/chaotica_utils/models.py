@@ -99,7 +99,7 @@ class Notification(models.Model):
                 self.title,
                 self.message,
                 None,
-                [self.user.email],
+                [self.user.email_address()],
                 html_message=msg_html,
             ) > 0:
             self.is_emailed = True
@@ -224,7 +224,8 @@ class UserInvitation(models.Model):
 class User(AbstractUser):
     # Fields to enforce email as the auth field
     username = None
-    email = models.EmailField("Email Address", unique=True)
+    email = models.EmailField("Email Address", unique=True, help_text="This is your authenticated email and can not be changed")
+    notification_email = models.EmailField("Notification Email Address", blank=True, default="", help_text="If configured, email notifications go to this address rather than your account address.")
     USERNAME_FIELD = "email"
     EMAIL_FIELD = "email"
     REQUIRED_FIELDS = []
@@ -290,10 +291,13 @@ class User(AbstractUser):
         upload_to=get_media_profile_file_path,
     )
     contracted_leave = models.IntegerField(
-        verbose_name="Contracted Days Leave", default=25
+        verbose_name="Contracted Leave", default=25, help_text="Days leave you are entitled to"
+    )
+    carry_over_leave = models.IntegerField(
+        verbose_name="Leave Carried Over", default=0, help_text="Days leave carried over from previous period"
     )
     contracted_leave_renewal = models.DateField(
-        verbose_name="Leave Renewal Date", default=date(day=1, month=9, year=2023)
+        verbose_name="Leave Renewal Date", default=date(day=1, month=9, year=2023), help_text="Date leave is reset"
     )
 
     profile_last_updated = models.DateField(
@@ -307,7 +311,14 @@ class User(AbstractUser):
             ("manage_leave", "Manage leave"),
             ("impersonate_users", "Can impersonate other users"),
             ("manage_site_settings", "Can change site settings"),
+            ("view_activity_logs", "Can review the activity logs"),
         )
+
+    def email_address(self):
+        if self.notification_email:
+            return self.notification_email
+        else:
+            return self.email
 
     def skills_last_updated(self):
         if self.skills.all().count():

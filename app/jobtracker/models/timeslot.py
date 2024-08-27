@@ -98,7 +98,7 @@ class TimeSlot(models.Model):
             )
         else:
             return "{}: {} ({})".format(
-                self.user.get_full_name(), self.slot_type.name, self.start
+                self.user, self.slot_type.name, self.start
             )
 
     def is_delivery(self):
