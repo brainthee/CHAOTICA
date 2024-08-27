@@ -149,7 +149,7 @@
     <div class="py-2">
       {% for usr in search_users %}
       <a class="dropdown-item py-2 d-flex align-items-center" href="{{ usr.get_absolute_url }}">
-        <div class="avatar avatar-l status-{{ usr.get_current_status }}  me-2 text-900">
+        <div class="avatar avatar-l me-2 text-900">
           <img class="rounded-circle " src="{{ usr.get_avatar_url }}" alt="" />
         </div>
         <div class="flex-1">

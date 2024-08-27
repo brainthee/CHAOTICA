@@ -27,6 +27,7 @@ urlpatterns = [
     path("admin/doc/", include("django.contrib.admindocs.urls")),
     path("auth/", include("django.contrib.auth.urls")),
     path("admin/", admin.site.urls),
+    path('explorer/', include('explorer.urls')),
     path("oauth2/", include("django_auth_adfs.urls")),
     re_path(r"", include("chaotica_utils.urls")),
     re_path(r"", include("jobtracker.urls")),

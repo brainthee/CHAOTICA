@@ -3,10 +3,12 @@ from django.db.models import Q
 from guardian.shortcuts import get_objects_for_user
 from ..models import Job, OrganisationalUnit, Client
 from ..enums import JobStatuses
-from rest_framework import permissions, viewsets, filters
+from rest_framework import permissions, viewsets, generics
 from ..serializers import *
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework_datatables.django_filters.backends import DatatablesFilterBackend
-
+from rest_framework_datatables.django_filters.filters import GlobalFilter
+from rest_framework_datatables.django_filters.filterset import DatatablesFilterSet
 
 class UserViewSet(viewsets.ModelViewSet):
     """
@@ -45,7 +47,7 @@ class ClientViewSet(viewsets.ModelViewSet):
     serializer_class = ClientSerializer
     permission_classes = [permissions.IsAuthenticated]
     http_method_names = ['get', 'head']
-    filter_backends = [DatatablesFilterBackend]
+    filter_backends = (DatatablesFilterBackend,)
     search_fields = ['name']
 
     def get_queryset(self):
@@ -62,7 +64,7 @@ class JobViewSet(viewsets.ModelViewSet):
     serializer_class = JobSerializer
     permission_classes = [permissions.IsAuthenticated]
     http_method_names = ['get', 'head']
-    filter_backends = [DatatablesFilterBackend]
+    filter_backends = [DjangoFilterBackend,]
     search_fields = ['title', 'client__name']
     filterset_fields = ['status', 'client']
     ordering_fields = '__all__'

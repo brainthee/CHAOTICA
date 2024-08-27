@@ -39,6 +39,13 @@ admin_children = (
         perm="chaotica_utils.view_activity_logs",
         weight=10,
     ),
+    MenuItem(
+        "SQL Explorer",
+        reverse("explorer_index"),
+        icon="database",
+        check=lambda request: request.user.is_superuser,
+        weight=10,
+    ),
     PermMenuItem(
         "Run Background Tasks",
         reverse("run_tasks"),
