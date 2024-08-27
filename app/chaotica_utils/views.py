@@ -873,6 +873,28 @@ class UserDeleteView(UserBaseView, DeleteView):
     """View to delete a job"""
 
 
+
+class NoteBaseView(ChaoticaBaseGlobalRoleView):
+    model = Note
+    fields = "__all__"
+    success_url = reverse_lazy("view_activity")
+    role_required = GlobalRoles.ADMIN
+
+    def get_context_data(self, **kwargs):
+        context = super(NoteBaseView, self).get_context_data(**kwargs)
+        return context
+
+    def get_queryset(self):
+        queryset = Note.objects.all()
+        return queryset
+
+
+class NoteListView(NoteBaseView, ListView):
+    """View to list all Notes.
+    Use the 'job_list' variable in the template
+    to access all job objects"""
+
+
 ######################################
 # Autocomplete fields
 ######################################

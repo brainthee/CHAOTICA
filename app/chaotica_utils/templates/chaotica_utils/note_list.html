@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% load menu %}
+{% load static %}
+{% load humanize %}
+
+{% block pageTitle %}
+  Activity Log
+{% endblock %}
+{% block head_title %}
+  Activity Log
+{% endblock %}
+
+{% block headerBlock_css %}
+  mb-6
+{% endblock %}
+
+{% block breadcrumbItem %}
+  <li class="breadcrumb-item text-sm text-dark active" aria-current="page">Activity Log</li>
+{% endblock %}
+
+{% block content %}
+  {% if request.u.show_help %}
+    <div class="row">
+      <div class="col-lg-12 col-12 mt-4 mt-lg-0">
+        {% include 'help/note_list.html' %}
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="row mb-4 gx-6 gy-3 mt-2 align-items-center">
+    <div class="col">
+      <h2 class="mb-0">Activity Log</h2>
+    </div>
+    <div class="col-3 d-flex justify-content-end"></div>
+  </div>
+
+  <div class="row my-3">
+    <div class="col-12">
+      <div class="card p-2">
+        <div class="card-body py-2">
+          <table class="table datatable align-items-center mb-0">
+            <caption>Audit Logs</caption>
+            <thead>
+              <tr>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Date</th>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Object</th>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Author</th>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Note</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for note in note_list %}
+                <tr>
+                  <td>
+                    <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ note.create_date }}">
+                        {{ note.create_date|naturaltime }}
+                    </span>
+                  </td>
+                  <td>
+                    {{ note.content_type }}
+                    <div class="d-flex px-2">
+                      <a href="{{ note.content_object.get_absolute_url }}">{{ note.content_object }}</a>
+                    </div>
+                  </td>
+                  <td>
+                    {% if note.author %}
+                      <div class="d-flex px-2">
+                        <a href="{{ note.author.get_absolute_url }}">{{ note.author }}</a>
+                      </div>
+                    {% else %}
+                    <span class="fw-semi-bold">SYSTEM</span>
+                    {% endif %}
+                  </td>
+                  <td>{{ note.content }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

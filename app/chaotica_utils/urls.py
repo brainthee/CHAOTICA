@@ -8,17 +8,20 @@ urlpatterns = [
     path("maintenance/", views.maintenance, name="maintenance"),
     re_path(r"^impersonate/", include("impersonate.urls")),
     path("quote", views.get_quote, name="get_quote"),
+
     # Autocomplete/search
     path(
         "autocomplete/users", views.UserAutocomplete.as_view(), name="user-autocomplete"
     ),
     # path('autocomplete/job', views.JobAutocomplete.as_view(), name='job-autocomplete'),
     path("search", views.site_search, name="search"),
+    
     # User CRUD
     path("users/", views.UserListView.as_view(), name="user_list"),
     path("users/invite", views.user_invite, name="user_invite"),
     path("signup/<str:invite_id>", views.signup, name="signup"),
     path("signup/", views.signup, name="signup"),
+
     # Notifications
     path("notifications/", views.notifications_feed, name="notifications_feed"),
     path(
@@ -31,6 +34,7 @@ urlpatterns = [
         views.notifications_mark_read,
         name="notifications_mark_read",
     ),
+
     # Annual Leave
     path("ops/leave/", views.manage_leave, name="manage_leave"),
     path(
@@ -38,10 +42,13 @@ urlpatterns = [
         views.manage_leave_auth_request,
         name="manage_leave_auth_request",
     ),
+
     # Settings
     path("settings/", views.app_settings, name="app_settings"),
     path("settings/import", views.settings_import_data, name="settings_import_data"),
     path("settings/export", views.settings_export_data, name="settings_export_data"),
+    path("activity/", views.NoteListView.as_view(), name="view_activity"),
+
     # Own profile bits
     path("profile/", views.view_own_profile, name="view_own_profile"),
     path("profile/theme", views.update_own_theme, name="update_own_theme"),
