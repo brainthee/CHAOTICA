@@ -80,13 +80,17 @@ class SchedulerFilter(forms.Form):
 
     users = forms.ModelMultipleChoiceField(
         required=False,
-        queryset=User.objects.filter(is_active=True),
+        queryset=User.objects.filter(),
         widget=autocomplete.ModelSelect2Multiple(
             url="user-autocomplete",
             attrs={
                 "data-minimum-input-length": 3,
             },
         ),
+    )
+
+    show_inactive_users = forms.BooleanField(
+        required=False,
     )
 
     def __init__(self, *args, **kwargs):
@@ -115,6 +119,7 @@ class SchedulerFilter(forms.Form):
             Div(
                 HTML('<h5 class="setting-panel-item-title">Users</h5>'),
                 Row(
+                    Field("show_inactive_users",),
                     Field("users", style="width: 100%;"),
                     Field("org_units", style="width: 100%;"),
                 ),
@@ -152,6 +157,7 @@ class SchedulerFilter(forms.Form):
             "skills_specialist",
             "skills_can_do_alone",
             "skills_can_do_support",
+            "show_inactive_users",
             "users",
             "services",
             "org_units",

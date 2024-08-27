@@ -1,16 +1,20 @@
 <div class="table-responsive scrollbar mx-n1 px-1">
-  <table class="table table-sm fs--1 mb-0" id="jobTableAjax">
+  <table class="table table-sm datatable fs--1 mb-0" 
+  id="jobTableAjax"
+  data-ajax="{% url 'job-list' %}?format=datatables{% if filter_field %}&{{ filter_field }}={{ filter_value }}{% endif %}"
+  {% comment %} data-server-side="true" {% endcomment %}
+  >
     <caption>Jobs</caption>
     <thead>
       <tr>
-        <th class="sort align-middle ps-0" scope="col" data-data="id">ID</th>
-        <th class="sort white-space-nowrap align-middle ps-3" scope="col" data-data="title" style="width:30%;">Name</th>
-        <th class="sort align-middle ps-3" scope="col" data-data="unit" style="width:10%;">Unit</th>
-        <th class="sort align-middle ps-3" scope="col" data-data="client" style="width:10%;">Client</th>
+        <th class="sort align-middle ps-0" scope="col" data-data="id" data-name="id">ID</th>
+        <th class="sort white-space-nowrap align-middle ps-3" scope="col" data-data="title_link" data-name="title" style="width:30%;">Name</th>
+        <th class="sort align-middle ps-3" scope="col" data-data="unit_link" style="width:10%;">Unit</th>
+        <th class="sort align-middle ps-3" scope="col" data-data="client_link" style="width:10%;">Client</th>
         <th class="sort align-middle ps-3" scope="col" data-data="start_date" style="width:10%;">Start</th>
         <th class="sort align-middle ps-3" scope="col" data-data="delivery_date" style="width:15%;">End</th>
         <th class="sort align-middle ps-3" scope="col" data-data="phases" style="width:12%;">Phases</th>
-        <th class="sort align-middle text-end" scope="col" data-data="status" style="width:10%;">Status</th>
+        <th class="sort align-middle text-end" scope="col" data-data="status_display" style="width:10%;">Status</th>
       </tr>
     </thead>
   </table>

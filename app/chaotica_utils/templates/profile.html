@@ -81,7 +81,8 @@
                      <p class="text-sm mb-0">Showcase your skillset. Values are automatically saved.</p>
                   </div>
                   <div class="col-3 d-flex flex-column align-items-end">
-                     <span class="badge badge-phoenix badge-phoenix-secondary">
+                     <span class="badge badge-phoenix badge-phoenix-secondary"
+                     data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ request.user.skills_last_updated }}">
                         {{ request.user.skills_last_updated | naturalday}}
                      </span>      
                      <span class="fs-10 text-opacity-60 fw-semibold">

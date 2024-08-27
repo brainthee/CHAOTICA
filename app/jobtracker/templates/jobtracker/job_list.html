@@ -42,23 +42,3 @@
     {% include 'partials/job/job_list_table.html' %}
   </div>
 {% endblock %}
-
-{% block footer_javascript_page %}
-  <script>    
-    $('#jobTableAjax').DataTable({
-      "retrieve": true,
-      "serverSide": true,
-      "ajax": "{% url 'job-list' %}?format=datatables",
-      "columns": [
-        {"data": "id"},
-        {"data": "title_link"},
-        {"data": "unit_link"},
-        {"data": "client_link"},
-        {"data": "start_date"},
-        {"data": "delivery_date"},
-        {"data": "phases"},
-        {"data": "status_display"},
-      ]
-    })
-  </script>
-{% endblock %}

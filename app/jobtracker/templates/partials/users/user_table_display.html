@@ -6,7 +6,7 @@
   </div>
   <div class="col">
     <div class="row">
-      <a class="me-3" href="{{ u.get_absolute_url }}">{{ u.get_full_name }}</a>
+      <a class="me-3" href="{{ u.get_absolute_url }}">{{ u }}</a>
     </div>
     {% if not noorg %}
       {% for unitMembership in u.unit_memberships.all %}
@@ -14,6 +14,10 @@
       {% endfor %}
     {% endif %}
 
+    {% if not u.is_active %}
+    <span class="badge badge-phoenix badge-phoenix-warning">INACTIVE</span>
+    {% endif %}
+    
     {% if not notitle %}
       <div class="row">
         <p class="mb-0 text-xs">{{ u.job_title }}</p>

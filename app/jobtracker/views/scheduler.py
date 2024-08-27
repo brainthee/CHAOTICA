@@ -38,7 +38,13 @@ def view_scheduler(request):
 
 
 def _filter_users_on_query(request):
+    query = Q()
     filter_form = SchedulerFilter(request.GET)
+    if filter_form.is_valid():
+        show_inactive_users = filter_form.cleaned_data.get("show_inactive_users")
+    else:
+        show_inactive_users = False
+
     # Starting users filter
     users_pk = []
     # This pre-loads which users we can see the schedule of.
@@ -47,11 +53,9 @@ def _filter_users_on_query(request):
     for org_unit in get_objects_for_user(
         request.user, "jobtracker.view_users_schedule"
     ):
-        for user in org_unit.get_activeMembers():
+        for user in org_unit.get_allMembers():
             if user.pk not in users_pk:
                 users_pk.append(user.pk)
-
-    query = Q(is_active=True)
 
     # If we're passed a job/phase ID - filter on that.
     job_id = clean_int(request.GET.get("job", None))
@@ -70,6 +74,9 @@ def _filter_users_on_query(request):
     if filter_form.is_valid():
         # Now lets apply the filters from the query...
         ## Filter users
+        if not show_inactive_users:
+            query.add(Q(is_active=True), Q.AND)
+
         users_q = filter_form.cleaned_data.get("users")
         if users_q:
             query.add(Q(pk__in=users_q), Q.AND)

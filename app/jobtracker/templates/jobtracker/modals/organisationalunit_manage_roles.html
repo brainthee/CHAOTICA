@@ -13,7 +13,7 @@
                     data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p>Select the roles you wish {{ membership.member.get_full_name }} to have in {{ orgUnit.name }}</p>
+                <p>Select the roles you wish {{ membership.member }} to have in {{ orgUnit.name }}</p>
                 
             {% crispy form %}
             </div>

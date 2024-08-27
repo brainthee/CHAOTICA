@@ -19,7 +19,7 @@
                </div>
             {% endif %}
             <h5>
-            {% if job.account_manager %}{{ job.account_manager.get_full_name }}{% else %}None Assigned{% endif %}
+            {% if job.account_manager %}{{ job.account_manager }}{% else %}None Assigned{% endif %}
             </h5>
 
             <a class="text-800 dropdown-toggle js-load-modal-form text-decoration-none dropdown-caret-none" 
@@ -46,7 +46,7 @@
                </div>
             {% endif %}
             <h5>
-            {% if job.dep_account_manager %}{{ job.dep_account_manager.get_full_name }}{% else %}None Assigned{% endif %}
+            {% if job.dep_account_manager %}{{ job.dep_account_manager }}{% else %}None Assigned{% endif %}
             </h5>
             <a class="text-800 dropdown-toggle js-load-modal-form text-decoration-none dropdown-caret-none" 
                data-url="{% url 'assign_job_field' job.slug 'dep_account_manager' %}" href="#!">
@@ -75,7 +75,7 @@
                </div>
             {% endif %}
             <h5>
-            {% if phase.project_lead %}{{ phase.project_lead.get_full_name }}{% else %}None Assigned{% endif %}
+            {% if phase.project_lead %}{{ phase.project_lead }}{% else %}None Assigned{% endif %}
             </h5>
             <a class="text-800 dropdown-toggle js-load-modal-form text-decoration-none dropdown-caret-none" 
                data-url="{% url 'assign_phase_field' job.slug phase.slug 'project_lead' %}" href="#!">
@@ -101,7 +101,7 @@
                </div>
             {% endif %}
             <h5>
-            {% if phase.report_author %}{{ phase.report_author.get_full_name }}{% else %}None Assigned{% endif %}
+            {% if phase.report_author %}{{ phase.report_author }}{% else %}None Assigned{% endif %}
             </h5>
             <a class="text-800 dropdown-toggle js-load-modal-form text-decoration-none dropdown-caret-none" 
                data-url="{% url 'assign_phase_field' job.slug phase.slug 'report_author' %}" href="#!">
@@ -130,7 +130,7 @@
                </div>
             {% endif %}
             <h5>
-            {% if phase.techqa_by %}{{ phase.techqa_by.get_full_name }}{% else %}None Assigned{% endif %}
+            {% if phase.techqa_by %}{{ phase.techqa_by }}{% else %}None Assigned{% endif %}
             </h5>
             <a class="text-800 dropdown-toggle js-load-modal-form text-decoration-none dropdown-caret-none" 
                data-url="{% url 'assign_phase_field' job.slug phase.slug 'techqa_by' %}" href="#!">
@@ -157,7 +157,7 @@
                </div>
             {% endif %}
             <h5>
-            {% if phase.presqa_by %}{{ phase.presqa_by.get_full_name }}{% else %}None Assigned{% endif %}
+            {% if phase.presqa_by %}{{ phase.presqa_by }}{% else %}None Assigned{% endif %}
             </h5>
             <a class="text-800 dropdown-toggle js-load-modal-form text-decoration-none dropdown-caret-none" 
                data-url="{% url 'assign_phase_field' job.slug phase.slug 'presqa_by' %}" href="#!">

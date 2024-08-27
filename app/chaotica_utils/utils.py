@@ -5,7 +5,7 @@ from django.core.mail import send_mail
 from django.conf import settings as django_settings
 from datetime import timedelta, datetime
 from uuid import UUID
-import re
+import re, logging, time
 from .enums import GlobalRoles
 from django.utils.text import slugify
 from menu import MenuItem
@@ -19,6 +19,23 @@ from django.utils.dateparse import (
 )
 from django.utils.timezone import is_aware, make_aware
 
+
+class NoColorFormatter(logging.Formatter):
+    """
+    Log formatter that strips terminal colour
+    escape codes from the log message.
+    """
+
+    # Regex for ANSI colour codes
+    ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
+
+    def format(self, record):
+        """Return logger message with terminal escapes removed."""
+        return "%s %s %s" % (
+            time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+            re.sub(self.ANSI_RE, "", record.levelname),
+            record.msg,
+        )
 
 def unique_slug_generator(instance, value=None):
     """Creates a unique slug
@@ -259,6 +276,6 @@ class AppNotification:
                 self.title,
                 self.message,
                 None,
-                [user.email],
+                [user.email_address()],
                 html_message=msg_html,
             )

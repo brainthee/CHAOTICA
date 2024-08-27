@@ -76,7 +76,7 @@
             </div>  
             <form method="post" action="{% url 'settings_import_data' %}" enctype="multipart/form-data">
                 {% csrf_token %}     
-                {% crispy import_form %}    
+{% crispy import_form %}    
             </form>
            </div>
        </div>

@@ -353,7 +353,7 @@ class ProfileForm(forms.Form):
 
     class Meta:
         model = User
-        fields = ("first_name", "last_name", "email", "password1", "password2")
+        fields = ("first_name", "last_name", "email", "notification_email", "password1", "password2")
 
 
 class ManageUserForm(forms.ModelForm):
@@ -520,6 +520,12 @@ class ProfileBasicForm(forms.ModelForm):
                         css_class="input-group input-group-dynamic",
                     )
                 ),
+                Column(
+                    Div(
+                        FloatingField("job_title"),
+                        css_class="input-group input-group-dynamic",
+                    )
+                ),
             ),
             Row(
                 Column(
@@ -530,7 +536,7 @@ class ProfileBasicForm(forms.ModelForm):
                 ),
                 Column(
                     Div(
-                        FloatingField("location"),
+                        FloatingField("notification_email"),
                         css_class="input-group input-group-dynamic",
                     )
                 ),
@@ -544,10 +550,14 @@ class ProfileBasicForm(forms.ModelForm):
                 ),
                 Column(
                     Div(
-                        FloatingField("job_title"),
+                        FloatingField("location"),
                         css_class="input-group input-group-dynamic",
                     )
                 ),
+            ),
+            Row(
+                Column(Div(Field("languages"), css_class="")),
+                Column(Div(Field("pref_timezone"), css_class="")),
             ),
             Row(
                 Column(
@@ -556,14 +566,17 @@ class ProfileBasicForm(forms.ModelForm):
                         css_class="input-group input-group-dynamic",
                     )
                 ),
-                Column(Div(Field("languages"), css_class="")),
-            ),
-            Row(
                 Column(
                     Row(
                         Column(
                             Div(
                                 Field("contracted_leave"),
+                                css_class="input-group input-group-dynamic",
+                            )
+                        ),
+                        Column(
+                            Div(
+                                Field("carry_over_leave"),
                                 css_class="input-group input-group-dynamic",
                             )
                         ),
@@ -575,7 +588,6 @@ class ProfileBasicForm(forms.ModelForm):
                         ),
                     ),
                 ),
-                Column(Div(Field("pref_timezone"), css_class="")),
             ),
         )
 
@@ -590,12 +602,14 @@ class ProfileBasicForm(forms.ModelForm):
             "profile_image",
             "pref_timezone",
             "email",
+            "notification_email",
             "phone_number",
             "job_title",
             "show_help",
             "location",
             "languages",
             "contracted_leave",
+            "carry_over_leave",
             "contracted_leave_renewal",
         )
 

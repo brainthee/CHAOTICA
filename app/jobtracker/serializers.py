@@ -29,8 +29,8 @@ class ClientSerializer(serializers.HyperlinkedModelSerializer):
 
     def get_status_display(self, client):
         return format_html("<span class='badge badge-phoenix badge-phoenix-{}'>{}</span>", 
-                           "success" if client.is_ready_for_jobs else "warning",
-                           "Ready" if client.is_ready_for_jobs else "Not Ready")
+                           "success" if client.is_ready_for_jobs() else "warning",
+                           "Ready" if client.is_ready_for_jobs() else "Not Ready")
 
     def get_ams_display(self, client):
         return loader.render_to_string(
