@@ -33,10 +33,10 @@ admin_children = (
         weight=10,
     ),
     PermMenuItem(
-        "Settings",
-        reverse("app_settings"),
-        icon="sliders",
-        perm="chaotica_utils.manage_site_settings",
+        "Activity Log",
+        reverse("view_activity"),
+        icon="magnifying-glass",
+        perm="chaotica_utils.view_activity_logs",
         weight=10,
     ),
     PermMenuItem(
@@ -50,6 +50,13 @@ admin_children = (
         "Send Test Notification",
         reverse("test_notification"),
         icon="envelope-open-text",
+        perm="chaotica_utils.manage_site_settings",
+        weight=10,
+    ),
+    PermMenuItem(
+        "Settings",
+        reverse("app_settings"),
+        icon="sliders",
         perm="chaotica_utils.manage_site_settings",
         weight=10,
     ),

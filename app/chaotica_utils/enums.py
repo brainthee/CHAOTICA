@@ -102,6 +102,7 @@ class GlobalRoles:
                 "chaotica_utils.manage_user",
                 "chaotica_utils.impersonate_users",
                 "chaotica_utils.manage_site_settings",
+                "chaotica_utils.view_activity_logs",
             ],
         ),
         (
