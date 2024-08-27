@@ -125,3 +125,6 @@ app/.scannerwork/
 .vscode/settings.json
 
 .vscode/
+
+app/.env*
+app/mediafiles/*
