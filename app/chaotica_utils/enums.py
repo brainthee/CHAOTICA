@@ -411,7 +411,7 @@ class UnitRoles:
                 "jobtracker.view_users_schedule",
                 "jobtracker.can_add_job",
                 "jobtracker.can_assign_poc_job",
-                "jobtracker.can_manage_frameworkagreement_job",
+                # "jobtracker.can_manage_frameworkagreement_job",
             ],
         ),
         (
@@ -448,7 +448,7 @@ class UnitRoles:
                 # Extras
                 "jobtracker.can_scope_jobs",
                 "jobtracker.can_assign_poc_job",
-                "jobtracker.can_manage_frameworkagreement_job",
+                # "jobtracker.can_manage_frameworkagreement_job",
                 "jobtracker.can_signoff_scopes",
                 "jobtracker.can_add_job",
                 "jobtracker.can_delete_job",

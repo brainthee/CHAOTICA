@@ -49,7 +49,7 @@ def populate_default_unit_roles():
                     for attr, value in role.items():
                         setattr(instance, attr, value)
 
-                    for perm in UnitRoles.PERMISSIONS[role["pk"]][1]:
+                    for perm in UnitRoles.PERMISSIONS[role["pk"]-1][1]:
                         if perm:
                             codeword = perm
                             if "." in perm:
