@@ -142,6 +142,23 @@
       {% endfor %}
     </div>
     {% endif %}
+
+    {% if search_project %}
+    <hr class="text-200 my-0" />
+    <h6 class="dropdown-header text-1000 fs--1 border-bottom border-200 py-2 lh-sm">Projects</h6>
+    <div class="py-2">
+      {% for project in search_project %}
+      <a class="dropdown-item" href="{{ project.get_absolute_url }}">
+        <div class="d-flex align-items-center">
+          <div class="fw-normal text-1000 title">
+            <span class="fab fa-diagram-project text-900" data-fa-transform="shrink-2"></span>
+            {{ project }}
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
     
     {% if search_users %}
     <hr class="text-200 my-0" />

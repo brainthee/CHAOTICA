@@ -69,7 +69,7 @@ urlpatterns = [
     ),
     path(
         "scheduler/timeslot/delete/<int:pk>",
-        views.SlotDeleteView.as_view(),
+        views.JobSlotDeleteView.as_view(),
         name="delete_scheduler_slot",
     ),
     path(
@@ -96,6 +96,11 @@ urlpatterns = [
         name="create_scheduler_phase_slot",
     ),
     path(
+        "scheduler/timeslots/project/create",
+        views.create_scheduler_project_slot,
+        name="create_scheduler_project_slot",
+    ),
+    path(
         "scheduler/timeslots/internal/create",
         views.create_scheduler_internal_slot,
         name="create_scheduler_internal_slot",
@@ -105,6 +110,37 @@ urlpatterns = [
         views.clear_scheduler_range,
         name="clear_scheduler_range",
     ),
+    # Project CRUD
+    path("projects/", views.ProjectListView.as_view(), name="project_list"),
+    path(
+        "project/create/", views.ProjectCreateView.as_view(), name="project_create"
+    ),
+    path(
+        "project/<str:slug>/",
+        views.ProjectDetailView.as_view(),
+        name="project_detail",
+    ),
+    path(
+        "project/<str:slug>/update/",
+        views.ProjectUpdateView.as_view(),
+        name="project_update",
+    ),
+    path(
+        "project/<str:slug>/schedule/slot/<int:pk>/delete",
+        views.ProjectSlotDeleteView.as_view(),
+        name="project_slot_delete",
+    ),
+    path(
+        "project/<str:slug>/delete/",
+        views.ProjectDeleteView.as_view(),
+        name="project_delete",
+    ),
+    path(
+        "autocomplete/projects",
+        views.ProjectAutocomplete.as_view(),
+        name="project-autocomplete",
+    ),
+
     # Job CRUD
     path("jobs/", views.JobListView.as_view(), name="job_list"),
     path(
@@ -178,7 +214,7 @@ urlpatterns = [
     ),
     path(
         "job/<str:slug>/schedule/slot/<int:pk>/delete",
-        views.SlotDeleteView.as_view(),
+        views.JobSlotDeleteView.as_view(),
         name="job_slot_delete",
     ),
     path(

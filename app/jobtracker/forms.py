@@ -13,6 +13,7 @@ from .models import (
     TimeSlotType,
     Client,
     Phase,
+    Project,
     OrganisationalUnit,
     OrganisationalUnitMember,
     Skill,
@@ -718,6 +719,139 @@ class DeliveryTimeSlotModalForm(forms.ModelForm):
         )
 
 
+class ProjectTimeSlotModalForm(forms.ModelForm):
+    project = forms.ModelChoiceField(
+        queryset=Project.objects.filter(),
+        widget=autocomplete.ModelSelect2(
+            url="project-autocomplete",
+            attrs={
+                "data-minimum-input-length": 3,
+            },
+        ),
+    )
+
+    def __init__(self, *args, **kwargs):
+        if "project" in kwargs:
+            project = kwargs.pop("project")
+        else:
+            project = None
+        if "user" in kwargs:
+            user = kwargs.pop("user")
+        else:
+            user = None
+        if "start" in kwargs:
+            start = kwargs.pop("start")
+        else:
+            start = None
+        if "end" in kwargs:
+            end = kwargs.pop("end")
+        else:
+            end = None
+        super(ProjectTimeSlotModalForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        for fieldname in self.fields:
+            self.fields[fieldname].help_text = None
+        self.fields["user"].widget = forms.HiddenInput()
+        if user:
+            self.fields["user"].initial = user
+            self.fields["user"].disabled = user
+
+        self.fields["slot_type"].widget = forms.HiddenInput()
+        self.fields["slot_type"].initial = TimeSlotType.get_builtin_object(
+            DefaultTimeSlotTypes.INTERNAL_PROJECT
+        )
+        self.fields["slot_type"].disabled = True
+
+        if project:
+            self.fields["project"].disabled = True
+            self.fields["project"].initial = project
+        else:
+            projects = Project.objects.filter()
+            self.fields["project"].widget = autocomplete.ModelSelect2()
+            self.fields["project"].queryset = projects
+
+        if self.instance.project:
+            delete_button = StrictButton(
+                "Delete",
+                type="button",
+                data_url=reverse(
+                    "project_slot_delete",
+                    kwargs={
+                        "slug": self.instance.project.slug,
+                        "pk": self.instance.pk,
+                    },
+                ),
+                css_class="btn js-load-modal-form btn-outline-phoenix-danger me-auto mb-0",
+            )
+
+            goto_button = HTML(
+                "<a href='"
+                + reverse(
+                    "project_detail",
+                    kwargs={
+                        "slug": self.instance.project.slug,
+                    },
+                )
+                + "' class='btn btn-outline-phoenix-secondary'>Goto Project</a>"
+            )
+        else:
+            goto_button = None
+            delete_button = None
+
+        self.fields["start"].widget = DateTimePickerInput()
+        if start:
+            self.fields["start"].initial = start
+
+        self.fields["end"].widget = DateTimePickerInput()
+        if end:
+            self.fields["end"].initial = end
+
+        self.helper.layout = Layout(
+            Div(
+                Row(
+                    Field("project", style="width: 100%;"),
+                    Field("user", style="width: 100%;"),
+                ),
+                Row(
+                    Column(
+                        Div(Field("start"), css_class="input-group input-group-dynamic")
+                    ),
+                    Column(
+                        Div(Field("end"), css_class="input-group input-group-dynamic")
+                    ),
+                ),
+                css_class="card-body p-3",
+            ),
+            Div(
+                Div(
+                    delete_button,
+                    goto_button,
+                    StrictButton(
+                        "Save",
+                        type="submit",
+                        css_class="btn btn-outline-phoenix-success ms-auto mb-0",
+                    ),
+                    css_class="button-row d-flex",
+                ),
+                css_class="card-footer pt-0 p-3",
+            ),
+        )
+
+    class Meta:
+        model = TimeSlot
+        widgets = {
+            "start": DateTimePickerInput(),
+            "end": DateTimePickerInput(),
+        }
+        fields = (
+            "user",
+            "project",
+            "slot_type",
+            "start",
+            "end",
+        )
+
+
 class ChangeTimeSlotDateModalForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(ChangeTimeSlotDateModalForm, self).__init__(*args, **kwargs)
@@ -802,7 +936,7 @@ class JobForm(forms.ModelForm):
     )
 
     client = forms.ModelChoiceField(
-        queryset=Client.objects.filter(account_managers__isnull=False),
+        queryset=Client.objects.filter(),
         widget=autocomplete.ModelSelect2(),
     )
 
@@ -834,7 +968,7 @@ class JobForm(forms.ModelForm):
 
         self.fields["unit"].queryset = OrganisationalUnit.objects.filter(
             pk__in=self.user.unit_memberships.filter(
-                roles__in=UnitRoles.get_roles_with_permission("jobtracker.can_add_job")
+                # roles__in=UnitRoles.get_roles_with_permission("jobtracker.can_add_job")
             )
             .values_list("unit")
             .distinct()
@@ -1580,6 +1714,47 @@ class BillingCodeForm(forms.ModelForm):
             "is_internal",
             "is_closed",
             "region",
+        ]
+
+class ProjectForm(forms.ModelForm):
+    primary_poc = forms.ModelChoiceField(
+        required=False,
+        queryset=User.objects.filter(is_active=True),
+        widget=autocomplete.ModelSelect2(
+            url="user-autocomplete",
+            attrs={
+                "data-minimum-input-length": 3,
+            },
+        ),
+    )
+    unit = forms.ModelChoiceField(
+        required=False,
+        queryset=OrganisationalUnit.objects.filter(),
+        widget=autocomplete.ModelSelect2(
+            attrs={
+                "data-minimum-input-length": 3,
+            },
+        ),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super(ProjectForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.fields["title"].label = False
+        self.fields["overview"].label = False
+
+        self.fields["primary_poc"].label = False
+        self.fields["status"].label = False
+        self.fields["unit"].label = False
+
+    class Meta:
+        model = Project
+        fields = [
+            "title",
+            "overview",
+            "primary_poc",
+            "status",
+            "unit",
         ]
 
 

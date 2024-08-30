@@ -20,13 +20,13 @@
 {% include 'partials/job/page_header.html' %}
 
 <div class="row g-0 mt-3 border-1 border-top bg-light dark__bg-1100 h-100">
-  <div class="col-12 col-md-9 px-3 pt-3 border-1 border-end">
+  <div class="col-12 col-md-9 border-1 border-end">
 
-    <div class="card card-calendar">
-      <div class="card-body p-0">
+    {% comment %} <div class="card card-calendar">
+      <div class="card-body p-0"> {% endcomment %}
         <div class="calendar" data-bs-toggle="calendar" id="calendar"></div>
-      </div>
-    </div>
+      {% comment %} </div>
+    </div> {% endcomment %}
 
   </div>
 
@@ -36,6 +36,7 @@
       <div class="bg-light dark__bg-1100 h-100 p-3">     
         {% include 'partials/scheduler/schedule_add_user.html' %}
         {% include 'partials/scheduler/schedule_util.html' %}     
+        {% include 'partials/scheduler/schedule_job_status.html' %}     
       </div>
     </div>
 

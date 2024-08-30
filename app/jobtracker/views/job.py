@@ -441,7 +441,7 @@ class JobCreateView(UnitPermissionRequiredMixin, JobBaseView, CreateView):
     def get_permission_object(self):
         orgs = OrganisationalUnit.objects.filter(
             pk__in=self.request.user.unit_memberships.filter(
-                roles__in=UnitRoles.get_roles_with_permission("jobtracker.can_add_job")
+                # roles__in=UnitRoles.get_roles_with_permission("jobtracker.can_add_job")
             )
             .values_list("unit")
             .distinct()

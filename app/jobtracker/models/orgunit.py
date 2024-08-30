@@ -11,7 +11,7 @@ from guardian.shortcuts import (
 )
 from django.db.models import JSONField
 import uuid, os, random
-from chaotica_utils.models import User
+from chaotica_utils.models import User, get_sentinel_user
 from chaotica_utils.enums import UnitRoles
 from decimal import Decimal
 from django.templatetags.static import static
@@ -64,7 +64,7 @@ class OrganisationalUnit(models.Model):
         settings.AUTH_USER_MODEL,
         related_name="units_lead",
         null=True,
-        on_delete=models.CASCADE,
+        on_delete=models.DO_NOTHING,
     )
 
     class Meta:
@@ -254,7 +254,7 @@ class OrganisationalUnitMember(models.Model):
     )
     inviter = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
+        on_delete=models.SET(get_sentinel_user),
         related_name="unitmember_invites",
         null=True,
         blank=True,
@@ -283,6 +283,9 @@ class OrganisationalUnitMember(models.Model):
     class Meta:
         ordering = [
             "member",
+        ]
+        unique_together = [
+            "unit", "member",
         ]
         get_latest_by = "mod_date"
 

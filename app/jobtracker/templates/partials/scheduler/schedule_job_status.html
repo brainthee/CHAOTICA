@@ -1,0 +1,34 @@
+{% load menu %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load index %}
+<div class="card mb-3">
+  <div class="card-header">
+    <h4>Phase Status</h4>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-sm fs--1 mb-0">
+        <thead>
+          <tr>
+            <th class="sort border-top ps-1" data-sort="name">Phase</th>
+            <th class="sort border-top" data-sort="email">Status</th>
+          </tr>
+        </thead>
+        <tbody class="list">
+          <!-- Do this for every phase -->
+          {% for j_phase in job.phases.all %}
+            <tr>
+              <td class="phase">
+                <a href="{{ j_phase.get_absolute_url }}">{{ j_phase }}</a>
+              </td>
+              <td>
+                {% include 'partials/phase/status_badge.html' with phase=j_phase %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

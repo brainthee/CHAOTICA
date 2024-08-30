@@ -1,137 +1,163 @@
-{% extends "base.html" %}
-{% load menu %}{% load static %}
+{% extends 'base.html' %}
+{% load menu %}
+{% load static %}
 
-{% block pageTitle %}{{ user }}{% endblock pageTitle %}
-{% block head_title %}{{ user }}{% endblock head_title %}
+{% block pageTitle %}
+  {{ user }}
+{% endblock %}
+{% block head_title %}
+  {{ user }}
+{% endblock %}
 
 {% block breadcrumbItem %}
-<li class="breadcrumb-item text-sm">Users</li>
-<li class="breadcrumb-item text-sm text-dark active" aria-current="page">{{ user }}</li>
-{% endblock breadcrumbItem %}
+  <li class="breadcrumb-item text-sm">Users</li>
+  <li class="breadcrumb-item text-sm text-dark active" aria-current="page">{{ user }}</li>
+{% endblock %}
 
 {% block content %}
-{% if not user.is_active %}
+  {% if not user.is_active %}
     <div class="alert alert-phoenix-warning d-flex mt-2 mb-0 align-items-center" role="alert">
-        <span class="fas fa-info-circle text-warning fs-5 me-3"></span>
-        <p class="mb-0 flex-1">
-            User is inactive
-        </p>
+      <span class="fas fa-info-circle text-warning fs-5 me-3"></span>
+      <p class="mb-0 flex-1">User is inactive</p>
     </div>
-{% endif %}
+  {% endif %}
 
-<div class="row pt-5 pb-2 g-2">
+  <div class="row pt-5 pb-2 g-2">
     <div class="col-12 g-2 col-xl-4">
-        <div class="card mb-3">
-            <div class="card-body d-flex flex-column justify-content-between pb-3">
-                <div class="m-2 position-absolute top-0 end-0">
-                    {% include 'partials/user/user_manage_menu.html' with u=user %}
-                </div>
+      <div class="card mb-3">
+        <div class="card-body d-flex flex-column justify-content-between pb-3">
+          <div class="m-2 position-absolute top-0 end-0">
+            {% include 'partials/user/user_manage_menu.html' with u=user %}
+          </div>
 
-                <div class="position-relative">
-                    <div class="p-3 pb-0">
-                        <div class="text-center row align-items-center">
-                            <div class="col-4">
-                                <div class="avatar avatar-4xl position-relative me-2 me-sm-0 me-xl-2 mb-2">
-                                    <img class="rounded-circle border border-light-subtle" src="{{ user.get_avatar_url }}" alt="" />
-                                </div>                                
-                            </div>
-                            <div class="col-8 text-start">
-                                <h3 class="">
-                                    {{ user }}
-                                </h3>
-                                <p class="text-opacity-50 fw-semibold fs-10 mb-2">
-                                    {{ user.job_title }}
-                                </p>                                
-                            </div>
-                        </div>
-                    </div>
+          <div class="position-relative">
+            <div class="p-3 pb-0">
+              <div class="text-center row align-items-center">
+                <div class="col-4">
+                  <div class="avatar avatar-4xl position-relative me-2 me-sm-0 me-xl-2 mb-2">
+                    <img class="rounded-circle border border-light-subtle" src="{{ user.get_avatar_url }}" alt="" />
+                  </div>
                 </div>
-                <div class="bg-body-emphasis">
-                    <div class="p-3 border-bottom border-translucent">
-                        <div class="d-flex justify-content-between">
-                            <a class="btn btn-phoenix-secondary"
-                            href="{{ user.get_absolute_url }}">
-                            <span class="fa-solid fa-id-card"></span>
-                            Profile
-                            </a>
-                            <a class="btn btn-phoenix-primary"
-                            href="mailto:{{ user.email }}">
-                            <span class="fa-solid fa-envelope me-2"></span>
-                            Email
-                            </a>
-                        </div>
-                    </div>
+                <div class="col-8 text-start">
+                  <h3 class="">{{ user }}</h3>
+                  <p class="text-opacity-50 fw-semibold fs-10 mb-2">{{ user.job_title }}</p>
                 </div>
-
-                
-                <div class="d-flex flex-between-center border-top border-dashed border-300 pt-4">
-                    <div>
-                        <h6>Avg Rating</h6>
-                        <div class="text-600 mb-0">
-                            {% with avg_qa_rating=user.get_average_qa_rating_12mo %}
-                            <span class="rating text-end {% if avg_qa_rating < 2 %}text-danger{% elif avg_qa_rating < 3 %}text-warning{% elif avg_qa_rating < 4 %}text-primary{% elif avg_qa_rating >= 4 %}text-success{% endif %}" 
-                                data-bs-toggle="tooltip" data-bs-placement="bottom" 
-                                title="{% if avg_qa_rating > 0 %}{{ avg_qa_rating }}{% else %}No Data{% endif %}" >
-                              {% include 'partials/feedback_stars.html' with feedback=avg_qa_rating %}
-                            </span>
-                            {% endwith %}
-                        </div>
-                    </div>
-                    <div>
-                        <h6>Jobs</h6>
-                        <p class="fs-1 text-800 mb-0">{{ user.get_jobs | length }}</p>
-                    </div>
-                    <div>
-                        <h6>Reports</h6>
-                        <p class="fs-1 text-800 mb-0">{{ user.phase_where_report_author.all | length }}</p>
-                    </div>
-                </div>
-                <div class="border-top border-dashed border-300 pt-4"></div>
-                <div class="mb-4">
-                    <div class="d-flex align-items-center mb-1">
-                        <span class="me-2 fas fa-certificate">  </span>
-                        <h5 class="text-body-highlight mb-0">Qualifications</h5>
-                    </div>
-                    <ul class="list-group align-items-center list-group-flush">
-                        {% for record in user.qualifications.all %}
-                        <li class="list-group-item">
-                            <a href="{{ record.qualification.get_absolute_url }}">
-                                <span class="badge badge-phoenix badge-phoenix-{{ record.status_bs_colour }} me-2 mb-1 text-wrap">
-                                    {{ record.qualification.awarding_body }} - {{ record.qualification }} ({{ record.get_status_display }})
-                                </span>            
-                            </a>
-                        </li>
-                        {% endfor %}
-                    </ul>
-
-                </div>
+              </div>
             </div>
-        </div>
+          </div>
+          <div class="bg-body-emphasis">
+            <div class="p-3 border-bottom border-translucent">
+              <div class="d-flex justify-content-between">
+                <a class="btn btn-phoenix-secondary" href="{{ user.get_absolute_url }}">
+                  <span class="fa-solid fa-id-card"></span>
+                  Profile
+                </a>
+                <a class="btn btn-phoenix-primary" href="mailto:{{ user.email }}">
+                  <span class="fa-solid fa-envelope me-2"></span>
+                  Email
+                </a>
+              </div>
+            </div>
+          </div>
 
+          <div class="d-flex flex-between-center border-top border-dashed border-300 pt-4">
+            <div>
+              <h6>Avg Report Rating</h6>
+              <div class="text-600 mb-0">
+                {% with avg_qa_rating=user.get_average_qa_rating_12mo %}
+                  <span class="rating text-end {% if avg_qa_rating < 2 %}
+                      text-danger
+                    {% elif avg_qa_rating < 3 %}
+                      text-warning
+                    {% elif avg_qa_rating < 4 %}
+                      text-primary
+                    {% elif avg_qa_rating >= 4 %}
+                      text-success
+                    {% endif %}"
+                    data-bs-toggle="tooltip"
+                    data-bs-placement="bottom"
+                    title="{% if avg_qa_rating > 0 %}
+                      {{ avg_qa_rating }}
+                    {% else %}
+                      No Data
+                    {% endif %}">
+                    {% include 'partials/feedback_stars.html' with feedback=avg_qa_rating %}
+                  </span>
+                {% endwith %}
+              </div>
+            </div>
+            <div>
+              <h6>Jobs</h6>
+              <p class="fs-1 text-800 mb-0">{{ user.get_jobs|length }}</p>
+            </div>
+            <div>
+              <h6>Reports</h6>
+              <p class="fs-1 text-800 mb-0">{{ user.phase_where_report_author.all|length }}</p>
+            </div>
+          </div>
+          <div class="border-top border-dashed border-300 pt-4"></div>
+          <div class="mb-4">
+            <div class="d-flex align-items-center mb-1">
+              <span class="me-2 fas fa-certificate"></span>
+              <h5 class="text-body-highlight mb-0">Qualifications</h5>
+            </div>
+            <ul class="list-group align-items-center list-group-flush">
+              {% for record in user.qualifications.all %}
+                <li class="list-group-item">
+                  <a href="{{ record.qualification.get_absolute_url }}"><span class="badge badge-phoenix badge-phoenix-{{ record.status_bs_colour }} me-2 mb-1 text-wrap">{{ record.qualification.awarding_body }} - {{ record.qualification }} ({{ record.get_status_display }})</span></a>
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="col-12 g-2 col-xl-8 ps-3 pt-3">
-    
-        <div class="row">
-            <div class="col-6">
-                {% include 'partials/profile/skills_card.html' %} 
-            </div>
-
-            <div class="col-6 ps-3">
-                {% include 'partials/profile/utilisation.html' %}
-            </div>
+      <div class="row">
+        <div class="col-6">
+          {% include 'partials/profile/skills_card.html' %}
+        </div>
+        <div class="col-6 ps-3">
+          {% include 'partials/profile/services_card.html' %}
         </div>
 
-        <div class="row mb-3">
-                
+        {% comment %} <div class="col-6 ps-3">
+          {% include 'partials/profile/utilisation.html' %}
+        </div> {% endcomment %}
+      </div>
+
+      <div class="row mb-3"></div>
+
+      <div class="row mb-3">
+        <div class="scrollbar">
+          <ul class="nav nav-underline fs-9 flex-nowrap mb-3 pb-1" id="myTab" role="tablist">
+            <li class="nav-item me-3" role="presentation">
+              <a class="nav-link text-nowrap active" id="jobs-tab" data-bs-toggle="tab" href="#tab-orders" role="tab" aria-controls="tab-orders" aria-selected="true"><span class="fas fa-shopping-cart me-2"></span> Jobs <span class="text-body-tertiary fw-normal">({{ user.get_jobs | length }})</span></a>
+            </li>
+            <li class="nav-item me-3" role="presentation">
+              <a class="nav-link text-nowrap" id="reviews-tab" data-bs-toggle="tab" href="#tab-reviews" role="tab" aria-controls="tab-orders" aria-selected="false" tabindex="-1"><span class="fas fa-star me-2"></span> Reports <span class="text-body-tertiary fw-normal">({{ user.phase_where_report_author.all|length }})</span></a>
+            </li>
+            <li class="nav-item me-3" role="presentation">
+              <a class="nav-link text-nowrap" id="wishlist-tab" data-bs-toggle="tab" href="#tab-wishlist" role="tab" aria-controls="tab-orders" aria-selected="false" tabindex="-1"><span class="fas fa-heart me-2"></span> Wishlist</a>
+            </li>
+            <li class="nav-item me-3" role="presentation">
+              <a class="nav-link text-nowrap" id="stores-tab" data-bs-toggle="tab" href="#tab-stores" role="tab" aria-controls="tab-stores" aria-selected="false" tabindex="-1"><span class="fas fa-home me-2"></span> Stores</a>
+            </li>
+            <li class="nav-item" role="presentation">
+              <a class="nav-link text-nowrap" id="personal-info-tab" data-bs-toggle="tab" href="#tab-personal-info" role="tab" aria-controls="tab-personal-info" aria-selected="false" tabindex="-1"><span class="fas fa-user me-2"></span>Personal info</a>
+            </li>
+          </ul>
         </div>
 
-        <div class="row mb-3">
-
-            {% include 'partials/profile/services_card.html' %} 
-                
+        <div class="tab-content" id="profileTabContent">
+          <div class="tab-pane fade active show" id="tab-jobs" role="tabpanel" aria-labelledby="jobs-tab">
+            {% include 'partials/job/job_list_table.html' with job_list=user.get_jobs %}
+          </div>
+          <div class="tab-pane fade" id="tab-reviews" role="tabpanel" aria-labelledby="reviews-tab"></div>
+          <div class="tab-pane fade" id="tab-wishlist" role="tabpanel" aria-labelledby="wishlist-tab"></div>
         </div>
+      </div>
     </div>
-</div>
-
-{% endblock content %}
+  </div>
+{% endblock %}

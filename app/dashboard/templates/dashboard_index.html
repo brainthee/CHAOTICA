@@ -169,8 +169,9 @@
 var calendarEl = document.getElementById('calendar');
 
 var calendar = new FullCalendar.Calendar(calendarEl, {
-    initialView: 'timeGridWeek',
+    initialView: 'dayGridMonth',
     themeSystem: 'bootstrap5',
+    eventDisplay: "block",
     headerToolbar: {
       left: 'prev,next today',
       center: 'title',
@@ -210,8 +211,8 @@ var calendar = new FullCalendar.Calendar(calendarEl, {
         },
       },
     ],
-    selectable: true,
-    editable: true,
+    selectable: false,
+    editable: false,
     eventClick: function(info) {
         info.jsEvent.preventDefault(); // don't let the browser navigate
         if (info.event.url) {

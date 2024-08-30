@@ -680,7 +680,7 @@ class Holiday(models.Model):
 class LeaveRequest(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.SET(get_sentinel_user),
+        on_delete=models.CASCADE,
         related_name="leave_records",
     )
 
@@ -698,11 +698,13 @@ class LeaveRequest(models.Model):
         related_name="leave_records_authorised",
         null=True,
         blank=True,
-        on_delete=models.PROTECT,
+        on_delete=models.SET(get_sentinel_user),
     )
 
     timeslot = models.ForeignKey(
-        "jobtracker.TimeSlot", null=True, blank=True, on_delete=models.CASCADE
+        "jobtracker.TimeSlot", 
+        related_name="leaverequest",
+        null=True, blank=True, on_delete=models.CASCADE
     )
 
     cancelled = models.BooleanField(default=False)
@@ -715,7 +717,7 @@ class LeaveRequest(models.Model):
         related_name="leave_records_declined",
         null=True,
         blank=True,
-        on_delete=models.PROTECT,
+        on_delete=models.SET(get_sentinel_user),
     )
 
     class Meta:

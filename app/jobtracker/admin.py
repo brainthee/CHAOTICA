@@ -23,6 +23,7 @@ from .models import (
     OrganisationalUnitRole,
     UserSkill,
     TimeSlotType,
+    Project
 )
 from import_export import resources
 from guardian.admin import GuardedModelAdmin
@@ -41,6 +42,7 @@ class PhasesInline(admin.StackedInline):
 @admin.register(Job)
 class JobAdmin(admin.ModelAdmin):
     inlines = [PhasesInline]
+    search_fields = ['id', 'title', "external_id"]
 
 
 admin.site.register(JobSupportTeamRole)
@@ -82,6 +84,12 @@ admin.site.register(TimeSlot, SimpleHistoryAdmin)
 admin.site.register(WorkflowTask)
 admin.site.register(BillingCode)
 admin.site.register(Feedback)
+
+
+@admin.register(Project)
+class ProjectAdmin(admin.ModelAdmin):
+    search_fields = ['id', 'title', "external_id"]
+
 admin.site.register(OrganisationalUnitRole)
 
 #### Quals

@@ -8,12 +8,13 @@ from chaotica_utils.views import page_defaults
 from chaotica_utils.views import ChaoticaBaseView
 from chaotica_utils.models import User
 from guardian.shortcuts import get_objects_for_user
-from ..models import Job, TimeSlot, UserSkill, Phase, OrganisationalUnitMember
+from ..models import Job, TimeSlot, UserSkill, Phase, OrganisationalUnitMember,Project
 from ..forms import (
     NonDeliveryTimeSlotModalForm,
     SchedulerFilter,
     ChangeTimeSlotDateModalForm,
     DeliveryTimeSlotModalForm,
+    ProjectTimeSlotModalForm,
 )
 from ..enums import UserSkillRatings
 import logging
@@ -264,11 +265,16 @@ def change_scheduler_slot(request, pk=None):
         return HttpResponseBadRequest()
     slot = get_object_or_404(TimeSlot, pk=pk)
     data = dict()
+    from pprint import pprint
+    pprint(slot)
     if request.method == "POST":
         if slot.is_delivery():
             form = DeliveryTimeSlotModalForm(request.POST, instance=slot)
+        elif slot.is_project():
+            form = ProjectTimeSlotModalForm(request.POST, instance=slot)
         else:
             form = NonDeliveryTimeSlotModalForm(request.POST, instance=slot)
+            
         if form.is_valid():
             form.save()
             data["form_is_valid"] = True
@@ -278,8 +284,13 @@ def change_scheduler_slot(request, pk=None):
     else:
         # Send the modal
         if slot.is_delivery():
+            pprint("is_delivery")
             form = DeliveryTimeSlotModalForm(instance=slot)
+        elif slot.is_project():
+            pprint("is_project")
+            form = ProjectTimeSlotModalForm(instance=slot)
         else:
+            pprint("internal")
             form = NonDeliveryTimeSlotModalForm(instance=slot)
 
     context = {"form": form}
@@ -313,6 +324,60 @@ def create_scheduler_internal_slot(request):
     context = {"form": form}
     data["html_form"] = loader.render_to_string(
         "jobtracker/modals/job_slot_create.html", context, request=request
+    )
+    return JsonResponse(data)
+
+@login_required
+def create_scheduler_project_slot(request):
+    data = dict()
+    start = clean_datetime(request.GET.get("start", None))
+    end = clean_datetime(request.GET.get("end", None))
+    resource_id = clean_int(request.GET.get("resource_id", None))
+    project_id = clean_int(request.GET.get("project", None))
+
+    if resource_id:
+        user = get_object_or_404(User, pk=resource_id)
+    else:
+        user = None
+
+    if project_id:
+        project = get_object_or_404(Project, pk=project_id)
+    else:
+        project = None
+
+    if request.method == "POST":
+        force = request.POST.get("force", None)
+        form = ProjectTimeSlotModalForm(
+            request.POST, start=start, end=end, user=user, project=project,
+        )
+        if form.is_valid():
+            slot = form.save(commit=False)
+            slots = slot.overlapping_slots()
+            from pprint import pprint
+            pprint(slots)
+            if slots and not force:
+                # Overlapping slots!
+                data["form_is_valid"] = False
+                data["logic_checks_failed"] = True
+                data["logic_checks_can_bypass"] = True
+                data["logic_checks_feedback"] = loader.render_to_string(
+                    "partials/scheduler/logicchecks/overlaps.html",
+                    {"slot": slot, "overlapping_slots": slots},
+                    request=request,
+                )
+            else:
+                slot.save()
+                data["form_is_valid"] = True
+        else:
+            data["form_is_valid"] = False
+    else:
+        form = ProjectTimeSlotModalForm(
+            start=start, end=end, user=user, project=project,
+        )
+
+    context = {"form": form}
+    data["html_form"] = loader.render_to_string(
+        "jobtracker/modals/project_slot_create.html", context, request=request
     )
     return JsonResponse(data)
 
@@ -432,7 +497,7 @@ def clear_scheduler_range(request):
     return JsonResponse(data)
 
 
-class SlotDeleteView(ChaoticaBaseView, DeleteView):
+class JobSlotDeleteView(ChaoticaBaseView, DeleteView):
     """View to delete a slot"""
 
     model = TimeSlot
@@ -446,7 +511,28 @@ class SlotDeleteView(ChaoticaBaseView, DeleteView):
             return reverse_lazy("view_scheduler")
 
     def get_context_data(self, **kwargs):
-        context = super(SlotDeleteView, self).get_context_data(**kwargs)
+        context = super(JobSlotDeleteView, self).get_context_data(**kwargs)
         if "slug" in self.kwargs:
             context["job"] = get_object_or_404(Job, slug=self.kwargs["slug"])
+        return context
+
+
+
+class ProjectSlotDeleteView(ChaoticaBaseView, DeleteView):
+    """View to delete a slot"""
+
+    model = TimeSlot
+    template_name = "jobtracker/modals/project_slot_delete.html"
+
+    def get_success_url(self):
+        if "slug" in self.kwargs:
+            slug = self.kwargs["slug"]
+            return reverse_lazy("project_detail", kwargs={"slug": slug})
+        else:
+            return reverse_lazy("view_scheduler")
+
+    def get_context_data(self, **kwargs):
+        context = super(ProjectSlotDeleteView, self).get_context_data(**kwargs)
+        if "slug" in self.kwargs:
+            context["project"] = get_object_or_404(Project, slug=self.kwargs["slug"])
         return context
