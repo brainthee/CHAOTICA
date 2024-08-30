@@ -192,6 +192,7 @@ def view_scheduler_members(request):
                 "title": user_title,
                 "first_name": user.first_name,
                 "last_name": user.last_name,
+                "url": user.get_absolute_url(),
                 "businessHours": (
                     {
                         "startTime": main_org.unit.businessHours_startTime,

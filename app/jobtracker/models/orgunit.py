@@ -156,7 +156,7 @@ class OrganisationalUnit(models.Model):
     def get_activeMembers(self):
         ids = []
         for mgr in OrganisationalUnitMember.objects.filter(
-            unit=self, left_date__isnull=True
+            unit=self, left_date__isnull=True, member__is_active=True,
         ):
             if mgr.member.pk not in ids:
                 ids.append(mgr.member.pk)
@@ -164,6 +164,11 @@ class OrganisationalUnit(models.Model):
             return User.objects.filter(pk__in=ids)
         else:
             return User.objects.none()
+
+    def get_activeMemberships(self):
+        return self.members.filter(
+            left_date__isnull=True, member__is_active=True,
+        )
 
     def get_active_members_with_perm(self, permission_str, include_su=False):
         members = self.get_activeMembers()

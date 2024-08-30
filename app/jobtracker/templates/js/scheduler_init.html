@@ -83,6 +83,11 @@
         stickyFooterScrollbar : true,
         // resourceAreaWidth: '',
         resourceAreaHeaderContent: 'Users',
+        resourceLabelDidMount: function(info) {    
+          info.el.querySelector('.fc-datagrid-cell-main').innerHTML =
+            '<a href="'+info.resource.extendedProps.url+'">' + info.resource.title + '</a>';
+          
+        },
         resources: {
             url: "{% url 'view_scheduler_members' %}",
             method: 'GET',
