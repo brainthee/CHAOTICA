@@ -40,7 +40,22 @@
                 </div>
                 <div class="col-8 text-start">
                   <h3 class="">{{ user }}</h3>
-                  <p class="text-opacity-50 fw-semibold fs-10 mb-2">{{ user.job_title }}</p>
+
+                  {% if user.job_title %}
+                    <p class="text-opacity-50 fw-semibold fs-10 mb-2">{{ user.job_title }}</p>
+                  {% endif %}
+                  {% if user.notification_email %}
+                    <p class="text-opacity-50 fw-semibold fs-10 mb-2">
+                      <a href="mailto:{{ user.notification_email }}">{{ user.notification_email }}</a>
+                    </p>
+                  {% elif user.email %}
+                    <p class="text-opacity-50 fw-semibold fs-10 mb-2">
+                      <a href="mailto:{{ user.email }}">{{ user.email }}</a>
+                    </p>
+                  {% endif %}
+                  {% for unitMembership in user.unit_memberships.all %}
+                    <a href="{{ unitMembership.unit.get_absolute_url }}">{% include 'partials/unit/unit_badge_role_colour.html' with unitMembership=unitMembership %}</a>
+                  {% endfor %}
                 </div>
               </div>
             </div>
@@ -48,14 +63,7 @@
           <div class="bg-body-emphasis">
             <div class="p-3 border-bottom border-translucent">
               <div class="d-flex justify-content-between">
-                <a class="btn btn-phoenix-secondary" href="{{ user.get_absolute_url }}">
-                  <span class="fa-solid fa-id-card"></span>
-                  Profile
-                </a>
-                <a class="btn btn-phoenix-primary" href="mailto:{{ user.email }}">
-                  <span class="fa-solid fa-envelope me-2"></span>
-                  Email
-                </a>
+                
               </div>
             </div>
           </div>
@@ -66,20 +74,40 @@
               <div class="text-600 mb-0">
                 {% with avg_qa_rating=user.get_average_qa_rating_12mo %}
                   <span class="rating text-end {% if avg_qa_rating < 2 %}
+                      
+                      
                       text-danger
+
+
                     {% elif avg_qa_rating < 3 %}
+                      
+                      
                       text-warning
+
+
                     {% elif avg_qa_rating < 4 %}
+                      
+                      
                       text-primary
+
+
                     {% elif avg_qa_rating >= 4 %}
+                      
+                      
                       text-success
+
+
                     {% endif %}"
                     data-bs-toggle="tooltip"
                     data-bs-placement="bottom"
                     title="{% if avg_qa_rating > 0 %}
                       {{ avg_qa_rating }}
                     {% else %}
+                      
+                      
                       No Data
+
+
                     {% endif %}">
                     {% include 'partials/feedback_stars.html' with feedback=avg_qa_rating %}
                   </span>
@@ -133,7 +161,7 @@
         <div class="scrollbar">
           <ul class="nav nav-underline fs-9 flex-nowrap mb-3 pb-1" id="myTab" role="tablist">
             <li class="nav-item me-3" role="presentation">
-              <a class="nav-link text-nowrap active" id="jobs-tab" data-bs-toggle="tab" href="#tab-jobs" role="tab" aria-controls="tab-jobs" aria-selected="true"><span class="fas fa-shopping-cart me-2"></span> Jobs <span class="text-body-tertiary fw-normal">({{ user.get_jobs | length }})</span></a>
+              <a class="nav-link text-nowrap active" id="jobs-tab" data-bs-toggle="tab" href="#tab-jobs" role="tab" aria-controls="tab-jobs" aria-selected="true"><span class="fas fa-shopping-cart me-2"></span> Jobs <span class="text-body-tertiary fw-normal">({{ user.get_jobs|length }})</span></a>
             </li>
             <li class="nav-item me-3" role="presentation">
               <a class="nav-link text-nowrap" id="reports-tab" data-bs-toggle="tab" href="#tab-reports" role="tab" aria-controls="tab-reports" aria-selected="false" tabindex="-1"><span class="fas fa-star me-2"></span> Reports <span class="text-body-tertiary fw-normal">({{ user.phase_where_report_author.all|length }})</span></a>
@@ -146,8 +174,8 @@
             {% include 'partials/job/job_list_table.html' with job_list=user.get_jobs %}
           </div>
           <div class="tab-pane fade" id="tab-reports" role="tabpanel" aria-labelledby="reports-tab">
-            {% include 'partials/phase/phase_list_table.html' with phases=user.phase_where_report_author.all %}</div>
-          
+            {% include 'partials/phase/phase_list_table.html' with phases=user.phase_where_report_author.all %}
+          </div>
         </div>
       </div>
     </div>
