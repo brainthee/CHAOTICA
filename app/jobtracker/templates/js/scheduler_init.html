@@ -60,6 +60,7 @@
         // {% endif %}
         // {% endif %}
         nowIndicator: true,
+        height: "100%",
         scrollTime: Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()),
         {% comment %} timeZone: '{{ user.pref_timezone }}', // the default (unnecessary to specify) {% endcomment %}
         views: {
@@ -77,7 +78,7 @@
         slotMinWidth: 150,
         displayEventTime: false,
         refetchResourcesOnNavigate: true,
-        contentHeight: 'auto',
+        contentHeight: '100%',
         stickyHeaderDates: true,
         stickyFooterScrollbar : true,
         // resourceAreaWidth: '',

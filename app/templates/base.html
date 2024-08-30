@@ -197,11 +197,13 @@
         {% block content %}
             if you see this, something is wrong!
         {% endblock content %}
-
-        {% block footer %}
-          {% include 'partials/footer.html' %}
-        {% endblock footer %}
       </div>
+
+      {% block footer %}
+      <footer class="footer {% block footer_css %}position-absolute{% endblock footer_css %}">
+        {% include 'partials/footer.html' %}
+      </footer>
+      {% endblock footer %}
     {% endblock page_content %}
 
     <script>
