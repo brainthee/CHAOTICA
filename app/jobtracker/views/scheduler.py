@@ -149,7 +149,7 @@ def _filter_users_on_query(request):
                 Q.OR,
             )
 
-    return User.objects.filter(query)
+    return User.objects.filter(query).order_by("last_name", "first_name")
 
 
 @login_required
@@ -190,6 +190,8 @@ def view_scheduler_members(request):
             {
                 "id": user.pk,
                 "title": user_title,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
                 "businessHours": (
                     {
                         "startTime": main_org.unit.businessHours_startTime,

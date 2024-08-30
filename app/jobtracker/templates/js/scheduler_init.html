@@ -40,6 +40,8 @@
     $('#addUserToResource').click(addUser);
 
     var calendar = new FullCalendar.Calendar(calendarEl, {
+        // resourceOrder: 'last_name, first_name',
+        resourceOrder: 'first_name',
         initialView: 'resourceTimelineThreeMonth',
         themeSystem: 'bootstrap5',
         eventDisplay: "block",
