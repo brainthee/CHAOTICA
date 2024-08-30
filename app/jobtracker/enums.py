@@ -151,7 +151,7 @@ class DefaultTimeSlotTypes:
             "name": "Internal Project",
             "built_in": True,
             "is_delivery": False,
-            "is_assignable": True,
+            "is_assignable": False, # No - this should be used only when booking through a phase
             "is_working": True,
             "availability": AvailabilityType.BUSY_INTERNAL,
         },
@@ -212,6 +212,27 @@ class JobSupportRole:
         (COMMERCIAL, "Commercial"),
         (QA, "QA"),
         (SCOPE, "Scope"),
+    )
+
+
+class ProjectStatuses:
+    UNTRACKED = 0
+    PENDING = 1
+    IN_PROGRESS = 2
+    COMPLETE = 3
+
+    CHOICES = (
+        (UNTRACKED, "Untracked"),
+        (PENDING, "Pending"),
+        (IN_PROGRESS, "In Progress"),
+        (COMPLETE, "Complete"),
+    )
+
+    BS_COLOURS = (
+        (UNTRACKED, "secondary"),
+        (PENDING, "info"),
+        (IN_PROGRESS, "warning"),
+        (COMPLETE, "success"),
     )
 
 

@@ -56,6 +56,7 @@ SESSION_COOKIE_AGE = int(os.environ.get("SESSION_COOKIE_AGE", default=60 * 60 * 
 CORS_ALLOWED_ORIGINS = [
     "{}://{}".format(SITE_PROTO, SITE_DOMAIN),
 ]
+CORS_ALLOW_ALL_ORIGINS = True
 
 AUTH_ADFS = {
     "AUDIENCE": os.environ.get("ADFS_CLIENT_ID", default="xx"),
@@ -125,6 +126,7 @@ CONSTANCE_CONFIG = {
     # Phase ID settings
     "JOB_ID_START": (2500, "Where to start Job IDs"),
     # 'PHASE_ID_START': (1, 'Where Phase IDs start'),
+    "PROJECT_ID_START": (9000, "Where to start Project IDs"),
     # Notification Settings
     "TQA_LATE_HOURS": (
         24,
@@ -154,37 +156,42 @@ CONSTANCE_CONFIG = {
     ),
     # Schedule Colours
     "SCHEDULE_COLOR_AVAILABLE": (
-        "#E224A3",
+        "#8BC34A",
         "Colour to show available in the schedule",
         "colour_picker",
     ),
     "SCHEDULE_COLOR_UNAVAILABLE": (
-        "#E224A3",
+        "#F44336",
         "Colour to show available in the schedule",
         "colour_picker",
     ),
     "SCHEDULE_COLOR_INTERNAL": (
-        "#E224A3",
+        "#FFC107",
         "Colour to show available in the schedule",
         "colour_picker",
     ),
-    "SCHEDULE_COLOR_PHASE_CONFIRMED": (
-        "#E224A3",
-        "Colour to show available in the schedule",
-        "colour_picker",
-    ),
-    "SCHEDULE_COLOR_PHASE_CONFIRMED_AWAY": (
-        "#E224A3",
+    "SCHEDULE_COLOR_PROJECT": (
+        "#9C27B0",
         "Colour to show available in the schedule",
         "colour_picker",
     ),
     "SCHEDULE_COLOR_PHASE": (
-        "#E224A3",
+        "#A3E1FF",
+        "Colour to show available in the schedule",
+        "colour_picker",
+    ),
+    "SCHEDULE_COLOR_PHASE_CONFIRMED": (
+        "#239DFF",
         "Colour to show available in the schedule",
         "colour_picker",
     ),
     "SCHEDULE_COLOR_PHASE_AWAY": (
-        "#E224A3",
+        "#FFBCA9",
+        "Colour to show available in the schedule",
+        "colour_picker",
+    ),
+    "SCHEDULE_COLOR_PHASE_CONFIRMED_AWAY": (
+        "#FF5722",
         "Colour to show available in the schedule",
         "colour_picker",
     ),
@@ -268,6 +275,7 @@ THIRD_PARTY_APPS = [
     "simple_history",
     "rest_framework",
     "django_filters",
+    "rest_framework_datatables",
     "impersonate",
     "import_export",
     "explorer",
@@ -345,7 +353,7 @@ REST_FRAMEWORK = {
         'rest_framework_datatables.filters.DatatablesFilterBackend',
     ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework_datatables.pagination.DatatablesPageNumberPagination',
-    'PAGE_SIZE': 25
+    # 'PAGE_SIZE': 50
 }
 
 MIDDLEWARE = [
@@ -392,20 +400,28 @@ WSGI_APPLICATION = "chaotica.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = {
-    "default": {
-        "ENGINE": os.environ.get("SQL_ENGINE", "django.db.backends.sqlite3"),
-        "NAME": os.environ.get("RDS_DB_NAME", os.path.join(BASE_DIR, "db.sqlite3")),
-        "USER": os.environ.get("RDS_USERNAME", "root"),
-        "PASSWORD": os.environ.get("RDS_PASSWORD", "chaoticadb1"),
-        "HOST": os.environ.get("RDS_HOSTNAME", "127.0.0.1"),
-        "PORT": os.environ.get("RDS_PORT", "13306"),
-        "DEFAULT-CHARACTER-SET": "utf8",
-        # 'OPTIONS': {
-        #     "init_command": "SET GLOBAL max_connections = 100000",
-        # }
+if not os.environ.get("SQL_ENGINE", None):
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
+            'OPTIONS': {
+                "timeout": 20,
+            }
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": os.environ.get("SQL_ENGINE", "django.db.backends.sqlite3"),
+            "NAME": os.environ.get("RDS_DB_NAME", os.path.join(BASE_DIR, "db.sqlite3")),
+            "USER": os.environ.get("RDS_USERNAME", "root"),
+            "PASSWORD": os.environ.get("RDS_PASSWORD", "chaoticadb1"),
+            "HOST": os.environ.get("RDS_HOSTNAME", "127.0.0.1"),
+            "PORT": os.environ.get("RDS_PORT", "13306"),
+            "DEFAULT-CHARACTER-SET": "utf8",
+        }
+    }
 
 
 # Password validation

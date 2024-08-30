@@ -289,16 +289,16 @@ class GlobalRoles:
 
 # These permissions are applied against specific units. Dependant jobs will use these permissions too
 class UnitRoles:
-    PENDING = 0
-    CONSULTANT = 1
-    SALES = 2
-    SERVICE_DELIVERY = 3
-    MANAGER = 4
-    TQA = 5
-    PQA = 6
-    SCOPER = 7
-    SUPERSCOPER = 8
-    SCHEDULER = 9
+    PENDING = 1
+    CONSULTANT = 2
+    SALES = 3
+    SERVICE_DELIVERY = 4
+    MANAGER = 5
+    TQA = 6
+    PQA = 7
+    SCOPER = 8
+    SUPERSCOPER = 9
+    SCHEDULER = 10
 
     DEFAULTS = [
         {
@@ -513,6 +513,13 @@ class LeaveRequestTypes:
     JURY_SERVICE = 5
     MILITARY_LEAVE = 6
     SICK = 7
+    PUBLIC_HOLIDAY = 8
+    NON_WORKING = 9
+    EXCUSED = 10
+    OTHER_APPROVED = 11
+    OVERTIME_LEAVE = 12
+    MEDICAL = 13
+    SABBATICAL = 14
 
     CHOICES = (
         (ANNUAL_LEAVE, "Annual leave"),
@@ -523,4 +530,11 @@ class LeaveRequestTypes:
         (JURY_SERVICE, "Jury service"),
         (MILITARY_LEAVE, "Military leave"),
         (SICK, "Sick"),
+        (PUBLIC_HOLIDAY, "Public Holiday"),
+        (NON_WORKING, "Non-Working"),
+        (EXCUSED, "Excused from Office"),
+        (OTHER_APPROVED, "Other Approved"),
+        (OVERTIME_LEAVE, "Overtime Leave"),
+        (MEDICAL, "Medical Appointment"),
+        (SABBATICAL, "Sabbatical Leave"),
     )

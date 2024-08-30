@@ -3,6 +3,7 @@ from .common import *
 
 from .job import *
 from .phase import *
+from .project import *
 
 from .client import *
 from .billingcodes import *

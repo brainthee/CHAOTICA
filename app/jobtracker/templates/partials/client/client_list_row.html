@@ -1,23 +1,21 @@
 <tr>
-  <td class="align-middle time white-space-nowrap ps-0 projectName">
-    <a class="fw-bold fs-0" href="{{ client.get_absolute_url }}">{{ client }}</a>
+  <td class="align-middle time white-space-nowrap ps-0 name">
+    <a class="fw-bold name fs-0" href="{{ client.get_absolute_url }}">{{ client }}</a>
   </td>
 
-  <td class="align-middle white-space-nowrap unit ps-3">{{ client.sector }}</td>
-
-  <td class="align-middle white-space-nowrap client ps-3">
+  <td class="align-middle white-space-nowrap client ps-3 ams">
     {% include 'partials/users/user_group.html' with users=client.account_managers.all %}
   </td>
 
-  <td class="align-middle white-space-nowrap start ps-3">
+  <td class="align-middle white-space-nowrap start ps-3 onboarding_required">
     {% include 'partials/users/user_group.html' with users=client.tech_account_managers.all %}
   </td>
 
-  <td class="align-middle white-space-nowrap end ps-3">
+  <td class="align-middle white-space-nowrap end ps-3 status">
     {% if client.is_ready_for_jobs %}
-      <span class="badge badge-warning">Ready</span>
+      <span class="badge badge-phoenix-warning">Ready</span>
     {% else %}
-      <span class="badge badge-warning">Not Ready</span>
+      <span class="badge badge-phoenix-warning">Not Ready</span>
     {% endif %}
   </td>
 

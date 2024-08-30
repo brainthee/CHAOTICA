@@ -37,19 +37,3 @@
 </div>
 
 {% endblock content %}
-
-{% block footer_javascript_page %}
-  <script>    
-    $('#clientTableAjax').DataTable({
-      "retrieve": true,
-      "serverSide": true,
-      "ajax": "{% url 'client-list' %}?format=datatables",
-      "columns": [
-        {"data": "name_link", 'name': "name"},
-        {"data": "ams_display"},
-        {"data": "tams_display"},
-        {"data": "status_display"},
-      ]
-    })
-  </script>
-{% endblock %}

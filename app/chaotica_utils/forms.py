@@ -41,6 +41,10 @@ class CustomConfigForm(ConstanceForm):
                         css_class="input-group input-group-dynamic",
                     ),
                     Div(
+                        FloatingField("PROJECT_ID_START"),
+                        css_class="input-group input-group-dynamic",
+                    ),
+                    Div(
                         FloatingField("TQA_LATE_HOURS"),
                         css_class="input-group input-group-dynamic",
                     ),
@@ -153,6 +157,10 @@ class CustomConfigForm(ConstanceForm):
                     ),
                     Div(
                         Field("SCHEDULE_COLOR_INTERNAL"),
+                        css_class="input-group input-group-dynamic",
+                    ),
+                    Div(
+                        Field("SCHEDULE_COLOR_PROJECT"),
                         css_class="input-group input-group-dynamic",
                     ),
                 ),
@@ -656,6 +664,7 @@ class ImportSiteDataForm(forms.Form):
         choices=[
             ("SmartSheetCSVImporter", "SmartSheet Project CSV"),
             ("ResourceManagerUserImporter", "Resource Manager User JSONs"),
+            ("ResourceManagerProjectImporter", "Resource Manager Project JSON"),
         ]
     )
 

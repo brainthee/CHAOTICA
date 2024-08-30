@@ -1,5 +1,8 @@
 <tr>
   <td class="align-middle time white-space-nowrap ps-0 projectName py-4">
+    {{ job.id }}
+  </td>
+  <td class="align-middle time white-space-nowrap ps-0 projectName py-4">
     <a class="fw-bold fs-0" href="{{ job.get_absolute_url }}">{{ job.title }}</a>
   </td>
 
@@ -12,18 +15,18 @@
   </td>
 
   <td class="align-middle white-space-nowrap start ps-3 py-4">
-    <p class="mb-0 fs--1 text-900">{{ job.start_date }}</p>
+    {{ job.start_date }}
   </td>
 
   <td class="align-middle white-space-nowrap end ps-3 py-4">
-    <p class="mb-0 fs--1 text-900">{{ job.delivery_date }}</p>
+    {{ job.delivery_date }}
   </td>
 
   <td class="align-middle white-space-nowrap phases ps-3 py-4">
-    <p class="fw-bo text-900 fs--1 mb-0">{{ job.phases.all|length }}</p>
+    {{ job.phases.all|length }}
   </td>
 
-  <td class="align-middle white-space-nowrap text-end statuses">
+  <td class="align-middle white-space-nowrap text-end status_display">
     {% include 'partials/job/status_badge.html' with badge_size='sm' %}
   </td>
 </tr>

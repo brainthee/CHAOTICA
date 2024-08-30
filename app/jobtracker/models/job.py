@@ -17,7 +17,7 @@ from model_utils.fields import MonitorField
 from django.db.models import JSONField
 from django.contrib import messages
 import uuid
-from chaotica_utils.models import Note, User
+from chaotica_utils.models import Note, User, get_sentinel_user
 from chaotica_utils.tasks import task_send_notifications
 from chaotica_utils.utils import AppNotification, NotificationTypes
 from chaotica_utils.views import log_system_activity
@@ -91,9 +91,10 @@ class Job(models.Model):
     external_id = models.CharField(
         verbose_name="External ID",
         db_index=True,
+        unique=True,
         max_length=255,
         blank=True,
-        default="",
+        default=None,
     )
     title = models.CharField("Job Title", max_length=250)
     history = HistoricalRecords()
@@ -121,7 +122,7 @@ class Job(models.Model):
         related_name="jobs_poc_for",
         blank=True,
         null=True,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
     )
     additional_contacts = models.ManyToManyField(
         "Contact", related_name="jobs_contact_for", blank=True
@@ -131,7 +132,7 @@ class Job(models.Model):
         related_name="associated_jobs",
         null=True,
         blank=True,
-        on_delete=models.PROTECT,
+        on_delete=models.SET_NULL,
     )
 
     # Sales fields
@@ -198,13 +199,13 @@ class Job(models.Model):
         settings.AUTH_USER_MODEL,
         verbose_name="Created By",
         related_name="jobs_created",
-        on_delete=models.CASCADE,
+        on_delete=models.SET(get_sentinel_user),
     )
     account_manager = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         verbose_name="Account Manager",
         related_name="jobs_am_for",
-        on_delete=models.CASCADE,
+        on_delete=models.SET(get_sentinel_user),
     )
     dep_account_manager = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -212,7 +213,7 @@ class Job(models.Model):
         null=True,
         blank=True,
         related_name="jobs_dam_for",
-        on_delete=models.CASCADE,
+        on_delete=models.SET(get_sentinel_user),
     )
 
     # Related jobs
@@ -289,6 +290,9 @@ class Job(models.Model):
         ordering = ["-id"]
 
     def __str__(self):
+        return "{id}: {title}".format(id=self.id, title=self.title)
+    
+    def short_str(self):
         return "{client}/{id}".format(client=self.client, id=self.id)
 
     def fire_status_notification(self, target_status):
@@ -596,6 +600,7 @@ class Job(models.Model):
 
     def can_to_pending_scope(self, notify_request=None):
         _can_proceed = True
+        primary_poc_required = False
         # Do logic checks
         ## Check if we have an account manager
         if not self.account_manager:
@@ -606,7 +611,7 @@ class Job(models.Model):
             _can_proceed = False
 
         ## Check if we have a primary PoC
-        if not self.primary_client_poc:
+        if not self.primary_client_poc and primary_poc_required:
             if notify_request:
                 messages.add_message(
                     notify_request,
@@ -1081,7 +1086,7 @@ class JobSupportTeamRole(models.Model):
         related_name="job_support_roles",
         null=True,
         blank=True,
-        on_delete=models.CASCADE,
+        on_delete=models.SET(get_sentinel_user),
     )
     role = models.IntegerField(
         verbose_name="Role",

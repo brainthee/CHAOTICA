@@ -4,6 +4,8 @@ from django.urls import reverse_lazy, reverse
 from django.conf import settings as django_settings
 from django.template import loader
 from django.utils import timezone
+from django.db.models import CharField, Value
+from django.db.models.functions import Concat
 from django.http import (
     HttpResponseForbidden,
     JsonResponse,
@@ -522,12 +524,17 @@ def settings_import_data(request):
                 from .impex.importers.smartsheets import SmartSheetCSVImporter
 
                 importer = SmartSheetCSVImporter()
-                job_output = importer.import_data(files)
+                job_output = importer.import_data(request, files)
             elif form.cleaned_data["importType"] == "ResourceManagerUserImporter":
-                from .impex.importers.resourcemanager import ResourceManagerUserImporter
+                from .impex.importers.resourcemanager_users import ResourceManagerUserImporter
 
                 importer = ResourceManagerUserImporter()
-                job_output = importer.import_data(files)
+                job_output = importer.import_data(request, files)
+            elif form.cleaned_data["importType"] == "ResourceManagerProjectImporter":
+                from .impex.importers.resourcemanager_projects import ResourceManagerProjectImporter
+
+                importer = ResourceManagerProjectImporter()
+                job_output = importer.import_data(request, files)
 
             data["form_is_valid"] = True
     else:
@@ -936,6 +943,7 @@ def site_search(request):
         BillingCode,
         Qualification,
         Accreditation,
+        Project,
     )
 
     if is_ajax(request) and len(q) > 2:
@@ -1004,12 +1012,21 @@ def site_search(request):
         context["search_accred"] = accred_search
         results_count = results_count + accred_search.count()
 
+        ## Projects
+        project_search = get_objects_for_user(
+            request.user, "*", Project
+        ).filter(Q(title__icontains=q))
+        context["search_project"] = project_search
+        results_count = results_count + project_search.count()
+
         ## Users
         if request.user.is_superuser:
-            us_search = User.objects.filter(
+            us_search = User.objects.annotate(full_name=Concat('first_name', 
+          Value(' '), 'last_name', output_field=CharField())).filter(
                 Q(email__icontains=q)
                 | Q(first_name__icontains=q)
                 | Q(last_name__icontains=q)
+                | Q(full_name__icontains=q)
             )
             context["search_users"] = us_search
             results_count = results_count + us_search.count()

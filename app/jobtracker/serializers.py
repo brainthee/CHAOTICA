@@ -45,6 +45,7 @@ class ClientSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Client
         fields = ['name', 'name_link', 'ams_display', 'tams_display', 'jobs_count', 'status_display']
+        datatables_always_serialize = ('name',)
 
 
 class JobSerializer(serializers.HyperlinkedModelSerializer):
@@ -53,7 +54,17 @@ class JobSerializer(serializers.HyperlinkedModelSerializer):
     client_link =  serializers.SerializerMethodField()
     phases = serializers.IntegerField(source="phases.count", read_only=True)
     status_display  =  serializers.SerializerMethodField()
+    DT_RowId = serializers.SerializerMethodField()
+    DT_RowAttr = serializers.SerializerMethodField()
 
+    start_date = serializers.DateField(read_only=True)
+    delivery_date = serializers.DateField(read_only=True)
+
+    def get_DT_RowId(self, job):
+        return 'row_%d' % job.pk
+
+    def get_DT_RowAttr(self, job):
+        return {'data-pk': job.pk}
 
     def get_title_link(self, job):
         return format_html("<a class='fw-bold fs-0' href='{}'>{}</a>", job.get_absolute_url(), job.title)
@@ -73,6 +84,7 @@ class JobSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Job
         fields = [
+            'DT_RowId', 'DT_RowAttr', 
             'id', 
             'slug', 
             'unit', 
@@ -83,8 +95,6 @@ class JobSerializer(serializers.HyperlinkedModelSerializer):
             'external_id', 
             'title', 
             'title_link', 
-            'desired_start_date', 
-            'desired_delivery_date', 
             'client', 
             'client_link', 
             'start_date',

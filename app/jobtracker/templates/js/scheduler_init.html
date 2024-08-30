@@ -16,6 +16,9 @@
     // {% if job %}
     urlSearchParams['job'] = "{{ job.pk }}";
     // {% endif %}
+    // {% if project %}
+    urlSearchParams['project'] = "{{ project.pk }}";
+    // {% endif %}
 
     var addUser = function() {
       var form = $(this);
@@ -35,14 +38,15 @@
     };
 
     $('#addUserToResource').click(addUser);
-    
+
     var calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'resourceTimelineMonth',
+        initialView: 'resourceTimelineThreeMonth',
         themeSystem: 'bootstrap5',
+        eventDisplay: "block",
         headerToolbar: {
             left: 'today prev,next',
             center: 'title',
-            right: 'resourceTimelineTenDay,resourceTimelineMonth,resourceTimelineYear'
+            right: 'resourceTimelineTenDay,resourceTimelineMonth,resourceTimelineThreeMonth,resourceTimelineYear'
         },
         // {% py_date_to_js_date request.GET.from_date as from_date %}
         // {% if earliest_scheduled_date %}
@@ -54,17 +58,25 @@
         // {% endif %}
         // {% endif %}
         nowIndicator: true,
-        timeZone: '{{ user.pref_timezone }}', // the default (unnecessary to specify)
+        scrollTime: Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()),
+        {% comment %} timeZone: '{{ user.pref_timezone }}', // the default (unnecessary to specify) {% endcomment %}
         views: {
-            resourceTimelineTenDay: {
-                type: 'resourceTimeline',
-                duration: { days: 10 },
-                buttonText: '10 days'
-            }
+          resourceTimelineTenDay: {
+              type: 'resourceTimeline',
+              duration: { days: 10 },
+              buttonText: '10 days'
+          },
+          resourceTimelineThreeMonth: {
+              type: 'resourceTimeline',
+              duration: { months: 3 },
+              buttonText: '3 Months'
+          }
         },
+        slotMinWidth: 150,
         displayEventTime: false,
         refetchResourcesOnNavigate: true,
         contentHeight: 'auto',
+        stickyHeaderDates: true,
         stickyFooterScrollbar : true,
         // resourceAreaWidth: '',
         resourceAreaHeaderContent: 'Users',
@@ -144,6 +156,7 @@
           $.contextMenu({
             selector: '.fc-scroller', 
             zIndex: 10,
+            reposition: false,
             trigger: 'none',
             build: function($triggerElement, e){
               return {
@@ -162,6 +175,11 @@
                     // {% else %}
                     job_id = "";
                     // {% endif %}
+                    // {% if project %}
+                    project_id = "&project={{ project.pk }}";
+                    // {% else %}
+                    project_id = "";
+                    // {% endif %}
                     // Lets open a modal window to setup the   
                     switch(key) {
                       case "assign_phase":
@@ -175,6 +193,17 @@
                           }
                         });
                         break;
+                        case "assign_project":
+                          $.ajax({
+                            url: '{% url "create_scheduler_project_slot" %}?resource_id='+parseInt(resource_id)+'&start='+start_date+'&end='+end_date+project_id,
+                            type: 'get',
+                            dataType: 'json',
+                            success: function(data) {
+                                $("#mainModalContent").html(data.html_form);
+                                $("#mainModal").modal("show");
+                            }
+                          });
+                          break;
                       case "assign_internal":
                         $.ajax({
                           url: '{% url "create_scheduler_internal_slot" %}?resource_id='+parseInt(resource_id)+'&start='+start_date+'&end='+end_date,
@@ -217,11 +246,12 @@
                     $('.fc-scroller').contextMenu('destroy');
                 },
                 position: function(opt, x, y){
-                    opt.$menu.css({top: info.jsEvent.y, left: info.jsEvent.x});
+                    opt.$menu.css({top: info.jsEvent.pageY, left: info.jsEvent.pageX});
                 },
                 items: {
                     "assign_phase": {name: "Assign phase", icon: "fas fa-cubes fs-0 me-2"},
-                    "assign_internal": {name: "Assign internal", icon: "fas fa-cubes fs-0 me-2"},
+                    "assign_project": {name: "Assign project", icon: "fas fa-diagram-project fs-0 me-2"},
+                    "assign_internal": {name: "Assign internal", icon: "fas fa-briefcase fs-0 me-2"},
                     // "assign_task": {name: "Assign task", icon: "fas fa-checkboard fs-0 me-2"},
                     "add_comment": {name: "Add Comment", icon: "fas fa-comment fs-0 me-2"},
                     "clear": {name: "Clear Range", icon: "fas fa-wipe fs-0 me-2"},

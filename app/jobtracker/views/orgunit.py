@@ -14,6 +14,7 @@ from ..models import (
     OrganisationalUnitMember,
     OrganisationalUnitRole,
 )
+from chaotica_utils.enums import UnitRoles
 from ..decorators import unit_permission_required_or_403
 from ..forms import (
     OrganisationalUnitForm,
@@ -109,19 +110,25 @@ def organisationalunit_add(request, slug):
         form = OrganisationalUnitMemberForm(request.POST, org_unit=org_unit)
         if form.is_valid():
             membership = form.save(commit=False)
-            membership.unit = org_unit
-            if membership:
-                # Ok, lets see if we need to make it pending...
-                if org_unit.approval_required:
-                    messages.info(
-                        request, "Request to join unit " + org_unit.name + " sent."
-                    )
-                else:
-                    # Add ourselves as inviter!
-                    membership.inviter = request.user
-                    messages.info(request, "Joined Unit " + org_unit.name)
-                membership.save()
-                data["form_is_valid"] = True
+            # lets check if they already exist...
+            if OrganisationalUnitMember.objects.filter(member=membership.member, unit=org_unit).exists():
+                # Already a member - refuse it...
+                form.add_error("member", "User is already a member")
+                data["form_is_valid"] = False
+            else:
+                membership.unit = org_unit
+                if membership:
+                    # Ok, lets see if we need to make it pending...
+                    if org_unit.approval_required:
+                        messages.info(
+                            request, "Request to join unit " + org_unit.name + " sent."
+                        )
+                    else:
+                        # Add ourselves as inviter!
+                        membership.inviter = request.user
+                        messages.info(request, "Joined Unit " + org_unit.name)
+                    membership.save()
+                    data["form_is_valid"] = True
         else:
             messages.error(request, "Error requesting membership. Please report this!")
             data["form_is_valid"] = False
@@ -154,7 +161,7 @@ def organisationalunit_join(request, slug):
         if membership:
             # Ok, lets see if we need to make it pending...
             if org_unit.approval_required:
-                membership.roles.add = OrganisationalUnitRole.objects.get(pk=0)
+                membership.roles.add = OrganisationalUnitRole.objects.get(pk=UnitRoles.PENDING)
                 messages.info(
                     request, "Request to join unit " + org_unit.name + " sent."
                 )

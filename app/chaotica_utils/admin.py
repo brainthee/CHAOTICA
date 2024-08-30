@@ -11,11 +11,13 @@ from .models import (
     LeaveRequest,
     HolidayCountry,
     Holiday,
+    Note,
 )
 
 
 class CustomUserAdmin(GuardedModelAdmin):
     list_display = ["email", "first_name", "last_name", "is_active"]
+    search_fields = ['email', 'first_name', 'last_name']
     fieldsets = (
         # *UserAdmin.fieldsets,  # original form fieldsets, expanded
         (
@@ -24,6 +26,7 @@ class CustomUserAdmin(GuardedModelAdmin):
                 "classes": ("wide",),
                 "fields": (
                     "email",
+                    "notification_email",
                     "first_name",
                     "last_name",
                     "is_active",
@@ -51,6 +54,7 @@ class CustomUserAdmin(GuardedModelAdmin):
                     "site_theme",
                     "show_help",
                     "schedule_feed_id",
+                    "external_id",
                 ),
             },
         ),
@@ -77,6 +81,7 @@ class UserCostAdmin(admin.ModelAdmin):
 
 admin.site.register(Group, GroupAdmin)
 admin.site.register(Language)
+admin.site.register(Note)
 admin.site.register(LeaveRequest)
 admin.site.register(HolidayCountry)
 
