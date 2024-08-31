@@ -313,6 +313,90 @@ class User(AbstractUser):
             ("manage_site_settings", "Can change site settings"),
             ("view_activity_logs", "Can review the activity logs"),
         )
+    
+    def merge(self, user_to_merge):
+        # Things to merge:
+        # Timeslots
+        # Leave
+        # Job, Phase assignments
+        # Org Unit memberships/roles
+        # Qualifications
+
+        ## Notes
+        Note.objects.filter(author=user_to_merge).update(author=self)
+        ## Manager
+        User.objects.filter(manager=user_to_merge).update(manager=self)
+        User.objects.filter(acting_manager=user_to_merge).update(acting_manager=self)
+        ## UserCost
+        UserCost.objects.filter(user=user_to_merge).update(user=self)
+        ## Leave
+        LeaveRequest.objects.filter(user=user_to_merge).update(user=self)
+        LeaveRequest.objects.filter(authorised_by=user_to_merge).update(authorised_by=self)
+        LeaveRequest.objects.filter(declined_by=user_to_merge).update(declined_by=self)
+        ## Client
+        from jobtracker.models.client import Client
+        for obj in Client.objects.filter(account_managers__in=[user_to_merge]):
+            obj.account_managers.remove(user_to_merge)
+            obj.account_managers.add(self)
+            obj.save()
+        for obj in Client.objects.filter(tech_account_managers__in=[user_to_merge]):
+            obj.tech_account_managers.remove(user_to_merge)
+            obj.tech_account_managers.add(self)
+            obj.save()
+        for obj in Client.objects.filter(onboarded_users__in=[user_to_merge]):
+            obj.onboarded_users.remove(user_to_merge)
+            obj.onboarded_users.add(self)
+            obj.save()
+        ## Feedback
+        from jobtracker.models.common import Feedback
+        Feedback.objects.filter(author=user_to_merge).update(author=self)
+        ## Job
+        from jobtracker.models.job import Job
+        Job.objects.filter(created_by=user_to_merge).update(created_by=self)
+        Job.objects.filter(account_manager=user_to_merge).update(account_manager=self)
+        Job.objects.filter(dep_account_manager=user_to_merge).update(dep_account_manager=self)
+        for obj in Job.objects.filter(scoped_by__in=[user_to_merge]):
+            obj.scoped_by.remove(user_to_merge)
+            obj.scoped_by.add(self)
+            obj.save()
+        Job.objects.filter(scoped_signed_off_by=user_to_merge).update(scoped_signed_off_by=self)
+        Job.objects.filter(created_by=user_to_merge).update(created_by=self)
+        ## JobSupportTeamRole
+        from jobtracker.models.job import JobSupportTeamRole
+        JobSupportTeamRole.objects.filter(user=user_to_merge).update(user=self)
+        ## JobSupportTeamRole
+        from jobtracker.models.orgunit import OrganisationalUnit, OrganisationalUnitMember
+        OrganisationalUnit.objects.filter(lead=user_to_merge).update(lead=self)
+        OrganisationalUnitMember.objects.filter(member=user_to_merge).update(member=self)
+        OrganisationalUnitMember.objects.filter(inviter=user_to_merge).update(inviter=self)
+        ## Phase
+        from jobtracker.models.phase import Phase
+        Phase.objects.filter(report_author=user_to_merge).update(report_author=self)
+        Phase.objects.filter(project_lead=user_to_merge).update(project_lead=self)
+        Phase.objects.filter(techqa_by=user_to_merge).update(techqa_by=self)
+        Phase.objects.filter(presqa_by=user_to_merge).update(presqa_by=self)
+        Phase.objects.filter(last_modified_by=user_to_merge).update(last_modified_by=self)
+        ## Project
+        from jobtracker.models.project import Project
+        Project.objects.filter(created_by=user_to_merge).update(created_by=self)
+        Project.objects.filter(primary_poc=user_to_merge).update(primary_poc=self)
+        ## QualificationRecord
+        from jobtracker.models.qualification import QualificationRecord
+        QualificationRecord.objects.filter(user=user_to_merge).update(user=self)
+        ## Service
+        from jobtracker.models.service import Service
+        for obj in Service.objects.filter(owners__in=[user_to_merge]):
+            obj.owners.remove(user_to_merge)
+            obj.owners.add(self)
+            obj.save()
+        ## TimeSlot
+        from jobtracker.models.timeslot import TimeSlot
+        TimeSlot.objects.filter(user=user_to_merge).update(user=self)
+
+        # If we have got this far... delete the target user!
+        user_to_merge.delete()
+
+        return True
 
     def email_address(self):
         if self.notification_email:

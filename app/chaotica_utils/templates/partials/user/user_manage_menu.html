@@ -1,45 +1,27 @@
 <div class="btn-reveal-trigger position-static">
-    <button class="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal fs-10" 
-        type="button" data-bs-toggle="dropdown" data-boundary="window" aria-haspopup="true" aria-expanded="false" 
-        data-bs-reference="parent">
-        <span class="fas fa-ellipsis-h fs-10"></span>
-    </button>
+  <button class="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal fs-10" type="button" data-bs-toggle="dropdown" data-boundary="window" aria-haspopup="true" aria-expanded="false" data-bs-reference="parent"><span class="fas fa-ellipsis-h fs-10"></span></button>
 
-    <div class="dropdown-menu shadow dropdown-menu-end me-sm-n4 me-n3" aria-labelledby="navbarDropdownMenuLink">     
-        <a class="dropdown-item " href="{{ u.get_absolute_url }}">
-            View Profile
-        </a>
+  <div class="dropdown-menu shadow dropdown-menu-end me-sm-n4 me-n3" aria-labelledby="navbarDropdownMenuLink">
+    <a class="dropdown-item" href="{{ u.get_absolute_url }}">View Profile</a>
 
-        {% if user.manager == request.user or user.acting_manager == request.user or perms.chaotica_utils.manage_user %}
-            <div class="dropdown-divider"></div>
-            <a class="dropdown-item" href="{% url 'user_manage' u.email %}">
-                Edit Profile
-            </a>
-        {% endif %}
+    {% if user.manager == request.user or user.acting_manager == request.user or perms.chaotica_utils.manage_user %}
+      <div class="dropdown-divider"></div>
+      <a class="dropdown-item" href="{% url 'user_manage' u.email %}">Edit Profile</a>
+    {% endif %}
 
-        {% if "chaotica_utils.manage_user" in perms %}
-            <button class="dropdown-item js-load-modal-form" 
-                data-url="{% url 'user_assign_global_role' u.email %}">
-                Assign Global Role
-            </button>     
+    {% if 'chaotica_utils.manage_user' in perms %}
+      <button class="dropdown-item js-load-modal-form" data-url="{% url 'user_assign_global_role' u.email %}">Assign Global Role</button>
 
-            {% if request.user.is_superuser %}
-            <a class="dropdown-item text-warning" href="{% url 'impersonate-start' u.id %}">
-                Impersonate
-            </a>
-            {% endif %}
+      {% if request.user.is_superuser %}
+        <a class="dropdown-item text-warning" href="{% url 'impersonate-start' u.id %}">Impersonate</a>
+      {% endif %}
 
-            {% if u.is_active %}
-            <button class="dropdown-item text-danger js-load-modal-form" 
-                data-url="{% url 'user_manage_status' u.email 'deactivate' %}" >
-                Deactivate
-            </button>   
-            {% else %}
-            <button class="dropdown-item text-success js-load-modal-form" 
-                data-url="{% url 'user_manage_status' u.email 'activate' %}">
-                Activate
-            </button>
-            {% endif %}
-        {% endif %}
-    </div>
+      <button class="dropdown-item text-danger js-load-modal-form" data-url="{% url 'user_merge' u.email %}">Merge other user</button>
+      {% if u.is_active %}
+        <button class="dropdown-item text-danger js-load-modal-form" data-url="{% url 'user_manage_status' u.email 'deactivate' %}">Deactivate</button>
+      {% else %}
+        <button class="dropdown-item text-success js-load-modal-form" data-url="{% url 'user_manage_status' u.email 'activate' %}">Activate</button>
+      {% endif %}
+    {% endif %}
+  </div>
 </div>

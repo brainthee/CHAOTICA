@@ -332,6 +332,30 @@ class ChaoticaUserForm(UserCreationForm):
         }
 
 
+class MergeUserForm(forms.Form):
+    user_to_merge = forms.ModelChoiceField(
+        queryset=User.objects.filter(),
+        required=True,
+        widget=autocomplete.ModelSelect2(
+            url="user-autocomplete",
+            attrs={
+                "data-minimum-input-length": 3,
+            },
+        ),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super(MergeUserForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.helper.form_tag = False
+        self.helper.layout = Layout(
+            Field("user_to_merge", style="width: 100%;"),
+        )
+
+    class Meta:
+        fields = ("user_to_merge",)
+
+
 class AssignRoleForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
