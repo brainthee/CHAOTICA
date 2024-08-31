@@ -78,6 +78,7 @@ urlpatterns = [
         name="user_delete",
     ),
     path("profile/<str:email>/manage/", views.user_manage, name="user_manage"),
+    path("profile/<str:email>/manage/merge", views.user_merge, name="user_merge"),
     path(
         "profile/<str:email>/manage/status/<str:state>/",
         views.user_manage_status,

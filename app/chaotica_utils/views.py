@@ -25,6 +25,7 @@ from .forms import (
     CustomConfigForm,
     AssignRoleForm,
     InviteUserForm,
+    MergeUserForm,
 )
 from .enums import GlobalRoles, NotificationTypes
 from .tasks import (
@@ -576,6 +577,40 @@ def settings_export_data(request):
     )
     return JsonResponse(data)
 
+
+@permission_required_or_403("chaotica_utils.manage_user")
+@require_http_methods(["GET", "POST"])
+def user_merge(request, email):
+    user = get_object_or_404(User, email=email)
+    context = {}
+    data = dict()
+    if request.method == "POST":
+        form = MergeUserForm(request.POST)
+        if form.is_valid():
+            # Lets merge!
+            user_to_merge = form.cleaned_data['user_to_merge']
+            if user_to_merge == user:
+                # Same user. GTFO
+                data["form_is_valid"] = False
+                form.add_error("user_to_merge", "You can't merge to the same user!")
+            else:
+                if user.merge(user_to_merge):
+                    # Success
+                    data["form_is_valid"] = True
+                    messages.success(request, "User merged")
+                else:
+                    # Merge failed!
+                    data["form_is_valid"] = False
+                    form.add_error("","Failed to merge!")
+    else:
+        # Send the modal
+        form = MergeUserForm()
+
+    context = {"form": form, "user": user}
+    data["html_form"] = loader.render_to_string(
+        "modals/user_merge.html", context, request=request
+    )
+    return JsonResponse(data)
 
 @require_http_methods(["GET", "POST"])
 # This is what we're doing in effect but we're doing it in the view
