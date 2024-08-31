@@ -203,7 +203,7 @@ def maintenance(request):
 
 
 @login_required
-@require_safe
+@require_http_methods(["POST", "GET"])
 def view_own_leave(request):
     context = {}
     leave_list = LeaveRequest.objects.filter(user=request.user)
