@@ -5,8 +5,8 @@ from ..models import Job, OrganisationalUnit, Client
 from ..enums import JobStatuses
 from rest_framework import permissions, viewsets, filters
 from ..serializers import *
-from django_filters.rest_framework import DjangoFilterBackend
-
+# from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework_datatables.django_filters.backends import DatatablesFilterBackend
 
 class UserViewSet(viewsets.ModelViewSet):
     """
@@ -45,8 +45,8 @@ class ClientViewSet(viewsets.ModelViewSet):
     serializer_class = ClientSerializer
     permission_classes = [permissions.IsAuthenticated]
     http_method_names = ['get', 'head']
-    filterset_fields = ['name',]
-    filter_backends = [DjangoFilterBackend]
+    # filterset_fields = ['name',]
+    # filter_backends = [DatatablesFilterBackend]
 
     def get_queryset(self):
         queryset = get_objects_for_user(
@@ -62,8 +62,10 @@ class JobViewSet(viewsets.ModelViewSet):
     serializer_class = JobSerializer
     permission_classes = [permissions.IsAuthenticated]
     http_method_names = ['get', 'head']
-    filterset_fields = ['status', 'client', 'unit']
-    filter_backends = [DjangoFilterBackend]
+    # filterset_fields = ['status', 'client', 'unit']
+    # filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    # filter_backends = [DatatablesFilterBackend]
+    # search_fields = ['title', 'client__name', 'unit__name']
 
 
     def get_queryset(self):

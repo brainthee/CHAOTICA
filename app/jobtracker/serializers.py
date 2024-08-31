@@ -49,10 +49,13 @@ class ClientSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class JobSerializer(serializers.HyperlinkedModelSerializer):
+    client = ClientSerializer()
+    unit = OrganisationalUnitSerializer()
+
     title_link =  serializers.SerializerMethodField()
     unit_link =  serializers.SerializerMethodField()
     client_link =  serializers.SerializerMethodField()
-    phases = serializers.IntegerField(source="phases.count", read_only=True)
+    phase_count = serializers.IntegerField(source="phases.count", read_only=True)
     status_display  =  serializers.SerializerMethodField()
     DT_RowId = serializers.SerializerMethodField()
     DT_RowAttr = serializers.SerializerMethodField()
@@ -86,12 +89,10 @@ class JobSerializer(serializers.HyperlinkedModelSerializer):
         fields = [
             'DT_RowId', 'DT_RowAttr', 
             'id', 
-            'slug', 
             'unit', 
             'unit_link', 
             'status', 
             'status_display',
-            'status_changed_date', 
             'external_id', 
             'title', 
             'title_link', 
@@ -99,5 +100,7 @@ class JobSerializer(serializers.HyperlinkedModelSerializer):
             'client_link', 
             'start_date',
             'delivery_date',
-            'phases'
+            'phase_count'
         ]
+        datatables_always_serialize = (
+            'DT_RowId', 'DT_RowAttr', 'client', 'id')

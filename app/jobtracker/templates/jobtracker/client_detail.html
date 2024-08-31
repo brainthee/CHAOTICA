@@ -153,7 +153,7 @@
                 <div class="tab-pane fade" id="jobs" role="tabpanel" aria-labelledby="jobs-tab">
                     <div class="row">
                         <div class="col-12">
-                            {% include 'partials/job/job_list_table.html' with filter_field="client" filter_value=client.pk %}
+                            {% include 'partials/job/job_list_table.html' with job_list=client.jobs.all %}
                         </div>
                     </div>
                 </div>
