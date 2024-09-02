@@ -6534,6 +6534,8 @@
             height: '50vh',
             skin: 'oxide',
             menubar: false,
+            content_css_cors: true,
+            referrer_policy: 'origin',
             content_style: `
         .mce-content-body { 
           color: ${getColor('black')} 
@@ -6549,7 +6551,9 @@
             //   toolbar: ['undo', 'bold']
             // },
             statusbar: false,
-            plugins: 'link,image,lists,table,media',
+            plugins: [
+              'anchor', 'autolink', 'charmap', 'codesample', 'emoticons', 'image', 'link', 'lists', 'media', 'searchreplace', 'table', 'visualblocks', 'wordcount',
+            ],
             theme_advanced_toolbar_align: 'center',
             directionality: getItemFromStore('phoenixIsRTL') ? 'rtl' : 'ltr',
             toolbar: [
