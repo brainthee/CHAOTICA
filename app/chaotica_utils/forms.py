@@ -652,7 +652,7 @@ class ProfileBasicForm(forms.ModelForm):
                 w, h = get_image_dimensions(profile_image)
 
                 # validate dimensions
-                max_width = max_height = 500
+                max_width = max_height = 1024
                 if (w and h) and (w > max_width or h > max_height):
                     self.add_error(
                         "profile_image",
