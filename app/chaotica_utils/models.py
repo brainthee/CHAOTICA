@@ -512,7 +512,7 @@ class User(AbstractUser):
         start = start or start_of_week
         end = end or end_of_week
 
-        slots = TimeSlot.objects.filter(user=self, start__gte=start, start__lte=end)
+        slots = TimeSlot.objects.filter(user=self, end__gte=start, start__lte=end)
         for slot in slots:
             slot_json = slot.get_schedule_json()
             is_focused = False
