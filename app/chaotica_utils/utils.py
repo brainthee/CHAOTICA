@@ -10,6 +10,7 @@ from .enums import GlobalRoles
 from django.utils.text import slugify
 from menu import MenuItem
 from django.conf import settings
+from constance import config
 from django.core.exceptions import SuspiciousOperation
 from django.utils.dateparse import (
     parse_date,
@@ -262,7 +263,7 @@ class AppNotification:
         )
 
         ## Email notification
-        if self.send_email:
+        if self.send_email and config.EMAIL_ENABLED:
             if user.is_active():
                 self.context["SITE_DOMAIN"] = django_settings.SITE_DOMAIN
                 self.context["SITE_PROTO"] = django_settings.SITE_PROTO
