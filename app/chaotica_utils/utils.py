@@ -253,29 +253,58 @@ class AppNotification:
     ) -> bool:
         # Lets see if we can do notifications
         ## In-app notification
-        if self.send_inapp:
-            Notification.objects.create(
-                user=user,
-                title=self.title,
-                message=self.message,
-                icon=self.icon,
-                link=self.action_link,
-            )
+        notice = Notification.objects.create(
+            user=user,
+            title=self.title,
+            message=self.message,
+            icon=self.icon,
+            link=self.action_link,
+        )
 
         ## Email notification
         if self.send_email:
-            self.context["SITE_DOMAIN"] = django_settings.SITE_DOMAIN
-            self.context["SITE_PROTO"] = django_settings.SITE_PROTO
-            self.context["title"] = self.title
-            self.context["message"] = self.message
-            self.context["icon"] = self.icon
-            self.context["action_link"] = self.action_link
-            self.context["user"] = user
-            msg_html = render_to_string(self.email_template, self.context)
-            send_mail(
-                self.title,
-                self.message,
-                None,
-                [user.email_address()],
-                html_message=msg_html,
-            )
+            notice.send_email
+            if user.is_active():
+                self.context["SITE_DOMAIN"] = django_settings.SITE_DOMAIN
+                self.context["SITE_PROTO"] = django_settings.SITE_PROTO
+                self.context["title"] = self.title
+                self.context["message"] = self.message
+                self.context["icon"] = self.icon
+                self.context["action_link"] = self.action_link
+                self.context["user"] = user
+                msg_html = render_to_string(self.email_template, self.context)
+                send_mail(
+                    self.title,
+                    self.message,
+                    None,
+                    [user.email_address()],
+                    html_message=msg_html,
+                )
+            else:
+                # User disabled, don't send emails
+                notice.is_emailed = True
+                notice.save()
+
+        if self.user.is_active():
+            context = {}
+            context["SITE_DOMAIN"] = settings.SITE_DOMAIN
+            context["SITE_PROTO"] = settings.SITE_PROTO
+            context["title"] = self.title
+            context["message"] = self.message
+            context["icon"] = self.icon
+            context["action_link"] = self.link
+            context["user"] = self.user
+            msg_html = render_to_string(self.email_template, context)
+            if send_mail(
+                    self.title,
+                    self.message,
+                    None,
+                    [self.user.email_address()],
+                    html_message=msg_html,
+                ) > 0:
+                self.is_emailed = True
+                self.save()
+        else:
+            # User disabled, don't send emails
+            self.is_emailed = True
+            self.save()
