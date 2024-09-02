@@ -102,6 +102,10 @@ DEFAULT_HOURS_IN_DAY = os.environ.get("DEFAULT_HOURS_IN_DAY", default=7.5)
 
 CONSTANCE_CONFIG = {
     # Feature Flags
+    "EMAIL_ENABLED": (
+        False,
+        "Despite email configuration - should we send emails?",
+    ),
     "ADFS_ENABLED": (
         False,
         "Should we allow ADFS login? Ensure there is a valid configuration!",

@@ -86,7 +86,7 @@ class Notification(models.Model):
         ordering = ["-timestamp"]
 
     def send_email(self):
-        if self.user.is_active():
+        if self.user.is_active() and config.EMAIL_ENABLED:
             context = {}
             context["SITE_DOMAIN"] = settings.SITE_DOMAIN
             context["SITE_PROTO"] = settings.SITE_PROTO
@@ -106,7 +106,7 @@ class Notification(models.Model):
                 self.is_emailed = True
                 self.save()
         else:
-            # User disabled, don't send emails
+            # User or site disabled, don't send emails
             self.is_emailed = True
             self.save()
 
@@ -203,27 +203,27 @@ class UserInvitation(models.Model):
 
     def send_email(self):
         from .utils import ext_reverse
+        if config.EMAIL_ENABLED:
+            ## Email notification
+            context = {}
+            context["SITE_DOMAIN"] = settings.SITE_DOMAIN
+            context["SITE_PROTO"] = settings.SITE_PROTO
+            context["title"] = "You're invited to Chaotica"
+            context["message"] = (
+                "You've been invited to join Chaotica - (Centralised Hub for Assigning Operational Tasks, Interactive Calendaring and Alerts). Follow the link below to accept the invitation and setup your account."
+            )
+            context["action_link"] = ext_reverse(self.get_absolute_url())
+            msg_html = render_to_string("emails/user_invite.html", context)
+            send_mail(
+                context["title"],
+                context["message"],
+                None,
+                [self.invited_email],
+                html_message=msg_html,
+            )
 
-        ## Email notification
-        context = {}
-        context["SITE_DOMAIN"] = settings.SITE_DOMAIN
-        context["SITE_PROTO"] = settings.SITE_PROTO
-        context["title"] = "You're invited to Chaotica"
-        context["message"] = (
-            "You've been invited to join Chaotica - (Centralised Hub for Assigning Operational Tasks, Interactive Calendaring and Alerts). Follow the link below to accept the invitation and setup your account."
-        )
-        context["action_link"] = ext_reverse(self.get_absolute_url())
-        msg_html = render_to_string("emails/user_invite.html", context)
-        send_mail(
-            context["title"],
-            context["message"],
-            None,
-            [self.invited_email],
-            html_message=msg_html,
-        )
-
-        self.sent = timezone.now()
-        self.save()
+            self.sent = timezone.now()
+            self.save()
 
 
 class User(AbstractUser):
