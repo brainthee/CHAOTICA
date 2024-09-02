@@ -1,32 +1,32 @@
 <tr>
-  <td class="align-middle time white-space-nowrap ps-0 projectName py-4">
+  <td class="align-middle time ps-0 projectName py-4">
     {{ job.id }}
   </td>
-  <td class="align-middle time white-space-nowrap ps-0 projectName py-4">
+  <td class="align-middle time ps-0 projectName py-4">
     <a class="fw-bold fs-0" href="{{ job.get_absolute_url }}">{{ job.title }}</a>
   </td>
 
-  <td class="align-middle white-space-nowrap unit ps-3 py-4">
+  <td class="align-middle unit ps-3 py-4">
     <a class="fw-bold fs-0" href="{{ job.unit.get_absolute_url }}">{{ job.unit }}</a>
   </td>
 
-  <td class="align-middle white-space-nowrap client ps-3 py-4">
+  <td class="align-middle client ps-3 py-4">
     <a class="fw-bold fs-0" href="{{ job.client.get_absolute_url }}">{{ job.client }}</a>
   </td>
 
-  <td class="align-middle white-space-nowrap start ps-3 py-4">
+  <td class="align-middle start ps-3 py-4">
     {{ job.start_date }}
   </td>
 
-  <td class="align-middle white-space-nowrap end ps-3 py-4">
+  <td class="align-middle end ps-3 py-4">
     {{ job.delivery_date }}
   </td>
 
-  <td class="align-middle white-space-nowrap phases ps-3 py-4">
+  <td class="align-middle phases ps-3 py-4">
     {{ job.phases.all|length }}
   </td>
 
-  <td class="align-middle white-space-nowrap text-end status_display">
+  <td class="align-middle text-end status_display">
     {% include 'partials/job/status_badge.html' with badge_size='sm' %}
   </td>
 </tr>
