@@ -86,22 +86,27 @@ class Notification(models.Model):
         ordering = ["-timestamp"]
 
     def send_email(self):
-        context = {}
-        context["SITE_DOMAIN"] = settings.SITE_DOMAIN
-        context["SITE_PROTO"] = settings.SITE_PROTO
-        context["title"] = self.title
-        context["message"] = self.message
-        context["icon"] = self.icon
-        context["action_link"] = self.link
-        context["user"] = self.user
-        msg_html = render_to_string(self.email_template, context)
-        if send_mail(
-                self.title,
-                self.message,
-                None,
-                [self.user.email_address()],
-                html_message=msg_html,
-            ) > 0:
+        if self.user.is_active():
+            context = {}
+            context["SITE_DOMAIN"] = settings.SITE_DOMAIN
+            context["SITE_PROTO"] = settings.SITE_PROTO
+            context["title"] = self.title
+            context["message"] = self.message
+            context["icon"] = self.icon
+            context["action_link"] = self.link
+            context["user"] = self.user
+            msg_html = render_to_string(self.email_template, context)
+            if send_mail(
+                    self.title,
+                    self.message,
+                    None,
+                    [self.user.email_address()],
+                    html_message=msg_html,
+                ) > 0:
+                self.is_emailed = True
+                self.save()
+        else:
+            # User disabled, don't send emails
             self.is_emailed = True
             self.save()
 
