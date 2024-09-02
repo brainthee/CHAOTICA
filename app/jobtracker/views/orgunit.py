@@ -206,6 +206,8 @@ def organisationalunit_manage_roles(request, slug, member_pk):
         )
         if form.is_valid():
             membership = form.save()
+            # Lets update the unit's permissions...
+            membership.unit.sync_permissions()
             data["form_is_valid"] = True
         else:
             messages.error(request, "Error requesting membership. Please report this!")

@@ -9,6 +9,7 @@ from chaotica_utils.views import ChaoticaBaseView
 from chaotica_utils.models import User
 from guardian.shortcuts import get_objects_for_user
 from ..models import Job, TimeSlot, UserSkill, Phase, OrganisationalUnitMember,Project
+from ..decorators import unit_permission_required_or_403
 from ..forms import (
     NonDeliveryTimeSlotModalForm,
     SchedulerFilter,
@@ -235,7 +236,7 @@ def view_schedule_holidays(request):
     return JsonResponse(data, safe=False)
 
 
-# @permission_required('jobtracker.can_schedule_job', (Job, 'slug', 'slug'))
+@unit_permission_required_or_403('jobtracker.can_schedule_job')
 def change_scheduler_slot_date(request, pk=None):
     if not pk:
         # We only do this because we want to generate the URL in JS land
@@ -261,7 +262,7 @@ def change_scheduler_slot_date(request, pk=None):
     return JsonResponse(data)
 
 
-# @permission_required('jobtracker.can_schedule_job', (Job, 'slug', 'slug'))
+@unit_permission_required_or_403('jobtracker.can_schedule_job')
 def change_scheduler_slot(request, pk=None):
     if not pk:
         # We only do this because we want to generate the URL in JS land

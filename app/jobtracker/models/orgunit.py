@@ -99,8 +99,6 @@ class OrganisationalUnit(models.Model):
         )
 
     def sync_permissions(self):
-        from pprint import pprint
-
         for user in self.get_allMembers():
             # Ensure the permissions are set right!
             existing_perms = list(
@@ -123,19 +121,16 @@ class OrganisationalUnit(models.Model):
                 # First lets add missing perms...
                 for new_perm in expected_perms:
                     if new_perm not in existing_perms:
-                        pprint("Add new perm: " + str(new_perm))
                         assign_perm(new_perm, user, self)
 
                 # Now lets remove old perms
                 for old_perm in existing_perms:
                     if old_perm not in expected_perms:
-                        # pprint("Remove old perm: "+str(old_perm))
                         remove_perm(old_perm, user, self)
             else:
                 if existing_perms:
                     # We should not have any permissions! Clear them all
                     for perm in existing_perms:
-                        # pprint("Clear old perm: "+str(perm))
                         remove_perm(perm, user, self)
 
     def __str__(self):

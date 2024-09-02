@@ -6,7 +6,7 @@ from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from django.http import HttpResponseForbidden, HttpResponseNotFound
 from django.shortcuts import render
 from guardian.conf import settings as guardian_settings
-from .models import Job, Phase, OrganisationalUnit
+from .models import Job, Phase, OrganisationalUnit, TimeSlot
 
 logger = logging.getLogger(__name__)
 abspath = lambda *p: os.path.abspath(os.path.join(*p))
@@ -39,16 +39,19 @@ def get_unit_40x_or_None(
             has_permissions = any(request.user.has_perm(perm, obj) for perm in perms)
         else:
             has_permissions = all(request.user.has_perm(perm, obj) for perm in perms)
-
     # Ok, now lets check unit permissions...
     if not has_permissions:
         unit = None
-        if isinstance(obj, Job):
-            unit = obj.unit
-        if isinstance(obj, Phase):
-            unit = obj.job.unit
-        if isinstance(obj, OrganisationalUnit):
-            unit = obj
+        if obj:
+            if isinstance(obj, Job):
+                unit = obj.unit
+            if isinstance(obj, Phase):
+                unit = obj.job.unit
+            if isinstance(obj, OrganisationalUnit):
+                unit = obj
+        else:
+            # get our own units
+            unit = request.user.unit_memberships.first().unit
         if unit:
             if any_perm:
                 has_permissions = any(
