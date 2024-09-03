@@ -53,9 +53,6 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = bool(
 )
 SESSION_COOKIE_AGE = int(os.environ.get("SESSION_COOKIE_AGE", default=60 * 60 * 12))
 
-CORS_ALLOWED_ORIGINS = [
-    "{}://{}".format(SITE_PROTO, SITE_DOMAIN),
-]
 CORS_ALLOW_ALL_ORIGINS = True
 
 AUTH_ADFS = {
@@ -499,9 +496,6 @@ if USE_S3 == "1" or USE_S3:
         STATICFILES_STORAGE = 'chaotica.custom_storages.StaticStorage'
         STATICFILES_LOCATION = "static"
         MEDIAFILES_LOCATION = "media"
-        CORS_ALLOWED_ORIGINS.append(
-            "https://{}".format(AWS_S3_CUSTOM_DOMAIN)
-        )
     else:
         # Use S3 directly
         AWS_S3_CUSTOM_DOMAIN = f"{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com"

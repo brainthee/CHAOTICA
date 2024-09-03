@@ -8,7 +8,7 @@ from chaotica_utils.views import page_defaults
 from chaotica_utils.views import ChaoticaBaseView
 from chaotica_utils.models import User
 from guardian.shortcuts import get_objects_for_user
-from ..models import Job, TimeSlot, UserSkill, Phase, OrganisationalUnitMember,Project
+from ..models import Job, TimeSlot, UserSkill, Phase, OrganisationalUnitMember,Project, OrganisationalUnitRole
 from ..decorators import unit_permission_required_or_403
 from ..forms import (
     NonDeliveryTimeSlotModalForm,
@@ -85,15 +85,20 @@ def _filter_users_on_query(request):
 
         ## Filter org unit
         org_units = filter_form.cleaned_data.get("org_units")
+        org_unit_roles = filter_form.cleaned_data.get("org_unit_roles")
+        if not org_unit_roles:
+            org_unit_roles = OrganisationalUnitRole.objects.all()
         if org_units:
             query.add(
                 Q(
                     unit_memberships__in=OrganisationalUnitMember.objects.filter(
                         unit__in=org_units,
+                        roles__in=org_unit_roles,
                     )
                 ),
                 Q.AND,
             )
+
 
         ## Filter on skills
         skills_specialist = filter_form.cleaned_data.get("skills_specialist")
