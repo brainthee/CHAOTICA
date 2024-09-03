@@ -309,7 +309,7 @@ def change_scheduler_slot(request, pk=None):
     return JsonResponse(data)
 
 
-@login_required
+@unit_permission_required_or_403('jobtracker.can_schedule_job')
 def create_scheduler_internal_slot(request):
     data = dict()
     start = clean_datetime(request.GET.get("start", None))
@@ -336,7 +336,7 @@ def create_scheduler_internal_slot(request):
     )
     return JsonResponse(data)
 
-@login_required
+@unit_permission_required_or_403('jobtracker.can_schedule_job')
 def create_scheduler_project_slot(request):
     data = dict()
     start = clean_datetime(request.GET.get("start", None))
@@ -391,7 +391,7 @@ def create_scheduler_project_slot(request):
     return JsonResponse(data)
 
 
-@login_required
+@unit_permission_required_or_403('jobtracker.can_schedule_job')
 def create_scheduler_phase_slot(request):
     data = dict()
     start = clean_datetime(request.GET.get("start", None))
@@ -450,7 +450,7 @@ def create_scheduler_phase_slot(request):
     return JsonResponse(data)
 
 
-@login_required
+@unit_permission_required_or_403('jobtracker.can_schedule_job')
 def create_scheduler_comment(request):
     data = dict()
     start = clean_datetime(request.GET.get("start", None))
@@ -478,7 +478,7 @@ def create_scheduler_comment(request):
     return JsonResponse(data)
 
 
-@login_required
+@unit_permission_required_or_403('jobtracker.can_schedule_job')
 def clear_scheduler_range(request):
     data = dict()
     start = clean_datetime(request.GET.get("start", None))
