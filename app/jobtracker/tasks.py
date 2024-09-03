@@ -31,13 +31,13 @@ class task_progress_workflows(CronJobBase):
                     phase.to_in_progress()
                     phase.save()
 
-        # Lets see if we can archive any?
-        for phase in Phase.objects.filter(
-            Q(status=PhaseStatuses.DELIVERED) | Q(status=PhaseStatuses.CANCELLED)
-        ):
-            if phase.can_to_archived():
-                phase.to_archived()
-                phase.save()
+        # # Lets see if we can archive any?
+        # for phase in Phase.objects.filter(
+        #     Q(status=PhaseStatuses.DELIVERED) | Q(status=PhaseStatuses.CANCELLED)
+        # ):
+        #     if phase.can_to_archived():
+        #         phase.to_archived()
+        #         phase.save()
 
 
 class task_fire_job_notifications(CronJobBase):

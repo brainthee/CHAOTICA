@@ -70,6 +70,12 @@ class SchedulerFilter(forms.Form):
         widget=autocomplete.ModelSelect2Multiple(),
     )
 
+    org_unit_roles = forms.ModelMultipleChoiceField(
+        required=False,
+        queryset=OrganisationalUnitRole.objects.all(),
+        widget=autocomplete.ModelSelect2Multiple(),
+    )
+
     from_date = forms.DateField(
         required=False,
         widget=DatePickerInput(),
@@ -122,7 +128,14 @@ class SchedulerFilter(forms.Form):
                 Row(
                     Field("show_inactive_users",),
                     Field("users", style="width: 100%;"),
+                ),
+                Row(
+                    Column(
                     Field("org_units", style="width: 100%;"),
+                    ),
+                    Column(
+                    Field("org_unit_roles", style="width: 100%;"),
+                    ),
                 ),
                 css_class="setting-panel-item",
             ),
@@ -162,6 +175,7 @@ class SchedulerFilter(forms.Form):
             "users",
             "services",
             "org_units",
+            "org_unit_roles",
             "from_date",
             "to_date",
         )
