@@ -15,7 +15,8 @@ then
 fi
 
 sudo -Eu chaotica -- python3 manage.py migrate --noinput
-sudo -Eu chaotica -- python3 manage.py collectstatic --noinput
+# Move this to supervisor to not hold up serving...
+# sudo -Eu chaotica -- python3 manage.py collectstatic --noinput
 sudo -Eu chaotica -- /usr/bin/crontab /crontab.txt
 
 exec "$@"
