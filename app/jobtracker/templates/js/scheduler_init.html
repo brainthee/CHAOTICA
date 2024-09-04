@@ -25,6 +25,10 @@
 
     $('#addUserToResource').click(addUser);
 
+    if (urlParams.substring(0,1) != "?") {
+      urlParams = "?" + urlParams;
+    }
+
     var calendar = new FullCalendar.Calendar(calendarEl, {
         // resourceOrder: 'last_name, first_name',
         resourceOrder: 'first_name',
