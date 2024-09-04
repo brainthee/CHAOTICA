@@ -984,15 +984,15 @@ def site_search(request):
 
     if is_ajax(request) and len(q) > 2:
         ## Jobs
-
-        units_with_perms = get_objects_for_user(
+        units_with_job_perms = get_objects_for_user(
             request.user, "jobtracker.can_view_jobs", OrganisationalUnit)
+        
         jobs_search = Job.objects.filter(
             Q(title__icontains=q)
             | Q(overview__icontains=q)
             | Q(slug__icontains=q)
             | Q(id__icontains=q),
-            unit__in=units_with_perms,
+            unit__in=units_with_job_perms,
         )
         context["search_jobs"] = jobs_search
         results_count = results_count + jobs_search.count()
@@ -1002,7 +1002,7 @@ def site_search(request):
             Q(title__icontains=q)
             | Q(description__icontains=q)
             | Q(phase_id__icontains=q),
-            job__unit__in=units_with_perms,
+            job__unit__in=units_with_job_perms,
         )
         context["search_phases"] = phases_search
         results_count = results_count + phases_search.count()
@@ -1057,16 +1057,15 @@ def site_search(request):
         results_count = results_count + project_search.count()
 
         ## Users
-        if request.user.is_superuser:
-            us_search = User.objects.annotate(full_name=Concat('first_name', 
+        us_search = User.objects.annotate(full_name=Concat('first_name', 
           Value(' '), 'last_name', output_field=CharField())).filter(
                 Q(email__icontains=q)
                 | Q(first_name__icontains=q)
                 | Q(last_name__icontains=q)
                 | Q(full_name__icontains=q)
             )
-            context["search_users"] = us_search
-            results_count = results_count + us_search.count()
+        context["search_users"] = us_search
+        results_count = results_count + us_search.count()
 
     context["results_count"] = results_count
 
