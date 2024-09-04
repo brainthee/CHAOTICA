@@ -9,8 +9,8 @@ from django.template import loader
 from django.db.models import Q
 from django.contrib.auth.mixins import UserPassesTestMixin
 from guardian.shortcuts import get_objects_for_user
-from ..decorators import unit_permission_required_or_403
-from ..mixins import UnitPermissionRequiredMixin
+from ..decorators import unit_permission_required_or_403, job_permission_required_or_403
+from ..mixins import UnitPermissionRequiredMixin, JobPermissionRequiredMixin
 from django.views import View
 from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
@@ -49,14 +49,16 @@ logger = logging.getLogger(__name__)
 
 # TODO: setup events for schedule so it comes back with member's only
 
+# TODO: Permissions for jobs needs revisiting. TLDR; deal with non unit members 
+# by adding them permissions directly to the job
 
-@unit_permission_required_or_403("jobtracker.view_job_schedule", (Job, "slug", "slug"))
+@job_permission_required_or_403("jobtracker.view_job_schedule", (Job, "slug", "slug"))
 def view_job_schedule_gantt_data(request, slug):
     job = get_object_or_404(Job, slug=slug)
     return JsonResponse(job.get_gantt_json(), safe=False)
 
 
-@unit_permission_required_or_403("jobtracker.view_job_schedule", (Job, "slug", "slug"))
+@job_permission_required_or_403("jobtracker.view_job_schedule", (Job, "slug", "slug"))
 def view_job_schedule_slots(request, slug):
     data = []
     job = get_object_or_404(Job, slug=slug)
@@ -72,7 +74,7 @@ def view_job_schedule_slots(request, slug):
     return JsonResponse(data, safe=False)
 
 
-@unit_permission_required_or_403("jobtracker.view_job_schedule", (Job, "slug", "slug"))
+@job_permission_required_or_403("jobtracker.view_job_schedule", (Job, "slug", "slug"))
 def view_job_schedule_members(request, slug):
     data = []
     job = get_object_or_404(Job, slug=slug)
@@ -93,7 +95,7 @@ def view_job_schedule_members(request, slug):
     return JsonResponse(data, safe=False)
 
 
-@unit_permission_required_or_403(
+@job_permission_required_or_403(
     "jobtracker.can_manage_framework_job", (Job, "slug", "slug")
 )
 def assign_job_framework(request, slug):
@@ -119,7 +121,7 @@ def assign_job_framework(request, slug):
     return JsonResponse(data)
 
 
-@unit_permission_required_or_403(
+@job_permission_required_or_403(
     "jobtracker.assign_billingcodes", (Job, "slug", "slug")
 )
 def assign_job_billingcodes(request, slug):
@@ -145,7 +147,7 @@ def assign_job_billingcodes(request, slug):
     return JsonResponse(data)
 
 
-@unit_permission_required_or_403("jobtracker.can_assign_poc_job", (Job, "slug", "slug"))
+@job_permission_required_or_403("jobtracker.can_assign_poc_job", (Job, "slug", "slug"))
 def assign_job_poc(request, slug):
     job = get_object_or_404(Job, slug=slug)
     contacts = Contact.objects.filter(company=job.client)
@@ -154,7 +156,7 @@ def assign_job_poc(request, slug):
     )
 
 
-@unit_permission_required_or_403("jobtracker.can_update_job", (Job, "slug", "slug"))
+@job_permission_required_or_403("jobtracker.can_update_job", (Job, "slug", "slug"))
 def assign_job_field(request, slug, field):
     valid_fields = [
         "account_manager",
@@ -172,13 +174,13 @@ def assign_job_field(request, slug, field):
         return HttpResponseBadRequest()
 
 
-@unit_permission_required_or_403("jobtracker.can_update_job", (Job, "slug", "slug"))
+@job_permission_required_or_403("jobtracker.can_update_job", (Job, "slug", "slug"))
 def assign_job_scoped(request, slug):
     job = get_object_or_404(Job, slug=slug)
     return _process_assign_user(request, job, "scoped_by", multiple=True)
 
 
-@unit_permission_required_or_403("jobtracker.can_scope_jobs", (Job, "slug", "slug"))
+@job_permission_required_or_403("jobtracker.can_scope_jobs", (Job, "slug", "slug"))
 def job_edit_scope(request, slug):
     is_ajax = False
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
@@ -212,7 +214,7 @@ def job_edit_scope(request, slug):
     return JsonResponse(data)
 
 
-@unit_permission_required_or_403("jobtracker.can_schedule_job", (Job, "slug", "slug"))
+@job_permission_required_or_403("jobtracker.can_schedule_job", (Job, "slug", "slug"))
 def change_job_schedule_slot(request, slug, pk=None):
     job = get_object_or_404(Job, slug=slug)
     slot = None
@@ -242,7 +244,7 @@ def change_job_schedule_slot(request, slug, pk=None):
     return JsonResponse(data)
 
 
-@unit_permission_required_or_403("jobtracker.can_schedule_job", (Job, "slug", "slug"))
+@job_permission_required_or_403("jobtracker.can_schedule_job", (Job, "slug", "slug"))
 def job_support_team_add(request, slug):
     job = get_object_or_404(Job, slug=slug)
     data = dict()
@@ -276,7 +278,7 @@ def job_support_team_add(request, slug):
     return JsonResponse(data)
 
 
-@unit_permission_required_or_403("jobtracker.can_schedule_job", (Job, "slug", "slug"))
+@job_permission_required_or_403("jobtracker.can_schedule_job", (Job, "slug", "slug"))
 def job_support_team_edit(request, slug, pk):
     job = get_object_or_404(Job, slug=slug)
     support_role = get_object_or_404(JobSupportTeamRole, pk=pk, job=job)
@@ -309,7 +311,7 @@ def job_support_team_edit(request, slug, pk):
     return JsonResponse(data)
 
 
-@unit_permission_required_or_403("jobtracker.can_schedule_job", (Job, "slug", "slug"))
+@job_permission_required_or_403("jobtracker.can_schedule_job", (Job, "slug", "slug"))
 def job_support_team_mark_used(request, slug, pk):
     job = get_object_or_404(Job, slug=slug)
     support_role = get_object_or_404(JobSupportTeamRole, pk=pk, job=job)
@@ -336,7 +338,7 @@ def job_support_team_mark_used(request, slug, pk):
     return JsonResponse(data)
 
 
-@unit_permission_required_or_403("jobtracker.can_schedule_job", (Job, "slug", "slug"))
+@job_permission_required_or_403("jobtracker.can_schedule_job", (Job, "slug", "slug"))
 def job_support_team_delete(request, slug, pk):
     job = get_object_or_404(Job, slug=slug)
     support_role = get_object_or_404(JobSupportTeamRole, pk=pk, job=job)
@@ -360,7 +362,7 @@ def job_support_team_delete(request, slug, pk):
     return JsonResponse(data)
 
 
-@unit_permission_required_or_403("jobtracker.can_add_note_job", (Job, "slug", "slug"))
+@job_permission_required_or_403("jobtracker.can_add_note_job", (Job, "slug", "slug"))
 def job_create_note(request, slug):
     job = get_object_or_404(Job, slug=slug)
     if request.method == "POST":
@@ -418,7 +420,7 @@ class JobListView(JobBaseView, UserPassesTestMixin, ListView):
         return jobs
 
 
-class JobDetailView(UnitPermissionRequiredMixin, JobBaseView, DetailView):
+class JobDetailView(JobPermissionRequiredMixin, JobBaseView, DetailView):
     permission_required = "jobtracker.can_view_jobs"
     return_403 = True
 
@@ -527,7 +529,7 @@ class JobDeleteView(UnitPermissionRequiredMixin, JobBaseView, DeleteView):
     """View to delete a job"""
 
 
-@unit_permission_required_or_403("jobtracker.can_update_job", (Job, "slug", "slug"))
+@job_permission_required_or_403("jobtracker.can_update_job", (Job, "slug", "slug"))
 def job_update_workflow(request, slug, new_state):
     job = get_object_or_404(Job, slug=slug)
     data = dict()
