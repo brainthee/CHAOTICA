@@ -46,6 +46,8 @@ def _filter_users_on_query(request):
         show_inactive_users = filter_form.cleaned_data.get("show_inactive_users")
     else:
         show_inactive_users = False
+        print("NOTVALID")
+    cleaned_data = filter_form.clean()
 
     # Starting users filter
     users_pk = []
@@ -79,13 +81,13 @@ def _filter_users_on_query(request):
         if not show_inactive_users:
             query.add(Q(is_active=True), Q.AND)
 
-        users_q = filter_form.cleaned_data.get("users")
+        users_q = cleaned_data.get('users')
         if users_q:
             query.add(Q(pk__in=users_q), Q.AND)
 
         ## Filter org unit
-        org_units = filter_form.cleaned_data.get("org_units")
-        org_unit_roles = filter_form.cleaned_data.get("org_unit_roles")
+        org_units = cleaned_data.get("org_units")
+        org_unit_roles = cleaned_data.get("org_unit_roles")
         if not org_unit_roles:
             org_unit_roles = OrganisationalUnitRole.objects.all()
         if org_units:
@@ -101,7 +103,7 @@ def _filter_users_on_query(request):
 
 
         ## Filter on skills
-        skills_specialist = filter_form.cleaned_data.get("skills_specialist")
+        skills_specialist = cleaned_data.get("skills_specialist")
         if skills_specialist:
             query.add(
                 Q(
@@ -112,7 +114,7 @@ def _filter_users_on_query(request):
                 Q.AND,
             )
 
-        skills_can_do_alone = filter_form.cleaned_data.get("skills_can_do_alone")
+        skills_can_do_alone = cleaned_data.get("skills_can_do_alone")
         if skills_can_do_alone:
             query.add(
                 Q(
@@ -124,7 +126,7 @@ def _filter_users_on_query(request):
                 Q.AND,
             )
 
-        skills_can_do_support = filter_form.cleaned_data.get("skills_can_do_support")
+        skills_can_do_support = cleaned_data.get("skills_can_do_support")
         if skills_can_do_support:
             query.add(
                 Q(
@@ -139,7 +141,7 @@ def _filter_users_on_query(request):
         # Filter on service
         # This is a bit mind bending. Of the service(s) selected, each will have some desired/needed skills
         # We then need to select the users based off containing a skill in either desired or needed..
-        services = filter_form.cleaned_data.get("services")
+        services = cleaned_data.get("services")
         for service in services:
             query.add(Q(pk__in=service.users_can_conduct()), Q.AND)
 
