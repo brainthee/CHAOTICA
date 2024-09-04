@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load menu %}
+{% load static %}
 {% load index %}
 {% load crispy_forms_tags %}
 
@@ -25,6 +26,7 @@
 
 {% block content %}
   <div class="calendar bg-white w-100 {% if config.SITE_NOTICE_ENABLED %}pt-5{% endif %}" data-bs-toggle="calendar" id="calendar"></div>
+{% include 'partials/loading.html' %}
 {% endblock %}
 
 {% block offcanvas %}
@@ -43,7 +45,6 @@
       <button class="btn btn-phoenix-secondary w-100" data-theme-control="reset"><span class="fas fa-arrows-rotate me-2 fs--2"></span>Reset to default</button>
     </div>
     <div class="offcanvas-body scrollbar px-card" id="themeController">
-      {% csrf_token %}
       {% crispy filter_form %}
     </div>
   </div>

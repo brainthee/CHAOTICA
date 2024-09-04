@@ -4,28 +4,14 @@
     var calendarEl = document.getElementById('calendar');
     var csrf = $('input[name="csrfmiddlewaretoken"]');
     
-    const urlParams = new URLSearchParams(window.location.search).entries();
+    urlParams = window.location.search + "{% if phase %}&phase={{ phase.pk }}{% endif %}{% if job %}&job={{ job.pk }}{% endif %}{% if project %}&project={{ project.pk }}{% endif %}";
     
-    var urlSearchParams = {}
-    for(const entry of urlParams) {
-      urlSearchParams[entry[0]] = entry[1];
-    }
-    // {% if phase %}
-    urlSearchParams['phase'] = "{{ phase.pk }}";
-    // {% endif %}
-    // {% if job %}
-    urlSearchParams['job'] = "{{ job.pk }}";
-    // {% endif %}
-    // {% if project %}
-    urlSearchParams['project'] = "{{ project.pk }}";
-    // {% endif %}
-
     var addUser = function() {
       var form = $(this);
       userVal = $('#id_user').find(":selected").val()
       userObj = $('#id_user').find(":selected").text()
       if(userVal) {
-        urlSearchParams['include_user'] = userVal;
+        urlParams = urlParams+"&include_user="+userVal;
         calendar.refetchResources();
         calendar.refetchEvents();
       } else {
@@ -89,10 +75,17 @@
             '<a href="'+info.resource.extendedProps.url+'">' + info.resource.title + '</a>';
           
         },
+        loading: function (isLoading) {
+            if (isLoading) {
+                $('#loading').show();
+            }
+            else {                
+                $('#loading').hide();
+            }
+        },
         resources: {
-            url: "{% url 'view_scheduler_members' %}",
+            url: "{% url 'view_scheduler_members' %}" + urlParams,
             method: 'GET',
-            extraParams: urlSearchParams,
             failure: function() {
               Swal.fire({
                 icon: 'error',
@@ -102,9 +95,8 @@
             },
         },
         eventSources: {
-            url: "{% url 'view_scheduler_slots' %}",
+            url: "{% url 'view_scheduler_slots' %}" + urlParams,
             method: 'GET',
-            extraParams: urlSearchParams,
             failure: function() {
               Swal.fire({
                 icon: 'error',
