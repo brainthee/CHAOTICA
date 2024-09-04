@@ -96,20 +96,22 @@ class Notification(models.Model):
             context["action_link"] = self.link
             context["user"] = self.user
             msg_html = render_to_string(self.email_template, context)
-            if send_mail(
+            if (
+                send_mail(
                     self.title,
                     self.message,
                     None,
                     [self.user.email_address()],
                     html_message=msg_html,
-                ) > 0:
+                )
+                > 0
+            ):
                 self.is_emailed = True
                 self.save()
         else:
             # User or site disabled, don't send emails
             self.is_emailed = True
             self.save()
-
 
 
 class Group(django.contrib.auth.models.Group):
@@ -203,6 +205,7 @@ class UserInvitation(models.Model):
 
     def send_email(self):
         from .utils import ext_reverse
+
         if config.EMAIL_ENABLED:
             ## Email notification
             context = {}
@@ -229,8 +232,17 @@ class UserInvitation(models.Model):
 class User(AbstractUser):
     # Fields to enforce email as the auth field
     username = None
-    email = models.EmailField("Email Address", unique=True, help_text="This is your authenticated email and can not be changed")
-    notification_email = models.EmailField("Notification Email Address", blank=True, default="", help_text="If configured, email notifications go to this address rather than your account address.")
+    email = models.EmailField(
+        "Email Address",
+        unique=True,
+        help_text="This is your authenticated email and can not be changed",
+    )
+    notification_email = models.EmailField(
+        "Notification Email Address",
+        blank=True,
+        default="",
+        help_text="If configured, email notifications go to this address rather than your account address.",
+    )
     USERNAME_FIELD = "email"
     EMAIL_FIELD = "email"
     REQUIRED_FIELDS = []
@@ -296,13 +308,19 @@ class User(AbstractUser):
         upload_to=get_media_profile_file_path,
     )
     contracted_leave = models.IntegerField(
-        verbose_name="Contracted Leave", default=25, help_text="Days leave you are entitled to"
+        verbose_name="Contracted Leave",
+        default=25,
+        help_text="Days leave you are entitled to",
     )
     carry_over_leave = models.IntegerField(
-        verbose_name="Leave Carried Over", default=0, help_text="Days leave carried over from previous period"
+        verbose_name="Leave Carried Over",
+        default=0,
+        help_text="Days leave carried over from previous period",
     )
     contracted_leave_renewal = models.DateField(
-        verbose_name="Leave Renewal Date", default=date(day=1, month=9, year=2023), help_text="Date leave is reset"
+        verbose_name="Leave Renewal Date",
+        default=date(day=1, month=9, year=2023),
+        help_text="Date leave is reset",
     )
 
     profile_last_updated = models.DateField(
@@ -318,7 +336,7 @@ class User(AbstractUser):
             ("manage_site_settings", "Can change site settings"),
             ("view_activity_logs", "Can review the activity logs"),
         )
-    
+
     def merge(self, user_to_merge):
         # Things to merge:
         # Timeslots
@@ -336,10 +354,13 @@ class User(AbstractUser):
         UserCost.objects.filter(user=user_to_merge).update(user=self)
         ## Leave
         LeaveRequest.objects.filter(user=user_to_merge).update(user=self)
-        LeaveRequest.objects.filter(authorised_by=user_to_merge).update(authorised_by=self)
+        LeaveRequest.objects.filter(authorised_by=user_to_merge).update(
+            authorised_by=self
+        )
         LeaveRequest.objects.filter(declined_by=user_to_merge).update(declined_by=self)
         ## Client
         from jobtracker.models.client import Client
+
         for obj in Client.objects.filter(account_managers__in=[user_to_merge]):
             obj.account_managers.remove(user_to_merge)
             obj.account_managers.add(self)
@@ -354,48 +375,70 @@ class User(AbstractUser):
             obj.save()
         ## Feedback
         from jobtracker.models.common import Feedback
+
         Feedback.objects.filter(author=user_to_merge).update(author=self)
         ## Job
         from jobtracker.models.job import Job
+
         Job.objects.filter(created_by=user_to_merge).update(created_by=self)
         Job.objects.filter(account_manager=user_to_merge).update(account_manager=self)
-        Job.objects.filter(dep_account_manager=user_to_merge).update(dep_account_manager=self)
+        Job.objects.filter(dep_account_manager=user_to_merge).update(
+            dep_account_manager=self
+        )
         for obj in Job.objects.filter(scoped_by__in=[user_to_merge]):
             obj.scoped_by.remove(user_to_merge)
             obj.scoped_by.add(self)
             obj.save()
-        Job.objects.filter(scoped_signed_off_by=user_to_merge).update(scoped_signed_off_by=self)
+        Job.objects.filter(scoped_signed_off_by=user_to_merge).update(
+            scoped_signed_off_by=self
+        )
         Job.objects.filter(created_by=user_to_merge).update(created_by=self)
         ## JobSupportTeamRole
         from jobtracker.models.job import JobSupportTeamRole
+
         JobSupportTeamRole.objects.filter(user=user_to_merge).update(user=self)
         ## JobSupportTeamRole
-        from jobtracker.models.orgunit import OrganisationalUnit, OrganisationalUnitMember
+        from jobtracker.models.orgunit import (
+            OrganisationalUnit,
+            OrganisationalUnitMember,
+        )
+
         OrganisationalUnit.objects.filter(lead=user_to_merge).update(lead=self)
-        OrganisationalUnitMember.objects.filter(member=user_to_merge).update(member=self)
-        OrganisationalUnitMember.objects.filter(inviter=user_to_merge).update(inviter=self)
+        OrganisationalUnitMember.objects.filter(member=user_to_merge).update(
+            member=self
+        )
+        OrganisationalUnitMember.objects.filter(inviter=user_to_merge).update(
+            inviter=self
+        )
         ## Phase
         from jobtracker.models.phase import Phase
+
         Phase.objects.filter(report_author=user_to_merge).update(report_author=self)
         Phase.objects.filter(project_lead=user_to_merge).update(project_lead=self)
         Phase.objects.filter(techqa_by=user_to_merge).update(techqa_by=self)
         Phase.objects.filter(presqa_by=user_to_merge).update(presqa_by=self)
-        Phase.objects.filter(last_modified_by=user_to_merge).update(last_modified_by=self)
+        Phase.objects.filter(last_modified_by=user_to_merge).update(
+            last_modified_by=self
+        )
         ## Project
         from jobtracker.models.project import Project
+
         Project.objects.filter(created_by=user_to_merge).update(created_by=self)
         Project.objects.filter(primary_poc=user_to_merge).update(primary_poc=self)
         ## QualificationRecord
         from jobtracker.models.qualification import QualificationRecord
+
         QualificationRecord.objects.filter(user=user_to_merge).update(user=self)
         ## Service
         from jobtracker.models.service import Service
+
         for obj in Service.objects.filter(owners__in=[user_to_merge]):
             obj.owners.remove(user_to_merge)
             obj.owners.add(self)
             obj.save()
         ## TimeSlot
         from jobtracker.models.timeslot import TimeSlot
+
         TimeSlot.objects.filter(user=user_to_merge).update(user=self)
 
         # If we have got this far... delete the target user!
@@ -488,7 +531,7 @@ class User(AbstractUser):
             return reverse("user_manage", kwargs={"email": self.email})
         else:
             return None
-    
+
     # We're not going to use this... maybe?
     # def get_current_status(self):
     #     # online, offline, away, do-not-disturb
@@ -700,6 +743,18 @@ class User(AbstractUser):
             user=self, effective_from=effective_from, cost_per_hour=cost
         )
 
+    def get_working_hours(self):
+        # Logic should be working hours from our org?
+        data = dict()
+        if self.unit_memberships.exists():
+            data["start"] = self.unit_memberships.first().unit.businessHours_startTime
+            data["end"] = self.unit_memberships.first().unit.businessHours_endTime
+        else:
+            # Do site defaults...
+            data["start"] = timezone.datetime.time(9, 0, 0)
+            data["end"] = timezone.datetime.time(17, 30, 0)
+        return data
+
 
 class UserCost(models.Model):
     user = models.ForeignKey(
@@ -791,9 +846,11 @@ class LeaveRequest(models.Model):
     )
 
     timeslot = models.ForeignKey(
-        "jobtracker.TimeSlot", 
+        "jobtracker.TimeSlot",
         related_name="leaverequest",
-        null=True, blank=True, on_delete=models.CASCADE
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
     )
 
     cancelled = models.BooleanField(default=False)
@@ -811,7 +868,7 @@ class LeaveRequest(models.Model):
 
     class Meta:
         verbose_name = "Leave Request"
-        ordering = ["start_date"]
+        ordering = ["-start_date"]
 
     def overlaps_work(self):
         from jobtracker.models.timeslot import TimeSlotType, TimeSlot
@@ -842,7 +899,18 @@ class LeaveRequest(models.Model):
 
     def affected_days(self):
         unit = "day"
-        days = businessDuration(self.start_date, self.end_date, unit=unit)
+        working_hours = self.user.get_working_hours()
+        days = businessDuration(
+            self.start_date,
+            self.end_date,
+            unit=unit,
+            # starttime=working_hours["start"],
+            # endtime=working_hours["end"],
+        )
+        from pprint import pprint
+
+        pprint(working_hours)
+        pprint(days)
         return round(days, 2)
 
     def can_cancel(self):
@@ -880,6 +948,7 @@ class LeaveRequest(models.Model):
 
     def send_request_notification(self):
         from chaotica_utils.utils import AppNotification
+
         # Send a notice to... people?!
         users_to_notify = self.can_approve_by()
         notice = AppNotification(
@@ -894,6 +963,7 @@ class LeaveRequest(models.Model):
 
     def send_approved_notification(self):
         from chaotica_utils.utils import AppNotification
+
         # Send a notice to... people?!
         users_to_notify = [self.user]
         notice = AppNotification(
@@ -910,6 +980,7 @@ class LeaveRequest(models.Model):
 
     def send_declined_notification(self):
         from chaotica_utils.utils import AppNotification
+
         # Send a notice to... people?!
         users_to_notify = [self.user]
         notice = AppNotification(
@@ -928,6 +999,7 @@ class LeaveRequest(models.Model):
 
     def send_cancelled_notification(self):
         from chaotica_utils.utils import AppNotification
+
         # Send a notice to... people?!
         users_to_notify = [self.user]
         notice = AppNotification(
