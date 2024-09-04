@@ -865,7 +865,7 @@ class Phase(models.Model):
         tasks = []
         from ..models.timeslot import TimeSlot
 
-        for slot in TimeSlot.objects.filter(phase=self):
+        for slot in TimeSlot.objects.filter(phase=self).order_by('deliveryRole'):
             user_text = str(slot.user)
             if slot.is_onsite:
                 user_text = user_text + " (Onsite)"
@@ -881,8 +881,8 @@ class Phase(models.Model):
                 + " ("
                 + str(slot.get_deliveryRole_display())
                 + ")",
-                "start_date": slot.start.date(),
-                "end_date": slot.end.date(),
+                "start_date": slot.start,
+                "end_date": slot.end,
             }
             tasks.append(info)
         data = {
