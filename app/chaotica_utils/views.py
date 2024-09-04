@@ -979,28 +979,30 @@ def site_search(request):
         Qualification,
         Accreditation,
         Project,
+        OrganisationalUnit,
     )
 
     if is_ajax(request) and len(q) > 2:
         ## Jobs
-        jobs_search = get_objects_for_user(
-            request.user, "jobtracker.view_job", Job
-        ).filter(
+
+        units_with_perms = get_objects_for_user(
+            request.user, "jobtracker.can_view_jobs", OrganisationalUnit)
+        jobs_search = Job.objects.filter(
             Q(title__icontains=q)
             | Q(overview__icontains=q)
             | Q(slug__icontains=q)
-            | Q(id__icontains=q)
+            | Q(id__icontains=q),
+            unit__in=units_with_perms,
         )
         context["search_jobs"] = jobs_search
         results_count = results_count + jobs_search.count()
 
         ## Phases
-        allowed_jobs = get_objects_for_user(request.user, "jobtracker.view_job", Job)
         phases_search = Phase.objects.filter(
             Q(title__icontains=q)
             | Q(description__icontains=q)
             | Q(phase_id__icontains=q),
-            job__in=allowed_jobs,
+            job__unit__in=units_with_perms,
         )
         context["search_phases"] = phases_search
         results_count = results_count + phases_search.count()
