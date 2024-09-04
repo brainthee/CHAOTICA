@@ -201,6 +201,14 @@ class TimeSlotDeliveryRole:
     )
     REQUIRED_ALLOCATIONS = (DELIVERY, QA)
 
+class JobGuestPermissions:
+    ALLOWED = [
+        "jobtracker.view_job_schedule",
+        "jobtracker.can_update_job",
+        "jobtracker.can_add_note_job",
+        "jobtracker.can_view_jobs",
+        "jobtracker.view_job_schedule",
+    ]
 
 class JobSupportRole:
     OTHER = 0

@@ -231,7 +231,8 @@ AUTHENTICATION_BACKENDS = (
     "django_auth_adfs.backend.AdfsAuthCodeBackend",
 )
 
-GUARDIAN_RAISE_403 = True
+GUARDIAN_RAISE_403 = False
+GUARDIAN_RENDER_403 = True
 GUARDIAN_TEMPLATE_403 = "403.html"
 
 AUTH_USER_MODEL = "chaotica_utils.User"
