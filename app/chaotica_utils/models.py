@@ -531,12 +531,18 @@ class User(AbstractUser):
             return reverse("user_manage", kwargs={"email": self.email})
         else:
             return None
-
-    # We're not going to use this... maybe?
-    # def get_current_status(self):
-    #     # online, offline, away, do-not-disturb
-    #     # Used to decorate avatars
-    #     return "online"
+    
+    def get_table_display_html(self):
+        context = {}
+        context["u"] = self
+        html = render_to_string("partials/users/user_table_display.html", context)
+        return html
+    
+    def get_profile_card_html(self):
+        context = {}
+        context["userProfile"] = self
+        html = render_to_string("partials/users/user_profile_card.html", context)
+        return html
 
     def get_jobs(self):
         from jobtracker.models import Job

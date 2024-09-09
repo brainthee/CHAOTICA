@@ -85,6 +85,7 @@ class TimeSlotComment(models.Model):
             "icon": "far fa-comment-dots",
             "color": config.SCHEDULE_COLOR_COMMENT,
             "textColor": self.get_schedule_slot_text_colour(),
+            "classNames": "p-1 rounded-3",
         }
         return data
 
@@ -263,8 +264,9 @@ class TimeSlot(models.Model):
             "userId": self.user.pk,
             # "color": self.get_schedule_slot_colour(),
             "backgroundColor": self.get_schedule_slot_colour(),
-            "borderColor": self.get_schedule_slot_colour(),
+            # "borderColor": self.get_schedule_slot_colour(),
             "textColor": self.get_schedule_slot_text_colour(),
+            "classNames": "p-1 rounded-3",
         }
         if self.is_delivery():
             data["deliveryRole"] = self.deliveryRole

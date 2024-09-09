@@ -213,6 +213,7 @@ def view_scheduler_members(request):
                 "first_name": user.first_name,
                 "last_name": user.last_name,
                 "url": user.get_absolute_url(),
+                "html_view": user.get_table_display_html(),
                 "businessHours": (
                     {
                         "startTime": main_org.unit.businessHours_startTime,
