@@ -39,7 +39,7 @@
         headerToolbar: {
             left: 'today prev,next',
             center: 'title',
-            right: 'resourceTimelineTenDay,resourceTimelineMonth,resourceTimelineThreeMonth,resourceTimelineYear'
+            right: 'resourceTimelineMonth,resourceTimelineThreeMonth,resourceTimelineYear'
         },
         // {% py_date_to_js_date request.GET.from_date as from_date %}
         // {% if earliest_scheduled_date %}
@@ -55,11 +55,6 @@
         scrollTime: Date(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate()),
         {% comment %} timeZone: '{{ user.pref_timezone }}', // the default (unnecessary to specify) {% endcomment %}
         views: {
-          resourceTimelineTenDay: {
-              type: 'resourceTimeline',
-              duration: { days: 10 },
-              buttonText: '10 days'
-          },
           resourceTimelineThreeMonth: {
               type: 'resourceTimeline',
               duration: { months: 3 },
@@ -72,11 +67,10 @@
         contentHeight: '100%',
         stickyHeaderDates: true,
         stickyFooterScrollbar : true,
-        // resourceAreaWidth: '',
+        resourceAreaWidth: "300px",
         resourceAreaHeaderContent: 'Users',
-        resourceLabelDidMount: function(info) {    
-          info.el.querySelector('.fc-datagrid-cell-main').innerHTML =
-            '<a href="'+info.resource.extendedProps.url+'">' + info.resource.title + '</a>';          
+        resourceLabelContent: function(info) {    
+          return {html: info.resource.extendedProps.html_view};
         },
         eventDidMount: function(info) {
           var icon = info.event.extendedProps.icon;
