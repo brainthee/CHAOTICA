@@ -48,6 +48,52 @@ class TimeSlotType(models.Model):
         return DefaultTimeSlotTypes.UNASSIGNED
 
 
+class TimeSlotComment(models.Model):
+    start = models.DateTimeField()
+    end = models.DateTimeField()
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        limit_choices_to=(models.Q(is_active=True)),
+        related_name="timeslot_comments",
+        on_delete=models.CASCADE,
+    )
+    comment = models.TextField(default="")
+
+    def get_schedule_slot_text_colour(self):
+        bg_colour = config.SCHEDULE_COLOR_COMMENT
+        color = bg_colour[1:]
+
+        hex_red = int(color[0:2], base=16)
+        hex_green = int(color[2:4], base=16)
+        hex_blue = int(color[4:6], base=16)
+
+        luminance = hex_red * 0.2126 + hex_green * 0.7152 + hex_blue * 0.0722
+        if luminance < 140:
+            return "white"
+        else:
+            return "black"
+
+    def get_schedule_json(self):
+        data = {
+            "id": self.pk,
+            "title": self.comment,
+            "resourceId": self.user.pk,
+            "start": self.start,
+            "display": "block",
+            "end": self.end,
+            "userId": self.user.pk,
+            "icon": "far fa-comment-dots",
+            "color": config.SCHEDULE_COLOR_COMMENT,
+            "textColor": self.get_schedule_slot_text_colour(),
+        }
+        return data
+
+    def __str__(self):
+        return "{}-{} {}".format(
+            self.start, self.end, self.comment
+        )
+
+
 class TimeSlot(models.Model):
     start = models.DateTimeField()
     end = models.DateTimeField()
@@ -216,10 +262,9 @@ class TimeSlot(models.Model):
             "url": url,
             "userId": self.user.pk,
             # "color": self.get_schedule_slot_colour(),
-            # "backgroundColor": self.get_schedule_slot_colour(),
-            "backgroundColor": "#fff",
+            "backgroundColor": self.get_schedule_slot_colour(),
             "borderColor": self.get_schedule_slot_colour(),
-            # "textColor": self.get_schedule_slot_text_colour(),
+            "textColor": self.get_schedule_slot_text_colour(),
         }
         if self.is_delivery():
             data["deliveryRole"] = self.deliveryRole
@@ -228,8 +273,10 @@ class TimeSlot(models.Model):
                 "change_job_schedule_slot",
                 kwargs={"slug": self.phase.job.slug, "pk": self.pk},
             )
+            data["viewURL"] = self.phase.get_absolute_url()
         elif self.is_project():
             data["projectId"] = self.project.pk
+            data["viewURL"] = self.project.get_absolute_url()
             # data["editURL"] = reverse(
             #     "change_job_schedule_slot",
             #     kwargs={"slug": self.phase.job.slug, "pk": self.pk},
@@ -307,3 +354,4 @@ class TimeSlot(models.Model):
                 if self.phase.can_to_sched_tentative():
                     self.phase.to_sched_tentative()
                     self.phase.save()
+

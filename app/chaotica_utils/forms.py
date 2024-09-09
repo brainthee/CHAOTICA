@@ -185,6 +185,10 @@ class CustomConfigForm(ConstanceForm):
                         Field("SCHEDULE_COLOR_PHASE_CONFIRMED_AWAY"),
                         css_class="input-group input-group-dynamic",
                     ),
+                    Div(
+                        Field("SCHEDULE_COLOR_COMMENT"),
+                        css_class="input-group input-group-dynamic",
+                    ),
                 ),
             ),
         )

@@ -542,6 +542,23 @@ class User(AbstractUser):
         from jobtracker.models import Job
 
         return Job.objects.jobs_for_user(self)
+    
+    def get_timeslot_comments(self, start=None, end=None):
+        from jobtracker.models import TimeSlotComment
+        data = []
+        today = timezone.now().today()
+        start_of_week = today - timedelta(days=today.weekday())
+        end_of_week = start_of_week + timedelta(days=6)
+
+        start = start or start_of_week
+        end = end or end_of_week
+
+        slots = TimeSlotComment.objects.filter(user=self, end__gte=start, start__lte=end)
+        for slot in slots:
+            slot_json = slot.get_schedule_json()
+            # slot_json["display"] = "background"
+            data.append(slot_json)
+        return data
 
     def get_timeslots(self, start=None, end=None, phase_focus=None):
         from jobtracker.models import TimeSlot

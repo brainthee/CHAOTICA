@@ -23,6 +23,7 @@ from .models import (
     OrganisationalUnitRole,
     UserSkill,
     TimeSlotType,
+    TimeSlotComment,
     Project
 )
 from import_export import resources
@@ -81,6 +82,7 @@ class ServiceAdmin(ImportExportModelAdmin):
 admin.site.register(Service, ServiceAdmin)
 
 admin.site.register(TimeSlot, SimpleHistoryAdmin)
+admin.site.register(TimeSlotComment)
 admin.site.register(WorkflowTask)
 admin.site.register(BillingCode)
 admin.site.register(Feedback)
