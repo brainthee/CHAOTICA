@@ -196,6 +196,12 @@ CONSTANCE_CONFIG = {
         "Colour to show available in the schedule",
         "colour_picker",
     ),
+    "SCHEDULE_COLOR_COMMENT": (
+        "#cbd0dd",
+        "Colour to show comments",
+        "colour_picker",
+    ),
+    
 }
 
 CONSTANCE_BACKEND = "constance.backends.database.DatabaseBackend"

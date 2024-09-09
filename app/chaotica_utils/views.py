@@ -958,7 +958,7 @@ class UserAutocomplete(autocomplete.Select2QuerySetView):
                 | Q(first_name__icontains=self.q)
                 | Q(last_name__icontains=self.q),
                 is_active=True,
-            ).order_by("email")
+            )
         return qs
 
 

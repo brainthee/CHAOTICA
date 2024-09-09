@@ -1,0 +1,99 @@
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+<div class="modal-dialog modal- modal-dialog-centered modal-" role="document">
+    <div class="modal-content">
+        <form method="post" action="{{ request.get_full_path }}" class="js-submit-modal-timeslot-form">
+          {{ form.media }}
+            {% csrf_token %}            
+            <div class="modal-header">
+                <h6 class="modal-title font-weight-normal" 
+                    id="modal-title-default">
+                        Add Comment
+                </h6>
+                <button type="button" class="btn-close text-dark" 
+                    data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <ul class="errorlist">
+                {% if form.non_field_errors %}
+                  <li>{{ form.non_field_errors }}</li>
+                {% endif %}
+                {% for field in form %}
+                  {% if field.errors %}
+                    <li>
+                      {{ field.label }}
+                      <ul class="errorlist">
+                        {% for error in field.errors %}
+                          <li>{{ error }}</li>
+                        {% endfor %}
+                      </ul>
+                    </li>
+                  {% endif %}
+                {% endfor %}
+              </ul>
+
+            {% crispy form %}
+        </form>
+    </div>
+ </div>
+
+<script>
+  $(function() {
+
+    var saveTimeslotForm = function() {
+        var form = $(this);
+        $.ajax({
+            url: form.attr("action"),
+            data: form.serialize(),
+            type: form.attr("method"),
+            dataType: 'json',
+            success: function(data) {
+                if (data.form_is_valid) {
+                    if (data.next) {
+                        location.href = data.next
+                    } else {
+                        calendar.refetchEvents();
+                      $("#mainModal").modal("hide");
+                    }
+                } else {
+                  // Check if it's due to validation
+                  if (data.logic_checks_failed) {
+                    if (data.logic_checks_can_bypass) {
+                      Swal.fire({
+                        title: "Warning",
+                        icon: "question",
+                        html: data.logic_checks_feedback,
+                        showCancelButton: true,
+                        confirmButtonText: "Save",
+                        denyButtonText: `Don't save`
+                      }).then((result) => {
+                        if (result.isConfirmed) {
+                          // Lets add a force param and re-submit...
+                          $('<input>').attr({
+                              type: 'hidden',
+                              id: 'force',
+                              name: 'force',
+                              value: '1',
+                          }).appendTo('.js-submit-modal-timeslot-form');
+
+                          $(".js-submit-modal-timeslot-form").submit();  
+                        } else if (result.isDenied) {
+                          Swal.fire("Changes are not saved", "", "info");
+                        }
+                      });
+                    } else {
+                      // Nothing
+                      $("#mainModalContent").html(data.html_form);
+                    }
+                  } else {
+                    $("#mainModalContent").html(data.html_form);
+                  }
+                }
+            }
+        });
+        return false;
+    };
+
+  $(".js-submit-modal-timeslot-form").submit(saveTimeslotForm);
+
+  });
+ </script>

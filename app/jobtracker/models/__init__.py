@@ -17,7 +17,7 @@ from .qualification import (
 )
 from .accreditation import Accreditation
 
-from .timeslot import TimeSlot, TimeSlotType
+from .timeslot import TimeSlot, TimeSlotType,TimeSlotComment
 from .orgunit import (
     OrganisationalUnit,
     OrganisationalUnitMember,

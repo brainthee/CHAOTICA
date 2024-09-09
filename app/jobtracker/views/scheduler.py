@@ -16,6 +16,7 @@ from ..forms import (
     ChangeTimeSlotDateModalForm,
     DeliveryTimeSlotModalForm,
     ProjectTimeSlotModalForm,
+    CommentTimeSlotModalForm,
 )
 from ..enums import UserSkillRatings
 import logging
@@ -90,11 +91,21 @@ def _filter_users_on_query(request):
         org_unit_roles = cleaned_data.get("org_unit_roles")
         if not org_unit_roles:
             org_unit_roles = OrganisationalUnitRole.objects.all()
+            
         if org_units:
             query.add(
                 Q(
                     unit_memberships__in=OrganisationalUnitMember.objects.filter(
                         unit__in=org_units,
+                        roles__in=org_unit_roles,
+                    )
+                ),
+                Q.AND,
+            )
+        else:
+            query.add(
+                Q(
+                    unit_memberships__in=OrganisationalUnitMember.objects.filter(
                         roles__in=org_unit_roles,
                     )
                 ),
@@ -180,6 +191,7 @@ def view_scheduler_slots(request):
             phase_focus = job
     for user in filtered_users:
         data = data + user.get_timeslots(start=start, end=end, phase_focus=phase_focus)
+        data = data + user.get_timeslot_comments(start=start, end=end)
         data = data + user.get_holidays(
             start=start,
             end=end,
@@ -276,8 +288,6 @@ def change_scheduler_slot(request, pk=None):
         return HttpResponseBadRequest()
     slot = get_object_or_404(TimeSlot, pk=pk)
     data = dict()
-    from pprint import pprint
-    pprint(slot)
     if request.method == "POST":
         if slot.is_delivery():
             form = DeliveryTimeSlotModalForm(request.POST, instance=slot)
@@ -295,13 +305,10 @@ def change_scheduler_slot(request, pk=None):
     else:
         # Send the modal
         if slot.is_delivery():
-            pprint("is_delivery")
             form = DeliveryTimeSlotModalForm(instance=slot)
         elif slot.is_project():
-            pprint("is_project")
             form = ProjectTimeSlotModalForm(instance=slot)
         else:
-            pprint("internal")
             form = NonDeliveryTimeSlotModalForm(instance=slot)
 
     context = {"form": form}
@@ -462,7 +469,7 @@ def create_scheduler_comment(request):
         resource = get_object_or_404(User, pk=resource_id)
 
     if request.method == "POST":
-        form = NonDeliveryTimeSlotModalForm(
+        form = CommentTimeSlotModalForm(
             request.POST, start=start, end=end, resource=resource
         )
         if form.is_valid():
@@ -471,11 +478,11 @@ def create_scheduler_comment(request):
         else:
             data["form_is_valid"] = False
     else:
-        form = NonDeliveryTimeSlotModalForm(start=start, end=end, resource=resource)
+        form = CommentTimeSlotModalForm(start=start, end=end, resource=resource)
 
     context = {"form": form}
     data["html_form"] = loader.render_to_string(
-        "jobtracker/modals/job_slot_create.html", context, request=request
+        "jobtracker/modals/job_slot_comment.html", context, request=request
     )
     return JsonResponse(data)
 

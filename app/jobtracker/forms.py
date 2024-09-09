@@ -11,6 +11,7 @@ from .models import (
     Feedback,
     TimeSlot,
     TimeSlotType,
+    TimeSlotComment,
     Client,
     Phase,
     Project,
@@ -481,6 +482,89 @@ class FeedbackForm(forms.ModelForm):
     class Meta:
         model = Feedback
         fields = ("body",)
+
+
+class CommentTimeSlotModalForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        start = None
+        if "start" in kwargs:
+            start = kwargs.pop("start")
+        end = None
+        if "end" in kwargs:
+            end = kwargs.pop("end")
+        resource = None
+        if "resource" in kwargs:
+            resource = kwargs.pop("resource")
+
+        super(CommentTimeSlotModalForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        for fieldname in self.fields:
+            self.fields[fieldname].help_text = None
+        if self.instance.pk:
+            delete_button = StrictButton(
+                "Delete",
+                type="button",
+                data_url=reverse(
+                    "delete_scheduler_comment_slot", kwargs={"pk": self.instance.pk}
+                ),
+                css_class="btn js-load-modal-form btn-outline-phoenix-danger me-auto mb-0",
+            )
+        else:
+            delete_button = None
+        self.fields["user"].widget = forms.HiddenInput()
+        self.fields["user"].disabled = True
+        self.fields["start"].widget = DateTimePickerInput()
+        self.fields["end"].widget = DateTimePickerInput()
+        if not self.instance.pk:
+            self.fields["start"].initial = start
+            self.fields["end"].initial = end
+            self.fields["user"].initial = resource
+        self.helper.layout = Layout(
+            Field("user", style="width: 100%;"),
+            Div(
+                Row(
+                    Column(
+                        Div(
+                            FloatingField("comment"),
+                        )
+                    ),
+                ),
+                Row(
+                    Column(
+                        Div(Field("start"), css_class="input-group input-group-dynamic")
+                    ),
+                    Column(
+                        Div(Field("end"), css_class="input-group input-group-dynamic")
+                    ),
+                ),
+                css_class="card-body p-3",
+            ),
+            Div(
+                Div(
+                    delete_button,
+                    StrictButton(
+                        "Save",
+                        type="submit",
+                        css_class="btn btn-outline-phoenix-success ms-auto mb-0",
+                    ),
+                    css_class="button-row d-flex",
+                ),
+                css_class="card-footer pt-0 p-3",
+            ),
+        )
+
+    class Meta:
+        model = TimeSlotComment
+        widgets = {
+            "start": DateTimePickerInput(),
+            "end": DateTimePickerInput(),
+        }
+        fields = (
+            "user",
+            "comment",
+            "start",
+            "end",
+        )
 
 
 class NonDeliveryTimeSlotModalForm(forms.ModelForm):

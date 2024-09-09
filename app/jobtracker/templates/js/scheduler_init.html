@@ -76,8 +76,13 @@
         resourceAreaHeaderContent: 'Users',
         resourceLabelDidMount: function(info) {    
           info.el.querySelector('.fc-datagrid-cell-main').innerHTML =
-            '<a href="'+info.resource.extendedProps.url+'">' + info.resource.title + '</a>';
-          
+            '<a href="'+info.resource.extendedProps.url+'">' + info.resource.title + '</a>';          
+        },
+        eventDidMount: function(info) {
+          var icon = info.event.extendedProps.icon;
+          if (info.event.extendedProps.icon) {                  
+            $(info.el).find('.fc-event-title').prepend("<i class='"+icon+" pe-1'></i> ");
+          };
         },
         loading: function (isLoading) {
             if (isLoading) {
