@@ -139,9 +139,10 @@
         droppable: false,
         // {% else %}
         eventClick: function(info) {
-          info.jsEvent.preventDefault(); // don't let the browser navigate
-          // Show slot edit modal
-          $.ajax({
+          if(info.event.extendedProps.editURL) {
+            info.jsEvent.preventDefault(); // don't let the browser navigate
+            // Show slot edit modal
+            $.ajax({
               url: '{% url "change_scheduler_slot" %}'+info.event.id,
               type: 'get',
               dataType: 'json',
@@ -150,6 +151,8 @@
                   $("#mainModal").modal("show");
               }
           });
+          };
+
         },
         selectable: true,
         editable: true,
