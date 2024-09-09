@@ -52,7 +52,7 @@
         // {% endif %}
         nowIndicator: true,
         height: "100%",
-        scrollTime: Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()),
+        scrollTime: Date(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate()),
         {% comment %} timeZone: '{{ user.pref_timezone }}', // the default (unnecessary to specify) {% endcomment %}
         views: {
           resourceTimelineTenDay: {
@@ -166,6 +166,7 @@
         select: function(info) {
           // get the selection info
           // https://swisnl.github.io/jQuery-contextMenu/
+          $.contextMenu( 'destroy' );
           $.contextMenu({
             selector: '.fc-scroller', 
             zIndex: 10,
@@ -255,19 +256,19 @@
                     //   title: "clicked: " + key,
                     //   icon: "success",
                     // });
-                    // Destroy the menu so we have a fresh one next time
-                    $('.fc-scroller').contextMenu('destroy');
                 },
                 position: function(opt, x, y){
-                    opt.$menu.css({top: info.jsEvent.pageY, left: info.jsEvent.pageX});
+                    opt.$menu.css({
+                      top: info.jsEvent.pageY, 
+                      left: info.jsEvent.pageX
+                    });
                 },
                 items: {
                     "assign_phase": {name: "Assign phase", icon: "fas fa-cubes fs-0 me-2"},
                     "assign_project": {name: "Assign project", icon: "fas fa-diagram-project fs-0 me-2"},
                     "assign_internal": {name: "Assign internal", icon: "fas fa-briefcase fs-0 me-2"},
-                    // "assign_task": {name: "Assign task", icon: "fas fa-checkboard fs-0 me-2"},
                     "add_comment": {name: "Add Comment", icon: "fas fa-comment fs-0 me-2"},
-                    "clear": {name: "Clear Range", icon: "fas fa-wipe fs-0 me-2"},
+                    "clear": {name: "Clear Range", icon: "fas fa-eraser fs-0 me-2"},
                 }
               };
             }

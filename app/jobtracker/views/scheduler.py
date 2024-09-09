@@ -492,25 +492,23 @@ def clear_scheduler_range(request):
     data = dict()
     start = clean_datetime(request.GET.get("start", None))
     end = clean_datetime(request.GET.get("end", None))
-    resource_id = clean_int(request.GET.get("resource_id", None))
-    if resource_id:
-        resource = get_object_or_404(User, pk=resource_id)
+    resource_id = clean_int(request.GET.get("resource_id", None))    
+    resource = get_object_or_404(User, pk=resource_id)
+    timeslots = resource.get_timeslots_objs(start, end)
 
     if request.method == "POST":
-        form = NonDeliveryTimeSlotModalForm(
-            request.POST, start=start, end=end, resource=resource
-        )
-        if form.is_valid():
-            form.save()
+        if request.POST.get("user_action") == "approve_action":
+            # Ok, user has confirmed. Lets do it!
+            resource.clear_timeslots_in_range(start, end)
+            print("Cleared range")
             data["form_is_valid"] = True
         else:
             data["form_is_valid"] = False
-    else:
-        form = NonDeliveryTimeSlotModalForm(start=start, end=end, resource=resource)
+            
 
-    context = {"form": form}
+    context = {"start": start, "end": end, "resource": resource, "timeslots": timeslots}
     data["html_form"] = loader.render_to_string(
-        "jobtracker/modals/job_slot_create.html", context, request=request
+        "jobtracker/modals/clear_timeslot_range.html", context, request=request
     )
     return JsonResponse(data)
 
