@@ -23704,10 +23704,7 @@ html[dir=rtl] .googlemap .gm-style-iw.gm-style-iw-c button[title=Close] {
   font-size: 0.64rem;
   border: 1px solid var(--phoenix-gray-300) !important;
 }
-.fc .fc-h-event,
-.fc .fc-daygrid-event {
-  background-color: var(--phoenix-white) !important;
-}
+
 .fc .fc-h-event .fc-event-main,
 .fc .fc-daygrid-event .fc-event-main {
   padding-left: 15px;
@@ -34194,4 +34191,3 @@ a[href].bg-200:hover, a[href].bg-200:focus {
   cursor: -webkit-grabbing;
   cursor: grabbing;
 }
-/*# sourceMappingURL=theme.css.map */
