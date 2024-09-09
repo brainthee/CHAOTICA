@@ -23669,10 +23669,6 @@ html[dir=rtl] .googlemap .gm-style-iw.gm-style-iw-c button[title=Close] {
   font-size: 0.64rem;
   border: 1px solid var(--phoenix-gray-300) !important;
 }
-.fc .fc-h-event,
-.fc .fc-daygrid-event {
-  background-color: var(--phoenix-white) !important;
-}
 .fc .fc-h-event .fc-event-main,
 .fc .fc-daygrid-event .fc-event-main {
   padding-right: 15px;
