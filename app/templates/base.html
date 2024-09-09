@@ -187,8 +187,10 @@
 
     {% block page_content %}
         <div class="content pt-15 {% block content_classes %}{% endblock content_classes %}" {% if config.SITE_NOTICE_ENABLED %}style="margin-top: 2rem"{% endif %}>
-
+        
+          {% block alerts %}
         {% include 'partials/alerts.html' %}
+        {% endblock alerts %}
           
         {% block breadcrumbs %}
           <nav class="pt-1 text-600 {% block breadcrumb_classes %}{% endblock breadcrumb_classes %}" style="--phoenix-breadcrumb-divider: '&gt;&gt;';" aria-label="breadcrumb">

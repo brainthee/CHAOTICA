@@ -542,9 +542,10 @@ class User(AbstractUser):
         from jobtracker.models import Job
 
         return Job.objects.jobs_for_user(self)
-    
+
     def get_timeslot_comments(self, start=None, end=None):
         from jobtracker.models import TimeSlotComment
+
         data = []
         today = timezone.now().today()
         start_of_week = today - timedelta(days=today.weekday())
@@ -553,7 +554,9 @@ class User(AbstractUser):
         start = start or start_of_week
         end = end or end_of_week
 
-        slots = TimeSlotComment.objects.filter(user=self, end__gte=start, start__lte=end)
+        slots = TimeSlotComment.objects.filter(
+            user=self, end__gte=start, start__lte=end
+        )
         for slot in slots:
             slot_json = slot.get_schedule_json()
             # slot_json["display"] = "background"
@@ -564,7 +567,6 @@ class User(AbstractUser):
         from jobtracker.models import TimeSlot
 
         data = []
-
         today = timezone.now().today()
         start_of_week = today - timedelta(days=today.weekday())
         end_of_week = start_of_week + timedelta(days=6)
@@ -586,6 +588,62 @@ class User(AbstractUser):
                 slot_json["display"] = "background"
             data.append(slot_json)
         return data
+
+    def get_timeslots_objs(self, start=None, end=None, phase_focus=None):
+        from jobtracker.models import TimeSlot
+
+        today = timezone.now().today()
+        start_of_week = today - timedelta(days=today.weekday())
+        end_of_week = start_of_week + timedelta(days=6)
+
+        start = start or start_of_week
+        end = end or end_of_week
+
+        slots = TimeSlot.objects.filter(user=self, end__gte=start, start__lte=end)
+        return slots
+
+    def clear_timeslots_in_range(self, start=None, end=None):
+        from jobtracker.models import TimeSlot
+        slots = self.get_timeslots_objs(start, end)
+        for slot in slots:            
+            if (
+                # First simple scenario, check if the slot simply falls in our range. 
+                # Action - delete
+                slot.start >= start
+                and slot.end <= end
+            ):
+                slot.delete()
+            elif ( 
+                # Now find slots that start before our range but finish inside it. 
+                # Action - change end date to our start.
+                slot.start <= start
+                and slot.end <= end
+            ):
+                slot.end = start
+                slot.save()
+            elif (
+                # Now find the op - slots that start in and end after
+                # Action - change the start date to our end
+                slot.start >= start
+                and slot.end > end
+            ):
+                slot.start = end
+                slot.save()
+            elif (
+                # Now find slots that go right through. Need to create extra ones!
+                slot.start < start
+                and slot.end > end
+            ):
+                # Lets get a duplicate ref
+                new_slot = TimeSlot.objects.get(pk=slot.pk)
+                new_slot.pk = None
+                slot.end = start
+                new_slot.start = end
+                slot.save()
+                new_slot.save()
+            else:
+                raise Exception("Found an edge case to clear schedule")
+                
 
     def get_holidays(self, start=None, end=None):
         data = []
