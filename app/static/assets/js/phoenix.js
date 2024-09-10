@@ -152,6 +152,7 @@
   const settings = {
     tinymce: {
       theme: 'oxide',
+      resize: true,
     },
     chart: {
       borderColor: 'rgba(255, 255, 255, 0.8)',
@@ -6531,26 +6532,27 @@
         const options = merge(
           {
             selector: '.tinymce',
-            height: '50vh',
-            skin: 'oxide',
+            // height: '50vh',
+            // skin: 'oxide',
             menubar: false,
+            resize: true,
             content_css_cors: true,
             referrer_policy: 'origin',
             content_style: `
-        .mce-content-body { 
-          color: ${getColor('black')} 
-        }
-        .mce-content-body[data-mce-placeholder]:not(.mce-visualblocks)::before {
-          color: ${getColor('gray-400')};
-          font-weight: 400;
-          font-size: 12.8px;
-        }
-        `,
+              .mce-content-body { 
+                color: ${getColor('black')} 
+              }
+              .mce-content-body[data-mce-placeholder]:not(.mce-visualblocks)::before {
+                color: ${getColor('gray-400')};
+                font-weight: 400;
+                font-size: 12.8px;
+              }
+            `,
             // mobile: {
             //   theme: 'mobile',
             //   toolbar: ['undo', 'bold']
             // },
-            statusbar: false,
+            statusbar: true,
             plugins: [
               'anchor', 'autolink', 'charmap', 'codesample', 'emoticons', 'image', 'link', 'lists', 'media', 'searchreplace', 'table', 'visualblocks', 'wordcount',
             ],
