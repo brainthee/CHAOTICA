@@ -1408,6 +1408,30 @@ class ScopeForm(forms.ModelForm):
         ]
 
 
+
+class MergeClientForm(forms.Form):
+    client_to_merge = forms.ModelChoiceField(
+        queryset=Client.objects.filter(),
+        required=True,
+        widget=autocomplete.ModelSelect2(
+            attrs={
+                "data-minimum-input-length": 3,
+            },
+        ),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super(MergeClientForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.helper.form_tag = False
+        self.helper.layout = Layout(
+            Field("client_to_merge", style="width: 100%;"),
+        )
+
+    class Meta:
+        fields = ("client_to_merge",)
+
+
 class ClientForm(forms.ModelForm):
     specific_requirements = forms.CharField(
         required=False,

@@ -351,6 +351,11 @@ urlpatterns = [
         views.ClientDeleteView.as_view(),
         name="client_delete",
     ),
+    path(
+        "client/<str:slug>/merge",
+        views.client_merge,
+        name="client_merge",
+    ),
     # Client Contact CRUD
     path(
         "client/<str:client_slug>/contact/create/",
