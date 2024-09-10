@@ -173,7 +173,7 @@ class TimeSlot(models.Model):
             seperator = ", " if tentative and onsite else ""
             extra = "({}{}{})".format(tentative, seperator, onsite) if tentative or onsite else ""
             return "{}: {} {}".format(
-                str(self.phase), self.slot_type.name, extra
+                str(self.phase), self.get_deliveryRole_display(), extra
             )
         elif self.is_project():
             return "{}: {}".format(
