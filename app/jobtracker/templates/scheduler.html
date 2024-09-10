@@ -24,6 +24,15 @@
 {% block breadcrumbs %}
 {% endblock %}
 {% block alerts %}
+{% comment %} This is ugly... but we have to "read" the messages otherwise next 
+time they visit a normal page, it'll be full of messages! {% endcomment %}
+
+{% for message in messages %}
+<div class="d-none alert m-2 alert-phoenix-{% if message.tags == "error" %}danger{% else %}{{ message.tags }}{% endif %} show" role="alert">
+    {{ message }}
+</div>
+{% endfor %}
+
 {% endblock alerts %}
 
 {% block content %}
