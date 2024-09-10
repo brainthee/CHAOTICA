@@ -168,7 +168,7 @@ def _filter_users_on_query(request):
                 Q.OR,
             )
 
-    return User.objects.filter(query).order_by("last_name", "first_name")
+    return User.objects.filter(query).distinct().order_by("last_name", "first_name")
 
 
 @login_required
@@ -189,6 +189,7 @@ def view_scheduler_slots(request):
             phase_focus = get_object_or_404(Phase, job=job, pk=phase_id)
         else:
             phase_focus = job
+            
     for user in filtered_users:
         data = data + user.get_timeslots(start=start, end=end, phase_focus=phase_focus)
         data = data + user.get_timeslot_comments(start=start, end=end)
