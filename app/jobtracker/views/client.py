@@ -1,13 +1,22 @@
 from guardian.mixins import PermissionRequiredMixin
+from django.http import (
+    JsonResponse,
+)
 from django.shortcuts import get_object_or_404
 from guardian.shortcuts import get_objects_for_user
+from guardian.decorators import permission_required_or_403
+from django.views.decorators.http import (
+    require_http_methods,
+)
+from django.template import loader
 from chaotica_utils.views import log_system_activity, ChaoticaBaseView
 from django.views.generic.list import ListView
+from django.contrib import messages
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from ..models import Client, Contact, FrameworkAgreement, OrganisationalUnit
-from ..forms import ClientForm, ClientContactForm, ClientFrameworkForm
+from ..forms import ClientForm, ClientContactForm, ClientFrameworkForm,MergeClientForm
 import logging
 
 logger = logging.getLogger(__name__)
@@ -76,6 +85,44 @@ class ClientDeleteView(ClientBaseView, DeleteView):
 
     permission_required = "jobtracker.delete_client"
 
+
+@permission_required_or_403("jobtracker.change_client")
+@require_http_methods(["GET", "POST"])
+def client_merge(request, slug):
+    client = get_object_or_404(Client, slug=slug)
+    context = {}
+    data = dict()
+    if request.method == "POST":
+        form = MergeClientForm(request.POST)
+        if form.is_valid():
+            # Lets merge!
+            client_to_merge = form.cleaned_data['client_to_merge']
+            if client_to_merge == client:
+                # Same user. GTFO
+                data["form_is_valid"] = False
+                form.add_error("client_to_merge", "You can't merge to the same client!")
+            elif not request.user.has_perm("jobtracker.change_client", client_to_merge) or not request.user.has_perm("jobtracker.delete_client", client_to_merge):
+                # No perms. GTFO
+                data["form_is_valid"] = False
+                form.add_error("client_to_merge", "You don't have change or delete permissions for the target client")
+            else:
+                if client.merge(client_to_merge):
+                    # Success
+                    data["form_is_valid"] = True
+                    messages.success(request, "Client merged")
+                else:
+                    # Merge failed!
+                    data["form_is_valid"] = False
+                    form.add_error("","Failed to merge!")
+    else:
+        # Send the modal
+        form = MergeClientForm()
+
+    context = {"form": form, "client": client}
+    data["html_form"] = loader.render_to_string(
+        "modals/client_merge.html", context, request=request
+    )
+    return JsonResponse(data)
 
 class ClientContactBaseView(PermissionRequiredMixin, ChaoticaBaseView):
     model = Contact

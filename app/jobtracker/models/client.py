@@ -100,6 +100,39 @@ class Client(models.Model):
             self.slug = unique_slug_generator(self, self.name)
         return super().save(*args, **kwargs)
 
+    def merge(self, client_to_merge):
+        # Things to merge:
+        # Jobs
+        # Contacts
+        # Billing Codes
+        # FrameworkAgreements
+        # Account Managers
+        # Technical Account Managers
+
+        ## Jobs
+        from jobtracker.models.job import Job
+        Job.objects.filter(client=client_to_merge).update(client=self)
+        ## Contacts
+        Contact.objects.filter(company=client_to_merge).update(company=self)
+        ## BillingCode
+        from jobtracker.models.financial import BillingCode
+        BillingCode.objects.filter(client=client_to_merge).update(client=self)
+        ## FrameworkAgreement
+        FrameworkAgreement.objects.filter(client=client_to_merge).update(client=self)
+
+        for am in client_to_merge.account_managers.all():
+            self.account_managers.add(am)
+            self.save()
+
+        for tam in client_to_merge.tech_account_managers.all():
+            self.tech_account_managers.add(tam)
+            self.save()
+
+        # If we have got this far... delete the target user!
+        client_to_merge.delete()
+
+        return True
+
 
 class FrameworkAgreement(models.Model):
     client = models.ForeignKey(
