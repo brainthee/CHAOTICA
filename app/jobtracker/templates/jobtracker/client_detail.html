@@ -53,20 +53,35 @@
     </div>
   
     <div class="col-4 g-2">
-        {% if client.special_requirements %}
-        <div class="card border h-100 border-warning mb-3">
+        <div class="card border h-100 {% if client.specific_requirements %}border-warning{% endif %} mb-3">
             <div class="card-header pb-2">
                 <h5>Specific Requirements</h5>
             </div>
             <div class="card-body py-2 ">
-                {{ client.special_requirements |safe }}
+                {% if client.specific_requirements %}
+                {{ client.specific_requirements |safe }}
+                {% else %}
+                <p class="mb-0">No Details</p>
+                {% endif %}
             </div>
         </div>
-        {% endif %}
     </div>
   
-    <div class="col-4 g-2">
+    <div class="col-4 g-2">        
+        <div class="card border h-100 {% if client.specific_reporting_requirements %}border-warning{% endif %} mb-3">
+            <div class="card-header pb-2">
+                <h5>Reporting Requirements</h5>
+            </div>
+            <div class="card-body py-2 ">
+                {% if client.specific_reporting_requirements %}
+                {{ client.specific_reporting_requirements |safe }}
+                {% else %}
+                <p class="mb-0">No Details</p>
+                {% endif %}
+            </div>
+        </div>
     </div>
+
   </div>
 
 
