@@ -1070,9 +1070,6 @@ def site_search(request):
 
     context["results_count"] = results_count
 
-    # Get research searches?
-    context["recentSearches"] = None
-
     context["q"] = q
     data["html_form"] = loader.render_to_string(
         "partials/search-results.html", context, request=request
