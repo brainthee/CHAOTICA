@@ -64,13 +64,13 @@
         </a>
         {% endif %}
         </td>
-        <td>
+        <td data-sort="{{ phase.start_date|date:'Y-m-d' }}">
         {{ phase.start_date }}
         </td>
-        <td>
+        <td data-sort="{{ phase.due_to_techqa|date:'Y-m-d' }}">
         {{ phase.due_to_techqa }}
         </td>
-        <td>
+        <td data-sort="{{ phase.delivery_date|date:'Y-m-d' }}">
         {{ phase.delivery_date }}
         </td>
         <td>
