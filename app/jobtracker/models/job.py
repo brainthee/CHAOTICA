@@ -35,10 +35,9 @@ class JobManager(models.Manager):
 
         units = get_objects_for_user(user, perm, klass=OrganisationalUnit)
 
-        matches = (
-            self.filter(Q(unit__in=units))
-            .exclude(status=JobStatuses.DELETED)
-            .exclude(status=JobStatuses.ARCHIVED)
+        matches = self.filter(
+            Q(unit__in=units),
+            status__in=JobStatuses.ACTIVE_STATUSES,  # Include active job statuses only
         )
         return matches
 
@@ -48,18 +47,15 @@ class JobManager(models.Manager):
         # - Lead/Author of
         # - Scoped while before scoping approved
 
-        matches = (
-            self.filter(
-                Q(phases__timeslots__user=user)  # Filter by scheduled
-                | Q(phases__report_author=user)  # Filter for report author
-                | Q(phases__project_lead=user)  # filter for lead
-                | Q(scoped_by__in=[user])  # filter for scoped
-                | Q(account_manager=user)  # filter for account_manager
-                | Q(dep_account_manager=user)  # filter for dep_account_manager
-            )
-            .exclude(Q(status=JobStatuses.DELETED) | Q(status=JobStatuses.ARCHIVED))
-            .distinct()
-        )
+        matches = self.filter(
+            Q(phases__timeslots__user=user)  # Filter by scheduled
+            | Q(phases__report_author=user)  # Filter for report author
+            | Q(phases__project_lead=user)  # filter for lead
+            | Q(scoped_by__in=[user])  # filter for scoped
+            | Q(account_manager=user)  # filter for account_manager
+            | Q(dep_account_manager=user),  # filter for dep_account_manager
+            status__in=JobStatuses.ACTIVE_STATUSES,  # Include active job statuses only
+        ).distinct()
         return matches
 
 
@@ -251,9 +247,7 @@ class Job(models.Model):
     indicative_services = models.ManyToManyField("Service", blank=True)
 
     # General engagement info
-    additional_kit_required = models.BooleanField(
-        "Additional kit required", null=True
-    )
+    additional_kit_required = models.BooleanField("Additional kit required", null=True)
     additional_kit_info = BleachField(null=True, blank=True)
     kit_sourced_by_client = models.BooleanField(default=False)
 
@@ -291,7 +285,7 @@ class Job(models.Model):
 
     def __str__(self):
         return "{id}: {title}".format(id=self.id, title=self.title)
-    
+
     def short_str(self):
         return "{client}/{id}".format(client=self.client, id=self.id)
 

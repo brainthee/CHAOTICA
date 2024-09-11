@@ -417,6 +417,17 @@ class JobStatuses:
         (ARCHIVED, []),
     )
 
+    ACTIVE_STATUSES = [
+        DRAFT,
+        PENDING_SCOPE,
+        SCOPING,
+        SCOPING_ADDITIONAL_INFO_REQUIRED,
+        PENDING_SCOPING_SIGNOFF,
+        SCOPING_COMPLETE,
+        PENDING_START,
+        IN_PROGRESS,
+    ]
+
     BS_COLOURS = (
         (DRAFT, "secondary"),
         (PENDING_SCOPE, "info"),
@@ -755,6 +766,25 @@ class PhaseStatuses:
         (DELETED, []),
         (ARCHIVED, []),
     )
+
+    ACTIVE_STATUSES = [
+        DRAFT,
+        PENDING_SCHED,
+        SCHEDULED_TENTATIVE,
+        SCHEDULED_CONFIRMED,
+        PRE_CHECKS,
+        CLIENT_NOT_READY,
+        READY_TO_BEGIN,
+        IN_PROGRESS,
+        PENDING_TQA,
+        QA_TECH,
+        QA_TECH_AUTHOR_UPDATES,
+        PENDING_PQA,
+        QA_PRES,
+        QA_PRES_AUTHOR_UPDATES,
+        COMPLETED,
+        DELIVERED,
+    ]
 
     BS_COLOURS = (
         (DRAFT, "secondary"),
