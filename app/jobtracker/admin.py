@@ -36,7 +36,7 @@ from import_export.admin import ImportExportModelAdmin
 
 class PhasesInline(admin.StackedInline):
     model = Phase
-    extra = 1
+    extra = 0
     min_num = 0
 
 

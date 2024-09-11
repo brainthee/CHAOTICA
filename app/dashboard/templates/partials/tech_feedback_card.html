@@ -1,18 +1,19 @@
 <div class="d-flex align-items-center">
-  <span class="me-2 text-info" data-feather="users" style="min-height:24px; width:24px"></span>
+  <div class="col-8">
   <h4 class="text-600 mb-0">
     <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="Average score over the last 12 months">
       Average Tech Rating
     </span>
-    {% with avg_tqa_rating=request.user.get_average_techqa_feedback %}
-      <span class="rating text-end {% if avg_tqa_rating < 2 %}text-danger{% elif avg_tqa_rating < 3 %}text-warning{% elif avg_tqa_rating < 4 %}text-primary{% elif avg_tqa_rating >= 4 %}text-success{% endif %}" 
-        data-bs-toggle="tooltip" data-bs-placement="bottom" 
-        title="{% if avg_tqa_rating > 0 %}{{ avg_tqa_rating }}{% else %}No Data{% endif %}" >
-      {% include 'partials/feedback_stars.html' with feedback=avg_tqa_rating %}
-    {% endwith %}
-    </span>
   </h4>
 </div>
+
+  <div class="col text-end">
+    {% with avg_tqa_rating=request.user.get_average_techqa_feedback %}
+      {% include 'partials/feedback_stars.html' with feedback=avg_tqa_rating %}
+    {% endwith %}
+  </div>
+</div>
+
 <div class="pb-0 pt-4">
   <div id="echarts-avg-tech-feedback" style="min-height:110px;width:100%;"></div>
 </div>

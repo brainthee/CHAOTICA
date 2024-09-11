@@ -11,6 +11,16 @@ from django.views.decorators.http import require_safe
 
 logger = logging.getLogger(__name__)
 
+# Pending scheduling
+# Pending TQA
+# Pending PQA
+# Upcoming Phases
+# List of inflight jobs
+# Late Jobs
+# This Week's jobs (schedule based)
+# AM View?
+# People Lead
+
 
 @login_required
 @require_safe
