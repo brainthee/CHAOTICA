@@ -16,10 +16,10 @@
   {% else %}
     No Data
   {% endif %}">
-  {% get_range_from_zero 4 as feedbackRange %}
+  {% get_range_from_one 5 as feedbackRange %}
   {% for i in feedbackRange %}
     {% if feedback >= i %}
-      <span class="fa fa-xs fa-star"></span>
+      <span class="fa fa-xs fa-star {% if feedback == 5 %}pulse{% endif %}"></span>
     {% else %}
       <span class="text-300 fa-xs fa-regular fa-star"></span>
     {% endif %}
