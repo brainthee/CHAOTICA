@@ -227,6 +227,19 @@ def view_scheduler_members(request):
                         "daysOfWeek": "",
                     }
                 ),
+                "workingHours": (
+                    {
+                        "startTime": main_org.unit.businessHours_startTime,
+                        "endTime": main_org.unit.businessHours_endTime,
+                        "daysOfWeek": main_org.unit.businessHours_days,
+                    }
+                    if main_org
+                    else {
+                        "startTime": "",
+                        "endTime": "",
+                        "daysOfWeek": "",
+                    }
+                ),
             }
         )
     return JsonResponse(data, safe=False)
