@@ -113,11 +113,10 @@ ops_children = (
         icon="list-check",
         weight=1,
     ),
-    PermMenuItem(
+    MenuItem(
         "Manage Leave",
         reverse("manage_leave"),
         icon="person-walking-arrow-right",
-        perm="chaotica_utils.manage_leave",
         weight=1,
     ),
     PermMenuItem(

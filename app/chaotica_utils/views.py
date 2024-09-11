@@ -34,6 +34,7 @@ from .tasks import (
     task_sync_role_permissions,
     task_sync_role_permissions_to_default,
 )
+from dateutil.relativedelta import relativedelta
 from .models import Notification, User, Language, Note, LeaveRequest, UserInvitation
 from .utils import ext_reverse, AppNotification, is_valid_uuid
 from django.db.models import Q
@@ -245,14 +246,18 @@ def manage_leave(request):
     units_with_perm = get_objects_for_user(
         request.user, "can_view_all_leave_requests", OrganisationalUnit
     )
+    
     leave_list = LeaveRequest.objects.filter(
+        # Only show this last calendar's year...
+        start_date__gte=timezone.now() - relativedelta(years=1),
+    ).filter(
         Q(
             user__unit_memberships__unit__in=units_with_perm
         )  # Show leave requests for users we have permission over
         | Q(user__manager=request.user)  # where we're manager
         | Q(user__acting_manager=request.user)  # where we're acting manager
-        | Q(user=request.user)
-    )  # and our own of course....
+        | Q(user=request.user)# and our own of course....
+    )
     context = {
         "leave_list": leave_list,
     }
