@@ -1,0 +1,19 @@
+<tr>
+  <td class="align-middle time ps-0 projectName py-4">
+    {{ project.id }}
+  </td>
+
+  <td class="align-middle time ps-0 projectName py-4">
+    <a class="fw-bold fs-0" href="{{ project.get_absolute_url }}">{{ project.title }}</a>
+  </td>
+
+  <td class="align-middle unit ps-3 py-4">
+    {% if project.unit %}
+    <a class="fw-bold fs-0" href="{{ project.unit.get_absolute_url }}">{{ project.unit }}</a>
+    {% endif %}
+  </td>
+
+  <td class="align-middle text-end status_display">
+    {% include 'partials/project/status_badge.html' with badge_size='sm' %}
+  </td>
+</tr>

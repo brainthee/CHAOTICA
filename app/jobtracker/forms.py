@@ -816,7 +816,6 @@ class DeliveryTimeSlotModalForm(forms.ModelForm):
             "end",
         )
 
-
 class ProjectTimeSlotModalForm(forms.ModelForm):
     project = forms.ModelChoiceField(
         queryset=Project.objects.filter(),
@@ -1838,6 +1837,7 @@ class BillingCodeForm(forms.ModelForm):
             "region",
         ]
 
+
 class ProjectForm(forms.ModelForm):
     primary_poc = forms.ModelChoiceField(
         required=False,
@@ -1853,8 +1853,16 @@ class ProjectForm(forms.ModelForm):
         required=False,
         queryset=OrganisationalUnit.objects.filter(),
         widget=autocomplete.ModelSelect2(
+        ),
+    )
+
+    overview = forms.CharField(
+        required=False,
+        widget=forms.Textarea(
             attrs={
-                "data-minimum-input-length": 3,
+                "class": "tinymce",
+                "data-tinymce": '{"height":"15rem","placeholder":"Write a description here..."}',
+                "rows": 5,
             },
         ),
     )
@@ -1878,7 +1886,6 @@ class ProjectForm(forms.ModelForm):
             "status",
             "unit",
         ]
-
 
 class ServiceForm(forms.ModelForm):
     owners = forms.ModelMultipleChoiceField(

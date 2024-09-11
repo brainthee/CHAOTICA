@@ -21,6 +21,7 @@ from chaotica_utils.models import Note, User, get_sentinel_user
 from chaotica_utils.tasks import task_send_notifications
 from chaotica_utils.views import log_system_activity
 from datetime import timedelta
+from django.db.models.functions import Lower
 from decimal import Decimal
 from django_bleach.models import BleachField
 from constance import config
@@ -64,6 +65,7 @@ class Project(models.Model):
     db_id = models.AutoField(
         primary_key=True, editable=False, verbose_name="Database ID"
     )
+    
     slug = models.UUIDField(
         default=uuid.uuid4, editable=False, unique=True, db_index=True
     )
@@ -84,7 +86,8 @@ class Project(models.Model):
         max_length=255,
         unique=True,
         blank=True,
-        default="",
+        null=True,
+        default=None,
     )
     title = models.CharField("Project Title", max_length=250)
     history = HistoricalRecords()
@@ -116,6 +119,7 @@ class Project(models.Model):
         related_name="projects_created",
         on_delete=models.SET(get_sentinel_user),
     )
+
     primary_poc = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         verbose_name="Primary Point of Contact",
@@ -129,7 +133,7 @@ class Project(models.Model):
 
     class Meta:
         verbose_name = "Project"
-        ordering = ["-id"]
+        ordering = [Lower("title")]
 
     def __str__(self):
         return "{id}: {title}".format(id=self.id, title=self.title)

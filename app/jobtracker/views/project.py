@@ -86,6 +86,10 @@ class ProjectCreateView(ProjectBaseView, PermissionRequiredMixin, CreateView):
     permission_object = Project
     return_403 = True
 
+    def form_valid(self, form):
+        form.instance.created_by = self.request.user
+        return super().form_valid(form)
+
 
 class ProjectUpdateView(ProjectBaseView, PermissionRequiredMixin, UpdateView):
     form_class = ProjectForm
@@ -102,3 +106,6 @@ class ProjectDeleteView(ProjectBaseView, PermissionRequiredMixin, DeleteView):
     permission_required = "jobtracker.delete_project"
     accept_global_perms = True
     return_403 = True
+
+    def get_success_url(self):
+        return reverse_lazy("project_list")

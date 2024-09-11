@@ -93,6 +93,13 @@ ops_children = (
         icon="certificate",
         weight=1,
     ),
+    PermMenuItem(
+        "Projects",
+        reverse("project_list"),
+        perm="jobtracker.view_projects",
+        icon="diagram-project",
+        weight=1,
+    ),
     # PermMenuItem("Accreditation",
     #             reverse("qualification_list"),
     #             perm='jobtracker.view_qualification',
