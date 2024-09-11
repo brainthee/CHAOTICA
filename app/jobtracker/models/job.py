@@ -90,6 +90,7 @@ class Job(models.Model):
         unique=True,
         max_length=255,
         blank=True,
+        null=True,
         default=None,
     )
     title = models.CharField("Job Title", max_length=250)
