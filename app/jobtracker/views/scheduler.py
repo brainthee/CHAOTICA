@@ -89,28 +89,27 @@ def _filter_users_on_query(request):
         ## Filter org unit
         org_units = cleaned_data.get("org_units")
         org_unit_roles = cleaned_data.get("org_unit_roles")
-        if not org_unit_roles:
-            org_unit_roles = OrganisationalUnitRole.objects.all()
             
         if org_units:
             query.add(
                 Q(
                     unit_memberships__in=OrganisationalUnitMember.objects.filter(
                         unit__in=org_units,
-                        roles__in=org_unit_roles,
+                        roles__in=org_unit_roles if org_unit_roles else OrganisationalUnitRole.objects.all()
                     )
                 ),
                 Q.AND,
             )
         else:
-            query.add(
-                Q(
-                    unit_memberships__in=OrganisationalUnitMember.objects.filter(
-                        roles__in=org_unit_roles,
-                    )
-                ),
-                Q.AND,
-            )
+            if org_unit_roles:
+                query.add(
+                    Q(
+                        unit_memberships__in=OrganisationalUnitMember.objects.filter(
+                            roles__in=org_unit_roles,
+                        )
+                    ),
+                    Q.AND,
+                )
 
 
         ## Filter on skills
