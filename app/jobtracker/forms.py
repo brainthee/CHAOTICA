@@ -741,7 +741,7 @@ class DeliveryTimeSlotModalForm(forms.ModelForm):
                         "slug": self.instance.phase.slug,
                     },
                 )
-                + "' class='btn btn-outline-phoenix-secondary'>Goto Phase</a>"
+                + "' class='btn btn-outline-phoenix-info'>Goto Phase</a>"
             )
         else:
             goto_button = None
