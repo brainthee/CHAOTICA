@@ -1,7 +1,16 @@
 
-<div class="list py-2">
+<div class="list py-0">
   {% if results_count > 0 %}
-  <h6 class="dropdown-header text-1000 fs--2 py-2">{{ results_count }} <span class="text-500">results</span></h6>
+  <h6 class="dropdown-header text-1000 fs--2 py-2">
+    {% if results_count > 50 %}
+    <div class="alert alert-phoenix-warning py-1 text-wrap" role="alert">
+      Over 50 results returned. Please be more specific to avoid truncated results.
+    </div>
+    {% endif %}
+    <div class="alert alert-phoenix-info p-0 mb-0 border-0" role="alert">
+      {{ results_count }} <span class="text-500">results</span>
+    </div>
+  </h6>
 
     {% if search_clients %}
     <hr class="text-200 my-0" />
@@ -147,7 +156,7 @@
       {% for job in search_jobs %}
       <a class="dropdown-item py-2 d-flex align-items-center" href="{{ job.get_absolute_url }}">
         <div class="flex-1">
-          <h6 class="mb-0 text-1000 title">{{ job }}</h6>
+          <h6 class="mb-0 text-1000 text-wrap title">{{ job }}</h6>
           <p class="fs--2 mb-0 d-flex text-700">
             <span class="fw-medium text-600">{{ job.client }}</span>
           </p>
