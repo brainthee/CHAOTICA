@@ -994,7 +994,7 @@ def site_search(request):
             | Q(slug__icontains=q)
             | Q(id__icontains=q),
             unit__in=units_with_job_perms,
-        )
+        )[:50]
         context["search_jobs"] = jobs_search
         results_count = results_count + jobs_search.count()
 
@@ -1004,56 +1004,56 @@ def site_search(request):
             | Q(description__icontains=q)
             | Q(phase_id__icontains=q),
             job__unit__in=units_with_job_perms,
-        )
+        )[:50]
         context["search_phases"] = phases_search
         results_count = results_count + phases_search.count()
 
         ## Clients
         cl_search = get_objects_for_user(
             request.user, "jobtracker.view_client", Client
-        ).filter(Q(name__icontains=q))
+        ).filter(Q(name__icontains=q))[:50]
         context["search_clients"] = cl_search
         results_count = results_count + cl_search.count()
 
         ## BillingCodes
         bc_search = get_objects_for_user(
             request.user, "jobtracker.view_billingcode", BillingCode
-        ).filter(Q(code__icontains=q))
+        ).filter(Q(code__icontains=q))[:50]
         context["search_billingCodes"] = bc_search
         results_count = results_count + bc_search.count()
 
         ## Services
         sv_search = get_objects_for_user(
             request.user, "jobtracker.view_service", Service
-        ).filter(Q(name__icontains=q))
+        ).filter(Q(name__icontains=q))[:50]
         context["search_services"] = sv_search
         results_count = results_count + sv_search.count()
 
         ## Skills
         sk_search = get_objects_for_user(
             request.user, "jobtracker.view_skill", Skill
-        ).filter(Q(name__icontains=q))
+        ).filter(Q(name__icontains=q))[:50]
         context["search_skills"] = sk_search
         results_count = results_count + sk_search.count()
 
         ## Qualifications
         qual_search = get_objects_for_user(
             request.user, "jobtracker.view_qualification", Qualification
-        ).filter(Q(name__icontains=q))
+        ).filter(Q(name__icontains=q))[:50]
         context["search_quals"] = qual_search
         results_count = results_count + qual_search.count()
 
         ## Accreditation
         accred_search = get_objects_for_user(
             request.user, "jobtracker.view_accreditation", Accreditation
-        ).filter(Q(name__icontains=q))
+        ).filter(Q(name__icontains=q))[:50]
         context["search_accred"] = accred_search
         results_count = results_count + accred_search.count()
 
         ## Projects
         project_search = get_objects_for_user(
             request.user, "*", Project
-        ).filter(Q(title__icontains=q))
+        ).filter(Q(title__icontains=q))[:50]
         context["search_project"] = project_search
         results_count = results_count + project_search.count()
 
@@ -1064,7 +1064,7 @@ def site_search(request):
                 | Q(first_name__icontains=q)
                 | Q(last_name__icontains=q)
                 | Q(full_name__icontains=q)
-            )
+            )[:50]
         context["search_users"] = us_search
         results_count = results_count + us_search.count()
 
