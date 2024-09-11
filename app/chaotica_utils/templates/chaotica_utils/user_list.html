@@ -109,6 +109,12 @@
                 <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
                     Global Roles
                 </th>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+                    Joined
+                </th>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+                    Last Login
+                </th>
                 <th>
                   <div class="btn-reveal-trigger position-static">
                     <button class="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal fs-10" 
@@ -164,7 +170,13 @@
                     No assigned roles
                     {% endfor %}
                     </p>
-                </td>        
+                </td>           
+                <td class="align-end text-end" data-sort="{{ u.date_joined|date:'Y-m-d' }}">
+                  {{ u.date_joined }}
+                </td>   
+                <td class="align-end text-end" data-sort="{{ u.last_login|date:'Y-m-d' }}">
+                  {{ u.last_login }}
+                </td>
                 <td class="align-end text-end">
                   {% include 'partials/user/user_menu.html' with u=u %}
                 </td>
