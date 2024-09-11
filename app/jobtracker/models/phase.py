@@ -39,10 +39,10 @@ class PhaseManager(models.Manager):
 
         units = get_objects_for_user(user, perm, klass=OrganisationalUnit)
 
-        matches = (
-            self.filter(Q(job__unit__in=units))
-            .exclude(job__status=JobStatuses.DELETED)
-            .exclude(job__status=JobStatuses.ARCHIVED)
+        matches = self.filter(
+            Q(job__unit__in=units),
+            status__in=PhaseStatuses.ACTIVE_STATUSES,  # Include active phase statuses only
+            job__status__in=JobStatuses.ACTIVE_STATUSES,  # Include active job statuses only
         )
         return matches
 
@@ -51,19 +51,13 @@ class PhaseManager(models.Manager):
         # - Scheduled on
         # - Lead/Author of
         # - Scoped while before scoping approved
-        matches = (
-            self.filter(
-                Q(timeslots__user=user)  # Filter by scheduled
-                | Q(report_author=user)  # Filter for report author
-                | Q(project_lead=user)  # filter for lead
-            )
-            .exclude(
-                Q(status=PhaseStatuses.CANCELLED)
-                | Q(status=PhaseStatuses.DELETED)
-                | Q(status=PhaseStatuses.ARCHIVED)
-            )
-            .distinct()
-        )
+        matches = self.filter(
+            Q(timeslots__user=user)  # Filter by scheduled
+            | Q(report_author=user)  # Filter for report author
+            | Q(project_lead=user),  # filter for lead
+            status__in=PhaseStatuses.ACTIVE_STATUSES,  # Include active phase statuses only
+            job__status__in=JobStatuses.ACTIVE_STATUSES,  # Include active job statuses only
+        ).distinct()
         return matches
 
 
@@ -865,7 +859,7 @@ class Phase(models.Model):
         tasks = []
         from ..models.timeslot import TimeSlot
 
-        for slot in TimeSlot.objects.filter(phase=self).order_by('deliveryRole'):
+        for slot in TimeSlot.objects.filter(phase=self).order_by("deliveryRole"):
             user_text = str(slot.user)
             if slot.is_onsite:
                 user_text = user_text + " (Onsite)"
@@ -985,7 +979,7 @@ class Phase(models.Model):
         total_scoped = Decimal(0.0)
         for state in TimeSlotDeliveryRole.CHOICES:
             total_scoped = total_scoped + self.get_total_scoped_by_type(state[0])
-        return round(total_scoped,2)
+        return round(total_scoped, 2)
 
     def get_all_total_scoped_by_type(self):
         data = dict()
