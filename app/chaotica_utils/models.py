@@ -981,19 +981,22 @@ class LeaveRequest(models.Model):
         )
 
     def affected_days(self):
-        unit = "day"
+        unit = "hour"
+        days = 0
         working_hours = self.user.get_working_hours()
-        days = businessDuration(
+        hours = businessDuration(
             self.start_date,
             self.end_date,
             unit=unit,
-            # starttime=working_hours["start"],
-            # endtime=working_hours["end"],
+            starttime=working_hours["start"],
+            endtime=working_hours["end"],
         )
-        from pprint import pprint
-
-        pprint(working_hours)
-        pprint(days)
+        hours_in_working_day = (
+                    timezone.datetime.combine(timezone.now().date(), working_hours["end"])
+                    - timezone.datetime.combine(timezone.now().date(), working_hours["start"])
+                ).total_seconds()/3600
+        if hours:
+            days = hours / hours_in_working_day
         return round(days, 2)
 
     def can_cancel(self):
@@ -1108,14 +1111,15 @@ class LeaveRequest(models.Model):
             self.authorised = True
             self.authorised_by = approved_by
             self.authorised_on = timezone.now()
-            self.save()
             # Lets add the timeslot...
-            TimeSlot.objects.get_or_create(
+            ts, ts_created = TimeSlot.objects.get_or_create(
                 user=self.user,
                 start=self.start_date,
                 end=self.end_date,
                 slot_type=TimeSlotType.get_builtin_object(DefaultTimeSlotTypes.LEAVE),
             )
+            self.timeslot = ts
+            self.save()
             self.send_approved_notification()
 
     def decline(self, declined_by):
@@ -1141,21 +1145,8 @@ class LeaveRequest(models.Model):
             self.cancelled_on = timezone.now()
             self.authorised = False
             self.declined = False
-            self.save()
             # Lets delete the timeslot...
-            if TimeSlot.objects.filter(
-                user=self.user,
-                start=self.start_date,
-                end=self.end_date,
-                slot_type=TimeSlotType.get_builtin_object(DefaultTimeSlotTypes.LEAVE),
-            ).exists():
-
-                TimeSlot.objects.filter(
-                    user=self.user,
-                    start=self.start_date,
-                    end=self.end_date,
-                    slot_type=TimeSlotType.get_builtin_object(
-                        DefaultTimeSlotTypes.LEAVE
-                    ),
-                ).delete()
+            if self.timeslot:
+                self.timeslot.delete()
+            self.save()
             self.send_cancelled_notification()
