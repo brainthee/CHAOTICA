@@ -72,46 +72,11 @@
             <div>
               <h6>Avg Report Rating</h6>
               <div class="text-600 mb-0">
-                {% with avg_qa_rating=user.get_average_qa_rating_12mo %}
-                  <span class="rating text-end {% if avg_qa_rating < 2 %}
-                      
-                      
-                      text-danger
+                {{ user.get_average_qa_rating_12mo }}
 
-
-                    {% elif avg_qa_rating < 3 %}
-                      
-                      
-                      text-warning
-
-
-                    {% elif avg_qa_rating < 4 %}
-                      
-                      
-                      text-primary
-
-
-                    {% elif avg_qa_rating >= 4 %}
-                      
-                      
-                      text-success
-
-
-                    {% endif %}"
-                    data-bs-toggle="tooltip"
-                    data-bs-placement="bottom"
-                    title="{% if avg_qa_rating > 0 %}
-                      {{ avg_qa_rating }}
-                    {% else %}
-                      
-                      
-                      No Data
-
-
-                    {% endif %}">
-                    {% include 'partials/feedback_stars.html' with feedback=avg_qa_rating %}
-                  </span>
-                {% endwith %}
+    {% with avg_qa_rating=user.get_average_qa_rating_12mo %}
+    {% include 'partials/feedback_stars.html' with feedback=avg_qa_rating %}
+  {% endwith %}
               </div>
             </div>
             <div>
