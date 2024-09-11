@@ -1,9 +1,27 @@
 {% load index %}
-{% get_range_from_one 5 as feedbackRange %}
-{% for i in feedbackRange %}
-{% if feedback > i %}
-    <span class="fa fa-xs fa-star "></span>
-{% else %}
-    <span class="text-300 fa-xs fa-regular fa-star "></span>
-{% endif %}
-{% endfor %}
+
+<span class="rating text-end {% if feedback < 2 %}
+    text-danger
+  {% elif feedback < 3 %}
+    text-warning
+  {% elif feedback < 4 %}
+    text-primary
+  {% elif feedback >= 4 %}
+    text-success
+  {% endif %}"
+  data-bs-toggle="tooltip"
+  data-bs-placement="bottom"
+  title="{% if feedback > 0 %}
+    {{ feedback }}
+  {% else %}
+    No Data
+  {% endif %}">
+  {% get_range_from_zero 4 as feedbackRange %}
+  {% for i in feedbackRange %}
+    {% if feedback >= i %}
+      <span class="fa fa-xs fa-star"></span>
+    {% else %}
+      <span class="text-300 fa-xs fa-regular fa-star"></span>
+    {% endif %}
+  {% endfor %}
+</span>
