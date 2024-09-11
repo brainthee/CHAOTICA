@@ -1,0 +1,19 @@
+  <table class="table table-responsive table-sm datatable align-items-center mb-0 mw-100"
+  >
+    <caption>Projects</caption>
+    <thead>
+      <tr>
+        <th class="text-uppercase text-secondary text-xxs font-weight-bolder" scope="col" data-data="id" data-name="id">ID</th>
+        <th class="text-uppercase text-wrap text-break text-secondary text-xxs font-weight-bolder  ps-2" scope="col" data-data="title_link" style="word-wrap: break-word;" data-name="title">Name</th>
+        <th class="text-uppercase text-secondary text-xxs font-weight-bolder  ps-2" scope="col" data-data="unit_link" data-name="unit.name">Unit</th>
+        <th class="text-uppercase col-1 text-secondary text-xxs font-weight-bolder  ps-2" scope="col" data-data="status_display" data-name="status" style="width:10%;">Status</th>
+      </tr>
+    </thead>
+    {% if project_list %}
+    <tbody>
+      {% for project in project_list %}
+        {% include 'partials/project/project_list_row.html' %}
+      {% endfor %}
+    </tbody>
+    {% endif %}
+  </table>

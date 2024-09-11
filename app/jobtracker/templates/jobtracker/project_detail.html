@@ -1,0 +1,198 @@
+{% extends 'base.html' %}
+{% load menu %}
+{% load static %}
+{% load guardian_tags %}
+
+{% block pageTitle %}
+  {{ project }}
+{% endblock %}
+{% block head_title %}
+  {{ project }}
+{% endblock %}
+
+{% block breadcrumbItem %}
+  <li class="breadcrumb-item text-sm">
+    <a class="opacity-50 text-dark" href="{% url 'project_list' %}">Projects</a>
+  </li>
+  <li class="breadcrumb-item text-sm text-dark active" aria-current="page">{{ project }}</li>
+{% endblock %}
+
+{% block content_classes %}
+  pt-15 px-0
+{% endblock %}
+{% block breadcrumb_classes %}
+  px-5
+{% endblock %}
+
+{% block content %}
+  {% get_obj_perms request.user for project as 'project_perms' %}
+
+  <div class="row px-5">
+    <div class="col-12">
+      <div class="row align-items-center justify-content-between g-3 mt-0 mb-0">
+        <div class="col-6 col-md-auto">
+          <h2 class="mb-2">Project Detail</h2>
+        </div>
+
+        <div class="col-md-auto">
+          <div class="d-flex">
+            {% if 'change_project' or 'delete_project' in project_perms %}
+              <div class="btn-reveal-trigger position-static">
+                <button class="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal fs-10" type="button" data-bs-toggle="dropdown" data-boundary="window" aria-haspopup="true" aria-expanded="false" data-bs-reference="parent"><span class="fas fa-ellipsis-h fs-10"></span></button>
+
+                <div class="dropdown-menu shadow dropdown-menu-end me-sm-n4 me-n3" aria-labelledby="navbarDropdownMenuLink">
+                  {% if 'change_project' in project_perms %}
+                    <a class="dropdown-item" href="{% url 'project_update' project.slug %}">Edit</a>
+                  {% endif %}
+                  {% if 'delete_project' in project_perms %}
+                    <a href="{% url 'project_delete' project.slug %}" class="dropdown-item text-danger">Delete</a>
+                  {% endif %}
+                </div>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row justify-content-between ms-3 me-3 g-3 mt-0 mb-0">
+    <div class="col-6">
+      <div class="card">
+        <div class="card-body">
+          <div class="row align-items-center g-3">
+            <h3 class="fw-bolder mb-2 line-clamp-1">{{ project }}</h3>
+          </div>
+
+          <div class="row">
+            <div class="col-6">
+              <table class="w-100 table-stats table-stats">
+                <caption>Project Info</caption>
+                <thead>
+                  <tr>
+                    <th class="w-50" scope="col"></th>
+                    <th class="" scope="col"></th>
+                    <th class="w-50" scope="col"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="">
+                      <p class="fw-bold mb-0">Point of Contact</p>
+                    </td>
+                    <td class="d-none d-sm-block pe-sm-2">:</td>
+                    <td class="">
+                      <p class="ps-6 ps-sm-0 fw-semi-bold mb-0">
+                        {% if project.primary_poc %}
+                          {% include 'partials/users/user_link.html' with user_profile=project.primary_poc %}
+                        {% else %}
+                          None
+                        {% endif %}
+                      </p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="">
+                      <p class="fw-bold mb-0">Unit</p>
+                    </td>
+                    <td class="d-none d-sm-block pe-sm-2">:</td>
+                    <td class="">
+                      <p class="ps-6 ps-sm-0 fw-semi-bold mb-0">
+                        {% if project.unit %}
+                          <a href="{{ project.unit.get_absolute_url }}">{{ project.unit }}</a>
+                        {% else %}
+                          None
+                        {% endif %}
+                      </p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="">
+                      <p class="fw-bold mb-0">Billing Codes</p>
+                    </td>
+                    <td class="d-none d-sm-block pe-sm-2">:</td>
+                    <td class="">
+                      <div class="d-flex">
+                        {% for billingcode in project.charge_codes.all %}
+                          <div class="m-1">
+                            {% include 'partials/billingcode/billingcode_badge.html' with billingcode=billingcode %}
+                          </div>
+                        {% endfor %}
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="col-6">
+              <table class="w-100 table-stats table-stats">
+                <caption>Project Info 2</caption>
+                <thead>
+                  <tr>
+                    <th class="w-25" scope="col"></th>
+                    <th class="" scope="col"></th>
+                    <th class="w-75" scope="col"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="">
+                      <p class="fw-bold mb-0">Status</p>
+                    </td>
+                    <td class="d-none d-sm-block pe-sm-2">:</td>
+                    <td class="">
+                      <h4 class="ps-6 ps-sm-0 mb-0">{% include 'partials/project/status_badge.html' %}</h4>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-6"></div>
+  </div>
+
+  <div class="row g-0 mt-3 border-1 border-top bg-light dark__bg-1100 h-100">
+    <div class="col-12 px-6 pt-3 border-1 border-end">
+      <div class="row mx-1">
+        <ul class="nav nav-underline scrollbar flex-nowrap w-100 pb-1 mb-3" id="sectionNav" role="tablist" style="overflow-y: hidden;">
+          <li class="nav-item text-nowrap me-2" role="presentation">
+            <a class="nav-link active" id="overview-tab" data-bs-toggle="tab" href="#overview" role="tab" aria-controls="tab-overview" aria-selected="true"><span class="fa-solid fa-info me-2 tab-icon-color"></span>Overview</a>
+          </li>
+          <li class="nav-item text-nowrap me-2" role="presentation">
+            <a class="nav-link" id="team-tab" data-bs-toggle="tab" href="#team" role="tab" aria-controls="tab-team" aria-selected="true"><span class="fa-solid fa-people-group me-2 tab-icon-color"></span>Team</a>
+          </li>
+          <li class="nav-item text-nowrap me-2" role="presentation">
+            <a class="nav-link" id="schedule-tab" data-bs-toggle="tab" href="#schedule" role="tab" aria-controls="tab-schedule" aria-selected="true"><span class="fa-solid fa-calendar me-2 tab-icon-color"></span>Schedule</a>
+          </li>
+        </ul>
+
+        <div class="tab-content" id="myTabContent">
+          <div class="tab-pane fade active show" id="overview" role="tabpanel" aria-labelledby="overview-tab">
+            {% if project.overview %}
+              {{ project.overview }}
+            {% else %}
+              <div class="alert alert-phoenix-info" role="alert">No Overview Available</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="tab-content" id="myTabContent">
+          <div class="tab-pane fade" id="team" role="tabpanel" aria-labelledby="team-tab">
+            <div class="alert alert-phoenix-info" role="alert">Not Available Yet (sorry!)</div>
+          </div>
+        </div>
+
+        <div class="tab-content" id="myTabContent">
+          <div class="tab-pane fade" id="schedule" role="tabpanel" aria-labelledby="schedule-tab">
+            <div class="alert alert-phoenix-info" role="alert">Not Available Yet (sorry!)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

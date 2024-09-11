@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% load menu %}{% load static %}
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+
+{% block pageTitle %}Project{% endblock pageTitle %}
+{% block head_title %}Project{% endblock head_title %}
+
+
+{% block breadcrumbItem %}
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{% url 'project_list' %}">Projects</a></li>
+<li class="breadcrumb-item text-sm text-dark active" aria-current="page">
+  {% if form.instance.pk %}
+  Edit Project
+  {% else %}
+  Add Project
+  {% endif %}   </li>
+{% endblock breadcrumbItem %}
+
+{% block content %}
+<div class="mt-3">
+  <form method="post">
+    {% csrf_token %}
+    {{ form.media }}
+
+    <div class="row g-3 flex-between-end mb-5">
+      <div class="col-auto">
+        <h2 class="mb-2">
+            {% if form.instance.pk %}
+            Edit Project
+            {% else %}
+            Add Project
+            {% endif %}            
+        </h2>
+      </div>
+      <div class="col-auto">
+        <button class="btn btn-phoenix-secondary me-2 mb-2 mb-sm-0" type="button">Discard</button>
+        <button class="btn btn-outline-success mb-2 mb-sm-0" type="submit">Save</button>
+      </div>
+    </div>
+
+
+    <div class="row">
+      <div class="col-12 col-xl-8 g-2 ">
+        <div class="row mb-6">
+            <h4 class="mb-3">Title</h4>
+            {{ form.title|as_crispy_field }}
+        </div>      
+
+        <div class="row mb-6">
+            <h4 class="mb-3">Overview</h4>
+            {{ form.overview|as_crispy_field }}
+        </div>       
+      </div>
+
+      <div class="col-12 col-xl-4">
+        <div class="row g-2">          
+          <div class="col-12 g-2 col-xl-12">
+            <div class="card mb-3">
+              <div class="card-body">
+                <div class="row gx-3">
+
+                  <div class="col-12 col-sm-6 col-xl-12">
+                    <div class="mb-4">
+                      <div class="d-flex flex-wrap mb-2">
+                        <h5 class="mb-0 text-1000 me-2">Status</h5>
+                      </div>
+                      {{ form.status|as_crispy_field }}                    
+                    </div>
+                  </div>
+
+                  <div class="col-12 col-sm-6 col-xl-12">
+                    <div class="mb-4">
+                      <div class="d-flex flex-wrap mb-2">
+                        <h5 class="mb-0 text-1000 me-2">Point of Contact</h5>
+                      </div>
+                      {{ form.primary_poc|as_crispy_field }}                    
+                    </div>
+                  </div>
+
+                  <div class="col-12 col-sm-6 col-xl-12">
+                    <div class="mb-4">
+                      <div class="d-flex flex-wrap mb-2">
+                        <h5 class="mb-0 text-1000 me-2">Organisational Unit</h5>
+                      </div>
+                      {{ form.unit|as_crispy_field }}                    
+                    </div>
+                  </div>
+                  
+                </div>
+              </div>
+            </div>
+          </div>        
+        </div>
+      </div>
+    </div>
+
+  </form>
+</div>
+{% endblock content %}
