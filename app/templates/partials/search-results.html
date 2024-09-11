@@ -3,23 +3,6 @@
   {% if results_count > 0 %}
   <h6 class="dropdown-header text-1000 fs--2 py-2">{{ results_count }} <span class="text-500">results</span></h6>
 
-    {% if recentSearches %}
-    <hr class="text-200 my-0" />
-    <h6 class="dropdown-header text-1000 fs--1 border-bottom border-200 py-2 lh-sm">Recently Searched</h6>
-    <div class="py-2">
-      {% for search in recentSearches %}
-      <a class="dropdown-item" href="#!">
-        <div class="d-flex align-items-center">
-          <div class="fw-normal text-1000 title">
-            <span class="fa-solid fa-clock-rotate-left" data-fa-transform="shrink-2"></span>
-             {{ search }}
-            </div>
-        </div>
-      </a>
-      {% endfor %}
-    </div>
-    {% endif %}
-
     {% if search_clients %}
     <hr class="text-200 my-0" />
     <h6 class="dropdown-header text-1000 fs--1 border-bottom border-200 py-2 lh-sm">Clients</h6>
