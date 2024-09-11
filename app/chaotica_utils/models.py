@@ -531,13 +531,13 @@ class User(AbstractUser):
             return reverse("user_manage", kwargs={"email": self.email})
         else:
             return None
-    
+
     def get_table_display_html(self):
         context = {}
         context["u"] = self
         html = render_to_string("partials/users/user_table_display.html", context)
         return html
-    
+
     def get_profile_card_html(self):
         context = {}
         context["userProfile"] = self
@@ -610,17 +610,18 @@ class User(AbstractUser):
 
     def clear_timeslots_in_range(self, start=None, end=None):
         from jobtracker.models import TimeSlot
+
         slots = self.get_timeslots_objs(start, end)
-        for slot in slots:            
+        for slot in slots:
             if (
-                # First simple scenario, check if the slot simply falls in our range. 
+                # First simple scenario, check if the slot simply falls in our range.
                 # Action - delete
                 slot.start >= start
                 and slot.end <= end
             ):
                 slot.delete()
-            elif ( 
-                # Now find slots that start before our range but finish inside it. 
+            elif (
+                # Now find slots that start before our range but finish inside it.
                 # Action - change end date to our start.
                 slot.start <= start
                 and slot.end <= end
@@ -649,7 +650,6 @@ class User(AbstractUser):
                 new_slot.save()
             else:
                 raise Exception("Found an edge case to clear schedule")
-                
 
     def get_holidays(self, start=None, end=None):
         data = []
@@ -755,7 +755,9 @@ class User(AbstractUser):
         for report in my_reports:
             # check we've got rating!
             if getattr(report, qa_field):
-                combined_score = combined_score + int(getattr(report, qa_field))
+                combined_score = combined_score + (
+                    int(getattr(report, qa_field)) + 1
+                )  # add one to go from 0-4 to 1-5
 
         if total_reports > 0:
             total_score = combined_score / total_reports

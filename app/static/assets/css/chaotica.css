@@ -33,7 +33,7 @@ div.content span.select2-container {
   padding-left: unset !important;
   content: unset !important;
   display: none !important;
-    /* position: absolute;
+  /* position: absolute;
     left: 0px;
     top: 50%;
     transform: translateY(-50%);
@@ -1037,5 +1037,38 @@ Do Force select2 to be phoenix compat
   66%,
   100% {
     opacity: 1;
+  }
+}
+
+
+.pulse {
+  border-radius: 50%;
+  position: relative;
+  animation: animate 3s linear infinite
+}
+
+.pulse i {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer
+}
+
+@keyframes animate {
+  0% {
+    box-shadow: 0 0 0 0 rgb(191,155,48, 0.7), 0 0 0 0 rgb(191,155,48, 0.7)
+  }
+
+  40% {
+    box-shadow: 0 0 0 10px rgb(191,155,48, 0), 0 0 0 0 rgb(191,155,48, 0.7)
+  }
+
+  80% {
+    box-shadow: 0 0 0 10px rgb(191,155,48, 0), 0 0 0 10px rgb(191,155,48, 0)
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgb(191,155,48, 0), 0 0 0 10px rgb(191,155,48, 0)
   }
 }
