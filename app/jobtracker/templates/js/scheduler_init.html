@@ -169,30 +169,47 @@
             build: function($triggerElement, e){
               return {
                 callback: function(key, options) {
+                  start_split = info.resource.extendedProps.workingHours.startTime.split(':')
+                  info.start.setHours(start_split[0], start_split[1]);
+                  start_date = info.start.toJSON();
+
+                  end_split = info.resource.extendedProps.workingHours.endTime.split(':')
+                  info.end.setHours(end_split[0], end_split[1]);
+                  end_date = info.end.toJSON();
           
-                    start_date = info.start.toJSON();
-                    end_date = info.end.toJSON();
-                    resource_id = info.resource.id;
-                    // {% if phase %}
-                    phase_id = "&phase={{ phase.pk }}";
-                    // {% else %}
-                    phase_id = "";
-                    // {% endif %}
-                    // {% if job %}
-                    job_id = "&job={{ job.pk }}";
-                    // {% else %}
-                    job_id = "";
-                    // {% endif %}
-                    // {% if project %}
-                    project_id = "&project={{ project.pk }}";
-                    // {% else %}
-                    project_id = "";
-                    // {% endif %}
-                    // Lets open a modal window to setup the   
-                    switch(key) {
-                      case "assign_phase":
+                  grr = info.end.toJSON();
+                  resource_id = info.resource.id;
+                  // {% if phase %}
+                  phase_id = "&phase={{ phase.pk }}";
+                  // {% else %}
+                  phase_id = "";
+                  // {% endif %}
+                  // {% if job %}
+                  job_id = "&job={{ job.pk }}";
+                  // {% else %}
+                  job_id = "";
+                  // {% endif %}
+                  // {% if project %}
+                  project_id = "&project={{ project.pk }}";
+                  // {% else %}
+                  project_id = "";
+                  // {% endif %}
+                  // Lets open a modal window to setup the   
+                  switch(key) {
+                    case "assign_phase":
+                      $.ajax({
+                        url: '{% url "create_scheduler_phase_slot" %}?resource_id='+parseInt(resource_id)+'&start='+start_date+'&end='+end_date+job_id+phase_id,
+                        type: 'get',
+                        dataType: 'json',
+                        success: function(data) {
+                            $("#mainModalContent").html(data.html_form);
+                            $("#mainModal").modal("show");
+                        }
+                      });
+                      break;
+                      case "assign_project":
                         $.ajax({
-                          url: '{% url "create_scheduler_phase_slot" %}?resource_id='+parseInt(resource_id)+'&start='+start_date+'&end='+end_date+job_id+phase_id,
+                          url: '{% url "create_scheduler_project_slot" %}?resource_id='+parseInt(resource_id)+'&start='+start_date+'&end='+end_date+project_id,
                           type: 'get',
                           dataType: 'json',
                           success: function(data) {
@@ -201,55 +218,44 @@
                           }
                         });
                         break;
-                        case "assign_project":
-                          $.ajax({
-                            url: '{% url "create_scheduler_project_slot" %}?resource_id='+parseInt(resource_id)+'&start='+start_date+'&end='+end_date+project_id,
-                            type: 'get',
-                            dataType: 'json',
-                            success: function(data) {
-                                $("#mainModalContent").html(data.html_form);
-                                $("#mainModal").modal("show");
-                            }
-                          });
-                          break;
-                      case "assign_internal":
-                        $.ajax({
-                          url: '{% url "create_scheduler_internal_slot" %}?resource_id='+parseInt(resource_id)+'&start='+start_date+'&end='+end_date,
-                          type: 'get',
-                          dataType: 'json',
-                          success: function(data) {
-                              $("#mainModalContent").html(data.html_form);
-                              $("#mainModal").modal("show");
-                          }
-                        });
-                        break;
-                      case "add_comment":
-                        $.ajax({
-                          url: '{% url "create_scheduler_comment" %}?resource_id='+parseInt(resource_id)+'&start='+start_date+'&end='+end_date,
-                          type: 'get',
-                          dataType: 'json',
-                          success: function(data) {
-                              $("#mainModalContent").html(data.html_form);
-                              $("#mainModal").modal("show");
-                          }
-                        });
-                        break;
-                      case "clear":
-                        $.ajax({
-                          url: '{% url "clear_scheduler_range" %}?resource_id='+parseInt(resource_id)+'&start='+start_date+'&end='+end_date,
-                          type: 'get',
-                          dataType: 'json',
-                          success: function(data) {
-                              $("#mainModalContent").html(data.html_form);
-                              $("#mainModal").modal("show");
-                          }
-                        });
-                        break;
-                    } 
-                    // Swal.fire({
-                    //   title: "clicked: " + key,
-                    //   icon: "success",
-                    // });
+                    case "assign_internal":
+                      $.ajax({
+                        url: '{% url "create_scheduler_internal_slot" %}?resource_id='+parseInt(resource_id)+'&start='+start_date+'&end='+end_date,
+                        type: 'get',
+                        dataType: 'json',
+                        success: function(data) {
+                            $("#mainModalContent").html(data.html_form);
+                            $("#mainModal").modal("show");
+                        }
+                      });
+                      break;
+                    case "add_comment":
+                      $.ajax({
+                        url: '{% url "create_scheduler_comment" %}?resource_id='+parseInt(resource_id)+'&start='+start_date+'&end='+end_date,
+                        type: 'get',
+                        dataType: 'json',
+                        success: function(data) {
+                            $("#mainModalContent").html(data.html_form);
+                            $("#mainModal").modal("show");
+                        }
+                      });
+                      break;
+                    case "clear":
+                      $.ajax({
+                        url: '{% url "clear_scheduler_range" %}?resource_id='+parseInt(resource_id)+'&start='+start_date+'&end='+end_date,
+                        type: 'get',
+                        dataType: 'json',
+                        success: function(data) {
+                            $("#mainModalContent").html(data.html_form);
+                            $("#mainModal").modal("show");
+                        }
+                      });
+                      break;
+                  } 
+                  // Swal.fire({
+                  //   title: "clicked: " + key,
+                  //   icon: "success",
+                  // });
                 },
                 position: function(opt, x, y){
                     opt.$menu.css({
