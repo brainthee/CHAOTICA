@@ -65,7 +65,7 @@ def page_defaults(request):
     from jobtracker.models import Job, Phase
 
     context = {}
-    context["notifications"] = Notification.objects.filter(user=request.user)
+    context["notifications"] = Notification.objects.filter(user=request.user, is_read=False) | Notification.objects.filter(user=request.user, is_read=True)[10:]
     context["config"] = config
     if django_settings.CHAOTICA_BIRTHDAY.month == datetime.date.today().month and \
         django_settings.CHAOTICA_BIRTHDAY.day == datetime.date.today().day:
@@ -429,10 +429,11 @@ def notifications_mark_read(request):
 @require_safe
 def notification_mark_read(request, pk):
     notification = get_object_or_404(
-        Notification, user=request.user, pk=pk, is_read=False
+        Notification, user=request.user, pk=pk
     )
-    notification.is_read = True
-    notification.save()
+    if not notification.is_read:
+        notification.is_read = True
+        notification.save()
     data = {"result": True}
     return JsonResponse(data, safe=False)
 

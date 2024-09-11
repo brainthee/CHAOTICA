@@ -8,22 +8,22 @@
     </div>
   </div>
   <div class="card-body p-0">
-    <div class="scrollbar-overlay">
+    <div class="scrollbar-overlay simplebar-scrollable-y" style="height: 27rem;" data-simplebar="init">
       <div class="border-300">
         {% for notification in notifications %}
 
-        <div class="px-2 px-sm-3 py-3 border-300 notification-card position-relative {% if notification.is_read %}read{% else %}unread{% endif %} border-bottom">
-          <a class="dropdown-item p-0 m-0" href="{{ notification.link }}">
+        <div class="p-2 border-300 notification-card position-relative {% if notification.is_read %}read{% else %}unread{% endif %} border-bottom">
+          <a class="dropdown-item text-wrap p-0 m-0" href="{{ notification.link }}">
             <div class="d-flex align-items-center justify-content-between position-relative">
               <div class="d-flex">              
                 <div class="flex-1 me-sm-3">
                   <h4 class="fs--1 text-black">
                     {{ notification.title }}
                   </h4>
-                  <p class="fs--1 text-1000 mb-2 mb-sm-3 fw-normal text-wrap">
+                  {% comment %} <p class="fs--1 text-1000 mb-2 mb-sm-3 fw-normal text-wrap">
                     <span class='me-1 fs--2'>💬</span>
                     {{ notification.message }}
-                  </p>
+                  </p> {% endcomment %}
                   <p class="text-800 fs--1 mb-0">
                     <span class="me-1 fas fa-clock"></span>
                     {{ notification.timestamp|naturaltime }}
@@ -36,9 +36,6 @@
                   <button class="dropdown-item notification_read" data-url="{% url 'notification_mark_read' notification.pk %}">
                     Mark as read
                   </button>
-                  {% if notification.link %}
-                  Go to action
-                  {% endif %}
                 </div>
               </div>
             </div>
