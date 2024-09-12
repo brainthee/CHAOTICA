@@ -44,7 +44,6 @@ class ProjectAutocomplete(autocomplete.Select2QuerySetView):
                 Q(title__icontains=self.q)
             )
         return qs
-    
 
 class ProjectBaseView(PermissionRequiredMixin, ChaoticaBaseView):
     model = Project

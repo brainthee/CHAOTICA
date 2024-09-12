@@ -4,15 +4,17 @@ from .feeds import ScheduleFeed, ScheduleFamilyFeed
 from rest_framework import routers
 
 router = routers.DefaultRouter()
-router.register(r'users', views.UserViewSet, basename="user")
-router.register(r'jobs', views.JobViewSet, basename="job")
-router.register(r'orgunit', views.OrganisationalUnitViewSet, basename="organisationalunit")
-router.register(r'client', views.ClientViewSet, basename="client")
+router.register(r"users", views.UserViewSet, basename="user")
+router.register(r"jobs", views.JobViewSet, basename="job")
+router.register(
+    r"orgunit", views.OrganisationalUnitViewSet, basename="organisationalunit"
+)
+router.register(r"client", views.ClientViewSet, basename="client")
 
 urlpatterns = [
     # Extra profile bits
-    path('api/', include(router.urls)),
-    path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
+    path("api/", include(router.urls)),
+    path("api-auth/", include("rest_framework.urls", namespace="rest_framework")),
     path(
         "profile/qualifications/",
         views.OwnQualificationRecordListView.as_view(),
@@ -112,9 +114,7 @@ urlpatterns = [
     ),
     # Project CRUD
     path("projects/", views.ProjectListView.as_view(), name="project_list"),
-    path(
-        "project/create/", views.ProjectCreateView.as_view(), name="project_create"
-    ),
+    path("project/create/", views.ProjectCreateView.as_view(), name="project_create"),
     path(
         "project/<str:slug>/",
         views.ProjectDetailView.as_view(),
@@ -135,12 +135,6 @@ urlpatterns = [
         views.ProjectDeleteView.as_view(),
         name="project_delete",
     ),
-    path(
-        "autocomplete/projects",
-        views.ProjectAutocomplete.as_view(),
-        name="project-autocomplete",
-    ),
-
     # Job CRUD
     path("jobs/", views.JobListView.as_view(), name="job_list"),
     path(
@@ -571,4 +565,10 @@ urlpatterns = [
         views.QualificationDeleteView.as_view(),
         name="qualification_delete",
     ),
+    path(
+        "autocomplete/projects",
+        views.ProjectAutocomplete.as_view(),
+        name="project-autocomplete",
+    ),
+    path("autocomplete/jobs", views.JobAutocomplete.as_view(), name="job-autocomplete"),
 ]
