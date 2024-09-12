@@ -24083,31 +24083,6 @@ html[dir=rtl] .googlemap .gm-style-iw.gm-style-iw-c button[title=Close] {
   left: 0.3125rem;
 }
 
-.windows.chrome .fc-scroller {
-  overflow: hidden auto !important;
-  overflow: auto;
-}
-.windows.chrome .fc-scroller::-webkit-scrollbar {
-  visibility: hidden;
-  -webkit-appearance: none;
-  width: 6px;
-  height: 6px;
-  background-color: transparent;
-}
-.windows.chrome .fc-scroller::-webkit-scrollbar-thumb {
-  visibility: hidden;
-  border-radius: 3px;
-  background-color: var(--phoenix-scrollbar-bg);
-}
-.windows.chrome .fc-scroller:hover::-webkit-scrollbar, .windows.chrome .fc-scroller:hover::-webkit-scrollbar-thumb, .windows.chrome .fc-scroller:focus::-webkit-scrollbar, .windows.chrome .fc-scroller:focus::-webkit-scrollbar-thumb {
-  visibility: visible;
-}
-.windows.firefox .fc-scroller {
-  overflow: hidden auto !important;
-  overflow: auto !important;
-  scrollbar-color: var(--phoenix-scrollbar-bg) transparent;
-  scrollbar-width: thin;
-}
 
 .firefox .fc table {
   border-collapse: unset;
