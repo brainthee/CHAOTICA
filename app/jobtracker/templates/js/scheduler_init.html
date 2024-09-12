@@ -175,6 +175,8 @@
 
                   end_split = info.resource.extendedProps.workingHours.endTime.split(':')
                   info.end.setHours(end_split[0], end_split[1]);
+                  // Because of fullcalendar's date selection, we need to minus one day?!
+                  info.end.setDate(info.end.getDate() - 1);
                   end_date = info.end.toJSON();
           
                   grr = info.end.toJSON();
