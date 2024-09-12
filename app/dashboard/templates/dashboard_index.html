@@ -16,7 +16,7 @@
 {% include 'partials/first_time_setup.html' %}
 {% endif %}
 
-<div class="row mt-3 px-5">
+<div class="row">
   <div class="col-3">
     <div class="row">
       <div class="nav flex-sm-column border-end-sm border-300 fs--1 vertical-tab justify-content-between" role="tablist" aria-orientation="vertical">      
@@ -66,6 +66,28 @@
           {% endif %}
         </a>          
         {% endif %}    
+  
+        {% if request.user.can_tqa %}
+        <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center" 
+          id="pendingTQATab" data-bs-toggle="tab" data-bs-target="#pendingTQATabContent" role="tab" aria-controls="pendingTQATabContent" aria-selected="false">
+          <span class="fa fa-signature me-sm-2 fs-1"></span>
+          <span class="d-none d-sm-inline">Pending Technical QA</span>
+          {% if pendingTQA|length %}
+          <span class="badge bg-primary-500 ms-2">{{ pendingTQA|length }}</span>
+          {% endif %}
+        </a>          
+        {% endif %}    
+  
+        {% if request.user.can_pqa %}
+        <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center" 
+          id="pendingPQATab" data-bs-toggle="tab" data-bs-target="#pendingPQATabContent" role="tab" aria-controls="pendingPQATabContent" aria-selected="false">
+          <span class="fa fa-signature me-sm-2 fs-1"></span>
+          <span class="d-none d-sm-inline">Pending Presentation QA</span>
+          {% if pendingPQA|length %}
+          <span class="badge bg-primary-500 ms-2">{{ pendingPQA|length }}</span>
+          {% endif %}
+        </a>          
+        {% endif %}    
              
         {% if request.user.is_people_manager %}
         <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center" 
@@ -81,57 +103,76 @@
         {% endif %}
       </div>
     </div>
-    <div class="row">
-      {% include 'partials/consultant_stats.html' %} 
-    </div>
-  </div>
-  <div class="col mt-0">
-    <div class="tab-content px-3 h-100"> 
 
-      <div class="tab-pane fade active show" id="scheduleTabContent" role="tabpanel" aria-labelledby="#scheduleTab">
-        <h4 class="mb-3 d-sm-none">Schedule</h4>        
-        <div class="card card-calendar">
-          <div class="card-body p-0">
-              <div class="calendar" data-bs-toggle="calendar" id="calendar"></div>                
-          </div>
-        </div>
+
+<div class="row">
+  {% include 'partials/consultant_stats.html' %} 
+</div>
+  </div>
+  <div class="col mt-0 bg-body">
+    <div class="tab-content h-100"> 
+
+      <div class="tab-pane fade active show" id="scheduleTabContent" role="tabpanel" aria-labelledby="#scheduleTab">    
+        <div class="calendar" data-bs-toggle="calendar" id="calendar"></div>   
       </div>
 
       <div class="tab-pane fade h-100" id="jobTabContent" role="tabpanel" aria-labelledby="jobTab">
-        <h4 class="mb-3">My Jobs</h4>        
+        <h2 class="ps-3 mb-2 lh-sm">My Jobs</h2>
         <div class="card card-calendar">
           <div class="p-3 bg-white border-top border-bottom border-200">
-          {% include 'partials/job/job_list_table.html' with job_list=myJobs %}
+          {% include 'partials/job/job_list_table.html' with job_list=myJobs disableAjax=1 only %}
           </div>
         </div>
       </div>
 
       <div class="tab-pane fade h-100" id="phasesTabContent" role="tabpanel" aria-labelledby="phasesTab">
-        <h4 class="mb-3 d-sm-none">My Phases</h4>        
+        <h2 class="ps-3 mb-2 lh-sm">My Phases</h2>   
         <div class="card card-calendar">
           <div class="p-3 bg-white border-top border-bottom border-200">
-          {% include 'partials/phase/phase_list_table.html' with phases=myPhases %}
+          {% include 'partials/phase/phase_list_table.html' with phases=myPhases disableAjax=1 only %}
           </div>
         </div>
       </div>
 
       {% if request.user.can_scope %}
       <div class="tab-pane fade h-100" id="pendingScopeTabContent" role="tabpanel" aria-labelledby="pendingScopeTab">
-        <h4 class="mb-3 d-sm-none">Jobs Pending Scoping</h4>        
+        <h2 class="ps-3 mb-2 lh-sm">Jobs Pending Scoping</h2>    
         <div class="card card-calendar">
           <div class="p-3 bg-white border-top border-bottom border-200">
-          {% include 'partials/job/job_list_table.html' with job_list=pendingScoping %}
+          {% include 'partials/job/job_list_table.html' with job_list=pendingScoping disableAjax=1 only %}
           </div>
         </div>
       </div>
       {% endif %}
 
       {% if request.user.can_signoff_scope %}
-      <div class="tab-pane fade h-100" id="pendingSignoffTabContent" role="tabpanel" aria-labelledby="pendingSignoffTab">
-        <h4 class="mb-3 d-sm-none">Jobs Pending Signoff</h4>        
+      <div class="tab-pane fade h-100" id="pendingSignoffTabContent" role="tabpanel" aria-labelledby="pendingSignoffTab"> 
+        <h2 class="ps-3 mb-2 lh-sm">Jobs Pending Signoff</h2>      
         <div class="card card-calendar">
           <div class="p-3 bg-white border-top border-bottom border-200">
-          {% include 'partials/job/job_list_table.html' with job_list=scopesToSignoff %}
+          {% include 'partials/job/job_list_table.html' with job_list=scopesToSignoff disableAjax=1 only %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if request.user.can_tqa %}
+      <div class="tab-pane fade h-100" id="pendingTQATabContent" role="tabpanel" aria-labelledby="pendingTQATab">
+        <h2 class="ps-3 mb-2 lh-sm">Jobs Pending TQA</h2>         
+        <div class="card card-calendar">
+          <div class="p-3 bg-white border-top border-bottom border-200">
+            {% include 'partials/phase/phase_list_table.html' with phases=pendingTQA disableAjax=1 only %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if request.user.can_pqa %}
+      <div class="tab-pane fade h-100" id="pendingPQATabContent" role="tabpanel" aria-labelledby="pendingPQATab">
+        <h2 class="ps-3 mb-2 lh-sm">Jobs Pending PQA</h2>        
+        <div class="card card-calendar">
+          <div class="p-3 bg-white border-top border-bottom border-200">
+            {% include 'partials/phase/phase_list_table.html' with phases=pendingPQA disableAjax=1 only %}
           </div>
         </div>
       </div>
@@ -139,7 +180,7 @@
 
       {% if request.user.is_people_manager %}
       <div class="tab-pane fade h-100" id="teamTabContent" role="tabpanel" aria-labelledby="teamTab">
-        <h4 class="mb-3 d-sm-none">My Team</h4>        
+        <h2 class="ps-3 mb-2 lh-sm">My Team</h2>            
         <div class="card card-calendar">
           <div class="card-body p-3">
             Team
@@ -148,7 +189,7 @@
       </div>
 
       <div class="tab-pane fade h-100" id="leaveTabContent" role="tabpanel" aria-labelledby="leaveTab">
-        <h4 class="mb-3 d-sm-none">Team Leave Requests</h4>        
+        <h2 class="ps-3 mb-2 lh-sm">Leave Requests</h2>            
         <div class="card card-calendar">
           <div class="card-body p-3">
             Team

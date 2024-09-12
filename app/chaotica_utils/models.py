@@ -468,6 +468,16 @@ class User(AbstractUser):
 
         return get_objects_for_user(self, "can_signoff_scopes", OrganisationalUnit)
 
+    def can_tqa(self):
+        from jobtracker.models.orgunit import OrganisationalUnit
+
+        return get_objects_for_user(self, "can_tqa_jobs", OrganisationalUnit)
+
+    def can_pqa(self):
+        from jobtracker.models.orgunit import OrganisationalUnit
+
+        return get_objects_for_user(self, "can_pqa_jobs", OrganisationalUnit)
+
     def _get_last_leave_renewal_date(self):
         today = timezone.now().date()
         renewal_date = self.contracted_leave_renewal.replace(year=today.year)
