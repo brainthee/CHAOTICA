@@ -97,6 +97,17 @@ class SchedulerFilter(forms.Form):
         ),
     )
 
+    job = forms.ModelChoiceField(
+        required=False,
+        queryset=Job.objects.filter(),
+        widget=autocomplete.ModelSelect2(
+            url="job-autocomplete",
+            attrs={
+                "data-minimum-input-length": 3,
+            },
+        ),
+    )
+
     show_inactive_users = forms.BooleanField(
         required=False,
     )
@@ -141,6 +152,13 @@ class SchedulerFilter(forms.Form):
                 css_class="setting-panel-item",
             ),
             Div(
+                HTML('<h5 class="setting-panel-item-title">Job</h5>'),
+                Row(
+                    Field("job", style="width: 100%;"),
+                ),
+                css_class="setting-panel-item",
+            ),
+            Div(
                 HTML('<h5 class="setting-panel-item-title">Skills</h5>'),
                 Row(
                     Field("skills_specialist", css_class="extra", style="width: 100%;"),
@@ -175,6 +193,7 @@ class SchedulerFilter(forms.Form):
             "show_inactive_users",
             "users",
             "services",
+            "job",
             "org_units",
             "org_unit_roles",
             "from_date",

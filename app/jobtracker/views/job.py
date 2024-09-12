@@ -49,8 +49,9 @@ logger = logging.getLogger(__name__)
 
 # TODO: setup events for schedule so it comes back with member's only
 
-# TODO: Permissions for jobs needs revisiting. TLDR; deal with non unit members 
+# TODO: Permissions for jobs needs revisiting. TLDR; deal with non unit members
 # by adding them permissions directly to the job
+
 
 @job_permission_required_or_403("jobtracker.view_job_schedule", (Job, "slug", "slug"))
 def view_job_schedule_gantt_data(request, slug):
@@ -121,9 +122,7 @@ def assign_job_framework(request, slug):
     return JsonResponse(data)
 
 
-@job_permission_required_or_403(
-    "jobtracker.assign_billingcodes", (Job, "slug", "slug")
-)
+@job_permission_required_or_403("jobtracker.assign_billingcodes", (Job, "slug", "slug"))
 def assign_job_billingcodes(request, slug):
     job = get_object_or_404(Job, slug=slug)
     data = dict()
@@ -670,3 +669,26 @@ class JobBillingCodeAutocomplete(autocomplete.Select2QuerySetView):
 
     def get_result_label(self, result):
         return result.get_html_label()
+
+
+class JobAutocomplete(autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        # Don't forget to filter out results depending on the visitor !
+        if not self.request.user.is_authenticated:
+            return Job.objects.none()
+
+        units_with_job_perms = get_objects_for_user(
+            self.request.user, "jobtracker.can_view_jobs", OrganisationalUnit
+        )
+
+        qs = Job.objects.filter(
+            unit__in=units_with_job_perms,
+        )
+        if self.q:
+            qs = qs.filter(
+                Q(title__icontains=self.q)
+                | Q(overview__icontains=self.q)
+                | Q(slug__icontains=self.q)
+                | Q(id__icontains=self.q),
+            )
+        return qs

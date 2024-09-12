@@ -50,6 +50,14 @@ div.content span.select2-container {
   padding-left: unset !important;
 }
 
+.fc .fc-bg-event, .fc .fc-highlight, .fc .fc-non-business {
+  inset: unset;
+  position: unset;
+  overflow: hidden;
+  text-wrap: nowrap;
+  opacity: 0.2;
+}
+
 .row {
   --phoenix-gutter-x: unset !important
 }

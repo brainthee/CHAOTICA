@@ -62,21 +62,20 @@ def _filter_users_on_query(request):
             if user.pk not in users_pk:
                 users_pk.append(user.pk)
 
-    # If we're passed a job/phase ID - filter on that.
-    job_id = clean_int(request.GET.get("job", None))
-    phase_id = clean_int(request.GET.get("phase", None))
-    if job_id:
-        job = get_object_or_404(Job, pk=job_id)
-        if phase_id:
-            phase = get_object_or_404(Phase, job=job, pk=phase_id)
-            query.add(Q(pk__in=phase.team()), Q.AND)
-        else:
-            # get the team for the whole job...
-            query.add(Q(pk__in=job.team()), Q.AND)
-    else:
-        query.add(Q(pk__in=users_pk), Q.AND)
-
     if filter_form.is_valid():
+        # If we're passed a job/phase ID - filter on that.
+        job = cleaned_data.get('job')
+        phase_id = clean_int(request.GET.get("phase", None))
+        if job:
+            if phase_id:
+                phase = get_object_or_404(Phase, job=job, pk=phase_id)
+                query.add(Q(pk__in=phase.team()), Q.AND)
+            else:
+                # get the team for the whole job...
+                query.add(Q(pk__in=job.team()), Q.AND)
+        else:
+            query.add(Q(pk__in=users_pk), Q.AND)
+
         # Now lets apply the filters from the query...
         ## Filter users
         if not show_inactive_users:
