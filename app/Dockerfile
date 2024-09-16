@@ -48,10 +48,10 @@ COPY --chown=chaotica:chaotica requirements*.txt ./
 
 RUN pip3 install --upgrade pip
 RUN pip3 install -r requirements.txt
+RUN pip3 install git+https://github.com/coderanger/supervisor-stdout.git
 
 # Setup CRON
 COPY ./crontab.txt /crontab.txt
-CMD sudo -u chaotica -- /usr/bin/crontab /crontab.txt
 
 # Copy supervisor conf
 COPY ./supervisord.conf /etc/
