@@ -50,7 +50,7 @@ div.content span.select2-container {
   padding-left: unset !important;
 }
 
-.fc .fc-bg-event, .fc .fc-highlight, .fc .fc-non-business {
+.fc .fc-bg-event, .fc .fc-highlight, {
   inset: unset;
   position: unset;
   overflow: hidden;
