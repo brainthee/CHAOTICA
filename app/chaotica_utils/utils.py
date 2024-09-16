@@ -3,9 +3,10 @@ from .enums import NotificationTypes
 from django.template.loader import render_to_string
 from django.core.mail import send_mail
 from django.conf import settings as django_settings
-from datetime import timedelta, datetime
+from datetime import timedelta, time, timezone, datetime
 from uuid import UUID
-import re, logging, time
+import re, logging
+from datetime import time
 from .enums import GlobalRoles
 from django.utils.text import slugify
 from menu import MenuItem
@@ -18,7 +19,7 @@ from django.utils.dateparse import (
     parse_duration,
     parse_time,
 )
-from django.utils.timezone import is_aware, make_aware
+from django.utils.timezone import is_aware, make_aware, now
 
 
 class NoColorFormatter(logging.Formatter):
@@ -33,7 +34,7 @@ class NoColorFormatter(logging.Formatter):
     def format(self, record):
         """Return logger message with terminal escapes removed."""
         return "%s %s %s" % (
-            time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+            datetime.strftime(now(), "%Y-%m-%d %H:%M:%S"),
             re.sub(self.ANSI_RE, "", record.levelname),
             record.msg,
         )
@@ -108,7 +109,7 @@ def clean_int(value):
     """
     Tries to convert the value to an int and raises SuspiciousOperation if it fails
     """
-    if value == None:
+    if value == None or value == "":
         return None
     try:
         return int(value)
@@ -142,6 +143,20 @@ def clean_datetime(value):
     except ValueError:
         raise SuspiciousOperation()
 
+def make_datetime_tzaware(value, tzinfo=timezone.utc):
+    """
+    Makes the DateTime TZ aware and raises SuspiciousOperation if it fails
+    """
+    if value == None:
+        return None
+    try:
+        if not is_aware(value):
+            value = make_aware(value, timezone=tzinfo)
+        return value
+    except ValueError:
+        raise SuspiciousOperation()
+
+
 
 def clean_time(value):
     """
@@ -165,6 +180,13 @@ def clean_duration(value):
         return parse_duration(value)
     except ValueError:
         raise SuspiciousOperation()
+    
+
+def datetime_startofday(dte):
+    return make_datetime_tzaware(datetime.combine(dte, time.min))
+
+def datetime_endofday(dte):
+    return make_datetime_tzaware(datetime.combine(dte, time.max))
 
 
 def is_valid_uuid(uuid_to_test, version=4):

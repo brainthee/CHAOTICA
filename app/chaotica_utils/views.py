@@ -15,7 +15,7 @@ from django.http import (
     HttpResponseBadRequest,
 )
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-import json, os, random
+import json, os, random, csv
 from .forms import (
     ChaoticaUserForm,
     ImportSiteDataForm,
@@ -542,6 +542,11 @@ def settings_import_data(request):
 
                 importer = ResourceManagerProjectImporter()
                 job_output = importer.import_data(request, files)
+            elif form.cleaned_data["importType"] == "CSVUserImporter":
+                from .impex.importers.csv_users import CSVUserImporter
+
+                importer = CSVUserImporter()
+                job_output = importer.import_data(request, files)
 
             data["form_is_valid"] = True
     else:
@@ -582,6 +587,18 @@ def settings_export_data(request):
         "partials/profile/basic_profile_form.html", context, request=request
     )
     return JsonResponse(data)
+
+
+@permission_required_or_403("chaotica_utils.manage_user")
+@require_http_methods(["GET"])
+def csv_template_users(request):
+    from impex.importers.csv_users import CSVUserImporter
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="chaotica_users.csv"'
+    writer = csv.writer(response,delimiter=',')
+    writer.writerow(CSVUserImporter.allowed_fields)
+    return response
+
 
 
 @permission_required_or_403("chaotica_utils.manage_user")
