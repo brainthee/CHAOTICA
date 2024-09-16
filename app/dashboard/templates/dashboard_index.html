@@ -238,7 +238,7 @@ var calendar = new FullCalendar.Calendar(calendarEl, {
         },
       },
       {
-        url: "{% url 'view_schedule_holidays' %}",
+        url: "{% url 'view_own_schedule_holidays' %}",
         method: 'GET',
         failure: function(res) {
           if(res.response.redirected) {
