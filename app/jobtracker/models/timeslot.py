@@ -79,6 +79,11 @@ class TimeSlotComment(models.Model):
             "title": self.comment,
             "resourceId": self.user.pk,
             "start": self.start,
+            "can_edit": True,  # Fix this
+            "edit_url": reverse(
+                "change_scheduler_slot_comment",
+                kwargs={"pk": self.pk},
+            ),
             "display": "block",
             "end": self.end,
             "userId": self.user.pk,
@@ -86,13 +91,12 @@ class TimeSlotComment(models.Model):
             "color": config.SCHEDULE_COLOR_COMMENT,
             "textColor": self.get_schedule_slot_text_colour(),
             "classNames": "p-1 rounded-3",
+            "is_comment": True,
         }
         return data
 
     def __str__(self):
-        return "{}-{} {}".format(
-            self.start, self.end, self.comment
-        )
+        return "{}-{} {}".format(self.start, self.end, self.comment)
 
 
 class TimeSlot(models.Model):
@@ -119,7 +123,11 @@ class TimeSlot(models.Model):
     )
 
     project = models.ForeignKey(
-        Project, related_name="timeslots", null=True, blank=True, on_delete=models.CASCADE
+        Project,
+        related_name="timeslots",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
     )
 
     deliveryRole = models.IntegerField(
@@ -139,7 +147,7 @@ class TimeSlot(models.Model):
         elif self.is_project():
             return None
         return None
-    
+
     def is_valid(self):
         if self.is_delivery() and self.phase:
             return True
@@ -160,9 +168,10 @@ class TimeSlot(models.Model):
         )
 
     def is_internal(self):
-        return (
-            self.slot_type != TimeSlotType.get_builtin_object(DefaultTimeSlotTypes.DELIVERY) and
-            self.slot_type != TimeSlotType.get_builtin_object(DefaultTimeSlotTypes.INTERNAL_PROJECT)
+        return self.slot_type != TimeSlotType.get_builtin_object(
+            DefaultTimeSlotTypes.DELIVERY
+        ) and self.slot_type != TimeSlotType.get_builtin_object(
+            DefaultTimeSlotTypes.INTERNAL_PROJECT
         )
 
     def __str__(self):
@@ -171,18 +180,21 @@ class TimeSlot(models.Model):
             tentative = "Tentative" if not self.is_confirmed() else ""
             onsite = "Onsite" if self.is_onsite else ""
             seperator = ", " if tentative and onsite else ""
-            extra = "({}{}{})".format(tentative, seperator, onsite) if tentative or onsite else ""
+            extra = (
+                "({}{}{})".format(tentative, seperator, onsite)
+                if tentative or onsite
+                else ""
+            )
             return "{}: {} {}".format(
                 str(self.phase), self.get_deliveryRole_display(), extra
             )
         elif self.is_project():
             return "{}: {}".format(
-                str(self.project.id), self.project.title,
+                str(self.project.id),
+                self.project.title,
             )
         else:
-            return "{}: {} ({})".format(
-                self.user, self.slot_type.name, self.start
-            )
+            return "{}: {} ({})".format(self.user, self.slot_type.name, self.start)
 
     def get_schedule_title(self):
         if self.is_delivery():
@@ -191,14 +203,17 @@ class TimeSlot(models.Model):
             return "{}".format(
                 self.project.title,
             )
-        elif self.slot_type == TimeSlotType.get_builtin_object(DefaultTimeSlotTypes.LEAVE):
-            return "{}".format(
-                self.leaverequest.first().get_type_of_leave_display(),
-            )
+        elif self.slot_type == TimeSlotType.get_builtin_object(
+            DefaultTimeSlotTypes.LEAVE
+        ):
+            if self.leaverequest.first():
+                return "{}".format(
+                    self.leaverequest.first().get_type_of_leave_display(),
+                )
+            else:
+                return "Leave"
         else:
-            return "{}".format(
-                self.slot_type.name
-            )
+            return "{}".format(self.slot_type.name)
 
     def get_short_schedule_title(self):
         if self.is_delivery():
@@ -267,22 +282,28 @@ class TimeSlot(models.Model):
             # "borderColor": self.get_schedule_slot_colour(),
             "textColor": self.get_schedule_slot_text_colour(),
             "classNames": "p-1 rounded-3",
+            "can_edit": True,  # Fix this
+            "is_comment": False,
         }
         if self.is_delivery():
             data["deliveryRole"] = self.deliveryRole
             data["phaseId"] = self.phase.pk
-            data["editURL"] = reverse(
+            data["edit_url"] = reverse(
                 "change_job_schedule_slot",
                 kwargs={"slug": self.phase.job.slug, "pk": self.pk},
             )
             data["viewURL"] = self.phase.get_absolute_url()
         elif self.is_project():
             data["projectId"] = self.project.pk
-            data["viewURL"] = self.project.get_absolute_url()
-            # data["editURL"] = reverse(
-            #     "change_job_schedule_slot",
-            #     kwargs={"slug": self.phase.job.slug, "pk": self.pk},
-            # )
+            data["edit_url"] = reverse(
+                "change_job_schedule_slot",
+                kwargs={"slug": self.project.slug, "pk": self.pk},
+            )
+        else:
+            data["edit_url"] = reverse(
+                "change_scheduler_slot",
+                kwargs={"pk": self.pk},
+            )
         return data
 
     def get_business_hours(self):
@@ -356,4 +377,3 @@ class TimeSlot(models.Model):
                 if self.phase.can_to_sched_tentative():
                     self.phase.to_sched_tentative()
                     self.phase.save()
-
