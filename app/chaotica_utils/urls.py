@@ -46,6 +46,7 @@ urlpatterns = [
     path("settings/", views.app_settings, name="app_settings"),
     path("settings/import", views.settings_import_data, name="settings_import_data"),
     path("settings/export", views.settings_export_data, name="settings_export_data"),
+    path("settings/csv_template/users", views.csv_template_users, name="csv_template_users"),
     path("activity/", views.NoteListView.as_view(), name="view_activity"),
 
     # Own profile bits

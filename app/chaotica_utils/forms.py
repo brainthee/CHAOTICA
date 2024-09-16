@@ -694,6 +694,7 @@ class ImportSiteDataForm(forms.Form):
     importFiles = forms.FileField(label="Data")
     importType = forms.ChoiceField(
         choices=[
+            ("CSVUserImporter", "User CSV"),
             ("SmartSheetCSVImporter", "SmartSheet Project CSV"),
             ("ResourceManagerUserImporter", "Resource Manager User JSONs"),
             ("ResourceManagerProjectImporter", "Resource Manager Project JSON"),
