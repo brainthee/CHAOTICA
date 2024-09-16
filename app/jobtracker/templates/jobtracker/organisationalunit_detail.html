@@ -100,21 +100,30 @@
                     <span class="fa-solid fa-video me-2 tab-icon-color"></span>Team
                     </a>
                 </li>
+                <li class="nav-item text-nowrap me-2" role="presentation">
+                    <a class="nav-link" id="orgchart-tab" data-bs-toggle="tab" href="#orgchart" role="tab" aria-controls="tab-orgchart" aria-selected="false" tabindex="-1">
+                    <span class="fa-solid fa-sitemap me-2 tab-icon-color"></span>Organisation Chart
+                    </a>
+                </li>
                 {% comment %} <li class="nav-item text-nowrap me-2" role="presentation">
                     <a class="nav-link" id="jobs-tab" data-bs-toggle="tab" href="#jobs" role="tab" aria-controls="tab-jobs" aria-selected="false" tabindex="-1">
                     <span class="fa-solid fa-clipboard me-2 tab-icon-color"></span>Jobs
                     </a>
                 </li> {% endcomment %}
                 <li class="nav-item text-nowrap me-2" role="presentation">
-                    <a class="nav-link" id="stats-tab" data-bs-toggle="tab" href="#stats" role="tab" aria-controls="tab-stats" aria-selected="false" tabindex="-1">
-                    <span class="fa-solid fa-clipboard me-2 tab-icon-color"></span>Stats
-                    </a>
-                </li>
+                  <a class="nav-link" id="stats-tab" data-bs-toggle="tab" href="#stats" role="tab" aria-controls="tab-stats" aria-selected="false" tabindex="-1">
+                  <span class="fa-solid fa-clipboard me-2 tab-icon-color"></span>Stats
+                  </a>
+              </li>
             </ul>
 
             <div class="tab-content" id="myTabContent">
                 <div class="tab-pane fade active show" id="team" role="tabpanel" aria-labelledby="team-tab">
                   {% include 'partials/unit/team_table.html' %}
+                </div>
+
+                <div class="tab-pane fade w-100" id="orgchart" role="tabpanel" aria-labelledby="orgchart-tab">
+                  {% include 'partials/unit/org_chart.html' %}
                 </div>
 
                 {% comment %} <div class="tab-pane fade" id="jobs" role="tabpanel" aria-labelledby="jobs-tab">
