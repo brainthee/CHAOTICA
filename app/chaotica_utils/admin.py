@@ -82,7 +82,27 @@ class UserCostAdmin(admin.ModelAdmin):
 admin.site.register(Group, GroupAdmin)
 admin.site.register(Language)
 admin.site.register(Note)
-admin.site.register(LeaveRequest)
+
+@admin.register(LeaveRequest)
+class LeaveRequestAdmin(admin.ModelAdmin):
+    list_display = ["user", 
+                    "requested_on", 
+                    "start_date",
+                    "end_date", 
+                    "type_of_leave",
+                    "timeslot", 
+                    "authorised",
+                    "cancelled",
+                    "declined",
+                    ]
+    list_filter = [
+        "type_of_leave",
+        "start_date",
+        "authorised",
+        "cancelled",
+        "declined",
+    ]
+
 admin.site.register(HolidayCountry)
 
 
