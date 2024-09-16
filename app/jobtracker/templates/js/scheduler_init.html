@@ -138,18 +138,18 @@
         droppable: false,
         // {% else %}
         eventClick: function(info) {
-          if(info.event.extendedProps.editURL) {
+          if(info.event.extendedProps.can_edit) {
             info.jsEvent.preventDefault(); // don't let the browser navigate
             // Show slot edit modal
             $.ajax({
-              url: '{% url "change_scheduler_slot" %}'+info.event.id,
+              url: info.event.extendedProps.edit_url,
               type: 'get',
               dataType: 'json',
               success: function(data) {
                   $("#mainModalContent").html(data.html_form);
                   $("#mainModal").modal("show");
               }
-          });
+            });
           };
 
         },
@@ -169,6 +169,9 @@
             build: function($triggerElement, e){
               return {
                 callback: function(key, options) {
+                  start_date_o = info.start.toJSON();
+                  end_date_o = info.end.toJSON();
+
                   start_split = info.resource.extendedProps.workingHours.startTime.split(':')
                   info.start.setHours(start_split[0], start_split[1]);
                   start_date = info.start.toJSON();
@@ -295,8 +298,13 @@
               if (info.newResource) {
                 slotData['user'] = info.newResource.id;
               };
+              if(info.event.extendedProps.is_comment) {
+                change_url = '{% url "change_scheduler_slot_comment_date" %}'+info.event.id;
+              } else {
+                change_url = '{% url "change_scheduler_slot_date" %}'+info.event.id;
+              };
               $.ajax({
-                url: '{% url "change_scheduler_slot_date" %}'+info.event.id,
+                url: change_url,
                 data: slotData,
                 type: "POST",
                 dataType: 'json',
@@ -333,8 +341,13 @@
                   "user": info.event.extendedProps.userId,
                   "csrfmiddlewaretoken": csrf.val(),
                 };
+              if(info.event.extendedProps.is_comment) {
+                change_url = '{% url "change_scheduler_slot_comment_date" %}'+info.event.id;
+              } else {
+                change_url = '{% url "change_scheduler_slot_date" %}'+info.event.id;
+              };
               $.ajax({
-                url: '{% url "change_scheduler_slot_date" %}'+info.event.id,
+                url: change_url,
                 data: slotData,
                 type: "POST",
                 dataType: 'json',

@@ -8,7 +8,16 @@ from chaotica_utils.views import page_defaults
 from chaotica_utils.views import ChaoticaBaseView
 from chaotica_utils.models import User
 from guardian.shortcuts import get_objects_for_user
-from ..models import Job, TimeSlot, UserSkill, Phase, OrganisationalUnitMember,Project, OrganisationalUnitRole
+from ..models import (
+    Job,
+    TimeSlot,
+    UserSkill,
+    Phase,
+    OrganisationalUnitMember,
+    Project,
+    OrganisationalUnitRole,
+    TimeSlotComment,
+)
 from ..decorators import unit_permission_required_or_403
 from ..forms import (
     NonDeliveryTimeSlotModalForm,
@@ -17,6 +26,7 @@ from ..forms import (
     DeliveryTimeSlotModalForm,
     ProjectTimeSlotModalForm,
     CommentTimeSlotModalForm,
+    ChangeTimeSlotCommentDateModalForm,
 )
 from ..enums import UserSkillRatings
 import logging
@@ -25,6 +35,8 @@ from chaotica_utils.utils import (
     clean_int,
     clean_datetime,
     clean_fullcalendar_datetime,
+    datetime_startofday,
+    datetime_endofday,
 )
 
 
@@ -64,7 +76,7 @@ def _filter_users_on_query(request):
 
     if filter_form.is_valid():
         # If we're passed a job/phase ID - filter on that.
-        job = cleaned_data.get('job')
+        job = cleaned_data.get("job")
         phase_id = clean_int(request.GET.get("phase", None))
         if job:
             if phase_id:
@@ -81,20 +93,24 @@ def _filter_users_on_query(request):
         if not show_inactive_users:
             query.add(Q(is_active=True), Q.AND)
 
-        users_q = cleaned_data.get('users')
+        users_q = cleaned_data.get("users")
         if users_q:
             query.add(Q(pk__in=users_q), Q.AND)
 
         ## Filter org unit
         org_units = cleaned_data.get("org_units")
         org_unit_roles = cleaned_data.get("org_unit_roles")
-            
+
         if org_units:
             query.add(
                 Q(
                     unit_memberships__in=OrganisationalUnitMember.objects.filter(
                         unit__in=org_units,
-                        roles__in=org_unit_roles if org_unit_roles else OrganisationalUnitRole.objects.all()
+                        roles__in=(
+                            org_unit_roles
+                            if org_unit_roles
+                            else OrganisationalUnitRole.objects.all()
+                        ),
                     )
                 ),
                 Q.AND,
@@ -109,7 +125,6 @@ def _filter_users_on_query(request):
                     ),
                     Q.AND,
                 )
-
 
         ## Filter on skills
         skills_specialist = cleaned_data.get("skills_specialist")
@@ -187,7 +202,7 @@ def view_scheduler_slots(request):
             phase_focus = get_object_or_404(Phase, job=job, pk=phase_id)
         else:
             phase_focus = job
-            
+
     for user in filtered_users:
         data = data + user.get_timeslots(start=start, end=end, phase_focus=phase_focus)
         data = data + user.get_timeslot_comments(start=start, end=end)
@@ -257,7 +272,7 @@ def view_own_schedule_timeslots(request):
 
 
 @login_required
-def view_schedule_holidays(request):
+def view_own_schedule_holidays(request):
     # Change FullCalendar format to DateTime
     start = clean_fullcalendar_datetime(request.GET.get("start", None))
     end = clean_fullcalendar_datetime(request.GET.get("end", None))
@@ -268,8 +283,88 @@ def view_schedule_holidays(request):
     return JsonResponse(data, safe=False)
 
 
-@unit_permission_required_or_403('jobtracker.can_schedule_job')
+@unit_permission_required_or_403("jobtracker.can_schedule_job")
+def change_scheduler_slot_comment_date(request, pk=None):
+    """Changes the date of the specified timeslotcomment. Used when we don't care what the type is.
+
+    Args:
+        request (Django request): Django request
+        pk (int, optional): PK of the TimeSlot. Not actually optional but made options so we can append the PK in JS client-side.
+
+    Returns:
+        _type_: JSONResponse
+    """
+    if not pk:
+        # We only do this because we want to generate the URL in JS land
+        return HttpResponseBadRequest()
+    slot = get_object_or_404(TimeSlotComment, pk=pk)
+    data = dict()
+    if request.method == "POST":
+        form = ChangeTimeSlotCommentDateModalForm(request.POST, instance=slot)
+        if form.is_valid():
+            form.save()
+            data["form_is_valid"] = True
+        else:
+            data["form_is_valid"] = False
+            data["form_errors"] = form.errors
+    else:
+        # Send the modal
+        form = ChangeTimeSlotCommentDateModalForm(instance=slot)
+
+    context = {"form": form}
+    data["html_form"] = loader.render_to_string(
+        "jobtracker/modals/job_slot.html", context, request=request
+    )
+    return JsonResponse(data)
+
+
+@unit_permission_required_or_403("jobtracker.can_schedule_job")
+def change_scheduler_slot_comment(request, pk=None):
+    """Changes a TimeSlot entry. Returns different forms based on the type of TimeSlot
+
+    Args:
+        request (_type_): _description_
+        pk (_type_, optional): PK of the TimeSlot. Optional to allow clientside construction
+
+    Returns:
+        JsonResponse: _description_
+    """
+    if not pk:
+        # We only do this because we want to generate the URL in JS land
+        return HttpResponseBadRequest()
+    slot = get_object_or_404(TimeSlotComment, pk=pk)
+    data = dict()
+    if request.method == "POST":
+        form = CommentTimeSlotModalForm(request.POST, instance=slot)
+
+        if form.is_valid():
+            form.save()
+            data["form_is_valid"] = True
+        else:
+            data["form_is_valid"] = False
+            data["form_errors"] = form.errors
+    else:
+        # Send the modal
+        form = CommentTimeSlotModalForm(instance=slot)
+
+    context = {"form": form}
+    data["html_form"] = loader.render_to_string(
+        "jobtracker/modals/job_slot_comment.html", context, request=request
+    )
+    return JsonResponse(data)
+
+
+@unit_permission_required_or_403("jobtracker.can_schedule_job")
 def change_scheduler_slot_date(request, pk=None):
+    """Changes the date of the specified timeslot. Used when we don't care what the type is.
+
+    Args:
+        request (Django request): Django request
+        pk (int, optional): PK of the TimeSlot. Not actually optional but made options so we can append the PK in JS client-side.
+
+    Returns:
+        _type_: JSONResponse
+    """
     if not pk:
         # We only do this because we want to generate the URL in JS land
         return HttpResponseBadRequest()
@@ -294,8 +389,17 @@ def change_scheduler_slot_date(request, pk=None):
     return JsonResponse(data)
 
 
-@unit_permission_required_or_403('jobtracker.can_schedule_job')
+@unit_permission_required_or_403("jobtracker.can_schedule_job")
 def change_scheduler_slot(request, pk=None):
+    """Changes a TimeSlot entry. Returns different forms based on the type of TimeSlot
+
+    Args:
+        request (_type_): _description_
+        pk (_type_, optional): PK of the TimeSlot. Optional to allow clientside construction
+
+    Returns:
+        JsonResponse: _description_
+    """
     if not pk:
         # We only do this because we want to generate the URL in JS land
         return HttpResponseBadRequest()
@@ -308,7 +412,7 @@ def change_scheduler_slot(request, pk=None):
             form = ProjectTimeSlotModalForm(request.POST, instance=slot)
         else:
             form = NonDeliveryTimeSlotModalForm(request.POST, instance=slot)
-            
+
         if form.is_valid():
             form.save()
             data["form_is_valid"] = True
@@ -331,8 +435,20 @@ def change_scheduler_slot(request, pk=None):
     return JsonResponse(data)
 
 
-@unit_permission_required_or_403('jobtracker.can_schedule_job')
+########
+## Timeslot Creation Methods
+
+
+@unit_permission_required_or_403("jobtracker.can_schedule_job")
 def create_scheduler_internal_slot(request):
+    """Creates an Internal type of TimeSlot
+
+    Args:
+        request (request): Django request
+
+    Returns:
+        JsonResponse: _description_
+    """
     data = dict()
     start = clean_datetime(request.GET.get("start", None))
     end = clean_datetime(request.GET.get("end", None))
@@ -358,8 +474,17 @@ def create_scheduler_internal_slot(request):
     )
     return JsonResponse(data)
 
-@unit_permission_required_or_403('jobtracker.can_schedule_job')
+
+@unit_permission_required_or_403("jobtracker.can_schedule_job")
 def create_scheduler_project_slot(request):
+    """Creates a Project type of TimeSlot
+
+    Args:
+        request (request): Django request
+
+    Returns:
+        JsonResponse: _description_
+    """
     data = dict()
     start = clean_datetime(request.GET.get("start", None))
     end = clean_datetime(request.GET.get("end", None))
@@ -379,13 +504,15 @@ def create_scheduler_project_slot(request):
     if request.method == "POST":
         force = request.POST.get("force", None)
         form = ProjectTimeSlotModalForm(
-            request.POST, start=start, end=end, user=user, project=project,
+            request.POST,
+            start=start,
+            end=end,
+            user=user,
+            project=project,
         )
         if form.is_valid():
             slot = form.save(commit=False)
             slots = slot.overlapping_slots()
-            from pprint import pprint
-            pprint(slots)
             if slots and not force:
                 # Overlapping slots!
                 data["form_is_valid"] = False
@@ -403,7 +530,10 @@ def create_scheduler_project_slot(request):
             data["form_is_valid"] = False
     else:
         form = ProjectTimeSlotModalForm(
-            start=start, end=end, user=user, project=project,
+            start=start,
+            end=end,
+            user=user,
+            project=project,
         )
 
     context = {"form": form}
@@ -413,8 +543,16 @@ def create_scheduler_project_slot(request):
     return JsonResponse(data)
 
 
-@unit_permission_required_or_403('jobtracker.can_schedule_job')
+@unit_permission_required_or_403("jobtracker.can_schedule_job")
 def create_scheduler_phase_slot(request):
+    """Creates a Phase type of TimeSlot
+
+    Args:
+        request (request): Django request
+
+    Returns:
+        JsonResponse: _description_
+    """
     data = dict()
     start = clean_datetime(request.GET.get("start", None))
     end = clean_datetime(request.GET.get("end", None))
@@ -472,8 +610,16 @@ def create_scheduler_phase_slot(request):
     return JsonResponse(data)
 
 
-@unit_permission_required_or_403('jobtracker.can_schedule_job')
+@unit_permission_required_or_403("jobtracker.can_schedule_job")
 def create_scheduler_comment(request):
+    """Creates a TimeSlotComment
+
+    Args:
+        request (request): Django request
+
+    Returns:
+        JsonResponse: _description_
+    """
     data = dict()
     start = clean_datetime(request.GET.get("start", None))
     end = clean_datetime(request.GET.get("end", None))
@@ -500,12 +646,25 @@ def create_scheduler_comment(request):
     return JsonResponse(data)
 
 
-@unit_permission_required_or_403('jobtracker.can_schedule_job')
+@unit_permission_required_or_403("jobtracker.can_schedule_job")
 def clear_scheduler_range(request):
+    """Clears the range specified in the schedule. Ignore's time and focuses on day only.
+
+    Args:
+        request (request): Django request
+
+    Returns:
+        JsonResponse: _description_
+    """
     data = dict()
     start = clean_datetime(request.GET.get("start", None))
     end = clean_datetime(request.GET.get("end", None))
-    resource_id = clean_int(request.GET.get("resource_id", None))    
+    resource_id = clean_int(request.GET.get("resource_id", None))
+    if start is None or end is None or resource_id is None:
+        return HttpResponseBadRequest()
+    start = datetime_startofday(start)
+    end = datetime_endofday(end)
+
     resource = get_object_or_404(User, pk=resource_id)
     timeslots = resource.get_timeslots_objs(start, end)
 
@@ -513,11 +672,9 @@ def clear_scheduler_range(request):
         if request.POST.get("user_action") == "approve_action":
             # Ok, user has confirmed. Lets do it!
             resource.clear_timeslots_in_range(start, end)
-            print("Cleared range")
             data["form_is_valid"] = True
         else:
             data["form_is_valid"] = False
-            
 
     context = {"start": start, "end": end, "resource": resource, "timeslots": timeslots}
     data["html_form"] = loader.render_to_string(
@@ -545,6 +702,15 @@ class JobSlotDeleteView(ChaoticaBaseView, DeleteView):
             context["job"] = get_object_or_404(Job, slug=self.kwargs["slug"])
         return context
 
+
+class SlotCommentDeleteView(ChaoticaBaseView, DeleteView):
+    """View to delete a slot"""
+
+    model = TimeSlotComment
+    template_name = "jobtracker/modals/job_slot_comment_delete.html"
+
+    def get_success_url(self):
+        return reverse_lazy("view_scheduler")
 
 
 class ProjectSlotDeleteView(ChaoticaBaseView, DeleteView):

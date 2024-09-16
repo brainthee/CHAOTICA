@@ -53,45 +53,16 @@ urlpatterns = [
         name="view_own_schedule_timeslots",
     ),
     path(
-        "schedule/holidays", views.view_schedule_holidays, name="view_schedule_holidays"
+        "schedule/holidays", views.view_own_schedule_holidays, name="view_own_schedule_holidays"
     ),
     path("scheduler/", views.view_scheduler, name="view_scheduler"),
     path(
         "scheduler/members", views.view_scheduler_members, name="view_scheduler_members"
     ),
     path(
-        "scheduler/timeslot/change/",
-        views.change_scheduler_slot,
-        name="change_scheduler_slot",
-    ),
-    path(
-        "scheduler/timeslot/change/<int:pk>",
-        views.change_scheduler_slot,
-        name="change_scheduler_slot",
-    ),
-    path(
-        "scheduler/timeslot/delete/<int:pk>",
-        views.JobSlotDeleteView.as_view(),
-        name="delete_scheduler_slot",
-    ),
-    path(
-        "scheduler/timeslot/change_date/",
-        views.change_scheduler_slot_date,
-        name="change_scheduler_slot_date",
-    ),
-    path(
-        "scheduler/timeslot/change_date/<int:pk>",
-        views.change_scheduler_slot_date,
-        name="change_scheduler_slot_date",
-    ),
-    path(
         "scheduler/timeslots", views.view_scheduler_slots, name="view_scheduler_slots"
     ),
-    path(
-        "scheduler/timeslots/comment/create",
-        views.create_scheduler_comment,
-        name="create_scheduler_comment",
-    ),
+    # Create paths
     path(
         "scheduler/timeslots/phase/create",
         views.create_scheduler_phase_slot,
@@ -107,6 +78,64 @@ urlpatterns = [
         views.create_scheduler_internal_slot,
         name="create_scheduler_internal_slot",
     ),
+    # change paths
+    path(
+        "scheduler/timeslot/change/",
+        views.change_scheduler_slot,
+        name="change_scheduler_slot",
+    ),
+    path(
+        "scheduler/timeslot/change/<int:pk>",
+        views.change_scheduler_slot,
+        name="change_scheduler_slot",
+    ),
+    path(
+        "scheduler/timeslot/change_date/",
+        views.change_scheduler_slot_date,
+        name="change_scheduler_slot_date",
+    ),
+    path(
+        "scheduler/timeslot/change_date/<int:pk>",
+        views.change_scheduler_slot_date,
+        name="change_scheduler_slot_date",
+    ),
+    path(
+        "scheduler/timeslot/delete/<int:pk>",
+        views.JobSlotDeleteView.as_view(),
+        name="delete_scheduler_slot",
+    ),
+    # Comment paths
+    path(
+        "scheduler/timeslots/comment/create",
+        views.create_scheduler_comment,
+        name="create_scheduler_comment",
+    ),
+    path(
+        "scheduler/timeslots/comment/change/",
+        views.change_scheduler_slot_comment,
+        name="change_scheduler_slot_comment",
+    ),
+    path(
+        "scheduler/timeslots/comment/change/<int:pk>",
+        views.change_scheduler_slot_comment,
+        name="change_scheduler_slot_comment",
+    ),
+    path(
+        "scheduler/timeslots/comment/change_date/",
+        views.change_scheduler_slot_comment_date,
+        name="change_scheduler_slot_comment_date",
+    ),
+    path(
+        "scheduler/timeslots/comment/change_date/<int:pk>",
+        views.change_scheduler_slot_comment_date,
+        name="change_scheduler_slot_comment_date",
+    ),
+    path(
+        "scheduler/timeslots/comment/delete/<int:pk>",
+        views.SlotCommentDeleteView.as_view(),
+        name="delete_scheduler_slot_comment",
+    ),
+    
     path(
         "scheduler/timeslots/clear_range",
         views.clear_scheduler_range,
