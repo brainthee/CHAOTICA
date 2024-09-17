@@ -1,8 +1,8 @@
 from datetime import date
 from django_cron import CronJobBase, Schedule
 from django.db.models import Q
-from .enums import PhaseStatuses
-from .models.phase import Phase
+from .enums import PhaseStatuses, JobStatuses
+from .models.phase import Phase, Job
 
 
 class task_progress_workflows(CronJobBase):
@@ -30,6 +30,12 @@ class task_progress_workflows(CronJobBase):
                 if phase.can_to_in_progress():
                     phase.to_in_progress()
                     phase.save()
+
+        # # Lets see if we can finish any jobs
+        for job in Job.objects.filter(status=JobStatuses.IN_PROGRESS).filter(phases__status__gte=PhaseStatuses.DELIVERED):
+            if job.can_to_complete():
+                job.to_complete()
+                job.save()
 
         # # Lets see if we can archive any?
         # for phase in Phase.objects.filter(
