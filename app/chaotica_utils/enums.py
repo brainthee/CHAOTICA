@@ -538,3 +538,8 @@ class LeaveRequestTypes:
         (MEDICAL, "Medical Appointment"),
         (SABBATICAL, "Sabbatical Leave"),
     )
+
+    # In time we'll refactor this to be better but for now...
+    COUNT_TOWARDS_LEAVE = [
+        ANNUAL_LEAVE,
+    ]
