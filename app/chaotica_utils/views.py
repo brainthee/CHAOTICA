@@ -266,7 +266,6 @@ def manage_leave(request):
 
 
 @login_required
-@permission_required_or_403("chaotica_utils.manage_leave")
 def manage_leave_auth_request(request, pk):
     leave = get_object_or_404(LeaveRequest, pk=pk)
     # First, check we're allowed to process this...
