@@ -238,7 +238,6 @@ def request_own_leave(request):
 
 @login_required
 @require_safe
-@permission_required_or_403("chaotica_utils.manage_leave")
 def manage_leave(request):
     context = {}
     from jobtracker.models.orgunit import OrganisationalUnit
