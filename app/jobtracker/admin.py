@@ -44,6 +44,7 @@ class PhasesInline(admin.StackedInline):
 class JobAdmin(admin.ModelAdmin):
     inlines = [PhasesInline]
     search_fields = ['id', 'title', "external_id"]
+    list_filter = ["status", ]
 
 
 admin.site.register(JobSupportTeamRole)
