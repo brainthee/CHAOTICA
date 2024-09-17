@@ -501,6 +501,7 @@ class User(AbstractUser):
         total = 0
         for leave in LeaveRequest.objects.filter(
             user=self,
+            type_of_leave__in=LeaveRequestTypes.COUNT_TOWARDS_LEAVE,
             cancelled=False,
             authorised=True,
             start_date__gte=self._get_last_leave_renewal_date(),
@@ -513,6 +514,7 @@ class User(AbstractUser):
         total = 0
         for leave in LeaveRequest.objects.filter(
             user=self,
+            type_of_leave__in=LeaveRequestTypes.COUNT_TOWARDS_LEAVE,
             cancelled=False,
             authorised=True,
             start_date__gte=self._get_last_leave_renewal_date(),
