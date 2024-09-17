@@ -296,8 +296,8 @@ class TimeSlot(models.Model):
         elif self.is_project():
             data["projectId"] = self.project.pk
             data["edit_url"] = reverse(
-                "change_job_schedule_slot",
-                kwargs={"slug": self.project.slug, "pk": self.pk},
+                "change_scheduler_slot",
+                kwargs={"pk": self.pk},
             )
         else:
             data["edit_url"] = reverse(
