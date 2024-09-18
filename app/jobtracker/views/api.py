@@ -21,6 +21,21 @@ class UserViewSet(viewsets.ModelViewSet):
             self.request.user, "chaotica_utils.view_user", klass=User
         )
         return queryset
+    
+class NoteViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint that allows users to be viewed or edited.
+    """
+    serializer_class = NoteSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    http_method_names = ['get', 'head']
+
+    def get_queryset(self):
+        if self.request.user.is_superuser:
+            queryset = Note.objects.all()
+        else:
+            queryset = Note.objects.none()
+        return queryset
 
 
 class OrganisationalUnitViewSet(viewsets.ModelViewSet):
