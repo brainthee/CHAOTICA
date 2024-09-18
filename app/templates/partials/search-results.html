@@ -148,6 +148,28 @@
       {% endfor %}  
     </div>
     {% endif %}
+    
+
+    {% if search_phases %}
+    <hr class="text-200 my-0" />
+    <h6 class="dropdown-header text-1000 fs--1 border-bottom border-200 py-2 lh-sm">Phases</h6>
+    <div class="py-2">
+      {% for phase in search_phases %}
+      <a class="dropdown-item py-2 d-flex align-items-center" href="{{ phase.get_absolute_url }}">
+        <div class="flex-1">
+          <h6 class="mb-0 text-1000 text-wrap title">{{ phase }}</h6>
+          <p class="fs--2 mb-0 d-flex text-700">
+            <span class="fw-medium text-600">{{ phase.client }}</span>
+          </p>
+        </div>
+        <div class="flex-1 text-end">
+          <span class="fw-medium text-600">{% include 'partials/phase/status_badge.html' %}</span>
+        </div>
+      </a>
+      {% endfor %}
+
+    </div>
+    {% endif %}
 
     {% if search_jobs %}
     <hr class="text-200 my-0" />
