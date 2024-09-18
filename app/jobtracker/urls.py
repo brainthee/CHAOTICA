@@ -10,6 +10,7 @@ router.register(
     r"orgunit", views.OrganisationalUnitViewSet, basename="organisationalunit"
 )
 router.register(r"client", views.ClientViewSet, basename="client")
+router.register(r"notes", views.NoteViewSet, basename="note")
 
 urlpatterns = [
     # Extra profile bits
