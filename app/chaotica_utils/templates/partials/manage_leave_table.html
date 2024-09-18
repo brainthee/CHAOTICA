@@ -1,0 +1,64 @@
+{% load leave_tags %}
+<div class="table-responsive scrollbar mx-n1 px-1">
+  <table class="table table-sm fs--1 datatable mb-0">
+    <caption>Leave List</caption>
+    <thead>
+      <tr>
+        <th class="sort align-middle ps-3" scope="col" style="width:10%;">Person</th>
+        <th class="sort align-middle ps-3" scope="col" style="width:10%;">Start</th>
+        <th class="sort align-middle ps-3" scope="col" style="width:10%;">End</th>
+        <th class="sort align-middle ps-3" scope="col" style="width:10%;">Type</th>
+        <th class="sort align-middle ps-3" scope="col" style="width:15%;">Notes</th>
+        <th class="sort align-middle ps-3" scope="col" style="width:12%;">Status</th>
+        <th class="sort align-middle text-end" scope="col" style="width:10%;"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for leave in leave_requests %}
+        <tr>
+          <td class="align-middle time ps-0 py-4">
+            {% include 'partials/users/user_table_display.html' with u=leave.user %}
+          </td>
+
+          <td class="align-middle time ps-0 py-4" data-sort="{{ leave.start_date|date:'Y-m-d' }}">{{ leave.start_date }}</td>
+
+          <td class="align-middle ps-3 py-4" data-sort="{{ leave.end_date|date:'Y-m-d' }}">{{ leave.end_date }}</td>
+
+          <td class="align-middle ps-3 py-4">{{ leave.get_type_of_leave_display }}</td>
+
+          <td class="align-middle ps-3 py-4">
+            <p class="mb-0 fs--1 text-900">{{ leave.notes }}</p>
+          </td>
+
+          <td class="align-middle ps-3 py-4">
+            {% if leave.cancelled %}
+              <span class="badge badge-phoenix badge-phoenix-secondary">Cancelled</span>
+            {% elif leave.declined %}
+              <span class="badge badge-phoenix badge-phoenix-danger">Declined</span>
+            {% elif leave.authorised %}
+              <span class="badge badge-phoenix badge-phoenix-success">Authorised</span>
+            {% else %}
+              <span class="badge badge-phoenix badge-phoenix-info">Pending</span>
+            {% endif %}
+
+            {% if leave.requested_late %}
+              <span class="badge badge-phoenix badge-phoenix-warning">Late</span>
+            {% endif %}
+            {% if leave.overlaps_work %}
+              <span class="badge badge-phoenix badge-phoenix-warning">Overlaps Scheduled Work</span>
+            {% endif %}
+          </td>
+
+          <td class="align-middle text-end pe-0">
+            <div class="font-sans-serif btn-reveal-trigger position-static">
+              {% can_auth leave request.user as can_auth_leave %}
+              {% if can_auth_leave %}
+                <button class="btn btn-sm btn-phoenix-primary js-load-modal-form" data-url="{% url 'manage_leave_auth_request' leave.pk %}" type="button">Manage</button>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
