@@ -1022,25 +1022,30 @@ class LeaveRequest(models.Model):
     def can_approve_by(self):
         # Update to reflect logic...
         user_pks = []
-        if self.user.manager:
+        if self.user.manager and self.user.manager.pk not in user_pks:
             user_pks.append(self.user.manager.pk)
-        if self.user.acting_manager:
+        if self.user.acting_manager and self.user.acting_manager.pk not in user_pks:
             user_pks.append(self.user.acting_manager.pk)
 
-        if not user_pks:
-            # No managers - lets default to unit managers...
-            for membership in self.user.unit_memberships.all():
-                user_pks.append(
-                    membership.unit.get_active_members_with_perm(
-                        "can_approve_leave_requests"
-                    ).values_list("pk", flat=True)
-                )
+        # No managers - lets default to unit managers...
+        for membership in self.user.unit_memberships.all():
+            for pk in membership.unit.get_active_members_with_perm(
+                    "can_approve_leave_requests"
+                ).values_list("pk", flat=True):
+                if pk not in user_pks:
+                    user_pks.append(pk)
         return User.objects.filter(pk__in=user_pks).distinct()
 
     def can_user_auth(self, user):
         if self.cancelled:
             return False
-        return user in self.can_approve_by()
+        if user is self.user.manager or user is self.user.acting_manager:
+            return True
+        for membership in self.user.unit_memberships.all():
+            # Check if user has permission in any of the units...
+            if user.has_perm("can_approve_leave_requests", membership.unit):
+                return True
+        return False
 
     EMAIL_TEMPLATE = "emails/leave.html"
 

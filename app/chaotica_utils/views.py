@@ -257,8 +257,11 @@ def manage_leave(request):
         | Q(user__acting_manager=request.user)  # where we're acting manager
         | Q(user=request.user)# and our own of course....
     )
+    pending_leave = leave_list.filter(authorised=False,cancelled=False,declined=False)
+    leave_list = leave_list.exclude(authorised=False,cancelled=False,declined=False)
     context = {
         "leave_list": leave_list,
+        "pending_leave": pending_leave,
     }
     template = loader.get_template("manage_leave.html")
     context = {**context, **page_defaults(request)}
