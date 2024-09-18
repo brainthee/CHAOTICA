@@ -33,9 +33,15 @@ class task_progress_workflows(CronJobBase):
 
         # # Lets see if we can finish any jobs
         for job in Job.objects.filter(status=JobStatuses.IN_PROGRESS).filter(phases__status__gte=PhaseStatuses.DELIVERED):
-            if job.can_to_complete():
-                job.to_complete()
-                job.save()
+            # Check there's no phases LTE DELIVERED
+            can_progress = True
+            for phase in job.phases.all():
+                if phase.status < PhaseStatuses.DELETED:
+                    can_progress = False
+            if can_progress:
+                if job.can_to_complete():
+                    job.to_complete()
+                    job.save()
 
         # # Lets see if we can archive any?
         # for phase in Phase.objects.filter(
