@@ -1039,7 +1039,7 @@ class LeaveRequest(models.Model):
     def can_user_auth(self, user):
         if self.cancelled:
             return False
-        if user is self.user.manager or user is self.user.acting_manager:
+        if user == self.user.manager or user == self.user.acting_manager:
             return True
         for membership in self.user.unit_memberships.all():
             # Check if user has permission in any of the units...
