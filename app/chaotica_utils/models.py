@@ -760,16 +760,18 @@ class User(AbstractUser):
         my_reports = self.phase_where_report_author.filter(
             actual_completed_date__gte=from_range, actual_completed_date__lte=to_range
         )
-        total_reports = my_reports.count()
+        total_reports = 0
         combined_score = 0
         total_score = 0
 
         for report in my_reports:
             # check we've got rating!
-            if getattr(report, qa_field):
+            rating = getattr(report, qa_field)
+            if rating:
                 combined_score = combined_score + (
-                    int(getattr(report, qa_field)) + 1
-                )  # add one to go from 0-4 to 1-5
+                    int(rating)
+                )
+                total_reports = total_reports + 1
 
         if total_reports > 0:
             total_score = combined_score / total_reports

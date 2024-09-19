@@ -1,26 +1,27 @@
-{% load humanize %}{% load static %}
+{% load humanize %}
+{% load static %}
 
 {% for feedback in feedbacks %}
-<div class="row g-3">
-   <div class="col">
+  <div class="row">
+    <div class="row">
       <div class="d-flex justify-content-between">
-         <div class="d-flex mb-2">
-            <h6 class="lh-sm mb-0 me-2 text-800 timeline-item-title">
-               {{ feedback.body }}
-            </h6>
-         </div>
-         <p class="text-500 fs--1 mb-0 text-nowrap timeline-time"
-            data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ feedback.create_date }}">
-            <span class="fa-regular fa-clock me-1"></span>{{ feedback.created_on|naturaltime }}
+        <div class="d-flex mb-2">
+          <h6 class="lh-sm mb-0 text-800 timeline-item-title">{{ feedback.body }}</h6>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col">
+         <h6 class="fs--2 fw-normal mb-3">by <a class="fw-semi-bold" href="{{ feedback.author.get_absolute_url }}">{{ feedback.author }}</a></h6>
+      </div>
+      
+      <div class="col text-end">
+         <p class="text-500 fs--1 mb-0 text-nowrap timeline-time" data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ feedback.create_date }}">
+           <span class="fa-regular fa-clock me-1"></span>{{ feedback.created_on|naturaltime }}
          </p>
       </div>
-      <h6 class="fs--2 fw-normal mb-3">
-         by <a class="fw-semi-bold" href="{{ feedback.author.get_absolute_url }}">{{ feedback.author }}</a>
-      </h6>
-   </div>
-</div>
+    </div>
+  </div>
 {% empty %}
-<h6 class="lh-sm mt-0 mb-0 me-2 text-800 timeline-item-title">
-   No comments
-</h6>
+  <h6 class="lh-sm mt-0 mb-0 me-2 text-800 timeline-item-title">No comments</h6>
 {% endfor %}
