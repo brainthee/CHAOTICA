@@ -9,6 +9,7 @@
         <th class="sort align-middle ps-3" scope="col" style="width:10%;">End</th>
         <th class="sort align-middle ps-3" scope="col" style="width:10%;">Type</th>
         <th class="sort align-middle ps-3" scope="col" style="width:15%;">Notes</th>
+        <th class="sort align-middle ps-3" scope="col" style="width:15%;">Manager</th>
         <th class="sort align-middle ps-3" scope="col" style="width:12%;">Status</th>
         <th class="sort align-middle text-end" scope="col" style="width:10%;"></th>
       </tr>
@@ -16,11 +17,11 @@
     <tbody>
       {% for leave in leave_requests %}
         <tr>
-          <td class="align-middle time ps-0 py-4">
+          <td class="align-middle ps-0 py-4">
             {% include 'partials/users/user_table_display.html' with u=leave.user %}
           </td>
 
-          <td class="align-middle time ps-0 py-4" data-sort="{{ leave.start_date|date:'Y-m-d' }}">{{ leave.start_date }}</td>
+          <td class="align-middle ps-0 py-4" data-sort="{{ leave.start_date|date:'Y-m-d' }}">{{ leave.start_date }}</td>
 
           <td class="align-middle ps-3 py-4" data-sort="{{ leave.end_date|date:'Y-m-d' }}">{{ leave.end_date }}</td>
 
@@ -28,6 +29,15 @@
 
           <td class="align-middle ps-3 py-4">
             <p class="mb-0 fs--1 text-900">{{ leave.notes }}</p>
+          </td>
+          <td class="align-middle ps-0 py-4">
+            {% if leave.user.manager %}
+            {% include 'partials/users/user_table_display.html' with u=leave.user.manager noorg=1 notitle=1 %}
+            {% endif %}
+            {% if leave.user.acting_manager %}
+            {% include 'partials/users/user_table_display.html' with u=leave.user.acting_manager noorg=1 notitle=1 %}
+            (Acting Manager)
+            {% endif %}
           </td>
 
           <td class="align-middle ps-3 py-4">
@@ -51,8 +61,10 @@
 
           <td class="align-middle text-end pe-0">
             <div class="font-sans-serif btn-reveal-trigger position-static">
-              {% can_auth leave request.user as can_auth_leave %}
-              {% if can_auth_leave %}
+              {% comment %} {% can_auth leave request.user as can_auth_leave %}
+              {% if can_auth_leave %} {% endcomment %}
+              {% comment %} Only show this if it's not for us... We can assume we can approve since we can view it... {% endcomment %}
+              {% if leave.user != request.user %}
                 <button class="btn btn-sm btn-phoenix-primary js-load-modal-form" data-url="{% url 'manage_leave_auth_request' leave.pk %}" type="button">Manage</button>
               {% endif %}
             </div>

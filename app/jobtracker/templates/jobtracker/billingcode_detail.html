@@ -144,7 +144,7 @@
 
             <div class="tab-content" id="myTabContent">
                 <div class="tab-pane fade active show" id="jobs" role="tabpanel" aria-labelledby="jobs-tab">
-                  {% include 'partials/job/job_list_table.html' with job_list=billingcode.jobs.all %}
+                  {% include 'partials/job/job_list_table.html' with job_list=billingcode.jobs.all disableAjax=1 only%}
                 </div>
             </div>        
         </div>

@@ -136,10 +136,10 @@
 
         <div class="tab-content" id="profileTabContent">
           <div class="tab-pane fade active show" id="tab-jobs" role="tabpanel" aria-labelledby="jobs-tab">
-            {% include 'partials/job/job_list_table.html' with job_list=user.get_jobs %}
+            {% include 'partials/job/job_list_table.html' with job_list=user.get_jobs disableAjax=1 only %}
           </div>
           <div class="tab-pane fade" id="tab-reports" role="tabpanel" aria-labelledby="reports-tab">
-            {% include 'partials/phase/phase_list_table.html' with phases=user.phase_where_report_author.all %}
+            {% include 'partials/phase/phase_list_table.html' with phases=user.phase_where_report_author.all  disableAjax=1 %}
           </div>
         </div>
       </div>
