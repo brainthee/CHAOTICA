@@ -30,7 +30,7 @@ class task_backup_site(CronJobBase):
 
     def do(self):
         if django_settings.DBBACKUP_ENABLED == "1" or django_settings.DBBACKUP_ENABLED:
-            management.call_command('dbbackup')
+            management.call_command('dbbackup', '-c')
 
 
 class task_update_holidays(CronJobBase):
