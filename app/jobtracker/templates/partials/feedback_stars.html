@@ -1,25 +1,25 @@
 {% load index %}
 
-<span class="rating text-end {% if feedback < 2 %}
+<span class="rating text-end {% if feedback < 1 %}
     text-danger
-  {% elif feedback < 3 %}
+  {% elif feedback < 2 %}
     text-warning
-  {% elif feedback < 4 %}
+  {% elif feedback < 3 %}
     text-primary
-  {% elif feedback >= 4 %}
+  {% elif feedback >= 3 %}
     text-success
   {% endif %}"
   data-bs-toggle="tooltip"
   data-bs-placement="bottom"
-  title="{% if feedback > 0 %}
-    {{ feedback }}
+  title="{% if feedback %}
+    {{ feedback|add:1 }} 
   {% else %}
     No Data
   {% endif %}">
-  {% get_range_from_one 5 as feedbackRange %}
+  {% get_range_from_zero 4 as feedbackRange %}
   {% for i in feedbackRange %}
     {% if feedback >= i %}
-      <span class="fa fa-xs fa-star {% if feedback == 5 %}pulse{% endif %}"></span>
+      <span class="fa fa-xs fa-star {% if feedback == 4 %}pulse{% endif %}"></span>
     {% else %}
       <span class="text-300 fa-xs fa-regular fa-star"></span>
     {% endif %}
