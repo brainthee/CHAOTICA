@@ -100,7 +100,7 @@ class SchedulerFilter(forms.Form):
     job = forms.ModelChoiceField(
         required=False,
         queryset=Job.objects.filter(),
-        widget=autocomplete.ModelSelect2(
+        widget=autocomplete.ModelSelect2Multiple(
             url="job-autocomplete",
             attrs={
                 "data-minimum-input-length": 3,
