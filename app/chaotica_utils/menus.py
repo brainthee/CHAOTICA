@@ -24,66 +24,74 @@ Menu.add_item(
     ),
 )
 
-admin_children = (
+# Admin menu
+Menu.add_item(
+    "admin",
     PermMenuItem(
         "Users",
         reverse("user_list"),
         icon="user-group",
         perm="chaotica_utils.manage_user",
         weight=10,
-    ),
+    )
+)
+Menu.add_item(
+    "admin",
     PermMenuItem(
         "Activity Log",
         reverse("view_activity"),
         icon="magnifying-glass",
         perm="chaotica_utils.view_activity_logs",
-        weight=10,
+        weight=70,
     ),
+)
+Menu.add_item(
+    "admin",
     MenuItem(
         "SQL Explorer",
         reverse("explorer_index"),
         icon="database",
         check=lambda request: request.user.is_superuser,
-        weight=10,
+        weight=70,
     ),
+)
+Menu.add_item(
+    "admin",
     PermMenuItem(
         "Run Background Tasks",
         reverse("run_tasks"),
         icon="list-check",
         perm="chaotica_utils.manage_site_settings",
-        weight=10,
+        weight=80,
     ),
+)
+Menu.add_item(
+    "admin",
     PermMenuItem(
         "Send Test Notification",
         reverse("test_notification"),
         icon="envelope-open-text",
         perm="chaotica_utils.manage_site_settings",
-        weight=10,
+        weight=80,
     ),
+)
+Menu.add_item(
+    "admin",
     PermMenuItem(
         "Settings",
         reverse("app_settings"),
         icon="sliders",
         perm="chaotica_utils.manage_site_settings",
-        weight=10,
+        weight=99,
     ),
+)
+Menu.add_item(
+    "admin",
     MenuItem(
         "Django Admin",
         reverse("admin:index"),
         icon="wrench",
         check=lambda request: request.user.is_superuser,
-        weight=10,
-    ),
-)
-
-Menu.add_item(
-    "main",
-    RoleMenuItem(
-        "Administration",
-        reverse("job_list"),
-        weight=20,
-        icon="toolbox",
-        children=admin_children,
-        requiredRole=GlobalRoles.ADMIN,
-    ),
+        weight=100,
+    )
 )

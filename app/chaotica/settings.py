@@ -112,6 +112,7 @@ CONSTANCE_CONFIG = {
     # Support
     "SUPPORT_DOC_URL": ("https://docs.chaotica.app/en/latest/", "URL to Documentation"),
     "SUPPORT_MAILBOX": ("https://github.com/brainthee/CHAOTICA/issues", "URL to request support"),
+    "SUPPORT_ISSUES": ("https://github.com/brainthee/CHAOTICA/issues", "URL to issues"),
     # Invite
     "INVITE_ENABLED": (True, "Should we allow inviting users?"),
     "USER_INVITE_EXPIRY": (7, "How long until invites expire"),
@@ -201,6 +202,9 @@ CONSTANCE_CONFIG = {
         "Colour to show comments",
         "colour_picker",
     ),
+    # ResourceManager Integration
+    "RM_SYNC_ENABLED": (False, "Should RM Synchronisation be enabled"),
+    "RM_SYNC_API_TOKEN": ("", "Developer API Token"),
     
 }
 
@@ -298,6 +302,7 @@ LOCAL_APPS = [
     "chaotica_utils",
     "jobtracker",
     "dashboard",
+    "rm_sync",
 ]
 
 INSTALLED_APPS = DEFAULT_APPS + THIRD_PARTY_APPS + LOCAL_APPS

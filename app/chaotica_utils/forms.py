@@ -91,6 +91,10 @@ class CustomConfigForm(ConstanceForm):
                         Field("SUPPORT_MAILBOX"),
                         css_class="input-group input-group-dynamic",
                     ),
+                    Div(
+                        Field("SUPPORT_ISSUES"),
+                        css_class="input-group input-group-dynamic",
+                    ),
                 ),
                 Column(
                     HTML('<h4 class="mb-4">Theme Settings</h4>'),
@@ -189,6 +193,19 @@ class CustomConfigForm(ConstanceForm):
                         Field("SCHEDULE_COLOR_COMMENT"),
                         css_class="input-group input-group-dynamic",
                     ),
+                ),
+            ),
+            Row(
+                Column(
+                    HTML('<h4 class="mb-4">Resource Manager Settings</h4>'),
+                    Div(
+                        Field("RM_SYNC_ENABLED"),
+                        css_class="input-group input-group-dynamic",
+                    ),
+                    Div(
+                        Field("RM_SYNC_API_TOKEN"),
+                        css_class="input-group input-group-dynamic",
+                    ),              
                 ),
             ),
         )
