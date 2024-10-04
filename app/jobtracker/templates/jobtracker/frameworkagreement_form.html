@@ -8,9 +8,9 @@
 
 
 {% block breadcrumbItem %}
-<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{% url 'client_list' %}">Clients</a></li>
-<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{{ client.get_absolute_url }}">{{ client }}</a></li>
-<li class="breadcrumb-item text-sm text-dark active" aria-current="page">New Client Framework Agreement</li>
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-body-emphasis" href="{% url 'client_list' %}">Clients</a></li>
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-body-emphasis" href="{{ client.get_absolute_url }}">{{ client }}</a></li>
+<li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">New Client Framework Agreement</li>
 {% endblock breadcrumbItem %}
 
 {% block content %}

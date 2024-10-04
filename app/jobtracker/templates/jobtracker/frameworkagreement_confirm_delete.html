@@ -8,11 +8,11 @@
 
 
 {% block breadcrumbItem %}
-<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{% url 'client_list' %}">Clients</a></li>
-<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{{ frameworkagreement.client.get_absolute_url }}">{{ client }}</a></li>
-<li class="breadcrumb-item text-sm opacity-50 text-dark" aria-current="page">Framework Agreements</li>
-<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{{ frameworkagreement.get_absolute_url }}">{{ client }}</a></li>
-<li class="breadcrumb-item text-sm text-dark active" aria-current="page">Confirm Delete</li>
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-body-emphasis" href="{% url 'client_list' %}">Clients</a></li>
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-body-emphasis" href="{{ frameworkagreement.client.get_absolute_url }}">{{ client }}</a></li>
+<li class="breadcrumb-item text-sm opacity-50 text-body-emphasis" aria-current="page">Framework Agreements</li>
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-body-emphasis" href="{{ frameworkagreement.get_absolute_url }}">{{ client }}</a></li>
+<li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">Confirm Delete</li>
 {% endblock breadcrumbItem %}
 
 {% block content %}

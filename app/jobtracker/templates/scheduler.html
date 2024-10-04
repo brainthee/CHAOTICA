@@ -36,7 +36,7 @@ time they visit a normal page, it'll be full of messages! {% endcomment %}
 {% endblock alerts %}
 
 {% block content %}
-  <div class="calendar bg-white w-100 {% if config.SITE_NOTICE_ENABLED %}pt-5{% endif %}" data-bs-toggle="calendar" id="calendar"></div>
+  <div class="calendar bg-body-emphasis w-100 {% if config.SITE_NOTICE_ENABLED %}pt-5{% endif %}" data-bs-toggle="calendar" id="calendar"></div>
 {% include 'partials/loading.html' %}
 {% endblock %}
 

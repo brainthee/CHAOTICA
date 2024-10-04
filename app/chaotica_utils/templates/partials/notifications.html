@@ -3,7 +3,7 @@
 <div class="card position-relative border-0">
   <div class="card-header p-2">
     <div class="d-flex justify-content-between">
-      <h5 class="text-black mb-0">Notificatons</h5>
+      <h5 class="text-body-emphasis mb-0">Notificatons</h5>
       <button class="btn btn-link p-0 fs-9 fw-normal notification_read" data-url="{% url 'notifications_mark_read' %}" type="button">Mark all as read</button>
     </div>
   </div>
@@ -17,7 +17,7 @@
             <div class="d-flex align-items-center justify-content-between position-relative">
               <div class="d-flex">              
                 <div class="flex-1 me-sm-3">
-                  <h4 class="fs-9 text-black">
+                  <h4 class="fs-9 text-body-emphasis">
                     {{ notification.title }}
                   </h4>
                   {% comment %} <p class="fs-9 text-1000 mb-2 mb-sm-3 fw-normal text-wrap">
@@ -46,7 +46,7 @@
           <div class="d-flex align-items-center justify-content-between position-relative">
             <div class="d-flex">
               <div class="flex-1 me-sm-3">
-                <h4 class="fs-9 text-black">
+                <h4 class="fs-9 text-body-emphasis">
                   No new notifications
                 </h4>
               </div>

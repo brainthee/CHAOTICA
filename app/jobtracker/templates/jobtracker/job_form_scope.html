@@ -8,10 +8,10 @@
 
 
 {% block breadcrumbItem %}
-<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{% url 'job_list' %}">Jobs</a></li>
-<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{{ job.client.get_absolute_url }}">{{ job.client }}</a></li>
-<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{{ job.get_absolute_url }}">{{ job.title }}</a></li>
-<li class="breadcrumb-item text-sm text-dark active" aria-current="page">Scope</li>
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-body-emphasis" href="{% url 'job_list' %}">Jobs</a></li>
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-body-emphasis" href="{{ job.client.get_absolute_url }}">{{ job.client }}</a></li>
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-body-emphasis" href="{{ job.get_absolute_url }}">{{ job.title }}</a></li>
+<li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">Scope</li>
 {% endblock breadcrumbItem %}
 
 {% block content %}

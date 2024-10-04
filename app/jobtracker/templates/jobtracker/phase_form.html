@@ -8,16 +8,16 @@
 
 
 {% block breadcrumbItem %}
-<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{% url 'job_list' %}">Jobs</a></li>
-<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{{ job.client.get_absolute_url }}">{{ job.client }}</a></li>
-<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{{ job.get_absolute_url }}">{{ job.id }}:{{ job.title }}</a></li>
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-body-emphasis" href="{% url 'job_list' %}">Jobs</a></li>
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-body-emphasis" href="{{ job.client.get_absolute_url }}">{{ job.client }}</a></li>
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-body-emphasis" href="{{ job.get_absolute_url }}">{{ job.id }}:{{ job.title }}</a></li>
 {% if form.instance.pk %}
 <li class="breadcrumb-item text-sm" aria-current="page">
-    <a class="opacity-50 text-dark" href="{{ phase.get_absolute_url }}">{{ phase.phase_number }}:{{ phase.title }}</a>
+    <a class="opacity-50 text-body-emphasis" href="{{ phase.get_absolute_url }}">{{ phase.phase_number }}:{{ phase.title }}</a>
 </li>
-<li class="breadcrumb-item text-sm text-dark active" aria-current="page">Edit</li>
+<li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">Edit</li>
 {% else %}
-<li class="breadcrumb-item text-sm text-dark active" aria-current="page">New</li>
+<li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">New</li>
 {% endif %}
 {% endblock breadcrumbItem %}
 

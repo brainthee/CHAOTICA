@@ -6,8 +6,8 @@
 
 
 {% block breadcrumbItem %}
-<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{% url 'service_list' %}">Services</a></li>
-<li class="breadcrumb-item text-sm text-dark active" aria-current="page">{{ service.name }}</li>
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-body-emphasis" href="{% url 'service_list' %}">Services</a></li>
+<li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">{{ service.name }}</li>
 {% endblock breadcrumbItem %}
 
 {% block content_classes %}pt-15 px-0 {% endblock content_classes %}

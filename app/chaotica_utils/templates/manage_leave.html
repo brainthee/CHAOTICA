@@ -26,13 +26,13 @@
   </div>
 
   {% if pending_leave %}
-  <div class="mx-n4 mb-3 px-3 py-3 mx-lg-n6 px-lg-6 bg-white border-top border-bottom border-200 position-relative top-1">
+  <div class="mx-n4 mb-3 px-3 py-3 mx-lg-n6 px-lg-6 bg-body-emphasis border-top border-bottom border-200 position-relative top-1">
     <h3>Pending Requests</h3>
     {% include 'partials/manage_leave_table.html' with leave_requests=pending_leave %}
   </div>
   {% endif %}
 
-  <div class="mx-n4 px-3 py-3 mx-lg-n6 px-lg-6 bg-white border-top border-bottom border-200 position-relative top-1">
+  <div class="mx-n4 px-3 py-3 mx-lg-n6 px-lg-6 bg-body-emphasis border-top border-bottom border-200 position-relative top-1">
     <h3>All Requests</h3>
     {% include 'partials/manage_leave_table.html' with leave_requests=leave_list %}
   </div>

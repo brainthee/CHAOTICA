@@ -8,8 +8,8 @@
 
 
 {% block breadcrumbItem %}
-<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{% url 'project_list' %}">Projects</a></li>
-<li class="breadcrumb-item text-sm text-dark active" aria-current="page">
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-body-emphasis" href="{% url 'project_list' %}">Projects</a></li>
+<li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">
   {% if form.instance.pk %}
   Edit Project
   {% else %}

@@ -118,7 +118,7 @@
       <div class="tab-pane fade h-100" id="jobTabContent" role="tabpanel" aria-labelledby="jobTab">
         <h2 class="ps-3 mb-2 lh-sm">My Jobs</h2>
         <div class="card card-calendar">
-          <div class="p-3 bg-white border-top border-bottom border-200">
+          <div class="p-3 bg-body-emphasis border-top border-bottom border-200">
           {% include 'partials/job/job_list_table.html' with job_list=myJobs disableAjax=1 only %}
           </div>
         </div>
@@ -127,7 +127,7 @@
       <div class="tab-pane fade h-100" id="phasesTabContent" role="tabpanel" aria-labelledby="phasesTab">
         <h2 class="ps-3 mb-2 lh-sm">My Phases</h2>   
         <div class="card card-calendar">
-          <div class="p-3 bg-white border-top border-bottom border-200">
+          <div class="p-3 bg-body-emphasis border-top border-bottom border-200">
           {% include 'partials/phase/phase_list_table.html' with phases=myPhases disableAjax=1 only %}
           </div>
         </div>
@@ -137,7 +137,7 @@
       <div class="tab-pane fade h-100" id="pendingScopeTabContent" role="tabpanel" aria-labelledby="pendingScopeTab">
         <h2 class="ps-3 mb-2 lh-sm">Jobs Pending Scoping</h2>    
         <div class="card card-calendar">
-          <div class="p-3 bg-white border-top border-bottom border-200">
+          <div class="p-3 bg-body-emphasis border-top border-bottom border-200">
           {% include 'partials/job/job_list_table.html' with job_list=pendingScoping disableAjax=1 only %}
           </div>
         </div>
@@ -148,7 +148,7 @@
       <div class="tab-pane fade h-100" id="pendingSignoffTabContent" role="tabpanel" aria-labelledby="pendingSignoffTab"> 
         <h2 class="ps-3 mb-2 lh-sm">Jobs Pending Signoff</h2>      
         <div class="card card-calendar">
-          <div class="p-3 bg-white border-top border-bottom border-200">
+          <div class="p-3 bg-body-emphasis border-top border-bottom border-200">
           {% include 'partials/job/job_list_table.html' with job_list=scopesToSignoff disableAjax=1 only %}
           </div>
         </div>
@@ -159,7 +159,7 @@
       <div class="tab-pane fade h-100" id="pendingTQATabContent" role="tabpanel" aria-labelledby="pendingTQATab">
         <h2 class="ps-3 mb-2 lh-sm">Jobs Pending TQA</h2>         
         <div class="card card-calendar">
-          <div class="p-3 bg-white border-top border-bottom border-200">
+          <div class="p-3 bg-body-emphasis border-top border-bottom border-200">
             {% include 'partials/phase/phase_list_table.html' with phases=pendingTQA disableAjax=1 only %}
           </div>
         </div>
@@ -170,7 +170,7 @@
       <div class="tab-pane fade h-100" id="pendingPQATabContent" role="tabpanel" aria-labelledby="pendingPQATab">
         <h2 class="ps-3 mb-2 lh-sm">Jobs Pending PQA</h2>        
         <div class="card card-calendar">
-          <div class="p-3 bg-white border-top border-bottom border-200">
+          <div class="p-3 bg-body-emphasis border-top border-bottom border-200">
             {% include 'partials/phase/phase_list_table.html' with phases=pendingPQA disableAjax=1 only %}
           </div>
         </div>
