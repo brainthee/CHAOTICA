@@ -25,7 +25,7 @@
     phoenixTheme: '{% if request.user.is_authenticated %}{{ request.user.site_theme }}{% else %}auto{% endif %}',
     phoenixNavbarTopStyle: 'default',
     phoenixNavbarVerticalStyle: 'default',
-    phoenixNavbarPosition: 'vertical',
+    phoenixNavbarPosition: 'dual',
     phoenixNavbarTopShape: 'default',
     phoenixIsRTL: false,
     phoenixSupportChat: true
@@ -94,13 +94,13 @@
     );
   }
 
-  if (localStorage.getItem('phoenixNavbarPosition') === 'horizontal') {
+  {% comment %} if (localStorage.getItem('phoenixNavbarPosition') === 'horizontal') {
     document.documentElement.setAttribute('data-navigation-type', 'horizontal');
   }
 
   if (localStorage.getItem('phoenixNavbarPosition') === 'combo') {
     document.documentElement.setAttribute('data-navigation-type', 'combo');
-  }
+  } {% endcomment %}
 
   var config = {
     config: CONFIG,

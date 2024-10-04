@@ -1,0 +1,14 @@
+{% if user.is_impersonate %}
+  <div class="alert m-0 py-2 alert-warning rounded-0 text-white" role="alert">
+    <div class="row">
+      <div class="col-auto text-start me-md-auto">Viewing as user "{{ request.user }}"</div>
+      <div class="col-auto text-end">
+        <a href="{% url 'impersonate-stop' %}" class="alert-link text-white">Stop Impersonation</a>
+      </div>
+    </div>
+  </div>
+{% endif %}
+
+{% if config.SITE_NOTICE_ENABLED %}
+  <div class="alert alert-{{ config.SITE_NOTICE_COLOUR }} text-white pt-2 pb-2 rounded-0 m-0" role="alert">{{ config.SITE_NOTICE_MSG }}</div>
+{% endif %}

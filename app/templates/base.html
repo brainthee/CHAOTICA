@@ -8,16 +8,9 @@
 
   <head>
     {% block head_meta %}
-      {% block head_meta_charset %}
       <meta charset="utf-8">
-      {% endblock head_meta_charset %}
-      {% block head_meta_contentlanguage %}
       <meta http-equiv="X-UA-Compatible" content="IE=edge">
-      {% endblock head_meta_contentlanguage %}
-      {% block head_meta_viewport %}
       <meta name="viewport" content="width=device-width, initial-scale=1">
-      {% endblock head_meta_viewport %}
-
     {% endblock head_meta %}
 
 
@@ -38,9 +31,6 @@
     <link rel="manifest" href="{% static "assets/img/favicons/manifest.json" %}">
     <meta name="msapplication-TileImage" content="{% static "assets/img/favicons/mstile-150x150.png" %}">
     <meta name="theme-color" content="#ffffff">
-    <script>
-      document.documentElement.classList.add('dual-nav');
-    </script>
 
     <!-- Font Awesome Icons -->
     <script src="https://kit.fontawesome.com/795119481a.js" crossorigin="anonymous"></script>

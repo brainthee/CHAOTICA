@@ -1,26 +1,9 @@
 {% load static %}
 {% load role_tags %}
 
-<nav class="navbar navbar-top fixed-top navbar-expand-lg" id="dualNav">
+<nav class="navbar navbar-top fixed-top navbar-expand-xl" id="dualNav">
   <div class="w-100">
-    {% if user.is_impersonate %}
-      <div class="alert m-0 py-2 alert-warning rounded-0 text-white" role="alert">
-        <div class="row">
-          <div class="col-auto text-start me-md-auto">
-            Viewing as user "{{ request.user }}"
-          </div>
-          <div class="col-auto text-end">
-            <a href="{% url 'impersonate-stop' %}" class="alert-link text-white">Stop Impersonation</a>
-          </div>
-        </div>
-      </div>
-      {% endif %}
-          
-      {% if config.SITE_NOTICE_ENABLED %}
-      <div class="alert alert-{{ config.SITE_NOTICE_COLOUR }} text-white pt-2 pb-2 rounded-0 m-0" role="alert">
-        {{ config.SITE_NOTICE_MSG }}
-      </div>
-      {% endif %}
+    {% include 'partials/page_alerts.html' %}
     
     <div class="d-flex flex-between-center dual-nav-first-layer">
 
@@ -53,7 +36,7 @@
 
         <li class="nav-item">
           <div class="dropdown theme-control-dropdown" data-bs-tooltip="tooltip" data-bs-placement="left" title="Switch theme">
-            <button class="btn btn-sm btn-phoenix-secondary dropdown-toggle dropdown-caret-none" type="button" id="themeSwitchDropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <button class="btn btn-sm dropdown-toggle dropdown-caret-none" type="button" id="themeSwitchDropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
               <span class="fas fa-sun {% if request.user.site_theme != 'light' %}d-none{% endif %}" data-theme-dropdown-toggle-icon="light"></span>
               <span class="fas fa-moon {% if request.user.site_theme != 'dark' %}d-none{% endif %}" data-theme-dropdown-toggle-icon="dark"></span>
               <span class="fas fa-adjust {% if request.user.site_theme != 'auto' %}d-none{% endif %}" data-theme-dropdown-toggle-icon="auto"></span>
