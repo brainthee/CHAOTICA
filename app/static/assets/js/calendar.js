@@ -30,6 +30,7 @@
     const options = merge(
       {
         initialView: 'dayGridMonth',
+        weekNumberCalculation: 'ISO',
         editable: true,
         direction: document.querySelector('html').getAttribute('dir'),
         headerToolbar: {
@@ -156,7 +157,7 @@
       description:
         'Sample example of a event with url. Click the event, will redirect to the given link.',
       className: 'text-success',
-      url: 'https://google.com'
+      url: 'http://google.com'
     },
     {
       title: 'Competition',
@@ -173,7 +174,7 @@
     },
     {
       title: 'Click for Google',
-      url: 'https://google.com/',
+      url: 'http://google.com/',
       start: `${currentYear}-${prevMonth}-10`,
       description:
         'Applications are open for the New Media Writing Prize 2020. The New Media Writing Prize (NMWP) showcases exciting and inventive stories and poetry that integrate a variety of formats, platforms, and digital media.',
@@ -182,29 +183,29 @@
   ];
 
   const getTemplate = event => `
-<div class="modal-header ps-card border-bottom">
+<div class="modal-header ps-card border-bottom border-translucent justify-content-between">
   <div>
-    <h4 class="modal-title text-1000 mb-0">${event.title}</h4>
+    <h4 class="modal-title text-body-highlight mb-0">${event.title}</h4>
     ${
       event.extendedProps.organizer
-        ? `<p class="mb-0 fs--1 mt-1">
+        ? `<p class="mb-0 fs-9 mt-1">
         by <a href="#!">${event.extendedProps.organizer}</a>
       </p>`
         : ''
     }
   </div>
   <button type="button" class="btn p-1 fw-bolder" data-bs-dismiss="modal" aria-label="Close">
-    <span class='fas fa-times fs-0'></span>
+    <span class='fas fa-times fs-8'></span>
   </button>
 
 </div>
 
-<div class="modal-body px-card pb-card pt-1 fs--1">
+<div class="modal-body px-card pb-card pt-1 fs-9">
   ${
     event.extendedProps.description
       ? `
-      <div class="mt-3 border-bottom pb-3">
-        <h5 class='mb-0 text-800'>Description</h5>
+      <div class="mt-3 border-bottom pb-3 border-translucent">
+        <h5 class='mb-0 text-body-secondary'>Description</h5>
         <p class="mb-0 mt-2">
           ${event.extendedProps.description.split(' ').slice(0, 30).join(' ')}
         </p>
@@ -212,8 +213,10 @@
     `
       : ''
   } 
-  <div class="mt-4 ${event.extendedProps.location ? 'border-bottom pb-3' : ''}">
-    <h5 class='mb-0 text-800'>Date and Time</h5>
+  <div class="mt-4 ${
+    event.extendedProps.location ? 'border-bottom pb-3 border-translucent' : ''
+  }">
+    <h5 class='mb-0 text-body-secondary'>Date and Time</h5>
     <p class="mb-1 mt-2">
     ${
       window.dayjs &&
@@ -237,7 +240,7 @@
     event.extendedProps.location
       ? `
         <div class="mt-4 ">
-          <h5 class='mb-0 text-800'>Location</h5>
+          <h5 class='mb-0 text-body-secondary'>Location</h5>
           <p class="mb-0 mt-2">${event.extendedProps.location}</p>
         </div>
       `
@@ -247,7 +250,7 @@
     event.schedules
       ? `
       <div class="mt-3">
-        <h5 class='mb-0 text-800'>Schedule</h5>
+        <h5 class='mb-0 text-body-secondary'>Schedule</h5>
         <ul class="list-unstyled timeline mt-2 mb-0">
           ${event.schedules
             .map(schedule => `<li>${schedule.title}</li>`)
@@ -262,14 +265,14 @@
 
 <div class="modal-footer d-flex justify-content-end px-card pt-0 border-top-0">
   <a href="#!" class="btn btn-phoenix-secondary btn-sm">
-    <span class="fas fa-pencil-alt fs--2 mr-2"></span> Edit
+    <span class="fas fa-pencil-alt fs-10 mr-2"></span> Edit
   </a>
   <button class="btn btn-phoenix-danger btn-sm" data-calendar-event-remove >
-    <span class="fa-solid fa-trash fs--1 mr-2" data-fa-transform="shrink-2"></span> Delete
+    <span class="fa-solid fa-trash fs-9 mr-2" data-fa-transform="shrink-2"></span> Delete
   </button>
   <a href='#!' class="btn btn-primary btn-sm">
     See more details
-    <span class="fas fa-angle-right fs--2 ml-1"></span>
+    <span class="fas fa-angle-right fs-10 ml-1"></span>
   </a>
 </div>
 `;
@@ -356,6 +359,7 @@
         const endingMonth = weekEndDate.toLocaleString('en-US', {
           month: 'short'
         });
+        console.log(weekEndDate);
         const endingDate = weekEndDate.getDate();
 
         document.querySelector(
@@ -408,7 +412,9 @@
           const modal = new window.bootstrap.Modal(addEventModal);
           modal.show();
           /* eslint-disable-next-line */
-          const flatpickr = document.querySelector(Selectors.EVENT_START_DATE)._flatpickr;
+          const flatpickr = document.querySelector(
+            Selectors.EVENT_START_DATE
+          )._flatpickr;
           flatpickr.setDate([info.dateStr]);
         }
       });

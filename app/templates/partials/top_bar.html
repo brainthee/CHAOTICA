@@ -1,7 +1,7 @@
 {% load static %}
 {% load role_tags %}
 
-<nav class="navbar navbar-top fixed-top navbar-expand-lg" aria-labelledby="navbartop" id="dualNav" style="display:none;">
+<nav class="navbar navbar-top fixed-top navbar-expand-lg" id="dualNav">
   <div class="w-100">
     {% if user.is_impersonate %}
       <div class="alert m-0 py-2 alert-warning rounded-0 text-white" role="alert">
@@ -67,7 +67,7 @@
           <a class="nav-link" id="navbarDropdownNindeDots" href="#" 
           role="button" data-bs-toggle="dropdown" aria-haspopup="true" 
           data-bs-auto-close="outside" aria-expanded="true">
-            <span class="fas fa-headset fs-0 me-2 "></span>
+            <span class="fas fa-headset fs-8 me-2 "></span>
           </a>
           <div class="dropdown-menu dropdown-menu-end navbar-dropdown-caret py-0 dropdown-nine-dots shadow border" 
           aria-labelledby="navbarDropdownNindeDots" data-bs-popper="static">
@@ -77,19 +77,19 @@
                 <ul class="nav d-flex flex-column mb-2 pb-1">
                   <li class="nav-item">
                     <a class="nav-link px-3" href="{{ config.SUPPORT_DOC_URL }}">
-                      <span class="fas fa-book fs-0 me-2 "></span>
+                      <span class="fas fa-book fs-8 me-2 "></span>
                       <span>Documentation</span>
                     </a>
                   </li>
                   <li class="nav-item">
                     <a class="nav-link px-3" href="{{ config.SUPPORT_MAILBOX }}">
-                      <span class="fas fa-envelope fs-0 me-2 "></span>
+                      <span class="fas fa-envelope fs-8 me-2 "></span>
                       <span>Support</span>
                     </a>
                   </li>
                   <li class="nav-item">
                     <a class="nav-link px-3" href="{{ config.SUPPORT_ISSUES }}">
-                      <span class="fas fa-envelope fs-0 me-2 "></span>
+                      <span class="fas fa-envelope fs-8 me-2 "></span>
                       <span>Issues</span>
                     </a>
                   </li>
@@ -102,7 +102,7 @@
 
         <li class="nav-item dropdown">
           <a class="nav-link" id="navbarDropdownNindeDots" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" data-bs-auto-close="outside" aria-expanded="true">
-            <span class="fas fa-plus fs-0 me-2 "></span>
+            <span class="fas fa-plus fs-8 me-2 "></span>
           </a>
           <div class="dropdown-menu dropdown-menu-end navbar-dropdown-caret py-0 dropdown-nine-dots shadow border" aria-labelledby="navbarDropdownNindeDots" data-bs-popper="static">
             <div class="card bg-body-emphasis position-relative border-0">
@@ -114,7 +114,7 @@
                     <li class="nav-item">
                       <a class="nav-link px-3" href="{{ item.url }}">
                         {% if item.icon %}
-                        <span class="{% if item.icon_prefix %}{{ item.icon_prefix }}{% else %}fas fa-{% endif %}{{ item.icon }} fs-0 me-2 "></span>
+                        <span class="{% if item.icon_prefix %}{{ item.icon_prefix }}{% else %}fas fa-{% endif %}{{ item.icon }} fs-8 me-2 "></span>
                         {% endif %}
                         <span>{{ item.title }}</span>
                       </a>
@@ -153,7 +153,7 @@
               <div class="card-body p-0 border-bottom">
                 <div class="text-center pt-2 pb-2">
                   <h6 class="mt-2 text-black">{{ request.user }}</h6>
-                  <p class="text-600 fw-semi-bold fs--2 mb-2">{{ user.job_title }}</p>
+                  <p class="text-600 fw-semi-bold fs-10 mb-2">{{ user.job_title }}</p>
                 </div>
               </div>
               <div class="overflow-auto scrollbar" style="height: 10rem;">
@@ -163,7 +163,7 @@
                   <li class="nav-item">
                     <a class="nav-link px-3" href="{{ item.url }}">
                       {% if item.icon %}
-                      <span class="{% if item.icon_prefix %}{{ item.icon_prefix }}{% else %}fas fa-{% endif %}{{ item.icon }} fs-0 me-2 "></span>
+                      <span class="{% if item.icon_prefix %}{{ item.icon_prefix }}{% else %}fas fa-{% endif %}{{ item.icon }} fs-8 me-2 "></span>
                       {% endif %}
                       <span>{{ item.title }}</span>
                     </a>
@@ -182,7 +182,7 @@
                     </button>
                   </form>
                 </div>
-                <div class="my-2 text-center fw-bold fs--2 text-600">
+                <div class="my-2 text-center fw-bold fs-10 text-600">
                   <a class="text-600 me-1" href="#!">Privacy policy</a> &bull;
                   <a class="text-600 mx-1" href="#!">Terms</a>&bull; 
                   <a class="text-600 ms-1" href="#!">Cookies</a>
@@ -203,7 +203,7 @@
           {% else %}
             <li class="nav-item dropdown">
               <a class="nav-link {% if item.selected %}active{% endif %} {% if item.children %}dropdown-toggle{% endif %} lh-1" href="{{ item.url }}" role="button" {% if item.children %}data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-haspopup="true" aria-expanded="false"{% endif %}>
-                {% if item.icon %}<span class="{% if item.icon_prefix %}{{ item.icon_prefix }}{% else %}fas fa-{% endif %}{{ item.icon }} fs-0 me-2 "></span>{% endif %}
+                {% if item.icon %}<span class="{% if item.icon_prefix %}{{ item.icon_prefix }}{% else %}fas fa-{% endif %}{{ item.icon }} fs-8 me-2 "></span>{% endif %}
                 {{ item.title }}
               </a>
               {% if item.children %}
@@ -213,7 +213,7 @@
                     <a class="dropdown-item {% if childItem.selected %}active{% endif %}" href="{{ childItem.url }}">
                       <div class="dropdown-item-wrapper">
                         {% if childItem.icon %}
-                        <span class="{% if childItem.icon_prefix %}{{ childItem.icon_prefix }}{% else %}fas fa-{% endif %}{{ childItem.icon }} fs-0 me-2 "></span>
+                        <span class="{% if childItem.icon_prefix %}{{ childItem.icon_prefix }}{% else %}fas fa-{% endif %}{{ childItem.icon }} fs-8 me-2 "></span>
                         {% endif %}
                         {{ childItem.title }}
                       </div>
@@ -230,7 +230,7 @@
         {% if has_admin_role %}
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle lh-1" href="#" role="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-haspopup="true" aria-expanded="false">
-              <span class="fas fa-toolbox fs-0 me-2 "></span>
+              <span class="fas fa-toolbox fs-8 me-2 "></span>
               Administration
             </a>
               <ul class="dropdown-menu navbar-dropdown-caret">
@@ -239,7 +239,7 @@
                   <a class="dropdown-item {% if childItem.selected %}active{% endif %}" href="{{ childItem.url }}">
                     <div class="dropdown-item-wrapper">
                       {% if childItem.icon %}
-                      <span class="{% if childItem.icon_prefix %}{{ childItem.icon_prefix }}{% else %}fas fa-{% endif %}{{ childItem.icon }} fs-0 me-2 "></span>
+                      <span class="{% if childItem.icon_prefix %}{{ childItem.icon_prefix }}{% else %}fas fa-{% endif %}{{ childItem.icon }} fs-8 me-2 "></span>
                       {% endif %}
                       {{ childItem.title }}
                     </div>

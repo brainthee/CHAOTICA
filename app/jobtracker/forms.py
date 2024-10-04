@@ -228,7 +228,7 @@ class AssignJobFramework(forms.ModelForm):
                     StrictButton(
                         "Save",
                         type="submit",
-                        css_class="btn btn-outline-phoenix-success ms-auto mb-0",
+                        css_class="btn btn-outline-success ms-auto mb-0",
                     ),
                     css_class="button-row d-flex",
                 ),
@@ -273,7 +273,7 @@ class AssignJobBillingCode(forms.ModelForm):
                     StrictButton(
                         "Save",
                         type="submit",
-                        css_class="btn btn-outline-phoenix-success ms-auto mb-0",
+                        css_class="btn btn-outline-success ms-auto mb-0",
                     ),
                     css_class="button-row d-flex",
                 ),
@@ -310,7 +310,7 @@ class AssignContact(forms.Form):
                     StrictButton(
                         "Save",
                         type="submit",
-                        css_class="btn btn-outline-phoenix-success ms-auto mb-0",
+                        css_class="btn btn-outline-success ms-auto mb-0",
                     ),
                     css_class="button-row d-flex",
                 ),
@@ -347,7 +347,7 @@ class AssignMultipleContacts(forms.Form):
                     StrictButton(
                         "Save",
                         type="submit",
-                        css_class="btn btn-outline-phoenix-success ms-auto mb-0",
+                        css_class="btn btn-outline-success ms-auto mb-0",
                     ),
                     css_class="button-row d-flex",
                 ),
@@ -378,7 +378,7 @@ class AssignUserField(forms.Form):
             StrictButton(
                 "Add",
                 id="addUserToResource",
-                css_class="btn btn-outline-phoenix-success",
+                css_class="btn btn-outline-success",
             ),
         )
 
@@ -417,7 +417,7 @@ class AssignUser(forms.Form):
                     StrictButton(
                         "Save",
                         type="submit",
-                        css_class="btn btn-outline-phoenix-success ms-auto mb-0",
+                        css_class="btn btn-outline-success ms-auto mb-0",
                     ),
                     css_class="button-row d-flex",
                 ),
@@ -457,7 +457,7 @@ class AssignMultipleUser(forms.Form):
                     StrictButton(
                         "Save",
                         type="submit",
-                        css_class="btn btn-outline-phoenix-success ms-auto mb-0",
+                        css_class="btn btn-outline-success ms-auto mb-0",
                     ),
                     css_class="button-row d-flex",
                 ),
@@ -526,7 +526,7 @@ class CommentTimeSlotModalForm(forms.ModelForm):
                 data_url=reverse(
                     "delete_scheduler_slot_comment", kwargs={"pk": self.instance.pk}
                 ),
-                css_class="btn js-load-modal-form btn-outline-phoenix-danger me-auto mb-0",
+                css_class="btn js-load-modal-form btn-outline-danger me-auto mb-0",
             )
         else:
             delete_button = None
@@ -564,7 +564,7 @@ class CommentTimeSlotModalForm(forms.ModelForm):
                     StrictButton(
                         "Save",
                         type="submit",
-                        css_class="btn btn-outline-phoenix-success ms-auto mb-0",
+                        css_class="btn btn-outline-success ms-auto mb-0",
                     ),
                     css_class="button-row d-flex",
                 ),
@@ -609,7 +609,7 @@ class NonDeliveryTimeSlotModalForm(forms.ModelForm):
                 data_url=reverse(
                     "delete_scheduler_slot", kwargs={"pk": self.instance.pk}
                 ),
-                css_class="btn js-load-modal-form btn-outline-phoenix-danger me-auto mb-0",
+                css_class="btn js-load-modal-form btn-outline-danger me-auto mb-0",
             )
         else:
             delete_button = None
@@ -653,7 +653,7 @@ class NonDeliveryTimeSlotModalForm(forms.ModelForm):
                     StrictButton(
                         "Save",
                         type="submit",
-                        css_class="btn btn-outline-phoenix-success ms-auto mb-0",
+                        css_class="btn btn-outline-success ms-auto mb-0",
                     ),
                     css_class="button-row d-flex",
                 ),
@@ -749,7 +749,7 @@ class DeliveryTimeSlotModalForm(forms.ModelForm):
                         "pk": self.instance.pk,
                     },
                 ),
-                css_class="btn js-load-modal-form btn-outline-phoenix-danger me-auto mb-0",
+                css_class="btn js-load-modal-form btn-outline-danger me-auto mb-0",
             )
 
             goto_button = HTML(
@@ -761,7 +761,7 @@ class DeliveryTimeSlotModalForm(forms.ModelForm):
                         "slug": self.instance.phase.slug,
                     },
                 )
-                + "' class='btn btn-outline-phoenix-info'>Goto Phase</a>"
+                + "' class='btn btn-outline-info'>Goto Phase</a>"
             )
         else:
             goto_button = None
@@ -812,7 +812,7 @@ class DeliveryTimeSlotModalForm(forms.ModelForm):
                     StrictButton(
                         "Save",
                         type="submit",
-                        css_class="btn btn-outline-phoenix-success ms-auto mb-0",
+                        css_class="btn btn-outline-success ms-auto mb-0",
                     ),
                     css_class="button-row d-flex",
                 ),
@@ -898,7 +898,7 @@ class ProjectTimeSlotModalForm(forms.ModelForm):
                         "pk": self.instance.pk,
                     },
                 ),
-                css_class="btn js-load-modal-form btn-outline-phoenix-danger me-auto mb-0",
+                css_class="btn js-load-modal-form btn-outline-danger me-auto mb-0",
             )
 
             goto_button = HTML(
@@ -909,7 +909,7 @@ class ProjectTimeSlotModalForm(forms.ModelForm):
                         "slug": self.instance.project.slug,
                     },
                 )
-                + "' class='btn btn-outline-phoenix-secondary'>Goto Project</a>"
+                + "' class='btn btn-outline-secondary'>Goto Project</a>"
             )
         else:
             goto_button = None
@@ -946,7 +946,7 @@ class ProjectTimeSlotModalForm(forms.ModelForm):
                     StrictButton(
                         "Save",
                         type="submit",
-                        css_class="btn btn-outline-phoenix-success ms-auto mb-0",
+                        css_class="btn btn-outline-success ms-auto mb-0",
                     ),
                     css_class="button-row d-flex",
                 ),
@@ -996,7 +996,7 @@ class ChangeTimeSlotCommentDateModalForm(forms.ModelForm):
                     StrictButton(
                         "Save",
                         type="submit",
-                        css_class="btn js-load-modal-form btn-outline-phoenix-success ms-auto mb-0",
+                        css_class="btn js-load-modal-form btn-outline-success ms-auto mb-0",
                     ),
                     css_class="button-row d-flex",
                 ),
@@ -1044,7 +1044,7 @@ class ChangeTimeSlotDateModalForm(forms.ModelForm):
                     StrictButton(
                         "Save",
                         type="submit",
-                        css_class="btn btn-outline-phoenix-success ms-auto mb-0",
+                        css_class="btn btn-outline-success ms-auto mb-0",
                     ),
                     css_class="button-row d-flex",
                 ),
@@ -1443,7 +1443,7 @@ class ScopeForm(forms.ModelForm):
                 StrictButton(
                     "Save",
                     type="submit",
-                    css_class="btn btn-outline-phoenix-success ms-auto mb-0",
+                    css_class="btn btn-outline-success ms-auto mb-0",
                 ),
                 css_class="button-row d-flex",
             ),
@@ -1833,7 +1833,7 @@ class OwnQualificationRecordForm(forms.ModelForm):
                     StrictButton(
                         "Save",
                         type="submit",
-                        css_class="btn btn-outline-phoenix-success ms-auto mb-0",
+                        css_class="btn btn-outline-success ms-auto mb-0",
                     ),
                     css_class="button-row d-flex",
                 ),
@@ -2071,7 +2071,7 @@ class JobSupportTeamRoleForm(forms.ModelForm):
                     StrictButton(
                         "Save",
                         type="submit",
-                        css_class="btn btn-outline-phoenix-success ms-auto mb-0",
+                        css_class="btn btn-outline-success ms-auto mb-0",
                     ),
                     css_class="button-row d-flex",
                 ),

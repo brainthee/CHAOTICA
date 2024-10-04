@@ -177,6 +177,9 @@ def job_permission_required_or_403(perm, *args, **kwargs):
                 team = obj.team()
             elif isinstance(obj, Phase):
                 team = obj.job.team()
+            
+            if not team:
+                response = False
 
             if response:
                 # It's forbidden - lets check if we have specific job permissions...

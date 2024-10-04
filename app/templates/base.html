@@ -4,7 +4,7 @@
 {% load menu %}{% generate_menu %}
 
 <!DOCTYPE html>
-<html lang="en-US" dir="ltr">
+<html lang="en-US" dir="ltr" data-navigation-type="dual" data-navbar-horizontal-shape="default">
 
   <head>
     {% block head_meta %}
@@ -62,6 +62,11 @@
     <!-- ===============================================-->
     <!--    Stylesheets-->
     <!-- ===============================================-->
+    
+    <link href="{% static "assets/css/theme.css" %}" type="text/css" rel="stylesheet" id="style-default">
+    <link href="{% static "assets/css/user.css" %}" type="text/css" rel="stylesheet" id="user-style-default">
+    <link href="{% static "assets/css/chaotica.css" %}" rel="stylesheet">
+
     <link href="{% static "vendors/choices/choices.min.css" %}" rel="stylesheet">
     <link href="{% static "vendors/dropzone/dropzone.min.css" %}" rel="stylesheet">
     <link href="{% static "vendors/dhtmlx-gantt/dhtmlxgantt.css" %}" rel="stylesheet">
@@ -71,9 +76,6 @@
     <link href="{% static "vendors/leaflet/leaflet.css" %}" rel="stylesheet">
     <link href="{% static "vendors/leaflet.markercluster/MarkerCluster.css" %}" rel="stylesheet">
     <link href="{% static "vendors/leaflet.markercluster/MarkerCluster.Default.css" %}" rel="stylesheet">
-    <link href="{% static "assets/css/theme.css" %}" type="text/css" rel="stylesheet" id="style-default">
-    <link href="{% static "assets/css/user.css" %}" type="text/css" rel="stylesheet" id="user-style-default">
-    <link href="{% static "assets/css/chaotica.css" %}" rel="stylesheet">
 
 
     <!-- Select2 -->
@@ -292,7 +294,7 @@
             title: "Happy Birthday CHAOTICA!",
             html: `
               CHAOTICA turns {{ CHAOTICA_BIRTHDAY_YEARS_OLD }} today!. 
-              <p class="text-secondary fst-italic fs-6">Don't worry though... I'll only show this once <br />🥳🥳🥳</p>
+              <p class="text-secondary fst-italic fs-2">Don't worry though... I'll only show this once <br />🥳🥳🥳</p>
             `,
             showClass: {
               popup: `

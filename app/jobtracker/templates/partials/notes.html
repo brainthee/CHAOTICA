@@ -8,14 +8,14 @@
                     {{ note.content }}
                 </p>
                 <div class="d-flex">
-                    <div class="fs--1 text-600">
+                    <div class="fs-9 text-600">
                         <span class="fa-solid fa-clock me-2"></span>
                         <span class="fw-semi-bold me-1"
                             data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ note.create_date }}">
                             {{ note.create_date|naturaltime }}
                         </span>
                     </div>
-                    <p class="fs--1 mb-0 text-600">
+                    <p class="fs-9 mb-0 text-600">
                         by <a class="ms-1 fw-semi-bold" href="{{ note.author.get_absolute_url }}">{{ note.author }}</a>
                     </p>
                 </div>

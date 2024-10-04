@@ -10,7 +10,7 @@
       </div>
 
       <div class="d-flex align-items-center mb-2">
-        <span class="fa-solid fa-user me-2 text-700 fs--1 fw-extra-bold"></span>
+        <span class="fa-solid fa-user me-2 text-700 fs-9 fw-extra-bold"></span>
         <p class="fw-bold mb-0 text-truncate lh-1">
           Lead : <span class="fw-semi-bold text-primary ms-1"><a href="{{ unit.lead.get_absolute_url }}">{{ unit.lead }}</a></span>
         </p>
@@ -21,7 +21,7 @@
           <p class="d-inline-block fw-bold mb-0">{{ unit.get_activeMembers.all | length }}<span class="fw-normal">	Members</span></p>
         </div>
         {% if request.user in unit.get_activeMembers.all %}
-        <span class="badge badge-phoenix fs--2 mb-2 mt-2 badge-phoenix-success">Member</span>
+        <span class="badge badge-phoenix fs-10 mb-2 mt-2 badge-phoenix-success">Member</span>
         {% endif %}
         <div class="mt-lg-3 mt-xl-0">
           <i class="fa-solid fa-list-check me-1"></i>

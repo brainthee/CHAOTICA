@@ -7,7 +7,7 @@
 {% block breadcrumbs %}
 {% endblock breadcrumbs %}
 
-{% block content_classes %}px-0 {% endblock content_classes %}
+{% block content_classes %}{% endblock content_classes %}
 {% block breadcrumb_classes %}px-5{% endblock breadcrumb_classes %}
 
 {% block content %}
@@ -16,20 +16,20 @@
 {% include 'partials/first_time_setup.html' %}
 {% endif %}
 
-<div class="row">
+<div class="row mx-n4 mx-lg-n6">
   <div class="col-3">
     <div class="row">
-      <div class="nav flex-sm-column border-end-sm border-300 fs--1 vertical-tab justify-content-between" role="tablist" aria-orientation="vertical">      
+      <div class="nav px-0 flex-sm-column border-end-sm border-300 fs-9 vertical-tab justify-content-between" role="tablist" aria-orientation="vertical">      
 
         <a class="nav-link border-top border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center active" 
           id="scheduleTab" data-bs-toggle="tab" data-bs-target="#scheduleTabContent" role="tab" aria-controls="scheduleTabContent" aria-selected="true">
-          <span class="fa fa-calendar me-sm-2 fs-1"></span>
+          <span class="fa fa-calendar me-sm-2 fs-7"></span>
           <span class="d-none d-sm-inline">Schedule</span>
         </a>
   
         <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center" 
           id="jobTab" data-bs-toggle="tab" data-bs-target="#jobTabContent" role="tab" aria-controls="jobTabContent" aria-selected="false">
-          <span class="fa fa-cubes me-sm-2 fs-1"></span>
+          <span class="fa fa-cubes me-sm-2 fs-7"></span>
           <span class="d-none d-sm-inline">My Jobs</span>
           {% if myJobs|length %}
           <span class="badge bg-primary-500 ms-2">{{ myJobs|length }}</span>
@@ -38,7 +38,7 @@
   
         <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center" 
           id="phasesTab" data-bs-toggle="tab" data-bs-target="#phasesTabContent" role="tab" aria-controls="phasesTabContent" aria-selected="false">
-          <span class="fa fa-cube me-sm-2 fs-1"></span>
+          <span class="fa fa-cube me-sm-2 fs-7"></span>
           <span class="d-none d-sm-inline">My Phases</span>
           {% if myPhases|length %}
           <span class="badge bg-primary-500 ms-2">{{ myPhases|length }}</span>
@@ -48,7 +48,7 @@
         {% if request.user.can_scope %}
         <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center" 
           id="pendingScopeTab" data-bs-toggle="tab" data-bs-target="#pendingScopeTabContent" role="tab" aria-controls="pendingScopeTabContent" aria-selected="false">
-          <span class="fa fa-microscope me-sm-2 fs-1"></span>
+          <span class="fa fa-microscope me-sm-2 fs-7"></span>
           <span class="d-none d-sm-inline">Pending Scoping</span>
           {% if pendingScoping|length %}
           <span class="badge bg-primary-500 ms-2">{{ pendingScoping|length }}</span>
@@ -59,7 +59,7 @@
         {% if request.user.can_signoff_scope %}
         <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center" 
           id="pendingSignoffTab" data-bs-toggle="tab" data-bs-target="#pendingSignoffTabContent" role="tab" aria-controls="pendingSignoffTabContent" aria-selected="false">
-          <span class="fa fa-signature me-sm-2 fs-1"></span>
+          <span class="fa fa-signature me-sm-2 fs-7"></span>
           <span class="d-none d-sm-inline">Pending Signoff</span>
           {% if scopesToSignoff|length %}
           <span class="badge bg-primary-500 ms-2">{{ scopesToSignoff|length }}</span>
@@ -70,7 +70,7 @@
         {% if request.user.can_tqa %}
         <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center" 
           id="pendingTQATab" data-bs-toggle="tab" data-bs-target="#pendingTQATabContent" role="tab" aria-controls="pendingTQATabContent" aria-selected="false">
-          <span class="fa fa-signature me-sm-2 fs-1"></span>
+          <span class="fa fa-signature me-sm-2 fs-7"></span>
           <span class="d-none d-sm-inline">Pending Technical QA</span>
           {% if pendingTQA|length %}
           <span class="badge bg-primary-500 ms-2">{{ pendingTQA|length }}</span>
@@ -81,7 +81,7 @@
         {% if request.user.can_pqa %}
         <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center" 
           id="pendingPQATab" data-bs-toggle="tab" data-bs-target="#pendingPQATabContent" role="tab" aria-controls="pendingPQATabContent" aria-selected="false">
-          <span class="fa fa-signature me-sm-2 fs-1"></span>
+          <span class="fa fa-signature me-sm-2 fs-7"></span>
           <span class="d-none d-sm-inline">Pending Presentation QA</span>
           {% if pendingPQA|length %}
           <span class="badge bg-primary-500 ms-2">{{ pendingPQA|length }}</span>
@@ -92,12 +92,12 @@
         {% if request.user.is_people_manager %}
         <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center" 
           id="teamTab" data-bs-toggle="tab" data-bs-target="#teamTabContent" role="tab" aria-controls="teamTabContent" aria-selected="false">
-          <span class="fa fa-users me-sm-2 fs-1"></span>
+          <span class="fa fa-users me-sm-2 fs-7"></span>
           <span class="d-none d-sm-inline">My Team</span>
         </a>
         <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center" 
           id="leaveTab" data-bs-toggle="tab" data-bs-target="#leaveTabContent" role="tab" aria-controls="leaveTabContent" aria-selected="false">
-          <span class="fa fa-users me-sm-2 fs-1"></span>
+          <span class="fa fa-users me-sm-2 fs-7"></span>
           <span class="d-none d-sm-inline">Team Leave Requests</span>
         </a>
         {% endif %}
@@ -105,9 +105,8 @@
     </div>
 
 
-<div class="row">
+    
   {% include 'partials/consultant_stats.html' %} 
-</div>
   </div>
   <div class="col mt-0 bg-body">
     <div class="tab-content h-100"> 
