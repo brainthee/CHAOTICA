@@ -10,3 +10,16 @@ function onKonamiCode(cb) {
       input = ("" + e.keyCode);
     });
 }
+
+const tooltipInit = () => {
+  const tooltipTriggerList = [].slice.call(
+    document.querySelectorAll('[data-bs-tooltip="tooltip"]')
+  );
+
+  tooltipTriggerList.map(
+    tooltipTriggerEl =>
+      new bootstrap.Tooltip(tooltipTriggerEl, {
+        trigger: 'hover'
+      })
+  );
+};

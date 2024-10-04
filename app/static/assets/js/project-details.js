@@ -54,6 +54,9 @@
         if (control === 'phoenixTheme') {
           chart.setOption(window._.merge(getDefaultOptions(), userOptions));
         }
+        if (responsiveOptions) {
+          handleResize(responsiveOptions);
+        }
       }
     );
   };
@@ -113,7 +116,7 @@
 
       let tooltipItem = ``;
       result.forEach((el, index) => {
-        tooltipItem += `<h6 class="fs-9 text-700 ${
+        tooltipItem += `<h6 class="fs-9 text-body-tertiary ${
         index > 0 && 'mb-0'
       }"><span class="fas fa-circle me-2" style="color:${el.color}"></span>
       ${el.date.format('MMM DD')} : ${el.value}
@@ -133,15 +136,16 @@
         tooltip: {
           trigger: 'axis',
           padding: 10,
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
-          textStyle: { color: getColor('dark') },
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') },
           borderWidth: 1,
           transitionDuration: 0,
           axisPointer: {
             type: 'none'
           },
-          formatter: tooltipFormatter
+          formatter: tooltipFormatter,
+          extraCssText: 'z-index: 1000'
         },
         xAxis: [
           {
@@ -152,7 +156,7 @@
               interval: 13,
               showMinLabel: true,
               showMaxLabel: false,
-              color: getColor('gray-800'),
+              color: getColor('secondary-color'),
               align: 'left',
               fontFamily: 'Nunito Sans',
               fontWeight: 600,
@@ -161,7 +165,7 @@
             axisLine: {
               show: true,
               lineStyle: {
-                color: getColor('gray-200')
+                color: getColor('secondary-bg')
               }
             },
             axisTick: {
@@ -171,7 +175,7 @@
               show: true,
               interval: 0,
               lineStyle: {
-                color: getColor('gray-200')
+                color: getColor('secondary-bg')
               }
             },
             boundaryGap: false
@@ -185,7 +189,7 @@
               interval: 130,
               showMaxLabel: true,
               showMinLabel: false,
-              color: getColor('gray-800'),
+              color: getColor('secondary-color'),
               align: 'right',
               fontFamily: 'Nunito Sans',
               fontWeight: 600,
@@ -275,16 +279,16 @@
       const getDefaultOptions = () => ({
         color: [
           getColor('primary'),
-          getColor('primary-200'),
-          getColor('info-500')
+          getColor('primary-lighter'),
+          getColor('info-dark')
         ],
 
         tooltip: {
           trigger: 'item',
           padding: [7, 10],
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
-          textStyle: { color: getColor('dark') },
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') },
           borderWidth: 1,
           transitionDuration: 0,
           position(pos, params, el, elRect, size) {
@@ -302,7 +306,8 @@
           },
           formatter: params => {
             return `<strong>${params.data.name}:</strong> ${params.percent}%`;
-          }
+          },
+          extraCssText: 'z-index: 1000'
         },
         legend: { show: false },
         series: [
@@ -319,14 +324,14 @@
             },
             itemStyle: {
               borderWidth: 2,
-              borderColor: getColor('gray-soft')
+              borderColor: getColor('body-bg')
             },
             label: {
               show: true,
               position: 'center',
               formatter: '{a}',
               fontSize: 23,
-              color: getColor('dark')
+              color: getColor('light-text-emphasis')
             },
             data: [
               { value: 7200000, name: 'Percentage discount' },

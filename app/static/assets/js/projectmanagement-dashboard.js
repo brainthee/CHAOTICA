@@ -54,6 +54,9 @@
         if (control === 'phoenixTheme') {
           chart.setOption(window._.merge(getDefaultOptions(), userOptions));
         }
+        if (responsiveOptions) {
+          handleResize(responsiveOptions);
+        }
       }
     );
   };
@@ -79,7 +82,7 @@
     let tooltipItem = ``;
     params.forEach(el => {
       tooltipItem += `<div class='ms-1'>
-        <h6 class="text-700"><span class="fas fa-circle me-1 fs-10" style="color:${
+        <h6 class="text-body-tertiary"><span class="fas fa-circle me-1 fs-10" style="color:${
           el.borderColor ? el.borderColor : el.color
         }"></span>
           ${el.seriesName} : ${
@@ -89,7 +92,7 @@
       </div>`;
     });
     return `<div>
-            <p class='mb-2 text-600'>
+            <p class='mb-2 text-body-tertiary'>
               ${
                 window.dayjs(params[0].axisValue).isValid()
                   ? window.dayjs(params[0].axisValue).format(dateFormatter)
@@ -118,7 +121,7 @@
   /* -------------------------------------------------------------------------- */
 
   const issuesDiscoveredChartInit = () => {
-    const { getColor, getData } = window.phoenix.utils;
+    const { getColor, getData, toggleColor } = window.phoenix.utils;
     const issuesDiscoveredChartEl = document.querySelector('.echart-issue-chart');
 
     if (issuesDiscoveredChartEl) {
@@ -127,14 +130,15 @@
 
       const getDefaultOptions = () => ({
         color: [
-          getColor('info-300'),
-          getColor('warning-300'),
-          getColor('danger-300'),
-          getColor('success-300'),
+          toggleColor(getColor('info-light'), getColor('info-dark')),
+          toggleColor(getColor('warning-light'), getColor('warning-dark')),
+          toggleColor(getColor('danger-light'), getColor('danger-dark')),
+          toggleColor(getColor('success-light'), getColor('success-dark')),
           getColor('primary')
         ],
         tooltip: {
           trigger: 'item',
+          extraCssText: 'z-index: 1000',
           position: (...params) => handleTooltipPosition(params)
         },
         responsive: true,
@@ -160,12 +164,12 @@
                 x: {
                   fontSize: 31.25,
                   fontWeight: 800,
-                  color: getColor('gray-700'),
+                  color: getColor('tertiary-color'),
                   padding: [0, 0, 5, 15]
                 },
                 y: {
                   fontSize: 12.8,
-                  color: getColor('gray-700'),
+                  color: getColor('tertiary-color'),
                   fontWeight: 600
                 }
               }
@@ -215,50 +219,45 @@
       const chart = window.echarts.init($zeroBurnOutChartEl);
 
       const getDefaultOptions = () => ({
-        color: [
-          getColor('gray-400'),
-          getColor('success'),
-          getColor('info'),
-          getColor('warning'),
-        ],
         tooltip: {
           trigger: 'axis',
-          backgroundColor: getColor('gray-soft'),
-          borderColor: getColor('gray-200'),
+          backgroundColor: getColor('body-bg'),
+          borderColor: getColor('secondary-bg'),
           formatter: params => tooltipFormatter(params, 'MMM DD, YYYY'),
           axisPointer: {
             shadowStyle: {
-              color: 'red',
-            },
+              color: 'red'
+            }
           },
+          extraCssText: 'z-index: 1000'
         },
         legend: {
           bottom: '10',
           data: [
             {
               name: 'Open',
-              icon: 'roundRect',
+              icon: 'roundRect'
             },
             {
               name: 'Issues found',
-              icon: 'roundRect',
+              icon: 'roundRect'
             },
             {
               name: 'In Progress',
-              icon: 'roundRect',
-            },
+              icon: 'roundRect'
+            }
           ],
           itemWidth: 16,
           itemHeight: 8,
           itemGap: 10,
-          inactiveColor: getColor('gray-500'),
+          inactiveColor: getColor('quaternary-color'),
           inactiveBorderWidth: 0,
           textStyle: {
-            color: getColor('gray-900'),
+            color: getColor('body-color'),
             fontWeight: 600,
             fontSize: 16,
-            fontFamily: 'Nunito Sans',
-          },
+            fontFamily: 'Nunito Sans'
+          }
         },
 
         // grid: {
@@ -277,57 +276,57 @@
             axisLine: {
               lineStyle: {
                 type: 'solid',
-                color: getColor('gray-300'),
-              },
+                color: getColor('border-color')
+              }
             },
             axisLabel: {
-              color: getColor('gray-900'),
+              color: getColor('body-color'),
               formatter: data => window.dayjs(data).format('D MMM'),
               interval: 5,
               align: 'left',
               margin: 20,
-              fontSize: 12.8,
+              fontSize: 12.8
             },
             axisTick: {
               show: true,
-              length: 15,
+              length: 15
               // alignWithLabel: true
             },
             splitLine: {
               interval: 0,
               show: true,
               lineStyle: {
-                color: getColor('gray-300'),
-                type: 'dashed',
-              },
+                color: getColor('border-color'),
+                type: 'dashed'
+              }
             },
             type: 'category',
             boundaryGap: false,
-            data: getPastDates(15),
+            data: getPastDates(15)
           },
           {
             show: true,
             interval: 2,
             axisLine: {
-              show: false,
+              show: false
             },
             axisLabel: {
-              show: false,
+              show: false
             },
             axisTick: {
-              show: false,
+              show: false
             },
             splitLine: {
               interval: 1,
               show: true,
               lineStyle: {
-                color: getColor('gray-300'),
-                type: 'solid',
-              },
+                color: getColor('border-color'),
+                type: 'solid'
+              }
             },
             boundaryGap: false,
-            data: getPastDates(15),
-          },
+            data: getPastDates(15)
+          }
         ],
         yAxis: {
           show: true,
@@ -335,30 +334,30 @@
           axisLine: {
             lineStyle: {
               type: 'solid',
-              color: getColor('gray-300'),
-            },
+              color: getColor('border-color')
+            }
           },
           axisLabel: {
-            color: getColor('gray-900'),
+            color: getColor('body-color'),
             margin: 20,
             fontSize: 12.8,
-            interval: 0,
+            interval: 0
           },
           splitLine: {
             show: true,
             lineStyle: {
-              color: getColor('gray-300'),
-              type: 'solid',
-            },
+              color: getColor('border-color'),
+              type: 'solid'
+            }
           },
           axisTick: {
             show: true,
             length: 15,
             alignWithLabel: true,
             lineStyle: {
-              color: getColor('gray-300'),
-            },
-          },
+              color: getColor('border-color')
+            }
+          }
           // data: ['0', '10', '20']
         },
         series: [
@@ -368,51 +367,85 @@
             symbol: 'none',
             data: [20, 17.5, 15, 15, 15, 12.5, 10, 7.5, 5, 2.5, 2.5, 2.5, 0],
             lineStyle: {
-              width: 0,
+              width: 0
             },
             areaStyle: {
-              color: getColor('primary-300'),
-              opacity: 0.075,
+              color: getColor('primary-light'),
+              opacity: 0.075
             },
             tooltip: {
-              show: false,
-            },
+              show: false
+            }
           },
           {
             name: 'Issues found',
             type: 'line',
             symbolSize: 6,
-            data: [3, 1, 2, 4, 3, 1],
+            itemStyle: {
+              color: getColor('body-highlight-bg'),
+              borderColor: getColor('success'),
+              borderWidth: 2
+            },
+            lineStyle: {
+              color: getColor('success')
+            },
+            symbol: 'circle',
+            data: [3, 1, 2, 4, 3, 1]
           },
           {
             name: 'Open',
             type: 'line',
             symbolSize: 6,
-            data: [6, 5, 4, 6, 5, 5],
+            itemStyle: {
+              color: getColor('body-highlight-bg'),
+              borderColor: getColor('info'),
+              borderWidth: 2
+            },
+            lineStyle: {
+              color: getColor('info')
+            },
+            symbol: 'circle',
+            data: [6, 5, 4, 6, 5, 5]
           },
           {
             name: 'In Progress',
             type: 'line',
             symbolSize: 6,
-            data: [11, 12, 11, 9, 11, 6],
+            itemStyle: {
+              color: getColor('body-highlight-bg'),
+              borderColor: getColor('warning'),
+              borderWidth: 2
+            },
+            lineStyle: {
+              color: getColor('warning')
+            },
+            symbol: 'circle',
+            data: [11, 12, 11, 9, 11, 6]
           },
           {
             name: 'Actual',
             type: 'line',
             symbolSize: 6,
-            data: [20, 19, 15, 14, 12, 8],
-            lineStyle: {
-              type: 'dashed',
+            itemStyle: {
+              color: getColor('body-highlight-bg'),
+              borderColor: getColor('quaternary-color'),
+              borderWidth: 2
             },
-          },
+            lineStyle: {
+              color: getColor('quaternary-color'),
+              type: 'dashed'
+            },
+            symbol: 'circle',
+            data: [20, 19, 15, 14, 12, 8]
+          }
         ],
         grid: {
           right: 5,
           left: 0,
           bottom: '15%',
           top: 20,
-          containLabel: true,
-        },
+          containLabel: true
+        }
       });
 
       echartSetOption(chart, userOptions, getDefaultOptions);
@@ -501,7 +534,7 @@
 
       gantt.templates.task_class = (start, end, task) => task.task_class;
 
-      gantt.templates.task_cell_class = function (task, date) {
+      gantt.timeline_cell_class = function (task, date) {
         return 'weekend';
       };
 

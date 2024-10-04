@@ -449,7 +449,7 @@ def notification_mark_read(request, pk):
 def update_own_theme(request):
     if "mode" in request.GET:
         mode = request.GET.get("mode", "light")
-        valid_modes = ["dark", "light"]
+        valid_modes = ["dark", "light", "auto"]
         if mode in valid_modes:
             request.user.site_theme = mode
             request.user.save()

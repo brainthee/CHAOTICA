@@ -54,6 +54,9 @@
         if (control === 'phoenixTheme') {
           chart.setOption(window._.merge(getDefaultOptions(), userOptions));
         }
+        if (responsiveOptions) {
+          handleResize(responsiveOptions);
+        }
       }
     );
   };
@@ -79,7 +82,7 @@
     let tooltipItem = ``;
     params.forEach(el => {
       tooltipItem += `<div class='ms-1'>
-        <h6 class="text-700"><span class="fas fa-circle me-1 fs-10" style="color:${
+        <h6 class="text-body-tertiary"><span class="fas fa-circle me-1 fs-10" style="color:${
           el.borderColor ? el.borderColor : el.color
         }"></span>
           ${el.seriesName} : ${
@@ -89,7 +92,7 @@
       </div>`;
     });
     return `<div>
-            <p class='mb-2 text-600'>
+            <p class='mb-2 text-body-tertiary'>
               ${
                 window.dayjs(params[0].axisValue).isValid()
                   ? window.dayjs(params[0].axisValue).format(dateFormatter)
@@ -132,7 +135,7 @@
 
       let tooltipItem = ``;
       result.forEach((el, index) => {
-        tooltipItem += `<h6 class="fs-9 text-700 ${
+        tooltipItem += `<h6 class="fs-9 text-body-tertiary ${
         index > 0 && 'mb-0'
       }"><span class="fas fa-circle me-2" style="color:${el.color}"></span>
       ${el.date.format('MMM DD')} : ${el.value}
@@ -150,15 +153,16 @@
         tooltip: {
           trigger: 'axis',
           padding: 10,
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
-          textStyle: { color: getColor('dark') },
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') },
           borderWidth: 1,
           transitionDuration: 0,
           axisPointer: {
             type: 'none'
           },
-          formatter: tooltipFormatter
+          formatter: tooltipFormatter,
+          extraCssText: 'z-index: 1000'
         },
         xAxis: [
           {
@@ -172,7 +176,7 @@
             boundaryGap: false,
             axisLine: {
               show: true,
-              lineStyle: { color: getColor('gray-200') }
+              lineStyle: { color: getColor('secondary-bg') }
             },
             axisTick: {
               show: false
@@ -181,7 +185,7 @@
               formatter: value => window.dayjs(value).format('DD MMM'),
               showMinLabel: true,
               showMaxLabel: false,
-              color: getColor('gray-800'),
+              color: getColor('secondary-color'),
               align: 'left',
               interval: 5,
               fontFamily: 'Nunito Sans',
@@ -203,7 +207,7 @@
               interval: 130,
               showMaxLabel: true,
               showMinLabel: false,
-              color: getColor('gray-800'),
+              color: getColor('secondary-color'),
               align: 'right',
               fontFamily: 'Nunito Sans',
               fontWeight: 600,
@@ -234,13 +238,14 @@
             symbol: 'circle',
             lineStyle: {
               width: 2,
-              color: getColor('gray-200')
+              color: getColor('secondary-bg')
             },
             emphasis: {
               lineStyle: {
-                color: getColor('gray-200')
+                color: getColor('secondary-bg')
               }
-            }
+            },
+            zlevel: 2
           },
           {
             type: 'line',
@@ -250,7 +255,8 @@
               color: getColor('primary')
             },
             showSymbol: false,
-            symbol: 'circle'
+            symbol: 'circle',
+            zlevel: 2
           }
         ],
         grid: { left: 0, right: 0, top: 5, bottom: 20 }
@@ -277,15 +283,16 @@
         tooltip: {
           trigger: 'item',
           padding: [7, 10],
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
-          textStyle: { color: getColor('dark') },
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') },
           borderWidth: 1,
           position: (...params) => handleTooltipPosition(params),
           transitionDuration: 0,
           formatter: params => {
             return `<strong>${params.seriesName}:</strong> ${params.value}%`;
-          }
+          },
+          extraCssText: 'z-index: 1000'
         },
         legend: { show: false },
         series: [
@@ -317,7 +324,7 @@
               roundCap: true,
               lineStyle: {
                 width: 12,
-                color: [[1, getColor('primary-100')]]
+                color: [[1, getColor('primary-bg-subtle')]]
               }
             },
             axisTick: {
@@ -375,20 +382,21 @@
       const chart = window.echarts.init($projectionVsActualChartEl);
 
       const getDefaultOptions = () => ({
-        color: [getColor('primary'), getColor('gray-300')],
+        color: [getColor('primary'), getColor('tertiary-bg')],
         tooltip: {
           trigger: 'axis',
           padding: [7, 10],
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
-          textStyle: { color: getColor('dark') },
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') },
           borderWidth: 1,
           transitionDuration: 0,
           axisPointer: {
             type: 'none'
           },
           position: (...params) => handleTooltipPosition(params),
-          formatter: params => tooltipFormatter(params)
+          formatter: params => tooltipFormatter(params),
+          extraCssText: 'z-index: 1000'
         },
         legend: {
           data: ['Projected revenue', 'Actual revenue'],
@@ -398,9 +406,9 @@
           itemHeight: 8,
           itemGap: 20,
           top: 3,
-          inactiveColor: getColor('gray-500'),
+          inactiveColor: getColor('quaternary-color'),
           textStyle: {
-            color: getColor('gray-900'),
+            color: getColor('body-color'),
             fontWeight: 600,
             fontFamily: 'Nunito Sans'
             // fontSize: '12.8px'
@@ -410,7 +418,7 @@
           type: 'category',
           // boundaryGap: false,
           axisLabel: {
-            color: getColor('gray-800'),
+            color: getColor('secondary-color'),
             formatter: value => window.dayjs(value).format('MMM DD'),
             interval: 3,
             fontFamily: 'Nunito Sans',
@@ -420,7 +428,7 @@
           data: dates,
           axisLine: {
             lineStyle: {
-              color: getColor('gray-300')
+              color: getColor('tertiary-bg')
             }
           },
           axisTick: false
@@ -432,7 +440,7 @@
           splitLine: {
             interval: 5,
             lineStyle: {
-              color: getColor('gray-200')
+              color: getColor('secondary-bg')
             }
           },
           axisLine: { show: false },
@@ -440,7 +448,7 @@
             fontFamily: 'Nunito Sans',
             fontWeight: 600,
             fontSize: 12.8,
-            color: getColor('gray-800'),
+            color: getColor('secondary-color'),
             margin: 20,
             verticalAlign: 'bottom',
             formatter: value => `$${value.toLocaleString()}`
@@ -469,7 +477,7 @@
             z: 10,
             itemStyle: {
               borderRadius: [2, 2, 0, 0],
-              color: getColor('info-100')
+              color: getColor('info-bg-subtle')
             }
           }
         ],
@@ -1657,21 +1665,21 @@
       const userOptions = getData($returningCustomerChart, 'echarts');
       const chart = echarts$1.init($returningCustomerChart);
       const getDefaultOptions = () => ({
-        color: getColor('gray-100'),
+        color: getColor('body-highlight-bg'),
         legend: {
           data: [
             {
               name: 'Fourth time',
               icon: 'roundRect',
               itemStyle: {
-                color: getColor('primary-300'),
+                color: getColor('primary-light'),
                 borderWidth: 0
               }
             },
             {
               name: 'Third time',
               icon: 'roundRect',
-              itemStyle: { color: getColor('info-200'), borderWidth: 0 }
+              itemStyle: { color: getColor('info-lighter'), borderWidth: 0 }
             },
             {
               name: 'Second time',
@@ -1686,10 +1694,10 @@
           itemHeight: 8,
           itemGap: 20,
           top: 3,
-          inactiveColor: getColor('gray-500'),
+          inactiveColor: getColor('quaternary-color'),
           inactiveBorderWidth: 0,
           textStyle: {
-            color: getColor('gray-900'),
+            color: getColor('body-color'),
             fontWeight: 600,
             fontFamily: 'Nunito Sans'
           }
@@ -1700,12 +1708,13 @@
             type: 'none'
           },
           padding: [7, 10],
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
-          textStyle: { color: getColor('dark') },
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') },
           borderWidth: 1,
           transitionDuration: 0,
-          formatter: tooltipFormatter
+          formatter: tooltipFormatter,
+          extraCssText: 'z-index: 1000'
         },
         xAxis: {
           type: 'category',
@@ -1714,7 +1723,7 @@
           boundaryGap: false,
           axisLine: {
             show: true,
-            lineStyle: { color: getColor('gray-300') }
+            lineStyle: { color: getColor('tertiary-bg') }
           },
           axisTick: {
             show: false
@@ -1723,7 +1732,7 @@
             // interval: 1,
             showMinLabel: false,
             showMaxLabel: false,
-            color: getColor('gray-800'),
+            color: getColor('secondary-color'),
             formatter: value => value.slice(0, 3),
             fontFamily: 'Nunito Sans',
             fontWeight: 600,
@@ -1731,7 +1740,7 @@
           },
           splitLine: {
             show: true,
-            lineStyle: { color: getColor('gray-200'), type: 'dashed' }
+            lineStyle: { color: getColor('secondary-bg'), type: 'dashed' }
           }
         },
         yAxis: {
@@ -1740,7 +1749,7 @@
           axisLabel: {
             showMinLabel: true,
             showMaxLabel: true,
-            color: getColor('gray-800'),
+            color: getColor('secondary-color'),
             formatter: value => `${value}%`,
             fontFamily: 'Nunito Sans',
             fontWeight: 600,
@@ -1748,7 +1757,7 @@
           },
           splitLine: {
             show: true,
-            lineStyle: { color: getColor('gray-200') }
+            lineStyle: { color: getColor('secondary-bg') }
           }
         },
         series: [
@@ -1767,12 +1776,13 @@
             lineStyle: {
               type: 'dashed',
               width: 1,
-              color: getColor('primary-300')
+              color: getColor('primary-light')
             },
             itemStyle: {
-              borderColor: getColor('primary-300'),
+              borderColor: getColor('primary-light'),
               borderWidth: 3
-            }
+            },
+            zlevel: 3
           },
           {
             name: 'Third time',
@@ -1788,12 +1798,13 @@
             },
             lineStyle: {
               width: 1,
-              color: getColor('info-200')
+              color: getColor('info-lighter')
             },
             itemStyle: {
-              borderColor: getColor('info-200'),
+              borderColor: getColor('info-lighter'),
               borderWidth: 3
-            }
+            },
+            zlevel: 2
           },
           {
             name: 'Second time',
@@ -1814,7 +1825,8 @@
             itemStyle: {
               borderColor: getColor('primary'),
               borderWidth: 3
-            }
+            },
+            zlevel: 1
           }
         ],
         grid: { left: 0, right: 8, top: '14%', bottom: 0, containLabel: true }
@@ -1843,16 +1855,16 @@
       const getDefaultOptions = () => ({
         color: [
           getColor('primary'),
-          getColor('primary-200'),
-          getColor('info-500')
+          getColor('primary-lighter'),
+          getColor('info-dark')
         ],
 
         tooltip: {
           trigger: 'item',
           padding: [7, 10],
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
-          textStyle: { color: getColor('dark') },
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') },
           borderWidth: 1,
           transitionDuration: 0,
           position(pos, params, el, elRect, size) {
@@ -1870,7 +1882,8 @@
           },
           formatter: params => {
             return `<strong>${params.data.name}:</strong> ${params.percent}%`;
-          }
+          },
+          extraCssText: 'z-index: 1000'
         },
         legend: { show: false },
         series: [
@@ -1887,14 +1900,14 @@
             },
             itemStyle: {
               borderWidth: 2,
-              borderColor: getColor('gray-soft')
+              borderColor: getColor('body-bg')
             },
             label: {
               show: true,
               position: 'center',
               formatter: '{a}',
               fontSize: 23,
-              color: getColor('dark')
+              color: getColor('light-text-emphasis')
             },
             data: [
               { value: 7200000, name: 'Percentage discount' },
@@ -1929,9 +1942,9 @@
         tooltip: {
           trigger: 'item',
           padding: [7, 10],
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
-          textStyle: { color: getColor('dark') },
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') },
           position: (...params) => handleTooltipPosition(params),
           borderWidth: 1,
           transitionDuration: 0,
@@ -1939,7 +1952,8 @@
             return `<strong>${window
             .dayjs(params.name)
             .format('DD MMM')}:</strong> ${params.value}`;
-          }
+          },
+          extraCssText: 'z-index: 1000'
         },
         xAxis: {
           type: 'category',
@@ -1952,7 +1966,7 @@
           boundaryGap: false,
           axisLine: {
             show: true,
-            lineStyle: { color: getColor('gray-200') }
+            lineStyle: { color: getColor('secondary-bg') }
           },
           axisTick: {
             show: false
@@ -1962,7 +1976,7 @@
             interval: 6,
             showMinLabel: true,
             showMaxLabel: true,
-            color: getColor('gray-800')
+            color: getColor('secondary-color')
           }
         },
         yAxis: {
@@ -1982,7 +1996,7 @@
             },
             backgroundStyle: {
               borderRadius: 10,
-              color: getColor('primary-100')
+              color: getColor('primary-bg-subtle')
             }
           }
         ],
@@ -2031,7 +2045,7 @@
 
       let tooltipItem = ``;
       result.forEach((el, index) => {
-        tooltipItem += `<h6 class="fs-9 text-700 ${
+        tooltipItem += `<h6 class="fs-9 text-body-tertiary ${
         index > 0 && 'mb-0'
       }"><span class="fas fa-circle me-2" style="color:${el.color}"></span>
       ${el.date.format('MMM DD')} : ${el.value}
@@ -2051,15 +2065,17 @@
         tooltip: {
           trigger: 'axis',
           padding: 10,
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
-          textStyle: { color: getColor('dark') },
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') },
           borderWidth: 1,
           transitionDuration: 0,
           axisPointer: {
-            type: 'none'
+            type: 'none',
+            z: 0
           },
-          formatter: tooltipFormatter
+          formatter: tooltipFormatter,
+          extraCssText: 'z-index: 1000'
         },
         xAxis: [
           {
@@ -2070,7 +2086,7 @@
               interval: 13,
               showMinLabel: true,
               showMaxLabel: false,
-              color: getColor('gray-800'),
+              color: getColor('secondary-color'),
               align: 'left',
               fontFamily: 'Nunito Sans',
               fontWeight: 600,
@@ -2079,7 +2095,7 @@
             axisLine: {
               show: true,
               lineStyle: {
-                color: getColor('gray-200')
+                color: getColor('secondary-bg')
               }
             },
             axisTick: {
@@ -2091,8 +2107,8 @@
               lineStyle: {
                 color:
                   window.config.config.phoenixTheme === 'dark'
-                    ? getColor('gray-100')
-                    : getColor('gray-200')
+                    ? getColor('body-highlight-bg')
+                    : getColor('secondary-bg')
               }
             },
             boundaryGap: false
@@ -2106,7 +2122,7 @@
               interval: 130,
               showMaxLabel: true,
               showMinLabel: false,
-              color: getColor('gray-800'),
+              color: getColor('secondary-color'),
               align: 'right',
               fontFamily: 'Nunito Sans',
               fontWeight: 600,
@@ -2143,7 +2159,8 @@
             // ),
             data: currentMonthData,
             showSymbol: false,
-            symbol: 'circle'
+            symbol: 'circle',
+            zlevel: 2
           },
           {
             name: 'e',
@@ -2159,7 +2176,8 @@
               color: getColor('info')
             },
             showSymbol: false,
-            symbol: 'circle'
+            symbol: 'circle',
+            zlevel: 1
           }
         ],
         grid: {
@@ -2172,90 +2190,6 @@
         animation: false
       });
       echartSetOption(chart, userOptions, getDefaultOptions);
-    }
-  };
-
-  const { L } = window;
-
-  /* -------------------------------------------------------------------------- */
-  /*                                   leaflet                                  */
-  /* -------------------------------------------------------------------------- */
-
-  const leafletTopRegionsInit = () => {
-    const mapContainer = document.getElementById('map');
-    if (L && mapContainer) {
-      const getFilterColor = () => {
-        return window.config.config.phoenixTheme === 'dark'
-          ? [
-              'invert:98%',
-              'grayscale:69%',
-              'bright:89%',
-              'contrast:111%',
-              'hue:205deg',
-              'saturate:1000%'
-            ]
-          : ['bright:101%', 'contrast:101%', 'hue:23deg', 'saturate:225%'];
-      };
-      const tileLayerTheme =
-        'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
-
-      const tiles = L.tileLayer.colorFilter(tileLayerTheme, {
-        attribution: null,
-        transparent: true,
-        filter: getFilterColor()
-      });
-
-      const map = L.map('map', {
-        center: L.latLng(25.659195, 30.182691),
-        zoom: 0.6,
-        layers: [tiles],
-        minZoom: 1.4
-      });
-
-      const mcg = L.markerClusterGroup({
-        chunkedLoading: false,
-        spiderfyOnMaxZoom: false
-      });
-
-      leaftletPoints.map(point => {
-        const { name, location, street } = point;
-        const icon = L.icon({
-          iconUrl: `data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABkAAAApCAYAAADAk4LOAAAACXBIWXMAAAFgAAABYAEg2RPaAAADpElEQVRYCZ1XS1LbQBBtybIdiMEJKSpUqihgEW/xDdARyAnirOIl3MBH8NK7mBvkBpFv4Gy9IRSpFIQiRPyNfqkeZkY9HwmFt7Lm06+7p/vN2MmyDIrQ6QebALAHAD4AbFuWfQeAAACGs5H/w5jlsJJw4wMA+GhMFuMA99jIDJJOP+ihZwDQFmNuowWO1wS3viDXpdEdZPEc0odruj0EgN5s5H8tJOEEX8R3rbkMtcU34NTqhe5nSQTJ7Tkk80s6/Gk28scGiULguFBffgdufdEwWoQ0uoXo8hdAlooVH0REjISfwZSlyHGh0V5n6aHAtKTxXI5g6nQnMH0P4bEgwtR18Yw8Pj8QZ4ARUAI0Hl+fQZZGisGEBVwHr7XKzox57DXZ/ij8Cdwe2u057z9/wygOxRl4S2vSUHx1oucaMQGAHTrgtdag9mK5aN+Wx/uAAQ9Zenp/SRce4TpaNbQK4+sTcGqeTB/aIXv3XN5oj2VKqii++U0JunpZ8urxee4hvjqVc2hHpBDXuKKT9XMgVYJ1/1fPGSeaikzgmWWkMIi9bVf8UhotXxzORn5gWFchI8QyttlzjS0qpsaIGY2MMsujV/AUSdcY0dDpB6/EiOPYzclR1CI5mOez3ekHvrFLxa7cR5pTscfrXjk0Vhm5V2PqLUWnH3R5GbPGpMVD7E1ckXesKBQ7AS/vmQ1c0+kHuxpBj98lTCm8pbc5QRJRdZ6qHb/wGryXq3Lxszv+5gySuwvxueXySwYvHEjuQ9ofTGKYlrmK1EsCHMd5SoD7mZ1HHFCBHLNbMEshvrugqWLn01hpVVJhFgVGkDvK7hR6n2B+d9C7xsqWsbkqHv4cCsWezEb+o2SR+SFweUBxfA5wH7kShjKt2vWL57Px3GhIFEezkb8pxvUWHYhotAfCk2AtkEcxoOttrxUWDR5svb1emSQKj0WXK1HYIgFREbiBqmoZcB2RkbE+byMZiosorVgAZF1ID7yQhEs38wa7nUqNDezdlavC2HbBGSQkGgZ8uJVBmzeiKCRRpEa9ilWghORVeGB7BxeSKF5xqbFBkxBrFKUk/JHA7ppENQaCnCjthK+3opCEYyANztXmZN858cDYWSUSHk3A311GAZDvo6deNKUk1EsqnJoQlkYBNlmxQZeaMgmxoUokICoHDce351RCCiuKoirJWEgNOYvQplM2VCLhUqF7jf94rW9kHVUjQeheV4riv0i4ZOzzz/2y/+0KAOAfr4EE4HpCFhwAAAAASUVORK5CYII=`
-        });
-        const marker = L.marker([point.lat, point.long], {
-          icon
-        });
-        const popupContent = `
-        <h6 class="mb-1">${name}</h6>
-        <p class="m-0 text-500">${street}, ${location}</p>
-      `;
-        const popup = L.popup({ minWidth: 180 }).setContent(popupContent);
-        marker.bindPopup(popup);
-        mcg.addLayer(marker);
-        return true;
-      });
-      map.addLayer(mcg);
-
-      const themeController = document.body;
-      themeController.addEventListener(
-        'clickControl',
-        ({ detail: { control, value } }) => {
-          if (control === 'phoenixTheme') {
-            tiles.updateFilter(
-              value === 'dark'
-                ? [
-                    'invert:98%',
-                    'grayscale:69%',
-                    'bright:89%',
-                    'contrast:111%',
-                    'hue:205deg',
-                    'saturate:1000%'
-                  ]
-                : ['bright:101%', 'contrast:101%', 'hue:23deg', 'saturate:225%']
-            );
-          }
-        }
-      );
     }
   };
 
@@ -2593,7 +2527,7 @@
 
           const label = `
         <h6 class="mb-1">${name}</h6>
-        <p class="m-0 text-500">${street}, ${location}</p>
+        <p class="m-0 text-body-quaternary">${street}, ${location}</p>
       `;
           const marker = new window.google.maps.Marker({
             position: { lat: point.lat, lng: point.lng }
@@ -2669,7 +2603,6 @@
   docReady(returningCustomerChartInit);
   docReady(payingCustomerChartInit);
   docReady(totalOrdersChartInit);
-  docReady(leafletTopRegionsInit);
 
 }));
 //# sourceMappingURL=ecommerce-dashboard.js.map
