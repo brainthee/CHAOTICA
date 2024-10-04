@@ -1,10 +1,10 @@
-<p class="text-800 fs--2 mb-0">{{ phase.get_total_scheduled_hours }}hrs of {{ phase.get_total_scoped_hours }}hrs</p>
+<p class="text-800 fs-10 mb-0">{{ phase.get_total_scheduled_hours }}hrs of {{ phase.get_total_scoped_hours }}hrs</p>
 {% if phase.get_total_scheduled_perc > 100 %}
 <div class="progress" style="height:3px;">
     <div class="progress-bar bg-danger" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" role="progressbar"></div>
 </div>
-<span class="badge badge-phoenix fs--1 badge-phoenix-danger p-1 mt-2">
-    <span class="fas fa-exclamation-triangle fs--3"></span>
+<span class="badge badge-phoenix fs-9 badge-phoenix-danger p-1 mt-2">
+    <span class="fas fa-exclamation-triangle fs-11"></span>
     <span class="badge-label">Over</span>
 </span>
 {% elif phase.get_total_scheduled_perc >= 90 %}

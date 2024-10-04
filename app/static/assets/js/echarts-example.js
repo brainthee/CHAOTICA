@@ -79,7 +79,7 @@
     let tooltipItem = ``;
     params.forEach(el => {
       tooltipItem += `<div class='ms-1'>
-        <h6 class="text-700"><span class="fas fa-circle me-1 fs--2" style="color:${
+        <h6 class="text-700"><span class="fas fa-circle me-1 fs-10" style="color:${
           el.borderColor ? el.borderColor : el.color
         }"></span>
           ${el.seriesName} : ${
@@ -136,7 +136,7 @@
     const tooltipFormatter = params => {
       return `
     <div>
-        <h6 class="fs--1 text-700 mb-0">
+        <h6 class="fs-9 text-700 mb-0">
           <span class="fas fa-circle me-1" style='color:${params[0].borderColor}'></span>
           ${params[0].name} : ${params[0].value}
         </h6>
@@ -247,7 +247,7 @@
     const tooltipFormatter = params => {
       return `
     <div>
-        <h6 class="fs--1 text-700 mb-0">
+        <h6 class="fs-9 text-700 mb-0">
           <span class="fas fa-circle me-1" style='color:${params[0].borderColor}'></span>
           ${params[0].name} : ${params[0].value}
         </h6>
@@ -2396,7 +2396,7 @@
 
     const tooltipFormatter = params => {
       return `<div> 
-        <h6 class="fs--1 text-700 mb-0">
+        <h6 class="fs-9 text-700 mb-0">
         <span class="fas fa-circle me-1 text-primary"></span> ${params[0].name} : ${params[0].value} 
          </h6>
       </div> `;
@@ -5427,7 +5427,7 @@
     const tooltipFormatter = params => {
       return `
     <div>
-        <h6 class="fs--1 text-700 mb-0">
+        <h6 class="fs-9 text-700 mb-0">
           <span class="fas fa-circle me-1" style='color:${params[0].color}'></span>
           ${params[0].name} : ${params[0].value}
         </h6>
@@ -5496,7 +5496,7 @@
     const tooltipFormatter = params => {
       return `
     <div>
-        <h6 class="fs--1 text-700 mb-0">
+        <h6 class="fs-9 text-700 mb-0">
           <span class="fas fa-circle me-1" style='color:${params[0].color}'></span>
           ${params[0].name} : ${params[0].value}
         </h6>
@@ -5601,7 +5601,7 @@
     const tooltipFormatter = params => {
       return `
     <div>
-        <h6 class="fs--1 text-700 mb-0">
+        <h6 class="fs-9 text-700 mb-0">
           <span class="fas fa-circle me-1" style='color:${params[0].color}'></span>
           ${params[0].name} : ${params[0].value}
         </h6>
@@ -5837,7 +5837,7 @@
     const tooltipFormatter = params => {
       return `
     <div>
-        <h6 class="fs--1 text-700 mb-0">
+        <h6 class="fs-9 text-700 mb-0">
           <span class="fas fa-circle me-1" style='color:${params[0].color}'></span>
           ${params[0].name} : ${params[0].value}
         </h6>
@@ -6151,7 +6151,7 @@
       ];
       const num = params.seriesIndex;
       return `<strong > ${params.name} </strong>
-    <div class="fs--1 text-600">
+    <div class="fs-9 text-600">
       <strong >${indicators[params.seriesIndex][0]}</strong>: ${
       params.value[0]
     }  <br>

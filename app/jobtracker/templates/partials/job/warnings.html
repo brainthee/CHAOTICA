@@ -1,16 +1,16 @@
 
 {% if job.is_restricted %}
-<span class="badge badge-phoenix badge-phoenix-warning fs-1 m-2">Restricted: {{ job.get_restricted_detail_display }}</span>
+<span class="badge badge-phoenix badge-phoenix-warning fs-7 m-2">Restricted: {{ job.get_restricted_detail_display }}</span>
 {% endif %}
 {% if job.high_risk %}
-<span class="badge badge-phoenix badge-phoenix-warning fs-1 m-2">High Risk</span>
+<span class="badge badge-phoenix badge-phoenix-warning fs-7 m-2">High Risk</span>
 {% endif %}
 {% if job.technically_complex_test %}
-<span class="badge badge-phoenix badge-phoenix-warning fs-1 m-2">Complex Job</span>
+<span class="badge badge-phoenix badge-phoenix-warning fs-7 m-2">Complex Job</span>
 {% endif %}
 {% if job.is_time_limited %}
-<span class="badge badge-phoenix badge-phoenix-warning fs-1 m-2">Time Limited</span>
+<span class="badge badge-phoenix badge-phoenix-warning fs-7 m-2">Time Limited</span>
 {% endif %}
 {% if job.is_imported %}
-<span class="badge badge-phoenix badge-phoenix-info fs-1 m-2" data-bs-toggle="tooltip" data-bs-placement="bottom" title="This object has been imported and may have missing workflows">Imported</span>
+<span class="badge badge-phoenix badge-phoenix-info fs-7 m-2" data-bs-toggle="tooltip" data-bs-placement="bottom" title="This object has been imported and may have missing workflows">Imported</span>
 {% endif %}

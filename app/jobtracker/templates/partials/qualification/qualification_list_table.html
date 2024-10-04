@@ -2,7 +2,7 @@
 <ul class="list-group list-group-flush">
   {% for qualification in qualification_list %}
   <li class="list-group-item">
-    <a class="fw-bold fs-0" href="{{ qualification.get_absolute_url }}">
+    <a class="fw-bold fs-8" href="{{ qualification.get_absolute_url }}">
       {{ qualification.name }}{% if qualification.short_name %} - ({{ qualification.short_name }}){% endif %}
     </a>
   </li>

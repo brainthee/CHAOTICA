@@ -1,5 +1,5 @@
 <div class="table-responsive scrollbar mx-n1 px-1">
-  <table class="table fs--1 datatable mb-0">
+  <table class="table fs-9 datatable mb-0">
     <caption>Billing Codes</caption>
     <thead>
       <tr>
@@ -18,14 +18,14 @@
     <tr>
       <td class="align-middle time white-space-nowrap ps-0">
         <h4>
-          <a class="fw-bold fs-0" href="{{ billingcode.get_absolute_url }}">
+          <a class="fw-bold fs-8" href="{{ billingcode.get_absolute_url }}">
             {% include 'partials/billingcode/billingcode_badge.html' %}
           </a>
         </h4>
       </td>
       <td class="align-middle time white-space-nowrap ps-0">
         {% if billingcode.client %}
-        <a class="fw-bold fs-0" href="{{ billingcode.client.get_absolute_url }}">
+        <a class="fw-bold fs-8" href="{{ billingcode.client.get_absolute_url }}">
           {{ billingcode.client }}
         </a>
         {% endif %}

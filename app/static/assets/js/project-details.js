@@ -113,7 +113,7 @@
 
       let tooltipItem = ``;
       result.forEach((el, index) => {
-        tooltipItem += `<h6 class="fs--1 text-700 ${
+        tooltipItem += `<h6 class="fs-9 text-700 ${
         index > 0 && 'mb-0'
       }"><span class="fas fa-circle me-2" style="color:${el.color}"></span>
       ${el.date.format('MMM DD')} : ${el.value}

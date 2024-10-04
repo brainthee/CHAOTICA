@@ -31,7 +31,7 @@ class ClientSerializer(serializers.HyperlinkedModelSerializer):
     tams_display  =  serializers.SerializerMethodField()
 
     def get_name_link(self, client):
-         return format_html("<a class='fw-bold fs-0' href='{}'>{}</a>", client.get_absolute_url(), client.name)
+         return format_html("<a class='fw-bold fs-8' href='{}'>{}</a>", client.get_absolute_url(), client.name)
 
     def get_status_display(self, client):
         return format_html("<span class='badge badge-phoenix badge-phoenix-{}'>{}</span>", 
@@ -76,7 +76,7 @@ class JobSerializer(serializers.HyperlinkedModelSerializer):
         return {'data-pk': job.pk}
 
     def get_title_link(self, job):
-        return format_html("<a class='fw-bold fs-0' href='{}'>{}</a>", job.get_absolute_url(), job.title)
+        return format_html("<a class='fw-bold fs-8' href='{}'>{}</a>", job.get_absolute_url(), job.title)
 
     def get_status_display(self, job):
         status_display = loader.render_to_string(
@@ -85,10 +85,10 @@ class JobSerializer(serializers.HyperlinkedModelSerializer):
         return status_display
 
     def get_unit_link(self, job):
-        return format_html("<a class='fw-bold fs-0' href='{}'>{}</a>", job.unit.get_absolute_url(), job.unit)
+        return format_html("<a class='fw-bold fs-8' href='{}'>{}</a>", job.unit.get_absolute_url(), job.unit)
 
     def get_client_link(self, job):
-        return format_html("<a class='fw-bold fs-0' href='{}'>{}</a>", job.client.get_absolute_url(), job.client)
+        return format_html("<a class='fw-bold fs-8' href='{}'>{}</a>", job.client.get_absolute_url(), job.client)
 
     class Meta:
         model = Job

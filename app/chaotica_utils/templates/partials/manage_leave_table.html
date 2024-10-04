@@ -1,6 +1,6 @@
 {% load leave_tags %}
 <div class="table-responsive scrollbar mx-n1 px-1">
-  <table class="table table-sm fs--1 datatable mb-0">
+  <table class="table table-sm fs-9 datatable mb-0">
     <caption>Leave List</caption>
     <thead>
       <tr>
@@ -28,7 +28,7 @@
           <td class="align-middle ps-3 py-4">{{ leave.get_type_of_leave_display }}</td>
 
           <td class="align-middle ps-3 py-4">
-            <p class="mb-0 fs--1 text-900">{{ leave.notes }}</p>
+            <p class="mb-0 fs-9 text-900">{{ leave.notes }}</p>
           </td>
           <td class="align-middle ps-0 py-4">
             {% if leave.user.manager %}

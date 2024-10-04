@@ -7,7 +7,7 @@
          <div class="col-auto">
             <div class="timeline-item-bar position-relative">
                <div class="icon-item icon-item-md rounded-7 border">
-                  <span class="fa-solid fa-clipboard text-success fs--1"></span>
+                  <span class="fa-solid fa-clipboard text-success fs-9"></span>
                </div>
                <span class="timeline-bar border-end border-dashed border-300"></span>
             </div>
@@ -19,12 +19,12 @@
                      {{ activity.content }}
                   </h6>
                </div>
-               <p class="text-500 fs--1 mb-0 text-nowrap timeline-time"
+               <p class="text-500 fs-9 mb-0 text-nowrap timeline-time"
                   data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ activity.create_date }}">
                   <span class="fa-regular fa-clock me-1"></span>{{ activity.create_date|naturaltime }}
                </p>
             </div>
-            <h6 class="fs--2 fw-normal mb-3">
+            <h6 class="fs-10 fw-normal mb-3">
                {% if activity.is_system_note and activity.author is None %}
                by <span class="fw-semi-bold">SYSTEM</span>
                {% else %}

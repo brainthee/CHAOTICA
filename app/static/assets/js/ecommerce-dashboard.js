@@ -79,7 +79,7 @@
     let tooltipItem = ``;
     params.forEach(el => {
       tooltipItem += `<div class='ms-1'>
-        <h6 class="text-700"><span class="fas fa-circle me-1 fs--2" style="color:${
+        <h6 class="text-700"><span class="fas fa-circle me-1 fs-10" style="color:${
           el.borderColor ? el.borderColor : el.color
         }"></span>
           ${el.seriesName} : ${
@@ -132,7 +132,7 @@
 
       let tooltipItem = ``;
       result.forEach((el, index) => {
-        tooltipItem += `<h6 class="fs--1 text-700 ${
+        tooltipItem += `<h6 class="fs-9 text-700 ${
         index > 0 && 'mb-0'
       }"><span class="fas fa-circle me-2" style="color:${el.color}"></span>
       ${el.date.format('MMM DD')} : ${el.value}
@@ -2031,7 +2031,7 @@
 
       let tooltipItem = ``;
       result.forEach((el, index) => {
-        tooltipItem += `<h6 class="fs--1 text-700 ${
+        tooltipItem += `<h6 class="fs-9 text-700 ${
         index > 0 && 'mb-0'
       }"><span class="fas fa-circle me-2" style="color:${el.color}"></span>
       ${el.date.format('MMM DD')} : ${el.value}

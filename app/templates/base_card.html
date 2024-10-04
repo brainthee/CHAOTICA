@@ -8,43 +8,46 @@
 
 <main class="main" id="top">
       
-  <div class="container-fluid bg-300 dark__bg-1200">
-    <div class="bg-holder bg-auth-card-overlay" style="background-image:url({% static "assets/img/bg/37.png" %});">
+  <div class="container-fluid bg-body-tertiary dark__bg-gray-1200">
+    <div class="bg-holder bg-auth-card-overlay" 
+    style="background-image:url({% static "assets/img/bg/37.png" %});">
     </div>
     <!--/.bg-holder-->
 
     <div class="row flex-center position-relative min-vh-100 g-0 py-5">
       <div class="col-11 col-sm-10 col-xl-8">
-        <div class="card border border-200 auth-card">
+        <div class="card border border-translucent auth-card">
           <div class="card-body pe-md-0">
-            <div class="row">
+            <div class="row align-items-center gx-0 gy-7">
 
-
-              <div class="col bg-100 dark__bg-1100 rounded-3 position-relative overflow-hidden auth-title-box ms-3">
-                <div class="bg-holder" style="background-image:url({% block illustrationImg %}{% static "assets/img/bg/38.png" %}{% endblock illustrationImg %});">
-                </div>
+              <div class="col-auto bg-body-highlight dark__bg-gray-1100 rounded-3 position-relative overflow-hidden auth-title-box">
+                <div class="bg-holder" style="background-image:url({% static "assets/img/bg/38.png" %});"></div>
                 <!--/.bg-holder-->
-
                 <div class="position-relative px-4 px-lg-7 pt-7 pb-7 pb-sm-5 text-center text-md-start pb-lg-7 pb-md-7">
-                  <p class="text-700" id="quote"></p>
-                  <ul class="list-unstyled mb-0 w-max-content w-md-auto mx-auto">
+                  <h3 class="mb-3 text-body-emphasis fs-7">Quote of the day</h3>
+                  <p id="quote" class="text-body-tertiary"></p>
+                  <ul class="list-unstyled mb-0 w-max-content w-md-auto">
                     <li class="d-flex align-items-center">
-                      <span id="quote_author" class="text-700 fw-semi-bold">Fast</span>
+                      <span class="fas fa-at text-success me-2"></span>
+                      <span id="quote_author" class="text-body-tertiary fw-semibold"></span>
                     </li>
                   </ul>
                 </div>
-
-                <div class="position-relative z-index--1 mb-6 d-none d-md-block text-center mt-md-15">
-                  <img class="auth-title-box-img d-dark-none" src="{% static "assets/img/spot-illustrations/auth.png" %}" alt="" />
+                
+                <div class="position-relative z-n1 mb-6 d-none d-md-block text-center mt-md-15"><img
+                    class="auth-title-box-img d-dark-none" src="{% static "assets/img/spot-illustrations/auth.png" %}" alt=""><img
+                    class="auth-title-box-img d-light-none" src="{% static "assets/img/spot-illustrations/auth.png" %}" alt="">
                 </div>
               </div>
 
 
-              <div class="col mx-auto">
 
+
+
+
+              <div class="col mx-auto">
                 {% block alerts %}{% endblock alerts %}
                 {% block left_col_content %}{% endblock left_col_content %}
-
               </div>
             </div>
           </div>

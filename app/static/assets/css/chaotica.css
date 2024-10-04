@@ -58,9 +58,9 @@ div.content span.select2-container {
   opacity: 0.2;
 }
 
-.row {
+/* .row {
   --phoenix-gutter-x: unset !important
-}
+} */
 
 table caption {
   display: none;

@@ -1,7 +1,7 @@
 
 <div class="list py-0">
   {% if results_count > 0 %}
-  <h6 class="dropdown-header text-1000 fs--2 py-2">
+  <h6 class="dropdown-header text-1000 fs-10 py-2">
     {% if results_count > 50 %}
     <div class="alert alert-phoenix-warning py-1 text-wrap" role="alert">
       Over 50 results returned. Please be more specific to avoid truncated results.
@@ -14,7 +14,7 @@
 
     {% if search_clients %}
     <hr class="text-200 my-0" />
-    <h6 class="dropdown-header text-1000 fs--1 border-bottom border-200 py-2 lh-sm">Clients</h6>
+    <h6 class="dropdown-header text-1000 fs-9 border-bottom border-200 py-2 lh-sm">Clients</h6>
     <div class="py-2">
       {% for client in search_clients %}
       <a class="dropdown-item" href="{{ client.get_absolute_url }}">
@@ -31,7 +31,7 @@
 
     {% if search_billingCodes %}
     <hr class="text-200 my-0" />
-    <h6 class="dropdown-header text-1000 fs--1 border-bottom border-200 py-2 lh-sm">Billing Codes</h6>
+    <h6 class="dropdown-header text-1000 fs-9 border-bottom border-200 py-2 lh-sm">Billing Codes</h6>
     <div class="py-2">
       {% for code in search_billingCodes %}
       <a class="dropdown-item" href="{{ code.get_absolute_url }}">
@@ -48,7 +48,7 @@
 
     {% if search_services %}
     <hr class="text-200 my-0" />
-    <h6 class="dropdown-header text-1000 fs--1 border-bottom border-200 py-2 lh-sm">Services</h6>
+    <h6 class="dropdown-header text-1000 fs-9 border-bottom border-200 py-2 lh-sm">Services</h6>
     <div class="py-2">
       {% for svc in search_services %}
       <a class="dropdown-item" href="{{ svc.get_absolute_url }}">
@@ -65,7 +65,7 @@
 
     {% if search_skills %}
     <hr class="text-200 my-0" />
-    <h6 class="dropdown-header text-1000 fs--1 border-bottom border-200 py-2 lh-sm">Skills</h6>
+    <h6 class="dropdown-header text-1000 fs-9 border-bottom border-200 py-2 lh-sm">Skills</h6>
     <div class="py-2">
       {% for skill in search_skills %}
       <a class="dropdown-item" href="{{ skill.get_absolute_url }}">
@@ -82,7 +82,7 @@
 
     {% if search_certs %}
     <hr class="text-200 my-0" />
-    <h6 class="dropdown-header text-1000 fs--1 border-bottom border-200 py-2 lh-sm">Certifications</h6>
+    <h6 class="dropdown-header text-1000 fs-9 border-bottom border-200 py-2 lh-sm">Certifications</h6>
     <div class="py-2">
       {% for cert in search_certs %}
       <a class="dropdown-item" href="{{ cert.get_absolute_url }}">
@@ -99,7 +99,7 @@
 
     {% if search_accred %}
     <hr class="text-200 my-0" />
-    <h6 class="dropdown-header text-1000 fs--1 border-bottom border-200 py-2 lh-sm">Accreditations</h6>
+    <h6 class="dropdown-header text-1000 fs-9 border-bottom border-200 py-2 lh-sm">Accreditations</h6>
     <div class="py-2">
       {% for accred in search_accred %}
       <a class="dropdown-item" href="{{ accred.get_absolute_url }}">
@@ -116,7 +116,7 @@
 
     {% if search_project %}
     <hr class="text-200 my-0" />
-    <h6 class="dropdown-header text-1000 fs--1 border-bottom border-200 py-2 lh-sm">Projects</h6>
+    <h6 class="dropdown-header text-1000 fs-9 border-bottom border-200 py-2 lh-sm">Projects</h6>
     <div class="py-2">
       {% for project in search_project %}
       <a class="dropdown-item" href="{{ project.get_absolute_url }}">
@@ -133,7 +133,7 @@
     
     {% if search_users %}
     <hr class="text-200 my-0" />
-    <h6 class="dropdown-header text-1000 fs--1 border-bottom border-200 py-2 lh-sm">Members</h6>
+    <h6 class="dropdown-header text-1000 fs-9 border-bottom border-200 py-2 lh-sm">Members</h6>
     <div class="py-2">
       {% for usr in search_users %}
       <a class="dropdown-item py-2 d-flex align-items-center" href="{{ usr.get_absolute_url }}">
@@ -142,7 +142,7 @@
         </div>
         <div class="flex-1">
           <h6 class="mb-0 text-1000 title">{{ usr }}</h6>
-          <p class="fs--2 mb-0 d-flex text-700">{{ usr.jobtitle }}</p>
+          <p class="fs-10 mb-0 d-flex text-700">{{ usr.jobtitle }}</p>
         </div>
       </a>
       {% endfor %}  
@@ -152,13 +152,13 @@
 
     {% if search_phases %}
     <hr class="text-200 my-0" />
-    <h6 class="dropdown-header text-1000 fs--1 border-bottom border-200 py-2 lh-sm">Phases</h6>
+    <h6 class="dropdown-header text-1000 fs-9 border-bottom border-200 py-2 lh-sm">Phases</h6>
     <div class="py-2">
       {% for phase in search_phases %}
       <a class="dropdown-item py-2 d-flex align-items-center" href="{{ phase.get_absolute_url }}">
         <div class="flex-1">
           <h6 class="mb-0 text-1000 text-wrap title">{{ phase }}</h6>
-          <p class="fs--2 mb-0 d-flex text-700">
+          <p class="fs-10 mb-0 d-flex text-700">
             <span class="fw-medium text-600">{{ phase.client }}</span>
           </p>
         </div>
@@ -173,13 +173,13 @@
 
     {% if search_jobs %}
     <hr class="text-200 my-0" />
-    <h6 class="dropdown-header text-1000 fs--1 border-bottom border-200 py-2 lh-sm">Jobs</h6>
+    <h6 class="dropdown-header text-1000 fs-9 border-bottom border-200 py-2 lh-sm">Jobs</h6>
     <div class="py-2">
       {% for job in search_jobs %}
       <a class="dropdown-item py-2 d-flex align-items-center" href="{{ job.get_absolute_url }}">
         <div class="flex-1">
           <h6 class="mb-0 text-1000 text-wrap title">{{ job }}</h6>
-          <p class="fs--2 mb-0 d-flex text-700">
+          <p class="fs-10 mb-0 d-flex text-700">
             <span class="fw-medium text-600">{{ job.client }}</span>
           </p>
         </div>
@@ -195,16 +195,16 @@
 {% else %}
   {% if q %}
     {% if q|length < 3 %}
-    <h6 class="dropdown-header text-1000 fs--1 py-2">
+    <h6 class="dropdown-header text-1000 fs-9 py-2">
       Type more than 2 characters
     </h6>
     {% else %}
-      <h6 class="dropdown-header text-1000 fs--1 py-2">
+      <h6 class="dropdown-header text-1000 fs-9 py-2">
         No results found
       </h6>
     {% endif %}
   {% else %}
-  <h6 class="dropdown-header text-1000 fs--1 py-2">
+  <h6 class="dropdown-header text-1000 fs-9 py-2">
     Start typing to search...
   </h6>
   {% endif %}
