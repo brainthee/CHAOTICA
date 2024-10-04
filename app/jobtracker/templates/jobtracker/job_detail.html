@@ -6,9 +6,9 @@
 
 
 {% block breadcrumbItem %}
-<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{% url 'job_list' %}">Jobs</a></li>
-<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{{ job.client.get_absolute_url }}">{{ job.client }}</a></li>
-<li class="breadcrumb-item text-sm text-dark active" aria-current="page">{{ job.id }}:{{ job.title }}</li>
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-body-emphasis" href="{% url 'job_list' %}">Jobs</a></li>
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-body-emphasis" href="{{ job.client.get_absolute_url }}">{{ job.client }}</a></li>
+<li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">{{ job.id }}:{{ job.title }}</li>
 {% endblock breadcrumbItem %}
 
 {% block content_classes %}pt-15 px-0 {% endblock content_classes %}
@@ -132,7 +132,7 @@
               </div>
               <div class="col-md-2 text-end">
                   <a href="#" data-url="{% url 'assign_job_poc' job.slug %}" 
-                    class="text-dark js-load-modal-form">
+                    class="text-body-emphasis js-load-modal-form">
                     <span class="fa fa-plus"></span>
                   </a>
               </div>

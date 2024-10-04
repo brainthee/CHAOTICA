@@ -13,11 +13,11 @@
 
 {% block breadcrumbItem %}
   <li class="breadcrumb-item text-sm">
-    <a class="opacity-50 text-dark" href="{% url 'skill_list' %}">Skills</a>
+    <a class="opacity-50 text-body-emphasis" href="{% url 'skill_list' %}">Skills</a>
   </li>
-  <li class="breadcrumb-item text-sm opacity-50 text-dark">{{ skill.category }}</li>
-  <li class="breadcrumb-item text-sm opacity-50 text-dark" aria-current="page">{{ skill.name }}</li>
-  <li class="breadcrumb-item text-sm text-dark active" aria-current="page">Delete Skill</li>
+  <li class="breadcrumb-item text-sm opacity-50 text-body-emphasis">{{ skill.category }}</li>
+  <li class="breadcrumb-item text-sm opacity-50 text-body-emphasis" aria-current="page">{{ skill.name }}</li>
+  <li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">Delete Skill</li>
 {% endblock %}
 
 {% block content %}

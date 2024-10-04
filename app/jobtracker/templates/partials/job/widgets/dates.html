@@ -3,7 +3,7 @@
 
     <div class="col border-1 border-end border-gray-400 p-2">
         <div class="btn w-100 fs-8 fw-semi-bold d-flex flex-column d-xxl-inline-block">
-            <h6 class="fs-18 mb-0 font-w500 text-black">Scope requested</h6>
+            <h6 class="fs-18 mb-0 font-w500 text-body-emphasis">Scope requested</h6>
             <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ job.scoping_requested_on }}" >
                 {% if job.scoping_requested_on %}
                     {{ job.scoping_requested_on|naturaltime }}
@@ -16,7 +16,7 @@
 
     <div class="col border-1 border-end p-2">
         <div class="btn w-100 fs-8 fw-semi-bold d-flex flex-column d-xxl-inline-block">
-            <h6 class="fs-18 mb-0 font-w500 text-black">Scope completed</h6>
+            <h6 class="fs-18 mb-0 font-w500 text-body-emphasis">Scope completed</h6>
             <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ job.scoping_completed_date }}" >
                 {% if job.scoping_completed_date %}
                     {{ job.scoping_completed_date|naturaltime }}
@@ -29,7 +29,7 @@
 
     <div class="col border-1  border-end p-2">
         <div class="btn w-100 fs-8 fw-semi-bold d-flex flex-column d-xxl-inline-block">
-            <h6 class="fs-18 mb-0 font-w500 text-black">Start date</h6>
+            <h6 class="fs-18 mb-0 font-w500 text-body-emphasis">Start date</h6>
             <span>
                 {% if job.start_date %}
                     {{ job.start_date|naturalday }}
@@ -42,7 +42,7 @@
 
     <div class="col p-2">
         <div class="btn w-100 {% if job.isOverdue %}btn-outline-danger{% endif %} fs-8 fw-semi-bold d-flex flex-column d-xxl-inline-block">
-            <h6 class="fs-18 mb-0 font-w500 text-black">Delivery date</h6>
+            <h6 class="fs-18 mb-0 font-w500 text-body-emphasis">Delivery date</h6>
             <span>
                 {% if job.delivery_date %}
                     {{ job.delivery_date|naturalday }}

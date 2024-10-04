@@ -6,7 +6,7 @@
       {% csrf_token %}
       <div class="modal-header bg-info">
         <h6 class="modal-title text-white font-weight-normal" id="modal-title-default">Review Leave Request</h6>
-        <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close"></button>
+        <button type="button" class="btn-close text-body-emphasis" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
         <p>{{ leave.user }} has requested leave from {{ leave.start_date }} to {{ leave.end_date }}</p>

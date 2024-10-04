@@ -9,17 +9,17 @@
         </p>
         <ol>
             <li>
-                {% if not setup_unit %}<del>{% endif %}<strong>Setup a Organisational Unit</strong> - A unit is an organisation unit of users. Perhaps a geographical region or isolated unit. <a href="{% url 'organisationalunit_create' %}" class="text-dark">Add a unit</a>{% if not setup_unit %}</del>{% endif %}
+                {% if not setup_unit %}<del>{% endif %}<strong>Setup a Organisational Unit</strong> - A unit is an organisation unit of users. Perhaps a geographical region or isolated unit. <a href="{% url 'organisationalunit_create' %}" class="text-body-emphasis">Add a unit</a>{% if not setup_unit %}</del>{% endif %}
             </li>
             <li>
-                {% if not setup_service %}<del>{% endif %}<strong>Setup a Service</strong> - A service is a standardised offering you have. Such as "Web Application" or "Internal Infrastructure" <a href="{% url 'service_create' %}" class="text-dark">Add a service</a>{% if not setup_service %}</del>{% endif %}
+                {% if not setup_service %}<del>{% endif %}<strong>Setup a Service</strong> - A service is a standardised offering you have. Such as "Web Application" or "Internal Infrastructure" <a href="{% url 'service_create' %}" class="text-body-emphasis">Add a service</a>{% if not setup_service %}</del>{% endif %}
             </li>
             <li>
-                {% if not setup_client %}<del>{% endif %}<strong>Setup a Client</strong> - A client is who you're doing the job for! <a href="{% url 'client_create' %}" class="text-dark">Add a client</a>{% if not setup_unit %}<del>{% endif %}{% if not setup_client %}</del>{% endif %}
+                {% if not setup_client %}<del>{% endif %}<strong>Setup a Client</strong> - A client is who you're doing the job for! <a href="{% url 'client_create' %}" class="text-body-emphasis">Add a client</a>{% if not setup_unit %}<del>{% endif %}{% if not setup_client %}</del>{% endif %}
             </li>
         </ol>
     </span>
-    <button type="button" class="btn-close text-dark" data-bs-dismiss="alert" aria-label="Close">
+    <button type="button" class="btn-close text-body-emphasis" data-bs-dismiss="alert" aria-label="Close">
         <span aria-hidden="true">&times;</span>
     </button>
 </div>

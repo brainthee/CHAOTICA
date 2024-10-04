@@ -6,9 +6,9 @@
 {% block head_title %}{{ user }}{% endblock head_title %}
 
 {% block breadcrumbItem %}
-<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{% url 'user_list' %}">Users</a></li>
-<li class="breadcrumb-item text-sm"><a class="opacity-50 text-dark" href="{{ user.get_absolute_url }}">{{ user }}</a></li>
-<li class="breadcrumb-item text-sm text-dark active" aria-current="page">Manage</li>
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-body-emphasis" href="{% url 'user_list' %}">Users</a></li>
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-body-emphasis" href="{{ user.get_absolute_url }}">{{ user }}</a></li>
+<li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">Manage</li>
 {% endblock breadcrumbItem %}
 
 {% block content %}
