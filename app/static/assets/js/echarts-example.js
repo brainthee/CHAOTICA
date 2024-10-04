@@ -54,6 +54,9 @@
         if (control === 'phoenixTheme') {
           chart.setOption(window._.merge(getDefaultOptions(), userOptions));
         }
+        if (responsiveOptions) {
+          handleResize(responsiveOptions);
+        }
       }
     );
   };
@@ -79,7 +82,7 @@
     let tooltipItem = ``;
     params.forEach(el => {
       tooltipItem += `<div class='ms-1'>
-        <h6 class="text-700"><span class="fas fa-circle me-1 fs-10" style="color:${
+        <h6 class="text-body-tertiary"><span class="fas fa-circle me-1 fs-10" style="color:${
           el.borderColor ? el.borderColor : el.color
         }"></span>
           ${el.seriesName} : ${
@@ -89,7 +92,7 @@
       </div>`;
     });
     return `<div>
-            <p class='mb-2 text-600'>
+            <p class='mb-2 text-body-tertiary'>
               ${
                 window.dayjs(params[0].axisValue).isValid()
                   ? window.dayjs(params[0].axisValue).format(dateFormatter)
@@ -136,7 +139,7 @@
     const tooltipFormatter = params => {
       return `
     <div>
-        <h6 class="fs-9 text-700 mb-0">
+        <h6 class="fs-9 text-body-tertiary mb-0">
           <span class="fas fa-circle me-1" style='color:${params[0].borderColor}'></span>
           ${params[0].name} : ${params[0].value}
         </h6>
@@ -151,9 +154,9 @@
         tooltip: {
           trigger: 'axis',
           padding: [7, 10],
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
-          textStyle: { color: getColor('dark') },
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') },
           borderWidth: 1,
           transitionDuration: 0,
           formatter: tooltipFormatter,
@@ -167,12 +170,12 @@
           boundaryGap: false,
           axisLine: {
             lineStyle: {
-              color: getColor('gray-300')
+              color: getColor('tertiary-bg')
             }
           },
           axisTick: { show: false },
           axisLabel: {
-            color: getColor('gray-400'),
+            color: getColor('quaternary-color'),
             formatter: value => value.substring(0, 3),
             margin: 15
           },
@@ -185,13 +188,13 @@
           splitLine: {
             lineStyle: {
               type: 'dashed',
-              color: getColor('gray-200')
+              color: getColor('secondary-bg')
             }
           },
           boundaryGap: false,
           axisLabel: {
             show: true,
-            color: getColor('gray-400'),
+            color: getColor('quaternary-color'),
             margin: 15
           },
           axisTick: { show: false },
@@ -203,7 +206,7 @@
             type: 'line',
             data,
             itemStyle: {
-              color: getColor('white'),
+              color: getColor('body-highlight-bg'),
               borderColor: getColor('primary'),
               borderWidth: 2
             },
@@ -247,7 +250,7 @@
     const tooltipFormatter = params => {
       return `
     <div>
-        <h6 class="fs-9 text-700 mb-0">
+        <h6 class="fs-9 text-body-tertiary mb-0">
           <span class="fas fa-circle me-1" style='color:${params[0].borderColor}'></span>
           ${params[0].name} : ${params[0].value}
         </h6>
@@ -262,9 +265,9 @@
         tooltip: {
           trigger: 'axis',
           padding: [7, 10],
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
-          textStyle: { color: getColor('dark') },
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') },
           borderWidth: 1,
           formatter: params => tooltipFormatter(params),
           transitionDuration: 0,
@@ -278,13 +281,13 @@
           boundaryGap: false,
           axisLine: {
             lineStyle: {
-              color: getColor('gray-300'),
+              color: getColor('tertiary-bg'),
               type: 'solid'
             }
           },
           axisTick: { show: false },
           axisLabel: {
-            color: getColor('gray-400'),
+            color: getColor('quaternary-color'),
             formatter: value => value.substring(0, 3),
             margin: 15
           },
@@ -296,13 +299,13 @@
           type: 'value',
           splitLine: {
             lineStyle: {
-              color: getColor('gray-200')
+              color: getColor('secondary-bg')
             }
           },
           boundaryGap: false,
           axisLabel: {
             show: true,
-            color: getColor('gray-400'),
+            color: getColor('quaternary-color'),
             margin: 15
           },
           axisTick: { show: false },
@@ -314,7 +317,7 @@
             type: 'line',
             data,
             itemStyle: {
-              color: getColor('white'),
+              color: getColor('body-highlight-bg'),
               borderColor: getColor('primary'),
               borderWidth: 2
             },
@@ -373,9 +376,9 @@
         tooltip: {
           trigger: 'axis',
           padding: [7, 10],
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
-          textStyle: { color: getColor('dark') },
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') },
           borderWidth: 1,
           transitionDuration: 0,
           axisPointer: {
@@ -390,13 +393,13 @@
           boundaryGap: false,
           axisLine: {
             lineStyle: {
-              color: getColor('gray-300'),
+              color: getColor('tertiary-bg'),
               type: 'solid'
             }
           },
           axisTick: { show: false },
           axisLabel: {
-            color: getColor('gray-400'),
+            color: getColor('quaternary-color'),
             margin: 15,
             formatter: value => value.substring(0, 3)
           },
@@ -408,14 +411,14 @@
           type: 'value',
           splitLine: {
             lineStyle: {
-              color: getColor('gray-200'),
+              color: getColor('secondary-bg'),
               type: 'dashed'
             }
           },
           boundaryGap: false,
           axisLabel: {
             show: true,
-            color: getColor('gray-400'),
+            color: getColor('quaternary-color'),
             margin: 15
           },
           axisTick: { show: false },
@@ -427,7 +430,7 @@
             type: 'line',
             symbolSize: 6,
             itemStyle: {
-              color: getColor('white'),
+              color: getColor('body-highlight-bg'),
               borderColor: getColor('info'),
               borderWidth: 2
             },
@@ -443,7 +446,7 @@
             type: 'line',
             symbolSize: 10,
             itemStyle: {
-              color: getColor('white'),
+              color: getColor('body-highlight-bg'),
               borderColor: getColor('success'),
               borderWidth: 2
             },
@@ -459,7 +462,7 @@
             type: 'line',
             symbolSize: 10,
             itemStyle: {
-              color: getColor('white'),
+              color: getColor('body-highlight-bg'),
               borderColor: getColor('danger'),
               borderWidth: 2
             },
@@ -475,7 +478,7 @@
             type: 'line',
             symbolSize: 10,
             itemStyle: {
-              color: getColor('white'),
+              color: getColor('body-highlight-bg'),
               borderColor: getColor('warning'),
               borderWidth: 2
             },
@@ -491,7 +494,7 @@
             type: 'line',
             symbolSize: 10,
             itemStyle: {
-              color: getColor('white'),
+              color: getColor('body-highlight-bg'),
               borderColor: getColor('primary'),
               borderWidth: 2
             },
@@ -529,9 +532,9 @@
         tooltip: {
           trigger: 'axis',
           padding: [7, 10],
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
-          textStyle: { color: getColor('dark') },
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') },
           borderWidth: 1,
           transitionDuration: 0,
           axisPointer: {
@@ -546,13 +549,13 @@
           boundaryGap: false,
           axisLine: {
             lineStyle: {
-              color: getColor('gray-300'),
+              color: getColor('tertiary-bg'),
               type: 'solid'
             }
           },
           axisTick: { show: false },
           axisLabel: {
-            color: getColor('gray-400'),
+            color: getColor('quaternary-color'),
             margin: 15,
             formatter: value => value.substring(0, 3)
           },
@@ -564,13 +567,13 @@
           type: 'value',
           splitLine: {
             lineStyle: {
-              color: getColor('gray-200')
+              color: getColor('secondary-bg')
             }
           },
           boundaryGap: false,
           axisLabel: {
             show: true,
-            color: getColor('gray-400'),
+            color: getColor('quaternary-color'),
             margin: 15
           },
           axisTick: { show: false },
@@ -587,7 +590,7 @@
               color: rgbaColor(getColor('info'), 0.3)
             },
             itemStyle: {
-              color: getColor('white'),
+              color: getColor('body-highlight-bg'),
               borderColor: getColor('info'),
               borderWidth: 2
             },
@@ -606,7 +609,7 @@
               color: rgbaColor(getColor('success'), 0.3)
             },
             itemStyle: {
-              color: getColor('white'),
+              color: getColor('body-highlight-bg'),
               borderColor: getColor('success'),
               borderWidth: 2
             },
@@ -625,7 +628,7 @@
               color: rgbaColor(getColor('danger'), 0.3)
             },
             itemStyle: {
-              color: getColor('white'),
+              color: getColor('body-highlight-bg'),
               borderColor: getColor('danger'),
               borderWidth: 2
             },
@@ -644,7 +647,7 @@
               color: rgbaColor(getColor('warning'), 0.3)
             },
             itemStyle: {
-              color: getColor('white'),
+              color: getColor('body-highlight-bg'),
               borderColor: getColor('warning'),
               borderWidth: 2
             },
@@ -663,7 +666,7 @@
               color: rgbaColor(getColor('primary'), 0.3)
             },
             itemStyle: {
-              color: getColor('white'),
+              color: getColor('body-highlight-bg'),
               borderColor: getColor('primary'),
               borderWidth: 2
             },
@@ -706,13 +709,13 @@
             {
               name: 'Max',
               textStyle: {
-                color: getColor('gray-600')
+                color: getColor('quaternary-color')
               }
             },
             {
               name: 'Min',
               textStyle: {
-                color: getColor('gray-600')
+                color: getColor('quaternary-color')
               }
             }
           ]
@@ -720,9 +723,9 @@
         tooltip: {
           trigger: 'axis',
           padding: [7, 10],
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
-          textStyle: { color: getColor('dark') },
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') },
           borderWidth: 1,
           transitionDuration: 0,
           axisPointer: {
@@ -736,14 +739,14 @@
           boundaryGap: false,
           axisLine: {
             lineStyle: {
-              color: getColor('gray-300'),
+              color: getColor('tertiary-bg'),
               type: 'solid'
             }
           },
           axisTick: { show: false },
           axisLabel: {
             formatter: value => value.substring(0, 3),
-            color: getColor('gray-400'),
+            color: getColor('quaternary-color'),
             margin: 15
           },
           splitLine: {
@@ -754,13 +757,13 @@
           type: 'value',
           splitLine: {
             lineStyle: {
-              color: getColor('gray-200')
+              color: getColor('secondary-bg')
             }
           },
           boundaryGap: false,
           axisLabel: {
             show: true,
-            color: getColor('gray-400'),
+            color: getColor('quaternary-color'),
             margin: 15
           },
           axisTick: { show: false },
@@ -773,7 +776,7 @@
             data: [10, 11, 13, 11, 12, 9, 12],
             symbolSize: 10,
             itemStyle: {
-              color: getColor('white'),
+              color: getColor('body-highlight-bg'),
               borderColor: getColor('primary'),
               borderWidth: 2
             },
@@ -795,7 +798,7 @@
                 color: getColor('primary')
               },
               label: {
-                color: getColor('gray-600')
+                color: getColor('quaternary-color')
               },
               data: [{ type: 'average', name: 'average' }]
             }
@@ -806,7 +809,7 @@
             data: [1, -2, 2, 5, 3, 2, 0],
             symbolSize: 10,
             itemStyle: {
-              color: getColor('white'),
+              color: getColor('body-highlight-bg'),
               borderColor: getColor('danger'),
               borderWidth: 2
             },
@@ -828,7 +831,7 @@
                 color: getColor('danger')
               },
               label: {
-                color: getColor('gray-600')
+                color: getColor('quaternary-color')
               },
               data: [
                 { type: 'average', name: 'average' },
@@ -869,9 +872,9 @@
         tooltip: {
           trigger: 'axis',
           padding: [7, 10],
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
-          textStyle: { color: getColor('dark') },
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') },
           borderWidth: 1,
           transitionDuration: 0,
           axisPointer: {
@@ -884,13 +887,13 @@
           boundaryGap: false,
           axisLine: {
             lineStyle: {
-              color: getColor('gray-300'),
+              color: getColor('tertiary-bg'),
               type: 'solid'
             }
           },
           axisTick: { show: false },
           axisLabel: {
-            color: getColor('gray-400'),
+            color: getColor('quaternary-color'),
             margin: 15,
             formatter: value => window.dayjs(value).format('MMM DD')
           },
@@ -902,13 +905,13 @@
           type: 'value',
           splitLine: {
             lineStyle: {
-              color: getColor('gray-200')
+              color: getColor('secondary-bg')
             }
           },
           boundaryGap: false,
           axisLabel: {
             show: true,
-            color: getColor('gray-400'),
+            color: getColor('quaternary-color'),
             margin: 15
           },
           axisTick: { show: false },
@@ -990,9 +993,9 @@
         tooltip: {
           trigger: 'axis',
           padding: [7, 10],
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
-          textStyle: { color: getColor('dark') },
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') },
           borderWidth: 1,
           transitionDuration: 0,
           formatter: params => tooltipFormatter(params)
@@ -1003,14 +1006,14 @@
           boundaryGap: false,
           axisLine: {
             lineStyle: {
-              color: getColor('gray-300'),
+              color: getColor('tertiary-bg'),
               type: 'solid'
             }
           },
           axisTick: { show: false },
           axisLabel: {
             formatter: value => value.substring(0, 3),
-            color: getColor('gray-400'),
+            color: getColor('quaternary-color'),
             margin: 15
           },
           splitLine: {
@@ -1018,7 +1021,7 @@
           },
           axisPointer: {
             lineStyle: {
-              color: getColor('gray-300')
+              color: getColor('tertiary-bg')
             }
           }
         },
@@ -1026,13 +1029,13 @@
           type: 'value',
           splitLine: {
             lineStyle: {
-              color: getColor('gray-200')
+              color: getColor('secondary-bg')
             }
           },
           boundaryGap: false,
           axisLabel: {
             show: true,
-            color: getColor('gray-400'),
+            color: getColor('quaternary-color'),
             margin: 15
           },
           axisTick: { show: false },
@@ -1045,7 +1048,7 @@
             step: 'start',
             symbolSize: 10,
             itemStyle: {
-              color: getColor('white'),
+              color: getColor('body-highlight-bg'),
               borderColor: getColor('primary'),
               borderWidth: 2
             },
@@ -1061,7 +1064,7 @@
             step: 'middle',
             symbolSize: 10,
             itemStyle: {
-              color: getColor('white'),
+              color: getColor('body-highlight-bg'),
               borderColor: getColor('warning'),
               borderWidth: 2
             },
@@ -1077,7 +1080,7 @@
             step: 'end',
             symbolSize: 10,
             itemStyle: {
-              color: getColor('white'),
+              color: getColor('body-highlight-bg'),
               borderColor: getColor('danger'),
               borderWidth: 2
             },
@@ -1175,9 +1178,9 @@
         tooltip: {
           trigger: 'axis',
           padding: [7, 10],
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
-          textStyle: { color: getColor('dark') },
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') },
           borderWidth: 1,
           transitionDuration: 0,
           axisPointer: {
@@ -1190,18 +1193,18 @@
           data: dateList,
           axisLabel: {
             formatter: value => window.dayjs(value).format('MMM DD'),
-            color: getColor('gray-500'),
+            color: getColor('quaternary-color'),
             margin: 15
           },
           axisLine: {
             lineStyle: {
-              color: getColor('gray-300'),
+              color: getColor('tertiary-bg'),
               type: 'solid'
             }
           },
           axisPointer: {
             lineStyle: {
-              color: getColor('gray-300')
+              color: getColor('tertiary-bg')
             }
           }
         },
@@ -1209,12 +1212,12 @@
           type: 'value',
           axisLabel: {
             show: true,
-            color: getColor('gray-500'),
+            color: getColor('quaternary-color'),
             margin: 15
           },
           splitLine: {
             lineStyle: {
-              color: getColor('gray-200'),
+              color: getColor('secondary-bg'),
               type: 'dashed'
             }
           }
@@ -1228,7 +1231,6 @@
           symbol: 'circle',
           data: valueList,
           itemStyle: {
-            color: getColor('white'),
             borderWidth: 2
           }
         }
@@ -1273,9 +1275,9 @@
             animation: false
           },
           padding: [7, 10],
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
-          textStyle: { color: getColor('dark') },
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') },
           borderWidth: 1,
           transitionDuration: 0,
           formatter: params => tooltipFormatter(params)
@@ -1286,17 +1288,17 @@
             show: false
           },
           axisLabel: {
-            color: getColor('gray-500')
+            color: getColor('quaternary-color')
           },
 
           axisLine: {
             lineStyle: {
-              color: getColor('gray-300')
+              color: getColor('tertiary-bg')
             }
           },
           axisPointer: {
             lineStyle: {
-              color: getColor('gray-300')
+              color: getColor('tertiary-bg')
             }
           }
         },
@@ -1307,7 +1309,7 @@
             show: false
           },
           axisLabel: {
-            color: getColor('gray-500')
+            color: getColor('quaternary-color')
           }
         },
         series: [
@@ -1321,7 +1323,7 @@
               color: getColor('primary')
             },
             itemStyle: {
-              color: getColor('white'),
+              color: getColor('body-highlight-bg'),
               borderColor: getColor('primary'),
               borderWidth: 2
             },
@@ -1362,8 +1364,8 @@
         tooltip: {
           trigger: 'axis',
           padding: [7, 10],
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
           borderWidth: 1,
           transitionDuration: 0,
           axisPointer: {
@@ -1375,11 +1377,11 @@
           type: 'category',
           axisLine: {
             lineStyle: {
-              color: getColor('gray-300')
+              color: getColor('tertiary-bg')
             }
           },
           axisLabel: {
-            color: getColor('gray-600')
+            color: getColor('quaternary-color')
           },
           splitLine: { show: false },
           data: Array.from(Array(10).keys()).map(item => item + 1)
@@ -1387,11 +1389,11 @@
         yAxis: {
           type: 'log',
           axisLabel: {
-            color: getColor('gray-600')
+            color: getColor('quaternary-color')
           },
           splitLine: {
             lineStyle: {
-              color: getColor('gray-200')
+              color: getColor('secondary-bg')
             }
           }
         },
@@ -1402,7 +1404,7 @@
             data: [1, 3, 9, 27, 81, 247, 741, 2223, 6669],
             symbolSize: 7,
             itemStyle: {
-              color: getColor('white'),
+              color: getColor('body-highlight-bg'),
               borderColor: getColor('danger'),
               borderWidth: 2
             },
@@ -1417,7 +1419,7 @@
             data: [1, 2, 4, 8, 16, 32, 64, 128, 256],
             symbolSize: 7,
             itemStyle: {
-              color: getColor('white'),
+              color: getColor('body-highlight-bg'),
               borderColor: getColor('success'),
               borderWidth: 2
             },
@@ -1442,7 +1444,7 @@
             ],
             symbolSize: 7,
             itemStyle: {
-              color: getColor('white'),
+              color: getColor('body-highlight-bg'),
               borderColor: getColor('info'),
               borderWidth: 2
             },
@@ -1483,7 +1485,7 @@
         legend: {
           top: 0,
           textStyle: {
-            color: getColor('gray-700')
+            color: getColor('tertiary-color')
           }
         },
         tooltip: {
@@ -1503,26 +1505,26 @@
           type: 'category',
           axisLine: {
             lineStyle: {
-              color: getColor('gray-300')
+              color: getColor('tertiary-bg')
             }
           },
           axisLabel: {
-            color: getColor('gray-600')
+            color: getColor('quaternary-color')
           },
           axisPointer: {
             lineStyle: {
-              color: getColor('gray-300')
+              color: getColor('tertiary-bg')
             }
           }
         },
         yAxis: {
           gridIndex: 0,
           axisLabel: {
-            color: getColor('gray-600')
+            color: getColor('quaternary-color')
           },
           splitLine: {
             lineStyle: {
-              color: getColor('gray-200')
+              color: getColor('secondary-bg')
             }
           }
         },
@@ -1534,7 +1536,7 @@
             emphasis: { focus: 'series' },
             symbolSize: 10,
             itemStyle: {
-              color: getColor('white'),
+              color: getColor('body-highlight-bg'),
               borderColor: getColor('danger'),
               borderWidth: 2
             },
@@ -1550,7 +1552,7 @@
             emphasis: { focus: 'series' },
             symbolSize: 10,
             itemStyle: {
-              color: getColor('white'),
+              color: getColor('body-highlight-bg'),
               borderColor: getColor('info'),
               borderWidth: 2
             },
@@ -1566,7 +1568,7 @@
             emphasis: { focus: 'series' },
             symbolSize: 10,
             itemStyle: {
-              color: getColor('white'),
+              color: getColor('body-highlight-bg'),
               borderColor: getColor('warning'),
               borderWidth: 2
             },
@@ -1582,7 +1584,7 @@
             emphasis: { focus: 'series' },
             symbolSize: 10,
             itemStyle: {
-              color: getColor('white'),
+              color: getColor('body-highlight-bg'),
               borderColor: getColor('primary'),
               borderWidth: 2
             },
@@ -1599,7 +1601,7 @@
             emphasis: { focus: 'data' },
             label: {
               formatter: '{b}: {@2012} ({d}%)',
-              color: getColor('gray-600')
+              color: getColor('tertiary-color')
             },
             encode: {
               itemName: 'product',
@@ -1648,9 +1650,9 @@
         tooltip: {
           trigger: 'axis',
           padding: [7, 10],
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
-          textStyle: { color: getColor('dark') },
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') },
           borderWidth: 1,
           formatter: params => tooltipFormatter(params),
           transitionDuration: 0,
@@ -1663,13 +1665,13 @@
           data: months,
           axisLine: {
             lineStyle: {
-              color: getColor('gray-300'),
+              color: getColor('tertiary-bg'),
               type: 'solid'
             }
           },
           axisTick: { show: false },
           axisLabel: {
-            color: getColor('gray-400'),
+            color: getColor('quaternary-color'),
             formatter: value => value.substring(0, 3),
             margin: 15
           },
@@ -1682,13 +1684,13 @@
           boundaryGap: true,
           axisLabel: {
             show: true,
-            color: getColor('gray-400'),
+            color: getColor('quaternary-color'),
             margin: 15
           },
           splitLine: {
             show: true,
             lineStyle: {
-              color: getColor('gray-200')
+              color: getColor('secondary-bg')
             }
           },
           axisTick: { show: false },
@@ -1747,9 +1749,9 @@
         tooltip: {
           trigger: 'axis',
           padding: [7, 10],
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
-          textStyle: { color: getColor('dark') },
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') },
           borderWidth: 1,
           formatter: tooltipFormatter,
           transitionDuration: 0,
@@ -1763,12 +1765,12 @@
           axisLine: {
             show: true,
             lineStyle: {
-              color: getColor('gray-300')
+              color: getColor('tertiary-bg')
             }
           },
           axisTick: { show: true },
           axisLabel: {
-            color: getColor('gray-500')
+            color: getColor('quaternary-color')
           },
           splitLine: {
             show: false
@@ -1782,19 +1784,19 @@
           axisLabel: {
             formatter: value => value.substring(0, 3),
             show: true,
-            color: getColor('gray-500'),
+            color: getColor('quaternary-color'),
             margin: 15
           },
           splitLine: {
             show: true,
             lineStyle: {
-              color: getColor('gray-200')
+              color: getColor('secondary-bg')
             }
           },
           axisTick: { show: false },
           axisLine: {
             lineStyle: {
-              color: getColor('gray-300')
+              color: getColor('tertiary-bg')
             }
           }
         },
@@ -1834,9 +1836,9 @@
             type: 'shadow'
           },
           padding: [7, 10],
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
-          textStyle: { color: getColor('dark') },
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') },
           borderWidth: 1,
           transitionDuration: 0,
           formatter: params => tooltipFormatter(params)
@@ -1853,7 +1855,7 @@
           splitLine: {
             lineStyle: {
               type: 'dashed',
-              color: getColor('gray-200')
+              color: getColor('secondary-bg')
             }
           }
         },
@@ -1912,9 +1914,9 @@
             type: 'shadow'
           },
           padding: [7, 10],
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
-          textStyle: { color: getColor('dark') },
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') },
           borderWidth: 1,
           transitionDuration: 0,
           formatter: params => tooltipFormatter(params)
@@ -1923,19 +1925,19 @@
           type: 'value',
           axisLabel: {
             formatter: value => `${value / 1000}k`,
-            color: getColor('gray-500')
+            color: getColor('quaternary-color')
           },
           axisLine: {
             show: true,
             lineStyle: {
-              color: getColor('gray-300'),
+              color: getColor('tertiary-bg'),
               type: 'solid'
             }
           },
           splitLine: {
             lineStyle: {
               type: 'dashed',
-              color: getColor('gray-200')
+              color: getColor('secondary-bg')
             }
           }
         },
@@ -1944,12 +1946,12 @@
           axisLine: {
             show: true,
             lineStyle: {
-              color: getColor('gray-300'),
+              color: getColor('tertiary-bg'),
               type: 'solid'
             }
           },
           axisLabel: {
-            color: getColor('gray-500')
+            color: getColor('quaternary-color')
           },
           axisTick: { show: false },
           splitLine: { show: false },
@@ -2000,7 +2002,7 @@
     const emphasisStyle = {
       itemStyle: {
         shadowBlur: 10,
-        shadowColor: rgbaColor(getColor('dark'), 0.3)
+        shadowColor: rgbaColor(getColor('light-text-emphasis'), 0.3)
       }
     };
 
@@ -2017,7 +2019,7 @@
         legend: {
           data: ['Bar1', 'Bar2', 'Bar3', 'Bar4'],
           textStyle: {
-            color: getColor('gray-700')
+            color: getColor('tertiary-color')
           },
           left: 0
         },
@@ -2028,15 +2030,15 @@
             }
           },
           iconStyle: {
-            borderColor: getColor('gray-700'),
+            borderColor: getColor('tertiary-color'),
             borderWidth: 1
           }
         },
         tooltip: {
           trigger: 'item',
           padding: [7, 10],
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
           borderWidth: 1,
           transitionDuration: 0,
           axisPointer: {
@@ -2049,23 +2051,23 @@
           splitArea: { show: false },
 
           axisLabel: {
-            color: getColor('gray-600')
+            color: getColor('quaternary-color')
           },
 
           axisLine: {
             lineStyle: {
-              color: getColor('gray-400')
+              color: getColor('quaternary-color')
             }
           }
         },
         yAxis: {
           splitLine: {
             lineStyle: {
-              color: getColor('gray-200')
+              color: getColor('secondary-bg')
             }
           },
           axisLabel: {
-            color: getColor('gray-600')
+            color: getColor('quaternary-color')
           }
         },
         series: [
@@ -2143,9 +2145,9 @@
             type: 'shadow'
           },
           padding: [7, 10],
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
-          textStyle: { color: getColor('dark') },
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') },
           borderWidth: 1,
           transitionDuration: 0,
           position: (...params) => handleTooltipPosition(params),
@@ -2168,7 +2170,7 @@
             'Search Engine'
           ],
           textStyle: {
-            color: getColor('gray-600')
+            color: getColor('tertiary-color')
           },
           left: 0
         },
@@ -2177,17 +2179,17 @@
           axisLine: {
             show: true,
             lineStyle: {
-              color: getColor('gray-300')
+              color: getColor('tertiary-bg')
             }
           },
           axisTick: { show: false },
           axisLabel: {
-            color: getColor('gray-500')
+            color: getColor('quaternary-color')
           },
           splitLine: {
             lineStyle: {
               show: true,
-              color: getColor('gray-200')
+              color: getColor('secondary-bg')
             }
           }
         },
@@ -2197,12 +2199,12 @@
           axisLine: {
             lineStyle: {
               show: true,
-              color: getColor('gray-300')
+              color: getColor('tertiary-bg')
             }
           },
           axisTick: { show: false },
           axisLabel: {
-            color: getColor('gray-500'),
+            color: getColor('quaternary-color'),
             formatter: value => value.substring(0, 3)
           }
         },
@@ -2305,11 +2307,11 @@
           max: 'dataMax',
           splitLine: {
             lineStyle: {
-              color: getColor('gray-200')
+              color: getColor('secondary-bg')
             }
           },
           axisLabel: {
-            color: getColor('gray-500')
+            color: getColor('quaternary-color')
           }
         },
         yAxis: {
@@ -2317,12 +2319,12 @@
           data: ['A', 'B', 'C', 'D', 'E', 'F', 'G'],
           inverse: true,
           axisLabel: {
-            color: getColor('gray-500')
+            color: getColor('quaternary-color')
           },
           axisLine: {
             show: true,
             lineStyle: {
-              color: getColor('gray-300')
+              color: getColor('tertiary-bg')
             }
           },
           axisTick: {
@@ -2341,7 +2343,7 @@
             label: {
               show: true,
               position: 'right',
-              color: getColor('gray-700'),
+              color: getColor('tertiary-color'),
               fontWeight: 500,
               valueAnimation: true
             },
@@ -2396,7 +2398,7 @@
 
     const tooltipFormatter = params => {
       return `<div> 
-        <h6 class="fs-9 text-700 mb-0">
+        <h6 class="fs-9 text-body-tertiary mb-0">
         <span class="fas fa-circle me-1 text-primary"></span> ${params[0].name} : ${params[0].value} 
          </h6>
       </div> `;
@@ -2436,9 +2438,9 @@
         tooltip: {
           trigger: 'axis',
           padding: [7, 10],
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
-          textStyle: { color: getColor('dark') },
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') },
           borderWidth: 1,
           transitionDuration: 0,
           axisPointer: {
@@ -2449,7 +2451,7 @@
         title: {
           text: 'Gradient and Clickable bar chart',
           textStyle: {
-            color: getColor('gray-600')
+            color: getColor('tertiary-color')
           },
           left: 'center'
         },
@@ -2478,13 +2480,13 @@
           },
           axisLabel: {
             textStyle: {
-              color: getColor('gray-600')
+              color: getColor('quaternary-color')
             }
           },
           splitLine: {
             show: true,
             lineStyle: {
-              color: getColor('gray-300')
+              color: getColor('tertiary-bg')
             }
           }
         },
@@ -2569,18 +2571,18 @@
           axisPointer: {
             type: 'cross',
             crossStyle: {
-              color: getColor('gray-500')
+              color: getColor('quaternary-color')
             },
             label: {
               show: true,
-              backgroundColor: getColor('gray-600'),
-              color: getColor('gray-100')
+              backgroundColor: getColor('tertiary-color'),
+              color: getColor('body-highlight-bg')
             }
           },
           padding: [7, 10],
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
-          textStyle: { color: getColor('dark') },
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') },
           borderWidth: 1,
           transitionDuration: 0,
           position: (...params) => handleTooltipPosition(params),
@@ -2598,13 +2600,13 @@
             saveAsImage: { show: true }
           },
           iconStyle: {
-            borderColor: getColor('gray-700'),
+            borderColor: getColor('tertiary-color'),
             borderWidth: 1
           },
 
           emphasis: {
             iconStyle: {
-              textFill: getColor('gray-600')
+              textFill: getColor('tertiary-color')
             }
           }
         },
@@ -2612,7 +2614,7 @@
           top: 40,
           data: ['Evaporation', 'Precipitation', 'Average temperature'],
           textStyle: {
-            color: getColor('gray-600')
+            color: getColor('tertiary-color')
           }
         },
         xAxis: [
@@ -2620,7 +2622,7 @@
             type: 'category',
             data: months,
             axisLabel: {
-              color: getColor('gray-600'),
+              color: getColor('quaternary-color'),
               formatter: value => value.slice(0, 3)
             },
             axisPointer: {
@@ -2629,7 +2631,7 @@
             axisLine: {
               show: true,
               lineStyle: {
-                color: getColor('gray-300')
+                color: getColor('tertiary-bg')
               }
             }
           }
@@ -2641,13 +2643,13 @@
             max: 250,
             interval: 50,
             axisLabel: {
-              color: getColor('gray-600'),
+              color: getColor('quaternary-color'),
               formatter: '{value} ml'
             },
             splitLine: {
               show: true,
               lineStyle: {
-                color: getColor('gray-200')
+                color: getColor('secondary-bg')
               }
             }
           },
@@ -2657,14 +2659,14 @@
             max: 25,
             interval: 5,
             axisLabel: {
-              color: getColor('gray-600'),
+              color: getColor('quaternary-color'),
               formatter: '{value} °C'
             },
 
             splitLine: {
               show: true,
               lineStyle: {
-                color: getColor('gray-200')
+                color: getColor('secondary-bg')
               }
             }
           }
@@ -2703,7 +2705,7 @@
               color: getColor('warning')
             },
             itemStyle: {
-              color: getColor('white'),
+              color: getColor('body-highlight-bg'),
               borderColor: getColor('warning'),
               borderWidth: 2
             },
@@ -2749,15 +2751,15 @@
         legend: {
           data: ['Expenditure', 'Income'],
           textStyle: {
-            color: getColor('gray-600')
+            color: getColor('quaternary-color')
           }
         },
         tooltip: {
           trigger: 'axis',
           padding: [7, 10],
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
-          textStyle: { color: getColor('dark') },
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') },
           borderWidth: 1,
           /* eslint-disable prefer-destructuring */
           formatter: params => {
@@ -2781,13 +2783,13 @@
           data: days,
           axisLine: {
             lineStyle: {
-              color: getColor('gray-300'),
+              color: getColor('tertiary-bg'),
               type: 'solid'
             }
           },
           axisTick: { show: false },
           axisLabel: {
-            color: getColor('gray-400'),
+            color: getColor('quaternary-color'),
             formatter: value => window.dayjs(value).format('MMM DD'),
             margin: 15
           },
@@ -2800,13 +2802,13 @@
           boundaryGap: true,
           axisLabel: {
             show: true,
-            color: getColor('gray-400'),
+            color: getColor('quaternary-color'),
             margin: 15
           },
           splitLine: {
             show: true,
             lineStyle: {
-              color: getColor('gray-200')
+              color: getColor('secondary-bg')
             }
           },
           axisTick: { show: false },
@@ -2837,7 +2839,7 @@
             label: {
               show: true,
               position: 'top',
-              color: getColor('gray-600')
+              color: getColor('quaternary-color')
             },
             data: [1000, 400, 350, '-', '-', 320, 180, 190, '-', '-', '-'],
             itemStyle: {
@@ -2852,7 +2854,7 @@
             label: {
               show: true,
               position: 'bottom',
-              color: getColor('gray-600')
+              color: getColor('quaternary-color')
             },
             data: ['-', '-', '-', 100, 140, '-', '-', '-', 120, 345, 190],
             itemStyle: {
@@ -3032,7 +3034,7 @@
           },
           title: {
             textStyle: {
-              color: getColor('gray-700')
+              color: getColor('tertiary-color')
             }
           },
           tooltip: {
@@ -3041,9 +3043,9 @@
               type: 'shadow'
             },
             padding: [7, 10],
-            backgroundColor: getColor('gray-100'),
-            borderColor: getColor('gray-300'),
-            textStyle: { color: getColor('dark') },
+            backgroundColor: getColor('body-highlight-bg'),
+            borderColor: getColor('border-color'),
+            textStyle: { color: getColor('light-text-emphasis') },
             borderWidth: 1,
             transitionDuration: 0,
             formatter: tooltipFormatter
@@ -3052,7 +3054,7 @@
             left: 'right',
             data: ['Primary industry', 'Secondary industry', 'Tertiary Industry'],
             textStyle: {
-              color: getColor('gray-700')
+              color: getColor('tertiary-color')
             }
           },
           calculable: true,
@@ -3062,11 +3064,11 @@
               data: months,
               splitLine: { show: false },
               axisLabel: {
-                color: getColor('gray-600')
+                color: getColor('quaternary-color')
               },
               axisLine: {
                 lineStyle: {
-                  color: getColor('gray-400')
+                  color: getColor('quaternary-color')
                 }
               }
             }
@@ -3076,11 +3078,11 @@
               type: 'value',
               axisLabel: {
                 formatter: value => `${value / 1000}k`,
-                color: getColor('gray-600')
+                color: getColor('quaternary-color')
               },
               splitLine: {
                 lineStyle: {
-                  color: getColor('gray-200')
+                  color: getColor('secondary-bg')
                 }
               }
             }
@@ -3248,9 +3250,9 @@
         tooltip: {
           trigger: 'axis',
           padding: [7, 10],
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
-          textStyle: { color: getColor('dark') },
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') },
           borderWidth: 1,
           transitionDuration: 0,
           axisPointer: {
@@ -3267,13 +3269,13 @@
             restore: { show: true }
           },
           iconStyle: {
-            borderColor: getColor('gray-700'),
+            borderColor: getColor('tertiary-color'),
             borderWidth: 1
           },
 
           emphasis: {
             iconStyle: {
-              textFill: getColor('gray-600')
+              textFill: getColor('tertiary-color')
             }
           }
         },
@@ -3296,19 +3298,19 @@
           boundaryGap: true,
           axisPointer: {
             lineStyle: {
-              color: getColor('gray-300'),
+              color: getColor('tertiary-bg'),
               type: 'dashed'
             }
           },
           axisLine: {
             lineStyle: {
-              color: getColor('gray-300'),
+              color: getColor('tertiary-bg'),
               type: 'solid'
             }
           },
           axisTick: { show: false },
           axisLabel: {
-            color: getColor('gray-600'),
+            color: getColor('quaternary-color'),
             formatter: value =>
               window.dayjs(value, 'YYYY-MM-DD').format('MMM DD'),
             margin: 15,
@@ -3320,14 +3322,14 @@
           axisPointer: { show: false },
           splitLine: {
             lineStyle: {
-              color: getColor('gray-200'),
+              color: getColor('secondary-bg'),
               type: 'dashed'
             }
           },
           boundaryGap: false,
           axisLabel: {
             show: true,
-            color: getColor('gray-600'),
+            color: getColor('quaternary-color'),
             margin: 15,
             fontWeight: 500
           },
@@ -3367,7 +3369,7 @@
     const colorList = [
       getColor('primary'),
       getColor('info'),
-      getColor('dark'),
+      getColor('light-text-emphasis'),
       getColor('warning')
     ];
 
@@ -3468,15 +3470,15 @@
           top: 0,
           data: ['MA1', 'MA5', 'Volume'],
           textStyle: {
-            color: getColor('gray-600')
+            color: getColor('quaternary-color')
           }
         },
         tooltip: {
           trigger: 'axis',
           padding: [7, 10],
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
-          textStyle: { color: getColor('dark') },
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') },
           borderWidth: 1,
           transitionDuration: 0,
           position: (...params) => handleTooltipPosition(params)
@@ -3516,10 +3518,10 @@
             data: dates,
             boundaryGap: false,
             axisLine: {
-              lineStyle: { color: getColor('gray-300') }
+              lineStyle: { color: getColor('tertiary-bg') }
             },
             axisLabel: {
-              color: getColor('gray-600'),
+              color: getColor('quaternary-color'),
               formatter: value => window.dayjs(value).format('MMM DD')
             },
             min: 'dataMin',
@@ -3555,12 +3557,12 @@
             axisLine: { show: false },
             splitLine: {
               lineStyle: {
-                color: getColor('gray-200')
+                color: getColor('secondary-bg')
               }
             },
             axisTick: { show: false },
             axisLabel: {
-              color: getColor('gray-600')
+              color: getColor('quaternary-color')
             }
           },
           {
@@ -3827,9 +3829,9 @@
         tooltip: {
           trigger: 'item',
           padding: [7, 10],
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
-          textStyle: { color: getColor('dark') },
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') },
           borderWidth: 1,
           transitionDuration: 0,
           formatter: params =>
@@ -3874,7 +3876,7 @@
               show: false
             },
             itemStyle: {
-              borderColor: getColor('gray-300')
+              borderColor: getColor('border-color')
             },
             emphasis: {
               label: {
@@ -3965,9 +3967,9 @@
         tooltip: {
           trigger: 'item',
           padding: [7, 10],
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
-          textStyle: { color: getColor('dark') },
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') },
           borderWidth: 1,
           transitionDuration: 0,
           position: (...params) => handleTooltipPosition(params),
@@ -3991,7 +3993,7 @@
           text: ['High', 'Low'],
           calculable: true,
           textStyle: {
-            color: getColor('gray-600')
+            color: getColor('quaternary-color')
           },
           formatter: value => `${value / 1000}k`
         },
@@ -4007,7 +4009,7 @@
               max: 5
             },
             itemStyle: {
-              borderColor: getColor('gray-300')
+              borderColor: getColor('border-color')
             },
             label: {
               color: '#fff'
@@ -4052,44 +4054,44 @@
             type: 'none'
           },
           padding: [7, 10],
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
-          textStyle: { color: getColor('dark') },
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') },
           borderWidth: 1,
           transitionDuration: 0
         },
         xAxis: {
           axisLabel: {
-            color: getColor('gray-600')
+            color: getColor('quaternary-color')
           },
           axisLine: {
             show: true,
             lineStyle: {
-              color: getColor('gray-200')
+              color: getColor('secondary-bg')
             }
           },
           splitLine: {
             show: true,
             lineStyle: {
-              color: getColor('gray-200')
+              color: getColor('secondary-bg')
             }
           }
         },
         yAxis: {
           axisLabel: {
-            color: getColor('gray-600')
+            color: getColor('quaternary-color')
           },
           splitLine: {
             show: true,
             lineStyle: {
-              color: getColor('gray-200')
+              color: getColor('secondary-bg')
             }
           },
 
           axisLine: {
             show: true,
             lineStyle: {
-              color: getColor('gray-200')
+              color: getColor('secondary-bg')
             }
           }
         },
@@ -4188,7 +4190,7 @@
           left: 0,
           top: 0,
           textStyle: {
-            color: getColor('gray-600'),
+            color: getColor('tertiary-color'),
             fontWeight: 600
           }
         },
@@ -4197,44 +4199,44 @@
           top: '10%',
           data: ['1990', '2015'],
           textStyle: {
-            color: getColor('gray-600')
+            color: getColor('tertiary-color')
           }
         },
         xAxis: {
           axisLabel: {
-            color: getColor('gray-600'),
+            color: getColor('quaternary-color'),
             formatter: value => `${value / 1000}k`
           },
           axisLine: {
             show: true,
             lineStyle: {
-              color: getColor('gray-300')
+              color: getColor('tertiary-bg')
             }
           },
 
           splitLine: {
             show: true,
             lineStyle: {
-              color: getColor('gray-200')
+              color: getColor('secondary-bg')
             }
           }
         },
         yAxis: {
           scale: true,
           axisLabel: {
-            color: getColor('gray-600')
+            color: getColor('quaternary-color')
           },
           splitLine: {
             show: true,
             lineStyle: {
-              color: getColor('gray-200')
+              color: getColor('secondary-bg')
             }
           },
 
           axisLine: {
             show: true,
             lineStyle: {
-              color: getColor('gray-300')
+              color: getColor('tertiary-bg')
             }
           }
         },
@@ -4249,7 +4251,7 @@
             emphasis: {
               focus: 'series',
               label: {
-                color: getColor('gray-600'),
+                color: getColor('tertiary-color'),
                 show: true,
                 formatter: param => {
                   return param.data[3];
@@ -4271,7 +4273,7 @@
             emphasis: {
               focus: 'series',
               label: {
-                color: getColor('gray-600'),
+                color: getColor('quaternary-color'),
                 show: true,
                 formatter: param => {
                   return param.data[3];
@@ -4359,38 +4361,38 @@
 
     const xAxis = () => ({
       axisLabel: {
-        color: getColor('gray-600')
+        color: getColor('quaternary-color')
       },
       axisLine: {
         show: true,
         lineStyle: {
-          color: getColor('gray-300')
+          color: getColor('tertiary-bg')
         }
       },
 
       splitLine: {
         show: true,
         lineStyle: {
-          color: getColor('gray-200')
+          color: getColor('secondary-bg')
         }
       }
     });
 
     const yAxis = () => ({
       axisLabel: {
-        color: getColor('gray-600')
+        color: getColor('quaternary-color')
       },
       splitLine: {
         show: true,
         lineStyle: {
-          color: getColor('gray-200')
+          color: getColor('secondary-bg')
         }
       },
 
       axisLine: {
         show: true,
         lineStyle: {
-          color: getColor('gray-300')
+          color: getColor('tertiary-bg')
         }
       }
     });
@@ -4400,7 +4402,7 @@
       label: {
         formatter: 'y = 0.5 * x + 3',
         align: 'right',
-        color: getColor('gray-600'),
+        color: getColor('tertiary-color'),
         fontWeight: 600
       },
       lineStyle: {
@@ -4452,9 +4454,9 @@
             type: 'none'
           },
           padding: [7, 10],
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
-          textStyle: { color: getColor('dark') },
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') },
           borderWidth: 1,
           transitionDuration: 0,
           formatter: 'Group {a}: ({c})'
@@ -4464,7 +4466,7 @@
           left: 'center',
           top: 0,
           textStyle: {
-            color: getColor('gray-600')
+            color: getColor('tertiary-color')
           }
         },
         grid: window.innerWidth < 768 ? gridMdDown : gridMdUp,
@@ -4587,9 +4589,9 @@
             type: 'none'
           },
           padding: [7, 10],
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
-          textStyle: { color: getColor('dark') },
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') },
           borderWidth: 1,
           transitionDuration: 0,
           position: 'top',
@@ -4607,7 +4609,7 @@
           splitLine: {
             show: true,
             lineStyle: {
-              color: getColor('gray-200')
+              color: getColor('secondary-bg')
             }
           },
           axisLine: {
@@ -4615,7 +4617,7 @@
           },
           axisTick: {
             lineStyle: {
-              color: getColor('gray-600')
+              color: getColor('quaternary-color')
             }
           }
         },
@@ -4627,7 +4629,7 @@
           },
           axisTick: {
             lineStyle: {
-              color: getColor('gray-600')
+              color: getColor('quaternary-color')
             }
           },
           axisLabel: {
@@ -4671,7 +4673,7 @@
         legend: {
           left: 'left',
           textStyle: {
-            color: getColor('gray-600')
+            color: getColor('tertiary-color')
           }
         },
         series: [
@@ -4679,7 +4681,7 @@
             type: 'pie',
             radius: window.innerWidth < 530 ? '45%' : '60%',
             label: {
-              color: getColor('gray-700')
+              color: getColor('tertiary-color')
             },
             center: ['50%', '55%'],
             data: [
@@ -4723,7 +4725,7 @@
               itemStyle: {
                 shadowBlur: 10,
                 shadowOffsetX: 0,
-                shadowColor: rgbaColor(getColor('gray-600'), 0.5)
+                shadowColor: rgbaColor(getColor('tertiary-color'), 0.5)
               }
             }
           }
@@ -4731,9 +4733,9 @@
         tooltip: {
           trigger: 'item',
           padding: [7, 10],
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
-          textStyle: { color: getColor('dark') },
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') },
           borderWidth: 1,
           transitionDuration: 0,
           axisPointer: {
@@ -4774,7 +4776,7 @@
         legend: {
           left: 'left',
           textStyle: {
-            color: getColor('gray-600')
+            color: getColor('tertiary-color')
           }
         },
         series: [
@@ -4832,9 +4834,9 @@
         tooltip: {
           trigger: 'item',
           padding: [7, 10],
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
-          textStyle: { color: getColor('dark') },
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') },
           borderWidth: 1,
           transitionDuration: 0,
           axisPointer: {
@@ -4860,7 +4862,7 @@
           orient: 'vertical',
           left: 'left',
           textStyle: {
-            color: getColor('gray-600')
+            color: getColor('tertiary-color')
           }
         },
         series: [
@@ -4871,7 +4873,7 @@
             avoidLabelOverlap: false,
             itemStyle: {
               borderRadius: 10,
-              borderColor: getColor('gray-100'),
+              borderColor: getColor('body-highlight-bg'),
               borderWidth: 2
             },
             label: {
@@ -4923,9 +4925,9 @@
         tooltip: {
           trigger: 'item',
           padding: [7, 10],
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
-          textStyle: { color: getColor('dark') },
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') },
           borderWidth: 1,
           transitionDuration: 0,
           axisPointer: {
@@ -5050,7 +5052,7 @@
             text: 'Pie Multiple Chart',
             left: 'center',
             textStyle: {
-              color: getColor('gray-600')
+              color: getColor('tertiary-color')
             }
           }
         ],
@@ -5058,9 +5060,9 @@
         tooltip: {
           trigger: 'item',
           padding: [7, 10],
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
-          textStyle: { color: getColor('dark') },
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') },
           borderWidth: 1,
           transitionDuration: 0,
           axisPointer: {
@@ -5185,7 +5187,7 @@
             text: 'Pie Label Align Chart',
             left: 'center',
             textStyle: {
-              color: getColor('gray-600')
+              color: getColor('tertiary-color')
             }
           },
           {
@@ -5194,7 +5196,7 @@
             top: '85%',
             textAlign: 'center',
             subtextStyle: {
-              color: getColor('gray-700')
+              color: getColor('tertiary-color')
             }
           }
         ],
@@ -5202,9 +5204,9 @@
         tooltip: {
           trigger: 'item',
           padding: [7, 10],
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
-          textStyle: { color: getColor('dark') },
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') },
           borderWidth: 1,
           transitionDuration: 0,
           axisPointer: {
@@ -5231,7 +5233,7 @@
               position: 'outer',
               alignTo: 'labelLine',
               bleedMargin: 5,
-              color: getColor('gray-700')
+              color: getColor('tertiary-color')
             },
             left: '5%',
             right: '5%',
@@ -5343,7 +5345,7 @@
             text: 'Pie Edge Align Chart',
             left: 'center',
             textStyle: {
-              color: getColor('gray-600')
+              color: getColor('tertiary-color')
             }
           },
           {
@@ -5352,7 +5354,7 @@
             top: '85%',
             textAlign: 'center',
             subtextStyle: {
-              color: getColor('gray-700')
+              color: getColor('tertiary-color')
             }
           }
         ],
@@ -5360,9 +5362,9 @@
         tooltip: {
           trigger: 'item',
           padding: [7, 10],
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
-          textStyle: { color: getColor('dark') },
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') },
           borderWidth: 1,
           transitionDuration: 0,
           axisPointer: {
@@ -5389,7 +5391,7 @@
               position: 'outer',
               alignTo: 'edge',
               margin: 20,
-              color: getColor('gray-700')
+              color: getColor('tertiary-color')
             },
             left: '5%',
             right: '5%',
@@ -5427,7 +5429,7 @@
     const tooltipFormatter = params => {
       return `
     <div>
-        <h6 class="fs-9 text-700 mb-0">
+        <h6 class="fs-9 text-body-tertiary mb-0">
           <span class="fas fa-circle me-1" style='color:${params[0].color}'></span>
           ${params[0].name} : ${params[0].value}
         </h6>
@@ -5442,9 +5444,9 @@
         tooltip: {
           trigger: 'axis',
           padding: [7, 10],
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
-          textStyle: { color: getColor('dark') },
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') },
           borderWidth: 1,
           formatter: params => tooltipFormatter(params),
           transitionDuration: 0,
@@ -5459,24 +5461,24 @@
             type: 'gauge',
             splitLine: {
               lineStyle: {
-                color: getColor('gray-600')
+                color: getColor('tertiary-color')
               }
             },
             axisLabel: {
-              color: getColor('gray-600')
+              color: getColor('tertiary-color')
             },
             detail: {
               formatter: '{value}'
             },
             title: {
-              color: getColor('gray-600')
+              color: getColor('tertiary-color')
             },
             data: [
               {
                 value: 50,
                 name: 'SCORE',
                 detail: {
-                  color: getColor('gray-600')
+                  color: getColor('tertiary-color')
                 }
               }
             ]
@@ -5496,7 +5498,7 @@
     const tooltipFormatter = params => {
       return `
     <div>
-        <h6 class="fs-9 text-700 mb-0">
+        <h6 class="fs-9 text-body-tertiary mb-0">
           <span class="fas fa-circle me-1" style='color:${params[0].color}'></span>
           ${params[0].name} : ${params[0].value}
         </h6>
@@ -5511,9 +5513,9 @@
         tooltip: {
           trigger: 'axis',
           padding: [7, 10],
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
-          textStyle: { color: getColor('dark') },
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') },
           borderWidth: 1,
           formatter: params => tooltipFormatter(params),
           transitionDuration: 0,
@@ -5545,7 +5547,7 @@
             axisLine: {
               lineStyle: {
                 width: 18,
-                color: [[1, getColor('gray-200')]]
+                color: [[1, getColor('secondary-bg')]]
               }
             },
             axisTick: {
@@ -5554,12 +5556,12 @@
             splitLine: {
               lineStyle: {
                 width: 2,
-                color: getColor('gray-600')
+                color: getColor('quaternary-color')
               }
             },
             axisLabel: {
               distance: 25,
-              color: getColor('gray-600')
+              color: getColor('quaternary-color')
             },
             anchor: {
               show: true,
@@ -5582,7 +5584,7 @@
                 value: 70,
                 detail: {
                   fontSize: 30,
-                  color: getColor('gray-600'),
+                  color: getColor('quaternary-color'),
                   offsetCenter: [0, '40%']
                 }
               }
@@ -5601,7 +5603,7 @@
     const tooltipFormatter = params => {
       return `
     <div>
-        <h6 class="fs-9 text-700 mb-0">
+        <h6 class="fs-9 text-body-tertiary mb-0">
           <span class="fas fa-circle me-1" style='color:${params[0].color}'></span>
           ${params[0].name} : ${params[0].value}
         </h6>
@@ -5616,9 +5618,9 @@
         tooltip: {
           trigger: 'axis',
           padding: [7, 10],
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
-          textStyle: { color: getColor('dark') },
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') },
           borderWidth: 1,
           formatter: params => tooltipFormatter(params),
           transitionDuration: 0,
@@ -5642,13 +5644,13 @@
               clip: false,
               itemStyle: {
                 borderWidth: 1,
-                borderColor: getColor('gray-500')
+                borderColor: getColor('quaternary-color')
               }
             },
             axisLine: {
               lineStyle: {
                 width: 18,
-                color: [[1, getColor('gray-200')]]
+                color: [[1, getColor('secondary-bg')]]
               }
             },
             splitLine: {
@@ -5726,7 +5728,7 @@
             axisLine: {
               lineStyle: {
                 width: 8,
-                color: [[1, getColor('gray-200')]]
+                color: [[1, getColor('secondary-bg')]]
               }
             },
             splitLine: {
@@ -5765,7 +5767,7 @@
             axisLine: {
               lineStyle: {
                 width: 8,
-                color: [[1, getColor('gray-200')]]
+                color: [[1, getColor('secondary-bg')]]
               }
             },
             splitLine: {
@@ -5804,7 +5806,7 @@
             axisLine: {
               lineStyle: {
                 width: 8,
-                color: [[1, getColor('gray-200')]]
+                color: [[1, getColor('secondary-bg')]]
               }
             },
             splitLine: {
@@ -5837,7 +5839,7 @@
     const tooltipFormatter = params => {
       return `
     <div>
-        <h6 class="fs-9 text-700 mb-0">
+        <h6 class="fs-9 text-body-tertiary mb-0">
           <span class="fas fa-circle me-1" style='color:${params[0].color}'></span>
           ${params[0].name} : ${params[0].value}
         </h6>
@@ -5852,9 +5854,9 @@
         tooltip: {
           trigger: 'axis',
           padding: [7, 10],
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
-          textStyle: { color: getColor('dark') },
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') },
           borderWidth: 1,
           formatter: params => tooltipFormatter(params),
           transitionDuration: 0,
@@ -5883,7 +5885,7 @@
             axisLine: {
               roundCap: true,
               lineStyle: {
-                color: [[1, getColor('gray-200')]]
+                color: [[1, getColor('secondary-bg')]]
               }
             },
             axisTick: {
@@ -5892,12 +5894,12 @@
             splitLine: {
               lineStyle: {
                 width: 2,
-                color: getColor('gray-600')
+                color: getColor('quaternary-color')
               }
             },
             axisLabel: {
               distance: 25,
-              color: getColor('gray-600')
+              color: getColor('quaternary-color')
             },
             data: [
               {
@@ -5944,7 +5946,7 @@
             ],
             title: {
               fontSize: 14,
-              color: getColor('gray-600')
+              color: getColor('tertiary-color')
             },
             detail: {
               width: 40,
@@ -6015,7 +6017,7 @@
               }
             },
             axisLabel: {
-              color: getColor('gray-600'),
+              color: getColor('quaternary-color'),
               distance: -60,
               formatter: value => {
                 if (value === 0.875) {
@@ -6035,7 +6037,7 @@
             },
             title: {
               offsetCenter: [0, '-20%'],
-              color: getColor('gray-600')
+              color: getColor('tertiary-color')
             },
             detail: {
               offsetCenter: [0, '0%'],
@@ -6070,15 +6072,15 @@
           orient: 'vertical',
           left: 'left',
           textStyle: {
-            color: getColor('gray-600')
+            color: getColor('tertiary-color')
           }
         },
         tooltip: {
           trigger: 'item',
           padding: [7, 10],
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
-          textStyle: { color: getColor('dark') },
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') },
           borderWidth: 1,
           transitionDuration: 0,
           axisPointer: {
@@ -6107,7 +6109,7 @@
           radius: 120,
           splitLine: {
             lineStyle: {
-              color: rgbaColor(getColor('gray-700'))
+              color: rgbaColor(getColor('tertiary-color'))
             }
           }
         },
@@ -6151,7 +6153,7 @@
       ];
       const num = params.seriesIndex;
       return `<strong > ${params.name} </strong>
-    <div class="fs-9 text-600">
+    <div class="fs-9 text-body-tertiary">
       <strong >${indicators[params.seriesIndex][0]}</strong>: ${
       params.value[0]
     }  <br>
@@ -6171,15 +6173,15 @@
           orient: 'vertical',
           left: 'left',
           textStyle: {
-            color: getColor('gray-600')
+            color: getColor('tertiary-color')
           }
         },
         tooltip: {
           trigger: 'item',
           padding: [7, 10],
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
-          textStyle: { color: getColor('dark') },
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') },
           borderWidth: 1,
           transitionDuration: 0,
           axisPointer: {
@@ -6204,12 +6206,12 @@
             name: {
               formatter: '{value}',
               textStyle: {
-                color: getColor('gray-700')
+                color: getColor('tertiary-color')
               }
             },
             splitLine: {
               lineStyle: {
-                color: rgbaColor(getColor('gray-700'))
+                color: rgbaColor(getColor('tertiary-color'))
               }
             }
           },
@@ -6227,13 +6229,13 @@
             center: window.innerWidth < 992 ? ['50%', '75%'] : ['75%', '50%'],
             splitLine: {
               lineStyle: {
-                color: rgbaColor(getColor('gray-700'))
+                color: getColor('tertiary-color')
               }
             },
             name: {
               textStyle: {
-                color: rgbaColor(getColor('gray-1000')),
-                backgroundColor: rgbaColor(getColor('gray-100')),
+                color: getColor('tertiary-color'),
+                backgroundColor: rgbaColor(getColor('body-highlight-bg')),
                 borderRadius: 3,
                 padding: [3, 5]
               }
@@ -6291,7 +6293,7 @@
                   formatter: params => {
                     return params.value;
                   },
-                  color: getColor('gray-700')
+                  color: getColor('tertiary-color')
                 }
               },
               {
@@ -6398,15 +6400,15 @@
         legend: {
           left: 'left',
           textStyle: {
-            color: getColor('gray-600')
+            color: getColor('tertiary-color')
           }
         },
         tooltip: {
           trigger: 'item',
           padding: [7, 10],
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
-          textStyle: { color: getColor('dark') },
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') },
           borderWidth: 1,
           transitionDuration: 0,
           axisPointer: {
@@ -6435,7 +6437,7 @@
             radius: 85,
             splitLine: {
               lineStyle: {
-                color: rgbaColor(getColor('gray-700'))
+                color: rgbaColor(getColor('tertiary-color'))
               }
             }
           },
@@ -6451,7 +6453,7 @@
             center: getCenter()[1],
             splitLine: {
               lineStyle: {
-                color: rgbaColor(getColor('gray-700'))
+                color: rgbaColor(getColor('tertiary-color'))
               }
             }
           },
@@ -6464,7 +6466,7 @@
             radius: 85,
             splitLine: {
               lineStyle: {
-                color: rgbaColor(getColor('gray-700'))
+                color: rgbaColor(getColor('tertiary-color'))
               }
             }
           }
@@ -6608,9 +6610,9 @@
         tooltip: {
           position: 'top',
           padding: [7, 10],
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
-          textStyle: { color: getColor('dark') },
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') },
           borderWidth: 1
         },
         grid: {
@@ -6627,12 +6629,12 @@
             show: true
           },
           axisLabel: {
-            color: getColor('gray-600')
+            color: getColor('quaternary-color')
           },
           axisLine: {
             show: true,
             lineStyle: {
-              color: getColor('gray-400')
+              color: getColor('quaternary-color')
             }
           }
         },
@@ -6641,7 +6643,7 @@
           data: days,
           axisLabel: {
             formatter: value => value.substring(0, 3),
-            color: getColor('gray-600')
+            color: getColor('quaternary-color')
           },
           splitArea: {
             show: true
@@ -6649,7 +6651,7 @@
           axisLine: {
             show: true,
             lineStyle: {
-              color: getColor('gray-400')
+              color: getColor('quaternary-color')
             }
           }
         },
@@ -6661,7 +6663,7 @@
           left: 'center',
           bottom: '0%',
           textStyle: {
-            color: getColor('gray-600'),
+            color: getColor('tertiary-color'),
             fontWeight: 500
           },
           inRange: {
@@ -6744,9 +6746,9 @@
         tooltip: {
           position: 'top',
           padding: [7, 10],
-          backgroundColor: getColor('gray-100'),
-          borderColor: getColor('gray-300'),
-          textStyle: { color: getColor('dark') },
+          backgroundColor: getColor('body-highlight-bg'),
+          borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') },
           borderWidth: 1
         },
         grid: {
@@ -6764,12 +6766,12 @@
             show: true
           },
           axisLabel: {
-            color: getColor('gray-600')
+            color: getColor('quaternary-color')
           },
           axisLine: {
             show: true,
             lineStyle: {
-              color: getColor('gray-400')
+              color: getColor('quaternary-color')
             }
           }
         },
@@ -6779,7 +6781,7 @@
           data: days,
           axisLabel: {
             formatter: value => value.substring(0, 3),
-            color: getColor('gray-600')
+            color: getColor('quaternary-color')
           },
           splitArea: {
             show: true
@@ -6787,7 +6789,7 @@
           axisLine: {
             show: true,
             lineStyle: {
-              color: getColor('gray-400')
+              color: getColor('quaternary-color')
             }
           }
         },
@@ -6800,7 +6802,7 @@
           left: 'center',
           bottom: '0%',
           textStyle: {
-            color: getColor('gray-600'),
+            color: getColor('quaternary-color'),
             fontWeight: 500
           }
         },
@@ -6813,7 +6815,7 @@
               show: true
             },
             itemStyle: {
-              borderColor: getColor('white'),
+              borderColor: getColor('body-highlight-bg'),
               borderWidth: 3
             },
             emphasis: {

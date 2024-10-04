@@ -52,14 +52,31 @@
         {% endif %}
 
         <li class="nav-item">
-          <div class="theme-control-toggle fa-icon-wait px-2">
-            <input class="form-check-input ms-0 theme-control-toggle-input" type="checkbox" data-theme-control="phoenixTheme" value="dark" id="themeControlToggle" />
-            <label class="mb-0 theme-control-toggle-label theme-control-toggle-light" for="themeControlToggle" data-bs-toggle="tooltip" data-bs-placement="left" title="Switch theme">
-              <span class="icon" data-feather="moon"></span>
-            </label>
-            <label class="mb-0 theme-control-toggle-label theme-control-toggle-dark" for="themeControlToggle" data-bs-toggle="tooltip" data-bs-placement="left" title="Switch theme">
-              <span class="icon" data-feather="sun"></span>
-            </label>
+          <div class="dropdown theme-control-dropdown" data-bs-tooltip="tooltip" data-bs-placement="left" title="Switch theme">
+            <button class="btn btn-sm btn-phoenix-secondary dropdown-toggle dropdown-caret-none" type="button" id="themeSwitchDropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <span class="fas fa-sun {% if request.user.site_theme != 'light' %}d-none{% endif %}" data-theme-dropdown-toggle-icon="light"></span>
+              <span class="fas fa-moon {% if request.user.site_theme != 'dark' %}d-none{% endif %}" data-theme-dropdown-toggle-icon="dark"></span>
+              <span class="fas fa-adjust {% if request.user.site_theme != 'auto' %}d-none{% endif %}" data-theme-dropdown-toggle-icon="auto"></span>
+            </button>
+            <div class="dropdown-menu dropdown-caret border py-0 mt-2" aria-labelledby="themeSwitchDropdown">
+              <div class="rounded-2 py-2">
+                <button class="dropdown-item d-flex align-items-center gap-2" type="button" value="light" data-theme-control="phoenixTheme">
+                  <span class="fas fa-sun"></span>
+                  Light
+                  <span class="fas fa-check dropdown-check-icon ms-auto text-body-quaternray"></span>
+                </button>
+                <button class="dropdown-item d-flex align-items-center gap-2" type="button" value="dark" data-theme-control="phoenixTheme">
+                  <span class="fas fa-moon" data-fa-transform=""></span>
+                  Dark
+                  <span class="fas fa-check dropdown-check-icon ms-auto text-body-quaternray"></span>
+                </button>
+                <button class="dropdown-item d-flex align-items-center gap-2" type="button" value="auto" data-theme-control="phoenixTheme">
+                  <span class="fas fa-adjust" data-fa-transform=""></span>
+                  Auto
+                  <span class="fas fa-check dropdown-check-icon ms-auto text-body-quaternray"></span>
+                </button>
+              </div>
+            </div>
           </div>
         </li>
 
@@ -133,7 +150,7 @@
             aria-expanded="false" data-bs-auto-close="outside">
             <span data-feather="bell" style="height:20px;width:20px;"></span>
             {% if request.user.unread_notifications|length > 0 %}
-            <span class="position-absolute top-10 start-75 translate-middle badge rounded-pill bg-warning-500">{{ request.user.unread_notifications | length }}<span class="visually-hidden">unread messages</span>
+            <span class="position-absolute top-10 start-75 translate-middle badge rounded-pill bg-warning">{{ request.user.unread_notifications | length }}<span class="visually-hidden">unread messages</span>
             {% endif %}
           </a>
 

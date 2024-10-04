@@ -30,7 +30,7 @@ def index(request):
 
     context["pendingScoping"] = Job.objects.jobs_with_unit_permission(
         request.user, "can_scope_jobs"
-    ).filter(status=JobStatuses.PENDING_SCOPE)
+    ).filter(Q(status=JobStatuses.PENDING_SCOPE) | Q(status=JobStatuses.SCOPING_ADDITIONAL_INFO_REQUIRED))
 
     context["scopesToSignoff"] = Job.objects.jobs_with_unit_permission(
         request.user, "can_signoff_scopes"

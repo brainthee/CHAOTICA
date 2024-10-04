@@ -156,13 +156,17 @@ $(function() {
     $("#mainModal").on("submit", ".js-workflow-job-form", saveForm);
     $("#mainModal").on("submit", ".js-submit-modal-form", saveForm);
 
-    $('.theme-control-toggle-input').change(function(){
-        var modeVal = "light";
-        if(this.checked) {
-            modeVal = "dark";
+    const themeController = document.body;
+
+    themeController.addEventListener(
+      "clickControl",
+      ({ detail: { control, value } }) => {    
+        if (control === "phoenixTheme") {
+          const mode = value === 'auto' ? window.phoenix.utils.getSystemTheme() : value;
+          $.get('{% url 'update_own_theme' %}', {mode:value}, function (data, textStatus, jqXHR) {});
         }
-        $.get('{% url 'update_own_theme' %}', {mode:modeVal}, function (data, textStatus, jqXHR) {});
-    });
+      }
+    );
 
     $("#sectionNav li .nav-link").click(function(e) {
         // e.preventDefault();

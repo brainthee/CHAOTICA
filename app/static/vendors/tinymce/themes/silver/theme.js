@@ -1,11 +1,11 @@
 /**
- * TinyMCE version 6.1.2 (2022-07-29)
+ * TinyMCE version 7.0.1 (2024-04-10)
  */
 
 (function () {
     'use strict';
 
-    const getPrototypeOf = Object.getPrototypeOf;
+    const getPrototypeOf$2 = Object.getPrototypeOf;
     const hasProto = (v, constructor, predicate) => {
       var _a;
       if (predicate(v, constructor.prototype)) {
@@ -29,7 +29,7 @@
     const isType$1 = type => value => typeOf(value) === type;
     const isSimpleType = type => value => typeof value === type;
     const eq$1 = t => a => t === a;
-    const is$2 = (value, constructor) => isObject(value) && hasProto(value, constructor, (o, proto) => getPrototypeOf(o) === proto);
+    const is$2 = (value, constructor) => isObject(value) && hasProto(value, constructor, (o, proto) => getPrototypeOf$2(o) === proto);
     const isString = isType$1('string');
     const isObject = isType$1('object');
     const isPlainObject = value => is$2(value, Object);
@@ -85,13 +85,11 @@
         throw new Error(msg);
       };
     };
-    const apply = f => {
+    const apply$1 = f => {
       return f();
     };
     const never = constant$1(false);
     const always = constant$1(true);
-
-    var global$a = tinymce.util.Tools.resolve('tinymce.ThemeManager');
 
     class Optional {
       constructor(tag, value) {
@@ -380,11 +378,9 @@
       r[i] = x;
     };
     const internalFilter = (obj, pred, onTrue, onFalse) => {
-      const r = {};
       each(obj, (x, i) => {
         (pred(x, i) ? onTrue : onFalse)(x, i);
       });
-      return r;
     };
     const bifilter = (obj, pred) => {
       const t = {};
@@ -470,8 +466,13 @@
     const ensureTrailing = (str, suffix) => {
       return endsWith(str, suffix) ? str : addToEnd(str, suffix);
     };
-    const contains$1 = (str, substr) => {
-      return str.indexOf(substr) !== -1;
+    const contains$1 = (str, substr, start = 0, end) => {
+      const idx = str.indexOf(substr, start);
+      if (idx !== -1) {
+        return isUndefined(end) ? true : idx + substr.length <= end;
+      } else {
+        return false;
+      }
     };
     const startsWith = (str, prefix) => {
       return checkRange(str, prefix, 0);
@@ -522,7 +523,39 @@
       fromPoint
     };
 
-    typeof window !== 'undefined' ? window : Function('return this;')();
+    const Global = typeof window !== 'undefined' ? window : Function('return this;')();
+
+    const path$1 = (parts, scope) => {
+      let o = scope !== undefined && scope !== null ? scope : Global;
+      for (let i = 0; i < parts.length && o !== undefined && o !== null; ++i) {
+        o = o[parts[i]];
+      }
+      return o;
+    };
+    const resolve = (p, scope) => {
+      const parts = p.split('.');
+      return path$1(parts, scope);
+    };
+
+    const unsafe = (name, scope) => {
+      return resolve(name, scope);
+    };
+    const getOrDie$1 = (name, scope) => {
+      const actual = unsafe(name, scope);
+      if (actual === undefined || actual === null) {
+        throw new Error(name + ' not available on this browser');
+      }
+      return actual;
+    };
+
+    const getPrototypeOf$1 = Object.getPrototypeOf;
+    const sandHTMLElement = scope => {
+      return getOrDie$1('HTMLElement', scope);
+    };
+    const isPrototypeOf = x => {
+      const scope = resolve('ownerDocument.defaultView', x);
+      return isObject(x) && (sandHTMLElement(scope).prototype.isPrototypeOf(x) || /^HTML\w*Element$/.test(getPrototypeOf$1(x).constructor.name));
+    };
 
     const DOCUMENT = 9;
     const DOCUMENT_FRAGMENT = 11;
@@ -535,6 +568,7 @@
     };
     const type$1 = element => element.dom.nodeType;
     const isType = t => element => type$1(element) === t;
+    const isHTMLElement = element => isElement$1(element) && isPrototypeOf(element.dom);
     const isElement$1 = isType(ELEMENT);
     const isText = isType(TEXT);
     const isDocument = isType(DOCUMENT);
@@ -582,7 +616,24 @@
     const documentElement = element => SugarElement.fromDom(documentOrOwner(element).dom.documentElement);
     const defaultView = element => SugarElement.fromDom(documentOrOwner(element).dom.defaultView);
     const parent = element => Optional.from(element.dom.parentNode).map(SugarElement.fromDom);
+    const parentNode = element => parent(element);
     const parentElement = element => Optional.from(element.dom.parentElement).map(SugarElement.fromDom);
+    const parents = (element, isRoot) => {
+      const stop = isFunction(isRoot) ? isRoot : never;
+      let dom = element.dom;
+      const ret = [];
+      while (dom.parentNode !== null && dom.parentNode !== undefined) {
+        const rawParent = dom.parentNode;
+        const p = SugarElement.fromDom(rawParent);
+        ret.push(p);
+        if (stop(p) === true) {
+          break;
+        } else {
+          dom = rawParent;
+        }
+      }
+      return ret;
+    };
     const offsetParent = element => Optional.from(element.dom.offsetParent).map(SugarElement.fromDom);
     const nextSibling = element => Optional.from(element.dom.nextSibling).map(SugarElement.fromDom);
     const children = element => map$2(element.dom.childNodes, SugarElement.fromDom);
@@ -673,7 +724,7 @@
     const remove$7 = (element, key) => {
       element.dom.removeAttribute(key);
     };
-    const clone$1 = element => foldl(element.dom.attributes, (acc, attr) => {
+    const clone$2 = element => foldl(element.dom.attributes, (acc, attr) => {
       acc[attr.name] = attr.value;
       return acc;
     }, {});
@@ -735,7 +786,7 @@
       }
       return css;
     };
-    const isValidValue = (tag, property, value) => {
+    const isValidValue$1 = (tag, property, value) => {
       const element = SugarElement.fromTag(tag);
       set$8(element, property, value);
       const style = getRaw(element, property);
@@ -1409,7 +1460,21 @@
       const height = getOuter$2(element);
       return bounds(position.left, position.top, width, height);
     };
+    const constrain = (original, constraint) => {
+      const left = Math.max(original.x, constraint.x);
+      const top = Math.max(original.y, constraint.y);
+      const right = Math.min(original.right, constraint.right);
+      const bottom = Math.min(original.bottom, constraint.bottom);
+      const width = right - left;
+      const height = bottom - top;
+      return bounds(left, top, width, height);
+    };
+    const constrainByMany = (original, constraints) => {
+      return foldl(constraints, (acc, c) => constrain(acc, c), original);
+    };
     const win = () => getBounds$3(window);
+
+    var global$a = tinymce.util.Tools.resolve('tinymce.ThemeManager');
 
     const value$4 = value => {
       const applyHelper = fn => fn(value);
@@ -1453,8 +1518,8 @@
         forall: always,
         getOr: identity,
         or: identity,
-        getOrThunk: apply,
-        orThunk: apply,
+        getOrThunk: apply$1,
+        orThunk: apply$1,
         getOrDie: die(String(error)),
         each: noop,
         toOptional: Optional.none
@@ -1566,7 +1631,7 @@
     const shallow$1 = (old, nu) => {
       return nu;
     };
-    const deep = (old, nu) => {
+    const deep$1 = (old, nu) => {
       const bothObjects = isPlainObject(old) && isPlainObject(nu);
       return bothObjects ? deepMerge(old, nu) : nu;
     };
@@ -1587,7 +1652,7 @@
         return ret;
       };
     };
-    const deepMerge = baseMerge(deep);
+    const deepMerge = baseMerge(deep$1);
     const merge$1 = baseMerge(shallow$1);
 
     const required$2 = () => ({
@@ -1757,13 +1822,17 @@
         toString
       };
     };
-    const oneOf = props => {
+    const oneOf = (props, rawF) => {
+      const f = rawF !== undefined ? rawF : identity;
       const extract = (path, val) => {
         const errors = [];
         for (const prop of props) {
           const res = prop.extract(path, val);
           if (res.stype === SimpleResultType.Value) {
-            return res;
+            return {
+              stype: SimpleResultType.Value,
+              svalue: f(res.svalue)
+            };
           }
           errors.push(res);
         }
@@ -2174,6 +2243,7 @@
     const repositionRequested = prefixName('system.repositionRequested');
     const focusShifted = prefixName('focusmanager.shifted');
     const slotVisibility = prefixName('slotcontainer.visibility');
+    const externalElementScroll = prefixName('system.external.element.scroll');
     const changeTab = prefixName('change.tab');
     const dismissTab = prefixName('dismiss.tab');
     const highlight$1 = prefixName('highlight');
@@ -2197,6 +2267,13 @@
         ...properties
       };
       component.getSystem().triggerEvent(event, target, data);
+    };
+    const retargetAndDispatchWith = (component, target, eventName, properties) => {
+      const data = {
+        ...properties,
+        target
+      };
+      component.getSystem().triggerEvent(eventName, target, data);
     };
     const dispatchEvent = (component, target, event, simulatedEvent) => {
       component.getSystem().triggerEvent(event, target, simulatedEvent.event);
@@ -2322,8 +2399,9 @@
       return get$9(container);
     };
 
-    const clone = (original, isDeep) => SugarElement.fromDom(original.dom.cloneNode(isDeep));
-    const shallow = original => clone(original, false);
+    const clone$1 = (original, isDeep) => SugarElement.fromDom(original.dom.cloneNode(isDeep));
+    const shallow = original => clone$1(original, false);
+    const deep = original => clone$1(original, true);
 
     const getHtml = element => {
       if (isShadowRoot(element)) {
@@ -2680,6 +2758,7 @@
           baseBehaviour,
           'representing',
           'item-events',
+          'toolbar-button-events',
           'tooltipping'
         ],
         [mousedown()]: [
@@ -2737,6 +2816,13 @@
     const get$8 = element => read(element, 'class');
     const add$3 = (element, clazz) => add$4(element, 'class', clazz);
     const remove$3 = (element, clazz) => remove$4(element, 'class', clazz);
+    const toggle$5 = (element, clazz) => {
+      if (contains$2(get$8(element), clazz)) {
+        return remove$3(element, clazz);
+      } else {
+        return add$3(element, clazz);
+      }
+    };
 
     const add$2 = (element, clazz) => {
       if (supports(element)) {
@@ -2760,6 +2846,11 @@
       }
       cleanClass(element);
     };
+    const toggle$4 = (element, clazz) => {
+      const result = supports(element) ? element.dom.classList.toggle(clazz) : toggle$5(element, clazz);
+      cleanClass(element);
+      return result;
+    };
     const has = (element, clazz) => supports(element) && element.dom.classList.contains(clazz);
 
     const add$1 = (element, classes) => {
@@ -2770,6 +2861,11 @@
     const remove$1 = (element, classes) => {
       each$1(classes, x => {
         remove$2(element, x);
+      });
+    };
+    const toggle$3 = (element, classes) => {
+      each$1(classes, x => {
+        toggle$4(element, x);
       });
     };
     const hasAll = (element, classes) => forall(classes, clazz => has(element, clazz));
@@ -2853,7 +2949,7 @@
         class: clazz,
         style,
         ...existingAttributes
-      } = clone$1(obsoleted);
+      } = clone$2(obsoleted);
       const {
         toSet: attrsToSet,
         toRemove: attrsToRemove
@@ -3025,7 +3121,7 @@
       };
       return Result.value(build$2(completeSpec, obsoleted));
     };
-    const text$1 = textContent => {
+    const text$2 = textContent => {
       const element = SugarElement.fromText(textContent);
       return external$1({ element });
     };
@@ -3100,6 +3196,13 @@
       const is = (s, test) => test(s);
       return ClosestOrAncestor(is, ancestor$1, scope, predicate, isRoot);
     };
+    const sibling$1 = (scope, predicate) => {
+      const element = scope.dom;
+      if (!element.parentNode) {
+        return Optional.none();
+      }
+      return child$1(SugarElement.fromDom(element.parentNode), x => !eq(scope, x) && predicate(x));
+    };
     const child$1 = (scope, predicate) => {
       const pred = node => predicate(SugarElement.fromDom(node));
       const result = find$5(scope.dom.childNodes, pred);
@@ -3124,7 +3227,9 @@
 
     const closest$2 = (scope, predicate, isRoot) => closest$3(scope, predicate, isRoot).isSome();
 
+    const first$1 = selector => one(selector);
     const ancestor = (scope, selector, isRoot) => ancestor$1(scope, e => is(e, selector), isRoot);
+    const sibling = (scope, selector) => sibling$1(scope, e => is(e, selector));
     const child = (scope, selector) => child$1(scope, e => is(e, selector));
     const descendant = (scope, selector) => one(selector, scope);
     const closest$1 = (scope, selector, isRoot) => {
@@ -3504,7 +3609,7 @@
     const loadEvent = (bConfig, bState, f) => runOnInit((component, _simulatedEvent) => {
       f(component, bConfig, bState);
     });
-    const create$4 = (schema, name, active, apis, extra, state) => {
+    const create$5 = (schema, name, active, apis, extra, state) => {
       const configSchema = objOfOnly(schema);
       const schemaSchema = optionObjOf(name, [optionObjOfOnly('config', schema)]);
       return doCreate(configSchema, schemaSchema, name, active, apis, extra, state);
@@ -3581,9 +3686,9 @@
       defaulted('state', NoState),
       defaulted('extra', {})
     ]);
-    const create$3 = data => {
+    const create$4 = data => {
       const value = asRawOrDie$1('Creating behaviour: ' + data.name, simpleSchema, data);
-      return create$4(value.fields, value.name, value.active, value.apis, value.extra, value.state);
+      return create$5(value.fields, value.name, value.active, value.apis, value.extra, value.state);
     };
     const modeSchema = objOfOnly([
       required$1('branchKey'),
@@ -3600,7 +3705,7 @@
     };
     const revoke = constant$1(undefined);
 
-    const Receiving = create$3({
+    const Receiving = create$4({
       fields: ReceivingSchema,
       name: 'receiving',
       active: ActiveReceiving
@@ -3616,7 +3721,7 @@
         exhibit: exhibit$6
     });
 
-    const focus$3 = element => element.dom.focus();
+    const focus$3 = (element, preventScroll = false) => element.dom.focus({ preventScroll });
     const blur$1 = element => element.dom.blur();
     const hasFocus = element => {
       const root = getRootNode(element).dom;
@@ -3710,8 +3815,7 @@
       const height = getOuter$2(element);
       return bounds(position.left, position.top, width, height);
     };
-    const viewport = (origin, getBounds) => getBounds.fold(() => origin.fold(win, win, bounds), b => origin.fold(b, b, () => {
-      const bounds$1 = b();
+    const viewport = (origin, optBounds) => optBounds.fold(() => origin.fold(win, win, bounds), bounds$1 => origin.fold(constant$1(bounds$1), constant$1(bounds$1), () => {
       const pos = translate$2(origin, bounds$1.x, bounds$1.y);
       return bounds(pos.left, pos.top, bounds$1.width, bounds$1.height);
     }));
@@ -4052,13 +4156,13 @@
     });
 
     const defaultOr = (options, key, dephault) => options[key] === undefined ? dephault : options[key];
-    const simple = (anchor, element, bubble, layouts, lastPlacement, getBounds, overrideOptions, transition) => {
+    const simple = (anchor, element, bubble, layouts, lastPlacement, optBounds, overrideOptions, transition) => {
       const maxHeightFunction = defaultOr(overrideOptions, 'maxHeightFunction', anchored());
       const maxWidthFunction = defaultOr(overrideOptions, 'maxWidthFunction', noop);
       const anchorBox = anchor.anchorBox;
       const origin = anchor.origin;
       const options = {
-        bounds: viewport(origin, getBounds),
+        bounds: viewport(origin, optBounds),
         origin,
         preference: layouts,
         maxHeightFunction,
@@ -4218,8 +4322,7 @@
         anchorBox,
         bubble: anchorInfo.bubble.getOr(fallback()),
         overrides: anchorInfo.overrides,
-        layouts,
-        placer: Optional.none()
+        layouts
       }));
     };
     var HotspotAnchor = [
@@ -4238,8 +4341,7 @@
         anchorBox,
         bubble: anchorInfo.bubble,
         overrides: anchorInfo.overrides,
-        layouts,
-        placer: Optional.none()
+        layouts
       }));
     };
     var MakeshiftAnchor = [
@@ -4311,8 +4413,7 @@
         anchorBox,
         bubble: anchorInfo.bubble.getOr(fallback()),
         overrides: anchorInfo.overrides,
-        layouts,
-        placer: Optional.none()
+        layouts
       });
     });
 
@@ -4338,13 +4439,13 @@
     const zeroWidth = '\uFEFF';
     const nbsp = '\xA0';
 
-    const create$2 = (start, soffset, finish, foffset) => ({
+    const create$3 = (start, soffset, finish, foffset) => ({
       start,
       soffset,
       finish,
       foffset
     });
-    const SimRange = { create: create$2 };
+    const SimRange = { create: create$3 };
 
     const adt$6 = Adt.generate([
       { before: ['element'] },
@@ -4529,6 +4630,8 @@
     adt$4.ltr;
     adt$4.rtl;
 
+    const ancestors = (scope, predicate, isRoot) => filter$2(parents(scope, isRoot), predicate);
+
     const descendants = (scope, selector) => all$3(selector, scope);
 
     const makeRange = (start, soffset, finish, foffset) => {
@@ -4615,28 +4718,52 @@
     };
 
     const descendOnce = (element, offset) => isText(element) ? point(element, offset) : descendOnce$1(element, offset);
+    const isSimRange = detail => detail.foffset !== undefined;
     const getAnchorSelection = (win, anchorInfo) => {
       const getSelection = anchorInfo.getSelection.getOrThunk(() => () => getExact(win));
       return getSelection().map(sel => {
-        const modStart = descendOnce(sel.start, sel.soffset);
-        const modFinish = descendOnce(sel.finish, sel.foffset);
-        return SimSelection.range(modStart.element, modStart.offset, modFinish.element, modFinish.offset);
+        if (isSimRange(sel)) {
+          const modStart = descendOnce(sel.start, sel.soffset);
+          const modFinish = descendOnce(sel.finish, sel.foffset);
+          return SimSelection.range(modStart.element, modStart.offset, modFinish.element, modFinish.offset);
+        } else {
+          return sel;
+        }
       });
     };
     const placement$1 = (component, anchorInfo, origin) => {
       const win = defaultView(anchorInfo.root).dom;
       const rootPoint = getRootPoint(component, origin, anchorInfo);
       const selectionBox = getAnchorSelection(win, anchorInfo).bind(sel => {
-        const optRect = getBounds$1(win, SimSelection.exactFromRange(sel)).orThunk(() => {
-          const x = SugarElement.fromText(zeroWidth);
-          before$1(sel.start, x);
-          const rect = getFirstRect(win, SimSelection.exact(x, 0, x, 1));
-          remove$5(x);
-          return rect;
-        });
-        return optRect.bind(rawRect => getBox(rawRect.left, rawRect.top, rawRect.width, rawRect.height));
+        if (isSimRange(sel)) {
+          const optRect = getBounds$1(win, SimSelection.exactFromRange(sel)).orThunk(() => {
+            const zeroWidth$1 = SugarElement.fromText(zeroWidth);
+            before$1(sel.start, zeroWidth$1);
+            const rect = getFirstRect(win, SimSelection.exact(zeroWidth$1, 0, zeroWidth$1, 1));
+            remove$5(zeroWidth$1);
+            return rect;
+          });
+          return optRect.bind(rawRect => {
+            return getBox(rawRect.left, rawRect.top, rawRect.width, rawRect.height);
+          });
+        } else {
+          const selectionRect = map$1(sel, cell => cell.dom.getBoundingClientRect());
+          const bounds = {
+            left: Math.min(selectionRect.firstCell.left, selectionRect.lastCell.left),
+            right: Math.max(selectionRect.firstCell.right, selectionRect.lastCell.right),
+            top: Math.min(selectionRect.firstCell.top, selectionRect.lastCell.top),
+            bottom: Math.max(selectionRect.firstCell.bottom, selectionRect.lastCell.bottom)
+          };
+          return getBox(bounds.left, bounds.top, bounds.right - bounds.left, bounds.bottom - bounds.top);
+        }
       });
-      const targetElement = getAnchorSelection(win, anchorInfo).bind(sel => isElement$1(sel.start) ? Optional.some(sel.start) : parentElement(sel.start));
+      const targetElement = getAnchorSelection(win, anchorInfo).bind(sel => {
+        if (isSimRange(sel)) {
+          return isElement$1(sel.start) ? Optional.some(sel.start) : parentElement(sel.start);
+        } else {
+          return Optional.some(sel.firstCell);
+        }
+      });
       const elem = targetElement.getOr(component.element);
       return calcNewAnchor(selectionBox, rootPoint, anchorInfo, origin, elem);
     };
@@ -4691,8 +4818,7 @@
         anchorBox,
         bubble: fallback(),
         overrides: submenuInfo.overrides,
-        layouts,
-        placer: Optional.none()
+        layouts
       }));
     };
     var SubmenuAnchor = [
@@ -4736,18 +4862,15 @@
       const bounds = component.element.dom.getBoundingClientRect();
       return relative$1(position.left, position.top, bounds.width, bounds.height);
     };
-    const place = (component, origin, anchoring, getBounds, placee, lastPlace, transition) => {
+    const place = (origin, anchoring, optBounds, placee, lastPlace, transition) => {
       const anchor = box(anchoring.anchorBox, origin);
-      return simple(anchor, placee.element, anchoring.bubble, anchoring.layouts, lastPlace, getBounds, anchoring.overrides, transition);
+      return simple(anchor, placee.element, anchoring.bubble, anchoring.layouts, lastPlace, optBounds, anchoring.overrides, transition);
     };
     const position$1 = (component, posConfig, posState, placee, placementSpec) => {
-      positionWithin(component, posConfig, posState, placee, placementSpec, Optional.none());
+      const optWithinBounds = Optional.none();
+      positionWithinBounds(component, posConfig, posState, placee, placementSpec, optWithinBounds);
     };
-    const positionWithin = (component, posConfig, posState, placee, placementSpec, boxElement) => {
-      const boundsBox = boxElement.map(box$1);
-      return positionWithinBounds(component, posConfig, posState, placee, placementSpec, boundsBox);
-    };
-    const positionWithinBounds = (component, posConfig, posState, placee, placementSpec, bounds) => {
+    const positionWithinBounds = (component, posConfig, posState, placee, placementSpec, optWithinBounds) => {
       const placeeDetail = asRawOrDie$1('placement.info', objOf(PlacementSchema), placementSpec);
       const anchorage = placeeDetail.anchor;
       const element = placee.element;
@@ -4757,11 +4880,9 @@
         const oldVisibility = getRaw(element, 'visibility');
         set$8(element, 'visibility', 'hidden');
         const origin = posConfig.useFixed() ? getFixedOrigin() : getRelativeOrigin(component);
-        const placer = anchorage.placement;
-        const getBounds = bounds.map(constant$1).or(posConfig.getBounds);
-        placer(component, anchorage, origin).each(anchoring => {
-          const doPlace = anchoring.placer.getOr(place);
-          const newState = doPlace(component, origin, anchoring, getBounds, placee, placeeState, placeeDetail.transition);
+        anchorage.placement(component, anchorage, origin).each(anchoring => {
+          const optBounds = optWithinBounds.orThunk(() => posConfig.getBounds.map(apply$1));
+          const newState = place(origin, anchoring, optBounds, placee, placeeState, placeeDetail.transition);
           posState.set(placee.uid, newState);
         });
         oldVisibility.fold(() => {
@@ -4791,7 +4912,6 @@
     var PositionApis = /*#__PURE__*/Object.freeze({
         __proto__: null,
         position: position$1,
-        positionWithin: positionWithin,
         positionWithinBounds: positionWithinBounds,
         getMode: getMode,
         reset: reset$1
@@ -4823,7 +4943,7 @@
         init: init$g
     });
 
-    const Positioning = create$3({
+    const Positioning = create$4({
       fields: PositionSchema,
       name: 'positioning',
       active: ActivePosition,
@@ -5065,7 +5185,7 @@
         init: init$f
     });
 
-    const Sandboxing = create$3({
+    const Sandboxing = create$4({
       fields: SandboxSchema,
       name: 'sandboxing',
       active: ActiveSandbox,
@@ -5320,7 +5440,7 @@
       defaulted('resetOnDom', false)
     ];
 
-    const Representing = create$3({
+    const Representing = create$4({
       fields: RepresentSchema,
       name: 'representing',
       active: ActiveRepresenting,
@@ -5716,7 +5836,7 @@
 
     const ComposeSchema = [required$1('find')];
 
-    const Composing = create$3({
+    const Composing = create$4({
       fields: ComposeSchema,
       name: 'composing',
       apis: ComposeApis
@@ -5798,7 +5918,7 @@
       onHandler('onEnabled')
     ];
 
-    const Disabling = create$3({
+    const Disabling = create$4({
       fields: DisableSchema,
       name: 'disabling',
       active: ActiveDisable,
@@ -5808,7 +5928,8 @@
     const dehighlightAllExcept = (component, hConfig, hState, skip) => {
       const highlighted = descendants(component.element, '.' + hConfig.highlightClass);
       each$1(highlighted, h => {
-        if (!exists(skip, skipComp => skipComp.element === h)) {
+        const shouldSkip = exists(skip, skipComp => eq(skipComp.element, h));
+        if (!shouldSkip) {
           remove$2(h, hConfig.highlightClass);
           component.getSystem().getByDom(h).each(target => {
             hConfig.onDehighlight(component, target);
@@ -5909,7 +6030,7 @@
       onHandler('onDehighlight')
     ];
 
-    const Highlighting = create$3({
+    const Highlighting = create$4({
       fields: HighlightSchema,
       name: 'highlighting',
       apis: HighlightApis
@@ -5949,7 +6070,7 @@
       return contains$2(keys, raw.which);
     };
     const and = preds => event => forall(preds, pred => pred(event));
-    const isShift = event => {
+    const isShift$1 = event => {
       const raw = event.raw;
       return raw.shiftKey === true;
     };
@@ -5957,7 +6078,7 @@
       const raw = event.raw;
       return raw.ctrlKey === true;
     };
-    const isNotShift = not(isShift);
+    const isNotShift = not(isShift$1);
 
     const rule = (matches, action) => ({
       matches,
@@ -6067,7 +6188,7 @@
       return me;
     };
 
-    const create$1 = cyclicField => {
+    const create$2 = cyclicField => {
       const schema = [
         option$3('onEscape'),
         option$3('onEnter'),
@@ -6111,11 +6232,13 @@
         const navigate = tabbingConfig.cyclic ? cycleNext : tryNext;
         return go(component, simulatedEvent, tabbingConfig, navigate);
       };
+      const isFirstChild = elem => parentNode(elem).bind(firstChild).exists(child => eq(child, elem));
+      const goFromPseudoTabstop = (component, simulatedEvent, tabbingConfig) => findCurrent(component, tabbingConfig).filter(elem => !tabbingConfig.useTabstopAt(elem)).bind(elem => (isFirstChild(elem) ? goBackwards : goForwards)(component, simulatedEvent, tabbingConfig));
       const execute = (component, simulatedEvent, tabbingConfig) => tabbingConfig.onEnter.bind(f => f(component, simulatedEvent));
       const exit = (component, simulatedEvent, tabbingConfig) => tabbingConfig.onEscape.bind(f => f(component, simulatedEvent));
       const getKeydownRules = constant$1([
         rule(and([
-          isShift,
+          isShift$1,
           inSet(TAB)
         ]), goBackwards),
         rule(inSet(TAB), goForwards),
@@ -6124,13 +6247,16 @@
           inSet(ENTER)
         ]), execute)
       ]);
-      const getKeyupRules = constant$1([rule(inSet(ESCAPE), exit)]);
+      const getKeyupRules = constant$1([
+        rule(inSet(ESCAPE), exit),
+        rule(inSet(TAB), goFromPseudoTabstop)
+      ]);
       return typical(schema, NoState.init, getKeydownRules, getKeyupRules, () => Optional.some(focusIn));
     };
 
-    var AcyclicType = create$1(customField('cyclic', never));
+    var AcyclicType = create$2(customField('cyclic', never));
 
-    var CyclicType = create$1(customField('cyclic', always));
+    var CyclicType = create$2(customField('cyclic', always));
 
     const doDefaultExecute = (component, _simulatedEvent, focused) => {
       dispatch(component, focused, execute$5());
@@ -6293,7 +6419,7 @@
       rule(inSet(UP), north$1(moveNorth$1)),
       rule(inSet(DOWN), south$1(moveSouth$1)),
       rule(and([
-        isShift,
+        isShift$1,
         inSet(TAB)
       ]), handleTab),
       rule(and([
@@ -6308,22 +6434,23 @@
     ]);
     var FlatgridType = typical(schema$u, flatgrid$1, getKeydownRules$4, getKeyupRules$4, () => Optional.some(focusIn$3));
 
-    const horizontal = (container, selector, current, delta) => {
+    const f = (container, selector, current, delta, getNewIndex) => {
       const isDisabledButton = candidate => name$3(candidate) === 'button' && get$f(candidate, 'disabled') === 'disabled';
-      const tryCycle = (initial, index, candidates) => {
-        const newIndex = cycleBy(index, delta, 0, candidates.length - 1);
-        if (newIndex === initial) {
-          return Optional.none();
-        } else {
-          return isDisabledButton(candidates[newIndex]) ? tryCycle(initial, newIndex, candidates) : Optional.from(candidates[newIndex]);
-        }
-      };
+      const tryNewIndex = (initial, index, candidates) => getNewIndex(initial, index, delta, 0, candidates.length - 1, candidates[index], newIndex => isDisabledButton(candidates[newIndex]) ? tryNewIndex(initial, newIndex, candidates) : Optional.from(candidates[newIndex]));
       return locateVisible(container, current, selector).bind(identified => {
         const index = identified.index;
         const candidates = identified.candidates;
-        return tryCycle(index, index, candidates);
+        return tryNewIndex(index, index, candidates);
       });
     };
+    const horizontalWithoutCycles = (container, selector, current, delta) => f(container, selector, current, delta, (prevIndex, v, d, min, max, oldCandidate, onNewIndex) => {
+      const newIndex = clamp(v + d, min, max);
+      return newIndex === prevIndex ? Optional.from(oldCandidate) : onNewIndex(newIndex);
+    });
+    const horizontal = (container, selector, current, delta) => f(container, selector, current, delta, (prevIndex, v, d, min, max, _oldCandidate, onNewIndex) => {
+      const newIndex = cycleBy(v, d, min, max);
+      return newIndex === prevIndex ? Optional.none() : onNewIndex(newIndex);
+    });
 
     const schema$t = [
       required$1('selector'),
@@ -6331,7 +6458,9 @@
       defaulted('execute', defaultExecute),
       onKeyboardHandler('onEscape'),
       defaulted('executeOnMove', false),
-      defaulted('allowVertical', true)
+      defaulted('allowVertical', true),
+      defaulted('allowHorizontal', true),
+      defaulted('cycles', true)
     ];
     const findCurrent = (component, flowConfig) => flowConfig.focusManager.get(component).bind(elem => closest$1(elem, flowConfig.selector));
     const execute$2 = (component, simulatedEvent, flowConfig) => findCurrent(component, flowConfig).bind(focused => flowConfig.execute(component, simulatedEvent, focused));
@@ -6340,13 +6469,13 @@
         flowConfig.focusManager.set(component, first);
       });
     };
-    const moveLeft$2 = (element, focused, info) => horizontal(element, info.selector, focused, -1);
-    const moveRight$2 = (element, focused, info) => horizontal(element, info.selector, focused, +1);
+    const moveLeft$2 = (element, focused, info) => (info.cycles ? horizontal : horizontalWithoutCycles)(element, info.selector, focused, -1);
+    const moveRight$2 = (element, focused, info) => (info.cycles ? horizontal : horizontalWithoutCycles)(element, info.selector, focused, +1);
     const doMove$1 = movement => (component, simulatedEvent, flowConfig, flowState) => movement(component, simulatedEvent, flowConfig, flowState).bind(() => flowConfig.executeOnMove ? execute$2(component, simulatedEvent, flowConfig) : Optional.some(true));
     const doEscape = (component, simulatedEvent, flowConfig) => flowConfig.onEscape(component, simulatedEvent);
     const getKeydownRules$3 = (_component, _se, flowConfig, _flowState) => {
-      const westMovers = LEFT.concat(flowConfig.allowVertical ? UP : []);
-      const eastMovers = RIGHT.concat(flowConfig.allowVertical ? DOWN : []);
+      const westMovers = [...flowConfig.allowHorizontal ? LEFT : []].concat(flowConfig.allowVertical ? UP : []);
+      const eastMovers = [...flowConfig.allowHorizontal ? RIGHT : []].concat(flowConfig.allowVertical ? DOWN : []);
       return [
         rule(inSet(westMovers), doMove$1(west$1(moveLeft$2, moveRight$2))),
         rule(inSet(eastMovers), doMove$1(east$1(moveLeft$2, moveRight$2))),
@@ -6464,7 +6593,7 @@
       rule(inSet(UP), move$1(moveUp)),
       rule(inSet(DOWN), move$1(moveDown)),
       rule(and([
-        isShift,
+        isShift$1,
         inSet(TAB)
       ]), fireShiftTab),
       rule(and([
@@ -6498,11 +6627,11 @@
         inSet(ENTER)
       ]), specialInfo.onEnter),
       rule(and([
-        isShift,
+        isShift$1,
         inSet(ENTER)
       ]), specialInfo.onShiftEnter),
       rule(and([
-        isShift,
+        isShift$1,
         inSet(TAB)
       ]), specialInfo.onShiftTab),
       rule(and([
@@ -6641,7 +6770,7 @@
         contents: contents
     });
 
-    const Replacing = create$3({
+    const Replacing = create$4({
       fields: [defaultedBoolean('reuseDom', true)],
       name: 'replacing',
       apis: ReplaceApis
@@ -6649,7 +6778,7 @@
 
     const events$d = (name, eventHandlers) => {
       const events = derive$2(eventHandlers);
-      return create$3({
+      return create$4({
         fields: [required$1('enabled')],
         name,
         active: { events: constant$1(events) }
@@ -6712,7 +6841,7 @@
       defaulted('ignore', false)
     ];
 
-    const Focusing = create$3({
+    const Focusing = create$4({
       fields: FocusSchema,
       name: 'focusing',
       active: ActiveFocus,
@@ -6831,7 +6960,7 @@
       }))
     ];
 
-    const Toggling = create$3({
+    const Toggling = create$4({
       fields: ToggleSchema,
       name: 'toggling',
       active: ActiveToggle,
@@ -7086,6 +7215,7 @@
         row: movementInfo.rowSelector,
         cell: '.' + detail.markers.item
       },
+      previousSelector: movementInfo.previousSelector,
       focusManager: detail.focusManager
     });
     const configureMenu = (detail, movementInfo) => ({
@@ -7139,7 +7269,8 @@
         ],
         matrix: [
           output$1('config', configureMatrix),
-          required$1('rowSelector')
+          required$1('rowSelector'),
+          defaulted('previousSelector', Optional.none)
         ],
         menu: [
           defaulted('moveOnTab', true),
@@ -7149,7 +7280,8 @@
       itemMarkers(),
       defaulted('fakeFocus', false),
       defaulted('focusManager', dom$2()),
-      onHandler('onHighlight')
+      onHandler('onHighlight'),
+      onHandler('onDehighlight')
     ]);
 
     const focus = constant$1('alloy.menu-focus');
@@ -7172,7 +7304,8 @@
         Highlighting.config({
           highlightClass: detail.markers.selectedItem,
           itemClass: detail.markers.item,
-          onHighlight: detail.onHighlight
+          onHighlight: detail.onHighlight,
+          onDehighlight: detail.onDehighlight
         }),
         Representing.config({
           store: {
@@ -7320,6 +7453,16 @@
       extractPreparedMenu
     };
 
+    const onMenuItemHighlightedEvent = generate$6('tiered-menu-item-highlight');
+    const onMenuItemDehighlightedEvent = generate$6('tiered-menu-item-dehighlight');
+
+    var HighlightOnOpen;
+    (function (HighlightOnOpen) {
+      HighlightOnOpen[HighlightOnOpen['HighlightMenuAndItem'] = 0] = 'HighlightMenuAndItem';
+      HighlightOnOpen[HighlightOnOpen['HighlightJustMenu'] = 1] = 'HighlightJustMenu';
+      HighlightOnOpen[HighlightOnOpen['HighlightNone'] = 2] = 'HighlightNone';
+    }(HighlightOnOpen || (HighlightOnOpen = {})));
+
     const make$6 = (detail, _rawUiSpec) => {
       const submenuParentItems = value$2();
       const buildMenus = (container, primaryName, menus) => map$1(menus, (spec, name) => {
@@ -7328,7 +7471,20 @@
           value: name,
           markers: detail.markers,
           fakeFocus: detail.fakeFocus,
-          onHighlight: detail.onHighlight,
+          onHighlight: (menuComp, itemComp) => {
+            const highlightData = {
+              menuComp,
+              itemComp
+            };
+            emitWith(menuComp, onMenuItemHighlightedEvent, highlightData);
+          },
+          onDehighlight: (menuComp, itemComp) => {
+            const dehighlightData = {
+              menuComp,
+              itemComp
+            };
+            emitWith(menuComp, onMenuItemDehighlightedEvent, dehighlightData);
+          },
           focusManager: detail.fakeFocus ? highlights() : dom$2()
         });
         return name === primaryName ? {
@@ -7355,10 +7511,15 @@
         return find$5(candidates, c => getItemValue(c) === itemValue);
       });
       const toDirectory = _container => map$1(detail.data.menus, (data, _menuName) => bind$3(data.items, item => item.type === 'separator' ? [] : [item.data.value]));
-      const setActiveMenu = (container, menu) => {
-        Highlighting.highlight(container, menu);
+      const setActiveMenu = Highlighting.highlight;
+      const setActiveMenuAndItem = (container, menu) => {
+        setActiveMenu(container, menu);
         Highlighting.getHighlighted(menu).orThunk(() => Highlighting.getFirst(menu)).each(item => {
-          dispatch(container, item.element, focusItem());
+          if (detail.fakeFocus) {
+            Highlighting.highlight(menu, item);
+          } else {
+            dispatch(container, item.element, focusItem());
+          }
         });
       };
       const getMenus = (state, menuValues) => cat(map$2(menuValues, mv => state.lookupMenu(mv).bind(prep => prep.type === 'prepared' ? Optional.some(prep.menu) : Optional.none())));
@@ -7404,7 +7565,7 @@
             Replacing.append(container, premade(activeMenu));
           }
           remove$1(activeMenu.element, [detail.markers.backgroundMenu]);
-          setActiveMenu(container, activeMenu);
+          setActiveMenuAndItem(container, activeMenu);
           closeOthers(container, state, path);
           return Optional.some(activeMenu);
         }
@@ -7467,15 +7628,17 @@
       const onRight = (container, item) => inside(item.element) ? Optional.none() : expandRight(container, item, ExpandHighlightDecision.HighlightSubmenu);
       const onLeft = (container, item) => inside(item.element) ? Optional.none() : collapseLeft(container, item);
       const onEscape = (container, item) => collapseLeft(container, item).orThunk(() => detail.onEscape(container, item).map(() => container));
-      const keyOnItem = f => (container, simulatedEvent) => closest$1(simulatedEvent.getSource(), '.' + detail.markers.item).bind(target => container.getSystem().getByDom(target).toOptional().bind(item => f(container, item).map(always)));
+      const keyOnItem = f => (container, simulatedEvent) => {
+        return closest$1(simulatedEvent.getSource(), `.${ detail.markers.item }`).bind(target => container.getSystem().getByDom(target).toOptional().bind(item => f(container, item).map(always)));
+      };
       const events = derive$2([
-        run$1(focus(), (sandbox, simulatedEvent) => {
+        run$1(focus(), (tmenu, simulatedEvent) => {
           const item = simulatedEvent.event.item;
           layeredState.lookupItem(getItemValue(item)).each(() => {
             const menu = simulatedEvent.event.menu;
-            Highlighting.highlight(sandbox, menu);
+            Highlighting.highlight(tmenu, menu);
             const value = getItemValue(simulatedEvent.event.item);
-            layeredState.refresh(value).each(path => closeOthers(sandbox, layeredState, path));
+            layeredState.refresh(value).each(path => closeOthers(tmenu, layeredState, path));
           });
         }),
         runOnExecute$1((component, simulatedEvent) => {
@@ -7494,17 +7657,26 @@
           setup(container).each(primary => {
             Replacing.append(container, premade(primary));
             detail.onOpenMenu(container, primary);
-            if (detail.highlightImmediately) {
+            if (detail.highlightOnOpen === HighlightOnOpen.HighlightMenuAndItem) {
+              setActiveMenuAndItem(container, primary);
+            } else if (detail.highlightOnOpen === HighlightOnOpen.HighlightJustMenu) {
               setActiveMenu(container, primary);
             }
           });
-        })
-      ].concat(detail.navigateOnHover ? [run$1(hover(), (sandbox, simulatedEvent) => {
-          const item = simulatedEvent.event.item;
-          updateView(sandbox, item);
-          expandRight(sandbox, item, ExpandHighlightDecision.HighlightParent);
-          detail.onHover(sandbox, item);
-        })] : []));
+        }),
+        run$1(onMenuItemHighlightedEvent, (tmenuComp, se) => {
+          detail.onHighlightItem(tmenuComp, se.event.menuComp, se.event.itemComp);
+        }),
+        run$1(onMenuItemDehighlightedEvent, (tmenuComp, se) => {
+          detail.onDehighlightItem(tmenuComp, se.event.menuComp, se.event.itemComp);
+        }),
+        ...detail.navigateOnHover ? [run$1(hover(), (tmenu, simulatedEvent) => {
+            const item = simulatedEvent.event.item;
+            updateView(tmenu, item);
+            expandRight(tmenu, item, ExpandHighlightDecision.HighlightParent);
+            detail.onHover(tmenu, item);
+          })] : []
+      ]);
       const getActiveItem = container => Highlighting.getHighlighted(container).bind(Highlighting.getHighlighted);
       const collapseMenuApi = container => {
         getActiveItem(container).each(currentItem => {
@@ -7513,7 +7685,7 @@
       };
       const highlightPrimary = container => {
         layeredState.getPrimary().each(primary => {
-          setActiveMenu(container, primary);
+          setActiveMenuAndItem(container, primary);
         });
       };
       const extractMenuFromContainer = container => Optional.from(container.components()[0]).filter(comp => get$f(comp.element, 'role') === 'menu');
@@ -7597,14 +7769,15 @@
         onStrictHandler('onOpenSubmenu'),
         onHandler('onRepositionMenu'),
         onHandler('onCollapseMenu'),
-        defaulted('highlightImmediately', true),
+        defaulted('highlightOnOpen', HighlightOnOpen.HighlightMenuAndItem),
         requiredObjOf('data', [
           required$1('primary'),
           required$1('menus'),
           required$1('expansions')
         ]),
         defaulted('fakeFocus', false),
-        onHandler('onHighlight'),
+        onHandler('onHighlightItem'),
+        onHandler('onDehighlightItem'),
         onHandler('onHover'),
         tieredMenuMarkers(),
         required$1('dom'),
@@ -7651,7 +7824,7 @@
         dom: { tag: 'div' },
         data: menuSpec.data,
         markers: menuSpec.menu.markers,
-        highlightImmediately: menuSpec.menu.highlightImmediately,
+        highlightOnOpen: menuSpec.menu.highlightOnOpen,
         fakeFocus: menuSpec.menu.fakeFocus,
         onEscape: () => {
           Sandboxing.close(menuSandbox);
@@ -7690,7 +7863,7 @@
         }
       });
     };
-    const factory$m = (detail, spec) => {
+    const factory$o = (detail, spec) => {
       const isPartOfRelated = (sandbox, queryElem) => {
         const related = detail.getRelated(sandbox);
         return related.exists(rel => isPartOf$1(rel, queryElem));
@@ -7699,10 +7872,8 @@
         Sandboxing.setContent(sandbox, thing);
       };
       const showAt = (sandbox, thing, placementSpec) => {
-        showWithin(sandbox, thing, placementSpec, Optional.none());
-      };
-      const showWithin = (sandbox, thing, placementSpec, boxElement) => {
-        showWithinBounds(sandbox, thing, placementSpec, () => boxElement.map(elem => box$1(elem)));
+        const getBounds = Optional.none;
+        showWithinBounds(sandbox, thing, placementSpec, getBounds);
       };
       const showWithinBounds = (sandbox, thing, placementSpec, getBounds) => {
         const sink = detail.lazySink(sandbox).getOrDie();
@@ -7749,7 +7920,6 @@
       const apis = {
         setContent,
         showAt,
-        showWithin,
         showWithinBounds,
         showMenuAt,
         showMenuWithinBounds,
@@ -7817,13 +7987,10 @@
         defaulted('isExtraPart', never),
         defaulted('eventOrder', Optional.none)
       ],
-      factory: factory$m,
+      factory: factory$o,
       apis: {
         showAt: (apis, component, anchor, thing) => {
           apis.showAt(component, anchor, thing);
-        },
-        showWithin: (apis, component, anchor, thing, boxElement) => {
-          apis.showWithin(component, anchor, thing, boxElement);
         },
         showWithinBounds: (apis, component, anchor, thing, bounds) => {
           apis.showWithinBounds(component, anchor, thing, bounds);
@@ -7850,7 +8017,7 @@
 
     var global$9 = tinymce.util.Tools.resolve('tinymce.util.Delay');
 
-    const factory$l = detail => {
+    const factory$n = detail => {
       const events = events$a(detail.action);
       const tag = detail.dom.tag;
       const lookupAttr = attr => get$g(detail.dom, 'attributes').bind(attrs => get$g(attrs, attr));
@@ -7863,7 +8030,7 @@
             ...roleAttrs
           };
         } else {
-          const role = lookupAttr('role').getOr('button');
+          const role = detail.role.getOr(lookupAttr('role').getOr('button'));
           return { role };
         }
       };
@@ -7886,7 +8053,7 @@
     };
     const Button = single({
       name: 'Button',
-      factory: factory$l,
+      factory: factory$n,
       configFields: [
         defaulted('uid', undefined),
         required$1('dom'),
@@ -7900,6 +8067,34 @@
         defaulted('eventOrder', {})
       ]
     });
+
+    const getAttrs = elem => {
+      const attributes = elem.dom.attributes !== undefined ? elem.dom.attributes : [];
+      return foldl(attributes, (b, attr) => {
+        if (attr.name === 'class') {
+          return b;
+        } else {
+          return {
+            ...b,
+            [attr.name]: attr.value
+          };
+        }
+      }, {});
+    };
+    const getClasses = elem => Array.prototype.slice.call(elem.dom.classList, 0);
+    const fromHtml = html => {
+      const elem = SugarElement.fromHtml(html);
+      const children$1 = children(elem);
+      const attrs = getAttrs(elem);
+      const classes = getClasses(elem);
+      const contents = children$1.length === 0 ? {} : { innerHtml: get$9(elem) };
+      return {
+        tag: name$3(elem),
+        classes,
+        attributes: attrs,
+        ...contents
+      };
+    };
 
     const record = spec => {
       const uid = isSketchSpec(spec) && hasNonNullableKey(spec, 'uid') ? spec.uid : generate$5('memento');
@@ -7915,6 +8110,1541 @@
         asSpec
       };
     };
+
+    const {entries, setPrototypeOf, isFrozen, getPrototypeOf, getOwnPropertyDescriptor} = Object;
+    let {freeze, seal, create: create$1} = Object;
+    let {apply, construct} = typeof Reflect !== 'undefined' && Reflect;
+    if (!apply) {
+      apply = function apply(fun, thisValue, args) {
+        return fun.apply(thisValue, args);
+      };
+    }
+    if (!freeze) {
+      freeze = function freeze(x) {
+        return x;
+      };
+    }
+    if (!seal) {
+      seal = function seal(x) {
+        return x;
+      };
+    }
+    if (!construct) {
+      construct = function construct(Func, args) {
+        return new Func(...args);
+      };
+    }
+    const arrayForEach = unapply(Array.prototype.forEach);
+    const arrayPop = unapply(Array.prototype.pop);
+    const arrayPush = unapply(Array.prototype.push);
+    const stringToLowerCase = unapply(String.prototype.toLowerCase);
+    const stringToString = unapply(String.prototype.toString);
+    const stringMatch = unapply(String.prototype.match);
+    const stringReplace = unapply(String.prototype.replace);
+    const stringIndexOf = unapply(String.prototype.indexOf);
+    const stringTrim = unapply(String.prototype.trim);
+    const regExpTest = unapply(RegExp.prototype.test);
+    const typeErrorCreate = unconstruct(TypeError);
+    function unapply(func) {
+      return function (thisArg) {
+        for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+          args[_key - 1] = arguments[_key];
+        }
+        return apply(func, thisArg, args);
+      };
+    }
+    function unconstruct(func) {
+      return function () {
+        for (var _len2 = arguments.length, args = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+          args[_key2] = arguments[_key2];
+        }
+        return construct(func, args);
+      };
+    }
+    function addToSet(set, array, transformCaseFunc) {
+      var _transformCaseFunc;
+      transformCaseFunc = (_transformCaseFunc = transformCaseFunc) !== null && _transformCaseFunc !== void 0 ? _transformCaseFunc : stringToLowerCase;
+      if (setPrototypeOf) {
+        setPrototypeOf(set, null);
+      }
+      let l = array.length;
+      while (l--) {
+        let element = array[l];
+        if (typeof element === 'string') {
+          const lcElement = transformCaseFunc(element);
+          if (lcElement !== element) {
+            if (!isFrozen(array)) {
+              array[l] = lcElement;
+            }
+            element = lcElement;
+          }
+        }
+        set[element] = true;
+      }
+      return set;
+    }
+    function clone(object) {
+      const newObject = create$1(null);
+      for (const [property, value] of entries(object)) {
+        newObject[property] = value;
+      }
+      return newObject;
+    }
+    function lookupGetter(object, prop) {
+      while (object !== null) {
+        const desc = getOwnPropertyDescriptor(object, prop);
+        if (desc) {
+          if (desc.get) {
+            return unapply(desc.get);
+          }
+          if (typeof desc.value === 'function') {
+            return unapply(desc.value);
+          }
+        }
+        object = getPrototypeOf(object);
+      }
+      function fallbackValue(element) {
+        console.warn('fallback value for', element);
+        return null;
+      }
+      return fallbackValue;
+    }
+    const html$1 = freeze([
+      'a',
+      'abbr',
+      'acronym',
+      'address',
+      'area',
+      'article',
+      'aside',
+      'audio',
+      'b',
+      'bdi',
+      'bdo',
+      'big',
+      'blink',
+      'blockquote',
+      'body',
+      'br',
+      'button',
+      'canvas',
+      'caption',
+      'center',
+      'cite',
+      'code',
+      'col',
+      'colgroup',
+      'content',
+      'data',
+      'datalist',
+      'dd',
+      'decorator',
+      'del',
+      'details',
+      'dfn',
+      'dialog',
+      'dir',
+      'div',
+      'dl',
+      'dt',
+      'element',
+      'em',
+      'fieldset',
+      'figcaption',
+      'figure',
+      'font',
+      'footer',
+      'form',
+      'h1',
+      'h2',
+      'h3',
+      'h4',
+      'h5',
+      'h6',
+      'head',
+      'header',
+      'hgroup',
+      'hr',
+      'html',
+      'i',
+      'img',
+      'input',
+      'ins',
+      'kbd',
+      'label',
+      'legend',
+      'li',
+      'main',
+      'map',
+      'mark',
+      'marquee',
+      'menu',
+      'menuitem',
+      'meter',
+      'nav',
+      'nobr',
+      'ol',
+      'optgroup',
+      'option',
+      'output',
+      'p',
+      'picture',
+      'pre',
+      'progress',
+      'q',
+      'rp',
+      'rt',
+      'ruby',
+      's',
+      'samp',
+      'section',
+      'select',
+      'shadow',
+      'small',
+      'source',
+      'spacer',
+      'span',
+      'strike',
+      'strong',
+      'style',
+      'sub',
+      'summary',
+      'sup',
+      'table',
+      'tbody',
+      'td',
+      'template',
+      'textarea',
+      'tfoot',
+      'th',
+      'thead',
+      'time',
+      'tr',
+      'track',
+      'tt',
+      'u',
+      'ul',
+      'var',
+      'video',
+      'wbr'
+    ]);
+    const svg$1 = freeze([
+      'svg',
+      'a',
+      'altglyph',
+      'altglyphdef',
+      'altglyphitem',
+      'animatecolor',
+      'animatemotion',
+      'animatetransform',
+      'circle',
+      'clippath',
+      'defs',
+      'desc',
+      'ellipse',
+      'filter',
+      'font',
+      'g',
+      'glyph',
+      'glyphref',
+      'hkern',
+      'image',
+      'line',
+      'lineargradient',
+      'marker',
+      'mask',
+      'metadata',
+      'mpath',
+      'path',
+      'pattern',
+      'polygon',
+      'polyline',
+      'radialgradient',
+      'rect',
+      'stop',
+      'style',
+      'switch',
+      'symbol',
+      'text',
+      'textpath',
+      'title',
+      'tref',
+      'tspan',
+      'view',
+      'vkern'
+    ]);
+    const svgFilters = freeze([
+      'feBlend',
+      'feColorMatrix',
+      'feComponentTransfer',
+      'feComposite',
+      'feConvolveMatrix',
+      'feDiffuseLighting',
+      'feDisplacementMap',
+      'feDistantLight',
+      'feDropShadow',
+      'feFlood',
+      'feFuncA',
+      'feFuncB',
+      'feFuncG',
+      'feFuncR',
+      'feGaussianBlur',
+      'feImage',
+      'feMerge',
+      'feMergeNode',
+      'feMorphology',
+      'feOffset',
+      'fePointLight',
+      'feSpecularLighting',
+      'feSpotLight',
+      'feTile',
+      'feTurbulence'
+    ]);
+    const svgDisallowed = freeze([
+      'animate',
+      'color-profile',
+      'cursor',
+      'discard',
+      'font-face',
+      'font-face-format',
+      'font-face-name',
+      'font-face-src',
+      'font-face-uri',
+      'foreignobject',
+      'hatch',
+      'hatchpath',
+      'mesh',
+      'meshgradient',
+      'meshpatch',
+      'meshrow',
+      'missing-glyph',
+      'script',
+      'set',
+      'solidcolor',
+      'unknown',
+      'use'
+    ]);
+    const mathMl$1 = freeze([
+      'math',
+      'menclose',
+      'merror',
+      'mfenced',
+      'mfrac',
+      'mglyph',
+      'mi',
+      'mlabeledtr',
+      'mmultiscripts',
+      'mn',
+      'mo',
+      'mover',
+      'mpadded',
+      'mphantom',
+      'mroot',
+      'mrow',
+      'ms',
+      'mspace',
+      'msqrt',
+      'mstyle',
+      'msub',
+      'msup',
+      'msubsup',
+      'mtable',
+      'mtd',
+      'mtext',
+      'mtr',
+      'munder',
+      'munderover',
+      'mprescripts'
+    ]);
+    const mathMlDisallowed = freeze([
+      'maction',
+      'maligngroup',
+      'malignmark',
+      'mlongdiv',
+      'mscarries',
+      'mscarry',
+      'msgroup',
+      'mstack',
+      'msline',
+      'msrow',
+      'semantics',
+      'annotation',
+      'annotation-xml',
+      'mprescripts',
+      'none'
+    ]);
+    const text$1 = freeze(['#text']);
+    const html = freeze([
+      'accept',
+      'action',
+      'align',
+      'alt',
+      'autocapitalize',
+      'autocomplete',
+      'autopictureinpicture',
+      'autoplay',
+      'background',
+      'bgcolor',
+      'border',
+      'capture',
+      'cellpadding',
+      'cellspacing',
+      'checked',
+      'cite',
+      'class',
+      'clear',
+      'color',
+      'cols',
+      'colspan',
+      'controls',
+      'controlslist',
+      'coords',
+      'crossorigin',
+      'datetime',
+      'decoding',
+      'default',
+      'dir',
+      'disabled',
+      'disablepictureinpicture',
+      'disableremoteplayback',
+      'download',
+      'draggable',
+      'enctype',
+      'enterkeyhint',
+      'face',
+      'for',
+      'headers',
+      'height',
+      'hidden',
+      'high',
+      'href',
+      'hreflang',
+      'id',
+      'inputmode',
+      'integrity',
+      'ismap',
+      'kind',
+      'label',
+      'lang',
+      'list',
+      'loading',
+      'loop',
+      'low',
+      'max',
+      'maxlength',
+      'media',
+      'method',
+      'min',
+      'minlength',
+      'multiple',
+      'muted',
+      'name',
+      'nonce',
+      'noshade',
+      'novalidate',
+      'nowrap',
+      'open',
+      'optimum',
+      'pattern',
+      'placeholder',
+      'playsinline',
+      'poster',
+      'preload',
+      'pubdate',
+      'radiogroup',
+      'readonly',
+      'rel',
+      'required',
+      'rev',
+      'reversed',
+      'role',
+      'rows',
+      'rowspan',
+      'spellcheck',
+      'scope',
+      'selected',
+      'shape',
+      'size',
+      'sizes',
+      'span',
+      'srclang',
+      'start',
+      'src',
+      'srcset',
+      'step',
+      'style',
+      'summary',
+      'tabindex',
+      'title',
+      'translate',
+      'type',
+      'usemap',
+      'valign',
+      'value',
+      'width',
+      'xmlns',
+      'slot'
+    ]);
+    const svg = freeze([
+      'accent-height',
+      'accumulate',
+      'additive',
+      'alignment-baseline',
+      'ascent',
+      'attributename',
+      'attributetype',
+      'azimuth',
+      'basefrequency',
+      'baseline-shift',
+      'begin',
+      'bias',
+      'by',
+      'class',
+      'clip',
+      'clippathunits',
+      'clip-path',
+      'clip-rule',
+      'color',
+      'color-interpolation',
+      'color-interpolation-filters',
+      'color-profile',
+      'color-rendering',
+      'cx',
+      'cy',
+      'd',
+      'dx',
+      'dy',
+      'diffuseconstant',
+      'direction',
+      'display',
+      'divisor',
+      'dur',
+      'edgemode',
+      'elevation',
+      'end',
+      'fill',
+      'fill-opacity',
+      'fill-rule',
+      'filter',
+      'filterunits',
+      'flood-color',
+      'flood-opacity',
+      'font-family',
+      'font-size',
+      'font-size-adjust',
+      'font-stretch',
+      'font-style',
+      'font-variant',
+      'font-weight',
+      'fx',
+      'fy',
+      'g1',
+      'g2',
+      'glyph-name',
+      'glyphref',
+      'gradientunits',
+      'gradienttransform',
+      'height',
+      'href',
+      'id',
+      'image-rendering',
+      'in',
+      'in2',
+      'k',
+      'k1',
+      'k2',
+      'k3',
+      'k4',
+      'kerning',
+      'keypoints',
+      'keysplines',
+      'keytimes',
+      'lang',
+      'lengthadjust',
+      'letter-spacing',
+      'kernelmatrix',
+      'kernelunitlength',
+      'lighting-color',
+      'local',
+      'marker-end',
+      'marker-mid',
+      'marker-start',
+      'markerheight',
+      'markerunits',
+      'markerwidth',
+      'maskcontentunits',
+      'maskunits',
+      'max',
+      'mask',
+      'media',
+      'method',
+      'mode',
+      'min',
+      'name',
+      'numoctaves',
+      'offset',
+      'operator',
+      'opacity',
+      'order',
+      'orient',
+      'orientation',
+      'origin',
+      'overflow',
+      'paint-order',
+      'path',
+      'pathlength',
+      'patterncontentunits',
+      'patterntransform',
+      'patternunits',
+      'points',
+      'preservealpha',
+      'preserveaspectratio',
+      'primitiveunits',
+      'r',
+      'rx',
+      'ry',
+      'radius',
+      'refx',
+      'refy',
+      'repeatcount',
+      'repeatdur',
+      'restart',
+      'result',
+      'rotate',
+      'scale',
+      'seed',
+      'shape-rendering',
+      'specularconstant',
+      'specularexponent',
+      'spreadmethod',
+      'startoffset',
+      'stddeviation',
+      'stitchtiles',
+      'stop-color',
+      'stop-opacity',
+      'stroke-dasharray',
+      'stroke-dashoffset',
+      'stroke-linecap',
+      'stroke-linejoin',
+      'stroke-miterlimit',
+      'stroke-opacity',
+      'stroke',
+      'stroke-width',
+      'style',
+      'surfacescale',
+      'systemlanguage',
+      'tabindex',
+      'targetx',
+      'targety',
+      'transform',
+      'transform-origin',
+      'text-anchor',
+      'text-decoration',
+      'text-rendering',
+      'textlength',
+      'type',
+      'u1',
+      'u2',
+      'unicode',
+      'values',
+      'viewbox',
+      'visibility',
+      'version',
+      'vert-adv-y',
+      'vert-origin-x',
+      'vert-origin-y',
+      'width',
+      'word-spacing',
+      'wrap',
+      'writing-mode',
+      'xchannelselector',
+      'ychannelselector',
+      'x',
+      'x1',
+      'x2',
+      'xmlns',
+      'y',
+      'y1',
+      'y2',
+      'z',
+      'zoomandpan'
+    ]);
+    const mathMl = freeze([
+      'accent',
+      'accentunder',
+      'align',
+      'bevelled',
+      'close',
+      'columnsalign',
+      'columnlines',
+      'columnspan',
+      'denomalign',
+      'depth',
+      'dir',
+      'display',
+      'displaystyle',
+      'encoding',
+      'fence',
+      'frame',
+      'height',
+      'href',
+      'id',
+      'largeop',
+      'length',
+      'linethickness',
+      'lspace',
+      'lquote',
+      'mathbackground',
+      'mathcolor',
+      'mathsize',
+      'mathvariant',
+      'maxsize',
+      'minsize',
+      'movablelimits',
+      'notation',
+      'numalign',
+      'open',
+      'rowalign',
+      'rowlines',
+      'rowspacing',
+      'rowspan',
+      'rspace',
+      'rquote',
+      'scriptlevel',
+      'scriptminsize',
+      'scriptsizemultiplier',
+      'selection',
+      'separator',
+      'separators',
+      'stretchy',
+      'subscriptshift',
+      'supscriptshift',
+      'symmetric',
+      'voffset',
+      'width',
+      'xmlns'
+    ]);
+    const xml = freeze([
+      'xlink:href',
+      'xml:id',
+      'xlink:title',
+      'xml:space',
+      'xmlns:xlink'
+    ]);
+    const MUSTACHE_EXPR = seal(/\{\{[\w\W]*|[\w\W]*\}\}/gm);
+    const ERB_EXPR = seal(/<%[\w\W]*|[\w\W]*%>/gm);
+    const TMPLIT_EXPR = seal(/\${[\w\W]*}/gm);
+    const DATA_ATTR = seal(/^data-[\-\w.\u00B7-\uFFFF]/);
+    const ARIA_ATTR = seal(/^aria-[\-\w]+$/);
+    const IS_ALLOWED_URI = seal(/^(?:(?:(?:f|ht)tps?|mailto|tel|callto|sms|cid|xmpp):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i);
+    const IS_SCRIPT_OR_DATA = seal(/^(?:\w+script|data):/i);
+    const ATTR_WHITESPACE = seal(/[\u0000-\u0020\u00A0\u1680\u180E\u2000-\u2029\u205F\u3000]/g);
+    const DOCTYPE_NAME = seal(/^html$/i);
+    var EXPRESSIONS = Object.freeze({
+      __proto__: null,
+      MUSTACHE_EXPR: MUSTACHE_EXPR,
+      ERB_EXPR: ERB_EXPR,
+      TMPLIT_EXPR: TMPLIT_EXPR,
+      DATA_ATTR: DATA_ATTR,
+      ARIA_ATTR: ARIA_ATTR,
+      IS_ALLOWED_URI: IS_ALLOWED_URI,
+      IS_SCRIPT_OR_DATA: IS_SCRIPT_OR_DATA,
+      ATTR_WHITESPACE: ATTR_WHITESPACE,
+      DOCTYPE_NAME: DOCTYPE_NAME
+    });
+    const getGlobal = () => typeof window === 'undefined' ? null : window;
+    const _createTrustedTypesPolicy = function _createTrustedTypesPolicy(trustedTypes, purifyHostElement) {
+      if (typeof trustedTypes !== 'object' || typeof trustedTypes.createPolicy !== 'function') {
+        return null;
+      }
+      let suffix = null;
+      const ATTR_NAME = 'data-tt-policy-suffix';
+      if (purifyHostElement && purifyHostElement.hasAttribute(ATTR_NAME)) {
+        suffix = purifyHostElement.getAttribute(ATTR_NAME);
+      }
+      const policyName = 'dompurify' + (suffix ? '#' + suffix : '');
+      try {
+        return trustedTypes.createPolicy(policyName, {
+          createHTML(html) {
+            return html;
+          },
+          createScriptURL(scriptUrl) {
+            return scriptUrl;
+          }
+        });
+      } catch (_) {
+        console.warn('TrustedTypes policy ' + policyName + ' could not be created.');
+        return null;
+      }
+    };
+    function createDOMPurify() {
+      let window = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : getGlobal();
+      const DOMPurify = root => createDOMPurify(root);
+      DOMPurify.version = '3.0.5';
+      DOMPurify.removed = [];
+      if (!window || !window.document || window.document.nodeType !== 9) {
+        DOMPurify.isSupported = false;
+        return DOMPurify;
+      }
+      const originalDocument = window.document;
+      const currentScript = originalDocument.currentScript;
+      let {document} = window;
+      const {DocumentFragment, HTMLTemplateElement, Node, Element, NodeFilter, NamedNodeMap = window.NamedNodeMap || window.MozNamedAttrMap, HTMLFormElement, DOMParser, trustedTypes} = window;
+      const ElementPrototype = Element.prototype;
+      const cloneNode = lookupGetter(ElementPrototype, 'cloneNode');
+      const getNextSibling = lookupGetter(ElementPrototype, 'nextSibling');
+      const getChildNodes = lookupGetter(ElementPrototype, 'childNodes');
+      const getParentNode = lookupGetter(ElementPrototype, 'parentNode');
+      if (typeof HTMLTemplateElement === 'function') {
+        const template = document.createElement('template');
+        if (template.content && template.content.ownerDocument) {
+          document = template.content.ownerDocument;
+        }
+      }
+      let trustedTypesPolicy;
+      let emptyHTML = '';
+      const {implementation, createNodeIterator, createDocumentFragment, getElementsByTagName} = document;
+      const {importNode} = originalDocument;
+      let hooks = {};
+      DOMPurify.isSupported = typeof entries === 'function' && typeof getParentNode === 'function' && implementation && implementation.createHTMLDocument !== undefined;
+      const {MUSTACHE_EXPR, ERB_EXPR, TMPLIT_EXPR, DATA_ATTR, ARIA_ATTR, IS_SCRIPT_OR_DATA, ATTR_WHITESPACE} = EXPRESSIONS;
+      let {IS_ALLOWED_URI: IS_ALLOWED_URI$1} = EXPRESSIONS;
+      let ALLOWED_TAGS = null;
+      const DEFAULT_ALLOWED_TAGS = addToSet({}, [
+        ...html$1,
+        ...svg$1,
+        ...svgFilters,
+        ...mathMl$1,
+        ...text$1
+      ]);
+      let ALLOWED_ATTR = null;
+      const DEFAULT_ALLOWED_ATTR = addToSet({}, [
+        ...html,
+        ...svg,
+        ...mathMl,
+        ...xml
+      ]);
+      let CUSTOM_ELEMENT_HANDLING = Object.seal(Object.create(null, {
+        tagNameCheck: {
+          writable: true,
+          configurable: false,
+          enumerable: true,
+          value: null
+        },
+        attributeNameCheck: {
+          writable: true,
+          configurable: false,
+          enumerable: true,
+          value: null
+        },
+        allowCustomizedBuiltInElements: {
+          writable: true,
+          configurable: false,
+          enumerable: true,
+          value: false
+        }
+      }));
+      let FORBID_TAGS = null;
+      let FORBID_ATTR = null;
+      let ALLOW_ARIA_ATTR = true;
+      let ALLOW_DATA_ATTR = true;
+      let ALLOW_UNKNOWN_PROTOCOLS = false;
+      let ALLOW_SELF_CLOSE_IN_ATTR = true;
+      let SAFE_FOR_TEMPLATES = false;
+      let WHOLE_DOCUMENT = false;
+      let SET_CONFIG = false;
+      let FORCE_BODY = false;
+      let RETURN_DOM = false;
+      let RETURN_DOM_FRAGMENT = false;
+      let RETURN_TRUSTED_TYPE = false;
+      let SANITIZE_DOM = true;
+      let SANITIZE_NAMED_PROPS = false;
+      const SANITIZE_NAMED_PROPS_PREFIX = 'user-content-';
+      let KEEP_CONTENT = true;
+      let IN_PLACE = false;
+      let USE_PROFILES = {};
+      let FORBID_CONTENTS = null;
+      const DEFAULT_FORBID_CONTENTS = addToSet({}, [
+        'annotation-xml',
+        'audio',
+        'colgroup',
+        'desc',
+        'foreignobject',
+        'head',
+        'iframe',
+        'math',
+        'mi',
+        'mn',
+        'mo',
+        'ms',
+        'mtext',
+        'noembed',
+        'noframes',
+        'noscript',
+        'plaintext',
+        'script',
+        'style',
+        'svg',
+        'template',
+        'thead',
+        'title',
+        'video',
+        'xmp'
+      ]);
+      let DATA_URI_TAGS = null;
+      const DEFAULT_DATA_URI_TAGS = addToSet({}, [
+        'audio',
+        'video',
+        'img',
+        'source',
+        'image',
+        'track'
+      ]);
+      let URI_SAFE_ATTRIBUTES = null;
+      const DEFAULT_URI_SAFE_ATTRIBUTES = addToSet({}, [
+        'alt',
+        'class',
+        'for',
+        'id',
+        'label',
+        'name',
+        'pattern',
+        'placeholder',
+        'role',
+        'summary',
+        'title',
+        'value',
+        'style',
+        'xmlns'
+      ]);
+      const MATHML_NAMESPACE = 'http://www.w3.org/1998/Math/MathML';
+      const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
+      const HTML_NAMESPACE = 'http://www.w3.org/1999/xhtml';
+      let NAMESPACE = HTML_NAMESPACE;
+      let IS_EMPTY_INPUT = false;
+      let ALLOWED_NAMESPACES = null;
+      const DEFAULT_ALLOWED_NAMESPACES = addToSet({}, [
+        MATHML_NAMESPACE,
+        SVG_NAMESPACE,
+        HTML_NAMESPACE
+      ], stringToString);
+      let PARSER_MEDIA_TYPE;
+      const SUPPORTED_PARSER_MEDIA_TYPES = [
+        'application/xhtml+xml',
+        'text/html'
+      ];
+      const DEFAULT_PARSER_MEDIA_TYPE = 'text/html';
+      let transformCaseFunc;
+      let CONFIG = null;
+      const formElement = document.createElement('form');
+      const isRegexOrFunction = function isRegexOrFunction(testValue) {
+        return testValue instanceof RegExp || testValue instanceof Function;
+      };
+      const _parseConfig = function _parseConfig(cfg) {
+        if (CONFIG && CONFIG === cfg) {
+          return;
+        }
+        if (!cfg || typeof cfg !== 'object') {
+          cfg = {};
+        }
+        cfg = clone(cfg);
+        PARSER_MEDIA_TYPE = SUPPORTED_PARSER_MEDIA_TYPES.indexOf(cfg.PARSER_MEDIA_TYPE) === -1 ? PARSER_MEDIA_TYPE = DEFAULT_PARSER_MEDIA_TYPE : PARSER_MEDIA_TYPE = cfg.PARSER_MEDIA_TYPE;
+        transformCaseFunc = PARSER_MEDIA_TYPE === 'application/xhtml+xml' ? stringToString : stringToLowerCase;
+        ALLOWED_TAGS = 'ALLOWED_TAGS' in cfg ? addToSet({}, cfg.ALLOWED_TAGS, transformCaseFunc) : DEFAULT_ALLOWED_TAGS;
+        ALLOWED_ATTR = 'ALLOWED_ATTR' in cfg ? addToSet({}, cfg.ALLOWED_ATTR, transformCaseFunc) : DEFAULT_ALLOWED_ATTR;
+        ALLOWED_NAMESPACES = 'ALLOWED_NAMESPACES' in cfg ? addToSet({}, cfg.ALLOWED_NAMESPACES, stringToString) : DEFAULT_ALLOWED_NAMESPACES;
+        URI_SAFE_ATTRIBUTES = 'ADD_URI_SAFE_ATTR' in cfg ? addToSet(clone(DEFAULT_URI_SAFE_ATTRIBUTES), cfg.ADD_URI_SAFE_ATTR, transformCaseFunc) : DEFAULT_URI_SAFE_ATTRIBUTES;
+        DATA_URI_TAGS = 'ADD_DATA_URI_TAGS' in cfg ? addToSet(clone(DEFAULT_DATA_URI_TAGS), cfg.ADD_DATA_URI_TAGS, transformCaseFunc) : DEFAULT_DATA_URI_TAGS;
+        FORBID_CONTENTS = 'FORBID_CONTENTS' in cfg ? addToSet({}, cfg.FORBID_CONTENTS, transformCaseFunc) : DEFAULT_FORBID_CONTENTS;
+        FORBID_TAGS = 'FORBID_TAGS' in cfg ? addToSet({}, cfg.FORBID_TAGS, transformCaseFunc) : {};
+        FORBID_ATTR = 'FORBID_ATTR' in cfg ? addToSet({}, cfg.FORBID_ATTR, transformCaseFunc) : {};
+        USE_PROFILES = 'USE_PROFILES' in cfg ? cfg.USE_PROFILES : false;
+        ALLOW_ARIA_ATTR = cfg.ALLOW_ARIA_ATTR !== false;
+        ALLOW_DATA_ATTR = cfg.ALLOW_DATA_ATTR !== false;
+        ALLOW_UNKNOWN_PROTOCOLS = cfg.ALLOW_UNKNOWN_PROTOCOLS || false;
+        ALLOW_SELF_CLOSE_IN_ATTR = cfg.ALLOW_SELF_CLOSE_IN_ATTR !== false;
+        SAFE_FOR_TEMPLATES = cfg.SAFE_FOR_TEMPLATES || false;
+        WHOLE_DOCUMENT = cfg.WHOLE_DOCUMENT || false;
+        RETURN_DOM = cfg.RETURN_DOM || false;
+        RETURN_DOM_FRAGMENT = cfg.RETURN_DOM_FRAGMENT || false;
+        RETURN_TRUSTED_TYPE = cfg.RETURN_TRUSTED_TYPE || false;
+        FORCE_BODY = cfg.FORCE_BODY || false;
+        SANITIZE_DOM = cfg.SANITIZE_DOM !== false;
+        SANITIZE_NAMED_PROPS = cfg.SANITIZE_NAMED_PROPS || false;
+        KEEP_CONTENT = cfg.KEEP_CONTENT !== false;
+        IN_PLACE = cfg.IN_PLACE || false;
+        IS_ALLOWED_URI$1 = cfg.ALLOWED_URI_REGEXP || IS_ALLOWED_URI;
+        NAMESPACE = cfg.NAMESPACE || HTML_NAMESPACE;
+        CUSTOM_ELEMENT_HANDLING = cfg.CUSTOM_ELEMENT_HANDLING || {};
+        if (cfg.CUSTOM_ELEMENT_HANDLING && isRegexOrFunction(cfg.CUSTOM_ELEMENT_HANDLING.tagNameCheck)) {
+          CUSTOM_ELEMENT_HANDLING.tagNameCheck = cfg.CUSTOM_ELEMENT_HANDLING.tagNameCheck;
+        }
+        if (cfg.CUSTOM_ELEMENT_HANDLING && isRegexOrFunction(cfg.CUSTOM_ELEMENT_HANDLING.attributeNameCheck)) {
+          CUSTOM_ELEMENT_HANDLING.attributeNameCheck = cfg.CUSTOM_ELEMENT_HANDLING.attributeNameCheck;
+        }
+        if (cfg.CUSTOM_ELEMENT_HANDLING && typeof cfg.CUSTOM_ELEMENT_HANDLING.allowCustomizedBuiltInElements === 'boolean') {
+          CUSTOM_ELEMENT_HANDLING.allowCustomizedBuiltInElements = cfg.CUSTOM_ELEMENT_HANDLING.allowCustomizedBuiltInElements;
+        }
+        if (SAFE_FOR_TEMPLATES) {
+          ALLOW_DATA_ATTR = false;
+        }
+        if (RETURN_DOM_FRAGMENT) {
+          RETURN_DOM = true;
+        }
+        if (USE_PROFILES) {
+          ALLOWED_TAGS = addToSet({}, [...text$1]);
+          ALLOWED_ATTR = [];
+          if (USE_PROFILES.html === true) {
+            addToSet(ALLOWED_TAGS, html$1);
+            addToSet(ALLOWED_ATTR, html);
+          }
+          if (USE_PROFILES.svg === true) {
+            addToSet(ALLOWED_TAGS, svg$1);
+            addToSet(ALLOWED_ATTR, svg);
+            addToSet(ALLOWED_ATTR, xml);
+          }
+          if (USE_PROFILES.svgFilters === true) {
+            addToSet(ALLOWED_TAGS, svgFilters);
+            addToSet(ALLOWED_ATTR, svg);
+            addToSet(ALLOWED_ATTR, xml);
+          }
+          if (USE_PROFILES.mathMl === true) {
+            addToSet(ALLOWED_TAGS, mathMl$1);
+            addToSet(ALLOWED_ATTR, mathMl);
+            addToSet(ALLOWED_ATTR, xml);
+          }
+        }
+        if (cfg.ADD_TAGS) {
+          if (ALLOWED_TAGS === DEFAULT_ALLOWED_TAGS) {
+            ALLOWED_TAGS = clone(ALLOWED_TAGS);
+          }
+          addToSet(ALLOWED_TAGS, cfg.ADD_TAGS, transformCaseFunc);
+        }
+        if (cfg.ADD_ATTR) {
+          if (ALLOWED_ATTR === DEFAULT_ALLOWED_ATTR) {
+            ALLOWED_ATTR = clone(ALLOWED_ATTR);
+          }
+          addToSet(ALLOWED_ATTR, cfg.ADD_ATTR, transformCaseFunc);
+        }
+        if (cfg.ADD_URI_SAFE_ATTR) {
+          addToSet(URI_SAFE_ATTRIBUTES, cfg.ADD_URI_SAFE_ATTR, transformCaseFunc);
+        }
+        if (cfg.FORBID_CONTENTS) {
+          if (FORBID_CONTENTS === DEFAULT_FORBID_CONTENTS) {
+            FORBID_CONTENTS = clone(FORBID_CONTENTS);
+          }
+          addToSet(FORBID_CONTENTS, cfg.FORBID_CONTENTS, transformCaseFunc);
+        }
+        if (KEEP_CONTENT) {
+          ALLOWED_TAGS['#text'] = true;
+        }
+        if (WHOLE_DOCUMENT) {
+          addToSet(ALLOWED_TAGS, [
+            'html',
+            'head',
+            'body'
+          ]);
+        }
+        if (ALLOWED_TAGS.table) {
+          addToSet(ALLOWED_TAGS, ['tbody']);
+          delete FORBID_TAGS.tbody;
+        }
+        if (cfg.TRUSTED_TYPES_POLICY) {
+          if (typeof cfg.TRUSTED_TYPES_POLICY.createHTML !== 'function') {
+            throw typeErrorCreate('TRUSTED_TYPES_POLICY configuration option must provide a "createHTML" hook.');
+          }
+          if (typeof cfg.TRUSTED_TYPES_POLICY.createScriptURL !== 'function') {
+            throw typeErrorCreate('TRUSTED_TYPES_POLICY configuration option must provide a "createScriptURL" hook.');
+          }
+          trustedTypesPolicy = cfg.TRUSTED_TYPES_POLICY;
+          emptyHTML = trustedTypesPolicy.createHTML('');
+        } else {
+          if (trustedTypesPolicy === undefined) {
+            trustedTypesPolicy = _createTrustedTypesPolicy(trustedTypes, currentScript);
+          }
+          if (trustedTypesPolicy !== null && typeof emptyHTML === 'string') {
+            emptyHTML = trustedTypesPolicy.createHTML('');
+          }
+        }
+        if (freeze) {
+          freeze(cfg);
+        }
+        CONFIG = cfg;
+      };
+      const MATHML_TEXT_INTEGRATION_POINTS = addToSet({}, [
+        'mi',
+        'mo',
+        'mn',
+        'ms',
+        'mtext'
+      ]);
+      const HTML_INTEGRATION_POINTS = addToSet({}, [
+        'foreignobject',
+        'desc',
+        'title',
+        'annotation-xml'
+      ]);
+      const COMMON_SVG_AND_HTML_ELEMENTS = addToSet({}, [
+        'title',
+        'style',
+        'font',
+        'a',
+        'script'
+      ]);
+      const ALL_SVG_TAGS = addToSet({}, svg$1);
+      addToSet(ALL_SVG_TAGS, svgFilters);
+      addToSet(ALL_SVG_TAGS, svgDisallowed);
+      const ALL_MATHML_TAGS = addToSet({}, mathMl$1);
+      addToSet(ALL_MATHML_TAGS, mathMlDisallowed);
+      const _checkValidNamespace = function _checkValidNamespace(element) {
+        let parent = getParentNode(element);
+        if (!parent || !parent.tagName) {
+          parent = {
+            namespaceURI: NAMESPACE,
+            tagName: 'template'
+          };
+        }
+        const tagName = stringToLowerCase(element.tagName);
+        const parentTagName = stringToLowerCase(parent.tagName);
+        if (!ALLOWED_NAMESPACES[element.namespaceURI]) {
+          return false;
+        }
+        if (element.namespaceURI === SVG_NAMESPACE) {
+          if (parent.namespaceURI === HTML_NAMESPACE) {
+            return tagName === 'svg';
+          }
+          if (parent.namespaceURI === MATHML_NAMESPACE) {
+            return tagName === 'svg' && (parentTagName === 'annotation-xml' || MATHML_TEXT_INTEGRATION_POINTS[parentTagName]);
+          }
+          return Boolean(ALL_SVG_TAGS[tagName]);
+        }
+        if (element.namespaceURI === MATHML_NAMESPACE) {
+          if (parent.namespaceURI === HTML_NAMESPACE) {
+            return tagName === 'math';
+          }
+          if (parent.namespaceURI === SVG_NAMESPACE) {
+            return tagName === 'math' && HTML_INTEGRATION_POINTS[parentTagName];
+          }
+          return Boolean(ALL_MATHML_TAGS[tagName]);
+        }
+        if (element.namespaceURI === HTML_NAMESPACE) {
+          if (parent.namespaceURI === SVG_NAMESPACE && !HTML_INTEGRATION_POINTS[parentTagName]) {
+            return false;
+          }
+          if (parent.namespaceURI === MATHML_NAMESPACE && !MATHML_TEXT_INTEGRATION_POINTS[parentTagName]) {
+            return false;
+          }
+          return !ALL_MATHML_TAGS[tagName] && (COMMON_SVG_AND_HTML_ELEMENTS[tagName] || !ALL_SVG_TAGS[tagName]);
+        }
+        if (PARSER_MEDIA_TYPE === 'application/xhtml+xml' && ALLOWED_NAMESPACES[element.namespaceURI]) {
+          return true;
+        }
+        return false;
+      };
+      const _forceRemove = function _forceRemove(node) {
+        arrayPush(DOMPurify.removed, { element: node });
+        try {
+          node.parentNode.removeChild(node);
+        } catch (_) {
+          node.remove();
+        }
+      };
+      const _removeAttribute = function _removeAttribute(name, node) {
+        try {
+          arrayPush(DOMPurify.removed, {
+            attribute: node.getAttributeNode(name),
+            from: node
+          });
+        } catch (_) {
+          arrayPush(DOMPurify.removed, {
+            attribute: null,
+            from: node
+          });
+        }
+        node.removeAttribute(name);
+        if (name === 'is' && !ALLOWED_ATTR[name]) {
+          if (RETURN_DOM || RETURN_DOM_FRAGMENT) {
+            try {
+              _forceRemove(node);
+            } catch (_) {
+            }
+          } else {
+            try {
+              node.setAttribute(name, '');
+            } catch (_) {
+            }
+          }
+        }
+      };
+      const _initDocument = function _initDocument(dirty) {
+        let doc;
+        let leadingWhitespace;
+        if (FORCE_BODY) {
+          dirty = '<remove></remove>' + dirty;
+        } else {
+          const matches = stringMatch(dirty, /^[\r\n\t ]+/);
+          leadingWhitespace = matches && matches[0];
+        }
+        if (PARSER_MEDIA_TYPE === 'application/xhtml+xml' && NAMESPACE === HTML_NAMESPACE) {
+          dirty = '<html xmlns="http://www.w3.org/1999/xhtml"><head></head><body>' + dirty + '</body></html>';
+        }
+        const dirtyPayload = trustedTypesPolicy ? trustedTypesPolicy.createHTML(dirty) : dirty;
+        if (NAMESPACE === HTML_NAMESPACE) {
+          try {
+            doc = new DOMParser().parseFromString(dirtyPayload, PARSER_MEDIA_TYPE);
+          } catch (_) {
+          }
+        }
+        if (!doc || !doc.documentElement) {
+          doc = implementation.createDocument(NAMESPACE, 'template', null);
+          try {
+            doc.documentElement.innerHTML = IS_EMPTY_INPUT ? emptyHTML : dirtyPayload;
+          } catch (_) {
+          }
+        }
+        const body = doc.body || doc.documentElement;
+        if (dirty && leadingWhitespace) {
+          body.insertBefore(document.createTextNode(leadingWhitespace), body.childNodes[0] || null);
+        }
+        if (NAMESPACE === HTML_NAMESPACE) {
+          return getElementsByTagName.call(doc, WHOLE_DOCUMENT ? 'html' : 'body')[0];
+        }
+        return WHOLE_DOCUMENT ? doc.documentElement : body;
+      };
+      const _createIterator = function _createIterator(root) {
+        return createNodeIterator.call(root.ownerDocument || root, root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_COMMENT | NodeFilter.SHOW_TEXT, null, false);
+      };
+      const _isClobbered = function _isClobbered(elm) {
+        return elm instanceof HTMLFormElement && (typeof elm.nodeName !== 'string' || typeof elm.textContent !== 'string' || typeof elm.removeChild !== 'function' || !(elm.attributes instanceof NamedNodeMap) || typeof elm.removeAttribute !== 'function' || typeof elm.setAttribute !== 'function' || typeof elm.namespaceURI !== 'string' || typeof elm.insertBefore !== 'function' || typeof elm.hasChildNodes !== 'function');
+      };
+      const _isNode = function _isNode(object) {
+        return typeof Node === 'object' ? object instanceof Node : object && typeof object === 'object' && typeof object.nodeType === 'number' && typeof object.nodeName === 'string';
+      };
+      const _executeHook = function _executeHook(entryPoint, currentNode, data) {
+        if (!hooks[entryPoint]) {
+          return;
+        }
+        arrayForEach(hooks[entryPoint], hook => {
+          hook.call(DOMPurify, currentNode, data, CONFIG);
+        });
+      };
+      const _sanitizeElements = function _sanitizeElements(currentNode) {
+        let content;
+        _executeHook('beforeSanitizeElements', currentNode, null);
+        if (_isClobbered(currentNode)) {
+          _forceRemove(currentNode);
+          return true;
+        }
+        const tagName = transformCaseFunc(currentNode.nodeName);
+        _executeHook('uponSanitizeElement', currentNode, {
+          tagName,
+          allowedTags: ALLOWED_TAGS
+        });
+        if (currentNode.hasChildNodes() && !_isNode(currentNode.firstElementChild) && (!_isNode(currentNode.content) || !_isNode(currentNode.content.firstElementChild)) && regExpTest(/<[/\w]/g, currentNode.innerHTML) && regExpTest(/<[/\w]/g, currentNode.textContent)) {
+          _forceRemove(currentNode);
+          return true;
+        }
+        if (!ALLOWED_TAGS[tagName] || FORBID_TAGS[tagName]) {
+          if (!FORBID_TAGS[tagName] && _basicCustomElementTest(tagName)) {
+            if (CUSTOM_ELEMENT_HANDLING.tagNameCheck instanceof RegExp && regExpTest(CUSTOM_ELEMENT_HANDLING.tagNameCheck, tagName))
+              return false;
+            if (CUSTOM_ELEMENT_HANDLING.tagNameCheck instanceof Function && CUSTOM_ELEMENT_HANDLING.tagNameCheck(tagName))
+              return false;
+          }
+          if (KEEP_CONTENT && !FORBID_CONTENTS[tagName]) {
+            const parentNode = getParentNode(currentNode) || currentNode.parentNode;
+            const childNodes = getChildNodes(currentNode) || currentNode.childNodes;
+            if (childNodes && parentNode) {
+              const childCount = childNodes.length;
+              for (let i = childCount - 1; i >= 0; --i) {
+                parentNode.insertBefore(cloneNode(childNodes[i], true), getNextSibling(currentNode));
+              }
+            }
+          }
+          _forceRemove(currentNode);
+          return true;
+        }
+        if (currentNode instanceof Element && !_checkValidNamespace(currentNode)) {
+          _forceRemove(currentNode);
+          return true;
+        }
+        if ((tagName === 'noscript' || tagName === 'noembed' || tagName === 'noframes') && regExpTest(/<\/no(script|embed|frames)/i, currentNode.innerHTML)) {
+          _forceRemove(currentNode);
+          return true;
+        }
+        if (SAFE_FOR_TEMPLATES && currentNode.nodeType === 3) {
+          content = currentNode.textContent;
+          content = stringReplace(content, MUSTACHE_EXPR, ' ');
+          content = stringReplace(content, ERB_EXPR, ' ');
+          content = stringReplace(content, TMPLIT_EXPR, ' ');
+          if (currentNode.textContent !== content) {
+            arrayPush(DOMPurify.removed, { element: currentNode.cloneNode() });
+            currentNode.textContent = content;
+          }
+        }
+        _executeHook('afterSanitizeElements', currentNode, null);
+        return false;
+      };
+      const _isValidAttribute = function _isValidAttribute(lcTag, lcName, value) {
+        if (SANITIZE_DOM && (lcName === 'id' || lcName === 'name') && (value in document || value in formElement)) {
+          return false;
+        }
+        if (ALLOW_DATA_ATTR && !FORBID_ATTR[lcName] && regExpTest(DATA_ATTR, lcName));
+        else if (ALLOW_ARIA_ATTR && regExpTest(ARIA_ATTR, lcName));
+        else if (!ALLOWED_ATTR[lcName] || FORBID_ATTR[lcName]) {
+          if (_basicCustomElementTest(lcTag) && (CUSTOM_ELEMENT_HANDLING.tagNameCheck instanceof RegExp && regExpTest(CUSTOM_ELEMENT_HANDLING.tagNameCheck, lcTag) || CUSTOM_ELEMENT_HANDLING.tagNameCheck instanceof Function && CUSTOM_ELEMENT_HANDLING.tagNameCheck(lcTag)) && (CUSTOM_ELEMENT_HANDLING.attributeNameCheck instanceof RegExp && regExpTest(CUSTOM_ELEMENT_HANDLING.attributeNameCheck, lcName) || CUSTOM_ELEMENT_HANDLING.attributeNameCheck instanceof Function && CUSTOM_ELEMENT_HANDLING.attributeNameCheck(lcName)) || lcName === 'is' && CUSTOM_ELEMENT_HANDLING.allowCustomizedBuiltInElements && (CUSTOM_ELEMENT_HANDLING.tagNameCheck instanceof RegExp && regExpTest(CUSTOM_ELEMENT_HANDLING.tagNameCheck, value) || CUSTOM_ELEMENT_HANDLING.tagNameCheck instanceof Function && CUSTOM_ELEMENT_HANDLING.tagNameCheck(value)));
+          else {
+            return false;
+          }
+        } else if (URI_SAFE_ATTRIBUTES[lcName]);
+        else if (regExpTest(IS_ALLOWED_URI$1, stringReplace(value, ATTR_WHITESPACE, '')));
+        else if ((lcName === 'src' || lcName === 'xlink:href' || lcName === 'href') && lcTag !== 'script' && stringIndexOf(value, 'data:') === 0 && DATA_URI_TAGS[lcTag]);
+        else if (ALLOW_UNKNOWN_PROTOCOLS && !regExpTest(IS_SCRIPT_OR_DATA, stringReplace(value, ATTR_WHITESPACE, '')));
+        else if (value) {
+          return false;
+        } else ;
+        return true;
+      };
+      const _basicCustomElementTest = function _basicCustomElementTest(tagName) {
+        return tagName.indexOf('-') > 0;
+      };
+      const _sanitizeAttributes = function _sanitizeAttributes(currentNode) {
+        let attr;
+        let value;
+        let lcName;
+        let l;
+        _executeHook('beforeSanitizeAttributes', currentNode, null);
+        const {attributes} = currentNode;
+        if (!attributes) {
+          return;
+        }
+        const hookEvent = {
+          attrName: '',
+          attrValue: '',
+          keepAttr: true,
+          allowedAttributes: ALLOWED_ATTR
+        };
+        l = attributes.length;
+        while (l--) {
+          attr = attributes[l];
+          const {name, namespaceURI} = attr;
+          value = name === 'value' ? attr.value : stringTrim(attr.value);
+          const initValue = value;
+          lcName = transformCaseFunc(name);
+          hookEvent.attrName = lcName;
+          hookEvent.attrValue = value;
+          hookEvent.keepAttr = true;
+          hookEvent.forceKeepAttr = undefined;
+          _executeHook('uponSanitizeAttribute', currentNode, hookEvent);
+          value = hookEvent.attrValue;
+          if (hookEvent.forceKeepAttr) {
+            continue;
+          }
+          if (!hookEvent.keepAttr) {
+            _removeAttribute(name, currentNode);
+            continue;
+          }
+          if (!ALLOW_SELF_CLOSE_IN_ATTR && regExpTest(/\/>/i, value)) {
+            _removeAttribute(name, currentNode);
+            continue;
+          }
+          if (SAFE_FOR_TEMPLATES) {
+            value = stringReplace(value, MUSTACHE_EXPR, ' ');
+            value = stringReplace(value, ERB_EXPR, ' ');
+            value = stringReplace(value, TMPLIT_EXPR, ' ');
+          }
+          const lcTag = transformCaseFunc(currentNode.nodeName);
+          if (!_isValidAttribute(lcTag, lcName, value)) {
+            _removeAttribute(name, currentNode);
+            continue;
+          }
+          if (SANITIZE_NAMED_PROPS && (lcName === 'id' || lcName === 'name')) {
+            _removeAttribute(name, currentNode);
+            value = SANITIZE_NAMED_PROPS_PREFIX + value;
+          }
+          if (trustedTypesPolicy && typeof trustedTypes === 'object' && typeof trustedTypes.getAttributeType === 'function') {
+            if (namespaceURI);
+            else {
+              switch (trustedTypes.getAttributeType(lcTag, lcName)) {
+              case 'TrustedHTML': {
+                  value = trustedTypesPolicy.createHTML(value);
+                  break;
+                }
+              case 'TrustedScriptURL': {
+                  value = trustedTypesPolicy.createScriptURL(value);
+                  break;
+                }
+              }
+            }
+          }
+          if (value !== initValue) {
+            try {
+              if (namespaceURI) {
+                currentNode.setAttributeNS(namespaceURI, name, value);
+              } else {
+                currentNode.setAttribute(name, value);
+              }
+            } catch (_) {
+              _removeAttribute(name, currentNode);
+            }
+          }
+        }
+        _executeHook('afterSanitizeAttributes', currentNode, null);
+      };
+      const _sanitizeShadowDOM = function _sanitizeShadowDOM(fragment) {
+        let shadowNode;
+        const shadowIterator = _createIterator(fragment);
+        _executeHook('beforeSanitizeShadowDOM', fragment, null);
+        while (shadowNode = shadowIterator.nextNode()) {
+          _executeHook('uponSanitizeShadowNode', shadowNode, null);
+          if (_sanitizeElements(shadowNode)) {
+            continue;
+          }
+          if (shadowNode.content instanceof DocumentFragment) {
+            _sanitizeShadowDOM(shadowNode.content);
+          }
+          _sanitizeAttributes(shadowNode);
+        }
+        _executeHook('afterSanitizeShadowDOM', fragment, null);
+      };
+      DOMPurify.sanitize = function (dirty) {
+        let cfg = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+        let body;
+        let importedNode;
+        let currentNode;
+        let returnNode;
+        IS_EMPTY_INPUT = !dirty;
+        if (IS_EMPTY_INPUT) {
+          dirty = '<!-->';
+        }
+        if (typeof dirty !== 'string' && !_isNode(dirty)) {
+          if (typeof dirty.toString === 'function') {
+            dirty = dirty.toString();
+            if (typeof dirty !== 'string') {
+              throw typeErrorCreate('dirty is not a string, aborting');
+            }
+          } else {
+            throw typeErrorCreate('toString is not a function');
+          }
+        }
+        if (!DOMPurify.isSupported) {
+          return dirty;
+        }
+        if (!SET_CONFIG) {
+          _parseConfig(cfg);
+        }
+        DOMPurify.removed = [];
+        if (typeof dirty === 'string') {
+          IN_PLACE = false;
+        }
+        if (IN_PLACE) {
+          if (dirty.nodeName) {
+            const tagName = transformCaseFunc(dirty.nodeName);
+            if (!ALLOWED_TAGS[tagName] || FORBID_TAGS[tagName]) {
+              throw typeErrorCreate('root node is forbidden and cannot be sanitized in-place');
+            }
+          }
+        } else if (dirty instanceof Node) {
+          body = _initDocument('<!---->');
+          importedNode = body.ownerDocument.importNode(dirty, true);
+          if (importedNode.nodeType === 1 && importedNode.nodeName === 'BODY') {
+            body = importedNode;
+          } else if (importedNode.nodeName === 'HTML') {
+            body = importedNode;
+          } else {
+            body.appendChild(importedNode);
+          }
+        } else {
+          if (!RETURN_DOM && !SAFE_FOR_TEMPLATES && !WHOLE_DOCUMENT && dirty.indexOf('<') === -1) {
+            return trustedTypesPolicy && RETURN_TRUSTED_TYPE ? trustedTypesPolicy.createHTML(dirty) : dirty;
+          }
+          body = _initDocument(dirty);
+          if (!body) {
+            return RETURN_DOM ? null : RETURN_TRUSTED_TYPE ? emptyHTML : '';
+          }
+        }
+        if (body && FORCE_BODY) {
+          _forceRemove(body.firstChild);
+        }
+        const nodeIterator = _createIterator(IN_PLACE ? dirty : body);
+        while (currentNode = nodeIterator.nextNode()) {
+          if (_sanitizeElements(currentNode)) {
+            continue;
+          }
+          if (currentNode.content instanceof DocumentFragment) {
+            _sanitizeShadowDOM(currentNode.content);
+          }
+          _sanitizeAttributes(currentNode);
+        }
+        if (IN_PLACE) {
+          return dirty;
+        }
+        if (RETURN_DOM) {
+          if (RETURN_DOM_FRAGMENT) {
+            returnNode = createDocumentFragment.call(body.ownerDocument);
+            while (body.firstChild) {
+              returnNode.appendChild(body.firstChild);
+            }
+          } else {
+            returnNode = body;
+          }
+          if (ALLOWED_ATTR.shadowroot || ALLOWED_ATTR.shadowrootmode) {
+            returnNode = importNode.call(originalDocument, returnNode, true);
+          }
+          return returnNode;
+        }
+        let serializedHTML = WHOLE_DOCUMENT ? body.outerHTML : body.innerHTML;
+        if (WHOLE_DOCUMENT && ALLOWED_TAGS['!doctype'] && body.ownerDocument && body.ownerDocument.doctype && body.ownerDocument.doctype.name && regExpTest(DOCTYPE_NAME, body.ownerDocument.doctype.name)) {
+          serializedHTML = '<!DOCTYPE ' + body.ownerDocument.doctype.name + '>\n' + serializedHTML;
+        }
+        if (SAFE_FOR_TEMPLATES) {
+          serializedHTML = stringReplace(serializedHTML, MUSTACHE_EXPR, ' ');
+          serializedHTML = stringReplace(serializedHTML, ERB_EXPR, ' ');
+          serializedHTML = stringReplace(serializedHTML, TMPLIT_EXPR, ' ');
+        }
+        return trustedTypesPolicy && RETURN_TRUSTED_TYPE ? trustedTypesPolicy.createHTML(serializedHTML) : serializedHTML;
+      };
+      DOMPurify.setConfig = function (cfg) {
+        _parseConfig(cfg);
+        SET_CONFIG = true;
+      };
+      DOMPurify.clearConfig = function () {
+        CONFIG = null;
+        SET_CONFIG = false;
+      };
+      DOMPurify.isValidAttribute = function (tag, attr, value) {
+        if (!CONFIG) {
+          _parseConfig({});
+        }
+        const lcTag = transformCaseFunc(tag);
+        const lcName = transformCaseFunc(attr);
+        return _isValidAttribute(lcTag, lcName, value);
+      };
+      DOMPurify.addHook = function (entryPoint, hookFunction) {
+        if (typeof hookFunction !== 'function') {
+          return;
+        }
+        hooks[entryPoint] = hooks[entryPoint] || [];
+        arrayPush(hooks[entryPoint], hookFunction);
+      };
+      DOMPurify.removeHook = function (entryPoint) {
+        if (hooks[entryPoint]) {
+          return arrayPop(hooks[entryPoint]);
+        }
+      };
+      DOMPurify.removeHooks = function (entryPoint) {
+        if (hooks[entryPoint]) {
+          hooks[entryPoint] = [];
+        }
+      };
+      DOMPurify.removeAllHooks = function () {
+        hooks = {};
+      };
+      return DOMPurify;
+    }
+    var purify = createDOMPurify();
+
+    const sanitizeHtmlString = html => purify().sanitize(html);
 
     var global$8 = tinymce.util.Tools.resolve('tinymce.util.I18n');
 
@@ -7954,7 +9684,7 @@
     const addFocusableBehaviour = () => config('add-focusable', [runOnAttached(comp => {
         child(comp.element, 'svg').each(svg => set$9(svg, 'focusable', 'false'));
       })]);
-    const renderIcon$2 = (spec, iconName, icons, fallbackIcon) => {
+    const renderIcon$3 = (spec, iconName, icons, fallbackIcon) => {
       var _a, _b;
       const rtlIconClasses = needsRtlTransform(iconName) ? ['tox-icon--flip'] : [];
       const iconHtml = get$g(icons, getIconName(iconName, icons)).or(fallbackIcon).getOrThunk(defaultIcon(icons));
@@ -7971,11 +9701,11 @@
         ])
       };
     };
-    const render$3 = (iconName, spec, iconProvider, fallbackIcon = Optional.none()) => renderIcon$2(spec, iconName, iconProvider(), fallbackIcon);
+    const render$3 = (iconName, spec, iconProvider, fallbackIcon = Optional.none()) => renderIcon$3(spec, iconName, iconProvider(), fallbackIcon);
     const renderFirst = (iconNames, spec, iconProvider) => {
       const icons = iconProvider();
       const iconName = find$5(iconNames, name => has$2(icons, getIconName(name, icons)));
-      return renderIcon$2(spec, iconName.getOr(defaultIconName), icons, Optional.none());
+      return renderIcon$3(spec, iconName.getOr(defaultIconName), icons, Optional.none());
     };
 
     const notificationIconMap = {
@@ -7986,12 +9716,9 @@
       warn: 'warning',
       info: 'info'
     };
-    const factory$k = detail => {
+    const factory$m = detail => {
       const memBannerText = record({
-        dom: {
-          tag: 'p',
-          innerHtml: detail.translationProvider(detail.text)
-        },
+        dom: fromHtml(`<p>${ sanitizeHtmlString(detail.translationProvider(detail.text)) }</p>`),
         behaviours: derive$1([Replacing.config({})])
       });
       const renderPercentBar = percent => ({
@@ -8047,7 +9774,7 @@
       const updateText = (comp, text) => {
         if (comp.getSystem().isConnected()) {
           const banner = memBannerText.get(comp);
-          Replacing.set(banner, [text$1(text)]);
+          Replacing.set(banner, [text$2(text)]);
         }
       };
       const apis = {
@@ -8070,7 +9797,7 @@
           ]
         },
         components: [render$3('close', {
-            tag: 'div',
+            tag: 'span',
             classes: ['tox-icon'],
             attributes: { 'aria-label': detail.translationProvider('Close') }
           }, detail.iconProvider)],
@@ -8114,22 +9841,21 @@
               memButton.getOpt(comp).each(Focusing.focus);
             })])
         ]),
-        components: components.concat(detail.progress ? [memBannerProgress.asSpec()] : []).concat(!detail.closeButton ? [] : [memButton.asSpec()]),
+        components: components.concat(detail.progress ? [memBannerProgress.asSpec()] : []).concat([memButton.asSpec()]),
         apis
       };
     };
     const Notification = single({
       name: 'Notification',
-      factory: factory$k,
+      factory: factory$m,
       configFields: [
         option$3('level'),
         required$1('progress'),
-        required$1('icon'),
+        option$3('icon'),
         required$1('onAction'),
         required$1('text'),
         required$1('iconProvider'),
-        required$1('translationProvider'),
-        defaultedBoolean('closeButton', true)
+        required$1('translationProvider')
       ],
       apis: {
         updateProgress: (apis, comp, percent) => {
@@ -8167,8 +9893,7 @@
             'info'
           ], settings.type) ? settings.type : undefined,
           progress: settings.progressBar === true,
-          icon: Optional.from(settings.icon),
-          closeButton: settings.closeButton,
+          icon: settings.icon,
           onAction: close,
           iconProvider: sharedBackstage.providers.icons,
           translationProvider: sharedBackstage.providers.translate
@@ -8183,7 +9908,7 @@
           ...sharedBackstage.header.isPositionedAtTop() ? {} : { fireRepositionEventInstead: {} }
         }));
         uiMothership.add(notificationWrapper);
-        if (settings.timeout > 0) {
+        if (isNumber(settings.timeout) && settings.timeout > 0) {
           global$9.setEditorTimeout(editor, () => {
             close();
           }, settings.timeout);
@@ -8312,6 +10037,10 @@
         processor: 'string',
         default: '8pt 10pt 12pt 14pt 18pt 24pt 36pt'
       });
+      registerOption('font_size_input_default_unit', {
+        processor: 'string',
+        default: 'pt'
+      });
       registerOption('block_formats', {
         processor: 'string',
         default: 'Paragraph=p;' + 'Heading 1=h1;' + 'Heading 2=h2;' + 'Heading 3=h3;' + 'Heading 4=h4;' + 'Heading 5=h5;' + 'Heading 6=h6;' + 'Preformatted=pre'
@@ -8377,6 +10106,10 @@
         default: ''
       });
       registerOption('fixed_toolbar_container_target', { processor: 'object' });
+      registerOption('ui_mode', {
+        processor: 'string',
+        default: 'combined'
+      });
       registerOption('file_picker_callback', { processor: 'function' });
       registerOption('file_picker_validator_handler', { processor: 'function' });
       registerOption('file_picker_types', { processor: 'string' });
@@ -8408,11 +10141,23 @@
         processor: 'boolean',
         default: true
       });
+      registerOption('promotion', {
+        processor: 'boolean',
+        default: true
+      });
       registerOption('resize', {
         processor: value => value === 'both' || isBoolean(value),
         default: !global$5.deviceType.isTouch()
       });
       registerOption('sidebar_show', { processor: 'string' });
+      registerOption('help_accessibility', {
+        processor: 'boolean',
+        default: editor.hasPlugin('help')
+      });
+      registerOption('default_font_stack', {
+        processor: 'string[]',
+        default: []
+      });
     };
     const isReadOnly = option$2('readonly');
     const getHeightOption = option$2('height');
@@ -8437,6 +10182,7 @@
     const getToolbar = option$2('toolbar');
     const getFilePickerCallback = option$2('file_picker_callback');
     const getFilePickerValidatorHandler = option$2('file_picker_validator_handler');
+    const getFontSizeInputDefaultUnit = option$2('font_size_input_default_unit');
     const getFilePickerTypes = option$2('file_picker_types');
     const useTypeaheadUrls = option$2('typeahead_urls');
     const getAnchorTop = option$2('anchor_top');
@@ -8448,6 +10194,9 @@
     const getResize = option$2('resize');
     const getPasteAsText = option$2('paste_as_text');
     const getSidebarShow = option$2('sidebar_show');
+    const promotionEnabled = option$2('promotion');
+    const useHelpAccessibility = option$2('help_accessibility');
+    const getDefaultFontStack = option$2('default_font_stack');
     const isSkinDisabled = editor => editor.options.get('skin') === false;
     const isMenubarEnabled = editor => editor.options.get('menubar') !== false;
     const getSkinUrl = editor => {
@@ -8463,6 +10212,7 @@
         }
       }
     };
+    const getSkinUrlOption = editor => Optional.from(editor.options.get('skin_url'));
     const getLineHeightFormats = editor => editor.options.get('line_height_formats').split(' ');
     const isToolbarEnabled = editor => {
       const toolbar = getToolbar(editor);
@@ -8481,10 +10231,11 @@
     }, always);
     const isToolbarLocationBottom = editor => getToolbarLocation(editor) === ToolbarLocation$1.bottom;
     const fixedContainerTarget = editor => {
+      var _a;
       if (!editor.inline) {
         return Optional.none();
       }
-      const selector = fixedContainerSelector(editor);
+      const selector = (_a = fixedContainerSelector(editor)) !== null && _a !== void 0 ? _a : '';
       if (selector.length > 0) {
         return descendant(body(), selector);
       }
@@ -8504,6 +10255,7 @@
       const isStickyToolbar = editor.options.get('toolbar_sticky');
       return (isStickyToolbar || editor.inline) && !useFixedContainer(editor) && !isDistractionFree(editor);
     };
+    const isSplitUiMode = editor => !useFixedContainer(editor) && editor.options.get('ui_mode') === 'split';
     const getMenus = editor => {
       const menu = editor.options.get('menu');
       return map$1(menu, menu => ({
@@ -8518,6 +10270,7 @@
         get ToolbarLocation () { return ToolbarLocation$1; },
         register: register$e,
         getSkinUrl: getSkinUrl,
+        getSkinUrlOption: getSkinUrlOption,
         isReadOnly: isReadOnly,
         isSkinDisabled: isSkinDisabled,
         getHeightOption: getHeightOption,
@@ -8539,6 +10292,7 @@
         getMultipleToolbarsOption: getMultipleToolbarsOption,
         getUiContainer: getUiContainer,
         useFixedContainer: useFixedContainer,
+        isSplitUiMode: isSplitUiMode,
         getToolbarMode: getToolbarMode,
         isDraggableModal: isDraggableModal$1,
         isDistractionFree: isDistractionFree,
@@ -8556,17 +10310,17 @@
         getAnchorTop: getAnchorTop,
         getAnchorBottom: getAnchorBottom,
         getFilePickerValidatorHandler: getFilePickerValidatorHandler,
+        getFontSizeInputDefaultUnit: getFontSizeInputDefaultUnit,
         useStatusBar: useStatusBar,
         useElementPath: useElementPath,
+        promotionEnabled: promotionEnabled,
         useBranding: useBranding,
         getResize: getResize,
         getPasteAsText: getPasteAsText,
-        getSidebarShow: getSidebarShow
+        getSidebarShow: getSidebarShow,
+        useHelpAccessibility: useHelpAccessibility,
+        getDefaultFontStack: getDefaultFontStack
     });
-
-    const autocompleteSelector = '[data-mce-autocompleter]';
-    const detect = elm => closest$1(elm, autocompleteSelector);
-    const findIn = elm => descendant(elm, autocompleteSelector);
 
     const setup$e = (api, editor) => {
       const redirectKeyToItem = (item, e) => {
@@ -8603,8 +10357,8 @@
           }
         }
       });
-      editor.on('NodeChange', e => {
-        if (api.isActive() && !api.isProcessingAction() && detect(SugarElement.fromDom(e.element)).isNone()) {
+      editor.on('NodeChange', () => {
+        if (api.isActive() && !api.isProcessingAction() && !editor.queryCommandState('mceAutoCompleterInRange')) {
           api.cancelIfNecessary();
         }
       });
@@ -8695,6 +10449,177 @@
       };
     };
 
+    const schema$l = constant$1([
+      option$3('data'),
+      defaulted('inputAttributes', {}),
+      defaulted('inputStyles', {}),
+      defaulted('tag', 'input'),
+      defaulted('inputClasses', []),
+      onHandler('onSetValue'),
+      defaulted('styles', {}),
+      defaulted('eventOrder', {}),
+      field('inputBehaviours', [
+        Representing,
+        Focusing
+      ]),
+      defaulted('selectOnFocus', true)
+    ]);
+    const focusBehaviours = detail => derive$1([Focusing.config({
+        onFocus: !detail.selectOnFocus ? noop : component => {
+          const input = component.element;
+          const value = get$6(input);
+          input.dom.setSelectionRange(0, value.length);
+        }
+      })]);
+    const behaviours = detail => ({
+      ...focusBehaviours(detail),
+      ...augment(detail.inputBehaviours, [Representing.config({
+          store: {
+            mode: 'manual',
+            ...detail.data.map(data => ({ initialValue: data })).getOr({}),
+            getValue: input => {
+              return get$6(input.element);
+            },
+            setValue: (input, data) => {
+              const current = get$6(input.element);
+              if (current !== data) {
+                set$5(input.element, data);
+              }
+            }
+          },
+          onSetValue: detail.onSetValue
+        })])
+    });
+    const dom = detail => ({
+      tag: detail.tag,
+      attributes: {
+        type: 'text',
+        ...detail.inputAttributes
+      },
+      styles: detail.inputStyles,
+      classes: detail.inputClasses
+    });
+
+    const factory$l = (detail, _spec) => ({
+      uid: detail.uid,
+      dom: dom(detail),
+      components: [],
+      behaviours: behaviours(detail),
+      eventOrder: detail.eventOrder
+    });
+    const Input = single({
+      name: 'Input',
+      configFields: schema$l(),
+      factory: factory$l
+    });
+
+    const refetchTriggerEvent = generate$6('refetch-trigger-event');
+    const redirectMenuItemInteractionEvent = generate$6('redirect-menu-item-interaction');
+
+    const menuSearcherClass = 'tox-menu__searcher';
+    const findWithinSandbox = sandboxComp => {
+      return descendant(sandboxComp.element, `.${ menuSearcherClass }`).bind(inputElem => sandboxComp.getSystem().getByDom(inputElem).toOptional());
+    };
+    const findWithinMenu = findWithinSandbox;
+    const restoreState = (inputComp, searcherState) => {
+      Representing.setValue(inputComp, searcherState.fetchPattern);
+      inputComp.element.dom.selectionStart = searcherState.selectionStart;
+      inputComp.element.dom.selectionEnd = searcherState.selectionEnd;
+    };
+    const saveState = inputComp => {
+      const fetchPattern = Representing.getValue(inputComp);
+      const selectionStart = inputComp.element.dom.selectionStart;
+      const selectionEnd = inputComp.element.dom.selectionEnd;
+      return {
+        fetchPattern,
+        selectionStart,
+        selectionEnd
+      };
+    };
+    const setActiveDescendant = (inputComp, active) => {
+      getOpt(active.element, 'id').each(id => set$9(inputComp.element, 'aria-activedescendant', id));
+    };
+    const renderMenuSearcher = spec => {
+      const handleByBrowser = (comp, se) => {
+        se.cut();
+        return Optional.none();
+      };
+      const handleByHighlightedItem = (comp, se) => {
+        const eventData = {
+          interactionEvent: se.event,
+          eventType: se.event.raw.type
+        };
+        emitWith(comp, redirectMenuItemInteractionEvent, eventData);
+        return Optional.some(true);
+      };
+      const customSearcherEventsName = 'searcher-events';
+      return {
+        dom: {
+          tag: 'div',
+          classes: [selectableClass]
+        },
+        components: [Input.sketch({
+            inputClasses: [
+              menuSearcherClass,
+              'tox-textfield'
+            ],
+            inputAttributes: {
+              ...spec.placeholder.map(placeholder => ({ placeholder: spec.i18n(placeholder) })).getOr({}),
+              'type': 'search',
+              'aria-autocomplete': 'list'
+            },
+            inputBehaviours: derive$1([
+              config(customSearcherEventsName, [
+                run$1(input(), inputComp => {
+                  emit(inputComp, refetchTriggerEvent);
+                }),
+                run$1(keydown(), (inputComp, se) => {
+                  if (se.event.raw.key === 'Escape') {
+                    se.stop();
+                  }
+                })
+              ]),
+              Keying.config({
+                mode: 'special',
+                onLeft: handleByBrowser,
+                onRight: handleByBrowser,
+                onSpace: handleByBrowser,
+                onEnter: handleByHighlightedItem,
+                onEscape: handleByHighlightedItem,
+                onUp: handleByHighlightedItem,
+                onDown: handleByHighlightedItem
+              })
+            ]),
+            eventOrder: {
+              keydown: [
+                customSearcherEventsName,
+                Keying.name()
+              ]
+            }
+          })]
+      };
+    };
+
+    const searchResultsClass = 'tox-collection--results__js';
+    const augmentWithAria = item => {
+      var _a;
+      if (item.dom) {
+        return {
+          ...item,
+          dom: {
+            ...item.dom,
+            attributes: {
+              ...(_a = item.dom.attributes) !== null && _a !== void 0 ? _a : {},
+              'id': generate$6('aria-item-search-result-id'),
+              'aria-selected': 'false'
+            }
+          }
+        };
+      } else {
+        return item;
+      }
+    };
+
     const chunk = (rowDom, numColumns) => items => {
       const chunks = chunk$1(items, numColumns);
       return map$2(chunks, c => ({
@@ -8749,7 +10674,7 @@
             allSplits.push(currentSplit);
           }
           currentSplit = [];
-          if (has$2(item.dom, 'innerHtml') || item.components.length > 0) {
+          if (has$2(item.dom, 'innerHtml') || item.components && item.components.length > 0) {
             currentSplit.push(item);
           }
         } else {
@@ -8767,6 +10692,21 @@
         components: s
       }));
     };
+    const insertItemsPlaceholder = (columns, initItems, onItem) => {
+      return Menu.parts.items({
+        preprocess: rawItems => {
+          const enrichedItems = map$2(rawItems, onItem);
+          if (columns !== 'auto' && columns > 1) {
+            return chunk({
+              tag: 'div',
+              classes: ['tox-collection__group']
+            }, columns)(enrichedItems);
+          } else {
+            return preprocessCollection(enrichedItems, (_item, i) => initItems[i].type === 'separator');
+          }
+        }
+      });
+    };
     const forCollection = (columns, initItems, _hasIcons = true) => ({
       dom: {
         tag: 'div',
@@ -8775,19 +10715,52 @@
           'tox-collection'
         ].concat(columns === 1 ? ['tox-collection--list'] : ['tox-collection--grid'])
       },
-      components: [Menu.parts.items({
-          preprocess: items => {
-            if (columns !== 'auto' && columns > 1) {
-              return chunk({
-                tag: 'div',
-                classes: ['tox-collection__group']
-              }, columns)(items);
-            } else {
-              return preprocessCollection(items, (_item, i) => initItems[i].type === 'separator');
-            }
-          }
-        })]
+      components: [insertItemsPlaceholder(columns, initItems, identity)]
     });
+    const forCollectionWithSearchResults = (columns, initItems, _hasIcons = true) => {
+      const ariaControlsSearchResults = generate$6('aria-controls-search-results');
+      return {
+        dom: {
+          tag: 'div',
+          classes: [
+            'tox-menu',
+            'tox-collection',
+            searchResultsClass
+          ].concat(columns === 1 ? ['tox-collection--list'] : ['tox-collection--grid']),
+          attributes: { id: ariaControlsSearchResults }
+        },
+        components: [insertItemsPlaceholder(columns, initItems, augmentWithAria)]
+      };
+    };
+    const forCollectionWithSearchField = (columns, initItems, searchField) => {
+      const ariaControlsSearchResults = generate$6('aria-controls-search-results');
+      return {
+        dom: {
+          tag: 'div',
+          classes: [
+            'tox-menu',
+            'tox-collection'
+          ].concat(columns === 1 ? ['tox-collection--list'] : ['tox-collection--grid'])
+        },
+        components: [
+          renderMenuSearcher({
+            i18n: global$8.translate,
+            placeholder: searchField.placeholder
+          }),
+          {
+            dom: {
+              tag: 'div',
+              classes: [
+                ...columns === 1 ? ['tox-collection--list'] : ['tox-collection--grid'],
+                searchResultsClass
+              ],
+              attributes: { id: ariaControlsSearchResults }
+            },
+            components: [insertItemsPlaceholder(columns, initItems, augmentWithAria)]
+          }
+        ]
+      };
+    };
     const forHorizontalCollection = (initItems, _hasIcons = true) => ({
       dom: {
         tag: 'div',
@@ -8805,7 +10778,7 @@
       console.log(error);
       return Optional.none();
     };
-    const createHorizontalPartialMenuWithAlloyItems = (value, _hasIcons, items, _columns, _presets) => {
+    const createHorizontalPartialMenuWithAlloyItems = (value, _hasIcons, items, _columns, _menuLayout) => {
       const structure = forHorizontalCollection(items);
       return {
         value,
@@ -8814,8 +10787,15 @@
         items
       };
     };
-    const createPartialMenuWithAlloyItems = (value, hasIcons, items, columns, presets) => {
-      if (presets === 'color') {
+    const createPartialMenuWithAlloyItems = (value, hasIcons, items, columns, menuLayout) => {
+      const getNormalStructure = () => {
+        if (menuLayout.menuType !== 'searchable') {
+          return forCollection(columns, items);
+        } else {
+          return menuLayout.searchMode.searchMode === 'search-with-field' ? forCollectionWithSearchField(columns, items, menuLayout.searchMode) : forCollectionWithSearchResults(columns, items);
+        }
+      };
+      if (menuLayout.menuType === 'color') {
         const structure = forSwatch(columns);
         return {
           value,
@@ -8823,8 +10803,7 @@
           components: structure.components,
           items
         };
-      }
-      if (presets === 'normal' && columns === 'auto') {
+      } else if (menuLayout.menuType === 'normal' && columns === 'auto') {
         const structure = forCollection(columns, items);
         return {
           value,
@@ -8832,26 +10811,15 @@
           components: structure.components,
           items
         };
-      }
-      if (presets === 'normal' && columns === 1) {
-        const structure = forCollection(1, items);
+      } else if (menuLayout.menuType === 'normal' || menuLayout.menuType === 'searchable') {
+        const structure = getNormalStructure();
         return {
           value,
           dom: structure.dom,
           components: structure.components,
           items
         };
-      }
-      if (presets === 'normal') {
-        const structure = forCollection(columns, items);
-        return {
-          value,
-          dom: structure.dom,
-          components: structure.components,
-          items
-        };
-      }
-      if (presets === 'listpreview' && columns !== 'auto') {
+      } else if (menuLayout.menuType === 'listpreview' && columns !== 'auto') {
         const structure = forToolbar(columns);
         return {
           value,
@@ -8859,13 +10827,14 @@
           components: structure.components,
           items
         };
+      } else {
+        return {
+          value,
+          dom: dom$1(hasIcons, columns, menuLayout.menuType),
+          components: components,
+          items
+        };
       }
-      return {
-        value,
-        dom: dom$1(hasIcons, columns, presets),
-        components: components,
-        items
-      };
     };
 
     const type = requiredString('type');
@@ -8925,14 +10894,16 @@
     ];
     const toolbarButtonSchema = objOf([
       type,
-      onAction
+      onAction,
+      optionalShortcut
     ].concat(baseToolbarButtonFields));
     const createToolbarButton = spec => asRaw('toolbarbutton', toolbarButtonSchema, spec);
 
     const baseToolbarToggleButtonFields = [active].concat(baseToolbarButtonFields);
     const toggleButtonSchema = objOf(baseToolbarToggleButtonFields.concat([
       type,
-      onAction
+      onAction,
+      optionalShortcut
     ]));
     const createToggleButton = spec => asRaw('ToggleButton', toggleButtonSchema, spec);
 
@@ -9044,10 +11015,14 @@
       defaultedOnAction
     ];
     const insertTableFields = [defaulted('initData', {})].concat(baseFields);
-    const colorSwatchFields = [defaultedObjOf('initData', {}, [
+    const colorSwatchFields = [
+      optionFunction('select'),
+      defaultedObjOf('initData', {}, [
         defaultedBoolean('allowCustomColors', true),
+        defaultedString('storageKey', 'default'),
         optionArrayOf('colors', anyValue())
-      ])].concat(baseFields);
+      ])
+    ].concat(baseFields);
     const fancyMenuItemSchema = choose$1('fancytype', {
       inserttable: insertTableFields,
       colorswatch: colorSwatchFields
@@ -9106,6 +11081,8 @@
     const ExclusivityChannel = generate$6('tooltip.exclusive');
     const ShowTooltipEvent = generate$6('tooltip.show');
     const HideTooltipEvent = generate$6('tooltip.hide');
+    const ImmediateHideTooltipEvent = generate$6('tooltip.immediateHide');
+    const ImmediateShowTooltipEvent = generate$6('tooltip.immediateShow');
 
     const hideAllExclusive = (component, _tConfig, _tState) => {
       component.getSystem().broadcastOn([ExclusivityChannel], {});
@@ -9127,9 +11104,11 @@
     const events$9 = (tooltipConfig, state) => {
       const hide = comp => {
         state.getTooltip().each(p => {
-          detach(p);
-          tooltipConfig.onHide(comp, p);
-          state.clearTooltip();
+          if (p.getSystem().isConnected()) {
+            detach(p);
+            tooltipConfig.onHide(comp, p);
+            state.clearTooltip();
+          }
         });
         state.clearTimer();
       };
@@ -9156,17 +11135,122 @@
           Positioning.position(sink, popup, { anchor: tooltipConfig.anchor(comp) });
         }
       };
+      const reposition = comp => {
+        state.getTooltip().each(tooltip => {
+          const sink = tooltipConfig.lazySink(comp).getOrDie();
+          Positioning.position(sink, tooltip, { anchor: tooltipConfig.anchor(comp) });
+        });
+      };
+      const getEvents = () => {
+        switch (tooltipConfig.mode) {
+        case 'normal':
+          return [
+            run$1(focusin(), comp => {
+              emit(comp, ImmediateShowTooltipEvent);
+            }),
+            run$1(postBlur(), comp => {
+              emit(comp, ImmediateHideTooltipEvent);
+            }),
+            run$1(mouseover(), comp => {
+              emit(comp, ShowTooltipEvent);
+            }),
+            run$1(mouseout(), comp => {
+              emit(comp, HideTooltipEvent);
+            })
+          ];
+        case 'follow-highlight':
+          return [
+            run$1(highlight$1(), (comp, _se) => {
+              emit(comp, ShowTooltipEvent);
+            }),
+            run$1(dehighlight$1(), comp => {
+              emit(comp, HideTooltipEvent);
+            })
+          ];
+        case 'children-normal':
+          return [
+            run$1(focusin(), (comp, se) => {
+              search(comp.element).each(_ => {
+                if (is(se.event.target, '[data-mce-tooltip]')) {
+                  state.getTooltip().fold(() => {
+                    emit(comp, ImmediateShowTooltipEvent);
+                  }, tooltip => {
+                    if (state.isShowing()) {
+                      tooltipConfig.onShow(comp, tooltip);
+                      reposition(comp);
+                    }
+                  });
+                }
+              });
+            }),
+            run$1(postBlur(), comp => {
+              search(comp.element).fold(() => {
+                emit(comp, ImmediateHideTooltipEvent);
+              }, noop);
+            }),
+            run$1(mouseover(), comp => {
+              descendant(comp.element, '[data-mce-tooltip]:hover').each(_ => {
+                state.getTooltip().fold(() => {
+                  emit(comp, ShowTooltipEvent);
+                }, tooltip => {
+                  if (state.isShowing()) {
+                    tooltipConfig.onShow(comp, tooltip);
+                    reposition(comp);
+                  }
+                });
+              });
+            }),
+            run$1(mouseout(), comp => {
+              descendant(comp.element, '[data-mce-tooltip]:hover').fold(() => {
+                emit(comp, HideTooltipEvent);
+              }, noop);
+            })
+          ];
+        default:
+          return [
+            run$1(focusin(), (comp, se) => {
+              search(comp.element).each(_ => {
+                if (is(se.event.target, '[data-mce-tooltip]')) {
+                  state.getTooltip().fold(() => {
+                    emit(comp, ImmediateShowTooltipEvent);
+                  }, tooltip => {
+                    if (state.isShowing()) {
+                      tooltipConfig.onShow(comp, tooltip);
+                      reposition(comp);
+                    }
+                  });
+                }
+              });
+            }),
+            run$1(postBlur(), comp => {
+              search(comp.element).fold(() => {
+                emit(comp, ImmediateHideTooltipEvent);
+              }, noop);
+            })
+          ];
+        }
+      };
       return derive$2(flatten([
         [
           run$1(ShowTooltipEvent, comp => {
             state.resetTimer(() => {
               show(comp);
-            }, tooltipConfig.delay);
+            }, tooltipConfig.delayForShow());
           }),
           run$1(HideTooltipEvent, comp => {
             state.resetTimer(() => {
               hide(comp);
-            }, tooltipConfig.delay);
+            }, tooltipConfig.delayForHide());
+          }),
+          run$1(ImmediateShowTooltipEvent, comp => {
+            state.resetTimer(() => {
+              show(comp);
+            }, 0);
+          }),
+          run$1(ImmediateHideTooltipEvent, comp => {
+            state.resetTimer(() => {
+              hide(comp);
+            }, 0);
           }),
           run$1(receive(), (comp, message) => {
             const receivingData = message;
@@ -9180,27 +11264,7 @@
             hide(comp);
           })
         ],
-        tooltipConfig.mode === 'normal' ? [
-          run$1(focusin(), comp => {
-            emit(comp, ShowTooltipEvent);
-          }),
-          run$1(postBlur(), comp => {
-            emit(comp, HideTooltipEvent);
-          }),
-          run$1(mouseover(), comp => {
-            emit(comp, ShowTooltipEvent);
-          }),
-          run$1(mouseout(), comp => {
-            emit(comp, HideTooltipEvent);
-          })
-        ] : [
-          run$1(highlight$1(), (comp, _se) => {
-            emit(comp, ShowTooltipEvent);
-          }),
-          run$1(dehighlight$1(), comp => {
-            emit(comp, HideTooltipEvent);
-          })
-        ]
+        getEvents()
       ]));
     };
 
@@ -9214,10 +11278,13 @@
       required$1('tooltipDom'),
       defaulted('exclusive', true),
       defaulted('tooltipComponents', []),
-      defaulted('delay', 300),
+      defaultedFunction('delayForShow', constant$1(300)),
+      defaultedFunction('delayForHide', constant$1(300)),
       defaultedStringEnum('mode', 'normal', [
         'normal',
-        'follow-highlight'
+        'follow-highlight',
+        'children-keyboard-focus',
+        'children-normal'
       ]),
       defaulted('anchor', comp => ({
         type: 'hotspot',
@@ -9239,7 +11306,8 @@
             southwest$2,
             northwest$2
           ])
-        }
+        },
+        bubble: nu$5(0, -2, {})
       })),
       onHandler('onHide'),
       onHandler('onShow')
@@ -9272,7 +11340,7 @@
         init: init$b
     });
 
-    const Tooltipping = create$3({
+    const Tooltipping = create$4({
       fields: TooltippingSchema,
       name: 'tooltipping',
       active: ActiveTooltipping,
@@ -9284,23 +11352,29 @@
 
     const ReadOnlyChannel = 'silver.readonly';
     const ReadOnlyDataSchema = objOf([requiredBoolean('readonly')]);
-    const broadcastReadonly = (uiComponents, readonly) => {
-      const outerContainer = uiComponents.outerContainer;
+    const broadcastReadonly = (uiRefs, readonly) => {
+      const outerContainer = uiRefs.mainUi.outerContainer;
       const target = outerContainer.element;
+      const motherships = [
+        uiRefs.mainUi.mothership,
+        ...uiRefs.uiMotherships
+      ];
       if (readonly) {
-        uiComponents.mothership.broadcastOn([dismissPopups()], { target });
-        uiComponents.uiMothership.broadcastOn([dismissPopups()], { target });
+        each$1(motherships, m => {
+          m.broadcastOn([dismissPopups()], { target });
+        });
       }
-      uiComponents.mothership.broadcastOn([ReadOnlyChannel], { readonly });
-      uiComponents.uiMothership.broadcastOn([ReadOnlyChannel], { readonly });
+      each$1(motherships, m => {
+        m.broadcastOn([ReadOnlyChannel], { readonly });
+      });
     };
-    const setupReadonlyModeSwitch = (editor, uiComponents) => {
+    const setupReadonlyModeSwitch = (editor, uiRefs) => {
       editor.on('init', () => {
         if (editor.mode.isReadOnly()) {
-          broadcastReadonly(uiComponents, true);
+          broadcastReadonly(uiRefs, true);
         }
       });
-      editor.on('SwitchMode', () => broadcastReadonly(uiComponents, editor.mode.isReadOnly()));
+      editor.on('SwitchMode', () => broadcastReadonly(uiRefs, editor.mode.isReadOnly()));
       if (isReadOnly(editor)) {
         editor.mode.set('readonly');
       }
@@ -9373,7 +11447,7 @@
     };
 
     const componentRenderPipeline = cat;
-    const renderCommonItem = (spec, structure, itemResponse, providersbackstage) => {
+    const renderCommonItem = (spec, structure, itemResponse, providersBackstage) => {
       const editorOffCell = Cell(noop);
       return {
         type: 'item',
@@ -9388,7 +11462,7 @@
             onControlAttached(spec, editorOffCell),
             onControlDetached(spec, editorOffCell)
           ]),
-          DisablingConfigs.item(() => !spec.enabled || providersbackstage.isDisabled()),
+          DisablingConfigs.item(() => !spec.enabled || providersBackstage.isDisabled()),
           receivingConfig(),
           Replacing.config({})
         ].concat(spec.itemBehaviours))
@@ -9424,7 +11498,7 @@
       return isMac ? updated.join('') : updated.join('+');
     };
 
-    const renderIcon$1 = (name, icons, classes = [iconClass]) => render$3(name, {
+    const renderIcon$2 = (name, icons, classes = [iconClass]) => render$3(name, {
       tag: 'div',
       classes
     }, icons);
@@ -9433,7 +11507,7 @@
         tag: 'div',
         classes: [textClass]
       },
-      components: [text$1(global$8.translate(text))]
+      components: [text$2(global$8.translate(text))]
     });
     const renderHtml = (html, classes) => ({
       dom: {
@@ -9452,7 +11526,7 @@
             tag: style.tag,
             styles: style.styles
           },
-          components: [text$1(global$8.translate(text))]
+          components: [text$2(global$8.translate(text))]
         }]
     });
     const renderShortcut = shortcut => ({
@@ -9460,11 +11534,11 @@
         tag: 'div',
         classes: [accessoryClass]
       },
-      components: [text$1(convertText(shortcut))]
+      components: [text$2(convertText(shortcut))]
     });
-    const renderCheckmark = icons => renderIcon$1('checkmark', icons, [checkmarkClass]);
-    const renderSubmenuCaret = icons => renderIcon$1('chevron-right', icons, [caretClass]);
-    const renderDownwardsCaret = icons => renderIcon$1('chevron-down', icons, [caretClass]);
+    const renderCheckmark = icons => renderIcon$2('checkmark', icons, [checkmarkClass]);
+    const renderSubmenuCaret = icons => renderIcon$2('chevron-right', icons, [caretClass]);
+    const renderDownwardsCaret = icons => renderIcon$2('chevron-down', icons, [caretClass]);
     const renderContainer = (container, components) => {
       const directionClass = container.direction === 'vertical' ? containerColumnClass : containerRowClass;
       const alignClass = container.align === 'left' ? containerAlignLeftClass : containerAlignRightClass;
@@ -9505,13 +11579,15 @@
     const renderColorStructure = (item, providerBackstage, fallbackIcon) => {
       const colorPickerCommand = 'custom';
       const removeColorCommand = 'remove';
-      const itemText = item.ariaLabel;
       const itemValue = item.value;
       const iconSvg = item.iconContent.map(name => getOr(name, providerBackstage.icons, fallbackIcon));
+      const attributes = item.ariaLabel.map(al => ({
+        'aria-label': providerBackstage.translate(al),
+        'data-mce-name': al
+      })).getOr({});
       const getDom = () => {
         const common = colorClass;
         const icon = iconSvg.getOr('');
-        const attributes = itemText.map(text => ({ title: providerBackstage.translate(text) })).getOr({});
         const baseDom = {
           tag: 'div',
           attributes,
@@ -9536,15 +11612,18 @@
             ],
             innerHtml: icon
           };
-        } else {
+        } else if (isNonNullable(itemValue)) {
           return {
             ...baseDom,
             attributes: {
               ...baseDom.attributes,
               'data-mce-color': itemValue
             },
-            styles: { 'background-color': itemValue }
+            styles: { 'background-color': itemValue },
+            innerHtml: icon
           };
+        } else {
+          return baseDom;
         }
       };
       return {
@@ -9553,7 +11632,12 @@
       };
     };
     const renderItemDomStructure = ariaLabel => {
-      const domTitle = ariaLabel.map(label => ({ attributes: { title: global$8.translate(label) } })).getOr({});
+      const domTitle = ariaLabel.map(label => ({
+        attributes: {
+          'id': generate$6('menu-item'),
+          'aria-label': global$8.translate(label)
+        }
+      })).getOr({});
       return {
         tag: 'div',
         classes: [
@@ -9594,7 +11678,7 @@
       }
     };
 
-    const tooltipBehaviour = (meta, sharedBackstage) => get$g(meta, 'tooltipWorker').map(tooltipWorker => [Tooltipping.config({
+    const tooltipBehaviour = (meta, sharedBackstage, tooltipText) => get$g(meta, 'tooltipWorker').map(tooltipWorker => [Tooltipping.config({
         lazySink: sharedBackstage.getSink,
         tooltipDom: {
           tag: 'div',
@@ -9612,7 +11696,12 @@
             Tooltipping.setComponents(component, [external$1({ element: SugarElement.fromDom(elm) })]);
           });
         }
-      })]).getOr([]);
+      })]).getOrThunk(() => {
+      return tooltipText.map(text => [Tooltipping.config({
+          ...sharedBackstage.providers.tooltips.getConfig({ tooltipText: text }),
+          mode: 'follow-highlight'
+        })]).getOr([]);
+    });
     const encodeText = text => global$7.DOM.encode(text);
     const replaceText = (text, matchText) => {
       const translated = global$8.translate(text);
@@ -9636,6 +11725,7 @@
         caret: Optional.none(),
         value: spec.value
       }, sharedBackstage.providers, renderIcons, spec.icon);
+      const tooltipString = spec.text.filter(text => !useText && text !== '');
       return renderCommonItem({
         data: buildData(spec),
         enabled: spec.enabled,
@@ -9643,7 +11733,7 @@
         onAction: _api => onItemValueHandler(spec.value, spec.meta),
         onSetup: constant$1(noop),
         triggersSubmenu: false,
-        itemBehaviours: tooltipBehaviour(spec.meta, sharedBackstage)
+        itemBehaviours: tooltipBehaviour(spec, sharedBackstage, tooltipString)
       }, structure, itemResponse, sharedBackstage.providers);
     };
 
@@ -9720,6 +11810,7 @@
         caret: Optional.none(),
         value: spec.value
       }, providersBackstage, renderIcons);
+      const optTooltipping = spec.text.filter(constant$1(!useText)).map(t => Tooltipping.config(providersBackstage.tooltips.getConfig({ tooltipText: providersBackstage.translate(t) })));
       return deepMerge(renderCommonItem({
         data: buildData(spec),
         enabled: spec.enabled,
@@ -9730,7 +11821,7 @@
           return noop;
         },
         triggersSubmenu: false,
-        itemBehaviours: []
+        itemBehaviours: [...optTooltipping.toArray()]
       }, structure, itemResponse, providersBackstage), {
         toggling: {
           toggleClass: tickedClass,
@@ -9743,7 +11834,7 @@
 
     const parts$f = generate$3(owner$2(), parts$h());
 
-    const hexColour = value => ({ value });
+    const hexColour = value => ({ value: normalizeHex(value) });
     const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
     const longformRegex = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i;
     const isHexString = hex => shorthandRegex.test(hex) || longformRegex.test(hex);
@@ -9874,12 +11965,149 @@
     const toString = rgba => `rgba(${ rgba.red },${ rgba.green },${ rgba.blue },${ rgba.alpha })`;
     const red = rgbaColour(255, 0, 0, 1);
 
-    const fireSkinLoaded$1 = editor => editor.dispatch('SkinLoaded');
-    const fireSkinLoadError$1 = (editor, error) => editor.dispatch('SkinLoadError', error);
-    const fireResizeEditor = editor => editor.dispatch('ResizeEditor');
-    const fireResizeContent = (editor, e) => editor.dispatch('ResizeContent', e);
-    const fireScrollContent = (editor, e) => editor.dispatch('ScrollContent', e);
-    const fireTextColorChange = (editor, data) => editor.dispatch('TextColorChange', data);
+    const fireSkinLoaded$1 = editor => {
+      editor.dispatch('SkinLoaded');
+    };
+    const fireSkinLoadError$1 = (editor, error) => {
+      editor.dispatch('SkinLoadError', error);
+    };
+    const fireResizeEditor = editor => {
+      editor.dispatch('ResizeEditor');
+    };
+    const fireResizeContent = (editor, e) => {
+      editor.dispatch('ResizeContent', e);
+    };
+    const fireScrollContent = (editor, e) => {
+      editor.dispatch('ScrollContent', e);
+    };
+    const fireTextColorChange = (editor, data) => {
+      editor.dispatch('TextColorChange', data);
+    };
+    const fireAfterProgressState = (editor, state) => {
+      editor.dispatch('AfterProgressState', { state });
+    };
+    const fireResolveName = (editor, node) => editor.dispatch('ResolveName', {
+      name: node.nodeName.toLowerCase(),
+      target: node
+    });
+    const fireToggleToolbarDrawer = (editor, state) => {
+      editor.dispatch('ToggleToolbarDrawer', { state });
+    };
+    const fireStylesTextUpdate = (editor, data) => {
+      editor.dispatch('StylesTextUpdate', data);
+    };
+    const fireAlignTextUpdate = (editor, data) => {
+      editor.dispatch('AlignTextUpdate', data);
+    };
+    const fireFontSizeTextUpdate = (editor, data) => {
+      editor.dispatch('FontSizeTextUpdate', data);
+    };
+    const fireFontSizeInputTextUpdate = (editor, data) => {
+      editor.dispatch('FontSizeInputTextUpdate', data);
+    };
+    const fireBlocksTextUpdate = (editor, data) => {
+      editor.dispatch('BlocksTextUpdate', data);
+    };
+    const fireFontFamilyTextUpdate = (editor, data) => {
+      editor.dispatch('FontFamilyTextUpdate', data);
+    };
+
+    const composeUnbinders = (f, g) => () => {
+      f();
+      g();
+    };
+    const onSetupEditableToggle = editor => onSetupEvent(editor, 'NodeChange', api => {
+      api.setEnabled(editor.selection.isEditable());
+    });
+    const onSetupFormatToggle = (editor, name) => api => {
+      const boundFormatChangeCallback = unbindable();
+      const init = () => {
+        api.setActive(editor.formatter.match(name));
+        const binding = editor.formatter.formatChanged(name, api.setActive);
+        boundFormatChangeCallback.set(binding);
+      };
+      editor.initialized ? init() : editor.once('init', init);
+      return () => {
+        editor.off('init', init);
+        boundFormatChangeCallback.clear();
+      };
+    };
+    const onSetupStateToggle = (editor, name) => api => {
+      const unbindEditableToogle = onSetupEditableToggle(editor)(api);
+      const unbindFormatToggle = onSetupFormatToggle(editor, name)(api);
+      return () => {
+        unbindEditableToogle();
+        unbindFormatToggle();
+      };
+    };
+    const onSetupEvent = (editor, event, f) => api => {
+      const handleEvent = () => f(api);
+      const init = () => {
+        f(api);
+        editor.on(event, handleEvent);
+      };
+      editor.initialized ? init() : editor.once('init', init);
+      return () => {
+        editor.off('init', init);
+        editor.off(event, handleEvent);
+      };
+    };
+    const onActionToggleFormat$1 = editor => rawItem => () => {
+      editor.undoManager.transact(() => {
+        editor.focus();
+        editor.execCommand('mceToggleFormat', false, rawItem.format);
+      });
+    };
+    const onActionExecCommand = (editor, command) => () => editor.execCommand(command);
+
+    var global$4 = tinymce.util.Tools.resolve('tinymce.util.LocalStorage');
+
+    const cacheStorage = {};
+    const ColorCache = (storageId, max = 10) => {
+      const storageString = global$4.getItem(storageId);
+      const localstorage = isString(storageString) ? JSON.parse(storageString) : [];
+      const prune = list => {
+        const diff = max - list.length;
+        return diff < 0 ? list.slice(0, max) : list;
+      };
+      const cache = prune(localstorage);
+      const add = key => {
+        indexOf(cache, key).each(remove);
+        cache.unshift(key);
+        if (cache.length > max) {
+          cache.pop();
+        }
+        global$4.setItem(storageId, JSON.stringify(cache));
+      };
+      const remove = idx => {
+        cache.splice(idx, 1);
+      };
+      const state = () => cache.slice(0);
+      return {
+        add,
+        state
+      };
+    };
+    const getCacheForId = id => get$g(cacheStorage, id).getOrThunk(() => {
+      const storageId = `tinymce-custom-colors-${ id }`;
+      const currentData = global$4.getItem(storageId);
+      if (isNullable(currentData)) {
+        const legacyDefault = global$4.getItem('tinymce-custom-colors');
+        global$4.setItem(storageId, isNonNullable(legacyDefault) ? legacyDefault : '[]');
+      }
+      const storage = ColorCache(storageId, 10);
+      cacheStorage[id] = storage;
+      return storage;
+    });
+    const getCurrentColors = id => map$2(getCacheForId(id).state(), color => ({
+      type: 'choiceitem',
+      text: color,
+      icon: 'checkmark',
+      value: color
+    }));
+    const addColor = (id, color) => {
+      getCacheForId(id).add(color);
+    };
 
     const hsvColour = (hue, saturation, value) => ({
       hue,
@@ -9926,65 +12154,53 @@
       return fromRgba(rgbaColour(r, g, b, a));
     });
 
-    var global$4 = tinymce.util.Tools.resolve('tinymce.util.LocalStorage');
-
-    const storageName = 'tinymce-custom-colors';
-    var ColorCache = (max = 10) => {
-      const storageString = global$4.getItem(storageName);
-      const localstorage = isString(storageString) ? JSON.parse(storageString) : [];
-      const prune = list => {
-        const diff = max - list.length;
-        return diff < 0 ? list.slice(0, max) : list;
-      };
-      const cache = prune(localstorage);
-      const add = key => {
-        indexOf(cache, key).each(remove);
-        cache.unshift(key);
-        if (cache.length > max) {
-          cache.pop();
-        }
-        global$4.setItem(storageName, JSON.stringify(cache));
-      };
-      const remove = idx => {
-        cache.splice(idx, 1);
-      };
-      const state = () => cache.slice(0);
-      return {
-        add,
-        state
-      };
-    };
-
-    const colorCache = ColorCache(10);
-    const calcCols = colors => Math.max(5, Math.ceil(Math.sqrt(colors)));
+    const foregroundId = 'forecolor';
+    const backgroundId = 'hilitecolor';
+    const fallbackCols = 5;
     const mapColors = colorMap => {
       const colors = [];
       for (let i = 0; i < colorMap.length; i += 2) {
         colors.push({
           text: colorMap[i + 1],
           value: '#' + anyToHex(colorMap[i]).value,
+          icon: 'checkmark',
           type: 'choiceitem'
         });
       }
       return colors;
     };
     const option$1 = name => editor => editor.options.get(name);
+    const fallbackColor = '#000000';
     const register$d = editor => {
       const registerOption = editor.options.register;
+      const colorProcessor = value => {
+        if (isArrayOf(value, isString)) {
+          return {
+            value: mapColors(value),
+            valid: true
+          };
+        } else {
+          return {
+            valid: false,
+            message: 'Must be an array of strings.'
+          };
+        }
+      };
+      const colorColsProcessor = value => {
+        if (isNumber(value) && value > 0) {
+          return {
+            value,
+            valid: true
+          };
+        } else {
+          return {
+            valid: false,
+            message: 'Must be a positive number.'
+          };
+        }
+      };
       registerOption('color_map', {
-        processor: value => {
-          if (isArrayOf(value, isString)) {
-            return {
-              value: mapColors(value),
-              valid: true
-            };
-          } else {
-            return {
-              valid: false,
-              message: 'Must be an array of strings.'
-            };
-          }
-        },
+        processor: colorProcessor,
         default: [
           '#BFEDD2',
           'Light Green',
@@ -10032,37 +12248,84 @@
           'White'
         ]
       });
+      registerOption('color_map_background', { processor: colorProcessor });
+      registerOption('color_map_foreground', { processor: colorProcessor });
       registerOption('color_cols', {
-        processor: 'number',
-        default: calcCols(getColors$2(editor).length)
+        processor: colorColsProcessor,
+        default: calcCols(editor)
+      });
+      registerOption('color_cols_foreground', {
+        processor: colorColsProcessor,
+        default: defaultCols(editor, foregroundId)
+      });
+      registerOption('color_cols_background', {
+        processor: colorColsProcessor,
+        default: defaultCols(editor, backgroundId)
       });
       registerOption('custom_colors', {
         processor: 'boolean',
         default: true
       });
-    };
-    const getColorCols$1 = option$1('color_cols');
-    const hasCustomColors$1 = option$1('custom_colors');
-    const getColors$2 = option$1('color_map');
-    const getCurrentColors = () => map$2(colorCache.state(), color => ({
-      type: 'choiceitem',
-      text: color,
-      value: color
-    }));
-    const addColor = color => {
-      colorCache.add(color);
-    };
-
-    const fallbackColor = '#000000';
-    const getCurrentColor = (editor, format) => {
-      let color;
-      editor.dom.getParents(editor.selection.getStart(), elm => {
-        let value;
-        if (value = elm.style[format === 'forecolor' ? 'color' : 'background-color']) {
-          color = color ? color : value;
-        }
+      registerOption('color_default_foreground', {
+        processor: 'string',
+        default: fallbackColor
       });
-      return Optional.from(color);
+      registerOption('color_default_background', {
+        processor: 'string',
+        default: fallbackColor
+      });
+    };
+    const getColors$2 = (editor, id) => {
+      if (id === foregroundId && editor.options.isSet('color_map_foreground')) {
+        return option$1('color_map_foreground')(editor);
+      } else if (id === backgroundId && editor.options.isSet('color_map_background')) {
+        return option$1('color_map_background')(editor);
+      } else {
+        return option$1('color_map')(editor);
+      }
+    };
+    const calcCols = (editor, id = 'default') => Math.max(fallbackCols, Math.ceil(Math.sqrt(getColors$2(editor, id).length)));
+    const defaultCols = (editor, id) => {
+      const defaultCols = option$1('color_cols')(editor);
+      const calculatedCols = calcCols(editor, id);
+      if (defaultCols === calcCols(editor)) {
+        return calculatedCols;
+      } else {
+        return defaultCols;
+      }
+    };
+    const getColorCols$1 = (editor, id = 'default') => {
+      const getCols = () => {
+        if (id === foregroundId) {
+          return option$1('color_cols_foreground')(editor);
+        } else if (id === backgroundId) {
+          return option$1('color_cols_background')(editor);
+        } else {
+          return option$1('color_cols')(editor);
+        }
+      };
+      return Math.round(getCols());
+    };
+    const hasCustomColors$1 = option$1('custom_colors');
+    const getDefaultForegroundColor = option$1('color_default_foreground');
+    const getDefaultBackgroundColor = option$1('color_default_background');
+
+    const defaultBackgroundColor = 'rgba(0, 0, 0, 0)';
+    const isValidBackgroundColor = value => fromString(value).exists(c => c.alpha !== 0);
+    const getClosestCssBackgroundColorValue = scope => {
+      return closest$4(scope, node => {
+        if (isElement$1(node)) {
+          const color = get$e(node, 'background-color');
+          return someIf(isValidBackgroundColor(color), color);
+        } else {
+          return Optional.none();
+        }
+      }).getOr(defaultBackgroundColor);
+    };
+    const getCurrentColor = (editor, format) => {
+      const node = SugarElement.fromDom(editor.selection.getStart());
+      const cssRgbValue = format === 'hilitecolor' ? getClosestCssBackgroundColorValue(node) : get$e(node, 'color');
+      return fromString(cssRgbValue).map(rgba => '#' + fromRgba(rgba).value);
     };
     const applyFormat = (editor, format, value) => {
       editor.undoManager.transact(() => {
@@ -10074,7 +12337,7 @@
     const removeFormat = (editor, format) => {
       editor.undoManager.transact(() => {
         editor.focus();
-        editor.formatter.remove(format, { value: null }, null, true);
+        editor.formatter.remove(format, { value: null }, undefined, true);
         editor.nodeChanged();
       });
     };
@@ -10110,11 +12373,11 @@
         const dialog = colorPickerDialog(editor);
         dialog(colorOpt => {
           colorOpt.each(color => {
-            addColor(color);
+            addColor(format, color);
             editor.execCommand('mceApplyTextcolor', format, color);
             onChoice(color);
           });
-        }, fallbackColor);
+        }, getCurrentColor(editor, format).getOr(fallbackColor));
       } else if (value === 'remove') {
         onChoice('');
         editor.execCommand('mceRemoveTextcolor', format);
@@ -10123,28 +12386,41 @@
         editor.execCommand('mceApplyTextcolor', format, value);
       }
     };
-    const getColors$1 = (colors, hasCustom) => colors.concat(getCurrentColors().concat(getAdditionalColors(hasCustom)));
-    const getFetch$1 = (colors, hasCustom) => callback => {
-      callback(getColors$1(colors, hasCustom));
+    const getColors$1 = (colors, id, hasCustom) => colors.concat(getCurrentColors(id).concat(getAdditionalColors(hasCustom)));
+    const getFetch$1 = (colors, id, hasCustom) => callback => {
+      callback(getColors$1(colors, id, hasCustom));
     };
     const setIconColor = (splitButtonApi, name, newColor) => {
       const id = name === 'forecolor' ? 'tox-icon-text-color__color' : 'tox-icon-highlight-bg-color__color';
       splitButtonApi.setIconFill(id, newColor);
     };
-    const registerTextColorButton = (editor, name, format, tooltip, lastColor) => {
+    const setTooltip = (buttonApi, tooltip) => {
+      buttonApi.setTooltip(tooltip);
+    };
+    const select$1 = (editor, format) => value => {
+      const optCurrentHex = getCurrentColor(editor, format);
+      return is$1(optCurrentHex, value.toUpperCase());
+    };
+    const getToolTipText = (editor, format, lastColor) => {
+      if (isEmpty(lastColor)) {
+        return format === 'forecolor' ? 'Text color' : 'Background color';
+      }
+      const tooltipPrefix = format === 'forecolor' ? 'Text color {0}' : 'Background color {0}';
+      const colors = getColors$1(getColors$2(editor, format), format, false);
+      const colorText = find$5(colors, c => c.value === lastColor).getOr({ text: '' }).text;
+      return editor.translate([
+        tooltipPrefix,
+        editor.translate(colorText)
+      ]);
+    };
+    const registerTextColorButton = (editor, name, format, lastColor) => {
       editor.ui.registry.addSplitButton(name, {
-        tooltip,
+        tooltip: getToolTipText(editor, format, lastColor.get()),
         presets: 'color',
         icon: name === 'forecolor' ? 'text-color' : 'highlight-bg-color',
-        select: value => {
-          const optCurrentRgb = getCurrentColor(editor, format);
-          return optCurrentRgb.bind(currentRgb => fromString(currentRgb).map(rgba => {
-            const currentHex = fromRgba(rgba).value;
-            return contains$1(value.toLowerCase(), currentHex);
-          })).getOr(false);
-        },
-        columns: getColorCols$1(editor),
-        fetch: getFetch$1(getColors$2(editor), hasCustomColors$1(editor)),
+        select: select$1(editor, format),
+        columns: getColorCols$1(editor, format),
+        fetch: getFetch$1(getColors$2(editor, format), format, hasCustomColors$1(editor)),
         onAction: _splitButtonApi => {
           applyColor(editor, format, lastColor.get(), noop);
         },
@@ -10162,24 +12438,38 @@
           const handler = e => {
             if (e.name === name) {
               setIconColor(splitButtonApi, e.name, e.color);
+              setTooltip(splitButtonApi, getToolTipText(editor, format, e.color));
             }
           };
           editor.on('TextColorChange', handler);
-          return () => {
+          return composeUnbinders(onSetupEditableToggle(editor)(splitButtonApi), () => {
             editor.off('TextColorChange', handler);
-          };
+          });
         }
       });
     };
-    const registerTextColorMenuItem = (editor, name, format, text) => {
+    const registerTextColorMenuItem = (editor, name, format, text, lastColor) => {
       editor.ui.registry.addNestedMenuItem(name, {
         text,
         icon: name === 'forecolor' ? 'text-color' : 'highlight-bg-color',
+        onSetup: api => {
+          setTooltip(api, getToolTipText(editor, format, lastColor.get()));
+          setIconColor(api, name, lastColor.get());
+          return onSetupEditableToggle(editor)(api);
+        },
         getSubmenuItems: () => [{
             type: 'fancymenuitem',
             fancytype: 'colorswatch',
+            select: select$1(editor, format),
+            initData: { storageKey: format },
             onAction: data => {
-              applyColor(editor, format, data.value, noop);
+              applyColor(editor, format, data.value, newColor => {
+                lastColor.set(newColor);
+                fireTextColorChange(editor, {
+                  name,
+                  color: newColor
+                });
+              });
             }
           }]
       });
@@ -10240,23 +12530,26 @@
     };
     const register$c = editor => {
       registerCommands(editor);
-      const lastForeColor = Cell(fallbackColor);
-      const lastBackColor = Cell(fallbackColor);
-      registerTextColorButton(editor, 'forecolor', 'forecolor', 'Text color', lastForeColor);
-      registerTextColorButton(editor, 'backcolor', 'hilitecolor', 'Background color', lastBackColor);
-      registerTextColorMenuItem(editor, 'forecolor', 'forecolor', 'Text color');
-      registerTextColorMenuItem(editor, 'backcolor', 'hilitecolor', 'Background color');
+      const fallbackColorForeground = getDefaultForegroundColor(editor);
+      const fallbackColorBackground = getDefaultBackgroundColor(editor);
+      const lastForeColor = Cell(fallbackColorForeground);
+      const lastBackColor = Cell(fallbackColorBackground);
+      registerTextColorButton(editor, 'forecolor', 'forecolor', lastForeColor);
+      registerTextColorButton(editor, 'backcolor', 'hilitecolor', lastBackColor);
+      registerTextColorMenuItem(editor, 'forecolor', 'forecolor', 'Text color', lastForeColor);
+      registerTextColorMenuItem(editor, 'backcolor', 'hilitecolor', 'Background color', lastBackColor);
     };
 
     const createPartialChoiceMenu = (value, items, onItemValueHandler, columns, presets, itemResponse, select, providersBackstage) => {
       const hasIcons = menuHasIcons(items);
       const presetItemTypes = presets !== 'color' ? 'normal' : 'color';
       const alloyItems = createChoiceItems(items, onItemValueHandler, columns, presetItemTypes, itemResponse, select, providersBackstage);
-      return createPartialMenuWithAlloyItems(value, hasIcons, alloyItems, columns, presets);
+      const menuLayout = { menuType: presets };
+      return createPartialMenuWithAlloyItems(value, hasIcons, alloyItems, columns, menuLayout);
     };
     const createChoiceItems = (items, onItemValueHandler, columns, itemPresets, itemResponse, select, providersBackstage) => cat(map$2(items, item => {
       if (item.type === 'choiceitem') {
-        return createChoiceMenuItem(item).fold(handleError, d => Optional.some(renderChoiceItem(d, columns === 1, itemPresets, onItemValueHandler, select(item.value), itemResponse, providersBackstage, menuHasIcons(items))));
+        return createChoiceMenuItem(item).fold(handleError, d => Optional.some(renderChoiceItem(d, columns === 1, itemPresets, onItemValueHandler, select(d.value), itemResponse, providersBackstage, menuHasIcons(items))));
       } else {
         return Optional.none();
       }
@@ -10282,7 +12575,10 @@
         const rowClass = presets === 'color' ? 'tox-swatches__row' : 'tox-collection__group';
         return {
           mode: 'matrix',
-          rowSelector: '.' + rowClass
+          rowSelector: '.' + rowClass,
+          previousSelector: menu => {
+            return presets === 'color' ? descendant(menu.element, '[aria-checked=true]') : Optional.none();
+          }
         };
       }
     };
@@ -10315,11 +12611,11 @@
 
     const renderColorSwatchItem = (spec, backstage) => {
       const items = getColorItems(spec, backstage);
-      const columns = backstage.colorinput.getColorCols();
+      const columns = backstage.colorinput.getColorCols(spec.initData.storageKey);
       const presets = 'color';
       const menuSpec = createPartialChoiceMenu(generate$6('menu-value'), items, value => {
         spec.onAction({ value });
-      }, columns, presets, ItemResponse$1.CLOSE_ON_EXECUTE, never, backstage.shared.providers);
+      }, columns, presets, ItemResponse$1.CLOSE_ON_EXECUTE, spec.select.getOr(never), backstage.shared.providers);
       const widgetSpec = {
         ...menuSpec,
         markers: markers(presets),
@@ -10338,12 +12634,17 @@
     };
     const getColorItems = (spec, backstage) => {
       const useCustomColors = spec.initData.allowCustomColors && backstage.colorinput.hasCustomColors();
-      return spec.initData.colors.fold(() => getColors$1(backstage.colorinput.getColors(), useCustomColors), colors => colors.concat(getAdditionalColors(useCustomColors)));
+      return spec.initData.colors.fold(() => getColors$1(backstage.colorinput.getColors(spec.initData.storageKey), spec.initData.storageKey, useCustomColors), colors => colors.concat(getAdditionalColors(useCustomColors)));
     };
 
     const cellOverEvent = generate$6('cell-over');
     const cellExecuteEvent = generate$6('cell-execute');
-    const makeCell = (row, col, labelId) => {
+    const makeAnnouncementText = backstage => (row, col) => backstage.shared.providers.translate([
+      '{0} columns, {1} rows',
+      col,
+      row
+    ]);
+    const makeCell = (row, col, label) => {
       const emitCellOver = c => emitWith(c, cellOverEvent, {
         row,
         col
@@ -10361,7 +12662,7 @@
           tag: 'div',
           attributes: {
             role: 'button',
-            ['aria-labelledby']: labelId
+            ['aria-label']: label
           }
         },
         behaviours: derive$1([
@@ -10379,12 +12680,13 @@
         ])
       });
     };
-    const makeCells = (labelId, numRows, numCols) => {
+    const makeCells = (getCellLabel, numRows, numCols) => {
       const cells = [];
       for (let i = 0; i < numRows; i++) {
         const row = [];
         for (let j = 0; j < numCols; j++) {
-          row.push(makeCell(i, j, labelId));
+          const label = getCellLabel(i + 1, j + 1);
+          row.push(makeCell(i, j, label));
         }
         cells.push(row);
       }
@@ -10398,18 +12700,17 @@
       }
     };
     const makeComponents = cells => bind$3(cells, cellRow => map$2(cellRow, premade));
-    const makeLabelText = (row, col) => text$1(`${ col }x${ row }`);
-    const renderInsertTableMenuItem = spec => {
+    const makeLabelText = (row, col) => text$2(`${ col }x${ row }`);
+    const renderInsertTableMenuItem = (spec, backstage) => {
       const numRows = 10;
       const numColumns = 10;
-      const sizeLabelId = generate$6('size-label');
-      const cells = makeCells(sizeLabelId, numRows, numColumns);
+      const getCellLabel = makeAnnouncementText(backstage);
+      const cells = makeCells(getCellLabel, numRows, numColumns);
       const emptyLabelText = makeLabelText(0, 0);
       const memLabel = record({
         dom: {
           tag: 'span',
-          classes: ['tox-insert-table-picker__label'],
-          attributes: { id: sizeLabelId }
+          classes: ['tox-insert-table-picker__label']
         },
         components: [emptyLabelText],
         behaviours: derive$1([Replacing.config({})])
@@ -10470,7 +12771,16 @@
       const caret = downwardsCaret ? renderDownwardsCaret(providersBackstage.icons) : renderSubmenuCaret(providersBackstage.icons);
       const getApi = component => ({
         isEnabled: () => !Disabling.isDisabled(component),
-        setEnabled: state => Disabling.set(component, !state)
+        setEnabled: state => Disabling.set(component, !state),
+        setIconFill: (id, value) => {
+          descendant(component.element, `svg path[class="${ id }"], rect[class="${ id }"]`).each(underlinePath => {
+            set$9(underlinePath, 'fill', value);
+          });
+        },
+        setTooltip: tooltip => {
+          const translatedTooltip = providersBackstage.translate(tooltip);
+          set$9(component.element, 'aria-label', translatedTooltip);
+        }
       });
       const structure = renderItemStructure({
         presets: 'normal',
@@ -10528,7 +12838,7 @@
           groupHeadingClass
         ]
       },
-      components: spec.text.map(text$1).toArray()
+      components: spec.text.map(text$2).toArray()
     });
 
     const renderToggleMenuItem = (spec, itemResponse, providersBackstage, renderIcons = true) => {
@@ -10576,6 +12886,568 @@
     const fancy = renderFancyMenuItem;
     const card = renderCardMenuItem;
 
+    const getCoupled = (component, coupleConfig, coupleState, name) => coupleState.getOrCreate(component, coupleConfig, name);
+    const getExistingCoupled = (component, coupleConfig, coupleState, name) => coupleState.getExisting(component, coupleConfig, name);
+
+    var CouplingApis = /*#__PURE__*/Object.freeze({
+        __proto__: null,
+        getCoupled: getCoupled,
+        getExistingCoupled: getExistingCoupled
+    });
+
+    var CouplingSchema = [requiredOf('others', setOf(Result.value, anyValue()))];
+
+    const init$a = () => {
+      const coupled = {};
+      const lookupCoupled = (coupleConfig, coupledName) => {
+        const available = keys(coupleConfig.others);
+        if (available.length === 0) {
+          throw new Error('Cannot find any known coupled components');
+        } else {
+          return get$g(coupled, coupledName);
+        }
+      };
+      const getOrCreate = (component, coupleConfig, name) => {
+        return lookupCoupled(coupleConfig, name).getOrThunk(() => {
+          const builder = get$g(coupleConfig.others, name).getOrDie('No information found for coupled component: ' + name);
+          const spec = builder(component);
+          const built = component.getSystem().build(spec);
+          coupled[name] = built;
+          return built;
+        });
+      };
+      const getExisting = (component, coupleConfig, name) => {
+        return lookupCoupled(coupleConfig, name).orThunk(() => {
+          get$g(coupleConfig.others, name).getOrDie('No information found for coupled component: ' + name);
+          return Optional.none();
+        });
+      };
+      const readState = constant$1({});
+      return nu$8({
+        readState,
+        getExisting,
+        getOrCreate
+      });
+    };
+
+    var CouplingState = /*#__PURE__*/Object.freeze({
+        __proto__: null,
+        init: init$a
+    });
+
+    const Coupling = create$4({
+      fields: CouplingSchema,
+      name: 'coupling',
+      apis: CouplingApis,
+      state: CouplingState
+    });
+
+    const nu$3 = baseFn => {
+      let data = Optional.none();
+      let callbacks = [];
+      const map = f => nu$3(nCallback => {
+        get(data => {
+          nCallback(f(data));
+        });
+      });
+      const get = nCallback => {
+        if (isReady()) {
+          call(nCallback);
+        } else {
+          callbacks.push(nCallback);
+        }
+      };
+      const set = x => {
+        if (!isReady()) {
+          data = Optional.some(x);
+          run(callbacks);
+          callbacks = [];
+        }
+      };
+      const isReady = () => data.isSome();
+      const run = cbs => {
+        each$1(cbs, call);
+      };
+      const call = cb => {
+        data.each(x => {
+          setTimeout(() => {
+            cb(x);
+          }, 0);
+        });
+      };
+      baseFn(set);
+      return {
+        get,
+        map,
+        isReady
+      };
+    };
+    const pure$1 = a => nu$3(callback => {
+      callback(a);
+    });
+    const LazyValue = {
+      nu: nu$3,
+      pure: pure$1
+    };
+
+    const errorReporter = err => {
+      setTimeout(() => {
+        throw err;
+      }, 0);
+    };
+    const make$5 = run => {
+      const get = callback => {
+        run().then(callback, errorReporter);
+      };
+      const map = fab => {
+        return make$5(() => run().then(fab));
+      };
+      const bind = aFutureB => {
+        return make$5(() => run().then(v => aFutureB(v).toPromise()));
+      };
+      const anonBind = futureB => {
+        return make$5(() => run().then(() => futureB.toPromise()));
+      };
+      const toLazy = () => {
+        return LazyValue.nu(get);
+      };
+      const toCached = () => {
+        let cache = null;
+        return make$5(() => {
+          if (cache === null) {
+            cache = run();
+          }
+          return cache;
+        });
+      };
+      const toPromise = run;
+      return {
+        map,
+        bind,
+        anonBind,
+        toLazy,
+        toCached,
+        toPromise,
+        get
+      };
+    };
+    const nu$2 = baseFn => {
+      return make$5(() => new Promise(baseFn));
+    };
+    const pure = a => {
+      return make$5(() => Promise.resolve(a));
+    };
+    const Future = {
+      nu: nu$2,
+      pure
+    };
+
+    const suffix = constant$1('sink');
+    const partType$1 = constant$1(optional({
+      name: suffix(),
+      overrides: constant$1({
+        dom: { tag: 'div' },
+        behaviours: derive$1([Positioning.config({ useFixed: always })]),
+        events: derive$2([
+          cutter(keydown()),
+          cutter(mousedown()),
+          cutter(click())
+        ])
+      })
+    }));
+
+    const getAnchor = (detail, component) => {
+      const hotspot = detail.getHotspot(component).getOr(component);
+      const type = 'hotspot';
+      const overrides = detail.getAnchorOverrides();
+      return detail.layouts.fold(() => ({
+        type,
+        hotspot,
+        overrides
+      }), layouts => ({
+        type,
+        hotspot,
+        overrides,
+        layouts
+      }));
+    };
+    const fetch = (detail, mapFetch, component) => {
+      const fetcher = detail.fetch;
+      return fetcher(component).map(mapFetch);
+    };
+    const openF = (detail, mapFetch, anchor, component, sandbox, externals, highlightOnOpen) => {
+      const futureData = fetch(detail, mapFetch, component);
+      const getLazySink = getSink(component, detail);
+      return futureData.map(tdata => tdata.bind(data => Optional.from(tieredMenu.sketch({
+        ...externals.menu(),
+        uid: generate$5(''),
+        data,
+        highlightOnOpen,
+        onOpenMenu: (tmenu, menu) => {
+          const sink = getLazySink().getOrDie();
+          Positioning.position(sink, menu, { anchor });
+          Sandboxing.decloak(sandbox);
+        },
+        onOpenSubmenu: (tmenu, item, submenu) => {
+          const sink = getLazySink().getOrDie();
+          Positioning.position(sink, submenu, {
+            anchor: {
+              type: 'submenu',
+              item
+            }
+          });
+          Sandboxing.decloak(sandbox);
+        },
+        onRepositionMenu: (tmenu, primaryMenu, submenuTriggers) => {
+          const sink = getLazySink().getOrDie();
+          Positioning.position(sink, primaryMenu, { anchor });
+          each$1(submenuTriggers, st => {
+            Positioning.position(sink, st.triggeredMenu, {
+              anchor: {
+                type: 'submenu',
+                item: st.triggeringItem
+              }
+            });
+          });
+        },
+        onEscape: () => {
+          Focusing.focus(component);
+          Sandboxing.close(sandbox);
+          return Optional.some(true);
+        }
+      }))));
+    };
+    const open = (detail, mapFetch, hotspot, sandbox, externals, onOpenSync, highlightOnOpen) => {
+      const anchor = getAnchor(detail, hotspot);
+      const processed = openF(detail, mapFetch, anchor, hotspot, sandbox, externals, highlightOnOpen);
+      return processed.map(tdata => {
+        tdata.fold(() => {
+          if (Sandboxing.isOpen(sandbox)) {
+            Sandboxing.close(sandbox);
+          }
+        }, data => {
+          Sandboxing.cloak(sandbox);
+          Sandboxing.open(sandbox, data);
+          onOpenSync(sandbox);
+        });
+        return sandbox;
+      });
+    };
+    const close = (detail, mapFetch, component, sandbox, _externals, _onOpenSync, _highlightOnOpen) => {
+      Sandboxing.close(sandbox);
+      return Future.pure(sandbox);
+    };
+    const togglePopup = (detail, mapFetch, hotspot, externals, onOpenSync, highlightOnOpen) => {
+      const sandbox = Coupling.getCoupled(hotspot, 'sandbox');
+      const showing = Sandboxing.isOpen(sandbox);
+      const action = showing ? close : open;
+      return action(detail, mapFetch, hotspot, sandbox, externals, onOpenSync, highlightOnOpen);
+    };
+    const matchWidth = (hotspot, container, useMinWidth) => {
+      const menu = Composing.getCurrent(container).getOr(container);
+      const buttonWidth = get$c(hotspot.element);
+      if (useMinWidth) {
+        set$8(menu.element, 'min-width', buttonWidth + 'px');
+      } else {
+        set$7(menu.element, buttonWidth);
+      }
+    };
+    const getSink = (anyInSystem, sinkDetail) => anyInSystem.getSystem().getByUid(sinkDetail.uid + '-' + suffix()).map(internalSink => () => Result.value(internalSink)).getOrThunk(() => sinkDetail.lazySink.fold(() => () => Result.error(new Error('No internal sink is specified, nor could an external sink be found')), lazySinkFn => () => lazySinkFn(anyInSystem)));
+    const doRepositionMenus = sandbox => {
+      Sandboxing.getState(sandbox).each(tmenu => {
+        tieredMenu.repositionMenus(tmenu);
+      });
+    };
+    const makeSandbox$1 = (detail, hotspot, extras) => {
+      const ariaControls = manager();
+      const onOpen = (component, menu) => {
+        const anchor = getAnchor(detail, hotspot);
+        ariaControls.link(hotspot.element);
+        if (detail.matchWidth) {
+          matchWidth(anchor.hotspot, menu, detail.useMinWidth);
+        }
+        detail.onOpen(anchor, component, menu);
+        if (extras !== undefined && extras.onOpen !== undefined) {
+          extras.onOpen(component, menu);
+        }
+      };
+      const onClose = (component, menu) => {
+        ariaControls.unlink(hotspot.element);
+        lazySink().getOr(menu).element.dom.dispatchEvent(new window.FocusEvent('focusout'));
+        if (extras !== undefined && extras.onClose !== undefined) {
+          extras.onClose(component, menu);
+        }
+      };
+      const lazySink = getSink(hotspot, detail);
+      return {
+        dom: {
+          tag: 'div',
+          classes: detail.sandboxClasses,
+          attributes: {
+            id: ariaControls.id,
+            role: 'listbox'
+          }
+        },
+        behaviours: SketchBehaviours.augment(detail.sandboxBehaviours, [
+          Representing.config({
+            store: {
+              mode: 'memory',
+              initialValue: hotspot
+            }
+          }),
+          Sandboxing.config({
+            onOpen,
+            onClose,
+            isPartOf: (container, data, queryElem) => {
+              return isPartOf$1(data, queryElem) || isPartOf$1(hotspot, queryElem);
+            },
+            getAttachPoint: () => {
+              return lazySink().getOrDie();
+            }
+          }),
+          Composing.config({
+            find: sandbox => {
+              return Sandboxing.getState(sandbox).bind(menu => Composing.getCurrent(menu));
+            }
+          }),
+          Receiving.config({
+            channels: {
+              ...receivingChannel$1({ isExtraPart: never }),
+              ...receivingChannel({ doReposition: doRepositionMenus })
+            }
+          })
+        ])
+      };
+    };
+    const repositionMenus = comp => {
+      const sandbox = Coupling.getCoupled(comp, 'sandbox');
+      doRepositionMenus(sandbox);
+    };
+
+    const sandboxFields = () => [
+      defaulted('sandboxClasses', []),
+      SketchBehaviours.field('sandboxBehaviours', [
+        Composing,
+        Receiving,
+        Sandboxing,
+        Representing
+      ])
+    ];
+
+    const schema$k = constant$1([
+      required$1('dom'),
+      required$1('fetch'),
+      onHandler('onOpen'),
+      onKeyboardHandler('onExecute'),
+      defaulted('getHotspot', Optional.some),
+      defaulted('getAnchorOverrides', constant$1({})),
+      schema$y(),
+      field('dropdownBehaviours', [
+        Toggling,
+        Coupling,
+        Keying,
+        Focusing
+      ]),
+      required$1('toggleClass'),
+      defaulted('eventOrder', {}),
+      option$3('lazySink'),
+      defaulted('matchWidth', false),
+      defaulted('useMinWidth', false),
+      option$3('role')
+    ].concat(sandboxFields()));
+    const parts$e = constant$1([
+      external({
+        schema: [
+          tieredMenuMarkers(),
+          defaulted('fakeFocus', false)
+        ],
+        name: 'menu',
+        defaults: detail => {
+          return { onExecute: detail.onExecute };
+        }
+      }),
+      partType$1()
+    ]);
+
+    const factory$k = (detail, components, _spec, externals) => {
+      const lookupAttr = attr => get$g(detail.dom, 'attributes').bind(attrs => get$g(attrs, attr));
+      const switchToMenu = sandbox => {
+        Sandboxing.getState(sandbox).each(tmenu => {
+          tieredMenu.highlightPrimary(tmenu);
+        });
+      };
+      const togglePopup$1 = (dropdownComp, onOpenSync, highlightOnOpen) => {
+        return togglePopup(detail, identity, dropdownComp, externals, onOpenSync, highlightOnOpen);
+      };
+      const action = component => {
+        const onOpenSync = switchToMenu;
+        togglePopup$1(component, onOpenSync, HighlightOnOpen.HighlightMenuAndItem).get(noop);
+      };
+      const apis = {
+        expand: comp => {
+          if (!Toggling.isOn(comp)) {
+            togglePopup$1(comp, noop, HighlightOnOpen.HighlightNone).get(noop);
+          }
+        },
+        open: comp => {
+          if (!Toggling.isOn(comp)) {
+            togglePopup$1(comp, noop, HighlightOnOpen.HighlightMenuAndItem).get(noop);
+          }
+        },
+        refetch: comp => {
+          const optSandbox = Coupling.getExistingCoupled(comp, 'sandbox');
+          return optSandbox.fold(() => {
+            return togglePopup$1(comp, noop, HighlightOnOpen.HighlightMenuAndItem).map(noop);
+          }, sandboxComp => {
+            return open(detail, identity, comp, sandboxComp, externals, noop, HighlightOnOpen.HighlightMenuAndItem).map(noop);
+          });
+        },
+        isOpen: Toggling.isOn,
+        close: comp => {
+          if (Toggling.isOn(comp)) {
+            togglePopup$1(comp, noop, HighlightOnOpen.HighlightMenuAndItem).get(noop);
+          }
+        },
+        repositionMenus: comp => {
+          if (Toggling.isOn(comp)) {
+            repositionMenus(comp);
+          }
+        }
+      };
+      const triggerExecute = (comp, _se) => {
+        emitExecute(comp);
+        return Optional.some(true);
+      };
+      return {
+        uid: detail.uid,
+        dom: detail.dom,
+        components,
+        behaviours: augment(detail.dropdownBehaviours, [
+          Toggling.config({
+            toggleClass: detail.toggleClass,
+            aria: { mode: 'expanded' }
+          }),
+          Coupling.config({
+            others: {
+              sandbox: hotspot => {
+                return makeSandbox$1(detail, hotspot, {
+                  onOpen: () => Toggling.on(hotspot),
+                  onClose: () => Toggling.off(hotspot)
+                });
+              }
+            }
+          }),
+          Keying.config({
+            mode: 'special',
+            onSpace: triggerExecute,
+            onEnter: triggerExecute,
+            onDown: (comp, _se) => {
+              if (Dropdown.isOpen(comp)) {
+                const sandbox = Coupling.getCoupled(comp, 'sandbox');
+                switchToMenu(sandbox);
+              } else {
+                Dropdown.open(comp);
+              }
+              return Optional.some(true);
+            },
+            onEscape: (comp, _se) => {
+              if (Dropdown.isOpen(comp)) {
+                Dropdown.close(comp);
+                return Optional.some(true);
+              } else {
+                return Optional.none();
+              }
+            }
+          }),
+          Focusing.config({})
+        ]),
+        events: events$a(Optional.some(action)),
+        eventOrder: {
+          ...detail.eventOrder,
+          [execute$5()]: [
+            'disabling',
+            'toggling',
+            'alloy.base.behaviour'
+          ]
+        },
+        apis,
+        domModification: {
+          attributes: {
+            'aria-haspopup': 'true',
+            ...detail.role.fold(() => ({}), role => ({ role })),
+            ...detail.dom.tag === 'button' ? { type: lookupAttr('type').getOr('button') } : {}
+          }
+        }
+      };
+    };
+    const Dropdown = composite({
+      name: 'Dropdown',
+      configFields: schema$k(),
+      partFields: parts$e(),
+      factory: factory$k,
+      apis: {
+        open: (apis, comp) => apis.open(comp),
+        refetch: (apis, comp) => apis.refetch(comp),
+        expand: (apis, comp) => apis.expand(comp),
+        close: (apis, comp) => apis.close(comp),
+        isOpen: (apis, comp) => apis.isOpen(comp),
+        repositionMenus: (apis, comp) => apis.repositionMenus(comp)
+      }
+    });
+
+    const identifyMenuLayout = searchMode => {
+      switch (searchMode.searchMode) {
+      case 'no-search': {
+          return { menuType: 'normal' };
+        }
+      default: {
+          return {
+            menuType: 'searchable',
+            searchMode
+          };
+        }
+      }
+    };
+    const handleRefetchTrigger = originalSandboxComp => {
+      const dropdown = Representing.getValue(originalSandboxComp);
+      const optSearcherState = findWithinSandbox(originalSandboxComp).map(saveState);
+      Dropdown.refetch(dropdown).get(() => {
+        const newSandboxComp = Coupling.getCoupled(dropdown, 'sandbox');
+        optSearcherState.each(searcherState => findWithinSandbox(newSandboxComp).each(inputComp => restoreState(inputComp, searcherState)));
+      });
+    };
+    const handleRedirectToMenuItem = (sandboxComp, se) => {
+      getActiveMenuItemFrom(sandboxComp).each(activeItem => {
+        retargetAndDispatchWith(sandboxComp, activeItem.element, se.event.eventType, se.event.interactionEvent);
+      });
+    };
+    const getActiveMenuItemFrom = sandboxComp => {
+      return Sandboxing.getState(sandboxComp).bind(Highlighting.getHighlighted).bind(Highlighting.getHighlighted);
+    };
+    const getSearchResults = activeMenuComp => {
+      return has(activeMenuComp.element, searchResultsClass) ? Optional.some(activeMenuComp.element) : descendant(activeMenuComp.element, '.' + searchResultsClass);
+    };
+    const updateAriaOnHighlight = (tmenuComp, menuComp, itemComp) => {
+      findWithinMenu(tmenuComp).each(inputComp => {
+        setActiveDescendant(inputComp, itemComp);
+        const optActiveResults = getSearchResults(menuComp);
+        optActiveResults.each(resultsElem => {
+          getOpt(resultsElem, 'id').each(controlledId => set$9(inputComp.element, 'aria-controls', controlledId));
+        });
+      });
+      set$9(itemComp.element, 'aria-selected', 'true');
+    };
+    const updateAriaOnDehighlight = (tmenuComp, menuComp, itemComp) => {
+      set$9(itemComp.element, 'aria-selected', 'false');
+    };
+    const focusSearchField = tmenuComp => {
+      findWithinMenu(tmenuComp).each(searcherComp => Focusing.focus(searcherComp));
+    };
+    const getSearchPattern = dropdownComp => {
+      const optSandboxComp = Coupling.getExistingCoupled(dropdownComp, 'sandbox');
+      return optSandboxComp.bind(findWithinSandbox).map(saveState).map(state => state.fetchPattern).getOr('');
+    };
+
     var FocusMode;
     (function (FocusMode) {
       FocusMode[FocusMode['ContentFocus'] = 0] = 'ContentFocus';
@@ -10598,7 +13470,7 @@
       case 'separator':
         return createSeparatorMenuItem(item).fold(handleError, d => Optional.some(separator$3(d)));
       case 'fancymenuitem':
-        return createFancyMenuItem(item).fold(handleError, d => fancy(parseForHorizontalMenu(d), backstage));
+        return createFancyMenuItem(item).fold(handleError, d => fancy(d, backstage));
       default: {
           console.error('Unknown item in general menu', item);
           return Optional.none();
@@ -10620,7 +13492,7 @@
               onItemValueHandler(d.value, d.meta);
             }
           }, itemResponse, sharedBackstage, {
-            itemBehaviours: tooltipBehaviour(d.meta, sharedBackstage),
+            itemBehaviours: tooltipBehaviour(d.meta, sharedBackstage, Optional.none()),
             cardText: {
               matchText,
               highlightOn
@@ -10632,7 +13504,7 @@
         }
       }));
     };
-    const createPartialMenu = (value, items, itemResponse, backstage, isHorizontalMenu) => {
+    const createPartialMenu = (value, items, itemResponse, backstage, isHorizontalMenu, searchMode) => {
       const hasIcons = menuHasIcons(items);
       const alloyItems = cat(map$2(items, item => {
         const itemHasIcon = i => isHorizontalMenu ? !has$2(i, 'text') : hasIcons;
@@ -10646,8 +13518,9 @@
           return createItem(item);
         }
       }));
+      const menuLayout = identifyMenuLayout(searchMode);
       const createPartial = isHorizontalMenu ? createHorizontalPartialMenuWithAlloyItems : createPartialMenuWithAlloyItems;
-      return createPartial(value, hasIcons, alloyItems, 1, 'normal');
+      return createPartial(value, hasIcons, alloyItems, 1, menuLayout);
     };
     const createTieredDataFrom = partialMenu => tieredMenu.singleData(partialMenu.value, partialMenu);
     const createInlineMenuFrom = (partialMenu, columns, focusMode, presets) => {
@@ -10670,24 +13543,26 @@
       };
     };
 
-    const getAutocompleterRange = (dom, initRange) => {
-      return detect(SugarElement.fromDom(initRange.startContainer)).map(elm => {
-        const range = dom.createRng();
-        range.selectNode(elm.dom);
-        return range;
-      });
-    };
+    const rangeToSimRange = r => SimRange.create(SugarElement.fromDom(r.startContainer), r.startOffset, SugarElement.fromDom(r.endContainer), r.endOffset);
     const register$b = (editor, sharedBackstage) => {
+      const autocompleterId = generate$6('autocompleter');
       const processingAction = Cell(false);
       const activeState = Cell(false);
+      const activeRange = value$2();
       const autocompleter = build$1(InlineView.sketch({
         dom: {
           tag: 'div',
-          classes: ['tox-autocompleter']
+          classes: ['tox-autocompleter'],
+          attributes: { id: autocompleterId }
         },
         components: [],
         fireDismissalEventInstead: {},
-        inlineBehaviours: derive$1([config('dismissAutocompleter', [run$1(dismissRequested(), () => cancelIfNecessary())])]),
+        inlineBehaviours: derive$1([config('dismissAutocompleter', [
+            run$1(dismissRequested(), () => cancelIfNecessary()),
+            run$1(highlight$1(), (_, se) => {
+              getOpt(se.event.target, 'id').each(id => set$9(SugarElement.fromDom(editor.getBody()), 'aria-activedescendant', id));
+            })
+          ])]),
         lazySink: sharedBackstage.getSink
       }));
       const isMenuOpen = () => InlineView.isOpen(autocompleter);
@@ -10695,6 +13570,12 @@
       const hideIfNecessary = () => {
         if (isMenuOpen()) {
           InlineView.hide(autocompleter);
+          editor.dom.remove(autocompleterId, false);
+          const editorBody = SugarElement.fromDom(editor.getBody());
+          getOpt(editorBody, 'aria-owns').filter(ariaOwnsAttr => ariaOwnsAttr === autocompleterId).each(() => {
+            remove$7(editorBody, 'aria-owns');
+            remove$7(editorBody, 'aria-activedescendant');
+          });
         }
       };
       const getMenu = () => InlineView.getContent(autocompleter).bind(tmenu => {
@@ -10706,15 +13587,15 @@
         return bind$3(matches, match => {
           const choices = match.items;
           return createAutocompleteItems(choices, match.matchText, (itemValue, itemMeta) => {
-            const nr = editor.selection.getRng();
-            getAutocompleterRange(editor.dom, nr).each(range => {
-              const autocompleterApi = {
-                hide: () => cancelIfNecessary(),
-                reload: fetchOptions => {
-                  hideIfNecessary();
-                  editor.execCommand('mceAutocompleterReload', false, { fetchOptions });
-                }
-              };
+            const autocompleterApi = {
+              hide: () => cancelIfNecessary(),
+              reload: fetchOptions => {
+                hideIfNecessary();
+                editor.execCommand('mceAutocompleterReload', false, { fetchOptions });
+              }
+            };
+            editor.execCommand('mceAutocompleterRefreshActiveRange');
+            activeRange.get().each(range => {
               processingAction.set(true);
               match.onAction(autocompleterApi, range, itemValue, itemMeta);
               processingAction.set(false);
@@ -10723,25 +13604,52 @@
         });
       };
       const display = (lookupData, items) => {
-        findIn(SugarElement.fromDom(editor.getBody())).each(element => {
-          const columns = findMap(lookupData, ld => Optional.from(ld.columns)).getOr(1);
-          InlineView.showMenuAt(autocompleter, {
-            anchor: {
-              type: 'node',
-              root: SugarElement.fromDom(editor.getBody()),
-              node: Optional.from(element)
-            }
-          }, createInlineMenuFrom(createPartialMenuWithAlloyItems('autocompleter-value', true, items, columns, 'normal'), columns, FocusMode.ContentFocus, 'normal'));
-        });
+        const columns = findMap(lookupData, ld => Optional.from(ld.columns)).getOr(1);
+        InlineView.showMenuAt(autocompleter, {
+          anchor: {
+            type: 'selection',
+            getSelection: () => activeRange.get().map(rangeToSimRange),
+            root: SugarElement.fromDom(editor.getBody())
+          }
+        }, createInlineMenuFrom(createPartialMenuWithAlloyItems('autocompleter-value', true, items, columns, { menuType: 'normal' }), columns, FocusMode.ContentFocus, 'normal'));
         getMenu().each(Highlighting.highlightFirst);
       };
       const updateDisplay = lookupData => {
         const combinedItems = getCombinedItems(lookupData);
         if (combinedItems.length > 0) {
           display(lookupData, combinedItems);
+          set$9(SugarElement.fromDom(editor.getBody()), 'aria-owns', autocompleterId);
+          if (!editor.inline) {
+            cloneAutocompleterToEditorDoc();
+          }
         } else {
           hideIfNecessary();
         }
+      };
+      const cloneAutocompleterToEditorDoc = () => {
+        if (editor.dom.get(autocompleterId)) {
+          editor.dom.remove(autocompleterId, false);
+        }
+        const docElm = editor.getDoc().documentElement;
+        const selection = editor.selection.getNode();
+        const newElm = deep(autocompleter.element);
+        setAll(newElm, {
+          border: '0',
+          clip: 'rect(0 0 0 0)',
+          height: '1px',
+          margin: '-1px',
+          overflow: 'hidden',
+          padding: '0',
+          position: 'absolute',
+          width: '1px',
+          top: `${ selection.offsetTop }px`,
+          left: `${ selection.offsetLeft }px`
+        });
+        editor.dom.add(docElm, newElm.dom);
+        descendant(newElm, '[role="menu"]').each(child => {
+          remove$6(child, 'position');
+          remove$6(child, 'max-height');
+        });
       };
       editor.on('AutocompleterStart', ({lookupData}) => {
         activeState.set(true);
@@ -10749,10 +13657,12 @@
         updateDisplay(lookupData);
       });
       editor.on('AutocompleterUpdate', ({lookupData}) => updateDisplay(lookupData));
+      editor.on('AutocompleterUpdateActiveRange', ({range}) => activeRange.set(range));
       editor.on('AutocompleterEnd', () => {
         hideIfNecessary();
         activeState.set(false);
         processingAction.set(false);
+        activeRange.clear();
       });
       const autocompleterUiApi = {
         cancelIfNecessary,
@@ -10764,6 +13674,38 @@
       AutocompleterEditorEvents.setup(autocompleterUiApi, editor);
     };
     const Autocompleter = { register: register$b };
+
+    const nonScrollingOverflows = [
+      'visible',
+      'hidden',
+      'clip'
+    ];
+    const isScrollingOverflowValue = value => trim$1(value).length > 0 && !contains$2(nonScrollingOverflows, value);
+    const isScroller = elem => {
+      if (isHTMLElement(elem)) {
+        const overflowX = get$e(elem, 'overflow-x');
+        const overflowY = get$e(elem, 'overflow-y');
+        return isScrollingOverflowValue(overflowX) || isScrollingOverflowValue(overflowY);
+      } else {
+        return false;
+      }
+    };
+    const detect = popupSinkElem => {
+      const ancestorsScrollers = ancestors(popupSinkElem, isScroller);
+      const scrollers = ancestorsScrollers.length === 0 ? getShadowRoot(popupSinkElem).map(getShadowHost).map(x => ancestors(x, isScroller)).getOr([]) : ancestorsScrollers;
+      return head(scrollers).map(element => ({
+        element,
+        others: scrollers.slice(1)
+      }));
+    };
+    const detectWhenSplitUiMode = (editor, popupSinkElem) => isSplitUiMode(editor) ? detect(popupSinkElem) : Optional.none();
+    const getBoundsFrom = sc => {
+      const scrollableBoxes = [
+        ...map$2(sc.others, box$1),
+        win()
+      ];
+      return constrainByMany(box$1(sc.element), scrollableBoxes);
+    };
 
     const closest = (scope, selector, isRoot) => closest$1(scope, selector, isRoot).isSome();
 
@@ -11314,14 +14256,14 @@
       components: map$2(spec.items, backstage.interpreter)
     });
 
-    const schema$l = constant$1([
+    const schema$j = constant$1([
       defaulted('prefix', 'form-field'),
       field('fieldBehaviours', [
         Composing,
         Representing
       ])
     ]);
-    const parts$e = constant$1([
+    const parts$d = constant$1([
       optional({
         schema: [required$1('dom')],
         name: 'label'
@@ -11410,8 +14352,8 @@
     };
     const FormField = composite({
       name: 'FormField',
-      configFields: schema$l(),
-      partFields: parts$e(),
+      configFields: schema$j(),
+      partFields: parts$d(),
       factory: factory$i,
       apis: {
         getField: (apis, comp) => apis.getField(comp),
@@ -11433,7 +14375,7 @@
 
     var TabstopSchema = [defaulted('tabAttr', 'data-alloy-tabstop')];
 
-    const Tabstopping = create$3({
+    const Tabstopping = create$4({
       fields: TabstopSchema,
       name: 'tabstopping',
       active: ActiveTabstopping
@@ -11456,12 +14398,12 @@
       tag: 'div',
       classes: ['tox-form__group'].concat(extraClasses)
     });
-    const renderLabel$2 = (label, providersBackstage) => FormField.parts.label({
+    const renderLabel$3 = (label, providersBackstage) => FormField.parts.label({
       dom: {
         tag: 'label',
         classes: ['tox-label']
       },
-      components: [text$1(providersBackstage.translate(label))]
+      components: [text$2(providersBackstage.translate(label))]
     });
 
     const formChangeEvent = generate$6('form-component-change');
@@ -11475,7 +14417,12 @@
     const formResizeEvent = generate$6('form-resize');
 
     const renderCollection = (spec, providersBackstage, initialData) => {
-      const pLabel = spec.label.map(label => renderLabel$2(label, providersBackstage));
+      const pLabel = spec.label.map(label => renderLabel$3(label, providersBackstage));
+      const icons = providersBackstage.icons();
+      const getIcon = icon => {
+        var _a;
+        return (_a = icons[icon]) !== null && _a !== void 0 ? _a : icon;
+      };
       const runOnItem = f => (comp, se) => {
         closest$1(se.event.target, '[data-collection-item-value]').each(target => {
           f(comp, se, target, get$f(target, 'data-collection-item-value'));
@@ -11485,7 +14432,7 @@
         const htmlLines = map$2(items, item => {
           const itemText = global$8.translate(item.text);
           const textContent = spec.columns === 1 ? `<div class="tox-collection__item-label">${ itemText }</div>` : '';
-          const iconContent = `<div class="tox-collection__item-icon">${ item.icon }</div>`;
+          const iconContent = `<div class="tox-collection__item-icon">${ getIcon(item.icon) }</div>`;
           const mapItemName = {
             '_': ' ',
             ' - ': ' ',
@@ -11493,7 +14440,7 @@
           };
           const ariaLabel = itemText.replace(/\_| \- |\-/g, match => mapItemName[match]);
           const disabledClass = providersBackstage.isDisabled() ? ' tox-collection__item--state-disabled' : '';
-          return `<div class="tox-collection__item${ disabledClass }" tabindex="-1" data-collection-item-value="${ global$3.encodeAllRaw(item.value) }" title="${ ariaLabel }" aria-label="${ ariaLabel }">${ iconContent }${ textContent }</div>`;
+          return `<div data-mce-tooltip="${ ariaLabel }" class="tox-collection__item${ disabledClass }" tabindex="-1" data-collection-item-value="${ global$3.encodeAllRaw(item.value) }" aria-label="${ ariaLabel }">${ iconContent }${ textContent }</div>`;
         });
         const chunks = spec.columns !== 'auto' && spec.columns > 1 ? chunk$1(htmlLines, spec.columns) : [htmlLines];
         const html = map$2(chunks, ch => `<div class="tox-collection__group">${ ch.join('') }</div>`);
@@ -11523,6 +14470,7 @@
         run$1(focusout(), runOnItem(comp => {
           descendant(comp.element, '.' + activeClass).each(currentActive => {
             remove$2(currentActive, activeClass);
+            blur$1(currentActive);
           });
         })),
         runOnExecute$1(runOnItem((comp, se, tgt, itemValue) => {
@@ -11558,6 +14506,43 @@
           }),
           receivingConfig(),
           Replacing.config({}),
+          Tooltipping.config({
+            ...providersBackstage.tooltips.getConfig({
+              tooltipText: '',
+              onShow: comp => {
+                descendant(comp.element, '.' + activeClass + '[data-mce-tooltip]').each(current => {
+                  getOpt(current, 'data-mce-tooltip').each(text => {
+                    Tooltipping.setComponents(comp, providersBackstage.tooltips.getComponents({ tooltipText: text }));
+                  });
+                });
+              }
+            }),
+            mode: 'children-keyboard-focus',
+            anchor: comp => ({
+              type: 'node',
+              node: descendant(comp.element, '.' + activeClass).orThunk(() => first$1('.tox-collection__item')),
+              root: comp.element,
+              layouts: {
+                onLtr: constant$1([
+                  south$2,
+                  north$2,
+                  southeast$2,
+                  northeast$2,
+                  southwest$2,
+                  northwest$2
+                ]),
+                onRtl: constant$1([
+                  south$2,
+                  north$2,
+                  southeast$2,
+                  northeast$2,
+                  southwest$2,
+                  northwest$2
+                ])
+              },
+              bubble: nu$5(0, -2, {})
+            })
+          }),
           Representing.config({
             store: {
               mode: 'memory',
@@ -11582,175 +14567,15 @@
             'disabling',
             'alloy.base.behaviour',
             'collection-events'
+          ],
+          [focusin()]: [
+            'collection-events',
+            'tooltipping'
           ]
         }
       });
       const extraClasses = ['tox-form__group--collection'];
       return renderFormFieldWith(pLabel, pField, extraClasses, []);
-    };
-
-    const schema$k = constant$1([
-      option$3('data'),
-      defaulted('inputAttributes', {}),
-      defaulted('inputStyles', {}),
-      defaulted('tag', 'input'),
-      defaulted('inputClasses', []),
-      onHandler('onSetValue'),
-      defaulted('styles', {}),
-      defaulted('eventOrder', {}),
-      field('inputBehaviours', [
-        Representing,
-        Focusing
-      ]),
-      defaulted('selectOnFocus', true)
-    ]);
-    const focusBehaviours = detail => derive$1([Focusing.config({
-        onFocus: !detail.selectOnFocus ? noop : component => {
-          const input = component.element;
-          const value = get$6(input);
-          input.dom.setSelectionRange(0, value.length);
-        }
-      })]);
-    const behaviours = detail => ({
-      ...focusBehaviours(detail),
-      ...augment(detail.inputBehaviours, [Representing.config({
-          store: {
-            mode: 'manual',
-            ...detail.data.map(data => ({ initialValue: data })).getOr({}),
-            getValue: input => {
-              return get$6(input.element);
-            },
-            setValue: (input, data) => {
-              const current = get$6(input.element);
-              if (current !== data) {
-                set$5(input.element, data);
-              }
-            }
-          },
-          onSetValue: detail.onSetValue
-        })])
-    });
-    const dom = detail => ({
-      tag: detail.tag,
-      attributes: {
-        type: 'text',
-        ...detail.inputAttributes
-      },
-      styles: detail.inputStyles,
-      classes: detail.inputClasses
-    });
-
-    const factory$h = (detail, _spec) => ({
-      uid: detail.uid,
-      dom: dom(detail),
-      components: [],
-      behaviours: behaviours(detail),
-      eventOrder: detail.eventOrder
-    });
-    const Input = single({
-      name: 'Input',
-      configFields: schema$k(),
-      factory: factory$h
-    });
-
-    const nu$3 = baseFn => {
-      let data = Optional.none();
-      let callbacks = [];
-      const map = f => nu$3(nCallback => {
-        get(data => {
-          nCallback(f(data));
-        });
-      });
-      const get = nCallback => {
-        if (isReady()) {
-          call(nCallback);
-        } else {
-          callbacks.push(nCallback);
-        }
-      };
-      const set = x => {
-        if (!isReady()) {
-          data = Optional.some(x);
-          run(callbacks);
-          callbacks = [];
-        }
-      };
-      const isReady = () => data.isSome();
-      const run = cbs => {
-        each$1(cbs, call);
-      };
-      const call = cb => {
-        data.each(x => {
-          setTimeout(() => {
-            cb(x);
-          }, 0);
-        });
-      };
-      baseFn(set);
-      return {
-        get,
-        map,
-        isReady
-      };
-    };
-    const pure$1 = a => nu$3(callback => {
-      callback(a);
-    });
-    const LazyValue = {
-      nu: nu$3,
-      pure: pure$1
-    };
-
-    const errorReporter = err => {
-      setTimeout(() => {
-        throw err;
-      }, 0);
-    };
-    const make$5 = run => {
-      const get = callback => {
-        run().then(callback, errorReporter);
-      };
-      const map = fab => {
-        return make$5(() => run().then(fab));
-      };
-      const bind = aFutureB => {
-        return make$5(() => run().then(v => aFutureB(v).toPromise()));
-      };
-      const anonBind = futureB => {
-        return make$5(() => run().then(() => futureB.toPromise()));
-      };
-      const toLazy = () => {
-        return LazyValue.nu(get);
-      };
-      const toCached = () => {
-        let cache = null;
-        return make$5(() => {
-          if (cache === null) {
-            cache = run();
-          }
-          return cache;
-        });
-      };
-      const toPromise = run;
-      return {
-        map,
-        bind,
-        anonBind,
-        toLazy,
-        toCached,
-        toPromise,
-        get
-      };
-    };
-    const nu$2 = baseFn => {
-      return make$5(() => new Promise(baseFn));
-    };
-    const pure = a => {
-      return make$5(() => Promise.resolve(a));
-    };
-    const Future = {
-      nu: nu$2,
-      pure
     };
 
     const ariaElements = [
@@ -11849,7 +14674,7 @@
       ])
     ];
 
-    const Invalidating = create$3({
+    const Invalidating = create$4({
       fields: InvalidateSchema,
       name: 'invalidating',
       active: ActiveInvalidate,
@@ -11861,392 +14686,6 @@
             return Future.pure(validator(v));
           };
         }
-      }
-    });
-
-    const getCoupled = (component, coupleConfig, coupleState, name) => coupleState.getOrCreate(component, coupleConfig, name);
-
-    var CouplingApis = /*#__PURE__*/Object.freeze({
-        __proto__: null,
-        getCoupled: getCoupled
-    });
-
-    var CouplingSchema = [requiredOf('others', setOf(Result.value, anyValue()))];
-
-    const init$a = () => {
-      const coupled = {};
-      const getOrCreate = (component, coupleConfig, name) => {
-        const available = keys(coupleConfig.others);
-        if (!available) {
-          throw new Error('Cannot find coupled component: ' + name + '. Known coupled components: ' + JSON.stringify(available, null, 2));
-        } else {
-          return get$g(coupled, name).getOrThunk(() => {
-            const builder = get$g(coupleConfig.others, name).getOrDie('No information found for coupled component: ' + name);
-            const spec = builder(component);
-            const built = component.getSystem().build(spec);
-            coupled[name] = built;
-            return built;
-          });
-        }
-      };
-      const readState = constant$1({});
-      return nu$8({
-        readState,
-        getOrCreate
-      });
-    };
-
-    var CouplingState = /*#__PURE__*/Object.freeze({
-        __proto__: null,
-        init: init$a
-    });
-
-    const Coupling = create$3({
-      fields: CouplingSchema,
-      name: 'coupling',
-      apis: CouplingApis,
-      state: CouplingState
-    });
-
-    const suffix = constant$1('sink');
-    const partType$1 = constant$1(optional({
-      name: suffix(),
-      overrides: constant$1({
-        dom: { tag: 'div' },
-        behaviours: derive$1([Positioning.config({ useFixed: always })]),
-        events: derive$2([
-          cutter(keydown()),
-          cutter(mousedown()),
-          cutter(click())
-        ])
-      })
-    }));
-
-    var HighlightOnOpen;
-    (function (HighlightOnOpen) {
-      HighlightOnOpen[HighlightOnOpen['HighlightFirst'] = 0] = 'HighlightFirst';
-      HighlightOnOpen[HighlightOnOpen['HighlightNone'] = 1] = 'HighlightNone';
-    }(HighlightOnOpen || (HighlightOnOpen = {})));
-    const getAnchor = (detail, component) => {
-      const hotspot = detail.getHotspot(component).getOr(component);
-      const type = 'hotspot';
-      const overrides = detail.getAnchorOverrides();
-      return detail.layouts.fold(() => ({
-        type,
-        hotspot,
-        overrides
-      }), layouts => ({
-        type,
-        hotspot,
-        overrides,
-        layouts
-      }));
-    };
-    const fetch = (detail, mapFetch, component) => {
-      const fetcher = detail.fetch;
-      return fetcher(component).map(mapFetch);
-    };
-    const openF = (detail, mapFetch, anchor, component, sandbox, externals, highlightOnOpen) => {
-      const futureData = fetch(detail, mapFetch, component);
-      const getLazySink = getSink(component, detail);
-      return futureData.map(tdata => tdata.bind(data => Optional.from(tieredMenu.sketch({
-        ...externals.menu(),
-        uid: generate$5(''),
-        data,
-        highlightImmediately: highlightOnOpen === HighlightOnOpen.HighlightFirst,
-        onOpenMenu: (tmenu, menu) => {
-          const sink = getLazySink().getOrDie();
-          Positioning.position(sink, menu, { anchor });
-          Sandboxing.decloak(sandbox);
-        },
-        onOpenSubmenu: (tmenu, item, submenu) => {
-          const sink = getLazySink().getOrDie();
-          Positioning.position(sink, submenu, {
-            anchor: {
-              type: 'submenu',
-              item
-            }
-          });
-          Sandboxing.decloak(sandbox);
-        },
-        onRepositionMenu: (tmenu, primaryMenu, submenuTriggers) => {
-          const sink = getLazySink().getOrDie();
-          Positioning.position(sink, primaryMenu, { anchor });
-          each$1(submenuTriggers, st => {
-            Positioning.position(sink, st.triggeredMenu, {
-              anchor: {
-                type: 'submenu',
-                item: st.triggeringItem
-              }
-            });
-          });
-        },
-        onEscape: () => {
-          Focusing.focus(component);
-          Sandboxing.close(sandbox);
-          return Optional.some(true);
-        }
-      }))));
-    };
-    const open = (detail, mapFetch, hotspot, sandbox, externals, onOpenSync, highlightOnOpen) => {
-      const anchor = getAnchor(detail, hotspot);
-      const processed = openF(detail, mapFetch, anchor, hotspot, sandbox, externals, highlightOnOpen);
-      return processed.map(tdata => {
-        tdata.fold(() => {
-          if (Sandboxing.isOpen(sandbox)) {
-            Sandboxing.close(sandbox);
-          }
-        }, data => {
-          Sandboxing.cloak(sandbox);
-          Sandboxing.open(sandbox, data);
-          onOpenSync(sandbox);
-        });
-        return sandbox;
-      });
-    };
-    const close = (detail, mapFetch, component, sandbox, _externals, _onOpenSync, _highlightOnOpen) => {
-      Sandboxing.close(sandbox);
-      return Future.pure(sandbox);
-    };
-    const togglePopup = (detail, mapFetch, hotspot, externals, onOpenSync, highlightOnOpen) => {
-      const sandbox = Coupling.getCoupled(hotspot, 'sandbox');
-      const showing = Sandboxing.isOpen(sandbox);
-      const action = showing ? close : open;
-      return action(detail, mapFetch, hotspot, sandbox, externals, onOpenSync, highlightOnOpen);
-    };
-    const matchWidth = (hotspot, container, useMinWidth) => {
-      const menu = Composing.getCurrent(container).getOr(container);
-      const buttonWidth = get$c(hotspot.element);
-      if (useMinWidth) {
-        set$8(menu.element, 'min-width', buttonWidth + 'px');
-      } else {
-        set$7(menu.element, buttonWidth);
-      }
-    };
-    const getSink = (anyInSystem, sinkDetail) => anyInSystem.getSystem().getByUid(sinkDetail.uid + '-' + suffix()).map(internalSink => () => Result.value(internalSink)).getOrThunk(() => sinkDetail.lazySink.fold(() => () => Result.error(new Error('No internal sink is specified, nor could an external sink be found')), lazySinkFn => () => lazySinkFn(anyInSystem)));
-    const doRepositionMenus = sandbox => {
-      Sandboxing.getState(sandbox).each(tmenu => {
-        tieredMenu.repositionMenus(tmenu);
-      });
-    };
-    const makeSandbox$1 = (detail, hotspot, extras) => {
-      const ariaControls = manager();
-      const onOpen = (component, menu) => {
-        const anchor = getAnchor(detail, hotspot);
-        ariaControls.link(hotspot.element);
-        if (detail.matchWidth) {
-          matchWidth(anchor.hotspot, menu, detail.useMinWidth);
-        }
-        detail.onOpen(anchor, component, menu);
-        if (extras !== undefined && extras.onOpen !== undefined) {
-          extras.onOpen(component, menu);
-        }
-      };
-      const onClose = (component, menu) => {
-        ariaControls.unlink(hotspot.element);
-        if (extras !== undefined && extras.onClose !== undefined) {
-          extras.onClose(component, menu);
-        }
-      };
-      const lazySink = getSink(hotspot, detail);
-      return {
-        dom: {
-          tag: 'div',
-          classes: detail.sandboxClasses,
-          attributes: {
-            id: ariaControls.id,
-            role: 'listbox'
-          }
-        },
-        behaviours: SketchBehaviours.augment(detail.sandboxBehaviours, [
-          Representing.config({
-            store: {
-              mode: 'memory',
-              initialValue: hotspot
-            }
-          }),
-          Sandboxing.config({
-            onOpen,
-            onClose,
-            isPartOf: (container, data, queryElem) => {
-              return isPartOf$1(data, queryElem) || isPartOf$1(hotspot, queryElem);
-            },
-            getAttachPoint: () => {
-              return lazySink().getOrDie();
-            }
-          }),
-          Composing.config({
-            find: sandbox => {
-              return Sandboxing.getState(sandbox).bind(menu => Composing.getCurrent(menu));
-            }
-          }),
-          Receiving.config({
-            channels: {
-              ...receivingChannel$1({ isExtraPart: never }),
-              ...receivingChannel({ doReposition: doRepositionMenus })
-            }
-          })
-        ])
-      };
-    };
-    const repositionMenus = comp => {
-      const sandbox = Coupling.getCoupled(comp, 'sandbox');
-      doRepositionMenus(sandbox);
-    };
-
-    const sandboxFields = () => [
-      defaulted('sandboxClasses', []),
-      SketchBehaviours.field('sandboxBehaviours', [
-        Composing,
-        Receiving,
-        Sandboxing,
-        Representing
-      ])
-    ];
-
-    const schema$j = constant$1([
-      required$1('dom'),
-      required$1('fetch'),
-      onHandler('onOpen'),
-      onKeyboardHandler('onExecute'),
-      defaulted('getHotspot', Optional.some),
-      defaulted('getAnchorOverrides', constant$1({})),
-      schema$y(),
-      field('dropdownBehaviours', [
-        Toggling,
-        Coupling,
-        Keying,
-        Focusing
-      ]),
-      required$1('toggleClass'),
-      defaulted('eventOrder', {}),
-      option$3('lazySink'),
-      defaulted('matchWidth', false),
-      defaulted('useMinWidth', false),
-      option$3('role')
-    ].concat(sandboxFields()));
-    const parts$d = constant$1([
-      external({
-        schema: [tieredMenuMarkers()],
-        name: 'menu',
-        defaults: detail => {
-          return { onExecute: detail.onExecute };
-        }
-      }),
-      partType$1()
-    ]);
-
-    const factory$g = (detail, components, _spec, externals) => {
-      const lookupAttr = attr => get$g(detail.dom, 'attributes').bind(attrs => get$g(attrs, attr));
-      const switchToMenu = sandbox => {
-        Sandboxing.getState(sandbox).each(tmenu => {
-          tieredMenu.highlightPrimary(tmenu);
-        });
-      };
-      const action = component => {
-        const onOpenSync = switchToMenu;
-        togglePopup(detail, identity, component, externals, onOpenSync, HighlightOnOpen.HighlightFirst).get(noop);
-      };
-      const apis = {
-        expand: comp => {
-          if (!Toggling.isOn(comp)) {
-            togglePopup(detail, identity, comp, externals, noop, HighlightOnOpen.HighlightNone).get(noop);
-          }
-        },
-        open: comp => {
-          if (!Toggling.isOn(comp)) {
-            togglePopup(detail, identity, comp, externals, noop, HighlightOnOpen.HighlightFirst).get(noop);
-          }
-        },
-        isOpen: Toggling.isOn,
-        close: comp => {
-          if (Toggling.isOn(comp)) {
-            togglePopup(detail, identity, comp, externals, noop, HighlightOnOpen.HighlightFirst).get(noop);
-          }
-        },
-        repositionMenus: comp => {
-          if (Toggling.isOn(comp)) {
-            repositionMenus(comp);
-          }
-        }
-      };
-      const triggerExecute = (comp, _se) => {
-        emitExecute(comp);
-        return Optional.some(true);
-      };
-      return {
-        uid: detail.uid,
-        dom: detail.dom,
-        components,
-        behaviours: augment(detail.dropdownBehaviours, [
-          Toggling.config({
-            toggleClass: detail.toggleClass,
-            aria: { mode: 'expanded' }
-          }),
-          Coupling.config({
-            others: {
-              sandbox: hotspot => {
-                return makeSandbox$1(detail, hotspot, {
-                  onOpen: () => Toggling.on(hotspot),
-                  onClose: () => Toggling.off(hotspot)
-                });
-              }
-            }
-          }),
-          Keying.config({
-            mode: 'special',
-            onSpace: triggerExecute,
-            onEnter: triggerExecute,
-            onDown: (comp, _se) => {
-              if (Dropdown.isOpen(comp)) {
-                const sandbox = Coupling.getCoupled(comp, 'sandbox');
-                switchToMenu(sandbox);
-              } else {
-                Dropdown.open(comp);
-              }
-              return Optional.some(true);
-            },
-            onEscape: (comp, _se) => {
-              if (Dropdown.isOpen(comp)) {
-                Dropdown.close(comp);
-                return Optional.some(true);
-              } else {
-                return Optional.none();
-              }
-            }
-          }),
-          Focusing.config({})
-        ]),
-        events: events$a(Optional.some(action)),
-        eventOrder: {
-          ...detail.eventOrder,
-          [execute$5()]: [
-            'disabling',
-            'toggling',
-            'alloy.base.behaviour'
-          ]
-        },
-        apis,
-        domModification: {
-          attributes: {
-            'aria-haspopup': 'true',
-            ...detail.role.fold(() => ({}), role => ({ role })),
-            ...detail.dom.tag === 'button' ? { type: lookupAttr('type').getOr('button') } : {}
-          }
-        }
-      };
-    };
-    const Dropdown = composite({
-      name: 'Dropdown',
-      configFields: schema$j(),
-      partFields: parts$d(),
-      factory: factory$g,
-      apis: {
-        open: (apis, comp) => apis.open(comp),
-        expand: (apis, comp) => apis.expand(comp),
-        close: (apis, comp) => apis.close(comp),
-        isOpen: (apis, comp) => apis.isOpen(comp),
-        repositionMenus: (apis, comp) => apis.repositionMenus(comp)
       }
     });
 
@@ -12267,7 +14706,7 @@
         exhibit: exhibit$1
     });
 
-    const Unselecting = create$3({
+    const Unselecting = create$4({
       fields: [],
       name: 'unselecting',
       active: ActiveUnselecting
@@ -12332,7 +14771,7 @@
         ]),
         selectOnFocus: false
       });
-      const pLabel = spec.label.map(label => renderLabel$2(label, sharedBackstage.providers));
+      const pLabel = spec.label.map(label => renderLabel$3(label, sharedBackstage.providers));
       const emitSwatchChange = (colorBit, value) => {
         emitWith(colorBit, colorSwatchChangeEvent, { value });
       };
@@ -12342,7 +14781,7 @@
             colorInputBackstage.colorPicker(valueOpt => {
               valueOpt.fold(() => emit(colorBit, colorPickerCancelEvent), value => {
                 emitSwatchChange(colorBit, value);
-                addColor(value);
+                addColor(spec.storageKey, value);
               });
             }, '#ffffff');
           } else if (value === 'remove') {
@@ -12370,8 +14809,8 @@
           ]
         },
         components: [],
-        fetch: getFetch$1(colorInputBackstage.getColors(), colorInputBackstage.hasCustomColors()),
-        columns: colorInputBackstage.getColorCols(),
+        fetch: getFetch$1(colorInputBackstage.getColors(spec.storageKey), spec.storageKey, colorInputBackstage.hasCustomColors()),
+        columns: colorInputBackstage.getColorCols(spec.storageKey),
         presets: 'color',
         onItemAction
       }, sharedBackstage));
@@ -12457,6 +14896,7 @@
         };
       }
     });
+    const isShift = event => isShift$1(event.event);
     const spectrumPart = required({
       schema: [customField('mouseIsDown', () => Cell(false))],
       name: 'spectrum',
@@ -12468,11 +14908,12 @@
           behaviours: derive$1([
             Keying.config({
               mode: 'special',
-              onLeft: spectrum => model.onLeft(spectrum, detail),
-              onRight: spectrum => model.onRight(spectrum, detail),
-              onUp: spectrum => model.onUp(spectrum, detail),
-              onDown: spectrum => model.onDown(spectrum, detail)
+              onLeft: (spectrum, event) => model.onLeft(spectrum, detail, isShift(event)),
+              onRight: (spectrum, event) => model.onRight(spectrum, detail, isShift(event)),
+              onUp: (spectrum, event) => model.onUp(spectrum, detail, isShift(event)),
+              onDown: (spectrum, event) => model.onDown(spectrum, detail, isShift(event))
             }),
+            Tabstopping.config({}),
             Focusing.config({})
           ]),
           events: derive$2([
@@ -12504,10 +14945,10 @@
 
     const _sliderChangeEvent = 'slider.change.value';
     const sliderChangeEvent = constant$1(_sliderChangeEvent);
-    const isTouchEvent$1 = evt => evt.type.indexOf('touch') !== -1;
+    const isTouchEvent$2 = evt => evt.type.indexOf('touch') !== -1;
     const getEventSource = simulatedEvent => {
       const evt = simulatedEvent.event.raw;
-      if (isTouchEvent$1(evt)) {
+      if (isTouchEvent$2(evt)) {
         const touchEvent = evt;
         return touchEvent.touches !== undefined && touchEvent.touches.length === 1 ? Optional.some(touchEvent.touches[0]).map(t => SugarPosition(t.clientX, t.clientY)) : Optional.none();
       } else {
@@ -12530,7 +14971,7 @@
     const yRange = detail => range(detail, maxY, minY);
     const halfX = detail => xRange(detail) / 2;
     const halfY = detail => yRange(detail) / 2;
-    const step = detail => detail.stepSize;
+    const step = (detail, useMultiplier) => useMultiplier ? detail.stepSize * detail.speedMultiplier : detail.stepSize;
     const snap = detail => detail.snapToGrid;
     const snapStart = detail => detail.snapStart;
     const rounded = detail => detail.rounded;
@@ -12733,13 +15174,13 @@
       const max = maxX(detail);
       fireSliderChange$2(spectrum, max);
     };
-    const moveBy$2 = (direction, spectrum, detail) => {
+    const moveBy$2 = (direction, spectrum, detail, useMultiplier) => {
       const f = direction > 0 ? increaseBy : reduceBy;
-      const xValue = f(currentValue(detail), minX(detail), maxX(detail), step(detail));
+      const xValue = f(currentValue(detail), minX(detail), maxX(detail), step(detail, useMultiplier));
       fireSliderChange$2(spectrum, xValue);
       return Optional.some(xValue);
     };
-    const handleMovement$2 = direction => (spectrum, detail) => moveBy$2(direction, spectrum, detail).map(always);
+    const handleMovement$2 = direction => (spectrum, detail, useMultiplier) => moveBy$2(direction, spectrum, detail, useMultiplier).map(always);
     const getValueFromEvent$2 = simulatedEvent => {
       const pos = getEventSource(simulatedEvent);
       return pos.map(p => p.left);
@@ -12841,13 +15282,13 @@
       const max = maxY(detail);
       fireSliderChange$1(spectrum, max);
     };
-    const moveBy$1 = (direction, spectrum, detail) => {
+    const moveBy$1 = (direction, spectrum, detail, useMultiplier) => {
       const f = direction > 0 ? increaseBy : reduceBy;
-      const yValue = f(currentValue(detail), minY(detail), maxY(detail), step(detail));
+      const yValue = f(currentValue(detail), minY(detail), maxY(detail), step(detail, useMultiplier));
       fireSliderChange$1(spectrum, yValue);
       return Optional.some(yValue);
     };
-    const handleMovement$1 = direction => (spectrum, detail) => moveBy$1(direction, spectrum, detail).map(always);
+    const handleMovement$1 = direction => (spectrum, detail, useMultiplier) => moveBy$1(direction, spectrum, detail, useMultiplier).map(always);
     const getValueFromEvent$1 = simulatedEvent => {
       const pos = getEventSource(simulatedEvent);
       return pos.map(p => {
@@ -12930,14 +15371,14 @@
       fireSliderChange(spectrum, val);
       return val;
     };
-    const moveBy = (direction, isVerticalMovement, spectrum, detail) => {
+    const moveBy = (direction, isVerticalMovement, spectrum, detail, useMultiplier) => {
       const f = direction > 0 ? increaseBy : reduceBy;
-      const xValue = isVerticalMovement ? currentValue(detail).x : f(currentValue(detail).x, minX(detail), maxX(detail), step(detail));
-      const yValue = !isVerticalMovement ? currentValue(detail).y : f(currentValue(detail).y, minY(detail), maxY(detail), step(detail));
+      const xValue = isVerticalMovement ? currentValue(detail).x : f(currentValue(detail).x, minX(detail), maxX(detail), step(detail, useMultiplier));
+      const yValue = !isVerticalMovement ? currentValue(detail).y : f(currentValue(detail).y, minY(detail), maxY(detail), step(detail, useMultiplier));
       fireSliderChange(spectrum, sliderValue(xValue, yValue));
       return Optional.some(xValue);
     };
-    const handleMovement = (direction, isVerticalMovement) => (spectrum, detail) => moveBy(direction, isVerticalMovement, spectrum, detail).map(always);
+    const handleMovement = (direction, isVerticalMovement) => (spectrum, detail, useMultiplier) => moveBy(direction, isVerticalMovement, spectrum, detail, useMultiplier).map(always);
     const setToMin = (spectrum, detail) => {
       const mX = minX(detail);
       const mY = minY(detail);
@@ -12989,6 +15430,7 @@
 
     const SliderSchema = [
       defaulted('stepSize', 1),
+      defaulted('speedMultiplier', 10),
       defaulted('onChange', noop),
       defaulted('onChoose', noop),
       defaulted('onInit', noop),
@@ -13090,6 +15532,9 @@
         detail.onDragEnd(slider, getThumb(slider));
         choose(slider);
       };
+      const focusWidget = component => {
+        getPart(component, detail, 'spectrum').map(Keying.focusIn);
+      };
       return {
         uid: detail.uid,
         dom: detail.dom,
@@ -13097,9 +15542,7 @@
         behaviours: augment(detail.sliderBehaviours, [
           Keying.config({
             mode: 'special',
-            focusIn: slider => {
-              return getPart(slider, detail, 'spectrum').map(Keying.focusIn).map(always);
-            }
+            focusIn: focusWidget
           }),
           Representing.config({
             store: {
@@ -13126,7 +15569,10 @@
           }),
           run$1(touchstart(), onDragStart),
           run$1(touchend(), onDragEnd),
-          run$1(mousedown(), onDragStart),
+          run$1(mousedown(), (component, event) => {
+            focusWidget(component);
+            onDragStart(component, event);
+          }),
           run$1(mouseup(), onDragEnd)
         ]),
         apis: {
@@ -13183,7 +15629,12 @@
         dom: {
           tag: 'div',
           classes: [getClass('hue-slider')],
-          attributes: { role: 'presentation' }
+          attributes: {
+            'role': 'slider',
+            'aria-valuemin': 0,
+            'aria-valuemax': 360,
+            'aria-valuenow': 120
+          }
         },
         rounded: false,
         model: {
@@ -13196,6 +15647,7 @@
         ],
         sliderBehaviours: derive$1([Focusing.config({})]),
         onChange: (slider, _thumb, value) => {
+          set$9(slider.element, 'aria-valuenow', Math.floor(360 - value * 3.6));
           emitWith(slider, sliderUpdate, { value });
         }
       });
@@ -13301,7 +15753,7 @@
             tag: 'label',
             attributes: { 'aria-label': description }
           },
-          components: [text$1(label)]
+          components: [text$2(label)]
         });
         const pField = FormField.parts.field({
           data,
@@ -13404,7 +15856,7 @@
         const onValidHex = (form, value) => {
           onValidHexx(form);
           const hex = hexColour(value);
-          set('hex', Optional.some(value));
+          set('hex', Optional.some(hex.value));
           const rgb = fromHex(hex);
           copyRgbToForm(form, rgb);
           setValueRgb(rgb);
@@ -13482,7 +15934,7 @@
       return rgbFormSketcher;
     };
 
-    const paletteFactory = (_translate, getClass) => {
+    const paletteFactory = (translate, getClass) => {
       const spectrumPart = Slider.parts.spectrum({
         dom: {
           tag: 'canvas',
@@ -13529,6 +15981,11 @@
           x: hsv.saturation,
           y: 100 - hsv.value
         });
+        set$9(slider.element, 'aria-valuetext', translate([
+          'Saturation {0}%, Brightness {1}%',
+          hsv.saturation,
+          hsv.value
+        ]));
       };
       const factory = _detail => {
         const getInitialValue = constant$1({
@@ -13536,6 +15993,13 @@
           y: 0
         });
         const onChange = (slider, _thumb, value) => {
+          if (!isNumber(value)) {
+            set$9(slider.element, 'aria-valuetext', translate([
+              'Saturation {0}%, Brightness {1}%',
+              Math.floor(value.x),
+              Math.floor(100 - value.y)
+            ]));
+          }
           emitWith(slider, paletteUpdate, { value });
         };
         const onInit = (_slider, _thumb, spectrum, _value) => {
@@ -13548,7 +16012,14 @@
         return Slider.sketch({
           dom: {
             tag: 'div',
-            attributes: { role: 'presentation' },
+            attributes: {
+              'role': 'slider',
+              'aria-valuetext': translate([
+                'Saturation {0}%, Brightness {1}%',
+                0,
+                0
+              ])
+            },
             classes: [getClass('sv-palette')]
           },
           model: {
@@ -13733,7 +16204,6 @@
       }
     });
     const withElement = (initialValue, getter, setter) => withComp(initialValue, c => getter(c.element), (c, v) => setter(c.element, v));
-    const domValue = optInitialValue => withElement(optInitialValue, get$6, set$5);
     const domHtml = optInitialValue => withElement(optInitialValue, get$9, set$6);
     const memory = initialValue => Representing.config({
       store: {
@@ -13741,14 +16211,6 @@
         initialValue
       }
     });
-    const RepresentingConfigs = {
-      memento,
-      withElement,
-      withComp,
-      domValue,
-      domHtml,
-      memory
-    };
 
     const english = {
       'colorcustom.rgb.red.label': 'R',
@@ -13764,7 +16226,11 @@
       'aria.input.invalid': 'Invalid input'
     };
     const translate$1 = providerBackstage => key => {
-      return providerBackstage.translate(english[key]);
+      if (isString(key)) {
+        return providerBackstage.translate(english[key]);
+      } else {
+        return providerBackstage.translate(key);
+      }
     };
     const renderColorPicker = (_spec, providerBackstage, initialData) => {
       const getClass = key => 'tox-' + key;
@@ -13794,23 +16260,23 @@
         dom: { tag: 'div' },
         components: [memPicker.asSpec()],
         behaviours: derive$1([
-          RepresentingConfigs.withComp(initialData, comp => {
+          withComp(initialData, comp => {
             const picker = memPicker.get(comp);
             const optRgbForm = Composing.getCurrent(picker);
             const optHex = optRgbForm.bind(rgbForm => {
               const formValues = Representing.getValue(rgbForm);
               return formValues.hex;
             });
-            return optHex.map(hex => '#' + hex).getOr('');
+            return optHex.map(hex => '#' + removeLeading(hex, '#')).getOr('');
           }, (comp, newValue) => {
             const pattern = /^#([a-fA-F0-9]{3}(?:[a-fA-F0-9]{3})?)/;
-            const m = pattern.exec(newValue);
+            const valOpt = Optional.from(pattern.exec(newValue)).bind(matches => get$h(matches, 1));
             const picker = memPicker.get(comp);
             const optRgbForm = Composing.getCurrent(picker);
             optRgbForm.fold(() => {
               console.log('Can not find form');
             }, rgbForm => {
-              Representing.setValue(rgbForm, { hex: Optional.from(m[1]).getOr('') });
+              Representing.setValue(rgbForm, { hex: valOpt.getOr('') });
               Form.getField(rgbForm, 'hex').each(hexField => {
                 emit(hexField, input());
               });
@@ -13828,6 +16294,16 @@
       const editorApi = value$2();
       const memReplaced = record({ dom: { tag: spec.tag } });
       const initialValue = value$2();
+      const focusBehaviour = !isOldCustomEditor(spec) && spec.onFocus.isSome() ? [
+        Focusing.config({
+          onFocus: comp => {
+            spec.onFocus.each(onFocusFn => {
+              onFocusFn(comp.element.dom);
+            });
+          }
+        }),
+        Tabstopping.config({})
+      ] : [];
       return {
         dom: {
           tag: 'div',
@@ -13845,11 +16321,11 @@
                 });
               });
             })]),
-          RepresentingConfigs.withComp(Optional.none(), () => editorApi.get().fold(() => initialValue.get().getOr(''), ed => ed.getValue()), (component, value) => {
+          withComp(Optional.none(), () => editorApi.get().fold(() => initialValue.get().getOr(''), ed => ed.getValue()), (_component, value) => {
             editorApi.get().fold(() => initialValue.set(value), ed => ed.setValue(value));
           }),
           ComposingConfigs.self()
-        ]),
+        ].concat(focusBehaviour)),
         components: [memReplaced.asSpec()]
       };
     };
@@ -13871,9 +16347,10 @@
         });
       };
       const onDrop = (comp, se) => {
+        var _a;
         if (!Disabling.isDisabled(comp)) {
           const transferEvent = se.event.raw;
-          handleFiles(comp, transferEvent.dataTransfer.files);
+          handleFiles(comp, (_a = transferEvent.dataTransfer) === null || _a === void 0 ? void 0 : _a.files);
         }
       };
       const onSelect = (component, simulatedEvent) => {
@@ -13881,8 +16358,10 @@
         handleFiles(component, input.files);
       };
       const handleFiles = (component, files) => {
-        Representing.setValue(component, filterByExtension(files, providersBackstage));
-        emitWith(component, formChangeEvent, { name: spec.name });
+        if (files) {
+          Representing.setValue(component, filterByExtension(files, providersBackstage));
+          emitWith(component, formChangeEvent, { name: spec.name });
+        }
       };
       const memInput = record({
         dom: {
@@ -13905,7 +16384,7 @@
           classes: ['tox-dropzone-container']
         },
         behaviours: derive$1([
-          RepresentingConfigs.memory(initialData.getOr([])),
+          memory(initialData.getOr([])),
           ComposingConfigs.self(),
           Disabling.config({}),
           Toggling.config({
@@ -13938,7 +16417,7 @@
             components: [
               {
                 dom: { tag: 'p' },
-                components: [text$1(providersBackstage.translate('Drop an image here'))]
+                components: [text$2(providersBackstage.translate('Drop an image here'))]
               },
               Button.sketch({
                 dom: {
@@ -13950,7 +16429,7 @@
                   ]
                 },
                 components: [
-                  text$1(providersBackstage.translate('Browse for an image')),
+                  text$2(providersBackstage.translate('Browse for an image')),
                   memInput.asSpec()
                 ],
                 action: comp => {
@@ -13966,7 +16445,7 @@
             ]
           }]
       });
-      const pLabel = spec.label.map(label => renderLabel$2(label, providersBackstage));
+      const pLabel = spec.label.map(label => renderLabel$3(label, providersBackstage));
       const pField = FormField.parts.field({ factory: { sketch: renderField } });
       return renderFormFieldWith(pLabel, pField, ['tox-form__group--stretched'], []);
     };
@@ -13981,6 +16460,74 @@
       },
       components: map$2(spec.items, backstage.interpreter)
     });
+
+    const adaptable = (fn, rate) => {
+      let timer = null;
+      let args = null;
+      const cancel = () => {
+        if (!isNull(timer)) {
+          clearTimeout(timer);
+          timer = null;
+          args = null;
+        }
+      };
+      const throttle = (...newArgs) => {
+        args = newArgs;
+        if (isNull(timer)) {
+          timer = setTimeout(() => {
+            const tempArgs = args;
+            timer = null;
+            args = null;
+            fn.apply(null, tempArgs);
+          }, rate);
+        }
+      };
+      return {
+        cancel,
+        throttle
+      };
+    };
+    const first = (fn, rate) => {
+      let timer = null;
+      const cancel = () => {
+        if (!isNull(timer)) {
+          clearTimeout(timer);
+          timer = null;
+        }
+      };
+      const throttle = (...args) => {
+        if (isNull(timer)) {
+          timer = setTimeout(() => {
+            timer = null;
+            fn.apply(null, args);
+          }, rate);
+        }
+      };
+      return {
+        cancel,
+        throttle
+      };
+    };
+    const last = (fn, rate) => {
+      let timer = null;
+      const cancel = () => {
+        if (!isNull(timer)) {
+          clearTimeout(timer);
+          timer = null;
+        }
+      };
+      const throttle = (...args) => {
+        cancel();
+        timer = setTimeout(() => {
+          timer = null;
+          fn.apply(null, args);
+        }, rate);
+      };
+      return {
+        cancel,
+        throttle
+      };
+    };
 
     const beforeObject = generate$6('alloy-fake-before-tabstop');
     const afterObject = generate$6('alloy-fake-after-tabstop');
@@ -14002,11 +16549,14 @@
         ])
       };
     };
-    const craft = spec => {
+    const craft = (containerClasses, spec) => {
       return {
         dom: {
           tag: 'div',
-          classes: ['tox-navobj']
+          classes: [
+            'tox-navobj',
+            ...containerClasses.getOr([])
+          ]
         },
         components: [
           craftWithClasses([beforeObject]),
@@ -14039,43 +16589,112 @@
       ].join(','), never);
     };
 
-    const getDynamicSource = initialData => {
+    const dialogChannel = generate$6('update-dialog');
+    const titleChannel = generate$6('update-title');
+    const bodyChannel = generate$6('update-body');
+    const footerChannel = generate$6('update-footer');
+    const bodySendMessageChannel = generate$6('body-send-message');
+    const dialogFocusShiftedChannel = generate$6('dialog-focus-shifted');
+
+    const browser = detect$1().browser;
+    const isSafari = browser.isSafari();
+    const isFirefox = browser.isFirefox();
+    const isSafariOrFirefox = isSafari || isFirefox;
+    const isChromium = browser.isChromium();
+    const isElementScrollAtBottom = ({scrollTop, scrollHeight, clientHeight}) => Math.ceil(scrollTop) + clientHeight >= scrollHeight;
+    const scrollToY = (win, y) => win.scrollTo(0, y === 'bottom' ? 99999999 : y);
+    const getScrollingElement = (doc, html) => {
+      const body = doc.body;
+      return Optional.from(!/^<!DOCTYPE (html|HTML)/.test(html) && (!isChromium && !isSafari || isNonNullable(body) && (body.scrollTop !== 0 || Math.abs(body.scrollHeight - body.clientHeight) > 1)) ? body : doc.documentElement);
+    };
+    const writeValue = (iframeElement, html, fallbackFn) => {
+      const iframe = iframeElement.dom;
+      Optional.from(iframe.contentDocument).fold(fallbackFn, doc => {
+        let lastScrollTop = 0;
+        const isScrollAtBottom = getScrollingElement(doc, html).map(el => {
+          lastScrollTop = el.scrollTop;
+          return el;
+        }).forall(isElementScrollAtBottom);
+        const scrollAfterWrite = () => {
+          const win = iframe.contentWindow;
+          if (isNonNullable(win)) {
+            if (isScrollAtBottom) {
+              scrollToY(win, 'bottom');
+            } else if (!isScrollAtBottom && isSafariOrFirefox && lastScrollTop !== 0) {
+              scrollToY(win, lastScrollTop);
+            }
+          }
+        };
+        if (isSafari) {
+          iframe.addEventListener('load', scrollAfterWrite, { once: true });
+        }
+        doc.open();
+        doc.write(html);
+        doc.close();
+        if (!isSafari) {
+          scrollAfterWrite();
+        }
+      });
+    };
+    const throttleInterval = someIf(isSafariOrFirefox, isSafari ? 500 : 200);
+    const writeValueThrottler = throttleInterval.map(interval => adaptable(writeValue, interval));
+    const getDynamicSource = (initialData, stream) => {
       const cachedValue = Cell(initialData.getOr(''));
       return {
         getValue: _frameComponent => cachedValue.get(),
         setValue: (frameComponent, html) => {
           if (cachedValue.get() !== html) {
-            set$9(frameComponent.element, 'srcdoc', html);
+            const iframeElement = frameComponent.element;
+            const setSrcdocValue = () => set$9(iframeElement, 'srcdoc', html);
+            if (stream) {
+              writeValueThrottler.fold(constant$1(writeValue), throttler => throttler.throttle)(iframeElement, html, setSrcdocValue);
+            } else {
+              setSrcdocValue();
+            }
           }
           cachedValue.set(html);
         }
       };
     };
     const renderIFrame = (spec, providersBackstage, initialData) => {
-      const isSandbox = spec.sandboxed;
-      const isTransparent = spec.transparent;
       const baseClass = 'tox-dialog__iframe';
+      const opaqueClass = spec.transparent ? [] : [`${ baseClass }--opaque`];
+      const containerBorderedClass = spec.border ? [`tox-navobj-bordered`] : [];
       const attributes = {
         ...spec.label.map(title => ({ title })).getOr({}),
         ...initialData.map(html => ({ srcdoc: html })).getOr({}),
-        ...isSandbox ? { sandbox: 'allow-scripts allow-same-origin' } : {}
+        ...spec.sandboxed ? { sandbox: 'allow-scripts allow-same-origin' } : {}
       };
-      const sourcing = getDynamicSource(initialData);
-      const pLabel = spec.label.map(label => renderLabel$2(label, providersBackstage));
-      const factory = newSpec => craft({
+      const sourcing = getDynamicSource(initialData, spec.streamContent);
+      const pLabel = spec.label.map(label => renderLabel$3(label, providersBackstage));
+      const factory = newSpec => craft(Optional.from(containerBorderedClass), {
         uid: newSpec.uid,
         dom: {
           tag: 'iframe',
           attributes,
-          classes: isTransparent ? [baseClass] : [
+          classes: [
             baseClass,
-            `${ baseClass }--opaque`
+            ...opaqueClass
           ]
         },
         behaviours: derive$1([
           Tabstopping.config({}),
           Focusing.config({}),
-          RepresentingConfigs.withComp(initialData, sourcing.getValue, sourcing.setValue)
+          withComp(initialData, sourcing.getValue, sourcing.setValue),
+          Receiving.config({
+            channels: {
+              [dialogFocusShiftedChannel]: {
+                onReceive: (comp, message) => {
+                  message.newFocus.each(newFocus => {
+                    parentElement(comp.element).each(parent => {
+                      const f = eq(comp.element, newFocus) ? add$2 : remove$2;
+                      f(parent, 'tox-navobj-bordered-focus');
+                    });
+                  });
+                }
+              }
+            }
+          })
         ])
       });
       const pField = FormField.parts.field({ factory: { sketch: factory } });
@@ -14141,16 +16760,17 @@
         data.cachedHeight.each(z => translatedData.cachedHeight = z);
         cachedData.set(translatedData);
         const applyFramePositioning = () => {
-          const imageWidth = translatedData.cachedWidth;
-          const imageHeight = translatedData.cachedHeight;
-          if (isUndefined(translatedData.zoom)) {
-            const z = zoomToFit(frameComponent.element, imageWidth, imageHeight);
-            translatedData.zoom = z;
+          const {cachedWidth, cachedHeight, zoom} = translatedData;
+          if (!isUndefined(cachedWidth) && !isUndefined(cachedHeight)) {
+            if (isUndefined(zoom)) {
+              const z = zoomToFit(frameComponent.element, cachedWidth, cachedHeight);
+              translatedData.zoom = z;
+            }
+            const position = calculateImagePosition(get$c(frameComponent.element), get$d(frameComponent.element), cachedWidth, cachedHeight, translatedData.zoom);
+            memContainer.getOpt(frameComponent).each(container => {
+              setAll(container.element, position);
+            });
           }
-          const position = calculateImagePosition(get$c(frameComponent.element), get$d(frameComponent.element), imageWidth, imageHeight, translatedData.zoom);
-          memContainer.getOpt(frameComponent).each(container => {
-            setAll(container.element, position);
-          });
         };
         memImage.getOpt(frameComponent).each(imageComponent => {
           const img = imageComponent.element;
@@ -14158,9 +16778,7 @@
             set$9(img, 'src', data.url);
             remove$2(frameComponent.element, 'tox-imagepreview__loaded');
           }
-          if (!isUndefined(translatedData.cachedWidth) && !isUndefined(translatedData.cachedHeight)) {
-            applyFramePositioning();
-          }
+          applyFramePositioning();
           image(img).then(img => {
             if (frameComponent.getSystem().isConnected()) {
               add$2(frameComponent.element, 'tox-imagepreview__loaded');
@@ -14189,18 +16807,25 @@
         components: [memContainer.asSpec()],
         behaviours: derive$1([
           ComposingConfigs.self(),
-          RepresentingConfigs.withComp(fakeValidatedData, () => cachedData.get(), setValue)
+          withComp(fakeValidatedData, () => cachedData.get(), setValue)
         ])
       };
     };
 
-    const renderLabel$1 = (spec, backstageShared) => {
+    const renderLabel$2 = (spec, backstageShared) => {
+      const baseClass = 'tox-label';
+      const centerClass = spec.align === 'center' ? [`${ baseClass }--center`] : [];
+      const endClass = spec.align === 'end' ? [`${ baseClass }--end`] : [];
       const label = {
         dom: {
           tag: 'label',
-          classes: ['tox-label']
+          classes: [
+            baseClass,
+            ...centerClass,
+            ...endClass
+          ]
         },
-        components: [text$1(backstageShared.providers.translate(spec.label))]
+        components: [text$2(backstageShared.providers.translate(spec.label))]
       };
       const comps = map$2(spec.items, backstageShared.interpreter);
       return {
@@ -14215,7 +16840,7 @@
         behaviours: derive$1([
           ComposingConfigs.self(),
           Replacing.config({}),
-          RepresentingConfigs.domHtml(Optional.none()),
+          domHtml(Optional.none()),
           Keying.config({ mode: 'acyclic' })
         ])
       };
@@ -14228,16 +16853,34 @@
         info.onAction(itemApi);
       });
     });
+    const commonButtonDisplayEvent = generate$6('common-button-display-events');
     const toolbarButtonEventOrder = {
       [execute$5()]: [
         'disabling',
         'alloy.base.behaviour',
         'toggling',
-        'toolbar-button-events'
+        'toolbar-button-events',
+        'tooltipping'
+      ],
+      [attachedToDom()]: [
+        'toolbar-button-events',
+        commonButtonDisplayEvent
+      ],
+      [detachedFromDom()]: [
+        'toolbar-button-events',
+        'dropdown-events',
+        'tooltipping'
+      ],
+      [mousedown()]: [
+        'focusing',
+        'alloy.base.behaviour',
+        commonButtonDisplayEvent
       ]
     };
 
-    const renderIcon = (iconName, iconsProvider, behaviours) => render$3(iconName, {
+    const forceInitialSize = comp => set$8(comp.element, 'width', get$e(comp.element, 'width'));
+
+    const renderIcon$1 = (iconName, iconsProvider, behaviours) => render$3(iconName, {
       tag: 'span',
       classes: [
         'tox-icon',
@@ -14245,23 +16888,23 @@
       ],
       behaviours
     }, iconsProvider);
-    const renderIconFromPack = (iconName, iconsProvider) => renderIcon(iconName, iconsProvider, []);
-    const renderReplacableIconFromPack = (iconName, iconsProvider) => renderIcon(iconName, iconsProvider, [Replacing.config({})]);
-    const renderLabel = (text, prefix, providersBackstage) => ({
+    const renderIconFromPack$1 = (iconName, iconsProvider) => renderIcon$1(iconName, iconsProvider, []);
+    const renderReplaceableIconFromPack = (iconName, iconsProvider) => renderIcon$1(iconName, iconsProvider, [Replacing.config({})]);
+    const renderLabel$1 = (text, prefix, providersBackstage) => ({
       dom: {
         tag: 'span',
         classes: [`${ prefix }__select-label`]
       },
-      components: [text$1(providersBackstage.translate(text))],
+      components: [text$2(providersBackstage.translate(text))],
       behaviours: derive$1([Replacing.config({})])
     });
 
     const updateMenuText = generate$6('update-menu-text');
     const updateMenuIcon = generate$6('update-menu-icon');
-    const renderCommonDropdown = (spec, prefix, sharedBackstage) => {
+    const renderCommonDropdown = (spec, prefix, sharedBackstage, btnName) => {
       const editorOffCell = Cell(noop);
-      const optMemDisplayText = spec.text.map(text => record(renderLabel(text, prefix, sharedBackstage.providers)));
-      const optMemDisplayIcon = spec.icon.map(iconName => record(renderReplacableIconFromPack(iconName, sharedBackstage.providers.icons)));
+      const optMemDisplayText = spec.text.map(text => record(renderLabel$1(text, prefix, sharedBackstage.providers)));
+      const optMemDisplayIcon = spec.icon.map(iconName => record(renderReplaceableIconFromPack(iconName, sharedBackstage.providers.icons)));
       const onLeftOrRightInMenu = (comp, se) => {
         const dropdown = Representing.getValue(comp);
         Focusing.focus(dropdown);
@@ -14270,17 +16913,16 @@
         return Optional.some(true);
       };
       const role = spec.role.fold(() => ({}), role => ({ role }));
-      const tooltipAttributes = spec.tooltip.fold(() => ({}), tooltip => {
-        const translatedTooltip = sharedBackstage.providers.translate(tooltip);
-        return {
-          'title': translatedTooltip,
-          'aria-label': translatedTooltip
-        };
+      const ariaLabelAttribute = spec.ariaLabel.fold(() => ({}), ariaLabel => {
+        const translatedAriaLabel = sharedBackstage.providers.translate(ariaLabel);
+        return { 'aria-label': translatedAriaLabel };
       });
       const iconSpec = render$3('chevron-down', {
         tag: 'div',
         classes: [`${ prefix }__select-chevron`]
       }, sharedBackstage.providers.icons);
+      const fixWidthBehaviourName = generate$6('common-button-display-events');
+      const customEventsName = 'dropdown-events';
       const memDropdown = record(Dropdown.sketch({
         ...spec.uid ? { uid: spec.uid } : {},
         ...role,
@@ -14290,7 +16932,10 @@
             prefix,
             `${ prefix }--select`
           ].concat(map$2(spec.classes, c => `${ prefix }--${ c }`)),
-          attributes: { ...tooltipAttributes }
+          attributes: {
+            ...ariaLabelAttribute,
+            ...isNonNullable(btnName) ? { 'data-mce-name': btnName } : {}
+          }
         },
         components: componentRenderPipeline([
           optMemDisplayIcon.map(mem => mem.asSpec()),
@@ -14299,52 +16944,96 @@
         ]),
         matchWidth: true,
         useMinWidth: true,
+        onOpen: (anchor, dropdownComp, tmenuComp) => {
+          if (spec.searchable) {
+            focusSearchField(tmenuComp);
+          }
+        },
         dropdownBehaviours: derive$1([
           ...spec.dropdownBehaviours,
           DisablingConfigs.button(() => spec.disabled || sharedBackstage.providers.isDisabled()),
           receivingConfig(),
           Unselecting.config({}),
           Replacing.config({}),
-          config('dropdown-events', [
+          ...spec.tooltip.map(t => Tooltipping.config(sharedBackstage.providers.tooltips.getConfig({ tooltipText: sharedBackstage.providers.translate(t) }))).toArray(),
+          config(customEventsName, [
             onControlAttached(spec, editorOffCell),
             onControlDetached(spec, editorOffCell)
           ]),
+          config(fixWidthBehaviourName, [runOnAttached((comp, _se) => forceInitialSize(comp))]),
           config('menubutton-update-display-text', [
             run$1(updateMenuText, (comp, se) => {
               optMemDisplayText.bind(mem => mem.getOpt(comp)).each(displayText => {
-                Replacing.set(displayText, [text$1(sharedBackstage.providers.translate(se.event.text))]);
+                Replacing.set(displayText, [text$2(sharedBackstage.providers.translate(se.event.text))]);
               });
             }),
             run$1(updateMenuIcon, (comp, se) => {
               optMemDisplayIcon.bind(mem => mem.getOpt(comp)).each(displayIcon => {
-                Replacing.set(displayIcon, [renderReplacableIconFromPack(se.event.icon, sharedBackstage.providers.icons)]);
+                Replacing.set(displayIcon, [renderReplaceableIconFromPack(se.event.icon, sharedBackstage.providers.icons)]);
               });
             })
           ])
         ]),
         eventOrder: deepMerge(toolbarButtonEventOrder, {
-          mousedown: [
+          [mousedown()]: [
             'focusing',
             'alloy.base.behaviour',
             'item-type-events',
             'normal-dropdown-events'
+          ],
+          [attachedToDom()]: [
+            'toolbar-button-events',
+            Tooltipping.name(),
+            customEventsName,
+            fixWidthBehaviourName
           ]
         }),
-        sandboxBehaviours: derive$1([Keying.config({
+        sandboxBehaviours: derive$1([
+          Keying.config({
             mode: 'special',
             onLeft: onLeftOrRightInMenu,
             onRight: onLeftOrRightInMenu
-          })]),
+          }),
+          config('dropdown-sandbox-events', [
+            run$1(refetchTriggerEvent, (originalSandboxComp, se) => {
+              handleRefetchTrigger(originalSandboxComp);
+              se.stop();
+            }),
+            run$1(redirectMenuItemInteractionEvent, (sandboxComp, se) => {
+              handleRedirectToMenuItem(sandboxComp, se);
+              se.stop();
+            })
+          ])
+        ]),
         lazySink: sharedBackstage.getSink,
         toggleClass: `${ prefix }--active`,
-        parts: { menu: part(false, spec.columns, spec.presets) },
+        parts: {
+          menu: {
+            ...part(false, spec.columns, spec.presets),
+            fakeFocus: spec.searchable,
+            onHighlightItem: updateAriaOnHighlight,
+            onCollapseMenu: (tmenuComp, itemCompCausingCollapse, nowActiveMenuComp) => {
+              Highlighting.getHighlighted(nowActiveMenuComp).each(itemComp => {
+                updateAriaOnHighlight(tmenuComp, nowActiveMenuComp, itemComp);
+              });
+            },
+            onDehighlightItem: updateAriaOnDehighlight
+          }
+        },
+        getAnchorOverrides: () => {
+          return {
+            maxHeightFunction: (element, available) => {
+              anchored()(element, available - 10);
+            }
+          };
+        },
         fetch: comp => Future.nu(curry(spec.fetch, comp))
       }));
       return memDropdown.asSpec();
     };
 
     const isMenuItemReference = item => isString(item);
-    const isSeparator$1 = item => item.type === 'separator';
+    const isSeparator$2 = item => item.type === 'separator';
     const isExpandingMenuItem = item => has$2(item, 'getSubmenuItems');
     const separator$2 = { type: 'separator' };
     const unwrapReferences = (items, menuItems) => {
@@ -14353,7 +17042,7 @@
           if (item === '') {
             return acc;
           } else if (item === '|') {
-            return acc.length > 0 && !isSeparator$1(acc[acc.length - 1]) ? acc.concat([separator$2]) : acc;
+            return acc.length > 0 && !isSeparator$2(acc[acc.length - 1]) ? acc.concat([separator$2]) : acc;
           } else if (has$2(menuItems, item.toLowerCase())) {
             return acc.concat([menuItems[item.toLowerCase()]]);
           } else {
@@ -14363,7 +17052,7 @@
           return acc.concat([item]);
         }
       }, []);
-      if (realItems.length > 0 && isSeparator$1(realItems[realItems.length - 1])) {
+      if (realItems.length > 0 && isSeparator$2(realItems[realItems.length - 1])) {
         realItems.pop();
       }
       return realItems;
@@ -14371,37 +17060,41 @@
     const getFromExpandingItem = (item, menuItems) => {
       const submenuItems = item.getSubmenuItems();
       const rest = expand(submenuItems, menuItems);
-      const newMenus = deepMerge(rest.menus, wrap$1(item.value, rest.items));
-      const newExpansions = deepMerge(rest.expansions, wrap$1(item.value, item.value));
+      const newMenus = deepMerge(rest.menus, { [item.value]: rest.items });
+      const newExpansions = deepMerge(rest.expansions, { [item.value]: item.value });
       return {
         item,
         menus: newMenus,
         expansions: newExpansions
       };
     };
-    const getFromItem = (item, menuItems) => isExpandingMenuItem(item) ? getFromExpandingItem(item, menuItems) : {
-      item,
-      menus: {},
-      expansions: {}
-    };
     const generateValueIfRequired = item => {
-      if (isSeparator$1(item)) {
-        return item;
-      } else {
-        const itemValue = get$g(item, 'value').getOrThunk(() => generate$6('generated-menu-item'));
-        return deepMerge({ value: itemValue }, item);
-      }
+      const itemValue = get$g(item, 'value').getOrThunk(() => generate$6('generated-menu-item'));
+      return deepMerge({ value: itemValue }, item);
     };
     const expand = (items, menuItems) => {
       const realItems = unwrapReferences(isString(items) ? items.split(' ') : items, menuItems);
       return foldr(realItems, (acc, item) => {
-        const itemWithValue = generateValueIfRequired(item);
-        const newData = getFromItem(itemWithValue, menuItems);
-        return {
-          menus: deepMerge(acc.menus, newData.menus),
-          items: [newData.item].concat(acc.items),
-          expansions: deepMerge(acc.expansions, newData.expansions)
-        };
+        if (isExpandingMenuItem(item)) {
+          const itemWithValue = generateValueIfRequired(item);
+          const newData = getFromExpandingItem(itemWithValue, menuItems);
+          return {
+            menus: deepMerge(acc.menus, newData.menus),
+            items: [
+              newData.item,
+              ...acc.items
+            ],
+            expansions: deepMerge(acc.expansions, newData.expansions)
+          };
+        } else {
+          return {
+            ...acc,
+            items: [
+              item,
+              ...acc.items
+            ]
+          };
+        }
       }, {
         menus: {},
         expansions: {},
@@ -14409,14 +17102,25 @@
       });
     };
 
-    const build = (items, itemResponse, backstage, isHorizontalMenu) => {
+    const getSearchModeForField = settings => {
+      return settings.search.fold(() => ({ searchMode: 'no-search' }), searchSettings => ({
+        searchMode: 'search-with-field',
+        placeholder: searchSettings.placeholder
+      }));
+    };
+    const getSearchModeForResults = settings => {
+      return settings.search.fold(() => ({ searchMode: 'no-search' }), _ => ({ searchMode: 'search-with-results' }));
+    };
+    const build = (items, itemResponse, backstage, settings) => {
       const primary = generate$6('primary-menu');
       const data = expand(items, backstage.shared.providers.menuItems());
       if (data.items.length === 0) {
         return Optional.none();
       }
-      const mainMenu = createPartialMenu(primary, data.items, itemResponse, backstage, isHorizontalMenu);
-      const submenus = map$1(data.menus, (menuItems, menuName) => createPartialMenu(menuName, menuItems, itemResponse, backstage, false));
+      const mainMenuSearchMode = getSearchModeForField(settings);
+      const mainMenu = createPartialMenu(primary, data.items, itemResponse, backstage, settings.isHorizontalMenu, mainMenuSearchMode);
+      const submenuSearchMode = getSearchModeForResults(settings);
+      const submenus = map$1(data.menus, (menuItems, menuName) => createPartialMenu(menuName, menuItems, itemResponse, backstage, false, submenuSearchMode));
       const menus = deepMerge(submenus, wrap$1(primary, mainMenu));
       return Optional.from(tieredMenu.tieredData(primary, menus, data.expansions));
     };
@@ -14454,7 +17158,7 @@
     const renderListBox = (spec, backstage, initialData) => {
       const providersBackstage = backstage.shared.providers;
       const initialItem = initialData.bind(value => findItemByValue(spec.items, value)).orThunk(() => head(spec.items).filter(isSingleListItem));
-      const pLabel = spec.label.map(label => renderLabel$2(label, providersBackstage));
+      const pLabel = spec.label.map(label => renderLabel$3(label, providersBackstage));
       const pField = FormField.parts.field({
         dom: {},
         factory: {
@@ -14462,11 +17166,15 @@
             uid: sketchSpec.uid,
             text: initialItem.map(item => item.text),
             icon: Optional.none(),
-            tooltip: spec.label,
+            tooltip: Optional.none(),
             role: Optional.none(),
+            ariaLabel: spec.label,
             fetch: (comp, callback) => {
               const items = fetchItems(comp, spec.name, spec.items, Representing.getValue(comp));
-              callback(build(items, ItemResponse$1.CLOSE_ON_EXECUTE, backstage, false));
+              callback(build(items, ItemResponse$1.CLOSE_ON_EXECUTE, backstage, {
+                isHorizontalMenu: false,
+                search: Optional.none()
+              }));
             },
             onSetup: constant$1(noop),
             getApi: constant$1({}),
@@ -14475,7 +17183,7 @@
             classes: [],
             dropdownBehaviours: [
               Tabstopping.config({}),
-              RepresentingConfigs.withComp(initialItem.map(item => item.value), comp => get$f(comp.element, dataAttribute), (comp, data) => {
+              withComp(initialItem.map(item => item.value), comp => get$f(comp.element, dataAttribute), (comp, data) => {
                 findItemByValue(spec.items, data).each(item => {
                   set$9(comp.element, dataAttribute, item.value);
                   emitWith(comp, updateMenuText, { text: item.text });
@@ -14521,7 +17229,7 @@
       components: map$2(spec.items, backstage.shared.interpreter)
     });
 
-    const factory$f = (detail, _spec) => {
+    const factory$h = (detail, _spec) => {
       const options = map$2(detail.options, option => ({
         dom: {
           tag: 'option',
@@ -14547,9 +17255,12 @@
                 return get$6(select.element);
               },
               setValue: (select, newValue) => {
+                const firstOption = head(detail.options);
                 const found = find$5(detail.options, opt => opt.value === newValue);
                 if (found.isSome()) {
                   set$5(select.element, newValue);
+                } else if (select.element.dom.selectedIndex === -1 && newValue === '') {
+                  firstOption.each(value => set$5(select.element, value.value));
                 }
               },
               ...initialValues
@@ -14570,7 +17281,7 @@
         defaulted('selectAttributes', {}),
         option$3('data')
       ],
-      factory: factory$f
+      factory: factory$h
     });
 
     const renderSelectBox = (spec, providersBackstage, initialData) => {
@@ -14578,7 +17289,7 @@
         text: providersBackstage.translate(item.text),
         value: item.value
       }));
-      const pLabel = spec.label.map(label => renderLabel$2(label, providersBackstage));
+      const pLabel = spec.label.map(label => renderLabel$3(label, providersBackstage));
       const pField = FormField.parts.field({
         dom: {},
         ...initialData.map(data => ({ data })).getOr({}),
@@ -14679,7 +17390,7 @@
       })
     ]);
 
-    const factory$e = (detail, components, _spec, _externals) => ({
+    const factory$g = (detail, components, _spec, _externals) => ({
       uid: detail.uid,
       dom: detail.dom,
       components,
@@ -14723,7 +17434,7 @@
       name: 'FormCoupledInputs',
       configFields: schema$h(),
       partFields: parts$c(),
-      factory: factory$e,
+      factory: factory$g,
       apis: {
         getField1: (apis, component) => apis.getField1(component),
         getField2: (apis, component) => apis.getField2(component),
@@ -14811,6 +17522,8 @@
           'tox-lock-icon__' + iconName
         ]
       }, providersBackstage.icons);
+      const label = spec.label.getOr('Constrain proportions');
+      const translatedLabel = providersBackstage.translate(label);
       const pLock = FormCoupledInputs.parts.lock({
         dom: {
           tag: 'button',
@@ -14820,7 +17533,10 @@
             'tox-button--naked',
             'tox-button--icon'
           ],
-          attributes: { title: providersBackstage.translate(spec.label.getOr('Constrain proportions')) }
+          attributes: {
+            'aria-label': translatedLabel,
+            'data-mce-name': label
+          }
         },
         components: [
           makeIcon('lock'),
@@ -14829,7 +17545,8 @@
         buttonBehaviours: derive$1([
           Disabling.config({ disabled: () => !spec.enabled || providersBackstage.isDisabled() }),
           receivingConfig(),
-          Tabstopping.config({})
+          Tabstopping.config({}),
+          Tooltipping.config(providersBackstage.tooltips.getConfig({ tooltipText: translatedLabel }))
         ])
       });
       const formGroup = components => ({
@@ -14862,7 +17579,7 @@
           tag: 'label',
           classes: ['tox-label']
         },
-        components: [text$1(providersBackstage.translate(label))]
+        components: [text$2(providersBackstage.translate(label))]
       });
       const widthField = FormCoupledInputs.parts.field1(formGroup([
         FormField.parts.label(getLabel('Width')),
@@ -14935,7 +17652,7 @@
           tag: 'label',
           classes: ['tox-label']
         },
-        components: [text$1(providerBackstage.translate(spec.label))]
+        components: [text$2(providerBackstage.translate(spec.label))]
       });
       const spectrum = Slider.parts.spectrum({
         dom: {
@@ -15026,7 +17743,7 @@
     };
 
     const renderTextField = (spec, providersBackstage) => {
-      const pLabel = spec.label.map(label => renderLabel$2(label, providersBackstage));
+      const pLabel = spec.label.map(label => renderLabel$3(label, providersBackstage));
       const baseInputBehaviours = [
         Disabling.config({ disabled: () => spec.disabled || providersBackstage.isDisabled() }),
         receivingConfig(),
@@ -15081,6 +17798,13 @@
         selectOnFocus: false,
         factory: Input
       });
+      const pTextField = spec.multiline ? {
+        dom: {
+          tag: 'div',
+          classes: ['tox-textarea-wrap']
+        },
+        components: [pField]
+      } : pField;
       const extraClasses = spec.flex ? ['tox-form__group--stretched'] : [];
       const extraClasses2 = extraClasses.concat(spec.maximized ? ['tox-form-group--maximize'] : []);
       const extraBehaviours = [
@@ -15095,7 +17819,7 @@
         }),
         receivingConfig()
       ];
-      return renderFormFieldWith(pLabel, pField, extraClasses2, extraBehaviours);
+      return renderFormFieldWith(pLabel, pTextField, extraClasses2, extraBehaviours);
     };
     const renderInput = (spec, providersBackstage, initialData) => renderTextField({
       name: spec.name,
@@ -15124,7 +17848,627 @@
       data: initialData
     }, providersBackstage);
 
-    const events$6 = (streamConfig, streamState) => {
+    const getAnimationRoot = (component, slideConfig) => slideConfig.getAnimationRoot.fold(() => component.element, get => get(component));
+
+    const getDimensionProperty = slideConfig => slideConfig.dimension.property;
+    const getDimension = (slideConfig, elem) => slideConfig.dimension.getDimension(elem);
+    const disableTransitions = (component, slideConfig) => {
+      const root = getAnimationRoot(component, slideConfig);
+      remove$1(root, [
+        slideConfig.shrinkingClass,
+        slideConfig.growingClass
+      ]);
+    };
+    const setShrunk = (component, slideConfig) => {
+      remove$2(component.element, slideConfig.openClass);
+      add$2(component.element, slideConfig.closedClass);
+      set$8(component.element, getDimensionProperty(slideConfig), '0px');
+      reflow(component.element);
+    };
+    const setGrown = (component, slideConfig) => {
+      remove$2(component.element, slideConfig.closedClass);
+      add$2(component.element, slideConfig.openClass);
+      remove$6(component.element, getDimensionProperty(slideConfig));
+    };
+    const doImmediateShrink = (component, slideConfig, slideState, _calculatedSize) => {
+      slideState.setCollapsed();
+      set$8(component.element, getDimensionProperty(slideConfig), getDimension(slideConfig, component.element));
+      disableTransitions(component, slideConfig);
+      setShrunk(component, slideConfig);
+      slideConfig.onStartShrink(component);
+      slideConfig.onShrunk(component);
+    };
+    const doStartShrink = (component, slideConfig, slideState, calculatedSize) => {
+      const size = calculatedSize.getOrThunk(() => getDimension(slideConfig, component.element));
+      slideState.setCollapsed();
+      set$8(component.element, getDimensionProperty(slideConfig), size);
+      reflow(component.element);
+      const root = getAnimationRoot(component, slideConfig);
+      remove$2(root, slideConfig.growingClass);
+      add$2(root, slideConfig.shrinkingClass);
+      setShrunk(component, slideConfig);
+      slideConfig.onStartShrink(component);
+    };
+    const doStartSmartShrink = (component, slideConfig, slideState) => {
+      const size = getDimension(slideConfig, component.element);
+      const shrinker = size === '0px' ? doImmediateShrink : doStartShrink;
+      shrinker(component, slideConfig, slideState, Optional.some(size));
+    };
+    const doStartGrow = (component, slideConfig, slideState) => {
+      const root = getAnimationRoot(component, slideConfig);
+      const wasShrinking = has(root, slideConfig.shrinkingClass);
+      const beforeSize = getDimension(slideConfig, component.element);
+      setGrown(component, slideConfig);
+      const fullSize = getDimension(slideConfig, component.element);
+      const startPartialGrow = () => {
+        set$8(component.element, getDimensionProperty(slideConfig), beforeSize);
+        reflow(component.element);
+      };
+      const startCompleteGrow = () => {
+        setShrunk(component, slideConfig);
+      };
+      const setStartSize = wasShrinking ? startPartialGrow : startCompleteGrow;
+      setStartSize();
+      remove$2(root, slideConfig.shrinkingClass);
+      add$2(root, slideConfig.growingClass);
+      setGrown(component, slideConfig);
+      set$8(component.element, getDimensionProperty(slideConfig), fullSize);
+      slideState.setExpanded();
+      slideConfig.onStartGrow(component);
+    };
+    const refresh$4 = (component, slideConfig, slideState) => {
+      if (slideState.isExpanded()) {
+        remove$6(component.element, getDimensionProperty(slideConfig));
+        const fullSize = getDimension(slideConfig, component.element);
+        set$8(component.element, getDimensionProperty(slideConfig), fullSize);
+      }
+    };
+    const grow = (component, slideConfig, slideState) => {
+      if (!slideState.isExpanded()) {
+        doStartGrow(component, slideConfig, slideState);
+      }
+    };
+    const shrink = (component, slideConfig, slideState) => {
+      if (slideState.isExpanded()) {
+        doStartSmartShrink(component, slideConfig, slideState);
+      }
+    };
+    const immediateShrink = (component, slideConfig, slideState) => {
+      if (slideState.isExpanded()) {
+        doImmediateShrink(component, slideConfig, slideState);
+      }
+    };
+    const hasGrown = (component, slideConfig, slideState) => slideState.isExpanded();
+    const hasShrunk = (component, slideConfig, slideState) => slideState.isCollapsed();
+    const isGrowing = (component, slideConfig, _slideState) => {
+      const root = getAnimationRoot(component, slideConfig);
+      return has(root, slideConfig.growingClass) === true;
+    };
+    const isShrinking = (component, slideConfig, _slideState) => {
+      const root = getAnimationRoot(component, slideConfig);
+      return has(root, slideConfig.shrinkingClass) === true;
+    };
+    const isTransitioning = (component, slideConfig, slideState) => isGrowing(component, slideConfig) || isShrinking(component, slideConfig);
+    const toggleGrow = (component, slideConfig, slideState) => {
+      const f = slideState.isExpanded() ? doStartSmartShrink : doStartGrow;
+      f(component, slideConfig, slideState);
+    };
+    const immediateGrow = (component, slideConfig, slideState) => {
+      if (!slideState.isExpanded()) {
+        setGrown(component, slideConfig);
+        set$8(component.element, getDimensionProperty(slideConfig), getDimension(slideConfig, component.element));
+        disableTransitions(component, slideConfig);
+        slideState.setExpanded();
+        slideConfig.onStartGrow(component);
+        slideConfig.onGrown(component);
+      }
+    };
+
+    var SlidingApis = /*#__PURE__*/Object.freeze({
+        __proto__: null,
+        refresh: refresh$4,
+        grow: grow,
+        shrink: shrink,
+        immediateShrink: immediateShrink,
+        hasGrown: hasGrown,
+        hasShrunk: hasShrunk,
+        isGrowing: isGrowing,
+        isShrinking: isShrinking,
+        isTransitioning: isTransitioning,
+        toggleGrow: toggleGrow,
+        disableTransitions: disableTransitions,
+        immediateGrow: immediateGrow
+    });
+
+    const exhibit = (base, slideConfig, _slideState) => {
+      const expanded = slideConfig.expanded;
+      return expanded ? nu$7({
+        classes: [slideConfig.openClass],
+        styles: {}
+      }) : nu$7({
+        classes: [slideConfig.closedClass],
+        styles: wrap$1(slideConfig.dimension.property, '0px')
+      });
+    };
+    const events$6 = (slideConfig, slideState) => derive$2([runOnSource(transitionend(), (component, simulatedEvent) => {
+        const raw = simulatedEvent.event.raw;
+        if (raw.propertyName === slideConfig.dimension.property) {
+          disableTransitions(component, slideConfig);
+          if (slideState.isExpanded()) {
+            remove$6(component.element, slideConfig.dimension.property);
+          }
+          const notify = slideState.isExpanded() ? slideConfig.onGrown : slideConfig.onShrunk;
+          notify(component);
+        }
+      })]);
+
+    var ActiveSliding = /*#__PURE__*/Object.freeze({
+        __proto__: null,
+        exhibit: exhibit,
+        events: events$6
+    });
+
+    var SlidingSchema = [
+      required$1('closedClass'),
+      required$1('openClass'),
+      required$1('shrinkingClass'),
+      required$1('growingClass'),
+      option$3('getAnimationRoot'),
+      onHandler('onShrunk'),
+      onHandler('onStartShrink'),
+      onHandler('onGrown'),
+      onHandler('onStartGrow'),
+      defaulted('expanded', false),
+      requiredOf('dimension', choose$1('property', {
+        width: [
+          output$1('property', 'width'),
+          output$1('getDimension', elem => get$c(elem) + 'px')
+        ],
+        height: [
+          output$1('property', 'height'),
+          output$1('getDimension', elem => get$d(elem) + 'px')
+        ]
+      }))
+    ];
+
+    const init$9 = spec => {
+      const state = Cell(spec.expanded);
+      const readState = () => 'expanded: ' + state.get();
+      return nu$8({
+        isExpanded: () => state.get() === true,
+        isCollapsed: () => state.get() === false,
+        setCollapsed: curry(state.set, false),
+        setExpanded: curry(state.set, true),
+        readState
+      });
+    };
+
+    var SlidingState = /*#__PURE__*/Object.freeze({
+        __proto__: null,
+        init: init$9
+    });
+
+    const Sliding = create$4({
+      fields: SlidingSchema,
+      name: 'sliding',
+      active: ActiveSliding,
+      apis: SlidingApis,
+      state: SlidingState
+    });
+
+    const getMenuButtonApi = component => ({
+      isEnabled: () => !Disabling.isDisabled(component),
+      setEnabled: state => Disabling.set(component, !state),
+      setActive: state => {
+        const elm = component.element;
+        if (state) {
+          add$2(elm, 'tox-tbtn--enabled');
+          set$9(elm, 'aria-pressed', true);
+        } else {
+          remove$2(elm, 'tox-tbtn--enabled');
+          remove$7(elm, 'aria-pressed');
+        }
+      },
+      isActive: () => has(component.element, 'tox-tbtn--enabled'),
+      setText: text => {
+        emitWith(component, updateMenuText, { text });
+      },
+      setIcon: icon => emitWith(component, updateMenuIcon, { icon })
+    });
+    const renderMenuButton = (spec, prefix, backstage, role, tabstopping = true, btnName) => {
+      return renderCommonDropdown({
+        text: spec.text,
+        icon: spec.icon,
+        tooltip: spec.tooltip,
+        ariaLabel: spec.tooltip,
+        searchable: spec.search.isSome(),
+        role,
+        fetch: (dropdownComp, callback) => {
+          const fetchContext = { pattern: spec.search.isSome() ? getSearchPattern(dropdownComp) : '' };
+          spec.fetch(items => {
+            callback(build(items, ItemResponse$1.CLOSE_ON_EXECUTE, backstage, {
+              isHorizontalMenu: false,
+              search: spec.search
+            }));
+          }, fetchContext, getMenuButtonApi(dropdownComp));
+        },
+        onSetup: spec.onSetup,
+        getApi: getMenuButtonApi,
+        columns: 1,
+        presets: 'normal',
+        classes: [],
+        dropdownBehaviours: [...tabstopping ? [Tabstopping.config({})] : []]
+      }, prefix, backstage.shared, btnName);
+    };
+    const getFetch = (items, getButton, backstage) => {
+      const getMenuItemAction = item => api => {
+        const newValue = !api.isActive();
+        api.setActive(newValue);
+        item.storage.set(newValue);
+        backstage.shared.getSink().each(sink => {
+          getButton().getOpt(sink).each(orig => {
+            focus$3(orig.element);
+            emitWith(orig, formActionEvent, {
+              name: item.name,
+              value: item.storage.get()
+            });
+          });
+        });
+      };
+      const getMenuItemSetup = item => api => {
+        api.setActive(item.storage.get());
+      };
+      return success => {
+        success(map$2(items, item => {
+          const text = item.text.fold(() => ({}), text => ({ text }));
+          return {
+            type: item.type,
+            active: false,
+            ...text,
+            onAction: getMenuItemAction(item),
+            onSetup: getMenuItemSetup(item)
+          };
+        }));
+      };
+    };
+
+    const renderLabel = text => ({
+      dom: {
+        tag: 'span',
+        classes: ['tox-tree__label'],
+        attributes: { 'aria-label': text }
+      },
+      components: [text$2(text)]
+    });
+    const leafLabelEventsId = generate$6('leaf-label-event-id');
+    const renderLeafLabel = ({leaf, onLeafAction, visible, treeId, selectedId, backstage}) => {
+      const internalMenuButton = leaf.menu.map(btn => renderMenuButton(btn, 'tox-mbtn', backstage, Optional.none(), visible));
+      const components = [renderLabel(leaf.title)];
+      internalMenuButton.each(btn => components.push(btn));
+      return Button.sketch({
+        dom: {
+          tag: 'div',
+          classes: [
+            'tox-tree--leaf__label',
+            'tox-trbtn'
+          ].concat(visible ? ['tox-tree--leaf__label--visible'] : [])
+        },
+        components,
+        role: 'treeitem',
+        action: button => {
+          onLeafAction(leaf.id);
+          button.getSystem().broadcastOn([`update-active-item-${ treeId }`], { value: leaf.id });
+        },
+        eventOrder: {
+          [keydown()]: [
+            leafLabelEventsId,
+            'keying'
+          ]
+        },
+        buttonBehaviours: derive$1([
+          ...visible ? [Tabstopping.config({})] : [],
+          Toggling.config({
+            toggleClass: 'tox-trbtn--enabled',
+            toggleOnExecute: false,
+            aria: { mode: 'selected' }
+          }),
+          Receiving.config({
+            channels: {
+              [`update-active-item-${ treeId }`]: {
+                onReceive: (comp, message) => {
+                  (message.value === leaf.id ? Toggling.on : Toggling.off)(comp);
+                }
+              }
+            }
+          }),
+          config(leafLabelEventsId, [
+            runOnAttached((comp, _se) => {
+              selectedId.each(id => {
+                const toggle = id === leaf.id ? Toggling.on : Toggling.off;
+                toggle(comp);
+              });
+            }),
+            run$1(keydown(), (comp, se) => {
+              const isLeftArrowKey = se.event.raw.code === 'ArrowLeft';
+              const isRightArrowKey = se.event.raw.code === 'ArrowRight';
+              if (isLeftArrowKey) {
+                ancestor(comp.element, '.tox-tree--directory').each(dirElement => {
+                  comp.getSystem().getByDom(dirElement).each(dirComp => {
+                    child(dirElement, '.tox-tree--directory__label').each(dirLabelElement => {
+                      dirComp.getSystem().getByDom(dirLabelElement).each(Focusing.focus);
+                    });
+                  });
+                });
+                se.stop();
+              } else if (isRightArrowKey) {
+                se.stop();
+              }
+            })
+          ])
+        ])
+      });
+    };
+    const renderIcon = (iconName, iconsProvider, behaviours) => render$3(iconName, {
+      tag: 'span',
+      classes: [
+        'tox-tree__icon-wrap',
+        'tox-icon'
+      ],
+      behaviours
+    }, iconsProvider);
+    const renderIconFromPack = (iconName, iconsProvider) => renderIcon(iconName, iconsProvider, []);
+    const directoryLabelEventsId = generate$6('directory-label-event-id');
+    const renderDirectoryLabel = ({directory, visible, noChildren, backstage}) => {
+      const internalMenuButton = directory.menu.map(btn => renderMenuButton(btn, 'tox-mbtn', backstage, Optional.none()));
+      const components = [
+        {
+          dom: {
+            tag: 'div',
+            classes: ['tox-chevron']
+          },
+          components: [renderIconFromPack('chevron-right', backstage.shared.providers.icons)]
+        },
+        renderLabel(directory.title)
+      ];
+      internalMenuButton.each(btn => {
+        components.push(btn);
+      });
+      const toggleExpandChildren = button => {
+        ancestor(button.element, '.tox-tree--directory').each(directoryEle => {
+          button.getSystem().getByDom(directoryEle).each(directoryComp => {
+            const willExpand = !Toggling.isOn(directoryComp);
+            Toggling.toggle(directoryComp);
+            emitWith(button, 'expand-tree-node', {
+              expanded: willExpand,
+              node: directory.id
+            });
+          });
+        });
+      };
+      return Button.sketch({
+        dom: {
+          tag: 'div',
+          classes: [
+            'tox-tree--directory__label',
+            'tox-trbtn'
+          ].concat(visible ? ['tox-tree--directory__label--visible'] : [])
+        },
+        components,
+        action: toggleExpandChildren,
+        eventOrder: {
+          [keydown()]: [
+            directoryLabelEventsId,
+            'keying'
+          ]
+        },
+        buttonBehaviours: derive$1([
+          ...visible ? [Tabstopping.config({})] : [],
+          config(directoryLabelEventsId, [run$1(keydown(), (comp, se) => {
+              const isRightArrowKey = se.event.raw.code === 'ArrowRight';
+              const isLeftArrowKey = se.event.raw.code === 'ArrowLeft';
+              if (isRightArrowKey && noChildren) {
+                se.stop();
+              }
+              if (isRightArrowKey || isLeftArrowKey) {
+                ancestor(comp.element, '.tox-tree--directory').each(directoryEle => {
+                  comp.getSystem().getByDom(directoryEle).each(directoryComp => {
+                    if (!Toggling.isOn(directoryComp) && isRightArrowKey || Toggling.isOn(directoryComp) && isLeftArrowKey) {
+                      toggleExpandChildren(comp);
+                      se.stop();
+                    } else if (isLeftArrowKey && !Toggling.isOn(directoryComp)) {
+                      ancestor(directoryComp.element, '.tox-tree--directory').each(parentDirElement => {
+                        child(parentDirElement, '.tox-tree--directory__label').each(parentDirLabelElement => {
+                          directoryComp.getSystem().getByDom(parentDirLabelElement).each(Focusing.focus);
+                        });
+                      });
+                      se.stop();
+                    }
+                  });
+                });
+              }
+            })])
+        ])
+      });
+    };
+    const renderDirectoryChildren = ({children, onLeafAction, visible, treeId, expandedIds, selectedId, backstage}) => {
+      return {
+        dom: {
+          tag: 'div',
+          classes: ['tox-tree--directory__children']
+        },
+        components: children.map(item => {
+          return item.type === 'leaf' ? renderLeafLabel({
+            leaf: item,
+            selectedId,
+            onLeafAction,
+            visible,
+            treeId,
+            backstage
+          }) : renderDirectory({
+            directory: item,
+            expandedIds,
+            selectedId,
+            onLeafAction,
+            labelTabstopping: visible,
+            treeId,
+            backstage
+          });
+        }),
+        behaviours: derive$1([
+          Sliding.config({
+            dimension: { property: 'height' },
+            closedClass: 'tox-tree--directory__children--closed',
+            openClass: 'tox-tree--directory__children--open',
+            growingClass: 'tox-tree--directory__children--growing',
+            shrinkingClass: 'tox-tree--directory__children--shrinking',
+            expanded: visible
+          }),
+          Replacing.config({})
+        ])
+      };
+    };
+    const directoryEventsId = generate$6('directory-event-id');
+    const renderDirectory = ({directory, onLeafAction, labelTabstopping, treeId, backstage, expandedIds, selectedId}) => {
+      const {children} = directory;
+      const expandedIdsCell = Cell(expandedIds);
+      const computedChildrenComponents = visible => children.map(item => {
+        return item.type === 'leaf' ? renderLeafLabel({
+          leaf: item,
+          selectedId,
+          onLeafAction,
+          visible,
+          treeId,
+          backstage
+        }) : renderDirectory({
+          directory: item,
+          expandedIds: expandedIdsCell.get(),
+          selectedId,
+          onLeafAction,
+          labelTabstopping: visible,
+          treeId,
+          backstage
+        });
+      });
+      const childrenVisible = expandedIds.includes(directory.id);
+      return {
+        dom: {
+          tag: 'div',
+          classes: ['tox-tree--directory'],
+          attributes: { role: 'treeitem' }
+        },
+        components: [
+          renderDirectoryLabel({
+            directory,
+            visible: labelTabstopping,
+            noChildren: directory.children.length === 0,
+            backstage
+          }),
+          renderDirectoryChildren({
+            children,
+            expandedIds,
+            selectedId,
+            onLeafAction,
+            visible: childrenVisible,
+            treeId,
+            backstage
+          })
+        ],
+        behaviours: derive$1([
+          config(directoryEventsId, [
+            runOnAttached((comp, _se) => {
+              Toggling.set(comp, childrenVisible);
+            }),
+            run$1('expand-tree-node', (_cmp, se) => {
+              const {expanded, node} = se.event;
+              expandedIdsCell.set(expanded ? [
+                ...expandedIdsCell.get(),
+                node
+              ] : expandedIdsCell.get().filter(id => id !== node));
+            })
+          ]),
+          Toggling.config({
+            ...directory.children.length > 0 ? { aria: { mode: 'expanded' } } : {},
+            toggleClass: 'tox-tree--directory--expanded',
+            onToggled: (comp, childrenVisible) => {
+              const childrenComp = comp.components()[1];
+              const newChildren = computedChildrenComponents(childrenVisible);
+              if (childrenVisible) {
+                Sliding.grow(childrenComp);
+              } else {
+                Sliding.shrink(childrenComp);
+              }
+              Replacing.set(childrenComp, newChildren);
+            }
+          })
+        ])
+      };
+    };
+    const treeEventsId = generate$6('tree-event-id');
+    const renderTree = (spec, backstage) => {
+      const onLeafAction = spec.onLeafAction.getOr(noop);
+      const onToggleExpand = spec.onToggleExpand.getOr(noop);
+      const defaultExpandedIds = spec.defaultExpandedIds;
+      const expandedIds = Cell(defaultExpandedIds);
+      const selectedIdCell = Cell(spec.defaultSelectedId);
+      const treeId = generate$6('tree-id');
+      const children = (selectedId, expandedIds) => spec.items.map(item => {
+        return item.type === 'leaf' ? renderLeafLabel({
+          leaf: item,
+          selectedId,
+          onLeafAction,
+          visible: true,
+          treeId,
+          backstage
+        }) : renderDirectory({
+          directory: item,
+          selectedId,
+          onLeafAction,
+          expandedIds,
+          labelTabstopping: true,
+          treeId,
+          backstage
+        });
+      });
+      return {
+        dom: {
+          tag: 'div',
+          classes: ['tox-tree'],
+          attributes: { role: 'tree' }
+        },
+        components: children(selectedIdCell.get(), expandedIds.get()),
+        behaviours: derive$1([
+          Keying.config({
+            mode: 'flow',
+            selector: '.tox-tree--leaf__label--visible, .tox-tree--directory__label--visible',
+            cycles: false
+          }),
+          config(treeEventsId, [run$1('expand-tree-node', (_cmp, se) => {
+              const {expanded, node} = se.event;
+              expandedIds.set(expanded ? [
+                ...expandedIds.get(),
+                node
+              ] : expandedIds.get().filter(id => id !== node));
+              onToggleExpand(expandedIds.get(), {
+                expanded,
+                node
+              });
+            })]),
+          Receiving.config({
+            channels: {
+              [`update-active-item-${ treeId }`]: {
+                onReceive: (comp, message) => {
+                  selectedIdCell.set(Optional.some(message.value));
+                  Replacing.set(comp, children(Optional.some(message.value), expandedIds.get()));
+                }
+              }
+            }
+          }),
+          Replacing.config({})
+        ])
+      };
+    };
+
+    const events$5 = (streamConfig, streamState) => {
       const streams = streamConfig.stream.streams;
       const processor = streams.setup(streamConfig, streamState);
       return derive$2([
@@ -15135,50 +18479,8 @@
 
     var ActiveStreaming = /*#__PURE__*/Object.freeze({
         __proto__: null,
-        events: events$6
+        events: events$5
     });
-
-    const first = (fn, rate) => {
-      let timer = null;
-      const cancel = () => {
-        if (!isNull(timer)) {
-          clearTimeout(timer);
-          timer = null;
-        }
-      };
-      const throttle = (...args) => {
-        if (isNull(timer)) {
-          timer = setTimeout(() => {
-            timer = null;
-            fn.apply(null, args);
-          }, rate);
-        }
-      };
-      return {
-        cancel,
-        throttle
-      };
-    };
-    const last = (fn, rate) => {
-      let timer = null;
-      const cancel = () => {
-        if (!isNull(timer)) {
-          clearTimeout(timer);
-          timer = null;
-        }
-      };
-      const throttle = (...args) => {
-        cancel();
-        timer = setTimeout(() => {
-          timer = null;
-          fn.apply(null, args);
-        }, rate);
-      };
-      return {
-        cancel,
-        throttle
-      };
-    };
 
     const throttle = _config => {
       const state = Cell(null);
@@ -15198,12 +18500,12 @@
         cancel
       });
     };
-    const init$9 = spec => spec.stream.streams.state(spec);
+    const init$8 = spec => spec.stream.streams.state(spec);
 
     var StreamingState = /*#__PURE__*/Object.freeze({
         __proto__: null,
         throttle: throttle,
-        init: init$9
+        init: init$8
     });
 
     const setup$c = (streamInfo, streamState) => {
@@ -15233,7 +18535,7 @@
       onStrictHandler('onStream')
     ];
 
-    const Streaming = create$3({
+    const Streaming = create$4({
       fields: StreamingSchema,
       name: 'streaming',
       active: ActiveStreaming,
@@ -15292,7 +18594,7 @@
           const onOpenSync = sandbox => {
             Composing.getCurrent(sandbox).each(highlighter);
           };
-          open(detail, mapFetch(comp), comp, sandbox, externals, onOpenSync, HighlightOnOpen.HighlightFirst).get(noop);
+          open(detail, mapFetch(comp), comp, sandbox, externals, onOpenSync, HighlightOnOpen.HighlightMenuAndItem).get(noop);
         }
       };
       const focusBehaviours$1 = focusBehaviours(detail);
@@ -15303,6 +18605,8 @@
         repState.update(map$2(items, item => item.data));
         return data;
       });
+      const getActiveMenu = sandboxComp => Composing.getCurrent(sandboxComp);
+      const typeaheadCustomEvents = 'typeaheadevents';
       const behaviours = [
         Focusing.config({}),
         Representing.config({
@@ -15331,27 +18635,27 @@
             const focusInInput = Focusing.isFocused(component);
             if (focusInInput) {
               if (get$6(component.element).length >= detail.minChars) {
-                const previousValue = Composing.getCurrent(sandbox).bind(menu => Highlighting.getHighlighted(menu).map(Representing.getValue));
+                const previousValue = getActiveMenu(sandbox).bind(activeMenu => Highlighting.getHighlighted(activeMenu).map(Representing.getValue));
                 detail.previewing.set(true);
                 const onOpenSync = _sandbox => {
-                  Composing.getCurrent(sandbox).each(menu => {
+                  getActiveMenu(sandbox).each(activeMenu => {
                     previousValue.fold(() => {
                       if (detail.model.selectsOver) {
-                        Highlighting.highlightFirst(menu);
+                        Highlighting.highlightFirst(activeMenu);
                       }
                     }, pv => {
-                      Highlighting.highlightBy(menu, item => {
+                      Highlighting.highlightBy(activeMenu, item => {
                         const itemData = Representing.getValue(item);
                         return itemData.value === pv.value;
                       });
-                      Highlighting.getHighlighted(menu).orThunk(() => {
-                        Highlighting.highlightFirst(menu);
+                      Highlighting.getHighlighted(activeMenu).orThunk(() => {
+                        Highlighting.highlightFirst(activeMenu);
                         return Optional.none();
                       });
                     });
                   });
                 };
-                open(detail, mapFetch(component), component, sandbox, externals, onOpenSync, HighlightOnOpen.HighlightFirst).get(noop);
+                open(detail, mapFetch(component), component, sandbox, externals, onOpenSync, HighlightOnOpen.HighlightJustMenu).get(noop);
               }
             }
           },
@@ -15379,7 +18683,7 @@
             const sandbox = Coupling.getCoupled(comp, 'sandbox');
             const sandboxIsOpen = Sandboxing.isOpen(sandbox);
             if (sandboxIsOpen && !detail.previewing.get()) {
-              return Composing.getCurrent(sandbox).bind(menu => Highlighting.getHighlighted(menu)).map(item => {
+              return getActiveMenu(sandbox).bind(activeMenu => Highlighting.getHighlighted(activeMenu)).map(item => {
                 emitWith(comp, itemExecute(), { item });
                 return true;
               });
@@ -15403,15 +18707,24 @@
             sandbox: hotspot => {
               return makeSandbox$1(detail, hotspot, {
                 onOpen: () => Toggling.on(hotspot),
-                onClose: () => Toggling.off(hotspot)
+                onClose: () => {
+                  detail.lazyTypeaheadComp.get().each(input => remove$7(input.element, 'aria-activedescendant'));
+                  Toggling.off(hotspot);
+                }
               });
             }
           }
         }),
-        config('typeaheadevents', [
+        config(typeaheadCustomEvents, [
+          runOnAttached(typeaheadComp => {
+            detail.lazyTypeaheadComp.set(Optional.some(typeaheadComp));
+          }),
+          runOnDetached(_typeaheadComp => {
+            detail.lazyTypeaheadComp.set(Optional.none());
+          }),
           runOnExecute$1(comp => {
             const onOpenSync = noop;
-            togglePopup(detail, mapFetch(comp), comp, externals, onOpenSync, HighlightOnOpen.HighlightFirst).get(noop);
+            togglePopup(detail, mapFetch(comp), comp, externals, onOpenSync, HighlightOnOpen.HighlightMenuAndItem).get(noop);
           }),
           run$1(itemExecute(), (comp, se) => {
             const sandbox = Coupling.getCoupled(comp, 'sandbox');
@@ -15428,6 +18741,14 @@
             }
           })] : []))
       ];
+      const eventOrder = {
+        [detachedFromDom()]: [
+          Representing.name(),
+          Streaming.name(),
+          typeaheadCustomEvents
+        ],
+        ...detail.eventOrder
+      };
       return {
         uid: detail.uid,
         dom: dom(deepMerge(detail, {
@@ -15441,7 +18762,7 @@
           ...focusBehaviours$1,
           ...augment(detail.typeaheadBehaviours, behaviours)
         },
-        eventOrder: detail.eventOrder
+        eventOrder
       };
     };
 
@@ -15479,37 +18800,48 @@
         Toggling,
         Coupling
       ]),
+      customField('lazyTypeaheadComp', () => Cell(Optional.none)),
       customField('previewing', () => Cell(true))
-    ].concat(schema$k()).concat(sandboxFields()));
+    ].concat(schema$l()).concat(sandboxFields()));
     const parts$b = constant$1([external({
         schema: [tieredMenuMarkers()],
         name: 'menu',
         overrides: detail => {
           return {
             fakeFocus: true,
-            onHighlight: (menu, item) => {
+            onHighlightItem: (_tmenu, menu, item) => {
               if (!detail.previewing.get()) {
-                menu.getSystem().getByUid(detail.uid).each(input => {
+                detail.lazyTypeaheadComp.get().each(input => {
                   if (detail.model.populateFromBrowse) {
                     setValueFromItem(detail.model, input, item);
                   }
+                  getOpt(item.element, 'id').each(id => set$9(input.element, 'aria-activedescendant', id));
                 });
               } else {
-                menu.getSystem().getByUid(detail.uid).each(input => {
-                  attemptSelectOver(detail.model, input, item).fold(() => Highlighting.dehighlight(menu, item), fn => fn());
+                detail.lazyTypeaheadComp.get().each(input => {
+                  attemptSelectOver(detail.model, input, item).fold(() => {
+                    if (detail.model.selectsOver) {
+                      Highlighting.dehighlight(menu, item);
+                      detail.previewing.set(true);
+                    } else {
+                      detail.previewing.set(false);
+                    }
+                  }, selectOverTextInInput => {
+                    selectOverTextInInput();
+                    detail.previewing.set(false);
+                  });
                 });
               }
-              detail.previewing.set(false);
             },
-            onExecute: (menu, item) => {
-              return menu.getSystem().getByUid(detail.uid).toOptional().map(typeahead => {
+            onExecute: (_menu, item) => {
+              return detail.lazyTypeaheadComp.get().map(typeahead => {
                 emitWith(typeahead, itemExecute(), { item });
                 return true;
               });
             },
             onHover: (menu, item) => {
               detail.previewing.set(false);
-              menu.getSystem().getByUid(detail.uid).each(input => {
+              detail.lazyTypeaheadComp.get().each(input => {
                 if (detail.model.populateFromBrowse) {
                   setValueFromItem(detail.model, input, item);
                 }
@@ -15606,77 +18938,14 @@
       fromPromise
     };
 
-    const getMenuButtonApi = component => ({
-      isEnabled: () => !Disabling.isDisabled(component),
-      setEnabled: state => Disabling.set(component, !state),
-      setActive: state => {
-        const elm = component.element;
-        if (state) {
-          add$2(elm, 'tox-tbtn--enabled');
-          set$9(elm, 'aria-pressed', true);
-        } else {
-          remove$2(elm, 'tox-tbtn--enabled');
-          remove$7(elm, 'aria-pressed');
-        }
-      },
-      isActive: () => has(component.element, 'tox-tbtn--enabled')
-    });
-    const renderMenuButton = (spec, prefix, backstage, role) => renderCommonDropdown({
-      text: spec.text,
-      icon: spec.icon,
-      tooltip: spec.tooltip,
-      role,
-      fetch: (_comp, callback) => {
-        spec.fetch(items => {
-          callback(build(items, ItemResponse$1.CLOSE_ON_EXECUTE, backstage, false));
-        });
-      },
-      onSetup: spec.onSetup,
-      getApi: getMenuButtonApi,
-      columns: 1,
-      presets: 'normal',
-      classes: [],
-      dropdownBehaviours: [Tabstopping.config({})]
-    }, prefix, backstage.shared);
-    const getFetch = (items, getButton, backstage) => {
-      const getMenuItemAction = item => api => {
-        const newValue = !api.isActive();
-        api.setActive(newValue);
-        item.storage.set(newValue);
-        backstage.shared.getSink().each(sink => {
-          getButton().getOpt(sink).each(orig => {
-            focus$3(orig.element);
-            emitWith(orig, formActionEvent, {
-              name: item.name,
-              value: item.storage.get()
-            });
-          });
-        });
-      };
-      const getMenuItemSetup = item => api => {
-        api.setActive(item.storage.get());
-      };
-      return success => {
-        success(map$2(items, item => {
-          const text = item.text.fold(() => ({}), text => ({ text }));
-          return {
-            type: item.type,
-            active: false,
-            ...text,
-            onAction: getMenuItemAction(item),
-            onSetup: getMenuItemSetup(item)
-          };
-        }));
-      };
-    };
-
-    const renderCommonSpec = (spec, actionOpt, extraBehaviours = [], dom, components, providersBackstage) => {
+    const renderCommonSpec = (spec, actionOpt, extraBehaviours = [], dom, components, tooltip, providersBackstage) => {
       const action = actionOpt.fold(() => ({}), action => ({ action }));
       const common = {
         buttonBehaviours: derive$1([
           DisablingConfigs.button(() => !spec.enabled || providersBackstage.isDisabled()),
           receivingConfig(),
           Tabstopping.config({}),
+          ...tooltip.map(t => Tooltipping.config(providersBackstage.tooltips.getConfig({ tooltipText: providersBackstage.translate(t) }))).toArray(),
           config('button press', [
             preventDefault('click'),
             preventDefault('mousedown')
@@ -15697,19 +18966,19 @@
       const domFinal = deepMerge(common, { dom });
       return deepMerge(domFinal, { components });
     };
-    const renderIconButtonSpec = (spec, action, providersBackstage, extraBehaviours = []) => {
-      const tooltipAttributes = spec.tooltip.map(tooltip => ({
-        'aria-label': providersBackstage.translate(tooltip),
-        'title': providersBackstage.translate(tooltip)
-      })).getOr({});
+    const renderIconButtonSpec = (spec, action, providersBackstage, extraBehaviours = [], btnName) => {
+      const tooltipAttributes = spec.tooltip.map(tooltip => ({ 'aria-label': providersBackstage.translate(tooltip) })).getOr({});
       const dom = {
         tag: 'button',
         classes: ['tox-tbtn'],
-        attributes: tooltipAttributes
+        attributes: {
+          ...tooltipAttributes,
+          'data-mce-name': btnName
+        }
       };
-      const icon = spec.icon.map(iconName => renderIconFromPack(iconName, providersBackstage.icons));
+      const icon = spec.icon.map(iconName => renderIconFromPack$1(iconName, providersBackstage.icons));
       const components = componentRenderPipeline([icon]);
-      return renderCommonSpec(spec, action, extraBehaviours, dom, components, providersBackstage);
+      return renderCommonSpec(spec, action, extraBehaviours, dom, components, spec.tooltip, providersBackstage);
     };
     const calculateClassesFromButtonType = buttonType => {
       switch (buttonType) {
@@ -15727,8 +18996,8 @@
     };
     const renderButtonSpec = (spec, action, providersBackstage, extraBehaviours = [], extraClasses = []) => {
       const translatedText = providersBackstage.translate(spec.text);
-      const icon = spec.icon.map(iconName => renderIconFromPack(iconName, providersBackstage.icons));
-      const components = [icon.getOrThunk(() => text$1(translatedText))];
+      const icon = spec.icon.map(iconName => renderIconFromPack$1(iconName, providersBackstage.icons));
+      const components = [icon.getOrThunk(() => text$2(translatedText))];
       const buttonType = spec.buttonType.getOr(!spec.primary && !spec.borderless ? 'secondary' : 'primary');
       const baseClasses = calculateClassesFromButtonType(buttonType);
       const classes = [
@@ -15740,11 +19009,15 @@
       const dom = {
         tag: 'button',
         classes,
-        attributes: { title: translatedText }
+        attributes: {
+          'aria-label': translatedText,
+          'data-mce-name': spec.text
+        }
       };
-      return renderCommonSpec(spec, action, extraBehaviours, dom, components, providersBackstage);
+      const optTooltip = spec.icon.map(constant$1(translatedText));
+      return renderCommonSpec(spec, action, extraBehaviours, dom, components, optTooltip, providersBackstage);
     };
-    const renderButton = (spec, action, providersBackstage, extraBehaviours = [], extraClasses = []) => {
+    const renderButton$1 = (spec, action, providersBackstage, extraBehaviours = [], extraClasses = []) => {
       const buttonSpec = renderButtonSpec(spec, Optional.some(action), providersBackstage, extraBehaviours, extraClasses);
       return Button.sketch(buttonSpec);
     };
@@ -15764,19 +19037,72 @@
     };
     const isMenuFooterButtonSpec = (spec, buttonType) => buttonType === 'menu';
     const isNormalFooterButtonSpec = (spec, buttonType) => buttonType === 'custom' || buttonType === 'cancel' || buttonType === 'submit';
+    const isToggleButtonSpec = (spec, buttonType) => buttonType === 'togglebutton';
+    const renderToggleButton = (spec, providers, btnName) => {
+      var _a, _b;
+      const optMemIcon = spec.icon.map(memIcon => renderReplaceableIconFromPack(memIcon, providers.icons)).map(record);
+      const action = comp => {
+        emitWith(comp, formActionEvent, {
+          name: spec.name,
+          value: {
+            setIcon: newIcon => {
+              optMemIcon.map(memIcon => memIcon.getOpt(comp).each(displayIcon => {
+                Replacing.set(displayIcon, [renderReplaceableIconFromPack(newIcon, providers.icons)]);
+              }));
+            }
+          }
+        });
+      };
+      const buttonType = spec.buttonType.getOr(!spec.primary ? 'secondary' : 'primary');
+      const buttonSpec = {
+        ...spec,
+        name: (_a = spec.name) !== null && _a !== void 0 ? _a : '',
+        primary: buttonType === 'primary',
+        tooltip: spec.tooltip,
+        enabled: (_b = spec.enabled) !== null && _b !== void 0 ? _b : false,
+        borderless: false
+      };
+      const tooltipAttributes = buttonSpec.tooltip.or(spec.text).map(tooltip => ({ 'aria-label': providers.translate(tooltip) })).getOr({});
+      const buttonTypeClasses = calculateClassesFromButtonType(buttonType !== null && buttonType !== void 0 ? buttonType : 'secondary');
+      const showIconAndText = spec.icon.isSome() && spec.text.isSome();
+      const dom = {
+        tag: 'button',
+        classes: [
+          ...buttonTypeClasses.concat(spec.icon.isSome() ? ['tox-button--icon'] : []),
+          ...spec.active ? ['tox-button--enabled'] : [],
+          ...showIconAndText ? ['tox-button--icon-and-text'] : []
+        ],
+        attributes: {
+          ...tooltipAttributes,
+          ...isNonNullable(btnName) ? { 'data-mce-name': btnName } : {}
+        }
+      };
+      const extraBehaviours = [];
+      const translatedText = providers.translate(spec.text.getOr(''));
+      const translatedTextComponed = text$2(translatedText);
+      const iconComp = componentRenderPipeline([optMemIcon.map(memIcon => memIcon.asSpec())]);
+      const components = [
+        ...iconComp,
+        ...spec.text.isSome() ? [translatedTextComponed] : []
+      ];
+      const iconButtonSpec = renderCommonSpec(buttonSpec, Optional.some(action), extraBehaviours, dom, components, spec.tooltip, providers);
+      return Button.sketch(iconButtonSpec);
+    };
     const renderFooterButton = (spec, buttonType, backstage) => {
       if (isMenuFooterButtonSpec(spec, buttonType)) {
         const getButton = () => memButton;
         const menuButtonSpec = spec;
         const fixedSpec = {
           ...spec,
+          type: 'menubutton',
+          search: Optional.none(),
           onSetup: api => {
             api.setEnabled(spec.enabled);
             return noop;
           },
           fetch: getFetch(menuButtonSpec.items, getButton, backstage)
         };
-        const memButton = record(renderMenuButton(fixedSpec, 'tox-tbtn', backstage, Optional.none()));
+        const memButton = record(renderMenuButton(fixedSpec, 'tox-tbtn', backstage, Optional.none(), true, spec.text.or(spec.tooltip).getOrUndefined()));
         return memButton.asSpec();
       } else if (isNormalFooterButtonSpec(spec, buttonType)) {
         const action = getAction(spec.name, buttonType);
@@ -15784,9 +19110,12 @@
           ...spec,
           borderless: false
         };
-        return renderButton(buttonSpec, action, backstage.shared.providers, []);
+        return renderButton$1(buttonSpec, action, backstage.shared.providers, []);
+      } else if (isToggleButtonSpec(spec, buttonType)) {
+        return renderToggleButton(spec, backstage.shared.providers, spec.text.or(spec.tooltip).getOrUndefined());
       } else {
         console.error('Unknown footer button type: ', buttonType);
+        throw new Error('Unknown footer button type');
       }
     };
     const renderDialogButton = (spec, providersBackstage) => {
@@ -15794,7 +19123,7 @@
       return renderFormField(Optional.none(), FormField.parts.field({
         factory: Button,
         ...renderButtonSpec(spec, Optional.some(action), providersBackstage, [
-          RepresentingConfigs.memory(''),
+          memory(''),
           ComposingConfigs.self()
         ])
       }));
@@ -15832,14 +19161,17 @@
     const filterByQuery = (term, menuItems) => {
       const lowerCaseTerm = term.toLowerCase();
       return filter$2(menuItems, item => {
+        var _a;
         const text = item.meta !== undefined && item.meta.text !== undefined ? item.meta.text : item.text;
-        return contains$1(text.toLowerCase(), lowerCaseTerm) || contains$1(item.value.toLowerCase(), lowerCaseTerm);
+        const value = (_a = item.value) !== null && _a !== void 0 ? _a : '';
+        return contains$1(text.toLowerCase(), lowerCaseTerm) || contains$1(value.toLowerCase(), lowerCaseTerm);
       });
     };
 
     const getItems = (fileType, input, urlBackstage) => {
+      var _a, _b;
       const urlInputValue = Representing.getValue(input);
-      const term = urlInputValue.meta.text !== undefined ? urlInputValue.meta.text : urlInputValue.value;
+      const term = (_b = (_a = urlInputValue === null || urlInputValue === void 0 ? void 0 : urlInputValue.meta) === null || _a === void 0 ? void 0 : _a.text) !== null && _b !== void 0 ? _b : urlInputValue.value;
       const info = urlBackstage.getLinkInformation();
       return info.fold(() => [], linkInfo => {
         const history = filterByQuery(term, historyTargets(urlBackstage.getHistory(fileType)));
@@ -15861,8 +19193,7 @@
         const urlEntry = Representing.getValue(component);
         urlBackstage.addToHistory(urlEntry.value, spec.filetype);
       };
-      const pField = FormField.parts.field({
-        factory: Typeahead,
+      const typeaheadSpec = {
         ...initialData.map(initialData => ({ initialData })).getOr({}),
         dismissOnBlur: true,
         inputClasses: ['tox-textfield'],
@@ -15875,7 +19206,10 @@
         responseTime: 0,
         fetch: input => {
           const items = getItems(spec.filetype, input, urlBackstage);
-          const tdata = build(items, ItemResponse$1.BUBBLE_TO_SANDBOX, backstage, false);
+          const tdata = build(items, ItemResponse$1.BUBBLE_TO_SANDBOX, backstage, {
+            isHorizontalMenu: false,
+            search: Optional.none()
+          });
           return Future.pure(tdata);
         },
         getHotspot: comp => memUrlBox.getOpt(comp),
@@ -15884,8 +19218,8 @@
             Invalidating.run(comp).get(noop);
           }
         },
-        typeaheadBehaviours: derive$1(flatten([
-          urlBackstage.getValidationHandler().map(handler => Invalidating.config({
+        typeaheadBehaviours: derive$1([
+          ...urlBackstage.getValidationHandler().map(handler => Invalidating.config({
             getRoot: comp => parentElement(comp.element),
             invalidClass: 'tox-control-wrap--status-invalid',
             notify: {
@@ -15916,26 +19250,29 @@
               validateOnLoad: false
             }
           })).toArray(),
-          [
-            Disabling.config({ disabled: () => !spec.enabled || providersBackstage.isDisabled() }),
-            Tabstopping.config({}),
-            config('urlinput-events', flatten([
-              spec.filetype === 'file' ? [run$1(input(), comp => {
-                  emitWith(comp, formChangeEvent, { name: spec.name });
-                })] : [],
-              [
-                run$1(change(), comp => {
-                  emitWith(comp, formChangeEvent, { name: spec.name });
-                  updateHistory(comp);
-                }),
-                run$1(postPaste(), comp => {
-                  emitWith(comp, formChangeEvent, { name: spec.name });
-                  updateHistory(comp);
-                })
-              ]
-            ]))
-          ]
-        ])),
+          Disabling.config({ disabled: () => !spec.enabled || providersBackstage.isDisabled() }),
+          Tabstopping.config({}),
+          config('urlinput-events', [
+            run$1(input(), comp => {
+              const currentValue = get$6(comp.element);
+              const trimmedValue = currentValue.trim();
+              if (trimmedValue !== currentValue) {
+                set$5(comp.element, trimmedValue);
+              }
+              if (spec.filetype === 'file') {
+                emitWith(comp, formChangeEvent, { name: spec.name });
+              }
+            }),
+            run$1(change(), comp => {
+              emitWith(comp, formChangeEvent, { name: spec.name });
+              updateHistory(comp);
+            }),
+            run$1(postPaste(), comp => {
+              emitWith(comp, formChangeEvent, { name: spec.name });
+              updateHistory(comp);
+            })
+          ])
+        ]),
         eventOrder: {
           [input()]: [
             'streaming',
@@ -15958,8 +19295,12 @@
           updateHistory(typeahead);
           emitWith(typeahead, formChangeEvent, { name: spec.name });
         }
+      };
+      const pField = FormField.parts.field({
+        ...typeaheadSpec,
+        factory: Typeahead
       });
-      const pLabel = spec.label.map(label => renderLabel$2(label, providersBackstage));
+      const pLabel = spec.label.map(label => renderLabel$3(label, providersBackstage));
       const makeIcon = (name, errId, icon = name, label = name) => render$3(icon, {
         tag: 'div',
         classes: [
@@ -15993,10 +19334,10 @@
         ],
         behaviours: derive$1([Disabling.config({ disabled: () => !spec.enabled || providersBackstage.isDisabled() })])
       });
-      const memUrlPickerButton = record(renderButton({
+      const memUrlPickerButton = record(renderButton$1({
         name: spec.name,
         icon: Optional.some('browse'),
-        text: spec.label.getOr(''),
+        text: spec.picker_text.or(spec.label).getOr(''),
         enabled: spec.enabled,
         primary: false,
         buttonType: Optional.none(),
@@ -16048,51 +19389,53 @@
       });
     };
 
-    const renderAlertBanner = (spec, providersBackstage) => Container.sketch({
-      dom: {
-        tag: 'div',
-        attributes: { role: 'alert' },
-        classes: [
-          'tox-notification',
-          'tox-notification--in',
-          `tox-notification--${ spec.level }`
-        ]
-      },
-      components: [
-        {
-          dom: {
-            tag: 'div',
-            classes: ['tox-notification__icon']
-          },
-          components: [Button.sketch({
-              dom: {
-                tag: 'button',
-                classes: [
-                  'tox-button',
-                  'tox-button--naked',
-                  'tox-button--icon'
-                ],
-                innerHtml: get$2(spec.icon, providersBackstage.icons),
-                attributes: { title: providersBackstage.translate(spec.iconTooltip) }
-              },
-              action: comp => {
-                emitWith(comp, formActionEvent, {
+    const renderAlertBanner = (spec, providersBackstage) => {
+      const icon = get$2(spec.icon, providersBackstage.icons);
+      return Container.sketch({
+        dom: {
+          tag: 'div',
+          attributes: { role: 'alert' },
+          classes: [
+            'tox-notification',
+            'tox-notification--in',
+            `tox-notification--${ spec.level }`
+          ]
+        },
+        components: [
+          {
+            dom: {
+              tag: 'div',
+              classes: ['tox-notification__icon'],
+              innerHtml: !spec.url ? icon : undefined
+            },
+            components: spec.url ? [Button.sketch({
+                dom: {
+                  tag: 'button',
+                  classes: [
+                    'tox-button',
+                    'tox-button--naked',
+                    'tox-button--icon'
+                  ],
+                  innerHtml: icon,
+                  attributes: { title: providersBackstage.translate(spec.iconTooltip) }
+                },
+                action: comp => emitWith(comp, formActionEvent, {
                   name: 'alert-banner',
                   value: spec.url
-                });
-              },
-              buttonBehaviours: derive$1([addFocusableBehaviour()])
-            })]
-        },
-        {
-          dom: {
-            tag: 'div',
-            classes: ['tox-notification__body'],
-            innerHtml: providersBackstage.translate(spec.text)
+                }),
+                buttonBehaviours: derive$1([addFocusableBehaviour()])
+              })] : undefined
+          },
+          {
+            dom: {
+              tag: 'div',
+              classes: ['tox-notification__body'],
+              innerHtml: providersBackstage.translate(spec.text)
+            }
           }
-        }
-      ]
-    });
+        ]
+      });
+    };
 
     const set$1 = (element, status) => {
       element.dom.checked = status;
@@ -16113,10 +19456,18 @@
         },
         behaviours: derive$1([
           ComposingConfigs.self(),
-          Disabling.config({ disabled: () => !spec.enabled || providerBackstage.isDisabled() }),
+          Disabling.config({
+            disabled: () => !spec.enabled || providerBackstage.isDisabled(),
+            onDisabled: component => {
+              parentElement(component.element).each(element => add$2(element, 'tox-checkbox--disabled'));
+            },
+            onEnabled: component => {
+              parentElement(component.element).each(element => remove$2(element, 'tox-checkbox--disabled'));
+            }
+          }),
           Tabstopping.config({}),
           Focusing.config({}),
-          RepresentingConfigs.withElement(initialData, get$1, set$1),
+          withElement(initialData, get$1, set$1),
           Keying.config({
             mode: 'special',
             onEnter: toggleCheckboxHandler,
@@ -16133,7 +19484,7 @@
           tag: 'span',
           classes: ['tox-checkbox__label']
         },
-        components: [text$1(providerBackstage.translate(spec.label))],
+        components: [text$2(providerBackstage.translate(spec.label))],
         behaviours: derive$1([Unselecting.config({})])
       });
       const makeIcon = className => {
@@ -16167,29 +19518,57 @@
           pLabel
         ],
         fieldBehaviours: derive$1([
-          Disabling.config({
-            disabled: () => !spec.enabled || providerBackstage.isDisabled(),
-            disableClass: 'tox-checkbox--disabled',
-            onDisabled: comp => {
-              FormField.getField(comp).each(Disabling.disable);
-            },
-            onEnabled: comp => {
-              FormField.getField(comp).each(Disabling.enable);
-            }
-          }),
+          Disabling.config({ disabled: () => !spec.enabled || providerBackstage.isDisabled() }),
           receivingConfig()
         ])
       });
     };
 
-    const renderHtmlPanel = spec => {
+    const renderHtmlPanel = (spec, providersBackstage) => {
       if (spec.presets === 'presentation') {
         return Container.sketch({
           dom: {
             tag: 'div',
             classes: ['tox-form__group'],
             innerHtml: spec.html
-          }
+          },
+          containerBehaviours: derive$1([Tooltipping.config({
+              ...providersBackstage.tooltips.getConfig({
+                tooltipText: '',
+                onShow: comp => {
+                  descendant(comp.element, '[data-mce-tooltip]:hover').orThunk(() => search(comp.element)).each(current => {
+                    getOpt(current, 'data-mce-tooltip').each(text => {
+                      Tooltipping.setComponents(comp, providersBackstage.tooltips.getComponents({ tooltipText: text }));
+                    });
+                  });
+                }
+              }),
+              mode: 'children-normal',
+              anchor: comp => ({
+                type: 'node',
+                node: descendant(comp.element, '[data-mce-tooltip]:hover').orThunk(() => search(comp.element).filter(current => getOpt(current, 'data-mce-tooltip').isSome())),
+                root: comp.element,
+                layouts: {
+                  onLtr: constant$1([
+                    south$2,
+                    north$2,
+                    southeast$2,
+                    northeast$2,
+                    southwest$2,
+                    northwest$2
+                  ]),
+                  onRtl: constant$1([
+                    south$2,
+                    north$2,
+                    southeast$2,
+                    northeast$2,
+                    southwest$2,
+                    northwest$2
+                  ])
+                },
+                bubble: nu$5(0, -2, {})
+              })
+            })])
         });
       } else {
         return Container.sketch({
@@ -16220,7 +19599,7 @@
       alertbanner: make$2((spec, backstage) => renderAlertBanner(spec, backstage.shared.providers)),
       input: make$2((spec, backstage, data) => renderInput(spec, backstage.shared.providers, data)),
       textarea: make$2((spec, backstage, data) => renderTextarea(spec, backstage.shared.providers, data)),
-      label: make$2((spec, backstage) => renderLabel$1(spec, backstage.shared)),
+      label: make$2((spec, backstage) => renderLabel$2(spec, backstage.shared)),
       iframe: makeIframe((spec, backstage, data) => renderIFrame(spec, backstage.shared.providers, data)),
       button: make$2((spec, backstage) => renderDialogButton(spec, backstage.shared.providers)),
       checkbox: make$2((spec, backstage, data) => renderCheckbox(spec, backstage.shared.providers, data)),
@@ -16234,9 +19613,10 @@
       slider: make$2((spec, backstage, data) => renderSlider(spec, backstage.shared.providers, data)),
       urlinput: make$2((spec, backstage, data) => renderUrlInput(spec, backstage, backstage.urlinput, data)),
       customeditor: make$2(renderCustomEditor),
-      htmlpanel: make$2(renderHtmlPanel),
+      htmlpanel: make$2((spec, backstage) => renderHtmlPanel(spec, backstage.shared.providers)),
       imagepreview: make$2((spec, _, data) => renderImagePreview(spec, data)),
       table: make$2((spec, backstage) => renderTable(spec, backstage.shared.providers)),
+      tree: make$2((spec, backstage) => renderTree(spec, backstage)),
       panel: make$2((spec, backstage) => renderPanel(spec, backstage))
     };
     const noFormParts = {
@@ -16344,7 +19724,7 @@
       const overrides = { maxHeightFunction: expandable$1() };
       const editableAreaAnchor = () => ({
         type: 'node',
-        root: getContentContainer(contentAreaElement()),
+        root: getContentContainer(getRootNode(contentAreaElement())),
         node: Optional.from(contentAreaElement()),
         bubble: nu$5(bubbleSize, bubbleSize, bubbleAlignments$2),
         layouts: {
@@ -16358,17 +19738,61 @@
         hotspot: lazyAnchorbar(),
         bubble: nu$5(-bubbleSize, bubbleSize, bubbleAlignments$2),
         layouts: {
-          onRtl: () => [southeast$2],
-          onLtr: () => [southwest$2]
+          onRtl: () => [
+            southeast$2,
+            southwest$2,
+            south$2
+          ],
+          onLtr: () => [
+            southwest$2,
+            southeast$2,
+            south$2
+          ]
         },
         overrides
       });
       return () => lazyUseEditableAreaAnchor() ? editableAreaAnchor() : standardAnchor();
     };
+    const getInlineBottomDialogAnchor = (inline, contentAreaElement, lazyBottomAnchorBar, lazyUseEditableAreaAnchor) => {
+      const bubbleSize = 12;
+      const overrides = { maxHeightFunction: expandable$1() };
+      const editableAreaAnchor = () => ({
+        type: 'node',
+        root: getContentContainer(getRootNode(contentAreaElement())),
+        node: Optional.from(contentAreaElement()),
+        bubble: nu$5(bubbleSize, bubbleSize, bubbleAlignments$2),
+        layouts: {
+          onRtl: () => [north],
+          onLtr: () => [north]
+        },
+        overrides
+      });
+      const standardAnchor = () => inline ? {
+        type: 'node',
+        root: getContentContainer(getRootNode(contentAreaElement())),
+        node: Optional.from(contentAreaElement()),
+        bubble: nu$5(0, -getOuter$2(contentAreaElement()), bubbleAlignments$2),
+        layouts: {
+          onRtl: () => [north$2],
+          onLtr: () => [north$2]
+        },
+        overrides
+      } : {
+        type: 'hotspot',
+        hotspot: lazyBottomAnchorBar(),
+        bubble: nu$5(0, 0, bubbleAlignments$2),
+        layouts: {
+          onRtl: () => [north$2],
+          onLtr: () => [north$2]
+        },
+        overrides
+      };
+      return () => lazyUseEditableAreaAnchor() ? editableAreaAnchor() : standardAnchor();
+    };
     const getBannerAnchor = (contentAreaElement, lazyAnchorbar, lazyUseEditableAreaAnchor) => {
       const editableAreaAnchor = () => ({
         type: 'node',
-        root: getContentContainer(contentAreaElement()),
+        root: getContentContainer(getRootNode(contentAreaElement())),
         node: Optional.from(contentAreaElement()),
         layouts: {
           onRtl: () => [north],
@@ -16390,6 +19814,16 @@
       root: bodyElement(),
       getSelection: () => {
         const rng = editor.selection.getRng();
+        const selectedCells = editor.model.table.getSelectedCells();
+        if (selectedCells.length > 1) {
+          const firstCell = selectedCells[0];
+          const lastCell = selectedCells[selectedCells.length - 1];
+          const selectionTableCellRange = {
+            firstCell: SugarElement.fromDom(firstCell),
+            lastCell: SugarElement.fromDom(lastCell)
+          };
+          return Optional.some(selectionTableCellRange);
+        }
         return Optional.some(SimSelection.range(SugarElement.fromDom(rng.startContainer), rng.startOffset, SugarElement.fromDom(rng.endContainer), rng.endOffset));
       }
     });
@@ -16398,13 +19832,14 @@
       root: bodyElement(),
       node: element
     });
-    const getAnchors = (editor, lazyAnchorbar, isToolbarTop) => {
+    const getAnchors = (editor, lazyAnchorbar, lazyBottomAnchorBar, isToolbarTop) => {
       const useFixedToolbarContainer = useFixedContainer(editor);
       const bodyElement = () => SugarElement.fromDom(editor.getBody());
       const contentAreaElement = () => SugarElement.fromDom(editor.getContentAreaContainer());
       const lazyUseEditableAreaAnchor = () => useFixedToolbarContainer || !isToolbarTop();
       return {
         inlineDialog: getInlineDialogAnchor(contentAreaElement, lazyAnchorbar, lazyUseEditableAreaAnchor),
+        inlineBottomDialog: getInlineBottomDialogAnchor(editor.inline, contentAreaElement, lazyBottomAnchorBar, lazyUseEditableAreaAnchor),
         banner: getBannerAnchor(contentAreaElement, lazyAnchorbar, lazyUseEditableAreaAnchor),
         cursor: getCursorAnchor(editor, bodyElement),
         node: getNodeAnchor$1(bodyElement)
@@ -16416,8 +19851,8 @@
       dialog(callback, value);
     };
     const hasCustomColors = editor => () => hasCustomColors$1(editor);
-    const getColors = editor => () => getColors$2(editor);
-    const getColorCols = editor => () => getColorCols$1(editor);
+    const getColors = editor => id => getColors$2(editor, id);
+    const getColorCols = editor => id => getColorCols$1(editor, id);
     const ColorInputBackstage = editor => ({
       colorPicker: colorPicker(editor),
       hasCustomColors: hasCustomColors(editor),
@@ -16437,6 +19872,8 @@
       };
     };
 
+    const isNestedFormat = format => hasNonNullableKey(format, 'items');
+    const isFormatReference = format => hasNonNullableKey(format, 'format');
     const defaultStyleFormats = [
       {
         title: 'Headings',
@@ -16543,12 +19980,12 @@
         ]
       }
     ];
-    const isNestedFormat = format => has$2(format, 'items');
+    const isNestedFormats = format => has$2(format, 'items');
     const isBlockFormat = format => has$2(format, 'block');
     const isInlineFormat = format => has$2(format, 'inline');
     const isSelectorFormat = format => has$2(format, 'selector');
     const mapFormats = userFormats => foldl(userFormats, (acc, fmt) => {
-      if (isNestedFormat(fmt)) {
+      if (isNestedFormats(fmt)) {
         const result = mapFormats(fmt.items);
         return {
           customFormats: acc.customFormats.concat(result.customFormats),
@@ -16604,42 +20041,49 @@
       return shouldMergeStyleFormats(editor) ? defaultStyleFormats.concat(registeredUserFormats) : registeredUserFormats;
     }).getOr(defaultStyleFormats);
 
-    const processBasic = (item, isSelectedFor, getPreviewFor) => {
-      const formatterSpec = {
-        type: 'formatter',
-        isSelected: isSelectedFor(item.format),
-        getStylePreview: getPreviewFor(item.format)
-      };
-      return deepMerge(item, formatterSpec);
+    const isSeparator$1 = format => {
+      const keys$1 = keys(format);
+      return keys$1.length === 1 && contains$2(keys$1, 'title');
     };
+    const processBasic = (item, isSelectedFor, getPreviewFor) => ({
+      ...item,
+      type: 'formatter',
+      isSelected: isSelectedFor(item.format),
+      getStylePreview: getPreviewFor(item.format)
+    });
     const register$a = (editor, formats, isSelectedFor, getPreviewFor) => {
       const enrichSupported = item => processBasic(item, isSelectedFor, getPreviewFor);
       const enrichMenu = item => {
-        const submenuSpec = { type: 'submenu' };
-        return deepMerge(item, submenuSpec);
+        const newItems = doEnrich(item.items);
+        return {
+          ...item,
+          type: 'submenu',
+          getStyleItems: constant$1(newItems)
+        };
       };
       const enrichCustom = item => {
         const formatName = isString(item.name) ? item.name : generate$6(item.title);
         const formatNameWithPrefix = `custom-${ formatName }`;
-        const customSpec = {
+        const newItem = {
+          ...item,
           type: 'formatter',
           format: formatNameWithPrefix,
           isSelected: isSelectedFor(formatNameWithPrefix),
           getStylePreview: getPreviewFor(formatNameWithPrefix)
         };
-        const newItem = deepMerge(item, customSpec);
         editor.formatter.register(formatName, newItem);
         return newItem;
       };
       const doEnrich = items => map$2(items, item => {
-        const keys$1 = keys(item);
-        if (hasNonNullableKey(item, 'items')) {
-          const newItems = doEnrich(item.items);
-          return deepMerge(enrichMenu(item), { getStyleItems: constant$1(newItems) });
-        } else if (hasNonNullableKey(item, 'format')) {
+        if (isNestedFormat(item)) {
+          return enrichMenu(item);
+        } else if (isFormatReference(item)) {
           return enrichSupported(item);
-        } else if (keys$1.length === 1 && contains$2(keys$1, 'title')) {
-          return deepMerge(item, { type: 'separator' });
+        } else if (isSeparator$1(item)) {
+          return {
+            ...item,
+            type: 'separator'
+          };
         } else {
           return enrichCustom(item);
         }
@@ -16647,7 +20091,7 @@
       return doEnrich(formats);
     };
 
-    const init$8 = editor => {
+    const init$7 = editor => {
       const isSelectedFor = format => () => editor.formatter.match(format);
       const getPreviewFor = format => () => {
         const fmt = editor.formatter.get(format);
@@ -16656,40 +20100,69 @@
           styles: editor.dom.parseStyle(editor.formatter.getCssText(format))
         }) : Optional.none();
       };
-      const flatten = fmt => {
-        const subs = fmt.items;
-        return subs !== undefined && subs.length > 0 ? bind$3(subs, flatten) : [fmt.format];
-      };
       const settingsFormats = Cell([]);
-      const settingsFlattenedFormats = Cell([]);
       const eventsFormats = Cell([]);
-      const eventsFlattenedFormats = Cell([]);
       const replaceSettings = Cell(false);
       editor.on('PreInit', _e => {
         const formats = getStyleFormats(editor);
         const enriched = register$a(editor, formats, isSelectedFor, getPreviewFor);
         settingsFormats.set(enriched);
-        settingsFlattenedFormats.set(bind$3(enriched, flatten));
       });
       editor.on('addStyleModifications', e => {
         const modifications = register$a(editor, e.items, isSelectedFor, getPreviewFor);
         eventsFormats.set(modifications);
         replaceSettings.set(e.replace);
-        eventsFlattenedFormats.set(bind$3(modifications, flatten));
       });
       const getData = () => {
         const fromSettings = replaceSettings.get() ? [] : settingsFormats.get();
         const fromEvents = eventsFormats.get();
         return fromSettings.concat(fromEvents);
       };
-      const getFlattenedKeys = () => {
-        const fromSettings = replaceSettings.get() ? [] : settingsFlattenedFormats.get();
-        const fromEvents = eventsFlattenedFormats.get();
-        return fromSettings.concat(fromEvents);
+      return { getData };
+    };
+
+    const TooltipsBackstage = getSink => {
+      const tooltipDelay = 300;
+      const intervalDelay = tooltipDelay * 0.2;
+      let numActiveTooltips = 0;
+      const alreadyShowingTooltips = () => numActiveTooltips > 0;
+      const getComponents = spec => {
+        return [{
+            dom: {
+              tag: 'div',
+              classes: ['tox-tooltip__body']
+            },
+            components: [text$2(spec.tooltipText)]
+          }];
+      };
+      const getConfig = spec => {
+        return {
+          delayForShow: () => alreadyShowingTooltips() ? intervalDelay : tooltipDelay,
+          delayForHide: constant$1(tooltipDelay),
+          exclusive: true,
+          lazySink: getSink,
+          tooltipDom: {
+            tag: 'div',
+            classes: [
+              'tox-tooltip',
+              'tox-tooltip--up'
+            ]
+          },
+          tooltipComponents: getComponents(spec),
+          onShow: (comp, tooltip) => {
+            numActiveTooltips++;
+            if (spec.onShow) {
+              spec.onShow(comp, tooltip);
+            }
+          },
+          onHide: () => {
+            numActiveTooltips--;
+          }
+        };
       };
       return {
-        getData,
-        getFlattenedKeys
+        getConfig,
+        getComponents
       };
     };
 
@@ -16710,20 +20183,19 @@
     };
     const isContentEditableTrue = hasContentEditableState('true');
     const isContentEditableFalse = hasContentEditableState('false');
-    const create = (type, title, url, level, attach) => {
-      return {
-        type,
-        title,
-        url,
-        level,
-        attach
-      };
-    };
+    const create = (type, title, url, level, attach) => ({
+      type,
+      title,
+      url,
+      level,
+      attach
+    });
     const isChildOfContentEditableTrue = node => {
-      while (node = node.parentNode) {
-        const value = node.contentEditable;
+      let tempNode = node;
+      while (tempNode = tempNode.parentNode) {
+        const value = tempNode.contentEditable;
         if (value && value !== 'inherit') {
-          return isContentEditableTrue(node);
+          return isContentEditableTrue(tempNode);
         }
       }
       return false;
@@ -16758,11 +20230,12 @@
       return isHeader(elm) ? parseInt(elm.nodeName.substr(1), 10) : 0;
     };
     const headerTarget = elm => {
+      var _a;
       const headerId = getOrGenerateId(elm);
       const attach = () => {
         elm.id = headerId;
       };
-      return create('header', getElementText(elm), '#' + headerId, getLevel(elm), attach);
+      return create('header', (_a = getElementText(elm)) !== null && _a !== void 0 ? _a : '', '#' + headerId, getLevel(elm), attach);
     };
     const anchorTarget = elm => {
       const anchorId = elm.id || elm.name;
@@ -16891,48 +20364,73 @@
       getUrlPicker: filetype => getUrlPicker(editor, filetype)
     });
 
-    const init$7 = (lazySink, editor, lazyAnchorbar) => {
+    const init$6 = (lazySinks, editor, lazyAnchorbar, lazyBottomAnchorBar) => {
       const contextMenuState = Cell(false);
       const toolbar = HeaderBackstage(editor);
-      const backstage = {
-        shared: {
-          providers: {
-            icons: () => editor.ui.registry.getAll().icons,
-            menuItems: () => editor.ui.registry.getAll().menuItems,
-            translate: global$8.translate,
-            isDisabled: () => editor.mode.isReadOnly() || !editor.ui.isEnabled(),
-            getOption: editor.options.get
-          },
-          interpreter: s => interpretWithoutForm(s, {}, backstage),
-          anchors: getAnchors(editor, lazyAnchorbar, toolbar.isPositionedAtTop),
-          header: toolbar,
-          getSink: lazySink
-        },
-        urlinput: UrlInputBackstage(editor),
-        styles: init$8(editor),
-        colorinput: ColorInputBackstage(editor),
-        dialog: DialogBackstage(editor),
-        isContextMenuOpen: () => contextMenuState.get(),
-        setContextMenuState: state => contextMenuState.set(state)
+      const providers = {
+        icons: () => editor.ui.registry.getAll().icons,
+        menuItems: () => editor.ui.registry.getAll().menuItems,
+        translate: global$8.translate,
+        isDisabled: () => editor.mode.isReadOnly() || !editor.ui.isEnabled(),
+        getOption: editor.options.get,
+        tooltips: TooltipsBackstage(lazySinks.dialog)
       };
-      return backstage;
+      const urlinput = UrlInputBackstage(editor);
+      const styles = init$7(editor);
+      const colorinput = ColorInputBackstage(editor);
+      const dialogSettings = DialogBackstage(editor);
+      const isContextMenuOpen = () => contextMenuState.get();
+      const setContextMenuState = state => contextMenuState.set(state);
+      const commonBackstage = {
+        shared: {
+          providers,
+          anchors: getAnchors(editor, lazyAnchorbar, lazyBottomAnchorBar, toolbar.isPositionedAtTop),
+          header: toolbar
+        },
+        urlinput,
+        styles,
+        colorinput,
+        dialog: dialogSettings,
+        isContextMenuOpen,
+        setContextMenuState
+      };
+      const popupBackstage = {
+        ...commonBackstage,
+        shared: {
+          ...commonBackstage.shared,
+          interpreter: s => interpretWithoutForm(s, {}, popupBackstage),
+          getSink: lazySinks.popup
+        }
+      };
+      const dialogBackstage = {
+        ...commonBackstage,
+        shared: {
+          ...commonBackstage.shared,
+          interpreter: s => interpretWithoutForm(s, {}, dialogBackstage),
+          getSink: lazySinks.dialog
+        }
+      };
+      return {
+        popup: popupBackstage,
+        dialog: dialogBackstage
+      };
     };
 
-    const setup$b = (editor, mothership, uiMothership) => {
+    const setup$b = (editor, mothership, uiMotherships) => {
       const broadcastEvent = (name, evt) => {
         each$1([
           mothership,
-          uiMothership
-        ], ship => {
-          ship.broadcastEvent(name, evt);
+          ...uiMotherships
+        ], m => {
+          m.broadcastEvent(name, evt);
         });
       };
       const broadcastOn = (channel, message) => {
         each$1([
           mothership,
-          uiMothership
-        ], ship => {
-          ship.broadcastOn([channel], message);
+          ...uiMotherships
+        ], m => {
+          m.broadcastOn([channel], message);
         });
       };
       const fireDismissPopups = evt => broadcastOn(dismissPopups(), { target: evt.target });
@@ -16964,6 +20462,23 @@
         broadcastOn(repositionPopups(), {});
         broadcastEvent(windowResize(), fromRawEvent(evt));
       };
+      const dos = getRootNode(SugarElement.fromDom(editor.getElement()));
+      const onElementScroll = capture(dos, 'scroll', evt => {
+        requestAnimationFrame(() => {
+          const c = editor.getContainer();
+          if (c !== undefined && c !== null) {
+            const optScrollingContext = detectWhenSplitUiMode(editor, mothership.element);
+            const scrollers = optScrollingContext.map(sc => [
+              sc.element,
+              ...sc.others
+            ]).getOr([]);
+            if (exists(scrollers, s => eq(s, evt.target))) {
+              editor.dispatch('ElementScroll', { target: evt.target.dom });
+              broadcastEvent(externalElementScroll(), evt);
+            }
+          }
+        });
+      });
       const onEditorResize = () => broadcastOn(repositionPopups(), {});
       const onEditorProgress = evt => {
         if (evt.state) {
@@ -16973,6 +20488,8 @@
       const onDismissPopups = event => {
         broadcastOn(dismissPopups(), { target: SugarElement.fromDom(event.relatedTarget.getContainer()) });
       };
+      const onFocusIn = event => editor.dispatch('focusin', event);
+      const onFocusOut = event => editor.dispatch('focusout', event);
       editor.on('PostRender', () => {
         editor.on('click', onContentClick);
         editor.on('tap', onContentClick);
@@ -16983,6 +20500,13 @@
         editor.on('ResizeEditor', onEditorResize);
         editor.on('AfterProgressState', onEditorProgress);
         editor.on('DismissPopups', onDismissPopups);
+        each$1([
+          mothership,
+          ...uiMotherships
+        ], gui => {
+          gui.element.dom.addEventListener('focusin', onFocusIn);
+          gui.element.dom.addEventListener('focusout', onFocusOut);
+        });
       });
       editor.on('remove', () => {
         editor.off('click', onContentClick);
@@ -16994,17 +20518,29 @@
         editor.off('ResizeEditor', onEditorResize);
         editor.off('AfterProgressState', onEditorProgress);
         editor.off('DismissPopups', onDismissPopups);
+        each$1([
+          mothership,
+          ...uiMotherships
+        ], gui => {
+          gui.element.dom.removeEventListener('focusin', onFocusIn);
+          gui.element.dom.removeEventListener('focusout', onFocusOut);
+        });
         onMousedown.unbind();
         onTouchstart.unbind();
         onTouchmove.unbind();
         onTouchend.unbind();
         onMouseup.unbind();
+        onElementScroll.unbind();
       });
       editor.on('detach', () => {
-        detachSystem(mothership);
-        detachSystem(uiMothership);
-        mothership.destroy();
-        uiMothership.destroy();
+        each$1([
+          mothership,
+          ...uiMotherships
+        ], detachSystem);
+        each$1([
+          mothership,
+          ...uiMotherships
+        ], m => m.destroy());
       });
     };
 
@@ -17025,7 +20561,7 @@
     const parts$9 = constant$1([itemsPart]);
     const name = constant$1('CustomList');
 
-    const factory$d = (detail, components, _spec, _external) => {
+    const factory$f = (detail, components, _spec, _external) => {
       const setItems = (list, items) => {
         getListContainer(list).fold(() => {
           console.error('Custom List was defined to not be a shell, but no item container was specified in components');
@@ -17064,7 +20600,7 @@
       name: name(),
       configFields: schema$f(),
       partFields: parts$9(),
-      factory: factory$d,
+      factory: factory$f,
       apis: {
         setItems: (apis, list, items) => {
           apis.setItems(list, items);
@@ -17083,7 +20619,7 @@
         overrides: enhanceGroups
       })]);
 
-    const factory$c = (detail, components, _spec, _externals) => {
+    const factory$e = (detail, components, _spec, _externals) => {
       const setGroups = (toolbar, groups) => {
         getGroupContainer(toolbar).fold(() => {
           console.error('Toolbar was defined to not be a shell, but no groups container was specified in components');
@@ -17105,7 +20641,10 @@
         dom: detail.dom,
         components: extra.components,
         behaviours: augment(detail.toolbarBehaviours, extra.behaviours),
-        apis: { setGroups },
+        apis: {
+          setGroups,
+          refresh: noop
+        },
         domModification: { attributes: { role: 'group' } }
       };
     };
@@ -17113,7 +20652,7 @@
       name: 'Toolbar',
       configFields: schema$e(),
       partFields: parts$8(),
-      factory: factory$c,
+      factory: factory$e,
       apis: {
         setGroups: (apis, toolbar, groups) => {
           apis.setGroups(toolbar, groups);
@@ -17147,11 +20686,6 @@
     };
     const getOrigin = element => getOffsetParent(element).map(absolute$3).getOrThunk(() => SugarPosition(0, 0));
 
-    const morphAdt = Adt.generate([
-      { static: [] },
-      { absolute: ['positionCss'] },
-      { fixed: ['positionCss'] }
-    ]);
     const appear = (component, contextualInfo) => {
       const elem = component.element;
       add$2(elem, contextualInfo.transitionClass);
@@ -17166,60 +20700,160 @@
       add$2(elem, contextualInfo.fadeOutClass);
       contextualInfo.onHide(component);
     };
-    const isPartiallyVisible = (box, viewport) => box.y < viewport.bottom && box.bottom > viewport.y;
-    const isTopCompletelyVisible = (box, viewport) => box.y >= viewport.y;
-    const isBottomCompletelyVisible = (box, viewport) => box.bottom <= viewport.bottom;
+    const isPartiallyVisible = (box, bounds) => box.y < bounds.bottom && box.bottom > bounds.y;
+    const isTopCompletelyVisible = (box, bounds) => box.y >= bounds.y;
+    const isBottomCompletelyVisible = (box, bounds) => box.bottom <= bounds.bottom;
+    const forceTopPosition = (winBox, leftX, viewport) => ({
+      location: 'top',
+      leftX,
+      topY: viewport.bounds.y - winBox.y
+    });
+    const forceBottomPosition = (winBox, leftX, viewport) => ({
+      location: 'bottom',
+      leftX,
+      bottomY: winBox.bottom - viewport.bounds.bottom
+    });
+    const getDockedLeftPosition = bounds => {
+      return bounds.box.x - bounds.win.x;
+    };
+    const tryDockingPosition = (modes, bounds, viewport) => {
+      const winBox = bounds.win;
+      const box = bounds.box;
+      const leftX = getDockedLeftPosition(bounds);
+      return findMap(modes, mode => {
+        switch (mode) {
+        case 'bottom':
+          return !isBottomCompletelyVisible(box, viewport.bounds) ? Optional.some(forceBottomPosition(winBox, leftX, viewport)) : Optional.none();
+        case 'top':
+          return !isTopCompletelyVisible(box, viewport.bounds) ? Optional.some(forceTopPosition(winBox, leftX, viewport)) : Optional.none();
+        default:
+          return Optional.none();
+        }
+      }).getOr({ location: 'no-dock' });
+    };
     const isVisibleForModes = (modes, box, viewport) => forall(modes, mode => {
       switch (mode) {
       case 'bottom':
-        return isBottomCompletelyVisible(box, viewport);
+        return isBottomCompletelyVisible(box, viewport.bounds);
       case 'top':
-        return isTopCompletelyVisible(box, viewport);
+        return isTopCompletelyVisible(box, viewport.bounds);
       }
     });
-    const getPrior = (elem, state) => state.getInitialPos().map(pos => bounds(pos.bounds.x, pos.bounds.y, get$c(elem), get$d(elem)));
-    const storePrior = (elem, box, state) => {
+    const getXYForRestoring = (pos, viewport) => {
+      const priorY = viewport.optScrollEnv.fold(constant$1(pos.bounds.y), scrollEnv => scrollEnv.scrollElmTop + (pos.bounds.y - scrollEnv.currentScrollTop));
+      return SugarPosition(pos.bounds.x, priorY);
+    };
+    const getXYForSaving = (box, viewport) => {
+      const priorY = viewport.optScrollEnv.fold(constant$1(box.y), scrollEnv => box.y + scrollEnv.currentScrollTop - scrollEnv.scrollElmTop);
+      return SugarPosition(box.x, priorY);
+    };
+    const getPrior = (elem, viewport, state) => state.getInitialPos().map(pos => {
+      const xy = getXYForRestoring(pos, viewport);
+      return {
+        box: bounds(xy.left, xy.top, get$c(elem), get$d(elem)),
+        location: pos.location
+      };
+    });
+    const storePrior = (elem, box, viewport, state, decision) => {
+      const xy = getXYForSaving(box, viewport);
+      const bounds$1 = bounds(xy.left, xy.top, box.width, box.height);
       state.setInitialPos({
         style: getAllRaw(elem),
         position: get$e(elem, 'position') || 'static',
-        bounds: box
+        bounds: bounds$1,
+        location: decision.location
       });
     };
+    const storePriorIfNone = (elem, box, viewport, state, decision) => {
+      state.getInitialPos().fold(() => storePrior(elem, box, viewport, state, decision), () => noop);
+    };
     const revertToOriginal = (elem, box, state) => state.getInitialPos().bind(position => {
+      var _a;
       state.clearInitialPos();
       switch (position.position) {
       case 'static':
-        return Optional.some(morphAdt.static());
+        return Optional.some({ morph: 'static' });
       case 'absolute':
-        const offsetBox = getOffsetParent(elem).map(box$1).getOrThunk(() => box$1(body()));
-        return Optional.some(morphAdt.absolute(NuPositionCss('absolute', get$g(position.style, 'left').map(_left => box.x - offsetBox.x), get$g(position.style, 'top').map(_top => box.y - offsetBox.y), get$g(position.style, 'right').map(_right => offsetBox.right - box.right), get$g(position.style, 'bottom').map(_bottom => offsetBox.bottom - box.bottom))));
+        const offsetParent = getOffsetParent(elem).getOr(body());
+        const offsetBox = box$1(offsetParent);
+        const scrollDelta = (_a = offsetParent.dom.scrollTop) !== null && _a !== void 0 ? _a : 0;
+        return Optional.some({
+          morph: 'absolute',
+          positionCss: NuPositionCss('absolute', get$g(position.style, 'left').map(_left => box.x - offsetBox.x), get$g(position.style, 'top').map(_top => box.y - offsetBox.y + scrollDelta), get$g(position.style, 'right').map(_right => offsetBox.right - box.right), get$g(position.style, 'bottom').map(_bottom => offsetBox.bottom - box.bottom))
+        });
       default:
         return Optional.none();
       }
     });
-    const morphToOriginal = (elem, viewport, state) => getPrior(elem, state).filter(box => isVisibleForModes(state.getModes(), box, viewport)).bind(box => revertToOriginal(elem, box, state));
-    const morphToFixed = (elem, viewport, state) => {
+    const tryMorphToOriginal = (elem, viewport, state) => getPrior(elem, viewport, state).filter(({box}) => isVisibleForModes(state.getModes(), box, viewport)).bind(({box}) => revertToOriginal(elem, box, state));
+    const tryDecisionToFixedMorph = decision => {
+      switch (decision.location) {
+      case 'top': {
+          return Optional.some({
+            morph: 'fixed',
+            positionCss: NuPositionCss('fixed', Optional.some(decision.leftX), Optional.some(decision.topY), Optional.none(), Optional.none())
+          });
+        }
+      case 'bottom': {
+          return Optional.some({
+            morph: 'fixed',
+            positionCss: NuPositionCss('fixed', Optional.some(decision.leftX), Optional.none(), Optional.none(), Optional.some(decision.bottomY))
+          });
+        }
+      default:
+        return Optional.none();
+      }
+    };
+    const tryMorphToFixed = (elem, viewport, state) => {
       const box = box$1(elem);
-      if (!isVisibleForModes(state.getModes(), box, viewport)) {
-        storePrior(elem, box, state);
-        const winBox = win();
-        const left = box.x - winBox.x;
-        const top = viewport.y - winBox.y;
-        const bottom = winBox.bottom - viewport.bottom;
-        const isTop = box.y <= viewport.y;
-        return Optional.some(morphAdt.fixed(NuPositionCss('fixed', Optional.some(left), isTop ? Optional.some(top) : Optional.none(), Optional.none(), !isTop ? Optional.some(bottom) : Optional.none())));
+      const winBox = win();
+      const decision = tryDockingPosition(state.getModes(), {
+        win: winBox,
+        box
+      }, viewport);
+      if (decision.location === 'top' || decision.location === 'bottom') {
+        storePrior(elem, box, viewport, state, decision);
+        return tryDecisionToFixedMorph(decision);
       } else {
         return Optional.none();
       }
     };
-    const getMorph = (component, viewport, state) => {
+    const tryMorphToOriginalOrUpdateFixed = (elem, viewport, state) => {
+      return tryMorphToOriginal(elem, viewport, state).orThunk(() => {
+        return viewport.optScrollEnv.bind(_ => getPrior(elem, viewport, state)).bind(({box, location}) => {
+          const winBox = win();
+          const leftX = getDockedLeftPosition({
+            win: winBox,
+            box
+          });
+          const decision = location === 'top' ? forceTopPosition(winBox, leftX, viewport) : forceBottomPosition(winBox, leftX, viewport);
+          return tryDecisionToFixedMorph(decision);
+        });
+      });
+    };
+    const tryMorph = (component, viewport, state) => {
       const elem = component.element;
       const isDocked = is$1(getRaw(elem, 'position'), 'fixed');
-      return isDocked ? morphToOriginal(elem, viewport, state) : morphToFixed(elem, viewport, state);
+      return isDocked ? tryMorphToOriginalOrUpdateFixed(elem, viewport, state) : tryMorphToFixed(elem, viewport, state);
     };
-    const getMorphToOriginal = (component, state) => {
+    const calculateMorphToOriginal = (component, viewport, state) => {
       const elem = component.element;
-      return getPrior(elem, state).bind(box => revertToOriginal(elem, box, state));
+      return getPrior(elem, viewport, state).bind(({box}) => revertToOriginal(elem, box, state));
+    };
+    const forceDockWith = (elem, viewport, state, getDecision) => {
+      const box = box$1(elem);
+      const winBox = win();
+      const leftX = getDockedLeftPosition({
+        win: winBox,
+        box
+      });
+      const decision = getDecision(winBox, leftX, viewport);
+      if (decision.location === 'bottom' || decision.location === 'top') {
+        storePriorIfNone(elem, box, viewport, state, decision);
+        return tryDecisionToFixedMorph(decision);
+      } else {
+        return Optional.none();
+      }
     };
 
     const morphToStatic = (component, config, state) => {
@@ -17243,7 +20877,7 @@
     const updateVisibility = (component, config, state, viewport, morphToDocked = false) => {
       config.contextual.each(contextInfo => {
         contextInfo.lazyContext(component).each(box => {
-          const isVisible = isPartiallyVisible(box, viewport);
+          const isVisible = isPartiallyVisible(box, viewport.bounds);
           if (isVisible !== state.isVisible()) {
             state.setVisible(isVisible);
             if (morphToDocked && !isVisible) {
@@ -17257,24 +20891,45 @@
         });
       });
     };
+    const applyFixedMorph = (component, config, state, viewport, morph) => {
+      updateVisibility(component, config, state, viewport, true);
+      morphToCoord(component, config, state, morph.positionCss);
+    };
+    const applyMorph = (component, config, state, viewport, morph) => {
+      switch (morph.morph) {
+      case 'static': {
+          return morphToStatic(component, config, state);
+        }
+      case 'absolute': {
+          return morphToCoord(component, config, state, morph.positionCss);
+        }
+      case 'fixed': {
+          return applyFixedMorph(component, config, state, viewport, morph);
+        }
+      }
+    };
     const refreshInternal = (component, config, state) => {
       const viewport = config.lazyViewport(component);
-      const isDocked = state.isDocked();
-      if (isDocked) {
-        updateVisibility(component, config, state, viewport);
-      }
-      getMorph(component, viewport, state).each(morph => {
-        morph.fold(() => morphToStatic(component, config, state), position => morphToCoord(component, config, state, position), position => {
-          updateVisibility(component, config, state, viewport, true);
-          morphToCoord(component, config, state, position);
-        });
+      updateVisibility(component, config, state, viewport);
+      tryMorph(component, viewport, state).each(morph => {
+        applyMorph(component, config, state, viewport, morph);
       });
     };
     const resetInternal = (component, config, state) => {
       const elem = component.element;
       state.setDocked(false);
-      getMorphToOriginal(component, state).each(morph => {
-        morph.fold(() => morphToStatic(component, config, state), position => morphToCoord(component, config, state, position), noop);
+      const viewport = config.lazyViewport(component);
+      calculateMorphToOriginal(component, viewport, state).each(staticOrAbsoluteMorph => {
+        switch (staticOrAbsoluteMorph.morph) {
+        case 'static': {
+            morphToStatic(component, config, state);
+            break;
+          }
+        case 'absolute': {
+            morphToCoord(component, config, state, staticOrAbsoluteMorph.positionCss);
+            break;
+          }
+        }
       });
       state.setVisible(true);
       config.contextual.each(contextInfo => {
@@ -17285,9 +20940,9 @@
         ]);
         contextInfo.onShow(component);
       });
-      refresh$4(component, config, state);
+      refresh$3(component, config, state);
     };
-    const refresh$4 = (component, config, state) => {
+    const refresh$3 = (component, config, state) => {
       if (component.getSystem().isConnected()) {
         refreshInternal(component, config, state);
       }
@@ -17297,20 +20952,31 @@
         resetInternal(component, config, state);
       }
     };
+    const forceDockWithDecision = getDecision => (component, config, state) => {
+      const viewport = config.lazyViewport(component);
+      const optMorph = forceDockWith(component.element, viewport, state, getDecision);
+      optMorph.each(morph => {
+        applyFixedMorph(component, config, state, viewport, morph);
+      });
+    };
+    const forceDockToTop = forceDockWithDecision(forceTopPosition);
+    const forceDockToBottom = forceDockWithDecision(forceBottomPosition);
     const isDocked$1 = (component, config, state) => state.isDocked();
     const setModes = (component, config, state, modes) => state.setModes(modes);
     const getModes = (component, config, state) => state.getModes();
 
     var DockingApis = /*#__PURE__*/Object.freeze({
         __proto__: null,
-        refresh: refresh$4,
+        refresh: refresh$3,
         reset: reset,
         isDocked: isDocked$1,
         getModes: getModes,
-        setModes: setModes
+        setModes: setModes,
+        forceDockToTop: forceDockToTop,
+        forceDockToBottom: forceDockToBottom
     });
 
-    const events$5 = (dockInfo, dockState) => derive$2([
+    const events$4 = (dockInfo, dockState) => derive$2([
       runOnSource(transitionend(), (component, simulatedEvent) => {
         dockInfo.contextual.each(contextInfo => {
           if (has(component.element, contextInfo.transitionClass)) {
@@ -17325,7 +20991,10 @@
         });
       }),
       run$1(windowScroll(), (component, _) => {
-        refresh$4(component, dockInfo, dockState);
+        refresh$3(component, dockInfo, dockState);
+      }),
+      run$1(externalElementScroll(), (component, _) => {
+        refresh$3(component, dockInfo, dockState);
       }),
       run$1(windowResize(), (component, _) => {
         reset(component, dockInfo, dockState);
@@ -17334,7 +21003,7 @@
 
     var ActiveDocking = /*#__PURE__*/Object.freeze({
         __proto__: null,
-        events: events$5
+        events: events$4
     });
 
     var DockingSchema = [
@@ -17348,7 +21017,10 @@
         onHandler('onHide'),
         onHandler('onHidden')
       ]),
-      defaultedFunction('lazyViewport', win),
+      defaultedFunction('lazyViewport', () => ({
+        bounds: win(),
+        optScrollEnv: Optional.none()
+      })),
       defaultedArrayOf('modes', [
         'top',
         'bottom'
@@ -17357,7 +21029,7 @@
       onHandler('onUndocked')
     ];
 
-    const init$6 = spec => {
+    const init$5 = spec => {
       const docked = Cell(false);
       const visible = Cell(true);
       const initialBounds = value$2();
@@ -17379,10 +21051,10 @@
 
     var DockingState = /*#__PURE__*/Object.freeze({
         __proto__: null,
-        init: init$6
+        init: init$5
     });
 
-    const Docking = create$3({
+    const Docking = create$4({
       fields: DockingSchema,
       name: 'docking',
       active: ActiveDocking,
@@ -17401,7 +21073,8 @@
     const editorStickyOffClass = 'tox-tinymce--toolbar-sticky-off';
     const scrollFromBehindHeader = (e, containerHeader) => {
       const doc = owner$4(containerHeader);
-      const viewHeight = doc.dom.defaultView.innerHeight;
+      const win = defaultView(containerHeader);
+      const viewHeight = win.dom.innerHeight;
       const scrollPos = get$b(doc);
       const markerElement = SugarElement.fromDom(e.elm);
       const markerPos = absolute$2(markerElement);
@@ -17425,7 +21098,7 @@
     const updateIframeContentFlow = header => {
       const getOccupiedHeight = elm => getOuter$2(elm) + (parseInt(get$e(elm, 'margin-top'), 10) || 0) + (parseInt(get$e(elm, 'margin-bottom'), 10) || 0);
       const elm = header.element;
-      parent(elm).each(parentElem => {
+      parentElement(elm).each(parentElem => {
         const padding = 'padding-' + Docking.getModes(header)[0];
         if (Docking.isDocked(header)) {
           const parentWidth = get$c(parentElem);
@@ -17523,10 +21196,19 @@
             lazyContext: comp => {
               const headerHeight = getOuter$2(comp.element);
               const container = editor.inline ? editor.getContentAreaContainer() : editor.getContainer();
-              const box = box$1(SugarElement.fromDom(container));
-              const boxHeight = box.height - headerHeight;
-              const topBound = box.y + (isDockedMode(comp, 'top') ? 0 : headerHeight);
-              return Optional.some(bounds(box.x, topBound, box.width, boxHeight));
+              return Optional.from(container).map(c => {
+                const box = box$1(SugarElement.fromDom(c));
+                const optScrollingContext = detectWhenSplitUiMode(editor, comp.element);
+                return optScrollingContext.fold(() => {
+                  const boxHeight = box.height - headerHeight;
+                  const topBound = box.y + (isDockedMode(comp, 'top') ? 0 : headerHeight);
+                  return bounds(box.x, topBound, box.width, boxHeight);
+                }, scrollEnv => {
+                  const constrainedBounds = constrain(box, getBoundsFrom(scrollEnv));
+                  const constrainedBoundsY = isDockedMode(comp, 'top') ? constrainedBounds.y : constrainedBounds.y + headerHeight;
+                  return bounds(constrainedBounds.x, constrainedBoundsY, constrainedBounds.width, constrainedBounds.height - headerHeight);
+                });
+              });
             },
             onShow: () => {
               runOnSinkElement(elem => updateSinkVisibility(elem, true));
@@ -17551,11 +21233,26 @@
             ...visibility
           },
           lazyViewport: comp => {
-            const win$1 = win();
-            const offset = getStickyToolbarOffset(editor);
-            const top = win$1.y + (isDockedMode(comp, 'top') ? offset : 0);
-            const height = win$1.height - (isDockedMode(comp, 'bottom') ? offset : 0);
-            return bounds(win$1.x, top, win$1.width, height);
+            const optScrollingContext = detectWhenSplitUiMode(editor, comp.element);
+            return optScrollingContext.fold(() => {
+              const boundsWithoutOffset = win();
+              const offset = getStickyToolbarOffset(editor);
+              const top = boundsWithoutOffset.y + (isDockedMode(comp, 'top') ? offset : 0);
+              const height = boundsWithoutOffset.height - (isDockedMode(comp, 'bottom') ? offset : 0);
+              return {
+                bounds: bounds(boundsWithoutOffset.x, top, boundsWithoutOffset.width, height),
+                optScrollEnv: Optional.none()
+              };
+            }, sc => {
+              const combinedBounds = getBoundsFrom(sc);
+              return {
+                bounds: combinedBounds,
+                optScrollEnv: Optional.some({
+                  currentScrollTop: sc.element.dom.scrollTop,
+                  scrollElmTop: absolute$3(sc.element).top
+                })
+              };
+            });
           },
           modes: [sharedBackstage.header.getDockingMode()],
           onDocked: onDockingSwitch,
@@ -17599,6 +21296,16 @@
       optionString('text'),
       optionString('tooltip'),
       optionString('icon'),
+      defaultedOf('search', false, oneOf([
+        boolean,
+        objOf([optionString('placeholder')])
+      ], x => {
+        if (isBoolean(x)) {
+          return x ? Optional.some({ placeholder: Optional.none() }) : Optional.none();
+        } else {
+          return Optional.some(x);
+        }
+      })),
       requiredFunction('fetch'),
       defaultedFunction('onSetup', () => noop)
     ];
@@ -17628,7 +21335,7 @@
     ]);
     const createSplitButton = spec => asRaw('SplitButton', splitButtonSchema, spec);
 
-    const factory$b = (detail, spec) => {
+    const factory$d = (detail, spec) => {
       const setMenus = (comp, menus) => {
         const newMenus = map$2(menus, m => {
           const buttonSpec = {
@@ -17698,7 +21405,7 @@
       };
     };
     var SilverMenubar = single({
-      factory: factory$b,
+      factory: factory$d,
       name: 'silver.Menubar',
       configFields: [
         required$1('dom'),
@@ -17717,213 +21424,27 @@
       }
     });
 
-    const getAnimationRoot = (component, slideConfig) => slideConfig.getAnimationRoot.fold(() => component.element, get => get(component));
-
-    const getDimensionProperty = slideConfig => slideConfig.dimension.property;
-    const getDimension = (slideConfig, elem) => slideConfig.dimension.getDimension(elem);
-    const disableTransitions = (component, slideConfig) => {
-      const root = getAnimationRoot(component, slideConfig);
-      remove$1(root, [
-        slideConfig.shrinkingClass,
-        slideConfig.growingClass
-      ]);
-    };
-    const setShrunk = (component, slideConfig) => {
-      remove$2(component.element, slideConfig.openClass);
-      add$2(component.element, slideConfig.closedClass);
-      set$8(component.element, getDimensionProperty(slideConfig), '0px');
-      reflow(component.element);
-    };
-    const setGrown = (component, slideConfig) => {
-      remove$2(component.element, slideConfig.closedClass);
-      add$2(component.element, slideConfig.openClass);
-      remove$6(component.element, getDimensionProperty(slideConfig));
-    };
-    const doImmediateShrink = (component, slideConfig, slideState, _calculatedSize) => {
-      slideState.setCollapsed();
-      set$8(component.element, getDimensionProperty(slideConfig), getDimension(slideConfig, component.element));
-      disableTransitions(component, slideConfig);
-      setShrunk(component, slideConfig);
-      slideConfig.onStartShrink(component);
-      slideConfig.onShrunk(component);
-    };
-    const doStartShrink = (component, slideConfig, slideState, calculatedSize) => {
-      const size = calculatedSize.getOrThunk(() => getDimension(slideConfig, component.element));
-      slideState.setCollapsed();
-      set$8(component.element, getDimensionProperty(slideConfig), size);
-      reflow(component.element);
-      const root = getAnimationRoot(component, slideConfig);
-      remove$2(root, slideConfig.growingClass);
-      add$2(root, slideConfig.shrinkingClass);
-      setShrunk(component, slideConfig);
-      slideConfig.onStartShrink(component);
-    };
-    const doStartSmartShrink = (component, slideConfig, slideState) => {
-      const size = getDimension(slideConfig, component.element);
-      const shrinker = size === '0px' ? doImmediateShrink : doStartShrink;
-      shrinker(component, slideConfig, slideState, Optional.some(size));
-    };
-    const doStartGrow = (component, slideConfig, slideState) => {
-      const root = getAnimationRoot(component, slideConfig);
-      const wasShrinking = has(root, slideConfig.shrinkingClass);
-      const beforeSize = getDimension(slideConfig, component.element);
-      setGrown(component, slideConfig);
-      const fullSize = getDimension(slideConfig, component.element);
-      const startPartialGrow = () => {
-        set$8(component.element, getDimensionProperty(slideConfig), beforeSize);
-        reflow(component.element);
+    const promotionMessage = '\u26A1\ufe0fUpgrade';
+    const promotionLink = 'https://www.tiny.cloud/tinymce-self-hosted-premium-features/?utm_campaign=self_hosted_upgrade_promo&utm_source=tiny&utm_medium=referral';
+    const renderPromotion = spec => {
+      return {
+        uid: spec.uid,
+        dom: spec.dom,
+        components: [{
+            dom: {
+              tag: 'a',
+              attributes: {
+                'href': promotionLink,
+                'rel': 'noopener',
+                'target': '_blank',
+                'aria-hidden': 'true'
+              },
+              classes: ['tox-promotion-link'],
+              innerHtml: promotionMessage
+            }
+          }]
       };
-      const startCompleteGrow = () => {
-        setShrunk(component, slideConfig);
-      };
-      const setStartSize = wasShrinking ? startPartialGrow : startCompleteGrow;
-      setStartSize();
-      remove$2(root, slideConfig.shrinkingClass);
-      add$2(root, slideConfig.growingClass);
-      setGrown(component, slideConfig);
-      set$8(component.element, getDimensionProperty(slideConfig), fullSize);
-      slideState.setExpanded();
-      slideConfig.onStartGrow(component);
     };
-    const refresh$3 = (component, slideConfig, slideState) => {
-      if (slideState.isExpanded()) {
-        remove$6(component.element, getDimensionProperty(slideConfig));
-        const fullSize = getDimension(slideConfig, component.element);
-        set$8(component.element, getDimensionProperty(slideConfig), fullSize);
-      }
-    };
-    const grow = (component, slideConfig, slideState) => {
-      if (!slideState.isExpanded()) {
-        doStartGrow(component, slideConfig, slideState);
-      }
-    };
-    const shrink = (component, slideConfig, slideState) => {
-      if (slideState.isExpanded()) {
-        doStartSmartShrink(component, slideConfig, slideState);
-      }
-    };
-    const immediateShrink = (component, slideConfig, slideState) => {
-      if (slideState.isExpanded()) {
-        doImmediateShrink(component, slideConfig, slideState);
-      }
-    };
-    const hasGrown = (component, slideConfig, slideState) => slideState.isExpanded();
-    const hasShrunk = (component, slideConfig, slideState) => slideState.isCollapsed();
-    const isGrowing = (component, slideConfig, _slideState) => {
-      const root = getAnimationRoot(component, slideConfig);
-      return has(root, slideConfig.growingClass) === true;
-    };
-    const isShrinking = (component, slideConfig, _slideState) => {
-      const root = getAnimationRoot(component, slideConfig);
-      return has(root, slideConfig.shrinkingClass) === true;
-    };
-    const isTransitioning = (component, slideConfig, slideState) => isGrowing(component, slideConfig) || isShrinking(component, slideConfig);
-    const toggleGrow = (component, slideConfig, slideState) => {
-      const f = slideState.isExpanded() ? doStartSmartShrink : doStartGrow;
-      f(component, slideConfig, slideState);
-    };
-    const immediateGrow = (component, slideConfig, slideState) => {
-      if (!slideState.isExpanded()) {
-        setGrown(component, slideConfig);
-        set$8(component.element, getDimensionProperty(slideConfig), getDimension(slideConfig, component.element));
-        disableTransitions(component, slideConfig);
-        slideState.setExpanded();
-        slideConfig.onStartGrow(component);
-        slideConfig.onGrown(component);
-      }
-    };
-
-    var SlidingApis = /*#__PURE__*/Object.freeze({
-        __proto__: null,
-        refresh: refresh$3,
-        grow: grow,
-        shrink: shrink,
-        immediateShrink: immediateShrink,
-        hasGrown: hasGrown,
-        hasShrunk: hasShrunk,
-        isGrowing: isGrowing,
-        isShrinking: isShrinking,
-        isTransitioning: isTransitioning,
-        toggleGrow: toggleGrow,
-        disableTransitions: disableTransitions,
-        immediateGrow: immediateGrow
-    });
-
-    const exhibit = (base, slideConfig, _slideState) => {
-      const expanded = slideConfig.expanded;
-      return expanded ? nu$7({
-        classes: [slideConfig.openClass],
-        styles: {}
-      }) : nu$7({
-        classes: [slideConfig.closedClass],
-        styles: wrap$1(slideConfig.dimension.property, '0px')
-      });
-    };
-    const events$4 = (slideConfig, slideState) => derive$2([runOnSource(transitionend(), (component, simulatedEvent) => {
-        const raw = simulatedEvent.event.raw;
-        if (raw.propertyName === slideConfig.dimension.property) {
-          disableTransitions(component, slideConfig);
-          if (slideState.isExpanded()) {
-            remove$6(component.element, slideConfig.dimension.property);
-          }
-          const notify = slideState.isExpanded() ? slideConfig.onGrown : slideConfig.onShrunk;
-          notify(component);
-        }
-      })]);
-
-    var ActiveSliding = /*#__PURE__*/Object.freeze({
-        __proto__: null,
-        exhibit: exhibit,
-        events: events$4
-    });
-
-    var SlidingSchema = [
-      required$1('closedClass'),
-      required$1('openClass'),
-      required$1('shrinkingClass'),
-      required$1('growingClass'),
-      option$3('getAnimationRoot'),
-      onHandler('onShrunk'),
-      onHandler('onStartShrink'),
-      onHandler('onGrown'),
-      onHandler('onStartGrow'),
-      defaulted('expanded', false),
-      requiredOf('dimension', choose$1('property', {
-        width: [
-          output$1('property', 'width'),
-          output$1('getDimension', elem => get$c(elem) + 'px')
-        ],
-        height: [
-          output$1('property', 'height'),
-          output$1('getDimension', elem => get$d(elem) + 'px')
-        ]
-      }))
-    ];
-
-    const init$5 = spec => {
-      const state = Cell(spec.expanded);
-      const readState = () => 'expanded: ' + state.get();
-      return nu$8({
-        isExpanded: () => state.get() === true,
-        isCollapsed: () => state.get() === false,
-        setCollapsed: curry(state.set, false),
-        setExpanded: curry(state.set, true),
-        readState
-      });
-    };
-
-    var SlidingState = /*#__PURE__*/Object.freeze({
-        __proto__: null,
-        init: init$5
-    });
-
-    const Sliding = create$3({
-      fields: SlidingSchema,
-      name: 'sliding',
-      active: ActiveSliding,
-      apis: SlidingApis,
-      state: SlidingState
-    });
 
     const owner = 'container';
     const schema$d = [field('slotBehaviours', [])];
@@ -18092,14 +21613,18 @@
       optSlider.each(slider => {
         Replacing.set(slider, [makeSidebar(panelConfigs)]);
         const configKey = showSidebar === null || showSidebar === void 0 ? void 0 : showSidebar.toLowerCase();
-        if (isString(showSidebar) && has$2(panelConfigs, configKey)) {
+        if (isString(configKey) && has$2(panelConfigs, configKey)) {
           Composing.getCurrent(slider).each(slotContainer => {
             SlotContainer.showSlot(slotContainer, configKey);
             Sliding.immediateGrow(slider);
             remove$6(slider.element, 'width');
+            updateSidebarRoleOnToggle(sidebar.element, 'region');
           });
         }
       });
+    };
+    const updateSidebarRoleOnToggle = (sidebar, sidebarState) => {
+      set$9(sidebar, 'role', sidebarState);
     };
     const toggleSidebar = (sidebar, name) => {
       const optSlider = Composing.getCurrent(sidebar);
@@ -18109,14 +21634,17 @@
           if (Sliding.hasGrown(slider)) {
             if (SlotContainer.isShowing(slotContainer, name)) {
               Sliding.shrink(slider);
+              updateSidebarRoleOnToggle(sidebar.element, 'presentation');
             } else {
               SlotContainer.hideAllSlots(slotContainer);
               SlotContainer.showSlot(slotContainer, name);
+              updateSidebarRoleOnToggle(sidebar.element, 'region');
             }
           } else {
             SlotContainer.hideAllSlots(slotContainer);
             SlotContainer.showSlot(slotContainer, name);
             Sliding.grow(slider);
+            updateSidebarRoleOnToggle(sidebar.element, 'region');
           }
         });
       });
@@ -18140,7 +21668,7 @@
       dom: {
         tag: 'div',
         classes: ['tox-sidebar'],
-        attributes: { role: 'complementary' }
+        attributes: { role: 'presentation' }
       },
       components: [{
           dom: {
@@ -18223,11 +21751,13 @@
       }
       state.clear();
     };
+    const isBlocked = (component, blockingConfig, blockingState) => blockingState.isBlocked();
 
     var BlockingApis = /*#__PURE__*/Object.freeze({
         __proto__: null,
         block: block,
-        unblock: unblock
+        unblock: unblock,
+        isBlocked: isBlocked
     });
 
     var BlockingSchema = [
@@ -18255,40 +21785,12 @@
         init: init$4
     });
 
-    const Blocking = create$3({
+    const Blocking = create$4({
       fields: BlockingSchema,
       name: 'blocking',
       apis: BlockingApis,
       state: BlockingState
     });
-
-    const getAttrs = elem => {
-      const attributes = elem.dom.attributes !== undefined ? elem.dom.attributes : [];
-      return foldl(attributes, (b, attr) => {
-        if (attr.name === 'class') {
-          return b;
-        } else {
-          return {
-            ...b,
-            [attr.name]: attr.value
-          };
-        }
-      }, {});
-    };
-    const getClasses = elem => Array.prototype.slice.call(elem.dom.classList, 0);
-    const fromHtml = html => {
-      const elem = SugarElement.fromHtml(html);
-      const children$1 = children(elem);
-      const attrs = getAttrs(elem);
-      const classes = getClasses(elem);
-      const contents = children$1.length === 0 ? {} : { innerHtml: get$9(elem) };
-      return {
-        tag: name$3(elem),
-        classes,
-        attributes: attrs,
-        ...contents
-      };
-    };
 
     const getBusySpec$1 = providerBackstage => (_root, _behaviours) => ({
       dom: {
@@ -18301,7 +21803,7 @@
       },
       components: [{ dom: fromHtml('<div class="tox-spinner"><div></div><div></div><div></div></div>') }]
     });
-    const focusBusyComponent = throbber => Composing.getCurrent(throbber).each(comp => focus$3(comp.element));
+    const focusBusyComponent = throbber => Composing.getCurrent(throbber).each(comp => focus$3(comp.element, true));
     const toggleEditorTabIndex = (editor, state) => {
       const tabIndexAttr = 'tabindex';
       const dataTabIndexAttr = `data-mce-${ tabIndexAttr }`;
@@ -18386,7 +21888,7 @@
         if (state !== throbberState.get()) {
           throbberState.set(state);
           toggleThrobber(editor, lazyThrobber(), state, sharedBackstage.providers);
-          editor.dispatch('AfterProgressState', { state });
+          fireAfterProgressState(editor, state);
         }
       };
       editor.on('ProgressState', e => {
@@ -18486,7 +21988,7 @@
       setOverflow([]);
       setGroups$1(primary, groups);
       const availableWidth = get$c(primary.element);
-      const overflows = partition(availableWidth, detail.builtGroups.get(), comp => get$c(comp.element), overflowGroup);
+      const overflows = partition(availableWidth, detail.builtGroups.get(), comp => Math.ceil(comp.element.dom.getBoundingClientRect().width), overflowGroup);
       if (overflows.extra.length === 0) {
         Replacing.remove(primary, overflowGroup);
         setOverflow([]);
@@ -18508,7 +22010,9 @@
       markers$1(['overflowToggledClass']),
       optionFunction('getOverflowBounds'),
       required$1('lazySink'),
-      customField('overflowGroups', () => Cell([]))
+      customField('overflowGroups', () => Cell([])),
+      onHandler('onOpened'),
+      onHandler('onClosed')
     ].concat(schema$c()));
     const parts$7 = constant$1([
       required({
@@ -18534,7 +22038,8 @@
       requiredFunction('fetch'),
       optionFunction('getBounds'),
       optionObjOf('fireDismissalEventInstead', [defaulted('event', dismissRequested())]),
-      schema$y()
+      schema$y(),
+      onHandler('onToggled')
     ]);
     const parts$6 = constant$1([
       external({
@@ -18544,7 +22049,8 @@
           buttonBehaviours: derive$1([Toggling.config({
               toggleClass: detail.markers.toggledClass,
               aria: { mode: 'expanded' },
-              toggleOnExecute: false
+              toggleOnExecute: false,
+              onToggled: detail.onToggled
             })])
         })
       }),
@@ -18566,6 +22072,12 @@
       })
     ]);
 
+    const shouldSkipFocus = value$2();
+    const toggleWithoutFocusing = (button, externals) => {
+      shouldSkipFocus.set(true);
+      toggle(button, externals);
+      shouldSkipFocus.clear();
+    };
     const toggle = (button, externals) => {
       const toolbarSandbox = Coupling.getCoupled(button, 'toolbarSandbox');
       if (Sandboxing.isOpen(toolbarSandbox)) {
@@ -18594,15 +22106,20 @@
     const makeSandbox = (button, spec, detail) => {
       const ariaControls = manager();
       const onOpen = (sandbox, toolbar) => {
+        const skipFocus = shouldSkipFocus.get().getOr(false);
         detail.fetch().get(groups => {
           setGroups(button, toolbar, detail, spec.layouts, groups);
           ariaControls.link(button.element);
-          Keying.focusIn(toolbar);
+          if (!skipFocus) {
+            Keying.focusIn(toolbar);
+          }
         });
       };
       const onClose = () => {
         Toggling.off(button);
-        Focusing.focus(button);
+        if (!shouldSkipFocus.get().getOr(false)) {
+          Focusing.focus(button);
+        }
         ariaControls.unlink(button.element);
       };
       return {
@@ -18646,7 +22163,7 @@
         ])
       };
     };
-    const factory$a = (detail, components, spec, externals) => ({
+    const factory$c = (detail, components, spec, externals) => ({
       ...Button.sketch({
         ...externals.button(),
         action: button => {
@@ -18674,6 +22191,9 @@
         toggle: button => {
           toggle(button, externals);
         },
+        toggleWithoutFocusing: button => {
+          toggleWithoutFocusing(button, externals);
+        },
         getToolbar: button => {
           return Sandboxing.getState(Coupling.getCoupled(button, 'toolbarSandbox'));
         },
@@ -18684,7 +22204,7 @@
     });
     const FloatingToolbarButton = composite({
       name: 'FloatingToolbarButton',
-      factory: factory$a,
+      factory: factory$c,
       configFields: schema$a(),
       partFields: parts$6(),
       apis: {
@@ -18696,6 +22216,9 @@
         },
         toggle: (apis, button) => {
           apis.toggle(button);
+        },
+        toggleWithoutFocusing: (apis, button) => {
+          apis.toggleWithoutFocusing(button);
         },
         getToolbar: (apis, button) => apis.getToolbar(button),
         isOpen: (apis, button) => apis.isOpen(button)
@@ -18712,7 +22235,7 @@
         unit: 'item'
       })]);
 
-    const factory$9 = (detail, components, _spec, _externals) => ({
+    const factory$b = (detail, components, _spec, _externals) => ({
       uid: detail.uid,
       dom: detail.dom,
       components,
@@ -18726,7 +22249,7 @@
       name: 'ToolbarGroup',
       configFields: schema$9(),
       partFields: parts$5(),
-      factory: factory$9
+      factory: factory$b
     });
 
     const buildGroups = comps => map$2(comps, g => premade(g));
@@ -18738,7 +22261,7 @@
         });
       });
     };
-    const factory$8 = (detail, components, spec, externals) => {
+    const factory$a = (detail, components, spec, externals) => {
       const memFloatingToolbarButton = record(FloatingToolbarButton.sketch({
         fetch: () => Future.nu(resolve => {
           resolve(buildGroups(detail.overflowGroups.get()));
@@ -18768,7 +22291,8 @@
         parts: {
           button: externals['overflow-button'](),
           toolbar: externals.overflow()
-        }
+        },
+        onToggled: (comp, state) => detail[state ? 'onOpened' : 'onClosed'](comp)
       }));
       return {
         uid: detail.uid,
@@ -18795,6 +22319,9 @@
               FloatingToolbarButton.toggle(floatingToolbarButton);
             });
           },
+          toggleWithoutFocusing: toolbar => {
+            memFloatingToolbarButton.getOpt(toolbar).each(FloatingToolbarButton.toggleWithoutFocusing);
+          },
           isOpen: toolbar => memFloatingToolbarButton.getOpt(toolbar).map(FloatingToolbarButton.isOpen).getOr(false),
           reposition: toolbar => {
             memFloatingToolbarButton.getOpt(toolbar).each(floatingToolbarButton => {
@@ -18810,7 +22337,7 @@
       name: 'SplitFloatingToolbar',
       configFields: schema$b(),
       partFields: parts$7(),
-      factory: factory$8,
+      factory: factory$a,
       apis: {
         setGroups: (apis, toolbar, groups) => {
           apis.setGroups(toolbar, groups);
@@ -18822,6 +22349,9 @@
           apis.reposition(toolbar);
         },
         toggle: (apis, toolbar) => {
+          apis.toggle(toolbar);
+        },
+        toggleWithoutFocusing: (apis, toolbar) => {
           apis.toggle(toolbar);
         },
         isOpen: (apis, toolbar) => apis.isOpen(toolbar),
@@ -18919,7 +22449,7 @@
         Sliding.refresh(overflow);
       });
     };
-    const factory$7 = (detail, components, spec, externals) => {
+    const factory$9 = (detail, components, spec, externals) => {
       const toolbarToggleEvent = 'alloy.toolbar.toggle';
       const doSetGroups = (toolbar, groups) => {
         const built = map$2(groups, toolbar.getSystem().build);
@@ -18965,7 +22495,7 @@
       name: 'SplitSlidingToolbar',
       configFields: schema$8(),
       partFields: parts$4(),
-      factory: factory$7,
+      factory: factory$9,
       apis: {
         setGroups: (apis, toolbar, groups) => {
           apis.setGroups(toolbar, groups);
@@ -18990,7 +22520,7 @@
         },
         components: [ToolbarGroup.parts.items({})],
         items: toolbarGroup.items,
-        markers: { itemSelector: '*:not(.tox-split-button) > .tox-tbtn:not([disabled]), ' + '.tox-split-button:not([disabled]), ' + '.tox-toolbar-nav-js:not([disabled])' },
+        markers: { itemSelector: '*:not(.tox-split-button) > .tox-tbtn:not([disabled]), ' + '.tox-split-button:not([disabled]), ' + '.tox-toolbar-nav-js:not([disabled]), ' + '.tox-number-input:not([disabled])' },
         tgroupBehaviours: derive$1([
           Tabstopping.config({}),
           Focusing.config({})
@@ -18998,7 +22528,7 @@
       };
     };
     const renderToolbarGroup = toolbarGroup => ToolbarGroup.sketch(renderToolbarGroupCommon(toolbarGroup));
-    const getToolbarbehaviours = (toolbarSpec, modeName) => {
+    const getToolbarBehaviours = (toolbarSpec, modeName) => {
       const onAttached = runOnAttached(component => {
         const groups = map$2(toolbarSpec.initGroups, renderToolbarGroup);
         Toolbar.setGroups(component, groups);
@@ -19031,13 +22561,13 @@
             name: 'more',
             icon: Optional.some('more-drawer'),
             enabled: true,
-            tooltip: Optional.some('More...'),
+            tooltip: Optional.some('Reveal or hide additional toolbar items'),
             primary: false,
             buttonType: Optional.none(),
             borderless: false
-          }, Optional.none(), toolbarSpec.providers)
+          }, Optional.none(), toolbarSpec.providers, [], 'overflow-button')
         },
-        splitToolbarBehaviours: getToolbarbehaviours(toolbarSpec, modeName)
+        splitToolbarBehaviours: getToolbarBehaviours(toolbarSpec, modeName)
       };
     };
     const renderFloatingMoreToolbar = toolbarSpec => {
@@ -19071,7 +22601,9 @@
           }
         },
         components: [primary],
-        markers: { overflowToggledClass: 'tox-tbtn--enabled' }
+        markers: { overflowToggledClass: 'tox-tbtn--enabled' },
+        onOpened: comp => toolbarSpec.onToggled(comp, true),
+        onClosed: comp => toolbarSpec.onToggled(comp, false)
       });
     };
     const renderSlidingMoreToolbar = toolbarSpec => {
@@ -19103,9 +22635,11 @@
         },
         onOpened: comp => {
           comp.getSystem().broadcastOn([toolbarHeightChange()], { type: 'opened' });
+          toolbarSpec.onToggled(comp, true);
         },
         onClosed: comp => {
           comp.getSystem().broadcastOn([toolbarHeightChange()], { type: 'closed' });
+          toolbarSpec.onToggled(comp, false);
         }
       });
     };
@@ -19118,11 +22652,352 @@
           classes: ['tox-toolbar'].concat(toolbarSpec.type === ToolbarMode$1.scrolling ? ['tox-toolbar--scrolling'] : [])
         },
         components: [Toolbar.parts.groups({})],
-        toolbarBehaviours: getToolbarbehaviours(toolbarSpec, modeName)
+        toolbarBehaviours: getToolbarBehaviours(toolbarSpec, modeName)
       });
     };
 
+    const baseButtonFields = [
+      optionalText,
+      optionalIcon,
+      optionString('tooltip'),
+      defaultedStringEnum('buttonType', 'secondary', [
+        'primary',
+        'secondary'
+      ]),
+      defaultedBoolean('borderless', false),
+      requiredFunction('onAction')
+    ];
+    const normalButtonFields = [
+      ...baseButtonFields,
+      text,
+      requiredStringEnum('type', ['button'])
+    ];
+    const toggleButtonFields = [
+      ...baseButtonFields,
+      defaultedBoolean('active', false),
+      requiredStringEnum('type', ['togglebutton'])
+    ];
+    const schemaWithoutGroupButton = {
+      button: normalButtonFields,
+      togglebutton: toggleButtonFields
+    };
+    const groupFields = [
+      requiredStringEnum('type', ['group']),
+      defaultedArrayOf('buttons', [], choose$1('type', schemaWithoutGroupButton))
+    ];
+    const viewButtonSchema = choose$1('type', {
+      ...schemaWithoutGroupButton,
+      group: groupFields
+    });
+
+    const viewSchema = objOf([
+      defaultedArrayOf('buttons', [], viewButtonSchema),
+      requiredFunction('onShow'),
+      requiredFunction('onHide')
+    ]);
+    const createView = spec => asRaw('view', viewSchema, spec);
+
+    const renderButton = (spec, providers) => {
+      var _a, _b;
+      const isToggleButton = spec.type === 'togglebutton';
+      const optMemIcon = spec.icon.map(memIcon => renderReplaceableIconFromPack(memIcon, providers.icons)).map(record);
+      const getAction = () => comp => {
+        const setIcon = newIcon => {
+          optMemIcon.map(memIcon => memIcon.getOpt(comp).each(displayIcon => {
+            Replacing.set(displayIcon, [renderReplaceableIconFromPack(newIcon, providers.icons)]);
+          }));
+        };
+        const setActive = state => {
+          const elm = comp.element;
+          if (state) {
+            add$2(elm, 'tox-button--enabled');
+            set$9(elm, 'aria-pressed', true);
+          } else {
+            remove$2(elm, 'tox-button--enabled');
+            remove$7(elm, 'aria-pressed');
+          }
+        };
+        const isActive = () => has(comp.element, 'tox-button--enabled');
+        if (isToggleButton) {
+          return spec.onAction({
+            setIcon,
+            setActive,
+            isActive
+          });
+        }
+        if (spec.type === 'button') {
+          return spec.onAction({ setIcon });
+        }
+      };
+      const action = getAction();
+      const buttonSpec = {
+        ...spec,
+        name: isToggleButton ? spec.text.getOr(spec.icon.getOr('')) : (_a = spec.text) !== null && _a !== void 0 ? _a : spec.icon.getOr(''),
+        primary: spec.buttonType === 'primary',
+        buttonType: Optional.from(spec.buttonType),
+        tooltip: spec.tooltip,
+        icon: spec.icon,
+        enabled: true,
+        borderless: spec.borderless
+      };
+      const buttonTypeClasses = calculateClassesFromButtonType((_b = spec.buttonType) !== null && _b !== void 0 ? _b : 'secondary');
+      const optTranslatedText = isToggleButton ? spec.text.map(providers.translate) : Optional.some(providers.translate(spec.text));
+      const optTranslatedTextComponed = optTranslatedText.map(text$2);
+      const ariaLabelAttributes = buttonSpec.tooltip.or(optTranslatedText).map(al => ({ 'aria-label': providers.translate(al) })).getOr({});
+      const optIconSpec = optMemIcon.map(memIcon => memIcon.asSpec());
+      const components = componentRenderPipeline([
+        optIconSpec,
+        optTranslatedTextComponed
+      ]);
+      const hasIconAndText = spec.icon.isSome() && optTranslatedTextComponed.isSome();
+      const dom = {
+        tag: 'button',
+        classes: buttonTypeClasses.concat(...spec.icon.isSome() && !hasIconAndText ? ['tox-button--icon'] : []).concat(...hasIconAndText ? ['tox-button--icon-and-text'] : []).concat(...spec.borderless ? ['tox-button--naked'] : []).concat(...spec.type === 'togglebutton' && spec.active ? ['tox-button--enabled'] : []),
+        attributes: ariaLabelAttributes
+      };
+      const extraBehaviours = [];
+      const iconButtonSpec = renderCommonSpec(buttonSpec, Optional.some(action), extraBehaviours, dom, components, spec.tooltip, providers);
+      return Button.sketch(iconButtonSpec);
+    };
+
+    const renderViewButton = (spec, providers) => renderButton(spec, providers);
+    const renderButtonsGroup = (spec, providers) => {
+      return {
+        dom: {
+          tag: 'div',
+          classes: ['tox-view__toolbar__group']
+        },
+        components: map$2(spec.buttons, button => renderViewButton(button, providers))
+      };
+    };
+    const deviceDetection = detect$1().deviceType;
+    const isPhone = deviceDetection.isPhone();
+    const isTablet = deviceDetection.isTablet();
+    const renderViewHeader = spec => {
+      let hasGroups = false;
+      const endButtons = map$2(spec.buttons, btnspec => {
+        if (btnspec.type === 'group') {
+          hasGroups = true;
+          return renderButtonsGroup(btnspec, spec.providers);
+        } else {
+          return renderViewButton(btnspec, spec.providers);
+        }
+      });
+      return {
+        uid: spec.uid,
+        dom: {
+          tag: 'div',
+          classes: [
+            !hasGroups ? 'tox-view__header' : 'tox-view__toolbar',
+            ...isPhone || isTablet ? [
+              'tox-view--mobile',
+              'tox-view--scrolling'
+            ] : []
+          ]
+        },
+        behaviours: derive$1([
+          Focusing.config({}),
+          Keying.config({
+            mode: 'flow',
+            selector: 'button, .tox-button',
+            focusInside: FocusInsideModes.OnEnterOrSpaceMode
+          })
+        ]),
+        components: hasGroups ? endButtons : [
+          Container.sketch({
+            dom: {
+              tag: 'div',
+              classes: ['tox-view__header-start']
+            },
+            components: []
+          }),
+          Container.sketch({
+            dom: {
+              tag: 'div',
+              classes: ['tox-view__header-end']
+            },
+            components: endButtons
+          })
+        ]
+      };
+    };
+    const renderViewPane = spec => {
+      return {
+        uid: spec.uid,
+        dom: {
+          tag: 'div',
+          classes: ['tox-view__pane']
+        }
+      };
+    };
+    const factory$8 = (detail, components, _spec, _externals) => {
+      const apis = {
+        getPane: comp => parts$a.getPart(comp, detail, 'pane'),
+        getOnShow: _comp => detail.viewConfig.onShow,
+        getOnHide: _comp => detail.viewConfig.onHide
+      };
+      return {
+        uid: detail.uid,
+        dom: detail.dom,
+        components,
+        apis
+      };
+    };
+    var View = composite({
+      name: 'silver.View',
+      configFields: [required$1('viewConfig')],
+      partFields: [
+        optional({
+          factory: { sketch: renderViewHeader },
+          schema: [
+            required$1('buttons'),
+            required$1('providers')
+          ],
+          name: 'header'
+        }),
+        optional({
+          factory: { sketch: renderViewPane },
+          schema: [],
+          name: 'pane'
+        })
+      ],
+      factory: factory$8,
+      apis: {
+        getPane: (apis, comp) => apis.getPane(comp),
+        getOnShow: (apis, comp) => apis.getOnShow(comp),
+        getOnHide: (apis, comp) => apis.getOnHide(comp)
+      }
+    });
+
+    const makeViews = (parts, viewConfigs, providers) => {
+      return mapToArray(viewConfigs, (config, name) => {
+        const internalViewConfig = getOrDie(createView(config));
+        return parts.slot(name, View.sketch({
+          dom: {
+            tag: 'div',
+            classes: ['tox-view']
+          },
+          viewConfig: internalViewConfig,
+          components: [
+            ...internalViewConfig.buttons.length > 0 ? [View.parts.header({
+                buttons: internalViewConfig.buttons,
+                providers
+              })] : [],
+            View.parts.pane({})
+          ]
+        }));
+      });
+    };
+    const makeSlotContainer = (viewConfigs, providers) => SlotContainer.sketch(parts => ({
+      dom: {
+        tag: 'div',
+        classes: ['tox-view-wrap__slot-container']
+      },
+      components: makeViews(parts, viewConfigs, providers),
+      slotBehaviours: SimpleBehaviours.unnamedEvents([runOnAttached(slotContainer => SlotContainer.hideAllSlots(slotContainer))])
+    }));
+    const getCurrentName = slotContainer => {
+      return find$5(SlotContainer.getSlotNames(slotContainer), name => SlotContainer.isShowing(slotContainer, name));
+    };
+    const hideContainer = comp => {
+      const element = comp.element;
+      set$8(element, 'display', 'none');
+      set$9(element, 'aria-hidden', 'true');
+    };
+    const showContainer = comp => {
+      const element = comp.element;
+      remove$6(element, 'display');
+      remove$7(element, 'aria-hidden');
+    };
+    const makeViewInstanceApi = slot => ({ getContainer: constant$1(slot) });
+    const runOnPaneWithInstanceApi = (slotContainer, name, get) => {
+      SlotContainer.getSlot(slotContainer, name).each(view => {
+        View.getPane(view).each(pane => {
+          const onCallback = get(view);
+          onCallback(makeViewInstanceApi(pane.element.dom));
+        });
+      });
+    };
+    const runOnShow = (slotContainer, name) => runOnPaneWithInstanceApi(slotContainer, name, View.getOnShow);
+    const runOnHide = (slotContainer, name) => runOnPaneWithInstanceApi(slotContainer, name, View.getOnHide);
+    const factory$7 = (detail, spec) => {
+      const setViews = (comp, viewConfigs) => {
+        Replacing.set(comp, [makeSlotContainer(viewConfigs, spec.backstage.shared.providers)]);
+      };
+      const whichView = comp => {
+        return Composing.getCurrent(comp).bind(getCurrentName);
+      };
+      const toggleView = (comp, showMainView, hideMainView, name) => {
+        return Composing.getCurrent(comp).exists(slotContainer => {
+          const optCurrentSlotName = getCurrentName(slotContainer);
+          const isTogglingCurrentView = optCurrentSlotName.exists(current => name === current);
+          const exists = SlotContainer.getSlot(slotContainer, name).isSome();
+          if (exists) {
+            SlotContainer.hideAllSlots(slotContainer);
+            if (!isTogglingCurrentView) {
+              hideMainView();
+              showContainer(comp);
+              SlotContainer.showSlot(slotContainer, name);
+              runOnShow(slotContainer, name);
+            } else {
+              hideContainer(comp);
+              showMainView();
+            }
+            optCurrentSlotName.each(prevName => runOnHide(slotContainer, prevName));
+          }
+          return exists;
+        });
+      };
+      const apis = {
+        setViews,
+        whichView,
+        toggleView
+      };
+      return {
+        uid: detail.uid,
+        dom: {
+          tag: 'div',
+          classes: ['tox-view-wrap'],
+          attributes: { 'aria-hidden': 'true' },
+          styles: { display: 'none' }
+        },
+        components: [],
+        behaviours: derive$1([
+          Replacing.config({}),
+          Composing.config({
+            find: comp => {
+              const children = Replacing.contents(comp);
+              return head(children);
+            }
+          })
+        ]),
+        apis
+      };
+    };
+    var ViewWrapper = single({
+      factory: factory$7,
+      name: 'silver.ViewWrapper',
+      configFields: [required$1('backstage')],
+      apis: {
+        setViews: (apis, comp, views) => apis.setViews(comp, views),
+        toggleView: (apis, comp, outerContainer, editorCont, name) => apis.toggleView(comp, outerContainer, editorCont, name),
+        whichView: (apis, comp) => apis.whichView(comp)
+      }
+    });
+
     const factory$6 = (detail, components, _spec) => {
+      let toolbarDrawerOpenState = false;
+      const toggleStatusbar = editorContainer => {
+        sibling(editorContainer, '.tox-statusbar').each(statusBar => {
+          if (get$e(statusBar, 'display') === 'none' && get$f(statusBar, 'aria-hidden') === 'true') {
+            remove$6(statusBar, 'display');
+            remove$7(statusBar, 'aria-hidden');
+          } else {
+            set$8(statusBar, 'display', 'none');
+            set$9(statusBar, 'aria-hidden', 'true');
+          }
+        });
+      };
       const apis = {
         getSocket: comp => {
           return parts$a.getPart(comp, detail, 'socket');
@@ -19144,12 +23019,14 @@
         },
         setToolbar: (comp, groups) => {
           parts$a.getPart(comp, detail, 'toolbar').each(toolbar => {
-            toolbar.getApis().setGroups(toolbar, groups);
+            const renderedGroups = map$2(groups, renderToolbarGroup);
+            toolbar.getApis().setGroups(toolbar, renderedGroups);
           });
         },
         setToolbars: (comp, toolbars) => {
           parts$a.getPart(comp, detail, 'multiple-toolbar').each(mToolbar => {
-            CustomList.setItems(mToolbar, toolbars);
+            const renderedToolbars = map$2(toolbars, g => map$2(g, renderToolbarGroup));
+            CustomList.setItems(mToolbar, renderedToolbars);
           });
         },
         refreshToolbar: comp => {
@@ -19159,6 +23036,11 @@
         toggleToolbarDrawer: comp => {
           parts$a.getPart(comp, detail, 'toolbar').each(toolbar => {
             mapFrom(toolbar.getApis().toggle, toggle => toggle(toolbar));
+          });
+        },
+        toggleToolbarDrawerWithoutFocusing: comp => {
+          parts$a.getPart(comp, detail, 'toolbar').each(toolbar => {
+            mapFrom(toolbar.getApis().toggleWithoutFocusing, toggleWithoutFocusing => toggleWithoutFocusing(toolbar));
           });
         },
         isToolbarDrawerToggled: comp => {
@@ -19181,6 +23063,40 @@
         focusMenubar: comp => {
           parts$a.getPart(comp, detail, 'menubar').each(menubar => {
             SilverMenubar.focus(menubar);
+          });
+        },
+        setViews: (comp, viewConfigs) => {
+          parts$a.getPart(comp, detail, 'viewWrapper').each(wrapper => {
+            ViewWrapper.setViews(wrapper, viewConfigs);
+          });
+        },
+        toggleView: (comp, name) => {
+          return parts$a.getPart(comp, detail, 'viewWrapper').exists(wrapper => ViewWrapper.toggleView(wrapper, () => apis.showMainView(comp), () => apis.hideMainView(comp), name));
+        },
+        whichView: comp => {
+          return parts$a.getPart(comp, detail, 'viewWrapper').bind(ViewWrapper.whichView).getOrNull();
+        },
+        hideMainView: comp => {
+          toolbarDrawerOpenState = apis.isToolbarDrawerToggled(comp);
+          if (toolbarDrawerOpenState) {
+            apis.toggleToolbarDrawer(comp);
+          }
+          parts$a.getPart(comp, detail, 'editorContainer').each(editorContainer => {
+            const element = editorContainer.element;
+            toggleStatusbar(element);
+            set$8(element, 'display', 'none');
+            set$9(element, 'aria-hidden', 'true');
+          });
+        },
+        showMainView: comp => {
+          if (toolbarDrawerOpenState) {
+            apis.toggleToolbarDrawer(comp);
+          }
+          parts$a.getPart(comp, detail, 'editorContainer').each(editorContainer => {
+            const element = editorContainer.element;
+            toggleStatusbar(element);
+            remove$6(element, 'display');
+            remove$7(element, 'aria-hidden');
           });
         }
       };
@@ -19249,6 +23165,7 @@
               spec.onEscape();
               return Optional.some(true);
             },
+            onToggled: (_comp, state) => spec.onToolbarToggled(state),
             cyclicKeying: false,
             initGroups: [],
             getSink: spec.getSink,
@@ -19275,6 +23192,11 @@
       name: 'header',
       schema: [required$1('dom')]
     });
+    const partPromotion = partType.optional({
+      factory: { sketch: renderPromotion },
+      name: 'promotion',
+      schema: [required$1('dom')]
+    });
     const partSocket = partType.optional({
       name: 'socket',
       schema: [required$1('dom')]
@@ -19288,6 +23210,24 @@
       factory: { sketch: renderThrobber },
       name: 'throbber',
       schema: [required$1('dom')]
+    });
+    const partViewWrapper = partType.optional({
+      factory: ViewWrapper,
+      name: 'viewWrapper',
+      schema: [required$1('backstage')]
+    });
+    const renderEditorContainer = spec => ({
+      uid: spec.uid,
+      dom: {
+        tag: 'div',
+        classes: ['tox-editor-container']
+      },
+      components: spec.components
+    });
+    const partEditorContainer = partType.optional({
+      factory: { sketch: renderEditorContainer },
+      name: 'editorContainer',
+      schema: []
     });
     var OuterContainer = composite({
       name: 'OuterContainer',
@@ -19303,7 +23243,10 @@
         partMultipleToolbar,
         partSocket,
         partSidebar,
-        partThrobber
+        partPromotion,
+        partThrobber,
+        partViewWrapper,
+        partEditorContainer
       ],
       apis: {
         getSocket: (apis, comp) => {
@@ -19324,21 +23267,20 @@
         getToolbar: (apis, comp) => {
           return apis.getToolbar(comp);
         },
-        setToolbar: (apis, comp, grps) => {
-          const groups = map$2(grps, grp => {
-            return renderToolbarGroup(grp);
-          });
+        setToolbar: (apis, comp, groups) => {
           apis.setToolbar(comp, groups);
         },
-        setToolbars: (apis, comp, ts) => {
-          const renderedToolbars = map$2(ts, g => map$2(g, renderToolbarGroup));
-          apis.setToolbars(comp, renderedToolbars);
+        setToolbars: (apis, comp, toolbars) => {
+          apis.setToolbars(comp, toolbars);
         },
         refreshToolbar: (apis, comp) => {
           return apis.refreshToolbar(comp);
         },
         toggleToolbarDrawer: (apis, comp) => {
           apis.toggleToolbarDrawer(comp);
+        },
+        toggleToolbarDrawerWithoutFocusing: (apis, comp) => {
+          apis.toggleToolbarDrawerWithoutFocusing(comp);
         },
         isToolbarDrawerToggled: (apis, comp) => {
           return apis.isToolbarDrawerToggled(comp);
@@ -19354,6 +23296,15 @@
         },
         focusToolbar: (apis, comp) => {
           apis.focusToolbar(comp);
+        },
+        setViews: (apis, comp, views) => {
+          apis.setViews(comp, views);
+        },
+        toggleView: (apis, comp, name) => {
+          return apis.toggleView(comp, name);
+        },
+        whichView: (apis, comp) => {
+          return apis.whichView(comp);
         }
       }
     });
@@ -19362,7 +23313,7 @@
     const defaultMenus = {
       file: {
         title: 'File',
-        items: 'newdocument restoredraft | preview | export print | deleteallconversations'
+        items: 'newdocument restoredraft | preview | importword exportpdf exportword | export print | deleteallconversations'
       },
       edit: {
         title: 'Edit',
@@ -19370,11 +23321,11 @@
       },
       view: {
         title: 'View',
-        items: 'code | visualaid visualchars visualblocks | spellchecker | preview fullscreen | showcomments'
+        items: 'code revisionhistory | visualaid visualchars visualblocks | spellchecker | preview fullscreen | showcomments'
       },
       insert: {
         title: 'Insert',
-        items: 'image link media addcomment pageembed template codesample inserttable | charmap emoticons hr | pagebreak nonbreaking anchor tableofcontents | insertdatetime'
+        items: 'image link media addcomment pageembed inserttemplate codesample inserttable accordion | charmap emoticons hr | pagebreak nonbreaking anchor tableofcontents footnotes | mergetags | insertdatetime'
       },
       format: {
         title: 'Format',
@@ -19382,7 +23333,7 @@
       },
       tools: {
         title: 'Tools',
-        items: 'spellchecker spellcheckerlanguage | a11ycheck code wordcount'
+        items: 'aidialog aishortcuts | spellchecker spellcheckerlanguage | autocorrect capitalization | a11ycheck code typography wordcount addtemplate'
       },
       table: {
         title: 'Table',
@@ -19414,10 +23365,7 @@
       };
     };
     const parseItemsString = items => {
-      if (typeof items === 'string') {
-        return items.split(' ');
-      }
-      return items;
+      return items.split(' ');
     };
     const identifyMenus = (editor, registry) => {
       const rawMenuData = {
@@ -19442,7 +23390,7 @@
         }, registry, editor);
       });
       return filter$2(menus, menu => {
-        const isNotSeparator = item => item.type !== 'separator';
+        const isNotSeparator = item => isString(item) || item.type !== 'separator';
         return menu.getItems().length > 0 && exists(menu.getItems(), isNotSeparator);
       });
     };
@@ -19466,70 +23414,74 @@
       editor.on('remove', () => styleSheetLoader.unload(stylesheetUrl));
       return styleSheetLoader.load(stylesheetUrl);
     };
-    const loadUiSkins = (editor, skinUrl) => {
-      const skinUiCss = skinUrl + '/skin.min.css';
-      return loadStylesheet(editor, skinUiCss, editor.ui.styleSheetLoader);
+    const loadRawCss = (editor, key, css, styleSheetLoader) => {
+      editor.on('remove', () => styleSheetLoader.unloadRawCss(key));
+      return styleSheetLoader.loadRawCss(key, css);
     };
-    const loadShadowDomUiSkins = (editor, skinUrl) => {
+    const loadUiSkins = async (editor, skinUrl) => {
+      const skinResourceIdentifier = getSkinUrlOption(editor).getOr('default');
+      const skinUiCss = 'ui/' + skinResourceIdentifier + '/skin.css';
+      const css = tinymce.Resource.get(skinUiCss);
+      if (isString(css)) {
+        return Promise.resolve(loadRawCss(editor, skinUiCss, css, editor.ui.styleSheetLoader));
+      } else {
+        const skinUiCss = skinUrl + '/skin.min.css';
+        return loadStylesheet(editor, skinUiCss, editor.ui.styleSheetLoader);
+      }
+    };
+    const loadShadowDomUiSkins = async (editor, skinUrl) => {
       const isInShadowRoot$1 = isInShadowRoot(SugarElement.fromDom(editor.getElement()));
       if (isInShadowRoot$1) {
-        const shadowDomSkinCss = skinUrl + '/skin.shadowdom.min.css';
-        return loadStylesheet(editor, shadowDomSkinCss, global$7.DOM.styleSheetLoader);
-      } else {
-        return Promise.resolve();
+        const skinResourceIdentifier = getSkinUrlOption(editor).getOr('default');
+        const shadowDomSkinCss = 'ui/' + skinResourceIdentifier + '/skin.shadowdom.css';
+        const css = tinymce.Resource.get(shadowDomSkinCss);
+        if (isString(css)) {
+          loadRawCss(editor, shadowDomSkinCss, css, global$7.DOM.styleSheetLoader);
+          return Promise.resolve();
+        } else {
+          const shadowDomSkinCss = skinUrl + '/skin.shadowdom.min.css';
+          return loadStylesheet(editor, shadowDomSkinCss, global$7.DOM.styleSheetLoader);
+        }
+      }
+    };
+    const loadUrlSkin = async (isInline, editor) => {
+      getSkinUrlOption(editor).fold(() => {
+        const skinResourceIdentifier = getSkinUrl(editor);
+        if (skinResourceIdentifier) {
+          editor.contentCSS.push(skinResourceIdentifier + (isInline ? '/content.inline' : '/content') + '.min.css');
+        }
+      }, skinUrl => {
+        const skinContentCss = 'ui/' + skinUrl + (isInline ? '/content.inline' : '/content') + '.css';
+        const css = tinymce.Resource.get(skinContentCss);
+        if (isString(css)) {
+          loadRawCss(editor, skinContentCss, css, editor.ui.styleSheetLoader);
+        } else {
+          const skinResourceIdentifier = getSkinUrl(editor);
+          if (skinResourceIdentifier) {
+            editor.contentCSS.push(skinResourceIdentifier + (isInline ? '/content.inline' : '/content') + '.min.css');
+          }
+        }
+      });
+      const skinUrl = getSkinUrl(editor);
+      if (!isSkinDisabled(editor) && isString(skinUrl)) {
+        return Promise.all([
+          loadUiSkins(editor, skinUrl),
+          loadShadowDomUiSkins(editor, skinUrl)
+        ]).then();
       }
     };
     const loadSkin = (isInline, editor) => {
-      const skinUrl = getSkinUrl(editor);
-      if (skinUrl) {
-        editor.contentCSS.push(skinUrl + (isInline ? '/content.inline' : '/content') + '.min.css');
-      }
-      if (!isSkinDisabled(editor) && isString(skinUrl)) {
-        Promise.all([
-          loadUiSkins(editor, skinUrl),
-          loadShadowDomUiSkins(editor, skinUrl)
-        ]).then(fireSkinLoaded(editor), fireSkinLoadError(editor, 'Skin could not be loaded'));
-      } else {
-        fireSkinLoaded(editor)();
-      }
+      return loadUrlSkin(isInline, editor).then(fireSkinLoaded(editor), fireSkinLoadError(editor, 'Skin could not be loaded'));
     };
     const iframe = curry(loadSkin, false);
     const inline = curry(loadSkin, true);
 
-    const onSetupFormatToggle = (editor, name) => api => {
-      const boundCallback = unbindable();
-      const init = () => {
-        api.setActive(editor.formatter.match(name));
-        const binding = editor.formatter.formatChanged(name, api.setActive);
-        boundCallback.set(binding);
-      };
-      editor.initialized ? init() : editor.once('init', init);
-      return () => {
-        editor.off('init', init);
-        boundCallback.clear();
-      };
-    };
-    const onSetupEvent = (editor, event, f) => api => {
-      const handleEvent = () => f(api);
-      const init = () => {
-        f(api);
-        editor.on(event, handleEvent);
-      };
-      editor.initialized ? init() : editor.once('init', init);
-      return () => {
-        editor.off('init', init);
-        editor.off(event, handleEvent);
-      };
-    };
-    const onActionToggleFormat$1 = editor => rawItem => () => {
-      editor.undoManager.transact(() => {
-        editor.focus();
-        editor.execCommand('mceToggleFormat', false, rawItem.format);
-      });
-    };
-    const onActionExecCommand = (editor, command) => () => editor.execCommand(command);
+    const makeTooltipText = (editor, labelWithPlaceholder, value) => isEmpty(value) ? editor.translate(labelWithPlaceholder) : editor.translate([
+      labelWithPlaceholder,
+      editor.translate(value)
+    ]);
 
-    const generateSelectItems = (_editor, backstage, spec) => {
+    const generateSelectItems = (backstage, spec) => {
       const generateItem = (rawItem, response, invalid, value) => {
         const translatedText = backstage.shared.providers.translate(rawItem.title);
         if (rawItem.type === 'separator') {
@@ -19577,7 +23529,10 @@
       const getFetch = (backstage, getStyleItems) => (comp, callback) => {
         const preItems = getStyleItems();
         const items = validateItems(preItems);
-        const menu = build(items, ItemResponse$1.CLOSE_ON_EXECUTE, backstage, false);
+        const menu = build(items, ItemResponse$1.CLOSE_ON_EXECUTE, backstage, {
+          isHorizontalMenu: false,
+          search: Optional.none()
+        });
         callback(menu);
       };
       return {
@@ -19585,25 +23540,39 @@
         getFetch
       };
     };
-    const createMenuItems = (editor, backstage, spec) => {
+    const createMenuItems = (backstage, spec) => {
       const dataset = spec.dataset;
       const getStyleItems = dataset.type === 'basic' ? () => map$2(dataset.data, d => processBasic(d, spec.isSelectedFor, spec.getPreviewFor)) : dataset.getData;
       return {
-        items: generateSelectItems(editor, backstage, spec),
+        items: generateSelectItems(backstage, spec),
         getStyleItems
       };
     };
-    const createSelectButton = (editor, backstage, spec) => {
-      const {items, getStyleItems} = createMenuItems(editor, backstage, spec);
-      const getApi = comp => ({ getComponent: constant$1(comp) });
-      const onSetup = onSetupEvent(editor, 'NodeChange', api => {
-        const comp = api.getComponent();
-        spec.updateText(comp);
+    const createSelectButton = (editor, backstage, spec, getTooltip, textUpdateEventName, btnName) => {
+      const {items, getStyleItems} = createMenuItems(backstage, spec);
+      const tooltipString = Cell(spec.tooltip);
+      const getApi = comp => ({
+        getComponent: constant$1(comp),
+        setTooltip: tooltip => {
+          const translatedTooltip = backstage.shared.providers.translate(tooltip);
+          set$9(comp.element, 'aria-label', translatedTooltip);
+          tooltipString.set(tooltip);
+        }
       });
+      const onSetup = api => {
+        const handler = e => api.setTooltip(makeTooltipText(editor, getTooltip(e.value), e.value));
+        editor.on(textUpdateEventName, handler);
+        return composeUnbinders(onSetupEvent(editor, 'NodeChange', api => {
+          const comp = api.getComponent();
+          spec.updateText(comp);
+          Disabling.set(api.getComponent(), !editor.selection.isEditable());
+        })(api), () => editor.off(textUpdateEventName, handler));
+      };
       return renderCommonDropdown({
         text: spec.icon.isSome() ? Optional.none() : spec.text,
         icon: spec.icon,
-        tooltip: Optional.from(spec.tooltip),
+        ariaLabel: Optional.some(spec.tooltip),
+        tooltip: Optional.none(),
         role: Optional.none(),
         fetch: items.getFetch(backstage, getStyleItems),
         onSetup,
@@ -19611,8 +23580,18 @@
         columns: 1,
         presets: 'normal',
         classes: spec.icon.isSome() ? [] : ['bespoke'],
-        dropdownBehaviours: []
-      }, 'tox-tbtn', backstage.shared);
+        dropdownBehaviours: [Tooltipping.config({
+            ...backstage.shared.providers.tooltips.getConfig({
+              tooltipText: backstage.shared.providers.translate(spec.tooltip),
+              onShow: comp => {
+                if (spec.tooltip !== tooltipString.get()) {
+                  const translatedTooltip = backstage.shared.providers.translate(tooltipString.get());
+                  Tooltipping.setComponents(comp, backstage.shared.providers.tooltips.getComponents({ tooltipText: translatedTooltip }));
+                }
+              }
+            })
+          })]
+      }, 'tox-tbtn', backstage.shared, btnName);
     };
 
     const process = rawFormats => map$2(rawFormats, item => {
@@ -19652,6 +23631,9 @@
       };
     };
 
+    const menuTitle$4 = 'Align';
+    const getTooltipPlaceholder$4 = constant$1('Alignment {0}');
+    const fallbackAlignment = 'left';
     const alignMenuItems = [
       {
         title: 'Left',
@@ -19684,13 +23666,14 @@
       const getPreviewFor = _format => Optional.none;
       const updateSelectMenuIcon = comp => {
         const match = getMatchingValue();
-        const alignment = match.fold(constant$1('left'), item => item.title.toLowerCase());
+        const alignment = match.fold(constant$1(fallbackAlignment), item => item.title.toLowerCase());
         emitWith(comp, updateMenuIcon, { icon: `align-${ alignment }` });
+        fireAlignTextUpdate(editor, { value: alignment });
       };
       const dataset = buildBasicStaticDataset(alignMenuItems);
       const onAction = rawItem => () => find$5(alignMenuItems, item => item.format === rawItem.format).each(item => editor.execCommand(item.command));
       return {
-        tooltip: 'Align',
+        tooltip: makeTooltipText(editor, getTooltipPlaceholder$4(), fallbackAlignment),
         text: Optional.none(),
         icon: Optional.some('align-left'),
         isSelectedFor,
@@ -19703,11 +23686,12 @@
         isInvalid: item => !editor.formatter.canApply(item.format)
       };
     };
-    const createAlignButton = (editor, backstage) => createSelectButton(editor, backstage, getSpec$4(editor));
+    const createAlignButton = (editor, backstage) => createSelectButton(editor, backstage, getSpec$4(editor), getTooltipPlaceholder$4, 'AlignTextUpdate', 'align');
     const createAlignMenu = (editor, backstage) => {
-      const menuItems = createMenuItems(editor, backstage, getSpec$4(editor));
+      const menuItems = createMenuItems(backstage, getSpec$4(editor));
       editor.ui.registry.addNestedMenuItem('align', {
-        text: backstage.shared.providers.translate('Align'),
+        text: backstage.shared.providers.translate(menuTitle$4),
+        onSetup: onSetupEditableToggle(editor),
         getSubmenuItems: () => menuItems.items.validateItems(menuItems.getStyleItems())
       });
     };
@@ -19715,30 +23699,34 @@
     const findNearest = (editor, getStyles) => {
       const styles = getStyles();
       const formats = map$2(styles, style => style.format);
-      return Optional.from(editor.formatter.closest(formats)).bind(fmt => find$5(styles, data => data.format === fmt)).orThunk(() => someIf(editor.formatter.match('p'), {
-        title: 'Paragraph',
-        format: 'p'
-      }));
+      return Optional.from(editor.formatter.closest(formats)).bind(fmt => find$5(styles, data => data.format === fmt));
     };
 
+    const menuTitle$3 = 'Blocks';
+    const getTooltipPlaceholder$3 = constant$1('Block {0}');
+    const fallbackFormat = 'Paragraph';
     const getSpec$3 = editor => {
-      const fallbackFormat = 'Paragraph';
       const isSelectedFor = format => () => editor.formatter.match(format);
       const getPreviewFor = format => () => {
         const fmt = editor.formatter.get(format);
-        return Optional.some({
-          tag: fmt.length > 0 ? fmt[0].inline || fmt[0].block || 'div' : 'div',
-          styles: editor.dom.parseStyle(editor.formatter.getCssText(format))
-        });
+        if (fmt) {
+          return Optional.some({
+            tag: fmt.length > 0 ? fmt[0].inline || fmt[0].block || 'div' : 'div',
+            styles: editor.dom.parseStyle(editor.formatter.getCssText(format))
+          });
+        } else {
+          return Optional.none();
+        }
       };
       const updateSelectMenuText = comp => {
         const detectedFormat = findNearest(editor, () => dataset.data);
         const text = detectedFormat.fold(constant$1(fallbackFormat), fmt => fmt.title);
         emitWith(comp, updateMenuText, { text });
+        fireBlocksTextUpdate(editor, { value: text });
       };
       const dataset = buildBasicSettingsDataset(editor, 'block_formats', Delimiter.SemiColon);
       return {
-        tooltip: 'Blocks',
+        tooltip: makeTooltipText(editor, getTooltipPlaceholder$3(), fallbackFormat),
         text: Optional.some(fallbackFormat),
         icon: Optional.none(),
         isSelectedFor,
@@ -19751,15 +23739,19 @@
         isInvalid: item => !editor.formatter.canApply(item.format)
       };
     };
-    const createBlocksButton = (editor, backstage) => createSelectButton(editor, backstage, getSpec$3(editor));
+    const createBlocksButton = (editor, backstage) => createSelectButton(editor, backstage, getSpec$3(editor), getTooltipPlaceholder$3, 'BlocksTextUpdate', 'blocks');
     const createBlocksMenu = (editor, backstage) => {
-      const menuItems = createMenuItems(editor, backstage, getSpec$3(editor));
+      const menuItems = createMenuItems(backstage, getSpec$3(editor));
       editor.ui.registry.addNestedMenuItem('blocks', {
-        text: 'Blocks',
+        text: menuTitle$3,
+        onSetup: onSetupEditableToggle(editor),
         getSubmenuItems: () => menuItems.items.validateItems(menuItems.getStyleItems())
       });
     };
 
+    const menuTitle$2 = 'Fonts';
+    const getTooltipPlaceholder$2 = constant$1('Font {0}');
+    const systemFont = 'System Font';
     const systemStackFonts = [
       '-apple-system',
       'Segoe UI',
@@ -19771,25 +23763,27 @@
       const fonts = fontFamily.split(/\s*,\s*/);
       return map$2(fonts, font => font.replace(/^['"]+|['"]+$/g, ''));
     };
-    const isSystemFontStack = fontFamily => {
-      const matchesSystemStack = () => {
+    const matchesStack = (fonts, stack) => stack.length > 0 && forall(stack, font => fonts.indexOf(font.toLowerCase()) > -1);
+    const isSystemFontStack = (fontFamily, userStack) => {
+      if (fontFamily.indexOf('-apple-system') === 0 || userStack.length > 0) {
         const fonts = splitFonts(fontFamily.toLowerCase());
-        return forall(systemStackFonts, font => fonts.indexOf(font.toLowerCase()) > -1);
-      };
-      return fontFamily.indexOf('-apple-system') === 0 && matchesSystemStack();
+        return matchesStack(fonts, systemStackFonts) || matchesStack(fonts, userStack);
+      } else {
+        return false;
+      }
     };
     const getSpec$2 = editor => {
-      const systemFont = 'System Font';
       const getMatchingValue = () => {
         const getFirstFont = fontFamily => fontFamily ? splitFonts(fontFamily)[0] : '';
         const fontFamily = editor.queryCommandValue('FontName');
         const items = dataset.data;
         const font = fontFamily ? fontFamily.toLowerCase() : '';
+        const userStack = getDefaultFontStack(editor);
         const matchOpt = find$5(items, item => {
           const format = item.format;
           return format.toLowerCase() === font || getFirstFont(format).toLowerCase() === getFirstFont(font).toLowerCase();
         }).orThunk(() => {
-          return someIf(isSystemFontStack(font), {
+          return someIf(isSystemFontStack(font, userStack), {
             title: systemFont,
             format: font
           });
@@ -19818,10 +23812,11 @@
         const {matchOpt, font} = getMatchingValue();
         const text = matchOpt.fold(constant$1(font), item => item.title);
         emitWith(comp, updateMenuText, { text });
+        fireFontFamilyTextUpdate(editor, { value: text });
       };
       const dataset = buildBasicSettingsDataset(editor, 'font_family_formats', Delimiter.SemiColon);
       return {
-        tooltip: 'Fonts',
+        tooltip: makeTooltipText(editor, getTooltipPlaceholder$2(), systemFont),
         text: Optional.some(systemFont),
         icon: Optional.none(),
         isSelectedFor,
@@ -19834,15 +23829,314 @@
         isInvalid: never
       };
     };
-    const createFontFamilyButton = (editor, backstage) => createSelectButton(editor, backstage, getSpec$2(editor));
+    const createFontFamilyButton = (editor, backstage) => createSelectButton(editor, backstage, getSpec$2(editor), getTooltipPlaceholder$2, 'FontFamilyTextUpdate', 'fontfamily');
     const createFontFamilyMenu = (editor, backstage) => {
-      const menuItems = createMenuItems(editor, backstage, getSpec$2(editor));
+      const menuItems = createMenuItems(backstage, getSpec$2(editor));
       editor.ui.registry.addNestedMenuItem('fontfamily', {
-        text: backstage.shared.providers.translate('Fonts'),
+        text: backstage.shared.providers.translate(menuTitle$2),
+        onSetup: onSetupEditableToggle(editor),
         getSubmenuItems: () => menuItems.items.validateItems(menuItems.getStyleItems())
       });
     };
 
+    const units = {
+      unsupportedLength: [
+        'em',
+        'ex',
+        'cap',
+        'ch',
+        'ic',
+        'rem',
+        'lh',
+        'rlh',
+        'vw',
+        'vh',
+        'vi',
+        'vb',
+        'vmin',
+        'vmax',
+        'cm',
+        'mm',
+        'Q',
+        'in',
+        'pc',
+        'pt',
+        'px'
+      ],
+      fixed: [
+        'px',
+        'pt'
+      ],
+      relative: ['%'],
+      empty: ['']
+    };
+    const pattern = (() => {
+      const decimalDigits = '[0-9]+';
+      const signedInteger = '[+-]?' + decimalDigits;
+      const exponentPart = '[eE]' + signedInteger;
+      const dot = '\\.';
+      const opt = input => `(?:${ input })?`;
+      const unsignedDecimalLiteral = [
+        'Infinity',
+        decimalDigits + dot + opt(decimalDigits) + opt(exponentPart),
+        dot + decimalDigits + opt(exponentPart),
+        decimalDigits + opt(exponentPart)
+      ].join('|');
+      const float = `[+-]?(?:${ unsignedDecimalLiteral })`;
+      return new RegExp(`^(${ float })(.*)$`);
+    })();
+    const isUnit = (unit, accepted) => exists(accepted, acc => exists(units[acc], check => unit === check));
+    const parse = (input, accepted) => {
+      const match = Optional.from(pattern.exec(input));
+      return match.bind(array => {
+        const value = Number(array[1]);
+        const unitRaw = array[2];
+        if (isUnit(unitRaw, accepted)) {
+          return Optional.some({
+            value,
+            unit: unitRaw
+          });
+        } else {
+          return Optional.none();
+        }
+      });
+    };
+    const normalise = (input, accepted) => parse(input, accepted).map(({value, unit}) => value + unit);
+
+    const Keys = {
+      tab: constant$1(9),
+      escape: constant$1(27),
+      enter: constant$1(13),
+      backspace: constant$1(8),
+      delete: constant$1(46),
+      left: constant$1(37),
+      up: constant$1(38),
+      right: constant$1(39),
+      down: constant$1(40),
+      space: constant$1(32),
+      home: constant$1(36),
+      end: constant$1(35),
+      pageUp: constant$1(33),
+      pageDown: constant$1(34)
+    };
+
+    const createBespokeNumberInput = (editor, backstage, spec, btnName) => {
+      let currentComp = Optional.none();
+      const getValueFromCurrentComp = comp => comp.map(alloyComp => Representing.getValue(alloyComp)).getOr('');
+      const onSetup = onSetupEvent(editor, 'NodeChange SwitchMode', api => {
+        const comp = api.getComponent();
+        currentComp = Optional.some(comp);
+        spec.updateInputValue(comp);
+        Disabling.set(comp, !editor.selection.isEditable());
+      });
+      const getApi = comp => ({ getComponent: constant$1(comp) });
+      const editorOffCell = Cell(noop);
+      const customEvents = generate$6('custom-number-input-events');
+      const changeValue = (f, fromInput, focusBack) => {
+        const text = getValueFromCurrentComp(currentComp);
+        const newValue = spec.getNewValue(text, f);
+        const lenghtDelta = text.length - `${ newValue }`.length;
+        const oldStart = currentComp.map(comp => comp.element.dom.selectionStart - lenghtDelta);
+        const oldEnd = currentComp.map(comp => comp.element.dom.selectionEnd - lenghtDelta);
+        spec.onAction(newValue, focusBack);
+        currentComp.each(comp => {
+          Representing.setValue(comp, newValue);
+          if (fromInput) {
+            oldStart.each(oldStart => comp.element.dom.selectionStart = oldStart);
+            oldEnd.each(oldEnd => comp.element.dom.selectionEnd = oldEnd);
+          }
+        });
+      };
+      const decrease = (fromInput, focusBack) => changeValue((n, s) => n - s, fromInput, focusBack);
+      const increase = (fromInput, focusBack) => changeValue((n, s) => n + s, fromInput, focusBack);
+      const goToParent = comp => parentElement(comp.element).fold(Optional.none, parent => {
+        focus$3(parent);
+        return Optional.some(true);
+      });
+      const focusInput = comp => {
+        if (hasFocus(comp.element)) {
+          firstChild(comp.element).each(input => focus$3(input));
+          return Optional.some(true);
+        } else {
+          return Optional.none();
+        }
+      };
+      const makeStepperButton = (action, title, tooltip, classes) => {
+        const editorOffCellStepButton = Cell(noop);
+        const translatedTooltip = backstage.shared.providers.translate(tooltip);
+        const altExecuting = generate$6('altExecuting');
+        const onSetup = onSetupEvent(editor, 'NodeChange SwitchMode', api => {
+          Disabling.set(api.getComponent(), !editor.selection.isEditable());
+        });
+        const onClick = comp => {
+          if (!Disabling.isDisabled(comp)) {
+            action(true);
+          }
+        };
+        return Button.sketch({
+          dom: {
+            tag: 'button',
+            attributes: {
+              'aria-label': translatedTooltip,
+              'data-mce-name': title
+            },
+            classes: classes.concat(title)
+          },
+          components: [renderIconFromPack$1(title, backstage.shared.providers.icons)],
+          buttonBehaviours: derive$1([
+            Disabling.config({}),
+            Tooltipping.config(backstage.shared.providers.tooltips.getConfig({ tooltipText: translatedTooltip })),
+            config(altExecuting, [
+              onControlAttached({
+                onSetup,
+                getApi
+              }, editorOffCellStepButton),
+              onControlDetached({ getApi }, editorOffCellStepButton),
+              run$1(keydown(), (comp, se) => {
+                if (se.event.raw.keyCode === Keys.space() || se.event.raw.keyCode === Keys.enter()) {
+                  if (!Disabling.isDisabled(comp)) {
+                    action(false);
+                  }
+                }
+              }),
+              run$1(click(), onClick),
+              run$1(touchend(), onClick)
+            ])
+          ]),
+          eventOrder: {
+            [keydown()]: [
+              altExecuting,
+              'keying'
+            ],
+            [click()]: [
+              altExecuting,
+              'alloy.base.behaviour'
+            ],
+            [touchend()]: [
+              altExecuting,
+              'alloy.base.behaviour'
+            ],
+            [attachedToDom()]: [
+              'alloy.base.behaviour',
+              altExecuting,
+              'tooltipping'
+            ],
+            [detachedFromDom()]: [
+              altExecuting,
+              'tooltipping'
+            ]
+          }
+        });
+      };
+      const memMinus = record(makeStepperButton(focusBack => decrease(false, focusBack), 'minus', 'Decrease font size', []));
+      const memPlus = record(makeStepperButton(focusBack => increase(false, focusBack), 'plus', 'Increase font size', []));
+      const memInput = record({
+        dom: {
+          tag: 'div',
+          classes: ['tox-input-wrapper']
+        },
+        components: [Input.sketch({
+            inputBehaviours: derive$1([
+              Disabling.config({}),
+              config(customEvents, [
+                onControlAttached({
+                  onSetup,
+                  getApi
+                }, editorOffCell),
+                onControlDetached({ getApi }, editorOffCell)
+              ]),
+              config('input-update-display-text', [
+                run$1(updateMenuText, (comp, se) => {
+                  Representing.setValue(comp, se.event.text);
+                }),
+                run$1(focusout(), comp => {
+                  spec.onAction(Representing.getValue(comp));
+                }),
+                run$1(change(), comp => {
+                  spec.onAction(Representing.getValue(comp));
+                })
+              ]),
+              Keying.config({
+                mode: 'special',
+                onEnter: _comp => {
+                  changeValue(identity, true, true);
+                  return Optional.some(true);
+                },
+                onEscape: goToParent,
+                onUp: _comp => {
+                  increase(true, false);
+                  return Optional.some(true);
+                },
+                onDown: _comp => {
+                  decrease(true, false);
+                  return Optional.some(true);
+                },
+                onLeft: (_comp, se) => {
+                  se.cut();
+                  return Optional.none();
+                },
+                onRight: (_comp, se) => {
+                  se.cut();
+                  return Optional.none();
+                }
+              })
+            ])
+          })],
+        behaviours: derive$1([
+          Focusing.config({}),
+          Keying.config({
+            mode: 'special',
+            onEnter: focusInput,
+            onSpace: focusInput,
+            onEscape: goToParent
+          }),
+          config('input-wrapper-events', [run$1(mouseover(), comp => {
+              each$1([
+                memMinus,
+                memPlus
+              ], button => {
+                const buttonNode = SugarElement.fromDom(button.get(comp).element.dom);
+                if (hasFocus(buttonNode)) {
+                  blur$1(buttonNode);
+                }
+              });
+            })])
+        ])
+      });
+      return {
+        dom: {
+          tag: 'div',
+          classes: ['tox-number-input'],
+          attributes: { ...isNonNullable(btnName) ? { 'data-mce-name': btnName } : {} }
+        },
+        components: [
+          memMinus.asSpec(),
+          memInput.asSpec(),
+          memPlus.asSpec()
+        ],
+        behaviours: derive$1([
+          Focusing.config({}),
+          Keying.config({
+            mode: 'flow',
+            focusInside: FocusInsideModes.OnEnterOrSpaceMode,
+            cycles: false,
+            selector: 'button, .tox-input-wrapper',
+            onEscape: wrapperComp => {
+              if (hasFocus(wrapperComp.element)) {
+                return Optional.none();
+              } else {
+                focus$3(wrapperComp.element);
+                return Optional.some(true);
+              }
+            }
+          })
+        ])
+      };
+    };
+
+    const menuTitle$1 = 'Font sizes';
+    const getTooltipPlaceholder$1 = constant$1('Font size {0}');
+    const fallbackFontSize = '12pt';
     const legacyFontSizes = {
       '8pt': '1',
       '10pt': '2',
@@ -19906,11 +24200,12 @@
         const {matchOpt, size} = getMatchingValue();
         const text = matchOpt.fold(constant$1(size), match => match.title);
         emitWith(comp, updateMenuText, { text });
+        fireFontSizeTextUpdate(editor, { value: text });
       };
       const dataset = buildBasicSettingsDataset(editor, 'font_size_formats', Delimiter.Space);
       return {
-        tooltip: 'Font sizes',
-        text: Optional.some('12pt'),
+        tooltip: makeTooltipText(editor, getTooltipPlaceholder$1(), fallbackFontSize),
+        text: Optional.some(fallbackFontSize),
         icon: Optional.none(),
         isSelectedFor,
         getPreviewFor,
@@ -19922,17 +24217,67 @@
         isInvalid: never
       };
     };
-    const createFontSizeButton = (editor, backstage) => createSelectButton(editor, backstage, getSpec$1(editor));
+    const createFontSizeButton = (editor, backstage) => createSelectButton(editor, backstage, getSpec$1(editor), getTooltipPlaceholder$1, 'FontSizeTextUpdate', 'fontsize');
+    const getConfigFromUnit = unit => {
+      var _a;
+      const baseConfig = { step: 1 };
+      const configs = {
+        em: { step: 0.1 },
+        cm: { step: 0.1 },
+        in: { step: 0.1 },
+        pc: { step: 0.1 },
+        ch: { step: 0.1 },
+        rem: { step: 0.1 }
+      };
+      return (_a = configs[unit]) !== null && _a !== void 0 ? _a : baseConfig;
+    };
+    const defaultValue = 16;
+    const isValidValue = value => value >= 0;
+    const getNumberInputSpec = editor => {
+      const getCurrentValue = () => editor.queryCommandValue('FontSize');
+      const updateInputValue = comp => emitWith(comp, updateMenuText, { text: getCurrentValue() });
+      return {
+        updateInputValue,
+        onAction: (format, focusBack) => editor.execCommand('FontSize', false, format, { skip_focus: !focusBack }),
+        getNewValue: (text, updateFunction) => {
+          parse(text, [
+            'unsupportedLength',
+            'empty'
+          ]);
+          const currentValue = getCurrentValue();
+          const parsedText = parse(text, [
+            'unsupportedLength',
+            'empty'
+          ]).or(parse(currentValue, [
+            'unsupportedLength',
+            'empty'
+          ]));
+          const value = parsedText.map(res => res.value).getOr(defaultValue);
+          const defaultUnit = getFontSizeInputDefaultUnit(editor);
+          const unit = parsedText.map(res => res.unit).filter(u => u !== '').getOr(defaultUnit);
+          const newValue = updateFunction(value, getConfigFromUnit(unit).step);
+          const res = `${ isValidValue(newValue) ? newValue : value }${ unit }`;
+          if (res !== currentValue) {
+            fireFontSizeInputTextUpdate(editor, { value: res });
+          }
+          return res;
+        }
+      };
+    };
+    const createFontSizeInputButton = (editor, backstage) => createBespokeNumberInput(editor, backstage, getNumberInputSpec(editor), 'fontsizeinput');
     const createFontSizeMenu = (editor, backstage) => {
-      const menuItems = createMenuItems(editor, backstage, getSpec$1(editor));
+      const menuItems = createMenuItems(backstage, getSpec$1(editor));
       editor.ui.registry.addNestedMenuItem('fontsize', {
-        text: 'Font sizes',
+        text: menuTitle$1,
+        onSetup: onSetupEditableToggle(editor),
         getSubmenuItems: () => menuItems.items.validateItems(menuItems.getStyleItems())
       });
     };
 
+    const menuTitle = 'Formats';
+    const getTooltipPlaceholder = value => isEmpty(value) ? 'Formats' : 'Format {0}';
     const getSpec = (editor, dataset) => {
-      const fallbackFormat = 'Paragraph';
+      const fallbackFormat = 'Formats';
       const isSelectedFor = format => () => editor.formatter.match(format);
       const getPreviewFor = format => () => {
         const fmt = editor.formatter.get(format);
@@ -19943,19 +24288,31 @@
       };
       const updateSelectMenuText = comp => {
         const getFormatItems = fmt => {
-          const subs = fmt.items;
-          return subs !== undefined && subs.length > 0 ? bind$3(subs, getFormatItems) : [{
-              title: fmt.title,
-              format: fmt.format
-            }];
+          if (isNestedFormat(fmt)) {
+            return bind$3(fmt.items, getFormatItems);
+          } else if (isFormatReference(fmt)) {
+            return [{
+                title: fmt.title,
+                format: fmt.format
+              }];
+          } else {
+            return [];
+          }
         };
         const flattenedItems = bind$3(getStyleFormats(editor), getFormatItems);
         const detectedFormat = findNearest(editor, constant$1(flattenedItems));
-        const text = detectedFormat.fold(constant$1(fallbackFormat), fmt => fmt.title);
-        emitWith(comp, updateMenuText, { text });
+        const text = detectedFormat.fold(constant$1({
+          title: fallbackFormat,
+          tooltipLabel: ''
+        }), fmt => ({
+          title: fmt.title,
+          tooltipLabel: fmt.title
+        }));
+        emitWith(comp, updateMenuText, { text: text.title });
+        fireStylesTextUpdate(editor, { value: text.tooltipLabel });
       };
       return {
-        tooltip: 'Formats',
+        tooltip: makeTooltipText(editor, getTooltipPlaceholder(''), ''),
         text: Optional.some(fallbackFormat),
         icon: Optional.none(),
         isSelectedFor,
@@ -19973,94 +24330,20 @@
         type: 'advanced',
         ...backstage.styles
       };
-      return createSelectButton(editor, backstage, getSpec(editor, dataset));
+      return createSelectButton(editor, backstage, getSpec(editor, dataset), getTooltipPlaceholder, 'StylesTextUpdate', 'styles');
     };
     const createStylesMenu = (editor, backstage) => {
       const dataset = {
         type: 'advanced',
         ...backstage.styles
       };
-      const menuItems = createMenuItems(editor, backstage, getSpec(editor, dataset));
+      const menuItems = createMenuItems(backstage, getSpec(editor, dataset));
       editor.ui.registry.addNestedMenuItem('styles', {
-        text: 'Formats',
+        text: menuTitle,
+        onSetup: onSetupEditableToggle(editor),
         getSubmenuItems: () => menuItems.items.validateItems(menuItems.getStyleItems())
       });
     };
-
-    const events$3 = (reflectingConfig, reflectingState) => {
-      const update = (component, data) => {
-        reflectingConfig.updateState.each(updateState => {
-          const newState = updateState(component, data);
-          reflectingState.set(newState);
-        });
-        reflectingConfig.renderComponents.each(renderComponents => {
-          const newComponents = renderComponents(data, reflectingState.get());
-          const replacer = reflectingConfig.reuseDom ? withReuse : withoutReuse;
-          replacer(component, newComponents);
-        });
-      };
-      return derive$2([
-        run$1(receive(), (component, message) => {
-          const receivingData = message;
-          if (!receivingData.universal) {
-            const channel = reflectingConfig.channel;
-            if (contains$2(receivingData.channels, channel)) {
-              update(component, receivingData.data);
-            }
-          }
-        }),
-        runOnAttached((comp, _se) => {
-          reflectingConfig.initialData.each(rawData => {
-            update(comp, rawData);
-          });
-        })
-      ]);
-    };
-
-    var ActiveReflecting = /*#__PURE__*/Object.freeze({
-        __proto__: null,
-        events: events$3
-    });
-
-    const getState = (component, replaceConfig, reflectState) => reflectState;
-
-    var ReflectingApis = /*#__PURE__*/Object.freeze({
-        __proto__: null,
-        getState: getState
-    });
-
-    var ReflectingSchema = [
-      required$1('channel'),
-      option$3('renderComponents'),
-      option$3('updateState'),
-      option$3('initialData'),
-      defaultedBoolean('reuseDom', true)
-    ];
-
-    const init$3 = () => {
-      const cell = Cell(Optional.none());
-      const clear = () => cell.set(Optional.none());
-      const readState = () => cell.get().getOr('none');
-      return {
-        readState,
-        get: cell.get,
-        set: cell.set,
-        clear
-      };
-    };
-
-    var ReflectingState = /*#__PURE__*/Object.freeze({
-        __proto__: null,
-        init: init$3
-    });
-
-    const Reflecting = create$3({
-      fields: ReflectingSchema,
-      name: 'reflecting',
-      active: ActiveReflecting,
-      apis: ReflectingApis,
-      state: ReflectingState
-    });
 
     const schema$7 = constant$1([
       required$1('toggleClass'),
@@ -20172,7 +24455,7 @@
       };
       const action = component => {
         const onOpenSync = switchToMenu;
-        togglePopup(detail, identity, component, externals, onOpenSync, HighlightOnOpen.HighlightFirst).get(noop);
+        togglePopup(detail, identity, component, externals, onOpenSync, HighlightOnOpen.HighlightMenuAndItem).get(noop);
       };
       const openMenu = comp => {
         action(comp);
@@ -20264,7 +24547,9 @@
 
     const getButtonApi = component => ({
       isEnabled: () => !Disabling.isDisabled(component),
-      setEnabled: state => Disabling.set(component, !state)
+      setEnabled: state => Disabling.set(component, !state),
+      setText: text => emitWith(component, updateMenuText, { text }),
+      setIcon: icon => emitWith(component, updateMenuIcon, { icon })
     });
     const getToggleApi = component => ({
       setActive: state => {
@@ -20272,53 +24557,74 @@
       },
       isActive: () => Toggling.isOn(component),
       isEnabled: () => !Disabling.isDisabled(component),
-      setEnabled: state => Disabling.set(component, !state)
+      setEnabled: state => Disabling.set(component, !state),
+      setText: text => emitWith(component, updateMenuText, { text }),
+      setIcon: icon => emitWith(component, updateMenuIcon, { icon })
     });
-    const getTooltipAttributes = (tooltip, providersBackstage) => tooltip.map(tooltip => ({
-      'aria-label': providersBackstage.translate(tooltip),
-      'title': providersBackstage.translate(tooltip)
-    })).getOr({});
+    const getTooltipAttributes = (tooltip, providersBackstage) => tooltip.map(tooltip => ({ 'aria-label': providersBackstage.translate(tooltip) })).getOr({});
     const focusButtonEvent = generate$6('focus-button');
-    const renderCommonStructure = (icon, text, tooltip, receiver, behaviours, providersBackstage) => {
+    const renderCommonStructure = (optIcon, optText, tooltip, behaviours, providersBackstage, btnName) => {
+      const optMemDisplayText = optText.map(text => record(renderLabel$1(text, 'tox-tbtn', providersBackstage)));
+      const optMemDisplayIcon = optIcon.map(icon => record(renderReplaceableIconFromPack(icon, providersBackstage.icons)));
       return {
         dom: {
           tag: 'button',
-          classes: ['tox-tbtn'].concat(text.isSome() ? ['tox-tbtn--select'] : []),
-          attributes: getTooltipAttributes(tooltip, providersBackstage)
+          classes: ['tox-tbtn'].concat(optText.isSome() ? ['tox-tbtn--select'] : []),
+          attributes: {
+            ...getTooltipAttributes(tooltip, providersBackstage),
+            ...isNonNullable(btnName) ? { 'data-mce-name': btnName } : {}
+          }
         },
         components: componentRenderPipeline([
-          icon.map(iconName => renderIconFromPack(iconName, providersBackstage.icons)),
-          text.map(text => renderLabel(text, 'tox-tbtn', providersBackstage))
+          optMemDisplayIcon.map(mem => mem.asSpec()),
+          optMemDisplayText.map(mem => mem.asSpec())
         ]),
         eventOrder: {
           [mousedown()]: [
             'focusing',
             'alloy.base.behaviour',
-            'common-button-display-events'
+            commonButtonDisplayEvent
+          ],
+          [attachedToDom()]: [
+            commonButtonDisplayEvent,
+            'toolbar-group-button-events'
           ]
         },
         buttonBehaviours: derive$1([
           DisablingConfigs.toolbarButton(providersBackstage.isDisabled),
           receivingConfig(),
-          config('common-button-display-events', [run$1(mousedown(), (button, se) => {
+          config(commonButtonDisplayEvent, [
+            runOnAttached((comp, _se) => forceInitialSize(comp)),
+            run$1(updateMenuText, (comp, se) => {
+              optMemDisplayText.bind(mem => mem.getOpt(comp)).each(displayText => {
+                Replacing.set(displayText, [text$2(providersBackstage.translate(se.event.text))]);
+              });
+            }),
+            run$1(updateMenuIcon, (comp, se) => {
+              optMemDisplayIcon.bind(mem => mem.getOpt(comp)).each(displayIcon => {
+                Replacing.set(displayIcon, [renderReplaceableIconFromPack(se.event.icon, providersBackstage.icons)]);
+              });
+            }),
+            run$1(mousedown(), (button, se) => {
               se.event.prevent();
               emit(button, focusButtonEvent);
-            })])
-        ].concat(receiver.map(r => Reflecting.config({
-          channel: r,
-          initialData: {
-            icon,
-            text
-          },
-          renderComponents: (data, _state) => componentRenderPipeline([
-            data.icon.map(iconName => renderIconFromPack(iconName, providersBackstage.icons)),
-            data.text.map(text => renderLabel(text, 'tox-tbtn', providersBackstage))
+            })
           ])
-        })).toArray()).concat(behaviours.getOr([])))
+        ].concat(behaviours.getOr([])))
       };
     };
-    const renderFloatingToolbarButton = (spec, backstage, identifyButtons, attributes) => {
+    const renderFloatingToolbarButton = (spec, backstage, identifyButtons, attributes, btnName) => {
       const sharedBackstage = backstage.shared;
+      const editorOffCell = Cell(noop);
+      const specialisation = {
+        toolbarButtonBehaviours: [],
+        getApi: getButtonApi,
+        onSetup: spec.onSetup
+      };
+      const behaviours = [config('toolbar-group-button-events', [
+          onControlAttached(specialisation, editorOffCell),
+          onControlDetached(specialisation, editorOffCell)
+        ])];
       return FloatingToolbarButton.sketch({
         lazySink: sharedBackstage.getSink,
         fetch: () => Future.nu(resolve => {
@@ -20326,7 +24632,7 @@
         }),
         markers: { toggledClass: 'tox-tbtn--enabled' },
         parts: {
-          button: renderCommonStructure(spec.icon, spec.text, spec.tooltip, Optional.none(), Optional.none(), sharedBackstage.providers),
+          button: renderCommonStructure(spec.icon, spec.text, spec.tooltip, Optional.some(behaviours), sharedBackstage.providers, btnName),
           toolbar: {
             dom: {
               tag: 'div',
@@ -20337,35 +24643,40 @@
         }
       });
     };
-    const renderCommonToolbarButton = (spec, specialisation, providersBackstage) => {
+    const renderCommonToolbarButton = (spec, specialisation, providersBackstage, btnName) => {
+      var _d;
       const editorOffCell = Cell(noop);
-      const structure = renderCommonStructure(spec.icon, spec.text, spec.tooltip, Optional.none(), Optional.none(), providersBackstage);
+      const structure = renderCommonStructure(spec.icon, spec.text, spec.tooltip, Optional.none(), providersBackstage, btnName);
       return Button.sketch({
         dom: structure.dom,
         components: structure.components,
         eventOrder: toolbarButtonEventOrder,
-        buttonBehaviours: derive$1([
-          config('toolbar-button-events', [
-            onToolbarButtonExecute({
-              onAction: spec.onAction,
-              getApi: specialisation.getApi
-            }),
-            onControlAttached(specialisation, editorOffCell),
-            onControlDetached(specialisation, editorOffCell)
-          ]),
-          DisablingConfigs.toolbarButton(() => !spec.enabled || providersBackstage.isDisabled()),
-          receivingConfig()
-        ].concat(specialisation.toolbarButtonBehaviours))
+        buttonBehaviours: {
+          ...derive$1([
+            config('toolbar-button-events', [
+              onToolbarButtonExecute({
+                onAction: spec.onAction,
+                getApi: specialisation.getApi
+              }),
+              onControlAttached(specialisation, editorOffCell),
+              onControlDetached(specialisation, editorOffCell)
+            ]),
+            ...spec.tooltip.map(t => Tooltipping.config(providersBackstage.tooltips.getConfig({ tooltipText: providersBackstage.translate(t) + spec.shortcut.map(shortcut => ` (${ convertText(shortcut) })`).getOr('') }))).toArray(),
+            DisablingConfigs.toolbarButton(() => !spec.enabled || providersBackstage.isDisabled()),
+            receivingConfig()
+          ].concat(specialisation.toolbarButtonBehaviours)),
+          [commonButtonDisplayEvent]: (_d = structure.buttonBehaviours) === null || _d === void 0 ? void 0 : _d[commonButtonDisplayEvent]
+        }
       });
     };
-    const renderToolbarButton = (spec, providersBackstage) => renderToolbarButtonWith(spec, providersBackstage, []);
-    const renderToolbarButtonWith = (spec, providersBackstage, bonusEvents) => renderCommonToolbarButton(spec, {
-      toolbarButtonBehaviours: [].concat(bonusEvents.length > 0 ? [config('toolbarButtonWith', bonusEvents)] : []),
+    const renderToolbarButton = (spec, providersBackstage, btnName) => renderToolbarButtonWith(spec, providersBackstage, [], btnName);
+    const renderToolbarButtonWith = (spec, providersBackstage, bonusEvents, btnName) => renderCommonToolbarButton(spec, {
+      toolbarButtonBehaviours: bonusEvents.length > 0 ? [config('toolbarButtonWith', bonusEvents)] : [],
       getApi: getButtonApi,
       onSetup: spec.onSetup
-    }, providersBackstage);
-    const renderToolbarToggleButton = (spec, providersBackstage) => renderToolbarToggleButtonWith(spec, providersBackstage, []);
-    const renderToolbarToggleButtonWith = (spec, providersBackstage, bonusEvents) => deepMerge(renderCommonToolbarButton(spec, {
+    }, providersBackstage, btnName);
+    const renderToolbarToggleButton = (spec, providersBackstage, btnName) => renderToolbarToggleButtonWith(spec, providersBackstage, [], btnName);
+    const renderToolbarToggleButtonWith = (spec, providersBackstage, bonusEvents, btnName) => renderCommonToolbarButton(spec, {
       toolbarButtonBehaviours: [
         Replacing.config({}),
         Toggling.config({
@@ -20376,7 +24687,7 @@
       ].concat(bonusEvents.length > 0 ? [config('toolbarToggleButtonWith', bonusEvents)] : []),
       getApi: getToggleApi,
       onSetup: spec.onSetup
-    }, providersBackstage));
+    }, providersBackstage, btnName);
     const fetchChoices = (getApi, spec, providersBackstage) => comp => Future.nu(callback => spec.fetch(callback)).map(items => Optional.from(createTieredDataFrom(deepMerge(createPartialChoiceMenu(generate$6('menu-value'), items, value => {
       spec.onItemAction(getApi(comp), value);
     }, spec.columns, spec.presets, ItemResponse$1.CLOSE_ON_EXECUTE, spec.select.getOr(never), providersBackstage), {
@@ -20387,13 +24698,13 @@
           });
         })])
     }))));
-    const renderSplitButton = (spec, sharedBackstage) => {
-      const displayChannel = generate$6('channel-update-split-dropdown-display');
+    const renderSplitButton = (spec, sharedBackstage, btnName) => {
+      const tooltipString = Cell(spec.tooltip.getOr(''));
       const getApi = comp => ({
         isEnabled: () => !Disabling.isDisabled(comp),
         setEnabled: state => Disabling.set(comp, !state),
         setIconFill: (id, value) => {
-          descendant(comp.element, 'svg path[id="' + id + '"], rect[id="' + id + '"]').each(underlinePath => {
+          descendant(comp.element, `svg path[class="${ id }"], rect[class="${ id }"]`).each(underlinePath => {
             set$9(underlinePath, 'fill', value);
           });
         },
@@ -20403,7 +24714,14 @@
             comp.getSystem().getByDom(button).each(buttonComp => Toggling.set(buttonComp, state));
           });
         },
-        isActive: () => descendant(comp.element, 'span').exists(button => comp.getSystem().getByDom(button).exists(Toggling.isOn))
+        isActive: () => descendant(comp.element, 'span').exists(button => comp.getSystem().getByDom(button).exists(Toggling.isOn)),
+        setText: text => descendant(comp.element, 'span').each(button => comp.getSystem().getByDom(button).each(buttonComp => emitWith(buttonComp, updateMenuText, { text }))),
+        setIcon: icon => descendant(comp.element, 'span').each(button => comp.getSystem().getByDom(button).each(buttonComp => emitWith(buttonComp, updateMenuIcon, { icon }))),
+        setTooltip: tooltip => {
+          const translatedTooltip = sharedBackstage.providers.translate(tooltip);
+          set$9(comp.element, 'aria-label', translatedTooltip);
+          tooltipString.set(tooltip);
+        }
       });
       const editorOffCell = Cell(noop);
       const specialisation = {
@@ -20416,11 +24734,15 @@
           classes: ['tox-split-button'],
           attributes: {
             'aria-pressed': false,
-            ...getTooltipAttributes(spec.tooltip, sharedBackstage.providers)
+            ...getTooltipAttributes(spec.tooltip, sharedBackstage.providers),
+            ...isNonNullable(btnName) ? { 'data-mce-name': btnName } : {}
           }
         },
         onExecute: button => {
-          spec.onAction(getApi(button));
+          const api = getApi(button);
+          if (api.isEnabled()) {
+            spec.onAction(api);
+          }
         },
         onItemExecute: (_a, _b, _c) => {
         },
@@ -20428,16 +24750,35 @@
           DisablingConfigs.splitButton(sharedBackstage.providers.isDisabled),
           receivingConfig(),
           config('split-dropdown-events', [
+            runOnAttached((comp, _se) => forceInitialSize(comp)),
             run$1(focusButtonEvent, Focusing.focus),
             onControlAttached(specialisation, editorOffCell),
             onControlDetached(specialisation, editorOffCell)
           ]),
-          Unselecting.config({})
+          Unselecting.config({}),
+          ...spec.tooltip.map(tooltip => {
+            return Tooltipping.config({
+              ...sharedBackstage.providers.tooltips.getConfig({
+                tooltipText: sharedBackstage.providers.translate(tooltip),
+                onShow: comp => {
+                  if (tooltipString.get() !== tooltip) {
+                    const translatedTooltip = sharedBackstage.providers.translate(tooltipString.get());
+                    Tooltipping.setComponents(comp, sharedBackstage.providers.tooltips.getComponents({ tooltipText: translatedTooltip }));
+                  }
+                }
+              })
+            });
+          }).toArray()
         ]),
         eventOrder: {
           [attachedToDom()]: [
             'alloy.base.behaviour',
-            'split-dropdown-events'
+            'split-dropdown-events',
+            'tooltipping'
+          ],
+          [detachedFromDom()]: [
+            'split-dropdown-events',
+            'tooltipping'
           ]
         },
         toggleClass: 'tox-tbtn--enabled',
@@ -20445,7 +24786,7 @@
         fetch: fetchChoices(getApi, spec, sharedBackstage.providers),
         parts: { menu: part(false, spec.columns, spec.presets) },
         components: [
-          SplitDropdown.parts.button(renderCommonStructure(spec.icon, spec.text, Optional.none(), Optional.some(displayChannel), Optional.some([Toggling.config({
+          SplitDropdown.parts.button(renderCommonStructure(spec.icon, spec.text, Optional.none(), Optional.some([Toggling.config({
               toggleClass: 'tox-tbtn--enabled',
               toggleOnExecute: false
             })]), sharedBackstage.providers)),
@@ -20475,6 +24816,13 @@
         items: [
           'undo',
           'redo'
+        ]
+      },
+      {
+        name: 'ai',
+        items: [
+          'aidialog',
+          'aishortcuts'
         ]
       },
       {
@@ -20513,46 +24861,42 @@
         items: ['addcomment']
       }
     ];
-    const renderFromBridge = (bridgeBuilder, render) => (spec, extras, editor) => {
+    const renderFromBridge = (bridgeBuilder, render) => (spec, backstage, editor, btnName) => {
       const internal = bridgeBuilder(spec).mapError(errInfo => formatError(errInfo)).getOrDie();
-      return render(internal, extras, editor);
+      return render(internal, backstage, editor, btnName);
     };
     const types = {
-      button: renderFromBridge(createToolbarButton, (s, extras) => renderToolbarButton(s, extras.backstage.shared.providers)),
-      togglebutton: renderFromBridge(createToggleButton, (s, extras) => renderToolbarToggleButton(s, extras.backstage.shared.providers)),
-      menubutton: renderFromBridge(createMenuButton, (s, extras) => renderMenuButton(s, 'tox-tbtn', extras.backstage, Optional.none())),
-      splitbutton: renderFromBridge(createSplitButton, (s, extras) => renderSplitButton(s, extras.backstage.shared)),
-      grouptoolbarbutton: renderFromBridge(createGroupToolbarButton, (s, extras, editor) => {
+      button: renderFromBridge(createToolbarButton, (s, backstage, _, btnName) => renderToolbarButton(s, backstage.shared.providers, btnName)),
+      togglebutton: renderFromBridge(createToggleButton, (s, backstage, _, btnName) => renderToolbarToggleButton(s, backstage.shared.providers, btnName)),
+      menubutton: renderFromBridge(createMenuButton, (s, backstage, _, btnName) => renderMenuButton(s, 'tox-tbtn', backstage, Optional.none(), false, btnName)),
+      splitbutton: renderFromBridge(createSplitButton, (s, backstage, _, btnName) => renderSplitButton(s, backstage.shared, btnName)),
+      grouptoolbarbutton: renderFromBridge(createGroupToolbarButton, (s, backstage, editor, btnName) => {
         const buttons = editor.ui.registry.getAll().buttons;
         const identify = toolbar => identifyButtons(editor, {
           buttons,
           toolbar,
           allowToolbarGroups: false
-        }, extras, Optional.none());
-        const attributes = { [Attribute]: extras.backstage.shared.header.isPositionedAtTop() ? AttributeValue.TopToBottom : AttributeValue.BottomToTop };
+        }, backstage, Optional.none());
+        const attributes = { [Attribute]: backstage.shared.header.isPositionedAtTop() ? AttributeValue.TopToBottom : AttributeValue.BottomToTop };
         switch (getToolbarMode(editor)) {
         case ToolbarMode$1.floating:
-          return renderFloatingToolbarButton(s, extras.backstage, identify, attributes);
+          return renderFloatingToolbarButton(s, backstage, identify, attributes, btnName);
         default:
           throw new Error('Toolbar groups are only supported when using floating toolbar mode');
         }
-      }),
-      styleSelectButton: (editor, extras) => createStylesButton(editor, extras.backstage),
-      fontsizeSelectButton: (editor, extras) => createFontSizeButton(editor, extras.backstage),
-      fontSelectButton: (editor, extras) => createFontFamilyButton(editor, extras.backstage),
-      formatButton: (editor, extras) => createBlocksButton(editor, extras.backstage),
-      alignMenuButton: (editor, extras) => createAlignButton(editor, extras.backstage)
+      })
     };
-    const extractFrom = (spec, extras, editor) => get$g(types, spec.type).fold(() => {
+    const extractFrom = (spec, backstage, editor, btnName) => get$g(types, spec.type).fold(() => {
       console.error('skipping button defined by', spec);
       return Optional.none();
-    }, render => Optional.some(render(spec, extras, editor)));
+    }, render => Optional.some(render(spec, backstage, editor, btnName)));
     const bespokeButtons = {
-      styles: types.styleSelectButton,
-      fontsize: types.fontsizeSelectButton,
-      fontfamily: types.fontSelectButton,
-      blocks: types.formatButton,
-      align: types.alignMenuButton
+      styles: createStylesButton,
+      fontsize: createFontSizeButton,
+      fontsizeinput: createFontSizeInputButton,
+      fontfamily: createFontFamilyButton,
+      blocks: createBlocksButton,
+      align: createAlignButton
     };
     const removeUnusedDefaults = buttons => {
       const filteredItemGroups = map$2(defaultToolbar, group => {
@@ -20585,18 +24929,20 @@
         return [];
       }
     };
-    const lookupButton = (editor, buttons, toolbarItem, allowToolbarGroups, extras, prefixes) => get$g(buttons, toolbarItem.toLowerCase()).orThunk(() => prefixes.bind(ps => findMap(ps, prefix => get$g(buttons, prefix + toolbarItem.toLowerCase())))).fold(() => get$g(bespokeButtons, toolbarItem.toLowerCase()).map(r => r(editor, extras)).orThunk(() => Optional.none()), spec => {
+    const lookupButton = (editor, buttons, toolbarItem, allowToolbarGroups, backstage, prefixes) => get$g(buttons, toolbarItem.toLowerCase()).orThunk(() => prefixes.bind(ps => findMap(ps, prefix => get$g(buttons, prefix + toolbarItem.toLowerCase())))).fold(() => get$g(bespokeButtons, toolbarItem.toLowerCase()).map(r => r(editor, backstage)), spec => {
       if (spec.type === 'grouptoolbarbutton' && !allowToolbarGroups) {
         console.warn(`Ignoring the '${ toolbarItem }' toolbar button. Group toolbar buttons are only supported when using floating toolbar mode and cannot be nested.`);
         return Optional.none();
       } else {
-        return extractFrom(spec, extras, editor);
+        return extractFrom(spec, backstage, editor, toolbarItem.toLowerCase());
       }
     });
-    const identifyButtons = (editor, toolbarConfig, extras, prefixes) => {
+    const identifyButtons = (editor, toolbarConfig, backstage, prefixes) => {
       const toolbarGroups = createToolbar(toolbarConfig);
       const groups = map$2(toolbarGroups, group => {
-        const items = bind$3(group.items, toolbarItem => toolbarItem.trim().length === 0 ? [] : lookupButton(editor, toolbarConfig.buttons, toolbarItem, toolbarConfig.allowToolbarGroups, extras, prefixes).toArray());
+        const items = bind$3(group.items, toolbarItem => {
+          return toolbarItem.trim().length === 0 ? [] : lookupButton(editor, toolbarConfig.buttons, toolbarItem, toolbarConfig.allowToolbarGroups, backstage, prefixes).toArray();
+        });
         return {
           title: Optional.from(editor.translate(group.name)),
           items
@@ -20605,8 +24951,8 @@
       return filter$2(groups, group => group.items.length > 0);
     };
 
-    const setToolbar = (editor, uiComponents, rawUiConfig, backstage) => {
-      const comp = uiComponents.outerContainer;
+    const setToolbar = (editor, uiRefs, rawUiConfig, backstage) => {
+      const outerContainer = uiRefs.mainUi.outerContainer;
       const toolbarConfig = rawUiConfig.toolbar;
       const toolbarButtonsConfig = rawUiConfig.buttons;
       if (isArrayOf(toolbarConfig, isString)) {
@@ -20616,17 +24962,18 @@
             buttons: toolbarButtonsConfig,
             allowToolbarGroups: rawUiConfig.allowToolbarGroups
           };
-          return identifyButtons(editor, config, { backstage }, Optional.none());
+          return identifyButtons(editor, config, backstage, Optional.none());
         });
-        OuterContainer.setToolbars(comp, toolbars);
+        OuterContainer.setToolbars(outerContainer, toolbars);
       } else {
-        OuterContainer.setToolbar(comp, identifyButtons(editor, rawUiConfig, { backstage }, Optional.none()));
+        OuterContainer.setToolbar(outerContainer, identifyButtons(editor, rawUiConfig, backstage, Optional.none()));
       }
     };
 
     const detection = detect$1();
     const isiOS12 = detection.os.isiOS() && detection.os.version.major <= 12;
-    const setupEvents$1 = (editor, uiComponents) => {
+    const setupEvents$1 = (editor, uiRefs) => {
+      const {uiMotherships} = uiRefs;
       const dom = editor.dom;
       let contentWindow = editor.getWin();
       const initialDocEle = editor.getDoc().documentElement;
@@ -20647,16 +24994,21 @@
           fireResizeContent(editor);
         }
       };
-      const scroll = e => fireScrollContent(editor, e);
+      const scroll = e => {
+        fireScrollContent(editor, e);
+      };
       dom.bind(contentWindow, 'resize', resizeWindow);
       dom.bind(contentWindow, 'scroll', scroll);
       const elementLoad = capture(SugarElement.fromDom(editor.getBody()), 'load', resizeDocument);
-      const mothership = uiComponents.uiMothership.element;
       editor.on('hide', () => {
-        set$8(mothership, 'display', 'none');
+        each$1(uiMotherships, m => {
+          set$8(m.element, 'display', 'none');
+        });
       });
       editor.on('show', () => {
-        remove$6(mothership, 'display');
+        each$1(uiMotherships, m => {
+          remove$6(m.element, 'display');
+        });
       });
       editor.on('NodeChange', resizeDocument);
       editor.on('remove', () => {
@@ -20666,20 +25018,28 @@
         contentWindow = null;
       });
     };
-    const render$1 = (editor, uiComponents, rawUiConfig, backstage, args) => {
+    const attachUiMotherships = (editor, uiRoot, uiRefs) => {
+      if (isSplitUiMode(editor)) {
+        attachSystemAfter(uiRefs.mainUi.mothership.element, uiRefs.popupUi.mothership);
+      }
+      attachSystem(uiRoot, uiRefs.dialogUi.mothership);
+    };
+    const render$1 = (editor, uiRefs, rawUiConfig, backstage, args) => {
+      const {mainUi, uiMotherships} = uiRefs;
       const lastToolbarWidth = Cell(0);
-      const outerContainer = uiComponents.outerContainer;
+      const outerContainer = mainUi.outerContainer;
       iframe(editor);
       const eTargetNode = SugarElement.fromDom(args.targetNode);
       const uiRoot = getContentContainer(getRootNode(eTargetNode));
-      attachSystemAfter(eTargetNode, uiComponents.mothership);
-      attachSystem(uiRoot, uiComponents.uiMothership);
-      editor.on('PostRender', () => {
+      attachSystemAfter(eTargetNode, mainUi.mothership);
+      attachUiMotherships(editor, uiRoot, uiRefs);
+      editor.on('SkinLoaded', () => {
         OuterContainer.setSidebar(outerContainer, rawUiConfig.sidebar, getSidebarShow(editor));
-        setToolbar(editor, uiComponents, rawUiConfig, backstage);
+        setToolbar(editor, uiRefs, rawUiConfig, backstage);
         lastToolbarWidth.set(editor.getWin().innerWidth);
         OuterContainer.setMenubar(outerContainer, identifyMenus(editor, rawUiConfig));
-        setupEvents$1(editor, uiComponents);
+        OuterContainer.setViews(outerContainer, rawUiConfig.views);
+        setupEvents$1(editor, uiRefs);
       });
       const socket = OuterContainer.getSocket(outerContainer).getOrDie('Could not find expected socket element');
       if (isiOS12) {
@@ -20693,15 +25053,36 @@
         const unbinder = bind(socket.element, 'scroll', limit.throttle);
         editor.on('remove', unbinder.unbind);
       }
-      setupReadonlyModeSwitch(editor, uiComponents);
+      setupReadonlyModeSwitch(editor, uiRefs);
       editor.addCommand('ToggleSidebar', (_ui, value) => {
         OuterContainer.toggleSidebar(outerContainer, value);
         editor.dispatch('ToggleSidebar');
       });
-      editor.addQueryValueHandler('ToggleSidebar', () => OuterContainer.whichSidebar(outerContainer));
+      editor.addQueryValueHandler('ToggleSidebar', () => {
+        var _a;
+        return (_a = OuterContainer.whichSidebar(outerContainer)) !== null && _a !== void 0 ? _a : '';
+      });
+      editor.addCommand('ToggleView', (_ui, value) => {
+        if (OuterContainer.toggleView(outerContainer, value)) {
+          const target = outerContainer.element;
+          mainUi.mothership.broadcastOn([dismissPopups()], { target });
+          each$1(uiMotherships, m => {
+            m.broadcastOn([dismissPopups()], { target });
+          });
+          if (isNull(OuterContainer.whichView(outerContainer))) {
+            editor.focus();
+            editor.nodeChanged();
+            OuterContainer.refreshToolbar(outerContainer);
+          }
+        }
+      });
+      editor.addQueryValueHandler('ToggleView', () => {
+        var _a;
+        return (_a = OuterContainer.whichView(outerContainer)) !== null && _a !== void 0 ? _a : '';
+      });
       const toolbarMode = getToolbarMode(editor);
       const refreshDrawer = () => {
-        OuterContainer.refreshToolbar(uiComponents.outerContainer);
+        OuterContainer.refreshToolbar(uiRefs.mainUi.outerContainer);
       };
       if (toolbarMode === ToolbarMode$1.sliding || toolbarMode === ToolbarMode$1.floating) {
         editor.on('ResizeWindow ResizeEditor ResizeContent', () => {
@@ -20714,7 +25095,7 @@
       }
       const api = {
         setEnabled: state => {
-          broadcastReadonly(uiComponents, !state);
+          broadcastReadonly(uiRefs, !state);
         },
         isEnabled: () => !Disabling.isDisabled(outerContainer)
       };
@@ -20766,14 +25147,16 @@
     };
 
     const {ToolbarLocation, ToolbarMode} = Options;
-    const InlineHeader = (editor, targetElm, uiComponents, backstage, floatContainer) => {
-      const {uiMothership, outerContainer} = uiComponents;
+    const maximumDistanceToEdge = 40;
+    const InlineHeader = (editor, targetElm, uiRefs, backstage, floatContainer) => {
+      const {mainUi, uiMotherships} = uiRefs;
       const DOM = global$7.DOM;
       const useFixedToolbarContainer = useFixedContainer(editor);
       const isSticky = isStickyToolbar(editor);
       const editorMaxWidthOpt = getMaxWidthOption(editor).or(getWidth(editor));
       const headerBackstage = backstage.shared.header;
       const isPositionedAtTop = headerBackstage.isPositionedAtTop;
+      const minimumToolbarWidth = 150;
       const toolbarMode = getToolbarMode(editor);
       const isSplitToolbar = toolbarMode === ToolbarMode.sliding || toolbarMode === ToolbarMode.floating;
       const visible = Cell(false);
@@ -20782,7 +25165,7 @@
       const calcMode = container => {
         switch (getToolbarLocation(editor)) {
         case ToolbarLocation.auto:
-          const toolbar = OuterContainer.getToolbar(outerContainer);
+          const toolbar = OuterContainer.getToolbar(mainUi.outerContainer);
           const offset = calcToolbarOffset(toolbar);
           const toolbarHeight = get$d(container.element) - offset;
           const targetBounds = box$1(targetElm);
@@ -20809,87 +25192,153 @@
         }
       };
       const setupMode = mode => {
-        const container = floatContainer.get();
-        Docking.setModes(container, [mode]);
-        headerBackstage.setDockingMode(mode);
-        const verticalDir = isPositionedAtTop() ? AttributeValue.TopToBottom : AttributeValue.BottomToTop;
-        set$9(container.element, Attribute, verticalDir);
+        floatContainer.on(container => {
+          Docking.setModes(container, [mode]);
+          headerBackstage.setDockingMode(mode);
+          const verticalDir = isPositionedAtTop() ? AttributeValue.TopToBottom : AttributeValue.BottomToTop;
+          set$9(container.element, Attribute, verticalDir);
+        });
       };
       const updateChromeWidth = () => {
-        const maxWidth = editorMaxWidthOpt.getOrThunk(() => {
-          const bodyMargin = parseToInt(get$e(body(), 'margin-left')).getOr(0);
-          return get$c(body()) - absolute$3(targetElm).left + bodyMargin;
-        });
-        set$8(floatContainer.get().element, 'max-width', maxWidth + 'px');
-      };
-      const updateChromePosition = () => {
-        const toolbar = OuterContainer.getToolbar(outerContainer);
-        const offset = calcToolbarOffset(toolbar);
-        const targetBounds = box$1(targetElm);
-        const top = isPositionedAtTop() ? Math.max(targetBounds.y - get$d(floatContainer.get().element) + offset, 0) : targetBounds.bottom;
-        setAll(outerContainer.element, {
-          position: 'absolute',
-          top: Math.round(top) + 'px',
-          left: Math.round(targetBounds.x) + 'px'
+        floatContainer.on(container => {
+          const maxWidth = editorMaxWidthOpt.getOrThunk(() => {
+            return getBounds$3().width - viewport$1(targetElm).left - 10;
+          });
+          set$8(container.element, 'max-width', maxWidth + 'px');
         });
       };
+      const updateChromePosition = (isOuterContainerWidthRestored, prevScroll) => {
+        floatContainer.on(container => {
+          const toolbar = OuterContainer.getToolbar(mainUi.outerContainer);
+          const offset = calcToolbarOffset(toolbar);
+          const targetBounds = box$1(targetElm);
+          const offsetParent = getOffsetParent$1(editor, mainUi.outerContainer.element);
+          const getLeft = () => offsetParent.fold(() => targetBounds.x, offsetParent => {
+            const offsetBox = box$1(offsetParent);
+            const isOffsetParentBody = eq(offsetParent, body());
+            return isOffsetParentBody ? targetBounds.x : targetBounds.x - offsetBox.x;
+          });
+          const getTop = () => offsetParent.fold(() => isPositionedAtTop() ? Math.max(targetBounds.y - get$d(container.element) + offset, 0) : targetBounds.bottom, offsetParent => {
+            var _a;
+            const offsetBox = box$1(offsetParent);
+            const scrollDelta = (_a = offsetParent.dom.scrollTop) !== null && _a !== void 0 ? _a : 0;
+            const isOffsetParentBody = eq(offsetParent, body());
+            const topValue = isOffsetParentBody ? Math.max(targetBounds.y - get$d(container.element) + offset, 0) : targetBounds.y - offsetBox.y + scrollDelta - get$d(container.element) + offset;
+            return isPositionedAtTop() ? topValue : targetBounds.bottom;
+          });
+          const left = getLeft();
+          const widthProperties = someIf(isOuterContainerWidthRestored, Math.ceil(mainUi.outerContainer.element.dom.getBoundingClientRect().width)).filter(w => w > minimumToolbarWidth).map(toolbarWidth => {
+            const scroll = prevScroll.getOr(get$b());
+            const availableWidth = window.innerWidth - (left - scroll.left);
+            const width = Math.max(Math.min(toolbarWidth, availableWidth), minimumToolbarWidth);
+            if (availableWidth < toolbarWidth) {
+              set$8(mainUi.outerContainer.element, 'width', width + 'px');
+            }
+            return { width: width + 'px' };
+          }).getOr({ width: 'max-content' });
+          const baseProperties = {
+            position: 'absolute',
+            left: Math.round(left) + 'px',
+            top: getTop() + 'px'
+          };
+          setAll(mainUi.outerContainer.element, {
+            ...baseProperties,
+            ...widthProperties
+          });
+        });
+      };
+      const getOffsetParent$1 = (editor, element) => isSplitUiMode(editor) ? getOffsetParent(element) : Optional.none();
       const repositionPopups$1 = () => {
-        uiMothership.broadcastOn([repositionPopups()], {});
+        each$1(uiMotherships, m => {
+          m.broadcastOn([repositionPopups()], {});
+        });
       };
-      const updateChromeUi = (resetDocking = false) => {
+      const restoreOuterContainerWidth = () => {
+        if (!useFixedToolbarContainer) {
+          const toolbarCurrentRightsidePosition = absolute$3(mainUi.outerContainer.element).left + getOuter$1(mainUi.outerContainer.element);
+          if (toolbarCurrentRightsidePosition >= window.innerWidth - maximumDistanceToEdge || getRaw(mainUi.outerContainer.element, 'width').isSome()) {
+            set$8(mainUi.outerContainer.element, 'position', 'absolute');
+            set$8(mainUi.outerContainer.element, 'left', '0px');
+            remove$6(mainUi.outerContainer.element, 'width');
+            return true;
+          }
+        }
+        return false;
+      };
+      const update = stickyAction => {
         if (!isVisible()) {
           return;
         }
         if (!useFixedToolbarContainer) {
           updateChromeWidth();
         }
+        const prevScroll = get$b();
+        const isOuterContainerWidthRestored = useFixedToolbarContainer ? false : restoreOuterContainerWidth();
         if (isSplitToolbar) {
-          OuterContainer.refreshToolbar(outerContainer);
+          OuterContainer.refreshToolbar(mainUi.outerContainer);
         }
         if (!useFixedToolbarContainer) {
-          updateChromePosition();
+          const currentScroll = get$b();
+          const optScroll = someIf(prevScroll.left !== currentScroll.left, prevScroll);
+          updateChromePosition(isOuterContainerWidthRestored, optScroll);
+          optScroll.each(scroll => {
+            to(scroll.left, currentScroll.top);
+          });
         }
         if (isSticky) {
-          const floatContainerComp = floatContainer.get();
-          resetDocking ? Docking.reset(floatContainerComp) : Docking.refresh(floatContainerComp);
+          floatContainer.on(stickyAction);
         }
         repositionPopups$1();
       };
-      const updateMode = (updateUi = true) => {
+      const doUpdateMode = () => {
         if (useFixedToolbarContainer || !isSticky || !isVisible()) {
-          return;
+          return false;
         }
-        const currentMode = headerBackstage.getDockingMode();
-        const newMode = calcMode(floatContainer.get());
-        if (newMode !== currentMode) {
-          setupMode(newMode);
-          if (updateUi) {
-            updateChromeUi(true);
+        return floatContainer.get().exists(fc => {
+          const currentMode = headerBackstage.getDockingMode();
+          const newMode = calcMode(fc);
+          if (newMode !== currentMode) {
+            setupMode(newMode);
+            return true;
+          } else {
+            return false;
           }
-        }
+        });
       };
       const show = () => {
         visible.set(true);
-        set$8(outerContainer.element, 'display', 'flex');
+        set$8(mainUi.outerContainer.element, 'display', 'flex');
         DOM.addClass(editor.getBody(), 'mce-edit-focus');
-        remove$6(uiMothership.element, 'display');
-        updateMode(false);
-        updateChromeUi();
+        each$1(uiMotherships, m => {
+          remove$6(m.element, 'display');
+        });
+        doUpdateMode();
+        if (isSplitUiMode(editor)) {
+          update(elem => Docking.isDocked(elem) ? Docking.reset(elem) : Docking.refresh(elem));
+        } else {
+          update(Docking.refresh);
+        }
       };
       const hide = () => {
         visible.set(false);
-        if (uiComponents.outerContainer) {
-          set$8(outerContainer.element, 'display', 'none');
-          DOM.removeClass(editor.getBody(), 'mce-edit-focus');
+        set$8(mainUi.outerContainer.element, 'display', 'none');
+        DOM.removeClass(editor.getBody(), 'mce-edit-focus');
+        each$1(uiMotherships, m => {
+          set$8(m.element, 'display', 'none');
+        });
+      };
+      const updateMode = () => {
+        const changedMode = doUpdateMode();
+        if (changedMode) {
+          update(Docking.reset);
         }
-        set$8(uiMothership.element, 'display', 'none');
       };
       return {
         isVisible,
         isPositionedAtTop,
         show,
         hide,
-        update: updateChromeUi,
+        update,
         updateMode,
         repositionPopups: repositionPopups$1
       };
@@ -20920,7 +25369,7 @@
         }
         if (ui.isVisible()) {
           if (prevPos !== pos) {
-            ui.update(true);
+            ui.update(Docking.reset);
           } else if (hasResized) {
             ui.updateMode();
             ui.repositionPopups();
@@ -20931,38 +25380,64 @@
         editor.on('activate', ui.show);
         editor.on('deactivate', ui.hide);
       }
-      editor.on('SkinLoaded ResizeWindow', () => ui.update(true));
+      editor.on('SkinLoaded ResizeWindow', () => ui.update(Docking.reset));
       editor.on('NodeChange keydown', e => {
         requestAnimationFrame(() => resizeContent(e));
       });
-      editor.on('ScrollWindow', () => ui.updateMode());
+      let lastScrollX = 0;
+      const updateUi = last(() => ui.update(Docking.refresh), 33);
+      editor.on('ScrollWindow', () => {
+        const newScrollX = get$b().left;
+        if (newScrollX !== lastScrollX) {
+          lastScrollX = newScrollX;
+          updateUi.throttle();
+        }
+        ui.updateMode();
+      });
+      if (isSplitUiMode(editor)) {
+        editor.on('ElementScroll', _args => {
+          ui.update(Docking.refresh);
+        });
+      }
       const elementLoad = unbindable();
-      elementLoad.set(capture(SugarElement.fromDom(editor.getBody()), 'load', resizeContent));
+      elementLoad.set(capture(SugarElement.fromDom(editor.getBody()), 'load', e => resizeContent(e.raw)));
       editor.on('remove', () => {
         elementLoad.clear();
       });
     };
-    const render = (editor, uiComponents, rawUiConfig, backstage, args) => {
-      const {mothership, uiMothership, outerContainer} = uiComponents;
-      const floatContainer = Cell(null);
+    const render = (editor, uiRefs, rawUiConfig, backstage, args) => {
+      const {mainUi} = uiRefs;
+      const floatContainer = value$2();
       const targetElm = SugarElement.fromDom(args.targetNode);
-      const ui = InlineHeader(editor, targetElm, uiComponents, backstage, floatContainer);
+      const ui = InlineHeader(editor, targetElm, uiRefs, backstage, floatContainer);
       const toolbarPersist = isToolbarPersist(editor);
       inline(editor);
       const render = () => {
-        if (floatContainer.get()) {
+        if (floatContainer.isSet()) {
           ui.show();
           return;
         }
-        floatContainer.set(OuterContainer.getHeader(outerContainer).getOrDie());
+        floatContainer.set(OuterContainer.getHeader(mainUi.outerContainer).getOrDie());
         const uiContainer = getUiContainer(editor);
-        attachSystem(uiContainer, mothership);
-        attachSystem(uiContainer, uiMothership);
-        setToolbar(editor, uiComponents, rawUiConfig, backstage);
-        OuterContainer.setMenubar(outerContainer, identifyMenus(editor, rawUiConfig));
-        ui.show();
-        setupEvents(editor, targetElm, ui, toolbarPersist);
-        editor.nodeChanged();
+        if (isSplitUiMode(editor)) {
+          attachSystemAfter(targetElm, mainUi.mothership);
+          attachSystemAfter(targetElm, uiRefs.popupUi.mothership);
+        } else {
+          attachSystem(uiContainer, mainUi.mothership);
+        }
+        attachSystem(uiContainer, uiRefs.dialogUi.mothership);
+        const setup = () => {
+          setToolbar(editor, uiRefs, rawUiConfig, backstage);
+          OuterContainer.setMenubar(mainUi.outerContainer, identifyMenus(editor, rawUiConfig));
+          ui.show();
+          setupEvents(editor, targetElm, ui, toolbarPersist);
+          editor.nodeChanged();
+        };
+        if (toolbarPersist) {
+          editor.once('SkinLoaded', setup);
+        } else {
+          setup();
+        }
       };
       editor.on('show', render);
       editor.on('hide', ui.hide);
@@ -20975,21 +25450,17 @@
           render();
         }
       });
-      setupReadonlyModeSwitch(editor, uiComponents);
+      setupReadonlyModeSwitch(editor, uiRefs);
       const api = {
-        show: () => {
-          render();
-        },
-        hide: () => {
-          ui.hide();
-        },
+        show: render,
+        hide: ui.hide,
         setEnabled: state => {
-          broadcastReadonly(uiComponents, !state);
+          broadcastReadonly(uiRefs, !state);
         },
-        isEnabled: () => !Disabling.isDisabled(outerContainer)
+        isEnabled: () => !Disabling.isDisabled(mainUi.outerContainer)
       };
       return {
-        editorContainer: outerContainer.element.dom,
+        editorContainer: mainUi.outerContainer.element.dom,
         api
       };
     };
@@ -20998,6 +25469,28 @@
         __proto__: null,
         render: render
     });
+
+    const LazyUiReferences = () => {
+      const dialogUi = value$2();
+      const popupUi = value$2();
+      const mainUi = value$2();
+      const lazyGetInOuterOrDie = (label, f) => () => mainUi.get().bind(oc => f(oc.outerContainer)).getOrDie(`Could not find ${ label } element in OuterContainer`);
+      const getUiMotherships = () => {
+        const optDialogMothership = dialogUi.get().map(ui => ui.mothership);
+        const optPopupMothership = popupUi.get().map(ui => ui.mothership);
+        return optDialogMothership.fold(() => optPopupMothership.toArray(), dm => optPopupMothership.fold(() => [dm], pm => eq(dm.element, pm.element) ? [dm] : [
+          dm,
+          pm
+        ]));
+      };
+      return {
+        dialogUi,
+        popupUi,
+        mainUi,
+        getUiMotherships,
+        lazyGetInOuterOrDie
+      };
+    };
 
     const showContextToolbarEvent = 'contexttoolbar-show';
     const hideContextToolbarEvent = 'contexttoolbar-hide';
@@ -21011,30 +25504,30 @@
       const formApi = getFormApi(input);
       original.onAction(formApi, se.event.buttonApi);
     });
-    const renderContextButton = (memInput, button, extras) => {
+    const renderContextButton = (memInput, button, providers) => {
       const {primary, ...rest} = button.original;
       const bridged = getOrDie(createToolbarButton({
         ...rest,
         type: 'button',
         onAction: noop
       }));
-      return renderToolbarButtonWith(bridged, extras.backstage.shared.providers, [runOnExecute(memInput, button)]);
+      return renderToolbarButtonWith(bridged, providers, [runOnExecute(memInput, button)]);
     };
-    const renderContextToggleButton = (memInput, button, extras) => {
+    const renderContextToggleButton = (memInput, button, providers) => {
       const {primary, ...rest} = button.original;
       const bridged = getOrDie(createToggleButton({
         ...rest,
         type: 'togglebutton',
         onAction: noop
       }));
-      return renderToolbarToggleButtonWith(bridged, extras.backstage.shared.providers, [runOnExecute(memInput, button)]);
+      return renderToolbarToggleButtonWith(bridged, providers, [runOnExecute(memInput, button)]);
     };
+    const isToggleButton = button => button.type === 'contextformtogglebutton';
     const generateOne = (memInput, button, providersBackstage) => {
-      const extras = { backstage: { shared: { providers: providersBackstage } } };
-      if (button.type === 'contextformtogglebutton') {
-        return renderContextToggleButton(memInput, button, extras);
+      if (isToggleButton(button)) {
+        return renderContextToggleButton(memInput, button, providersBackstage);
       } else {
-        return renderContextButton(memInput, button, extras);
+        return renderContextButton(memInput, button, providersBackstage);
       }
     };
     const generate = (memInput, buttons, providersBackstage) => {
@@ -21104,7 +25597,7 @@
       buildInitGroups
     };
 
-    const isVerticalOverlap = (a, b, threshold = 0.01) => b.bottom - a.y >= threshold && a.bottom - b.y >= threshold;
+    const isVerticalOverlap = (a, b, threshold) => b.bottom - a.y >= threshold && a.bottom - b.y >= threshold;
     const getRangeRect = rng => {
       const rect = rng.getBoundingClientRect();
       if (rect.height <= 0 && rect.width <= 0) {
@@ -21126,7 +25619,7 @@
         return bounds(bodyPos.x + rect.left, bodyPos.y + rect.top, rect.width, rect.height);
       }
     };
-    const getAnchorElementBounds = (editor, lastElement) => lastElement.filter(inBody).map(absolute$2).getOrThunk(() => getSelectionBounds(editor));
+    const getAnchorElementBounds = (editor, lastElement) => lastElement.filter(elem => inBody(elem) && isHTMLElement(elem)).map(absolute$2).getOrThunk(() => getSelectionBounds(editor));
     const getHorizontalBounds = (contentAreaBox, viewportBounds, margin) => {
       const x = Math.max(contentAreaBox.x + margin, viewportBounds.x);
       const right = Math.min(contentAreaBox.right - margin, viewportBounds.right);
@@ -21215,7 +25708,7 @@
         return isSameAnchorElement ? preserve : north;
       } else if (isSameAnchorElement) {
         return preservePosition(contextbar, data.getMode(), () => {
-          const isOverlapping = isVerticalOverlap(selectionBounds, box$1(contextbar));
+          const isOverlapping = isVerticalOverlap(selectionBounds, box$1(contextbar), -20);
           return isOverlapping && !data.isReposition() ? flip : preserve;
         });
       } else {
@@ -21556,7 +26049,7 @@
         } else {
           const contextToolbarBounds = getBounds();
           const anchorBounds = is$1(lastContextPosition.get(), 'node') ? getAnchorElementBounds(editor, lastElement.get()) : getSelectionBounds(editor);
-          return contextToolbarBounds.height <= 0 || !isVerticalOverlap(anchorBounds, contextToolbarBounds);
+          return contextToolbarBounds.height <= 0 || !isVerticalOverlap(anchorBounds, contextToolbarBounds, 0.01);
         }
       };
       const close = () => {
@@ -21603,7 +26096,7 @@
         buttons: allButtons,
         toolbar: ctx.items,
         allowToolbarGroups: false
-      }, extras, Optional.some(['form:']));
+      }, extras.backstage, Optional.some(['form:']));
       const buildContextFormGroups = (ctx, providers) => ContextForm.buildInitGroups(ctx, providers);
       const buildToolbar = toolbars => {
         const {buttons} = editor.ui.registry.getAll();
@@ -21660,8 +26153,9 @@
           set$8(contextBarEle, 'display', 'none');
         }
       };
+      let isDragging = false;
       const launchContextToolbar = last(() => {
-        if (!editor.hasFocus() || editor.removed) {
+        if (!editor.hasFocus() || editor.removed || isDragging) {
           return;
         }
         if (has(contextbar.element, transitionClass)) {
@@ -21697,12 +26191,23 @@
             close();
           }
         });
+        editor.on('ExecCommand', ({command}) => {
+          if (command.toLowerCase() === 'toggleview') {
+            close();
+          }
+        });
         editor.on('AfterProgressState', event => {
           if (event.state) {
             close();
           } else if (editor.hasFocus()) {
             launchContextToolbar.throttle();
           }
+        });
+        editor.on('dragstart', () => {
+          isDragging = true;
+        });
+        editor.on('dragend drop', () => {
+          isDragging = false;
         });
         editor.on('NodeChange', _e => {
           search(contextbar.element).fold(launchContextToolbar.throttle, noop);
@@ -21742,79 +26247,16 @@
           tooltip: item.text,
           icon: item.icon,
           onAction: onActionExecCommand(editor, item.cmd),
-          onSetup: onSetupFormatToggle(editor, item.name)
+          onSetup: onSetupStateToggle(editor, item.name)
         });
       });
       editor.ui.registry.addButton('alignnone', {
         tooltip: 'No alignment',
         icon: 'align-none',
+        onSetup: onSetupEditableToggle(editor),
         onAction: onActionExecCommand(editor, 'JustifyNone')
       });
     };
-
-    const units = {
-      unsupportedLength: [
-        'em',
-        'ex',
-        'cap',
-        'ch',
-        'ic',
-        'rem',
-        'lh',
-        'rlh',
-        'vw',
-        'vh',
-        'vi',
-        'vb',
-        'vmin',
-        'vmax',
-        'cm',
-        'mm',
-        'Q',
-        'in',
-        'pc',
-        'pt',
-        'px'
-      ],
-      fixed: [
-        'px',
-        'pt'
-      ],
-      relative: ['%'],
-      empty: ['']
-    };
-    const pattern = (() => {
-      const decimalDigits = '[0-9]+';
-      const signedInteger = '[+-]?' + decimalDigits;
-      const exponentPart = '[eE]' + signedInteger;
-      const dot = '\\.';
-      const opt = input => `(?:${ input })?`;
-      const unsignedDecimalLiteral = [
-        'Infinity',
-        decimalDigits + dot + opt(decimalDigits) + opt(exponentPart),
-        dot + decimalDigits + opt(exponentPart),
-        decimalDigits + opt(exponentPart)
-      ].join('|');
-      const float = `[+-]?(?:${ unsignedDecimalLiteral })`;
-      return new RegExp(`^(${ float })(.*)$`);
-    })();
-    const isUnit = (unit, accepted) => exists(accepted, acc => exists(units[acc], check => unit === check));
-    const parse = (input, accepted) => {
-      const match = Optional.from(pattern.exec(input));
-      return match.bind(array => {
-        const value = Number(array[1]);
-        const unitRaw = array[2];
-        if (isUnit(unitRaw, accepted)) {
-          return Optional.some({
-            value,
-            unit: unitRaw
-          });
-        } else {
-          return Optional.none();
-        }
-      });
-    };
-    const normalise = (input, accepted) => parse(input, accepted).map(({value, unit}) => value + unit);
 
     const registerController = (editor, spec) => {
       const getMenuItems = () => {
@@ -21855,7 +26297,7 @@
         onSetup: spec.onMenuSetup
       });
     };
-    const lineHeightSpec = {
+    const lineHeightSpec = editor => ({
       name: 'lineheight',
       text: 'Line height',
       icon: 'line-height',
@@ -21868,8 +26310,10 @@
       display: identity,
       watcher: (editor, value, callback) => editor.formatter.formatChanged('lineheight', callback, false, { value }).unbind,
       getCurrent: editor => Optional.from(editor.queryCommandValue('LineHeight')),
-      setCurrent: (editor, value) => editor.execCommand('LineHeight', false, value)
-    };
+      setCurrent: (editor, value) => editor.execCommand('LineHeight', false, value),
+      onToolbarSetup: onSetupEditableToggle(editor),
+      onMenuSetup: onSetupEditableToggle(editor)
+    });
     const languageSpec = editor => {
       const settingsOpt = Optional.from(getContentLanguages(editor));
       return settingsOpt.map(settings => ({
@@ -21879,10 +26323,13 @@
         getOptions: constant$1(settings),
         hash: input => isUndefined(input.customCode) ? input.code : `${ input.code }/${ input.customCode }`,
         display: input => input.title,
-        watcher: (editor, value, callback) => editor.formatter.formatChanged('lang', callback, false, {
-          value: value.code,
-          customValue: value.customCode
-        }).unbind,
+        watcher: (editor, value, callback) => {
+          var _a;
+          return editor.formatter.formatChanged('lang', callback, false, {
+            value: value.code,
+            customValue: (_a = value.customCode) !== null && _a !== void 0 ? _a : null
+          }).unbind;
+        },
         getCurrent: editor => {
           const node = SugarElement.fromDom(editor.selection.getNode());
           return closest$4(node, n => Optional.some(n).filter(isElement$1).bind(ele => {
@@ -21902,12 +26349,13 @@
           const unbinder = unbindable();
           api.setActive(editor.formatter.match('lang', {}, undefined, true));
           unbinder.set(editor.formatter.formatChanged('lang', api.setActive, true));
-          return unbinder.clear;
-        }
+          return composeUnbinders(unbinder.clear, onSetupEditableToggle(editor)(api));
+        },
+        onMenuSetup: onSetupEditableToggle(editor)
       }));
     };
     const register$7 = editor => {
-      registerController(editor, lineHeightSpec);
+      registerController(editor, lineHeightSpec(editor));
       languageSpec(editor).each(spec => registerController(editor, spec));
     };
 
@@ -21920,7 +26368,7 @@
     };
 
     const onSetupOutdentState = editor => onSetupEvent(editor, 'NodeChange', api => {
-      api.setEnabled(editor.queryCommandState('outdent'));
+      api.setEnabled(editor.queryCommandState('outdent') && editor.selection.isEditable());
     });
     const registerButtons$2 = editor => {
       editor.ui.registry.addButton('outdent', {
@@ -21932,6 +26380,7 @@
       editor.ui.registry.addButton('indent', {
         tooltip: 'Increase indent',
         icon: 'indent',
+        onSetup: onSetupEditableToggle(editor),
         onAction: onActionExecCommand(editor, 'indent')
       });
     };
@@ -21946,7 +26395,7 @@
         api.setActive(e.state);
       };
       editor.on('PastePlainTextToggle', pastePlainTextToggleHandler);
-      return () => editor.off('PastePlainTextToggle', pastePlainTextToggleHandler);
+      return composeUnbinders(() => editor.off('PastePlainTextToggle', pastePlainTextToggleHandler), onSetupEditableToggle(editor)(api));
     };
     const register$4 = editor => {
       const pasteAsText = Cell(getPasteAsText(editor));
@@ -21974,17 +26423,20 @@
         {
           name: 'bold',
           text: 'Bold',
-          icon: 'bold'
+          icon: 'bold',
+          shortcut: 'Meta+B'
         },
         {
           name: 'italic',
           text: 'Italic',
-          icon: 'italic'
+          icon: 'italic',
+          shortcut: 'Meta+I'
         },
         {
           name: 'underline',
           text: 'Underline',
-          icon: 'underline'
+          icon: 'underline',
+          shortcut: 'Meta+U'
         },
         {
           name: 'strikethrough',
@@ -22005,21 +26457,66 @@
         editor.ui.registry.addToggleButton(btn.name, {
           tooltip: btn.text,
           icon: btn.icon,
-          onSetup: onSetupFormatToggle(editor, btn.name),
-          onAction: onActionToggleFormat(editor, btn.name)
+          onSetup: onSetupStateToggle(editor, btn.name),
+          onAction: onActionToggleFormat(editor, btn.name),
+          shortcut: btn.shortcut
         });
       });
       for (let i = 1; i <= 6; i++) {
         const name = 'h' + i;
+        const shortcut = `Access+${ i }`;
         editor.ui.registry.addToggleButton(name, {
           text: name.toUpperCase(),
           tooltip: 'Heading ' + i,
-          onSetup: onSetupFormatToggle(editor, name),
-          onAction: onActionToggleFormat(editor, name)
+          onSetup: onSetupStateToggle(editor, name),
+          onAction: onActionToggleFormat(editor, name),
+          shortcut
         });
       }
     };
     const registerCommandButtons = editor => {
+      global$1.each([
+        {
+          name: 'copy',
+          text: 'Copy',
+          action: 'Copy',
+          icon: 'copy'
+        },
+        {
+          name: 'help',
+          text: 'Help',
+          action: 'mceHelp',
+          icon: 'help',
+          shortcut: 'Alt+0'
+        },
+        {
+          name: 'selectall',
+          text: 'Select all',
+          action: 'SelectAll',
+          icon: 'select-all',
+          shortcut: 'Meta+A'
+        },
+        {
+          name: 'newdocument',
+          text: 'New document',
+          action: 'mceNewDocument',
+          icon: 'new-document'
+        },
+        {
+          name: 'print',
+          text: 'Print',
+          action: 'mcePrint',
+          icon: 'print',
+          shortcut: 'Meta+P'
+        }
+      ], btn => {
+        editor.ui.registry.addButton(btn.name, {
+          tooltip: btn.text,
+          icon: btn.icon,
+          onAction: onActionExecCommand(editor, btn.action),
+          shortcut: btn.shortcut
+        });
+      });
       global$1.each([
         {
           name: 'cut',
@@ -22028,34 +26525,10 @@
           icon: 'cut'
         },
         {
-          name: 'copy',
-          text: 'Copy',
-          action: 'Copy',
-          icon: 'copy'
-        },
-        {
           name: 'paste',
           text: 'Paste',
           action: 'Paste',
           icon: 'paste'
-        },
-        {
-          name: 'help',
-          text: 'Help',
-          action: 'mceHelp',
-          icon: 'help'
-        },
-        {
-          name: 'selectall',
-          text: 'Select all',
-          action: 'SelectAll',
-          icon: 'select-all'
-        },
-        {
-          name: 'newdocument',
-          text: 'New document',
-          action: 'mceNewDocument',
-          icon: 'new-document'
         },
         {
           name: 'removeformat',
@@ -22070,12 +26543,6 @@
           icon: 'remove'
         },
         {
-          name: 'print',
-          text: 'Print',
-          action: 'mcePrint',
-          icon: 'print'
-        },
-        {
           name: 'hr',
           text: 'Horizontal line',
           action: 'InsertHorizontalRule',
@@ -22085,6 +26552,7 @@
         editor.ui.registry.addButton(btn.name, {
           tooltip: btn.text,
           icon: btn.icon,
+          onSetup: onSetupEditableToggle(editor),
           onAction: onActionExecCommand(editor, btn.action)
         });
       });
@@ -22100,7 +26568,7 @@
           tooltip: btn.text,
           icon: btn.icon,
           onAction: onActionExecCommand(editor, btn.action),
-          onSetup: onSetupFormatToggle(editor, btn.name)
+          onSetup: onSetupStateToggle(editor, btn.name)
         });
       });
     };
@@ -22110,6 +26578,42 @@
       registerCommandToggleButtons(editor);
     };
     const registerMenuItems$2 = editor => {
+      global$1.each([
+        {
+          name: 'newdocument',
+          text: 'New document',
+          action: 'mceNewDocument',
+          icon: 'new-document'
+        },
+        {
+          name: 'copy',
+          text: 'Copy',
+          action: 'Copy',
+          icon: 'copy',
+          shortcut: 'Meta+C'
+        },
+        {
+          name: 'selectall',
+          text: 'Select all',
+          action: 'SelectAll',
+          icon: 'select-all',
+          shortcut: 'Meta+A'
+        },
+        {
+          name: 'print',
+          text: 'Print...',
+          action: 'mcePrint',
+          icon: 'print',
+          shortcut: 'Meta+P'
+        }
+      ], menuitem => {
+        editor.ui.registry.addMenuItem(menuitem.name, {
+          text: menuitem.text,
+          icon: menuitem.icon,
+          shortcut: menuitem.shortcut,
+          onAction: onActionExecCommand(editor, menuitem.action)
+        });
+      });
       global$1.each([
         {
           name: 'bold',
@@ -22157,12 +26661,6 @@
           icon: 'remove-formatting'
         },
         {
-          name: 'newdocument',
-          text: 'New document',
-          action: 'mceNewDocument',
-          icon: 'new-document'
-        },
-        {
           name: 'cut',
           text: 'Cut',
           action: 'Cut',
@@ -22170,32 +26668,11 @@
           shortcut: 'Meta+X'
         },
         {
-          name: 'copy',
-          text: 'Copy',
-          action: 'Copy',
-          icon: 'copy',
-          shortcut: 'Meta+C'
-        },
-        {
           name: 'paste',
           text: 'Paste',
           action: 'Paste',
           icon: 'paste',
           shortcut: 'Meta+V'
-        },
-        {
-          name: 'selectall',
-          text: 'Select all',
-          action: 'SelectAll',
-          icon: 'select-all',
-          shortcut: 'Meta+A'
-        },
-        {
-          name: 'print',
-          text: 'Print...',
-          action: 'mcePrint',
-          icon: 'print',
-          shortcut: 'Meta+P'
         },
         {
           name: 'hr',
@@ -22208,12 +26685,14 @@
           text: menuitem.text,
           icon: menuitem.icon,
           shortcut: menuitem.shortcut,
+          onSetup: onSetupEditableToggle(editor),
           onAction: onActionExecCommand(editor, menuitem.action)
         });
       });
       editor.ui.registry.addMenuItem('codeformat', {
         text: 'Code',
         icon: 'sourcecode',
+        onSetup: onSetupEditableToggle(editor),
         onAction: onActionToggleFormat(editor, 'code')
       });
     };
@@ -22247,14 +26726,16 @@
         icon: 'undo',
         enabled: false,
         onSetup: onSetupUndoRedoState(editor, 'hasUndo'),
-        onAction: onActionExecCommand(editor, 'undo')
+        onAction: onActionExecCommand(editor, 'undo'),
+        shortcut: 'Meta+Z'
       });
       editor.ui.registry.addButton('redo', {
         tooltip: 'Redo',
         icon: 'redo',
         enabled: false,
         onSetup: onSetupUndoRedoState(editor, 'hasRedo'),
-        onAction: onActionExecCommand(editor, 'redo')
+        onAction: onActionExecCommand(editor, 'redo'),
+        shortcut: 'Meta+Y'
       });
     };
     const register$2 = editor => {
@@ -22351,9 +26832,9 @@
     const transpose = (pos, dx, dy) => {
       return nu(pos.x + dx, pos.y + dy);
     };
-    const isTouchEvent = e => e.type === 'longpress' || e.type.indexOf('touch') === 0;
+    const isTouchEvent$1 = e => e.type === 'longpress' || e.type.indexOf('touch') === 0;
     const fromPageXY = e => {
-      if (isTouchEvent(e)) {
+      if (isTouchEvent$1(e)) {
         const touch = e.touches[0];
         return nu(touch.pageX, touch.pageY);
       } else {
@@ -22361,7 +26842,7 @@
       }
     };
     const fromClientXY = e => {
-      if (isTouchEvent(e)) {
+      if (isTouchEvent$1(e)) {
         const touch = e.touches[0];
         return nu(touch.clientX, touch.clientY);
       } else {
@@ -22408,7 +26889,10 @@
     const initAndShow$1 = (editor, e, buildMenu, backstage, contextmenu, anchorType) => {
       const items = buildMenu();
       const anchorSpec = getAnchorSpec$1(editor, e, anchorType);
-      build(items, ItemResponse$1.CLOSE_ON_EXECUTE, backstage, false).map(menuData => {
+      build(items, ItemResponse$1.CLOSE_ON_EXECUTE, backstage, {
+        isHorizontalMenu: false,
+        search: Optional.none()
+      }).map(menuData => {
         e.preventDefault();
         InlineView.showMenuAt(contextmenu, { anchor: anchorSpec }, {
           menu: { markers: markers('normal') },
@@ -22506,12 +26990,16 @@
     };
     const show = (editor, e, items, backstage, contextmenu, anchorType, highlightImmediately) => {
       const anchorSpec = getAnchorSpec(editor, e, anchorType);
-      build(items, ItemResponse$1.CLOSE_ON_EXECUTE, backstage, true).map(menuData => {
+      build(items, ItemResponse$1.CLOSE_ON_EXECUTE, backstage, {
+        isHorizontalMenu: true,
+        search: Optional.none()
+      }).map(menuData => {
         e.preventDefault();
+        const highlightOnOpen = highlightImmediately ? HighlightOnOpen.HighlightMenuAndItem : HighlightOnOpen.HighlightNone;
         InlineView.showMenuWithinBounds(contextmenu, { anchor: anchorSpec }, {
           menu: {
             markers: markers('normal'),
-            highlightImmediately
+            highlightOnOpen
           },
           data: menuData,
           type: 'horizontal'
@@ -22575,10 +27063,11 @@
             }
           };
         default:
+          const commonItem = item;
           return {
             type: 'menuitem',
-            ...commonMenuItem(item),
-            onAction: noarg(item.onAction)
+            ...commonMenuItem(commonItem),
+            onAction: noarg(commonItem.onAction)
           };
         }
       }
@@ -22595,9 +27084,9 @@
       const sections = foldl(menuConfig, (acc, name) => {
         return get$g(contextMenus, name.toLowerCase()).map(menu => {
           const items = menu.update(selectedElement);
-          if (isString(items)) {
+          if (isString(items) && isNotEmpty(trim$1(items))) {
             return addContextMenuGroup(acc, items.split(' '));
-          } else if (items.length > 0) {
+          } else if (isArray(items) && items.length > 0) {
             const allItems = map$2(items, makeContextItem);
             return addContextMenuGroup(acc, allItems);
           } else {
@@ -22611,7 +27100,8 @@
       return sections;
     };
     const isNativeOverrideKeyEvent = (editor, e) => e.ctrlKey && !shouldNeverUseNative(editor);
-    const isTriggeredByKeyboard = (editor, e) => e.type !== 'longpress' && (e.button !== 2 || e.target === editor.getBody() && e.pointerType === '');
+    const isTouchEvent = e => e.type === 'longpress' || has$2(e, 'touches');
+    const isTriggeredByKeyboard = (editor, e) => !isTouchEvent(e) && (e.button !== 2 || e.target === editor.getBody() && e.pointerType === '');
     const getSelectedElement = (editor, e) => isTriggeredByKeyboard(editor, e) ? editor.selection.getStart(true) : e.target;
     const getAnchorType = (editor, e) => {
       const selector = getAvoidOverlapSelector(editor);
@@ -22639,7 +27129,7 @@
               editor.focus();
             })])])
       }));
-      const hideContextMenu = _e => InlineView.hide(contextmenu);
+      const hideContextMenu = () => InlineView.hide(contextmenu);
       const showContextMenu = e => {
         if (shouldNeverUseNative(editor)) {
           e.preventDefault();
@@ -22984,7 +27474,7 @@
       ]);
     };
 
-    const init$2 = dragApi => derive$2([
+    const init$3 = dragApi => derive$2([
       run$1(mousedown(), dragApi.forceDrop),
       run$1(mouseup(), dragApi.drop),
       run$1(mousemove(), (comp, simulatedEvent) => {
@@ -23002,7 +27492,7 @@
         getDelta: getDelta$1
     });
 
-    const events$2 = (dragConfig, dragState, updateStartState) => [run$1(mousedown(), (component, simulatedEvent) => {
+    const events$3 = (dragConfig, dragState, updateStartState) => [run$1(mousedown(), (component, simulatedEvent) => {
         const raw = simulatedEvent.event.raw;
         if (raw.button !== 0) {
           return;
@@ -23019,7 +27509,7 @@
             move(component, dragConfig, dragState, MouseData, event);
           }
         };
-        const blocker = createComponent(component, dragConfig.blockerClass, init$2(dragApi));
+        const blocker = createComponent(component, dragConfig.blockerClass, init$3(dragApi));
         const start = () => {
           updateStartState(component);
           instigate(component, blocker);
@@ -23028,10 +27518,10 @@
       })];
     const schema$5 = [
       ...schema$6,
-      output$1('dragger', { handlers: handlers(events$2) })
+      output$1('dragger', { handlers: handlers(events$3) })
     ];
 
-    const init$1 = dragApi => derive$2([
+    const init$2 = dragApi => derive$2([
       run$1(touchstart(), dragApi.forceDrop),
       run$1(touchend(), dragApi.drop),
       run$1(touchcancel(), dragApi.drop),
@@ -23057,7 +27547,7 @@
         getDelta: getDelta
     });
 
-    const events$1 = (dragConfig, dragState, updateStartState) => {
+    const events$2 = (dragConfig, dragState, updateStartState) => {
       const blockerSingleton = value$2();
       const stopBlocking = component => {
         stop(component, blockerSingleton.get(), dragConfig, dragState);
@@ -23075,7 +27565,7 @@
               move(component, dragConfig, dragState, TouchData, event);
             }
           };
-          const blocker = createComponent(component, dragConfig.blockerClass, init$1(dragApi));
+          const blocker = createComponent(component, dragConfig.blockerClass, init$2(dragApi));
           blockerSingleton.set(blocker);
           const start = () => {
             updateStartState(component);
@@ -23096,16 +27586,16 @@
     };
     const schema$4 = [
       ...schema$6,
-      output$1('dragger', { handlers: handlers(events$1) })
+      output$1('dragger', { handlers: handlers(events$2) })
     ];
 
-    const events = (dragConfig, dragState, updateStartState) => [
-      ...events$2(dragConfig, dragState, updateStartState),
-      ...events$1(dragConfig, dragState, updateStartState)
+    const events$1 = (dragConfig, dragState, updateStartState) => [
+      ...events$3(dragConfig, dragState, updateStartState),
+      ...events$2(dragConfig, dragState, updateStartState)
     ];
     const schema$3 = [
       ...schema$6,
-      output$1('dragger', { handlers: handlers(events) })
+      output$1('dragger', { handlers: handlers(events$1) })
     ];
 
     const mouse = schema$5;
@@ -23119,7 +27609,7 @@
         mouseOrTouch: mouseOrTouch
     });
 
-    const init = () => {
+    const init$1 = () => {
       let previous = Optional.none();
       let startData = Optional.none();
       const reset = () => {
@@ -23148,7 +27638,7 @@
 
     var DragState = /*#__PURE__*/Object.freeze({
         __proto__: null,
-        init: init
+        init: init$1
     });
 
     const Dragging = createModes({
@@ -23291,19 +27781,22 @@
       const snapBottomRight = cell => snapTo(bottomRight, cell, getBottomRightSnap, 'bottom');
       const snapLastBottomRight = () => finishCell.get().each(snapBottomRight);
       if (detect$1().deviceType.isTouch()) {
+        const domToSugar = arr => map$2(arr, SugarElement.fromDom);
         editor.on('TableSelectionChange', e => {
           if (!isVisible.get()) {
             attach(sink, topLeft);
             attach(sink, bottomRight);
             isVisible.set(true);
           }
-          startCell.set(e.start);
-          finishCell.set(e.finish);
-          e.otherCells.each(otherCells => {
-            tlTds.set(otherCells.upOrLeftCells);
-            brTds.set(otherCells.downOrRightCells);
-            snapTopLeft(e.start);
-            snapBottomRight(e.finish);
+          const start = SugarElement.fromDom(e.start);
+          const finish = SugarElement.fromDom(e.finish);
+          startCell.set(start);
+          finishCell.set(finish);
+          Optional.from(e.otherCells).each(otherCells => {
+            tlTds.set(domToSugar(otherCells.upOrLeftCells));
+            brTds.set(domToSugar(otherCells.downOrRightCells));
+            snapTopLeft(start);
+            snapBottomRight(finish);
           });
         });
         editor.on('ResizeEditor ResizeWindow ScrollContent', () => {
@@ -23337,7 +27830,7 @@
             'aria-level': index + 1
           }
         },
-        components: [text$1(name)],
+        components: [text$2(name)],
         action: _btn => {
           editor.focus();
           editor.selection.select(element);
@@ -23354,7 +27847,7 @@
           classes: ['tox-statusbar__path-divider'],
           attributes: { 'aria-hidden': true }
         },
-        components: [text$1(` ${ delimiter } `)]
+        components: [text$2(` ${ delimiter } `)]
       });
       const renderPathData = data => foldl(data, (acc, path, index) => {
         const element = renderElement(path.name, path.element, index);
@@ -23373,10 +27866,7 @@
         while (i-- > 0) {
           const parent = parents[i];
           if (parent.nodeType === 1 && !isHidden(parent)) {
-            const args = editor.dispatch('ResolveName', {
-              name: parent.nodeName.toLowerCase(),
-              target: parent
-            });
+            const args = fireResolveName(editor, parent);
             if (!args.isDefaultPrevented()) {
               newPath.push({
                 name: args.name,
@@ -23425,8 +27915,7 @@
       ResizeTypes[ResizeTypes['Vertical'] = 2] = 'Vertical';
     }(ResizeTypes || (ResizeTypes = {})));
     const getDimensions = (editor, deltas, resizeType, originalHeight, originalWidth) => {
-      const dimensions = {};
-      dimensions.height = calcCappedSize(originalHeight + deltas.top, getMinHeightOption(editor), getMaxHeightOption(editor));
+      const dimensions = { height: calcCappedSize(originalHeight + deltas.top, getMinHeightOption(editor), getMaxHeightOption(editor)) };
       if (resizeType === ResizeTypes.Both) {
         dimensions.width = calcCappedSize(originalWidth + deltas.left, getMinWidthOption(editor), getMaxWidthOption(editor));
       }
@@ -23435,7 +27924,11 @@
     const resize = (editor, deltas, resizeType) => {
       const container = SugarElement.fromDom(editor.getContainer());
       const dimensions = getDimensions(editor, deltas, resizeType, get$d(container), get$c(container));
-      each(dimensions, (val, dim) => set$8(container, dim, numToPx(val)));
+      each(dimensions, (val, dim) => {
+        if (isNumber(val)) {
+          set$8(container, dim, numToPx(val));
+        }
+      });
       fireResizeEditor(editor);
     };
 
@@ -23460,10 +27953,14 @@
       if (resizeType === ResizeTypes.None) {
         return Optional.none();
       }
+      const resizeLabel = resizeType === ResizeTypes.Both ? 'Press the arrow keys to resize the editor.' : 'Press the Up and Down arrow keys to resize the editor.';
       return Optional.some(render$3('resize-handle', {
         tag: 'div',
         classes: ['tox-statusbar__resize-handle'],
-        attributes: { title: providersBackstage.translate('Resize') },
+        attributes: {
+          'aria-label': providersBackstage.translate(resizeLabel),
+          'data-mce-name': 'resize-handle'
+        },
         behaviours: [
           Dragging.config({
             mode: 'mouse',
@@ -23479,13 +27976,14 @@
             onDown: () => keyboardHandler(editor, resizeType, 0, 1)
           }),
           Tabstopping.config({}),
-          Focusing.config({})
+          Focusing.config({}),
+          Tooltipping.config(providersBackstage.tooltips.getConfig({ tooltipText: providersBackstage.translate('Resize') }))
         ]
       }, providersBackstage.icons));
     };
 
     const renderWordCount = (editor, providersBackstage) => {
-      const replaceCountText = (comp, count, mode) => Replacing.set(comp, [text$1(providersBackstage.translate([
+      const replaceCountText = (comp, count, mode) => Replacing.set(comp, [text$2(providersBackstage.translate([
           '{0} ' + mode,
           count[mode]
         ]))]);
@@ -23555,7 +28053,7 @@
               dom: {
                 tag: 'a',
                 attributes: {
-                  'href': 'https://www.tiny.cloud/powered-by-tiny?utm_campaign=editor_referral&utm_medium=poweredby&utm_source=tinymce&utm_content=v6',
+                  'href': 'https://www.tiny.cloud/powered-by-tiny?utm_campaign=poweredby&utm_source=tiny&utm_medium=referral&utm_content=v7',
                   'rel': 'noopener',
                   'target': '_blank',
                   'aria-label': global$8.translate([
@@ -23569,22 +28067,83 @@
             }]
         };
       };
-      const getTextComponents = () => {
+      const renderHelpAccessibility = () => {
+        const shortcutText = convertText('Alt+0');
+        const text = `Press {0} for help`;
+        return {
+          dom: {
+            tag: 'div',
+            classes: ['tox-statusbar__help-text']
+          },
+          components: [text$2(global$8.translate([
+              text,
+              shortcutText
+            ]))]
+        };
+      };
+      const renderRightContainer = () => {
         const components = [];
-        if (useElementPath(editor)) {
-          components.push(renderElementPath(editor, {}, providersBackstage));
-        }
         if (editor.hasPlugin('wordcount')) {
           components.push(renderWordCount(editor, providersBackstage));
         }
         if (useBranding(editor)) {
           components.push(renderBranding());
         }
+        return {
+          dom: {
+            tag: 'div',
+            classes: ['tox-statusbar__right-container']
+          },
+          components
+        };
+      };
+      const getTextComponents = () => {
+        const components = [];
+        const shouldRenderHelp = useHelpAccessibility(editor);
+        const shouldRenderElementPath = useElementPath(editor);
+        const shouldRenderRightContainer = useBranding(editor) || editor.hasPlugin('wordcount');
+        const getTextComponentClasses = () => {
+          const flexStart = 'tox-statusbar__text-container--flex-start';
+          const flexEnd = 'tox-statusbar__text-container--flex-end';
+          const spaceAround = 'tox-statusbar__text-container--space-around';
+          if (shouldRenderHelp) {
+            const container3Columns = 'tox-statusbar__text-container-3-cols';
+            if (!shouldRenderRightContainer && !shouldRenderElementPath) {
+              return [
+                container3Columns,
+                spaceAround
+              ];
+            }
+            if (shouldRenderRightContainer && !shouldRenderElementPath) {
+              return [
+                container3Columns,
+                flexEnd
+              ];
+            }
+            return [
+              container3Columns,
+              flexStart
+            ];
+          }
+          return [shouldRenderRightContainer && !shouldRenderElementPath ? flexEnd : flexStart];
+        };
+        if (shouldRenderElementPath) {
+          components.push(renderElementPath(editor, {}, providersBackstage));
+        }
+        if (shouldRenderHelp) {
+          components.push(renderHelpAccessibility());
+        }
+        if (shouldRenderRightContainer) {
+          components.push(renderRightContainer());
+        }
         if (components.length > 0) {
           return [{
               dom: {
                 tag: 'div',
-                classes: ['tox-statusbar__text-container']
+                classes: [
+                  'tox-statusbar__text-container',
+                  ...getTextComponentClasses()
+                ]
               },
               components
             }];
@@ -23605,15 +28164,15 @@
       };
     };
 
-    const getLazyMothership = singleton => singleton.get().getOrDie('UI has not been rendered');
-    const setup$3 = editor => {
+    const getLazyMothership = (label, singleton) => singleton.get().getOrDie(`UI for ${ label } has not been rendered`);
+    const setup$3 = (editor, setupForTheme) => {
       const isInline = editor.inline;
       const mode = isInline ? Inline : Iframe;
       const header = isStickyToolbar(editor) ? StickyHeader : StaticHeader;
-      const lazySink = value$2();
-      const lazyOuterContainer = value$2();
+      const lazyUiRefs = LazyUiReferences();
       const lazyMothership = value$2();
-      const lazyUiMothership = value$2();
+      const lazyDialogMothership = value$2();
+      const lazyPopupMothership = value$2();
       const platform = detect$1();
       const isTouch = platform.deviceType.isTouch();
       const touchPlatformClass = 'tox-platform-touch';
@@ -23626,12 +28185,23 @@
           classes: ['tox-anchorbar']
         }
       });
-      const lazyHeader = () => lazyOuterContainer.get().bind(OuterContainer.getHeader);
-      const lazySinkResult = () => Result.fromOption(lazySink.get(), 'UI has not been rendered');
-      const lazyAnchorBar = () => lazyOuterContainer.get().bind(container => memAnchorBar.getOpt(container)).getOrDie('Could not find a anchor bar element');
-      const lazyToolbar = () => lazyOuterContainer.get().bind(container => OuterContainer.getToolbar(container)).getOrDie('Could not find more toolbar element');
-      const lazyThrobber = () => lazyOuterContainer.get().bind(container => OuterContainer.getThrobber(container)).getOrDie('Could not find throbber element');
-      const backstage = init$7(lazySinkResult, editor, lazyAnchorBar);
+      const memBottomAnchorBar = record({
+        dom: {
+          tag: 'div',
+          classes: ['tox-bottom-anchorbar']
+        }
+      });
+      const lazyHeader = () => lazyUiRefs.mainUi.get().map(ui => ui.outerContainer).bind(OuterContainer.getHeader);
+      const lazyDialogSinkResult = () => Result.fromOption(lazyUiRefs.dialogUi.get().map(ui => ui.sink), 'UI has not been rendered');
+      const lazyPopupSinkResult = () => Result.fromOption(lazyUiRefs.popupUi.get().map(ui => ui.sink), '(popup) UI has not been rendered');
+      const lazyAnchorBar = lazyUiRefs.lazyGetInOuterOrDie('anchor bar', memAnchorBar.getOpt);
+      const lazyBottomAnchorBar = lazyUiRefs.lazyGetInOuterOrDie('bottom anchor bar', memBottomAnchorBar.getOpt);
+      const lazyToolbar = lazyUiRefs.lazyGetInOuterOrDie('toolbar', OuterContainer.getToolbar);
+      const lazyThrobber = lazyUiRefs.lazyGetInOuterOrDie('throbber', OuterContainer.getThrobber);
+      const backstages = init$6({
+        popup: lazyPopupSinkResult,
+        dialog: lazyDialogSinkResult
+      }, editor, lazyAnchorBar, lazyBottomAnchorBar);
       const makeHeaderPart = () => {
         const verticalDirAttributes = { attributes: { [Attribute]: isToolbarBottom ? AttributeValue.BottomToTop : AttributeValue.TopToBottom } };
         const partMenubar = OuterContainer.parts.menubar({
@@ -23639,7 +28209,7 @@
             tag: 'div',
             classes: ['tox-menubar']
           },
-          backstage,
+          backstage: backstages.popup,
           onEscape: () => {
             editor.focus();
           }
@@ -23649,10 +28219,13 @@
             tag: 'div',
             classes: ['tox-toolbar']
           },
-          getSink: lazySinkResult,
-          providers: backstage.shared.providers,
+          getSink: backstages.popup.shared.getSink,
+          providers: backstages.popup.shared.providers,
           onEscape: () => {
             editor.focus();
+          },
+          onToolbarToggled: state => {
+            fireToggleToolbarDrawer(editor, state);
           },
           type: toolbarMode,
           lazyToolbar,
@@ -23664,7 +28237,7 @@
             tag: 'div',
             classes: ['tox-toolbar-overlord']
           },
-          providers: backstage.shared.providers,
+          providers: backstages.popup.shared.providers,
           onEscape: () => {
             editor.focus();
           },
@@ -23673,6 +28246,9 @@
         const hasMultipleToolbar = isMultipleToolbars(editor);
         const hasToolbar = isToolbarEnabled(editor);
         const hasMenubar = isMenubarEnabled(editor);
+        const shouldHavePromotion = promotionEnabled(editor);
+        const partPromotion = makePromotion();
+        const hasAnyContents = hasMultipleToolbar || hasToolbar || hasMenubar;
         const getPartToolbar = () => {
           if (hasMultipleToolbar) {
             return [partMultipleToolbar];
@@ -23682,20 +28258,32 @@
             return [];
           }
         };
+        const menubarCollection = shouldHavePromotion ? [
+          partPromotion,
+          partMenubar
+        ] : [partMenubar];
         return OuterContainer.parts.header({
           dom: {
             tag: 'div',
-            classes: ['tox-editor-header'],
+            classes: ['tox-editor-header'].concat(hasAnyContents ? [] : ['tox-editor-header--empty']),
             ...verticalDirAttributes
           },
           components: flatten([
-            hasMenubar ? [partMenubar] : [],
+            hasMenubar ? menubarCollection : [],
             getPartToolbar(),
             useFixedContainer(editor) ? [] : [memAnchorBar.asSpec()]
           ]),
           sticky: isStickyToolbar(editor),
           editor,
-          sharedBackstage: backstage.shared
+          sharedBackstage: backstages.popup.shared
+        });
+      };
+      const makePromotion = () => {
+        return OuterContainer.parts.promotion({
+          dom: {
+            tag: 'div',
+            classes: ['tox-promotion']
+          }
         });
       };
       const makeSidebarDefinition = () => {
@@ -23722,7 +28310,7 @@
           ]
         };
       };
-      const renderSink = () => {
+      const renderDialogUi = () => {
         const uiContainer = getUiContainer(editor);
         const isGridUiContainer = eq(body(), uiContainer) && get$e(uiContainer, 'display') === 'grid';
         const sinkSpec = {
@@ -23745,14 +28333,38 @@
         };
         const sink = build$1(deepMerge(sinkSpec, isGridUiContainer ? reactiveWidthSpec : {}));
         const uiMothership = takeover(sink);
-        lazySink.set(sink);
-        lazyUiMothership.set(uiMothership);
+        lazyDialogMothership.set(uiMothership);
         return {
           sink,
-          uiMothership
+          mothership: uiMothership
         };
       };
-      const renderContainer = () => {
+      const renderPopupUi = () => {
+        const sinkSpec = {
+          dom: {
+            tag: 'div',
+            classes: [
+              'tox',
+              'tox-silver-sink',
+              'tox-silver-popup-sink',
+              'tox-tinymce-aux'
+            ].concat(deviceClasses),
+            attributes: { ...global$8.isRtl() ? { dir: 'rtl' } : {} }
+          },
+          behaviours: derive$1([Positioning.config({
+              useFixed: () => header.isDocked(lazyHeader),
+              getBounds: () => setupForTheme.getPopupSinkBounds()
+            })])
+        };
+        const sink = build$1(sinkSpec);
+        const uiMothership = takeover(sink);
+        lazyPopupMothership.set(uiMothership);
+        return {
+          sink,
+          mothership: uiMothership
+        };
+      };
+      const renderMainUi = () => {
         const partHeader = makeHeaderPart();
         const sidebarContainer = makeSidebarDefinition();
         const partThrobber = OuterContainer.parts.throbber({
@@ -23760,26 +28372,21 @@
             tag: 'div',
             classes: ['tox-throbber']
           },
-          backstage
+          backstage: backstages.popup
         });
-        const statusbar = useStatusBar(editor) && !isInline ? Optional.some(renderStatusbar(editor, backstage.shared.providers)) : Optional.none();
+        const partViewWrapper = OuterContainer.parts.viewWrapper({ backstage: backstages.popup });
+        const statusbar = useStatusBar(editor) && !isInline ? Optional.some(renderStatusbar(editor, backstages.popup.shared.providers)) : Optional.none();
         const editorComponents = flatten([
           isToolbarBottom ? [] : [partHeader],
           isInline ? [] : [sidebarContainer],
           isToolbarBottom ? [partHeader] : []
         ]);
-        const editorContainer = {
-          dom: {
-            tag: 'div',
-            classes: ['tox-editor-container']
-          },
-          components: editorComponents
-        };
-        const containerComponents = flatten([
-          [editorContainer],
-          isInline ? [] : statusbar.toArray(),
-          [partThrobber]
-        ]);
+        const editorContainer = OuterContainer.parts.editorContainer({
+          components: flatten([
+            editorComponents,
+            isInline ? [] : [memBottomAnchorBar.asSpec()]
+          ])
+        });
         const isHidden = isDistractionFree(editor);
         const attributes = {
           role: 'application',
@@ -23802,7 +28409,14 @@
             },
             attributes
           },
-          components: containerComponents,
+          components: [
+            editorContainer,
+            ...isInline ? [] : [
+              partViewWrapper,
+              ...statusbar.toArray()
+            ],
+            partThrobber
+          ],
           behaviours: derive$1([
             receivingConfig(),
             Disabling.config({ disableClass: 'tox-tinymce--disabled' }),
@@ -23813,7 +28427,6 @@
           ])
         }));
         const mothership = takeover(outerContainer);
-        lazyOuterContainer.set(outerContainer);
         lazyMothership.set(mothership);
         return {
           mothership,
@@ -23824,10 +28437,10 @@
         const parsedHeight = numToPx(getHeightWithFallback(editor));
         const parsedWidth = numToPx(getWidthWithFallback(editor));
         if (!editor.inline) {
-          if (isValidValue('div', 'width', parsedWidth)) {
+          if (isValidValue$1('div', 'width', parsedWidth)) {
             set$8(outerContainer.element, 'width', parsedWidth);
           }
-          if (isValidValue('div', 'height', parsedHeight)) {
+          if (isValidValue$1('div', 'height', parsedHeight)) {
             set$8(outerContainer.element, 'height', parsedHeight);
           } else {
             set$8(outerContainer.element, 'height', '400px');
@@ -23842,18 +28455,21 @@
         editor.addShortcut('alt+F10', 'focus toolbar', () => {
           OuterContainer.focusToolbar(outerContainer);
         });
-        editor.addCommand('ToggleToolbarDrawer', () => {
-          OuterContainer.toggleToolbarDrawer(outerContainer);
+        editor.addCommand('ToggleToolbarDrawer', (_ui, options) => {
+          if (options === null || options === void 0 ? void 0 : options.skipFocus) {
+            OuterContainer.toggleToolbarDrawerWithoutFocusing(outerContainer);
+          } else {
+            OuterContainer.toggleToolbarDrawer(outerContainer);
+          }
         });
         editor.addQueryStateHandler('ToggleToolbarDrawer', () => OuterContainer.isToolbarDrawerToggled(outerContainer));
       };
-      const renderUI = () => {
-        const {mothership, outerContainer} = renderContainer();
-        const {uiMothership, sink} = renderSink();
+      const renderUIWithRefs = uiRefs => {
+        const {mainUi, popupUi, uiMotherships} = uiRefs;
         map$1(getToolbarGroups(editor), (toolbarGroupButtonConfig, name) => {
           editor.ui.registry.addGroupToolbarButton(name, toolbarGroupButtonConfig);
         });
-        const {buttons, menuItems, contextToolbars, sidebars} = editor.ui.registry.getAll();
+        const {buttons, menuItems, contextToolbars, sidebars, views} = editor.ui.registry.getAll();
         const toolbarOpt = getMultipleToolbarsOption(editor);
         const rawUiConfig = {
           menuItems,
@@ -23862,48 +28478,56 @@
           toolbar: toolbarOpt.getOrThunk(() => getToolbar(editor)),
           allowToolbarGroups: toolbarMode === ToolbarMode$1.floating,
           buttons,
-          sidebar: sidebars
+          sidebar: sidebars,
+          views
         };
-        setupShortcutsAndCommands(outerContainer);
-        setup$b(editor, mothership, uiMothership);
-        header.setup(editor, backstage.shared, lazyHeader);
-        setup$6(editor, backstage);
-        setup$5(editor, lazySinkResult, backstage);
+        setupShortcutsAndCommands(mainUi.outerContainer);
+        setup$b(editor, mainUi.mothership, uiMotherships);
+        header.setup(editor, backstages.popup.shared, lazyHeader);
+        setup$6(editor, backstages.popup);
+        setup$5(editor, backstages.popup.shared.getSink, backstages.popup);
         setup$8(editor);
-        setup$7(editor, lazyThrobber, backstage.shared);
-        register$9(editor, contextToolbars, sink, { backstage });
-        setup$4(editor, sink);
+        setup$7(editor, lazyThrobber, backstages.popup.shared);
+        register$9(editor, contextToolbars, popupUi.sink, { backstage: backstages.popup });
+        setup$4(editor, popupUi.sink);
         const elm = editor.getElement();
-        const height = setEditorSize(outerContainer);
-        const uiComponents = {
-          mothership,
-          uiMothership,
-          outerContainer,
-          sink
-        };
+        const height = setEditorSize(mainUi.outerContainer);
         const args = {
           targetNode: elm,
           height
         };
-        return mode.render(editor, uiComponents, rawUiConfig, backstage, args);
+        return mode.render(editor, uiRefs, rawUiConfig, backstages.popup, args);
       };
-      const getMothership = () => getLazyMothership(lazyMothership);
-      const getUiMothership = () => getLazyMothership(lazyUiMothership);
+      const reuseDialogUiForPopuUi = dialogUi => {
+        lazyPopupMothership.set(dialogUi.mothership);
+        return dialogUi;
+      };
+      const renderUI = () => {
+        const mainUi = renderMainUi();
+        const dialogUi = renderDialogUi();
+        const popupUi = isSplitUiMode(editor) ? renderPopupUi() : reuseDialogUiForPopuUi(dialogUi);
+        lazyUiRefs.dialogUi.set(dialogUi);
+        lazyUiRefs.popupUi.set(popupUi);
+        lazyUiRefs.mainUi.set(mainUi);
+        const uiRefs = {
+          popupUi,
+          dialogUi,
+          mainUi,
+          uiMotherships: lazyUiRefs.getUiMotherships()
+        };
+        return renderUIWithRefs(uiRefs);
+      };
       return {
-        getMothership,
-        getUiMothership,
-        backstage,
+        popups: {
+          backstage: backstages.popup,
+          getMothership: () => getLazyMothership('popups', lazyPopupMothership)
+        },
+        dialogs: {
+          backstage: backstages.dialog,
+          getMothership: () => getLazyMothership('dialogs', lazyDialogMothership)
+        },
         renderUI
       };
-    };
-
-    const describedBy = (describedElement, describeElement) => {
-      const describeId = Optional.from(get$f(describedElement, 'id')).fold(() => {
-        const id = generate$6('dialog-describe');
-        set$9(describeElement, 'id', id);
-        return id;
-      }, identity);
-      set$9(describedElement, 'aria-describedby', describeId);
     };
 
     const labelledBy = (labelledElement, labelElement) => {
@@ -23920,6 +28544,7 @@
       option$3('dragBlockClass'),
       defaultedFunction('getBounds', win),
       defaulted('useTabstopAt', always),
+      defaulted('firstTabstop', 0),
       defaulted('eventOrder', {}),
       field('modalBehaviours', [Keying]),
       onKeyboardHandler('onExecute'),
@@ -23998,7 +28623,7 @@
           behaviours: derive$1([
             Focusing.config({}),
             config('dialog-blocker-events', [runOnSource(focusin(), () => {
-                Keying.focusIn(dialog);
+                Blocking.isBlocked(dialog) ? noop() : Keying.focusIn(dialog);
               })])
           ])
         });
@@ -24014,7 +28639,7 @@
         });
       };
       const getDialogBody = dialog => getPartOrDie(dialog, detail, 'body');
-      const getDialogFooter = dialog => getPartOrDie(dialog, detail, 'footer');
+      const getDialogFooter = dialog => getPart(dialog, detail, 'footer');
       const setBusy = (dialog, getBusySpec) => {
         Blocking.block(dialog, getBusySpec);
       };
@@ -24051,12 +28676,12 @@
             mode: 'cyclic',
             onEnter: detail.onExecute,
             onEscape: detail.onEscape,
-            useTabstopAt: detail.useTabstopAt
+            useTabstopAt: detail.useTabstopAt,
+            firstTabstop: detail.firstTabstop
           }),
           Blocking.config({ getRoot: dialogComp.get }),
           config(modalEventsId, [runOnAttached(c => {
               labelledBy(c.element, getPartOrDie(c, detail, 'title').element);
-              describedBy(c.element, getPartOrDie(c, detail, 'body').element);
             })])
         ])
       };
@@ -24124,11 +28749,20 @@
       requiredArrayOf('items', dialogToggleMenuItemSchema),
       ...baseFooterButtonFields
     ];
+    const toggleButtonSpecFields = [
+      ...baseFooterButtonFields,
+      requiredStringEnum('type', ['togglebutton']),
+      optionalTooltip,
+      optionalIcon,
+      optionalText,
+      defaultedBoolean('active', false)
+    ];
     const dialogFooterButtonSchema = choose$1('type', {
       submit: normalFooterButtonFields,
       cancel: normalFooterButtonFields,
       custom: normalFooterButtonFields,
-      menu: menuFooterButtonFields
+      menu: menuFooterButtonFields,
+      togglebutton: toggleButtonSpecFields
     });
 
     const alertBannerFields = [
@@ -24187,7 +28821,7 @@
       icon
     ]);
 
-    const colorInputFields = formComponentWithLabelFields;
+    const colorInputFields = formComponentWithLabelFields.concat([defaultedString('storageKey', 'default')]);
     const colorInputSchema = objOf(colorInputFields);
     const colorInputDataProcessor = string;
 
@@ -24199,6 +28833,7 @@
       defaultedString('tag', 'textarea'),
       requiredString('scriptId'),
       requiredString('scriptUrl'),
+      optionFunction('onFocus'),
       defaultedPostMsg('settings', undefined)
     ]);
     const customEditorFieldsOld = formComponentFields.concat([
@@ -24229,7 +28864,9 @@
     const htmlPanelSchema = objOf(htmlPanelFields);
 
     const iframeFields = formComponentWithLabelFields.concat([
+      defaultedBoolean('border', false),
       defaultedBoolean('sandboxed', true),
+      defaultedBoolean('streamContent', false),
       defaultedBoolean('transparent', true)
     ]);
     const iframeSchema = objOf(iframeFields);
@@ -24255,7 +28892,12 @@
     const createLabelFields = itemsField => [
       type,
       label,
-      itemsField
+      itemsField,
+      defaultedStringEnum('align', 'start', [
+        'start',
+        'center',
+        'end'
+      ])
     ];
 
     const listBoxSingleItemFields = [
@@ -24321,13 +28963,46 @@
     const textAreaSchema = objOf(textAreaFields);
     const textAreaDataProcessor = string;
 
+    const baseTreeItemFields = [
+      requiredStringEnum('type', [
+        'directory',
+        'leaf'
+      ]),
+      title,
+      requiredString('id'),
+      optionOf('menu', MenuButtonSchema)
+    ];
+    const treeItemLeafFields = baseTreeItemFields;
+    const treeItemLeafSchema = objOf(treeItemLeafFields);
+    const treeItemDirectoryFields = baseTreeItemFields.concat([requiredArrayOf('children', thunkOf('children', () => {
+        return choose$2('type', {
+          directory: treeItemDirectorySchema,
+          leaf: treeItemLeafSchema
+        });
+      }))]);
+    const treeItemDirectorySchema = objOf(treeItemDirectoryFields);
+    const treeItemSchema = choose$2('type', {
+      directory: treeItemDirectorySchema,
+      leaf: treeItemLeafSchema
+    });
+    const treeFields = [
+      type,
+      requiredArrayOf('items', treeItemSchema),
+      optionFunction('onLeafAction'),
+      optionFunction('onToggleExpand'),
+      defaultedArrayOf('defaultExpandedIds', [], string),
+      optionString('defaultSelectedId')
+    ];
+    const treeSchema = objOf(treeFields);
+
     const urlInputFields = formComponentWithLabelFields.concat([
       defaultedStringEnum('filetype', 'file', [
         'image',
         'media',
         'file'
       ]),
-      enabled
+      enabled,
+      optionString('picker_text')
     ]);
     const urlInputSchema = objOf(urlInputFields);
     const urlInputDataProcessor = objOf([
@@ -24359,6 +29034,7 @@
       collection: collectionSchema,
       label: objOf(createLabelFields(createItemsField('label'))),
       table: tableSchema,
+      tree: treeSchema,
       panel: panelSchema
     }));
     const panelFields = [
@@ -24388,7 +29064,7 @@
         tabpanel: tabPanelSchema
       })),
       defaultedString('size', 'normal'),
-      requiredArrayOf('buttons', dialogButtonSchema),
+      defaultedArrayOf('buttons', [], dialogButtonSchema),
       defaulted('initialData', {}),
       defaultedFunction('onAction', noop),
       defaultedFunction('onChange', noop),
@@ -24459,9 +29135,10 @@
     };
 
     const extract = structure => {
+      var _a;
       const internalDialog = getOrDie(createDialog(structure));
       const dataValidator = createDataValidator(structure);
-      const initialData = structure.initialData;
+      const initialData = (_a = structure.initialData) !== null && _a !== void 0 ? _a : {};
       return {
         internalDialog,
         dataValidator,
@@ -24479,6 +29156,81 @@
       },
       redial: structure => extract(structure)
     };
+
+    const events = (reflectingConfig, reflectingState) => {
+      const update = (component, data) => {
+        reflectingConfig.updateState.each(updateState => {
+          const newState = updateState(component, data);
+          reflectingState.set(newState);
+        });
+        reflectingConfig.renderComponents.each(renderComponents => {
+          const newComponents = renderComponents(data, reflectingState.get());
+          const replacer = reflectingConfig.reuseDom ? withReuse : withoutReuse;
+          replacer(component, newComponents);
+        });
+      };
+      return derive$2([
+        run$1(receive(), (component, message) => {
+          const receivingData = message;
+          if (!receivingData.universal) {
+            const channel = reflectingConfig.channel;
+            if (contains$2(receivingData.channels, channel)) {
+              update(component, receivingData.data);
+            }
+          }
+        }),
+        runOnAttached((comp, _se) => {
+          reflectingConfig.initialData.each(rawData => {
+            update(comp, rawData);
+          });
+        })
+      ]);
+    };
+
+    var ActiveReflecting = /*#__PURE__*/Object.freeze({
+        __proto__: null,
+        events: events
+    });
+
+    const getState = (component, replaceConfig, reflectState) => reflectState;
+
+    var ReflectingApis = /*#__PURE__*/Object.freeze({
+        __proto__: null,
+        getState: getState
+    });
+
+    var ReflectingSchema = [
+      required$1('channel'),
+      option$3('renderComponents'),
+      option$3('updateState'),
+      option$3('initialData'),
+      defaultedBoolean('reuseDom', true)
+    ];
+
+    const init = () => {
+      const cell = Cell(Optional.none());
+      const clear = () => cell.set(Optional.none());
+      const readState = () => cell.get().getOr('none');
+      return {
+        readState,
+        get: cell.get,
+        set: cell.set,
+        clear
+      };
+    };
+
+    var ReflectingState = /*#__PURE__*/Object.freeze({
+        __proto__: null,
+        init: init
+    });
+
+    const Reflecting = create$4({
+      fields: ReflectingSchema,
+      name: 'reflecting',
+      active: ActiveReflecting,
+      apis: ReflectingApis,
+      state: ReflectingState
+    });
 
     const toValidValues = values => {
       const errors = [];
@@ -24519,12 +29271,15 @@
             useTabstopAt: not(isPseudoStop)
           }),
           ComposingConfigs.memento(memForm),
-          RepresentingConfigs.memento(memForm, {
+          memento(memForm, {
             postprocess: formValue => toValidValues(formValue).fold(err => {
               console.error(err);
               return {};
             }, identity)
-          })
+          }),
+          config('dialog-body-panel', [run$1(focusin(), (comp, se) => {
+              comp.getSystem().broadcastOn([dialogFocusShiftedChannel], { newFocus: Optional.some(se.event.target) });
+            })])
         ])
       };
     };
@@ -24826,73 +29581,59 @@
       });
     };
     const getTabview = dialog => descendant(dialog, '[role="tabpanel"]');
-    const setMode = allTabs => {
-      const smartTabHeight = (() => {
-        const maxTabHeight = value$2();
-        const extraEvents = [
-          runOnAttached(comp => {
-            const dialog = comp.element;
-            getTabview(dialog).each(tabview => {
-              set$8(tabview, 'visibility', 'hidden');
-              comp.getSystem().getByDom(tabview).toOptional().each(tabviewComp => {
-                const heights = measureHeights(allTabs, tabview, tabviewComp);
-                const maxTabHeightOpt = getMaxHeight(heights);
-                maxTabHeightOpt.fold(maxTabHeight.clear, maxTabHeight.set);
-              });
-              updateTabviewHeight(dialog, tabview, maxTabHeight);
-              remove$6(tabview, 'visibility');
-              showTab(allTabs, comp);
-              requestAnimationFrame(() => {
-                updateTabviewHeight(dialog, tabview, maxTabHeight);
-              });
+    const smartMode = allTabs => {
+      const maxTabHeight = value$2();
+      const extraEvents = [
+        runOnAttached(comp => {
+          const dialog = comp.element;
+          getTabview(dialog).each(tabview => {
+            set$8(tabview, 'visibility', 'hidden');
+            comp.getSystem().getByDom(tabview).toOptional().each(tabviewComp => {
+              const heights = measureHeights(allTabs, tabview, tabviewComp);
+              const maxTabHeightOpt = getMaxHeight(heights);
+              maxTabHeightOpt.fold(maxTabHeight.clear, maxTabHeight.set);
             });
-          }),
-          run$1(windowResize(), comp => {
-            const dialog = comp.element;
-            getTabview(dialog).each(tabview => {
+            updateTabviewHeight(dialog, tabview, maxTabHeight);
+            remove$6(tabview, 'visibility');
+            showTab(allTabs, comp);
+            requestAnimationFrame(() => {
               updateTabviewHeight(dialog, tabview, maxTabHeight);
             });
-          }),
-          run$1(formResizeEvent, (comp, _se) => {
-            const dialog = comp.element;
-            getTabview(dialog).each(tabview => {
-              const oldFocus = active$1(getRootNode(tabview));
-              set$8(tabview, 'visibility', 'hidden');
-              const oldHeight = getRaw(tabview, 'height').map(h => parseInt(h, 10));
-              remove$6(tabview, 'height');
-              remove$6(tabview, 'flex-basis');
-              const newHeight = tabview.dom.getBoundingClientRect().height;
-              const hasGrown = oldHeight.forall(h => newHeight > h);
-              if (hasGrown) {
-                maxTabHeight.set(newHeight);
-                updateTabviewHeight(dialog, tabview, maxTabHeight);
-              } else {
-                oldHeight.each(h => {
-                  setTabviewHeight(tabview, h);
-                });
-              }
-              remove$6(tabview, 'visibility');
-              oldFocus.each(focus$3);
-            });
-          })
-        ];
-        const selectFirst = false;
-        return {
-          extraEvents,
-          selectFirst
-        };
-      })();
-      const naiveTabHeight = (() => {
-        const extraEvents = [];
-        const selectFirst = true;
-        return {
-          extraEvents,
-          selectFirst
-        };
-      })();
+          });
+        }),
+        run$1(windowResize(), comp => {
+          const dialog = comp.element;
+          getTabview(dialog).each(tabview => {
+            updateTabviewHeight(dialog, tabview, maxTabHeight);
+          });
+        }),
+        run$1(formResizeEvent, (comp, _se) => {
+          const dialog = comp.element;
+          getTabview(dialog).each(tabview => {
+            const oldFocus = active$1(getRootNode(tabview));
+            set$8(tabview, 'visibility', 'hidden');
+            const oldHeight = getRaw(tabview, 'height').map(h => parseInt(h, 10));
+            remove$6(tabview, 'height');
+            remove$6(tabview, 'flex-basis');
+            const newHeight = tabview.dom.getBoundingClientRect().height;
+            const hasGrown = oldHeight.forall(h => newHeight > h);
+            if (hasGrown) {
+              maxTabHeight.set(newHeight);
+              updateTabviewHeight(dialog, tabview, maxTabHeight);
+            } else {
+              oldHeight.each(h => {
+                setTabviewHeight(tabview, h);
+              });
+            }
+            remove$6(tabview, 'visibility');
+            oldFocus.each(focus$3);
+          });
+        })
+      ];
+      const selectFirst = false;
       return {
-        smartTabHeight,
-        naiveTabHeight
+        extraEvents,
+        selectFirst
       };
     };
 
@@ -24919,7 +29660,7 @@
             tag: 'div',
             classes: ['tox-dialog__body-nav-item']
           },
-          components: [text$1(backstage.shared.providers.translate(tab.title))],
+          components: [text$2(backstage.shared.providers.translate(tab.title))],
           view: () => {
             return [Form.sketch(parts => ({
                 dom: {
@@ -24953,7 +29694,7 @@
           }
         };
       });
-      const tabMode = setMode(allTabs).smartTabHeight;
+      const tabMode = smartMode(allTabs);
       return TabSection.sketch({
         dom: {
           tag: 'div',
@@ -24993,7 +29734,7 @@
           config('tabpanel', tabMode.extraEvents),
           Keying.config({ mode: 'acyclic' }),
           Composing.config({ find: comp => head(TabSection.getViewItems(comp)) }),
-          RepresentingConfigs.withComp(Optional.none(), tsection => {
+          withComp(Optional.none(), tsection => {
             tsection.getSystem().broadcastOn([SendDataToSectionChannel], {});
             return storedValue.get();
           }, (tsection, value) => {
@@ -25003,12 +29744,6 @@
         ])
       });
     };
-
-    const dialogChannel = generate$6('update-dialog');
-    const titleChannel = generate$6('update-title');
-    const bodyChannel = generate$6('update-body');
-    const footerChannel = generate$6('update-footer');
-    const bodySendMessageChannel = generate$6('body-send-message');
 
     const renderBody = (spec, dialogId, contentId, backstage, ariaAttrs) => {
       const renderComponents = incoming => {
@@ -25061,7 +29796,7 @@
               tag: 'div',
               classes: ['tox-dialog__body-iframe']
             },
-            components: [craft({
+            components: [craft(Optional.none(), {
                 dom: {
                   tag: 'iframe',
                   attributes: { src: spec.url }
@@ -25126,7 +29861,7 @@
             tag: 'div',
             classes: ['tox-dialog__body-content']
           },
-          components: [{ dom: fromHtml(`<p>${ providersBackstage.translate(message) }</p>`) }]
+          components: [{ dom: fromHtml(`<p>${ sanitizeHtmlString(providersBackstage.translate(message)) }</p>`) }]
         }]
     });
     const pFooter = buttons => ModalDialog.parts.footer({
@@ -25164,6 +29899,7 @@
           return Optional.some(true);
         },
         useTabstopAt: elem => !isPseudoStop(elem),
+        firstTabstop: spec.firstTabstop,
         dom: {
           tag: 'div',
           classes: [dialogClass].concat(spec.extraClasses),
@@ -25194,9 +29930,14 @@
         dragBlockClass: blockerClass,
         modalBehaviours: derive$1([
           Focusing.config({}),
-          config('dialog-events', spec.dialogEvents.concat([runOnSource(focusin(), (comp, _se) => {
-              Keying.focusIn(comp);
-            })])),
+          config('dialog-events', spec.dialogEvents.concat([
+            runOnSource(focusin(), (comp, _se) => {
+              Blocking.isBlocked(comp) ? noop() : Keying.focusIn(comp);
+            }),
+            run$1(focusShifted(), (comp, se) => {
+              comp.getSystem().broadcastOn([dialogFocusShiftedChannel], { newFocus: se.event.newFocus });
+            })
+          ])),
           config('scroll-lock', [
             runOnAttached(() => {
               add$2(body(), scrollLockClass);
@@ -25235,11 +29976,15 @@
         attributes: {
           'type': 'button',
           'aria-label': providersBackstage.translate('Close'),
-          'title': providersBackstage.translate('Close')
+          'data-mce-name': 'close'
         }
       },
+      buttonBehaviours: derive$1([
+        Tabstopping.config({}),
+        Tooltipping.config(providersBackstage.tooltips.getConfig({ tooltipText: providersBackstage.translate('Close') }))
+      ]),
       components: [render$3('close', {
-          tag: 'div',
+          tag: 'span',
           classes: ['tox-icon']
         }, providersBackstage.icons)],
       action: comp => {
@@ -25247,7 +29992,7 @@
       }
     });
     const renderTitle = (spec, dialogId, titleId, providersBackstage) => {
-      const renderComponents = data => [text$1(providersBackstage.translate(data.title))];
+      const renderComponents = data => [text$2(providersBackstage.translate(data.title))];
       return {
         dom: {
           tag: 'div',
@@ -25298,7 +30043,7 @@
       title: backstage.shared.providers.translate(title),
       draggable: backstage.dialog.isDraggableModal()
     }, dialogId, backstage.shared.providers);
-    const getBusySpec = (message, bs, providers) => ({
+    const getBusySpec = (message, bs, providers, headerHeight) => ({
       dom: {
         tag: 'div',
         classes: ['tox-dialog__busy-spinner'],
@@ -25307,7 +30052,7 @@
           left: '0px',
           right: '0px',
           bottom: '0px',
-          top: '0px',
+          top: `${ headerHeight.getOr(0) }px`,
           position: 'absolute'
         }
       },
@@ -25317,56 +30062,82 @@
     const getEventExtras = (lazyDialog, providers, extra) => ({
       onClose: () => extra.closeWindow(),
       onBlock: blockEvent => {
-        ModalDialog.setBusy(lazyDialog(), (_comp, bs) => getBusySpec(blockEvent.message, bs, providers));
+        const headerHeight = descendant(lazyDialog().element, '.tox-dialog__header').map(header => get$d(header));
+        ModalDialog.setBusy(lazyDialog(), (_comp, bs) => getBusySpec(blockEvent.message, bs, providers, headerHeight));
       },
       onUnblock: () => {
         ModalDialog.setIdle(lazyDialog());
       }
     });
-    const renderModalDialog = (spec, initialData, dialogEvents, backstage) => {
-      const updateState = (_comp, incoming) => Optional.some(incoming);
-      return build$1(renderDialog$1({
-        ...spec,
-        lazySink: backstage.shared.getSink,
-        extraBehaviours: [
-          Reflecting.config({
-            channel: `${ dialogChannel }-${ spec.id }`,
-            updateState,
-            initialData
-          }),
-          RepresentingConfigs.memory({}),
-          ...spec.extraBehaviours
-        ],
-        onEscape: comp => {
-          emit(comp, formCancelEvent);
-        },
-        dialogEvents,
-        eventOrder: {
-          [receive()]: [
-            Reflecting.name(),
-            Receiving.name()
-          ],
-          [attachedToDom()]: [
-            'scroll-lock',
-            Reflecting.name(),
-            'messages',
-            'dialog-events',
-            'alloy.base.behaviour'
-          ],
-          [detachedFromDom()]: [
-            'alloy.base.behaviour',
-            'dialog-events',
-            'messages',
-            Reflecting.name(),
-            'scroll-lock'
-          ]
-        }
-      }));
+    const fullscreenClass = 'tox-dialog--fullscreen';
+    const largeDialogClass = 'tox-dialog--width-lg';
+    const mediumDialogClass = 'tox-dialog--width-md';
+    const getDialogSizeClass = size => {
+      switch (size) {
+      case 'large':
+        return Optional.some(largeDialogClass);
+      case 'medium':
+        return Optional.some(mediumDialogClass);
+      default:
+        return Optional.none();
+      }
     };
-    const mapMenuButtons = buttons => {
+    const updateDialogSizeClass = (size, component) => {
+      const dialogBody = SugarElement.fromDom(component.element.dom);
+      if (!has(dialogBody, fullscreenClass)) {
+        remove$1(dialogBody, [
+          largeDialogClass,
+          mediumDialogClass
+        ]);
+        getDialogSizeClass(size).each(dialogSizeClass => add$2(dialogBody, dialogSizeClass));
+      }
+    };
+    const toggleFullscreen = (comp, currentSize) => {
+      const dialogBody = SugarElement.fromDom(comp.element.dom);
+      const classes = get$7(dialogBody);
+      const currentSizeClass = find$5(classes, c => c === largeDialogClass || c === mediumDialogClass).or(getDialogSizeClass(currentSize));
+      toggle$3(dialogBody, [
+        fullscreenClass,
+        ...currentSizeClass.toArray()
+      ]);
+    };
+    const renderModalDialog = (spec, dialogEvents, backstage) => build$1(renderDialog$1({
+      ...spec,
+      firstTabstop: 1,
+      lazySink: backstage.shared.getSink,
+      extraBehaviours: [
+        memory({}),
+        ...spec.extraBehaviours
+      ],
+      onEscape: comp => {
+        emit(comp, formCancelEvent);
+      },
+      dialogEvents,
+      eventOrder: {
+        [receive()]: [
+          Reflecting.name(),
+          Receiving.name()
+        ],
+        [attachedToDom()]: [
+          'scroll-lock',
+          Reflecting.name(),
+          'messages',
+          'dialog-events',
+          'alloy.base.behaviour'
+        ],
+        [detachedFromDom()]: [
+          'alloy.base.behaviour',
+          'dialog-events',
+          'messages',
+          Reflecting.name(),
+          'scroll-lock'
+        ]
+      }
+    }));
+    const mapMenuButtons = (buttons, menuItemStates = {}) => {
       const mapItems = button => {
         const items = map$2(button.items, item => {
-          const cell = Cell(false);
+          const cell = get$g(menuItemStates, item.name).getOr(Cell(false));
           return {
             ...item,
             storage: cell
@@ -25378,10 +30149,7 @@
         };
       };
       return map$2(buttons, button => {
-        if (button.type === 'menu') {
-          return mapItems(button);
-        }
-        return button;
+        return button.type === 'menu' ? mapItems(button) : button;
       });
     };
     const extractCellsToObject = buttons => foldl(buttons, (acc, button) => {
@@ -25397,7 +30165,8 @@
 
     const initCommonEvents = (fireApiEvent, extras) => [
       runWithTarget(focusin(), onFocus),
-      fireApiEvent(formCloseEvent, (_api, spec) => {
+      fireApiEvent(formCloseEvent, (_api, spec, _event, self) => {
+        active$1(getRootNode(self.element)).fold(noop, blur$1);
         extras.onClose();
         spec.onClose();
       }),
@@ -25444,7 +30213,7 @@
           spec.onChange(api, { name: event.name });
         }),
         fireApiEvent(formActionEvent, (api, spec, event, component) => {
-          const focusIn = () => Keying.focusIn(component);
+          const focusIn = () => component.getSystem().isConnected() ? Keying.focusIn(component) : undefined;
           const isDisabled = focused => has$1(focused, 'disabled') || getOpt(focused, 'aria-disabled').exists(val => val === 'true');
           const rootNode = getRootNode(component.element);
           const current = active$1(rootNode);
@@ -25473,10 +30242,6 @@
           Representing.setValue(component, api.getData());
         })
       ];
-    };
-    const SilverDialogEvents = {
-      initUrlDialog,
-      initDialog
     };
 
     const makeButton = (button, backstage) => renderFooterButton(button, button.type, backstage);
@@ -25534,7 +30299,7 @@
         const form = Composing.getCurrent(access.getFormWrapper()).getOr(access.getFormWrapper());
         return Form.getField(form, name).orThunk(() => {
           const footer = access.getFooter();
-          const footerState = Reflecting.getState(footer).get();
+          const footerState = footer.bind(f => Reflecting.getState(f).get());
           return footerState.bind(f => f.lookupByName(name));
         });
       } else {
@@ -25610,10 +30375,14 @@
         withRoot(root => {
           const id = access.getId();
           const dialogInit = doRedial(d);
+          const storedMenuButtons = mapMenuButtons(dialogInit.internalDialog.buttons, menuItemStates);
           root.getSystem().broadcastOn([`${ dialogChannel }-${ id }`], dialogInit);
           root.getSystem().broadcastOn([`${ titleChannel }-${ id }`], dialogInit.internalDialog);
           root.getSystem().broadcastOn([`${ bodyChannel }-${ id }`], dialogInit.internalDialog);
-          root.getSystem().broadcastOn([`${ footerChannel }-${ id }`], dialogInit.internalDialog);
+          root.getSystem().broadcastOn([`${ footerChannel }-${ id }`], {
+            ...dialogInit.internalDialog,
+            buttons: storedMenuButtons
+          });
           instanceApi.setData(dialogInit.initialData);
         });
       };
@@ -25631,55 +30400,60 @@
         unblock,
         showTab,
         redial,
-        close
+        close,
+        toggleFullscreen: access.toggleFullscreen
       };
       return instanceApi;
     };
 
-    const getDialogSizeClasses = size => {
-      switch (size) {
-      case 'large':
-        return ['tox-dialog--width-lg'];
-      case 'medium':
-        return ['tox-dialog--width-md'];
-      default:
-        return [];
-      }
-    };
     const renderDialog = (dialogInit, extra, backstage) => {
       const dialogId = generate$6('dialog');
       const internalDialog = dialogInit.internalDialog;
       const header = getHeader(internalDialog.title, dialogId, backstage);
+      const dialogSize = Cell(internalDialog.size);
+      const dialogSizeClasses = getDialogSizeClass(dialogSize.get()).toArray();
+      const updateState = (comp, incoming) => {
+        dialogSize.set(incoming.internalDialog.size);
+        updateDialogSizeClass(incoming.internalDialog.size, comp);
+        return Optional.some(incoming);
+      };
       const body = renderModalBody({
         body: internalDialog.body,
         initialData: internalDialog.initialData
       }, dialogId, backstage);
-      const storagedMenuButtons = mapMenuButtons(internalDialog.buttons);
-      const objOfCells = extractCellsToObject(storagedMenuButtons);
-      const footer = renderModalFooter({ buttons: storagedMenuButtons }, dialogId, backstage);
-      const dialogEvents = SilverDialogEvents.initDialog(() => instanceApi, getEventExtras(() => dialog, backstage.shared.providers, extra), backstage.shared.getSink);
-      const dialogSize = getDialogSizeClasses(internalDialog.size);
+      const storedMenuButtons = mapMenuButtons(internalDialog.buttons);
+      const objOfCells = extractCellsToObject(storedMenuButtons);
+      const footer = someIf(storedMenuButtons.length !== 0, renderModalFooter({ buttons: storedMenuButtons }, dialogId, backstage));
+      const dialogEvents = initDialog(() => instanceApi, getEventExtras(() => dialog, backstage.shared.providers, extra), backstage.shared.getSink);
       const spec = {
         id: dialogId,
         header,
         body,
-        footer: Optional.some(footer),
-        extraClasses: dialogSize,
-        extraBehaviours: [],
+        footer,
+        extraClasses: dialogSizeClasses,
+        extraBehaviours: [Reflecting.config({
+            channel: `${ dialogChannel }-${ dialogId }`,
+            updateState,
+            initialData: dialogInit
+          })],
         extraStyles: {}
       };
-      const dialog = renderModalDialog(spec, dialogInit, dialogEvents, backstage);
+      const dialog = renderModalDialog(spec, dialogEvents, backstage);
       const modalAccess = (() => {
         const getForm = () => {
           const outerForm = ModalDialog.getBody(dialog);
           return Composing.getCurrent(outerForm).getOr(outerForm);
+        };
+        const toggleFullscreen$1 = () => {
+          toggleFullscreen(dialog, dialogSize.get());
         };
         return {
           getId: constant$1(dialogId),
           getRoot: constant$1(dialog),
           getBody: () => ModalDialog.getBody(dialog),
           getFooter: () => ModalDialog.getFooter(dialog),
-          getFormWrapper: getForm
+          getFormWrapper: getForm,
+          toggleFullscreen: toggleFullscreen$1
         };
       })();
       const instanceApi = getDialogApi(modalAccess, extra.redial, objOfCells);
@@ -25689,12 +30463,19 @@
       };
     };
 
-    const renderInlineDialog = (dialogInit, extra, backstage, ariaAttrs) => {
+    const renderInlineDialog = (dialogInit, extra, backstage, ariaAttrs = false, refreshDocking) => {
       const dialogId = generate$6('dialog');
       const dialogLabelId = generate$6('dialog-label');
       const dialogContentId = generate$6('dialog-content');
       const internalDialog = dialogInit.internalDialog;
-      const updateState = (_comp, incoming) => Optional.some(incoming);
+      const dialogSize = Cell(internalDialog.size);
+      const dialogSizeClass = getDialogSizeClass(dialogSize.get()).toArray();
+      const updateState = (comp, incoming) => {
+        dialogSize.set(incoming.internalDialog.size);
+        updateDialogSizeClass(incoming.internalDialog.size, comp);
+        refreshDocking();
+        return Optional.some(incoming);
+      };
       const memHeader = record(renderInlineHeader({
         title: internalDialog.title,
         draggable: true
@@ -25705,27 +30486,31 @@
       }, dialogId, dialogContentId, backstage, ariaAttrs));
       const storagedMenuButtons = mapMenuButtons(internalDialog.buttons);
       const objOfCells = extractCellsToObject(storagedMenuButtons);
-      const memFooter = record(renderInlineFooter({ buttons: storagedMenuButtons }, dialogId, backstage));
-      const dialogEvents = SilverDialogEvents.initDialog(() => instanceApi, {
+      const optMemFooter = someIf(storagedMenuButtons.length !== 0, record(renderInlineFooter({ buttons: storagedMenuButtons }, dialogId, backstage)));
+      const dialogEvents = initDialog(() => instanceApi, {
         onBlock: event => {
-          Blocking.block(dialog, (_comp, bs) => getBusySpec(event.message, bs, backstage.shared.providers));
+          Blocking.block(dialog, (_comp, bs) => {
+            const headerHeight = memHeader.getOpt(dialog).map(dialog => get$d(dialog.element));
+            return getBusySpec(event.message, bs, backstage.shared.providers, headerHeight);
+          });
         },
         onUnblock: () => {
           Blocking.unblock(dialog);
         },
         onClose: () => extra.closeWindow()
       }, backstage.shared.getSink);
+      const inlineClass = 'tox-dialog-inline';
       const dialog = build$1({
         dom: {
           tag: 'div',
           classes: [
             'tox-dialog',
-            'tox-dialog-inline'
+            inlineClass,
+            ...dialogSizeClass
           ],
           attributes: {
             role: 'dialog',
-            ['aria-labelledby']: dialogLabelId,
-            ['aria-describedby']: dialogContentId
+            ['aria-labelledby']: dialogLabelId
           }
         },
         eventOrder: {
@@ -25746,7 +30531,8 @@
               emit(c, formCloseEvent);
               return Optional.some(true);
             },
-            useTabstopAt: elem => !isPseudoStop(elem) && (name$3(elem) !== 'button' || get$f(elem, 'disabled') !== 'disabled')
+            useTabstopAt: elem => !isPseudoStop(elem) && (name$3(elem) !== 'button' || get$f(elem, 'disabled') !== 'disabled'),
+            firstTabstop: 1
           }),
           Reflecting.config({
             channel: `${ dialogChannel }-${ dialogId }`,
@@ -25754,28 +30540,37 @@
             initialData: dialogInit
           }),
           Focusing.config({}),
-          config('execute-on-form', dialogEvents.concat([runOnSource(focusin(), (comp, _se) => {
+          config('execute-on-form', dialogEvents.concat([
+            runOnSource(focusin(), (comp, _se) => {
               Keying.focusIn(comp);
-            })])),
+            }),
+            run$1(focusShifted(), (comp, se) => {
+              comp.getSystem().broadcastOn([dialogFocusShiftedChannel], { newFocus: se.event.newFocus });
+            })
+          ])),
           Blocking.config({ getRoot: () => Optional.some(dialog) }),
           Replacing.config({}),
-          RepresentingConfigs.memory({})
+          memory({})
         ]),
         components: [
           memHeader.asSpec(),
           memBody.asSpec(),
-          memFooter.asSpec()
+          ...optMemFooter.map(memFooter => memFooter.asSpec()).toArray()
         ]
       });
+      const toggleFullscreen$1 = () => {
+        toggleFullscreen(dialog, dialogSize.get());
+      };
       const instanceApi = getDialogApi({
         getId: constant$1(dialogId),
         getRoot: constant$1(dialog),
-        getFooter: () => memFooter.get(dialog),
+        getFooter: () => optMemFooter.map(memFooter => memFooter.get(dialog)),
         getBody: () => memBody.get(dialog),
         getFormWrapper: () => {
           const body = memBody.get(dialog);
           return Composing.getCurrent(body).getOr(body);
-        }
+        },
+        toggleFullscreen: toggleFullscreen$1
       }, extra.redial, objOfCells);
       return {
         dialog,
@@ -25866,7 +30661,7 @@
           return Optional.some(renderModalFooter({ buttons }, dialogId, backstage));
         }
       });
-      const dialogEvents = SilverDialogEvents.initUrlDialog(() => instanceApi, getEventExtras(() => dialog, backstage.shared.providers, extra));
+      const dialogEvents = initUrlDialog(() => instanceApi, getEventExtras(() => dialog, backstage.shared.providers, extra));
       const styles = {
         ...internalDialog.height.fold(() => ({}), height => ({
           'height': height + 'px',
@@ -25881,7 +30676,13 @@
       const iframeUri = new global(internalDialog.url, { base_uri: new global(window.location.href) });
       const iframeDomain = `${ iframeUri.protocol }://${ iframeUri.host }${ iframeUri.port ? ':' + iframeUri.port : '' }`;
       const messageHandlerUnbinder = unbindable();
+      const updateState = (_comp, incoming) => Optional.some(incoming);
       const extraBehaviours = [
+        Reflecting.config({
+          channel: `${ dialogChannel }-${ dialogId }`,
+          updateState,
+          initialData: internalDialog
+        }),
         config('messages', [
           runOnAttached(() => {
             const unbind = bind(SugarElement.fromDom(window), 'message', e => {
@@ -25904,7 +30705,9 @@
               onReceive: (comp, data) => {
                 descendant(comp.element, 'iframe').each(iframeEle => {
                   const iframeWin = iframeEle.dom.contentWindow;
-                  iframeWin.postMessage(data, iframeDomain);
+                  if (isNonNullable(iframeWin)) {
+                    iframeWin.postMessage(data, iframeDomain);
+                  }
                 });
               }
             }
@@ -25920,7 +30723,7 @@
         extraBehaviours,
         extraStyles: styles
       };
-      const dialog = renderModalDialog(spec, internalDialog, dialogEvents, backstage);
+      const dialog = renderModalDialog(spec, dialogEvents, backstage);
       const instanceApi = getUrlDialogApi(dialog);
       return {
         dialog,
@@ -25928,8 +30731,8 @@
       };
     };
 
-    const setup$2 = extras => {
-      const sharedBackstage = extras.backstage.shared;
+    const setup$2 = backstage => {
+      const sharedBackstage = backstage.shared;
       const open = (message, callback) => {
         const closeDialog = () => {
           ModalDialog.hide(alertDialog);
@@ -25943,7 +30746,7 @@
           align: 'end',
           enabled: true,
           icon: Optional.none()
-        }, 'cancel', extras.backstage));
+        }, 'cancel', backstage));
         const titleSpec = pUntitled();
         const closeSpec = pClose(closeDialog, sharedBackstage.providers);
         const alertDialog = build$1(renderDialog$1({
@@ -25965,8 +30768,8 @@
       return { open };
     };
 
-    const setup$1 = extras => {
-      const sharedBackstage = extras.backstage.shared;
+    const setup$1 = backstage => {
+      const sharedBackstage = backstage.shared;
       const open = (message, callback) => {
         const closeDialog = state => {
           ModalDialog.hide(confirmDialog);
@@ -25980,7 +30783,7 @@
           align: 'end',
           enabled: true,
           icon: Optional.none()
-        }, 'submit', extras.backstage));
+        }, 'submit', backstage));
         const footerNo = renderFooterButton({
           name: 'no',
           text: 'No',
@@ -25989,7 +30792,7 @@
           align: 'end',
           enabled: true,
           icon: Optional.none()
-        }, 'cancel', extras.backstage);
+        }, 'cancel', backstage);
         const titleSpec = pUntitled();
         const closeSpec = pClose(() => closeDialog(false), sharedBackstage.providers);
         const confirmDialog = build$1(renderDialog$1({
@@ -26030,24 +30833,42 @@
               fadeOutClass: 'tox-dialog-dock-fadeout',
               transitionClass: 'tox-dialog-dock-transition'
             },
-            modes: ['top']
+            modes: ['top'],
+            lazyViewport: comp => {
+              const optScrollingContext = detectWhenSplitUiMode(editor, comp.element);
+              return optScrollingContext.map(sc => {
+                const combinedBounds = getBoundsFrom(sc);
+                return {
+                  bounds: combinedBounds,
+                  optScrollEnv: Optional.some({
+                    currentScrollTop: sc.element.dom.scrollTop,
+                    scrollElmTop: absolute$3(sc.element).top
+                  })
+                };
+              }).getOrThunk(() => ({
+                bounds: win(),
+                optScrollEnv: Optional.none()
+              }));
+            }
           })];
       }
     };
     const setup = extras => {
-      const backstage = extras.backstage;
       const editor = extras.editor;
       const isStickyToolbar$1 = isStickyToolbar(editor);
-      const alertDialog = setup$2(extras);
-      const confirmDialog = setup$1(extras);
+      const alertDialog = setup$2(extras.backstages.dialog);
+      const confirmDialog = setup$1(extras.backstages.dialog);
       const open = (config, params, closeWindow) => {
-        if (params !== undefined && params.inline === 'toolbar') {
-          return openInlineDialog(config, backstage.shared.anchors.inlineDialog(), closeWindow, params.ariaAttrs);
-        } else if (params !== undefined && params.inline === 'cursor') {
-          return openInlineDialog(config, backstage.shared.anchors.cursor(), closeWindow, params.ariaAttrs);
-        } else {
-          return openModalDialog(config, closeWindow);
+        if (!isUndefined(params)) {
+          if (params.inline === 'toolbar') {
+            return openInlineDialog(config, extras.backstages.popup.shared.anchors.inlineDialog(), closeWindow, params);
+          } else if (params.inline === 'bottom') {
+            return openBottomInlineDialog(config, extras.backstages.popup.shared.anchors.inlineBottomDialog(), closeWindow, params);
+          } else if (params.inline === 'cursor') {
+            return openInlineDialog(config, extras.backstages.popup.shared.anchors.cursor(), closeWindow, params);
+          }
         }
+        return openModalDialog(config, closeWindow);
       };
       const openUrl = (config, closeWindow) => openModalUrlDialog(config, closeWindow);
       const openModalUrlDialog = (config, closeWindow) => {
@@ -26057,7 +30878,7 @@
               ModalDialog.hide(dialog.dialog);
               closeWindow(dialog.instanceApi);
             }
-          }, editor, backstage);
+          }, editor, extras.backstages.dialog);
           ModalDialog.show(dialog.dialog);
           return dialog.instanceApi;
         };
@@ -26077,18 +30898,76 @@
               ModalDialog.hide(dialog.dialog);
               closeWindow(dialog.instanceApi);
             }
-          }, backstage);
+          }, extras.backstages.dialog);
           ModalDialog.show(dialog.dialog);
           dialog.instanceApi.setData(initialData);
           return dialog.instanceApi;
         };
         return DialogManager.open(factory, config);
       };
-      const openInlineDialog = (config$1, anchor, closeWindow, ariaAttrs) => {
+      const openInlineDialog = (config$1, anchor, closeWindow, windowParams) => {
         const factory = (contents, internalInitialData, dataValidator) => {
           const initialData = validateData(internalInitialData, dataValidator);
           const inlineDialog = value$2();
-          const isToolbarLocationTop = backstage.shared.header.isPositionedAtTop();
+          const isToolbarLocationTop = extras.backstages.popup.shared.header.isPositionedAtTop();
+          const dialogInit = {
+            dataValidator,
+            initialData,
+            internalDialog: contents
+          };
+          const refreshDocking = () => inlineDialog.on(dialog => {
+            InlineView.reposition(dialog);
+            if (!isStickyToolbar$1 || !isToolbarLocationTop) {
+              Docking.refresh(dialog);
+            }
+          });
+          const dialogUi = renderInlineDialog(dialogInit, {
+            redial: DialogManager.redial,
+            closeWindow: () => {
+              inlineDialog.on(InlineView.hide);
+              editor.off('ResizeEditor', refreshDocking);
+              inlineDialog.clear();
+              closeWindow(dialogUi.instanceApi);
+            }
+          }, extras.backstages.popup, windowParams.ariaAttrs, refreshDocking);
+          const inlineDialogComp = build$1(InlineView.sketch({
+            lazySink: extras.backstages.popup.shared.getSink,
+            dom: {
+              tag: 'div',
+              classes: []
+            },
+            fireDismissalEventInstead: windowParams.persistent ? { event: 'doNotDismissYet' } : {},
+            ...isToolbarLocationTop ? {} : { fireRepositionEventInstead: {} },
+            inlineBehaviours: derive$1([
+              config('window-manager-inline-events', [run$1(dismissRequested(), (_comp, _se) => {
+                  emit(dialogUi.dialog, formCancelEvent);
+                })]),
+              ...inlineAdditionalBehaviours(editor, isStickyToolbar$1, isToolbarLocationTop)
+            ]),
+            isExtraPart: (_comp, target) => isAlertOrConfirmDialog(target)
+          }));
+          inlineDialog.set(inlineDialogComp);
+          const getInlineDialogBounds = () => {
+            const elem = editor.inline ? body() : SugarElement.fromDom(editor.getContainer());
+            const bounds = box$1(elem);
+            return Optional.some(bounds);
+          };
+          InlineView.showWithinBounds(inlineDialogComp, premade(dialogUi.dialog), { anchor }, getInlineDialogBounds);
+          if (!isStickyToolbar$1 || !isToolbarLocationTop) {
+            Docking.refresh(inlineDialogComp);
+            editor.on('ResizeEditor', refreshDocking);
+          }
+          dialogUi.instanceApi.setData(initialData);
+          Keying.focusIn(dialogUi.dialog);
+          return dialogUi.instanceApi;
+        };
+        return DialogManager.open(factory, config$1);
+      };
+      const openBottomInlineDialog = (config$1, anchor, closeWindow, windowParams) => {
+        const factory = (contents, internalInitialData, dataValidator) => {
+          const initialData = validateData(internalInitialData, dataValidator);
+          const inlineDialog = value$2();
+          const isToolbarLocationTop = extras.backstages.popup.shared.header.isPositionedAtTop();
           const dialogInit = {
             dataValidator,
             initialData,
@@ -26102,33 +30981,68 @@
             redial: DialogManager.redial,
             closeWindow: () => {
               inlineDialog.on(InlineView.hide);
-              editor.off('ResizeEditor', refreshDocking);
+              editor.off('ResizeEditor ScrollWindow ElementScroll', refreshDocking);
               inlineDialog.clear();
               closeWindow(dialogUi.instanceApi);
             }
-          }, backstage, ariaAttrs);
+          }, extras.backstages.popup, windowParams.ariaAttrs, refreshDocking);
           const inlineDialogComp = build$1(InlineView.sketch({
-            lazySink: backstage.shared.getSink,
+            lazySink: extras.backstages.popup.shared.getSink,
             dom: {
               tag: 'div',
               classes: []
             },
-            fireDismissalEventInstead: {},
+            fireDismissalEventInstead: windowParams.persistent ? { event: 'doNotDismissYet' } : {},
             ...isToolbarLocationTop ? {} : { fireRepositionEventInstead: {} },
             inlineBehaviours: derive$1([
               config('window-manager-inline-events', [run$1(dismissRequested(), (_comp, _se) => {
                   emit(dialogUi.dialog, formCancelEvent);
                 })]),
-              ...inlineAdditionalBehaviours(editor, isStickyToolbar$1, isToolbarLocationTop)
+              Docking.config({
+                contextual: {
+                  lazyContext: () => Optional.some(box$1(SugarElement.fromDom(editor.getContentAreaContainer()))),
+                  fadeInClass: 'tox-dialog-dock-fadein',
+                  fadeOutClass: 'tox-dialog-dock-fadeout',
+                  transitionClass: 'tox-dialog-dock-transition'
+                },
+                modes: [
+                  'top',
+                  'bottom'
+                ],
+                lazyViewport: comp => {
+                  const optScrollingContext = detectWhenSplitUiMode(editor, comp.element);
+                  return optScrollingContext.map(sc => {
+                    const combinedBounds = getBoundsFrom(sc);
+                    return {
+                      bounds: combinedBounds,
+                      optScrollEnv: Optional.some({
+                        currentScrollTop: sc.element.dom.scrollTop,
+                        scrollElmTop: absolute$3(sc.element).top
+                      })
+                    };
+                  }).getOrThunk(() => ({
+                    bounds: win(),
+                    optScrollEnv: Optional.none()
+                  }));
+                }
+              })
             ]),
             isExtraPart: (_comp, target) => isAlertOrConfirmDialog(target)
           }));
           inlineDialog.set(inlineDialogComp);
-          InlineView.showWithin(inlineDialogComp, premade(dialogUi.dialog), { anchor }, Optional.some(body()));
-          if (!isStickyToolbar$1 || !isToolbarLocationTop) {
-            Docking.refresh(inlineDialogComp);
-            editor.on('ResizeEditor', refreshDocking);
-          }
+          const getInlineDialogBounds = () => {
+            return extras.backstages.popup.shared.getSink().toOptional().bind(s => {
+              const optScrollingContext = detectWhenSplitUiMode(editor, s.element);
+              const margin = 15;
+              const bounds$1 = optScrollingContext.map(sc => getBoundsFrom(sc)).getOr(win());
+              const contentAreaContainer = box$1(SugarElement.fromDom(editor.getContentAreaContainer()));
+              const constrainedBounds = constrain(contentAreaContainer, bounds$1);
+              return Optional.some(bounds(constrainedBounds.x, constrainedBounds.y, constrainedBounds.width, constrainedBounds.height - margin));
+            });
+          };
+          InlineView.showWithinBounds(inlineDialogComp, premade(dialogUi.dialog), { anchor }, getInlineDialogBounds);
+          Docking.refresh(inlineDialogComp);
+          editor.on('ResizeEditor ScrollWindow ElementScroll ResizeWindow', refreshDocking);
           dialogUi.instanceApi.setData(initialData);
           Keying.focusIn(dialogUi.dialog);
           return dialogUi.instanceApi;
@@ -26136,14 +31050,10 @@
         return DialogManager.open(factory, config$1);
       };
       const confirm = (message, callback) => {
-        confirmDialog.open(message, state => {
-          callback(state);
-        });
+        confirmDialog.open(message, callback);
       };
       const alert = (message, callback) => {
-        alertDialog.open(message, () => {
-          callback();
-        });
+        alertDialog.open(message, callback);
       };
       const close = instanceApi => {
         instanceApi.close();
@@ -26165,16 +31075,35 @@
     var Theme = () => {
       global$a.add('silver', editor => {
         registerOptions(editor);
-        const {getUiMothership, backstage, renderUI} = setup$3(editor);
-        Autocompleter.register(editor, backstage.shared);
+        let popupSinkBounds = () => win();
+        const {
+          dialogs,
+          popups,
+          renderUI: renderModeUI
+        } = setup$3(editor, { getPopupSinkBounds: () => popupSinkBounds() });
+        const renderUI = () => {
+          const renderResult = renderModeUI();
+          const optScrollingContext = detectWhenSplitUiMode(editor, popups.getMothership().element);
+          optScrollingContext.each(sc => {
+            popupSinkBounds = () => {
+              return getBoundsFrom(sc);
+            };
+          });
+          return renderResult;
+        };
+        Autocompleter.register(editor, popups.backstage.shared);
         const windowMgr = setup({
           editor,
-          backstage
+          backstages: {
+            popup: popups.backstage,
+            dialog: dialogs.backstage
+          }
         });
+        const getNotificationManagerImpl = () => NotificationManagerImpl(editor, { backstage: popups.backstage }, popups.getMothership());
         return {
           renderUI,
           getWindowManagerImpl: constant$1(windowMgr),
-          getNotificationManagerImpl: () => NotificationManagerImpl(editor, { backstage }, getUiMothership())
+          getNotificationManagerImpl
         };
       });
     };

@@ -1,5 +1,5 @@
 /**
- * TinyMCE version 6.1.2 (2022-07-29)
+ * TinyMCE version 7.0.1 (2024-04-10)
  */
 
 (function () {
@@ -10,6 +10,8 @@
     const isNullable = a => a === null || a === undefined;
     const isNonNullable = a => !isNullable(a);
 
+    const noop = () => {
+    };
     const constant = value => {
       return () => {
         return value;
@@ -111,8 +113,6 @@
 
     const get$1 = (xs, i) => i >= 0 && i < xs.length ? Optional.some(xs[i]) : Optional.none();
     const head = xs => get$1(xs, 0);
-
-    const someIf = (b, a) => b ? Optional.some(a) : Optional.none();
 
     var global$1 = tinymce.util.Tools.resolve('tinymce.dom.DOMUtils');
 
@@ -1224,7 +1224,7 @@
         Prism.languages.css = {
           'comment': /\/\*[\s\S]*?\*\//,
           'atrule': {
-            pattern: /@[\w-](?:[^;{\s]|\s+(?![\s{]))*(?:;|(?=\s*\{))/,
+            pattern: RegExp('@[\\w-](?:' + /[^;{\s"']|\s+(?!\s)/.source + '|' + string.source + ')*?' + /(?:;|(?=\s*\{))/.source),
             inside: {
               'rule': /^@[\w-]+/,
               'selector-function-argument': {
@@ -1321,7 +1321,8 @@
           'operator': {
             pattern: /(^|[^.])(?:<<=?|>>>?=?|->|--|\+\+|&&|\|\||::|[?:~]|[-+*/%&|^!=<>]=?)/m,
             lookbehind: true
-          }
+          },
+          'constant': /\b[A-Z][A-Z_\d]+\b/
         });
         Prism.languages.insertBefore('java', 'string', {
           'triple-quoted-string': {
@@ -1551,7 +1552,10 @@
                     pattern: /^=/,
                     alias: 'attr-equals'
                   },
-                  /"|'/
+                  {
+                    pattern: /^(\s*)["']|["']$/,
+                    lookbehind: true
+                  }
                 ]
               }
             },
@@ -2206,12 +2210,12 @@
     const get = editor => Global.Prism && useGlobalPrismJS(editor) ? Global.Prism : prismjs;
 
     const isCodeSample = elm => {
-      return elm && elm.nodeName === 'PRE' && elm.className.indexOf('language-') !== -1;
+      return isNonNullable(elm) && elm.nodeName === 'PRE' && elm.className.indexOf('language-') !== -1;
     };
 
     const getSelectedCodeSample = editor => {
       const node = editor.selection ? editor.selection.getNode() : null;
-      return someIf(isCodeSample(node), node);
+      return isCodeSample(node) ? Optional.some(node) : Optional.none();
     };
     const insertCodeSample = (editor, language, code) => {
       const dom = editor.dom;
@@ -2233,7 +2237,7 @@
     };
     const getCurrentCode = editor => {
       const node = getSelectedCodeSample(editor);
-      return node.fold(constant(''), n => n.textContent);
+      return node.bind(n => Optional.from(n.textContent)).getOr('');
     };
 
     const getLanguages = editor => {
@@ -2302,7 +2306,7 @@
           type: 'panel',
           items: [
             {
-              type: 'selectbox',
+              type: 'listbox',
               name: 'language',
               label: 'Language',
               items: languages
@@ -2407,6 +2411,17 @@
       });
     };
 
+    const onSetupEditable = (editor, onChanged = noop) => api => {
+      const nodeChanged = () => {
+        api.setEnabled(editor.selection.isEditable());
+        onChanged(api);
+      };
+      editor.on('NodeChange', nodeChanged);
+      nodeChanged();
+      return () => {
+        editor.off('NodeChange', nodeChanged);
+      };
+    };
     const isCodeSampleSelection = editor => {
       const node = editor.selection.getStart();
       return editor.dom.is(node, 'pre[class*="language-"]');
@@ -2417,18 +2432,15 @@
         icon: 'code-sample',
         tooltip: 'Insert/edit code sample',
         onAction,
-        onSetup: api => {
-          const nodeChangeHandler = () => {
-            api.setActive(isCodeSampleSelection(editor));
-          };
-          editor.on('NodeChange', nodeChangeHandler);
-          return () => editor.off('NodeChange', nodeChangeHandler);
-        }
+        onSetup: onSetupEditable(editor, api => {
+          api.setActive(isCodeSampleSelection(editor));
+        })
       });
       editor.ui.registry.addMenuItem('codesample', {
         text: 'Code sample...',
         icon: 'code-sample',
-        onAction
+        onAction,
+        onSetup: onSetupEditable(editor)
       });
     };
 
