@@ -205,6 +205,8 @@ CONSTANCE_CONFIG = {
     # ResourceManager Integration
     "RM_SYNC_ENABLED": (False, "Should RM Synchronisation be enabled"),
     "RM_SYNC_API_TOKEN": ("", "Developer API Token"),
+    "RM_SYNC_API_SITE": ("https://api.rm.smartsheet.com", "Domain of RM API"),
+    "RM_WARNING_MSG": ("This project is managed via CHAOTICA.", "Warning message to display in project descriptions."),
     
 }
 

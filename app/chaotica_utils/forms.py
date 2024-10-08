@@ -203,7 +203,15 @@ class CustomConfigForm(ConstanceForm):
                         css_class="input-group input-group-dynamic",
                     ),
                     Div(
+                        Field("RM_SYNC_API_SITE"),
+                        css_class="input-group input-group-dynamic",
+                    ),      
+                    Div(
                         Field("RM_SYNC_API_TOKEN"),
+                        css_class="input-group input-group-dynamic",
+                    ),              
+                    Div(
+                        Field("RM_WARNING_MSG"),
                         css_class="input-group input-group-dynamic",
                     ),              
                 ),
