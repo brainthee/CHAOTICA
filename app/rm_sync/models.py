@@ -15,16 +15,6 @@ from chaotica_utils.utils import ext_reverse
 
 urllib3.disable_warnings()
 
-PROXIES = None
-# PROXIES = {
-#     "http": "http://127.0.0.1:8080",
-#     "https": "http://127.0.0.1:8080",
-# }
-RM_HEADERS = {
-    "Content-Type": "application/json; charset=utf-8",
-    "auth": config.RM_SYNC_API_TOKEN,
-}
-VERIFY_TLS = False
 
 
 class RMAssignable(models.Model):
@@ -83,6 +73,16 @@ class RMAssignable(models.Model):
         return False
 
     def update_rm(self):
+        PROXIES = None
+        # PROXIES = {
+        #     "http": "http://127.0.0.1:8080",
+        #     "https": "http://127.0.0.1:8080",
+        # }
+        RM_HEADERS = {
+            "Content-Type": "application/json; charset=utf-8",
+            "auth": config.RM_SYNC_API_TOKEN,
+        }
+        VERIFY_TLS = False
         # Setup logging
         log_stream = StringIO()
         stream_handler = logging.StreamHandler(log_stream)
@@ -194,6 +194,16 @@ class RMAssignable(models.Model):
             print((log_stream.getvalue() + ".")[:-1])
 
     def delete_in_rm(self):
+        PROXIES = None
+        # PROXIES = {
+        #     "http": "http://127.0.0.1:8080",
+        #     "https": "http://127.0.0.1:8080",
+        # }
+        RM_HEADERS = {
+            "Content-Type": "application/json; charset=utf-8",
+            "auth": config.RM_SYNC_API_TOKEN,
+        }
+        VERIFY_TLS = False
         # Setup logging
         log_stream = StringIO()
         stream_handler = logging.StreamHandler(log_stream)
@@ -280,6 +290,16 @@ class RMAssignableSlot(models.Model):
         return False
 
     def update_rm(self):
+        PROXIES = None
+        # PROXIES = {
+        #     "http": "http://127.0.0.1:8080",
+        #     "https": "http://127.0.0.1:8080",
+        # }
+        RM_HEADERS = {
+            "Content-Type": "application/json; charset=utf-8",
+            "auth": config.RM_SYNC_API_TOKEN,
+        }
+        VERIFY_TLS = False
         # Setup logging
         log_stream = StringIO()
         stream_handler = logging.StreamHandler(log_stream)
@@ -393,6 +413,16 @@ class RMAssignableSlot(models.Model):
             print((log_stream.getvalue() + ".")[:-1])
 
     def delete_in_rm(self):
+        PROXIES = None
+        # PROXIES = {
+        #     "http": "http://127.0.0.1:8080",
+        #     "https": "http://127.0.0.1:8080",
+        # }
+        RM_HEADERS = {
+            "Content-Type": "application/json; charset=utf-8",
+            "auth": config.RM_SYNC_API_TOKEN,
+        }
+        VERIFY_TLS = False
         # Setup logging
         log_stream = StringIO()
         stream_handler = logging.StreamHandler(log_stream)
@@ -470,6 +500,16 @@ class RMSyncRecord(models.Model):
         return "({}) {}".format(self.rm_id, str(self.user))
 
     def sync_records(self):
+        PROXIES = None
+        # PROXIES = {
+        #     "http": "http://127.0.0.1:8080",
+        #     "https": "http://127.0.0.1:8080",
+        # }
+        RM_HEADERS = {
+            "Content-Type": "application/json; charset=utf-8",
+            "auth": config.RM_SYNC_API_TOKEN,
+        }
+        VERIFY_TLS = False
 
         # Setup logging
         log_stream = StringIO()
