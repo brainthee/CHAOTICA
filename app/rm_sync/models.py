@@ -16,10 +16,10 @@ from chaotica_utils.utils import ext_reverse
 urllib3.disable_warnings()
 
 PROXIES = None
-PROXIES = {
-    "http": "http://127.0.0.1:8080",
-    "https": "http://127.0.0.1:8080",
-}
+# PROXIES = {
+#     "http": "http://127.0.0.1:8080",
+#     "https": "http://127.0.0.1:8080",
+# }
 RM_HEADERS = {
     "Content-Type": "application/json; charset=utf-8",
     "auth": config.RM_SYNC_API_TOKEN,
