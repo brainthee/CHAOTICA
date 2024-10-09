@@ -58,6 +58,15 @@ div.content span.select2-container {
   opacity: 0.2;
 }
 
+.fc-timeline-event .fc-event-title {
+  white-space: unset !important;
+}
+
+.fc-h-event .fc-event-title {
+  display: inline-block !important;
+  vertical-align: middle !important;
+}
+
 /* .row {
   --phoenix-gutter-x: unset !important
 } */

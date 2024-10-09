@@ -346,11 +346,12 @@ CRON_CLASSES = [
     "chaotica_utils.tasks.task_sync_global_permissions",
     "chaotica_utils.tasks.task_sync_role_permissions_to_default",
     "chaotica_utils.tasks.task_sync_role_permissions",
-
     "chaotica_utils.tasks.task_backup_site",
 
     "jobtracker.tasks.task_progress_workflows",
     "jobtracker.tasks.task_fire_job_notifications",
+
+    "rm_sync.tasks.task_sync_rm_schedule",
 ]
 
 REST_FRAMEWORK = {

@@ -82,7 +82,11 @@ class ServiceAdmin(ImportExportModelAdmin):
     resource_classes = [ServiceResource]
 admin.site.register(Service, ServiceAdmin)
 
-admin.site.register(TimeSlot, SimpleHistoryAdmin)
+@admin.register(TimeSlot)
+class TimeSlotAdmin(SimpleHistoryAdmin):
+    readonly_fields = ['phase', 'project', "updated"]
+
+
 admin.site.register(TimeSlotComment)
 admin.site.register(WorkflowTask)
 admin.site.register(BillingCode)
