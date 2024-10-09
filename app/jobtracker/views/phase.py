@@ -64,21 +64,21 @@ def view_phase_schedule_slots(request, job_slug, slug):
 
 class PhaseAutocomplete(autocomplete.Select2QuerySetView):
     def get_queryset(self):
+        from pprint import pprint
         # Don't forget to filter out results depending on the visitor !
         if not self.request.user.is_authenticated:
             return Phase.objects.none()
         qs = Phase.objects.phases_with_unit_permission(
             self.request.user, "jobtracker.can_view_jobs"
-        ).annotate(
-            full_phase_id=ExpressionWrapper(
-                Concat("job__id", V("-"), "phase_number"), output_field=CharField()
-            )
         )
+        pprint(qs)
         if self.q:
             qs = qs.filter(
-                # Q(email__icontains=self.q) |
-                Q(full_phase_id__icontains=self.q)
+                Q(title__icontains=self.q)|
+                Q(phase_id__icontains=self.q)|
+                Q(job__id__icontains=self.q)
             )
+        pprint(qs)
         return qs
 
 

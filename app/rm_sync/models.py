@@ -12,9 +12,10 @@ from jobtracker.enums import (
     DefaultTimeSlotTypes,
 )
 from chaotica_utils.utils import ext_reverse
+from django.db.models.signals import pre_delete
+from django.dispatch import receiver
 
 urllib3.disable_warnings()
-
 
 
 class RMAssignable(models.Model):
@@ -285,9 +286,11 @@ class RMAssignableSlot(models.Model):
             not self.last_synced
             or not self.last_sync_result
             or self.last_synced < (timezone.now() - timedelta(days=1))
+            or self.last_synced < self.slot.updated
         ):
             return self.update_rm()
         return False
+
 
     def update_rm(self):
         PROXIES = None
@@ -355,6 +358,50 @@ class RMAssignableSlot(models.Model):
                 # Ok - should have it!
                 self.rm_data = r_check_assignment.json()
 
+                # Lets see if we should update!
+                if not should_create and (
+                    self.rm_data["starts_at"] != self.slot.start.strftime("%d-%m-%Y")
+                    or self.rm_data["ends_at"] != self.slot.end.strftime("%d-%m-%Y")
+                ):
+                    # Dates are wrong - lets update
+                    data = {
+                        "starts_at": self.slot.start.strftime("%d-%m-%Y"),
+                        "ends_at": self.slot.end.strftime("%d-%m-%Y"),
+                        "user_id": rm_user.rm_id,
+                    }
+                    r_upd_assignment = requests.put(
+                        "{}/api/v1/users/{}/assignments/{}".format(
+                            config.RM_SYNC_API_SITE,
+                            rm_user.rm_id,
+                            self.rm_id
+                        ),
+                        json=data,
+                        headers=RM_HEADERS,
+                        proxies=PROXIES,
+                        verify=VERIFY_TLS,
+                    )
+                    if r_upd_assignment.status_code != 200:
+                        if r_upd_assignment.status_code == 400:
+                            log.error("Invalid JSON sent")
+                            return False
+                        if r_upd_assignment.status_code == 401:
+                            log.error("RM API Token Invalid")
+                            return False
+                        elif r_upd_assignment.status_code == 404:
+                            log.warning("RM slot not found")
+                            should_create = True
+                        else:
+                            log.warning(
+                                " ! Got a non-200 status code: {}".format(
+                                    r_upd_assignment.status_code
+                                )
+                            )
+                            return False
+                    self.rm_data = r_upd_assignment.json()
+                    self.rm_id = self.rm_data["id"]
+                    log.info("Updated assignment in RM - id: {}".format(self.rm_data["id"]))
+
+
             if should_create:
                 # Create the assignment!
                 data = {
@@ -385,7 +432,7 @@ class RMAssignableSlot(models.Model):
                         log.error("RM API Token Invalid")
                         return False
                     elif r_add_assignment.status_code == 404:
-                        log.warning("RM project not found")
+                        log.warning("RM slot not found")
                         should_create = True
                     else:
                         log.warning(
@@ -397,6 +444,7 @@ class RMAssignableSlot(models.Model):
                 self.rm_data = r_add_assignment.json()
                 self.rm_id = self.rm_data["id"]
                 log.info("Created assignment in RM - id: {}".format(self.rm_data["id"]))
+
             self.last_sync_result = True
 
         except Exception as ex:
@@ -473,6 +521,11 @@ class RMAssignableSlot(models.Model):
             self.last_synced = timezone.now()
             self.save()
             print((log_stream.getvalue() + ".")[:-1])
+    
+
+@receiver(pre_delete, sender=RMAssignableSlot)
+def remove_assignment_from_rm_on_delete(sender, instance, **kwargs):
+    instance.delete_in_rm()
 
 
 class RMSyncRecord(models.Model):

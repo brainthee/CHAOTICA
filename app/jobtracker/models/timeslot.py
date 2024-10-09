@@ -102,6 +102,7 @@ class TimeSlotComment(models.Model):
 class TimeSlot(models.Model):
     start = models.DateTimeField()
     end = models.DateTimeField()
+    updated = models.DateTimeField(auto_now=True)
     notes = GenericRelation(Note)
     history = HistoricalRecords()
     user = models.ForeignKey(
