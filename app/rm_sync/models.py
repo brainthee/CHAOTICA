@@ -18,6 +18,14 @@ from django.dispatch import receiver
 urllib3.disable_warnings()
 
 
+class RMTaskLock(models.Model):
+    task_id = models.CharField(
+        max_length=255,
+        unique=True,
+    )
+    started = models.DateTimeField(auto_now_add=True)
+
+
 class RMAssignable(models.Model):
     phase = models.OneToOneField(
         Phase,
@@ -237,7 +245,7 @@ class RMAssignable(models.Model):
             log.info("Deleting RM project for {}".format(self.phase))
         elif self.project:
             log.info("Deleting RM project for {}".format(self.project))
-        elif self.project:
+        elif self.slotType:
             log.info("Deleting RM project for {}".format(self.slotType))
         else:
             log.error("Told to delete project for a assignable with no project/phase")
@@ -565,6 +573,7 @@ class RMSyncRecord(models.Model):
 
     last_synced = models.DateTimeField(null=True, blank=True)
     last_sync_result = models.BooleanField(default=False)
+    sync_in_progress = models.BooleanField(default=False)
 
     sync_enabled = models.BooleanField(default=False, help_text="Should sync schedules")
     sync_authoritative = models.BooleanField(
@@ -579,6 +588,13 @@ class RMSyncRecord(models.Model):
         return "({}) {}".format(self.rm_id, str(self.user))
 
     def sync_records(self):
+        if self.sync_in_progress:
+            # In progress - skip
+            return
+        
+        self.sync_in_progress = True
+        self.save()
+
         PROXIES = None
         # PROXIES = {
         #     "http": "http://127.0.0.1:8080",
@@ -743,5 +759,6 @@ class RMSyncRecord(models.Model):
 
         finally:
             self.last_synced = timezone.now()
+            self.sync_in_progress = False
             self.save()
             print((log_stream.getvalue() + ".")[:-1])
