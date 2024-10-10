@@ -7,7 +7,7 @@ import logging, requests, json
 from chaotica_utils.utils import NoColorFormatter
 from io import StringIO
 import urllib3
-from jobtracker.models import Phase, Project, TimeSlot
+from jobtracker.models import Phase, Project, TimeSlot, TimeSlotType
 from jobtracker.enums import (
     DefaultTimeSlotTypes,
 )
@@ -19,25 +19,33 @@ urllib3.disable_warnings()
 
 
 class RMAssignable(models.Model):
-    phase = models.ForeignKey(
+    phase = models.OneToOneField(
         Phase,
         on_delete=models.CASCADE,
         null=True,
         blank=True,
         related_name="rm_assignable",
     )
-
-    project = models.ForeignKey(
+    project = models.OneToOneField(
         Project,
         related_name="rm_assignable",
         null=True,
         blank=True,
         on_delete=models.CASCADE,
     )
+    slotType = models.OneToOneField(
+        TimeSlotType,
+        related_name="rm_assignable",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+    )
+
     rm_id = models.CharField(
         max_length=255,
         null=True,
         blank=True,
+        unique=True,
         help_text="Assignable ID in Resource Manager",
     )
     rm_data = models.JSONField(default=list, blank=True)
@@ -53,6 +61,8 @@ class RMAssignable(models.Model):
             return "({}) {}".format(self.rm_id, str(self.project))
         elif self.phase:
             return "({}) {}".format(self.rm_id, str(self.phase))
+        elif self.slotType:
+            return "({}) {}".format(self.rm_id, str(self.slotType))
         else:
             return "({}) {}".format(self.rm_id, "Unknown")
 
@@ -62,7 +72,7 @@ class RMAssignable(models.Model):
         elif self.project:
             return self.project.get_absolute_url()
         else:
-            return None
+            return "/"
 
     def update_rm_if_stale(self):
         if (
@@ -95,6 +105,8 @@ class RMAssignable(models.Model):
             log.info("Starting RM Sync for {}".format(self.phase))
         elif self.project:
             log.info("Starting RM Sync for {}".format(self.project))
+        elif self.slotType:
+            log.info("Starting RM Sync for {}".format(self.slotType))
         else:
             log.error("Told to start sync for a assignable with no project/phase")
 
@@ -147,6 +159,15 @@ class RMAssignable(models.Model):
                         "tags": ["CHAOTICA"],
                         "description": config.RM_WARNING_MSG
                         + " {}".format(ext_reverse(self.project.get_absolute_url())),
+                    }
+                elif self.slotType:
+                    data = {
+                        "name": str(self.slotType),
+                        "project_code": str(self.slotType.pk),
+                        "project_state": "Internal",
+                        "tags": ["CHAOTICA"],
+                        "description": config.RM_WARNING_MSG
+                        + " {}".format(ext_reverse("/")),
                     }
                 else:
                     log.error("No phase or project assigned")
@@ -216,6 +237,8 @@ class RMAssignable(models.Model):
             log.info("Deleting RM project for {}".format(self.phase))
         elif self.project:
             log.info("Deleting RM project for {}".format(self.project))
+        elif self.project:
+            log.info("Deleting RM project for {}".format(self.slotType))
         else:
             log.error("Told to delete project for a assignable with no project/phase")
 
@@ -271,6 +294,7 @@ class RMAssignableSlot(models.Model):
         max_length=255,
         null=True,
         blank=True,
+        unique=True,
         help_text="Assignable ID in Resource Manager",
     )
     rm_data = models.JSONField(default=list, blank=True)
@@ -321,7 +345,7 @@ class RMAssignableSlot(models.Model):
         elif self.slot.is_project():
             rm_ass = RMAssignable.objects.get(project=self.slot.project)
         else:
-            rm_ass = None
+            rm_ass = RMAssignable.objects.get(slotType=self.slot.slot_type)
 
         if not rm_ass:
             log.warning("Nothing to assign to currently")
@@ -534,7 +558,7 @@ class RMSyncRecord(models.Model):
         on_delete=models.CASCADE,
         related_name="rm_sync_record",
     )
-    rm_id = models.CharField(max_length=255, help_text="User ID in Resource Manager")
+    rm_id = models.CharField(max_length=255, unique=True, help_text="User ID in Resource Manager")
     rm_data = models.JSONField(default=list, blank=True)
 
     last_synced = models.DateTimeField(null=True, blank=True)
@@ -640,15 +664,14 @@ class RMSyncRecord(models.Model):
                     ch_assignable, _ = RMAssignable.objects.get_or_create(
                         phase=slot.phase
                     )
-                    # It's a phase one...
                 elif slot.is_project():
                     ch_assignable, _ = RMAssignable.objects.get_or_create(
                         project=slot.project
                     )
-                    # Internal ish
                 elif slot.is_internal():
-                    # anything else!
-                    pass
+                    ch_assignable, _ = RMAssignable.objects.get_or_create(
+                        slotType=slot.slot_type
+                    )
 
                 if ch_assignable:
                     ch_assignable.update_rm_if_stale()
