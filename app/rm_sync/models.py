@@ -289,6 +289,8 @@ class RMAssignableSlot(models.Model):
         TimeSlot,
         on_delete=models.CASCADE,
         related_name="rm_assignable",
+        blank=False,
+        primary_key=True,
     )
     rm_id = models.CharField(
         max_length=255,
