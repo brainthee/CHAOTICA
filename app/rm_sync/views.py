@@ -44,6 +44,11 @@ def rm_run_sync(request):
         # RM Sync is disabled. Don't run        
         messages.warning(request, "RM Sync disabled")
         return HttpResponseRedirect(reverse("rm_settings"))
+        
+    if RMTaskLock.objects.filter(task_id=task_sync_rm_schedule.code).exists():
+        # Task already in flight. Ignore this run
+        messages.warning(request, "RM Sync already running")
+        return HttpResponseRedirect(reverse("rm_settings"))
     
     task_sync_rm_schedule.do(request)
     messages.info(request, "Sync Running...")
@@ -59,10 +64,12 @@ def rm_clear_projects(request):
         messages.warning(request, "RM Sync disabled")
         return HttpResponseRedirect(reverse("rm_settings"))
 
-    for sync_record in RMAssignable.objects.all():
-        sync_record.delete_in_rm()
     for sync_record in RMAssignableSlot.objects.all():
         sync_record.delete_in_rm()
+        sync_record.delete()
+    for sync_record in RMAssignable.objects.all():
+        sync_record.delete_in_rm()
+        sync_record.delete()
         
     messages.info(request, "Clear Sync Running...")
     return HttpResponseRedirect(reverse("rm_settings"))

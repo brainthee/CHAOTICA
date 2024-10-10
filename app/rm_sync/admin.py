@@ -1,7 +1,11 @@
 from django.contrib import admin
-from .models import RMSyncRecord, RMAssignable, RMAssignableSlot
+from .models import RMSyncRecord, RMAssignable, RMAssignableSlot, RMTaskLock
 
 # Register your models here.
+
+@admin.register(RMTaskLock)
+class RMTaskLockAdmin(admin.ModelAdmin):
+    pass
 
 @admin.register(RMAssignableSlot)
 class SlotAdmin(admin.ModelAdmin):
@@ -21,6 +25,7 @@ class AssignAdmin(admin.ModelAdmin):
         "rm_id",
         "project", 
         "phase",
+        "slotType",
         "last_sync_result",
         "last_synced",]
 
@@ -33,6 +38,7 @@ class SyncAdmin(admin.ModelAdmin):
         "rm_id",
         "sync_enabled",
         "sync_authoritative",
+        "sync_in_progress",
         "last_sync_result",
         "last_synced",
     ]
