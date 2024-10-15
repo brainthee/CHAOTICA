@@ -78,6 +78,8 @@ urlpatterns = [
         name="user_delete",
     ),
     path("profile/<str:email>/manage/", views.user_manage, name="user_manage"),
+    path("profile/<str:email>/schedule/timeslots/", views.user_schedule_timeslots, name="user_schedule_timeslots"),
+    path("profile/<str:email>/schedule/holidays/", views.user_schedule_holidays, name="user_schedule_holidays"),
     path("profile/<str:email>/manage/merge", views.user_merge, name="user_merge"),
     path(
         "profile/<str:email>/manage/status/<str:state>/",

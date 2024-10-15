@@ -60,34 +60,27 @@
               </div>
             </div>
           </div>
-          <div class="bg-body-emphasis">
-            <div class="p-3 border-bottom border-translucent">
-              <div class="d-flex justify-content-between">
-                
-              </div>
-            </div>
-          </div>
-
-          <div class="d-flex flex-between-center border-top border-dashed border-300 pt-4">
+          <div class="d-flex flex-between-center border-top mt-4 border-dashed border-300 py-4">
             <div>
               <h6>Avg Report Rating</h6>
               <div class="text-600 mb-0">
                 {{ user.get_average_qa_rating_12mo }}
 
-    {% with avg_qa_rating=user.get_average_qa_rating_12mo %}
-    {% include 'partials/feedback_stars.html' with feedback=avg_qa_rating %}
-  {% endwith %}
+                {% with avg_qa_rating=user.get_average_qa_rating_12mo %}
+                  {% include 'partials/feedback_stars.html' with feedback=avg_qa_rating %}
+                {% endwith %}
               </div>
             </div>
             <div>
               <h6>Jobs</h6>
-              <p class="fs-1 text-800 mb-0">{{ user.get_jobs|length }}</p>
+              <p class="text-800 mb-0">{{ user.get_jobs|length }}</p>
             </div>
             <div>
               <h6>Reports</h6>
-              <p class="fs-1 text-800 mb-0">{{ user.phase_where_report_author.all|length }}</p>
+              <p class="text-800 mb-0">{{ user.phase_where_report_author.all|length }}</p>
             </div>
           </div>
+
           <div class="border-top border-dashed border-300 pt-4"></div>
           <div class="mb-4">
             <div class="d-flex align-items-center mb-1">
@@ -102,26 +95,45 @@
               {% endfor %}
             </ul>
           </div>
+
+          <div class="border-top border-dashed border-300 pt-4"></div>
+          <div class="mb-4">
+            <div class="d-flex align-items-center mb-1">
+              <span class="me-2 fas fa-certificate"></span>
+              <h5 class="text-body-highlight mb-0">Skills</h5>
+            </div>
+            {% for skill in user.get_skills_specialist %}
+            {% include 'partials/skill/skill_badge.html' with rating='specialist' %}
+            {% empty %}
+            &nbsp;
+            {% endfor %}  
+
+            {% for skill in user.get_skills_alone %}
+            {% include 'partials/skill/skill_badge.html' with rating='alone' %}
+            {% empty %}
+            &nbsp;
+            {% endfor %}    
+
+            {% for skill in user.get_skills_support %}
+            {% include 'partials/skill/skill_badge.html' with rating='support' %}
+            {% empty %}
+            &nbsp;
+            {% endfor %}    
+          </div>
+
+          <div class="border-top border-dashed border-300 pt-4"></div>
+          <div class="mb-4">
+            <div class="d-flex align-items-center mb-1">
+              <span class="me-2 fas fa-certificate"></span>
+              <h5 class="text-body-highlight mb-0">Services</h5>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
 
     <div class="col-12 g-2 col-xl-8 ps-3 pt-3">
-      <div class="row">
-        <div class="col-6">
-          {% include 'partials/profile/skills_card.html' %}
-        </div>
-        <div class="col-6 ps-3">
-          {% include 'partials/profile/services_card.html' %}
-        </div>
-
-        {% comment %} <div class="col-6 ps-3">
-          {% include 'partials/profile/utilisation.html' %}
-        </div> {% endcomment %}
-      </div>
-
-      <div class="row mb-3"></div>
-
       <div class="row mb-3">
         <div class="scrollbar">
           <ul class="nav nav-underline fs-9 flex-nowrap mb-3 pb-1" id="myTab" role="tablist">
@@ -131,6 +143,9 @@
             <li class="nav-item me-3" role="presentation">
               <a class="nav-link text-nowrap" id="reports-tab" data-bs-toggle="tab" href="#tab-reports" role="tab" aria-controls="tab-reports" aria-selected="false" tabindex="-1"><span class="fas fa-star me-2"></span> Reports <span class="text-body-tertiary fw-normal">({{ user.phase_where_report_author.all|length }})</span></a>
             </li>
+            <li class="nav-item me-3" role="presentation">
+              <a class="nav-link text-nowrap" id="schedule-tab" data-bs-toggle="tab" href="#tab-schedule" role="tab" aria-controls="tab-schedule" aria-selected="false" tabindex="-1"><span class="fas fa-calendar me-2"></span> Schedule</a>
+            </li>
           </ul>
         </div>
 
@@ -139,10 +154,107 @@
             {% include 'partials/job/job_list_table.html' with job_list=user.get_jobs disableAjax=1 only %}
           </div>
           <div class="tab-pane fade" id="tab-reports" role="tabpanel" aria-labelledby="reports-tab">
-            {% include 'partials/phase/phase_list_table.html' with phases=user.phase_where_report_author.all  disableAjax=1 %}
+            {% include 'partials/phase/phase_list_table.html' with phases=user.phase_where_report_author.all disableAjax=1 %}
+          </div>
+          <div class="tab-pane fade" id="tab-schedule" role="tabpanel" aria-labelledby="schedule-tab">
+            <div class="calendar" data-bs-toggle="calendar" id="calendar"></div>   
           </div>
         </div>
       </div>
     </div>
   </div>
 {% endblock %}
+
+
+{% block footer_javascript_page %}
+<script>
+
+var calendarEl = document.getElementById('calendar');
+
+var calendar = new FullCalendar.Calendar(calendarEl, {
+    schedulerLicenseKey: 'GPL-My-Project-Is-Open-Source',
+    initialView: 'dayGridMonth',
+    themeSystem: 'bootstrap5',
+    eventDisplay: "block",
+    firstDay: 1,
+    headerToolbar: {
+      left: 'prev,next today',
+      center: 'title',
+      right: 'dayGridMonth,timeGridWeek,timeGridDay'
+    },
+    eventSources: [
+      {
+        url: "{% url 'user_schedule_timeslots' user.email %}",
+        method: 'GET',
+        failure: function(res) {
+          if(res.response.redirected) {
+            // Reload the page - we're prob logged out...
+            window.location.reload();
+          } else {
+            Swal.fire({
+              icon: 'error',
+              title: 'Oops...',
+              text: 'Something went wrong getting scheduled events!',
+            })
+          }
+        },
+      },
+      {
+        url: "{% url 'user_schedule_holidays' user.email %}",
+        method: 'GET',
+        failure: function(res) {
+          if(res.response.redirected) {
+            // Reload the page - we're prob logged out...
+            window.location.reload();
+          } else {
+            Swal.fire({
+              icon: 'error',
+              title: 'Oops...',
+              text: 'Something went wrong getting scheduled holidays!',
+            })
+          }
+        },
+      },
+    ],
+    selectable: false,
+    editable: false,
+    eventClick: function(info) {
+        info.jsEvent.preventDefault(); // don't let the browser navigate
+        if (info.event.url) {
+        window.open(info.event.url);
+        }
+    },
+    // Cal Defaults
+    nowIndicator: true,
+    weekNumberCalculation: "ISO",
+    slotDuration: "00:30:00",
+    scrollTime: "08:00:00",
+    slotMinTime: "08:30:00",
+    slotMaxTime: "18:00:00",
+    aspectRatio: 1.45,
+
+    businessHours: {
+        // days of week. an array of zero-based day of week integers (0=Sunday)
+        daysOfWeek: [ 1, 2, 3, 4, 5], // Monday - Friday
+
+        startTime: '09:00', // a start time
+        endTime: '17:30', // an end time
+    }
+  });
+
+calendar.render();
+
+
+var triggerTabList = [].slice.call(document.querySelectorAll('a#schedule-tab'))
+triggerTabList.forEach(function (triggerEl) {
+  var tabTrigger = new bootstrap.Tab(triggerEl)
+  triggerEl.addEventListener('shown.bs.tab', function (event) {
+
+    calendar.updateSize();
+    calendar.render();
+    calendar.refetchEvents();
+
+  })
+})
+</script>
+{% endblock footer_javascript_page %}

@@ -36,7 +36,7 @@ from .tasks import (
 )
 from dateutil.relativedelta import relativedelta
 from .models import Notification, User, Language, Note, LeaveRequest, UserInvitation
-from .utils import ext_reverse, AppNotification, is_valid_uuid
+from .utils import ext_reverse, AppNotification, is_valid_uuid, clean_fullcalendar_datetime
 from django.db.models import Q
 from django.db.models import Value as V
 from django.db.models.functions import Concat
@@ -635,6 +635,32 @@ def user_merge(request, email):
         "modals/user_merge.html", context, request=request
     )
     return JsonResponse(data)
+
+
+@login_required
+def user_schedule_timeslots(request, email):
+    user = get_object_or_404(User, email=email)
+    # Change FullCalendar format to DateTime
+    start = clean_fullcalendar_datetime(request.GET.get("start", None))
+    end = clean_fullcalendar_datetime(request.GET.get("end", None))
+    data = user.get_timeslots(
+        start=start,
+        end=end,
+    )
+    return JsonResponse(data, safe=False)
+
+
+@login_required
+def user_schedule_holidays(request, email):
+    user = get_object_or_404(User, email=email)
+    # Change FullCalendar format to DateTime
+    start = clean_fullcalendar_datetime(request.GET.get("start", None))
+    end = clean_fullcalendar_datetime(request.GET.get("end", None))
+    data = user.get_holidays(
+        start=start,
+        end=end,
+    )
+    return JsonResponse(data, safe=False)
 
 @require_http_methods(["GET", "POST"])
 # This is what we're doing in effect but we're doing it in the view
