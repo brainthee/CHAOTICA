@@ -97,11 +97,22 @@ class SchedulerFilter(forms.Form):
         ),
     )
 
-    job = forms.ModelChoiceField(
+    jobs = forms.ModelMultipleChoiceField(
         required=False,
         queryset=Job.objects.filter(),
         widget=autocomplete.ModelSelect2Multiple(
             url="job-autocomplete",
+            attrs={
+                "data-minimum-input-length": 3,
+            },
+        ),
+    )
+
+    phases = forms.ModelMultipleChoiceField(
+        required=False,
+        queryset=Phase.objects.filter(),
+        widget=autocomplete.ModelSelect2Multiple(
+            url="phase-autocomplete",
             attrs={
                 "data-minimum-input-length": 3,
             },
@@ -154,7 +165,8 @@ class SchedulerFilter(forms.Form):
             Div(
                 HTML('<h5 class="setting-panel-item-title">Job</h5>'),
                 Row(
-                    Field("job", style="width: 100%;"),
+                    Field("jobs", style="width: 100%;"),
+                    Field("phases", style="width: 100%;"),
                 ),
                 css_class="setting-panel-item",
             ),
@@ -193,7 +205,8 @@ class SchedulerFilter(forms.Form):
             "show_inactive_users",
             "users",
             "services",
-            "job",
+            "jobs",
+            "phases",
             "org_units",
             "org_unit_roles",
             "from_date",
