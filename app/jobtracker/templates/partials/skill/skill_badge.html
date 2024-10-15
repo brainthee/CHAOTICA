@@ -1,3 +1,13 @@
-<a href="{{ skill.get_absolute_url }}">
-    <span class="badge badge-tag me-2 mb-1">{{ skill }}</span>
+<a class="text-decoration-none" href="{{ skill.get_absolute_url }}">
+    <span class="badge badge-phoenix 
+    {% if rating == 'specialist' %}
+    badge-phoenix-primary
+    {% elif rating == 'alone' %}
+    badge-phoenix-success
+    {% elif rating == 'support' %}
+    badge-phoenix-warning
+    {% else %}
+    badge-tag 
+    {% endif %}
+    me-2 mb-1">{{ skill }}</span>
 </a>
