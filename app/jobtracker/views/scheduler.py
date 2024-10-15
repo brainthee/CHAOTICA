@@ -38,6 +38,7 @@ from chaotica_utils.utils import (
     datetime_startofday,
     datetime_endofday,
 )
+from django.contrib import messages
 
 
 logger = logging.getLogger(__name__)
@@ -59,7 +60,7 @@ def _filter_users_on_query(request):
         show_inactive_users = filter_form.cleaned_data.get("show_inactive_users")
     else:
         show_inactive_users = False
-        print("NOTVALID")
+        
     cleaned_data = filter_form.clean()
 
     # Starting users filter
@@ -76,16 +77,17 @@ def _filter_users_on_query(request):
 
     if filter_form.is_valid():
         # If we're passed a job/phase ID - filter on that.
-        job = cleaned_data.get("job")
-        phase_id = clean_int(request.GET.get("phase", None))
-        if job:
-            if phase_id:
-                phase = get_object_or_404(Phase, job=job, pk=phase_id)
-                query.add(Q(pk__in=phase.team()), Q.AND)
-            else:
-                # get the team for the whole job...
+        jobs = cleaned_data.get("jobs")
+        if jobs:
+            for job in jobs:
                 query.add(Q(pk__in=job.team()), Q.AND)
-        else:
+
+        phases = cleaned_data.get("phases")
+        if phases:
+            for phase in phases:
+                query.add(Q(pk__in=phase.team()), Q.AND)
+        
+        if not jobs and not phases:
             query.add(Q(pk__in=users_pk), Q.AND)
 
         # Now lets apply the filters from the query...
