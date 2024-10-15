@@ -717,8 +717,11 @@ class Phase(models.Model):
         elif target_status == PhaseStatuses.PENDING_TQA:
             # Notify qa team
             if not self.techqa_by:
+                # users_to_notify = self.job.unit.get_active_members_with_perm(
+                #     "can_tqa_jobs"
+                # )
                 users_to_notify = self.job.unit.get_active_members_with_perm(
-                    "can_tqa_jobs"
+                    "notification_pool_tqa"
                 )
             else:
                 users_to_notify = User.objects.filter(pk=self.techqa_by.pk)
@@ -763,8 +766,11 @@ class Phase(models.Model):
         elif target_status == PhaseStatuses.PENDING_PQA:
             # Notify qa team
             if not self.presqa_by:
+                # users_to_notify = self.job.unit.get_active_members_with_perm(
+                #     "can_pqa_jobs"
+                # )
                 users_to_notify = self.job.unit.get_active_members_with_perm(
-                    "can_pqa_jobs"
+                    "notification_pool_pqa"
                 )
             else:
                 users_to_notify = User.objects.filter(pk=self.presqa_by.pk)

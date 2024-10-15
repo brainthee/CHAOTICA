@@ -295,7 +295,8 @@ class Job(models.Model):
 
         if target_status == JobStatuses.PENDING_SCOPE:
             # Notify scoping team
-            users_to_notify = self.unit.get_active_members_with_perm("can_scope_jobs")
+            # users_to_notify = self.unit.get_active_members_with_perm("can_scope_jobs")
+            users_to_notify = self.unit.get_active_members_with_perm("notification_pool_scoping")
             notice = AppNotification(
                 NotificationTypes.JOB,
                 "Job Pending Scope",
@@ -316,8 +317,11 @@ class Job(models.Model):
 
         elif target_status == JobStatuses.PENDING_SCOPING_SIGNOFF:
             # Notify scoping team
+            # users_to_notify = self.unit.get_active_members_with_perm(
+            #     "can_signoff_scopes"
+            # )
             users_to_notify = self.unit.get_active_members_with_perm(
-                "can_signoff_scopes"
+                "notification_pool_scoping"
             )
             notice = AppNotification(
                 NotificationTypes.JOB,
@@ -339,7 +343,8 @@ class Job(models.Model):
 
         elif target_status == JobStatuses.SCOPING_COMPLETE:
             # Notify scheduling team
-            users_to_notify = self.unit.get_active_members_with_perm("can_schedule_job")
+            # users_to_notify = self.unit.get_active_members_with_perm("can_schedule_job")
+            users_to_notify = self.unit.get_active_members_with_perm("notification_pool_scheduling")
             notice = AppNotification(
                 NotificationTypes.JOB,
                 "Job Ready to Schedule",

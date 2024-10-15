@@ -300,6 +300,11 @@ class UnitRoles:
     SUPERSCOPER = 9
     SCHEDULER = 10
 
+    POOL_SCHEDULER = 11
+    POOL_SCOPER = 12
+    POOL_TQA = 13
+    POOL_PQA = 14
+
     DEFAULTS = [
         {
             "pk": PENDING,
@@ -368,6 +373,34 @@ class UnitRoles:
             "pk": SCHEDULER,
             "name": "Scheduler",
             "bs_colour": "info",
+            "default_role": False,
+            "manage_role": False,
+        },
+        {
+            "pk": POOL_SCHEDULER,
+            "name": "Scheduling Pool",
+            "bs_colour": "secondary",
+            "default_role": False,
+            "manage_role": False,
+        },
+        {
+            "pk": POOL_SCOPER,
+            "name": "Scoping Pool",
+            "bs_colour": "secondary",
+            "default_role": False,
+            "manage_role": False,
+        },
+        {
+            "pk": POOL_TQA,
+            "name": "TQA Pool",
+            "bs_colour": "secondary",
+            "default_role": False,
+            "manage_role": False,
+        },
+        {
+            "pk": POOL_PQA,
+            "name": "PQA Pool",
+            "bs_colour": "secondary",
             "default_role": False,
             "manage_role": False,
         },
@@ -499,6 +532,30 @@ class UnitRoles:
                 "jobtracker.can_schedule_job",
                 "jobtracker.view_job_schedule",
                 "jobtracker.view_users_schedule",
+            ],
+        ),
+        (
+            POOL_SCHEDULER,
+            [
+                "jobtracker.notification_pool_scheduling",
+            ],
+        ),
+        (
+            POOL_SCOPER,
+            [
+                "jobtracker.notification_pool_scoping",
+            ],
+        ),
+        (
+            POOL_TQA,
+            [
+                "jobtracker.notification_pool_tqa",
+            ],
+        ),
+        (
+            POOL_PQA,
+            [
+                "jobtracker.notification_pool_pqa",
             ],
         ),
     )
