@@ -768,9 +768,7 @@ class User(AbstractUser):
             # check we've got rating!
             rating = getattr(report, qa_field)
             if rating:
-                combined_score = combined_score + (
-                    int(rating)
-                )
+                combined_score = combined_score + (int(rating))
                 total_reports = total_reports + 1
 
         if total_reports > 0:
@@ -1006,9 +1004,9 @@ class LeaveRequest(models.Model):
             endtime=working_hours["end"],
         )
         hours_in_working_day = (
-                    timezone.datetime.combine(timezone.now().date(), working_hours["end"])
-                    - timezone.datetime.combine(timezone.now().date(), working_hours["start"])
-                ).total_seconds()/3600
+            timezone.datetime.combine(timezone.now().date(), working_hours["end"])
+            - timezone.datetime.combine(timezone.now().date(), working_hours["start"])
+        ).total_seconds() / 3600
         if hours:
             days = hours / hours_in_working_day
         return round(days, 2)
@@ -1028,12 +1026,15 @@ class LeaveRequest(models.Model):
             user_pks.append(self.user.manager.pk)
         if self.user.acting_manager and self.user.acting_manager.pk not in user_pks:
             user_pks.append(self.user.acting_manager.pk)
+        if not self.user.manager and not self.user.acting_manager:
+            # No managers defined - can self approve
+            user_pks.append(self.user.pk)
 
         # No managers - lets default to unit managers...
         for membership in self.user.unit_memberships.all():
             for pk in membership.unit.get_active_members_with_perm(
-                    "can_approve_leave_requests"
-                ).values_list("pk", flat=True):
+                "can_approve_leave_requests"
+            ).values_list("pk", flat=True):
                 if pk not in user_pks:
                     user_pks.append(pk)
         return User.objects.filter(pk__in=user_pks).distinct()
@@ -1042,6 +1043,12 @@ class LeaveRequest(models.Model):
         if self.cancelled:
             return False
         if user == self.user.manager or user == self.user.acting_manager:
+            return True
+
+        if (
+            not self.user.manager and not self.user.acting_manager
+        ) and user == self.user:
+            # No managers defined - can self approve
             return True
         for membership in self.user.unit_memberships.all():
             # Check if user has permission in any of the units...

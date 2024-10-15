@@ -64,9 +64,10 @@
               {% comment %} {% can_auth leave request.user as can_auth_leave %}
               {% if can_auth_leave %} {% endcomment %}
               {% comment %} Only show this if it's not for us... We can assume we can approve since we can view it... {% endcomment %}
-              {% if leave.user != request.user %}
-                <button class="btn btn-sm btn-phoenix-primary js-load-modal-form" data-url="{% url 'manage_leave_auth_request' leave.pk %}" type="button">Manage</button>
-              {% endif %}
+              <button class="btn btn-sm btn-phoenix-primary js-load-modal-form" 
+                data-url="{% url 'manage_leave_auth_request' leave.pk %}" type="button">
+                Manage
+              </button>
             </div>
           </td>
         </tr>
