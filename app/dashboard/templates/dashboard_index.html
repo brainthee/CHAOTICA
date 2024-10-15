@@ -45,6 +45,28 @@
           {% endif %}
         </a>
   
+        {% if in_flight %}  
+        <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center" 
+          id="in_flightTab" data-bs-toggle="tab" data-bs-target="#in_flightTabContent" role="tab" aria-controls="in_flightTabContent" aria-selected="false">
+          <span class="fa fa-cube me-sm-2 fs-7"></span>
+          <span class="d-none d-sm-inline">In Flight</span>
+          {% if in_flight|length %}
+          <span class="badge bg-primary ms-2">{{ in_flight|length }}</span>
+          {% endif %}
+        </a>  
+        {% endif %}
+
+        {% if scheduled_phases_this_week %}      
+        <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center" 
+          id="scheduled_phases_this_weekTab" data-bs-toggle="tab" data-bs-target="#scheduled_phases_this_weekTabContent" role="tab" aria-controls="scheduled_phases_this_weekTabContent" aria-selected="false">
+          <span class="fa fa-cube me-sm-2 fs-7"></span>
+          <span class="d-none d-sm-inline">Scheduled This Week</span>
+          {% if scheduled_phases_this_week|length %}
+          <span class="badge bg-primary ms-2">{{ scheduled_phases_this_week|length }}</span>
+          {% endif %}
+        </a>
+        {% endif %}
+  
         {% if request.user.can_scope %}
         <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center" 
           id="pendingScopeTab" data-bs-toggle="tab" data-bs-target="#pendingScopeTabContent" role="tab" aria-controls="pendingScopeTabContent" aria-selected="false">
@@ -69,22 +91,22 @@
   
         {% if request.user.can_tqa %}
         <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center" 
-          id="pendingTQATab" data-bs-toggle="tab" data-bs-target="#pendingTQATabContent" role="tab" aria-controls="pendingTQATabContent" aria-selected="false">
+          id="TQATab" data-bs-toggle="tab" data-bs-target="#TQATabContent" role="tab" aria-controls="TQATabContent" aria-selected="false">
           <span class="fa fa-signature me-sm-2 fs-7"></span>
-          <span class="d-none d-sm-inline">Pending Technical QA</span>
-          {% if pendingTQA|length %}
-          <span class="badge bg-primary ms-2">{{ pendingTQA|length }}</span>
+          <span class="d-none d-sm-inline">Technical QA</span>
+          {% if TQA|length %}
+          <span class="badge bg-primary ms-2">{{ TQA|length }}</span>
           {% endif %}
         </a>          
         {% endif %}    
   
         {% if request.user.can_pqa %}
         <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center" 
-          id="pendingPQATab" data-bs-toggle="tab" data-bs-target="#pendingPQATabContent" role="tab" aria-controls="pendingPQATabContent" aria-selected="false">
+          id="PQATab" data-bs-toggle="tab" data-bs-target="#PQATabContent" role="tab" aria-controls="PQATabContent" aria-selected="false">
           <span class="fa fa-signature me-sm-2 fs-7"></span>
-          <span class="d-none d-sm-inline">Pending Presentation QA</span>
-          {% if pendingPQA|length %}
-          <span class="badge bg-primary ms-2">{{ pendingPQA|length }}</span>
+          <span class="d-none d-sm-inline">Presentation QA</span>
+          {% if PQA|length %}
+          <span class="badge bg-primary ms-2">{{ PQA|length }}</span>
           {% endif %}
         </a>          
         {% endif %}    
@@ -133,6 +155,28 @@
         </div>
       </div>
 
+      {% if in_flight %}
+      <div class="tab-pane fade h-100" id="in_flightTabContent" role="tabpanel" aria-labelledby="in_flightTab">
+        <h2 class="ps-3 mb-2 lh-sm">In Flight</h2>   
+        <div class="card card-calendar">
+          <div class="p-3 bg-body-emphasis border-top border-bottom border-200">
+          {% include 'partials/phase/phase_list_table.html' with phases=in_flight disableAjax=1 only %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if scheduled_phases_this_week %}      
+      <div class="tab-pane fade h-100" id="scheduled_phases_this_weekTabContent" role="tabpanel" aria-labelledby="scheduled_phases_this_weekTab">
+        <h2 class="ps-3 mb-2 lh-sm">Scheduled This Week</h2>   
+        <div class="card card-calendar">
+          <div class="p-3 bg-body-emphasis border-top border-bottom border-200">
+          {% include 'partials/phase/phase_list_table.html' with phases=scheduled_phases_this_week disableAjax=1 only %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
       {% if request.user.can_scope %}
       <div class="tab-pane fade h-100" id="pendingScopeTabContent" role="tabpanel" aria-labelledby="pendingScopeTab">
         <h2 class="ps-3 mb-2 lh-sm">Jobs Pending Scoping</h2>    
@@ -156,22 +200,22 @@
       {% endif %}
 
       {% if request.user.can_tqa %}
-      <div class="tab-pane fade h-100" id="pendingTQATabContent" role="tabpanel" aria-labelledby="pendingTQATab">
-        <h2 class="ps-3 mb-2 lh-sm">Jobs Pending TQA</h2>         
+      <div class="tab-pane fade h-100" id="TQATabContent" role="tabpanel" aria-labelledby="TQATab">
+        <h2 class="ps-3 mb-2 lh-sm">Jobs in TQA</h2>         
         <div class="card card-calendar">
           <div class="p-3 bg-body-emphasis border-top border-bottom border-200">
-            {% include 'partials/phase/phase_list_table.html' with phases=pendingTQA disableAjax=1 only %}
+            {% include 'partials/phase/tables/tqa_table.html' with phases=TQA disableAjax=1 only %}
           </div>
         </div>
       </div>
       {% endif %}
 
       {% if request.user.can_pqa %}
-      <div class="tab-pane fade h-100" id="pendingPQATabContent" role="tabpanel" aria-labelledby="pendingPQATab">
-        <h2 class="ps-3 mb-2 lh-sm">Jobs Pending PQA</h2>        
+      <div class="tab-pane fade h-100" id="PQATabContent" role="tabpanel" aria-labelledby="PQATab">
+        <h2 class="ps-3 mb-2 lh-sm">Jobs in PQA</h2>        
         <div class="card card-calendar">
           <div class="p-3 bg-body-emphasis border-top border-bottom border-200">
-            {% include 'partials/phase/phase_list_table.html' with phases=pendingPQA disableAjax=1 only %}
+            {% include 'partials/phase/tables/pqa_table.html' with phases=PQA disableAjax=1 only %}
           </div>
         </div>
       </div>
