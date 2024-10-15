@@ -26631,7 +26631,9 @@ html[dir=rtl] .googlemap .gm-style-iw.gm-style-iw-c button[title=Close] {
   left: 0.3125rem;
 }
 
-.windows.chrome .fc-scroller {
+/* WHY DO YOU HIDE THIS!? */
+
+/* .windows.chrome .fc-scroller {
   overflow: hidden auto !important;
   overflow: auto;
 }
@@ -26655,7 +26657,7 @@ html[dir=rtl] .googlemap .gm-style-iw.gm-style-iw-c button[title=Close] {
   overflow: auto !important;
   scrollbar-color: var(--phoenix-scrollbar-bg) transparent;
   scrollbar-width: thin;
-}
+} */
 
 .firefox .fc table {
   border-collapse: unset;
