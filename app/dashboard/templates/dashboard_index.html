@@ -150,7 +150,7 @@
         <h2 class="ps-3 mb-2 lh-sm">My Phases</h2>   
         <div class="card card-calendar">
           <div class="p-3 bg-body-emphasis border-top border-bottom border-200">
-          {% include 'partials/phase/phase_list_table.html' with phases=myPhases disableAjax=1 only %}
+          {% include 'partials/phase/tables/basic_table.html' with phases=myPhases disableAjax=1 only %}
           </div>
         </div>
       </div>
@@ -160,7 +160,7 @@
         <h2 class="ps-3 mb-2 lh-sm">In Flight</h2>   
         <div class="card card-calendar">
           <div class="p-3 bg-body-emphasis border-top border-bottom border-200">
-          {% include 'partials/phase/phase_list_table.html' with phases=in_flight disableAjax=1 only %}
+          {% include 'partials/phase/tables/basic_table.html' with phases=in_flight disableAjax=1 only %}
           </div>
         </div>
       </div>
@@ -171,7 +171,7 @@
         <h2 class="ps-3 mb-2 lh-sm">Scheduled This Week</h2>   
         <div class="card card-calendar">
           <div class="p-3 bg-body-emphasis border-top border-bottom border-200">
-          {% include 'partials/phase/phase_list_table.html' with phases=scheduled_phases_this_week disableAjax=1 only %}
+          {% include 'partials/phase/tables/basic_table.html' with phases=scheduled_phases_this_week disableAjax=1 only %}
           </div>
         </div>
       </div>
