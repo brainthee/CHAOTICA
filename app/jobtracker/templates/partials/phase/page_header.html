@@ -27,86 +27,73 @@
 <div class="row justify-content-between mx-1 my-3">
   <div class="col-4 gx-3 d-flex align-items-stretch">
     <div class="card w-100">
-      <div class="card-body">
+      <div class="card-body pb-1">
         <div class="row align-items-center">
-          <h3 class="fw-bolder mb-2 line-clamp-1">{{ phase.phase_id }} - {{ phase.title }}</h3>
+          <h3 class="fw-bolder mb-2 line-clamp-1"
+          data-bs-toggle="tooltip" data-bs-placement="bottom" 
+          data-bs-original-title="{{ phase.phase_id }} - {{ phase.title }}"
+          >{{ phase.phase_id }} - {{ phase.title }}</h3>
         </div>
-        <div class="row">
-          <div class="col-6">
-            <table class="w-100 table-stats table-stats">
-              <caption>Phase Data</caption>
-              <thead>
-                <tr>
-                  <th class="w-25" scope="col"></th>
-                  <th class="" scope="col"></th>
-                  <th class="w-75" scope="col"></th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td class="">
-                    <p class="fw-bold mb-0">Job</p>
-                  </td>
-                  <td class="d-none d-sm-block pe-sm-2">:</td>
-                  <td class="">
-                    <p class="ps-6 ps-sm-0 fw-semi-bold mb-0">
-                      <a href="{{ job.get_absolute_url }}">{{ job }}</a>
-                    </p>
-                  </td>
-                </tr>
-                <tr>
-                  <td class="">
-                    <p class="fw-bold mb-0">Service</p>
-                  </td>
-                  <td class="d-none d-sm-block pe-sm-2">:</td>
-                  <td class="">
-                    <p class="ps-6 ps-sm-0 fw-semi-bold mb-0">
-                      <a href="{{ phase.service.get_absolute_url }}">{{ phase.service }}</a>
-                    </p>
-                  </td>
-                </tr>
-                <tr>
-                  <td class="">
-                    <p class="fw-bold mb-0">Codes</p>
-                  </td>
-                  <td class="d-none d-sm-block pe-sm-2">:</td>
-                  <td class="">
-                    <div class="d-flex">
-                      {% for billingcode in phase.job.charge_codes.all %}
-                        <div class="m-1">
-                          {% include 'partials/billingcode/billingcode_badge.html' with billingcode=billingcode %}
-                        </div>
-                      {% endfor %}
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
 
-          <div class="col-6">
-            <table class="w-100 table-stats table-stats">
-              <caption>Phase Data</caption>
-              <thead>
-                <tr>
-                  <th class="w-25" scope="col"></th>
-                  <th class="" scope="col"></th>
-                  <th class="w-75" scope="col"></th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td class="">
-                    <p class="fw-bold mb-0">Status</p>
-                  </td>
-                  <td class="d-none d-sm-block pe-sm-2">:</td>
-                  <td class="">
-                    <h4 class="ps-6 ps-sm-0 mb-0">{% include 'partials/phase/status_badge.html' %}</h4>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+        <div class="row px-2">
+          <table class="w-100 table-stats table-stats">
+            <caption>Phase Data</caption>
+            <thead>
+              <tr class="d-flex">
+                <th class="col-2" scope="col"></th>
+                <th class="col-1" scope="col"></th>
+                <th class="col-10" scope="col"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="d-flex">
+                <td class="col-2">
+                  <p class="fw-bold mb-0">Job</p>
+                </td>
+                <td class="d-none d-sm-block pe-sm-2">:</td>
+                <td class="">
+                  <p class="ps-6 ps-sm-0 fw-semi-bold mb-0">
+                    <a href="{{ job.get_absolute_url }}">{{ job }}</a>
+                  </p>
+                </td>
+              </tr>
+              <tr class="d-flex">
+                <td class="col-2">
+                  <p class="fw-bold mb-0">Status</p>
+                </td>
+                <td class="d-none d-sm-block pe-sm-2">:</td>
+                <td class="">
+                  <h4 class="ps-6 ps-sm-0 mb-0">{% include 'partials/phase/status_badge.html' %}</h4>
+                </td>
+              </tr>
+              <tr class="d-flex">
+                <td class="col-2">
+                  <p class="fw-bold mb-0">Service</p>
+                </td>
+                <td class="d-none d-sm-block pe-sm-2">:</td>
+                <td class="">
+                  <p class="ps-6 ps-sm-0 fw-semi-bold mb-0">
+                    <a href="{{ phase.service.get_absolute_url }}">{{ phase.service }}</a>
+                  </p>
+                </td>
+              </tr>
+              <tr class="d-flex">
+                <td class="col-2">
+                  <p class="fw-bold mb-0">Codes</p>
+                </td>
+                <td class="d-none d-sm-block pe-sm-2">:</td>
+                <td class="">
+                  <div class="d-flex">
+                    {% for billingcode in phase.job.charge_codes.all %}
+                      <div class="m-1">
+                        {% include 'partials/billingcode/billingcode_badge.html' with billingcode=billingcode %}
+                      </div>
+                    {% endfor %}
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
