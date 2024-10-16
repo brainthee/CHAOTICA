@@ -215,6 +215,25 @@ class CustomConfigForm(ConstanceForm):
                         css_class="input-group input-group-dynamic",
                     ),              
                 ),
+                Column(
+                    HTML('<h4 class="mb-4">Additional Notification Recipients</h4>'),
+                    Div(
+                        Field("NOTIFICATION_POOL_SCOPING_EMAIL_RCPTS"),
+                        css_class="input-group input-group-dynamic",
+                    ),
+                    Div(
+                        Field("NOTIFICATION_POOL_SCHEDULING_EMAIL_RCPTS"),
+                        css_class="input-group input-group-dynamic",
+                    ),      
+                    Div(
+                        Field("NOTIFICATION_POOL_TQA_EMAIL_RCPTS"),
+                        css_class="input-group input-group-dynamic",
+                    ),              
+                    Div(
+                        Field("NOTIFICATION_POOL_PQA_EMAIL_RCPTS"),
+                        css_class="input-group input-group-dynamic",
+                    ),              
+                ),
             ),
         )
 
