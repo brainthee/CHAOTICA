@@ -23,4 +23,12 @@
                 data-status="Deleted" data-status-id="10">Delete Job</button>
         </li>
     {% endif %}
+
+    {% if request.user.is_superuser %}
+    <li>
+        <a href="{% url 'admin:jobtracker_job_change' job.pk %}" class="dropdown-item">
+            Django Admin Page
+        </a>
+    </li>
+    {% endif %}
 </ul>

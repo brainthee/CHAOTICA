@@ -32,10 +32,19 @@
                 data-status="Deleted" data-status-id="15">Delete Phase</button>
         </li>
     {% endif %}
+    
     <li>
         <button data-url="{% url 'phase_refire_notifications' phase.job.slug phase.slug %}" class="dropdown-item js-update-phase-workflow text-info">
             Fire Notifications
         </button>
     </li>
+
+    {% if request.user.is_superuser %}
+    <li>
+        <a href="{% url 'admin:jobtracker_job_change' phase.job.pk %}" class="dropdown-item">
+            Django Admin Page
+        </a>
+    </li>
+    {% endif %}
     
 </ul>
