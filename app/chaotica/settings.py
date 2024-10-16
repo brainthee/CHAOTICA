@@ -294,6 +294,7 @@ DEFAULT_APPS = [
     "django.contrib.humanize",
 ]
 THIRD_PARTY_APPS = [
+    "debug_toolbar",
     "colorfield",
     "constance",
     "django_auth_adfs",
@@ -395,6 +396,7 @@ REST_FRAMEWORK = {
 
 MIDDLEWARE = [
     "chaotica_utils.middleware.HealthCheckMiddleware",
+    "debug_toolbar.middleware.DebugToolbarMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -410,6 +412,11 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = "chaotica.urls"
+
+INTERNAL_IPS = [
+    "127.0.0.1",
+]
+
 
 TEMPLATES = [
     {

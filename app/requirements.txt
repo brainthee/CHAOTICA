@@ -40,6 +40,7 @@ django-crispy-forms==2.2
 django-cron==0.6.0
 django-cryptography-django5==2.2
 django-dbbackup==4.1.0
+django-debug-toolbar==4.4.6
 django-filter==24.2
 django-fsm==3.0.0
 django-guardian==2.4.0
