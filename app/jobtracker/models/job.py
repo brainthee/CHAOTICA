@@ -305,7 +305,7 @@ class Job(models.Model):
                 action_link=self.get_absolute_url(),
                 job=self,
             )
-            task_send_notifications(notice, users_to_notify)
+            task_send_notifications(notice, users_to_notify, config.NOTIFICATION_POOL_SCOPING_EMAIL_RCPTS)
             # Lets also update the audit log
             for user in users_to_notify:
                 log_system_activity(
@@ -331,7 +331,7 @@ class Job(models.Model):
                 action_link=self.get_absolute_url(),
                 job=self,
             )
-            task_send_notifications(notice, users_to_notify)
+            task_send_notifications(notice, users_to_notify, config.NOTIFICATION_POOL_SCOPING_EMAIL_RCPTS)
             # Lets also update the audit log
             for user in users_to_notify:
                 log_system_activity(
@@ -355,7 +355,7 @@ class Job(models.Model):
                 action_link=self.get_absolute_url(),
                 job=self,
             )
-            task_send_notifications(notice, users_to_notify)
+            task_send_notifications(notice, users_to_notify, config.NOTIFICATION_POOL_SCHEDULING_EMAIL_RCPTS)
             # Lets also update the audit log
             for user in users_to_notify:
                 log_system_activity(

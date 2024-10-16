@@ -607,7 +607,36 @@ class Phase(models.Model):
 
     def fire_status_notification(self, target_status):
         email_template = "emails/phase_content.html"
-        if target_status == PhaseStatuses.SCHEDULED_CONFIRMED:
+
+        if target_status == PhaseStatuses.PENDING_SCHED:
+            users_to_notify = self.job.unit.get_active_members_with_perm(
+                "notification_pool_scheduling"
+            )
+            
+            notice = AppNotification(
+                NotificationTypes.PHASE,
+                "Phase Update - {phase} - Ready for scheduling".format(phase=self),
+                "{phase} is ready for Scheduling".format(phase=self),
+                email_template,
+                action_link=self.get_absolute_url(),
+                phase=self,
+            )
+            task_send_notifications(notice, users_to_notify, config.NOTIFICATION_POOL_SCHEDULING_EMAIL_RCPTS)
+            # Lets also update the audit log
+            for user in users_to_notify:
+                log_system_activity(
+                    self,
+                    "Ready for Scheduling notification sent to {target}".format(
+                        target=user.email
+                    ),
+                )
+            if config.NOTIFICATION_POOL_SCHEDULING_EMAIL_RCPTS:
+                log_system_activity(
+                    self,
+                    "Ready for scheduling notification sent to configured scheduling Pool",
+                )
+
+        elif target_status == PhaseStatuses.SCHEDULED_CONFIRMED:
             # Notify project team
             users_to_notify = self.team()
             notice = AppNotification(
@@ -733,7 +762,7 @@ class Phase(models.Model):
                 action_link=self.get_absolute_url(),
                 phase=self,
             )
-            task_send_notifications(notice, users_to_notify)
+            task_send_notifications(notice, users_to_notify, config.NOTIFICATION_POOL_TQA_EMAIL_RCPTS)
             # Lets also update the audit log
             for user in users_to_notify:
                 log_system_activity(
@@ -742,6 +771,12 @@ class Phase(models.Model):
                         target=user.email
                     ),
                 )
+            if config.NOTIFICATION_POOL_TQA_EMAIL_RCPTS:
+                log_system_activity(
+                    self,
+                    "Ready for TQA notification sent to configured TQA Pool",
+                )
+
 
         elif target_status == PhaseStatuses.QA_TECH_AUTHOR_UPDATES:
             users_to_notify = User.objects.filter(pk=self.report_author.pk)
@@ -782,7 +817,7 @@ class Phase(models.Model):
                 action_link=self.get_absolute_url(),
                 phase=self,
             )
-            task_send_notifications(notice, users_to_notify)
+            task_send_notifications(notice, users_to_notify, config.NOTIFICATION_POOL_PQA_EMAIL_RCPTS)
             # Lets also update the audit log
             for user in users_to_notify:
                 log_system_activity(
@@ -790,6 +825,11 @@ class Phase(models.Model):
                     "Ready for PQA notification sent to {target}".format(
                         target=user.email
                     ),
+                )
+            if config.NOTIFICATION_POOL_PQA_EMAIL_RCPTS:
+                log_system_activity(
+                    self,
+                    "Ready for TQA notification sent to configured PQA Pool",
                 )
 
         elif target_status == PhaseStatuses.QA_PRES_AUTHOR_UPDATES:
@@ -834,7 +874,7 @@ class Phase(models.Model):
                 )
 
         elif target_status == PhaseStatuses.POSTPONED:
-            users_to_notify = None
+            users_to_notify = self.team()
             notice = AppNotification(
                 NotificationTypes.PHASE,
                 "Phase Update - {phase} - Postponed".format(phase=self),
@@ -1062,6 +1102,7 @@ class Phase(models.Model):
             self.MOVED_TO + PhaseStatuses.CHOICES[PhaseStatuses.PENDING_SCHED][1],
             author=user,
         )
+        self.fire_status_notification(PhaseStatuses.PENDING_SCHED)
 
     def can_proceed_to_pending_sched(self):
         return can_proceed(self.to_pending_sched)
@@ -1782,6 +1823,9 @@ class Phase(models.Model):
             author=user,
         )
         self.cancellation_date = timezone.now()
+        for slot in self.timeslots.all():
+            slot.delete()
+
         self.fire_status_notification(PhaseStatuses.CANCELLED)
 
     def can_proceed_to_cancelled(self):
@@ -1793,10 +1837,16 @@ class Phase(models.Model):
 
         # Do general check
         can_proceed_result = can_proceed(self.to_cancelled)
+
         if not can_proceed_result:
             if notify_request:
                 messages.add_message(notify_request, messages.ERROR, self.INVALID_STATE)
             _can_proceed = False
+        else:
+            # Show a warning to the user that any timeslots will be erased
+            if notify_request:
+                messages.add_message(notify_request, messages.INFO, 
+                                     "Warning - any scheduled timeslots will be deleted!")
         return _can_proceed
 
     # POSTPONED

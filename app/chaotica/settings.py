@@ -202,6 +202,25 @@ CONSTANCE_CONFIG = {
         "Colour to show comments",
         "colour_picker",
     ),
+    # Notification boxes
+    "NOTIFICATION_POOL_SCOPING_EMAIL_RCPTS": (
+        "",
+        "Additional email recipients for Scoping Pool",
+    ),
+    "NOTIFICATION_POOL_SCHEDULING_EMAIL_RCPTS": (
+        "",
+        "Additional email recipients for Scheduling Pool",
+    ),
+    "NOTIFICATION_POOL_TQA_EMAIL_RCPTS": (
+        "",
+        "Additional email recipients for TQA Pool",
+    ),
+    "NOTIFICATION_POOL_PQA_EMAIL_RCPTS": (
+        "",
+        "Additional email recipients for PQA Pool",
+    ),
+
+    
     # ResourceManager Integration
     "RM_SYNC_ENABLED": (False, "Should RM Synchronisation be enabled"),
     "RM_SYNC_API_TOKEN": ("", "Developer API Token"),

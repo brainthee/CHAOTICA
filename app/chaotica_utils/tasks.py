@@ -5,6 +5,9 @@ from django.conf import settings
 from constance import config
 from django.utils import timezone
 import holidays
+import email.utils
+from django.template.loader import render_to_string
+from django.core.mail import send_mail
 
 
 class task_backup_site(CronJobBase):
@@ -68,7 +71,7 @@ class task_update_holidays(CronJobBase):
                 pass
 
 
-def task_send_notifications(notification, users_to_notify):
+def task_send_notifications(notification, users_to_notify, additional_mails=None):
     for u in users_to_notify:
         # create a Notification..
         from .models import Notification
@@ -80,6 +83,29 @@ def task_send_notifications(notification, users_to_notify):
             link=notification.action_link,
             email_template=notification.email_template,
         )
+    
+    if additional_mails:
+        addresses = email.utils.getaddresses([additional_mails])
+        for _, email_address in addresses:
+            if email_address:
+                context = {}
+                context["SITE_DOMAIN"] = settings.SITE_DOMAIN
+                context["SITE_PROTO"] = settings.SITE_PROTO
+                context["title"] = notification.title
+                context["message"] = notification.message
+                context["icon"] = notification.icon
+                context["action_link"] = notification.action_link
+                context["user"] = ""
+                msg_html = render_to_string(notification.email_template, context)
+                send_mail(
+                    notification.title,
+                    notification.message,
+                    None,
+                    [email_address],
+                    html_message=msg_html,
+                )
+        
+        
 
 
 class task_send_email_notifications(CronJobBase):
