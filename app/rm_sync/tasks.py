@@ -15,18 +15,26 @@ class task_sync_rm_schedule(CronJobBase):
         # Check if we're enabled first...
         if not config.RM_SYNC_ENABLED:
             # RM Sync is disabled. Don't run
-            return
-        from pprint import pprint
+            return "Task disabled due to site setting"
         
         if RMTaskLock.objects.filter(task_id=task_sync_rm_schedule.code).exists():
-            # Task already in flight. Ignore this run
-            pprint("Lock exists")
-            return
+            # Check if the lock is stale...
+            lock = RMTaskLock.objects.get(task_id=task_sync_rm_schedule.code)
+            if lock.is_stale():
+                # Lets reset all the locks
+                RMSyncRecord.objects.filter(sync_in_progress=True).update(sync_in_progress=False)
+                lock.delete()
+            else:
+                # Task already in flight. Ignore this run
+                return "Task ignored - concurrent task running"
         
         task_lock = RMTaskLock.objects.create(task_id=task_sync_rm_schedule.code)
 
         try:
             for sync_record in RMSyncRecord.objects.filter(sync_enabled=True):
                 sync_record.sync_records()
+                task_lock.last_updated = timezone.now()
         finally:
             task_lock.delete()
+        
+        return "Task successfully run"

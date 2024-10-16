@@ -226,6 +226,7 @@ CONSTANCE_CONFIG = {
     "RM_SYNC_API_TOKEN": ("", "Developer API Token"),
     "RM_SYNC_API_SITE": ("https://api.rm.smartsheet.com", "Domain of RM API"),
     "RM_WARNING_MSG": ("This project is managed via CHAOTICA.", "Warning message to display in project descriptions."),
+    "RM_SYNC_STALE_TIMEOUT": (60, "Amount of minutes before a sync task is stale"),
     
 }
 

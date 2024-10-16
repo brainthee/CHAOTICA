@@ -24,6 +24,12 @@ class RMTaskLock(models.Model):
         unique=True,
     )
     started = models.DateTimeField(auto_now_add=True)
+    last_updated = models.DateTimeField(auto_now=True)
+
+    def is_stale(self):
+        now = timezone.now()
+        time_diff = (now - self.last_updated).total_seconds() / int(config.RM_SYNC_STALE_TIMEOUT) * 60
+        return time_diff > 1
 
 
 class RMAssignable(models.Model):
