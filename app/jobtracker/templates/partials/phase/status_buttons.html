@@ -2,7 +2,7 @@
   <div class="btn-group">
     {% if phase.can_proceed_to_pending_sched %}
       <button data-url="{% url 'phase_update_workflow' phase.job.slug phase.slug 1 %}" class="btn btn-outline-success js-update-phase-workflow" data-status="Scheduled" data-status-id="3">
-        Proceed to Scheduling{% if not phase.can_proceed_to_pending_sched %}
+        Mark Pending Scheduling{% if not phase.can_proceed_to_pending_sched %}
           <span class="ms-1 text-danger" data-feather="alert-triangle" style="height:12.8px;width:12.8px;"></span>
         {% endif %}
       </button>

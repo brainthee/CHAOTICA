@@ -7,20 +7,20 @@
     <li>
         <button data-url="{% url 'assign_job_billingcodes' job.slug %}" 
             class="dropdown-item js-load-modal-form" 
-            data-status="Lost" data-status-id="8">
+            >
                 Assign Billing Codes
         </button>
     </li>
     {% if job.can_proceed_to_lost %}
         <li>
-            <button data-url="{% url 'job_update_workflow' job.slug 8 %}" class="dropdown-item js-update-job-workflow text-warning" 
-                data-status="Lost" data-status-id="8">Close as Lost</button>
+            <button data-url="{% url 'job_update_workflow' job.slug 9 %}" class="dropdown-item js-update-job-workflow text-warning" 
+                data-status="Lost" data-status-id="9">Close as Lost</button>
         </li>
     {% endif %}
     {% if job.can_proceed_to_delete %}
         <li>
             <button data-url="{% url 'job_update_workflow' job.slug 10 %}" class="dropdown-item js-update-job-workflow text-danger" 
-                data-status="Deleted" data-status-id="9">Delete Job</button>
+                data-status="Deleted" data-status-id="10">Delete Job</button>
         </li>
     {% endif %}
 </ul>

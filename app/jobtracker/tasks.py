@@ -36,7 +36,7 @@ class task_progress_workflows(CronJobBase):
             # Check there's no phases LTE DELIVERED
             can_progress = True
             for phase in job.phases.all():
-                if phase.status < PhaseStatuses.DELETED:
+                if phase.status < PhaseStatuses.DELIVERED or phase.status == PhaseStatuses.POSTPONED:
                     can_progress = False
             if can_progress:
                 if job.can_to_complete():
@@ -50,6 +50,8 @@ class task_progress_workflows(CronJobBase):
         #     if phase.can_to_archived():
         #         phase.to_archived()
         #         phase.save()
+        
+
 
 
 class task_fire_job_notifications(CronJobBase):
