@@ -1,0 +1,84 @@
+<table class="table table-responsive table-sm datatable align-items-center mb-0">
+    <caption>Phases</caption>
+    <thead>
+        <tr>
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder ">
+            ID
+            </th>
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder ">
+            Title
+            </th>
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder  ps-2">
+            Service
+            </th>
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder  ps-2">
+            Lead
+            </th>
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder  ps-2">
+            Author
+            </th>
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder  ps-2">
+            Start
+            </th>
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder  ps-2">
+            QA
+            </th>
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder  ps-2">
+            Delivery
+            </th>
+            <th scope="col" style="width:10%;" class="text-uppercase col-1 text-secondary text-xxs font-weight-bolder  ps-2">
+            Status
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for phase in phases %}
+    <tr>
+        <td>
+            <div class="d-flex px-2">
+                <div class="my-auto">
+                <a href="{{ phase.get_absolute_url }}">
+                {{ phase.phase_id }}
+            </a>
+            </div>
+        </div>
+        <td>
+                {{ phase.title }}
+        </td>
+        <td>{{ phase.service }}</td>
+        <td>
+        {% if phase.project_lead %}
+            {% include 'partials/users/user_link.html' with user_profile=phase.project_lead %}
+        {% else %}
+        <a href="#" data-url="{% url 'assign_phase_field' phase.job.slug phase.slug 'project_lead' %}"  
+            class="text-danger js-load-modal-form">
+            Assign
+        </a>
+        {% endif %}
+        </td>
+        <td>
+        {% if phase.report_author %}
+            {% include 'partials/users/user_link.html' with user_profile=phase.report_author %}
+        {% else %}
+        <a href="#" data-url="{% url 'assign_phase_field' phase.job.slug phase.slug 'report_author' %}" 
+            class="text-danger js-load-modal-form">
+            Assign
+        </a>
+        {% endif %}
+        </td>
+        <td data-sort="{{ phase.start_date|date:'Y-m-d' }}">
+        {{ phase.start_date }}
+        </td>
+        <td data-sort="{{ phase.due_to_techqa|date:'Y-m-d' }}">
+        {{ phase.due_to_techqa }}
+        </td>
+        <td data-sort="{{ phase.delivery_date|date:'Y-m-d' }}">
+        {{ phase.delivery_date }}
+        </td>
+        <td>
+        {% include 'partials/phase/status_badge.html' with badge_size='sm' %}
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
