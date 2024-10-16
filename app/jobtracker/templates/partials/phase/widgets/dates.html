@@ -1,70 +1,89 @@
-{% load humanize %}{% load static %}
+{% load humanize %}
+{% load static %}
 
 <div class="row">
-    
-    <div class="col border-1  border-end p-2">
-        <div class="btn w-100 fs-8 fw-semi-bold d-flex flex-column d-xxl-inline-block">
-            <h6 class="fs-18 mb-0 font-w500 text-body-emphasis">Checks Completed</h6>
-            <span data-bs-toggle="tooltip" 
-                data-bs-placement="bottom" title="{{ phase.pre_checks_done_date }}" >
-                {% if phase.pre_checks_done_date %}
-                {{ phase.pre_checks_done_date|naturaltime }}
-                {% else %}
-                <span class="fas fa-ellipsis-h"></span>
-                {% endif %}
-            </span>
-        </div>
+  <div class="col border-1 border-end p-2">
+    <div class="btn w-100 fs-8 fw-semi-bold d-flex flex-column d-xxl-inline-block">
+      <h6 class="fs-18 mb-1 font-w500 text-body-emphasis">Checks Completed</h6>
+      <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ phase.pre_checks_done_date }}">
+        {% if phase.pre_checks_done_date %}
+          {{ phase.pre_checks_done_date|naturaltime }}
+        {% else %}
+          <span class="fas fa-ellipsis-h"></span>
+        {% endif %}
+      </span>
     </div>
-    
-    <div class="col border-1  border-end p-2">
-        <div class="btn w-100 fs-8 fw-semi-bold d-flex flex-column d-xxl-inline-block">
-            <h6 class="fs-18 mb-0 font-w500 text-body-emphasis">Start Date</h6>
-            <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ phase.start_date }}" >
-                {% if phase.start_date %}
-                {{ phase.start_date|naturalday }}
-                {% else %}
-                <span class="fas fa-ellipsis-h"></span>
-                {% endif %}
-            </span>
-        </div>
+  </div>
+
+  <div class="col border-1 border-end p-2">
+    <div class="btn w-100 fs-8 fw-semi-bold d-flex flex-column d-xxl-inline-block">
+      <h6 class="fs-18 mb-1 font-w500 text-body-emphasis">Start Date</h6>
+      <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ phase.start_date }}">
+        {% if phase.start_date %}
+          {{ phase.start_date|naturalday }}
+          {% if phase.desired_start_date %}
+            <p class="text-body-secondary fw-normal fs-9 mb-0">(Desired)</p>
+          {% else %}
+            <p class="text-body-secondary fw-normal fs-9 mb-0">(Scheduled)</p>
+          {% endif %}
+        {% else %}
+          <span class="fas fa-ellipsis-h"></span>
+        {% endif %}
+      </span>
     </div>
-    
-    <div class="col border-1  border-end p-2">
-        <div class="btn w-100 fs-8 {% if phase.is_tqa_late %}btn-outline-danger{% endif %} fw-semi-bold d-flex flex-column d-xxl-inline-block">
-            <h6 class="fs-18 mb-0 font-w500 text-body-emphasis">Due to TechQA</h6>
-            <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ phase.due_to_techqa }}" >
-                {% if phase.due_to_techqa %}
-                {{ phase.due_to_techqa|naturalday }}
-                {% else %}
-                <span class="fas fa-ellipsis-h"></span>
-                {% endif %}
-            </span>
-        </div>
+  </div>
+
+  <div class="col border-1 border-end p-2">
+    <div class="btn w-100 fs-8 {% if phase.is_tqa_late %}btn-outline-danger{% endif %} fw-semi-bold d-flex flex-column d-xxl-inline-block">
+      <h6 class="fs-18 mb-1 font-w500 text-body-emphasis">Due to TechQA</h6>
+      <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ phase.due_to_techqa }}{% if phase.is_tqa_late %} - LATE{% endif %}">
+        {% if phase.due_to_techqa %}
+          {{ phase.due_to_techqa|naturalday }}
+          {% if phase.due_to_techqa_set %}
+            <p class="text-body-secondary fw-normal fs-9 mb-0">(Desired)</p>
+          {% else %}
+            <p class="text-body-secondary fw-normal fs-9 mb-0">(Scheduled)</p>
+          {% endif %}
+        {% else %}
+          <span class="fas fa-ellipsis-h"></span>
+        {% endif %}
+      </span>
     </div>
-    
-    <div class="col border-1  border-end p-2">
-        <div class="btn w-100 fs-8 {% if phase.is_pqa_late %}btn-outline-danger{% endif %} fw-semi-bold d-flex flex-column d-xxl-inline-block">
-            <h6 class="fs-18 mb-0 font-w500 text-body-emphasis">Due to PresQA</h6>
-            <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ phase.due_to_presqa }}" >
-                {% if phase.due_to_presqa %}
-                {{ phase.due_to_presqa|naturalday }}
-                {% else %}
-                <span class="fas fa-ellipsis-h"></span>
-                {% endif %}
-            </span>
-        </div>
+  </div>
+
+  <div class="col border-1 border-end p-2">
+    <div class="btn w-100 fs-8 {% if phase.is_pqa_late %}btn-outline-danger{% endif %} fw-semi-bold d-flex flex-column d-xxl-inline-block">
+      <h6 class="fs-18 mb-1 font-w500 text-body-emphasis">Due to PresQA</h6>
+      <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ phase.due_to_presqa }}{% if phase.is_pqa_late %} - LATE{% endif %}">
+        {% if phase.due_to_presqa %}
+          {{ phase.due_to_presqa|naturalday }}
+          {% if phase.due_to_presqa_set %}
+            <p class="text-body-secondary fw-normal fs-9 mb-0">(Desired)</p>
+          {% else %}
+            <p class="text-body-secondary fw-normal fs-9 mb-0">(Scheduled)</p>
+          {% endif %}
+        {% else %}
+          <span class="fas fa-ellipsis-h"></span>
+        {% endif %}
+      </span>
     </div>
-    
-    <div class="col p-2">
-        <div class="btn w-100 fs-8 {% if phase.is_delivery_late %}btn-outline-danger{% endif %} fw-semi-bold d-flex flex-column d-xxl-inline-block">
-            <h6 class="fs-18 mb-0 font-w500 text-body-emphasis">Delivery Date</h6>
-            <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ phase.delivery_date }}" >
-                {% if phase.delivery_date %}
-                {{ phase.delivery_date|naturalday }}
-                {% else %}
-                <span class="fas fa-ellipsis-h"></span>
-                {% endif %}
-            </span>
-        </div>
+  </div>
+
+  <div class="col p-2">
+    <div class="btn w-100 fs-8 {% if phase.is_delivery_late %}btn-outline-danger{% endif %} fw-semi-bold d-flex flex-column d-xxl-inline-block">
+      <h6 class="fs-18 mb-1 font-w500 text-body-emphasis">Delivery Date</h6>
+      <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ phase.delivery_date }}{% if phase.is_delivery_late %} - LATE{% endif %}">
+        {% if phase.delivery_date %}
+          {{ phase.delivery_date|naturalday }}
+          {% if phase.desired_delivery_date %}
+            <p class="text-body-secondary fw-normal fs-9 mb-0">(Desired)</p>
+          {% else %}
+            <p class="text-body-secondary fw-normal fs-9 mb-0">(Scheduled)</p>
+          {% endif %}
+        {% else %}
+          <span class="fas fa-ellipsis-h"></span>
+        {% endif %}
+      </span>
     </div>
+  </div>
 </div>
