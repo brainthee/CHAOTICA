@@ -398,7 +398,7 @@ def notifications_feed(request):
         return HttpResponseForbidden()
 
     if is_ajax(request):
-        notifications = Notification.objects.filter(user=request.user)
+        notifications = Notification.objects.filter(user=request.user)[:30]
         for notice in notifications:
             data["notifications"].append(
                 {
