@@ -344,9 +344,15 @@ BLEACH_ALLOWED_TAGS = [
     "ul",
     "li",
     "ol",
+    "br",
+    "img",
+    "div",
+    "table",
+    "tr",
+    "td",
 ]
 # Which HTML attributes are allowed
-BLEACH_ALLOWED_ATTRIBUTES = ["href", "title", "style"]
+BLEACH_ALLOWED_ATTRIBUTES = ["href", "title", "style", "src"]
 # Which CSS properties are allowed in 'style' attributes (assuming style is
 # an allowed attribute)
 BLEACH_ALLOWED_STYLES = [
@@ -355,6 +361,8 @@ BLEACH_ALLOWED_STYLES = [
     "font-weight",
     "text-decoration",
     "font-variant",
+    "width",
+    "height",
 ]
 # Which protocols (and pseudo-protocols) are allowed in 'src' attributes
 # (assuming src is an allowed attribute)
