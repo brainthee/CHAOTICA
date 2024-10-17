@@ -60,24 +60,13 @@ class NewInstallMiddleware(MiddlewareMixin):
                 return HttpResponseRedirect(reverse("view_own_profile"))
 
 
-class MaintenanceModeMiddleware:
-    def __init__(self, get_response):
-        self.get_response = get_response
-
-    def __call__(self, request):
+class MaintenanceModeMiddleware(MiddlewareMixin):
+    def process_request(self, request):
         path = request.META.get("PATH_INFO", "")
-        should_redirect = False
-
         if (
             settings.MAINTENANCE_MODE
             and not request.user.is_superuser
             and path != reverse("maintenance")
         ):
-            should_redirect = True
-
-        if should_redirect:
             response = redirect(reverse("maintenance"))
-            return response
-        else:
-            response = self.get_response(request)
             return response
