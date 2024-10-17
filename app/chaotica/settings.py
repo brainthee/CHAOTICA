@@ -404,7 +404,7 @@ REST_FRAMEWORK = {
 
 MIDDLEWARE = [
     "chaotica_utils.middleware.HealthCheckMiddleware",
-    "debug_toolbar.middleware.DebugToolbarMiddleware",
+    # "debug_toolbar.middleware.DebugToolbarMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
