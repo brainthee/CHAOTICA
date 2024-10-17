@@ -4,6 +4,8 @@
 #
 #    pip-compile docs/requirements.in
 #
+beautifulsoup4==4.12.3
+    # via mkdocs-pandoc-plugin
 click==8.1.7
     # via
     #   mkdocs
@@ -38,9 +40,12 @@ mkdocs==1.5.3
     # via
     #   -r docs/requirements.in
     #   mkdocs-autorefs
+    #   mkdocs-pandoc-plugin
     #   mkdocstrings
 mkdocs-autorefs==0.5.0
     # via mkdocstrings
+mkdocs-pandoc-plugin==1.0.1
+    # via -r docs/requirements.in
 mkdocstrings[python]==0.24.0
     # via
     #   -r docs/requirements.in
@@ -68,5 +73,7 @@ pyyaml-env-tag==0.1
     # via mkdocs
 six==1.16.0
     # via python-dateutil
+soupsieve==2.6
+    # via beautifulsoup4
 watchdog==3.0.0
     # via mkdocs

@@ -1,6 +1,6 @@
 site_name: CHAOTICA Documentation
 theme:
-  name: readthedocs
+  name: material
   highlightjs: true
 plugins:
   - search
@@ -11,6 +11,19 @@ plugins:
           options:
             docstring_style: sphinx
 markdown_extensions:
+  - pymdownx.extra:
+      pymdownx.superfences:
+        custom_fences:
+          - name: mermaid
+            class: mermaid
+            format: !!python/name:pymdownx.superfences.fence_code_format
+  - toc:
+      permalink: True
   - markdown_include.include:
       base_path: .
   - admonition
+  - def_list
+  - mkdocs_graphviz
+
+extra_javascript:
+  - https://cdn.jsdelivr.net/gh/rod2ik/cdn@main/mkdocs/javascripts/mkdocs-graphviz.js
