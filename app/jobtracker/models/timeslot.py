@@ -159,21 +159,13 @@ class TimeSlot(models.Model):
         return False
 
     def is_delivery(self):
-        return self.slot_type == TimeSlotType.get_builtin_object(
-            DefaultTimeSlotTypes.DELIVERY
-        )
+        return self.slot_type.pk == DefaultTimeSlotTypes.DELIVERY
 
     def is_project(self):
-        return self.slot_type == TimeSlotType.get_builtin_object(
-            DefaultTimeSlotTypes.INTERNAL_PROJECT
-        )
+        return self.slot_type.pk == DefaultTimeSlotTypes.INTERNAL_PROJECT
 
     def is_internal(self):
-        return self.slot_type != TimeSlotType.get_builtin_object(
-            DefaultTimeSlotTypes.DELIVERY
-        ) and self.slot_type != TimeSlotType.get_builtin_object(
-            DefaultTimeSlotTypes.INTERNAL_PROJECT
-        )
+        return self.slot_type.pk != DefaultTimeSlotTypes.DELIVERY and self.slot_type.pk != DefaultTimeSlotTypes.INTERNAL_PROJECT
 
     def __str__(self):
         # There is no rhyme or reason for this...
@@ -204,9 +196,7 @@ class TimeSlot(models.Model):
             return "{}".format(
                 self.project.title,
             )
-        elif self.slot_type == TimeSlotType.get_builtin_object(
-            DefaultTimeSlotTypes.LEAVE
-        ):
+        elif self.slot_type.pk == DefaultTimeSlotTypes.LEAVE:
             if self.leaverequest.first():
                 return "{}".format(
                     self.leaverequest.first().get_type_of_leave_display(),

@@ -4,7 +4,7 @@ from django.urls import reverse_lazy, reverse
 from django.conf import settings as django_settings
 from django.template import loader
 from django.utils import timezone
-from django.db.models import CharField, Value
+from django.db.models import TextField, Value
 from django.db.models.functions import Concat
 from django.http import (
     HttpResponseForbidden,
@@ -36,7 +36,12 @@ from .tasks import (
 )
 from dateutil.relativedelta import relativedelta
 from .models import Notification, User, Language, Note, LeaveRequest, UserInvitation
-from .utils import ext_reverse, AppNotification, is_valid_uuid, clean_fullcalendar_datetime
+from .utils import (
+    ext_reverse,
+    AppNotification,
+    is_valid_uuid,
+    clean_fullcalendar_datetime,
+)
 from django.db.models import Q
 from django.db.models import Value as V
 from django.db.models.functions import Concat
@@ -66,14 +71,22 @@ def page_defaults(request):
     from jobtracker.models import Job, Phase
 
     context = {}
-    context["notifications"] = Notification.objects.filter(user=request.user, is_read=False) | Notification.objects.filter(user=request.user, is_read=True)#[10:]
+    context["notifications"] = Notification.objects.filter(
+        user=request.user, is_read=False
+    ) | Notification.objects.filter(
+        user=request.user, is_read=True
+    )  # [10:]
     context["config"] = config
-    if django_settings.CHAOTICA_BIRTHDAY.month == datetime.date.today().month and \
-        django_settings.CHAOTICA_BIRTHDAY.day == datetime.date.today().day:
-        
+    if (
+        django_settings.CHAOTICA_BIRTHDAY.month == datetime.date.today().month
+        and django_settings.CHAOTICA_BIRTHDAY.day == datetime.date.today().day
+    ):
+
         context["IS_APP_BIRTHDAY"] = True
-        context["CHAOTICA_BIRTHDAY_YEARS_OLD"] = datetime.date.today().year - django_settings.CHAOTICA_BIRTHDAY.year
-        
+        context["CHAOTICA_BIRTHDAY_YEARS_OLD"] = (
+            datetime.date.today().year - django_settings.CHAOTICA_BIRTHDAY.year
+        )
+
     context["DJANGO_ENV"] = django_settings.DJANGO_ENV
     context["DJANGO_VERSION"] = django_settings.DJANGO_VERSION
 
@@ -245,20 +258,21 @@ def manage_leave(request):
     units_with_perm = get_objects_for_user(
         request.user, "can_view_all_leave_requests", OrganisationalUnit
     )
-    
+
     leave_list = LeaveRequest.objects.filter(
         # Only show this last calendar's year...
-        start_date__gte=timezone.now() - relativedelta(years=1),
+        start_date__gte=timezone.now()
+        - relativedelta(years=1),
     ).filter(
         Q(
             user__unit_memberships__unit__in=units_with_perm
         )  # Show leave requests for users we have permission over
         | Q(user__manager=request.user)  # where we're manager
         | Q(user__acting_manager=request.user)  # where we're acting manager
-        | Q(user=request.user)# and our own of course....
+        | Q(user=request.user)  # and our own of course....
     )
-    pending_leave = leave_list.filter(authorised=False,cancelled=False,declined=False)
-    leave_list = leave_list.exclude(authorised=False,cancelled=False,declined=False)
+    pending_leave = leave_list.filter(authorised=False, cancelled=False, declined=False).prefetch_related("user", "user__unit_memberships", "user__timeslots")
+    leave_list = leave_list.exclude(authorised=False, cancelled=False, declined=False).prefetch_related("user", "user__unit_memberships", "user__timeslots")
     context = {
         "leave_list": leave_list,
         "pending_leave": pending_leave,
@@ -337,7 +351,7 @@ def view_own_profile(request):
     from jobtracker.models import Skill, UserSkill
 
     context = {}
-    skills = Skill.objects.all().order_by('category', 'name')
+    skills = Skill.objects.all().order_by("category", "name")
     languages = Language.objects.all()
     user_skills = UserSkill.objects.filter(user=request.user)
     profile_form = ProfileBasicForm(instance=request.user)
@@ -434,9 +448,7 @@ def notifications_mark_read(request):
 @login_required
 @require_safe
 def notification_mark_read(request, pk):
-    notification = get_object_or_404(
-        Notification, user=request.user, pk=pk
-    )
+    notification = get_object_or_404(Notification, user=request.user, pk=pk)
     if not notification.is_read:
         notification.is_read = True
         notification.save()
@@ -534,12 +546,16 @@ def settings_import_data(request):
                 importer = SmartSheetCSVImporter()
                 job_output = importer.import_data(request, files)
             elif form.cleaned_data["importType"] == "ResourceManagerUserImporter":
-                from .impex.importers.resourcemanager_users import ResourceManagerUserImporter
+                from .impex.importers.resourcemanager_users import (
+                    ResourceManagerUserImporter,
+                )
 
                 importer = ResourceManagerUserImporter()
                 job_output = importer.import_data(request, files)
             elif form.cleaned_data["importType"] == "ResourceManagerProjectImporter":
-                from .impex.importers.resourcemanager_projects import ResourceManagerProjectImporter
+                from .impex.importers.resourcemanager_projects import (
+                    ResourceManagerProjectImporter,
+                )
 
                 importer = ResourceManagerProjectImporter()
                 job_output = importer.import_data(request, files)
@@ -594,12 +610,12 @@ def settings_export_data(request):
 @require_http_methods(["GET"])
 def csv_template_users(request):
     from impex.importers.csv_users import CSVUserImporter
-    response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = 'attachment; filename="chaotica_users.csv"'
-    writer = csv.writer(response,delimiter=',')
+
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = 'attachment; filename="chaotica_users.csv"'
+    writer = csv.writer(response, delimiter=",")
     writer.writerow(CSVUserImporter.allowed_fields)
     return response
-
 
 
 @permission_required_or_403("chaotica_utils.manage_user")
@@ -612,7 +628,7 @@ def user_merge(request, email):
         form = MergeUserForm(request.POST)
         if form.is_valid():
             # Lets merge!
-            user_to_merge = form.cleaned_data['user_to_merge']
+            user_to_merge = form.cleaned_data["user_to_merge"]
             if user_to_merge == user:
                 # Same user. GTFO
                 data["form_is_valid"] = False
@@ -625,7 +641,7 @@ def user_merge(request, email):
                 else:
                     # Merge failed!
                     data["form_is_valid"] = False
-                    form.add_error("","Failed to merge!")
+                    form.add_error("", "Failed to merge!")
     else:
         # Send the modal
         form = MergeUserForm()
@@ -661,6 +677,7 @@ def user_schedule_holidays(request, email):
         end=end,
     )
     return JsonResponse(data, safe=False)
+
 
 @require_http_methods(["GET", "POST"])
 # This is what we're doing in effect but we're doing it in the view
@@ -965,7 +982,6 @@ class UserDeleteView(UserBaseView, DeleteView):
     """View to delete a job"""
 
 
-
 class NoteBaseView(ChaoticaBaseGlobalRoleView):
     model = Note
     fields = "__all__"
@@ -1017,7 +1033,7 @@ class UserAutocomplete(autocomplete.Select2QuerySetView):
 def site_search(request):
     data = {}
     context = {}
-    q = request.POST.get("q", "").capitalize()
+    q = request.POST.get("q", "")
     results_count = 0
     from jobtracker.models import (
         Job,
@@ -1035,15 +1051,16 @@ def site_search(request):
     if is_ajax(request) and len(q) > 2:
         ## Jobs
         units_with_job_perms = get_objects_for_user(
-            request.user, "jobtracker.can_view_jobs", OrganisationalUnit)
-        
+            request.user, "jobtracker.can_view_jobs", OrganisationalUnit
+        )
+
         jobs_search = Job.objects.filter(
             Q(title__icontains=q)
             | Q(overview__icontains=q)
             | Q(slug__icontains=q)
             | Q(id__icontains=q),
             unit__in=units_with_job_perms,
-        )#[:50]
+        )  # [:50]
         context["search_jobs"] = jobs_search
         results_count = results_count + jobs_search.count()
 
@@ -1053,67 +1070,80 @@ def site_search(request):
             | Q(description__icontains=q)
             | Q(phase_id__icontains=q),
             job__unit__in=units_with_job_perms,
-        )#[:50]
+        )  # [:50]
         context["search_phases"] = phases_search
         results_count = results_count + phases_search.count()
 
         ## Clients
         cl_search = get_objects_for_user(
             request.user, "jobtracker.view_client", Client
-        ).filter(Q(name__icontains=q))#[:50]
+        ).filter(
+            Q(name__icontains=q)
+        )  # [:50]
         context["search_clients"] = cl_search
         results_count = results_count + cl_search.count()
 
         ## BillingCodes
         bc_search = get_objects_for_user(
             request.user, "jobtracker.view_billingcode", BillingCode
-        ).filter(Q(code__icontains=q))#[:50]
+        ).filter(
+            Q(code__icontains=q)
+        )  # [:50]
         context["search_billingCodes"] = bc_search
         results_count = results_count + bc_search.count()
 
         ## Services
         sv_search = get_objects_for_user(
             request.user, "jobtracker.view_service", Service
-        ).filter(Q(name__icontains=q))#[:50]
+        ).filter(
+            Q(name__icontains=q)
+        )  # [:50]
         context["search_services"] = sv_search
         results_count = results_count + sv_search.count()
 
         ## Skills
         sk_search = get_objects_for_user(
             request.user, "jobtracker.view_skill", Skill
-        ).filter(Q(name__icontains=q))#[:50]
+        ).filter(
+            Q(name__icontains=q)
+        )  # [:50]
         context["search_skills"] = sk_search
         results_count = results_count + sk_search.count()
 
         ## Qualifications
         qual_search = get_objects_for_user(
             request.user, "jobtracker.view_qualification", Qualification
-        ).filter(Q(name__icontains=q))#[:50]
+        ).filter(
+            Q(name__icontains=q)
+        )  # [:50]
         context["search_quals"] = qual_search
         results_count = results_count + qual_search.count()
 
         ## Accreditation
         accred_search = get_objects_for_user(
             request.user, "jobtracker.view_accreditation", Accreditation
-        ).filter(Q(name__icontains=q))#[:50]
+        ).filter(
+            Q(name__icontains=q)
+        )  # [:50]
         context["search_accred"] = accred_search
         results_count = results_count + accred_search.count()
 
         ## Projects
-        project_search = get_objects_for_user(
-            request.user, "*", Project
-        ).filter(Q(title__icontains=q))#[:50]
+        project_search = get_objects_for_user(request.user, "*", Project).filter(
+            Q(title__icontains=q)
+        )  # [:50]
         context["search_project"] = project_search
         results_count = results_count + project_search.count()
 
         ## Users
-        us_search = User.objects.annotate(full_name=Concat('first_name', 
-          Value(' '), 'last_name', output_field=CharField())).filter(
-                Q(email__icontains=q)
-                | Q(first_name__icontains=q)
-                | Q(last_name__icontains=q)
-                | Q(full_name__icontains=q)
-            )#[:50]
+        us_search = User.objects.annotate(
+            full_name=Concat(
+                "first_name", Value(" "), "last_name", output_field=TextField()
+            )
+        ).filter(
+            Q(full_name__icontains=q) | Q(email__icontains=q)
+        )  # [:50]
+
         context["search_users"] = us_search
         results_count = results_count + us_search.count()
 

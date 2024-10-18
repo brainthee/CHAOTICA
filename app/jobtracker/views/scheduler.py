@@ -183,7 +183,7 @@ def _filter_users_on_query(request):
                 Q.OR,
             )
 
-    return User.objects.filter(query).distinct().order_by("last_name", "first_name")
+    return User.objects.filter(query).distinct().order_by("last_name", "first_name").prefetch_related("timeslots")
 
 
 @login_required
@@ -198,12 +198,29 @@ def view_scheduler_slots(request):
     job_id = clean_int(request.GET.get("job", None))
     phase_id = clean_int(request.GET.get("phase", None))
 
-    if job_id:
+    if phase_id:
+        phase_focus = get_object_or_404(Phase, pk=phase_id)
+    elif job_id:
         job = get_object_or_404(Job, pk=job_id)
-        if phase_id:
-            phase_focus = get_object_or_404(Phase, job=job, pk=phase_id)
-        else:
-            phase_focus = job
+        phase_focus = job
+    
+    # # Lets get slots!
+    # slots = TimeSlot.objects.filter(user__in=filtered_users, end__gte=start, start__lte=end)
+    # print("got slots")
+    # for slot in slots:
+    #     print("processing "+str(slot))
+    #     slot_json = slot.get_schedule_json()
+    #     is_focused = False
+    #     if phase_focus:
+    #         if slot.phase:
+    #             if slot.phase == phase_focus:
+    #                 is_focused = True
+    #             if not is_focused and slot.phase.job == phase_focus:
+    #                 is_focused = True
+    #     if phase_focus and not is_focused:
+    #         slot_json["display"] = "background"
+    #     data.append(slot_json)
+    #     print("done processing "+str(slot))
 
     for user in filtered_users:
         data = data + user.get_timeslots(start=start, end=end, phase_focus=phase_focus)
