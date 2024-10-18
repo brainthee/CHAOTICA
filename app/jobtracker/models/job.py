@@ -658,7 +658,7 @@ class Job(models.Model):
                 )
 
         if not self.scoped_by.all():
-            if notify_request.user.has_perm("scope_job"):
+            if notify_request.user.has_perm("can_scope_jobs", self.unit):
                 if notify_request:
                     messages.add_message(
                         notify_request,
