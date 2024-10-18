@@ -46,18 +46,9 @@
 
 
 {% block footer_javascript_page %}
-<script id="resource_dropdown_menu" type="text/plain">
-  <a class="btn btn-sm dropdown-toggle dropdown-caret-none transition-none fs-10" type="button" data-bs-toggle="dropdown" data-boundary="window" aria-haspopup="true" aria-expanded="false" data-bs-reference="parent">
-    <span class="fas fa-ellipsis-h fs-10"></span>
-  </a>
-  <div class="dropdown-menu dropdown-menu-end py-2">
-    <a class="dropdown-item" data-url="" href="#!">Make Project Lead</a>
-    <a class="dropdown-item" data-url="" href="#!">Make Report Author</a>
-    <div class="dropdown-divider"></div>
-    <a class="dropdown-item text-danger" href="#!">Remove</a>
-  </div>
-</script>
 
-{% include 'js/scheduler_init.html' %}
+<script>
+  {% include 'js/scheduler_init.js' %}
+</script>
 
 {% endblock footer_javascript_page %}

@@ -1,6 +1,4 @@
 {% load index %}
-<script>
-
     var calendarEl = document.getElementById('calendar');
     var csrf = $('input[name="csrfmiddlewaretoken"]');
     
@@ -22,6 +20,13 @@
         );    
       }
     };
+
+    function get_start_of_week(d) {
+      d = new Date(d);
+      var day = d.getDay(),
+        diff = d.getDate() - day + (day == 0 ? -6 : 1); // adjust when day is sunday
+      return new Date(d.setDate(diff));
+    }
 
     $('#addUserToResource').click(addUser);
 
@@ -52,7 +57,6 @@
         // {% endif %}
         nowIndicator: true,
         height: "100%",
-        scrollTime: Date(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate()),
         {% comment %} timeZone: '{{ user.pref_timezone }}', // the default (unnecessary to specify) {% endcomment %}
         views: {
           resourceTimelineThreeMonth: {
@@ -77,6 +81,11 @@
           if (info.event.extendedProps.icon) {                  
             $(info.el).find('.fc-event-title').prepend("<i class='"+icon+" pe-1'></i> ");
           };
+        },
+        datesSet: function(dateInfo){
+          start_of_week = get_start_of_week(new Date());
+          const diffDays = Math.abs(start_of_week - dateInfo.start) / (1000 * 60 * 60 * 24);
+          dateInfo.view.calendar.scrollToTime({days:diffDays-1});
         },
         loading: function (isLoading) {
             if (isLoading) {
@@ -373,4 +382,3 @@
     
     calendar.render();
     
-    </script>
