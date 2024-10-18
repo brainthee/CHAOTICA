@@ -85,7 +85,7 @@
         datesSet: function(dateInfo){
           start_of_week = get_start_of_week(new Date());
           const diffDays = Math.abs(start_of_week - dateInfo.start) / (1000 * 60 * 60 * 24);
-          dateInfo.view.calendar.scrollToTime({days:diffDays-1});
+          dateInfo.view.calendar.scrollToTime({days:diffDays});
         },
         loading: function (isLoading) {
             if (isLoading) {
