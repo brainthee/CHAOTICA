@@ -562,8 +562,6 @@ class User(AbstractUser):
         return Job.objects.jobs_for_user(self)
 
     def get_timeslot_comments(self, start=None, end=None):
-        from jobtracker.models import TimeSlotComment
-
         data = []
         today = timezone.now().today()
         start_of_week = today - timedelta(days=today.weekday())
@@ -572,8 +570,8 @@ class User(AbstractUser):
         start = start or start_of_week
         end = end or end_of_week
 
-        slots = TimeSlotComment.objects.filter(
-            user=self, end__gte=start, start__lte=end
+        slots = self.timeslot_comments.filter(
+            end__gte=start, start__lte=end
         )
         for slot in slots:
             slot_json = slot.get_schedule_json()
@@ -582,8 +580,6 @@ class User(AbstractUser):
         return data
 
     def get_timeslots(self, start=None, end=None, phase_focus=None):
-        from jobtracker.models import TimeSlot
-
         data = []
         today = timezone.now().today()
         start_of_week = today - timedelta(days=today.weekday())
@@ -592,7 +588,7 @@ class User(AbstractUser):
         start = start or start_of_week
         end = end or end_of_week
 
-        slots = TimeSlot.objects.filter(user=self, end__gte=start, start__lte=end)
+        slots = self.timeslots.filter(end__gte=start, start__lte=end)
         for slot in slots:
             slot_json = slot.get_schedule_json()
             is_focused = False
@@ -608,8 +604,6 @@ class User(AbstractUser):
         return data
 
     def get_timeslots_objs(self, start=None, end=None, phase_focus=None):
-        from jobtracker.models import TimeSlot
-
         today = timezone.now().today()
         start_of_week = today - timedelta(days=today.weekday())
         end_of_week = start_of_week + timedelta(days=6)
@@ -617,12 +611,10 @@ class User(AbstractUser):
         start = start or start_of_week
         end = end or end_of_week
 
-        slots = TimeSlot.objects.filter(user=self, end__gte=start, start__lte=end)
+        slots = self.timeslots.filter(end__gte=start, start__lte=end)
         return slots
 
     def clear_timeslots_in_range(self, start=None, end=None):
-        from jobtracker.models import TimeSlot
-
         slots = self.get_timeslots_objs(start, end)
         for slot in slots:
             if (
@@ -654,7 +646,7 @@ class User(AbstractUser):
                 and slot.end > end
             ):
                 # Lets get a duplicate ref
-                new_slot = TimeSlot.objects.get(pk=slot.pk)
+                new_slot = self.timeslots.get(pk=slot.pk)
                 new_slot.pk = None
                 slot.end = start
                 new_slot.start = end
@@ -966,11 +958,10 @@ class LeaveRequest(models.Model):
         ordering = ["-start_date"]
 
     def overlaps_work(self):
-        from jobtracker.models.timeslot import TimeSlotType, TimeSlot
+        from jobtracker.models.timeslot import TimeSlotType
 
-        return TimeSlot.objects.filter(
-            user=self.user,
-            slot_type=TimeSlotType.get_builtin_object(DefaultTimeSlotTypes.DELIVERY),
+        return self.user.timeslots.filter(
+            slot_type=DefaultTimeSlotTypes.DELIVERY,
             start__lte=self.end_date,
             end__gte=self.start_date,
         ).exists()
@@ -979,9 +970,8 @@ class LeaveRequest(models.Model):
         from jobtracker.models.timeslot import TimeSlotType, TimeSlot
         from jobtracker.enums import PhaseStatuses
 
-        return TimeSlot.objects.filter(
-            user=self.user,
-            slot_type=TimeSlotType.get_builtin_object(DefaultTimeSlotTypes.DELIVERY),
+        return self.user.timeslots.filter(
+            slot_type=DefaultTimeSlotTypes.DELIVERY,
             phase__status__gte=PhaseStatuses.SCHEDULED_CONFIRMED,
             start__lte=self.end_date,
             end__gte=self.start_date,
