@@ -554,7 +554,7 @@ def job_update_workflow(request, slug, new_state):
         if job.can_to_scoping(request):
             if request.method == "POST":
                 if not job.scoped_by.all():
-                    if request.user.has_perm("scope_job"):
+                    if request.user.has_perm("can_scope_jobs", job.unit):
                         # No one is defined to scope and we have permission - auto add!
                         job.scoped_by.add(request.user)
                         job.save()
