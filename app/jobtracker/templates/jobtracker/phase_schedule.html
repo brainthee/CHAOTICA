@@ -45,10 +45,9 @@
 </div>
 {% endblock content %}
 
+
 {% block footer_javascript_page %}
-
-{% include 'js/scheduler_init.html' with earliest_scheduled_date=earliest_scheduled_date %}
-
-calendar.render();
+<script>
+  {% include 'js/scheduler_init.js' with earliest_scheduled_date=earliest_scheduled_date %}
 </script>
 {% endblock footer_javascript_page %}

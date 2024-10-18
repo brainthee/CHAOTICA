@@ -71,7 +71,9 @@ time they visit a normal page, it'll be full of messages! {% endcomment %}
 {% endblock %}
 
 {% block footer_javascript_page %}
-  {% include 'js/scheduler_init.html' %}
+<script>
+  {% include 'js/scheduler_init.js' %}
+</script>
 {% endblock %}
 
 {% block footer_css %}
