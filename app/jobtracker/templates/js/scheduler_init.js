@@ -2,24 +2,24 @@
     var calendarEl = document.getElementById('calendar');
     var csrf = $('input[name="csrfmiddlewaretoken"]');
     
-    urlParams = window.location.search + "{% if phase %}&phase={{ phase.pk }}{% endif %}{% if job %}&job={{ job.pk }}{% endif %}{% if project %}&project={{ project.pk }}{% endif %}";
+    urlParams = window.location.search + "{% if phase %}&phases={{ phase.pk }}{% endif %}{% if job %}&jobs={{ job.pk }}{% endif %}{% if project %}&project={{ project.pk }}{% endif %}";
     
+    if (urlParams.substring(0,1) != "?") {
+      urlParams = "?" + urlParams;
+    }
+
     var addUser = function() {
       var form = $(this);
-      userVal = $('#id_user').find(":selected").val()
-      userObj = $('#id_user').find(":selected").text()
-      if(userVal) {
-        urlParams = urlParams+"&include_user="+userVal;
-        calendar.refetchResources();
-        calendar.refetchEvents();
-      } else {
-        Swal.fire(
-          'No User Selected!',
-          'Please select a user to add them to the resource table.',
-          'warning'
-        );    
-      }
+      $("#id_user > option").each(function() {
+        if(this.value) {
+          urlParams = urlParams+"&include_user="+this.value;
+        }
+      });
+      calendar.refetchResources();
+      calendar.refetchEvents();
     };
+
+    $('#addUserToResource').click(addUser);
 
     function get_start_of_week(d) {
       d = new Date(d);
@@ -28,10 +28,24 @@
       return new Date(d.setDate(diff));
     }
 
-    $('#addUserToResource').click(addUser);
+    function getResources(fetchInfo, handleData) {
+      $.ajax({
+        url: "{% url 'view_scheduler_members' %}" + urlParams + "&start="+fetchInfo.startStr+"&end="+fetchInfo.endStr,
+        method: 'GET',
+        success:function(data) {
+            handleData(data); 
+        }
+      });
+    }
 
-    if (urlParams.substring(0,1) != "?") {
-      urlParams = "?" + urlParams;
+    function getEvents(fetchInfo, handleData) {
+      $.ajax({
+        url: "{% url 'view_scheduler_slots' %}" + urlParams + "&start="+fetchInfo.startStr+"&end="+fetchInfo.endStr,
+        method: 'GET',
+        success:function(data) {
+            handleData(data); 
+        }
+      });
     }
 
     var calendar = new FullCalendar.Calendar(calendarEl, {
@@ -95,7 +109,7 @@
                 $('#loading').hide();
             }
         },
-        resources: {
+        {% comment %} resources: {
             url: "{% url 'view_scheduler_members' %}" + urlParams,
             method: 'GET',
             failure: function() {
@@ -116,31 +130,17 @@
                 text: 'Something went wrong getting scheduler members!',
               })
             },
+        }, {% endcomment %}
+        resources: function(fetchInfo, successCallback, failureCallback) {
+          getResources(fetchInfo, function(resourceObjects) {
+            successCallback(resourceObjects);
+          });
         },
-        // [
-        //     function(info, successCallback, failureCallback) {
-        //       // lets get members
-        //       superagent.get("{% url 'view_scheduler_slots' %}")
-        //         .type('json')
-        //         .query({
-        //           start: info.start.toJSON(),
-        //           // {% if phase %}
-        //           phase: "{{ phase.pk }}",
-        //           // {% endif %}
-        //           // {% if job %}
-        //           job: "{{ job.pk }}",
-        //           // {% endif %}
-        //           end: info.end.toJSON()
-        //         },urlSearchParams)
-        //         .end(function(err, res) {    
-        //           if (err) {
-        //             failureCallback(err);
-        //           } else {
-        //             successCallback(res.body)
-        //           }
-        //         })
-        //     },
-        // ],
+        eventSources: function(fetchInfo, successCallback, failureCallback) {
+          getEvents(fetchInfo, function(resourceObjects) {
+            successCallback(resourceObjects);
+          });
+        },        
         // {% if readonly %}
         selectable: false,
         editable: false,

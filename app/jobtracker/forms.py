@@ -97,6 +97,18 @@ class SchedulerFilter(forms.Form):
         ),
     )
 
+    include_user = forms.ModelMultipleChoiceField(
+        required=False,
+        queryset=User.objects.filter(),
+        widget=autocomplete.ModelSelect2Multiple(
+            url="user-autocomplete",
+            attrs={
+                "data-minimum-input-length": 3,
+            },
+        ),
+    )
+    
+
     jobs = forms.ModelMultipleChoiceField(
         required=False,
         queryset=Job.objects.filter(),
@@ -204,6 +216,7 @@ class SchedulerFilter(forms.Form):
             "skills_can_do_support",
             "show_inactive_users",
             "users",
+            "include_user",
             "services",
             "jobs",
             "phases",
@@ -370,10 +383,10 @@ class AssignMultipleContacts(forms.Form):
 
 
 class AssignUserField(forms.Form):
-    user = forms.ModelChoiceField(
+    user = forms.ModelMultipleChoiceField(
         required=False,
         queryset=User.objects.filter(is_active=True),
-        widget=autocomplete.ModelSelect2(
+        widget=autocomplete.ModelSelect2Multiple(
             url="user-autocomplete",
             attrs={
                 "data-minimum-input-length": 3,

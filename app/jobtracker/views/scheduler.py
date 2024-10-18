@@ -171,17 +171,14 @@ def _filter_users_on_query(request):
         for service in services:
             query.add(Q(pk__in=service.users_can_conduct()), Q.AND)
 
-    extra_user = clean_int(request.GET.get("include_user", None))
-    if extra_user:
-        if extra_user:
-            query.add(
-                Q(
-                    pk__in=[
-                        extra_user,
-                    ]
-                ),
-                Q.OR,
-            )
+    extra_users = cleaned_data.get("include_user")
+    if extra_users:
+        query.add(
+            Q(
+                pk__in=extra_users
+            ),
+            Q.OR,
+        )
 
     return User.objects.filter(query).distinct().order_by("last_name", "first_name").prefetch_related("timeslots")
 

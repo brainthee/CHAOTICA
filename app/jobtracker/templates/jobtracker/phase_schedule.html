@@ -1,53 +1,67 @@
-{% extends "base.html" %}
-{% load menu %}{% load static %}{% load crispy_forms_tags %}{% load index %}
+{% extends 'base.html' %}
+{% load menu %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load index %}
 
-{% block pageTitle %}Phase{% endblock pageTitle %}
-{% block head_title %}{{ job }}{% endblock head_title %}
-
+{% block pageTitle %}
+  Phase
+{% endblock %}
+{% block head_title %}
+  {{ job }}
+{% endblock %}
 
 {% block breadcrumbItem %}
-<li class="breadcrumb-item text-sm"><a class="opacity-50 text-body-emphasis" href="{% url 'job_list' %}">Jobs</a></li>
-<li class="breadcrumb-item text-sm"><a class="opacity-50 text-body-emphasis" href="{{ job.client.get_absolute_url }}">{{ phase.job.client }}</a></li>
-<li class="breadcrumb-item text-sm"><a class="opacity-50 text-body-emphasis" href="{{ phase.job.get_absolute_url }}">{{ phase.job.id }}:{{ phase.job.title }}</a></li>
-<li class="breadcrumb-item text-sm"><span class="opacity-50 text-body-emphasis">Phase</span></li>
-<li class="breadcrumb-item text-sm"><a class="opacity-50 text-body-emphasis" href="{{ phase.get_absolute_url }}">{{ phase.phase_number }}:{{ phase.title }}</a></li></li>
-<li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">Schedule</li>
-{% endblock breadcrumbItem %}
+  <li class="breadcrumb-item text-sm">
+    <a class="opacity-50 text-body-emphasis" href="{% url 'job_list' %}">Jobs</a>
+  </li>
+  <li class="breadcrumb-item text-sm">
+    <a class="opacity-50 text-body-emphasis" href="{{ job.client.get_absolute_url }}">{{ phase.job.client }}</a>
+  </li>
+  <li class="breadcrumb-item text-sm">
+    <a class="opacity-50 text-body-emphasis" href="{{ phase.job.get_absolute_url }}">{{ phase.job.id }}:{{ phase.job.title }}</a>
+  </li>
+  <li class="breadcrumb-item text-sm">
+    <span class="opacity-50 text-body-emphasis">Phase</span>
+  </li>
+  <li class="breadcrumb-item text-sm">
+    <a class="opacity-50 text-body-emphasis" href="{{ phase.get_absolute_url }}">{{ phase.phase_number }}:{{ phase.title }}</a>
+  </li>
+  <li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">Schedule</li>
+{% endblock %}
 
-{% block content_classes %}px-0 {% endblock content_classes %}
-{% block breadcrumb_classes %}px-5{% endblock breadcrumb_classes %}
+{% block content_classes %}
+  px-0
+{% endblock %}
+{% block breadcrumb_classes %}
+  px-5
+{% endblock %}
 
 {% block content %}
+  {% include 'partials/phase/page_header.html' %}
 
-{% include 'partials/phase/page_header.html' %}
-
-
-<div class="row g-0 mt-3 border-1 border-top bg-body-secondary h-100">
-  <div class="col-12 col-md-9 px-3 pt-3 border-1 border-end">
-
-    <div class="card card-calendar">
-      <div class="card-body p-0">
-        <div class="calendar" data-bs-toggle="calendar" id="calendar"></div>
-      </div>
-    </div>
-  </div>
-
-  <div class="col-12 col-md-3 px-0 border-start-xxl border-300 border-top-0">
-
-    <div class="col-12 h-100">
-      <div class="bg-body-secondary h-100 p-3">
-        {% include 'partials/scheduler/schedule_add_user.html' %}
-        {% include 'partials/scheduler/schedule_util.html' %}                 
+  <div class="row min-vh-100 g-0 mt-3 border-1 border-top bg-body-secondary">
+    <div class="col-12 col-md-9 px-3 pt-3 border-1 border-end">
+      <div class="card h-100">
+        <div class="card-body p-0">
+          <div class="calendar" data-bs-toggle="calendar" id="calendar"></div>
+        </div>
       </div>
     </div>
 
+    <div class="col-12 col-md-3 px-0 border-start-xxl border-300 border-top-0">
+      <div class="col-12 h-100">
+        <div class="bg-body-secondary h-100 p-3">
+          {% include 'partials/scheduler/schedule_add_user.html' %}
+          {% include 'partials/scheduler/schedule_util.html' %}
+        </div>
+      </div>
+    </div>
   </div>
-</div>
-{% endblock content %}
-
+{% endblock %}
 
 {% block footer_javascript_page %}
-<script>
+  <script>
   {% include 'js/scheduler_init.js' with earliest_scheduled_date=earliest_scheduled_date %}
 </script>
-{% endblock footer_javascript_page %}
+{% endblock %}
