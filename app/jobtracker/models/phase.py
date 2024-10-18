@@ -263,6 +263,8 @@ class Phase(models.Model):
 
     @property
     def due_to_techqa(self):
+        if self.number_of_reports == 0:
+            return None
         if self.due_to_techqa_set:
             return self.due_to_techqa_set
         else:
@@ -286,6 +288,8 @@ class Phase(models.Model):
 
     @property
     def due_to_presqa(self):
+        if self.number_of_reports == 0:
+            return None
         if self.due_to_presqa_set:
             return self.due_to_presqa_set
         else:
@@ -336,17 +340,19 @@ class Phase(models.Model):
     def is_delivery_late(self):
         # This relies on delivery_date being valid (which needs it manually set or a timeslot...)
         if self.delivery_date:
-            # Two ways to be late - it's not delivered yet and it should have been...
-            if self.status < PhaseStatuses.DELIVERED:
-                if self.delivery_date < timezone.now().today().date():
-                    return True
+            # If no reports - there's nothing to deliver!
+            if self.number_of_reports > 0:
+                # Two ways to be late - it's not delivered yet and it should have been...
+                if self.status < PhaseStatuses.DELIVERED:
+                    if self.delivery_date < timezone.now().today().date():
+                        return True
 
-            # Or it was delivered but beyond the actual time and we still want to mark it as late
-            if (
-                self.actual_delivery_date
-                and self.delivery_date < self.actual_delivery_date.date()
-            ):
-                return True
+                # Or it was delivered but beyond the actual time and we still want to mark it as late
+                if (
+                    self.actual_delivery_date
+                    and self.delivery_date < self.actual_delivery_date.date()
+                ):
+                    return True
         return False
 
     @property
@@ -500,6 +506,10 @@ class Phase(models.Model):
         email_template = "emails/phase_content.html"
         now = timezone.now()
 
+        if self.number_of_reports == 0:
+            # No reports - nothing to fire!
+            return
+
         if self.is_tqa_late and (
             self.status == PhaseStatuses.IN_PROGRESS
             or self.status == PhaseStatuses.PENDING_TQA
@@ -535,6 +545,10 @@ class Phase(models.Model):
     def fire_late_to_pqa_notification(self):
         email_template = "emails/phase_content.html"
         now = timezone.now()
+
+        if self.number_of_reports == 0:
+            # No reports - nothing to fire!
+            return
 
         if self.is_pqa_late and (
             self.status == PhaseStatuses.PENDING_PQA
@@ -573,6 +587,10 @@ class Phase(models.Model):
     def fire_late_to_delivery_notification(self):
         email_template = "emails/phase_content.html"
         now = timezone.now()
+
+        if self.number_of_reports == 0:
+            # No reports - nothing to fire!
+            return
 
         if self.is_delivery_late:
             # check if we should or not...
