@@ -75,7 +75,7 @@
           {% include 'partials/phase/dates_view.html' %}          
         </div>
         <div class="tab-pane fade" id="deliverables" role="tabpanel" aria-labelledby="deliverables-tab">    
-          {% if phase.status == 7 %}
+          {% if phase.status == 7 or phase.status == 10 or phase.status == 13 %}
           {% include 'partials/phase/forms/deliverable_links.html' %}
           {% else %}
           {% include 'partials/phase/widgets/deliverable_links.html' %}
