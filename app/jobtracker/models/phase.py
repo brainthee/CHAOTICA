@@ -149,26 +149,26 @@ class Phase(models.Model):
     report_to_be_left_on_client_site = models.BooleanField(default=False)
 
     # links
-    linkDeliverable = models.URLField(
-        max_length=2000,
+    linkDeliverable = models.TextField(
         default="",
         null=True,
         blank=True,
         verbose_name="Link to Deliverable",
+        help_text="Typically this is the content delivered to the client."
     )
-    linkTechData = models.URLField(
-        max_length=2000,
+    linkTechData = models.TextField(
         default="",
         null=True,
         blank=True,
         verbose_name="Link to Technical Data",
+        help_text="All data generated during the job."
     )
-    linkReportData = models.URLField(
-        max_length=2000,
+    linkReportData = models.TextField(
         default="",
         null=True,
         blank=True,
         verbose_name="Link to Report Data",
+        help_text="Data used to generate the report such as checklists or evidence."
     )
 
     # Desirable dates
