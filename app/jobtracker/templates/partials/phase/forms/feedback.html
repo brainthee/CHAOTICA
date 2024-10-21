@@ -1,6 +1,6 @@
 {% load crispy_forms_tags %}
 <div class="card mt-3" id="basic-info">
-   <form method="post" action="{% url 'phase_edit_qa' phase.job.slug phase.slug %}" class="js-submit-modal-form">
+   <form method="post" id="feedbackForm" action="{% url 'phase_edit_qa' phase.job.slug phase.slug %}" class="js-submit-modal-form">
       <div class="card-header">
          <div class="row">
             <div class="col my-auto">
@@ -76,3 +76,8 @@
       </div>
    </form>
  </div>
+
+
+ <script> 
+   $("#feedbackForm").dirty({preventLeaving: true});
+</script>
