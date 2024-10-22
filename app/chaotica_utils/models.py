@@ -1020,13 +1020,6 @@ class LeaveRequest(models.Model):
             # No managers defined - can self approve
             user_pks.append(self.user.pk)
 
-        # No managers - lets default to unit managers...
-        for membership in self.user.unit_memberships.all():
-            for pk in membership.unit.get_active_members_with_perm(
-                "can_approve_leave_requests"
-            ).values_list("pk", flat=True):
-                if pk not in user_pks:
-                    user_pks.append(pk)
         return User.objects.filter(pk__in=user_pks).distinct()
 
     def can_user_auth(self, user):
