@@ -570,16 +570,14 @@ class User(AbstractUser):
         start = start or start_of_week
         end = end or end_of_week
 
-        slots = self.timeslot_comments.filter(
-            end__gte=start, start__lte=end
-        )
+        slots = self.timeslot_comments.filter(end__gte=start, start__lte=end)
         for slot in slots:
             slot_json = slot.get_schedule_json()
             # slot_json["display"] = "background"
             data.append(slot_json)
         return data
 
-    def get_timeslots(self, start=None, end=None, phase_focus=None):
+    def get_timeslots(self, start=None, end=None, selected_phases=[]):
         data = []
         today = timezone.now().today()
         start_of_week = today - timedelta(days=today.weekday())
@@ -588,22 +586,18 @@ class User(AbstractUser):
         start = start or start_of_week
         end = end or end_of_week
 
-        slots = self.timeslots.filter(end__gte=start, start__lte=end)
+        slots = self.timeslots.filter(end__gte=start, start__lte=end).prefetch_related("phase", "phase__job")
         for slot in slots:
             slot_json = slot.get_schedule_json()
-            is_focused = False
-            if phase_focus:
-                if slot.phase:
-                    if slot.phase == phase_focus:
-                        is_focused = True
-                    if not is_focused and slot.phase.job == phase_focus:
-                        is_focused = True
-            if phase_focus and not is_focused:
-                slot_json["display"] = "background"
+            if selected_phases:
+                if slot.phase and (
+                    slot.phase not in selected_phases and slot.phase.job not in selected_phases
+                ):
+                    slot_json["display"] = "background"
             data.append(slot_json)
         return data
 
-    def get_timeslots_objs(self, start=None, end=None, phase_focus=None):
+    def get_timeslots_objs(self, start=None, end=None, selected_phases=None):
         today = timezone.now().today()
         start_of_week = today - timedelta(days=today.weekday())
         end_of_week = start_of_week + timedelta(days=6)
