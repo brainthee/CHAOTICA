@@ -277,10 +277,7 @@ class Phase(models.Model):
                     self.timeslots.filter(
                         Q(deliveryRole=TimeSlotDeliveryRole.REPORTING)
                         | Q(deliveryRole=TimeSlotDeliveryRole.DELIVERY)
-                    )
-                    .order_by("end")
-                    .first()
-                    .end
+                    ).latest("end").end
                 ).date()
             else:
                 # No slots - return None
@@ -302,10 +299,7 @@ class Phase(models.Model):
                     self.timeslots.filter(
                         Q(deliveryRole=TimeSlotDeliveryRole.REPORTING)
                         | Q(deliveryRole=TimeSlotDeliveryRole.DELIVERY)
-                    )
-                    .order_by("end")
-                    .first()
-                    .end
+                    ).latest("end").end
                     + timedelta(days=5)
                 ).date()
             else:
@@ -326,10 +320,7 @@ class Phase(models.Model):
                     self.timeslots.filter(
                         Q(deliveryRole=TimeSlotDeliveryRole.REPORTING)
                         | Q(deliveryRole=TimeSlotDeliveryRole.DELIVERY)
-                    )
-                    .order_by("end")
-                    .first()
-                    .end
+                    ).latest("end").end
                     + timedelta(weeks=1)
                 ).date()
             else:
