@@ -53,15 +53,11 @@ def view_scheduler(request):
     return HttpResponse(template.render(context, request))
 
 
-def _filter_users_on_query(request):
+def _filter_users_on_query(request, cleaned_data=None):
     query = Q()
-    filter_form = SchedulerFilter(request.GET)
-    if filter_form.is_valid():
-        show_inactive_users = filter_form.cleaned_data.get("show_inactive_users")
-    else:
-        show_inactive_users = False
+
+    show_inactive_users = cleaned_data.get("show_inactive_users")
         
-    cleaned_data = filter_form.clean()
 
     # Starting users filter
     users_pk = []
@@ -75,101 +71,100 @@ def _filter_users_on_query(request):
             if user.pk not in users_pk:
                 users_pk.append(user.pk)
 
-    if filter_form.is_valid():
-        # If we're passed a job/phase ID - filter on that.
-        jobs = cleaned_data.get("jobs")
-        if jobs:
-            for job in jobs:
-                query.add(Q(pk__in=job.team()), Q.AND)
+    # If we're passed a job/phase ID - filter on that.
+    jobs = cleaned_data.get("jobs")
+    if jobs:
+        for job in jobs:
+            query.add(Q(pk__in=job.team()), Q.AND)
 
-        phases = cleaned_data.get("phases")
-        if phases:
-            for phase in phases:
-                query.add(Q(pk__in=phase.team()), Q.AND)
-        
-        if not jobs and not phases:
-            query.add(Q(pk__in=users_pk), Q.AND)
+    phases = cleaned_data.get("phases")
+    if phases:
+        for phase in phases:
+            query.add(Q(pk__in=phase.team()), Q.AND)
+    
+    if not jobs and not phases:
+        query.add(Q(pk__in=users_pk), Q.AND)
 
-        # Now lets apply the filters from the query...
-        ## Filter users
-        if not show_inactive_users:
-            query.add(Q(is_active=True), Q.AND)
+    # Now lets apply the filters from the query...
+    ## Filter users
+    if not show_inactive_users:
+        query.add(Q(is_active=True), Q.AND)
 
-        users_q = cleaned_data.get("users")
-        if users_q:
-            query.add(Q(pk__in=users_q), Q.AND)
+    users_q = cleaned_data.get("users")
+    if users_q:
+        query.add(Q(pk__in=users_q), Q.AND)
 
-        ## Filter org unit
-        org_units = cleaned_data.get("org_units")
-        org_unit_roles = cleaned_data.get("org_unit_roles")
+    ## Filter org unit
+    org_units = cleaned_data.get("org_units")
+    org_unit_roles = cleaned_data.get("org_unit_roles")
 
-        if org_units:
+    if org_units:
+        query.add(
+            Q(
+                unit_memberships__in=OrganisationalUnitMember.objects.filter(
+                    unit__in=org_units,
+                    roles__in=(
+                        org_unit_roles
+                        if org_unit_roles
+                        else OrganisationalUnitRole.objects.all()
+                    ),
+                )
+            ),
+            Q.AND,
+        )
+    else:
+        if org_unit_roles:
             query.add(
                 Q(
                     unit_memberships__in=OrganisationalUnitMember.objects.filter(
-                        unit__in=org_units,
-                        roles__in=(
-                            org_unit_roles
-                            if org_unit_roles
-                            else OrganisationalUnitRole.objects.all()
-                        ),
+                        roles__in=org_unit_roles,
                     )
                 ),
                 Q.AND,
             )
-        else:
-            if org_unit_roles:
-                query.add(
-                    Q(
-                        unit_memberships__in=OrganisationalUnitMember.objects.filter(
-                            roles__in=org_unit_roles,
-                        )
-                    ),
-                    Q.AND,
+
+    ## Filter on skills
+    skills_specialist = cleaned_data.get("skills_specialist")
+    if skills_specialist:
+        query.add(
+            Q(
+                skills__in=UserSkill.objects.filter(
+                    skill__in=skills_specialist, rating=UserSkillRatings.SPECIALIST
                 )
+            ),
+            Q.AND,
+        )
 
-        ## Filter on skills
-        skills_specialist = cleaned_data.get("skills_specialist")
-        if skills_specialist:
-            query.add(
-                Q(
-                    skills__in=UserSkill.objects.filter(
-                        skill__in=skills_specialist, rating=UserSkillRatings.SPECIALIST
-                    )
-                ),
-                Q.AND,
-            )
+    skills_can_do_alone = cleaned_data.get("skills_can_do_alone")
+    if skills_can_do_alone:
+        query.add(
+            Q(
+                skills__in=UserSkill.objects.filter(
+                    skill__in=skills_can_do_alone,
+                    rating=UserSkillRatings.CAN_DO_ALONE,
+                )
+            ),
+            Q.AND,
+        )
 
-        skills_can_do_alone = cleaned_data.get("skills_can_do_alone")
-        if skills_can_do_alone:
-            query.add(
-                Q(
-                    skills__in=UserSkill.objects.filter(
-                        skill__in=skills_can_do_alone,
-                        rating=UserSkillRatings.CAN_DO_ALONE,
-                    )
-                ),
-                Q.AND,
-            )
+    skills_can_do_support = cleaned_data.get("skills_can_do_support")
+    if skills_can_do_support:
+        query.add(
+            Q(
+                skills__in=UserSkill.objects.filter(
+                    skill__in=skills_can_do_support,
+                    rating=UserSkillRatings.CAN_DO_WITH_SUPPORT,
+                )
+            ),
+            Q.AND,
+        )
 
-        skills_can_do_support = cleaned_data.get("skills_can_do_support")
-        if skills_can_do_support:
-            query.add(
-                Q(
-                    skills__in=UserSkill.objects.filter(
-                        skill__in=skills_can_do_support,
-                        rating=UserSkillRatings.CAN_DO_WITH_SUPPORT,
-                    )
-                ),
-                Q.AND,
-            )
-
-        # Filter on service
-        # This is a bit mind bending. Of the service(s) selected, each will have some desired/needed skills
-        # We then need to select the users based off containing a skill in either desired or needed..
-        services = cleaned_data.get("services")
-        for service in services:
-            query.add(Q(pk__in=service.users_can_conduct()), Q.AND)
+    # Filter on service
+    # This is a bit mind bending. Of the service(s) selected, each will have some desired/needed skills
+    # We then need to select the users based off containing a skill in either desired or needed..
+    services = cleaned_data.get("services")
+    for service in services:
+        query.add(Q(pk__in=service.users_can_conduct()), Q.AND)
 
     extra_users = cleaned_data.get("include_user")
     if extra_users:
@@ -186,41 +181,28 @@ def _filter_users_on_query(request):
 @login_required
 def view_scheduler_slots(request):
     data = []
-    filtered_users = _filter_users_on_query(request)
-    phase_focus = None
+    selected_phases = []
+    cleaned_data = None
+
+    filter_form = SchedulerFilter(request.GET)
+    if filter_form.is_valid():
+        cleaned_data = filter_form.clean()
+
+        jobs = cleaned_data.get("jobs", [])
+        for job in jobs:
+            selected_phases.append(job)
+        phases = cleaned_data.get("phases", [])
+        for phase in phases:
+            selected_phases.append(phase)
+
+    filtered_users = _filter_users_on_query(request, cleaned_data)
 
     # Change FullCalendar format to DateTime
     start = clean_fullcalendar_datetime(request.GET.get("start", None))
     end = clean_fullcalendar_datetime(request.GET.get("end", None))
-    job_id = clean_int(request.GET.get("job", None))
-    phase_id = clean_int(request.GET.get("phase", None))
-
-    if phase_id:
-        phase_focus = get_object_or_404(Phase, pk=phase_id)
-    elif job_id:
-        job = get_object_or_404(Job, pk=job_id)
-        phase_focus = job
-    
-    # # Lets get slots!
-    # slots = TimeSlot.objects.filter(user__in=filtered_users, end__gte=start, start__lte=end)
-    # print("got slots")
-    # for slot in slots:
-    #     print("processing "+str(slot))
-    #     slot_json = slot.get_schedule_json()
-    #     is_focused = False
-    #     if phase_focus:
-    #         if slot.phase:
-    #             if slot.phase == phase_focus:
-    #                 is_focused = True
-    #             if not is_focused and slot.phase.job == phase_focus:
-    #                 is_focused = True
-    #     if phase_focus and not is_focused:
-    #         slot_json["display"] = "background"
-    #     data.append(slot_json)
-    #     print("done processing "+str(slot))
 
     for user in filtered_users:
-        data = data + user.get_timeslots(start=start, end=end, phase_focus=phase_focus)
+        data = data + user.get_timeslots(start=start, end=end, selected_phases=selected_phases)
         data = data + user.get_timeslot_comments(start=start, end=end)
         data = data + user.get_holidays(
             start=start,
@@ -232,7 +214,22 @@ def view_scheduler_slots(request):
 @login_required
 def view_scheduler_members(request):
     data = []
-    filtered_users = _filter_users_on_query(request)
+    selected_phases = []
+    cleaned_data = None
+
+    filter_form = SchedulerFilter(request.GET)
+    if filter_form.is_valid():
+        cleaned_data = filter_form.clean()
+
+        jobs = cleaned_data.get("jobs", [])
+        for job in jobs:
+            selected_phases.append(job)
+        phases = cleaned_data.get("phases", [])
+        for phase in phases:
+            selected_phases.append(phase)
+
+    filtered_users = _filter_users_on_query(request, cleaned_data)
+    
     for user in filtered_users:
         user_title = str(user)
         main_org = user.unit_memberships.first()
