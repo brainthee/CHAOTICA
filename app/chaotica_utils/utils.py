@@ -1,7 +1,6 @@
 from .models import User, Notification
 from .enums import NotificationTypes
 from django.template.loader import render_to_string
-from django.core.mail import send_mail
 from django.conf import settings as django_settings
 from datetime import timedelta, time, timezone, datetime
 from uuid import UUID
@@ -269,40 +268,3 @@ class AppNotification:
         self.send_email = send_email
         self.context = {}
         self.context.update(kwargs)
-
-    def send_to_user(
-        self,
-        user: User,
-    ) -> bool:
-        # Lets see if we can do notifications
-        ## In-app notification
-        notice = Notification.objects.create(
-            user=user,
-            title=self.title,
-            message=self.message,
-            icon=self.icon,
-            link=self.action_link,
-        )
-
-        ## Email notification
-        if self.send_email and config.EMAIL_ENABLED:
-            if user.is_active:
-                self.context["SITE_DOMAIN"] = django_settings.SITE_DOMAIN
-                self.context["SITE_PROTO"] = django_settings.SITE_PROTO
-                self.context["title"] = self.title
-                self.context["message"] = self.message
-                self.context["icon"] = self.icon
-                self.context["action_link"] = self.action_link
-                self.context["user"] = user
-                msg_html = render_to_string(self.email_template, self.context)
-                send_mail(
-                    self.title,
-                    self.message,
-                    None,
-                    [user.email_address()],
-                    html_message=msg_html,
-                )
-            else:
-                # User disabled, don't send emails
-                notice.is_emailed = True
-                notice.save()

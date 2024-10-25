@@ -75,7 +75,7 @@ def task_send_notifications(notification, users_to_notify, additional_mails=None
     for u in users_to_notify:
         # create a Notification..
         from .models import Notification
-        new_notification = Notification.objects.create(
+        _ = Notification.objects.create(
             user=u,
             title=notification.title,
             icon=notification.icon,
@@ -83,7 +83,6 @@ def task_send_notifications(notification, users_to_notify, additional_mails=None
             link=notification.action_link,
             email_template=notification.email_template,
         )
-        new_notification.send_email()
     
     if additional_mails:
         addresses = email.utils.getaddresses([additional_mails])
@@ -99,16 +98,14 @@ def task_send_notifications(notification, users_to_notify, additional_mails=None
                 context["user"] = ""
                 msg_html = render_to_string(notification.email_template, context)
                 send_mail(
-                    notification.title,
-                    notification.message,
-                    None,
-                    [email_address],
+                    subject=notification.title,
+                    message=notification.message,
+                    from_email=None,
+                    recipient_list=[email_address],
                     html_message=msg_html,
                 )
         
         
-
-
 class task_send_email_notifications(CronJobBase):
     RUN_EVERY_MINS = 1
     schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
