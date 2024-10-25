@@ -26,6 +26,7 @@ from business_duration import businessDuration
 from constance import config
 from django.template.loader import render_to_string
 from django.core.mail import send_mail
+from geopy.geocoders import Nominatim
 
 
 def get_sentinel_user():
@@ -270,6 +271,9 @@ class User(AbstractUser):
     location = models.CharField(
         verbose_name="Location", max_length=255, null=True, blank=True, default=""
     )
+    longitude = models.DecimalField(max_digits=22, decimal_places=16, blank=True, null=True)
+    latitude = models.DecimalField(max_digits=22, decimal_places=16, blank=True, null=True)
+
     country = CountryField(default="GB")
     external_id = models.CharField(
         verbose_name="External ID",
@@ -451,6 +455,19 @@ class User(AbstractUser):
             return self.notification_email
         else:
             return self.email
+    
+    def update_latlong(self):
+        if self.location:
+            try:
+                loc = Nominatim(user_agent="CHAOTICA")
+                getLoc = loc.geocode(self.location)
+                self.longitude = getLoc.longitude
+                self.latitude = getLoc.latitude
+                self.save()
+            except:
+                pass # Don't care. 
+        else:
+            return None
 
     def skills_last_updated(self):
         if self.skills.all().count():
