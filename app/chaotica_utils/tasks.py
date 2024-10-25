@@ -75,7 +75,7 @@ def task_send_notifications(notification, users_to_notify, additional_mails=None
     for u in users_to_notify:
         # create a Notification..
         from .models import Notification
-        Notification.objects.create(
+        new_notification = Notification.objects.create(
             user=u,
             title=notification.title,
             icon=notification.icon,
@@ -83,6 +83,7 @@ def task_send_notifications(notification, users_to_notify, additional_mails=None
             link=notification.action_link,
             email_template=notification.email_template,
         )
+        new_notification.send_email()
     
     if additional_mails:
         addresses = email.utils.getaddresses([additional_mails])
