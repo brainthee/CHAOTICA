@@ -70,13 +70,13 @@ class UserCostAdmin(admin.ModelAdmin):
 
 
 @admin.register(UserInvitation)
-class UserCostAdmin(admin.ModelAdmin):
+class UserInvitationAdmin(admin.ModelAdmin):
     list_display = ["invited_email", "sent", "accepted", "invited_by"]
 
 
 @admin.register(Notification)
-class UserCostAdmin(admin.ModelAdmin):
-    list_display = ["user", "timestamp", "title"]
+class NotificationAdmin(admin.ModelAdmin):
+    list_display = ["user", "timestamp", "title", "is_emailed"]
 
 
 admin.site.register(Group, GroupAdmin)

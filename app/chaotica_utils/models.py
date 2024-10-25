@@ -25,7 +25,7 @@ from jobtracker.enums import DefaultTimeSlotTypes, UserSkillRatings
 from business_duration import businessDuration
 from constance import config
 from django.template.loader import render_to_string
-from django.core.mail import send_mail
+import django.core.mail
 from geopy.geocoders import Nominatim
 
 
@@ -86,8 +86,14 @@ class Notification(models.Model):
     class Meta:
         ordering = ["-timestamp"]
 
-    def send_email(self):
-        if self.user.is_active and config.EMAIL_ENABLED:
+    def send_email(self, resend=False):
+        if (
+            self.user.is_active  # User must be active
+            and config.EMAIL_ENABLED  # Emails must be enabled
+            and (
+                self.is_emailed == False or resend == True
+            )  # Either we've not already sent it or we're resending it
+        ):
             context = {}
             context["SITE_DOMAIN"] = settings.SITE_DOMAIN
             context["SITE_PROTO"] = settings.SITE_PROTO
@@ -97,22 +103,16 @@ class Notification(models.Model):
             context["action_link"] = self.link
             context["user"] = self.user
             msg_html = render_to_string(self.email_template, context)
-            if (
-                send_mail(
-                    self.title,
-                    self.message,
-                    None,
-                    [self.user.email_address()],
-                    html_message=msg_html,
-                )
-                > 0
-            ):
-                self.is_emailed = True
-                self.save()
-        else:
-            # User or site disabled, don't send emails
-            self.is_emailed = True
-            self.save()
+            django.core.mail.send_mail(
+                subject=self.title,
+                message=self.message,
+                from_email=None,
+                recipient_list=[self.user.email_address()],
+                html_message=msg_html,
+            )
+        # Mark it as sent regardless
+        self.is_emailed = True
+        self.save()
 
 
 class Group(django.contrib.auth.models.Group):
@@ -218,11 +218,11 @@ class UserInvitation(models.Model):
             )
             context["action_link"] = ext_reverse(self.get_absolute_url())
             msg_html = render_to_string("emails/user_invite.html", context)
-            send_mail(
-                context["title"],
-                context["message"],
-                None,
-                [self.invited_email],
+            django.core.mail.send_mail(
+                subject=context["title"],
+                message=context["message"],
+                from_email=None,
+                recipient_list=[self.invited_email],
                 html_message=msg_html,
             )
 
@@ -271,8 +271,12 @@ class User(AbstractUser):
     location = models.CharField(
         verbose_name="Location", max_length=255, null=True, blank=True, default=""
     )
-    longitude = models.DecimalField(max_digits=22, decimal_places=16, blank=True, null=True)
-    latitude = models.DecimalField(max_digits=22, decimal_places=16, blank=True, null=True)
+    longitude = models.DecimalField(
+        max_digits=22, decimal_places=16, blank=True, null=True
+    )
+    latitude = models.DecimalField(
+        max_digits=22, decimal_places=16, blank=True, null=True
+    )
 
     country = CountryField(default="GB")
     external_id = models.CharField(
@@ -455,7 +459,7 @@ class User(AbstractUser):
             return self.notification_email
         else:
             return self.email
-    
+
     def update_latlong(self):
         if self.location:
             try:
@@ -465,7 +469,7 @@ class User(AbstractUser):
                 self.latitude = getLoc.latitude
                 self.save()
             except:
-                pass # Don't care. 
+                pass  # Don't care.
         else:
             return None
 
@@ -603,12 +607,15 @@ class User(AbstractUser):
         start = start or start_of_week
         end = end or end_of_week
 
-        slots = self.timeslots.filter(end__gte=start, start__lte=end).prefetch_related("phase", "phase__job")
+        slots = self.timeslots.filter(end__gte=start, start__lte=end).prefetch_related(
+            "phase", "phase__job"
+        )
         for slot in slots:
             slot_json = slot.get_schedule_json()
             if selected_phases:
                 if slot.phase and (
-                    slot.phase not in selected_phases and slot.phase.job not in selected_phases
+                    slot.phase not in selected_phases
+                    and slot.phase.job not in selected_phases
                 ):
                     slot_json["display"] = "background"
             data.append(slot_json)
