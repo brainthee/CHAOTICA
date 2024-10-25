@@ -87,7 +87,7 @@ class Notification(models.Model):
         ordering = ["-timestamp"]
 
     def send_email(self):
-        if self.user.is_active() and config.EMAIL_ENABLED:
+        if self.user.is_active and config.EMAIL_ENABLED:
             context = {}
             context["SITE_DOMAIN"] = settings.SITE_DOMAIN
             context["SITE_PROTO"] = settings.SITE_PROTO
