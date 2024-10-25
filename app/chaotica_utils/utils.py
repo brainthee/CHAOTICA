@@ -286,7 +286,7 @@ class AppNotification:
 
         ## Email notification
         if self.send_email and config.EMAIL_ENABLED:
-            if user.is_active():
+            if user.is_active:
                 self.context["SITE_DOMAIN"] = django_settings.SITE_DOMAIN
                 self.context["SITE_PROTO"] = django_settings.SITE_PROTO
                 self.context["title"] = self.title
