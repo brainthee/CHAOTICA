@@ -1,6 +1,7 @@
 from django.http import JsonResponse
 from django.template import loader
-from ..models import Contact
+from ..models import Contact, Phase
+from ..enums import PhaseStatuses
 from ..forms import (
     AssignMultipleUser,
     AssignUser,
@@ -33,13 +34,31 @@ def _process_assign_user(request, obj, prop, multiple=False, users=None):
             else:
                 setattr(obj, prop, form.cleaned_data["user"])
 
+            obj.save()
+            
+            if isinstance(obj, Phase):
+                if (
+                    (
+                        obj.status == PhaseStatuses.QA_TECH
+                        or obj.status == PhaseStatuses.PENDING_TQA
+                    )
+                    and prop == "techqa_by"
+                ) or (
+                    (
+                        obj.status == PhaseStatuses.QA_PRES
+                        or obj.status == PhaseStatuses.PENDING_PQA
+                    )
+                    and prop == "presqa_by"
+                ):
+                    # Refire notifications
+                    obj.refire_status_notification()
+
             log_system_activity(
                 obj,
                 "Altered assigned user for "
                 + obj._meta.get_field(prop).verbose_name.title(),
                 author=request.user,
             )
-            obj.save()
             data["form_is_valid"] = True
         else:
             data["form_is_valid"] = False
