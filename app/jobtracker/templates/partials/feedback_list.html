@@ -2,26 +2,27 @@
 {% load static %}
 
 {% for feedback in feedbacks %}
-  <div class="row">
-    <div class="row">
-      <div class="d-flex justify-content-between">
-        <div class="d-flex mb-2">
-          <h6 class="lh-sm mb-0 text-800 timeline-item-title">{{ feedback.body }}</h6>
-        </div>
+  <div class="d-flex align-items-center mb-3">
+    <a href="{{ feedback.author.get_absolute_url }}">
+      <div class="avatar avatar-xl me-2">
+        <img class="rounded-circle" src="{{ feedback.author.get_avatar_url }}" alt="" />
       </div>
+    </a>
+    <div class="flex-1">
+      <a class="fw-bold mb-0 text-body-emphasis" href="{{ feedback.author.get_absolute_url }}">{{ feedback.author }}</a>
+      <p class="fs-10 mb-0 text-body-tertiary text-opacity-85 fw-semibold" data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ feedback.last_edited }}">{{ feedback.last_edited|naturaltime }}</p>
     </div>
-    <div class="row">
-      <div class="col">
-         <h6 class="fs-10 fw-normal mb-3">by <a class="fw-semi-bold" href="{{ feedback.author.get_absolute_url }}">{{ feedback.author }}</a></h6>
-      </div>
-      
-      <div class="col text-end">
-         <p class="text-500 fs-9 mb-0 text-nowrap timeline-time" data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ feedback.create_date }}">
-           <span class="fa-regular fa-clock me-1"></span>{{ feedback.created_on|naturaltime }}
-         </p>
-      </div>
+    <div class="btn-reveal-trigger">
+      {% if feedback.author == request.user %}
+        <button class="btn btn-sm dropdown-toggle dropdown-caret-none transition-none d-flex btn-reveal" type="button" data-bs-toggle="dropdown" data-boundary="window" aria-haspopup="true" aria-expanded="false" data-bs-reference="parent"><span class="fas fa-ellipsis-h"></span></button>
+        <div class="dropdown-menu dropdown-menu-end py-2" style="">
+          <button class="dropdown-item js-load-modal-form" data-url="{% url 'phase_feedback_edit' phase.job.slug phase.slug feedback.pk %}">Edit</button>
+          <button class="dropdown-item text-danger js-load-modal-form" data-url="{% url 'phase_feedback_delete' phase.job.slug phase.slug feedback.pk %}">Delete</button>
+        </div>
+      {% endif %}
     </div>
   </div>
+  <p class="text-body-secondary">{{ feedback.body }}</p>
 {% empty %}
   <h6 class="lh-sm mt-0 mb-0 me-2 text-800 timeline-item-title">No comments</h6>
 {% endfor %}

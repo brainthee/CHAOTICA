@@ -90,7 +90,11 @@ class TimeSlotAdmin(SimpleHistoryAdmin):
 admin.site.register(TimeSlotComment)
 admin.site.register(WorkflowTask)
 admin.site.register(BillingCode)
-admin.site.register(Feedback)
+
+@admin.register(Feedback)
+class FeedbackAdmin(SimpleHistoryAdmin):
+    readonly_fields = ['phase', 'author']
+    list_display = ["phase", "author", "created_on", "feedbackType"]
 
 
 @admin.register(Project)

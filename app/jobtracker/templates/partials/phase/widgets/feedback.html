@@ -29,7 +29,7 @@
          <div class="card-body">            
             {% if phase.status == 7 %}
                <!-- In Progress - allow leaving scope feedback -->
-               <a href="#" data-url="{% url 'phase_feedback_scope' phase.job.slug phase.slug %}" class="js-load-modal-form">Add Feedback</a>
+               <a href="#" data-url="{% url 'phase_feedback_scope' phase.job.slug phase.slug %}" class="btn d-block btn-phoenix-primary me-1 mb-3 js-load-modal-form" >Add Feedback</a>
             {% endif %}
             {% include 'partials/feedback_list.html' with feedbacks=phase.feedback_scope %}
          </div>
@@ -60,8 +60,9 @@
          <div class="card-body">               
             {% if phase.status == 9 %}
                <!-- In TechQA - allow leaving feedback -->
-               <a href="#" data-url="{% url 'phase_feedback_techqa' phase.job.slug phase.slug %}" class="js-load-modal-form">Add Feedback</a>
+               <a href="#" class="btn d-block btn-phoenix-primary me-1 mb-3 js-load-modal-form" data-url="{% url 'phase_feedback_techqa' phase.job.slug phase.slug %}">Add Feedback</a>
             {% endif %}
+
             {% include 'partials/feedback_list.html' with feedbacks=phase.feedback_techqa %}
          </div>
       </div>
@@ -92,7 +93,7 @@
          <div class="card-body">
             {% if phase.status == 12 %}
                <!-- In PresQA - allow leaving feedback -->
-               <a href="#" data-url="{% url 'phase_feedback_presqa' phase.job.slug phase.slug %}" class="js-load-modal-form">Add Feedback</a>
+               <a href="#" data-url="{% url 'phase_feedback_presqa' phase.job.slug phase.slug %}" class="btn d-block btn-phoenix-primary me-1 mb-3 js-load-modal-form" >Add Feedback</a>
             {% endif %}
             {% include 'partials/feedback_list.html' with feedbacks=phase.feedback_presqa %}
          </div>

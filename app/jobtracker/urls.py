@@ -302,6 +302,16 @@ urlpatterns = [
     ),
     # path('job/<str:job_slug>/phase/<str:slug>/edit/qa', views.phase_edit_qa, name='phase_edit_qa'),
     path(
+        "job/<str:job_slug>/phase/<str:slug>/feedback/<int:pk>/edit",
+        views.phase_feedback_edit,
+        name="phase_feedback_edit",
+    ),
+    path(
+        "job/<str:job_slug>/phase/<str:slug>/feedback/<int:pk>/delete",
+        views.phase_feedback_delete,
+        name="phase_feedback_delete",
+    ),
+    path(
         "job/<str:job_slug>/phase/<str:slug>/feedback/techqa",
         views.phase_feedback_techqa,
         name="phase_feedback_techqa",
