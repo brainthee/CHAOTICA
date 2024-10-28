@@ -68,6 +68,19 @@ class CustomConfigForm(ConstanceForm):
                         FloatingField("LEAVE_DAYS_NOTICE"),
                         css_class="input-group input-group-dynamic",
                     ),
+                    HTML('<h4 class="mb-4">Phase Deadlines</h4>'),
+                    Div(
+                        FloatingField("DAYS_TO_TQA"),
+                        css_class="input-group input-group-dynamic",
+                    ),
+                    Div(
+                        FloatingField("DAYS_TO_PQA"),
+                        css_class="input-group input-group-dynamic",
+                    ),
+                    Div(
+                        FloatingField("DAYS_TO_DELIVERY"),
+                        css_class="input-group input-group-dynamic",
+                    ),
                 ),
             ),
             Row(

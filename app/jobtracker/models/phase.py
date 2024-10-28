@@ -278,6 +278,7 @@ class Phase(models.Model):
                         Q(deliveryRole=TimeSlotDeliveryRole.REPORTING)
                         | Q(deliveryRole=TimeSlotDeliveryRole.DELIVERY)
                     ).latest("end").end
+                    + timedelta(days=config.DAYS_TO_TQA)
                 ).date()
             else:
                 # No slots - return None
@@ -300,7 +301,7 @@ class Phase(models.Model):
                         Q(deliveryRole=TimeSlotDeliveryRole.REPORTING)
                         | Q(deliveryRole=TimeSlotDeliveryRole.DELIVERY)
                     ).latest("end").end
-                    + timedelta(days=5)
+                    + timedelta(days=config.DAYS_TO_PQA)
                 ).date()
             else:
                 # No slots - return None
@@ -321,7 +322,7 @@ class Phase(models.Model):
                         Q(deliveryRole=TimeSlotDeliveryRole.REPORTING)
                         | Q(deliveryRole=TimeSlotDeliveryRole.DELIVERY)
                     ).latest("end").end
-                    + timedelta(weeks=1)
+                    + timedelta(days=config.DAYS_TO_DELIVERY)
                 ).date()
             else:
                 # No slots - return None
