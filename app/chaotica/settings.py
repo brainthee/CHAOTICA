@@ -142,6 +142,20 @@ CONSTANCE_CONFIG = {
         24,
         "How many hours before sending another late to Delivery notficiation",
     ),
+    # Default days to TQA/PQA/Delivery
+    "DAYS_TO_TQA": (
+        0,
+        "How many days after the last testing/reporting slot should a job be due to TQA.",
+    ),
+    "DAYS_TO_PQA": (
+        5,
+        "How many days after the last testing/reporting slot should a job be due to PQA.",
+    ),
+    "DAYS_TO_DELIVERY": (
+        7,
+        "How many days after the last testing/reporting slot should a job be due to Delivery.",
+    ),
+
     # Work settings
     "DEFAULT_HOURS_IN_DAY": (7.5, "Default hours in a work day"),
     "LEAVE_DAYS_NOTICE": (14, "How many days notice for Annual Leave submissions?"),
