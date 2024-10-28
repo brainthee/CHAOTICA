@@ -4146,7 +4146,7 @@
             //   theme: 'mobile',
             //   toolbar: ['undo', 'bold']
             // },
-            statusbar: false,
+            statusbar: true,
             plugins: 'link,image,lists,table,media',
             theme_advanced_toolbar_align: 'center',
             directionality: getItemFromStore('phoenixIsRTL') ? 'rtl' : 'ltr',
