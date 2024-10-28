@@ -2,6 +2,7 @@ from django.db import models
 from ..enums import JobStatuses, PhaseStatuses, FeedbackType, LinkType, UserSkillRatings
 from ..models.skill import Skill, UserSkill
 from ..models.phase import Phase
+from model_utils.fields import MonitorField
 from django.conf import settings
 from django.db.models import Q
 from chaotica_utils.utils import unique_slug_generator
@@ -69,6 +70,7 @@ class Feedback(models.Model):
 
     body = BleachField()
     created_on = models.DateTimeField(auto_now_add=True)
+    last_edited = MonitorField(monitor="body")
     history = HistoricalRecords()
 
     class Meta:

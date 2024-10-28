@@ -10,7 +10,7 @@ from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from chaotica_utils.views import log_system_activity, ChaoticaBaseView
-from ..models import Job, Phase, WorkflowTask
+from ..models import Job, Phase, WorkflowTask, Feedback
 from ..forms import (
     AddNote,
     AssignUserField,
@@ -330,6 +330,45 @@ def phase_edit_delivery(request, job_slug, slug):
     context = {"form": form}
     data["html_form"] = loader.render_to_string(
         "jobtracker/modals/feedback_form.html", context, request=request
+    )
+    return JsonResponse(data)
+
+
+def phase_feedback_edit(request, job_slug, slug, pk):
+    feedback = get_object_or_404(Feedback, pk=pk, phase__slug=slug, author=request.user)
+
+    data = dict()
+    if request.method == "POST":
+        form = FeedbackForm(request.POST, instance=feedback)
+        if form.is_valid():
+            form.save()
+            data["form_is_valid"] = True
+        else:
+            data["form_is_valid"] = False
+    else:
+        form = FeedbackForm(instance=feedback)
+
+    context = {"form": form}
+    data["html_form"] = loader.render_to_string(
+        "jobtracker/modals/feedback_form.html", context, request=request
+    )
+    return JsonResponse(data)
+
+
+def phase_feedback_delete(request, job_slug, slug, pk):
+    feedback = get_object_or_404(Feedback, pk=pk, phase__slug=slug, author=request.user)
+    context = {}
+    
+    data = dict()
+    if request.method == "POST":
+        feedback.delete()
+        data["form_is_valid"] = True
+    else:
+        form = FeedbackForm(instance=feedback)
+        context = {"form": form}
+
+    data["html_form"] = loader.render_to_string(
+        "jobtracker/modals/feedback_form_delete.html", context, request=request
     )
     return JsonResponse(data)
 
