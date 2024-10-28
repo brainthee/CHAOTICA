@@ -4,6 +4,7 @@ from django.urls import reverse_lazy, reverse
 from django.conf import settings as django_settings
 from django.template import loader
 from django.utils import timezone
+from django.forms import widgets
 from django.db.models import TextField, Value
 from django.db.models.functions import Concat
 from django.http import (
@@ -240,6 +241,9 @@ def request_own_leave(request):
             leave.save()
             leave.send_request_notification()
             return HttpResponseRedirect(reverse("view_own_leave"))
+        else:
+            # Redisplay form with errors
+            form = LeaveRequestForm(request.POST, request=request)
     else:
         form = LeaveRequestForm(request=request)
 
@@ -389,6 +393,9 @@ def update_own_profile(request):
             obj = form.save()
             obj.profile_last_updated = timezone.now().today()
             obj.save()
+            if "location" in form.changed_data:
+                obj.update_latlong()
+                
             data["form_is_valid"] = True
             data["changed_data"] = form.changed_data
     else:

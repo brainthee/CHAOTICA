@@ -1,5 +1,6 @@
 from django.contrib.auth.forms import UserCreationForm
 from django.utils import timezone
+from django.utils.html import format_html
 from django import forms
 from .models import LeaveRequest, User, Group, UserInvitation
 from crispy_forms.helper import FormHelper
@@ -271,7 +272,12 @@ class LeaveRequestForm(forms.ModelForm):
             )
 
         if start < today:
-            self.add_error("start_date", "The start date is before today.")
+            if (not self.instance.id and 'warn_override' not in self.data):
+                self.add_error('start_date', format_html(
+                    'The start date is before today. Please save again to acknowledge.'
+                    '<input type="hidden" id="warn_override"' # inject hidden input with error msg itself
+                    'name="warn_override" value="0"/>'        # so it's returned in form `data` on second save
+                ))
 
         if start > end:
             self.add_error("end_date", "The end date is before the start date.")
