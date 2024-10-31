@@ -226,6 +226,27 @@
           {% endif %}
         {% endfor %}
 
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle lh-1" href="#" role="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-haspopup="true" aria-expanded="false">
+              <span class="fas fa-cogs fs-8 me-2 "></span>
+              Operations
+            </a>
+              <ul class="dropdown-menu navbar-dropdown-caret">
+              {% for childItem in menus.ops %}
+                <li>
+                  <a class="dropdown-item {% if childItem.selected %}active{% endif %}" href="{{ childItem.url }}">
+                    <div class="dropdown-item-wrapper">
+                      {% if childItem.icon %}
+                      <span class="{% if childItem.icon_prefix %}{{ childItem.icon_prefix }}{% else %}fas fa-{% endif %}{{ childItem.icon }} fs-8 me-2 "></span>
+                      {% endif %}
+                      {{ childItem.title }}
+                    </div>
+                  </a>
+                </li>
+              {% endfor %}
+              </ul>
+            </li>
+
         {% has_role request.user "Admin" as has_admin_role %}
         {% if has_admin_role %}
           <li class="nav-item dropdown">

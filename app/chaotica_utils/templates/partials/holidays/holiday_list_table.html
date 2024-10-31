@@ -1,0 +1,26 @@
+<div class="table-responsive">
+  <table class="table fs-9 datatable mb-0">
+    <caption>Holidays</caption>
+    <thead>
+      <tr>
+        <th class="sort align-middle ps-0" scope="col" data-sort="reason">Reason</th>
+        <th class="sort align-middle ps-0" scope="col" data-sort="date" style="width:20%;">Date</th>
+        <th class="sort align-middle text-end" scope="col" style="width:15%;"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for holiday in holidays %}
+        <tr>
+          <td class="align-middle time ps-0 projectName">{{ holiday.reason }}</td>
+          <td class="align-middle time ps-0 projectDesc">{{ holiday.date }}</td>
+          <td class="align-middle text-end pe-0 action">
+            <div class="font-sans-serif btn-reveal-trigger position-static">
+              <button class="btn btn-sm btn-phoenix-primary js-load-modal-form" data-url="{% url 'holiday_update' holiday.pk %}" type="button">Edit</button>
+              <button class="btn btn-sm btn-phoenix-danger js-load-modal-form" data-url="{% url 'holiday_delete' holiday.pk %}" type="button">Delete</button>
+            </div>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

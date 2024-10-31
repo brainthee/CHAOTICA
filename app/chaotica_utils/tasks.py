@@ -37,40 +37,6 @@ class task_backup_site(CronJobBase):
             management.call_command('dbbackup', '-c')
 
 
-class task_update_holidays(CronJobBase):
-    RUN_EVERY_DAYS = 1 # every 1st of the month
-    schedule = Schedule(run_monthly_on_days=RUN_EVERY_DAYS)
-    code = 'chaotica_utils.task_update_holidays'
-
-    def do(self):
-        from .models import Holiday, HolidayCountry
-
-        now = timezone.now().today()
-        years = [now.year, now.year + 1]
-        # Lets make sure our countries list is up to date...
-        for code, name in list(countries):
-            HolidayCountry.objects.get_or_create(country=code)
-
-        for country in HolidayCountry.objects.all():
-            try:
-                holiday_days = holidays.CountryHoliday(country.country.code)
-                for subdiv in holiday_days.subdivisions:
-                    dates = holidays.CountryHoliday(
-                        country=country.country.code, subdiv=subdiv, years=years
-                    )
-                    for hol, desc in dates.items():
-                        db_date, _ = Holiday.objects.get_or_create(
-                            date=hol,
-                            country=country,
-                            reason=desc,
-                        )
-                        if subdiv not in db_date.subdivs:
-                            db_date.subdivs.append(subdiv)
-                            db_date.save()
-            except NotImplementedError:
-                pass
-
-
 def task_send_notifications(notification, users_to_notify, additional_mails=None):
     for u in users_to_notify:
         # create a Notification..

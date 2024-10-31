@@ -8,6 +8,10 @@ html.holodeck {
   z-index: 10070 !important;
 }
 
+#ui-datepicker-div {
+  z-index: 999999 !important;
+}
+
 span.select2-container {
   z-index: 10050 !important;
   min-width: unset !important;

@@ -41,6 +41,20 @@ urlpatterns = [
         views.manage_leave_auth_request,
         name="manage_leave_auth_request",
     ),
+    # Holidays
+    path("ops/holidays/", views.HolidayListView.as_view(), name="holiday_list"),
+    path("ops/holidays/create/", views.holiday_create, name="holiday_create"),
+    path("ops/holidays/import_lib/", views.holiday_import_lib, name="holiday_import_lib"),
+    path(
+        "ops/holidays/<str:pk>/update/",
+        views.holiday_edit,
+        name="holiday_update",
+    ),
+    path(
+        "ops/holidays/<str:pk>/delete/",
+        views.holiday_delete,
+        name="holiday_delete",
+    ),
 
     # Settings
     path("settings/", views.app_settings, name="app_settings"),
@@ -87,7 +101,6 @@ urlpatterns = [
         name="user_manage_status",
     ),
     # Tasks
-    path("tasks/update_holidays", views.update_holidays, name="update_holidays"),
     path(
         "tasks/sync_global_permissions",
         views.sync_global_permissions,

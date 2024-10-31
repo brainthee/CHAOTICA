@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% load menu %}
+{% load static %}
+
+{% block pageTitle %}
+  Holidays
+{% endblock %}
+{% block head_title %}
+  Holidays
+{% endblock %}
+
+{% block headerBlock_css %}
+  mb-6
+{% endblock %}
+
+{% block breadcrumbItem %}
+  <li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">Holidays</li>
+{% endblock %}
+
+{% block content %}
+  {% if request.user.show_help %}
+    <div class="row">
+      <div class="col-lg-12 col-12 mt-4 mt-lg-0">
+        {% include 'help/qualification_list.html' %}
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="row mb-4 gx-6 gy-3 mt-2 align-items-center">
+    <div class="col">
+      <h2 class="mb-0">Holidays</h2>
+      <p class="mb-0">Holidays show on user's schedules as unavailable. User's need to have a country set in their profile to show the right holidays.</p>
+    </div>
+    <div class="col-5 d-flex justify-content-end">
+      <button class="btn btn-phoenix-primary px-5 ms-2 js-load-modal-form" data-url="{% url 'holiday_create' %}">
+        <i class="fa-solid fa-plus me-2"></i>
+        Add Holiday
+      </button>
+      <button class="btn btn-phoenix-secondary px-5 ms-2 js-load-modal-form" data-url="{% url 'holiday_import_lib' %}">
+        <i class="fa-solid fa-cloud-upload me-2"></i>
+        Auto-add Holidays
+      </button>
+    </div>
+  </div>
+
+  <div class="row">
+    {% regroup holiday_list|dictsort:"country.name" by country as holiday_countries %}
+    {% for country in holiday_countries %}
+      <div class="card p-0 mb-3">
+        <div class="card-header">
+          {% if country.grouper %}
+            <h5>{{ country.grouper.unicode_flag }} {{ country.grouper.name }}</h5>
+          {% else %}
+            <h5>Generic Holidays</h5>
+            <p class="mb-0">Holidays with no specific country will show on everyone's schedule.</p>
+          {% endif %}
+        </div>
+        <div class="card-body p-1">
+          {% include 'partials/holidays/holiday_list_table.html' with holidays=country.list %}
+        </div>
+      </div>
+    {% empty %}
+      <div class="alert alert-phoenix-info" role="alert">
+        <strong>No Holidays!</strong> Manually add or import them!
+      </div>
+    {% endfor %}
+  </div>
+{% endblock %}

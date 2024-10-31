@@ -1,0 +1,33 @@
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+<div class="modal-dialog modal- modal-dialog-centered modal-" role="document">
+    <div class="modal-content">
+        <form method="post" action="{{ request.get_full_path }}" class="js-submit-modal-form">
+            {% csrf_token %}            
+            <div class="modal-header">
+                <h6 class="modal-title font-weight-normal" 
+                    id="modal-title-default">
+                        Import Country Holidays
+                </h6>
+                <button type="button" class="btn-close text-body-emphasis" 
+                    data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="card-body p-3">
+                <p class="">
+                    This will create scheduled events for all holidays in the selected country.
+                    The holidays are populated from the Python library <a href="https://holidays.readthedocs.io/en/latest/">holidays</a>
+                </p>
+                <div class="alert alert-phoenix-warning">
+                    Please validate the holidays that are created. This is taken from unofficial public data.
+                </div>
+                {% crispy form %}
+            </div>
+            <div class="card-footer p-3">
+                <div class="text-end">
+                    <button class="btn btn-link text-danger" type="button">Cancel</button>
+                    <button class="btn btn-sm btn-primary px-5" type="submit">Import</button>
+                </div>
+            </div>
+        </form>
+    </div>
+ </div>
