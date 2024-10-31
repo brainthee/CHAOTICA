@@ -17,7 +17,7 @@ from chaotica_utils.models import Note, User
 from chaotica_utils.enums import NotificationTypes
 from chaotica_utils.tasks import task_send_notifications
 from chaotica_utils.utils import AppNotification
-from chaotica_utils.views import log_system_activity
+from chaotica_utils.views.common import log_system_activity
 from datetime import timedelta
 from decimal import Decimal
 from django_bleach.models import BleachField

@@ -24,6 +24,17 @@ Menu.add_item(
     ),
 )
 
+Menu.add_item(
+    "ops",
+    PermMenuItem(
+        "Manage Holidays",
+        reverse("holiday_list"),
+        icon="user-group",
+        perm="chaotica_utils.manage_holidays",
+        weight=8,
+    )
+)
+
 # Admin menu
 Menu.add_item(
     "admin",

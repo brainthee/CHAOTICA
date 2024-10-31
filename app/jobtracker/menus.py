@@ -70,7 +70,8 @@ Menu.add_item(
     ),
 )
 
-ops_children = (
+Menu.add_item(
+    "ops",
     PermMenuItem(
         "Skills",
         reverse("skill_list"),
@@ -79,6 +80,9 @@ ops_children = (
         icon_prefix="fab fa-",
         weight=1,
     ),
+)
+Menu.add_item(
+    "ops",
     PermMenuItem(
         "Services",
         reverse("service_list"),
@@ -86,6 +90,9 @@ ops_children = (
         icon="laptop-code",
         weight=1,
     ),
+)
+Menu.add_item(
+    "ops",
     PermMenuItem(
         "Qualifications",
         reverse("qualification_list"),
@@ -93,39 +100,58 @@ ops_children = (
         icon="certificate",
         weight=1,
     ),
+)
+Menu.add_item(
+    "ops",
     PermMenuItem(
         "Projects",
         reverse("project_list"),
         perm="jobtracker.view_projects",
         icon="diagram-project",
+        weight=3,
+    ),
+)
+Menu.add_item(
+    "ops",
+    PermMenuItem(
+        "Accreditation",
+        reverse("qualification_list"),
+        perm="jobtracker.view_qualification",
+        icon="certificate",
         weight=1,
     ),
-    # PermMenuItem("Accreditation",
-    #             reverse("qualification_list"),
-    #             perm='jobtracker.view_qualification',
-    #             icon="certificate",
-    #             weight=1,
-    #             ),
+)
+Menu.add_item(
+    "ops",
     PermMenuItem(
         "Workflow Checklists",
         reverse("wf_tasks_list"),
         perm="jobtracker.view_workflowtask",
         icon="list-check",
-        weight=1,
+        weight=5,
     ),
+)
+Menu.add_item(
+    "ops",
     MenuItem(
         "Manage Leave",
         reverse("manage_leave"),
         icon="person-walking-arrow-right",
-        weight=1,
+        weight=6,
     ),
+)
+Menu.add_item(
+    "ops",
     PermMenuItem(
         "Billing Codes",
         reverse("billingcode_list"),
         perm="jobtracker.view_billingcode",
         icon="receipt",
-        weight=1,
+        weight=5,
     ),
+)
+Menu.add_item(
+    "ops",
     PermMenuItem(
         "Organisational Units",
         reverse("organisationalunit_list"),
@@ -133,8 +159,4 @@ ops_children = (
         icon="building",
         weight=10,
     ),
-)
-
-Menu.add_item(
-    "main", MenuItem("Operations", "#", weight=10, icon="gears", children=ops_children)
 )

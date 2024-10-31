@@ -9,7 +9,6 @@ from .models import (
     Group,
     Language,
     LeaveRequest,
-    HolidayCountry,
     Holiday,
     Note,
 )
@@ -103,10 +102,8 @@ class LeaveRequestAdmin(admin.ModelAdmin):
         "declined",
     ]
 
-admin.site.register(HolidayCountry)
-
 
 @admin.register(Holiday)
 class HolidayAdmin(admin.ModelAdmin):
-    list_display = ["country", "date", "reason"]
+    list_display = ["date", "country", "reason"]
     list_filter = ["country"]

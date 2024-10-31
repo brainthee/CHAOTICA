@@ -278,7 +278,7 @@ class User(AbstractUser):
         max_digits=22, decimal_places=16, blank=True, null=True
     )
 
-    country = CountryField(default="GB")
+    country = CountryField(default="GB", help_text="Used to determine which holidays apply.")
     external_id = models.CharField(
         verbose_name="External ID",
         db_index=True,
@@ -684,7 +684,8 @@ class User(AbstractUser):
         end = end or end_of_week
 
         slots = Holiday.objects.filter(
-            country__country=self.country, date__gte=start.date(), date__lte=end.date()
+            Q(country=self.country) | Q(country__isnull=True), 
+            date__gte=start.date(), date__lte=end.date()
         )
         for slot in slots:
             data.append(slot.get_schedule_json())
@@ -890,28 +891,21 @@ class UserCost(models.Model):
         return "{} {}".format(str(self.user), str(self.cost_per_hour))
 
 
-class HolidayCountry(models.Model):
-    country = CountryField()
-
-    class Meta:
-        ordering = [Lower("country")]
-
-    def __str__(self):
-        return "{}".format(str(self.country.name))
-
-
 class Holiday(models.Model):
     date = models.DateField(db_index=True)
-    country = models.ForeignKey(HolidayCountry, on_delete=models.CASCADE)
+    country = CountryField(blank=True, null=True)
     subdivs = models.JSONField(default=list, blank=True)
     reason = models.CharField(max_length=255)
 
     def __str__(self):
-        return "{} ({})".format(str(self.reason), str(self.country))
+        if self.country:
+            return "{} ({})".format(str(self.reason), str(self.country))
+        else:
+            return "{}".format(str(self.reason))
 
     def get_schedule_json(self):
         return {
-            "title": "{} ({})".format(self.reason, str(self.country)),
+            "title": str(self),
             "start": self.date,
             "end": self.date,
             "allDay": True,
@@ -921,7 +915,7 @@ class Holiday(models.Model):
 
     class Meta:
         ordering = [
-            "-date",
+            "country", "date",
         ]
         unique_together = ["date", "country", "reason"]
 

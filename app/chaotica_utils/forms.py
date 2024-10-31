@@ -2,15 +2,15 @@ from django.contrib.auth.forms import UserCreationForm
 from django.utils import timezone
 from django.utils.html import format_html
 from django import forms
-from .models import LeaveRequest, User, Group, UserInvitation
+from .models import LeaveRequest, User, Group, UserInvitation, Holiday
 from crispy_forms.helper import FormHelper
 from crispy_forms.bootstrap import (
     StrictButton,
 )
 from crispy_forms.layout import Layout, Row, Column, Field, Div, HTML
 from crispy_bootstrap5.bootstrap5 import FloatingField
-
-# from constance.forms import ConstanceForm
+from django_countries.widgets import CountrySelectWidget
+from django_countries.fields import CountryField
 from constance.admin import ConstanceForm
 from dal import autocomplete
 import pytz
@@ -21,6 +21,66 @@ from bootstrap_datepicker_plus.widgets import (
 )
 from django.core.files.images import get_image_dimensions
 from business_duration import businessDuration
+
+
+class HolidayForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(HolidayForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.helper.form_tag = False
+        self.fields["date"].widget = DatePickerInput()
+        self.fields["date"].label = ""
+        self.helper.layout = Layout(
+            Row(
+                Column(
+                    Div(
+                        FloatingField("country"),
+                        css_class="input-group input-group-dynamic",
+                    )
+                ),
+                Column(
+                    Div(
+                        FloatingField("date"),
+                        css_class="input-group input-group-dynamic",
+                    )
+                ),
+            ),
+            Row(
+                Div(
+                    FloatingField("reason"), css_class="input-group input-group-dynamic"
+                ),
+            ),
+        )
+
+    class Meta:
+        model = Holiday
+        fields = [
+            "date",
+            "country",
+            "reason",
+        ]
+
+
+class HolidayImportLibForm(forms.Form):
+    country = CountryField().formfield()
+    
+    def __init__(self, *args, **kwargs):
+        super(HolidayImportLibForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.helper.form_tag = False
+        self.helper.layout = Layout(
+            Row(
+                Div(
+                    FloatingField("country"), css_class="input-group input-group-dynamic"
+                ),
+            ),
+        )
+
+    class Meta:
+        fields = [
+            "country",
+        ]
+        widgets = {"country": CountrySelectWidget()}
 
 
 class CustomConfigForm(ConstanceForm):
@@ -519,6 +579,12 @@ class ManageUserForm(forms.ModelForm):
                         css_class="input-group input-group-dynamic",
                     )
                 ),
+                Column(
+                    Div(
+                        FloatingField("country"),
+                        css_class="input-group input-group-dynamic",
+                    )
+                ),
             ),
             Row(
                 Column(
@@ -585,6 +651,7 @@ class ManageUserForm(forms.ModelForm):
             "job_title",
             "show_help",
             "location",
+            "country",
             "languages",
             "contracted_leave",
             "contracted_leave_renewal",
@@ -647,17 +714,23 @@ class ProfileBasicForm(forms.ModelForm):
                         css_class="input-group input-group-dynamic",
                     )
                 ),
-            ),
-            Row(
                 Column(
                     Div(
                         FloatingField("phone_number"),
                         css_class="input-group input-group-dynamic",
                     )
                 ),
+            ),
+            Row(
                 Column(
                     Div(
                         FloatingField("location"),
+                        css_class="input-group input-group-dynamic",
+                    )
+                ),
+                Column(
+                    Div(
+                        FloatingField("country"),
                         css_class="input-group input-group-dynamic",
                     )
                 ),
@@ -714,6 +787,7 @@ class ProfileBasicForm(forms.ModelForm):
             "job_title",
             "show_help",
             "location",
+            "country",
             "languages",
             "contracted_leave",
             "carry_over_leave",

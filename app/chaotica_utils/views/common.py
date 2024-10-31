@@ -17,7 +17,7 @@ from django.http import (
 )
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 import json, os, random, csv
-from .forms import (
+from ..forms import (
     ChaoticaUserForm,
     ImportSiteDataForm,
     LeaveRequestForm,
@@ -28,16 +28,16 @@ from .forms import (
     InviteUserForm,
     MergeUserForm,
 )
-from .enums import GlobalRoles, NotificationTypes
-from .tasks import (
+from ..enums import GlobalRoles, NotificationTypes
+from ..tasks import (
     task_send_notifications,
     task_sync_global_permissions,
     task_sync_role_permissions,
     task_sync_role_permissions_to_default,
 )
 from dateutil.relativedelta import relativedelta
-from .models import Notification, User, Language, Note, LeaveRequest, UserInvitation
-from .utils import (
+from ..models import Notification, User, Language, Note, LeaveRequest, UserInvitation
+from ..utils import (
     ext_reverse,
     AppNotification,
     is_valid_uuid,
@@ -60,7 +60,6 @@ from django.shortcuts import get_object_or_404
 from constance import config
 from constance.utils import get_values
 import datetime
-from .tasks import task_update_holidays
 from django.views.decorators.http import (
     require_http_methods,
     require_safe,
@@ -123,15 +122,6 @@ def page_defaults(request):
 
 def is_ajax(request):
     return request.META.get("HTTP_X_REQUESTED_WITH") == "XMLHttpRequest"
-
-
-@login_required
-@staff_member_required
-@require_safe
-def update_holidays(request):
-    task_update_holidays.do(request)
-    return HttpResponse()
-    return HttpResponseRedirect(reverse("home"))
 
 
 @login_required
@@ -226,6 +216,18 @@ def view_own_leave(request):
         "leave_list": leave_list,
     }
     template = loader.get_template("view_own_leave.html")
+    context = {**context, **page_defaults(request)}
+    return HttpResponse(template.render(context, request))
+
+@login_required
+@require_http_methods(["POST", "GET"])
+def map_view(request):
+    context = {}
+    active_users = User.objects.filter(is_active=True)
+    context = {
+        "active_users": active_users,
+    }
+    template = loader.get_template("map_view.html")
     context = {**context, **page_defaults(request)}
     return HttpResponse(template.render(context, request))
 

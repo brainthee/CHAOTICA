@@ -1,0 +1,37 @@
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+<div class="modal-dialog modal- modal-dialog-centered modal-" role="document">
+    <div class="modal-content">
+        <form method="post" action="{{ request.get_full_path }}" class="js-submit-modal-form">
+            {% csrf_token %}            
+            <div class="modal-header">
+                <h6 class="modal-title font-weight-normal" 
+                    id="modal-title-default">
+                    {% if holiday_form.instance.pk %}
+                    Edit Holiday
+                    {% else %}
+                    Add New Holiday
+                    {% endif %}
+                </h6>
+                <button type="button" class="btn-close text-body-emphasis" 
+                    data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="card-body p-3">
+                {% crispy holiday_form %}
+            </div>
+            <div class="card-footer p-3">
+                <div class="text-end">
+                    <button class="btn btn-link text-danger" type="button">Cancel</button>
+                    <button class="btn btn-sm btn-primary px-5" type="submit">Save</button>
+                </div>
+            </div>
+        </form>
+    </div>
+ </div>
+
+ <script>
+    $('#mainModal').on('shown.bs.modal', function() {
+        $('.datepickerinput').datetimepicker({
+            format: 'YYYY-MM-DD'});
+    });
+</script> 
