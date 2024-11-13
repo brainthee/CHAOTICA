@@ -142,7 +142,7 @@
         <h5 class="mb-3 text-body-tertiary fw-semibold">
           Jobs you are involved in.
         </h5>
-        <div class="card card-calendar">
+        <div class="card">
           <div class="p-3 bg-body-emphasis border-top border-bottom border-200">
           {% include 'partials/job/job_list_table.html' with job_list=myJobs disableAjax=1 only %}
           </div>
@@ -154,7 +154,7 @@
         <h5 class="mb-3 text-body-tertiary fw-semibold">
           Phases you are involved in.
         </h5>
-        <div class="card card-calendar">
+        <div class="card">
           <div class="p-3 bg-body-emphasis border-top border-bottom border-200">
           {% include 'partials/phase/tables/basic_table.html' with phases=myPhases disableAjax=1 only %}
           </div>
@@ -167,7 +167,7 @@
         <h5 class="mb-3 text-body-tertiary fw-semibold">
           Phases from your organisational unit that are at <span class="badge text-wrap badge-phoenix badge-phoenix-danger">In Progress</span>.
         </h5>
-        <div class="card card-calendar">
+        <div class="card">
           <div class="p-3 bg-body-emphasis border-top border-bottom border-200">
           {% include 'partials/phase/tables/basic_table.html' with phases=in_flight disableAjax=1 only %}
           </div>
@@ -181,7 +181,7 @@
         <h5 class="mb-3 text-body-tertiary fw-semibold">
           Phases from your organisational unit that have scheduled slots this week.
         </h5>
-        <div class="card card-calendar">
+        <div class="card">
           <div class="p-3 bg-body-emphasis border-top border-bottom border-200">
           {% include 'partials/phase/tables/basic_table.html' with phases=scheduled_phases_this_week disableAjax=1 only %}
           </div>
@@ -195,7 +195,7 @@
         <h5 class="mb-3 text-body-tertiary fw-semibold">
           Jobs from your organisational unit that are at <span class="badge badge-phoenix badge-phoenix-info">Pending Scoping</span> or <span class="badge badge-phoenix badge-phoenix-info">Additional Scoping Required</span>.
         </h5>
-        <div class="card card-calendar">
+        <div class="card">
           <div class="p-3 bg-body-emphasis border-top border-bottom border-200">
           {% include 'partials/job/job_list_table.html' with job_list=pendingScoping disableAjax=1 only %}
           </div>
@@ -209,7 +209,7 @@
         <h5 class="mb-3 text-body-tertiary fw-semibold">
           Jobs from your organisational unit that are at <span class="badge badge-phoenix badge-phoenix-info">Additional Scoping Required</span>.
         </h5>  
-        <div class="card card-calendar">
+        <div class="card">
           <div class="p-3 bg-body-emphasis border-top border-bottom border-200">
           {% include 'partials/job/job_list_table.html' with job_list=scopesToSignoff disableAjax=1 only %}
           </div>
@@ -223,7 +223,7 @@
         <h5 class="mb-3 text-body-tertiary fw-semibold">
           Phases from your organisational unit that are at <span class="badge badge-phoenix badge-phoenix-secondary">Pending Technical QA</span>, <span class="badge badge-phoenix badge-phoenix-info">Tech QA</span> or <span class="badge badge-phoenix badge-phoenix-info">Author Tech Updates</span>.
         </h5>    
-        <div class="card card-calendar">
+        <div class="card">
           <div class="p-3 bg-body-emphasis border-top border-bottom border-200">
             {% include 'partials/phase/tables/tqa_table.html' with phases=TQA disableAjax=1 only %}
           </div>
@@ -237,7 +237,7 @@
         <h5 class="mb-3 text-body-tertiary fw-semibold">
           Phases from your organisational unit that are at <span class="badge badge-phoenix badge-phoenix-secondary">Pending Presentation QA</span>, <span class="badge badge-phoenix badge-phoenix-info">Pres QA</span> or <span class="badge badge-phoenix badge-phoenix-info">Author Pres Updates</span>.
         </h5>      
-        <div class="card card-calendar">
+        <div class="card">
           <div class="p-3 bg-body-emphasis border-top border-bottom border-200">
             {% include 'partials/phase/tables/pqa_table.html' with phases=PQA disableAjax=1 only %}
           </div>
@@ -247,19 +247,21 @@
 
       {% if request.user.is_people_manager %}
       <div class="tab-pane fade h-100 p-3" id="teamTabContent" role="tabpanel" aria-labelledby="teamTab">
-        <h2 class="mb-3 lh-sm">My Team</h2>            
-        <div class="card card-calendar">
-          <div class="card-body p-3">
-            Team
-          </div>
-        </div>
+        <h2 class="mb-3 lh-sm">My Team</h2>    
+        <h5 class="mb-3 text-body-tertiary fw-semibold">
+          Team members that report to you.
+        </h5>      
+            {% include 'partials/team_dashboard.html' with team=team %}
       </div>
 
       <div class="tab-pane fade h-100 p-3" id="leaveTabContent" role="tabpanel" aria-labelledby="leaveTab">
-        <h2 class="mb-3 lh-sm">Leave Requests</h2>            
-        <div class="card card-calendar">
-          <div class="card-body p-3">
-            Team
+        <h2 class="mb-3 lh-sm">Team Leave Requests</h2>        
+        <h5 class="mb-3 text-body-tertiary fw-semibold">
+          Leave requests submitted by your team.
+        </h5>      
+        <div class="card">
+          <div class="p-3 bg-body-emphasis border-top border-bottom border-200">
+            {% include 'partials/team_leave_table.html' with team_leave=team_leave %}
           </div>
         </div>
       </div>
