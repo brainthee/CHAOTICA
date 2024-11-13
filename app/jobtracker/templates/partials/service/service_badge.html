@@ -1,3 +1,13 @@
-<a href="{{ service.get_absolute_url }}">
-    <span class="badge badge-tag me-2 mb-1">{{ service }}</span>
+<a class="text-decoration-none" href="{{ service.get_absolute_url }}">
+  <span class="badge badge-phoenix    
+    {% if rating == 'lead' %}      
+    badge-phoenix-primary
+    {% elif rating == 'support' %}      
+    badge-phoenix-success
+    {% else %}      
+    badge-tag 
+    {% endif %}
+    me-2 mb-1" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-original-title="{% if rating == 'lead' %}Can Lead{% elif rating == 'support' %}Can Support{% endif %}">
+    {{ service }}
+  </span>
 </a>
