@@ -16,6 +16,7 @@
   {% else %}
     No Data
   {% endif %}">
+  {% if feedback %}
   {% get_range_from_zero 4 as feedbackRange %}
   {% for i in feedbackRange %}
     {% if feedback >= i %}
@@ -24,4 +25,12 @@
       <span class="text-300 fa-xs fa-regular fa-star"></span>
     {% endif %}
   {% endfor %}
+  {% else %}
+  <span class="text-300 text-secondary-subtle fa-xs fa-regular fa-star"></span>
+  <span class="text-300 text-secondary-subtle fa-xs fa-regular fa-star"></span>
+  <span class="text-300 text-secondary-subtle fa-xs fa-regular fa-star"></span>
+  <span class="text-300 text-secondary-subtle fa-xs fa-regular fa-star"></span>
+  <span class="text-300 text-secondary-subtle fa-xs fa-regular fa-star"></span>
+
+  {% endif %}
 </span>
