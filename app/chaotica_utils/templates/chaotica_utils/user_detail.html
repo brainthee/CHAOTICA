@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% load menu %}
 {% load static %}
+{% load feedback_tags %}
 
 {% block pageTitle %}
   {{ user }}
@@ -39,23 +40,61 @@
                   </div>
                 </div>
                 <div class="col-8 text-start">
-                  <h3 class="">{{ user }}</h3>
+                  <h3 class="">
+                    {{ user }}
+                    {% for unitMembership in user.unit_memberships.all %}
+                      <a href="{{ unitMembership.unit.get_absolute_url }}">{% include 'partials/unit/unit_badge_role_colour.html' with unitMembership=unitMembership %}</a>
+                    {% endfor %}
+                  </h3>
 
                   {% if user.job_title %}
                     <p class="text-opacity-50 fw-semibold fs-10 mb-2">{{ user.job_title }}</p>
                   {% endif %}
-                  {% if user.notification_email %}
-                    <p class="text-opacity-50 fw-semibold fs-10 mb-2">
-                      <a href="mailto:{{ user.notification_email }}">{{ user.notification_email }}</a>
-                    </p>
-                  {% elif user.email %}
-                    <p class="text-opacity-50 fw-semibold fs-10 mb-2">
-                      <a href="mailto:{{ user.email }}">{{ user.email }}</a>
-                    </p>
-                  {% endif %}
-                  {% for unitMembership in user.unit_memberships.all %}
-                    <a href="{{ unitMembership.unit.get_absolute_url }}">{% include 'partials/unit/unit_badge_role_colour.html' with unitMembership=unitMembership %}</a>
-                  {% endfor %}
+
+                  <div class="row mb-1">
+                    <div class="d-flex align-items-center">
+                      <div class="px-2 py-1 me-2 text-secondary fs-9">
+                        <span class="fa-solid fa-at"></span>
+                      </div>
+                      <p class="fs-9 mb-0">
+                        {% if user.notification_email %}
+                            <a href="mailto:{{ user.notification_email }}">{{ user.notification_email }}</a>
+                        {% elif user.email %}
+                            <a href="mailto:{{ user.email }}">{{ user.email }}</a>
+                        {% endif %}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="row mb-1">
+                    <div class="d-flex align-items-center">
+                      <div class="px-2 py-1 me-2 text-secondary fs-9">
+                        <span class="fa-solid fa-phone"></span>
+                      </div>
+                      <p class="fs-9 mb-0">
+                        {% if user.phone_number %}
+                        {{ user.phone_number }}
+                        {% else %}
+                        No info
+                        {% endif %}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="row mb-1">
+                    <div class="d-flex align-items-center">
+                      <div class="px-2 py-1 me-2 text-secondary fs-9">
+                        <span class="fa-solid fa-route"></span>
+                      </div>
+                      <p class="fs-9 mb-0">
+                        {% if user.location %}
+                        {{ user.location }}
+                        {% else %}
+                        No info
+                        {% endif %}</p>
+                    </div>
+                  </div>
+
                 </div>
               </div>
             </div>
@@ -64,11 +103,8 @@
             <div>
               <h6>Avg Report Rating</h6>
               <div class="text-600 mb-0">
-                {{ user.get_average_qa_rating_12mo }}
-
-                {% with avg_qa_rating=user.get_average_qa_rating_12mo %}
-                  {% include 'partials/feedback_stars.html' with feedback=avg_qa_rating %}
-                {% endwith %}
+                {% get_combined_average_qa_rating_12mo user as avg_qa_rating %}
+                {% include 'partials/feedback_stars.html' with feedback=avg_qa_rating %}
               </div>
             </div>
             <div>
@@ -103,22 +139,22 @@
               <h5 class="text-body-highlight mb-0">Skills</h5>
             </div>
             {% for skill in user.get_skills_specialist %}
-            {% include 'partials/skill/skill_badge.html' with rating='specialist' %}
+              {% include 'partials/skill/skill_badge.html' with rating='specialist' %}
             {% empty %}
-            &nbsp;
-            {% endfor %}  
+              &nbsp;
+            {% endfor %}
 
             {% for skill in user.get_skills_alone %}
-            {% include 'partials/skill/skill_badge.html' with rating='alone' %}
+              {% include 'partials/skill/skill_badge.html' with rating='alone' %}
             {% empty %}
-            &nbsp;
-            {% endfor %}    
+              &nbsp;
+            {% endfor %}
 
             {% for skill in user.get_skills_support %}
-            {% include 'partials/skill/skill_badge.html' with rating='support' %}
+              {% include 'partials/skill/skill_badge.html' with rating='support' %}
             {% empty %}
-            &nbsp;
-            {% endfor %}    
+              &nbsp;
+            {% endfor %}
           </div>
 
           <div class="border-top border-dashed border-300 pt-4"></div>
@@ -128,7 +164,6 @@
               <h5 class="text-body-highlight mb-0">Services</h5>
             </div>
           </div>
-
         </div>
       </div>
     </div>
@@ -157,7 +192,7 @@
             {% include 'partials/phase/phase_list_table.html' with phases=user.phase_where_report_author.all disableAjax=1 %}
           </div>
           <div class="tab-pane fade" id="tab-schedule" role="tabpanel" aria-labelledby="schedule-tab">
-            <div class="calendar" data-bs-toggle="calendar" id="calendar"></div>   
+            <div class="calendar" data-bs-toggle="calendar" id="calendar"></div>
           </div>
         </div>
       </div>
@@ -165,96 +200,91 @@
   </div>
 {% endblock %}
 
-
 {% block footer_javascript_page %}
-<script>
-
-var calendarEl = document.getElementById('calendar');
-
-var calendar = new FullCalendar.Calendar(calendarEl, {
-    schedulerLicenseKey: 'GPL-My-Project-Is-Open-Source',
-    initialView: 'dayGridMonth',
-    themeSystem: 'bootstrap5',
-    eventDisplay: "block",
-    firstDay: 1,
-    headerToolbar: {
-      left: 'prev,next today',
-      center: 'title',
-      right: 'dayGridMonth,timeGridWeek,timeGridDay'
-    },
-    eventSources: [
-      {
-        url: "{% url 'user_schedule_timeslots' user.email %}",
-        method: 'GET',
-        failure: function(res) {
-          if(res.response.redirected) {
-            // Reload the page - we're prob logged out...
-            window.location.reload();
-          } else {
-            Swal.fire({
-              icon: 'error',
-              title: 'Oops...',
-              text: 'Something went wrong getting scheduled events!',
-            })
+  <script>
+    var calendarEl = document.getElementById('calendar')
+    
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+      schedulerLicenseKey: 'GPL-My-Project-Is-Open-Source',
+      initialView: 'dayGridMonth',
+      themeSystem: 'bootstrap5',
+      eventDisplay: 'block',
+      firstDay: 1,
+      headerToolbar: {
+        left: 'prev,next today',
+        center: 'title',
+        right: 'dayGridMonth,timeGridWeek,timeGridDay'
+      },
+      eventSources: [
+        {
+          url: "{% url 'user_schedule_timeslots' user.email %}",
+          method: 'GET',
+          failure: function (res) {
+            if (res.response.redirected) {
+              // Reload the page - we're prob logged out...
+              window.location.reload()
+            } else {
+              Swal.fire({
+                icon: 'error',
+                title: 'Oops...',
+                text: 'Something went wrong getting scheduled events!'
+              })
+            }
           }
         },
-      },
-      {
-        url: "{% url 'user_schedule_holidays' user.email %}",
-        method: 'GET',
-        failure: function(res) {
-          if(res.response.redirected) {
-            // Reload the page - we're prob logged out...
-            window.location.reload();
-          } else {
-            Swal.fire({
-              icon: 'error',
-              title: 'Oops...',
-              text: 'Something went wrong getting scheduled holidays!',
-            })
+        {
+          url: "{% url 'user_schedule_holidays' user.email %}",
+          method: 'GET',
+          failure: function (res) {
+            if (res.response.redirected) {
+              // Reload the page - we're prob logged out...
+              window.location.reload()
+            } else {
+              Swal.fire({
+                icon: 'error',
+                title: 'Oops...',
+                text: 'Something went wrong getting scheduled holidays!'
+              })
+            }
           }
-        },
-      },
-    ],
-    selectable: false,
-    editable: false,
-    eventClick: function(info) {
-        info.jsEvent.preventDefault(); // don't let the browser navigate
-        if (info.event.url) {
-        window.open(info.event.url);
         }
-    },
-    // Cal Defaults
-    nowIndicator: true,
-    weekNumberCalculation: "ISO",
-    slotDuration: "00:30:00",
-    scrollTime: "08:00:00",
-    slotMinTime: "08:30:00",
-    slotMaxTime: "18:00:00",
-    aspectRatio: 1.45,
-
-    businessHours: {
+      ],
+      selectable: false,
+      editable: false,
+      eventClick: function (info) {
+        info.jsEvent.preventDefault() // don't let the browser navigate
+        if (info.event.url) {
+          window.open(info.event.url)
+        }
+      },
+      // Cal Defaults
+      nowIndicator: true,
+      weekNumberCalculation: 'ISO',
+      slotDuration: '00:30:00',
+      scrollTime: '08:00:00',
+      slotMinTime: '08:30:00',
+      slotMaxTime: '18:00:00',
+      aspectRatio: 1.45,
+    
+      businessHours: {
         // days of week. an array of zero-based day of week integers (0=Sunday)
-        daysOfWeek: [ 1, 2, 3, 4, 5], // Monday - Friday
-
+        daysOfWeek: [1, 2, 3, 4, 5], // Monday - Friday
+    
         startTime: '09:00', // a start time
-        endTime: '17:30', // an end time
-    }
-  });
-
-calendar.render();
-
-
-var triggerTabList = [].slice.call(document.querySelectorAll('a#schedule-tab'))
-triggerTabList.forEach(function (triggerEl) {
-  var tabTrigger = new bootstrap.Tab(triggerEl)
-  triggerEl.addEventListener('shown.bs.tab', function (event) {
-
-    calendar.updateSize();
-    calendar.render();
-    calendar.refetchEvents();
-
-  })
-})
-</script>
-{% endblock footer_javascript_page %}
+        endTime: '17:30' // an end time
+      }
+    })
+    
+    calendar.render()
+    
+    var triggerTabList = [].slice.call(document.querySelectorAll('a#schedule-tab'))
+    triggerTabList.forEach(function (triggerEl) {
+      var tabTrigger = new bootstrap.Tab(triggerEl)
+      triggerEl.addEventListener('shown.bs.tab', function (event) {
+        calendar.updateSize()
+        calendar.render()
+        calendar.refetchEvents()
+      })
+    })
+  </script>
+{% endblock %}
