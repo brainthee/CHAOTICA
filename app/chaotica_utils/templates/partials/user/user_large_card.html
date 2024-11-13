@@ -112,6 +112,26 @@
     <div class="mb-4">
       <div class="d-flex align-items-center mb-1">
         <span class="me-2 fas fa-certificate"></span>
+        <h5 class="text-body-highlight mb-0">Services</h5>
+      </div>
+
+      {% for service in user.services_can_lead %}
+        {% include 'partials/service/service_badge.html' with rating='lead' %}
+      {% empty %}
+        &nbsp;
+      {% endfor %}
+
+      {% for service in user.services_can_contribute %}
+        {% include 'partials/service/service_badge.html' with rating='support' %}
+      {% empty %}
+        &nbsp;
+      {% endfor %}
+    </div>
+
+    <div class="border-top border-dashed border-300 pt-4"></div>
+    <div class="mb-4">
+      <div class="d-flex align-items-center mb-1">
+        <span class="me-2 fas fa-certificate"></span>
         <h5 class="text-body-highlight mb-0">Skills</h5>
       </div>
       {% for skill in user.get_skills_specialist %}
@@ -132,23 +152,5 @@
         &nbsp;
       {% endfor %}
     </div>
-
-    <div class="border-top border-dashed border-300 pt-4"></div>
-    <div class="d-flex align-items-center mb-1">
-      <span class="me-2 fas fa-certificate"></span>
-      <h5 class="text-body-highlight mb-0">Services</h5>
-    </div>
-
-    {% for service in user.services_can_lead %}
-      {% include 'partials/service/service_badge.html' with rating='lead' %}
-    {% empty %}
-      &nbsp;
-    {% endfor %}
-
-    {% for service in user.services_can_contribute %}
-      {% include 'partials/service/service_badge.html' with rating='support' %}
-    {% empty %}
-      &nbsp;
-    {% endfor %}
   </div>
 </div>
