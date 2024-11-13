@@ -14,7 +14,11 @@
             <button data-url="{% url 'job_update_workflow' job.slug 2 %}" 
                 class="btn btn-outline-info js-update-job-workflow"
                 data-status="Scoping" data-status-id="2">
+                {% if job.status == 5 %}
+                Return to Scoping
+                {% else %}
                 Move to Scoping
+                {% endif %}
                 {% if not job.can_to_scoping %}
                 <span class="ms-1 text-danger" data-feather="alert-triangle" style="height:12.8px;width:12.8px;"></span>
                 {% endif %} 

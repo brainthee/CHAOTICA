@@ -724,9 +724,7 @@ class User(AbstractUser):
         from jobtracker.models import Service
 
         return Service.objects.filter(
-            Q(skillsRequired__in=self.get_skills_specialist())
-            | Q(skillsRequired__in=self.get_skills_alone())
-            | Q(skillsRequired__in=self.get_skills_support())
+            Q(skillsRequired__in=self.get_skills_support())
         )
 
     def get_skills_specialist(self):
@@ -801,9 +799,10 @@ class User(AbstractUser):
     ):
         return self.get_average_qa_rating("presqa_report_rating", from_range, to_range)
 
-    def get_average_qa_rating_12mo(self):
-        tqa = self.get_average_techqa_feedback_12mo()
-        pqa = self.get_average_presqa_feedback_12mo()
+
+    def get_combined_average_qa_rating_12mo(self):
+        tqa = self.get_average_techqa_feedback()
+        pqa = self.get_average_presqa_feedback()
         if tqa > 0 and pqa > 0:
             return (tqa + pqa) / 2
         else:
