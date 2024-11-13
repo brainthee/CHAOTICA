@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% load menu %}
+{% load static %}
+
+{% block pageTitle %}
+  Map View
+{% endblock %}
+{% block head_title %}
+Map View
+{% endblock %}
+
+{% block headerBlock_css %}
+  mb-6
+{% endblock %}
+
+{% block breadcrumbItem %}
+  <li class="breadcrumb-item active" aria-current="page">Map View</li>
+{% endblock %}
+
+{% block content %}
+  <div class="row mb-4 gx-6 gy-3 mt-2 align-items-center">
+    <div class="col">
+      <h2 class="mb-0">Global Map View</h2>
+    </div>
+    <div class="col-3 d-flex justify-content-end"></div>
+  </div>
+
+  {% if active_users %}
+  <div class="mx-n4 mb-3 px-3 py-3 mx-lg-n6 px-lg-6 bg-body-emphasis border-top border-bottom border-200 position-relative top-1">
+    <div id="usermap" class="googlemap h-100 min-vh-50">
+    </div>
+  </div>
+  {% endif %}
+
+{% endblock %}
+
+
+{% block footer_javascript_page %}
+<script>
+
+
+//An extract of address points from the LINZ bulk extract: http://www.linz.govt.nz/survey-titles/landonline-data/landonline-bde
+//Should be this data set: http://data.linz.govt.nz/#/layer/779-nz-street-address-electoral/
+var addressPoints = [
+{% for u in active_users %}
+{% if u.latitude and u.longitude and u.location %}[{{ u.latitude }}, {{ u.longitude }}, "{{ u }} ({{ u.location }})"],{% endif %}
+{% endfor %}
+];
+
+    icons = { // you can replace with your exact image paths
+        iconUrl: "../../../../{% static 'assets/img/map-marker.png' %}",
+        shadowSize: [0,0],
+    };
+    // Setup map
+    var map = L.map('usermap').setView([51.505, -0.09], 2);
+    L.Icon.Default.mergeOptions(icons)
+    {% comment %} L.Icon.Default.prototype.options.shadowUrl = []; {% endcomment %}
+    
+    // Setup tiles
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    // Setup markers
+    var markers = L.markerClusterGroup();
+		
+    for (var i = 0; i < addressPoints.length; i++) {
+        var a = addressPoints[i];
+        var title = a[2];
+        var marker = L.marker(new L.LatLng(a[0], a[1]), { title: title });
+        marker.bindPopup(title);
+        markers.addLayer(marker);
+    }
+
+    map.addLayer(markers);
+  
+</script>
+{% endblock footer_javascript_page %}

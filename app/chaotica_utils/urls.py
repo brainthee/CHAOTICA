@@ -17,6 +17,7 @@ urlpatterns = [
     
     # User CRUD
     path("users/", views.UserListView.as_view(), name="user_list"),
+    path("users/map", views.map_view, name="map_view"),
     path("users/invite", views.user_invite, name="user_invite"),
     path("signup/<str:invite_id>", views.signup, name="signup"),
     path("signup/", views.signup, name="signup"),

@@ -151,6 +151,7 @@ def sync_role_permissions(request):
     return HttpResponseRedirect(reverse("home"))
 
 
+@staff_member_required
 @require_safe
 def trigger_error(request):
     """
@@ -166,6 +167,7 @@ def trigger_error(request):
     return division_by_zero
 
 
+@login_required
 @require_safe
 def test_notification(request):
     """
@@ -207,6 +209,19 @@ def maintenance(request):
     return HttpResponse(template.render(context, request))
 
 
+@staff_member_required
+@require_http_methods(["POST", "GET"])
+def map_view(request):
+    context = {}
+    active_users = User.objects.filter(is_active=True)
+    context = {
+        "active_users": active_users,
+    }
+    template = loader.get_template("map_view.html")
+    context = {**context, **page_defaults(request)}
+    return HttpResponse(template.render(context, request))
+
+
 @login_required
 @require_http_methods(["POST", "GET"])
 def view_own_leave(request):
@@ -216,18 +231,6 @@ def view_own_leave(request):
         "leave_list": leave_list,
     }
     template = loader.get_template("view_own_leave.html")
-    context = {**context, **page_defaults(request)}
-    return HttpResponse(template.render(context, request))
-
-@login_required
-@require_http_methods(["POST", "GET"])
-def map_view(request):
-    context = {}
-    active_users = User.objects.filter(is_active=True)
-    context = {
-        "active_users": active_users,
-    }
-    template = loader.get_template("map_view.html")
     context = {**context, **page_defaults(request)}
     return HttpResponse(template.render(context, request))
 

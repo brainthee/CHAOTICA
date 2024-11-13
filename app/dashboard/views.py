@@ -29,7 +29,6 @@ logger = logging.getLogger(__name__)
 @require_safe
 def index(request):
     context = {}
-    template = loader.get_template("dashboard_index.html")
 
     view_units = get_objects_for_user(request.user, "can_view_jobs", klass=OrganisationalUnit)
     all_phases = Phase.objects.filter(
@@ -83,4 +82,5 @@ def index(request):
             Q(user__manager=request.user) | Q(user__acting_manager=request.user)
         )
     context = {**context, **page_defaults(request)}
+    template = loader.get_template("dashboard_index.html")
     return HttpResponse(template.render(context, request))
