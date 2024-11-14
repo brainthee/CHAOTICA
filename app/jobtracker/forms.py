@@ -37,6 +37,8 @@ from bootstrap_datepicker_plus.widgets import (
     DatePickerInput,
     DateTimePickerInput,
 )
+from tinymce.widgets import TinyMCE
+
 
 
 class SchedulerFilter(forms.Form):
@@ -1521,7 +1523,7 @@ class MergeClientForm(forms.Form):
 class ClientForm(forms.ModelForm):
     specific_requirements = forms.CharField(
         required=False,
-        widget=forms.Textarea(
+        widget=TinyMCE(
             attrs={
                 "class": "tinymce",
                 "data-tinymce": '{"height":"15rem","placeholder":"Write an special requirements of this team here..."}',
@@ -1531,7 +1533,7 @@ class ClientForm(forms.ModelForm):
     )
     specific_reporting_requirements = forms.CharField(
         required=False,
-        widget=forms.Textarea(
+        widget=TinyMCE(
             attrs={
                 "class": "tinymce",
                 "data-tinymce": '{"height":"15rem","placeholder":"Write an special requirements of this team here..."}',

@@ -385,8 +385,6 @@ BLEACH_ALLOWED_STYLES = [
 # (assuming src is an allowed attribute)
 BLEACH_ALLOWED_PROTOCOLS = ["http", "https", "data"]
 
-TINYMCE_COMPRESSOR = True
-
 DJANGO_CRON_DELETE_LOGS_OLDER_THAN = 14
 DJANGO_CRON_LOCK_BACKEND = "django_cron.backends.lock.file.FileLock"
 CRON_CLASSES = [
@@ -606,6 +604,62 @@ CONTENT_SECURITY_POLICY = {
         ],
         "upgrade-insecure-requests": True,
     },
+}
+
+
+
+TINYMCE_JS_ROOT = os.path.join(STATIC_URL, "vendors/tinymce")
+TINYMCE_JS_URL = os.path.join(TINYMCE_JS_ROOT, "tinymce.min.js")
+
+TINYMCE_COMPRESSOR = True
+TINYMCE_DEFAULT_CONFIG = {
+    "suffix": ".min",
+    "plugins": "advlist autolink lists link image charmap print preview anchor table media searchreplace visualblocks code",
+    "theme": "silver",
+
+    "selector": '.tinymce',
+    "height": '50vh',
+
+    "promotion": False,
+    "skin": 'oxide',
+    # "menubar": False,
+    # content_style: `
+    #   .mce-content-body { 
+    #     color: ${getColor('emphasis-color')};
+    #     background-color: ${getColor('tinymce-bg')};
+    #   }
+    #   .mce-content-body[data-mce-placeholder]:not(.mce-visualblocks)::before {
+    #     color: ${getColor('quaternary-color')};
+    #     font-weight: 400;
+    #     font-size: 12.8px;
+    #   }
+    # `,
+    "statusbar": True,
+    "themes": 'silver',
+    # "theme_advanced_toolbar_align": 'center',
+    # "toolbar": [
+    #   { name: 'history', items: ['undo', 'redo'] },
+    #   {
+    #     name: 'formatting',
+    #     items: ['bold', 'italic', 'underline', 'strikethrough']
+    #   },
+    #   {
+    #     name: 'alignment',
+    #     items: ['alignleft', 'aligncenter', 'alignright', 'alignjustify']
+    #   },
+    #   { name: 'list', items: ['numlist', 'bullist'] },
+    #   { name: 'link', items: ['link'] }
+    # ],
+    # "setup": editor => {
+    #   editor.on('focus', () => {
+    #     const wraper = document.querySelector('.tox-sidebar-wrap');
+    #     wraper.classList.add('editor-focused');
+    #   });
+    #   editor.on('blur', () => {
+    #     const wraper = document.querySelector('.tox-sidebar-wrap');
+    #     wraper.classList.remove('editor-focused');
+    #   });
+    # }
 }
 
 # Default primary key field type

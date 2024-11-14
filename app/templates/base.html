@@ -128,8 +128,11 @@
     <script src="{% static "vendors/tinymce/plugins/media/plugin.min.js" %}"></script> {% endcomment %}
 
     {% comment %} <script nonce="{{request.csp_nonce}}" src="https://cdn.tiny.cloud/1/q9n609zp86ls5162adwa7442cinatffvom2msi4l7bbv9gs4/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script> {% endcomment %}
-    <script src="{% static "tinymce/tinymce.min.js" %}"></script>
-    
+
+    {% comment %} <script src="{% static "tinymce/tinymce.min.js" %}"></script> {% endcomment %}
+
+    {% comment %} <script src="{% static "js/tiny_mce/tiny_mce.js" %}"></script> {% endcomment %}
+    <script src="{% url "tinymce-compressor" %}"></script>
 
     <link nonce="{{request.csp_nonce}}" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
 
