@@ -113,6 +113,20 @@
     <script src="{% static "vendors/leaflet.markercluster/leaflet.markercluster.js" %}"></script>
     <script src="{% static "vendors/leaflet.tilelayer.colorfilter/leaflet-tilelayer-colorfilter.min.js" %}"></script>
     <script src="{% static "vendors/tinymce/tinymce.min.js" %}"></script>
+    <script src="{% static "vendors/tinymce/themes/silver/theme.min.js" %}"></script>
+    
+    <link rel="stylesheet" src="{% static "vendors/tinymce/skins/ui/oxide/skin.min.css" %}" />
+    <link rel="stylesheet" src="{% static "vendors/tinymce/skins/content/default/content.min.css" %}" />
+    <link rel="stylesheet" src="{% static "vendors/tinymce/skins/ui/oxide/content.min.css" %}" />
+
+    <script src="{% static "vendors/tinymce/models/dom/model.min.js" %}"></script>
+    <script src="{% static "vendors/tinymce/icons/default/icons.min.js" %}"></script>
+    <script src="{% static "vendors/tinymce/plugins/link/plugin.min.js" %}"></script>
+    <script src="{% static "vendors/tinymce/plugins/image/plugin.min.js" %}"></script>
+    <script src="{% static "vendors/tinymce/plugins/lists/plugin.min.js" %}"></script>
+    <script src="{% static "vendors/tinymce/plugins/table/plugin.min.js" %}"></script>
+    <script src="{% static "vendors/tinymce/plugins/media/plugin.min.js" %}"></script>
+
     {% comment %} <script nonce="{{request.csp_nonce}}" src="https://cdn.tiny.cloud/1/q9n609zp86ls5162adwa7442cinatffvom2msi4l7bbv9gs4/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script> {% endcomment %}
 
     <link nonce="{{request.csp_nonce}}" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />

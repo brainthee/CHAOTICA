@@ -487,7 +487,7 @@ class Phase(models.Model):
         permissions = ()
 
     def __str__(self):
-        return "{id}: {title}".format(id=self.get_id(), title=self.title)
+        return "{id}: {client} - {title}".format(id=self.get_id(), client=self.job.client, title=self.title)
 
     ###########################################
     ## Notifications
