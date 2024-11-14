@@ -180,7 +180,14 @@
 
             <div class="tab-content" id="myTabContent">
                 <div class="tab-pane fade active show" id="team" role="tabpanel" aria-labelledby="team-tab">
-
+                  
+                  <div class="d-flex flex-wrap mb-3">
+                    {% for user in service.can_lead %}
+                    <div class="col-4 p-0 m-1">
+                    {% include 'partials/user/user_card.html' with user=user %}
+                    </div>
+                    {% endfor %}
+                  </div>
                 </div>
 
                 <div class="tab-pane fade" id="services" role="tabpanel" aria-labelledby="services-tab">
