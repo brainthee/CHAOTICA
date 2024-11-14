@@ -385,6 +385,8 @@ BLEACH_ALLOWED_STYLES = [
 # (assuming src is an allowed attribute)
 BLEACH_ALLOWED_PROTOCOLS = ["http", "https", "data"]
 
+TINYMCE_COMPRESSOR = True
+
 DJANGO_CRON_DELETE_LOGS_OLDER_THAN = 14
 DJANGO_CRON_LOCK_BACKEND = "django_cron.backends.lock.file.FileLock"
 CRON_CLASSES = [
