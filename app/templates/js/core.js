@@ -296,7 +296,6 @@ jQuery(document).ready(function($){
     });
 });
 
-const { getColor, getData, getItemFromStore } = window.phoenix.utils;
 tinyMCE_GZ.init(
 {% comment %} {
     selector: '.tinymce',
