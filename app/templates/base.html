@@ -33,7 +33,7 @@
     <meta name="theme-color" content="#ffffff">
 
     <!-- Font Awesome Icons -->
-    <script src="https://kit.fontawesome.com/795119481a.js" crossorigin="anonymous"></script>
+    <script src="https://kit.fontawesome.com/795119481a.js" nonce="{{request.csp_nonce}}" crossorigin="anonymous"></script>
     <!-- JS bits -->
     <script src="{% static "vendors/imagesloaded/imagesloaded.pkgd.min.js" %}"></script>
     <script src="{% static "vendors/simplebar/simplebar.min.js" %}"></script>
@@ -45,9 +45,9 @@
     <!-- ===============================================-->
     <!--    Stylesheets-->
     <!-- ===============================================-->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
-    <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@300;400;600;700;800;900&amp;display=swap" rel="stylesheet">
+    <link rel="preconnect" nonce="{{request.csp_nonce}}" href="https://fonts.googleapis.com">
+    <link rel="preconnect" nonce="{{request.csp_nonce}}" href="https://fonts.gstatic.com" crossorigin="">
+    <link rel="preconnect" nonce="{{request.csp_nonce}}" href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@300;400;600;700;800;900&amp;display=swap">
 
     <!-- ===============================================-->
     <!--    Stylesheets-->
@@ -62,7 +62,7 @@
     <link href="{% static "vendors/dhtmlx-gantt/dhtmlxgantt.css" %}" rel="stylesheet">
     <link href="{% static "vendors/simplebar/simplebar.min.css" %}" rel="stylesheet">
     <link href="{% static "vendors/flatpickr/flatpickr.min.css" %}" rel="stylesheet">
-    <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.8/css/line.css">
+    {% comment %} <link href="https://unicons.iconscout.com/release/v4.0.8/css/line.css" rel="stylesheet" nonce="{{request.csp_nonce}}"> {% endcomment %}
     <link href="{% static "vendors/leaflet/leaflet.css" %}" rel="stylesheet">
     <link href="{% static "vendors/leaflet.markercluster/MarkerCluster.css" %}" rel="stylesheet">
     <link href="{% static "vendors/leaflet.markercluster/MarkerCluster.Default.css" %}" rel="stylesheet">
@@ -72,11 +72,11 @@
     <link href="{% static "admin/css/vendor/select2/select2.css" %}" type="text/css" media="screen" rel="stylesheet">
     <link href="{% static "admin/css/autocomplete.css" %}" type="text/css" media="screen" rel="stylesheet">
     <link href="{% static "autocomplete_light/select2.css" %}" type="text/css" media="screen" rel="stylesheet">        
-    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" type="text/css" media="screen" rel="stylesheet"/>
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" type="text/css" media="screen" rel="stylesheet" nonce="{{request.csp_nonce}}">
     
     <!-- jQuery -->
-    <script type="text/javascript" src="https://code.jquery.com/jquery-3.6.3.min.js"></script>
-    <script type="text/javascript" src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+    <script type="text/javascript" nonce="{{request.csp_nonce}}" src="https://code.jquery.com/jquery-3.6.3.min.js"></script>
+    <script type="text/javascript" nonce="{{request.csp_nonce}}" src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
     <script type="text/javascript" src="{% static "assets/js/jquery.dirty.js" %}"></script>
 
     <!-- Misc Django JS's -->
@@ -87,9 +87,9 @@
     <script src="{% static "autocomplete_light/i18n/en.js" %}"></script>
 
     <!-- DataTables -->
-    <link rel="stylesheet" href="https://cdn.datatables.net/2.1.4/css/dataTables.bootstrap5.css" />
-    <script src="https://cdn.datatables.net/2.1.4/js/dataTables.js"></script>
-    <script src="https://cdn.datatables.net/2.1.4/js/dataTables.bootstrap5.js"></script>
+    <link rel="stylesheet" nonce="{{request.csp_nonce}}" href="https://cdn.datatables.net/2.1.4/css/dataTables.bootstrap5.css" />
+    <script nonce="{{request.csp_nonce}}" src="https://cdn.datatables.net/2.1.4/js/dataTables.js"></script>
+    <script nonce="{{request.csp_nonce}}" src="https://cdn.datatables.net/2.1.4/js/dataTables.bootstrap5.js"></script>
 
     {% block head_css_section %}{% endblock head_css_section %}
     {% block head_css_page %}{% endblock head_css_page %}
@@ -109,26 +109,26 @@
     <script src="{% static "vendors/dropzone/dropzone-min.js" %}"></script>
     <script src="{% static "vendors/choices/choices.min.js" %}"></script>
     <script src="{% static "vendors/leaflet/leaflet.js" %}"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script nonce="{{request.csp_nonce}}" src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="{% static "vendors/leaflet.markercluster/leaflet.markercluster.js" %}"></script>
     <script src="{% static "vendors/leaflet.tilelayer.colorfilter/leaflet-tilelayer-colorfilter.min.js" %}"></script>
-    {% comment %} <script src="{% static "vendors/tinymce/tinymce.min.js" %}"></script> {% endcomment %}
-    <script src="https://cdn.tiny.cloud/1/q9n609zp86ls5162adwa7442cinatffvom2msi4l7bbv9gs4/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
+    <script src="{% static "vendors/tinymce/tinymce.min.js" %}"></script>
+    {% comment %} <script nonce="{{request.csp_nonce}}" src="https://cdn.tiny.cloud/1/q9n609zp86ls5162adwa7442cinatffvom2msi4l7bbv9gs4/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script> {% endcomment %}
 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+    <link nonce="{{request.csp_nonce}}" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
 
 
-    <script src="https://d3js.org/d3.v7.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/d3-org-chart@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/d3-flextree@2.1.2/build/d3-flextree.js"></script>
+    <script nonce="{{request.csp_nonce}}" src="https://d3js.org/d3.v7.min.js"></script>
+    <script nonce="{{request.csp_nonce}}" src="https://cdn.jsdelivr.net/npm/d3-org-chart@2"></script>
+    <script nonce="{{request.csp_nonce}}" src="https://cdn.jsdelivr.net/npm/d3-flextree@2.1.2/build/d3-flextree.js"></script>
 
     <!-- Calendar -->
     <script src="{% static "vendors/fullcalendar/index.global.js" %}"></script>
-    <script src="https://cdn.jsdelivr.net/npm/superagent"></script>
+    <script nonce="{{request.csp_nonce}}" src="https://cdn.jsdelivr.net/npm/superagent"></script>
 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-contextmenu/2.7.1/jquery.contextMenu.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-contextmenu/2.7.1/jquery.contextMenu.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-contextmenu/2.7.1/jquery.ui.position.js"></script>
+    <link rel="stylesheet" nonce="{{request.csp_nonce}}" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-contextmenu/2.7.1/jquery.contextMenu.min.css">
+    <script nonce="{{request.csp_nonce}}" src="https://cdnjs.cloudflare.com/ajax/libs/jquery-contextmenu/2.7.1/jquery.contextMenu.min.js"></script>
+    <script nonce="{{request.csp_nonce}}" src="https://cdnjs.cloudflare.com/ajax/libs/jquery-contextmenu/2.7.1/jquery.ui.position.js"></script>
     <script src="{% static "assets/js/snow.js" %}"></script> 
 
     <script src="{% static "assets/js/phoenix.js" %}"></script>
