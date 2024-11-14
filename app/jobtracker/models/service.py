@@ -53,23 +53,21 @@ class Service(models.Model):
     def __str__(self):
         return self.name
 
-    def users_can_conduct(self):
+    def can_conduct(self):
         # Return users who have a userskill
         return User.objects.filter(
             skills__in=UserSkill.objects.filter(
-                Q(rating=UserSkillRatings.CAN_DO_ALONE)
-                | Q(rating=UserSkillRatings.CAN_DO_WITH_SUPPORT)
-                | Q(rating=UserSkillRatings.SPECIALIST),
+                Q(rating=UserSkillRatings.CAN_DO_WITH_SUPPORT),
                 skill__in=self.skillsRequired.all(),
             )
         )
 
-    def users_can_lead(self):
+    def can_lead(self):
         # Return users who have a userskill
         return User.objects.filter(
             skills__in=UserSkill.objects.filter(
-                Q(rating=UserSkillRatings.CAN_DO_ALONE)
-                | Q(rating=UserSkillRatings.SPECIALIST),
+                Q(rating=UserSkillRatings.SPECIALIST)
+                | Q(rating=UserSkillRatings.CAN_DO_ALONE), 
                 skill__in=self.skillsRequired.all(),
             )
         )
