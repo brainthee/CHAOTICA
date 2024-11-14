@@ -5,6 +5,7 @@ from sentry_sdk.integrations.django import DjangoIntegration
 from dotenv import load_dotenv
 import datetime
 import base64
+from csp.constants import SELF, UNSAFE_INLINE, UNSAFE_EVAL, NONCE
 
 
 load_dotenv()
@@ -53,7 +54,6 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = bool(
 )
 SESSION_COOKIE_AGE = int(os.environ.get("SESSION_COOKIE_AGE", default=60 * 60 * 12))
 
-CORS_ALLOW_ALL_ORIGINS = True
 
 AUTH_ADFS = {
     "AUDIENCE": os.environ.get("ADFS_CLIENT_ID", default="xx"),
@@ -111,7 +111,10 @@ CONSTANCE_CONFIG = {
     "LOCAL_LOGIN_ENABLED": (True, "Should we allow logging in via local user?"),
     # Support
     "SUPPORT_DOC_URL": ("https://docs.chaotica.app/en/latest/", "URL to Documentation"),
-    "SUPPORT_MAILBOX": ("https://github.com/brainthee/CHAOTICA/issues", "URL to request support"),
+    "SUPPORT_MAILBOX": (
+        "https://github.com/brainthee/CHAOTICA/issues",
+        "URL to request support",
+    ),
     "SUPPORT_ISSUES": ("https://github.com/brainthee/CHAOTICA/issues", "URL to issues"),
     # Invite
     "INVITE_ENABLED": (True, "Should we allow inviting users?"),
@@ -155,7 +158,6 @@ CONSTANCE_CONFIG = {
         7,
         "How many days after the last testing/reporting slot should a job be due to Delivery.",
     ),
-
     # Work settings
     "DEFAULT_HOURS_IN_DAY": (7.5, "Default hours in a work day"),
     "LEAVE_DAYS_NOTICE": (14, "How many days notice for Annual Leave submissions?"),
@@ -233,15 +235,15 @@ CONSTANCE_CONFIG = {
         "",
         "Additional email recipients for PQA Pool",
     ),
-
-    
     # ResourceManager Integration
     "RM_SYNC_ENABLED": (False, "Should RM Synchronisation be enabled"),
     "RM_SYNC_API_TOKEN": ("", "Developer API Token"),
     "RM_SYNC_API_SITE": ("https://api.rm.smartsheet.com", "Domain of RM API"),
-    "RM_WARNING_MSG": ("This project is managed via CHAOTICA.", "Warning message to display in project descriptions."),
+    "RM_WARNING_MSG": (
+        "This project is managed via CHAOTICA.",
+        "Warning message to display in project descriptions.",
+    ),
     "RM_SYNC_STALE_TIMEOUT": (60, "Amount of minutes before a sync task is stale"),
-    
 }
 
 CONSTANCE_BACKEND = "constance.backends.database.DatabaseBackend"
@@ -332,8 +334,9 @@ THIRD_PARTY_APPS = [
     "location_field.apps.DefaultConfig",
     "storages",
     "django_cron",
-    'dbbackup',  # django-dbbackup
+    "dbbackup",  # django-dbbackup
     "corsheaders",
+    "csp",
 ]
 LOCAL_APPS = [
     "chaotica_utils",
@@ -383,17 +386,15 @@ BLEACH_ALLOWED_STYLES = [
 BLEACH_ALLOWED_PROTOCOLS = ["http", "https", "data"]
 
 DJANGO_CRON_DELETE_LOGS_OLDER_THAN = 14
-DJANGO_CRON_LOCK_BACKEND="django_cron.backends.lock.file.FileLock"
+DJANGO_CRON_LOCK_BACKEND = "django_cron.backends.lock.file.FileLock"
 CRON_CLASSES = [
     "chaotica_utils.tasks.task_send_email_notifications",
     "chaotica_utils.tasks.task_sync_global_permissions",
     "chaotica_utils.tasks.task_sync_role_permissions_to_default",
     "chaotica_utils.tasks.task_sync_role_permissions",
     "chaotica_utils.tasks.task_backup_site",
-
     "jobtracker.tasks.task_progress_workflows",
     "jobtracker.tasks.task_fire_job_notifications",
-
     "rm_sync.tasks.task_sync_rm_schedule",
 ]
 
@@ -402,16 +403,16 @@ REST_FRAMEWORK = {
         "rest_framework.authentication.TokenAuthentication",
         "rest_framework.authentication.SessionAuthentication",
     ),
-    'DEFAULT_RENDERER_CLASSES': (
-        'rest_framework.renderers.JSONRenderer',
-        'rest_framework.renderers.BrowsableAPIRenderer',
-        'rest_framework_datatables.renderers.DatatablesRenderer',
+    "DEFAULT_RENDERER_CLASSES": (
+        "rest_framework.renderers.JSONRenderer",
+        "rest_framework.renderers.BrowsableAPIRenderer",
+        "rest_framework_datatables.renderers.DatatablesRenderer",
     ),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_FILTER_BACKENDS": (
-        'rest_framework_datatables.filters.DatatablesFilterBackend',
+        "rest_framework_datatables.filters.DatatablesFilterBackend",
     ),
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework_datatables.pagination.DatatablesPageNumberPagination',
+    "DEFAULT_PAGINATION_CLASS": "rest_framework_datatables.pagination.DatatablesPageNumberPagination",
     # 'PAGE_SIZE': 50
 }
 
@@ -419,6 +420,7 @@ MIDDLEWARE = [
     "chaotica_utils.middleware.HealthCheckMiddleware",
     # "debug_toolbar.middleware.DebugToolbarMiddleware",
     "corsheaders.middleware.CorsMiddleware",
+    "csp.middleware.CSPMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -451,6 +453,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.template.context_processors.static",
                 "django.template.context_processors.media",
+                "csp.context_processors.nonce",
                 "chaotica_utils.context_processors.defaults",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
@@ -470,9 +473,9 @@ if not os.environ.get("SQL_ENGINE", None):
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
             "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
-            'OPTIONS': {
+            "OPTIONS": {
                 "timeout": 20,
-            }
+            },
         }
     }
 else:
@@ -523,17 +526,19 @@ DBBACKUP_CLEANUP_KEEP_MEDIA = os.environ.get("DBBACKUP_CLEANUP_KEEP_MEDIA", defa
 
 DBBACKUP_ENABLED = os.environ.get("DBBACKUP_ENABLED", default=False)
 if DBBACKUP_ENABLED == "1" or DBBACKUP_ENABLED:
-    DBBACKUP_STORAGE = os.environ.get("DBBACKUP_STORAGE", default='django.core.files.storage.FileSystemStorage')
+    DBBACKUP_STORAGE = os.environ.get(
+        "DBBACKUP_STORAGE", default="django.core.files.storage.FileSystemStorage"
+    )
     if "FileSystemStorage" in DBBACKUP_STORAGE:
         DBBACKUP_STORAGE_OPTIONS = {
-            'location': os.environ.get("DBBACKUP_FS_LOCATION", default='')
+            "location": os.environ.get("DBBACKUP_FS_LOCATION", default="")
         }
     if "S3Boto3Storage" in DBBACKUP_STORAGE:
         DBBACKUP_STORAGE_OPTIONS = {
-            'access_key': os.environ.get("DBBACKUP_S3_AKEY", default=''),
-            'secret_key': os.environ.get("DBBACKUP_S3_SKEY", default=''),
-            'bucket_name': os.environ.get("DBBACKUP_S3_BUCKET_NAME", default=''),
-            'default_acl': os.environ.get("DBBACKUP_S3_DEFAULT_ACL", default=''),
+            "access_key": os.environ.get("DBBACKUP_S3_AKEY", default=""),
+            "secret_key": os.environ.get("DBBACKUP_S3_SKEY", default=""),
+            "bucket_name": os.environ.get("DBBACKUP_S3_BUCKET_NAME", default=""),
+            "default_acl": os.environ.get("DBBACKUP_S3_DEFAULT_ACL", default=""),
         }
 
 # Static files (CSS, JavaScript, Images)
@@ -548,16 +553,18 @@ if USE_S3 == "1" or USE_S3:
     AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME")
     # AWS_DEFAULT_ACL = "public-read"
     AWS_S3_OBJECT_PARAMETERS = {"CacheControl": "max-age=86400"}
-    STATICFILES_LOCATION = 'static'  # staticfiles will be in 'static'
-    AWS_S3_SIGNATURE_VERSION = 's3v4'
+    STATICFILES_LOCATION = "static"  # staticfiles will be in 'static'
+    AWS_S3_SIGNATURE_VERSION = "s3v4"
 
     if os.getenv("AWS_STORAGE_CLOUDFRONT_DOMAIN", None):
         # Use CloudFront
-        AWS_S3_CUSTOM_DOMAIN = os.getenv("AWS_STORAGE_CLOUDFRONT_DOMAIN", None)        
-        AWS_CLOUDFRONT_KEY = base64.b64decode(os.environ.get('AWS_CLOUDFRONT_KEY', None))
-        AWS_CLOUDFRONT_KEY_ID = os.environ.get('AWS_CLOUDFRONT_KEY_ID', None)
-        DEFAULT_FILE_STORAGE = 'chaotica.custom_storages.MediaStorage'
-        STATICFILES_STORAGE = 'chaotica.custom_storages.StaticStorage'
+        AWS_S3_CUSTOM_DOMAIN = os.getenv("AWS_STORAGE_CLOUDFRONT_DOMAIN", None)
+        AWS_CLOUDFRONT_KEY = base64.b64decode(
+            os.environ.get("AWS_CLOUDFRONT_KEY", None)
+        )
+        AWS_CLOUDFRONT_KEY_ID = os.environ.get("AWS_CLOUDFRONT_KEY_ID", None)
+        DEFAULT_FILE_STORAGE = "chaotica.custom_storages.MediaStorage"
+        STATICFILES_STORAGE = "chaotica.custom_storages.StaticStorage"
         STATICFILES_LOCATION = "static"
         MEDIAFILES_LOCATION = "media"
     else:
@@ -569,12 +576,35 @@ if USE_S3 == "1" or USE_S3:
     MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/media/"
     STATIC_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/static/"
 else:
+    AWS_S3_CUSTOM_DOMAIN = ""
     MEDIA_URL = "/media/"
     MEDIA_ROOT = os.path.join(BASE_DIR, "mediafiles")
     STATIC_URL = "/static/"
     STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
 STATICFILES_DIRS = (os.path.join(BASE_DIR, "static"),)
+
+
+CORS_ALLOW_ALL_ORIGINS = True
+
+CONTENT_SECURITY_POLICY = {
+    "EXCLUDE_URL_PREFIXES": ["/excluded-path/"],
+    "DIRECTIVES": {
+        "default-src": [
+            # FFS
+            "*",
+            SELF,
+            # NONCE,
+            # "{}".format(AWS_S3_CUSTOM_DOMAIN),
+            # "https://cdnjs.cloudflare.com",
+            # "https://*.fontawesome.com",
+            UNSAFE_EVAL,
+            UNSAFE_INLINE,
+            "data:",
+        ],
+        "upgrade-insecure-requests": True,
+    },
+}
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
