@@ -32,6 +32,10 @@ This is a concept where you can tie multiple jobs together via the client for pu
 !!! Example
     Rather than a client contract you for a specific project; if they instead buy x days as an annual contract in one go. This contract can be entered in CHAOTICA as a Framework Agreement and can be used to keep track of days "spent" against that contract.
 
+### Onboarded
+
+Some client's require their own onboarding process and will only allow people who have been accepted to carry out work. 
+
 ## Operations
 
 ### Project
@@ -55,6 +59,10 @@ Something that makes you special :)
 ### Qualification
 
 Something special you got!
+
+### Accreditation
+
+Something you've been given (e.g. membership to something?)
 
 ### Organisational Unit
 
