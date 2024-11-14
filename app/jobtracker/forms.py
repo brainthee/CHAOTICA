@@ -1128,7 +1128,7 @@ class JobForm(forms.ModelForm):
 
     overview = forms.CharField(
         required=False,
-        widget=forms.Textarea(
+        widget=TinyMCE(
             attrs={
                 "class": "tinymce",
                 "data-tinymce": '{"height":"15rem","placeholder":"Write a description here..."}',
@@ -1174,7 +1174,7 @@ class PhaseForm(forms.ModelForm):
 
     description = forms.CharField(
         required=False,
-        widget=forms.Textarea(
+        widget=TinyMCE(
             attrs={
                 "class": "tinymce",
                 "data-tinymce": '{"height":"15rem","placeholder":"Write a description here..."}',
@@ -1252,7 +1252,7 @@ class ScopeInlineForm(forms.ModelForm):
     overview = forms.CharField(
         required=False,
         label="",
-        widget=forms.Textarea(
+        widget=TinyMCE(
             attrs={
                 "class": "tinymce",
                 "data-tinymce": '{"height":"15rem","placeholder":"Write a description here..."}',
@@ -1712,7 +1712,7 @@ class OrganisationalUnitMemberRolesForm(forms.ModelForm):
 class OrganisationalUnitForm(forms.ModelForm):
     description = forms.CharField(
         required=False,
-        widget=forms.Textarea(
+        widget=TinyMCE(
             attrs={
                 "class": "tinymce",
                 "data-tinymce": '{"height":"15rem","placeholder":"Write a description here..."}',
@@ -1722,7 +1722,7 @@ class OrganisationalUnitForm(forms.ModelForm):
     )
     special_requirements = forms.CharField(
         required=False,
-        widget=forms.Textarea(
+        widget=TinyMCE(
             attrs={
                 "class": "tinymce",
                 "data-tinymce": '{"height":"15rem","placeholder":"Write an special requirements of this team here..."}',
@@ -1947,7 +1947,7 @@ class ProjectForm(forms.ModelForm):
 
     overview = forms.CharField(
         required=False,
-        widget=forms.Textarea(
+        widget=TinyMCE(
             attrs={
                 "class": "tinymce",
                 "data-tinymce": '{"height":"15rem","placeholder":"Write a description here..."}',
