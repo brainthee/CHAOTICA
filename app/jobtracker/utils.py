@@ -25,42 +25,40 @@ def get_unit_40x_or_None(
 ):
     login_url = login_url or settings.LOGIN_URL
     redirect_field_name = redirect_field_name or REDIRECT_FIELD_NAME
-
-    # Handles both original and with object provided permission check
-    # as ``obj`` defaults to None
-
     has_permissions = False
-    # global perms check first (if accept_global_perms)
-    if accept_global_perms:
-        has_permissions = all(request.user.has_perm(perm) for perm in perms)
-    # if still no permission granted, try obj perms
-    if not has_permissions:
-        if any_perm:
-            has_permissions = any(request.user.has_perm(perm, obj) for perm in perms)
-        else:
-            has_permissions = all(request.user.has_perm(perm, obj) for perm in perms)
-    # Ok, now lets check unit permissions...
-    if not has_permissions:
-        unit = None
-        if obj:
-            if isinstance(obj, Job):
-                unit = obj.unit
-            if isinstance(obj, Phase):
-                unit = obj.job.unit
-            if isinstance(obj, OrganisationalUnit):
-                unit = obj
-        else:
-            # get our own units
-            unit = request.user.unit_memberships.first().unit
-        if unit:
+
+    if request.user.is_authenticated:
+        # global perms check first (if accept_global_perms)
+        if accept_global_perms:
+            has_permissions = all(request.user.has_perm(perm) for perm in perms)
+        # if still no permission granted, try obj perms
+        if not has_permissions:
             if any_perm:
-                has_permissions = any(
-                    request.user.has_perm(perm, unit) for perm in perms
-                )
+                has_permissions = any(request.user.has_perm(perm, obj) for perm in perms)
             else:
-                has_permissions = all(
-                    request.user.has_perm(perm, unit) for perm in perms
-                )
+                has_permissions = all(request.user.has_perm(perm, obj) for perm in perms)
+        # Ok, now lets check unit permissions...
+        if not has_permissions:
+            unit = None
+            if obj:
+                if isinstance(obj, Job):
+                    unit = obj.unit
+                if isinstance(obj, Phase):
+                    unit = obj.job.unit
+                if isinstance(obj, OrganisationalUnit):
+                    unit = obj
+            else:
+                # get our own units
+                unit = request.user.unit_memberships.first().unit
+            if unit:
+                if any_perm:
+                    has_permissions = any(
+                        request.user.has_perm(perm, unit) for perm in perms
+                    )
+                else:
+                    has_permissions = all(
+                        request.user.has_perm(perm, unit) for perm in perms
+                    )
 
     if not has_permissions:
         if return_403:
