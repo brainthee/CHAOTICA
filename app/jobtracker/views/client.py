@@ -16,7 +16,7 @@ from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from ..models import Client, Contact, FrameworkAgreement, OrganisationalUnit
-from ..forms import ClientForm, ClientContactForm, ClientFrameworkForm,MergeClientForm
+from ..forms import ClientForm, ClientOnboardingConfigForm, ClientContactForm, ClientFrameworkForm,MergeClientForm
 import logging
 
 logger = logging.getLogger(__name__)
@@ -84,6 +84,32 @@ class ClientDeleteView(ClientBaseView, DeleteView):
     """View to delete a job"""
 
     permission_required = "jobtracker.delete_client"
+
+
+@permission_required_or_403("jobtracker.change_client")
+@require_http_methods(["GET", "POST"])
+def client_onboarding_cfg(request, slug):
+    client = get_object_or_404(Client, slug=slug)
+    context = {}
+    data = dict()
+    if request.method == "POST":
+        form = ClientOnboardingConfigForm(request.POST, instance=client)
+        if form.is_valid():
+            # Lets merge!
+            form.save()
+            data["form_is_valid"] = True
+        else:
+            # Merge failed!
+            data["form_is_valid"] = False
+    else:
+        # Send the modal
+        form = ClientOnboardingConfigForm(instance=client)
+
+    context = {"form": form, "client": client}
+    data["html_form"] = loader.render_to_string(
+        "modals/client_onboarding_configuration.html", context, request=request
+    )
+    return JsonResponse(data)
 
 
 @permission_required_or_403("jobtracker.change_client")

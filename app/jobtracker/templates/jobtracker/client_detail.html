@@ -2,6 +2,8 @@
 {% load menu %}
 {% load static %}
 {% load guardian_tags %}
+{% load bleach_tags %}
+
 
 {% block pageTitle %}
   {{ client }}
@@ -25,7 +27,7 @@
 {% endblock %}
 
 {% block content %}
-{% get_obj_perms request.user for client as 'client_perms' %}
+  {% get_obj_perms request.user for client as 'client_perms' %}
   <div class="row px-5">
     <div class="col-12">
       <div class="row align-items-center justify-content-between g-3 mt-0 mb-0">
@@ -114,54 +116,156 @@
             <a class="nav-link" id="frameworks-tab" data-bs-toggle="tab" href="#frameworks" role="tab" aria-controls="tab-frameworks" aria-selected="false" tabindex="-1"><span class="fa-solid fa-clipboard me-2 tab-icon-color"></span>Framework Agreements</a>
           </li>
           <li class="nav-item text-nowrap me-2" role="presentation">
+            <a class="nav-link" id="onboarding-tab" data-bs-toggle="tab" href="#onboarding" role="tab" aria-controls="tab-onboarding" aria-selected="false" tabindex="-1"><span class="fa-solid fa-person-snowboarding me-2 tab-icon-color"></span>Onboarding</a>
+          </li>
+          <li class="nav-item text-nowrap me-2" role="presentation">
             <a class="nav-link" id="jobs-tab" data-bs-toggle="tab" href="#jobs" role="tab" aria-controls="tab-jobs" aria-selected="false" tabindex="-1"><span class="fa-solid fa-clipboard me-2 tab-icon-color"></span>Jobs</a>
           </li>
         </ul>
 
-        <div class="tab-content" id="myTabContent">
+        <div class="tab-content pb-3 px-0" id="myTabContent">
           <div class="tab-pane fade active show" id="team" role="tabpanel" aria-labelledby="team-tab">
-            {% include 'partials/client/team_widget.html' %}
+            <div class="px-3 py-3 px-lg-6 bg-body-emphasis border-top border-bottom border-200 position-relative top-1">
+              {% include 'partials/client/team_widget.html' %}
+            </div>
           </div>
 
           <div class="tab-pane fade" id="contacts" role="tabpanel" aria-labelledby="contacts-tab">
-            <div class="row gx-4 mb-0">
+            <div class="row mb-3">
               <div class="col-auto my-auto">
-                <div class="h-100">
-                  <h5>Contacts</h5>
-                </div>
+                <h4>Contacts</h4>
               </div>
               <div class="col-lg-4 col-md-6 my-sm-auto text-end ms-sm-auto me-sm-0 mx-auto mt-3">
                 <a href="{% url 'client_contact_create' client.slug %}" class="btn btn-phoenix-primary ms-auto">Add Contact</a>
               </div>
             </div>
             <div class="row">
-              <div class="col-12">
+              <div class="px-3 py-3 px-lg-6 bg-body-emphasis border-top border-bottom border-200 position-relative top-1">
                 {% include 'partials/client/contact_table.html' with contacts=client.contacts.all %}
               </div>
             </div>
           </div>
 
           <div class="tab-pane fade" id="frameworks" role="tabpanel" aria-labelledby="frameworks-tab">
-            <div class="row gx-4 mb-0">
+            <div class="row mb-3">
               <div class="col-auto my-auto">
-                <div class="h-100">
-                  <h5>Framework Agreements</h5>
-                </div>
+                <h4>Framework Agreements</h4>
               </div>
-              <div class="col-lg-4 col-md-6 my-sm-auto text-end ms-sm-auto me-sm-0 mx-auto mt-3">
+              <div class="col-4 text-end ms-sm-auto me-sm-0 mx-auto mt-3">
                 <a href="{% url 'client_framework_create' client.slug %}" class="btn btn-phoenix-primary ms-auto">Add Framework Agreement</a>
               </div>
             </div>
+
             <div class="row">
-              <div class="col-12">
+              <div class="px-3 py-3 px-lg-6 bg-body-emphasis border-top border-bottom border-200 position-relative top-1">
                 {% include 'partials/client/frameworks_table.html' with frameworks=client.framework_agreements.all %}
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-pane fade" id="onboarding" role="tabpanel" aria-labelledby="onboarding-tab">
+            <div class="row mb-3">
+              <div class="card p-0">
+                <div class="card-header p-3">
+                  <div class="row">
+                    <div class="col-9">
+                      <h4 class="mt-2">Onboarding Status</h4>
+                    </div>
+                    <div class="col-3 text-end">
+                      <button class="btn btn-phoenix-primary ms-auto js-load-modal-form" data-url="{% url 'client_onboarding_cfg' client.slug %}">Edit</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="card-body">
+                  <div class="row mb-3">
+                    <div class="col-6">
+                      <div class="d-flex justify-content-between mb-1">
+                        <div class="col">
+                          <p class="text-body fw-semibold mb-0">Onboarding Required:</p>
+                          <p class="text-body-tertiary lh-sm mb-0">Only onboarded users can be scheduled on jobs.</p>
+                        </div>
+                        <div class="col-4">
+                          {% if client.onboarding_required %}
+                            <p class="badge badge-phoenix badge-phoenix-warning">Yes</p>
+                          {% else %}
+                            <p class="badge badge-phoenix badge-phoenix-secondary">No</p>
+                          {% endif %}
+                        </div>
+                      </div>
+
+                      <div class="d-flex justify-content-between mb-1">
+                        <div class="col">
+                          <p class="text-body fw-semibold mb-0">Reoccuring Renewal:</p>
+                          <p class="text-body-tertiary lh-sm mb-0">Requirements must be revalidated/renewed.</p>
+                        </div>
+                        <div class="col-4">
+                          {% if client.onboarding_reoccurring_renewal %}
+                            <p class="badge badge-phoenix badge-phoenix-warning">Yes</p>
+                          {% else %}
+                            <p class="badge badge-phoenix badge-phoenix-secondary">No</p>
+                          {% endif %}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="col-6">
+                      <div class="d-flex justify-content-between mb-1">
+                        <div class="col">
+                          <p class="text-body fw-semibold mb-0">Days requirements due:</p>
+                          <p class="text-body-tertiary lh-sm mb-0">How often requirements must be renewed</p>
+                        </div>
+                        <div class="col-4">
+                          <div class="border border-cake p-2">{{ client.onboarding_reqs_renewal }} days</div>
+                        </div>
+                      </div>
+
+                      <div class="d-flex justify-content-between mb-1">
+                        <div class="col">
+                          <p class="text-body fw-semibold mb-0">Days before reminder:</p>
+                          <p class="text-body-tertiary lh-sm mb-0">How many days before requirements are due should a reminder be sent.</p>
+                        </div>
+                        <div class="col-4">
+                          <div class="border border-cake p-2">{{ client.onboarding_reqs_reminder_days }} days</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="row">
+                    <p class="text-body fw-semibold mb-0">Requirements:</p>
+                  </div>
+                  <div class="row">
+                    <div class="border border-cake p-2">
+                      {% if client.onboarding_requirements %}
+                        {{ client.onboarding_requirements |bleach }}
+                      {% else %}
+                        <p class="mb-0">No Details</p>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-auto my-auto">
+                <h4>Onboarded Users</h4>
+              </div>
+              <div class="col-4 text-end ms-sm-auto me-sm-0 mx-auto mt-3">
+                <a href="{% url 'client_framework_create' client.slug %}" class="btn btn-phoenix-success ms-auto">Add User</a>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="px-3 py-3 px-lg-6 bg-body-emphasis border-top border-bottom border-200 position-relative top-1">
+                {% include 'partials/client/onboarded_users_table.html' %}
               </div>
             </div>
           </div>
 
           <div class="tab-pane fade" id="jobs" role="tabpanel" aria-labelledby="jobs-tab">
             <div class="row">
-              <div class="col-12">
+              <div class="px-3 py-3 px-lg-6 bg-body-emphasis border-top border-bottom border-200 position-relative top-1">
                 {% include 'partials/job/job_list_table.html' with disableAjax=1 job_list=client.jobs.all %}
               </div>
             </div>

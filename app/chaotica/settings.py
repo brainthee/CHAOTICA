@@ -384,6 +384,7 @@ BLEACH_ALLOWED_STYLES = [
 # Which protocols (and pseudo-protocols) are allowed in 'src' attributes
 # (assuming src is an allowed attribute)
 BLEACH_ALLOWED_PROTOCOLS = ["http", "https", "data"]
+BLEACH_DEFAULT_WIDGET = 'tinymce.widgets.TinyMCE'
 
 DJANGO_CRON_DELETE_LOGS_OLDER_THAN = 14
 DJANGO_CRON_LOCK_BACKEND = "django_cron.backends.lock.file.FileLock"

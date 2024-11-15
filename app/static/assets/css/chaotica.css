@@ -71,6 +71,11 @@ div.content span.select2-container {
   vertical-align: middle !important;
 }
 
+.tox .tox-menubar, .tox .tox-mbtn {
+  background-color: unset !important;
+  padding: unset !important;
+}
+
 /* .row {
   --phoenix-gutter-x: unset !important
 } */

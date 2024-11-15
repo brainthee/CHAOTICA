@@ -1521,26 +1521,6 @@ class MergeClientForm(forms.Form):
 
 
 class ClientForm(forms.ModelForm):
-    specific_requirements = forms.CharField(
-        required=False,
-        widget=TinyMCE(
-            attrs={
-                "class": "tinymce",
-                "data-tinymce": '{"height":"15rem","placeholder":"Write an special requirements of this team here..."}',
-                "rows": 5,
-            },
-        ),
-    )
-    specific_reporting_requirements = forms.CharField(
-        required=False,
-        widget=TinyMCE(
-            attrs={
-                "class": "tinymce",
-                "data-tinymce": '{"height":"15rem","placeholder":"Write an special requirements of this team here..."}',
-                "rows": 5,
-            },
-        ),
-    )
     account_managers = forms.ModelMultipleChoiceField(
         queryset=User.objects.filter(is_active=True),
         widget=autocomplete.ModelSelect2Multiple(
@@ -1581,6 +1561,65 @@ class ClientForm(forms.ModelForm):
             "specific_requirements",
             "account_managers",
             "tech_account_managers",
+        ]
+
+
+
+class ClientOnboardingConfigForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(ClientOnboardingConfigForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.fields["onboarding_requirements"].label = "Requirements"
+        self.helper.layout = Layout(
+            Div(
+                Row(
+                    Column(
+                        Div(
+                            Field("onboarding_required"),
+                            css_class="input-group input-group-dynamic",
+                        ),
+                        Div(
+                            Field("onboarding_reoccurring_renewal"),
+                            css_class="input-group input-group-dynamic",
+                        )
+                    ),
+                    Column(
+                        Div(
+                            FloatingField("onboarding_reqs_renewal"),
+                            css_class="input-group input-group-dynamic",
+                        ),
+                        Div(
+                            FloatingField("onboarding_reqs_reminder_days"),
+                            css_class="input-group input-group-dynamic",
+                        )
+                    ),
+                ),
+                Row(
+                    Field("onboarding_requirements"),
+                ),
+                css_class="card-body p-3",
+            ),
+            Div(
+                Div(
+                    StrictButton(
+                        "Save",
+                        type="submit",
+                        css_class="btn btn-outline-success ms-auto mb-0",
+                    ),
+                    css_class="button-row d-flex",
+                ),
+                css_class="card-footer pt-0 p-3",
+            ),
+        )
+
+    class Meta:
+        model = Client
+        fields = [
+            "onboarding_required",
+            "onboarding_reoccurring_renewal",
+            "onboarding_requirements",
+            "onboarding_reqs_renewal",
+            "onboarding_reqs_reminder_days",
         ]
 
 
