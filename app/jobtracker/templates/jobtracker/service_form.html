@@ -1,112 +1,114 @@
-{% extends "base.html" %}
-{% load menu %}{% load static %}
+{% extends 'base.html' %}
+{% load menu %}
+{% load static %}
 {% load widget_tweaks %}
 {% load crispy_forms_tags %}
 
-{% block pageTitle %}Service Management{% endblock pageTitle %}
-{% block head_title %}Service Management{% endblock head_title %}
-
+{% block pageTitle %}
+  Service Management
+{% endblock %}
+{% block head_title %}
+  Service Management
+{% endblock %}
 
 {% block breadcrumbItem %}
-<li class="breadcrumb-item text-sm"><a class="opacity-50 text-body-emphasis" href="{% url 'service_list' %}">Services</a></li>
-<li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">New Service</li>
-{% endblock breadcrumbItem %}
+  <li class="breadcrumb-item text-sm">
+    <a class="opacity-50 text-body-emphasis" href="{% url 'service_list' %}">Services</a>
+  </li>
+  <li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">
+    {% if form.instance.pk %}
+      Edit Service
+    {% else %}
+      Add Service
+    {% endif %}
+  </li>
+{% endblock %}
 
 {% block content %}
-<div class="mt-3">
-  <form method="post">
-    {% csrf_token %}
-    {{ form.media }}
+  <div class="mt-3">
+    <form method="post">
+      {% csrf_token %}
+      {{ form.media }}
 
-    <div class="row g-3 flex-between-end mb-5">
-      <div class="col-auto">
-        <h2 class="mb-2">
+      <div class="row g-3 flex-between-end mb-5">
+        <div class="col-auto">
+          <h2 class="mb-2">
             {% if form.instance.pk %}
-            Edit Service
+              Edit Service
             {% else %}
-            Add Service
-            {% endif %}            
-        </h2>
+              Add Service
+            {% endif %}
+          </h2>
+        </div>
+        <div class="col-auto">
+          <button class="btn btn-phoenix-secondary me-2 mb-2 mb-sm-0" type="button">Discard</button>
+          <button class="btn btn-outline-success mb-2 mb-sm-0" type="submit">Save</button>
+        </div>
       </div>
-      <div class="col-auto">
-        <button class="btn btn-phoenix-secondary me-2 mb-2 mb-sm-0" type="button">Discard</button>
-        <button class="btn btn-outline-success mb-2 mb-sm-0" type="submit">Save</button>
-      </div>
-    </div>
 
+      <div class="row">
+        <div class="col-12 col-xl-8 g-2">
+          <h4 class="mb-3">Name</h4>
+          {{ form.name|as_crispy_field }}
 
-    <div class="row">
-      <div class="col-12 col-xl-8 g-2 ">
-        
-        <h4 class="mb-3">Name</h4>
-        {{ form.name|as_crispy_field }}
-
-        <div class="row mb-6">
-          <div class="col-12">
-            <h4 class="mb-3">Description</h4>
-            {{ form.description|as_crispy_field }}
+          <div class="row mb-6">
+            <div class="col-12">
+              <h4 class="mb-3">Description</h4>
+              {{ form.description|as_crispy_field }}
+            </div>
           </div>
-        </div>    
-      
-      </div>
+        </div>
 
-      <div class="col-12 col-xl-4">
-        <div class="row g-2">          
-          <div class="col-12 g-2 col-xl-12">
-            <div class="card mb-3">
-              <div class="card-body">
-
-                <div class="row gx-3">
-                  <div class="col-12 col-sm-6 col-xl-12">
-                    <div class="mb-4">
-                      <div class="d-flex flex-wrap mb-2">
-                        <h5 class="mb-0 text-1000 me-2">Service Owners</h5>
+        <div class="col-12 col-xl-4">
+          <div class="row g-2">
+            <div class="col-12 g-2 col-xl-12">
+              <div class="card mb-3">
+                <div class="card-body">
+                  <div class="row gx-3">
+                    <div class="col-12 col-sm-6 col-xl-12">
+                      <div class="mb-4">
+                        <div class="d-flex flex-wrap mb-2">
+                          <h5 class="mb-0 text-1000 me-2">Service Owners</h5>
+                        </div>
+                        {{ form.owners|as_crispy_field }}
                       </div>
-                      {{ form.owners|as_crispy_field }}
-                      
+                    </div>
+
+                    <div class="col-12 col-sm-6 col-xl-12">
+                      <div class="mb-4">
+                        <div class="d-flex flex-wrap mb-2">
+                          <h5 class="mb-0 text-1000 me-2">Service Information</h5>
+                        </div>
+                        {{ form.link|as_crispy_field }}
+                      </div>
                     </div>
                   </div>
 
-                  <div class="col-12 col-sm-6 col-xl-12">
-                    <div class="mb-4">
-                      <div class="d-flex flex-wrap mb-2">
-                        <h5 class="mb-0 text-1000 me-2">Service Information</h5>
+                  <div class="row gx-3">
+                    <h4 class="text-center">Skills</h4>
+                    <div class="col-12 col-sm-6 col-xl-12">
+                      <div class="mb-4">
+                        <div class="d-flex flex-wrap mb-2">
+                          <h6 class="mb-0 text-1000 me-2">Required</h6>
+                        </div>
+                        {{ form.skillsRequired|as_crispy_field }}
                       </div>
-                      {{ form.link|as_crispy_field }}
-                      
                     </div>
-                  </div>
-                </div>
-
-                <div class="row gx-3">
-                  <h4 class="text-center">Skills</h4>
-                  <div class="col-12 col-sm-6 col-xl-12">
-                    <div class="mb-4">
-                      <div class="d-flex flex-wrap mb-2">
-                        <h6 class="mb-0 text-1000 me-2">Required</h6>
+                    <div class="col-12 col-sm-6 col-xl-12">
+                      <div class="mb-4">
+                        <div class="d-flex flex-wrap mb-2">
+                          <h6 class="mb-0 text-1000 me-2">Desired</h6>
+                        </div>
+                        {{ form.skillsDesired|as_crispy_field }}
                       </div>
-                      {{ form.skillsRequired|as_crispy_field }}
-                      
-                    </div>
-                  </div>
-                  <div class="col-12 col-sm-6 col-xl-12">
-                    <div class="mb-4">
-                      <div class="d-flex flex-wrap mb-2">
-                        <h6 class="mb-0 text-1000 me-2">Desired</h6>
-                      </div>
-                      {{ form.skillsDesired|as_crispy_field }}
-                      
                     </div>
                   </div>
                 </div>
-
               </div>
             </div>
           </div>
-          
         </div>
       </div>
-    </div>
-  </form>
-</div>
-{% endblock content %}
+    </form>
+  </div>
+{% endblock %}

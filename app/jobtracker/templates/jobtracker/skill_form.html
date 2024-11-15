@@ -15,7 +15,13 @@
   <li class="breadcrumb-item text-sm">
     <a class="opacity-50 text-body-emphasis" href="{% url 'skill_list' %}">Skills</a>
   </li>
-  <li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">Skill</li>
+  <li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">
+    {% if form.instance.pk %}
+      Edit Skill
+    {% else %}
+      Add new Skill
+    {% endif %}
+  </li>
 {% endblock %}
 
 {% block content %}
