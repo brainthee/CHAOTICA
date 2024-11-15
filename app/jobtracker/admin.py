@@ -14,6 +14,7 @@ from .models import (
     BillingCode,
     Feedback,
     Client,
+    ClientOnboarding,
     Contact,
     FrameworkAgreement,
     Qualification,
@@ -152,11 +153,19 @@ class ClientResource(resources.ModelResource):
         model = Client
 
 
+@admin.register(Client)
 class ClientAdmin(ImportExportModelAdmin):
     resource_classes = [ClientResource]
 
 
-admin.site.register(Client, ClientAdmin)
+#### ClientOnboarding
+class ClientOnboardingResource(resources.ModelResource):
+    class Meta:
+        model = ClientOnboarding
+
+@admin.register(ClientOnboarding)
+class ClientOnboardingAdmin(ImportExportModelAdmin):
+    resource_classes = [ClientOnboardingResource]
 
 
 #### FrameworkAgreement
@@ -164,12 +173,9 @@ class FrameworkAgreementResource(resources.ModelResource):
     class Meta:
         model = FrameworkAgreement
 
-
+@admin.register(FrameworkAgreement)
 class FrameworkAgreementAdmin(ImportExportModelAdmin):
     resource_classes = [FrameworkAgreementResource]
-
-
-admin.site.register(FrameworkAgreement, FrameworkAgreementAdmin)
 
 
 @admin.register(Contact)

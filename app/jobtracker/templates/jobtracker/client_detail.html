@@ -4,7 +4,6 @@
 {% load guardian_tags %}
 {% load bleach_tags %}
 
-
 {% block pageTitle %}
   {{ client }}
 {% endblock %}
@@ -140,7 +139,7 @@
               </div>
             </div>
             <div class="row">
-              <div class="px-3 py-3 px-lg-6 bg-body-emphasis border-top border-bottom border-200 position-relative top-1">
+              <div class="p-0 pt-3 bg-body-emphasis border-top border-200 position-relative top-1">
                 {% include 'partials/client/contact_table.html' with contacts=client.contacts.all %}
               </div>
             </div>
@@ -157,7 +156,7 @@
             </div>
 
             <div class="row">
-              <div class="px-3 py-3 px-lg-6 bg-body-emphasis border-top border-bottom border-200 position-relative top-1">
+              <div class="p-0 pt-3 bg-body-emphasis border-top border-200 position-relative top-1">
                 {% include 'partials/client/frameworks_table.html' with frameworks=client.framework_agreements.all %}
               </div>
             </div>
@@ -237,7 +236,7 @@
                   <div class="row">
                     <div class="border border-cake p-2">
                       {% if client.onboarding_requirements %}
-                        {{ client.onboarding_requirements |bleach }}
+                        {{ client.onboarding_requirements|bleach }}
                       {% else %}
                         <p class="mb-0">No Details</p>
                       {% endif %}
@@ -249,16 +248,20 @@
 
             <div class="row mb-3">
               <div class="col-auto my-auto">
-                <h4>Onboarded Users</h4>
+                <h4 class="mt-2">Onboarded Users</h4>
               </div>
               <div class="col-4 text-end ms-sm-auto me-sm-0 mx-auto mt-3">
-                <a href="{% url 'client_framework_create' client.slug %}" class="btn btn-phoenix-success ms-auto">Add User</a>
+                <button class="btn btn-phoenix-success ms-auto js-load-modal-form" data-url="{% url 'client_onboarding_add_user' client.slug %}">Add User</button>
               </div>
             </div>
 
             <div class="row">
-              <div class="px-3 py-3 px-lg-6 bg-body-emphasis border-top border-bottom border-200 position-relative top-1">
-                {% include 'partials/client/onboarded_users_table.html' %}
+              <div class="p-0 pt-3 bg-body-emphasis border-top border-200 position-relative top-1">
+                {% if client.onboarded_users.all %}
+                  {% include 'partials/client/onboarded_users_table.html' %}
+                {% else %}
+                  <div class="mx-3 mb-3 alert alert-phoenix-primary" role="alert">No users are currently onboarded.</div>
+                {% endif %}
               </div>
             </div>
           </div>

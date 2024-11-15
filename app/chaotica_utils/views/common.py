@@ -515,6 +515,34 @@ def update_own_certs(request):
     return HttpResponseBadRequest()
 
 
+@login_required
+@require_http_methods(["GET"])
+def view_own_onboarding(request):
+    context = {}
+    template = loader.get_template("onboarded_clients.html")
+    context = {**context, **page_defaults(request)}
+    return HttpResponse(template.render(context, request))
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def renew_own_onboarding(request, pk):
+    from jobtracker.models import ClientOnboarding
+    onboarding = get_object_or_404(ClientOnboarding, user=request.user, pk=pk)
+    context = {}
+    data = dict()
+    if request.method == "POST":
+        onboarding.reqs_completed = timezone.now()
+        onboarding.save()
+        data["form_is_valid"] = True
+
+    context = {"onboarding": onboarding}
+    data["html_form"] = loader.render_to_string(
+        "modals/user_renew_onboarding.html", context, request=request
+    )
+    return JsonResponse(data)
+
+
 @permission_required_or_403("chaotica_utils.manage_site_settings")
 @require_http_methods(["GET", "POST"])
 def app_settings(request):

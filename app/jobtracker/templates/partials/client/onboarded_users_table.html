@@ -1,28 +1,68 @@
+{% load humanize %}
 <table class="table align-items-center mb-0">
-  <caption>Framework Agreement List</caption>
+  <caption>Onboarded Users List</caption>
   <thead>
     <tr>
-      <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">User</th>
-      <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Date Onboarded</th>
+      <th class="text-uppercase px-3 text-secondary text-xxs font-weight-bolder opacity-7">User</th>
+      <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Onboarded</th>
       <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Requirements Completed</th>
+      <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Offboarded</th>
       <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Status</th>
       <th class=""></th>
     </tr>
   </thead>
   <tbody>
-    {% for onboarding in onboarded_users %}
+    {% for onboarding in client.onboarded_users.all %}
       <tr>
-        <td>
-            {% include 'partials/users/user_table_display.html' with u=onboarding.user %}
+        <td class="align-middle text-start px-3 text-sm">
+          {% include 'partials/users/user_table_display.html' with u=onboarding.user %}
         </td>
         <td class="align-middle text-center text-sm">
-          <p class="text-xs text-secondary mb-0">{{ onboarding.onboarded }}</p>
+          <p class="text-xs text-secondary mb-0" data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ onboarding.onboarded }}">
+            {% if onboarding.onboarded %}
+              {{ onboarding.onboarded|naturalday }}
+            {% endif %}
+          </p>
         </td>
         <td class="align-middle text-center text-sm">
-          <p class="text-xs text-secondary mb-0">{{ onboarding.reqs_completed }}</p>
+          {% if onboarding.client.onboarding_reoccurring_renewal %}
+            <p class="text-xs text-secondary mb-0" data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ onboarding.reqs_completed }}">
+              {% if onboarding.reqs_completed %}
+                {{ onboarding.reqs_completed|naturalday }}
+              {% endif %}
+            </p>
+          {% else %}
+            <span class="badge badge-phoenix badge-tag me-2 mb-1">N/A</span>
+          {% endif %}
         </td>
         <td class="align-middle text-center text-sm">
-            {% include 'partials/client/onboarding_status_badge.html' with onboarding=onboarding %}
+          <p class="text-xs text-secondary mb-0" data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ onboarding.offboarded }}">
+            {% if onboarding.offboarded %}
+              {{ onboarding.offboarded|naturalday }}
+            {% endif %}
+          </p>
+        </td>
+        <td class="align-middle text-center text-sm">
+          {% include 'partials/client/onboarding_status_badge.html' with onboarding=onboarding %}
+          {% if onboarding.is_due %}
+            <br />
+            <span class="badge badge-phoenix badge-phoenix-warning me-2 mb-1">Due in {{ onboarding.days_till_renewal }} days</span>
+          {% endif %}
+        </td>
+        <td class="align-middle text-center text-sm">
+          <div class="btn-reveal-trigger position-static">
+            <button class="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal fs-10" type="button" data-bs-toggle="dropdown" data-boundary="window" aria-haspopup="true" aria-expanded="false" data-bs-reference="parent"><span class="fas fa-ellipsis-h fs-10"></span></button>
+
+            <div class="dropdown-menu shadow dropdown-menu-end me-sm-n4 me-n3" aria-labelledby="navbarDropdownMenuLink">
+              <a class="dropdown-item" href="{{ onboarding.user.get_absolute_url }}">View Profile</a>
+
+              {% if 'change_client' in client_perms %}
+                <div class="dropdown-divider"></div>
+                <button class="dropdown-item js-load-modal-form" data-url="{% url 'client_onboarding_manage_user' client.slug onboarding.pk %}">Edit record</button>
+                <button class="dropdown-item text-warning js-load-modal-form" data-url="{% url 'client_onboarding_remove_user' client.slug onboarding.pk %}">Remove record</button>
+              {% endif %}
+            </div>
+          </div>
         </td>
       </tr>
     {% endfor %}

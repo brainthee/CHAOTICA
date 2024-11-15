@@ -1,9 +1,3 @@
 <span class="badge badge-phoenix {% if onboarding.is_stale %}badge-phoenix-danger{% elif onboarding.is_active %}badge-phoenix-success{% else %}badge-phoenix-secondary{% endif %} me-2 mb-1">
-  {% if onboarding.is_stale %}
-    Stale
-  {% elif onboarding.is_active %}
-    Active
-  {% else %}
-    Offboarded
-  {% endif %}
+  {{ onboarding.status }}
 </span>

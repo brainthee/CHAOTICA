@@ -5,11 +5,18 @@ from django.urls import reverse
 from simple_history.models import HistoricalRecords
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db.models import JSONField
+from django.utils import timezone
+from datetime import timedelta
 from phone_field import PhoneField
 from chaotica_utils.models import Note
+from constance import config
 from decimal import Decimal
 from django_bleach.models import BleachField
 from django.db.models.functions import Lower
+from chaotica_utils.tasks import task_send_notifications
+from chaotica_utils.utils import AppNotification
+from chaotica_utils.views.common import log_system_activity
+from chaotica_utils.enums import NotificationTypes
 
 
 class Client(models.Model):
@@ -149,7 +156,7 @@ class Client(models.Model):
         return True
 
 
-class Onboarding(models.Model):
+class ClientOnboarding(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -160,6 +167,7 @@ class Onboarding(models.Model):
         on_delete=models.CASCADE,
         related_name="onboarded_users",
     )
+    notes = GenericRelation(Note)
 
     onboarded = models.DateTimeField(
         "Date Onboarded", null=True, blank=True, help_text="This is the date they are considered onboarded"
@@ -171,17 +179,84 @@ class Onboarding(models.Model):
         "Date Offboarded", null=True, blank=True, help_text="This is the date they are considered offboarded"
     )
 
+    def status(self):
+        now = timezone.now()
+        if self.offboarded and self.offboarded < now:
+            # Not active if we're past an offboarded date
+            return 'offboarded'
+        elif self.onboarded and self.onboarded < now:
+            # Ok, onboarded is in the past... lets check if we're stale...
+            if self.client.onboarding_reoccurring_renewal:
+                if self.reqs_completed:
+                    renewal_date = self.reqs_completed + timedelta(days=self.client.onboarding_reqs_renewal)
+                    if renewal_date < now:
+                        # we're stale because we haven't renewed..
+                        return 'stale'
+                    else:
+                        return 'active'
+                else:
+                    # Reqs required but no renewal date
+                    return 'stale'
+            else:
+                return 'active'
+        elif self.onboarded and self.onboarded > now:
+            return 'pending'
+        else:
+            return 'unknown'
+    
     @property
     def is_active(self):
-        return True
+        return self.status() == 'active'
     
     @property
     def is_stale(self):
-        return True
+        return self.status() == 'stale'
+    
+    @property
+    def is_offboarded(self):
+        return self.status() == 'offboarded'
+    
+    def days_till_renewal(self):
+        now = timezone.now()
+        if self.client.onboarding_reoccurring_renewal and self.reqs_completed:
+            renewal_date = self.reqs_completed + timedelta(days=self.client.onboarding_reqs_renewal)
+            return (renewal_date - now).days
+        return 0
+    
+    def is_due(self):
+        now = timezone.now()
+        if self.client.onboarding_reoccurring_renewal:
+            if self.reqs_completed:
+                renewal_date = self.reqs_completed + timedelta(days=self.client.onboarding_reqs_renewal) - timedelta(days=self.client.onboarding_reqs_reminder_days)
+                if renewal_date < now:
+                    # we're stale because we haven't renewed..
+                    return True
+            else:
+                # Reqs required but no renewal date
+                return True
+        else:
+            return False
+        
+    def send_reminder(self):
+        email_template = "emails/onboarding_reminder.html"
+        if self.is_due:
+            # check if we should or not...
+            days_till_renewal = self.days_till_renewal()
+            notice = AppNotification(
+                NotificationTypes.CLIENT,
+                "{client} Onboarding Requirements Due".format(client=self.client),
+                "Onboarding requirements are due in {days_till_renewal} for {client}. Please check the requirements, complete them and mark it as renewed.".format(
+                    days_till_renewal=days_till_renewal,
+                    client=self.client,
+                ),
+                email_template,
+                action_link=reverse('view_own_onboarding'),
+            )
+            task_send_notifications(notice, [self.user])
+            log_system_activity(self, "Sent Onboarding Reminder")
 
     class Meta:
         ordering = [Lower("client"), "user"]
-        unique_together = ["client", "user"]
 
 
 class FrameworkAgreement(models.Model):

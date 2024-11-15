@@ -81,8 +81,13 @@
                         }
                       });
                     } else {
-                      // Nothing
-                      $("#mainModalContent").html(data.html_form);
+                      Swal.fire({
+                        title: "Error",
+                        icon: "exclamation",
+                        html: data.logic_checks_feedback,
+                        showCancelButton: true,
+                        denyButtonText: `Dismiss`
+                      });
                     }
                   } else {
                     $("#mainModalContent").html(data.html_form);

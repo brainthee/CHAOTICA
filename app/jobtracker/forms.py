@@ -13,6 +13,7 @@ from .models import (
     TimeSlotType,
     TimeSlotComment,
     Client,
+    ClientOnboarding,
     Phase,
     Project,
     OrganisationalUnit,
@@ -31,6 +32,7 @@ from crispy_forms.bootstrap import StrictButton
 from crispy_forms.layout import Layout, Row, Column, Field, Div, HTML, Submit
 from crispy_bootstrap5.bootstrap5 import FloatingField
 from dal import autocomplete, forward
+from django.utils.html import format_html
 from chaotica_utils.enums import UnitRoles
 from bootstrap_datepicker_plus.widgets import (
     TimePickerInput,
@@ -38,7 +40,6 @@ from bootstrap_datepicker_plus.widgets import (
     DateTimePickerInput,
 )
 from tinymce.widgets import TinyMCE
-
 
 
 class SchedulerFilter(forms.Form):
@@ -109,7 +110,6 @@ class SchedulerFilter(forms.Form):
             },
         ),
     )
-    
 
     jobs = forms.ModelMultipleChoiceField(
         required=False,
@@ -133,6 +133,17 @@ class SchedulerFilter(forms.Form):
         ),
     )
 
+    onboarded_to = forms.ModelMultipleChoiceField(
+        label="Onboarded to Client",
+        required=False,
+        queryset=Client.objects.filter(onboarded_users__isnull=False).distinct(),
+        widget=autocomplete.ModelSelect2Multiple(
+            attrs={
+                "data-minimum-input-length": 3,
+            },
+        ),
+    )
+
     show_inactive_users = forms.BooleanField(
         required=False,
     )
@@ -143,6 +154,20 @@ class SchedulerFilter(forms.Form):
         self.helper.form_method = "get"
         self.helper.form_class = "form-inline"
         self.helper.layout = Layout(
+            Row(
+                Column(
+                    HTML(
+                        '<a class="btn btn-phoenix-info d-block w-100" href="'
+                        + reverse("view_scheduler")
+                        + '"><span class="fas fa-arrows-rotate me-2 fs-10"></span>Reset to default</a>'
+                    ),
+                ),
+                Column(
+                    Submit(
+                        "apply", "Apply", css_class="btn btn-phoenix-success d-block w-100"
+                    ),
+                ),
+            ),
             Div(
                 HTML('<h5 class="setting-panel-item-title">Date Range</h5>'),
                 Row(
@@ -163,16 +188,21 @@ class SchedulerFilter(forms.Form):
             Div(
                 HTML('<h5 class="setting-panel-item-title">Users</h5>'),
                 Row(
-                    Field("show_inactive_users",),
+                    Field(
+                        "show_inactive_users",
+                    ),
                     Field("users", style="width: 100%;"),
                 ),
                 Row(
                     Column(
-                    Field("org_units", style="width: 100%;"),
+                        Field("org_units", style="width: 100%;"),
                     ),
                     Column(
-                    Field("org_unit_roles", style="width: 100%;"),
+                        Field("org_unit_roles", style="width: 100%;"),
                     ),
+                ),
+                Row(
+                    Field("onboarded_to", style="width: 100%;"),
                 ),
                 css_class="setting-panel-item",
             ),
@@ -204,11 +234,6 @@ class SchedulerFilter(forms.Form):
                 ),
                 css_class="setting-panel-item",
             ),
-            Row(
-                Submit(
-                    "apply", "Apply", css_class="btn-phoenix-success d-grid mb-3 mt-5"
-                ),
-            ),
         )
 
     class Meta:
@@ -218,6 +243,7 @@ class SchedulerFilter(forms.Form):
             "skills_can_do_support",
             "show_inactive_users",
             "users",
+            "onboarded_users",
             "include_user",
             "services",
             "jobs",
@@ -864,6 +890,7 @@ class DeliveryTimeSlotModalForm(forms.ModelForm):
             "end",
         )
 
+
 class ProjectTimeSlotModalForm(forms.ModelForm):
     project = forms.ModelChoiceField(
         queryset=Project.objects.filter(),
@@ -1496,7 +1523,6 @@ class ScopeForm(forms.ModelForm):
         ]
 
 
-
 class MergeClientForm(forms.Form):
     client_to_merge = forms.ModelChoiceField(
         queryset=Client.objects.filter(),
@@ -1564,7 +1590,6 @@ class ClientForm(forms.ModelForm):
         ]
 
 
-
 class ClientOnboardingConfigForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(ClientOnboardingConfigForm, self).__init__(*args, **kwargs)
@@ -1581,7 +1606,7 @@ class ClientOnboardingConfigForm(forms.ModelForm):
                         Div(
                             Field("onboarding_reoccurring_renewal"),
                             css_class="input-group input-group-dynamic",
-                        )
+                        ),
                     ),
                     Column(
                         Div(
@@ -1591,7 +1616,7 @@ class ClientOnboardingConfigForm(forms.ModelForm):
                         Div(
                             FloatingField("onboarding_reqs_reminder_days"),
                             css_class="input-group input-group-dynamic",
-                        )
+                        ),
                     ),
                 ),
                 Row(
@@ -1620,6 +1645,96 @@ class ClientOnboardingConfigForm(forms.ModelForm):
             "onboarding_requirements",
             "onboarding_reqs_renewal",
             "onboarding_reqs_reminder_days",
+        ]
+
+
+class ClientOnboardingUserForm(forms.ModelForm):
+
+    user = forms.ModelChoiceField(
+        required=False,
+        queryset=User.objects.filter(),
+        widget=autocomplete.ModelSelect2(
+            url="user-autocomplete",
+            attrs={
+                "data-minimum-input-length": 3,
+            },
+        ),
+    )
+
+    onboarded = forms.DateField(
+        widget=DatePickerInput(),
+    )
+
+    reqs_completed = forms.DateField(
+        required=False,
+        widget=DatePickerInput(),
+    )
+
+    offboarded = forms.DateField(
+        required=False,
+        widget=DatePickerInput(),
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        onboarded = cleaned_data.get("onboarded")
+        offboarded = cleaned_data.get("offboarded")
+
+        if onboarded and offboarded and offboarded < onboarded:
+            self.add_error(
+                "offboarded", "This can not be set before the onboarding date"
+            )
+
+    def __init__(self, *args, **kwargs):
+        super(ClientOnboardingUserForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.helper.layout = Layout(
+            Div(
+                Row(
+                    Field("user", style="width: 100%;"),
+                ),
+                Row(
+                    Column(
+                        Div(
+                            Field("onboarded"),
+                            css_class="input-group input-group-dynamic",
+                        ),
+                    ),
+                    Column(
+                        Div(
+                            Field("reqs_completed"),
+                            css_class="input-group input-group-dynamic",
+                        ),
+                    ),
+                    Column(
+                        Div(
+                            Field("offboarded"),
+                            css_class="input-group input-group-dynamic",
+                        ),
+                    ),
+                ),
+                css_class="card-body p-3",
+            ),
+            Div(
+                Div(
+                    StrictButton(
+                        "Save",
+                        type="submit",
+                        css_class="btn btn-outline-success ms-auto mb-0",
+                    ),
+                    css_class="button-row d-flex",
+                ),
+                css_class="card-footer pt-0 p-3",
+            ),
+        )
+
+    class Meta:
+        model = ClientOnboarding
+        fields = [
+            "user",
+            "onboarded",
+            "reqs_completed",
+            "offboarded",
         ]
 
 
@@ -1980,8 +2095,7 @@ class ProjectForm(forms.ModelForm):
     unit = forms.ModelChoiceField(
         required=False,
         queryset=OrganisationalUnit.objects.filter(),
-        widget=autocomplete.ModelSelect2(
-        ),
+        widget=autocomplete.ModelSelect2(),
     )
 
     overview = forms.CharField(
@@ -2014,6 +2128,7 @@ class ProjectForm(forms.ModelForm):
             "status",
             "unit",
         ]
+
 
 class ServiceForm(forms.ModelForm):
     owners = forms.ModelMultipleChoiceField(
