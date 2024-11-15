@@ -1,0 +1,30 @@
+<table class="table align-items-center mb-0">
+  <caption>Framework Agreement List</caption>
+  <thead>
+    <tr>
+      <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">User</th>
+      <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Date Onboarded</th>
+      <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Requirements Completed</th>
+      <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Status</th>
+      <th class=""></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for onboarding in onboarded_users %}
+      <tr>
+        <td>
+            {% include 'partials/users/user_table_display.html' with u=onboarding.user %}
+        </td>
+        <td class="align-middle text-center text-sm">
+          <p class="text-xs text-secondary mb-0">{{ onboarding.onboarded }}</p>
+        </td>
+        <td class="align-middle text-center text-sm">
+          <p class="text-xs text-secondary mb-0">{{ onboarding.reqs_completed }}</p>
+        </td>
+        <td class="align-middle text-center text-sm">
+            {% include 'partials/client/onboarding_status_badge.html' with onboarding=onboarding %}
+        </td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>

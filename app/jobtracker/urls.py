@@ -390,6 +390,11 @@ urlpatterns = [
         views.client_merge,
         name="client_merge",
     ),
+    path(
+        "client/<str:slug>/onboarding/configure",
+        views.client_onboarding_cfg,
+        name="client_onboarding_cfg",
+    ),
     # Client Contact CRUD
     path(
         "client/<str:client_slug>/contact/create/",

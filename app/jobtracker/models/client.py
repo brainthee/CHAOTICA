@@ -63,16 +63,31 @@ class Client(models.Model):
         blank=True,
     )
 
+    ### Onboarding settings
     onboarding_required = models.BooleanField(
+        "Onboarding Required",
         default=False,
-        help_text="If enabled, only onboarded users can be scheduled on jobs for this client.",
+        help_text="Only onboarded users can be scheduled on jobs for this client.",
     )
-    onboarded_users = models.ManyToManyField(
-        settings.AUTH_USER_MODEL,
-        help_text="Users who have been onboarded",
-        related_name="onboarded_to",
-        verbose_name="Onboarded Users",
-        blank=True,
+    onboarding_reoccurring_renewal = models.BooleanField(
+        "Reoccurring Renewal Required",
+        default=False,
+        help_text="Requirements must be refreshed repeatably.",
+    )
+    onboarding_requirements = models.TextField(
+        "Reoccurring Requirements",
+        null=True, blank=True,
+        help_text="What requirements are there every renewal.",
+    )
+    onboarding_reqs_renewal = models.IntegerField(
+        "Requirements Refresh Every",
+        default=0,
+        help_text="How many days requirements must be refreshed.",
+    )
+    onboarding_reqs_reminder_days = models.IntegerField(
+        "Reminder Lead",
+        default=0,
+        help_text="How many days lead should a reminder be sent.",
     )
 
     class Meta:
@@ -132,6 +147,41 @@ class Client(models.Model):
         client_to_merge.delete()
 
         return True
+
+
+class Onboarding(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="onboarded_clients",
+    )
+    client = models.ForeignKey(
+        Client,
+        on_delete=models.CASCADE,
+        related_name="onboarded_users",
+    )
+
+    onboarded = models.DateTimeField(
+        "Date Onboarded", null=True, blank=True, help_text="This is the date they are considered onboarded"
+    )
+    reqs_completed = models.DateTimeField(
+        "Requirements Completed", null=True, blank=True, help_text="This is the date reoccurring requirements were last completed"
+    )
+    offboarded = models.DateTimeField(
+        "Date Offboarded", null=True, blank=True, help_text="This is the date they are considered offboarded"
+    )
+
+    @property
+    def is_active(self):
+        return True
+    
+    @property
+    def is_stale(self):
+        return True
+
+    class Meta:
+        ordering = [Lower("client"), "user"]
+        unique_together = ["client", "user"]
 
 
 class FrameworkAgreement(models.Model):
