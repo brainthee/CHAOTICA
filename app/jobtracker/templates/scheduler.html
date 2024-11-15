@@ -15,34 +15,36 @@
   mb-0
 {% endblock %}
 {% block content_classes %}
-  px-0 my-0 vh-100 position-fixed w-100 
+  px-0 my-0 vh-100 position-fixed w-100
 {% endblock %}
 {% block breadcrumb_classes %}
   px-5
 {% endblock %}
 
 {% block breadcrumbs %}
+
 {% endblock %}
 {% block alerts %}
-{% comment %} This is ugly... but we have to "read" the messages otherwise next 
-time they visit a normal page, it'll be full of messages! {% endcomment %}
+  {% comment %}This is ugly... but we have to "read" the messages otherwise next time they visit a normal page, it'll be full of messages!{% endcomment %}
 
-{% for message in messages %}
-<div class="d-none alert m-2 alert-phoenix-{% if message.tags == "error" %}danger{% else %}{{ message.tags }}{% endif %} show" role="alert">
-    {{ message }}
-</div>
-{% endfor %}
-
-{% endblock alerts %}
+  {% for message in messages %}
+    <div class="d-none alert m-2 alert-phoenix-{% if message.tags == 'error' %}
+        danger
+      {% else %}
+        {{ message.tags }}
+      {% endif %} show"
+      role="alert">{{ message }}</div>
+  {% endfor %}
+{% endblock %}
 
 {% block content %}
   <div class="calendar bg-body-emphasis w-100 {% if config.SITE_NOTICE_ENABLED %}pt-5{% endif %}" data-bs-toggle="calendar" id="calendar"></div>
-{% include 'partials/loading.html' %}
+  {% include 'partials/loading.html' %}
 {% endblock %}
 
 {% block offcanvas %}
   <div class="offcanvas offcanvas-end settings-panel border-0" id="settings-offcanvas" tabindex="-1" aria-labelledby="settings-offcanvas">
-    <div class="offcanvas-header align-items-start border-bottom flex-column">
+    <div class="offcanvas-header align-items-start flex-column pb-0">
       <div class="pt-1 w-100 mb-3 d-flex justify-content-between align-items-start">
         <div>
           <h5 class="mb-2 me-2 lh-sm">
@@ -53,9 +55,8 @@ time they visit a normal page, it'll be full of messages! {% endcomment %}
         </div>
         <button class="btn p-1 fw-bolder" type="button" data-bs-dismiss="offcanvas" aria-label="Close"><span class="fas fa-times fs-8"></span></button>
       </div>
-      <button class="btn btn-phoenix-secondary w-100" data-theme-control="reset"><span class="fas fa-arrows-rotate me-2 fs-10"></span>Reset to default</button>
     </div>
-    <div class="offcanvas-body scrollbar px-card" id="themeController">
+    <div class="offcanvas-body scrollbar pt-0" id="themeController">
       {% crispy filter_form %}
     </div>
   </div>
@@ -71,7 +72,7 @@ time they visit a normal page, it'll be full of messages! {% endcomment %}
 {% endblock %}
 
 {% block footer_javascript_page %}
-<script>
+  <script>
   {% include 'js/scheduler_init.js' %}
 </script>
 {% endblock %}

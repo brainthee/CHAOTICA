@@ -25,6 +25,16 @@ Menu.add_item(
 )
 
 Menu.add_item(
+    "user",
+    MenuItem(
+        "Onboarded Clients",
+        reverse("view_own_onboarding"),
+        icon="person-snowboarding",
+        weight=2,
+    ),
+)
+
+Menu.add_item(
     "ops",
     PermMenuItem(
         "Manage Holidays",

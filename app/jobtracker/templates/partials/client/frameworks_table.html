@@ -2,7 +2,7 @@
     <caption>Framework Agreement List</caption>
     <thead>
         <tr>
-            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Name</th>
+            <th class="px-3 text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Name</th>
             <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Start</th>
             <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">End</th>
             <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Usage</th>
@@ -11,7 +11,7 @@
     <tbody>
     {% for framework in frameworks %}
         <tr>
-            <td>
+            <td class="px-3">
                 <h6 class="mb-0 text-xs">
                     <a href="{{ framework.get_absolute_url }}">
                         {{ framework.name }}
@@ -53,7 +53,7 @@
     {% empty %}
         <tr>
             <td colspan="4">
-                <p class="text-xs text-secondary mb-0">No frameworks found</p>  
+                <p class="text-xs px-3 text-secondary mb-0">No frameworks found</p>  
             </td>
         </tr>
     {% endfor %}

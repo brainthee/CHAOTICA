@@ -395,6 +395,21 @@ urlpatterns = [
         views.client_onboarding_cfg,
         name="client_onboarding_cfg",
     ),
+    path(
+        "client/<str:slug>/onboarding/add",
+        views.client_onboarding_add_user,
+        name="client_onboarding_add_user",
+    ),
+    path(
+        "client/<str:slug>/onboarding/change/<int:pk>",
+        views.client_onboarding_manage_user,
+        name="client_onboarding_manage_user",
+    ),
+    path(
+        "client/<str:slug>/onboarding/remove/<int:pk>",
+        views.client_onboarding_remove_user,
+        name="client_onboarding_remove_user",
+    ),
     # Client Contact CRUD
     path(
         "client/<str:client_slug>/contact/create/",

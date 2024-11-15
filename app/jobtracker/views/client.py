@@ -15,8 +15,21 @@ from django.contrib import messages
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
-from ..models import Client, Contact, FrameworkAgreement, OrganisationalUnit
-from ..forms import ClientForm, ClientOnboardingConfigForm, ClientContactForm, ClientFrameworkForm,MergeClientForm
+from ..models import (
+    Client,
+    ClientOnboarding,
+    Contact,
+    FrameworkAgreement,
+    OrganisationalUnit,
+)
+from ..forms import (
+    ClientForm,
+    ClientOnboardingConfigForm,
+    ClientOnboardingUserForm,
+    ClientContactForm,
+    ClientFrameworkForm,
+    MergeClientForm,
+)
 import logging
 
 logger = logging.getLogger(__name__)
@@ -114,6 +127,79 @@ def client_onboarding_cfg(request, slug):
 
 @permission_required_or_403("jobtracker.change_client")
 @require_http_methods(["GET", "POST"])
+def client_onboarding_add_user(request, slug):
+    client = get_object_or_404(Client, slug=slug)
+    context = {}
+    data = dict()
+    if request.method == "POST":
+        form = ClientOnboardingUserForm(request.POST)
+        if form.is_valid():
+            form.instance.client = client
+            # Lets merge!
+            form.save()
+            data["form_is_valid"] = True
+        else:
+            # Merge failed!
+            data["form_is_valid"] = False
+    else:
+        # Send the modal
+        form = ClientOnboardingUserForm()
+
+    context = {"form": form, "client": client}
+    data["html_form"] = loader.render_to_string(
+        "modals/client_onboarding_user.html", context, request=request
+    )
+    return JsonResponse(data)
+
+
+@permission_required_or_403("jobtracker.change_client")
+@require_http_methods(["GET", "POST"])
+def client_onboarding_manage_user(request, slug, pk):
+    client = get_object_or_404(Client, slug=slug)
+    onboarding = get_object_or_404(ClientOnboarding, client=client, pk=pk)
+    context = {}
+    data = dict()
+    if request.method == "POST":
+        form = ClientOnboardingUserForm(request.POST, instance=onboarding)
+        if form.is_valid():
+            form.instance.client = client
+            # Lets merge!
+            form.save()
+            data["form_is_valid"] = True
+        else:
+            # Merge failed!
+            data["form_is_valid"] = False
+    else:
+        # Send the modal
+        form = ClientOnboardingUserForm(instance=onboarding)
+
+    context = {"form": form, "client": client}
+    data["html_form"] = loader.render_to_string(
+        "modals/client_onboarding_user.html", context, request=request
+    )
+    return JsonResponse(data)
+
+
+@permission_required_or_403("jobtracker.change_client")
+@require_http_methods(["GET", "POST"])
+def client_onboarding_remove_user(request, slug, pk):
+    client = get_object_or_404(Client, slug=slug)
+    onboarding = get_object_or_404(ClientOnboarding, client=client, pk=pk)
+    context = {}
+    data = dict()
+    if request.method == "POST":
+        onboarding.delete()
+        data["form_is_valid"] = True
+
+    context = {"client": client}
+    data["html_form"] = loader.render_to_string(
+        "modals/client_onboarding_user_remove.html", context, request=request
+    )
+    return JsonResponse(data)
+
+
+@permission_required_or_403("jobtracker.change_client")
+@require_http_methods(["GET", "POST"])
 def client_merge(request, slug):
     client = get_object_or_404(Client, slug=slug)
     context = {}
@@ -122,15 +208,20 @@ def client_merge(request, slug):
         form = MergeClientForm(request.POST)
         if form.is_valid():
             # Lets merge!
-            client_to_merge = form.cleaned_data['client_to_merge']
+            client_to_merge = form.cleaned_data["client_to_merge"]
             if client_to_merge == client:
                 # Same user. GTFO
                 data["form_is_valid"] = False
                 form.add_error("client_to_merge", "You can't merge to the same client!")
-            elif not request.user.has_perm("jobtracker.change_client", client_to_merge) or not request.user.has_perm("jobtracker.delete_client", client_to_merge):
+            elif not request.user.has_perm(
+                "jobtracker.change_client", client_to_merge
+            ) or not request.user.has_perm("jobtracker.delete_client", client_to_merge):
                 # No perms. GTFO
                 data["form_is_valid"] = False
-                form.add_error("client_to_merge", "You don't have change or delete permissions for the target client")
+                form.add_error(
+                    "client_to_merge",
+                    "You don't have change or delete permissions for the target client",
+                )
             else:
                 if client.merge(client_to_merge):
                     # Success
@@ -139,7 +230,7 @@ def client_merge(request, slug):
                 else:
                     # Merge failed!
                     data["form_is_valid"] = False
-                    form.add_error("","Failed to merge!")
+                    form.add_error("", "Failed to merge!")
     else:
         # Send the modal
         form = MergeClientForm()
@@ -149,6 +240,7 @@ def client_merge(request, slug):
         "modals/client_merge.html", context, request=request
     )
     return JsonResponse(data)
+
 
 class ClientContactBaseView(PermissionRequiredMixin, ChaoticaBaseView):
     model = Contact

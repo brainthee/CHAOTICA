@@ -57,7 +57,6 @@ def _filter_users_on_query(request, cleaned_data=None):
     query = Q()
 
     show_inactive_users = cleaned_data.get("show_inactive_users")
-        
 
     # Starting users filter
     users_pk = []
@@ -71,6 +70,15 @@ def _filter_users_on_query(request, cleaned_data=None):
             if user.pk not in users_pk:
                 users_pk.append(user.pk)
 
+    onboarded_to = cleaned_data.get("onboarded_to")
+    if onboarded_to:
+        users_onboarded = []
+        for client in onboarded_to:
+            for onboarded in client.onboarded_users.all():
+                if onboarded.is_active:
+                    users_onboarded.append(onboarded.user.pk)
+        query.add(Q(pk__in=users_onboarded), Q.AND)
+
     # If we're passed a job/phase ID - filter on that.
     jobs = cleaned_data.get("jobs")
     if jobs:
@@ -81,7 +89,7 @@ def _filter_users_on_query(request, cleaned_data=None):
     if phases:
         for phase in phases:
             query.add(Q(pk__in=phase.team()), Q.AND)
-    
+
     if not jobs and not phases:
         query.add(Q(pk__in=users_pk), Q.AND)
 
@@ -169,13 +177,16 @@ def _filter_users_on_query(request, cleaned_data=None):
     extra_users = cleaned_data.get("include_user")
     if extra_users:
         query.add(
-            Q(
-                pk__in=extra_users
-            ),
+            Q(pk__in=extra_users),
             Q.OR,
         )
 
-    return User.objects.filter(query).distinct().order_by("last_name", "first_name").prefetch_related("timeslots")
+    return (
+        User.objects.filter(query)
+        .distinct()
+        .order_by("last_name", "first_name")
+        .prefetch_related("timeslots")
+    )
 
 
 @login_required
@@ -202,7 +213,9 @@ def view_scheduler_slots(request):
     end = clean_fullcalendar_datetime(request.GET.get("end", None))
 
     for user in filtered_users:
-        data = data + user.get_timeslots(start=start, end=end, selected_phases=selected_phases)
+        data = data + user.get_timeslots(
+            start=start, end=end, selected_phases=selected_phases
+        )
         data = data + user.get_timeslot_comments(start=start, end=end)
         data = data + user.get_holidays(
             start=start,
@@ -229,7 +242,7 @@ def view_scheduler_members(request):
             selected_phases.append(phase)
 
     filtered_users = _filter_users_on_query(request, cleaned_data)
-    
+
     for user in filtered_users:
         user_title = str(user)
         main_org = user.unit_memberships.first()
@@ -567,6 +580,7 @@ def create_scheduler_phase_slot(request):
         JsonResponse: _description_
     """
     data = dict()
+    data["logic_checks_feedback"] = ""
     start = clean_datetime(request.GET.get("start", None))
     end = clean_datetime(request.GET.get("end", None))
     resource_id = clean_int(request.GET.get("resource_id", None))
@@ -596,19 +610,59 @@ def create_scheduler_phase_slot(request):
         if form.is_valid():
             slot = form.save(commit=False)
             slots = slot.overlapping_slots()
-            if slots and not force:
-                # Overlapping slots!
+
+            if (
+                slot.phase.job.client.onboarding_required
+                and not slot.phase.job.client.onboarded_users.filter(
+                    user=user, client=slot.phase.job.client
+                ).exists()
+            ):
                 data["form_is_valid"] = False
                 data["logic_checks_failed"] = True
-                data["logic_checks_can_bypass"] = True
+                data["logic_checks_can_bypass"] = False
                 data["logic_checks_feedback"] = loader.render_to_string(
-                    "partials/scheduler/logicchecks/overlaps.html",
-                    {"slot": slot, "overlapping_slots": slots},
+                    "partials/scheduler/logicchecks/not_onboarded.html",
+                    {"slot": slot, "phase": slot.phase},
                     request=request,
                 )
             else:
-                slot.save()
-                data["form_is_valid"] = True
+                if not force:
+                    # These logic checks can be bypassed
+                    if slots:
+                        # Overlapping slots!
+                        data["form_is_valid"] = False
+                        data["logic_checks_failed"] = True
+                        data["logic_checks_can_bypass"] = True
+                        data["logic_checks_feedback"] += loader.render_to_string(
+                            "partials/scheduler/logicchecks/overlaps.html",
+                            {"slot": slot, "overlapping_slots": slots},
+                            request=request,
+                        )
+
+                    if (
+                        slot.phase.job.client.onboarding_required
+                        and slot.phase.job.client.onboarded_users.filter(
+                            user=user
+                        ).exists()
+                    ):
+                        onboarding = slot.phase.job.client.onboarded_users.get(
+                            user=user, client=slot.phase.job.client
+                        )
+                        if onboarding.is_stale:
+                            data["form_is_valid"] = False
+                            data["logic_checks_failed"] = True
+                            data["logic_checks_can_bypass"] = True
+                            data["logic_checks_feedback"] += loader.render_to_string(
+                                "partials/scheduler/logicchecks/stale_onboarding.html",
+                                {"slot": slot, "phase": phase},
+                                request=request,
+                            )
+
+                if not data["logic_checks_failed"] or (
+                    data["logic_checks_failed"] and force
+                ):
+                    slot.save()
+                    data["form_is_valid"] = True
         else:
             data["form_is_valid"] = False
     else:

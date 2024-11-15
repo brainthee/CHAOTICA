@@ -718,14 +718,14 @@ class User(AbstractUser):
         return Service.objects.filter(
             Q(skillsRequired__in=self.get_skills_specialist())
             | Q(skillsRequired__in=self.get_skills_alone())
-        )
+        ).distinct()
 
     def services_can_contribute(self):
         from jobtracker.models import Service
 
         return Service.objects.filter(
             Q(skillsRequired__in=self.get_skills_support())
-        )
+        ).distinct()
 
     def get_skills_specialist(self):
         from jobtracker.models import Skill

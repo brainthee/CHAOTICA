@@ -70,6 +70,8 @@ urlpatterns = [
     path("profile/update", views.update_own_profile, name="update_own_profile"),
     path("profile/update/skills", views.update_own_skills, name="update_own_skills"),
     path("profile/update/certs", views.update_own_certs, name="update_own_certs"),
+    path("profile/onboarding/", views.view_own_onboarding, name="view_own_onboarding"),
+    path("profile/onboarding/renew/<int:pk>", views.renew_own_onboarding, name="renew_own_onboarding"),
     path("profile/leave/", views.view_own_leave, name="view_own_leave"),
     path("profile/leave/request", views.request_own_leave, name="request_own_leave"),
     path(

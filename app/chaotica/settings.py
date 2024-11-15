@@ -396,6 +396,7 @@ CRON_CLASSES = [
     "chaotica_utils.tasks.task_backup_site",
     "jobtracker.tasks.task_progress_workflows",
     "jobtracker.tasks.task_fire_job_notifications",
+    "jobtracker.tasks.task_fire_onboarding_reminders",
     "rm_sync.tasks.task_sync_rm_schedule",
 ]
 

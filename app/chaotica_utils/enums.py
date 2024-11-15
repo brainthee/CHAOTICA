@@ -5,6 +5,7 @@ class NotificationTypes:
     ORGUNIT = 3
     ADMIN = 4
     SYSTEM = 5
+    CLIENT = 6
 
 
 # Roles that apply across the whole site with no object specific permissions

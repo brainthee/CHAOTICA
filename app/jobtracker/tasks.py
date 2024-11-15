@@ -1,6 +1,7 @@
 from datetime import date
 from django_cron import CronJobBase, Schedule
 from django.db.models import Q
+from django.utils import timezone
 from .enums import PhaseStatuses, JobStatuses
 from .models.phase import Phase, Job
 
@@ -52,8 +53,6 @@ class task_progress_workflows(CronJobBase):
         #         phase.save()
         
 
-
-
 class task_fire_job_notifications(CronJobBase):
     RUN_EVERY_MINS = 5 # every 1st of the month
     schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
@@ -94,3 +93,19 @@ class task_fire_job_notifications(CronJobBase):
             if phase.is_delivery_late:
                 # Ok, it's late. Lets fire a notification!
                 phase.fire_late_to_delivery_notification()
+
+
+class task_fire_onboarding_reminders(CronJobBase):
+    RUN_EVERY_MINS = 1440 # once a day
+    schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
+    code = 'jobtracker.task_fire_onboarding_reminders'
+
+    def do(self):
+        from jobtracker.models import ClientOnboarding
+        now = timezone.now()
+        for onboarding in ClientOnboarding.objects.filter(
+            Q(offboarded__isnull=True) | Q(offboarded__gte=now),
+            onboarded__lte=now,):
+            if onboarding.is_due():
+                # Send a reminder...
+                onboarding.send_reminder()
