@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+{% load menu %}
+{% load index %}
+{% load static %}
+
+{% block pageTitle %}
+  {{ team }}
+{% endblock %}
+{% block head_title %}
+  {{ team }}
+{% endblock %}
+
+{% block breadcrumbItem %}
+  <li class="breadcrumb-item text-sm">
+    <a class="opacity-50 text-body-emphasis" href="{% url 'team_list' %}">Teams</a>
+  </li>
+  <li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">{{ team.name }}</li>
+{% endblock %}
+
+{% block content_classes %}
+  pt-15 px-0
+{% endblock %}
+{% block breadcrumb_classes %}
+  px-5
+{% endblock %}
+
+{% block content %}
+  <div class="row mt-2 mb-0 px-5">
+    <div class="card mb-3 px-0">
+      <div class="card-header d-flex justify-content-center align-items-end position-relative mb-7 mb-xxl-0" style="min-height: 214px; ">
+        <div class="bg-holder rounded-top" style="background-image:url({{ team.get_cover_url }});"></div>
+          <div class="position-relative feed-profile bg-body-quaternary rounded-circle d-flex flex-center mb-xxl-7">
+            <div class="avatar avatar-5xl">
+              <img class="rounded-circle rounded-circle img-thumbnail shadow-sm border-0" src="{{ team.get_avatar_url }}" alt="" />
+            </div>
+          </div>
+      </div>
+      <div class="card-body">
+        <div class="row justify-content-xl-between">
+          <div class="col-auto">
+            <div class="d-flex flex-wrap mb-3 align-items-center">
+              <h2 class="me-2">{{ team.name }}</h2>
+            </div>
+            <div class="mb-5">
+              <div class="d-md-flex align-items-center">
+                <div class="d-flex align-items-center">
+                  <span class="fa-solid fa-user-group fs-9 text-body-tertiary me-2 me-lg-1 me-xl-2"></span>
+                  <span class="fs-7 fw-bold text-body-tertiary text-opacity-85">
+                    {{ team.users.all|length }}
+                    <span class="fw-semibold ms-1 me-4">Members</span>
+                  </span>
+                </div>
+
+                <div class="d-flex align-items-center">
+                  <span class="fa-solid fa-location-dot fs-9 text-body-tertiary me-2 me-lg-1 me-xl-2"></span>
+                  <span class="fs-7 fw-bold text-body-tertiary text-opacity-85">
+                    Owners:{% for user in team.owners.all %}
+                      {% include 'partials/users/user_link.html' with user_profile=user link_css='fs-7 fw-bold text-body-tertiary text-opacity-85 text-body-emphasis-hover' %}
+                      {% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                  </span>
+                </div>
+              </div>
+            </div>
+            {% if team.description %}
+              <p class="fs-6 text-body-secondary">{{ team.description }}</p>
+            {% endif %}
+          </div>
+          <div class="col-auto">
+            <div class="row g-2">
+              <div class="col-auto">
+                <a href="{% url 'view_scheduler' %}?teams={{ team.pk }}" class="btn btn-phoenix-success lh-1">
+                  <span class="fa-solid fa-calendar me-2"></span>
+                  View Schedule
+                </a>
+                <button data-url="{% url 'teammember_add' team.slug %}" class="btn btn-phoenix-primary lh-1 js-load-modal-form">
+                  <span class="fa-solid fa-plus me-2"></span>
+                  Add User
+                </button>
+              </div>
+
+              <div class="col-auto">
+                <div class="position-static">
+                  <button class="btn btn-phoenix-secondary lh-1" data-bs-toggle="dropdown" data-boundary="window" aria-haspopup="true" aria-expanded="false" data-bs-reference="parent">
+                    <span class="fa-solid fa-chevron-down me-2"></span>
+                    More
+                  </button>
+
+                  <div class="dropdown-menu dropdown-menu-end py-2">
+                    <a class="dropdown-item" href="mailto:{% for user in team.active_users %}{{ user.user.email_address }}{% if not forloop.last %}, {% endif %}{% endfor %}">
+                      <span class="fa-solid fa-message text-body-secondary me-2"></span>
+                      Send Email
+                    </a>
+
+                    <a class="dropdown-item" href="{% url 'team_update' team.slug %}">
+                      <span class="fa-solid fa-gear text-body-secondary me-2"></span>
+                      Edit Team Settings
+                    </a>
+
+                    <a class="dropdown-item" href="{% url 'team_delete' team.slug %}">
+                      <span class="fa-solid fa-ban text-danger me-2"></span>
+                      Delete Team
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-0 border-1 border-top bg-body-secondary h-100">
+    <div class="col-12 px-6 pt-3 border-1 border-end">
+      <div class="row mx-1">
+        <ul class="nav nav-underline scrollbar flex-nowrap w-100 pb-1 mb-3" id="sectionNav" role="tablist" style="overflow-y: hidden;">
+          <li class="nav-item text-nowrap me-2" role="presentation">
+            <a class="nav-link active" id="team-tab" data-bs-toggle="tab" href="#team" role="tab" aria-controls="tab-team" aria-selected="true"><span class="fa-solid fa-video me-2 tab-icon-color"></span>Team</a>
+          </li>
+        </ul>
+
+        <div class="tab-content" id="myTabContent">
+          <div class="tab-pane fade active show" id="team" role="tabpanel" aria-labelledby="team-tab">
+            <div class="d-flex flex-wrap mb-3">
+              {% for userMembership in team.users.all %}
+                <div class="col-4 p-0 m-1">
+                  {% include 'partials/user/user_card.html' with user=userMembership.user %}
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+          
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

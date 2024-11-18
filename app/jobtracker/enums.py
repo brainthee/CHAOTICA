@@ -900,7 +900,8 @@ class QualificationStatus:
     PENDING = 4
     ATTEMPTED = 5
     AWARDED = 6
-    LAPSED = 7
+    UNSUCCESSFUL = 7
+    LAPSED = 8
 
     CHOICES = (
         (UNKNOWN, "Unknown"),
@@ -910,6 +911,7 @@ class QualificationStatus:
         (PENDING, "Pending"),
         (ATTEMPTED, "Attempted"),
         (AWARDED, "Awarded"),
+        (UNSUCCESSFUL, "Unsuccessful"),
         (LAPSED, "Lapsed"),
     )
 
@@ -921,5 +923,6 @@ class QualificationStatus:
         (PENDING, "primary"),
         (ATTEMPTED, "warning"),
         (AWARDED, "success"),
+        (UNSUCCESSFUL, "danger"),
         (LAPSED, "secondary"),
     )

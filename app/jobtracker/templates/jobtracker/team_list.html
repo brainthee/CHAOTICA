@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load menu %}{% load static %}
+
+{% block pageTitle %}Teams{% endblock pageTitle %}
+{% block head_title %}Teams{% endblock head_title %}
+
+{% block headerBlock_css %}mb-6{% endblock headerBlock_css %}
+
+{% block breadcrumbItem %}
+<li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">Teams</li>
+{% endblock breadcrumbItem %}
+
+{% block content %}
+
+{% if request.user.show_help %}
+<div class="row">
+  <div class="col-lg-12 col-12 mt-4 mt-lg-0">
+{% include 'help/team_list.html' %}
+  </div>
+</div>
+{% endif %}
+
+<div class="row mb-4 gx-6 gy-3 mt-2 align-items-center">
+  <div class="col">
+    <h2 class="mb-0">Teams</h2>
+  </div>
+  <div class="col-3 d-flex justify-content-end">
+    <a class="btn btn-phoenix-primary px-5" href="{% url 'team_create' %}">
+      <i class="fa-solid fa-plus me-2"></i>
+      Add new Team
+    </a>
+  </div>
+</div>
+
+
+<div class="mx-n4 px-3 py-3 mx-lg-n6 px-lg-6 bg-body-emphasis border-top border-bottom border-200 position-relative top-1">
+  {% include 'partials/team/list_table.html' %}
+</div>
+
+{% endblock content %}

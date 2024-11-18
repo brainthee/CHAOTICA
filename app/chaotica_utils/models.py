@@ -726,6 +726,12 @@ class User(AbstractUser):
         return Service.objects.filter(
             Q(skillsRequired__in=self.get_skills_support())
         ).distinct()
+    
+    def get_active_qualifications(self):
+        from jobtracker.enums import QualificationStatus
+        return self.qualifications.filter(
+            status=QualificationStatus.AWARDED
+        )
 
     def get_skills_specialist(self):
         from jobtracker.models import Skill

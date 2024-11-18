@@ -1,3 +1,5 @@
+
+{% if u.email %}
 {% if 'chaotica_utils.manage_user' in perms %}
   <button class="dropdown-item js-load-modal-form" data-url="{% url 'user_assign_global_role' u.email %}">Assign Global Role</button>
 
@@ -11,4 +13,6 @@
   {% else %}
     <button class="dropdown-item text-success js-load-modal-form" data-url="{% url 'user_manage_status' u.email 'activate' %}">Activate</button>
   {% endif %}
+{% endif %}
+
 {% endif %}

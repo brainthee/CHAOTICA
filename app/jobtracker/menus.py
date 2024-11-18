@@ -73,6 +73,17 @@ Menu.add_item(
 Menu.add_item(
     "ops",
     PermMenuItem(
+        "Teams",
+        reverse("team_list"),
+        icon="people-group",
+        perm="jobtracker.view_teams",
+        weight=1,
+    ),
+)
+
+Menu.add_item(
+    "ops",
+    PermMenuItem(
         "Skills",
         reverse("skill_list"),
         icon="readme",
