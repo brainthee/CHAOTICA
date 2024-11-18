@@ -610,6 +610,7 @@ def create_scheduler_phase_slot(request):
         if form.is_valid():
             slot = form.save(commit=False)
             slots = slot.overlapping_slots()
+            data["logic_checks_failed"] = False
 
             if (
                 slot.phase.job.client.onboarding_required
