@@ -84,6 +84,7 @@ admin.site.register(Note)
 
 @admin.register(LeaveRequest)
 class LeaveRequestAdmin(admin.ModelAdmin):
+    readonly_fields = ['user', 'timeslot']
     list_display = ["user", 
                     "requested_on", 
                     "start_date",
