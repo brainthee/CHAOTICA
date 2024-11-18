@@ -1,0 +1,45 @@
+<div class="table-responsive scrollbar mx-n1 px-1">
+  <table class="table fs-9 datatable mb-0">
+    <caption>Services</caption>
+    <thead>
+      <tr>
+        <th class="sort align-middle ps-0" scope="col" data-sort="projectName" style="width:30%;">
+          Name
+        </th>
+        <th class="sort align-middle ps-0" scope="col" data-sort="projectDesc">
+          Description
+        </th>
+        <th class="sort align-middle ps-0" scope="col" data-sort="projectLink" style="width:10%;">
+          Owners
+        </th>
+        <th class="sort align-middle text-end" scope="col" style="width:10%;">
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for team in team_list %}
+    <tr>
+
+      <td class="align-middle time ps-0 projectName">
+        <a class="fw-bold fs-8" href="{{ team.get_absolute_url }}">
+          {{ team.name }}
+        </a>
+      </td>
+
+      <td class="align-middle time ps-0 projectDesc">
+        {% if team.description %}
+          {{ team.description }}
+        {% endif %}
+      </td>
+
+      <td class="align-middle time ps-0 projectLink">
+        {% include 'partials/users/user_group.html' with users=team.owners.all %}
+      </td>
+
+      <td class="align-middle text-end pe-0 action">
+      </td>
+    </tr>
+    {% endfor %}        
+    </tbody>
+  </table>
+</div>

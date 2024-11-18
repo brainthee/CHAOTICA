@@ -6,6 +6,7 @@ from .models import (
     JobSupportTeamRole,
     OrganisationalUnit,
     OrganisationalUnitMember,
+    Team, TeamMember,
     Skill,
     SkillCategory,
     Service,
@@ -51,6 +52,16 @@ class JobAdmin(admin.ModelAdmin):
 admin.site.register(JobSupportTeamRole)
 
 
+class TeamMemberInline(admin.TabularInline):
+    model = TeamMember
+    extra = 1
+
+
+@admin.register(Team)
+class TeamAdmin(GuardedModelAdmin):
+    inlines = [TeamMemberInline]
+
+
 class OrganisationalUnitMemberInline(admin.TabularInline):
     model = OrganisationalUnitMember
     extra = 1
@@ -91,6 +102,7 @@ class TimeSlotAdmin(SimpleHistoryAdmin):
 admin.site.register(TimeSlotComment)
 admin.site.register(WorkflowTask)
 admin.site.register(BillingCode)
+
 
 @admin.register(Feedback)
 class FeedbackAdmin(SimpleHistoryAdmin):

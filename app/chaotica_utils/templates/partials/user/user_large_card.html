@@ -100,7 +100,7 @@
         <h5 class="text-body-highlight mb-0">Qualifications</h5>
       </div>
       <ul class="list-group align-items-center list-group-flush">
-        {% for record in user.qualifications.all %}
+        {% for record in user.get_active_qualifications %}
           <li class="list-group-item">
             <a href="{{ record.qualification.get_absolute_url }}"><span class="badge badge-phoenix badge-phoenix-{{ record.status_bs_colour }} me-2 mb-1 text-wrap">{{ record.qualification.awarding_body }} - {{ record.qualification }} ({{ record.get_status_display }})</span></a>
           </li>

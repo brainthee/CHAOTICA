@@ -19,3 +19,4 @@ class Accreditation(models.Model):
         ordering = [Lower("name")]
         unique_together = (("name"),)
         permissions = (("view_users_accreditations", "View Users with Accreditation"),)
+

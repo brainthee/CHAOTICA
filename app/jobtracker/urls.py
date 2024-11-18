@@ -54,7 +54,9 @@ urlpatterns = [
         name="view_own_schedule_timeslots",
     ),
     path(
-        "schedule/holidays", views.view_own_schedule_holidays, name="view_own_schedule_holidays"
+        "schedule/holidays",
+        views.view_own_schedule_holidays,
+        name="view_own_schedule_holidays",
     ),
     path("scheduler/", views.view_scheduler, name="view_scheduler"),
     path(
@@ -136,7 +138,6 @@ urlpatterns = [
         views.SlotCommentDeleteView.as_view(),
         name="delete_scheduler_slot_comment",
     ),
-    
     path(
         "scheduler/timeslots/clear_range",
         views.clear_scheduler_range,
@@ -560,6 +561,34 @@ urlpatterns = [
         "ops/unit/<str:slug>/delete/",
         views.OrganisationalUnitDeleteView.as_view(),
         name="organisationalunit_delete",
+    ),
+    # Team CRUD
+    path("ops/teams/", views.TeamListView.as_view(), name="team_list"),
+    path(
+        "ops/teams/create/",
+        views.TeamCreateView.as_view(),
+        name="team_create",
+    ),
+    path("team/<str:slug>/", views.TeamDetailView.as_view(), name="team_detail"),
+    path(
+        "team/<str:slug>/update/",
+        views.TeamUpdateView.as_view(),
+        name="team_update",
+    ),
+    path(
+        "team/<str:slug>/delete/",
+        views.TeamDeleteView.as_view(),
+        name="team_delete",
+    ),
+    path(
+        "team/<str:slug>/members/add",
+        views.teammember_add,
+        name="teammember_add",
+    ),
+    path(
+        "team/<str:slug>/members/edit/<int:member_pk>",
+        views.organisationalunit_review_join_request,
+        name="teammember_edit",
     ),
     # Skill CRUD
     path("ops/skills/", views.SkillListView.as_view(), name="skill_list"),

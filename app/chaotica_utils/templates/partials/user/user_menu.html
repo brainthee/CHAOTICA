@@ -6,7 +6,9 @@
 
     {% if user.manager == request.user or user.acting_manager == request.user or perms.chaotica_utils.manage_user %}
       <div class="dropdown-divider"></div>
+      {% if u.email %}
       <a class="dropdown-item" href="{% url 'user_manage' u.email %}">Edit Profile</a>
+      {% endif %}
     {% endif %}
 
     {% include 'partials/user/user_manage_menu_options.html' %}

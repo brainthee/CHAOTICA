@@ -79,6 +79,14 @@ def _filter_users_on_query(request, cleaned_data=None):
                     users_onboarded.append(onboarded.user.pk)
         query.add(Q(pk__in=users_onboarded), Q.AND)
 
+    teams = cleaned_data.get("teams")
+    if teams:
+        users_memberof = []
+        for team in teams:
+            for usr in team.active_users():
+                users_memberof.append(usr.user.pk)
+        query.add(Q(pk__in=users_memberof), Q.AND)
+
     # If we're passed a job/phase ID - filter on that.
     jobs = cleaned_data.get("jobs")
     if jobs:

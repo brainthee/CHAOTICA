@@ -7,6 +7,7 @@ from .job import Job, JobSupportTeamRole
 from .phase import Phase
 
 from .project import Project
+from .team import Team, TeamMember
 
 from .skill import Skill, SkillCategory, UserSkill
 from .qualification import (

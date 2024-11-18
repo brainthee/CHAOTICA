@@ -9,6 +9,8 @@ from .models import (
     QualificationRecord,
     AwardingBody,
     Feedback,
+    Team,
+    TeamMember,
     TimeSlot,
     TimeSlotType,
     TimeSlotComment,
@@ -59,6 +61,12 @@ class SchedulerFilter(forms.Form):
         required=False,
         label="Require Support",
         queryset=Skill.objects.all(),
+        widget=autocomplete.ModelSelect2Multiple(),
+    )
+
+    teams = forms.ModelMultipleChoiceField(
+        required=False,
+        queryset=Team.objects.all(),
         widget=autocomplete.ModelSelect2Multiple(),
     )
 
@@ -202,7 +210,12 @@ class SchedulerFilter(forms.Form):
                     ),
                 ),
                 Row(
-                    Field("onboarded_to", style="width: 100%;"),
+                    Column(
+                        Field("onboarded_to", style="width: 100%;"),
+                    ),
+                    Column(
+                        Field("teams", style="width: 100%;"),
+                    ),
                 ),
                 css_class="setting-panel-item",
             ),
@@ -243,6 +256,7 @@ class SchedulerFilter(forms.Form):
             "skills_can_do_support",
             "show_inactive_users",
             "users",
+            "teams",
             "onboarded_users",
             "include_user",
             "services",
@@ -2127,6 +2141,69 @@ class ProjectForm(forms.ModelForm):
             "primary_poc",
             "status",
             "unit",
+        ]
+
+
+class TeamForm(forms.ModelForm):
+    owners = forms.ModelMultipleChoiceField(
+        required=False,
+        queryset=User.objects.filter(is_active=True),
+        widget=autocomplete.ModelSelect2Multiple(
+            url="user-autocomplete",
+            attrs={
+                "data-minimum-input-length": 3,
+            },
+        ),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super(TeamForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.fields["name"].label = False
+        self.fields["description"].label = False
+
+        self.fields["owners"].label = False
+        self.fields["is_hidden"].label = False
+        self.fields["profile_image"].label = False
+        self.fields["cover_image"].label = False
+
+    class Meta:
+        model = Team
+        fields = [
+            "name",
+            "description",
+            "owners",
+            "is_hidden",
+            "profile_image",
+            "cover_image",
+        ]
+
+
+class TeamMemberForm(forms.ModelForm):
+    user = forms.ModelChoiceField(
+        queryset=User.objects.filter(is_active=True),
+        widget=autocomplete.ModelSelect2(
+            url="user-autocomplete",
+            attrs={
+                "data-minimum-input-length": 3,
+            },
+        ),
+    )
+
+    def __init__(self, *args, **kwargs):
+        team = kwargs.pop("team", None)
+        super(TeamMemberForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.helper.form_tag = False
+        self.helper.layout = Layout(
+            Field("user", style="width: 100%;"),
+        )
+        self.fields["user"].label = False
+
+    class Meta:
+        model = TeamMember
+        fields = [
+            "user",
         ]
 
 
