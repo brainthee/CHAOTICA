@@ -25,17 +25,24 @@
 {% endblock %}
 
 {% block content %}
+  <div class="alert m-3 alert-phoenix-warning" role="alert">There are no owners defined. Only Admins will be able to manage this team.</div>
+
   <div class="row mt-2 mb-0 px-5">
     <div class="card mb-3 px-0">
+      {% if team.profile_image or team.cover_image %}
       <div class="card-header d-flex justify-content-center align-items-end position-relative mb-7 mb-xxl-0" style="min-height: 214px; ">
         <div class="bg-holder rounded-top" style="background-image:url({{ team.get_cover_url }});"></div>
-          <div class="position-relative feed-profile bg-body-quaternary rounded-circle d-flex flex-center mb-xxl-7">
-            <div class="avatar avatar-5xl">
-              <img class="rounded-circle rounded-circle img-thumbnail shadow-sm border-0" src="{{ team.get_avatar_url }}" alt="" />
-            </div>
+        {% if team.profile_image %}
+        <div class="position-relative feed-profile bg-body-quaternary rounded-circle d-flex flex-center mb-xxl-7">
+          <div class="avatar avatar-5xl">
+            <img class="rounded-circle rounded-circle img-thumbnail shadow-sm border-0" src="{{ team.get_avatar_url }}" alt="" />
           </div>
+        </div>
+        {% endif %}
       </div>
-      <div class="card-body">
+      {% endif %}
+      
+      <div class="card-body pb-0">
         <div class="row justify-content-xl-between">
           <div class="col-auto">
             <div class="d-flex flex-wrap mb-3 align-items-center">
@@ -87,7 +94,10 @@
                   </button>
 
                   <div class="dropdown-menu dropdown-menu-end py-2">
-                    <a class="dropdown-item" href="mailto:{% for user in team.active_users %}{{ user.user.email_address }}{% if not forloop.last %}, {% endif %}{% endfor %}">
+                    <a class="dropdown-item"
+                      href="mailto:{% for user in team.active_users %}
+                        {{ user.user.email_address }}{% if not forloop.last %}, {% endif %}
+                      {% endfor %}">
                       <span class="fa-solid fa-message text-body-secondary me-2"></span>
                       Send Email
                     </a>
@@ -130,7 +140,6 @@
               {% endfor %}
             </div>
           </div>
-          
         </div>
       </div>
     </div>
