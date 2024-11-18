@@ -50,7 +50,7 @@ class Qualification(models.Model):
     short_name = models.CharField(max_length=200, default="")
     slug = models.SlugField(null=False, default="", unique=True)
     tags = models.ManyToManyField(QualificationTag, verbose_name="Tags", blank=True)
-    validity_period = models.DurationField(
+    validity_period = models.IntegerField(
         "Validity Period",
         help_text="How many days the qualification is valid for. If left empty, it does not expire.",
         null=True,
