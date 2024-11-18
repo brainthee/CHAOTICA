@@ -38,7 +38,6 @@ class Team(models.Model):
     )
     owners = models.ManyToManyField(
         settings.AUTH_USER_MODEL,
-        blank=True,
         limit_choices_to={"is_active": True},
         help_text="Users responsible for the management of the team.",
     )
@@ -82,7 +81,7 @@ class Team(models.Model):
 
 
 class TeamMember(models.Model):
-    team = models.ForeignKey(Team, related_name="users", on_delete=models.PROTECT)
+    team = models.ForeignKey(Team, related_name="users", on_delete=models.CASCADE)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,

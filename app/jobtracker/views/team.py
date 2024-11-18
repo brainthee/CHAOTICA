@@ -26,6 +26,13 @@ class TeamBaseView(PermissionRequiredMixin, ChaoticaBaseView):
     return_403 = True
     success_url = reverse_lazy("team_list")
 
+    def get_success_url(self):
+        if "slug" in self.kwargs:
+            slug = self.kwargs["slug"]
+            return reverse_lazy("team_detail", kwargs={"slug": slug})
+        else:
+            return reverse_lazy("team_list")
+
 
 class TeamListView(TeamBaseView, ListView):
     """View to list all jobs.
