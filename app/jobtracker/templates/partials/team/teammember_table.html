@@ -1,0 +1,48 @@
+<table class="table datatable table-sm fs-9 leads-table">
+    <caption>Team Members</caption>
+    <thead>
+      <tr>
+        <th class="sort align-middle ps-0 pe-5 text-uppercase text-nowrap" scope="col">
+            User
+        </th>
+        <th class="sort align-middle ps-4 pe-5 text-uppercase text-nowrap" scope="col">
+            Joined
+        </th>
+        <th class="sort align-middle ps-4 pe-5 text-uppercase text-nowrap" scope="col">
+            Status
+        </th>
+        <th class="sort text-end align-middle pe-0 ps-4" scope="col"></th>
+      </tr>
+    </thead>
+    <tbody class="list" id="purchasers-sellers-body">
+     {% for membership in team.users.all %}
+        <tr class="hover-actions-trigger btn-reveal-trigger position-static">
+            <td class="align-middle white-space-nowrap fw-semi-bold text-1100 ps-4 py-0">
+                {% include 'partials/users/user_table_display.html' with u=membership.user %}
+            </td>
+            <td class="align-middle white-space-nowrap ps-4 fw-semi-bold text-900 py-0">
+                {{ membership.joined_at }}
+            </td>
+            <td class="align-middle white-space-nowrap fw-bold text-900 py-0">
+                {% if membership.is_active %}
+                <span class="badge badge-phoenix badge-phoenix-success">Active</span>
+                {% else %}
+                <span class="badge badge-phoenix badge-phoenix-info">Left</span>
+                {% endif %}
+            </td>
+            <td class="align-middle white-space-nowrap text-end pe-0 ps-4">
+                {% if 'change_team' in team_perms %}
+                <div class="btn-reveal-trigger position-static">
+                  <button class="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal fs-10" type="button" data-bs-toggle="dropdown" data-boundary="window" aria-haspopup="true" aria-expanded="false" data-bs-reference="parent"><span class="fas fa-ellipsis-h fs-10"></span></button>
+      
+                  <div class="dropdown-menu shadow dropdown-menu-end me-sm-n4 me-n3" aria-labelledby="navbarDropdownMenuLink">
+                      <button class="dropdown-item js-load-modal-form" data-url="{% url 'teammember_change' team.slug membership.pk %}">Edit record</button>
+                      <button class="dropdown-item text-warning js-load-modal-form" data-url="{% url 'teammember_remove' team.slug membership.pk %}">Remove record</button>
+                  </div>
+                </div>
+                {% endif %}
+            </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>

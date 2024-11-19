@@ -587,8 +587,13 @@ urlpatterns = [
     ),
     path(
         "team/<str:slug>/members/edit/<int:member_pk>",
-        views.organisationalunit_review_join_request,
-        name="teammember_edit",
+        views.teammember_change,
+        name="teammember_change",
+    ),
+    path(
+        "team/<str:slug>/members/remove/<int:member_pk>",
+        views.teammember_remove,
+        name="teammember_remove",
     ),
     # Skill CRUD
     path("ops/skills/", views.SkillListView.as_view(), name="skill_list"),

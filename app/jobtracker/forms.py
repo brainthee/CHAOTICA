@@ -2179,7 +2179,7 @@ class TeamForm(forms.ModelForm):
         ]
 
 
-class TeamMemberForm(forms.ModelForm):
+class AddTeamMemberForm(forms.ModelForm):
     user = forms.ModelChoiceField(
         queryset=User.objects.filter(is_active=True),
         widget=autocomplete.ModelSelect2(
@@ -2192,7 +2192,7 @@ class TeamMemberForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         team = kwargs.pop("team", None)
-        super(TeamMemberForm, self).__init__(*args, **kwargs)
+        super(AddTeamMemberForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
         self.helper.form_tag = False
         self.helper.layout = Layout(
@@ -2204,6 +2204,36 @@ class TeamMemberForm(forms.ModelForm):
         model = TeamMember
         fields = [
             "user",
+        ]
+
+
+class TeamMemberForm(forms.ModelForm):
+
+    joined_at = forms.DateField(
+        required=False,
+        widget=DatePickerInput(),
+    )
+
+    left_at = forms.DateField(
+        required=False,
+        widget=DatePickerInput(),
+    )
+
+    def __init__(self, *args, **kwargs):
+        team = kwargs.pop("team", None)
+        super(TeamMemberForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.helper.form_tag = False
+        self.helper.layout = Layout(
+            Field("joined_at"),
+            Field("left_at"),
+        )
+
+    class Meta:
+        model = TeamMember
+        fields = [
+            "joined_at",
+            "left_at",
         ]
 
 

@@ -2,6 +2,7 @@
 {% load menu %}
 {% load index %}
 {% load static %}
+{% load guardian_tags %}
 
 {% block pageTitle %}
   {{ team }}
@@ -25,23 +26,27 @@
 {% endblock %}
 
 {% block content %}
-  <div class="alert m-3 alert-phoenix-warning" role="alert">There are no owners defined. Only Admins will be able to manage this team.</div>
+  {% get_obj_perms request.user for team as 'team_perms' %}
+
+  {% if not team.owners.exists %}
+    <div class="alert m-3 alert-phoenix-warning" role="alert">There are no owners defined. Only Admins will be able to manage this team.</div>
+  {% endif %}
 
   <div class="row mt-2 mb-0 px-5">
     <div class="card mb-3 px-0">
       {% if team.profile_image or team.cover_image %}
-      <div class="card-header d-flex justify-content-center align-items-end position-relative mb-7 mb-xxl-0" style="min-height: 214px; ">
-        <div class="bg-holder rounded-top" style="background-image:url({{ team.get_cover_url }});"></div>
-        {% if team.profile_image %}
-        <div class="position-relative feed-profile bg-body-quaternary rounded-circle d-flex flex-center mb-xxl-7">
-          <div class="avatar avatar-5xl">
-            <img class="rounded-circle rounded-circle img-thumbnail shadow-sm border-0" src="{{ team.get_avatar_url }}" alt="" />
-          </div>
+        <div class="card-header d-flex justify-content-center align-items-end position-relative mb-7 mb-xxl-0" style="min-height: 214px; ">
+          <div class="bg-holder rounded-top" style="background-image:url({{ team.get_cover_url }});"></div>
+          {% if team.profile_image %}
+            <div class="position-relative feed-profile bg-body-quaternary rounded-circle d-flex flex-center mb-xxl-7">
+              <div class="avatar avatar-5xl">
+                <img class="rounded-circle rounded-circle img-thumbnail shadow-sm border-0" src="{{ team.get_avatar_url }}" alt="" />
+              </div>
+            </div>
+          {% endif %}
         </div>
-        {% endif %}
-      </div>
       {% endif %}
-      
+
       <div class="card-body pb-0">
         <div class="row justify-content-xl-between">
           <div class="col-auto">
@@ -80,10 +85,12 @@
                   <span class="fa-solid fa-calendar me-2"></span>
                   View Schedule
                 </a>
-                <button data-url="{% url 'teammember_add' team.slug %}" class="btn btn-phoenix-primary lh-1 js-load-modal-form">
-                  <span class="fa-solid fa-plus me-2"></span>
-                  Add User
-                </button>
+                {% if 'change_team' in team_perms %}
+                  <button data-url="{% url 'teammember_add' team.slug %}" class="btn btn-phoenix-primary lh-1 js-load-modal-form">
+                    <span class="fa-solid fa-plus me-2"></span>
+                    Add User
+                  </button>
+                {% endif %}
               </div>
 
               <div class="col-auto">
@@ -102,15 +109,19 @@
                       Send Email
                     </a>
 
-                    <a class="dropdown-item" href="{% url 'team_update' team.slug %}">
-                      <span class="fa-solid fa-gear text-body-secondary me-2"></span>
-                      Edit Team Settings
-                    </a>
+                    {% if 'change_team' in team_perms %}
+                      <a class="dropdown-item" href="{% url 'team_update' team.slug %}">
+                        <span class="fa-solid fa-gear text-body-secondary me-2"></span>
+                        Edit Team Settings
+                      </a>
+                    {% endif %}
 
-                    <a class="dropdown-item" href="{% url 'team_delete' team.slug %}">
-                      <span class="fa-solid fa-ban text-danger me-2"></span>
-                      Delete Team
-                    </a>
+                    {% if 'delete_team' in team_perms %}
+                      <a class="dropdown-item" href="{% url 'team_delete' team.slug %}">
+                        <span class="fa-solid fa-ban text-danger me-2"></span>
+                        Delete Team
+                      </a>
+                    {% endif %}
                   </div>
                 </div>
               </div>
@@ -122,9 +133,9 @@
   </div>
 
   <div class="row g-0 border-1 border-top bg-body-secondary h-100">
-    <div class="col-12 px-6 pt-3 border-1 border-end">
+    <div class="col-12 pt-3 border-1 border-end">
       <div class="row mx-1">
-        <ul class="nav nav-underline scrollbar flex-nowrap w-100 pb-1 mb-3" id="sectionNav" role="tablist" style="overflow-y: hidden;">
+        <ul class="nav nav-underline scrollbar px-6 flex-nowrap w-100 pb-1 mb-3" id="sectionNav" role="tablist" style="overflow-y: hidden;">
           <li class="nav-item text-nowrap me-2" role="presentation">
             <a class="nav-link active" id="team-tab" data-bs-toggle="tab" href="#team" role="tab" aria-controls="tab-team" aria-selected="true"><span class="fa-solid fa-video me-2 tab-icon-color"></span>Team</a>
           </li>
@@ -132,12 +143,8 @@
 
         <div class="tab-content" id="myTabContent">
           <div class="tab-pane fade active show" id="team" role="tabpanel" aria-labelledby="team-tab">
-            <div class="d-flex flex-wrap mb-3">
-              {% for userMembership in team.users.all %}
-                <div class="col-4 p-0 m-1">
-                  {% include 'partials/user/user_card.html' with user=userMembership.user %}
-                </div>
-              {% endfor %}
+            <div class="mx-n4 mb-3 px-3 py-3 mx-lg-n6 px-lg-6 bg-body-emphasis border-top border-bottom border-200 position-relative top-1">
+              {% include 'partials/team/teammember_table.html' with user=userMembership.user %}
             </div>
           </div>
         </div>

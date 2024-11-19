@@ -76,7 +76,7 @@ Menu.add_item(
         "Teams",
         reverse("team_list"),
         icon="people-group",
-        perm="jobtracker.view_teams",
+        perm="jobtracker.view_team",
         weight=1,
     ),
 )
