@@ -63,6 +63,11 @@ class GlobalRoles:
                 "jobtracker.add_service",
                 "jobtracker.change_service",
                 "jobtracker.delete_service",
+                # Team
+                "jobtracker.view_team",
+                "jobtracker.add_team",
+                "jobtracker.change_team",
+                "jobtracker.delete_team",
                 # SkillCategory
                 "jobtracker.view_skillcategory",
                 "jobtracker.add_skillcategory",
@@ -120,6 +125,11 @@ class GlobalRoles:
                 "jobtracker.add_service",
                 "jobtracker.change_service",
                 "jobtracker.delete_service",
+                # Team
+                "jobtracker.view_team",
+                "jobtracker.add_team",
+                "jobtracker.change_team",
+                "jobtracker.delete_team",
                 # SkillCategory
                 "jobtracker.view_skillcategory",
                 "jobtracker.add_skillcategory",
@@ -169,6 +179,9 @@ class GlobalRoles:
                 "jobtracker.delete_frameworkagreement",
                 # Client Contacts
                 "jobtracker.view_contact",
+                # Team
+                "jobtracker.view_team",
+                "jobtracker.add_team",
                 # Service
                 "jobtracker.view_service",
                 # SkillCategory
@@ -210,6 +223,9 @@ class GlobalRoles:
                 "jobtracker.add_contact",
                 "jobtracker.change_contact",
                 "jobtracker.delete_contact",
+                # Team
+                "jobtracker.view_team",
+                "jobtracker.add_team",
                 # Service
                 "jobtracker.view_service",
                 # SkillCategory
@@ -243,6 +259,9 @@ class GlobalRoles:
                 "jobtracker.add_contact",
                 "jobtracker.change_contact",
                 "jobtracker.delete_contact",
+                # Team
+                "jobtracker.view_team",
+                "jobtracker.add_team",
                 # Service
                 "jobtracker.view_service",
                 # SkillCategory
@@ -269,6 +288,9 @@ class GlobalRoles:
                 "jobtracker.view_frameworkagreement",
                 # Client Contacts
                 "jobtracker.view_contact",
+                # Team
+                "jobtracker.view_team",
+                "jobtracker.add_team",
                 # Service
                 "jobtracker.view_service",
                 # SkillCategory

@@ -8,7 +8,7 @@ from django.urls import reverse_lazy
 from chaotica_utils.views import ChaoticaBaseView
 from ..models import Team, TeamMember
 from guardian.decorators import permission_required_or_403
-from ..forms import TeamForm, TeamMemberForm
+from ..forms import TeamForm, TeamMemberForm, AddTeamMemberForm
 from django.http import HttpResponseBadRequest, JsonResponse
 from django.template import loader
 import logging
@@ -76,7 +76,7 @@ class TeamDeleteView(TeamBaseView, PermissionRequiredMixin, DeleteView):
 
 
 @permission_required_or_403(
-    "jobtracker.manage_members", (Team, "slug", "slug")
+    "jobtracker.change_team", (Team, "slug", "slug")
 )
 def teammember_add(request, slug):
     data = dict()
@@ -85,7 +85,7 @@ def teammember_add(request, slug):
     data["form_is_valid"] = False
 
     if request.method == "POST":
-        form = TeamMemberForm(request.POST, team=team)
+        form = AddTeamMemberForm(request.POST, team=team)
         if form.is_valid():
             membership = form.save(commit=False)
             # lets check if they already exist...
@@ -95,16 +95,61 @@ def teammember_add(request, slug):
                 data["form_is_valid"] = False
             else:
                 membership.team = team
-                membership.joined_at = timezone.now
+                membership.joined_at = timezone.now()
                 membership.save()
                 data["form_is_valid"] = True
         else:
             data["form_is_valid"] = False
     else:
-        form = TeamMemberForm(team=team)
+        form = AddTeamMemberForm(team=team)
 
     context = {"team": team, "form": form}
     data["html_form"] = loader.render_to_string(
-        "jobtracker/modals/teammember_add.html", context, request=request
+        "jobtracker/modals/teammember_form.html", context, request=request
+    )
+    return JsonResponse(data)
+
+
+@permission_required_or_403(
+    "jobtracker.change_team", (Team, "slug", "slug")
+)
+def teammember_change(request, slug, member_pk):
+    data = dict()
+    team = get_object_or_404(Team, slug=slug)
+    membership = get_object_or_404(TeamMember, team=team, pk=member_pk)
+    data["form_is_valid"] = False
+
+    if request.method == "POST":
+        form = TeamMemberForm(request.POST, team=team, instance=membership)
+        if form.is_valid():
+            membership = form.save()
+            data["form_is_valid"] = True
+        else:
+            data["form_is_valid"] = False
+    else:
+        form = TeamMemberForm(team=team, instance=membership)
+
+    context = {"team": team, "membership": membership, "form": form}
+    data["html_form"] = loader.render_to_string(
+        "jobtracker/modals/teammember_form.html", context, request=request
+    )
+    return JsonResponse(data)
+
+
+@permission_required_or_403(
+    "jobtracker.change_team", (Team, "slug", "slug")
+)
+def teammember_remove(request, slug, member_pk):
+    data = dict()
+    team = get_object_or_404(Team, slug=slug)
+    membership = get_object_or_404(TeamMember, team=team, pk=member_pk)
+    data["form_is_valid"] = False
+    if request.method == "POST":
+        membership.delete()
+        data["form_is_valid"] = True
+        
+    context = {"team": team, "membership": membership}
+    data["html_form"] = loader.render_to_string(
+        "jobtracker/modals/teammember_remove.html", context, request=request
     )
     return JsonResponse(data)
