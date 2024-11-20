@@ -180,7 +180,7 @@ def _filter_users_on_query(request, cleaned_data=None):
     # We then need to select the users based off containing a skill in either desired or needed..
     services = cleaned_data.get("services")
     for service in services:
-        query.add(Q(pk__in=service.users_can_conduct()), Q.AND)
+        query.add(Q(pk__in=service.can_conduct()), Q.AND)
 
     extra_users = cleaned_data.get("include_user")
     if extra_users:
