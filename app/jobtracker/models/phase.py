@@ -253,8 +253,7 @@ class Phase(models.Model):
             ).exists():
                 return (
                     self.timeslots.filter(deliveryRole=TimeSlotDeliveryRole.DELIVERY)
-                    .order_by("-start")
-                    .first()
+                    .earliest("start")
                     .start.date()
                 )
             else:
