@@ -605,7 +605,7 @@ def phase_update_workflow(request, job_slug, slug, new_state):
     elif new_state == PhaseStatuses.QA_TECH:
         if phase.can_to_tech_qa(request):
             if request.method == "POST":
-                if request.user is not phase.techqa_by:
+                if request.user != phase.techqa_by:
                     if request.user.has_perm("can_tqa_jobs", phase.job.unit):
                         # We're not the TQA'er but we can... lets overwrite...
                         phase.techqa_by = request.user
@@ -651,7 +651,7 @@ def phase_update_workflow(request, job_slug, slug, new_state):
     elif new_state == PhaseStatuses.QA_PRES:
         if phase.can_to_pres_qa(request):
             if request.method == "POST":
-                if request.user is not phase.presqa_by:
+                if request.user != phase.presqa_by:
                     if request.user.has_perm("can_pqa_jobs", phase.job.unit):
                         # We're not the TQA'er but we can... lets overwrite...
                         phase.presqa_by = request.user
