@@ -310,7 +310,6 @@ DEFAULT_APPS = [
     "django.contrib.humanize",
 ]
 THIRD_PARTY_APPS = [
-    "debug_toolbar",
     "colorfield",
     "constance",
     "django_auth_adfs",
@@ -346,6 +345,11 @@ LOCAL_APPS = [
 ]
 
 INSTALLED_APPS = DEFAULT_APPS + THIRD_PARTY_APPS + LOCAL_APPS
+
+if DEBUG:
+    INSTALLED_APPS += [
+        "debug_toolbar",
+    ]
 
 # Which HTML tags are allowed
 BLEACH_ALLOWED_TAGS = [
@@ -384,7 +388,7 @@ BLEACH_ALLOWED_STYLES = [
 # Which protocols (and pseudo-protocols) are allowed in 'src' attributes
 # (assuming src is an allowed attribute)
 BLEACH_ALLOWED_PROTOCOLS = ["http", "https", "data"]
-BLEACH_DEFAULT_WIDGET = 'tinymce.widgets.TinyMCE'
+BLEACH_DEFAULT_WIDGET = "tinymce.widgets.TinyMCE"
 
 DJANGO_CRON_DELETE_LOGS_OLDER_THAN = 14
 DJANGO_CRON_LOCK_BACKEND = "django_cron.backends.lock.file.FileLock"
@@ -435,6 +439,9 @@ MIDDLEWARE = [
     "chaotica_utils.middleware.NewInstallMiddleware",
     "chaotica_utils.middleware.MaintenanceModeMiddleware",
 ]
+
+if DEBUG:
+    MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")
 
 ROOT_URLCONF = "chaotica.urls"
 
@@ -609,7 +616,6 @@ CONTENT_SECURITY_POLICY = {
 }
 
 
-
 TINYMCE_JS_ROOT = os.path.join(STATIC_URL, "vendors/tinymce")
 TINYMCE_JS_URL = os.path.join(TINYMCE_JS_ROOT, "tinymce.min.js")
 
@@ -618,15 +624,13 @@ TINYMCE_DEFAULT_CONFIG = {
     "suffix": ".min",
     "plugins": "advlist autolink lists link image charmap print preview anchor table media searchreplace visualblocks code",
     "theme": "silver",
-
-    "selector": '.tinymce',
-    "height": '50vh',
-
+    "selector": ".tinymce",
+    "height": "50vh",
     "promotion": False,
-    "skin": 'oxide',
+    "skin": "oxide",
     # "menubar": False,
     # content_style: `
-    #   .mce-content-body { 
+    #   .mce-content-body {
     #     color: ${getColor('emphasis-color')};
     #     background-color: ${getColor('tinymce-bg')};
     #   }
@@ -637,7 +641,7 @@ TINYMCE_DEFAULT_CONFIG = {
     #   }
     # `,
     "statusbar": True,
-    "themes": 'silver',
+    "themes": "silver",
     # "theme_advanced_toolbar_align": 'center',
     # "toolbar": [
     #   { name: 'history', items: ['undo', 'redo'] },
