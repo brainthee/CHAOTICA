@@ -20,7 +20,7 @@
     <span class="badge badge-phoenix badge-phoenix-warning">INACTIVE</span>
     {% endif %}
     
-    {% if not notitle %}
+    {% if not notitle and u.job_title %}
       <div class="row">
         <p class="mb-0 text-xs">{{ u.job_title }}</p>
       </div>
