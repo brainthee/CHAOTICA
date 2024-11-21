@@ -367,7 +367,7 @@ class User(AbstractUser):
         )
         LeaveRequest.objects.filter(declined_by=user_to_merge).update(declined_by=self)
         ## Client
-        from jobtracker.models.client import Client
+        from jobtracker.models.client import Client, ClientOnboarding
 
         for obj in Client.objects.filter(account_managers__in=[user_to_merge]):
             obj.account_managers.remove(user_to_merge)
@@ -377,9 +377,8 @@ class User(AbstractUser):
             obj.tech_account_managers.remove(user_to_merge)
             obj.tech_account_managers.add(self)
             obj.save()
-        for obj in Client.objects.filter(onboarded_users__in=[user_to_merge]):
-            obj.onboarded_users.remove(user_to_merge)
-            obj.onboarded_users.add(self)
+        for obj in ClientOnboarding.objects.filter(user=user_to_merge):
+            obj.user = self
             obj.save()
         ## Feedback
         from jobtracker.models.common import Feedback
