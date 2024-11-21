@@ -519,48 +519,49 @@ class RMAssignableSlot(models.Model):
         log.setLevel(logging.INFO)
         log.addHandler(stream_handler)
         log.info("Deleting RM assignment for {}".format(self.slot))
-        rm_user = RMSyncRecord.objects.get(user=self.slot.user)
+        if RMSyncRecord.objects.filter(user=self.slot.user).exists():
+            rm_user = RMSyncRecord.objects.get(user=self.slot.user)
 
-        try:
-            if not self.rm_id:
-                log.error("No ID to delete")
-                return False
-            else:
-                r_delete_ass = requests.delete(
-                    "{}/api/v1/users/{}/assignments/{}".format(
-                        config.RM_SYNC_API_SITE, rm_user.rm_id, self.rm_id
-                    ),
-                    headers=RM_HEADERS,
-                    proxies=PROXIES,
-                    verify=VERIFY_TLS,
-                )
-                if r_delete_ass.status_code != 200:
-                    if r_delete_ass.status_code == 400:
-                        log.error("Invalid JSON sent")
-                        return False
-                    if r_delete_ass.status_code == 401:
-                        log.error("RM API Token Invalid")
-                        return False
-                    elif r_delete_ass.status_code == 404:
-                        log.warning("RM assignment not found")
-                    else:
-                        log.warning(
-                            " ! Got a non-200 status code: {}".format(
-                                r_delete_ass.status_code
+            try:
+                if not self.rm_id:
+                    log.error("No ID to delete")
+                    return False
+                else:
+                    r_delete_ass = requests.delete(
+                        "{}/api/v1/users/{}/assignments/{}".format(
+                            config.RM_SYNC_API_SITE, rm_user.rm_id, self.rm_id
+                        ),
+                        headers=RM_HEADERS,
+                        proxies=PROXIES,
+                        verify=VERIFY_TLS,
+                    )
+                    if r_delete_ass.status_code != 200:
+                        if r_delete_ass.status_code == 400:
+                            log.error("Invalid JSON sent")
+                            return False
+                        if r_delete_ass.status_code == 401:
+                            log.error("RM API Token Invalid")
+                            return False
+                        elif r_delete_ass.status_code == 404:
+                            log.warning("RM assignment not found")
+                        else:
+                            log.warning(
+                                " ! Got a non-200 status code: {}".format(
+                                    r_delete_ass.status_code
+                                )
                             )
-                        )
-                        return False
-                log.info("Deleted assignment in RM - id: {}".format(self.rm_data["id"]))
-                self.rm_id = None
-            self.last_sync_result = False
+                            return False
+                    log.info("Deleted assignment in RM - id: {}".format(self.rm_data["id"]))
+                    self.rm_id = None
+                self.last_sync_result = False
 
-        except Exception as ex:
-            log.error("Sync error: {}".format(ex))
-            self.last_sync_result = False
-        finally:
-            self.last_synced = timezone.now()
-            self.save()
-            print((log_stream.getvalue() + ".")[:-1])
+            except Exception as ex:
+                log.error("Sync error: {}".format(ex))
+                self.last_sync_result = False
+            finally:
+                self.last_synced = timezone.now()
+                self.save()
+                print((log_stream.getvalue() + ".")[:-1])
     
 
 @receiver(pre_delete, sender=RMAssignableSlot)
