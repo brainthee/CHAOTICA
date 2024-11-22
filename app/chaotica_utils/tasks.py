@@ -37,6 +37,18 @@ class task_backup_site(CronJobBase):
             management.call_command('dbbackup', '-c')
 
 
+class task_clean_historical_records(CronJobBase):
+    RUN_AT_TIMES = [
+        '6:00', 
+    ]
+    schedule = Schedule(run_at_times=RUN_AT_TIMES)
+    code = 'chaotica_utils.task_backup_site'
+
+    def do(self):
+        management.call_command('clean_duplicate_history', '--auto')
+        management.call_command('clean_old_history', '--auto')
+
+
 def task_send_notifications(notification, users_to_notify, additional_mails=None):
     for u in users_to_notify:
         # create a Notification..
