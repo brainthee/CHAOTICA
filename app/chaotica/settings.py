@@ -394,6 +394,7 @@ DJANGO_CRON_DELETE_LOGS_OLDER_THAN = 14
 DJANGO_CRON_LOCK_BACKEND = "django_cron.backends.lock.file.FileLock"
 CRON_CLASSES = [
     "chaotica_utils.tasks.task_send_email_notifications",
+    "chaotica_utils.tasks.task_clean_historical_records",
     "chaotica_utils.tasks.task_sync_global_permissions",
     "chaotica_utils.tasks.task_sync_role_permissions_to_default",
     "chaotica_utils.tasks.task_sync_role_permissions",
