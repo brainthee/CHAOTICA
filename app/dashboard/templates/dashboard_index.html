@@ -71,7 +71,7 @@
         <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center" 
           id="pendingScopeTab" data-bs-toggle="tab" data-bs-target="#pendingScopeTabContent" role="tab" aria-controls="pendingScopeTabContent" aria-selected="false">
           <span class="fa fa-microscope me-sm-2 fs-7"></span>
-          <span class="d-none d-sm-inline">Pending Scoping</span>
+          <span class="d-none d-sm-inline">Scoping</span>
           {% if pendingScoping|length %}
           <span class="badge bg-primary ms-2">{{ pendingScoping|length }}</span>
           {% endif %}
@@ -191,9 +191,9 @@
 
       {% if request.user.can_scope %}
       <div class="tab-pane fade h-100 p-3" id="pendingScopeTabContent" role="tabpanel" aria-labelledby="pendingScopeTab">
-        <h2 class="mb-3 lh-sm">Jobs Pending Scoping</h2>    
+        <h2 class="mb-3 lh-sm">Jobs in Scoping</h2>    
         <h5 class="mb-3 text-body-tertiary fw-semibold">
-          Jobs from your organisational unit that are at <span class="badge badge-phoenix badge-phoenix-info">Pending Scoping</span> or <span class="badge badge-phoenix badge-phoenix-info">Additional Scoping Required</span>.
+          Jobs from your organisational unit that are at <span class="badge badge-phoenix badge-phoenix-info">Pending Scoping</span>, <span class="badge badge-phoenix badge-phoenix-info">Additional Scoping Required</span> or <span class="badge badge-phoenix badge-phoenix-info">Scoping</span>.
         </h5>
         <div class="card">
           <div class="p-3 bg-body-emphasis border-top border-bottom border-200">
