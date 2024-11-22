@@ -79,16 +79,6 @@ Menu.add_item(
 Menu.add_item(
     "admin",
     PermMenuItem(
-        "Run Background Tasks",
-        reverse("run_tasks"),
-        icon="list-check",
-        perm="chaotica_utils.manage_site_settings",
-        weight=80,
-    ),
-)
-Menu.add_item(
-    "admin",
-    PermMenuItem(
         "Send Test Notification",
         reverse("test_notification"),
         icon="envelope-open-text",

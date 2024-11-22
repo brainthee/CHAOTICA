@@ -34,7 +34,6 @@ urlpatterns = [
     # Misc
     path("stats/", views.view_stats, name="view_stats"),
     path("reports/", views.view_reports, name="view_reports"),
-    path("tasks/", views.run_tasks, name="run_tasks"),
     # Scheduler
     path("schedule/feed/reset", views.reset_cal_feed, name="reset_cal_feed"),
     path(

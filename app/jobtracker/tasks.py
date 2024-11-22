@@ -54,7 +54,7 @@ class task_progress_workflows(CronJobBase):
         
 
 class task_fire_job_notifications(CronJobBase):
-    RUN_EVERY_MINS = 5 # every 1st of the month
+    RUN_EVERY_MINS = 5
     schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
     code = 'jobtracker.task_fire_job_notifications'
 
