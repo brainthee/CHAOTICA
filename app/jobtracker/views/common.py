@@ -2,29 +2,12 @@ from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.urls import reverse
 from django.template import loader
 from chaotica_utils.views import page_defaults
-from ..tasks import task_progress_workflows, task_fire_job_notifications
 import logging
 from django.contrib.auth.decorators import login_required
 import uuid
 from django.contrib import messages
 
 logger = logging.getLogger(__name__)
-
-
-@login_required
-def run_tasks(request):
-    """A view that manually runs tasks normally run in the background.
-
-    Args:
-        request (HttpRequest): The request
-
-    Returns:
-        HttpResponse: A redirect
-    """
-    task_progress_workflows()
-    task_fire_job_notifications()
-    messages.success(request, "Background tasks triggered")
-    return HttpResponseRedirect(reverse("home"))
 
 
 @login_required
