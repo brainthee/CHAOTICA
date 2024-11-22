@@ -68,6 +68,7 @@ def index(request):
         Q(unit__in=get_objects_for_user(request.user, "can_scope_jobs", klass=OrganisationalUnit)),
         Q(status=JobStatuses.PENDING_SCOPE)
         | Q(status=JobStatuses.SCOPING_ADDITIONAL_INFO_REQUIRED)
+        | Q(status=JobStatuses.SCOPING)
     )
     context["scopesToSignoff"] = Job.objects.filter(
         Q(unit__in=get_objects_for_user(request.user, "can_signoff_scopes", klass=OrganisationalUnit)),
