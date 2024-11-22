@@ -87,6 +87,8 @@ class Notification(models.Model):
         ordering = ["-timestamp"]
 
     def send_email(self, resend=False):
+        self.refresh_from_db() # Make sure we're using the latest info!
+        
         if (
             self.user.is_active  # User must be active
             and config.EMAIL_ENABLED  # Emails must be enabled
@@ -110,7 +112,8 @@ class Notification(models.Model):
                 recipient_list=[self.user.email_address()],
                 html_message=msg_html,
             )
-        # Mark it as sent regardless
+
+        # Mark it as sent regardless - don't want to create a backlog
         self.is_emailed = True
         self.save()
 
