@@ -259,10 +259,20 @@ class Phase(models.Model):
             else:
                 # No slots - return None
                 return None
+    
+    def has_reports(self):
+        return self.number_of_reports > 0
+    
+    def should_do_qa(self):
+        if self.report_to_be_left_on_client_site:
+            return False
+        if self.number_of_reports == 0:
+            return False
+        return True
 
     @property
     def due_to_techqa(self):
-        if self.number_of_reports == 0:
+        if not self.should_do_qa():
             return None
         if self.due_to_techqa_set:
             return self.due_to_techqa_set
@@ -285,7 +295,7 @@ class Phase(models.Model):
 
     @property
     def due_to_presqa(self):
-        if self.number_of_reports == 0:
+        if not self.should_do_qa():
             return None
         if self.due_to_presqa_set:
             return self.due_to_presqa_set
@@ -332,7 +342,7 @@ class Phase(models.Model):
         # This relies on delivery_date being valid (which needs it manually set or a timeslot...)
         if self.delivery_date:
             # If no reports - there's nothing to deliver!
-            if self.number_of_reports > 0:
+            if self.should_do_qa():
                 # Two ways to be late - it's not delivered yet and it should have been...
                 if self.status < PhaseStatuses.DELIVERED:
                     if self.delivery_date < timezone.now().today().date():
@@ -351,7 +361,7 @@ class Phase(models.Model):
         # This relies on due_to_techqa being valid (which needs it manually set or a timeslot...)
         if self.due_to_techqa:
             # Two ways to be late - it's not in tqa yet and it should have been...
-            if self.number_of_reports > 0:
+            if self.should_do_qa():
                 if self.status < PhaseStatuses.QA_TECH:
                     if self.due_to_techqa < timezone.now().today().date():
                         return True
@@ -369,7 +379,7 @@ class Phase(models.Model):
         # This relies on due_to_presqa being valid (which needs it manually set or a timeslot...)
         if self.due_to_presqa:
             # Two ways to be late - it's not in tqa yet and it should have been...
-            if self.number_of_reports > 0:
+            if self.should_do_qa():
                 if self.status < PhaseStatuses.QA_PRES:
                     if self.due_to_presqa < timezone.now().today().date():
                         return True
@@ -497,7 +507,7 @@ class Phase(models.Model):
         email_template = "emails/phase_content.html"
         now = timezone.now()
 
-        if self.number_of_reports == 0:
+        if not self.should_do_qa():
             # No reports - nothing to fire!
             return
 
@@ -537,7 +547,7 @@ class Phase(models.Model):
         email_template = "emails/phase_content.html"
         now = timezone.now()
 
-        if self.number_of_reports == 0:
+        if not self.should_do_qa():
             # No reports - nothing to fire!
             return
 
@@ -579,7 +589,7 @@ class Phase(models.Model):
         email_template = "emails/phase_content.html"
         now = timezone.now()
 
-        if self.number_of_reports == 0:
+        if not self.should_do_qa():
             # No reports - nothing to fire!
             return
 
@@ -1201,7 +1211,7 @@ class Phase(models.Model):
                 messages.add_message(notify_request, messages.ERROR, "No project lead.")
             _can_proceed = False
 
-        if not self.report_author and self.number_of_reports > 0:
+        if not self.report_author and self.has_reports():
             if notify_request:
                 messages.add_message(
                     notify_request,
@@ -1210,7 +1220,7 @@ class Phase(models.Model):
                 )
             _can_proceed = False
 
-        if self.number_of_reports == 0 and notify_request:
+        if not self.has_reports() and notify_request:
             messages.add_message(
                 notify_request, messages.INFO, "Beware - no reports required!"
             )
@@ -1403,7 +1413,7 @@ class Phase(models.Model):
                     )
                 _can_proceed = False
 
-        if self.number_of_reports > 0:
+        if self.should_do_qa():
             if not self.linkDeliverable:
                 if notify_request:
                     messages.add_message(
@@ -1713,14 +1723,14 @@ class Phase(models.Model):
         self.fire_status_notification(PhaseStatuses.COMPLETED)
 
     def can_proceed_to_completed(self):
-        if self.number_of_reports > 0 and self.status <= PhaseStatuses.QA_TECH:
+        if self.should_do_qa() and self.status <= PhaseStatuses.QA_TECH:
             return False
         return can_proceed(self.to_completed)
 
     def can_to_completed(self, notify_request=None):
         _can_proceed = True
         # Do logic checks
-        if self.number_of_reports > 0:
+        if self.should_do_qa():
             if self.status <= PhaseStatuses.QA_TECH:
                 if notify_request:
                     messages.add_message(
@@ -1797,7 +1807,7 @@ class Phase(models.Model):
         self.fire_status_notification(PhaseStatuses.DELIVERED)
 
     def can_proceed_to_delivered(self):
-        if self.number_of_reports == 0:
+        if not self.should_do_qa():
             return can_proceed(self.to_delivered)
         else:
             if self.status == PhaseStatuses.COMPLETED:
