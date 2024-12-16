@@ -379,7 +379,7 @@ class Job(models.Model):
                     TimeSlot.objects.filter(
                         phase__job=self, deliveryRole=TimeSlotDeliveryRole.DELIVERY
                     )
-                    .order_by("-start")
+                    .order_by("start")
                     .first()
                     .start.date()
                 )
