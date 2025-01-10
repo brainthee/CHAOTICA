@@ -125,6 +125,7 @@ class RMAssignable(models.Model):
             log.error("Told to start sync for a assignable with no project/phase")
 
         should_create = self.rm_id == None
+        # TODO: some sort of state management - need to update when phase goes tentative/confirmed
 
         try:
             if self.rm_id:
