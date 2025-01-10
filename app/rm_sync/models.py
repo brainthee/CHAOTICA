@@ -161,6 +161,7 @@ class RMAssignable(models.Model):
                     data = {
                         "name": self.phase.title,
                         "project_code": self.phase.phase_id,
+                        "project_state": "Confirmed" if self.phase.is_confirmed() else "Tentative",
                         "tags": ["CHAOTICA"],
                         "client": str(self.phase.job.client),
                         "description": config.RM_WARNING_MSG
@@ -170,6 +171,7 @@ class RMAssignable(models.Model):
                     data = {
                         "name": self.project.title,
                         "project_code": str(self.project.id),
+                        "project_state": "Confirmed" if self.project.is_chargable() else "Internal",
                         "tags": ["CHAOTICA"],
                         "description": config.RM_WARNING_MSG
                         + " {}".format(ext_reverse(self.project.get_absolute_url())),

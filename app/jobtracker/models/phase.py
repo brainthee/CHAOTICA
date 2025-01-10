@@ -1097,6 +1097,12 @@ class Phase(models.Model):
             "phase_detail", kwargs={"slug": self.slug, "job_slug": self.job.slug}
         )
 
+    def is_confirmed(self):
+        return self.status >= PhaseStatuses.SCHEDULED_CONFIRMED
+
+    def is_tentative(self):
+        return self.status <= PhaseStatuses.SCHEDULED_TENTATIVE
+
     @property
     def status_bs_colour(self):
         return PhaseStatuses.BS_COLOURS[self.status][1]

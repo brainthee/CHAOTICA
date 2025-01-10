@@ -135,6 +135,9 @@ class Project(models.Model):
         verbose_name = "Project"
         ordering = [Lower("title")]
 
+    def is_chargable(self):
+        return self.charge_codes.exists()
+
     def __str__(self):
         return "{id}: {title}".format(id=self.id, title=self.title)
 
