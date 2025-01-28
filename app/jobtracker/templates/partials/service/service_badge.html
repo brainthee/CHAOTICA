@@ -1,9 +1,9 @@
 <a class="text-decoration-none" href="{{ service.get_absolute_url }}">
   <span class="badge badge-phoenix    
     {% if rating == 'lead' %}      
-    badge-phoenix-primary
-    {% elif rating == 'support' %}      
     badge-phoenix-success
+    {% elif rating == 'support' %}      
+    badge-phoenix-warning
     {% else %}      
     badge-tag 
     {% endif %}
