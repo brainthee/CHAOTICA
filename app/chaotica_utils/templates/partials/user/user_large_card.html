@@ -113,6 +113,10 @@
       <div class="d-flex align-items-center mb-1">
         <span class="me-2 fas fa-certificate"></span>
         <h5 class="text-body-highlight mb-0">Services</h5>
+        <div class="flex-fill mb-0 fs-9 text-body text-end">
+          <span class="fa-solid fa-square fs-11 me-0 ms-2 text-success" data-fa-transform="up-2"></span> Can Lead
+          <span class="fa-solid fa-square fs-11 me-0 ms-2 text-warning" data-fa-transform="up-2"></span> Can Support
+        </div>
       </div>
 
       {% for service in user.services_can_lead %}
@@ -133,23 +137,25 @@
       <div class="d-flex align-items-center mb-1">
         <span class="me-2 fas fa-certificate"></span>
         <h5 class="text-body-highlight mb-0">Skills</h5>
+        <div class="flex-fill mb-0 fs-9 text-body text-end">
+          <span class="fa-solid fa-square fs-11 me-0 ms-2 text-primary" data-fa-transform="up-2"></span> Specialist
+          <span class="fa-solid fa-square fs-11 me-0 ms-2 text-success" data-fa-transform="up-2"></span> Can Lead
+          <span class="fa-solid fa-square fs-11 me-0 ms-2 text-warning" data-fa-transform="up-2"></span> Can Support
+        </div>
       </div>
       {% for skill in user.get_skills_specialist %}
         {% include 'partials/skill/skill_badge.html' with rating='specialist' %}
       {% empty %}
-        &nbsp;
       {% endfor %}
 
       {% for skill in user.get_skills_alone %}
         {% include 'partials/skill/skill_badge.html' with rating='alone' %}
       {% empty %}
-        &nbsp;
       {% endfor %}
 
       {% for skill in user.get_skills_support %}
         {% include 'partials/skill/skill_badge.html' with rating='support' %}
       {% empty %}
-        &nbsp;
       {% endfor %}
     </div>
   </div>
