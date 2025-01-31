@@ -3,6 +3,7 @@ from django.utils import timezone
 from django.utils.html import format_html
 from django import forms
 from .models import LeaveRequest, User, Group, UserInvitation, Holiday
+from .enums import LeaveRequestTypes
 from crispy_forms.helper import FormHelper
 from crispy_forms.bootstrap import (
     StrictButton,
@@ -15,6 +16,7 @@ from constance.admin import ConstanceForm
 from dal import autocomplete
 import pytz
 from django.conf import settings
+from constance import config
 from bootstrap_datepicker_plus.widgets import (
     DatePickerInput,
     DateTimePickerInput,
@@ -128,6 +130,11 @@ class CustomConfigForm(ConstanceForm):
                         FloatingField("LEAVE_DAYS_NOTICE"),
                         css_class="input-group input-group-dynamic",
                     ),
+                    Div(
+                        Field("LEAVE_ENFORCE_LIMIT"),
+                        css_class="input-group input-group-dynamic",
+                    ),                   
+
                     HTML('<h4 class="mb-4">Phase Deadlines</h4>'),
                     Div(
                         FloatingField("DAYS_TO_TQA"),
@@ -324,6 +331,7 @@ class LeaveRequestForm(forms.ModelForm):
         self.fields["start_date"].label = False
         self.fields["end_date"].label = False
         self.fields["type_of_leave"].label = False
+        self.fields["type_of_leave"].choices = LeaveRequestTypes.FORM_CHOICES
         self.fields["notes"].label = False
         self.fields["start_date"].widget = DateTimePickerInput()
         self.fields["end_date"].widget = DateTimePickerInput()
@@ -361,12 +369,21 @@ class LeaveRequestForm(forms.ModelForm):
         requested_days = round(days, 2)
         available_days = self.request.user.remaining_leave()
         if requested_days > available_days:
-            self.add_error(
-                None,
-                "You have requested more days than your allocation ({} required, {} available)".format(
-                    str(requested_days), str(available_days)
-                ),
-            )
+            if config.LEAVE_ENFORCE_LIMIT:
+                self.add_error(
+                    None,
+                    "You have requested more days than your allocation ({} required, {} available)".format(
+                        str(requested_days), str(available_days)
+                    ),
+                )
+            else:
+                if (not self.instance.id and 'warn_override' not in self.data):
+                    self.add_error(None, format_html(
+                        'You have requested more days than your allocation. Are you sure you wish to continue? Please save again to acknowledge.'
+                        '<input type="hidden" id="warn_override"' # inject hidden input with error msg itself
+                        'name="warn_override" value="0"/>'        # so it's returned in form `data` on second save
+                    ))
+
 
     class Meta:
         model = LeaveRequest
