@@ -38,7 +38,7 @@
               <a class="nav-link text-nowrap" id="jobs-tab" data-bs-toggle="tab" href="#tab-jobs" role="tab" aria-controls="tab-jobs" aria-selected="true"><span class="fas fa-shopping-cart me-2"></span> Jobs <span class="text-body-tertiary fw-normal">({{ user.get_jobs|length }})</span></a>
             </li>
             <li class="nav-item me-3" role="presentation">
-              <a class="nav-link text-nowrap" id="reports-tab" data-bs-toggle="tab" href="#tab-reports" role="tab" aria-controls="tab-reports" aria-selected="false" tabindex="-1"><span class="fas fa-star me-2"></span> Reports <span class="text-body-tertiary fw-normal">({{ user.phase_where_report_author.all|length }})</span></a>
+              <a class="nav-link text-nowrap" id="reports-tab" data-bs-toggle="tab" href="#tab-reports" role="tab" aria-controls="tab-reports" aria-selected="false" tabindex="-1"><span class="fas fa-star me-2"></span> Reports <span class="text-body-tertiary fw-normal">({{ user.get_reports|length }})</span></a>
             </li>
             <li class="nav-item me-3" role="presentation">
               <a class="nav-link text-nowrap" id="schedule-tab" data-bs-toggle="tab" href="#tab-schedule" role="tab" aria-controls="tab-schedule" aria-selected="false" tabindex="-1"><span class="fas fa-calendar me-2"></span> Schedule</a>
@@ -46,15 +46,15 @@
           </ul>
         </div>
 
-        <div class="tab-content" id="profileTabContent">
+        <div class="tab-content" id="myTabContent">
           <div class="tab-pane fade active show" id="tab-stats" role="tabpanel" aria-labelledby="stats-tab">
             {% include 'partials/user/user_stats.html'%}
           </div>
           <div class="tab-pane fade" id="tab-jobs" role="tabpanel" aria-labelledby="jobs-tab">
-            {% comment %} {% include 'partials/job/job_list_table.html' with job_list=user.get_jobs disableAjax=1 only %} {% endcomment %}
+            {% include 'partials/job/job_list_table.html' with job_list=user.get_jobs disableAjax=1 only %}
           </div>
           <div class="tab-pane fade" id="tab-reports" role="tabpanel" aria-labelledby="reports-tab">
-            {% comment %} {% include 'partials/phase/phase_list_table.html' with phases=user.phase_where_report_author.all disableAjax=1 %} {% endcomment %}
+            {% include 'partials/phase/reporting_list_table.html' with phases=user.get_reports disableAjax=1 %}
           </div>
           <div class="tab-pane fade" id="tab-schedule" role="tabpanel" aria-labelledby="schedule-tab">
             <div class="calendar" data-bs-toggle="calendar" id="calendar"></div>

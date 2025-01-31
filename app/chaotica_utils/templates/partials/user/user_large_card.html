@@ -89,7 +89,7 @@
       </div>
       <div>
         <h6>Reports</h6>
-        <p class="text-800 mb-0">{{ user.phase_where_report_author.all|length }}</p>
+        <p class="text-800 mb-0">{{ user.get_reports|length }}</p>
       </div>
     </div>
 

@@ -578,6 +578,10 @@ class User(AbstractUser):
         context["userProfile"] = self
         html = render_to_string("partials/users/user_profile_card.html", context)
         return html
+    
+    def get_reports(self):
+        from jobtracker.enums import PhaseStatuses
+        return self.phase_where_report_author.filter(status__in=PhaseStatuses.ACTIVE_STATUSES).order_by('-job__id', '-id')
 
     def get_jobs(self):
         from jobtracker.models import Job
