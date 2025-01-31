@@ -310,7 +310,7 @@ class TimeSlot(models.Model):
             )
         else:
             hours = businessDuration(self.start, self.end, unit=unit)
-        return hours
+        return Decimal(hours)
 
     def cost(self):
         # Only support a single cost field at the moment... :(

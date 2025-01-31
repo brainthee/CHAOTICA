@@ -27,12 +27,15 @@
       {% include 'partials/user/user_large_card.html' with user=user %}      
     </div>
 
-    <div class="col-12 g-2 col-xl-8 ps-3 pt-3">
+    <div class="col-12 g-2 col-xl-8 ps-3 pt-0">
       <div class="row mb-3">
         <div class="scrollbar">
           <ul class="nav nav-underline fs-9 flex-nowrap mb-3 pb-1" id="myTab" role="tablist">
             <li class="nav-item me-3" role="presentation">
-              <a class="nav-link text-nowrap active" id="jobs-tab" data-bs-toggle="tab" href="#tab-jobs" role="tab" aria-controls="tab-jobs" aria-selected="true"><span class="fas fa-shopping-cart me-2"></span> Jobs <span class="text-body-tertiary fw-normal">({{ user.get_jobs|length }})</span></a>
+              <a class="nav-link text-nowrap active" id="stats-tab" data-bs-toggle="tab" href="#tab-stats" role="tab" aria-controls="tab-stats" aria-selected="false" tabindex="-1"><span class="fas fa-chart-simple me-2"></span> Stats</a>
+            </li>
+            <li class="nav-item me-3" role="presentation">
+              <a class="nav-link text-nowrap" id="jobs-tab" data-bs-toggle="tab" href="#tab-jobs" role="tab" aria-controls="tab-jobs" aria-selected="true"><span class="fas fa-shopping-cart me-2"></span> Jobs <span class="text-body-tertiary fw-normal">({{ user.get_jobs|length }})</span></a>
             </li>
             <li class="nav-item me-3" role="presentation">
               <a class="nav-link text-nowrap" id="reports-tab" data-bs-toggle="tab" href="#tab-reports" role="tab" aria-controls="tab-reports" aria-selected="false" tabindex="-1"><span class="fas fa-star me-2"></span> Reports <span class="text-body-tertiary fw-normal">({{ user.phase_where_report_author.all|length }})</span></a>
@@ -44,11 +47,14 @@
         </div>
 
         <div class="tab-content" id="profileTabContent">
-          <div class="tab-pane fade active show" id="tab-jobs" role="tabpanel" aria-labelledby="jobs-tab">
-            {% include 'partials/job/job_list_table.html' with job_list=user.get_jobs disableAjax=1 only %}
+          <div class="tab-pane fade active show" id="tab-stats" role="tabpanel" aria-labelledby="stats-tab">
+            {% include 'partials/user/user_stats.html'%}
+          </div>
+          <div class="tab-pane fade" id="tab-jobs" role="tabpanel" aria-labelledby="jobs-tab">
+            {% comment %} {% include 'partials/job/job_list_table.html' with job_list=user.get_jobs disableAjax=1 only %} {% endcomment %}
           </div>
           <div class="tab-pane fade" id="tab-reports" role="tabpanel" aria-labelledby="reports-tab">
-            {% include 'partials/phase/phase_list_table.html' with phases=user.phase_where_report_author.all disableAjax=1 %}
+            {% comment %} {% include 'partials/phase/phase_list_table.html' with phases=user.phase_where_report_author.all disableAjax=1 %} {% endcomment %}
           </div>
           <div class="tab-pane fade" id="tab-schedule" role="tabpanel" aria-labelledby="schedule-tab">
             <div class="calendar" data-bs-toggle="calendar" id="calendar"></div>
