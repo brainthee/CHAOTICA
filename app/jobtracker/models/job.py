@@ -497,13 +497,18 @@ class Job(models.Model):
         )
         return my_slots
     
+    def get_hours_in_day(self):
+        # Priority is client
+        return self.client.hours_in_day
+    
     def total_hrs_scheduled(self):
         from ..models import TimeSlot
         slots = TimeSlot.objects.filter(phase__job=self)
         total = Decimal()
+        _hours_in_day = self.get_hours_in_day()
         for slot in slots:
-            diff = slot.get_business_hours()
-            total = total + diff
+            # This is dumb - doesn't validate if it's half a day or something.
+            total = total + _hours_in_day
         return total
     
     def total_days_scheduled(self):
