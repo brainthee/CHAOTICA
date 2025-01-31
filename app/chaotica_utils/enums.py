@@ -619,6 +619,10 @@ class LeaveRequestTypes:
         (SABBATICAL, "Sabbatical Leave"),
     )
 
+    FORM_CHOICES = (
+        (ANNUAL_LEAVE, "Annual leave"),
+    )
+
     # In time we'll refactor this to be better but for now...
     COUNT_TOWARDS_LEAVE = [
         ANNUAL_LEAVE,
