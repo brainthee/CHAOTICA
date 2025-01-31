@@ -13,6 +13,8 @@ from django.db.models import JSONField
 import uuid, os, random
 from chaotica_utils.models import User, get_sentinel_user
 from chaotica_utils.enums import UnitRoles
+from django.utils import timezone
+import datetime
 from decimal import Decimal
 from django.templatetags.static import static
 from django_bleach.models import BleachField
@@ -102,6 +104,29 @@ class OrganisationalUnit(models.Model):
             ),
             ("can_approve_leave_requests", "Can approve leave requests"),
         )
+
+
+    def get_working_days_in_range(self, start_date, end_date):
+        working_days_list = []
+        if not (isinstance(start_date, datetime.date) and isinstance(end_date, datetime.date)):
+            raise TypeError("Both start_date and end_date must be datetime.date objects")
+        
+        # Ensure that the start date is before or equal to the end date.
+        if start_date > end_date:
+            start_date, end_date = end_date, start_date
+
+        # Now lets iter through and only add dates that we work
+        current_date = start_date
+        while current_date <= end_date:
+            is_working_day = (current_date.weekday()+1) in self.businessHours_days
+            if is_working_day:
+                working_days_list.append(current_date)
+
+            current_date += datetime.timedelta(days=1)
+
+        return working_days_list
+
+
 
     def sync_permissions(self):
         for user in self.get_allMembers():

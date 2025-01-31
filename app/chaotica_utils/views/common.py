@@ -1000,9 +1000,40 @@ class UserDetailView(UserBaseView, DetailView):
 
     def get_object(self, queryset=None):
         if self.kwargs.get("email"):
-            return get_object_or_404(User, email=self.kwargs.get("email"))
+            return get_object_or_404(User.objects.select_related(), email=self.kwargs.get("email"))
         else:
             raise Http404()
+    
+
+    def get_context_data(self, **kwargs):
+        context = super(UserDetailView, self).get_context_data(**kwargs)
+        
+        date_range_raw = self.request.GET.get("dateRange", "")
+        if " to " in date_range_raw:
+            date_range_split = date_range_raw.split(" to ")
+            if len(date_range_split) == 2:
+                context["start_date"] = timezone.datetime.strptime(date_range_split[0], '%Y-%m-%d').date()
+                context["end_date"] = timezone.datetime.strptime(date_range_split[1], '%Y-%m-%d').date()
+
+        if "start_date" not in context:
+            context["start_date"] = self.request.GET.get("start_date", (timezone.datetime.today() - datetime.timedelta(days=30)).date())
+            context["end_date"] = self.request.GET.get("end_date", timezone.datetime.today().date())
+
+        org_raw = self.request.GET.get("org", None)
+        if org_raw and org_raw.isdigit():
+            if self.get_object().unit_memberships.filter(unit__pk=org_raw).exists():
+                context["org"] = self.get_object().unit_memberships.get(unit__pk=org_raw).unit
+        
+        if "org" not in context:
+            context["org"] = None
+
+        context["stats"] = self.get_object().get_stats(
+            context["org"],
+            context["start_date"],
+            context["end_date"])
+        
+        context["stats_pretty"] = json.dumps(context["stats"], indent=2, sort_keys=True, default=str)
+        return context
 
 
 class UserCreateView(UserBaseView, CreateView):

@@ -855,6 +855,11 @@ class User(AbstractUser):
         return UserCost.objects.create(
             user=self, effective_from=effective_from, cost_per_hour=cost
         )
+    
+    #### WORKING HOURS/DAYS STUFF
+    ## Terms:
+    ## working = when the business is open and staff "could" work
+    ## available = when the individual is in work
 
     def get_working_hours(self):
         # Logic should be working hours from our org?
@@ -867,6 +872,264 @@ class User(AbstractUser):
             data["start"] = timezone.datetime.time(9, 0, 0)
             data["end"] = timezone.datetime.time(17, 30, 0)
         return data
+    
+    def get_working_days_in_range(self, org, start_date, end_date):
+        days_list = []
+        if not (isinstance(start_date, date) and isinstance(end_date, date)):
+            raise TypeError("Both start_date and end_date must be datetime.date objects")
+        
+        # Ensure that the start date is before or equal to the end date.
+        if start_date > end_date:
+            start_date, end_date = end_date, start_date
+        
+        # Get org dates as a starting point
+        org_working_days_list = org.get_working_days_in_range(start_date, end_date)
+
+        holidays = Holiday.objects.get_date_list(start_date, end_date, self.country)
+
+        # Now lets iter through and only add dates that we work
+        for current_date in org_working_days_list:
+            is_working_day = current_date not in holidays
+            if is_working_day:
+                days_list.append(current_date)
+
+        return days_list
+    
+    
+    def get_non_delivery_days_in_range(self, start_date, end_date, working_days=[]):
+        from .utils import make_datetime_tzaware
+        from jobtracker.enums import (
+            PhaseStatuses,
+        )
+        days_list = []
+        if not (isinstance(start_date, date) and isinstance(end_date, date)):
+            raise TypeError("Both start_date and end_date must be datetime.date objects")
+        
+        # Ensure that the start date is before or equal to the end date.
+        if start_date > end_date:
+            start_date, end_date = end_date, start_date
+        
+        if not working_days:
+            working_days = self.get_working_days_in_range(self.unit_memberships.first().unit, start_date, end_date)
+
+        # Now lets iter through and only add dates that we work
+        current_date = make_datetime_tzaware(timezone.datetime.combine(start_date, timezone.datetime.min.time()) + timedelta(hours=12))
+        while current_date.date() <= end_date:
+            if current_date.date() in working_days:
+                is_confirmed_day = self.timeslots.filter(
+                    (Q(start__lte=current_date) & Q(end__gte=current_date)) | 
+                    (Q(start__lt=current_date) & Q(end__gt=current_date)),
+                    phase__isnull=True, project__isnull=True,
+                    slot_type__is_delivery=False,
+                    ).exists()
+                if is_confirmed_day:
+                    days_list.append(current_date)
+
+            current_date += timedelta(days=1)
+        
+        return days_list
+    
+    
+    def get_delivery_confirmed_days_in_range(self, start_date, end_date, working_days=[]):
+        from .utils import make_datetime_tzaware
+        from jobtracker.enums import (
+            PhaseStatuses,
+        )
+        days_list = []
+        if not (isinstance(start_date, date) and isinstance(end_date, date)):
+            raise TypeError("Both start_date and end_date must be datetime.date objects")
+        
+        # Ensure that the start date is before or equal to the end date.
+        if start_date > end_date:
+            start_date, end_date = end_date, start_date
+        
+        if not working_days:
+            working_days = self.get_working_days_in_range(self.unit_memberships.first().unit, start_date, end_date)
+
+        # Now lets iter through and only add dates that we work
+        current_date = make_datetime_tzaware(timezone.datetime.combine(start_date, timezone.datetime.min.time()) + timedelta(hours=12))
+        while current_date.date() <= end_date:
+            if current_date.date() in working_days:
+                is_confirmed_day = self.timeslots.filter(
+                    (Q(start__lte=current_date) & Q(end__gte=current_date)) | 
+                    (Q(start__lt=current_date) & Q(end__gt=current_date)),
+                    (Q(phase__isnull=False) & Q(phase__status__gte=PhaseStatuses.SCHEDULED_CONFIRMED)) |
+                    Q(project__isnull=False),
+                    ).exists()
+                if is_confirmed_day:
+                    days_list.append(current_date)
+
+            current_date += timedelta(days=1)
+        
+        return days_list
+    
+    
+    def get_delivery_tentative_days_in_range(self, start_date, end_date, working_days=[]):
+        from .utils import make_datetime_tzaware
+        from jobtracker.enums import (
+            PhaseStatuses,
+        )
+        days_list = []
+        if not (isinstance(start_date, date) and isinstance(end_date, date)):
+            raise TypeError("Both start_date and end_date must be datetime.date objects")
+        
+        # Ensure that the start date is before or equal to the end date.
+        if start_date > end_date:
+            start_date, end_date = end_date, start_date
+        
+        if not working_days:
+            working_days = self.get_working_days_in_range(self.unit_memberships.first().unit, start_date, end_date)
+
+        # Now lets iter through and only add dates that we work
+        current_date = make_datetime_tzaware(timezone.datetime.combine(start_date, timezone.datetime.min.time()) + timedelta(hours=12))
+
+        while current_date.date() <= end_date:
+            if current_date.date() in working_days:
+                is_confirmed_day = self.timeslots.filter(
+                    (Q(start__lte=current_date) & Q(end__gte=current_date)) | 
+                    (Q(start__lt=current_date) & Q(end__gt=current_date)),
+                    slot_type__is_delivery=True,
+                    phase__status__lt=PhaseStatuses.SCHEDULED_CONFIRMED,
+                    ).exists()
+                if is_confirmed_day:
+                    days_list.append(current_date)
+
+            current_date += timedelta(days=1)
+        
+        return days_list
+    
+
+    def get_available_days_in_range(self, start_date, end_date, working_days=[]):
+        from .utils import make_datetime_tzaware
+        days_list = []
+        if not (isinstance(start_date, date) and isinstance(end_date, date)):
+            raise TypeError("Both start_date and end_date must be datetime.date objects")
+        
+        # Ensure that the start date is before or equal to the end date.
+        if start_date > end_date:
+            start_date, end_date = end_date, start_date
+        
+        if not working_days:
+            working_days = self.get_working_days_in_range(self.unit_memberships.first().unit, start_date, end_date)
+
+        # Now lets iter through and only add dates that we work
+        current_date = make_datetime_tzaware(timezone.datetime.combine(start_date, timezone.datetime.min.time()) + timedelta(hours=12))
+        while current_date.date() <= end_date:
+            if current_date.date() in working_days:
+                is_working_day = self.timeslots.filter(
+                    (Q(start__lte=current_date) & Q(end__gte=current_date)) | 
+                    (Q(start__lt=current_date) & Q(end__gt=current_date))).exists()
+                if not is_working_day:
+                    days_list.append(current_date)
+
+            current_date += timedelta(days=1)
+        
+        return days_list
+    
+
+    def get_scheduled_days_in_range(self, start_date, end_date):
+        from .utils import make_datetime_tzaware
+        days_list = []
+        if not (isinstance(start_date, date) and isinstance(end_date, date)):
+            raise TypeError("Both start_date and end_date must be datetime.date objects")
+        
+        # Ensure that the start date is before or equal to the end date.
+        if start_date > end_date:
+            start_date, end_date = end_date, start_date
+
+        # Now lets iter through and only add dates that we work
+        current_date = make_datetime_tzaware(timezone.datetime.combine(start_date, timezone.datetime.min.time()) + timedelta(hours=12))
+        while current_date.date() <= end_date:
+            is_working_day = self.timeslots.filter(
+                (Q(start__lte=current_date) & Q(end__gte=current_date)) | 
+                (Q(start__lt=current_date) & Q(end__gt=current_date))).exists()
+            if is_working_day:
+                days_list.append(current_date)
+
+            current_date += timedelta(days=1)
+        
+        return days_list
+    
+    def get_availability(self, start_date, end_date, org=None):
+        data = {}
+
+        if not org:
+            org = self.unit_memberships.first().unit
+
+        data["working_days_list"] = self.get_working_days_in_range(org, start_date, end_date)
+        if len(data["working_days_list"]) > 0:
+            data["scheduled_days_list"] = self.get_scheduled_days_in_range(start_date, end_date)
+            data["scheduled_days_perc"] = round(len(data["scheduled_days_list"]) / len(data["working_days_list"])*100, 1)
+            data["tentative_days_list"] = self.get_delivery_tentative_days_in_range(start_date, end_date, data["working_days_list"])
+            data["tentative_days_perc"] = round(len(data["tentative_days_list"]) / len(data["working_days_list"])*100, 1)
+            data["confirmed_days_list"] = self.get_delivery_confirmed_days_in_range(start_date, end_date, data["working_days_list"])
+            data["confirmed_days_perc"] = round(len(data["confirmed_days_list"]) / len(data["working_days_list"])*100, 1)
+
+            data["non_delivery_days_list"] = self.get_non_delivery_days_in_range(start_date, end_date, data["working_days_list"])
+            data["non_delivery_days_perc"] = round(len(data["non_delivery_days_list"]) / len(data["working_days_list"])*100, 1)
+
+            data["available_days_list"] = self.get_available_days_in_range(start_date, end_date, data["working_days_list"])
+            data["available_days_perc"] = round(len(data["available_days_list"]) / len(data["working_days_list"])*100, 1)
+        else:
+            data["non_delivery_days_list"] = []
+            data["non_delivery_days_perc"] = 0
+            data["scheduled_days_list"] = []
+            data["scheduled_days_perc"] = 0
+            data["tentative_days_list"] = []
+            data["tentative_days_perc"] = 0
+            data["confirmed_days_list"] = []
+            data["confirmed_days_perc"] = 0
+            data["available_days_list"] = []
+            data["available_days_perc"] = 0
+
+        return data
+    
+    
+    def get_stats(self, org=None, start_date=None, end_date=None):
+        data = {
+            "ranged": {},
+            "availability": {},
+        }
+        if not start_date:
+            start_date = (timezone.datetime.today() - timedelta(days=30)).date()
+        if not end_date:
+            end_date = timezone.datetime.today().date()
+        if not org:
+            org = self.unit_memberships.first().unit
+        
+        data["ranged"]["org"] = org
+        data["ranged"]["start_date"] = start_date
+        data["ranged"]["end_date"] = end_date
+        data["ranged"]["working_days_list"] = self.get_working_days_in_range(org, start_date, end_date)
+        data["ranged"]["scheduled_days_list"] = self.get_scheduled_days_in_range(start_date, end_date)
+        data["ranged"]["confirmed_days_list"] = self.get_delivery_confirmed_days_in_range(start_date, end_date, data["ranged"]["working_days_list"])
+        data["ranged"]["utilisation_perc"] = 0
+        # util is calculated as 
+        if len(data["ranged"]["working_days_list"]) > 0:
+            data["ranged"]["utilisation_perc"] = round(len(data["ranged"]["confirmed_days_list"]) / len(data["ranged"]["working_days_list"])*100, 1)
+        
+        # these values are not reliant on start_date and end_date
+        data["availability"] = {}
+        avail_start = (timezone.now() - timedelta(days=timezone.now().weekday())).date()
+        avail_thisweek = avail_start + timedelta(days=6)
+        data["availability"]["thisweek"] = self.get_availability(avail_start, avail_thisweek)
+        avail_twoweeks = avail_start + timedelta(days=13)
+        data["availability"]["twoweeks"] = self.get_availability(avail_start, avail_twoweeks)
+        avail_eightweeks = avail_start + timedelta(days=27)
+        data["availability"]["fourweeks"] = self.get_availability(avail_start, avail_eightweeks)
+        avail_eightweeks = avail_start + timedelta(days=55)
+        data["availability"]["eightweeks"] = self.get_availability(avail_start, avail_eightweeks)
+
+        for avrng in ["thisweek", "twoweeks", "fourweeks", "eightweeks"]:
+            if len(data["availability"][avrng]["working_days_list"]) > 0:
+                data["availability"][avrng]["utilisation_perc"] = round(
+                    len(data["availability"][avrng]["confirmed_days_list"]) / len(data["availability"][avrng]["working_days_list"])*100, 1)
+            else:
+                data["availability"][avrng]["utilisation_perc"] = 0
+
+        
+        return data
+
 
 
 class UserCost(models.Model):
@@ -897,8 +1160,25 @@ class UserCost(models.Model):
     def __str__(self):
         return "{} {}".format(str(self.user), str(self.cost_per_hour))
 
+class HolidayManager(models.Manager):
+    def get_date_list(self, start_date, end_date, country=None):
+        if not (isinstance(start_date, date) and isinstance(end_date, date)):
+            raise TypeError("Both start_date and end_date must be datetime.date objects")
+        
+        matches = self.filter(
+            date__gte=start_date, 
+            date__lte=end_date)
+        
+        if country:
+            matches.filter(country=country)
+
+        data = matches.values_list('date', flat=True)
+        return data
+
+
 
 class Holiday(models.Model):
+    objects = HolidayManager()
     date = models.DateField(db_index=True)
     country = CountryField(blank=True, null=True)
     subdivs = models.JSONField(default=list, blank=True)

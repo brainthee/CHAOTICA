@@ -1007,7 +1007,7 @@ class Phase(models.Model):
         from ..models.timeslot import TimeSlot
 
         slots = TimeSlot.objects.filter(phase=self, deliveryRole=slot_type)
-        total = 0.0
+        total = Decimal()
         for slot in slots:
             diff = slot.get_business_hours()
             total = total + diff
