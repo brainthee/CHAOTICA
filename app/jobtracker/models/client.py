@@ -289,7 +289,10 @@ class FrameworkAgreement(models.Model):
         return self.total_days - days_allocated
 
     def days_allocated(self):
-        return 0
+        total = 0
+        for job in self.associated_jobs.all():
+            total = total + job.total_days_scheduled()
+        return total
 
     def perc_allocated(self):
         if self.total_days:

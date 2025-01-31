@@ -496,6 +496,19 @@ class Job(models.Model):
             .distinct()
         )
         return my_slots
+    
+    def total_hrs_scheduled(self):
+        from ..models import TimeSlot
+        slots = TimeSlot.objects.filter(phase__job=self)
+        total = Decimal()
+        for slot in slots:
+            diff = slot.get_business_hours()
+            total = total + diff
+        return total
+    
+    def total_days_scheduled(self):
+        hrs = self.total_hrs_scheduled()
+        return round(hrs / self.client.hours_in_day,1)
 
     def get_all_total_scheduled_by_type(self):
         data = dict()
@@ -507,7 +520,7 @@ class Job(models.Model):
         from ..models import TimeSlot
 
         slots = TimeSlot.objects.filter(phase__job=self, deliveryRole=slot_type)
-        total = 0.0
+        total = Decimal()
         for slot in slots:
             diff = slot.get_business_hours()
             total = total + diff
