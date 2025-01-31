@@ -121,6 +121,9 @@ class Client(models.Model):
         if not self.slug:
             self.slug = unique_slug_generator(self, self.name)
         return super().save(*args, **kwargs)
+    
+    def get_jobs(self):
+        return self.jobs.select_related('unit').all()
 
     def merge(self, client_to_merge):
         # Things to merge:
