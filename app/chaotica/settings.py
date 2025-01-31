@@ -161,6 +161,7 @@ CONSTANCE_CONFIG = {
     # Work settings
     "DEFAULT_HOURS_IN_DAY": (7.5, "Default hours in a work day"),
     "LEAVE_DAYS_NOTICE": (14, "How many days notice for Annual Leave submissions?"),
+    "LEAVE_ENFORCE_LIMIT": (False, "Should leave be prevented if over balance?"),
     # Theme/Look settings
     "SNOW_ENABLED": (False, "Should it snow?"),
     "KONAMI_ENABLED": (True, "Should the Konami easter-egg be enabled?"),
