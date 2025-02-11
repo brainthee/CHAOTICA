@@ -11,7 +11,7 @@
       {% for member in organisationalunit.get_activeMemberships %}
           <tr>
               <td>
-                  {% include 'partials/users/user_table_display.html' with u=member.member %}
+                  {% include 'partials/users/user_table_display.html' with u=member.member noorg=1 %}
               </td>   
               <td>
                   <p class="text-xs font-weight-normal mb-0">

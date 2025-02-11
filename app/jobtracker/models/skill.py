@@ -2,14 +2,16 @@ from django.db import models
 from ..enums import UserSkillRatings
 from chaotica_utils.utils import unique_slug_generator
 from django.conf import settings
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.urls import reverse
 from django.db.models.functions import Lower
 
 
 class SkillCategory(models.Model):
     name = models.CharField(max_length=200)
-    description = models.TextField(help_text="A short description of the category", default="")
+    description = models.TextField(
+        help_text="A short description of the category", default=""
+    )
     slug = models.SlugField(null=False, default="", unique=True)
 
     def __str__(self):
@@ -21,46 +23,76 @@ class SkillCategory(models.Model):
         permissions = ()
 
     def get_users_can_do_alone(self):
-        return UserSkill.objects.filter(
-            skill__in=self.skills.all(), rating=UserSkillRatings.CAN_DO_ALONE
+        return (
+            self.skills.all()
+            .filter(users__rating=UserSkillRatings.CAN_DO_ALONE)
+            .values("users")
         )
 
     def get_users_can_do_with_support(self):
-        return UserSkill.objects.filter(
-            skill__in=self.skills.all(), rating=UserSkillRatings.CAN_DO_WITH_SUPPORT
+        return (
+            self.skills.all()
+            .filter(users__rating=UserSkillRatings.CAN_DO_WITH_SUPPORT)
+            .values("users")
         )
 
     def get_users_specialist(self):
-        return UserSkill.objects.filter(
-            skill__in=self.skills.all(), rating=UserSkillRatings.SPECIALIST
+        return (
+            self.skills.all()
+            .filter(users__rating=UserSkillRatings.SPECIALIST)
+            .values("users")
         )
 
+    def get_rating_counts(self):
+        """
+        Returns a dictionary with total counts for each rating.
+        """
+        ratings = (
+            self.skills.values("users__rating").annotate(count=Count("id")).order_by()
+        )
+        return dict((r["users__rating"], r["count"]) for r in ratings)
+
     def get_users_breakdown_perc(self):
-        total_users = self.get_users().count()
+        rating_counts = self.get_rating_counts()
+
+        total_users = (
+            rating_counts.get(UserSkillRatings.CAN_DO_ALONE, 0)
+            + rating_counts.get(UserSkillRatings.CAN_DO_WITH_SUPPORT, 0)
+            + rating_counts.get(UserSkillRatings.SPECIALIST, 0)
+        )
+
         data = {}
         data["total_users"] = total_users
+        data["can_do_with_support"] = 0
+        data["can_do_alone"] = 0
+        data["specialist"] = 0
+        data["can_do_with_support_perc"] = 0
+        data["can_do_alone_perc"] = 0
+        data["specialist_perc"] = 0
+
         if total_users > 0:
-            data["can_do_with_support"] = round(
-                (self.get_users_can_do_with_support().count() / total_users) * 100, 2
+            data["can_do_with_support_perc"] = round(
+                (rating_counts.get(UserSkillRatings.CAN_DO_WITH_SUPPORT, 0) / total_users)
+                * 100,
+                2,
             )
-            data["can_do_alone"] = round(
-                (self.get_users_can_do_alone().count() / total_users) * 100, 2
+            data["can_do_alone_perc"] = round(
+                (rating_counts.get(UserSkillRatings.CAN_DO_ALONE, 0) / total_users) * 100, 2
             )
-            data["specialist"] = round(
-                (self.get_users_specialist().count() / total_users) * 100, 2
+            data["specialist_perc"] = round(
+                (rating_counts.get(UserSkillRatings.SPECIALIST, 0) / total_users) * 100, 2
             )
-        else:
-            data["can_do_with_support"] = 0
-            data["can_do_alone"] = 0
-            data["specialist"] = 0
         return data
 
     def get_users(self):
-        return UserSkill.objects.filter(
-            Q(rating=UserSkillRatings.CAN_DO_ALONE)
-            | Q(rating=UserSkillRatings.CAN_DO_WITH_SUPPORT)
-            | Q(rating=UserSkillRatings.SPECIALIST),
-            skill__in=self.skills.all(),
+        return (
+            self.skills.all()
+            .filter(
+                Q(users__rating=UserSkillRatings.CAN_DO_ALONE)
+                | Q(users__rating=UserSkillRatings.CAN_DO_WITH_SUPPORT)
+                | Q(users__rating=UserSkillRatings.SPECIALIST),
+            )
+            .values("users")
         )
 
     def save(self, *args, **kwargs):
@@ -74,7 +106,9 @@ class SkillCategory(models.Model):
 
 class Skill(models.Model):
     name = models.CharField(max_length=200)
-    description = models.TextField(help_text="A short description of the skill", default="")
+    description = models.TextField(
+        help_text="A short description of the skill", default=""
+    )
     category = models.ForeignKey(
         SkillCategory, related_name="skills", on_delete=models.CASCADE
     )
@@ -106,26 +140,75 @@ class Skill(models.Model):
             ("view_users_skill", "View Users with Skill"),
         )
 
-    def get_users_can_do_alone(self):
-        return UserSkill.objects.filter(
-            skill=self, rating=UserSkillRatings.CAN_DO_ALONE
+    def get_rating_counts(self):
+        """
+        Returns a dictionary with total counts for each rating.
+        """
+        ratings = self.users.values("rating").annotate(count=Count("id")).order_by()
+        return dict((r["rating"], r["count"]) for r in ratings)
+
+    def get_users_breakdown_perc(self):
+
+        rating_counts = self.get_rating_counts()
+
+        total_users = (
+            rating_counts.get(UserSkillRatings.CAN_DO_ALONE, 0)
+            + rating_counts.get(UserSkillRatings.CAN_DO_WITH_SUPPORT, 0)
+            + rating_counts.get(UserSkillRatings.SPECIALIST, 0)
         )
+
+        data = {}
+        data["total_users"] = total_users
+        data["can_do_with_support"] = rating_counts.get(
+            UserSkillRatings.CAN_DO_WITH_SUPPORT, 0
+        )
+        data["can_do_alone"] = rating_counts.get(UserSkillRatings.CAN_DO_ALONE, 0)
+        data["specialist"] = rating_counts.get(UserSkillRatings.SPECIALIST, 0)
+        data["can_do_with_support_perc"] = 0
+        data["can_do_alone_perc"] = 0
+        data["specialist_perc"] = 0
+
+        if total_users > 0:
+            data["can_do_with_support_perc"] = round(
+                (
+                    rating_counts.get(UserSkillRatings.CAN_DO_WITH_SUPPORT, 0)
+                    / total_users
+                )
+                * 100,
+                2,
+            )
+            data["can_do_alone_perc"] = round(
+                (rating_counts.get(UserSkillRatings.CAN_DO_ALONE, 0) / total_users)
+                * 100,
+                2,
+            )
+            data["specialist_perc"] = round(
+                (rating_counts.get(UserSkillRatings.SPECIALIST, 0) / total_users) * 100,
+                2,
+            )
+        return data
+
+    def get_users_can_do_alone(self):
+        return self.users.filter(
+            rating=UserSkillRatings.CAN_DO_ALONE
+        ).prefetch_related("user", "user__unit_memberships")
 
     def get_users_can_do_with_support(self):
-        return UserSkill.objects.filter(
-            skill=self, rating=UserSkillRatings.CAN_DO_WITH_SUPPORT
-        )
+        return self.users.filter(
+            rating=UserSkillRatings.CAN_DO_WITH_SUPPORT
+        ).prefetch_related("user", "user__unit_memberships")
 
     def get_users_specialist(self):
-        return UserSkill.objects.filter(skill=self, rating=UserSkillRatings.SPECIALIST)
+        return self.users.filter(
+            rating=UserSkillRatings.SPECIALIST
+        ).prefetch_related("user", "user__unit_memberships")
 
     def get_users(self):
-        return UserSkill.objects.filter(
+        return self.users.filter(
             Q(rating=UserSkillRatings.CAN_DO_ALONE)
             | Q(rating=UserSkillRatings.CAN_DO_WITH_SUPPORT)
-            | Q(rating=UserSkillRatings.SPECIALIST),
-            skill=self,
-        )
+            | Q(rating=UserSkillRatings.SPECIALIST)
+        ).prefetch_related("user", "user__unit_memberships", "user__unit_memberships__unit")
 
     def get_absolute_url(self):
         if not self.slug:

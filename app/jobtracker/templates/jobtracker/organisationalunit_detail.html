@@ -1,143 +1,125 @@
-{% extends "base.html" %}
-{% load menu %}{% load static %} {% load index %}{% load guardian_tags %}
+{% extends 'base.html' %}
+{% load menu %}
+{% load static %} {% load index %}
+{% load guardian_tags %}
 
-{% block pageTitle %}{{ organisationalunit }}{% endblock pageTitle %}
-{% block head_title %}{{ organisationalunit }}{% endblock head_title %}
-
+{% block pageTitle %}
+  {{ organisationalunit }}
+{% endblock %}
+{% block head_title %}
+  {{ organisationalunit }}
+{% endblock %}
 
 {% block breadcrumbItem %}
-<li class="breadcrumb-item text-sm"><a class="opacity-50 text-body-emphasis" href="{% url 'organisationalunit_list' %}">Organisational Units</a></li>
-<li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">{{ organisationalunit }}</li>
-{% endblock breadcrumbItem %}
+  <li class="breadcrumb-item text-sm">
+    <a class="opacity-50 text-body-emphasis" href="{% url 'organisationalunit_list' %}">Organisational Units</a>
+  </li>
+  <li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">{{ organisationalunit }}</li>
+{% endblock %}
 
-{% block content_classes %}pt-15 px-0 {% endblock content_classes %}
-{% block breadcrumb_classes %}px-5{% endblock breadcrumb_classes %}
+{% block content_classes %}
+  pt-15 px-0
+{% endblock %}
+{% block breadcrumb_classes %}
+  px-5
+{% endblock %}
 
 {% block content %}
-{% get_obj_perms request.user for organisationalunit as "unit_perms" %}
+  {% get_obj_perms request.user for organisationalunit as 'unit_perms' %}
 
-<div class="row px-5">
-  <div class="col-12">
-    <div class="row align-items-center justify-content-between g-3 mt-0 mb-0">
-      <div class="col-6 col-md-auto">
-        <h2 class="mb-2">
-            Organisational Unit
-        </h2>
-      </div>
+  <div class="row px-5">
+    <div class="col-12">
+      <div class="row align-items-center justify-content-between g-3 mt-0 mb-0">
+        <div class="col-6 col-md-auto">
+          <h2 class="mb-2">Organisational Unit</h2>
+        </div>
 
-      <div class="col-md-auto">
-        <div class="d-flex">
-          {% if 'manage_members' in unit_perms %}
-            <a href="#" data-url="{% url 'organisationalunit_add' organisationalunit.slug %}" 
-                class="btn btn-outline-success js-load-modal-form ms-2">
-            Add Member
-            </a>
-          {% endif %}
-          
+        <div class="col-md-auto">
+          <div class="d-flex">
+            {% if 'manage_members' in unit_perms %}
+              <a href="#" data-url="{% url 'organisationalunit_add' organisationalunit.slug %}" class="btn btn-outline-success js-load-modal-form ms-2">Add Member</a>
+            {% endif %}
+
             {% if 'change_organisationalunit' in unit_perms %}
-            <a href="{% url 'organisationalunit_update' organisationalunit.slug %}" 
-                class="btn btn-outline-secondary ms-2">
-            Edit
-            </a>
+              <a href="{% url 'organisationalunit_update' organisationalunit.slug %}" class="btn btn-outline-secondary ms-2">Edit</a>
             {% endif %}
             {% if request.user not in organisationalunit.get_activeMembers %}
-            <a href="#" data-url="{% url 'organisationalunit_join' organisationalunit.slug %}" 
-                class="btn btn-outline-success ms-auto js-load-modal-form">
-            Join
-            </a>
+              <a href="#" data-url="{% url 'organisationalunit_join' organisationalunit.slug %}" class="btn btn-outline-success ms-auto js-load-modal-form">Join</a>
             {% endif %}
+          </div>
         </div>
       </div>
     </div>
   </div>
-</div>
 
-
-<div class="row justify-content-between ms-3 me-3 g-3 mt-0 mb-0 pb-3">
+  <div class="row justify-content-between ms-3 me-3 g-3 mt-0 mb-0 pb-3">
     <div class="col-4">
       <div class="card h-100">
         <div class="card-body">
           <div class="row align-items-center g-3">
             <div class="col-12 col-sm-auto flex-1">
-              <h3 class="fw-bolder mb-2 line-clamp-1">
-                {{ organisationalunit.name }}
-              </h3>  
-              <p>
-                  {{ organisationalunit.description }}
-              </p>
+              <h3 class="fw-bolder mb-2 line-clamp-1">{{ organisationalunit.name }}</h3>
+              <p>{{ organisationalunit.description }}</p>
             </div>
-          </div>  
+          </div>
         </div>
       </div>
     </div>
-  
+
     <div class="col-4">
-        {% if organisationalunit.special_requirements %}
+      {% if organisationalunit.special_requirements %}
         <div class="card border h-100 border-warning mb-3">
-            <div class="card-header pb-2">
-                <h5>Specific Requirements</h5>
-            </div>
-            <div class="card-body py-2 ">
-                {{ organisationalunit.special_requirements |safe }}
-            </div>
+          <div class="card-header pb-2">
+            <h5>Specific Requirements</h5>
+          </div>
+          <div class="card-body py-2">{{ organisationalunit.special_requirements|safe }}</div>
         </div>
-        {% endif %}
+      {% endif %}
     </div>
-  
+
     <div class="col-4">
-        {% include 'partials/users/user_profile_card.html' with userProfile=organisationalunit.lead %}
+      {% include 'partials/users/user_profile_card.html' with userProfile=organisationalunit.lead %}
     </div>
   </div>
 
-
   <div class="row g-0 mt-3 border-1 border-top bg-body-secondary h-100">
     <div class="col-12 px-6 pt-3 border-1 border-end">
+      <div class="row mx-1">
+        <ul class="nav nav-underline scrollbar flex-nowrap w-100 pb-1 mb-3" id="sectionNav" role="tablist" style="overflow-y: hidden;">
+          <li class="nav-item text-nowrap me-2" role="presentation">
+            <a class="nav-link active" id="team-tab" data-bs-toggle="tab" href="#team" role="tab" aria-controls="tab-team" aria-selected="true"><span class="fa-solid fa-video me-2 tab-icon-color"></span>Team</a>
+          </li>
+          <li class="nav-item text-nowrap me-2" role="presentation">
+            <a class="nav-link" id="orgchart-tab" data-bs-toggle="tab" href="#orgchart" role="tab" aria-controls="tab-orgchart" aria-selected="false" tabindex="-1"><span class="fa-solid fa-sitemap me-2 tab-icon-color"></span>Organisation Chart</a>
+          </li>
+          <li class="nav-item text-nowrap me-2" role="presentation">
+            <a class="nav-link" id="jobs-tab" data-bs-toggle="tab" href="#jobs" role="tab" aria-controls="tab-jobs" aria-selected="false" tabindex="-1"><span class="fa-solid fa-clipboard me-2 tab-icon-color"></span>Jobs</a>
+          </li>
+          {% comment %} <li class="nav-item text-nowrap me-2" role="presentation">
+            <a class="nav-link" id="stats-tab" data-bs-toggle="tab" href="#stats" role="tab" aria-controls="tab-stats" aria-selected="false" tabindex="-1"><span class="fa-solid fa-clipboard me-2 tab-icon-color"></span>Stats</a>
+          </li> {% endcomment %}
+        </ul>
 
-        <div class="row mx-1">  
-            <ul class="nav nav-underline scrollbar flex-nowrap w-100 pb-1 mb-3" id="sectionNav" role="tablist" style="overflow-y: hidden;">
-                <li class="nav-item text-nowrap me-2" role="presentation">
-                    <a class="nav-link active" id="team-tab" data-bs-toggle="tab" href="#team" role="tab" aria-controls="tab-team" aria-selected="true">
-                    <span class="fa-solid fa-video me-2 tab-icon-color"></span>Team
-                    </a>
-                </li>
-                <li class="nav-item text-nowrap me-2" role="presentation">
-                    <a class="nav-link" id="orgchart-tab" data-bs-toggle="tab" href="#orgchart" role="tab" aria-controls="tab-orgchart" aria-selected="false" tabindex="-1">
-                    <span class="fa-solid fa-sitemap me-2 tab-icon-color"></span>Organisation Chart
-                    </a>
-                </li>
-                {% comment %} <li class="nav-item text-nowrap me-2" role="presentation">
-                    <a class="nav-link" id="jobs-tab" data-bs-toggle="tab" href="#jobs" role="tab" aria-controls="tab-jobs" aria-selected="false" tabindex="-1">
-                    <span class="fa-solid fa-clipboard me-2 tab-icon-color"></span>Jobs
-                    </a>
-                </li> {% endcomment %}
-                <li class="nav-item text-nowrap me-2" role="presentation">
-                  <a class="nav-link" id="stats-tab" data-bs-toggle="tab" href="#stats" role="tab" aria-controls="tab-stats" aria-selected="false" tabindex="-1">
-                  <span class="fa-solid fa-clipboard me-2 tab-icon-color"></span>Stats
-                  </a>
-              </li>
-            </ul>
+        <div class="tab-content" id="myTabContent">
+          <div class="tab-pane fade active show" id="team" role="tabpanel" aria-labelledby="team-tab">
+            {% include 'partials/unit/team_table.html' %}
+          </div>
 
-            <div class="tab-content" id="myTabContent">
-                <div class="tab-pane fade active show" id="team" role="tabpanel" aria-labelledby="team-tab">
-                  {% include 'partials/unit/team_table.html' %}
-                </div>
+          <div class="tab-pane fade w-100" id="orgchart" role="tabpanel" aria-labelledby="orgchart-tab">
+            {% include 'partials/unit/org_chart.html' %}
+          </div>
 
-                <div class="tab-pane fade w-100" id="orgchart" role="tabpanel" aria-labelledby="orgchart-tab">
-                  {% include 'partials/unit/org_chart.html' %}
-                </div>
+          <div class="tab-pane fade" id="jobs" role="tabpanel" aria-labelledby="jobs-tab">
+            {% if 'can_view_jobs' in unit_perms %}
+              {% include 'partials/job/job_list_table.html' with job_list=organisationalunit.jobs.all disableAjax=1 only %}
+            {% endif %}
+          </div>
 
-                {% comment %} <div class="tab-pane fade" id="jobs" role="tabpanel" aria-labelledby="jobs-tab">
-                  {% if 'can_view_jobs' in unit_perms %}
-                    {% include 'partials/job/job_list_table.html' with job_list=organisationalunit.jobs.all disableAjax=1 only %}
-                    {% endif %}
-                </div> {% endcomment %}
-
-                <div class="tab-pane fade" id="stats" role="tabpanel" aria-labelledby="stats-tab">
-                </div>
-            </div>
-        
+          {% comment %} <div class="tab-pane fade" id="stats" role="tabpanel" aria-labelledby="stats-tab">
+            {% include 'partials/unit/team_stats.html' %}
+          </div> {% endcomment %}
         </div>
+      </div>
     </div>
-</div>
-
-{% endblock content %}
+  </div>
+{% endblock %}

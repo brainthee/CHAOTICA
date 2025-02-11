@@ -48,19 +48,19 @@ class SchedulerFilter(forms.Form):
     skills_specialist = forms.ModelMultipleChoiceField(
         required=False,
         label="Specialist",
-        queryset=Skill.objects.all(),
+        queryset=Skill.objects.all().prefetch_related("category"),
         widget=autocomplete.ModelSelect2Multiple(),
     )
     skills_can_do_alone = forms.ModelMultipleChoiceField(
         required=False,
         label="Independent",
-        queryset=Skill.objects.all(),
+        queryset=Skill.objects.all().prefetch_related("category"),
         widget=autocomplete.ModelSelect2Multiple(),
     )
     skills_can_do_support = forms.ModelMultipleChoiceField(
         required=False,
         label="Require Support",
-        queryset=Skill.objects.all(),
+        queryset=Skill.objects.all().prefetch_related("category"),
         widget=autocomplete.ModelSelect2Multiple(),
     )
 

@@ -45,38 +45,40 @@
         <td>
                 {{ phase.title }}
         </td>
-        <td>{{ phase.service }}</td>
         <td>
-        {% if phase.project_lead %}
-            {% include 'partials/users/user_link.html' with user_profile=phase.project_lead %}
-        {% else %}
-        <a href="#" data-url="{% url 'assign_phase_field' phase.job.slug phase.slug 'project_lead' %}"  
-            class="text-danger js-load-modal-form">
-            Assign
-        </a>
-        {% endif %}
+            {{ phase.service }}
         </td>
         <td>
-        {% if phase.report_author %}
-            {% include 'partials/users/user_link.html' with user_profile=phase.report_author %}
-        {% else %}
-        <a href="#" data-url="{% url 'assign_phase_field' phase.job.slug phase.slug 'report_author' %}" 
-            class="text-danger js-load-modal-form">
-            Assign
-        </a>
-        {% endif %}
+            {% if phase.project_lead %}
+                {% include 'partials/users/user_link.html' with user_profile=phase.project_lead %}
+            {% else %}
+            <a href="#" data-url="{% url 'assign_phase_field' phase.job.slug phase.slug 'project_lead' %}"  
+                class="text-danger js-load-modal-form">
+                Assign
+            </a>
+            {% endif %}
+        </td>
+        <td>
+            {% if phase.report_author %}
+                {% include 'partials/users/user_link.html' with user_profile=phase.report_author %}
+            {% else %}
+            <a href="#" data-url="{% url 'assign_phase_field' phase.job.slug phase.slug 'report_author' %}" 
+                class="text-danger js-load-modal-form">
+                Assign
+            </a>
+            {% endif %}
         </td>
         <td data-sort="{{ phase.start_date|date:'Y-m-d' }}">
-        {{ phase.start_date }}
+            {{ phase.start_date }}
         </td>
         <td data-sort="{{ phase.due_to_techqa|date:'Y-m-d' }}">
-        {{ phase.due_to_techqa }}
+            {{ phase.due_to_techqa }}
         </td>
         <td data-sort="{{ phase.delivery_date|date:'Y-m-d' }}">
-        {{ phase.delivery_date }}
+            {{ phase.delivery_date }}
         </td>
         <td>
-        {% include 'partials/phase/status_badge.html' with badge_size='sm' %}
+            {% include 'partials/phase/status_badge.html' with badge_size='sm' %}
         </td>
     </tr>
     {% endfor %}

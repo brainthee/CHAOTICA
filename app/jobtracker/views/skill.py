@@ -6,6 +6,7 @@ from django.urls import reverse_lazy
 from chaotica_utils.views import ChaoticaBaseView
 from ..models import Skill, SkillCategory
 from ..forms import SkillForm, SkillCatForm
+from ..mixins import PrefetchRelatedMixin
 import logging
 
 
@@ -23,17 +24,18 @@ class SkillBaseView(PermissionRequiredMixin, ChaoticaBaseView):
     def get_context_data(self, **kwargs):
         context = super(SkillBaseView, self).get_context_data(**kwargs)
         # Get categories
-        context["categories"] = SkillCategory.objects.all()
+        context["categories"] = SkillCategory.objects.all().prefetch_related("skills", "skills__users", "skills__users__user")
         return context
 
 
 class SkillListView(SkillBaseView, ListView):
-    """View to list all jobs.
-    Use the 'job_list' variable in the template
-    to access all job objects"""
+    # prefetch_related = ["category", "user_skill"]
+    pass
+    
 
 
-class SkillDetailView(SkillBaseView, PermissionRequiredMixin, DetailView):
+class SkillDetailView(PrefetchRelatedMixin, SkillBaseView, PermissionRequiredMixin, DetailView):
+    prefetch_related = ["category", "users"]
     """View to list the details from one job.
     Use the 'job' variable in the template to access
     the specific job here and in the Views below"""

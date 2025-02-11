@@ -62,40 +62,54 @@ class PhaseManager(models.Manager):
 
 
 class Phase(models.Model):
+    """
+    Desribes a Phase of a :model:`jobtracker.Job`.
+    """
+
     objects = PhaseManager()
-    job = models.ForeignKey(Job, related_name="phases", on_delete=models.CASCADE)
-
-    # auto fields
-    slug = models.SlugField(null=False, default="", unique=True)
-    phase_id = models.CharField(max_length=100, unique=True, verbose_name="Phase ID")
-
-    # misc fields
-    history = HistoricalRecords()
-    data = JSONField(verbose_name="Data", null=True, blank=True, default=dict)
-    is_imported = models.BooleanField(default=False)
-    notes = GenericRelation(Note)
-    status = FSMIntegerField(
-        choices=PhaseStatuses.CHOICES, db_index=True, default=PhaseStatuses.DRAFT
+    job = models.ForeignKey(
+        Job, related_name="phases", on_delete=models.CASCADE, help_text="The parent job"
     )
 
-    # Phase info
+    ################
+    ## Auto Fields
+    ################
+    slug = models.SlugField(null=False, default="", unique=True)
+    phase_id = models.CharField(max_length=100, unique=True, verbose_name="Phase ID")
+    history = HistoricalRecords()
+
+    ################
+    ## Main Fields
+    ################
     phase_number = models.IntegerField(db_index=True, default=0)
     title = models.CharField(max_length=200)
-
-    # General test info
     service = models.ForeignKey(
         "Service",
         null=True,
         blank=True,
         related_name="phases",
         on_delete=models.PROTECT,
+        help_text="Associated service to be delivered from this Phase",
     )
     description = BleachField(blank=True, null=True, default="")
+    status = FSMIntegerField(
+        choices=PhaseStatuses.CHOICES, db_index=True, default=PhaseStatuses.DRAFT
+    )
 
-    # Requirements
+    ################
+    ## Misc Fields
+    ################
+    data = JSONField(verbose_name="Data", null=True, blank=True, default=dict)
+    is_imported = models.BooleanField(
+        "Imported", default=False, help_text="If this phase was imported"
+    )
+    notes = GenericRelation(Note)
+
+    ################
+    ## Phase Detail
+    ################
     test_target = BleachField("Test Target URL/IPs/Scope", blank=True, null=True)
     comm_reqs = BleachField("Communication Requirements", blank=True, null=True)
-
     restrictions = BleachField(
         "Time restrictions / Special requirements", blank=True, null=True
     )
@@ -104,7 +118,21 @@ class Phase(models.Model):
     )
     prerequisites = BleachField("Pre-requisites", null=True, blank=True)
 
-    # Key Users
+    ################
+    ## Logistics
+    ################
+    is_testing_onsite = models.BooleanField("Testing Onsite", default=False)
+    is_reporting_onsite = models.BooleanField("Reporting Onsite", default=False)
+    location = BleachField("Onsite Location", blank=True, null=True, default="")
+    number_of_reports = models.IntegerField(
+        default=1,
+        help_text="If set to 0, this phase will not go through Technical or Presentation QA",
+    )
+    report_to_be_left_on_client_site = models.BooleanField(default=False)
+
+    ################
+    ## Key Users
+    ################
     report_author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         related_name="phase_where_report_author",
@@ -135,48 +163,96 @@ class Phase(models.Model):
         blank=True,
         on_delete=models.PROTECT,
     )
+
+    ################
+    ## Flags
+    ################
     required_tqa_updates = models.BooleanField("Required TQA Updates", default=False)
     required_pqa_updates = models.BooleanField("Required PQA Updates", default=False)
-
-    # Logistics
-    is_testing_onsite = models.BooleanField("Testing Onsite", default=False)
-    is_reporting_onsite = models.BooleanField("Reporting Onsite", default=False)
-    location = BleachField("Onsite Location", blank=True, null=True, default="")
-    number_of_reports = models.IntegerField(
-        default=1,
-        help_text="If set to 0, this phase will not go through Technical or Presentation QA",
+    was_submitted_late_tqa = models.BooleanField(
+        "Submitted late to TQA",
+        default=False,
+        help_text="Set if the phase was late to TQA",
     )
-    report_to_be_left_on_client_site = models.BooleanField(default=False)
+    was_submitted_late_pqa = models.BooleanField(
+        "Submitted late to PQA",
+        default=False,
+        help_text="Set if the phase was late to PQA",
+    )
+    was_submitted_late_delivery = models.BooleanField(
+        "Submitted late to Delivery",
+        default=False,
+        help_text="Set if the phase was late to Delivery",
+    )
 
-    # links
+    ################
+    ## Deliverable Links
+    ################
     linkDeliverable = models.TextField(
         default="",
         null=True,
         blank=True,
         verbose_name="Link to Deliverable",
-        help_text="Typically this is the content delivered to the client."
+        help_text="Typically this is the content delivered to the client.",
     )
     linkTechData = models.TextField(
         default="",
         null=True,
         blank=True,
         verbose_name="Link to Technical Data",
-        help_text="All data generated during the job."
+        help_text="All data generated during the job.",
     )
     linkReportData = models.TextField(
         default="",
         null=True,
         blank=True,
         verbose_name="Link to Report Data",
-        help_text="Data used to generate the report such as checklists or evidence."
+        help_text="Data used to generate the report such as checklists or evidence.",
     )
 
-    # Desirable dates
+    ########################################################################################
+    ## Dates
+    ##
+    ## Most dates have a `_`, `desired_` and `actual_`
+    ## `_` is computed from the schedule and updated each time the schedule changes
+    ## `desired_` is a user input date and when it is prefered to start
+    ## `actual_` is when the phase started based on state change
+    ########################################################################################
+
+    ################
+    ## Start Date
+    ################
+
+    _start_date = models.DateField(
+        "Start Date",
+        null=True,
+        blank=True,
+        help_text="Start date computed from the schedule.",
+    )
     desired_start_date = models.DateField(
         "Start Date",
         null=True,
         blank=True,
         help_text="If left blank, this will be automatically determined from scheduled slots",
+    )
+    actual_start_date = models.DateTimeField(
+        "Actual start date",
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="Date the phase actually started based on state change.",
+    )
+
+    ################
+    ## Delivery Date
+    ################
+
+    _delivery_date = models.DateField(
+        "Delivery date",
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="Delivery Date computed from schedule",
     )
     desired_delivery_date = models.DateField(
         "Delivery date",
@@ -185,12 +261,47 @@ class Phase(models.Model):
         db_index=True,
         help_text="If left blank, this will be automatically determined from scheduled slots",
     )
+    actual_delivery_date = models.DateTimeField(
+        "Actual delivered date",
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="Date the phase actually delivered based on state change.",
+    )
 
+    ################
+    ## TechQA Date
+    ################
+
+    _due_to_techqa = models.DateField(
+        "Due to Tech QA",
+        null=True,
+        blank=True,
+        help_text="If left blank, this will be automatically determined from the end of last day of reporting",
+    )
     due_to_techqa_set = models.DateField(
         "Due to Tech QA",
         null=True,
         blank=True,
         help_text="If left blank, this will be automatically determined from the end of last day of reporting",
+    )
+    actual_sent_to_tqa_date = models.DateTimeField(
+        "Actual sent to TQA date",
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="Date the report was sent to TQA based on state change",
+    )
+
+    ################
+    ## PresQA Date
+    ################
+
+    _due_to_presqa = models.DateField(
+        "Due to Pres QA",
+        null=True,
+        blank=True,
+        help_text="If left blank, this will be automatically determined from the end of last day of reporting plus QA days",
     )
     due_to_presqa_set = models.DateField(
         "Due to Pres QA",
@@ -198,27 +309,87 @@ class Phase(models.Model):
         blank=True,
         help_text="If left blank, this will be automatically determined from the end of last day of reporting plus QA days",
     )
-
-    # Status Change Dates
-    actual_start_date = models.DateTimeField(
-        "Actual start date", null=True, blank=True, db_index=True
-    )
-    actual_sent_to_tqa_date = models.DateTimeField(
-        "Actual sent to TQA date", null=True, blank=True, db_index=True
-    )
     actual_sent_to_pqa_date = models.DateTimeField(
-        "Actual sent to PQA date", null=True, blank=True, db_index=True
-    )
-    actual_completed_date = models.DateTimeField(
-        "Actual completed date", null=True, blank=True, db_index=True
-    )
-    actual_delivery_date = models.DateTimeField(
-        "Actual delivered date", null=True, blank=True, db_index=True
+        "Actual sent to PQA date",
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="Date the report was sent to PQA based on state change",
     )
 
-    cancellation_date = models.DateTimeField(null=True, blank=True)
-    pre_checks_done_date = models.DateTimeField(null=True, blank=True)
+    ################
+    ## Notification Dates
+    ################
+
+    notifications_workflow_last_fired = models.DateTimeField(
+        "Workflow Notification last sent",
+        blank=True,
+        null=True,
+        help_text="Date the last notification was sent for Workflow",
+    )
+    notifications_late_tqa_last_fired = models.DateTimeField(
+        "Late TQA Notification last sent",
+        blank=True,
+        null=True,
+        help_text="Date the last notification was sent for Late TQA",
+    )
+    notifications_late_pqa_last_fired = models.DateTimeField(
+        "Late PQA Notification last sent",
+        blank=True,
+        null=True,
+        help_text="Date the last notification was sent for Late PQA",
+    )
+    notifications_late_delivery_last_fired = models.DateTimeField(
+        "Late Delivery Notification last sent",
+        blank=True,
+        null=True,
+        help_text="Date the last notification was sent for Late Delivery",
+    )
+
+    ################
+    ## Misc Dates
+    ################
+
+    created_date = models.DateTimeField(
+        "Date Created", auto_now_add=True, help_text="Date the phase record was created"
+    )
     status_changed_date = MonitorField(monitor="status")
+    actual_completed_date = models.DateTimeField(
+        "Actual completed date",
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="Date the phase was completed based on state change",
+    )
+    cancellation_date = models.DateTimeField(
+        "Cancelled Date",
+        null=True,
+        blank=True,
+        help_text="When the phase was cancelled based on state change",
+    )
+    pre_checks_done_date = models.DateTimeField(
+        "Pre-checks Completed Date",
+        null=True,
+        blank=True,
+        help_text="When the pre-checks were completed based on state change",
+    )
+
+    last_modified = models.DateTimeField(
+        "Last Modified", auto_now=True, help_text="When the phase was last modified"
+    )
+    last_modified_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        blank=True,
+        null=True,
+        on_delete=models.SET_NULL,
+        help_text="Who last modified the phase",
+    )
+
+    ########################################################################################
+    ##
+    ## Date Methods/Properties
+    ##
+    ########################################################################################
 
     def earliest_date(self):
         if self.start_date:
@@ -228,6 +399,7 @@ class Phase(models.Model):
         else:
             # return today's date
             return timezone.now().today()
+        
 
     def earliest_scheduled_date(self):
         # Calculate start from first delivery slot
@@ -241,101 +413,92 @@ class Phase(models.Model):
         else:
             # return today's date
             return timezone.now().today()
+    
+
+    def update_stored_dates(self):
+        """Updates the stored _*_date fields based on the schedule
+        """
+        # Start date first...            
+        # Calculate start from first delivery slot
+        if self.timeslots.filter(
+            deliveryRole=TimeSlotDeliveryRole.DELIVERY
+        ).exists():
+            self._start_date = (
+                self.timeslots.filter(
+                    deliveryRole=TimeSlotDeliveryRole.DELIVERY
+                )
+                .earliest("start")
+                .start
+            ).date()
+
+        # Now due to *qa      
+        # Calculate start from last delivery slot
+        if self.timeslots.filter(
+            Q(deliveryRole=TimeSlotDeliveryRole.REPORTING)
+            | Q(deliveryRole=TimeSlotDeliveryRole.DELIVERY)
+        ).exists():
+            last_delivery_date = (
+                self.timeslots.filter(
+                    Q(deliveryRole=TimeSlotDeliveryRole.REPORTING)
+                    | Q(deliveryRole=TimeSlotDeliveryRole.DELIVERY)
+                )
+                .latest("end")
+                .end).date()
+            self._due_to_techqa = last_delivery_date + timedelta(days=config.DAYS_TO_TQA)
+            self._due_to_presqa = last_delivery_date + timedelta(days=config.DAYS_TO_PQA)
+            self._delivery_date = last_delivery_date + timedelta(days=config.DAYS_TO_DELIVERY)    
+
+        self.save()
+        
+
 
     @property
     def start_date(self):
         if self.desired_start_date:
             return self.desired_start_date
-        else:
-            # Calculate start from first delivery slot
-            if self.timeslots.filter(
-                deliveryRole=TimeSlotDeliveryRole.DELIVERY
-            ).exists():
-                return (
-                    self.timeslots.filter(deliveryRole=TimeSlotDeliveryRole.DELIVERY)
-                    .earliest("start")
-                    .start.date()
-                )
-            else:
-                # No slots - return None
-                return None
-    
+        
+        if self._start_date:
+            return self._start_date
+
+    @property
+    def due_to_techqa(self):
+        if not self.should_do_qa():
+            return None
+        
+        if self.due_to_techqa_set:
+            return self.due_to_techqa_set
+
+        if self._due_to_techqa:
+            return self._due_to_techqa
+
+    @property
+    def due_to_presqa(self):
+        if not self.should_do_qa():
+            return None
+
+        if self.due_to_presqa_set:
+            return self.due_to_presqa_set
+
+        if self._due_to_presqa:
+            return self._due_to_presqa
+
+    @property
+    def delivery_date(self):
+        if self.desired_delivery_date:
+            return self.desired_delivery_date
+
+        if self._delivery_date:
+            return self._delivery_date
+
     def has_reports(self):
         return self.number_of_reports > 0
-    
+
     def should_do_qa(self):
         if self.report_to_be_left_on_client_site:
             return False
         if self.number_of_reports == 0:
             return False
         return True
-
-    @property
-    def due_to_techqa(self):
-        if not self.should_do_qa():
-            return None
-        if self.due_to_techqa_set:
-            return self.due_to_techqa_set
-        else:
-            # Calculate start from last delivery slot
-            if self.timeslots.filter(
-                Q(deliveryRole=TimeSlotDeliveryRole.REPORTING)
-                | Q(deliveryRole=TimeSlotDeliveryRole.DELIVERY)
-            ).exists():
-                return (
-                    self.timeslots.filter(
-                        Q(deliveryRole=TimeSlotDeliveryRole.REPORTING)
-                        | Q(deliveryRole=TimeSlotDeliveryRole.DELIVERY)
-                    ).latest("end").end
-                    + timedelta(days=config.DAYS_TO_TQA)
-                ).date()
-            else:
-                # No slots - return None
-                return None
-
-    @property
-    def due_to_presqa(self):
-        if not self.should_do_qa():
-            return None
-        if self.due_to_presqa_set:
-            return self.due_to_presqa_set
-        else:
-            # Calculate start from last delivery slot
-            if self.timeslots.filter(
-                Q(deliveryRole=TimeSlotDeliveryRole.REPORTING)
-                | Q(deliveryRole=TimeSlotDeliveryRole.DELIVERY)
-            ).exists():
-                return (
-                    self.timeslots.filter(
-                        Q(deliveryRole=TimeSlotDeliveryRole.REPORTING)
-                        | Q(deliveryRole=TimeSlotDeliveryRole.DELIVERY)
-                    ).latest("end").end
-                    + timedelta(days=config.DAYS_TO_PQA)
-                ).date()
-            else:
-                # No slots - return None
-                return None
-
-    @property
-    def delivery_date(self):
-        if self.desired_delivery_date:
-            return self.desired_delivery_date
-        else:
-            # Calculate start from first delivery slot
-            if self.timeslots.filter(
-                Q(deliveryRole=TimeSlotDeliveryRole.REPORTING)
-                | Q(deliveryRole=TimeSlotDeliveryRole.DELIVERY)
-            ).exists():
-                return (
-                    self.timeslots.filter(
-                        Q(deliveryRole=TimeSlotDeliveryRole.REPORTING)
-                        | Q(deliveryRole=TimeSlotDeliveryRole.DELIVERY)
-                    ).latest("end").end
-                    + timedelta(days=config.DAYS_TO_DELIVERY)
-                ).date()
-            else:
-                # No slots - return None
-                return None
 
     @property
     def is_delivery_late(self):
@@ -392,7 +555,9 @@ class Phase(models.Model):
                     return True
         return False
 
-    # rating and feedback
+    ################
+    ## Feedback
+    ################
     feedback_scope_correct = models.BooleanField(
         "Was scope correct?", choices=BOOL_CHOICES, default=None, null=True, blank=True
     )
@@ -407,21 +572,17 @@ class Phase(models.Model):
     )
 
     def feedback_scope(self):
-        from ..models.common import Feedback
-
-        return Feedback.objects.filter(phase=self, feedbackType=FeedbackType.SCOPE)
+        return self.feedback.filter(feedbackType=FeedbackType.SCOPE)
 
     def feedback_techqa(self):
-        from ..models.common import Feedback
-
-        return Feedback.objects.filter(phase=self, feedbackType=FeedbackType.TECH)
+        return self.feedback.filter(feedbackType=FeedbackType.TECH)
 
     def feedback_presqa(self):
-        from ..models.common import Feedback
+        return self.feedback.filter(feedbackType=FeedbackType.PRES)
 
-        return Feedback.objects.filter(phase=self, feedbackType=FeedbackType.PRES)
-
-    # Scoped Time
+    ################
+    ## Scoping
+    ################
     delivery_hours = models.DecimalField(
         "Delivery Hours",
         max_digits=6,
@@ -471,23 +632,9 @@ class Phase(models.Model):
         decimal_places=3,
     )
 
-    # notification fields
-    notifications_workflow_last_fired = models.DateTimeField(blank=True, null=True)
-    notifications_late_tqa_last_fired = models.DateTimeField(blank=True, null=True)
-    notifications_late_pqa_last_fired = models.DateTimeField(blank=True, null=True)
-    notifications_late_delivery_last_fired = models.DateTimeField(blank=True, null=True)
-
-    # change control
-    last_modified = models.DateTimeField(auto_now=True)
-    last_modified_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, blank=True, null=True, on_delete=models.SET_NULL
-    )
-    created_date = models.DateTimeField(auto_now_add=True)
-
-    def get_id(self):
-        return "{job_id}-{phase_number}".format(
-            job_id=self.job.id, phase_number=self.phase_number
-        )
+    ###########################################
+    ## Meta/Overrides
+    ###########################################
 
     class Meta:
         ordering = ("-job__id", "phase_number")
@@ -496,14 +643,179 @@ class Phase(models.Model):
         permissions = ()
 
     def __str__(self):
-        return "{id}: {client} - {title}".format(id=self.get_id(), client=self.job.client, title=self.title)
+        return "{id}: {client} - {title}".format(
+            id=self.get_id(), client=self.job.client, title=self.title
+        )
+
+    def save(self, *args, **kwargs):
+        if not self.phase_number:
+            self.phase_number = self.job.phases.all().count() + 1
+        if not self.phase_id:
+            self.phase_id = self.get_id()
+        # lets increment the phase_number
+        if not self.slug:
+            self.slug = unique_slug_generator(self, str(self.phase_id) + self.title)
+        super(Phase, self).save(*args, **kwargs)
+
+    def get_absolute_url(self):
+        return reverse(
+            "phase_detail", kwargs={"slug": self.slug, "job_slug": self.job.slug}
+        )
+
+
+    ########################################################################################
+    ## 
+    ## Main Methods
+    ## 
+    ########################################################################################
+
+    def get_id(self):
+        return "{job_id}-{phase_number}".format(
+            job_id=self.job.id, phase_number=self.phase_number
+        )
+
+    def summary(self):
+        if self.description:
+            soup = BeautifulSoup(self.description, "lxml")
+            text = soup.find_all("p")[0].get_text()
+            if len(text) > 100:
+                text = text.partition(".")[0] + "."
+            return text
+        else:
+            return ""
+        
+    def get_user_notes(self):
+        return self.notes.filter(is_system_note=False)
+
+    def get_system_notes(self):
+        return self.notes.filter(is_system_note=True)
+    
+    def is_confirmed(self):
+        return self.status >= PhaseStatuses.SCHEDULED_CONFIRMED
+
+    def is_tentative(self):
+        return self.status <= PhaseStatuses.SCHEDULED_TENTATIVE
+
+    @property
+    def status_bs_colour(self):
+        return PhaseStatuses.BS_COLOURS[self.status][1]
 
     ###########################################
-    ## Notifications
+    ## Schedule Methods
     ###########################################
 
-    ## Late to TQA
+    def get_gantt_json(self):
+        tasks = []
+        for slot in self.timeslots.filter(phase=self).order_by("deliveryRole"):
+            user_text = str(slot.user)
+            if slot.is_onsite:
+                user_text = user_text + " (Onsite)"
+            info = {
+                "id": slot.pk,
+                "user_id": slot.user.pk,
+                "user": user_text,
+                "slot_type_ID": slot.slot_type.pk,
+                "slot_type_name": slot.slot_type.name,
+                "delivery_role_id": slot.deliveryRole,
+                "delivery_role": slot.get_deliveryRole_display(),
+                "text": str(slot.phase.get_id())
+                + " ("
+                + str(slot.get_deliveryRole_display())
+                + ")",
+                "start_date": slot.start,
+                "end_date": slot.end,
+            }
+            tasks.append(info)
+        data = {
+            "tasks": tasks,
+        }
+        return data
+    
+    def get_all_total_scheduled_by_type(self):
+        data = dict()
+        for state in TimeSlotDeliveryRole.CHOICES:
+            data[state[0]] = self.get_total_scheduled_by_type(state[0])
+        return data
+
+    def get_total_scheduled_by_type(self, slot_type):
+        slots = self.timeslots.filter(deliveryRole=slot_type)
+        total = Decimal()
+        for slot in slots:
+            diff = slot.get_business_hours()
+            total = total + diff
+        return total
+
+    def get_total_scheduled_hours(self):
+        total_scheduled = Decimal(0.0)
+        for _, sch_hrs in self.get_all_total_scheduled_by_type().items():
+            total_scheduled = total_scheduled + Decimal(sch_hrs)
+        return round(total_scheduled, 2)
+
+    def get_total_scoped_by_type(self, slot_type):
+        total_scoped = Decimal(0.0)
+        # Ugly.... but yolo
+        if slot_type == TimeSlotDeliveryRole.DELIVERY:
+            total_scoped = total_scoped + self.delivery_hours
+        elif slot_type == TimeSlotDeliveryRole.REPORTING:
+            total_scoped = total_scoped + self.reporting_hours
+        elif slot_type == TimeSlotDeliveryRole.MANAGEMENT:
+            total_scoped = total_scoped + self.mgmt_hours
+        elif slot_type == TimeSlotDeliveryRole.QA:
+            total_scoped = total_scoped + self.qa_hours
+        elif slot_type == TimeSlotDeliveryRole.OVERSIGHT:
+            total_scoped = total_scoped + self.oversight_hours
+        elif slot_type == TimeSlotDeliveryRole.DEBRIEF:
+            total_scoped = total_scoped + self.debrief_hours
+        elif slot_type == TimeSlotDeliveryRole.CONTINGENCY:
+            total_scoped = total_scoped + self.contingency_hours
+        elif slot_type == TimeSlotDeliveryRole.OTHER:
+            total_scoped = total_scoped + self.other_hours
+        return total_scoped
+
+    def get_total_scoped_hours(self):
+        total_scoped = Decimal(0.0)
+        for state in TimeSlotDeliveryRole.CHOICES:
+            total_scoped = total_scoped + self.get_total_scoped_by_type(state[0])
+        return round(total_scoped, 2)
+
+    def get_all_total_scoped_by_type(self):
+        data = dict()
+        for state in TimeSlotDeliveryRole.CHOICES:
+            data[state[0]] = {
+                "type": state[1],
+                "hrs": self.get_total_scoped_by_type(state[0]),
+            }
+        return data
+
+    def get_slot_type_usage_perc(self, slot_type):
+        # First, get the total for the slot_type
+        total_scoped = self.get_total_scoped_by_type(slot_type)
+        # Now lets get the scheduled amount
+        scheduled = self.get_total_scheduled_by_type(slot_type)
+        if scheduled == 0.0:
+            return 0
+        if total_scoped == 0.0 and scheduled > 0.0:
+            # We've scoped 0 but scheduled. Lets make a superficial scope of 1 to show perc inc
+            total_scoped = 10
+        return round(100 * float(scheduled) / float(total_scoped), 2)
+
+    def get_total_scheduled_perc(self):
+        total_hours = self.get_total_scoped_hours()
+        if total_hours > 0:
+            # get total scheduled hours...
+            total_scheduled = sum(self.get_all_total_scheduled_by_type().values())
+            return round(100 * float(total_scheduled) / float(total_hours), 2)
+        else:
+            return 0
+    
+
+    ###########################################
+    ## Notification Methods
+    ###########################################
+
     def fire_late_to_tqa_notification(self):
+        """ Fires notifications if late to TQA
+        """
         email_template = "emails/phase_content.html"
         now = timezone.now()
 
@@ -542,8 +854,9 @@ class Phase(models.Model):
                 self.notifications_late_tqa_last_fired = now
                 self.save()
 
-    ## Late to PQA
+
     def fire_late_to_pqa_notification(self):
+        """ Fires notifications if late to PQA """
         email_template = "emails/phase_content.html"
         now = timezone.now()
 
@@ -584,8 +897,9 @@ class Phase(models.Model):
                 self.notifications_late_pqa_last_fired = now
                 self.save()
 
-    ## Late to Delivery
+
     def fire_late_to_delivery_notification(self):
+        """ Fires notifications if late to Delivery """
         email_template = "emails/phase_content.html"
         now = timezone.now()
 
@@ -622,16 +936,18 @@ class Phase(models.Model):
                 self.save()
 
     def refire_status_notification(self):
+        """ Refire status notifications """
         self.fire_status_notification(self.status)
 
     def fire_status_notification(self, target_status):
+        """ Main status notification method """
         email_template = "emails/phase_content.html"
 
         if target_status == PhaseStatuses.PENDING_SCHED:
             users_to_notify = self.job.unit.get_active_members_with_perm(
                 "notification_pool_scheduling"
             )
-            
+
             notice = AppNotification(
                 NotificationTypes.PHASE,
                 "Phase Update - {phase} - Ready for scheduling".format(phase=self),
@@ -640,7 +956,9 @@ class Phase(models.Model):
                 action_link=self.get_absolute_url(),
                 phase=self,
             )
-            task_send_notifications(notice, users_to_notify, config.NOTIFICATION_POOL_SCHEDULING_EMAIL_RCPTS)
+            task_send_notifications(
+                notice, users_to_notify, config.NOTIFICATION_POOL_SCHEDULING_EMAIL_RCPTS
+            )
             # Lets also update the audit log
             for user in users_to_notify:
                 log_system_activity(
@@ -781,7 +1099,9 @@ class Phase(models.Model):
                 action_link=self.get_absolute_url(),
                 phase=self,
             )
-            task_send_notifications(notice, users_to_notify, config.NOTIFICATION_POOL_TQA_EMAIL_RCPTS)
+            task_send_notifications(
+                notice, users_to_notify, config.NOTIFICATION_POOL_TQA_EMAIL_RCPTS
+            )
             # Lets also update the audit log
             for user in users_to_notify:
                 log_system_activity(
@@ -795,7 +1115,6 @@ class Phase(models.Model):
                     self,
                     "Ready for TQA notification sent to configured TQA Pool",
                 )
-
 
         elif target_status == PhaseStatuses.QA_TECH_AUTHOR_UPDATES:
             users_to_notify = User.objects.filter(pk=self.report_author.pk)
@@ -836,7 +1155,9 @@ class Phase(models.Model):
                 action_link=self.get_absolute_url(),
                 phase=self,
             )
-            task_send_notifications(notice, users_to_notify, config.NOTIFICATION_POOL_PQA_EMAIL_RCPTS)
+            task_send_notifications(
+                notice, users_to_notify, config.NOTIFICATION_POOL_PQA_EMAIL_RCPTS
+            )
             # Lets also update the audit log
             for user in users_to_notify:
                 log_system_activity(
@@ -910,51 +1231,19 @@ class Phase(models.Model):
                     "Postponed notification sent to {target}".format(target=user.email),
                 )
 
-    def summary(self):
-        if self.description:
-            soup = BeautifulSoup(self.description, "lxml")
-            text = soup.find_all("p")[0].get_text()
-            if len(text) > 100:
-                text = text.partition(".")[0] + "."
-            return text
-        else:
-            return ""
 
-    def get_gantt_json(self):
-        tasks = []
-        from ..models.timeslot import TimeSlot
+    ###########################################
+    ## Team Methods
+    ###########################################
 
-        for slot in TimeSlot.objects.filter(phase=self).order_by("deliveryRole"):
-            user_text = str(slot.user)
-            if slot.is_onsite:
-                user_text = user_text + " (Onsite)"
-            info = {
-                "id": slot.pk,
-                "user_id": slot.user.pk,
-                "user": user_text,
-                "slot_type_ID": slot.slot_type.pk,
-                "slot_type_name": slot.slot_type.name,
-                "delivery_role_id": slot.deliveryRole,
-                "delivery_role": slot.get_deliveryRole_display(),
-                "text": str(slot.phase.get_id())
-                + " ("
-                + str(slot.get_deliveryRole_display())
-                + ")",
-                "start_date": slot.start,
-                "end_date": slot.end,
-            }
-            tasks.append(info)
-        data = {
-            "tasks": tasks,
-        }
-        return data
-
-    # Gets scheduled users and assigned users (e.g. lead/author/qa etc)
     def team_pks(self):
-        from ..models.timeslot import TimeSlot
+        """Gets scheduled users and assigned users (e.g. lead/author/qa etc)
 
+        Returns:
+            List[int]: List of PK's
+        """
         ids = []
-        for slot in TimeSlot.objects.filter(phase=self):
+        for slot in self.timeslots.all():
             if slot.user.pk not in ids:
                 ids.append(slot.user.pk)
         if self.job.account_manager and self.job.account_manager.pk not in ids:
@@ -985,132 +1274,27 @@ class Phase(models.Model):
             return User.objects.none()
 
     def team_scheduled(self):
-        from ..models import TimeSlot
+        """Gets all scheduled users
 
-        user_ids = (
-            TimeSlot.objects.filter(phase=self)
-            .values_list("user", flat=True)
-            .distinct()
-        )
+        Returns:
+            _type_: _description_
+        """
+        user_ids = self.timeslots.values_list("user", flat=True).distinct()
         if user_ids:
             return User.objects.filter(pk__in=user_ids)
         else:
             return None
 
-    def get_all_total_scheduled_by_type(self):
-        data = dict()
-        for state in TimeSlotDeliveryRole.CHOICES:
-            data[state[0]] = self.get_total_scheduled_by_type(state[0])
-        return data
 
-    def get_total_scheduled_by_type(self, slot_type):
-        from ..models.timeslot import TimeSlot
-
-        slots = TimeSlot.objects.filter(phase=self, deliveryRole=slot_type)
-        total = Decimal()
-        for slot in slots:
-            diff = slot.get_business_hours()
-            total = total + diff
-        return total
-
-    def get_total_scheduled_hours(self):
-        total_scheduled = Decimal(0.0)
-        for _, sch_hrs in self.get_all_total_scheduled_by_type().items():
-            total_scheduled = total_scheduled + Decimal(sch_hrs)
-        return round(total_scheduled, 2)
-
-    def get_total_scoped_by_type(self, slot_type):
-        total_scoped = Decimal(0.0)
-        # Ugly.... but yolo
-        if slot_type == TimeSlotDeliveryRole.DELIVERY:
-            total_scoped = total_scoped + self.delivery_hours
-        elif slot_type == TimeSlotDeliveryRole.REPORTING:
-            total_scoped = total_scoped + self.reporting_hours
-        elif slot_type == TimeSlotDeliveryRole.MANAGEMENT:
-            total_scoped = total_scoped + self.mgmt_hours
-        elif slot_type == TimeSlotDeliveryRole.QA:
-            total_scoped = total_scoped + self.qa_hours
-        elif slot_type == TimeSlotDeliveryRole.OVERSIGHT:
-            total_scoped = total_scoped + self.oversight_hours
-        elif slot_type == TimeSlotDeliveryRole.DEBRIEF:
-            total_scoped = total_scoped + self.debrief_hours
-        elif slot_type == TimeSlotDeliveryRole.CONTINGENCY:
-            total_scoped = total_scoped + self.contingency_hours
-        elif slot_type == TimeSlotDeliveryRole.OTHER:
-            total_scoped = total_scoped + self.other_hours
-        return total_scoped
-
-    def get_total_scoped_hours(self):
-        total_scoped = Decimal(0.0)
-        for state in TimeSlotDeliveryRole.CHOICES:
-            total_scoped = total_scoped + self.get_total_scoped_by_type(state[0])
-        return round(total_scoped, 2)
-
-    def get_all_total_scoped_by_type(self):
-        data = dict()
-        for state in TimeSlotDeliveryRole.CHOICES:
-            data[state[0]] = {
-                "type": state[1],
-                "hrs": self.get_total_scoped_by_type(state[0]),
-            }
-        return data
-
-    def get_slot_type_usage_perc(self, slot_type):
-        # First, get the total for the slot_type
-        total_scoped = self.get_total_scoped_by_type(slot_type)
-        # Now lets get the scheduled amount
-        scheduled = self.get_total_scheduled_by_type(slot_type)
-        if scheduled == 0.0:
-            return 0
-        if total_scoped == 0.0 and scheduled > 0.0:
-            # We've scoped 0 but scheduled. Lets make a superficial scope of 1 to show perc inc
-            total_scoped = 10
-        return round(100 * float(scheduled) / float(total_scoped), 2)
-
-    def get_total_scheduled_perc(self):
-        total_hours = self.get_total_scoped_hours()
-        if total_hours > 0:
-            # get total scheduled hours...
-            total_scheduled = sum(self.get_all_total_scheduled_by_type().values())
-            return round(100 * float(total_scheduled) / float(total_hours), 2)
-        else:
-            return 0
-
-    def get_user_notes(self):
-        return self.notes.filter(is_system_note=False)
-
-    def get_system_notes(self):
-        return self.notes.filter(is_system_note=True)
-
-    def save(self, *args, **kwargs):
-        if not self.phase_number:
-            self.phase_number = self.job.phases.all().count() + 1
-        if not self.phase_id:
-            self.phase_id = self.get_id()
-        # lets increment the phase_number
-        if not self.slug:
-            self.slug = unique_slug_generator(self, str(self.phase_id) + self.title)
-        super(Phase, self).save(*args, **kwargs)
-
-    def get_absolute_url(self):
-        return reverse(
-            "phase_detail", kwargs={"slug": self.slug, "job_slug": self.job.slug}
-        )
-
-    def is_confirmed(self):
-        return self.status >= PhaseStatuses.SCHEDULED_CONFIRMED
-
-    def is_tentative(self):
-        return self.status <= PhaseStatuses.SCHEDULED_TENTATIVE
-
-    @property
-    def status_bs_colour(self):
-        return PhaseStatuses.BS_COLOURS[self.status][1]
-
+    ###########################################
+    ## Workflow Methods
+    ###########################################
     INVALID_STATE = "Invalid state or permissions."
     MOVED_TO = "Moved to "
 
-    # PENDING_SCHED
+    #####################
+    ## PENDING_SCHED
+    #####################
     @transition(
         field=status,
         source=[
@@ -1144,7 +1328,10 @@ class Phase(models.Model):
             _can_proceed = False
         return _can_proceed
 
-    # SCHEDULED_TENTATIVE
+
+    #####################
+    ## SCHEDULED_TENTATIVE
+    #####################
     @transition(
         field=status,
         source=[PhaseStatuses.PENDING_SCHED, PhaseStatuses.SCHEDULED_CONFIRMED],
@@ -1180,7 +1367,10 @@ class Phase(models.Model):
             _can_proceed = False
         return _can_proceed
 
-    # SCHEDULED_CONFIRMED
+
+    #####################
+    ## SCHEDULED_CONFIRMED
+    #####################
     @transition(
         field=status,
         source=[PhaseStatuses.PENDING_SCHED, PhaseStatuses.SCHEDULED_TENTATIVE],
@@ -1249,7 +1439,10 @@ class Phase(models.Model):
             _can_proceed = False
         return _can_proceed
 
-    # PRE_CHECKS
+
+    #####################
+    ## PRE_CHECKS
+    #####################
     @transition(
         field=status,
         source=[
@@ -1280,7 +1473,10 @@ class Phase(models.Model):
             _can_proceed = False
         return _can_proceed
 
-    # CLIENT_NOT_READY
+
+    #####################
+    ## CLIENT_NOT_READY
+    #####################
     @transition(
         field=status,
         source=[
@@ -1311,7 +1507,10 @@ class Phase(models.Model):
             _can_proceed = False
         return _can_proceed
 
-    # READY_TO_BEGIN
+
+    #####################
+    ## READY_TO_BEGIN
+    #####################
     @transition(
         field=status,
         source=[PhaseStatuses.PRE_CHECKS, PhaseStatuses.CLIENT_NOT_READY],
@@ -1341,7 +1540,10 @@ class Phase(models.Model):
             _can_proceed = False
         return _can_proceed
 
-    # IN_PROGRESS
+
+    #####################
+    ## IN_PROGRESS
+    #####################
     @transition(
         field=status,
         source=[
@@ -1378,7 +1580,10 @@ class Phase(models.Model):
             _can_proceed = False
         return _can_proceed
 
-    # PENDING_TQA
+
+    #####################
+    ## PENDING_TQA
+    #####################
     @transition(
         field=status,
         source=[PhaseStatuses.IN_PROGRESS, PhaseStatuses.QA_TECH_AUTHOR_UPDATES],
@@ -1470,7 +1675,10 @@ class Phase(models.Model):
             _can_proceed = False
         return _can_proceed
 
-    # QA_TECH
+
+    #####################
+    ## QA_TECH
+    #####################
     @transition(
         field=status,
         source=[
@@ -1569,7 +1777,10 @@ class Phase(models.Model):
             _can_proceed = False
         return _can_proceed
 
-    # PENDING_PQA
+
+    #####################
+    ## PENDING_PQA
+    #####################
     @transition(
         field=status,
         source=[PhaseStatuses.QA_TECH, PhaseStatuses.QA_PRES_AUTHOR_UPDATES],
@@ -1614,7 +1825,10 @@ class Phase(models.Model):
             _can_proceed = False
         return _can_proceed
 
-    # QA_PRES
+
+    #####################
+    ## QA_PRES
+    #####################
     @transition(
         field=status,
         source=[
@@ -1665,7 +1879,10 @@ class Phase(models.Model):
             _can_proceed = False
         return _can_proceed
 
-    # QA_PRES_AUTHOR_UPDATES
+
+    #####################
+    ## QA_PRES_AUTHOR_UPDATES
+    #####################
     @transition(
         field=status,
         source=[
@@ -1713,7 +1930,10 @@ class Phase(models.Model):
             _can_proceed = False
         return _can_proceed
 
-    # COMPLETED
+
+    #####################
+    ## COMPLETED
+    #####################
     @transition(
         field=status,
         source=[PhaseStatuses.QA_PRES, PhaseStatuses.IN_PROGRESS],
@@ -1789,7 +2009,10 @@ class Phase(models.Model):
             _can_proceed = False
         return _can_proceed
 
-    # DELIVERED
+
+    #####################
+    ## DELIVERED
+    #####################
     @transition(
         field=status, source=PhaseStatuses.COMPLETED, target=PhaseStatuses.DELIVERED
     )
@@ -1839,7 +2062,10 @@ class Phase(models.Model):
             _can_proceed = False
         return _can_proceed
 
-    # CANCELLED
+
+    #####################
+    ## CANCELLED
+    #####################
     @transition(field=status, source="+", target=PhaseStatuses.CANCELLED)
     def to_cancelled(self, user=None):
         log_system_activity(
@@ -1870,11 +2096,17 @@ class Phase(models.Model):
         else:
             # Show a warning to the user that any timeslots will be erased
             if notify_request:
-                messages.add_message(notify_request, messages.INFO, 
-                                     "Warning - any scheduled timeslots will be deleted!")
+                messages.add_message(
+                    notify_request,
+                    messages.INFO,
+                    "Warning - any scheduled timeslots will be deleted!",
+                )
         return _can_proceed
 
-    # POSTPONED
+
+    #####################
+    ## POSTPONED
+    #####################
     @transition(field=status, source="+", target=PhaseStatuses.POSTPONED)
     def to_postponed(self, user=None):
         log_system_activity(
@@ -1899,7 +2131,10 @@ class Phase(models.Model):
             _can_proceed = False
         return _can_proceed
 
-    # DELETED
+
+    #####################
+    ## DELETED
+    #####################
     @transition(field=status, source="+", target=PhaseStatuses.DELETED)
     def to_deleted(self, user=None):
         log_system_activity(
@@ -1924,7 +2159,10 @@ class Phase(models.Model):
             _can_proceed = False
         return _can_proceed
 
-    # ARCHIVED
+
+    #####################
+    ## ARCHIVED
+    #####################
     @transition(
         field=status,
         source=[

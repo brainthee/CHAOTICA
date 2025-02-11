@@ -2,7 +2,7 @@
   <div class="col-auto">
     {% if not noavatar %}
     <div class="avatar avatar-m me-3 my-1">
-      <img class="rounded-circle avatar-placeholder" src="{{ u.get_avatar_url }}" alt="" />
+      <img class="rounded-circle avatar-placeholder" loading="lazy" src="{{ u.get_avatar_url }}" alt="" />
     </div>
     {% endif %}
   </div>

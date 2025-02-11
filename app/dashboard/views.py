@@ -36,13 +36,12 @@ def index(request):
     )
     week_end_date = week_start_date + timedelta(days=6)
 
+
     all_phases = Phase.objects.filter(
             Q(job__unit__in=get_objects_for_user(request.user, "can_view_jobs", klass=OrganisationalUnit)),
             status__in=PhaseStatuses.ACTIVE_STATUSES,  # Include active phase statuses only
             job__status__in=JobStatuses.ACTIVE_STATUSES,  # Include active job statuses only
-        ).prefetch_related()
-
-
+        ).prefetch_related("service", "project_lead", "report_author", "techqa_by", "timeslots", "job", "job__client")
 
     context["in_flight"] = all_phases.filter(Q(status=PhaseStatuses.IN_PROGRESS))
     context["TQA"] = all_phases.filter(
@@ -82,6 +81,7 @@ def index(request):
         context["team_leave"] = LeaveRequest.objects.filter(
             Q(user__manager=request.user) | Q(user__acting_manager=request.user)
         )
+
     context = {**context, **page_defaults(request)}
     template = loader.get_template("dashboard_index.html")
     return HttpResponse(template.render(context, request))

@@ -101,6 +101,7 @@
           const diffDays = Math.abs(start_of_week - dateInfo.start) / (1000 * 60 * 60 * 24);
           dateInfo.view.calendar.scrollToTime({days:diffDays});
         },
+        lazyFetching: true,
         loading: function (isLoading) {
             if (isLoading) {
                 $('#loading').show();

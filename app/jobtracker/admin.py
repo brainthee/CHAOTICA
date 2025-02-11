@@ -94,6 +94,7 @@ class ServiceAdmin(ImportExportModelAdmin):
     resource_classes = [ServiceResource]
 admin.site.register(Service, ServiceAdmin)
 
+
 @admin.register(TimeSlot)
 class TimeSlotAdmin(SimpleHistoryAdmin):
     readonly_fields = ['phase', 'project', "updated"]

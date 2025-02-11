@@ -1,0 +1,64 @@
+{% load user_tags %}
+<div class="col-5 card">
+    <div class="card-body px-1 d-flex flex-row justify-content-center">
+        <form class="orgunit-stats-form" action="" method="get">
+            <div class="pe-3">
+                <label class="form-label" for="floaTingLabelSingleSelect">Organisational Unit</label>
+                <select name="org" class="form-select" id="floaTingLabelSingleSelect">
+                    {% for orgUnit in user.unit_memberships.all %}
+                    <option {% if orgUnit.unit is stats.ranged.org %}selected=""{% endif %} value="{{ orgUnit.unit.id }}">{{ orgUnit.unit }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="flatpickr-input-container">
+                <label class="form-label" for="dateRangePicker">Select Date Range</label>
+                <input name="dateRange" class="form-control datetimepicker" id="dateRangePicker" type="text" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<table class="table datatable align-items-center mb-0">
+    <caption>Team</caption>
+      <thead>
+        <tr>
+          <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Member</th>
+          <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Utilisation</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for member in organisationalunit.get_activeMemberships %}
+            {% get_utilisation_perc member.member organisationalunit start_date end_date as member_util %}        
+            <tr>
+                <td>
+                    {% include 'partials/users/user_table_display.html' with u=member.member noorg=1 %}
+                </td>   
+                <td>
+                    {{ member_util }}%
+                </td>       
+            </tr>
+        {% endfor %}        
+      </tbody>
+    </table>
+
+
+<script>
+    $(function() {
+        $("#dateRangePicker").flatpickr(
+            {
+                mode: "range",
+                dateFormat: "Y-m-d",
+                disableMobile: true,
+                defaultDate: [
+                    "{{ start_date.isoformat }}", 
+                    "{{ end_date.isoformat }}",
+                ],
+                onClose: function(selectedDates, dateStr, instance) {
+                    $(".orgunit-stats-form").submit();  
+                },
+    
+            }
+        );
+    });
+</script>

@@ -19,6 +19,7 @@
         <tr>
           <td class="align-middle ps-0 py-4">
             {% include 'partials/users/user_table_display.html' with u=leave.user %}
+            {{ leave.overlapping_timeslots }}
           </td>
 
           <td class="align-middle ps-0 py-4" data-sort="{{ leave.start_date|date:'Y-m-d' }}">{{ leave.start_date }}</td>
@@ -49,13 +50,15 @@
               <span class="badge badge-phoenix badge-phoenix-success">Authorised</span>
             {% else %}
               <span class="badge badge-phoenix badge-phoenix-info">Pending</span>
-            {% endif %}
 
-            {% if leave.requested_late %}
-              <span class="badge badge-phoenix badge-phoenix-warning">Late</span>
-            {% endif %}
-            {% if leave.overlaps_work %}
-              <span class="badge badge-phoenix badge-phoenix-warning">Overlaps Scheduled Work</span>
+              {% if leave.requested_late %}
+                <span class="badge badge-phoenix badge-phoenix-warning">Late</span>
+              {% endif %}
+              
+              {% if leave.overlaps_work %}
+                <span class="badge badge-phoenix badge-phoenix-warning">Overlaps Scheduled Work</span>
+              {% endif %}
+
             {% endif %}
           </td>
 

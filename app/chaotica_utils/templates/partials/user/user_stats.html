@@ -15,7 +15,7 @@
     </div>
 </div>
 
-<div class="row g-4 justify-content-between">
+<div class="row g-4 mb-4 justify-content-between">
     <div class="card px-0 mx-3 shadow-none border">
         <div class="card-header p-4 border-bottom bg-body">
             <div class="row g-3 justify-content-between align-items-center">
@@ -58,17 +58,37 @@
     </div>
 </div>
 
+<div class="row g-4 justify-content-between">
+    <div class="card px-0 mx-3 shadow-none border">
+        <div class="card-header p-4 border-bottom bg-body">
+            <div class="row g-3 justify-content-between align-items-center">
+
+                <div class="col-8 col-md">
+                    <h4 class="text-body mb-0">Service Breakdown</h4>
+                    <span class="bg-body pe-2">
+                        Ranked breakdown of services participated in
+                    </span>
+                </div>
+                <div class="col col-md-auto">
+                </div>
+            </div>
+        </div>
+
+        <div class="card-body p-0">
+            <div class="echart-service-breakdown" style="min-height:350px"></div>
+        </div>
+    </div>
+</div>
+
 
 <div class="row gy-3 mt-6 justify-content-between">
-    <form class="profile-stats-form" action="" method="get">
-        <h3 class="mb-0 text-primary position-relative fw-bold">
-            <span class="bg-body pe-2">
-                Ranged Stats
-            </span>
-            <span class="border border-primary position-absolute top-50 translate-middle-y w-100 start-0 z-n1"></span>
-        </h3>
-        <p class="mb-0">You can easily show your stats content by using these cards.</p>
-    </form>
+    <h3 class="mb-0 text-primary position-relative fw-bold">
+        <span class="bg-body pe-2">
+            Ranged Stats
+        </span>
+        <span class="border border-primary position-absolute top-50 translate-middle-y w-100 start-0 z-n1"></span>
+    </h3>
+    <p class="mb-0">You can easily show your stats content by using these cards.</p>
 </div>
 
 <div class="row mt-6">
@@ -100,19 +120,21 @@
 
     <div class="col-5 card">
         <div class="card-body px-1 d-flex flex-row justify-content-center">
-            <div class="pe-3">
-                <label class="form-label" for="floaTingLabelSingleSelect">Organisational Unit</label>
-                <select name="org" class="form-select" id="floaTingLabelSingleSelect">
-                    {% for orgUnit in user.unit_memberships.all %}
-                    <option {% if orgUnit.unit is stats.ranged.org %}selected=""{% endif %} value="{{ orgUnit.unit.id }}">{{ orgUnit.unit }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+            <form class="profile-stats-form" action="" method="get">
+                <div class="pe-3">
+                    <label class="form-label" for="floaTingLabelSingleSelect">Organisational Unit</label>
+                    <select name="org" class="form-select" id="floaTingLabelSingleSelect">
+                        {% for orgUnit in user.unit_memberships.all %}
+                        <option {% if orgUnit.unit is stats.ranged.org %}selected=""{% endif %} value="{{ orgUnit.unit.id }}">{{ orgUnit.unit }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-            <div class="flatpickr-input-container">
-                <label class="form-label" for="dateRangePicker">Select Date Range</label>
-                <input name="dateRange" class="form-control datetimepicker" id="dateRangePicker" type="text" />
-            </div>
+                <div class="flatpickr-input-container">
+                    <label class="form-label" for="dateRangePicker">Select Date Range</label>
+                    <input name="dateRange" class="form-control datetimepicker" id="dateRangePicker" type="text" />
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -136,102 +158,102 @@ $(function() {
         }
     );
 
-  // import * as echarts from 'echarts';
-  const { merge } = window._;
+    // import * as echarts from 'echarts';
+    const { merge } = window._;
 
-  // form config.js
-  const echartSetOption = (
-    chart,
-    userOptions,
-    getDefaultOptions,
-    responsiveOptions
-  ) => {
-    const { breakpoints, resize } = window.phoenix.utils;
-    const handleResize = options => {
-      Object.keys(options).forEach(item => {
-        if (window.innerWidth > breakpoints[item]) {
-          chart.setOption(options[item]);
+    // form config.js
+    const echartSetOption = (
+        chart,
+        userOptions,
+        getDefaultOptions,
+        responsiveOptions
+    ) => {
+        const { breakpoints, resize } = window.phoenix.utils;
+        const handleResize = options => {
+        Object.keys(options).forEach(item => {
+            if (window.innerWidth > breakpoints[item]) {
+            chart.setOption(options[item]);
+            }
+        });
+        };
+
+        const themeController = document.body;
+        // Merge user options with lodash
+        chart.setOption(merge(getDefaultOptions(), userOptions));
+
+        const navbarVerticalToggle = document.querySelector(
+        '.navbar-vertical-toggle'
+        );
+        if (navbarVerticalToggle) {
+            navbarVerticalToggle.addEventListener('navbar.vertical.toggle', () => {
+                chart.resize();
+                if (responsiveOptions) {
+                handleResize(responsiveOptions);
+                }
+            });
         }
-      });
+
+        resize(() => {
+            chart.resize();
+            if (responsiveOptions) {
+                handleResize(responsiveOptions);
+            }
+        });
+        if (responsiveOptions) {
+            handleResize(responsiveOptions);
+        }
+
+        themeController.addEventListener(
+            'clickControl',
+            ({ detail: { control } }) => {
+                if (control === 'phoenixTheme') {
+                chart.setOption(window._.merge(getDefaultOptions(), userOptions));
+                }
+                if (responsiveOptions) {
+                handleResize(responsiveOptions);
+                }
+            }
+        );
     };
 
-    const themeController = document.body;
-    // Merge user options with lodash
-    chart.setOption(merge(getDefaultOptions(), userOptions));
+    const tooltipFormatter = (params, dateFormatter = 'MMM DD') => {
+        let tooltipItem = ``;
+        params.forEach(el => {
+            tooltipItem += `<div class='ms-1'>
+                <h6 class="text-body-tertiary"><span class="fas fa-circle me-1 fs-10" style="color:${
+                el.borderColor ? el.borderColor : el.color
+                }"></span>
+                ${el.seriesName} : ${
+            typeof el.value === 'object' ? el.value[1] : el.value
+            }
+                </h6>
+            </div>`;
+        });
+        return `<div>
+                <p class='mb-2 text-body-tertiary'>
+                ${
+                    window.dayjs(params[0].axisValue).isValid()
+                    ? window.dayjs(params[0].axisValue).format(dateFormatter)
+                    : params[0].axisValue
+                }
+                </p>
+                ${tooltipItem}
+            </div>`;
+    };
 
-    const navbarVerticalToggle = document.querySelector(
-      '.navbar-vertical-toggle'
-    );
-    if (navbarVerticalToggle) {
-      navbarVerticalToggle.addEventListener('navbar.vertical.toggle', () => {
-        chart.resize();
-        if (responsiveOptions) {
-          handleResize(responsiveOptions);
+    const handleTooltipPosition = ([pos, , dom, , size]) => {
+        // only for mobile device
+        if (window.innerWidth <= 540) {
+        const tooltipHeight = dom.offsetHeight;
+        const obj = { top: pos[1] - tooltipHeight - 20 };
+        obj[pos[0] < size.viewSize[0] / 2 ? 'left' : 'right'] = 5;
+        return obj;
         }
-      });
-    }
+        return null; // else default behaviour
+    };
 
-    resize(() => {
-      chart.resize();
-      if (responsiveOptions) {
-        handleResize(responsiveOptions);
-      }
-    });
-    if (responsiveOptions) {
-      handleResize(responsiveOptions);
-    }
-
-    themeController.addEventListener(
-      'clickControl',
-      ({ detail: { control } }) => {
-        if (control === 'phoenixTheme') {
-          chart.setOption(window._.merge(getDefaultOptions(), userOptions));
-        }
-        if (responsiveOptions) {
-          handleResize(responsiveOptions);
-        }
-      }
-    );
-  };
-
-  const tooltipFormatter = (params, dateFormatter = 'MMM DD') => {
-    let tooltipItem = ``;
-    params.forEach(el => {
-      tooltipItem += `<div class='ms-1'>
-        <h6 class="text-body-tertiary"><span class="fas fa-circle me-1 fs-10" style="color:${
-          el.borderColor ? el.borderColor : el.color
-        }"></span>
-          ${el.seriesName} : ${
-      typeof el.value === 'object' ? el.value[1] : el.value
-    }
-        </h6>
-      </div>`;
-    });
-    return `<div>
-            <p class='mb-2 text-body-tertiary'>
-              ${
-                window.dayjs(params[0].axisValue).isValid()
-                  ? window.dayjs(params[0].axisValue).format(dateFormatter)
-                  : params[0].axisValue
-              }
-            </p>
-            ${tooltipItem}
-          </div>`;
-  };
-
-  const handleTooltipPosition = ([pos, , dom, , size]) => {
-    // only for mobile device
-    if (window.innerWidth <= 540) {
-      const tooltipHeight = dom.offsetHeight;
-      const obj = { top: pos[1] - tooltipHeight - 20 };
-      obj[pos[0] < size.viewSize[0] / 2 ? 'left' : 'right'] = 5;
-      return obj;
-    }
-    return null; // else default behaviour
-  };
-
-    const { getColor, getData } = window.phoenix.utils;
-    const $chartEl = document.querySelector(
+    const { getColor, getData, rgbaColor } = window.phoenix.utils;
+    const $chartEl_availability = document.querySelector(
         '.echart-availability'
     );
 
@@ -242,9 +264,9 @@ $(function() {
         'This Week',
     ];
 
-    if ($chartEl) {
-        const userOptions = getData($chartEl, 'echarts');
-        const chart = window.echarts.init($chartEl);
+    if ($chartEl_availability) {
+        const userOptions = getData($chartEl_availability, 'echarts');
+        const chart = window.echarts.init($chartEl_availability);
         const getDefaultOptions = () => ({
             color: [
                 getColor('success'),
@@ -411,6 +433,130 @@ $(function() {
             }
         });
         echartSetOption(chart, userOptions, getDefaultOptions);
+};
+
+
+    // Radar Chart for Service Breakdown
+
+    const $chartEl_serviceBreakdown = document.querySelector(
+      '.echart-service-breakdown'
+    );
+
+    const getFormatter = params => {
+        const indicators = [[
+            {% for serv in stats.service_breakdown %}
+            '{{ serv.name }}',
+            {% endfor %}
+        ]];
+        const num = params.seriesIndex;
+        return `<strong > ${params.name} </strong>
+            <div class="fs-9 text-body-tertiary">
+            <strong >${indicators[params.seriesIndex][0]}</strong>: ${
+            params.value[0]
+            }  <br>
+            {% for serv in stats.service_breakdown %}
+            <strong>${indicators[num][{{ forloop.counter }}]}</strong>: ${params.value[{{ forloop.counter }}]}  <br>
+            {% endfor %}
+            </div>`;
     };
+
+    if ($chartEl_serviceBreakdown) {
+        const userOptions = getData($chartEl_serviceBreakdown, 'echarts');
+        const chart = window.echarts.init($chartEl_serviceBreakdown);
+        const getDefaultOptions = () => ({
+            legend: {
+                orient: 'vertical',
+                left: 'left',
+                textStyle: {
+                    color: getColor('tertiary-color')
+                }
+            },
+            tooltip: {
+                trigger: 'item',
+                padding: [7, 10],
+                backgroundColor: getColor('body-highlight-bg'),
+                borderColor: getColor('border-color'),
+                textStyle: { color: getColor('light-text-emphasis') },
+                borderWidth: 1,
+                transitionDuration: 0,
+                axisPointer: {
+                    type: 'none'
+                },
+                formatter: getFormatter
+            },
+            radar: [
+                {
+                    startAngle: 90,
+                    splitNumber: 4,
+                    indicator: [
+                        {% for serv in stats.service_breakdown %}
+                        { name: '{{ serv.name }}', max: {{ stats.service_breakdown.0.participation_count }}},
+                        {% endfor %}
+                    ],
+                    name: {
+                        formatter: '{value}',
+                        textStyle: {
+                            color: getColor('tertiary-color')
+                        }
+                    },
+                    splitLine: {
+                        lineStyle: {
+                            color: rgbaColor(getColor('tertiary-color'))
+                        }
+                    }
+                },
+            ],
+
+            series: [
+                {
+                    type: 'radar',
+                    data: [
+                    {
+                        value: [
+                            {% for serv in stats.service_breakdown %}
+                            {{ serv.participation_count }} ,
+                            {% endfor %}
+                        ],
+                        name: 'Support',
+                        itemStyle: {
+                        color: getColor('warning')
+                        },
+                        areaStyle: {
+                        color: rgbaColor(getColor('warning'), 0.3)
+                        }
+                    },
+                    ]
+                }
+            ]
+        });
+
+        const responsiveOptions = {
+            xs: {
+                radar: [
+                    {
+                    center: ['50%', '30%'],
+                    radius: 90
+                    },
+                ]
+            },
+            sm: {
+                radar: [
+                    {
+                    radius: 120
+                    },
+                ]
+            },
+            xl: {
+                radar: [
+                    {
+                    center: ['25%', '50%']
+                    },
+                ]
+            }
+        };
+
+        echartSetOption(chart, userOptions, getDefaultOptions, responsiveOptions);
+    };
+
 });
 </script>

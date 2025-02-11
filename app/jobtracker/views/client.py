@@ -30,12 +30,14 @@ from ..forms import (
     ClientFrameworkForm,
     MergeClientForm,
 )
+from ..mixins import PrefetchRelatedMixin
 import logging
 
 logger = logging.getLogger(__name__)
 
 
-class ClientBaseView(PermissionRequiredMixin, ChaoticaBaseView):
+class ClientBaseView(PrefetchRelatedMixin, PermissionRequiredMixin, ChaoticaBaseView):
+    prefetch_related = ["account_managers", "tech_account_managers", "jobs", "jobs__unit", "framework_agreements"]
     model = Client
     fields = "__all__"
     permission_required = "jobtracker.view_client"

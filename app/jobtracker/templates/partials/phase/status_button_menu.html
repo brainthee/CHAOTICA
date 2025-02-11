@@ -38,6 +38,12 @@
             Fire Notifications
         </button>
     </li>
+    
+    <li>
+        <a href="{% url 'phase_update_dates' phase.job.slug phase.slug %}" class="dropdown-item text-info">
+            Update Dates
+        </a>
+    </li>
 
     {% if request.user.is_superuser %}
     <li>

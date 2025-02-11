@@ -365,44 +365,54 @@ class Job(models.Model):
                     ),
                 )
 
-    def start_date(self):
-        from ..models import TimeSlot
 
+    _start_date = models.DateField(
+        "Start Date",
+        null=True,
+        blank=True,
+        help_text="If left blank, this will be automatically determined from scheduled slots",
+    )
+
+    def start_date(self):
         if self.desired_start_date:
             return self.desired_start_date
-        else:
-            # Calculate start from first delivery slot
-            if TimeSlot.objects.filter(
-                phase__job=self, deliveryRole=TimeSlotDeliveryRole.DELIVERY
-            ).exists():
-                return (
-                    TimeSlot.objects.filter(
-                        phase__job=self, deliveryRole=TimeSlotDeliveryRole.DELIVERY
-                    )
-                    .order_by("start")
-                    .first()
-                    .start.date()
-                )
-            else:
-                # No slots - return None
-                return None
+        
+        if self._start_date:
+            return self._start_date
 
-    def delivery_date(self):
+    def update_stored_dates(self):
         from ..models import TimeSlot
 
+        # Start date first...
+        # Calculate start from first delivery slot
+        if TimeSlot.objects.filter(
+            phase__job=self, deliveryRole=TimeSlotDeliveryRole.DELIVERY
+        ).exists():
+            self._start_date = (
+                TimeSlot.objects.filter(
+                    phase__job=self, deliveryRole=TimeSlotDeliveryRole.DELIVERY
+                )
+                .order_by("start")
+                .first()
+                .start.date()
+            )
+
+        self.save()
+
+    _delivery_date = models.DateField(
+        "Delivery date",
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="If left blank, this will be automatically determined from scheduled slots",
+    )
+
+    def delivery_date(self):
         if self.desired_delivery_date:
             return self.desired_delivery_date
-        else:
-            # Calculate start from first delivery slot
-            if TimeSlot.objects.filter(
-                phase__job=self, deliveryRole=TimeSlotDeliveryRole.REPORTING
-            ).exists():
-                return TimeSlot.objects.filter(
-                    phase__job=self, deliveryRole=TimeSlotDeliveryRole.REPORTING
-                ).order_by("end").first().end.date() + timedelta(weeks=1)
-            else:
-                # No slots - return None
-                return None
+        
+        if self._delivery_date:
+            return self._delivery_date
 
     @property
     def status_bs_colour(self):

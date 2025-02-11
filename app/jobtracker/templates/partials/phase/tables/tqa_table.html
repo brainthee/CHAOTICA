@@ -56,8 +56,12 @@
           {% endif %}
         </td>
 
-        <td data-sort="{{ phase.due_to_techqa|date:'Y-m-d' }}">{{ phase.due_to_techqa }}</td>
-        <td data-sort="{{ phase.delivery_date|date:'Y-m-d' }}">{{ phase.delivery_date }}</td>
+        <td data-sort="{{ phase.due_to_techqa|date:'Y-m-d' }}">
+          {{ phase.due_to_techqa }}
+        </td>
+        <td data-sort="{{ phase.delivery_date|date:'Y-m-d' }}">
+          {{ phase.delivery_date }}
+        </td>
         <td>
           {% include 'partials/phase/status_badge.html' with badge_size='sm' %}
         </td>

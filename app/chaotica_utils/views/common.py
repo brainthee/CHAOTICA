@@ -5,7 +5,7 @@ from django.conf import settings as django_settings
 from django.template import loader
 from django.utils import timezone
 from django.forms import widgets
-from django.db.models import TextField, Value
+from django.db.models import TextField, Value, Count, F, Subquery
 from django.db.models.functions import Concat
 from django.http import (
     HttpResponseForbidden,
@@ -262,26 +262,30 @@ def request_own_leave(request):
 @require_safe
 def manage_leave(request):
     context = {}
-    from jobtracker.models.orgunit import OrganisationalUnit
+    from jobtracker.models import OrganisationalUnit, TimeSlot
 
     units_with_perm = get_objects_for_user(
         request.user, "can_view_all_leave_requests", OrganisationalUnit
     )
 
-    leave_list = LeaveRequest.objects.filter(
-        # Only show this last calendar's year...
-        start_date__gte=timezone.now()
-        - relativedelta(years=1),
-    ).filter(
-        Q(
-            user__unit_memberships__unit__in=units_with_perm
-        )  # Show leave requests for users we have permission over
-        | Q(user__manager=request.user)  # where we're manager
-        | Q(user__acting_manager=request.user)  # where we're acting manager
-        | Q(user=request.user)  # and our own of course....
+    leave_list = (
+        LeaveRequest.objects.filter(
+            # Only show this last calendar's year...
+            start_date__gte=timezone.now()
+            - relativedelta(years=1),
+        )
+        .filter(
+            Q(
+                user__unit_memberships__unit__in=units_with_perm
+            )  # Show leave requests for users we have permission over
+            | Q(user__manager=request.user)  # where we're manager
+            | Q(user__acting_manager=request.user)  # where we're acting manager
+            | Q(user=request.user)  # and our own of course....
+        )
+        .prefetch_related("user", "user__unit_memberships", "user__timeslots")
     )
-    pending_leave = leave_list.filter(authorised=False, cancelled=False, declined=False).prefetch_related("user", "user__unit_memberships", "user__timeslots")
-    leave_list = leave_list.exclude(authorised=False, cancelled=False, declined=False).prefetch_related("user", "user__unit_memberships", "user__timeslots")
+    pending_leave = leave_list.filter(authorised=False, cancelled=False, declined=False)
+    leave_list = leave_list.exclude(authorised=False, cancelled=False, declined=False)
     context = {
         "leave_list": leave_list,
         "pending_leave": pending_leave,
@@ -400,7 +404,7 @@ def update_own_profile(request):
             obj.save()
             if "location" in form.changed_data:
                 obj.update_latlong()
-                
+
             data["form_is_valid"] = True
             data["changed_data"] = form.changed_data
     else:
@@ -528,6 +532,7 @@ def view_own_onboarding(request):
 @require_http_methods(["GET", "POST"])
 def renew_own_onboarding(request, pk):
     from jobtracker.models import ClientOnboarding
+
     onboarding = get_object_or_404(ClientOnboarding, user=request.user, pk=pk)
     context = {}
     data = dict()
@@ -1000,39 +1005,60 @@ class UserDetailView(UserBaseView, DetailView):
 
     def get_object(self, queryset=None):
         if self.kwargs.get("email"):
-            return get_object_or_404(User.objects.select_related(), email=self.kwargs.get("email"))
+            return get_object_or_404(
+                User.objects.select_related(), email=self.kwargs.get("email")
+            )
         else:
             raise Http404()
-    
 
     def get_context_data(self, **kwargs):
+        from jobtracker.models import TimeSlot
+
         context = super(UserDetailView, self).get_context_data(**kwargs)
-        
+
         date_range_raw = self.request.GET.get("dateRange", "")
         if " to " in date_range_raw:
             date_range_split = date_range_raw.split(" to ")
             if len(date_range_split) == 2:
-                context["start_date"] = timezone.datetime.strptime(date_range_split[0], '%Y-%m-%d').date()
-                context["end_date"] = timezone.datetime.strptime(date_range_split[1], '%Y-%m-%d').date()
+                context["start_date"] = timezone.datetime.strptime(
+                    date_range_split[0], "%Y-%m-%d"
+                ).date()
+                context["end_date"] = timezone.datetime.strptime(
+                    date_range_split[1], "%Y-%m-%d"
+                ).date()
 
         if "start_date" not in context:
-            context["start_date"] = self.request.GET.get("start_date", (timezone.datetime.today() - datetime.timedelta(days=30)).date())
-            context["end_date"] = self.request.GET.get("end_date", timezone.datetime.today().date())
+            context["start_date"] = self.request.GET.get(
+                "start_date",
+                (timezone.datetime.today() - datetime.timedelta(days=30)).date(),
+            )
+            context["end_date"] = self.request.GET.get(
+                "end_date", timezone.datetime.today().date()
+            )
 
         org_raw = self.request.GET.get("org", None)
         if org_raw and org_raw.isdigit():
             if self.get_object().unit_memberships.filter(unit__pk=org_raw).exists():
-                context["org"] = self.get_object().unit_memberships.get(unit__pk=org_raw).unit
-        
+                context["org"] = (
+                    self.get_object().unit_memberships.get(unit__pk=org_raw).unit
+                )
+
         if "org" not in context:
             context["org"] = None
 
         context["stats"] = self.get_object().get_stats(
-            context["org"],
-            context["start_date"],
-            context["end_date"])
-        
-        context["stats_pretty"] = json.dumps(context["stats"], indent=2, sort_keys=True, default=str)
+            context["org"], context["start_date"], context["end_date"]
+        )
+
+        context["schedule_history"] = TimeSlot.history.filter(user=self.get_object())
+        from pprint import pprint
+
+        for his in context["schedule_history"]:
+            pprint(his)
+
+        context["stats_pretty"] = json.dumps(
+            context["stats"], indent=2, sort_keys=True, default=str
+        )
         return context
 
 

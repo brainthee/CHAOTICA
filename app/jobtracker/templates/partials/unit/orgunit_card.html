@@ -18,14 +18,14 @@
       <div class="d-flex d-lg-block d-xl-flex justify-content-between align-items-center mt-3">
         <div class="mt-lg-3 mt-xl-0">
           <i class="fa-solid fa-people-group me-1"></i>
-          <p class="d-inline-block fw-bold mb-0">{{ unit.get_activeMembers.all | length }}<span class="fw-normal">	Members</span></p>
+          <p class="d-inline-block fw-bold mb-0">{{ unit.get_activeMembers.count }}<span class="fw-normal">	Members</span></p>
         </div>
         {% if request.user in unit.get_activeMembers.all %}
         <span class="badge badge-phoenix fs-10 mb-2 mt-2 badge-phoenix-success">Member</span>
         {% endif %}
         <div class="mt-lg-3 mt-xl-0">
           <i class="fa-solid fa-list-check me-1"></i>
-          <p class="d-inline-block fw-bold mb-0">{{ unit.jobs.all | length }}<span class="fw-normal">	Jobs</span></p>
+          <p class="d-inline-block fw-bold mb-0">{{ unit.jobs.count }}<span class="fw-normal">	Jobs</span></p>
         </div>
       </div>
     </div>
