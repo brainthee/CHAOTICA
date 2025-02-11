@@ -29,52 +29,90 @@ logger = logging.getLogger(__name__)
 @require_safe
 def index(request):
     context = {}
-    
+
     # this week's datetime objects
     week_start_date = timezone.datetime.today() - timedelta(
         days=timezone.datetime.today().weekday()
     )
     week_end_date = week_start_date + timedelta(days=6)
 
-
     all_phases = Phase.objects.filter(
-            Q(job__unit__in=get_objects_for_user(request.user, "can_view_jobs", klass=OrganisationalUnit)),
-            status__in=PhaseStatuses.ACTIVE_STATUSES,  # Include active phase statuses only
-            job__status__in=JobStatuses.ACTIVE_STATUSES,  # Include active job statuses only
-        ).prefetch_related("service", "project_lead", "report_author", "techqa_by", "timeslots", "job", "job__client")
+        Q(
+            job__unit__in=get_objects_for_user(
+                request.user, "can_view_jobs", klass=OrganisationalUnit
+            )
+        ),
+        status__in=PhaseStatuses.ACTIVE_STATUSES,  # Include active phase statuses only
+        job__status__in=JobStatuses.ACTIVE_STATUSES,  # Include active job statuses only
+    )
 
-    context["in_flight"] = all_phases.filter(Q(status=PhaseStatuses.IN_PROGRESS))
+    context["in_flight"] = all_phases.filter(
+        Q(status=PhaseStatuses.IN_PROGRESS)
+    ).prefetch_related(
+        "service",
+        "job__client",
+        "project_lead",
+        "report_author",
+    )
     context["TQA"] = all_phases.filter(
-            Q(status=PhaseStatuses.PENDING_TQA)
-            | Q(status=PhaseStatuses.QA_TECH)
-            | Q(status=PhaseStatuses.QA_TECH_AUTHOR_UPDATES)
-        )
+        Q(status=PhaseStatuses.PENDING_TQA)
+        | Q(status=PhaseStatuses.QA_TECH)
+        | Q(status=PhaseStatuses.QA_TECH_AUTHOR_UPDATES)
+    ).prefetch_related(
+        "service",
+        "job__client",
+        "project_lead",
+        "report_author",
+        "techqa_by",
+    )
     context["PQA"] = all_phases.filter(
-            Q(status=PhaseStatuses.PENDING_PQA)
-            | Q(status=PhaseStatuses.QA_PRES)
-            | Q(status=PhaseStatuses.QA_PRES_AUTHOR_UPDATES)
-        )
-    
-    context["scheduled_phases_this_week"] = all_phases.filter(pk__in=(
-        TimeSlot.objects.filter(
-            end__gte=week_start_date, start__lte=week_end_date, phase__isnull=False
-        )
-        .values_list("phase", flat=True)
-        .distinct()
-    ))
+        Q(status=PhaseStatuses.PENDING_PQA)
+        | Q(status=PhaseStatuses.QA_PRES)
+        | Q(status=PhaseStatuses.QA_PRES_AUTHOR_UPDATES)
+    ).prefetch_related(
+        "service",
+        "job__client",
+        "project_lead",
+        "report_author",
+        "presqa_by",
+    )
+
+    context["scheduled_phases_this_week"] = all_phases.filter(
+        timeslots__end__gte=week_start_date, 
+        timeslots__start__lte=week_end_date,
+    ).distinct().prefetch_related(
+        "service",
+        "project_lead",
+        "report_author",
+        "techqa_by",
+        "presqa_by",
+        "timeslots",
+        "job",
+        "job__client",
+    )
 
     context["pendingScoping"] = Job.objects.filter(
-        Q(unit__in=get_objects_for_user(request.user, "can_scope_jobs", klass=OrganisationalUnit)),
+        Q(
+            unit__in=get_objects_for_user(
+                request.user, "can_scope_jobs", klass=OrganisationalUnit
+            )
+        ),
         Q(status=JobStatuses.PENDING_SCOPE)
         | Q(status=JobStatuses.SCOPING_ADDITIONAL_INFO_REQUIRED)
-        | Q(status=JobStatuses.SCOPING)
-    )
+        | Q(status=JobStatuses.SCOPING),
+    ).prefetch_related("unit", "client", "phases", "scoped_by")
+
     context["scopesToSignoff"] = Job.objects.filter(
-        Q(unit__in=get_objects_for_user(request.user, "can_signoff_scopes", klass=OrganisationalUnit)),
-        status=JobStatuses.PENDING_SCOPING_SIGNOFF)
+        Q(
+            unit__in=get_objects_for_user(
+                request.user, "can_signoff_scopes", klass=OrganisationalUnit
+            )
+        ),
+        status=JobStatuses.PENDING_SCOPING_SIGNOFF,
+    ).prefetch_related("unit", "client", "phases")
 
     if request.user.is_people_manager():
-        context['team'] = User.objects.filter(
+        context["team"] = User.objects.filter(
             Q(manager=request.user) | Q(acting_manager=request.user),
             is_active=True,
         )

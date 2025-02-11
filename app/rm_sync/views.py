@@ -29,7 +29,7 @@ def rm_settings(request):
         "sync_records": RMSyncRecord.objects.all(),
         "all_users": User.objects.filter(is_active=True).order_by(
             "-rm_sync_record__sync_enabled", "-rm_sync_record__sync_authoritative"
-        ),
+        ).prefetch_related("unit_memberships", "unit_memberships__unit", "rm_sync_record"),
     }
     template = loader.get_template("rm_sync_settings.html")
     context = {**context, **page_defaults(request)}

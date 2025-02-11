@@ -105,18 +105,23 @@ urlpatterns = [
     ),
     # Tasks
     path(
-        "tasks/sync_global_permissions",
-        views.sync_global_permissions,
-        name="sync_global_permissions",
+        "admin_tasks/update_phase_dates",
+        views.admin_task_update_phase_dates,
+        name="admin_task_update_phase_dates",
     ),
     path(
-        "tasks/sync_role_permissions_to_default",
-        views.sync_role_permissions_to_default,
-        name="sync_role_permissions_to_default",
+        "admin_tasks/sync_global_permissions",
+        views.admin_task_sync_global_permissions,
+        name="admin_task_sync_global_permissions",
     ),
     path(
-        "tasks/sync_role_permissions",
-        views.sync_role_permissions,
-        name="sync_role_permissions",
+        "admin_tasks/sync_role_permissions_to_default",
+        views.admin_task_sync_role_permissions_to_default,
+        name="admin_task_sync_role_permissions_to_default",
+    ),
+    path(
+        "admin_tasks/sync_role_permissions",
+        views.admin_task_sync_role_permissions,
+        name="admin_task_sync_role_permissions",
     ),
 ]

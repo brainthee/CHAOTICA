@@ -1,0 +1,68 @@
+  <table class="table table-responsive table-sm datatable align-items-center mb-0 mw-100"
+  id="jobTableAjax"
+  {% if not job_list and not disableAjax %}
+  data-server-side=true
+  data-processing=true
+  data-ajax="{% url 'job-list' %}?format=datatables{% if filter_field %}&{{ filter_field }}={{ filter_value }}{% endif %}"
+  {% endif %}
+  >
+    <caption>Jobs</caption>
+    <thead>
+      <tr>
+        <th class="text-uppercase text-secondary text-xxs font-weight-bolder" scope="col" data-data="id" data-name="id">ID</th>
+        <th class="text-uppercase text-wrap text-break text-secondary text-xxs font-weight-bolder  ps-2" scope="col" data-data="title_link" style="word-wrap: break-word;" data-name="title">Name</th>
+        <th class="text-uppercase text-secondary text-xxs font-weight-bolder  ps-2" scope="col" data-data="unit_link" data-name="unit.name">Unit</th>
+        <th class="text-uppercase text-secondary text-xxs font-weight-bolder  ps-2" scope="col" data-data="client_link" data-name="client.name">Client</th>
+        <th class="text-uppercase text-secondary text-xxs font-weight-bolder  ps-2" scope="col" data-data="scoped_by" data-name="scoped_by">Scoped</th>
+        <th class="text-uppercase text-secondary text-xxs font-weight-bolder  ps-2" scope="col" data-data="scoped_signed_off_by" data-name="scoped_signed_off_by">Signed Off</th>
+        <th class="text-uppercase text-secondary text-xxs font-weight-bolder  ps-2" scope="col" data-data="start_date" data-searchable=false data-orderable=false>Start</th>
+        <th class="text-uppercase text-secondary text-xxs font-weight-bolder  ps-2" scope="col" data-data="delivery_date" data-searchable=false data-orderable=false>End</th>
+        <th class="text-uppercase col-1 text-secondary text-xxs font-weight-bolder  ps-2" scope="col" data-data="status_display" data-name="status" style="width:10%;">Status</th>
+      </tr>
+    </thead>
+    {% if job_list %}
+    <tbody>
+      {% for job in job_list %}
+        <tr>
+          <td class="time ps-0 projectName py-2">{{ job.id }}</td>
+          <td class="ps-0 py-2">
+            <a class="fw-bold fs-8" href="{{ job.get_absolute_url }}">{{ job.title }}</a>
+          </td>
+        
+          <td class="unit ps-3 py-2">
+            <a class="fw-bold fs-8" href="{{ job.unit.get_absolute_url }}">{{ job.unit }}</a>
+          </td>
+        
+          <td class="client ps-3 py-2">
+            <a class="fw-bold fs-8" href="{{ job.client.get_absolute_url }}">{{ job.client }}</a>
+          </td>
+        
+          <td class="scoped_by ps-3 py-2">
+            {% for scoper in job.scoped_by.all %}
+              {% include 'partials/users/user_link.html' with user_profile=scoper %}
+            {% empty %}
+              <a href="#" data-url="{% url 'assign_job_field' job.slug 'scoped_by' %}" class="text-danger js-load-modal-form">Assign</a>
+            {% endfor %}
+          </td>
+        
+          <td class="scoped_signed_off_by ps-3 py-2">
+            {% for scoper in job.scoped_signed_off_by.all %}
+              {% include 'partials/users/user_link.html' with user_profile=scoper %}
+            {% empty %}
+              <a href="#" data-url="{% url 'assign_job_field' job.slug 'scoped_signed_off_by' %}" class="text-danger js-load-modal-form">Assign</a>
+            {% endfor %}
+          </td>
+        
+          <td class="start ps-3 py-2">{{ job.start_date }}</td>
+        
+          <td class="end ps-3 py-2">{{ job.delivery_date }}</td>
+        
+          <td class="text-end status_display">
+            {% include 'partials/job/status_badge.html' with badge_size='sm' %}
+          </td>
+        </tr>
+      
+      {% endfor %}
+    </tbody>
+    {% endif %}
+  </table>

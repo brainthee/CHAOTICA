@@ -28,6 +28,7 @@ from ..forms import (
     InviteUserForm,
     MergeUserForm,
 )
+from ..mixins import PrefetchRelatedMixin
 from ..enums import GlobalRoles, NotificationTypes
 from ..tasks import (
     task_send_notifications,
@@ -123,32 +124,6 @@ def page_defaults(request):
 def is_ajax(request):
     return request.META.get("HTTP_X_REQUESTED_WITH") == "XMLHttpRequest"
 
-
-@login_required
-@staff_member_required
-@require_safe
-def sync_global_permissions(request):
-    task_sync_global_permissions()
-    return HttpResponse()
-    return HttpResponseRedirect(reverse("home"))
-
-
-@login_required
-@staff_member_required
-@require_safe
-def sync_role_permissions_to_default(request):
-    task_sync_role_permissions_to_default()
-    return HttpResponse()
-    return HttpResponseRedirect(reverse("home"))
-
-
-@login_required
-@staff_member_required
-@require_safe
-def sync_role_permissions(request):
-    task_sync_role_permissions()
-    return HttpResponse()
-    return HttpResponseRedirect(reverse("home"))
 
 
 @staff_member_required
@@ -988,7 +963,8 @@ class UserBaseView(ChaoticaBaseGlobalRoleView):
         return queryset
 
 
-class UserListView(UserBaseView, ListView):
+class UserListView(PrefetchRelatedMixin, UserBaseView, ListView):
+    prefetch_related = ["groups", "unit_memberships", "unit_memberships__unit"]
     """View to list all jobs.
     Use the 'job_list' variable in the template
     to access all job objects"""
@@ -1006,7 +982,12 @@ class UserDetailView(UserBaseView, DetailView):
     def get_object(self, queryset=None):
         if self.kwargs.get("email"):
             return get_object_or_404(
-                User.objects.select_related(), email=self.kwargs.get("email")
+                User.objects.all().prefetch_related(
+                    "timeslots",
+                    "unit_memberships",
+                    "skills",
+                ),
+                email=self.kwargs.get("email"),
             )
         else:
             raise Http404()
@@ -1050,15 +1031,13 @@ class UserDetailView(UserBaseView, DetailView):
             context["org"], context["start_date"], context["end_date"]
         )
 
-        context["schedule_history"] = TimeSlot.history.filter(user=self.get_object())
+        context["schedule_history"] = TimeSlot.history.filter(
+            user=self.get_object()
+        ).prefetch_related("history_user")
         from pprint import pprint
 
-        for his in context["schedule_history"]:
-            pprint(his)
-
-        context["stats_pretty"] = json.dumps(
-            context["stats"], indent=2, sort_keys=True, default=str
-        )
+        # for his in context["schedule_history"]:
+        #     pprint(his)
         return context
 
 
@@ -1094,10 +1073,12 @@ class NoteBaseView(ChaoticaBaseGlobalRoleView):
         return queryset
 
 
-class NoteListView(NoteBaseView, ListView):
-    """View to list all Notes.
-    Use the 'job_list' variable in the template
-    to access all job objects"""
+class NoteListView(PrefetchRelatedMixin, NoteBaseView, ListView):
+    prefetch_related = ["content_type"]
+
+    def get_queryset(self):
+        queryset = super(NoteListView, self).get_queryset()
+        return queryset[:200]
 
 
 ######################################

@@ -256,8 +256,8 @@
             </a>
               <ul class="dropdown-menu navbar-dropdown-caret">
               {% for childItem in menus.admin %}
-                <li>
-                  <a class="dropdown-item {% if childItem.selected %}active{% endif %}" href="{{ childItem.url }}">
+                <li {% if childItem.children %}class="dropdown dropdown-inside"{% endif %}>
+                  <a {% if childItem.children %}class="dropdown-item dropdown-toggle{% if childItem.selected %}active{% endif %}" href="#" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"{% else %}class="dropdown-item {% if childItem.selected %}active{% endif %}" href="{{ childItem.url }}"{% endif %}>
                     <div class="dropdown-item-wrapper">
                       {% if childItem.icon %}
                       <span class="{% if childItem.icon_prefix %}{{ childItem.icon_prefix }}{% else %}fas fa-{% endif %}{{ childItem.icon }} fs-8 me-2 "></span>
@@ -265,6 +265,18 @@
                       {{ childItem.title }}
                     </div>
                   </a>
+                  {% if childItem.children %}                  
+                    <ul class="dropdown-menu">
+                      {% for childchildItem in childItem.children %}
+                      <li>
+                        <a class="dropdown-item" href="{{ childchildItem.url }}">
+                          <div class="dropdown-item-wrapper"><span class="me-2 {% if childchildItem.icon_prefix %}{{ childchildItem.icon_prefix }}{% else %}fas fa-{% endif %}{{ childchildItem.icon }}"></span>{{ childchildItem.title }}</div>
+                        </a>
+                      </li>
+                      {% endfor %}
+                    </ul>
+
+                  {% endif %}
                 </li>
               {% endfor %}
               </ul>

@@ -1,3 +1,6 @@
+<div class="alert alert-phoenix-warning" role="alert">This page is somewhat experimental and should only be used as a rough guide for now.</div>
+
+
 <div class="col-xl-7 scrollbar">
     <div>
         {% regroup schedule_history by history_date.date as grouped_history %}
@@ -12,7 +15,7 @@
                         <div class="col-auto">
                             <div class="timeline-item-bar position-relative">
                                 <div class="icon-item icon-item-md rounded-7 border border-translucent">
-                                    <span class="fa-solid fa-clipboard text-{% if his.history_type == "+" %}success{% elif his.history_type == "~" %}info{% else %}danger{% endif %} fs-9"></span>
+                                    <span class="fa-solid fa-{% if his.history_type == "+" %}plus{% elif his.history_type == "~" %}pen{% else %}minus{% endif %} text-{% if his.history_type == "+" %}success{% elif his.history_type == "~" %}info{% else %}danger{% endif %} fs-9"></span>
                                 </div>
                                 <span class="timeline-bar border-end border-dashed"></span>
                             </div>
@@ -34,7 +37,7 @@
                                 <a class="fw-semibold" href="#!">{{ his.history_user }}</a>
                             </h6>
                             <p class="fs-9 text-body-secondary w-sm-60 mb-5">
-                                Utilizing best practices to better leverage our assets, we must engage in black sky leadership thinking, not the usual band-aid solution.
+                                {{ his }}
                             </p>
                         </div>
                     </div>

@@ -42,7 +42,7 @@ Menu.add_item(
         icon="user-group",
         perm="chaotica_utils.manage_holidays",
         weight=8,
-    )
+    ),
 )
 
 # Admin menu
@@ -54,7 +54,7 @@ Menu.add_item(
         icon="user-group",
         perm="chaotica_utils.manage_user",
         weight=10,
-    )
+    ),
 )
 Menu.add_item(
     "admin",
@@ -79,16 +79,6 @@ Menu.add_item(
 Menu.add_item(
     "admin",
     PermMenuItem(
-        "Send Test Notification",
-        reverse("test_notification"),
-        icon="envelope-open-text",
-        perm="chaotica_utils.manage_site_settings",
-        weight=80,
-    ),
-)
-Menu.add_item(
-    "admin",
-    PermMenuItem(
         "Settings",
         reverse("app_settings"),
         icon="sliders",
@@ -104,5 +94,51 @@ Menu.add_item(
         icon="wrench",
         check=lambda request: request.user.is_superuser,
         weight=100,
-    )
+    ),
+)
+
+admin_tasks = (
+    MenuItem(
+        "Update ALL phase dates",
+        reverse("admin_task_update_phase_dates"),
+        weight=10,
+        icon="calendar",
+    ),
+    MenuItem(
+        "Sync Global Permissions",
+        reverse("admin_task_sync_global_permissions"),
+        weight=10,
+        icon="rotate",
+    ),
+    MenuItem(
+        "Sync Role Permissions to Default",
+        reverse("admin_task_sync_role_permissions_to_default"),
+        weight=10,
+        icon="id-card",
+    ),
+    MenuItem(
+        "Sync Role Permissions",
+        reverse("admin_task_sync_role_permissions"),
+        weight=10,
+        icon="rotate",
+    ),
+    PermMenuItem(
+        "Send Test Notification",
+        reverse("test_notification"),
+        icon="envelope-open-text",
+        perm="chaotica_utils.manage_site_settings",
+        weight=80,
+    ),
+)
+
+Menu.add_item(
+    "admin",
+    MenuItem(
+        "Admin Tasks",
+        reverse("admin:index"),
+        icon="list-check",
+        children=admin_tasks,
+        check=lambda request: request.user.is_superuser,
+        weight=100,
+    ),
 )

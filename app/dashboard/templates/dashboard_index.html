@@ -197,7 +197,7 @@
         </h5>
         <div class="card">
           <div class="p-3 bg-body-emphasis border-top border-bottom border-200">
-          {% include 'partials/job/job_list_table.html' with job_list=pendingScoping disableAjax=1 only %}
+          {% include 'partials/job/scoping_job_list_table.html' with job_list=pendingScoping disableAjax=1 only %}
           </div>
         </div>
       </div>
@@ -211,7 +211,7 @@
         </h5>  
         <div class="card">
           <div class="p-3 bg-body-emphasis border-top border-bottom border-200">
-          {% include 'partials/job/job_list_table.html' with job_list=scopesToSignoff disableAjax=1 only %}
+          {% include 'partials/job/scoping_job_list_table.html' with job_list=scopesToSignoff disableAjax=1 only %}
           </div>
         </div>
       </div>
