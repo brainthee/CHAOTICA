@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 @staff_member_required
 @require_safe
 def admin_task_update_phase_dates(request):
-    task_update_phase_dates()
+    task_update_phase_dates().do()
     messages.success(request, "Phase dates updated")
     return HttpResponseRedirect(reverse("home"))
 
