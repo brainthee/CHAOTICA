@@ -23,6 +23,7 @@ from django_countries.fields import CountryField
 from .tasks import task_send_notifications
 from jobtracker.enums import DefaultTimeSlotTypes, UserSkillRatings
 from business_duration import businessDuration
+from django.db.models import Count
 from constance import config
 from django.template.loader import render_to_string
 import django.core.mail
@@ -1093,7 +1094,9 @@ class User(AbstractUser):
         data = {
             "ranged": {},
             "availability": {},
+            "service_breakdown": {},
         }
+        # clean vars
         if not start_date:
             start_date = (timezone.datetime.today() - timedelta(days=30)).date()
         if not end_date:
@@ -1101,6 +1104,7 @@ class User(AbstractUser):
         if not org:
             org = self.unit_memberships.first().unit
         
+        # ranged stats
         data["ranged"]["org"] = org
         data["ranged"]["start_date"] = start_date
         data["ranged"]["end_date"] = end_date
@@ -1112,8 +1116,8 @@ class User(AbstractUser):
         if len(data["ranged"]["working_days_list"]) > 0:
             data["ranged"]["utilisation_perc"] = round(len(data["ranged"]["confirmed_days_list"]) / len(data["ranged"]["working_days_list"])*100, 1)
         
+        # Get future availability
         # these values are not reliant on start_date and end_date
-        data["availability"] = {}
         avail_start = (timezone.now() - timedelta(days=timezone.now().weekday())).date()
         avail_thisweek = avail_start + timedelta(days=6)
         data["availability"]["thisweek"] = self.get_availability(avail_start, avail_thisweek)
@@ -1130,9 +1134,57 @@ class User(AbstractUser):
                     len(data["availability"][avrng]["confirmed_days_list"]) / len(data["availability"][avrng]["working_days_list"])*100, 1)
             else:
                 data["availability"][avrng]["utilisation_perc"] = 0
-
         
+        # Get service breakdown
+        data["service_breakdown"] = self.get_service_breakdown(avail_start, avail_eightweeks)
+
         return data
+    
+    def get_service_breakdown(self, start_date=None, end_date=None, rank_count=5):
+        from jobtracker.models import Service
+        from pprint import pprint
+
+        top_services = (
+            Service.objects
+            .annotate(
+                participation_count=Count(
+                    'phases__timeslots',
+                    filter=Q(
+                        phases__timeslots__user=self, 
+                        phases__timeslots__start__gte=start_date, 
+                        phases__timeslots__end__lte=end_date)
+                )
+            )
+            .order_by('-participation_count')[:rank_count]
+        )
+
+        (Q(start__gte=start_date) & Q(end__lte=end_date))
+        
+        for srvs in top_services:
+            pprint(srvs.name+" - "+str(srvs.participation_count))
+        pprint(top_services)
+        return top_services
+
+    
+    def get_utilisation_perc(self, org=None, start_date=None, end_date=None):
+        util = 0
+        if not start_date:
+            start_date = (timezone.datetime.today() - timedelta(days=30)).date()
+        if not end_date:
+            end_date = timezone.datetime.today().date()
+            
+        if not org:
+            org = self.unit_memberships.first().unit
+        
+        working_days_list = self.get_working_days_in_range(org, start_date, end_date)
+        confirmed_days_list = self.get_delivery_confirmed_days_in_range(start_date, end_date, working_days_list)
+
+        # util is calculated as 
+        if len(working_days_list) > 0:
+            util = round(len(confirmed_days_list) / len(working_days_list)*100, 1)
+             
+        return util
+
 
 
 
@@ -1261,8 +1313,6 @@ class LeaveRequest(models.Model):
         ordering = ["-start_date"]
 
     def overlaps_work(self):
-        from jobtracker.models.timeslot import TimeSlotType
-
         return self.user.timeslots.filter(
             slot_type=DefaultTimeSlotTypes.DELIVERY,
             start__lte=self.end_date,
@@ -1270,7 +1320,6 @@ class LeaveRequest(models.Model):
         ).exists()
 
     def overlaps_confirmed_work(self):
-        from jobtracker.models.timeslot import TimeSlotType, TimeSlot
         from jobtracker.enums import PhaseStatuses
 
         return self.user.timeslots.filter(

@@ -3,6 +3,10 @@ from django import template
 register = template.Library()
 
 @register.simple_tag
+def get_utilisation_perc(user, org, start_date, end_date):
+    return user.get_utilisation_perc(org, start_date, end_date)
+
+@register.simple_tag
 def get_available_days_in_range(user, start_date, end_date):
     return user.get_available_days_in_range(start_date, end_date)
 

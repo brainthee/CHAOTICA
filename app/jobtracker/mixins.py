@@ -1,5 +1,5 @@
 from guardian.mixins import PermissionRequiredMixin
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ImproperlyConfigured
 from .utils import get_unit_40x_or_None
 from .enums import JobGuestPermissions
 from django.contrib.auth.decorators import login_required, REDIRECT_FIELD_NAME
@@ -76,9 +76,10 @@ class JobPermissionRequiredMixin(PermissionRequiredMixin):
             accept_global_perms=self.accept_global_perms,
             any_perm=self.any_perm,
         )
-        
+
         team = None
         from .models import Job, Phase
+
         if isinstance(obj, Job):
             team = obj.team()
         elif isinstance(obj, Phase):
@@ -87,11 +88,11 @@ class JobPermissionRequiredMixin(PermissionRequiredMixin):
         if forbidden:
             # It's forbidden - lets check if we have specific job permissions...
             if request.user in team:
-                should_permit = True # We're in the team - permit for now!
+                should_permit = True  # We're in the team - permit for now!
                 # We're in the team but check if we're doing a permission we'll permit for the moment?
                 for perm in perms:
                     if perm not in JobGuestPermissions.ALLOWED:
-                        should_permit = False # Ok, asking for a denied perm. 
+                        should_permit = False  # Ok, asking for a denied perm.
 
                 if should_permit:
                     forbidden = False
@@ -101,3 +102,24 @@ class JobPermissionRequiredMixin(PermissionRequiredMixin):
         if forbidden and self.raise_exception:
             raise PermissionDenied()
         return forbidden
+
+
+class PrefetchRelatedMixin(object):
+    prefetch_related = None
+
+    def get_queryset(self):
+        if self.prefetch_related is None:
+            raise ImproperlyConfigured(
+                "%(cls)s is missing the prefetch_related"
+                "property. This must be a tuple or list."
+                % {"cls": self.__class__.__name__}
+            )
+
+        if not isinstance(self.prefetch_related, (tuple, list)):
+            raise ImproperlyConfigured(
+                "%(cls)s's select_related property "
+                "must be a tuple or list." % {"cls": self.__class__.__name__}
+            )
+
+        queryset = super(PrefetchRelatedMixin, self).get_queryset()
+        return queryset.prefetch_related(*self.prefetch_related)

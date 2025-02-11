@@ -67,9 +67,11 @@
             </div>
 
             <div class="progress rounded-0" style="height: 10px">
-              <div class="progress-bar bg-warning" style="width: {{ category.get_users_breakdown_perc.can_do_with_support }}%"></div>
-              <div class="progress-bar bg-success" style="width: {{ category.get_users_breakdown_perc.can_do_alone }}%"></div>
-              <div class="progress-bar bg-primary" style="width: {{ category.get_users_breakdown_perc.specialist }}%"></div>
+              {% with category.get_users_breakdown_perc as breakdown %}
+              <div class="progress-bar bg-warning" style="width: {{ breakdown.can_do_with_support_perc }}%"></div>
+              <div class="progress-bar bg-success" style="width: {{ breakdown.can_do_alone_perc }}%"></div>
+              <div class="progress-bar bg-primary" style="width: {{ breakdown.specialist_perc }}%"></div>
+              {% endwith %}
             </div>
           </div>
           <div class="card-body p-0">
@@ -101,14 +103,16 @@
                 </thead>
                 <tbody>
                   {% for skill in category.skills.all %}
+                  {% with skill.get_users_breakdown_perc as rating_counts %}
                     <tr class="">
                       <td class="contact align-middle white-space-nowrap py-2 ps-3 px-3">
                         <a class="fw-semi-bold" href="{{ skill.get_absolute_url }}">{{ skill.name }}</a>
                       </td>
-                      <td class="appointment align-middle white-space-nowrap text-end fw-semi-bold text-900 py-2 px-3">{{ skill.get_users_can_do_with_support|length }}</td>
-                      <td class="qualified align-middle white-space-nowrap text-end fw-semi-bold text-900 py-2 px-3">{{ skill.get_users_can_do_alone|length }}</td>
-                      <td class="closed-won align-middle white-space-nowrap text-end fw-semi-bold text-900 py-2 px-3">{{ skill.get_users_specialist|length }}</td>
+                      <td class="appointment align-middle white-space-nowrap text-end fw-semi-bold text-900 py-2 px-3">{{ rating_counts.can_do_with_support }}</td>
+                      <td class="qualified align-middle white-space-nowrap text-end fw-semi-bold text-900 py-2 px-3">{{ rating_counts.can_do_alone }}</td>
+                      <td class="closed-won align-middle white-space-nowrap text-end fw-semi-bold text-900 py-2 px-3">{{ rating_counts.specialist }}</td>
                     </tr>
+                    {% endwith %}
                   {% endfor %}
                 </tbody>
               </table>

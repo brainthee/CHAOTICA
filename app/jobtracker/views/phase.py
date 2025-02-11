@@ -6,6 +6,7 @@ from django.views import View
 from django.db.models import Q, CharField, ExpressionWrapper
 from django.db.models import Value as V
 from django.db.models.functions import Concat
+from django.contrib import messages
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
@@ -29,7 +30,7 @@ from chaotica_utils.enums import NotificationTypes
 import logging
 from dal import autocomplete
 from ..decorators import unit_permission_required_or_403, job_permission_required_or_403
-from ..mixins import UnitPermissionRequiredMixin, JobPermissionRequiredMixin
+from ..mixins import UnitPermissionRequiredMixin, JobPermissionRequiredMixin, PrefetchRelatedMixin
 from chaotica_utils.utils import (
     clean_date,
 )
@@ -141,7 +142,8 @@ def assign_phase_field(request, job_slug, slug, field):
         return HttpResponseBadRequest()
 
 
-class PhaseBaseView(ChaoticaBaseView, View):
+class PhaseBaseView(PrefetchRelatedMixin, ChaoticaBaseView, View):
+    prefetch_related = ['timeslots', 'notes', 'notes__author']
     model = Phase
     fields = "__all__"
     job_slug = None
@@ -244,6 +246,19 @@ def phase_refire_notifications(request, job_slug, slug):
     job = get_object_or_404(Job, slug=job_slug)
     phase = get_object_or_404(Phase, job=job, slug=slug)
     phase.refire_status_notification()
+    return HttpResponseRedirect(
+        reverse("phase_detail", kwargs={"job_slug": job_slug, "slug": slug})
+    )
+
+@job_permission_required_or_403(
+    "jobtracker.can_update_job", (Phase, "slug", "slug")
+)
+def phase_update_dates(request, job_slug, slug):
+    job = get_object_or_404(Job, slug=job_slug)
+    phase = get_object_or_404(Phase, job=job, slug=slug)
+    phase.update_stored_dates()
+    messages.info(request, "Dates updated based on schedule")
+    
     return HttpResponseRedirect(
         reverse("phase_detail", kwargs={"job_slug": job_slug, "slug": slug})
     )

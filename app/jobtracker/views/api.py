@@ -1,5 +1,5 @@
 from chaotica_utils.models import User
-from django.db.models import Q
+from django.db.models import Q, Prefetch, Max, Min
 from guardian.shortcuts import get_objects_for_user
 from ..models import Job, OrganisationalUnit, Client
 from ..enums import JobStatuses
@@ -66,7 +66,7 @@ class ClientViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = get_objects_for_user(
             self.request.user, "jobtracker.view_client", klass=Client
-        )
+        ).prefetch_related("account_managers", "tech_account_managers", "jobs")
         return queryset
 
 
@@ -87,9 +87,21 @@ class JobViewSet(viewsets.ModelViewSet):
         units = get_objects_for_user(
             self.request.user, "jobtracker.can_view_jobs", klass=OrganisationalUnit
         )
-        queryset = (
+        # We want to annotate the start_date and delivery_date from the phases
+
+        queryset = ((
             Job.objects.filter(Q(unit__in=units))
             .exclude(status=JobStatuses.DELETED)
             .exclude(status=JobStatuses.ARCHIVED)
+        )
+        .prefetch_related(
+            "client", 
+            "client__account_managers", 
+            "client__tech_account_managers", 
+            "client__jobs", 
+            "unit",
+            "phases",
+            Prefetch("phases__timeslots"),)
+        .annotate(start_date=Min('phases__timeslots__start__date'), end_date=Max('phases__timeslots__end__date'))
         )
         return queryset

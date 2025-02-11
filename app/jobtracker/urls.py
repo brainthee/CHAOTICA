@@ -281,6 +281,11 @@ urlpatterns = [
         name="phase_refire_notifications",
     ),
     path(
+        "job/<str:job_slug>/phase/<str:slug>/update_dates",
+        views.phase_update_dates,
+        name="phase_update_dates",
+    ),
+    path(
         "job/<str:job_slug>/phase/<str:slug>/update/note",
         views.phase_create_note,
         name="phase_create_note",

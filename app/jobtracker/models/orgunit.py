@@ -105,12 +105,16 @@ class OrganisationalUnit(models.Model):
             ("can_approve_leave_requests", "Can approve leave requests"),
         )
 
-
     def get_working_days_in_range(self, start_date, end_date):
         working_days_list = []
-        if not (isinstance(start_date, datetime.date) and isinstance(end_date, datetime.date)):
-            raise TypeError("Both start_date and end_date must be datetime.date objects")
-        
+        if not (
+            isinstance(start_date, datetime.date)
+            and isinstance(end_date, datetime.date)
+        ):
+            raise TypeError(
+                "Both start_date and end_date must be datetime.date objects"
+            )
+
         # Ensure that the start date is before or equal to the end date.
         if start_date > end_date:
             start_date, end_date = end_date, start_date
@@ -118,15 +122,13 @@ class OrganisationalUnit(models.Model):
         # Now lets iter through and only add dates that we work
         current_date = start_date
         while current_date <= end_date:
-            is_working_day = (current_date.weekday()+1) in self.businessHours_days
+            is_working_day = (current_date.weekday() + 1) in self.businessHours_days
             if is_working_day:
                 working_days_list.append(current_date)
 
             current_date += datetime.timedelta(days=1)
 
         return working_days_list
-
-
 
     def sync_permissions(self):
         for user in self.get_allMembers():
@@ -179,20 +181,23 @@ class OrganisationalUnit(models.Model):
             return User.objects.none()
 
     def get_activeMembers(self):
-        ids = []
-        for mgr in OrganisationalUnitMember.objects.filter(
-            unit=self, left_date__isnull=True, member__is_active=True,
-        ):
-            if mgr.member.pk not in ids:
-                ids.append(mgr.member.pk)
-        if ids:
-            return User.objects.filter(pk__in=ids)
-        else:
-            return User.objects.none()
+        return (
+            self.get_activeMemberships()
+            .values("member")
+            .distinct()
+        )
 
     def get_activeMemberships(self):
         return self.members.filter(
-            left_date__isnull=True, member__is_active=True,
+            left_date__isnull=True,
+            member__is_active=True,
+        ).prefetch_related(
+            "member",
+            "member__unit_memberships",
+            "roles",
+            "member__manager",
+            "member__timeslots",
+            "member__timeslots__phase",
         )
 
     def get_active_members_with_perm(self, permission_str, include_su=False):
@@ -207,8 +212,9 @@ class OrganisationalUnit(models.Model):
 
     def get_allMembers(self):
         ids = []
-        return User.objects.filter(pk__in=
-                                   self.members.all().values_list("member__pk", flat=True))
+        return User.objects.filter(
+            pk__in=self.members.all().values_list("member__pk", flat=True)
+        )
         # for mgr in OrganisationalUnitMember.objects.filter(unit=self):
         #     if mgr.member.pk not in ids:
         #         ids.append(mgr.member.pk)
@@ -317,7 +323,8 @@ class OrganisationalUnitMember(models.Model):
             "member",
         ]
         unique_together = [
-            "unit", "member",
+            "unit",
+            "member",
         ]
         get_latest_by = "mod_date"
 

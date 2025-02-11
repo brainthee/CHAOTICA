@@ -23,7 +23,13 @@ def get_phases_for_user(user, phases):
     from ..models import Job
 
     my_jobs = get_objects_for_user(user, "jobtracker.view_job", Job)
-    return phases.filter(job__in=my_jobs)
+    return phases.prefetch_related(
+        "timeslots",
+        "job__client",
+        "job__unit",
+        "report_author",
+        "project_lead",
+    ).filter(job__in=my_jobs)
 
 
 @register.simple_tag

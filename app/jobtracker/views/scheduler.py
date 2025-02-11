@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest
 from django.template import loader
-from django.db.models import Q
+from django.db.models import Q, Prefetch
 from django.views.generic.edit import DeleteView
 from django.urls import reverse_lazy
 from chaotica_utils.views import page_defaults
@@ -38,7 +38,9 @@ from chaotica_utils.utils import (
     datetime_startofday,
     datetime_endofday,
 )
+from chaotica_utils.models import Holiday
 from django.contrib import messages
+import time
 
 
 logger = logging.getLogger(__name__)
@@ -214,21 +216,45 @@ def view_scheduler_slots(request):
         for phase in phases:
             selected_phases.append(phase)
 
-    filtered_users = _filter_users_on_query(request, cleaned_data)
+    filtered_users = _filter_users_on_query(request, cleaned_data).prefetch_related("unit_memberships")
 
     # Change FullCalendar format to DateTime
     start = clean_fullcalendar_datetime(request.GET.get("start", None))
     end = clean_fullcalendar_datetime(request.GET.get("end", None))
 
+    # Load the timeslots
+    for slot in TimeSlot.objects.filter(
+        user__in=filtered_users, end__gte=start, start__lte=end
+    ).prefetch_related("phase", "phase__job", "phase__job__client", "project", "slot_type", "user", "leaverequest"):
+        slot_json = slot.get_schedule_json()
+        if selected_phases:
+            if slot.phase and (
+                slot.phase not in selected_phases
+                and slot.phase.job not in selected_phases
+            ):
+                slot_json["display"] = "background"
+        data.append(slot_json)
+
+    # Add the holidays
+    holidays = Holiday.objects.filter(date__gte=start.date(), date__lte=end.date())
     for user in filtered_users:
-        data = data + user.get_timeslots(
-            start=start, end=end, selected_phases=selected_phases
-        )
-        data = data + user.get_timeslot_comments(start=start, end=end)
-        data = data + user.get_holidays(
-            start=start,
-            end=end,
-        )
+        for hol in holidays:
+            if user.country == hol.country:
+                data.append({
+                    "title": str(hol),
+                    "start": hol.date,
+                    "end": hol.date,
+                    "allDay": True,
+                    "display": "background",
+                    "id": hol.pk,
+                    "resourceId": user.pk,
+                })
+
+    # Add the comments
+    for comment in TimeSlotComment.objects.filter(
+        user__in=filtered_users, end__gte=start, start__lte=end
+    ):
+        data.append(comment.get_schedule_json())
     return JsonResponse(data, safe=False)
 
 
@@ -249,7 +275,7 @@ def view_scheduler_members(request):
         for phase in phases:
             selected_phases.append(phase)
 
-    filtered_users = _filter_users_on_query(request, cleaned_data)
+    filtered_users = _filter_users_on_query(request, cleaned_data).prefetch_related("unit_memberships")
 
     for user in filtered_users:
         user_title = str(user)

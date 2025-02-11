@@ -10,7 +10,7 @@ from django.db.models import Q
 from django.contrib.auth.mixins import UserPassesTestMixin
 from guardian.shortcuts import get_objects_for_user
 from ..decorators import unit_permission_required_or_403, job_permission_required_or_403
-from ..mixins import UnitPermissionRequiredMixin, JobPermissionRequiredMixin
+from ..mixins import UnitPermissionRequiredMixin, JobPermissionRequiredMixin, PrefetchRelatedMixin
 from django.views import View
 from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
@@ -378,7 +378,8 @@ def job_create_note(request, slug):
     return HttpResponseBadRequest()
 
 
-class JobBaseView(ChaoticaBaseView, View):
+class JobBaseView(PrefetchRelatedMixin, ChaoticaBaseView, View):
+    prefetch_related = ['notes', 'notes__author', 'phases', 'phases__timeslots']
     model = Job
     fields = "__all__"
 
@@ -420,6 +421,19 @@ class JobListView(JobBaseView, UserPassesTestMixin, ListView):
 
 
 class JobDetailView(JobPermissionRequiredMixin, JobBaseView, DetailView):
+    prefetch_related = [
+        'notes', 
+        'notes__author', 
+        'account_manager', 
+        'dep_account_manager', 
+        'scoped_by', 
+        'phases', 
+        'phases__timeslots',
+        'phases__report_author',
+        'phases__project_lead',
+        'phases__techqa_by',
+        'phases__presqa_by',
+        ]
     permission_required = "jobtracker.can_view_jobs"
     return_403 = True
 

@@ -21,8 +21,11 @@ from ..forms import (
     OrganisationalUnitMemberForm,
     OrganisationalUnitMemberRolesForm,
 )
+from ..mixins import PrefetchRelatedMixin
 import logging
 from django.contrib import messages
+from django.utils import timezone
+import datetime
 from guardian.decorators import permission_required_or_403
 from guardian.mixins import PermissionRequiredMixin
 
@@ -45,16 +48,68 @@ class OrganisationalUnitBaseView(ChaoticaBaseView):
 
 
 class OrganisationalUnitListView(
-    PermissionRequiredMixin, OrganisationalUnitBaseView, ListView
+    PrefetchRelatedMixin, PermissionRequiredMixin, OrganisationalUnitBaseView, ListView
 ):
+    prefetch_related = [
+        "jobs",
+        "members",
+    ]
     permission_required = "jobtracker.view_organisationalunit"
 
 
 class OrganisationalUnitDetailView(
-    PermissionRequiredMixin, OrganisationalUnitBaseView, DetailView
+    PrefetchRelatedMixin,
+    PermissionRequiredMixin,
+    OrganisationalUnitBaseView,
+    DetailView,
 ):
+    prefetch_related = [
+        "jobs",
+        "jobs__client",
+        "members",
+        "members__roles",
+    ]
     permission_required = "jobtracker.view_organisationalunit"
     accept_global_perms = True
+
+    def get_context_data(self, **kwargs):
+        context = super(OrganisationalUnitDetailView, self).get_context_data(**kwargs)
+
+        date_range_raw = self.request.GET.get("dateRange", "")
+        if " to " in date_range_raw:
+            date_range_split = date_range_raw.split(" to ")
+            if len(date_range_split) == 2:
+                context["start_date"] = timezone.datetime.strptime(
+                    date_range_split[0], "%Y-%m-%d"
+                ).date()
+                context["end_date"] = timezone.datetime.strptime(
+                    date_range_split[1], "%Y-%m-%d"
+                ).date()
+
+        if "start_date" not in context:
+            context["start_date"] = self.request.GET.get(
+                "start_date",
+                (timezone.datetime.today() - datetime.timedelta(days=30)).date(),
+            )
+            context["end_date"] = self.request.GET.get(
+                "end_date", timezone.datetime.today().date()
+            )
+
+        # org_raw = self.request.GET.get("org", None)
+        # if org_raw and org_raw.isdigit():
+        #     if self.get_object().unit_memberships.filter(unit__pk=org_raw).exists():
+        #         context["org"] = self.get_object().unit_memberships.get(unit__pk=org_raw).unit
+
+        # if "org" not in context:
+        #     context["org"] = None
+
+        # context["stats"] = self.get_object().get_stats(
+        #     context["org"],
+        #     context["start_date"],
+        #     context["end_date"])
+
+        # context["stats_pretty"] = json.dumps(context["stats"], indent=2, sort_keys=True, default=str)
+        return context
 
 
 class OrganisationalUnitDeleteView(
@@ -111,7 +166,9 @@ def organisationalunit_add(request, slug):
         if form.is_valid():
             membership = form.save(commit=False)
             # lets check if they already exist...
-            if OrganisationalUnitMember.objects.filter(member=membership.member, unit=org_unit).exists():
+            if OrganisationalUnitMember.objects.filter(
+                member=membership.member, unit=org_unit
+            ).exists():
                 # Already a member - refuse it...
                 form.add_error("member", "User is already a member")
                 data["form_is_valid"] = False
@@ -161,7 +218,9 @@ def organisationalunit_join(request, slug):
         if membership:
             # Ok, lets see if we need to make it pending...
             if org_unit.approval_required:
-                membership.roles.add = OrganisationalUnitRole.objects.get(pk=UnitRoles.PENDING)
+                membership.roles.add = OrganisationalUnitRole.objects.get(
+                    pk=UnitRoles.PENDING
+                )
                 messages.info(
                     request, "Request to join unit " + org_unit.name + " sent."
                 )
@@ -241,9 +300,7 @@ def organisationalunit_review_join_request(request, slug, member_pk):
         # We need to check which button was pressed... accept or reject!
         if request.POST.get("user_action") == "approve_action":
             # Approve it!
-            messages.info(
-                request, "Accepted request from " + str(membership.member)
-            )
+            messages.info(request, "Accepted request from " + str(membership.member))
             membership.inviter = request.user
             default_role = OrganisationalUnitRole.objects.filter(
                 default_role=True
@@ -267,9 +324,7 @@ def organisationalunit_review_join_request(request, slug, member_pk):
 
         elif request.POST.get("user_action") == "reject_action":
             # remove it!
-            messages.warning(
-                request, "Removed request from " + str(membership.member)
-            )
+            messages.warning(request, "Removed request from " + str(membership.member))
             membership.delete()
             # send a notification to the user
             notice = AppNotification(

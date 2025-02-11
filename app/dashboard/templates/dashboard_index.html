@@ -31,8 +31,8 @@
           id="jobTab" data-bs-toggle="tab" data-bs-target="#jobTabContent" role="tab" aria-controls="jobTabContent" aria-selected="false">
           <span class="fa fa-cubes me-sm-2 fs-7"></span>
           <span class="d-none d-sm-inline">My Jobs</span>
-          {% if myJobs|length %}
-          <span class="badge bg-primary ms-2">{{ myJobs|length }}</span>
+          {% if myJobs.count %}
+          <span class="badge bg-primary ms-2">{{ myJobs.count }}</span>
           {% endif %}
         </a>
   
@@ -40,8 +40,8 @@
           id="phasesTab" data-bs-toggle="tab" data-bs-target="#phasesTabContent" role="tab" aria-controls="phasesTabContent" aria-selected="false">
           <span class="fa fa-cube me-sm-2 fs-7"></span>
           <span class="d-none d-sm-inline">My Phases</span>
-          {% if myPhases|length %}
-          <span class="badge bg-primary ms-2">{{ myPhases|length }}</span>
+          {% if myPhases.count %}
+          <span class="badge bg-primary ms-2">{{ myPhases.count }}</span>
           {% endif %}
         </a>
   
@@ -50,8 +50,8 @@
           id="in_flightTab" data-bs-toggle="tab" data-bs-target="#in_flightTabContent" role="tab" aria-controls="in_flightTabContent" aria-selected="false">
           <span class="fa fa-cube me-sm-2 fs-7"></span>
           <span class="d-none d-sm-inline">In Flight</span>
-          {% if in_flight|length %}
-          <span class="badge bg-primary ms-2">{{ in_flight|length }}</span>
+          {% if in_flight.count %}
+          <span class="badge bg-primary ms-2">{{ in_flight.count }}</span>
           {% endif %}
         </a>  
         {% endif %}
@@ -61,8 +61,8 @@
           id="scheduled_phases_this_weekTab" data-bs-toggle="tab" data-bs-target="#scheduled_phases_this_weekTabContent" role="tab" aria-controls="scheduled_phases_this_weekTabContent" aria-selected="false">
           <span class="fa fa-cube me-sm-2 fs-7"></span>
           <span class="d-none d-sm-inline">Scheduled This Week</span>
-          {% if scheduled_phases_this_week|length %}
-          <span class="badge bg-primary ms-2">{{ scheduled_phases_this_week|length }}</span>
+          {% if scheduled_phases_this_week.count %}
+          <span class="badge bg-primary ms-2">{{ scheduled_phases_this_week.count }}</span>
           {% endif %}
         </a>
         {% endif %}
@@ -72,8 +72,8 @@
           id="pendingScopeTab" data-bs-toggle="tab" data-bs-target="#pendingScopeTabContent" role="tab" aria-controls="pendingScopeTabContent" aria-selected="false">
           <span class="fa fa-microscope me-sm-2 fs-7"></span>
           <span class="d-none d-sm-inline">Scoping</span>
-          {% if pendingScoping|length %}
-          <span class="badge bg-primary ms-2">{{ pendingScoping|length }}</span>
+          {% if pendingScoping.count %}
+          <span class="badge bg-primary ms-2">{{ pendingScoping.count }}</span>
           {% endif %}
         </a>
         {% endif %}
@@ -83,8 +83,8 @@
           id="pendingSignoffTab" data-bs-toggle="tab" data-bs-target="#pendingSignoffTabContent" role="tab" aria-controls="pendingSignoffTabContent" aria-selected="false">
           <span class="fa fa-signature me-sm-2 fs-7"></span>
           <span class="d-none d-sm-inline">Pending Signoff</span>
-          {% if scopesToSignoff|length %}
-          <span class="badge bg-primary ms-2">{{ scopesToSignoff|length }}</span>
+          {% if scopesToSignoff.count %}
+          <span class="badge bg-primary ms-2">{{ scopesToSignoff.count }}</span>
           {% endif %}
         </a>          
         {% endif %}    
@@ -94,8 +94,8 @@
           id="TQATab" data-bs-toggle="tab" data-bs-target="#TQATabContent" role="tab" aria-controls="TQATabContent" aria-selected="false">
           <span class="fa fa-signature me-sm-2 fs-7"></span>
           <span class="d-none d-sm-inline">Technical QA</span>
-          {% if TQA|length %}
-          <span class="badge bg-primary ms-2">{{ TQA|length }}</span>
+          {% if TQA.count %}
+          <span class="badge bg-primary ms-2">{{ TQA.count }}</span>
           {% endif %}
         </a>          
         {% endif %}    
@@ -105,8 +105,8 @@
           id="PQATab" data-bs-toggle="tab" data-bs-target="#PQATabContent" role="tab" aria-controls="PQATabContent" aria-selected="false">
           <span class="fa fa-signature me-sm-2 fs-7"></span>
           <span class="d-none d-sm-inline">Presentation QA</span>
-          {% if PQA|length %}
-          <span class="badge bg-primary ms-2">{{ PQA|length }}</span>
+          {% if PQA.count %}
+          <span class="badge bg-primary ms-2">{{ PQA.count }}</span>
           {% endif %}
         </a>          
         {% endif %}    

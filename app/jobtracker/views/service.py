@@ -6,6 +6,7 @@ from django.urls import reverse_lazy
 from chaotica_utils.views import ChaoticaBaseView
 from ..models import Service
 from ..forms import ServiceForm
+from ..mixins import PrefetchRelatedMixin
 import logging
 
 
@@ -33,7 +34,20 @@ class ServiceListView(ServiceBaseView, ListView):
     to access all job objects"""
 
 
-class ServiceDetailView(ServiceBaseView, PermissionRequiredMixin, DetailView):
+class ServiceDetailView(
+    PrefetchRelatedMixin, ServiceBaseView, PermissionRequiredMixin, DetailView
+):
+    prefetch_related = [
+        "owners",
+        "skillsRequired",
+        "skillsDesired",
+        "phases",
+        "phases__job",
+        "phases__timeslots",
+        "phases__job__client",
+        "phases__job__unit",
+        "phases__report_author",
+    ]
     """View to list the details from one job.
     Use the 'job' variable in the template to access
     the specific job here and in the Views below"""

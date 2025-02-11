@@ -172,7 +172,7 @@
           <div class="tab-pane fade" id="engagements" role="tabpanel" aria-labelledby="engagements-tab">
             {% get_phases_for_user request.user service.phases.all as phases %}
 
-            {% include 'partials/phase/phase_list_table.html' with phases=phases %}
+            {% include 'partials/phase/phase_list_table.html' with phases=phases no_schedule_bar=1 %}
           </div>
         </div>
       </div>

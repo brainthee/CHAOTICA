@@ -43,12 +43,17 @@
             <li class="nav-item me-3" role="presentation">
               <a class="nav-link text-nowrap" id="schedule-tab" data-bs-toggle="tab" href="#tab-schedule" role="tab" aria-controls="tab-schedule" aria-selected="false" tabindex="-1"><span class="fas fa-calendar me-2"></span> Schedule</a>
             </li>
+            <li class="nav-item me-3" role="presentation">
+              <a class="nav-link text-nowrap" id="schedule_history-tab" data-bs-toggle="tab" href="#tab-schedule_history" role="tab" aria-controls="tab-schedule_history" aria-selected="false" tabindex="-1"><span class="fas fa-calendar me-2"></span> Schedule History</a>
+            </li>
           </ul>
         </div>
 
         <div class="tab-content" id="myTabContent">
           <div class="tab-pane fade active show" id="tab-stats" role="tabpanel" aria-labelledby="stats-tab">
             {% include 'partials/user/user_stats.html'%}
+            <hr>
+            {{ stats.service_breakdown }}
           </div>
           <div class="tab-pane fade" id="tab-jobs" role="tabpanel" aria-labelledby="jobs-tab">
             {% include 'partials/job/job_list_table.html' with job_list=user.get_jobs disableAjax=1 only %}
@@ -58,6 +63,9 @@
           </div>
           <div class="tab-pane fade" id="tab-schedule" role="tabpanel" aria-labelledby="schedule-tab">
             <div class="calendar" data-bs-toggle="calendar" id="calendar"></div>
+          </div>
+          <div class="tab-pane fade" id="tab-schedule_history" role="tabpanel" aria-labelledby="schedule_history-tab">
+            {% include 'partials/users/user_schedule_history.html' %}            
           </div>
         </div>
       </div>

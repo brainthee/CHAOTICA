@@ -6,6 +6,7 @@
     var orgData = [
     {"id": 0, "name": "{{ organisationalunit }}", "imageUrl": "", 
     "positionName": "Root", "profileUrl": ""},
+    {% with organisationalunit.get_activeMembers as activeMembers %}
 
     {% for member in organisationalunit.get_activeMemberships %}
         {
@@ -16,7 +17,7 @@
             "profileUrl": "{{ member.member.get_absolute_url }}",
             {% if member.member.manager %}
                 {% comment %} Check if the mgr is in the org... {% endcomment %}
-                {% if member.member.manager in organisationalunit.get_activeMembers %}
+                {% if member.member.manager in activeMembers %}
                     "parentId": {{ member.member.manager.pk }},
                 {% else %}
                     "parentId": 0,
@@ -27,6 +28,7 @@
             {% endif %}
         },
     {% endfor %}];
+    {% endwith %}
     const containerRect = $('.chart-container').parent().innerWidth() -20 ;
 
     chart = new d3.OrgChart()

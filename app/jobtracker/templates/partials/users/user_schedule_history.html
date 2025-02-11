@@ -1,0 +1,48 @@
+<div class="col-xl-7 scrollbar">
+    <div>
+        {% regroup schedule_history by history_date.date as grouped_history %}
+
+        {% for his_date in grouped_history %}
+            <h4 class="py-3 border-y mb-5 ms-8">{{ his_date.grouper }}</h4>
+            <div class="timeline-basic mb-9">
+
+            {% for his in his_date.list %}
+                <div class="timeline-item">
+                    <div class="row g-3">
+                        <div class="col-auto">
+                            <div class="timeline-item-bar position-relative">
+                                <div class="icon-item icon-item-md rounded-7 border border-translucent">
+                                    <span class="fa-solid fa-clipboard text-{% if his.history_type == "+" %}success{% elif his.history_type == "~" %}info{% else %}danger{% endif %} fs-9"></span>
+                                </div>
+                                <span class="timeline-bar border-end border-dashed"></span>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="d-flex justify-content-between">
+                                <div class="d-flex mb-2">
+                                <h6 class="lh-sm mb-0 me-2 text-body-secondary timeline-item-title">
+                                    {{ his.name }}
+                                </h6>
+                                </div>
+                                <p class="text-body-quaternary fs-9 mb-0 text-nowrap timeline-time">
+                                    <span class="fa-regular fa-clock me-1"></span>
+                                    {{ his.history_date.time }}
+                                </p>
+                            </div>
+                            <h6 class="fs-10 fw-normal mb-3">
+                                by 
+                                <a class="fw-semibold" href="#!">{{ his.history_user }}</a>
+                            </h6>
+                            <p class="fs-9 text-body-secondary w-sm-60 mb-5">
+                                Utilizing best practices to better leverage our assets, we must engage in black sky leadership thinking, not the usual band-aid solution.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% endfor %}
+
+        </div>            
+    </div>
+</div>
+<hr>

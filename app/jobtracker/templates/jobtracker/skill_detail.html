@@ -187,21 +187,21 @@
         },
         data: [
             {
-                value: {{ skill.get_users_can_do_with_support | length }},
+                value: {{ skill.get_users_can_do_with_support.count }},
                 name: 'Need Support',
                 itemStyle: {
                     color: getColor('warning')
                 }
             },
             {
-                value: {{ skill.get_users_can_do_alone | length }},
+                value: {{ skill.get_users_can_do_alone.count }},
                 name: 'Do Alone',
                 itemStyle: {
                     color: getColor('success')
                 }
             },
             {
-                value: {{ skill.get_users_specialist | length }},
+                value: {{ skill.get_users_specialist.count }},
                 name: 'Specialist',
                 itemStyle: {
                     color: getColor('primary')

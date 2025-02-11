@@ -433,6 +433,11 @@ MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
+
+    # 'django.middleware.cache.UpdateCacheMiddleware',
+    # 'django.middleware.common.CommonMiddleware',
+    # 'django.middleware.cache.FetchFromCacheMiddleware',
+
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -444,6 +449,10 @@ MIDDLEWARE = [
 
 if DEBUG:
     MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")
+
+# CACHE_MIDDLEWARE_ALIAS  = ' ' # cache alias
+CACHE_MIDDLEWARE_SECONDS = 600 # number of seconds each page should be cached.
+CACHE_MIDDLEWARE_KEY_PREFIX = ''  # name of site if multiple sites are used
 
 ROOT_URLCONF = "chaotica.urls"
 
@@ -501,6 +510,16 @@ else:
             "DEFAULT-CHARACTER-SET": "utf8",
         }
     }
+
+
+CACHES = {
+    'default': {
+        "BACKEND": "django.core.cache.backends.memcached.PyMemcacheCache",
+        'LOCATION': '127.0.0.1:11211',
+    }
+}
+CONSTANCE_DATABASE_CACHE_BACKEND = 'default'
+
 
 
 # Password validation
