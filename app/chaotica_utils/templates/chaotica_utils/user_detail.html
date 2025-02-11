@@ -52,8 +52,6 @@
         <div class="tab-content" id="myTabContent">
           <div class="tab-pane fade active show" id="tab-stats" role="tabpanel" aria-labelledby="stats-tab">
             {% include 'partials/user/user_stats.html'%}
-            <hr>
-            {{ stats.service_breakdown }}
           </div>
           <div class="tab-pane fade" id="tab-jobs" role="tabpanel" aria-labelledby="jobs-tab">
             {% include 'partials/job/job_list_table.html' with job_list=user.get_jobs disableAjax=1 only %}

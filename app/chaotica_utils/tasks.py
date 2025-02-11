@@ -94,6 +94,17 @@ class task_send_email_notifications(CronJobBase):
         for notification in Notification.objects.filter(is_emailed=False):
             notification.send_email()
 
+class task_update_phase_dates(CronJobBase):
+    RUN_AT_TIMES = ['3:30',]
+    schedule = Schedule(run_at_times=RUN_AT_TIMES)
+    code = 'chaotica_utils.task_update_phase_dates'
+
+    def do(self):
+        from jobtracker.models import Phase
+
+        for phase in Phase.objects.all():
+            phase.update_stored_dates()
+
 
 class task_sync_global_permissions(CronJobBase):
     RUN_AT_TIMES = ['07:30',]
