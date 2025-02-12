@@ -3,8 +3,6 @@ from . import views
 
 
 urlpatterns = [
-    path("debug/sentry", views.trigger_error, name="trigger_error"),
-    path("debug/test_notification", views.test_notification, name="test_notification"),
     path("maintenance/", views.maintenance, name="maintenance"),
     re_path(r"^impersonate/", include("impersonate.urls")),
     path("quote", views.get_quote, name="get_quote"),
@@ -103,7 +101,19 @@ urlpatterns = [
         views.user_manage_status,
         name="user_manage_status",
     ),
-    # Tasks
+    # Admin tasks/triggers
+        
+    path(
+        "admin_tasks/trigger_error",
+        views.admin_trigger_error,
+        name="admin_trigger_error",
+    ),    
+    path(
+        "admin_tasks/send_test_notification",
+        views.admin_send_test_notification,
+        name="admin_send_test_notification",
+    ),
+
     path(
         "admin_tasks/update_phase_dates",
         views.admin_task_update_phase_dates,

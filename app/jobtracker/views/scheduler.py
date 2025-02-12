@@ -41,6 +41,7 @@ from chaotica_utils.utils import (
 from chaotica_utils.models import Holiday
 from django.contrib import messages
 import time
+from constance import config
 
 
 logger = logging.getLogger(__name__)
@@ -216,17 +217,39 @@ def view_scheduler_slots(request):
         for phase in phases:
             selected_phases.append(phase)
 
-    filtered_users = _filter_users_on_query(request, cleaned_data).prefetch_related("unit_memberships")
+    filtered_users = _filter_users_on_query(request, cleaned_data).prefetch_related(
+        "unit_memberships"
+    )
 
     # Change FullCalendar format to DateTime
     start = clean_fullcalendar_datetime(request.GET.get("start", None))
     end = clean_fullcalendar_datetime(request.GET.get("end", None))
 
+    schedule_colours = {
+        "SCHEDULE_COLOR_PHASE_CONFIRMED_AWAY": str(
+            config.SCHEDULE_COLOR_PHASE_CONFIRMED_AWAY
+        ),
+        "SCHEDULE_COLOR_PHASE_CONFIRMED": str(config.SCHEDULE_COLOR_PHASE_CONFIRMED),
+        "SCHEDULE_COLOR_PHASE_AWAY": str(config.SCHEDULE_COLOR_PHASE_AWAY),
+        "SCHEDULE_COLOR_PHASE": str(config.SCHEDULE_COLOR_PHASE),
+        "SCHEDULE_COLOR_PROJECT": str(config.SCHEDULE_COLOR_PROJECT),
+        "SCHEDULE_COLOR_INTERNAL": str(config.SCHEDULE_COLOR_INTERNAL),
+        "SCHEDULE_COLOR_COMMENT": str(config.SCHEDULE_COLOR_COMMENT),
+    }
+
     # Load the timeslots
     for slot in TimeSlot.objects.filter(
         user__in=filtered_users, end__gte=start, start__lte=end
-    ).prefetch_related("phase", "phase__job", "phase__job__client", "project", "slot_type", "user", "leaverequest"):
-        slot_json = slot.get_schedule_json()
+    ).prefetch_related(
+        "phase",
+        "phase__job",
+        "phase__job__client",
+        "project",
+        "slot_type",
+        "user",
+        "leaverequest",
+    ):
+        slot_json = slot.get_schedule_json(schedule_colours=schedule_colours)
         if selected_phases:
             if slot.phase and (
                 slot.phase not in selected_phases
@@ -240,21 +263,23 @@ def view_scheduler_slots(request):
     for user in filtered_users:
         for hol in holidays:
             if user.country == hol.country:
-                data.append({
-                    "title": str(hol),
-                    "start": hol.date,
-                    "end": hol.date,
-                    "allDay": True,
-                    "display": "background",
-                    "id": hol.pk,
-                    "resourceId": user.pk,
-                })
+                data.append(
+                    {
+                        "title": str(hol),
+                        "start": hol.date,
+                        "end": hol.date,
+                        "allDay": True,
+                        "display": "background",
+                        "id": hol.pk,
+                        "resourceId": user.pk,
+                    }
+                )
 
     # Add the comments
     for comment in TimeSlotComment.objects.filter(
         user__in=filtered_users, end__gte=start, start__lte=end
     ):
-        data.append(comment.get_schedule_json())
+        data.append(comment.get_schedule_json(schedule_colours=schedule_colours))
     return JsonResponse(data, safe=False)
 
 
@@ -275,7 +300,9 @@ def view_scheduler_members(request):
         for phase in phases:
             selected_phases.append(phase)
 
-    filtered_users = _filter_users_on_query(request, cleaned_data).prefetch_related("unit_memberships")
+    filtered_users = _filter_users_on_query(request, cleaned_data).prefetch_related(
+        "unit_memberships", "unit_memberships__unit"
+    )
 
     for user in filtered_users:
         user_title = str(user)

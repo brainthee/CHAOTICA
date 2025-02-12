@@ -125,47 +125,6 @@ def is_ajax(request):
     return request.META.get("HTTP_X_REQUESTED_WITH") == "XMLHttpRequest"
 
 
-
-@staff_member_required
-@require_safe
-def trigger_error(request):
-    """
-    Deliberately causes an error. Used to test error capturing
-
-    Args:
-        request (Request): A request object
-
-    Returns:
-        Exception: An error :)
-    """
-    division_by_zero = 1 / 0
-    return division_by_zero
-
-
-@login_required
-@require_safe
-def test_notification(request):
-    """
-    Sends a test notification
-
-    Args:
-        request (Request): A request object
-
-    Returns:
-        HttpResponseRedirect: Redirect to the referer
-    """
-    notice = AppNotification(
-        NotificationTypes.SYSTEM,
-        "Test Notification",
-        "This is a test notification. At ease.",
-        "emails/test_email.html",
-        None,
-        reverse("home"),
-    )
-    task_send_notifications(notice, User.objects.filter(pk=request.user.pk))
-    return HttpResponseRedirect(request.META.get("HTTP_REFERER"))
-
-
 @require_safe
 def maintenance(request):
     """
