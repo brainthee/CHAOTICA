@@ -122,12 +122,17 @@ admin_tasks = (
         weight=10,
         icon="rotate",
     ),
-    PermMenuItem(
+    MenuItem(
         "Send Test Notification",
-        reverse("test_notification"),
+        reverse("admin_send_test_notification"),
         icon="envelope-open-text",
-        perm="chaotica_utils.manage_site_settings",
-        weight=80,
+        weight=10,
+    ),
+    MenuItem(
+        "Trigger Error",
+        reverse("admin_trigger_error"),
+        icon="bug",
+        weight=10,
     ),
 )
 

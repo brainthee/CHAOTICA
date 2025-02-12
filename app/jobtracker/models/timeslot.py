@@ -59,8 +59,9 @@ class TimeSlotComment(models.Model):
     )
     comment = models.TextField(default="")
 
-    def get_schedule_slot_text_colour(self):
-        bg_colour = config.SCHEDULE_COLOR_COMMENT
+    def get_schedule_slot_text_colour(self, bg_colour=None):
+        if not bg_colour:
+            bg_colour = config.SCHEDULE_COLOR_COMMENT
         color = bg_colour[1:]
 
         hex_red = int(color[0:2], base=16)
@@ -73,7 +74,12 @@ class TimeSlotComment(models.Model):
         else:
             return "black"
 
-    def get_schedule_json(self):
+    def get_schedule_json(self, schedule_colours=None):
+        if not schedule_colours:
+            schedule_colours = {
+                "SCHEDULE_COLOR_COMMENT": config.SCHEDULE_COLOR_COMMENT,
+            }
+    
         data = {
             "id": self.pk,
             "title": self.comment,
@@ -88,8 +94,8 @@ class TimeSlotComment(models.Model):
             "end": self.end,
             "userId": self.user.pk,
             "icon": "far fa-comment-dots",
-            "color": config.SCHEDULE_COLOR_COMMENT,
-            "textColor": self.get_schedule_slot_text_colour(),
+            "color": schedule_colours['SCHEDULE_COLOR_COMMENT'],
+            "textColor": self.get_schedule_slot_text_colour(schedule_colours['SCHEDULE_COLOR_COMMENT']),
             "classNames": "p-1 rounded-3",
             "is_comment": True,
         }
@@ -165,7 +171,10 @@ class TimeSlot(models.Model):
         return self.slot_type.pk == DefaultTimeSlotTypes.INTERNAL_PROJECT
 
     def is_internal(self):
-        return self.slot_type.pk != DefaultTimeSlotTypes.DELIVERY and self.slot_type.pk != DefaultTimeSlotTypes.INTERNAL_PROJECT
+        return (
+            self.slot_type.pk != DefaultTimeSlotTypes.DELIVERY
+            and self.slot_type.pk != DefaultTimeSlotTypes.INTERNAL_PROJECT
+        )
 
     def __str__(self):
         # There is no rhyme or reason for this...
@@ -212,28 +221,38 @@ class TimeSlot(models.Model):
         else:
             return self.slot_type.name
 
-    def get_schedule_slot_colour(self):
+    def get_schedule_slot_colour(self, schedule_colours=None):
+        if not schedule_colours:
+            schedule_colours = {
+                "SCHEDULE_COLOR_PHASE_CONFIRMED_AWAY": config.SCHEDULE_COLOR_PHASE_CONFIRMED_AWAY,
+                "SCHEDULE_COLOR_PHASE_CONFIRMED": config.SCHEDULE_COLOR_PHASE_CONFIRMED,
+                "SCHEDULE_COLOR_PHASE_AWAY": config.SCHEDULE_COLOR_PHASE_AWAY,
+                "SCHEDULE_COLOR_PHASE": config.SCHEDULE_COLOR_PHASE,
+                "SCHEDULE_COLOR_PROJECT": config.SCHEDULE_COLOR_PROJECT,
+                "SCHEDULE_COLOR_INTERNAL": config.SCHEDULE_COLOR_INTERNAL,
+            }
         if self.is_delivery():
             if self.is_confirmed():
                 return (
-                    config.SCHEDULE_COLOR_PHASE_CONFIRMED_AWAY
+                    schedule_colours['SCHEDULE_COLOR_PHASE_CONFIRMED_AWAY']
                     if self.is_onsite
-                    else config.SCHEDULE_COLOR_PHASE_CONFIRMED
+                    else schedule_colours['SCHEDULE_COLOR_PHASE_CONFIRMED']
                 )
             else:
                 return (
-                    config.SCHEDULE_COLOR_PHASE_AWAY
+                    schedule_colours['SCHEDULE_COLOR_PHASE_AWAY']
                     if self.is_onsite
-                    else config.SCHEDULE_COLOR_PHASE
+                    else schedule_colours['SCHEDULE_COLOR_PHASE']
                 )
         elif self.is_project():
-            return config.SCHEDULE_COLOR_PROJECT
+            return schedule_colours['SCHEDULE_COLOR_PROJECT']
         else:
             # If no phase attached... always confirmed ;)
-            return config.SCHEDULE_COLOR_INTERNAL
+            return schedule_colours['SCHEDULE_COLOR_INTERNAL']
 
-    def get_schedule_slot_text_colour(self):
-        bg_colour = self.get_schedule_slot_colour()
+    def get_schedule_slot_text_colour(self, bg_colour=None):
+        if not bg_colour:
+            bg_colour = self.get_schedule_slot_colour()
         color = bg_colour[1:]
 
         hex_red = int(color[0:2], base=16)
@@ -254,7 +273,7 @@ class TimeSlot(models.Model):
             .exclude(pk=self.pk)
         )
 
-    def get_schedule_json(self, url=None):
+    def get_schedule_json(self, url=None, schedule_colours=None):
         if not url:
             url = self.get_target_url()
 
@@ -268,14 +287,14 @@ class TimeSlot(models.Model):
             "slot_type_name": self.slot_type.name,
             "url": url,
             "userId": self.user.pk,
-            # "color": self.get_schedule_slot_colour(),
-            "backgroundColor": self.get_schedule_slot_colour(),
-            # "borderColor": self.get_schedule_slot_colour(),
-            "textColor": self.get_schedule_slot_text_colour(),
+            "backgroundColor": self.get_schedule_slot_colour(schedule_colours=schedule_colours),
             "classNames": "p-1 rounded-3",
             "can_edit": True,  # Fix this
             "is_comment": False,
         }
+
+        data["textColor"] = self.get_schedule_slot_text_colour(data["backgroundColor"])
+
         if self.is_delivery():
             data["deliveryRole"] = self.deliveryRole
             data["phaseId"] = self.phase.pk
@@ -356,7 +375,6 @@ class TimeSlot(models.Model):
                     if phase.can_to_pending_sched():
                         phase.to_pending_sched()
                         phase.save()
-
 
     def save(self, *args, **kwargs):
         if self.start > self.end:

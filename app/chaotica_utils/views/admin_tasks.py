@@ -6,11 +6,16 @@ from django.urls import reverse
 from django.views.decorators.http import require_safe
 from ..tasks import *
 from django.contrib import messages
+from ..utils import (
+    AppNotification,
+)
+from ..enums import NotificationTypes
+from ..models import User
+
 
 logger = logging.getLogger(__name__)
 
 
-@login_required
 @staff_member_required
 @require_safe
 def admin_task_update_phase_dates(request):
@@ -19,28 +24,66 @@ def admin_task_update_phase_dates(request):
     return HttpResponseRedirect(reverse("home"))
 
 
-@login_required
 @staff_member_required
 @require_safe
 def admin_task_sync_global_permissions(request):
-    task_sync_global_permissions()
+    task_sync_global_permissions().do()
     messages.success(request, "Global permissions sync'd")
     return HttpResponseRedirect(reverse("home"))
 
 
-@login_required
 @staff_member_required
 @require_safe
 def admin_task_sync_role_permissions_to_default(request):
-    task_sync_role_permissions_to_default()
+    task_sync_role_permissions_to_default().do()
     messages.success(request, "Role Permissions sync'd to default")
     return HttpResponseRedirect(reverse("home"))
 
 
-@login_required
 @staff_member_required
 @require_safe
 def admin_task_sync_role_permissions(request):
-    task_sync_role_permissions()
+    task_sync_role_permissions().do()
     messages.success(request, "Role Permissions sync'd")
     return HttpResponseRedirect(reverse("home"))
+
+
+@staff_member_required
+@require_safe
+def admin_trigger_error(request):
+    """
+    Deliberately causes an error. Used to test error capturing
+
+    Args:
+        request (Request): A request object
+
+    Returns:
+        Exception: An error :)
+    """
+    division_by_zero = 1 / 0
+    return division_by_zero
+
+
+@login_required
+@require_safe
+def admin_send_test_notification(request):
+    """
+    Sends a test notification
+
+    Args:
+        request (Request): A request object
+
+    Returns:
+        HttpResponseRedirect: Redirect to the referer
+    """
+    notice = AppNotification(
+        NotificationTypes.SYSTEM,
+        "Test Notification",
+        "This is a test notification. At ease.",
+        "emails/test_email.html",
+        None,
+        reverse("home"),
+    )
+    task_send_notifications(notice, request.user)
+    messages.success(request, "Test Notification Sent")
+    return HttpResponseRedirect(request.META.get("HTTP_REFERER"))

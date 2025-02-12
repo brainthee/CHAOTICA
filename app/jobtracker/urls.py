@@ -64,6 +64,7 @@ urlpatterns = [
     path(
         "scheduler/timeslots", views.view_scheduler_slots, name="view_scheduler_slots"
     ),
+    
     # Create paths
     path(
         "scheduler/timeslots/phase/create",
