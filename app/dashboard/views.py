@@ -54,41 +54,57 @@ def index(request):
         "project_lead",
         "report_author",
     )
-    context["TQA"] = all_phases.filter(
-        Q(status=PhaseStatuses.PENDING_TQA)
-        | Q(status=PhaseStatuses.QA_TECH)
-        | Q(status=PhaseStatuses.QA_TECH_AUTHOR_UPDATES)
-    ).prefetch_related(
-        "service",
-        "job__client",
-        "project_lead",
-        "report_author",
-        "techqa_by",
+    context["TQA"] = (
+        all_phases.filter(
+            Q(status=PhaseStatuses.PENDING_TQA)
+            | Q(status=PhaseStatuses.QA_TECH)
+            | Q(status=PhaseStatuses.QA_TECH_AUTHOR_UPDATES)
+        )
+        .exclude(
+            Q(report_to_be_left_on_client_site=True) | Q(number_of_reports=0)
+        )  # Exclude non QA reports
+        .prefetch_related(
+            "service",
+            "job__client",
+            "project_lead",
+            "report_author",
+            "techqa_by",
+        )
     )
-    context["PQA"] = all_phases.filter(
-        Q(status=PhaseStatuses.PENDING_PQA)
-        | Q(status=PhaseStatuses.QA_PRES)
-        | Q(status=PhaseStatuses.QA_PRES_AUTHOR_UPDATES)
-    ).prefetch_related(
-        "service",
-        "job__client",
-        "project_lead",
-        "report_author",
-        "presqa_by",
+    context["PQA"] = (
+        all_phases.filter(
+            Q(status=PhaseStatuses.PENDING_PQA)
+            | Q(status=PhaseStatuses.QA_PRES)
+            | Q(status=PhaseStatuses.QA_PRES_AUTHOR_UPDATES)
+        )
+        .exclude(
+            Q(report_to_be_left_on_client_site=True) | Q(number_of_reports=0)
+        )  # Exclude non QA reports
+        .prefetch_related(
+            "service",
+            "job__client",
+            "project_lead",
+            "report_author",
+            "presqa_by",
+        )
     )
 
-    context["scheduled_phases_this_week"] = all_phases.filter(
-        timeslots__end__gte=week_start_date, 
-        timeslots__start__lte=week_end_date,
-    ).distinct().prefetch_related(
-        "service",
-        "project_lead",
-        "report_author",
-        "techqa_by",
-        "presqa_by",
-        "timeslots",
-        "job",
-        "job__client",
+    context["scheduled_phases_this_week"] = (
+        all_phases.filter(
+            timeslots__end__gte=week_start_date,
+            timeslots__start__lte=week_end_date,
+        )
+        .distinct()
+        .prefetch_related(
+            "service",
+            "project_lead",
+            "report_author",
+            "techqa_by",
+            "presqa_by",
+            "timeslots",
+            "job",
+            "job__client",
+        )
     )
 
     context["pendingScoping"] = Job.objects.filter(
