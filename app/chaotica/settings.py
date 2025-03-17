@@ -390,7 +390,9 @@ BLEACH_ALLOWED_STYLES = [
 # (assuming src is an allowed attribute)
 BLEACH_ALLOWED_PROTOCOLS = ["http", "https", "data"]
 BLEACH_DEFAULT_WIDGET = "tinymce.widgets.TinyMCE"
-
+BOOTSTRAP_DATEPICKER_PLUS = {
+    "app_static_url": f"{SITE_PROTO}://{SITE_DOMAIN}/static/vendors/bootstrap_datepicker_plus/",
+}
 DJANGO_CRON_DELETE_LOGS_OLDER_THAN = 14
 DJANGO_CRON_LOCK_BACKEND = "django_cron.backends.lock.file.FileLock"
 CRON_CLASSES = [
