@@ -89,10 +89,10 @@ class OrganisationalUnitDetailView(
         if "start_date" not in context:
             context["start_date"] = self.request.GET.get(
                 "start_date",
-                (timezone.now().date() - datetime.timedelta(days=30)).date(),
+                (timezone.now() - datetime.timedelta(days=30)).date(),
             )
             context["end_date"] = self.request.GET.get(
-                "end_date", timezone.now().date().date()
+                "end_date", timezone.now().date()
             )
         
         context["stats"] = self.get_object().get_stats(

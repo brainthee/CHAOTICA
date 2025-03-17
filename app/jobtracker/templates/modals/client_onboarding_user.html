@@ -13,9 +13,16 @@
                     data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
-            {{ form.media }}
             {% crispy form %}
         </form>
     </div>
  </div>
 
+<script>
+    $('#mainModal').on('shown.bs.modal', function() {
+        $('.datepickerinput').datetimepicker({
+            format: 'YYYY-MM-DD',
+            allowInputToggle: true,
+        });
+    });
+</script> 
