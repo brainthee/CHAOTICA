@@ -66,6 +66,7 @@
     <link href="{% static "vendors/leaflet/leaflet.css" %}" rel="stylesheet">
     <link href="{% static "vendors/leaflet.markercluster/MarkerCluster.css" %}" rel="stylesheet">
     <link href="{% static "vendors/leaflet.markercluster/MarkerCluster.Default.css" %}" rel="stylesheet">
+    <link href="{% static "vendors/highlight/styles/stackoverflow-light.min.css" %}" rel="stylesheet">
 
 
     <!-- Select2 -->
@@ -113,6 +114,7 @@
     <script nonce="{{request.csp_nonce}}" src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="{% static "vendors/leaflet.markercluster/leaflet.markercluster.js" %}"></script>
     <script src="{% static "vendors/leaflet.tilelayer.colorfilter/leaflet-tilelayer-colorfilter.min.js" %}"></script>
+    <script src="{% static "vendors/highlight/highlight.min.js" %}"></script>
 
 
     {% comment %} <script src="{% static "vendors/tinymce/tinymce.min.js" %}"></script>
@@ -318,6 +320,9 @@
           });
         }
       });
+
+      hljs.highlightAll();
+
     </script>
     {% endif %}
     

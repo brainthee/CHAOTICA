@@ -4,24 +4,13 @@
 {% get_org_working_days_range user.unit_memberships.first.unit start_date end_date as org_working_days %}
 
 
-<div class="row gy-3 mb-4 justify-content-between">
-    <div class="col">
-        <h3 class="mb-0 text-primary position-relative fw-bold">
-            <span class="bg-body pe-2">
-                Upcoming
-            </span>
-            <span class="border border-primary position-absolute top-50 translate-middle-y w-100 start-0 z-n1"></span>
-        </h3>
-    </div>
-</div>
-
 <div class="row g-4 mb-4 justify-content-between">
     <div class="card px-0 mx-3 shadow-none border">
         <div class="card-header p-4 border-bottom bg-body">
             <div class="row g-3 justify-content-between align-items-center">
 
                 <div class="col-8 col-md">
-                    <h4 class="text-body mb-0">Future Utilisation</h4>
+                    <h4 class="text-body mb-0">Upcoming Availability</h4>
                     <span class="bg-body pe-2">
                         The scheduled time as percentages from the start of the current week.
                     </span>
@@ -29,22 +18,22 @@
                 <div class="col col-md-auto">
                     <div class="d-flex flex-row text-center">
                             <div class="m0 px-3 border-translucent border-end">
-                                <h4 class="text-body mb-0">{{ stats.availability.thisweek.utilisation_perc }}%</h4>
+                                <h4 class="text-body mb-0">{{ stats.upcoming_availability.thisweek.confirmed_percentage }}%</h4>
                                 <p class="text-body-secondary fs-10 mb-0">This<br />Week</p>
                             </div>
 
                             <div class="m0 px-3 border-translucent border-end">
-                                <h4 class="text-body mb-0">{{ stats.availability.twoweeks.utilisation_perc }}%</h4>
+                                <h4 class="text-body mb-0">{{ stats.upcoming_availability.twoweeks.confirmed_percentage }}%</h4>
                                 <p class="text-body-secondary fs-10 mb-0">Two<br />Weeks</p>
                             </div>
 
                             <div class="m0 px-3 border-translucent border-end">
-                                <h4 class="text-body mb-0">{{ stats.availability.fourweeks.utilisation_perc }}%</h4>
+                                <h4 class="text-body mb-0">{{ stats.upcoming_availability.fourweeks.confirmed_percentage }}%</h4>
                                 <p class="text-body-secondary fs-10 mb-0">Four<br />Weeks</p>
                             </div>
 
                             <div class="m0 ps-3">
-                                <h4 class="text-body mb-0">{{ stats.availability.eightweeks.utilisation_perc }}%</h4>
+                                <h4 class="text-body mb-0">{{ stats.upcoming_availability.eightweeks.confirmed_percentage }}%</h4>
                                 <p class="text-body-secondary fs-10 mb-0">Eight<br />Weeks</p>
                             </div>
                       </div>
@@ -57,30 +46,6 @@
         </div>
     </div>
 </div>
-
-{% comment %} <div class="row g-4 justify-content-between">
-    <div class="card px-0 mx-3 shadow-none border">
-        <div class="card-header p-4 border-bottom bg-body">
-            <div class="row g-3 justify-content-between align-items-center">
-
-                <div class="col-8 col-md">
-                    <h4 class="text-body mb-0">Service Breakdown</h4>
-                    <span class="bg-body pe-2">
-                        Ranked breakdown of services participated in
-                    </span>
-                </div>
-                <div class="col col-md-auto">
-                </div>
-            </div>
-        </div>
-
-        <div class="card-body p-0">
-            <div class="echart-service-breakdown" style="min-height:350px"></div>
-        </div>
-    </div>
-</div> {% endcomment %}
-
-
 
 <div class="row gy-3 mb-4 justify-content-between">
     <div class="col">
@@ -112,7 +77,7 @@
         </div>
         <div class="col-3 text-center border-translucent">
             <i class="fa-solid fa-percent fs-6 lh-1 text-info"></i>
-            <h2 class="fs-6 pt-3">{{ stats.ranged.utilisation_perc }}%</h2>
+            <h2 class="fs-6 pt-3">{{ stats.ranged.confirmed_percentage }}%</h2>
             <p class="fs-9 mb-0">
                 Utilisation
                 <i class="text-secondary fa-solid fa-circle-info" data-bs-toggle="tooltip" data-bs-placement="top" title="Utilisation is calculated as `confirmed scheduled days` ÷ `available working days` x 100"></i>
@@ -141,6 +106,28 @@
     </div>
 </div>
 
+
+{% comment %} <div class="row g-4 justify-content-between">
+    <div class="card px-0 mx-3 shadow-none border">
+        <div class="card-header p-4 border-bottom bg-body">
+            <div class="row g-3 justify-content-between align-items-center">
+
+                <div class="col-8 col-md">
+                    <h4 class="text-body mb-0">Service Breakdown</h4>
+                    <span class="bg-body pe-2">
+                        Ranked breakdown of services participated in
+                    </span>
+                </div>
+                <div class="col col-md-auto">
+                </div>
+            </div>
+        </div>
+
+        <div class="card-body p-0">
+            <div class="echart-service-breakdown" style="min-height:350px"></div>
+        </div>
+    </div>
+</div> {% endcomment %}
 
 <script>
 $(function() {
@@ -359,10 +346,10 @@ $(function() {
                         focus: 'series'
                     },
                     data: [
-                    {{ stats.availability.eightweeks.confirmed_days_perc }},
-                    {{ stats.availability.fourweeks.confirmed_days_perc }},
-                    {{ stats.availability.twoweeks.confirmed_days_perc }},
-                    {{ stats.availability.thisweek.confirmed_days_perc }},
+                    {{ stats.upcoming_availability.eightweeks.confirmed_percentage }},
+                    {{ stats.upcoming_availability.fourweeks.confirmed_percentage }},
+                    {{ stats.upcoming_availability.twoweeks.confirmed_percentage }},
+                    {{ stats.upcoming_availability.thisweek.confirmed_percentage }},
                     ]
                 },
                 {
@@ -379,10 +366,10 @@ $(function() {
                         focus: 'series'
                     },
                     data: [
-                    {{ stats.availability.eightweeks.tentative_days_perc }},
-                    {{ stats.availability.fourweeks.tentative_days_perc }},
-                    {{ stats.availability.twoweeks.tentative_days_perc }},
-                    {{ stats.availability.thisweek.tentative_days_perc }},
+                    {{ stats.upcoming_availability.eightweeks.tentative_percentage }},
+                    {{ stats.upcoming_availability.fourweeks.tentative_percentage }},
+                    {{ stats.upcoming_availability.twoweeks.tentative_percentage }},
+                    {{ stats.upcoming_availability.thisweek.tentative_percentage }},
                     ]
                 },
                 {
@@ -399,10 +386,10 @@ $(function() {
                         focus: 'series'
                     },
                     data: [
-                    {{ stats.availability.eightweeks.non_delivery_days_perc }},
-                    {{ stats.availability.fourweeks.non_delivery_days_perc }},
-                    {{ stats.availability.twoweeks.non_delivery_days_perc }},
-                    {{ stats.availability.thisweek.non_delivery_days_perc }},
+                    {{ stats.upcoming_availability.eightweeks.non_delivery_percentage }},
+                    {{ stats.upcoming_availability.fourweeks.non_delivery_percentage }},
+                    {{ stats.upcoming_availability.twoweeks.non_delivery_percentage }},
+                    {{ stats.upcoming_availability.thisweek.non_delivery_percentage }},
                     ]
                 },
                 {
@@ -419,10 +406,10 @@ $(function() {
                         focus: 'series'
                     },
                     data: [
-                    {{ stats.availability.eightweeks.available_days_perc }},
-                    {{ stats.availability.fourweeks.available_days_perc }},
-                    {{ stats.availability.twoweeks.available_days_perc }},
-                    {{ stats.availability.thisweek.available_days_perc }},
+                    {{ stats.upcoming_availability.eightweeks.available_percentage }},
+                    {{ stats.upcoming_availability.fourweeks.available_percentage }},
+                    {{ stats.upcoming_availability.twoweeks.available_percentage }},
+                    {{ stats.upcoming_availability.thisweek.available_percentage }},
                     ]
                 }
             ],

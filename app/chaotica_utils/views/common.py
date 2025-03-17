@@ -962,18 +962,18 @@ class UserDetailView(UserBaseView, DetailView):
             if len(date_range_split) == 2:
                 context["start_date"] = timezone.datetime.strptime(
                     date_range_split[0], "%Y-%m-%d"
-                ).date()
+                )
                 context["end_date"] = timezone.datetime.strptime(
                     date_range_split[1], "%Y-%m-%d"
-                ).date()
+                )
 
         if "start_date" not in context:
             context["start_date"] = self.request.GET.get(
                 "start_date",
-                (timezone.datetime.today() - datetime.timedelta(days=30)).date(),
+                (timezone.datetime.today() - datetime.timedelta(days=30)),
             )
             context["end_date"] = self.request.GET.get(
-                "end_date", timezone.datetime.today().date()
+                "end_date", timezone.datetime.today()
             )
 
         org_raw = self.request.GET.get("org", None)
@@ -989,14 +989,12 @@ class UserDetailView(UserBaseView, DetailView):
         context["stats"] = self.get_object().get_stats(
             context["org"], context["start_date"], context["end_date"]
         )
+        context["stats_json"] = json.dumps(context["stats"], indent=4, sort_keys=True, default=str)
+
 
         context["schedule_history"] = TimeSlot.history.filter(
             user=self.get_object()
         ).prefetch_related("history_user")
-        from pprint import pprint
-
-        # for his in context["schedule_history"]:
-        #     pprint(his)
         return context
 
 

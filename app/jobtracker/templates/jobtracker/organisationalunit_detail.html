@@ -95,9 +95,9 @@
           <li class="nav-item text-nowrap me-2" role="presentation">
             <a class="nav-link" id="jobs-tab" data-bs-toggle="tab" href="#jobs" role="tab" aria-controls="tab-jobs" aria-selected="false" tabindex="-1"><span class="fa-solid fa-clipboard me-2 tab-icon-color"></span>Jobs</a>
           </li>
-          {% comment %} <li class="nav-item text-nowrap me-2" role="presentation">
+          <li class="nav-item text-nowrap me-2" role="presentation">
             <a class="nav-link" id="stats-tab" data-bs-toggle="tab" href="#stats" role="tab" aria-controls="tab-stats" aria-selected="false" tabindex="-1"><span class="fa-solid fa-clipboard me-2 tab-icon-color"></span>Stats</a>
-          </li> {% endcomment %}
+          </li>
         </ul>
 
         <div class="tab-content" id="myTabContent">
@@ -115,11 +115,43 @@
             {% endif %}
           </div>
 
-          {% comment %} <div class="tab-pane fade" id="stats" role="tabpanel" aria-labelledby="stats-tab">
+          <div class="tab-pane fade" id="stats" role="tabpanel" aria-labelledby="stats-tab">
             {% include 'partials/unit/team_stats.html' %}
-          </div> {% endcomment %}
+          </div>
         </div>
       </div>
     </div>
   </div>
+{% endblock %}
+
+{% block offcanvas %}
+  <div class="offcanvas offcanvas-end settings-panel border-0" id="settings-offcanvas" tabindex="-1" aria-labelledby="settings-offcanvas">
+    <div class="offcanvas-header align-items-start flex-column pb-0">
+      <div class="pt-1 w-100 mb-3 d-flex justify-content-between align-items-start">
+        <div>
+          <h5 class="mb-2 me-2 lh-sm">
+            <span class="fas fa-palette me-2 fs-8"></span>
+            Raw Data
+          </h5>
+          <p class="mb-0 fs-9">The JSON string below shows the raw values used to calculate the stats on this page.</p>
+        </div>
+        <button class="btn p-1 fw-bolder" type="button" data-bs-dismiss="offcanvas" aria-label="Close"><span class="fas fa-times fs-8"></span></button>
+      </div>
+    </div>
+    <div class="offcanvas-body scrollbar pt-0" id="themeController">
+      <pre><code>{{ stats_json }}</code></pre>
+      <script>
+        hljs.highlightAll();
+      </script>
+    </div>
+  </div>
+  <a class="card setting-toggle" href="#settings-offcanvas" data-bs-toggle="offcanvas">
+    <div class="card-body d-flex align-items-center px-2 py-1">
+      <div class="position-relative rounded-start" style="height:34px;width:28px">
+        <div class="settings-popover">
+          <span class="fa-solid fa-filter"></span>
+        </div>
+      </div><small class="text-uppercase text-700 fw-bold py-2 pe-2 ps-1 rounded-end">Detail</small>
+    </div>
+  </a>
 {% endblock %}
