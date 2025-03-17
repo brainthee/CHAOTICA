@@ -55,65 +55,65 @@
               location.reload();
           }
       });
-  };
-
-  $(".js-load-modal-form").click(loadForm2);
-
-    var saveTimeslotForm = function() {
-        var form = $(this);
-        $.ajax({
-            url: form.attr("action"),
-            data: form.serialize(),
-            type: form.attr("method"),
-            dataType: 'json',
-            success: function(data) {
-                if (data.form_is_valid) {
-                    if (data.next) {
-                        location.href = data.next
-                    } else {
-                        calendar.refetchEvents();
-                      $("#mainModal").modal("hide");
-                    }
-                } else {
-                  // Check if it's due to validation
-                  if (data.logic_checks_failed) {
-                    if (data.logic_checks_can_bypass) {
-                      Swal.fire({
-                        title: "Warning",
-                        icon: "question",
-                        html: data.logic_checks_feedback,
-                        showCancelButton: true,
-                        confirmButtonText: "Save",
-                        denyButtonText: `Don't save`
-                      }).then((result) => {
-                        if (result.isConfirmed) {
-                          // Lets add a force param and re-submit...
-                          $('<input>').attr({
-                              type: 'hidden',
-                              id: 'force',
-                              name: 'force',
-                              value: '1',
-                          }).appendTo('.js-submit-modal-timeslot-form');
-
-                          $(".js-submit-modal-timeslot-form").submit();  
-                        } else if (result.isDenied) {
-                          Swal.fire("Changes are not saved", "", "info");
-                        }
-                      });
-                    } else {
-                      // Nothing
-                      $("#mainModalContent").html(data.html_form);
-                    }
-                  } else {
-                    $("#mainModalContent").html(data.html_form);
-                  }
-                }
-            }
-        });
-        return false;
     };
 
-  $(".js-submit-modal-timeslot-form").submit(saveTimeslotForm);
+    $(".js-load-modal-form").click(loadForm2);
+
+    var saveTimeslotForm = function() {
+      var form = $(this);
+      $.ajax({
+        url: form.attr("action"),
+        data: form.serialize(),
+        type: form.attr("method"),
+        dataType: 'json',
+        success: function(data) {
+            if (data.form_is_valid) {
+                if (data.next) {
+                    location.href = data.next
+                } else {
+                    calendar.refetchEvents();
+                  $("#mainModal").modal("hide");
+                }
+            } else {
+              // Check if it's due to validation
+              if (data.logic_checks_failed) {
+                if (data.logic_checks_can_bypass) {
+                  Swal.fire({
+                    title: "Warning",
+                    icon: "question",
+                    html: data.logic_checks_feedback,
+                    showCancelButton: true,
+                    confirmButtonText: "Save",
+                    denyButtonText: `Don't save`
+                  }).then((result) => {
+                    if (result.isConfirmed) {
+                      // Lets add a force param and re-submit...
+                      $('<input>').attr({
+                          type: 'hidden',
+                          id: 'force',
+                          name: 'force',
+                          value: '1',
+                      }).appendTo('.js-submit-modal-timeslot-form');
+
+                      $(".js-submit-modal-timeslot-form").submit();  
+                    } else if (result.isDenied) {
+                      Swal.fire("Changes are not saved", "", "info");
+                    }
+                  });
+                } else {
+                  // Nothing
+                  $("#mainModalContent").html(data.html_form);
+                }
+              } else {
+                $("#mainModalContent").html(data.html_form);
+              }
+            }
+          }
+      });
+      return false;
+    };
+
+    $(".js-submit-modal-timeslot-form").submit(saveTimeslotForm);
 
   });
- </script>
+</script>
