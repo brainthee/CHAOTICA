@@ -90,11 +90,11 @@ class SchedulerFilter(forms.Form):
 
     from_date = forms.DateField(
         required=False,
-        widget=DatePickerInput(options={"format": "DD/MM/YYYY", "allowInputToggle": True}),
+        widget=DatePickerInput(),
     )
     to_date = forms.DateField(
         required=False,
-        widget=DatePickerInput(range_from="from_date", options={"format": "DD/MM/YYYY", "allowInputToggle": True}),
+        widget=DatePickerInput(range_from="from_date", options={"format": "YYYY-MM-DD", "allowInputToggle": True}),
     )
 
     users = forms.ModelMultipleChoiceField(
@@ -1204,8 +1204,8 @@ class JobForm(forms.ModelForm):
     class Meta:
         model = Job
         widgets = {
-            "desired_start_date": DatePickerInput(options={"format": "DD/MM/YYYY", "allowInputToggle": True}),
-            "desired_delivery_date": DatePickerInput(range_from="desired_start_date", options={"format": "DD/MM/YYYY", "allowInputToggle": True}),
+            "desired_start_date": DatePickerInput(),
+            "desired_delivery_date": DatePickerInput(range_from="desired_start_date", options={"format": "YYYY-MM-DD", "allowInputToggle": True}),
             "unit": autocomplete.ModelSelect2(),
         }
         exclude = ["created_by"]
@@ -1243,20 +1243,20 @@ class PhaseForm(forms.ModelForm):
             )
 
         self.fields["contingency_hours"].css_class = "mb-0"
-        self.fields["desired_start_date"].widget = DatePickerInput(options={"format": "DD/MM/YYYY", "allowInputToggle": True})
-        self.fields["due_to_techqa_set"].widget = DatePickerInput(options={"format": "DD/MM/YYYY", "allowInputToggle": True})
-        self.fields["due_to_presqa_set"].widget = DatePickerInput(options={"format": "DD/MM/YYYY", "allowInputToggle": True})
-        self.fields["desired_delivery_date"].widget = DatePickerInput(options={"format": "DD/MM/YYYY", "allowInputToggle": True})
+        self.fields["desired_start_date"].widget = DatePickerInput(options={"format": "YYYY-MM-DD", "allowInputToggle": True})
+        self.fields["due_to_techqa_set"].widget = DatePickerInput(options={"format": "YYYY-MM-DD", "allowInputToggle": True})
+        self.fields["due_to_presqa_set"].widget = DatePickerInput(options={"format": "YYYY-MM-DD", "allowInputToggle": True})
+        self.fields["desired_delivery_date"].widget = DatePickerInput(options={"format": "YYYY-MM-DD", "allowInputToggle": True})
 
         # Set some verification bits. E.g. no dodgy phase IDs, make sure service and title is required
 
     class Meta:
         model = Phase
         widgets = {
-            "desired_start_date": DatePickerInput(options={"format": "DD/MM/YYYY", "allowInputToggle": True}),
-            "due_to_techqa_set": DatePickerInput(options={"format": "DD/MM/YYYY", "allowInputToggle": True}),
-            "due_to_presqa_set": DatePickerInput(options={"format": "DD/MM/YYYY", "allowInputToggle": True}),
-            "desired_delivery_date": DatePickerInput(options={"format": "DD/MM/YYYY", "allowInputToggle": True}),
+            "desired_start_date": DatePickerInput(),
+            "due_to_techqa_set": DatePickerInput(),
+            "due_to_presqa_set": DatePickerInput(),
+            "desired_delivery_date": DatePickerInput(),
         }
         exclude = ["slug", "phase_id", "job"]
         # fields = [
@@ -1677,20 +1677,6 @@ class ClientOnboardingUserForm(forms.ModelForm):
         ),
     )
 
-    onboarded = forms.DateField(
-        widget=DatePickerInput(options={"format": "DD/MM/YYYY", "allowInputToggle": True}),
-    )
-
-    reqs_completed = forms.DateField(
-        required=False,
-        widget=DatePickerInput(options={"format": "DD/MM/YYYY", "allowInputToggle": True}),
-    )
-
-    offboarded = forms.DateField(
-        required=False,
-        widget=DatePickerInput(options={"format": "DD/MM/YYYY", "allowInputToggle": True}),
-    )
-
     def clean(self):
         cleaned_data = super().clean()
         onboarded = cleaned_data.get("onboarded")
@@ -1704,6 +1690,8 @@ class ClientOnboardingUserForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(ClientOnboardingUserForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
+        self.fields["reqs_completed"].required = False
+        self.fields["offboarded"].required = False
         self.helper.layout = Layout(
             Div(
                 Row(
@@ -1711,22 +1699,13 @@ class ClientOnboardingUserForm(forms.ModelForm):
                 ),
                 Row(
                     Column(
-                        Div(
-                            Field("onboarded"),
-                            css_class="input-group input-group-dynamic",
-                        ),
+                        Div(Field("onboarded"))
                     ),
                     Column(
-                        Div(
-                            Field("reqs_completed"),
-                            css_class="input-group input-group-dynamic",
-                        ),
+                        Div(Field("reqs_completed"))
                     ),
                     Column(
-                        Div(
-                            Field("offboarded"),
-                            css_class="input-group input-group-dynamic",
-                        ),
+                        Div(Field("offboarded"))
                     ),
                 ),
                 css_class="card-body p-3",
@@ -1752,6 +1731,11 @@ class ClientOnboardingUserForm(forms.ModelForm):
             "reqs_completed",
             "offboarded",
         ]
+        widgets = {
+            "onboarded": DatePickerInput(),
+            "reqs_completed": DatePickerInput(),
+            "offboarded": DatePickerInput(),
+        }
 
 
 class ClientContactForm(forms.ModelForm):
@@ -1789,11 +1773,11 @@ class ClientContactForm(forms.ModelForm):
 
 class ClientFrameworkForm(forms.ModelForm):
     start_date = forms.DateField(
-        widget=DatePickerInput(options={"format": "DD/MM/YYYY", "allowInputToggle": True}),
+        widget=DatePickerInput(),
     )
     end_date = forms.DateField(
         required=False,
-        widget=DatePickerInput(range_from="start_date", options={"format": "DD/MM/YYYY", "allowInputToggle": True}),
+        widget=DatePickerInput(range_from="start_date", options={"format": "YYYY-MM-DD", "allowInputToggle": True}),
     )
 
     def __init__(self, *args, **kwargs):
@@ -1930,12 +1914,16 @@ class OrganisationalUnitForm(forms.ModelForm):
             "targetProfit",
             "businessHours_startTime",
             "businessHours_endTime",
+            "businessHours_lunch_startTime",
+            "businessHours_lunch_endTime",
             "businessHours_days",
         ]
         widgets = {
             "businessHours_days": forms.TextInput(),
             "businessHours_startTime": TimePickerInput(options={"allowInputToggle": True}),
             "businessHours_endTime": TimePickerInput(range_from="businessHours_startTime", options={"allowInputToggle": True}),
+            "businessHours_lunch_startTime": TimePickerInput(options={"allowInputToggle": True}),
+            "businessHours_lunch_endTime": TimePickerInput(range_from="businessHours_lunch_startTime", options={"allowInputToggle": True}),
         }
 
 
@@ -1977,15 +1965,15 @@ class OwnQualificationRecordForm(forms.ModelForm):
 
     attempt_date = forms.DateField(
         required=False,
-        widget=DatePickerInput(options={"format": "DD/MM/YYYY", "allowInputToggle": True}),
+        widget=DatePickerInput(),
     )
     awarded_date = forms.DateField(
         required=False,
-        widget=DatePickerInput(options={"format": "DD/MM/YYYY", "allowInputToggle": True}),
+        widget=DatePickerInput(),
     )
     lapse_date = forms.DateField(
         required=False,
-        widget=DatePickerInput(options={"format": "DD/MM/YYYY", "allowInputToggle": True}),
+        widget=DatePickerInput(),
     )
 
     def __init__(self, *args, **kwargs):
@@ -2213,12 +2201,12 @@ class TeamMemberForm(forms.ModelForm):
 
     joined_at = forms.DateField(
         required=False,
-        widget=DatePickerInput(options={"format": "DD/MM/YYYY", "allowInputToggle": True}),
+        widget=DatePickerInput(),
     )
 
     left_at = forms.DateField(
         required=False,
-        widget=DatePickerInput(range_from="joined_at", options={"format": "DD/MM/YYYY", "allowInputToggle": True}),
+        widget=DatePickerInput(range_from="joined_at", options={"format": "YYYY-MM-DD", "allowInputToggle": True}),
     )
 
     def __init__(self, *args, **kwargs):

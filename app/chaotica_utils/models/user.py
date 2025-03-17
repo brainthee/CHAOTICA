@@ -537,57 +537,429 @@ class User(AbstractUser):
             data.append(slot_json)
         return data
 
-    def get_timeslots_objs(self, start=None, end=None, selected_phases=None):
-        today = timezone.now().today()
-        start_of_week = today - timedelta(days=today.weekday())
-        end_of_week = start_of_week + timedelta(days=6)
+    def get_timeslots_objs(self, start_date, end_date):
+        """
+        Gets all timeslots overlapping the range
 
-        start = start or start_of_week
-        end = end or end_of_week
+        Args:
+            start_date (datetime): Start of the date range to clear
+            end_date (datetime): End of the date range to clear
 
-        slots = self.timeslots.filter(end__gte=start, start__lte=end)
-        return slots
+        Returns:
+            queryset: affected_timeslots - Lists of affected timeslots
+        """
+        from django.utils import timezone
 
-    def clear_timeslots_in_range(self, start=None, end=None):
-        slots = self.get_timeslots_objs(start, end)
-        for slot in slots:
-            if (
-                # First simple scenario, check if the slot simply falls in our range.
-                # Action - delete
-                slot.start >= start
-                and slot.end <= end
-            ):
-                slot.delete()
-            elif (
-                # Now find slots that start before our range but finish inside it.
-                # Action - change end date to our start.
-                slot.start <= start
-                and slot.end <= end
-            ):
-                slot.end = start
-                slot.save()
-            elif (
-                # Now find the op - slots that start in and end after
-                # Action - change the start date to our end
-                slot.start >= start
-                and slot.end > end
-            ):
-                slot.start = end
-                slot.save()
-            elif (
-                # Now find slots that go right through. Need to create extra ones!
-                slot.start < start
-                and slot.end > end
-            ):
-                # Lets get a duplicate ref
-                new_slot = self.timeslots.get(pk=slot.pk)
-                new_slot.pk = None
-                slot.end = start
-                new_slot.start = end
-                slot.save()
-                new_slot.save()
-            else:
-                raise Exception("Found an edge case to clear schedule")
+        tz = timezone.get_current_timezone()
+        if isinstance(start_date, datetime.date) and not isinstance(
+            start_date, datetime.datetime
+        ):
+            start_date = datetime.datetime.combine(
+                start_date, datetime.time.min
+            ).replace(tzinfo=tz)
+        elif isinstance(start_date, datetime.datetime) and start_date.tzinfo is None:
+            start_date = start_date.replace(tzinfo=tz)
+
+        # Convert end_date to datetime (end of day if it's a date object)
+        if isinstance(end_date, datetime.date) and not isinstance(
+            end_date, datetime.datetime
+        ):
+            # If end_date is a date, use the end of that day (23:59:59)
+            end_date = datetime.datetime.combine(end_date, datetime.time.max).replace(
+                tzinfo=tz
+            )
+        elif isinstance(end_date, datetime.datetime) and end_date.tzinfo is None:
+            end_date = end_date.replace(tzinfo=tz)
+
+        # Validate dates
+        if start_date >= end_date:
+            raise ValueError("Start date must be before end date")
+
+        # Find timeslots that overlap with the range
+        queryset = self.timeslots.filter(start__lt=end_date, end__gt=start_date)
+        return queryset
+
+    def get_timeslot_comments_objs(self, start_date, end_date):
+        """
+        Gets all timeslot comments overlapping the range
+
+        Args:
+            start_date (datetime): Start of the date range to clear
+            end_date (datetime): End of the date range to clear
+
+        Returns:
+            queryset: affected_timeslot_comments - Lists of affected timeslot comments
+        """
+        from django.utils import timezone
+
+        tz = timezone.get_current_timezone()
+        if isinstance(start_date, datetime.date) and not isinstance(
+            start_date, datetime.datetime
+        ):
+            start_date = datetime.datetime.combine(
+                start_date, datetime.time.min
+            ).replace(tzinfo=tz)
+        elif isinstance(start_date, datetime.datetime) and start_date.tzinfo is None:
+            start_date = start_date.replace(tzinfo=tz)
+
+        # Convert end_date to datetime (end of day if it's a date object)
+        if isinstance(end_date, datetime.date) and not isinstance(
+            end_date, datetime.datetime
+        ):
+            # If end_date is a date, use the end of that day (23:59:59)
+            end_date = datetime.datetime.combine(end_date, datetime.time.max).replace(
+                tzinfo=tz
+            )
+        elif isinstance(end_date, datetime.datetime) and end_date.tzinfo is None:
+            end_date = end_date.replace(tzinfo=tz)
+
+        # Validate dates
+        if start_date >= end_date:
+            raise ValueError("Start date must be before end date")
+
+        # Find timeslots that overlap with the range
+        queryset = self.timeslot_comments.filter(start__lt=end_date, end__gt=start_date)
+        return queryset
+
+
+    def clear_timeslots_in_range(
+        self, start_date, end_date, respect_working_hours=True
+    ):
+        """
+        Clear timeslots in a date range for the user.
+        This method handles partial overlaps by splitting timeslots as needed.
+
+        Args:
+            start_date (datetime): Start of the date range to clear
+            end_date (datetime): End of the date range to clear
+
+        Returns:
+            tuple: (affected_timeslots, created_timeslots) - Lists of affected and newly created timeslots
+        """
+        from django.utils import timezone
+        from django.db import transaction
+        from jobtracker.models import TimeSlot
+        from django.forms.models import model_to_dict
+
+        # Ensure we have datetime objects with proper timezone
+        tz = timezone.get_current_timezone()
+
+        # Convert date to datetime (start of day)
+        if isinstance(start_date, datetime.date) and not isinstance(
+            start_date, datetime.datetime
+        ):
+            start_date = datetime.datetime.combine(
+                start_date, datetime.time.min
+            ).replace(tzinfo=tz)
+        elif isinstance(start_date, datetime.datetime) and start_date.tzinfo is None:
+            start_date = start_date.replace(tzinfo=tz)
+
+        # Convert end_date to datetime (end of day if it's a date object)
+        if isinstance(end_date, datetime.date) and not isinstance(
+            end_date, datetime.datetime
+        ):
+            # If end_date is a date, use the end of that day (23:59:59)
+            end_date = datetime.datetime.combine(end_date, datetime.time.max).replace(
+                tzinfo=tz
+            )
+        elif isinstance(end_date, datetime.datetime) and end_date.tzinfo is None:
+            end_date = end_date.replace(tzinfo=tz)
+
+        # Validate dates
+        if start_date >= end_date:
+            raise ValueError("Start date must be before end date")
+
+        affected_timeslots = []
+        created_timeslots = []
+
+        # Find timeslots that overlap with the range
+        queryset = self.timeslots.filter(start__lt=end_date, end__gt=start_date)
+
+        # Process each overlapping timeslot
+        with transaction.atomic():
+            for slot in queryset:
+                affected_timeslots.append(slot)
+
+                # Case 1: Slot starts before range and ends after range (completely encompasses)
+                if slot.start < start_date and slot.end > end_date:
+                    # Create two new slots: one before and one after the range
+                    slot_data = model_to_dict(
+                            slot, exclude=["id", "start", "end", "user", "slot_type", "phase", "project"]
+                    )
+
+                    # For the "before" slot, adjust the end time to working hours if needed
+                    adjusted_end = self.adjust_to_working_hours(
+                        start_date, is_end_time=True
+                    )
+
+                    # Only create "before" slot if it would have non-zero duration
+                    if adjusted_end > slot.start:
+                        before_slot = TimeSlot.objects.create(
+                            user=slot.user,
+                            slot_type=slot.slot_type,
+                            phase=slot.phase,
+                            project=slot.project,
+                            start=slot.start,
+                            end=adjusted_end,
+                            **slot_data,
+                        )
+                        created_timeslots.append(before_slot)
+
+                    # For the "after" slot, adjust the start time to working hours if needed
+                    if respect_working_hours:
+                        adjusted_start = self.get_next_workday_start(end_date)
+                    else:
+                        adjusted_start = datetime.datetime.combine(
+                            end_date.date() + datetime.timedelta(days=1),
+                            datetime.time.min,
+                        ).replace(tzinfo=end_date.tzinfo)
+
+                    # Only create "after" slot if it would have non-zero duration
+                    if slot.end > adjusted_start:
+                        after_slot = TimeSlot.objects.create(
+                            user=slot.user,
+                            start=adjusted_start,
+                            slot_type=slot.slot_type,
+                            phase=slot.phase,
+                            project=slot.project,
+                            end=slot.end,
+                            **slot_data,
+                        )
+                        created_timeslots.append(after_slot)
+
+                    slot.delete()
+
+                # Case 2: Slot starts before range and ends within or at the end of range
+                elif slot.start < start_date and slot.end <= end_date:
+                    # Create one new slot before the range
+                    slot_data = model_to_dict(
+                            slot, exclude=["id", "start", "end", "user", "slot_type", "phase", "project"]
+                    )
+
+                    # Adjust the end time to working hours if needed
+                    adjusted_end = self.adjust_to_working_hours(
+                        start_date, is_end_time=True
+                    )
+
+                    # Only create the new slot if it would have non-zero duration
+                    if adjusted_end > slot.start:
+                        before_slot = TimeSlot.objects.create(
+                            user=slot.user,
+                            start=slot.start,
+                            slot_type=slot.slot_type,
+                            phase=slot.phase,
+                            project=slot.project,
+                            end=adjusted_end,
+                            **slot_data,
+                        )
+                        created_timeslots.append(before_slot)
+
+                    slot.delete()
+
+                # Case 3: Slot starts within or at start of range and ends after range
+                elif slot.start >= start_date and slot.end > end_date:
+                    # Determine the appropriate start time for the new slot
+                    if respect_working_hours:
+                        adjusted_start = self.get_next_workday_start(end_date)
+                    else:
+                        adjusted_start = datetime.datetime.combine(
+                            end_date.date() + datetime.timedelta(days=1),
+                            datetime.time.min,
+                        ).replace(tzinfo=end_date.tzinfo)
+
+                    # Special case: If the slot ends too close to the adjusted start, don't create a new slot
+                    if (
+                        slot.end - adjusted_start
+                    ).total_seconds() < 900:  # Less than 15 minutes
+                        slot.delete()
+                    else:
+                        # Create one new slot after the range
+                        slot_data = model_to_dict(
+                            slot, exclude=["id", "start", "end", "user", "slot_type", "phase", "project"]
+                        )
+
+                        after_slot = TimeSlot.objects.create(
+                            user=slot.user,
+                            start=adjusted_start,
+                            slot_type=slot.slot_type,
+                            phase=slot.phase,
+                            project=slot.project,
+                            end=slot.end,
+                            **slot_data,
+                        )
+
+                        created_timeslots.append(after_slot)
+                        slot.delete()
+
+                # Case 4: Slot is completely within the range
+                else:
+                    # Just delete the slot as it's completely covered by the range
+                    slot.delete()
+
+        return affected_timeslots, created_timeslots
+
+
+    def clear_timeslot_comments_in_range(self, start_date, end_date, respect_working_hours=True):
+        """
+        Clear timeslots in a date range for the user.
+        This method handles partial overlaps by splitting timeslots as needed.
+
+        Args:
+            start_date (datetime): Start of the date range to clear
+            end_date (datetime): End of the date range to clear
+
+        Returns:
+            tuple: (affected_timeslots, created_timeslots) - Lists of affected and newly created timeslots
+        """
+        from django.utils import timezone
+        from django.db import transaction
+        from jobtracker.models import TimeSlotComment
+        from django.forms.models import model_to_dict
+
+        # Ensure we have datetime objects with proper timezone
+        tz = timezone.get_current_timezone()
+
+        # Convert date to datetime (start of day)
+        if isinstance(start_date, datetime.date) and not isinstance(
+            start_date, datetime.datetime
+        ):
+            start_date = datetime.datetime.combine(
+                start_date, datetime.time.min
+            ).replace(tzinfo=tz)
+        elif isinstance(start_date, datetime.datetime) and start_date.tzinfo is None:
+            start_date = start_date.replace(tzinfo=tz)
+
+        # Convert end_date to datetime (end of day if it's a date object)
+        if isinstance(end_date, datetime.date) and not isinstance(
+            end_date, datetime.datetime
+        ):
+            # If end_date is a date, use the end of that day (23:59:59)
+            end_date = datetime.datetime.combine(end_date, datetime.time.max).replace(
+                tzinfo=tz
+            )
+        elif isinstance(end_date, datetime.datetime) and end_date.tzinfo is None:
+            end_date = end_date.replace(tzinfo=tz)
+
+        # Validate dates
+        if start_date >= end_date:
+            raise ValueError("Start date must be before end date")
+
+        affected_timeslots = []
+        created_timeslots = []
+
+        # Find timeslots that overlap with the range
+        queryset = self.timeslot_comments.filter(start__lt=end_date, end__gt=start_date)
+
+        # Process each overlapping timeslot
+        with transaction.atomic():
+            for slot in queryset:
+                affected_timeslots.append(slot)
+
+                # Case 1: Slot starts before range and ends after range (completely encompasses)
+                if slot.start < start_date and slot.end > end_date:
+                    # Create two new slots: one before and one after the range
+                    slot_data = model_to_dict(
+                        slot, exclude=["id", "start", "end", "user"]
+                    )
+
+                    # For the "before" slot, adjust the end time to working hours if needed
+                    adjusted_end = self.adjust_to_working_hours(
+                        start_date, is_end_time=True
+                    )
+
+                    # Only create "before" slot if it would have non-zero duration
+                    if adjusted_end > slot.start:
+                        before_slot = TimeSlotComment.objects.create(
+                            user=slot.user,
+                            start=slot.start,
+                            end=adjusted_end,
+                            **slot_data,
+                        )
+                        created_timeslots.append(before_slot)
+
+                    # For the "after" slot, adjust the start time to working hours if needed
+                    if respect_working_hours:
+                        adjusted_start = self.get_next_workday_start(end_date)
+                    else:
+                        adjusted_start = datetime.datetime.combine(
+                            end_date.date() + datetime.timedelta(days=1),
+                            datetime.time.min,
+                        ).replace(tzinfo=end_date.tzinfo)
+
+                    # Only create "after" slot if it would have non-zero duration
+                    if slot.end > adjusted_start:
+                        after_slot = TimeSlotComment.objects.create(
+                            user=slot.user,
+                            start=adjusted_start,
+                            end=slot.end,
+                            **slot_data,
+                        )
+                        created_timeslots.append(after_slot)
+
+                    slot.delete()
+
+                # Case 2: Slot starts before range and ends within or at the end of range
+                elif slot.start < start_date and slot.end <= end_date:
+                    # Create one new slot before the range
+                    slot_data = model_to_dict(
+                        slot, exclude=["id", "start", "end", "user"]
+                    )
+
+                    # Adjust the end time to working hours if needed
+                    adjusted_end = self.adjust_to_working_hours(
+                        start_date, is_end_time=True
+                    )
+
+                    # Only create the new slot if it would have non-zero duration
+                    if adjusted_end > slot.start:
+                        before_slot = TimeSlotComment.objects.create(
+                            user=slot.user,
+                            start=slot.start,
+                            end=adjusted_end,
+                            **slot_data,
+                        )
+                        created_timeslots.append(before_slot)
+
+                    slot.delete()
+
+                # Case 3: Slot starts within or at start of range and ends after range
+                elif slot.start >= start_date and slot.end > end_date:
+                    # Determine the appropriate start time for the new slot
+                    if respect_working_hours:
+                        adjusted_start = self.get_next_workday_start(end_date)
+                    else:
+                        adjusted_start = datetime.datetime.combine(
+                            end_date.date() + datetime.timedelta(days=1),
+                            datetime.time.min,
+                        ).replace(tzinfo=end_date.tzinfo)
+
+                    # Special case: If the slot ends too close to the adjusted start, don't create a new slot
+                    if (
+                        slot.end - adjusted_start
+                    ).total_seconds() < 900:  # Less than 15 minutes
+                        slot.delete()
+                    else:
+                        # Create one new slot after the range
+                        slot_data = model_to_dict(
+                            slot, exclude=["id", "start", "end", "user"]
+                        )
+
+                        after_slot = TimeSlotComment.objects.create(
+                            user=slot.user,
+                            start=adjusted_start,
+                            end=slot.end,
+                            **slot_data,
+                        )
+
+                        created_timeslots.append(after_slot)
+                        slot.delete()
+
+                # Case 4: Slot is completely within the range
+                else:
+                    # Just delete the slot as it's completely covered by the range
+                    slot.delete()
+
+        return affected_timeslots, created_timeslots
 
     def get_holidays(self, start=None, end=None):
         from ..models import Holiday
@@ -833,6 +1205,67 @@ class User(AbstractUser):
             data["start"] = timezone.datetime.time(9, 0, 0)
             data["end"] = timezone.datetime.time(17, 30, 0)
         return data
+
+    # Helper function to adjust to working hours
+    def adjust_to_working_hours(self, dt, is_end_time=False):
+        """Adjust datetime to respect working hours"""
+        working_hours = self.get_working_hours()
+
+        day_start = datetime.datetime.combine(
+            dt.date(), working_hours["start"]
+        ).replace(tzinfo=dt.tzinfo)
+        day_end = datetime.datetime.combine(dt.date(), working_hours["end"]).replace(
+            tzinfo=dt.tzinfo
+        )
+
+        # If it's an end time and falls in the middle of a day, use end of workday
+        if (
+            is_end_time
+            and dt.time() > working_hours["start"]
+            and dt.time() < working_hours["end"]
+        ):
+            return day_end
+
+        # If it's a start time and falls in the middle of a day, use start of workday
+        if (
+            not is_end_time
+            and dt.time() > working_hours["start"]
+            and dt.time() < working_hours["end"]
+        ):
+            return day_start
+
+        # For start times: if before workday start, use workday start
+        if not is_end_time and dt.time() < working_hours["start"]:
+            return day_start
+
+        # For end times: if after workday end, use workday end
+        if is_end_time and dt.time() > working_hours["end"]:
+            return day_end
+
+        # For start times: if after workday end, use next day's workday start
+        if not is_end_time and dt.time() > working_hours["end"]:
+            next_day = (dt + datetime.timedelta(days=1)).date()
+            return datetime.datetime.combine(next_day, working_hours["start"]).replace(
+                tzinfo=dt.tzinfo
+            )
+
+        # For end times: if before workday start, use previous day's workday end
+        if is_end_time and dt.time() < working_hours["start"]:
+            prev_day = (dt - datetime.timedelta(days=1)).date()
+            return datetime.datetime.combine(prev_day, working_hours["end"]).replace(
+                tzinfo=dt.tzinfo
+            )
+
+        return dt
+
+    # Helper function to get next workday start
+    def get_next_workday_start(self, dt):
+        """Get the start of the next workday"""
+        next_day = (dt + datetime.timedelta(days=1)).date()
+        working_hours = self.get_working_hours()
+        return datetime.datetime.combine(next_day, working_hours["start"]).replace(
+            tzinfo=dt.tzinfo
+        )
 
     def get_working_days_in_range(
         self, org, start_date, end_date, org_working_days_list=None

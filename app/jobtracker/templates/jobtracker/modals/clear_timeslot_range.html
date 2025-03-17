@@ -11,13 +11,28 @@
       <div class="modal-body">
         <p>Are you sure you wish to clear the following range of all assignments for {{ resource }}?</p>
 
-        <p>{{ start }} to {{ end }}</p>
+        <p>
+          <span class="badge badge-phoenix badge-phoenix-primary">{{ start }}</span> to <span class="badge badge-phoenix badge-phoenix-primary">{{ end }}</span>
+        </p>
 
         <p>
-          This will modify the affected slots:
+          This will modify the overlapping slots:
           <ul>
             {% for timeslot in timeslots %}
               <li>{{ timeslot }}</li>
+              {% empty %}
+              <li><span class="badge badge-phoenix badge-phoenix-secondary">None</span></li>
+            {% endfor %}
+          </ul>
+        </p>
+
+        <p>
+          This will modify the overlapping comments:
+          <ul>
+            {% for comment in comments %}
+              <li>{{ comment }}</li>
+              {% empty %}
+              <li><span class="badge badge-phoenix badge-phoenix-secondary">None</span></li>
             {% endfor %}
           </ul>
         </p>

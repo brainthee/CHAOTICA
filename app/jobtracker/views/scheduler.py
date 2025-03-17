@@ -796,16 +796,18 @@ def clear_scheduler_range(request):
 
     resource = get_object_or_404(User, pk=resource_id)
     timeslots = resource.get_timeslots_objs(start, end)
+    comments = resource.get_timeslot_comments_objs(start, end)
 
     if request.method == "POST":
         if request.POST.get("user_action") == "approve_action":
             # Ok, user has confirmed. Lets do it!
             resource.clear_timeslots_in_range(start, end)
+            resource.clear_timeslot_comments_in_range(start, end)
             data["form_is_valid"] = True
         else:
             data["form_is_valid"] = False
 
-    context = {"start": start, "end": end, "resource": resource, "timeslots": timeslots}
+    context = {"start": start, "end": end, "resource": resource, "timeslots": timeslots, "comments": comments}
     data["html_form"] = loader.render_to_string(
         "jobtracker/modals/clear_timeslot_range.html", context, request=request
     )

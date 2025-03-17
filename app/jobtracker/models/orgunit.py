@@ -18,8 +18,7 @@ from ..models import TimeSlot
 from chaotica_utils.enums import UnitRoles, UpcomingAvailabilityRanges
 from ..enums import PhaseStatuses
 from django.utils import timezone
-from datetime import timedelta, date
-import datetime
+from datetime import timedelta, date, datetime
 from decimal import Decimal
 from django.templatetags.static import static
 from django_bleach.models import BleachField
@@ -55,12 +54,14 @@ class OrganisationalUnit(models.Model):
     )
     businessHours_startTime = models.TimeField("Start Time", default="09:00:00")
     businessHours_endTime = models.TimeField("End Time", default="17:30:00")
+    businessHours_lunch_startTime = models.TimeField("Lunch Start Time", default="12:00:00")
+    businessHours_lunch_endTime = models.TimeField("Lunch End Time", default="13:00:00")
     businessHours_days = JSONField(
         verbose_name="Days",
         null=True,
         blank=True,
         default=_default_business_days,
-        help_text="An int array with the numbers equaling the day of the week. Sunday == 0, Monday == 2 etc",
+        help_text="An int array with the numbers equaling the day of the week. Sunday == 0, Monday == 1 etc",
     )
     approval_required = models.BooleanField(
         "Approval Required",
@@ -115,11 +116,11 @@ class OrganisationalUnit(models.Model):
     def get_working_days_in_range(self, start_date, end_date):
         working_days_list = []
         if not (
-            isinstance(start_date, datetime.date)
-            and isinstance(end_date, datetime.date)
+            isinstance(start_date, date)
+            and isinstance(end_date, date)
         ):
             raise TypeError(
-                "Both start_date and end_date must be datetime.date objects"
+                "Both start_date and end_date must be date objects"
             )
 
         # Ensure that the start date is before or equal to the end date.
@@ -136,7 +137,7 @@ class OrganisationalUnit(models.Model):
             if is_working_day:
                 working_days_list.append(current_date)
 
-            current_date += datetime.timedelta(days=1)
+            current_date += timedelta(days=1)
 
         return working_days_list
 
