@@ -31,8 +31,8 @@ def index(request):
     context = {}
 
     # this week's datetime objects
-    week_start_date = timezone.datetime.today() - timedelta(
-        days=timezone.datetime.today().weekday()
+    week_start_date = timezone.now().date() - timedelta(
+        days=timezone.now().date().weekday()
     )
     week_end_date = week_start_date + timedelta(days=6)
 
