@@ -51,3 +51,45 @@
     </tbody>
     {% endif %}
   </table>
+  
+  {% comment %} <script>
+    $('#jobTableAjax').DataTable({retrieve: true,}).destroy();
+    
+    table = $('.jobTableAjax').DataTable({
+      {% include 'js/dtDefaultConfig.js' %}
+      {% if not job_list and not disableAjax %}
+      serverSide: true,
+      processing: true,
+      ajax: "{% url 'job-list' %}?format=datatables{% if filter_field %}&{{ filter_field }}={{ filter_value }}{% endif %}",
+      {% endif %}
+      initComplete: function () {
+        this.api()
+            .columns('.dtFilter')
+            .every(function () {
+                let column = this;
+ 
+                // Create select element
+                let select = document.createElement('select');
+                select.add(new Option(''));
+                column.footer().replaceChildren(select);
+ 
+                // Apply listener for user change in value
+                select.addEventListener('change', function () {
+                    column
+                        .search(select.value, {exact: true})
+                        .draw();
+                });
+ 
+                // Add list of options
+                column
+                    .data()
+                    .unique()
+                    .sort()
+                    .each(function (d, j, a) {
+                      console.log('Data in index: ' + d + ' is: ' + j);
+                      select.add(new Option(d));
+                    });
+            });
+    }
+  });
+</script> {% endcomment %}

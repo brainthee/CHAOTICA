@@ -1,4 +1,4 @@
-from .models import User, Notification
+from .models import *
 from .enums import NotificationTypes
 from django.template.loader import render_to_string
 from django.conf import settings as django_settings
@@ -19,6 +19,35 @@ from django.utils.dateparse import (
     parse_time,
 )
 from django.utils.timezone import is_aware, make_aware, now
+
+
+def calculate_percentage(part, whole, decimal_places=1):
+    """
+    Calculate percentage with specified decimal places.
+    
+    Args:
+        part (float|int): The partial value
+        whole (float|int): The total value
+        decimal_places (int, optional): Number of decimal places to round to. Defaults to 1.
+    
+    Returns:
+        float: The calculated percentage rounded to specified decimal places
+        
+    Raises:
+        ZeroDivisionError: If whole is zero
+        ValueError: If decimal_places is negative
+    """
+    if whole == 0:
+        raise ZeroDivisionError("Cannot calculate percentage with zero total")
+    
+    if decimal_places < 0:
+        raise ValueError("Decimal places must be non-negative")
+        
+    try:
+        percentage = (part / whole) * 100
+        return round(percentage, decimal_places)
+    except TypeError:
+        raise TypeError("Part and whole must be numeric values")
 
 
 class NoColorFormatter(logging.Formatter):

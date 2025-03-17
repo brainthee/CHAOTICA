@@ -25,7 +25,7 @@ from ..mixins import PrefetchRelatedMixin
 import logging
 from django.contrib import messages
 from django.utils import timezone
-import datetime
+import datetime, json
 from guardian.decorators import permission_required_or_403
 from guardian.mixins import PermissionRequiredMixin
 
@@ -94,21 +94,12 @@ class OrganisationalUnitDetailView(
             context["end_date"] = self.request.GET.get(
                 "end_date", timezone.datetime.today().date()
             )
+        
+        context["stats"] = self.get_object().get_stats(
+            context["start_date"], context["end_date"]
+        )
+        context["stats_json"] = json.dumps(context["stats"], indent=4, default=str)
 
-        # org_raw = self.request.GET.get("org", None)
-        # if org_raw and org_raw.isdigit():
-        #     if self.get_object().unit_memberships.filter(unit__pk=org_raw).exists():
-        #         context["org"] = self.get_object().unit_memberships.get(unit__pk=org_raw).unit
-
-        # if "org" not in context:
-        #     context["org"] = None
-
-        # context["stats"] = self.get_object().get_stats(
-        #     context["org"],
-        #     context["start_date"],
-        #     context["end_date"])
-
-        # context["stats_pretty"] = json.dumps(context["stats"], indent=2, sort_keys=True, default=str)
         return context
 
 
