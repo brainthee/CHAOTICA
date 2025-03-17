@@ -1,0 +1,58 @@
+{% load static %}
+
+{% comment %} <script src="{% static "virtualpet/virtual-pet.js" %}"></script> {% endcomment %}
+
+
+
+
+{% if request.user.is_authenticated %}
+
+
+
+
+<!-- Virtual Pet Assets -->
+{% if request.user.petpreference.enabled %}
+<link rel="stylesheet" href="{% static 'virtualpet/virtual-pet.css' %}">
+<script type="module">  
+    import { initPet } from "{% static 'virtualpet/pet-main.js' %}";
+    document.addEventListener('DOMContentLoaded', initPet);
+</script>
+{% endif %}
+
+
+
+
+<button id="toggle-pet" class="btn btn-sm btn-outline-secondary">
+    {% if request.user.petpreference.enabled %}
+    Hide Pet
+    {% else %}
+    Show Pet
+    {% endif %}
+</button>
+
+<script>
+document.getElementById('toggle-pet').addEventListener('click', function() {
+    fetch('{% url "virtualpet:toggle" %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.enabled) {
+            this.textContent = 'Hide Pet';
+            // Refresh page to show pet
+            location.reload();
+        } else {
+            this.textContent = 'Show Pet';
+            // Remove pet if it exists
+            if (window.petInstance) {
+                window.petInstance.container.remove();
+            }
+        }
+    });
+});
+</script>
+
+{% endif %}

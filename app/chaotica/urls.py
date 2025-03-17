@@ -34,6 +34,7 @@ urlpatterns = [
     re_path(r"", include("chaotica_utils.urls")),
     re_path(r"", include("jobtracker.urls")),
     path("rm_sync/", include("rm_sync.urls")),
+    path('pet/', include('virtualpet.urls')),
 ]
 
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

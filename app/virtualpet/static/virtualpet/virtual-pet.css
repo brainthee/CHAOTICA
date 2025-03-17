@@ -1,0 +1,102 @@
+/* virtual-pet.css */
+.virtual-pet-container {
+    position: fixed;
+    z-index: 9999;
+    transition: all 0.3s ease;
+}
+
+.virtual-pet-container.bottom-right {
+    bottom: 20px;
+    right: 20px;
+}
+
+.virtual-pet-container.bottom-left {
+    bottom: 20px;
+    left: 20px;
+}
+
+.virtual-pet-container.top-right {
+    top: 20px;
+    right: 20px;
+}
+
+.virtual-pet-container.top-left {
+    top: 20px;
+    left: 20px;
+}
+
+.virtual-pet {
+    background-color: transparent;
+    cursor: pointer;
+    user-select: none;
+    transition: transform 0.3s ease;
+}
+
+.virtual-pet.small {
+    width: 40px;
+    height: 40px;
+}
+
+.virtual-pet.medium {
+    width: 60px;
+    height: 60px;
+}
+
+.virtual-pet.large {
+    width: 80px;
+    height: 80px;
+}
+
+.virtual-pet:hover {
+    transform: scale(1.1);
+}
+
+.virtual-pet-menu {
+    background-color: white;
+    border-radius: 5px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    padding: 5px;
+    margin-bottom: 10px;
+    z-index: 10000;
+}
+
+.virtual-pet-action {
+    margin: 3px;
+    padding: 5px 10px;
+    border: none;
+    border-radius: 3px;
+    background-color: #f0f0f0;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.virtual-pet-action:hover {
+    background-color: #e0e0e0;
+}
+
+.virtual-pet-status {
+    font-size: 12px;
+    text-align: center;
+    margin-top: 5px;
+}
+
+/* Animation keyframes */
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+
+@keyframes wobble {
+    0%, 100% { transform: rotate(0); }
+    25% { transform: rotate(-5deg); }
+    75% { transform: rotate(5deg); }
+}
+
+/* Applied animation classes */
+.virtual-pet.bounce {
+    animation: bounce 1s infinite;
+}
+
+.virtual-pet.wobble {
+    animation: wobble 1s infinite;
+}
