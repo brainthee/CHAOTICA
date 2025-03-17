@@ -970,10 +970,10 @@ class UserDetailView(UserBaseView, DetailView):
         if "start_date" not in context:
             context["start_date"] = self.request.GET.get(
                 "start_date",
-                (timezone.datetime.today() - datetime.timedelta(days=30)),
+                (timezone.now().date() - datetime.timedelta(days=30)),
             )
             context["end_date"] = self.request.GET.get(
-                "end_date", timezone.datetime.today()
+                "end_date", timezone.now().date()
             )
 
         org_raw = self.request.GET.get("org", None)

@@ -2,6 +2,7 @@ from django.http import HttpResponse
 from django.template import loader
 from django.contrib.auth.decorators import login_required
 import logging
+from chaotica_utils.utils import make_aware
 from django.utils import timezone
 from datetime import datetime, timedelta
 from jobtracker.models import Job, Phase, TimeSlot, OrganisationalUnit
@@ -31,8 +32,8 @@ def index(request):
     context = {}
 
     # this week's datetime objects
-    week_start_date = timezone.datetime.today() - timedelta(
-        days=timezone.datetime.today().weekday()
+    week_start_date = timezone.now().date() - timedelta(
+        days=timezone.now().date().weekday()
     )
     week_end_date = week_start_date + timedelta(days=6)
 
@@ -91,8 +92,8 @@ def index(request):
 
     context["scheduled_phases_this_week"] = (
         all_phases.filter(
-            timeslots__end__gte=week_start_date,
-            timeslots__start__lte=week_end_date,
+            timeslots__end__date__gte=week_start_date,
+            timeslots__start__date__lte=week_end_date,
         )
         .distinct()
         .prefetch_related(
