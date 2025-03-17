@@ -15,6 +15,7 @@ from django_countries.fields import CountryField
 from constance.admin import ConstanceForm
 from dal import autocomplete
 import pytz
+from datetime import datetime, timedelta
 from django.conf import settings
 from constance import config
 from bootstrap_datepicker_plus.widgets import (
@@ -65,7 +66,7 @@ class HolidayForm(forms.ModelForm):
 
 class HolidayImportLibForm(forms.Form):
     country = CountryField().formfield()
-    
+
     def __init__(self, *args, **kwargs):
         super(HolidayImportLibForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
@@ -73,7 +74,8 @@ class HolidayImportLibForm(forms.Form):
         self.helper.layout = Layout(
             Row(
                 Div(
-                    FloatingField("country"), css_class="input-group input-group-dynamic"
+                    FloatingField("country"),
+                    css_class="input-group input-group-dynamic",
                 ),
             ),
         )
@@ -133,8 +135,7 @@ class CustomConfigForm(ConstanceForm):
                     Div(
                         Field("LEAVE_ENFORCE_LIMIT"),
                         css_class="input-group input-group-dynamic",
-                    ),                   
-
+                    ),
                     HTML('<h4 class="mb-4">Phase Deadlines</h4>'),
                     Div(
                         FloatingField("DAYS_TO_TQA"),
@@ -215,7 +216,7 @@ class CustomConfigForm(ConstanceForm):
                     Div(
                         Field("EMAIL_ENABLED"),
                         css_class="input-group input-group-dynamic",
-                    ),                    
+                    ),
                 ),
                 Column(
                     HTML('<h4 class="mb-4">Site Notice</h4>'),
@@ -286,19 +287,19 @@ class CustomConfigForm(ConstanceForm):
                     Div(
                         Field("RM_SYNC_API_SITE"),
                         css_class="input-group input-group-dynamic",
-                    ),      
+                    ),
                     Div(
                         Field("RM_SYNC_API_TOKEN"),
                         css_class="input-group input-group-dynamic",
-                    ),              
+                    ),
                     Div(
                         Field("RM_SYNC_STALE_TIMEOUT"),
                         css_class="input-group input-group-dynamic",
-                    ),                                
+                    ),
                     Div(
                         Field("RM_WARNING_MSG"),
                         css_class="input-group input-group-dynamic",
-                    ),              
+                    ),
                 ),
                 Column(
                     HTML('<h4 class="mb-4">Additional Notification Recipients</h4>'),
@@ -309,27 +310,43 @@ class CustomConfigForm(ConstanceForm):
                     Div(
                         Field("NOTIFICATION_POOL_SCHEDULING_EMAIL_RCPTS"),
                         css_class="input-group input-group-dynamic",
-                    ),      
+                    ),
                     Div(
                         Field("NOTIFICATION_POOL_TQA_EMAIL_RCPTS"),
                         css_class="input-group input-group-dynamic",
-                    ),              
+                    ),
                     Div(
                         Field("NOTIFICATION_POOL_PQA_EMAIL_RCPTS"),
                         css_class="input-group input-group-dynamic",
-                    ),              
+                    ),
                 ),
             ),
         )
 
 
 class LeaveRequestForm(forms.ModelForm):
+    # start_date = forms.DateTimeField(initial=timezone.now())
+
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop("request", None)
         super(LeaveRequestForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
         self.fields["start_date"].label = False
         self.fields["end_date"].label = False
+
+        working_hours = self.request.user.get_working_hours()
+
+        self.initial["start_date"] = timezone.make_aware(
+            datetime.combine(
+                (timezone.now().date() + timedelta(days=1)), working_hours["start"]
+            )
+        )
+        self.initial["end_date"] = timezone.make_aware(
+            datetime.combine(
+                (timezone.now().date() + timedelta(days=1)), working_hours["end"]
+            )
+        )
+
         self.fields["type_of_leave"].label = False
         self.fields["type_of_leave"].choices = LeaveRequestTypes.FORM_CHOICES
         self.fields["notes"].label = False
@@ -353,12 +370,15 @@ class LeaveRequestForm(forms.ModelForm):
             )
 
         if start < today:
-            if (not self.instance.id and 'warn_override' not in self.data):
-                self.add_error('start_date', format_html(
-                    'The start date is before today. Please save again to acknowledge.'
-                    '<input type="hidden" id="warn_override"' # inject hidden input with error msg itself
-                    'name="warn_override" value="0"/>'        # so it's returned in form `data` on second save
-                ))
+            if not self.instance.id and "warn_override" not in self.data:
+                self.add_error(
+                    "start_date",
+                    format_html(
+                        "The start date is before today. Please save again to acknowledge."
+                        '<input type="hidden" id="warn_override"'  # inject hidden input with error msg itself
+                        'name="warn_override" value="0"/>'  # so it's returned in form `data` on second save
+                    ),
+                )
 
         if start > end:
             self.add_error("end_date", "The end date is before the start date.")
@@ -377,13 +397,15 @@ class LeaveRequestForm(forms.ModelForm):
                     ),
                 )
             else:
-                if (not self.instance.id and 'warn_override' not in self.data):
-                    self.add_error(None, format_html(
-                        'You have requested more days than your allocation. Are you sure you wish to continue? Please save again to acknowledge.'
-                        '<input type="hidden" id="warn_override"' # inject hidden input with error msg itself
-                        'name="warn_override" value="0"/>'        # so it's returned in form `data` on second save
-                    ))
-
+                if not self.instance.id and "warn_override" not in self.data:
+                    self.add_error(
+                        None,
+                        format_html(
+                            "You have requested more days than your allocation. Are you sure you wish to continue? Please save again to acknowledge."
+                            '<input type="hidden" id="warn_override"'  # inject hidden input with error msg itself
+                            'name="warn_override" value="0"/>'  # so it's returned in form `data` on second save
+                        ),
+                    )
 
     class Meta:
         model = LeaveRequest
@@ -537,7 +559,14 @@ class ProfileForm(forms.Form):
 
     class Meta:
         model = User
-        fields = ("first_name", "last_name", "email", "notification_email", "password1", "password2")
+        fields = (
+            "first_name",
+            "last_name",
+            "email",
+            "notification_email",
+            "password1",
+            "password2",
+        )
 
 
 class ManageUserForm(forms.ModelForm):
