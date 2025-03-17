@@ -125,6 +125,9 @@ class OrganisationalUnit(models.Model):
         # Ensure that the start date is before or equal to the end date.
         if start_date > end_date:
             start_date, end_date = end_date, start_date
+        # Make sure dates are in same TZ and at max range
+        start_date = timezone.make_aware(datetime.combine(start_date, datetime.min.time()))
+        end_date = timezone.make_aware(datetime.combine(end_date, datetime.max.time()))
 
         # Now lets iter through and only add dates that we work
         current_date = start_date
@@ -479,9 +482,9 @@ class OrganisationalUnit(models.Model):
         }
         # clean vars
         if not start_date:
-            start_date = (timezone.datetime.today() - timedelta(days=30)).date()
+            start_date = (timezone.now().date() - timedelta(days=30)).date()
         if not end_date:
-            end_date = timezone.datetime.today().date()
+            end_date = timezone.now().date().date()
         
         data["upcoming_availability"] = self.get_upcoming_availability(user_ids=user_ids)
             

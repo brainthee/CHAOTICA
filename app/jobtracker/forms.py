@@ -1248,6 +1248,8 @@ class PhaseForm(forms.ModelForm):
         self.fields["due_to_presqa_set"].widget = DatePickerInput()
         self.fields["desired_delivery_date"].widget = DatePickerInput()
 
+        # Set some verification bits. E.g. no dodgy phase IDs, make sure service and title is required
+
     class Meta:
         model = Phase
         widgets = {

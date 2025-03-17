@@ -4,7 +4,7 @@ from django.db.models.functions import Lower, TruncDate, ExtractDay
 from django.contrib.auth.models import AbstractUser, Permission
 from django.templatetags.static import static
 import uuid
-import os
+import os, datetime, pytz
 from ..enums import GlobalRoles, LeaveRequestTypes, UpcomingAvailabilityRanges
 from ..utils import calculate_percentage
 from .models import Note, LeaveRequest, Language
@@ -161,7 +161,13 @@ class User(AbstractUser):
         blank=True,
     )
     pref_timezone = models.CharField(
-        verbose_name="Time Zone", max_length=255, null=True, blank=True, default="UTC"
+        verbose_name="Time Zone",
+        max_length=255,
+        null=True,
+        blank=True,
+        choices=[(tz, tz) for tz in pytz.common_timezones],
+        default="UTC",
+        help_text="User's preferred timezone for displaying dates and times",
     )
     job_title = models.CharField(
         verbose_name="Job Title", max_length=255, null=True, blank=True, default=""
@@ -640,12 +646,12 @@ class User(AbstractUser):
             Q(skillsRequired__in=self.get_skills_support())
         ).distinct()
 
-
     def get_active_qualifications(self):
         from jobtracker.enums import QualificationStatus
 
-        return self.qualifications.filter(status=QualificationStatus.AWARDED).prefetch_related("qualification", "qualification__awarding_body")
-
+        return self.qualifications.filter(
+            status=QualificationStatus.AWARDED
+        ).prefetch_related("qualification", "qualification__awarding_body")
 
     def get_skills_specialist(self):
         from jobtracker.models import Skill
@@ -727,12 +733,15 @@ class User(AbstractUser):
         from_range=timezone.now() - relativedelta(months=12),
         to_range=timezone.now(),
     ):
-        return (self.get_reports()
+        return (
+            self.get_reports()
             .filter(
                 actual_completed_date__gte=from_range,
                 actual_completed_date__lte=to_range,
             )
-        .aggregate(avg_techqa_rating=Avg('techqa_report_rating'))['avg_techqa_rating']
+            .aggregate(avg_techqa_rating=Avg("techqa_report_rating"))[
+                "avg_techqa_rating"
+            ]
         )
 
     def get_average_presqa_feedback(
@@ -740,27 +749,33 @@ class User(AbstractUser):
         from_range=timezone.now() - relativedelta(months=12),
         to_range=timezone.now(),
     ):
-        return (self.get_reports()
+        return (
+            self.get_reports()
             .filter(
                 actual_completed_date__gte=from_range,
                 actual_completed_date__lte=to_range,
             )
-        .aggregate(avg_presqa_rating=Avg('presqa_report_rating'))['avg_presqa_rating']
+            .aggregate(avg_presqa_rating=Avg("presqa_report_rating"))[
+                "avg_presqa_rating"
+            ]
         )
 
     def get_combined_average_qa_rating_12mo(self):
-        from_range=timezone.now() - relativedelta(months=12)
-        to_range=timezone.now()
-        
-        data = (self.get_reports()
+        from_range = timezone.now() - relativedelta(months=12)
+        to_range = timezone.now()
+
+        data = (
+            self.get_reports()
             .filter(
                 actual_completed_date__gte=from_range,
                 actual_completed_date__lte=to_range,
             )
-        .aggregate(avg_presqa_rating=Avg('presqa_report_rating'), avg_techqa_rating=Avg('techqa_report_rating'))
+            .aggregate(
+                avg_presqa_rating=Avg("presqa_report_rating"),
+                avg_techqa_rating=Avg("techqa_report_rating"),
+            )
         )
-        return (data['avg_techqa_rating'] + data['avg_presqa_rating']) / 2
-
+        return (data["avg_techqa_rating"] + data["avg_presqa_rating"]) / 2
 
     def get_average_qa_rating_12mo(self, qa_field):
         from chaotica_utils.utils import last_day_of_month
@@ -833,6 +848,11 @@ class User(AbstractUser):
         # Ensure that the start date is before or equal to the end date.
         if start_date > end_date:
             start_date, end_date = end_date, start_date
+        # Make sure dates are in same TZ and at max range
+        start_date = timezone.make_aware(
+            datetime.combine(start_date, datetime.min.time())
+        )
+        end_date = timezone.make_aware(datetime.combine(end_date, datetime.max.time()))
 
         # Get org dates as a starting point
         if not org_working_days_list:
@@ -863,6 +883,11 @@ class User(AbstractUser):
         # Ensure that the start date is before or equal to the end date.
         if start_date > end_date:
             start_date, end_date = end_date, start_date
+        # Make sure dates are in same TZ and at max range
+        start_date = timezone.make_aware(
+            datetime.combine(start_date, datetime.min.time())
+        )
+        end_date = timezone.make_aware(datetime.combine(end_date, datetime.max.time()))
 
         if not working_days:
             working_days = self.get_working_days_in_range(
@@ -907,6 +932,11 @@ class User(AbstractUser):
         # Ensure that the start date is before or equal to the end date.
         if start_date > end_date:
             start_date, end_date = end_date, start_date
+        # Make sure dates are in same TZ and at max range
+        start_date = timezone.make_aware(
+            datetime.combine(start_date, datetime.min.time())
+        )
+        end_date = timezone.make_aware(datetime.combine(end_date, datetime.max.time()))
 
         if not working_days:
             working_days = self.get_working_days_in_range(
@@ -953,6 +983,11 @@ class User(AbstractUser):
         # Ensure that the start date is before or equal to the end date.
         if start_date > end_date:
             start_date, end_date = end_date, start_date
+        # Make sure dates are in same TZ and at max range
+        start_date = timezone.make_aware(
+            datetime.combine(start_date, datetime.min.time())
+        )
+        end_date = timezone.make_aware(datetime.combine(end_date, datetime.max.time()))
 
         if not working_days:
             working_days = self.get_working_days_in_range(
@@ -992,6 +1027,11 @@ class User(AbstractUser):
         # Ensure that the start date is before or equal to the end date.
         if start_date > end_date:
             start_date, end_date = end_date, start_date
+        # Make sure dates are in same TZ and at max range
+        start_date = timezone.make_aware(
+            datetime.combine(start_date, datetime.min.time())
+        )
+        end_date = timezone.make_aware(datetime.combine(end_date, datetime.max.time()))
 
         if not working_days:
             working_days = self.get_working_days_in_range(
@@ -1054,6 +1094,15 @@ class User(AbstractUser):
         if not org:
             org = self.unit_memberships.first().unit
 
+        # Ensure that the start date is before or equal to the end date.
+        if start_date > end_date:
+            start_date, end_date = end_date, start_date
+        # Make sure dates are in same TZ and at max range
+        start_date = timezone.make_aware(
+            datetime.combine(start_date, datetime.min.time())
+        )
+        end_date = timezone.make_aware(datetime.combine(end_date, datetime.max.time()))
+
         data["working_days_list"] = self.get_working_days_in_range(
             org, start_date, end_date, org_working_days_list=org_working_days_list
         )
@@ -1115,9 +1164,18 @@ class User(AbstractUser):
     def get_utilisation_perc(self, org=None, start_date=None, end_date=None):
         util = 0
         if not start_date:
-            start_date = (timezone.datetime.today() - timedelta(days=30)).date()
+            start_date = (timezone.now().date() - timedelta(days=30)).date()
         if not end_date:
-            end_date = timezone.datetime.today().date()
+            end_date = timezone.now().date().date()
+
+        # Ensure that the start date is before or equal to the end date.
+        if start_date > end_date:
+            start_date, end_date = end_date, start_date
+        # Make sure dates are in same TZ and at max range
+        start_date = timezone.make_aware(
+            datetime.combine(start_date, datetime.min.time())
+        )
+        end_date = timezone.make_aware(datetime.combine(end_date, datetime.max.time()))
 
         if not org:
             org = self.unit_memberships.first().unit
@@ -1141,9 +1199,19 @@ class User(AbstractUser):
         }
         # clean vars
         if not start_date:
-            start_date = timezone.datetime.now() - timedelta(days=30)
+            start_date = timezone.now() - timedelta(days=30)
         if not end_date:
-            end_date = timezone.datetime.now()
+            end_date = timezone.now()
+
+        # Ensure that the start date is before or equal to the end date.
+        if start_date > end_date:
+            start_date, end_date = end_date, start_date
+        # Make sure dates are in same TZ and at max range
+        start_date = timezone.make_aware(
+            datetime.combine(start_date, datetime.min.time())
+        )
+        end_date = timezone.make_aware(datetime.combine(end_date, datetime.max.time()))
+
         if not org:
             org = self.unit_memberships.first().unit
 
@@ -1222,16 +1290,24 @@ class User(AbstractUser):
             date=TruncDate("start"),
             # Calculate if slot is tentative (phase status < 6)
             is_tentative=Case(
-                When(phase__status__lt=PhaseStatuses.SCHEDULED_CONFIRMED, then=Value(1)),
-                When(phase__status__gte=PhaseStatuses.SCHEDULED_CONFIRMED, then=Value(0)),
+                When(
+                    phase__status__lt=PhaseStatuses.SCHEDULED_CONFIRMED, then=Value(1)
+                ),
+                When(
+                    phase__status__gte=PhaseStatuses.SCHEDULED_CONFIRMED, then=Value(0)
+                ),
                 When(phase__isnull=True, then=Value(0)),
                 default=Value(0),
                 output_field=models.IntegerField(),
             ),
             # Calculate if slot is confirmed (phase status >= 6)
             is_confirmed=Case(
-                When(phase__status__gte=PhaseStatuses.SCHEDULED_CONFIRMED, then=Value(1)),
-                When(phase__status__lt=PhaseStatuses.SCHEDULED_CONFIRMED, then=Value(0)),
+                When(
+                    phase__status__gte=PhaseStatuses.SCHEDULED_CONFIRMED, then=Value(1)
+                ),
+                When(
+                    phase__status__lt=PhaseStatuses.SCHEDULED_CONFIRMED, then=Value(0)
+                ),
                 When(phase__isnull=True, then=Value(0)),
                 default=Value(0),
                 output_field=models.IntegerField(),
@@ -1360,14 +1436,26 @@ class User(AbstractUser):
 
         ## Calculate percentages
         # Working perc (basically available working days minus holidays)
-        data["working_percentage"] = calculate_percentage(data["working_days"], data["total_days"] - data["non_working_days"])
-    
+        data["working_percentage"] = calculate_percentage(
+            data["working_days"], data["total_days"] - data["non_working_days"]
+        )
+
         # util == working_days / confirmed
-        data["utilisation_percentage"] = calculate_percentage(data["confirmed_days"], data["working_days"])        
-        data["confirmed_percentage"] = calculate_percentage(data["confirmed_days"], data["working_days"])        
-        data["tentative_percentage"] = calculate_percentage(data["tentative_days"], data["working_days"])
-        data["non_delivery_percentage"] = calculate_percentage(data["non_delivery_days"], data["working_days"])
-        data["available_percentage"] = calculate_percentage(data["available_days"], data["working_days"])
+        data["utilisation_percentage"] = calculate_percentage(
+            data["confirmed_days"], data["working_days"]
+        )
+        data["confirmed_percentage"] = calculate_percentage(
+            data["confirmed_days"], data["working_days"]
+        )
+        data["tentative_percentage"] = calculate_percentage(
+            data["tentative_days"], data["working_days"]
+        )
+        data["non_delivery_percentage"] = calculate_percentage(
+            data["non_delivery_days"], data["working_days"]
+        )
+        data["available_percentage"] = calculate_percentage(
+            data["available_days"], data["working_days"]
+        )
 
         return data
 
