@@ -26,7 +26,6 @@ urlpatterns = [
     re_path(r"^$", lambda r: HttpResponseRedirect("dashboard/"), name="home"),
     re_path(r"^dashboard/", include("dashboard.urls")),
     path("admin/doc/", include("django.contrib.admindocs.urls")),
-    path("auth/", include("django.contrib.auth.urls")),
     path("admin/", admin.site.urls),
     path('explorer/', include('explorer.urls')),
     path("oauth2/", include("django_auth_adfs.urls")),
