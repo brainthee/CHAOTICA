@@ -1,8 +1,11 @@
 from django.urls import path, include, re_path
 from . import views
+from django.contrib.auth import views as auth_views
 
 
 urlpatterns = [
+    path('auth/login/', auth_views.LoginView.as_view(redirect_authenticated_user=True), name='login'),
+    path("auth/", include("django.contrib.auth.urls")),
     path("maintenance/", views.maintenance, name="maintenance"),
     re_path(r"^impersonate/", include("impersonate.urls")),
     path("quote", views.get_quote, name="get_quote"),
