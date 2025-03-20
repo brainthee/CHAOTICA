@@ -5,7 +5,7 @@
 
 {% block breadcrumbItem %}
 <li class="breadcrumb-item text-sm">Users</li>
-<li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">My Profile</li>
+<li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">Edit Profile</li>
 {% endblock breadcrumbItem %}
 
 {% block content %}
@@ -15,21 +15,21 @@
          <div class="row justify-content-center align-items-center">
             <div class="col-sm-auto col-4">
                <div class="avatar avatar-xl position-relative">
-                  <img src="{{ user.get_avatar_url }}" alt="bruce" class="w-100 rounded-circle shadow-sm">
+                  <img src="{{ usr.get_avatar_url }}" alt="bruce" class="w-100 rounded-circle shadow-sm">
                </div>
             </div>
             <div class="col-sm-auto col-8 my-auto">
                <div class="h-100">
                   <h5 class="mb-1 font-weight-bolder">
-                     {{ user }}
+                     {{ usr }}
                   </h5>
                   <p class="mb-0 font-weight-normal text-sm">
-                     {{ user.job_title }}
+                     {{ usr.job_title }}
                   </p>
                </div>
             </div>
             <div class="col-sm-auto ms-sm-auto mt-sm-0 mt-3 d-flex">
-               <a href="{% url 'user_profile' user.email %}"
+               <a href="{% url 'user_profile' usr.email %}"
                   class="btn btn-outline-success">
                   View Public Profile
                </a>
@@ -66,12 +66,12 @@
     </div>
 
     <div class="col-lg-9 g-2 mt-lg-0">
-       <div class="card" id="basic-info">
+       <div id="basic-info">
          {% include 'partials/profile/basic_profile_form.html' %}
        </div>
 
        <div class="card mt-4" id="skills">
-         <form method="post" class="skillsForm" action="{% url 'update_own_skills' %}">
+         <form method="post" class="skillsForm" action="{% url 'update_skills' usr.email %}">
             {% csrf_token %}
             <div class="card-header">
 
@@ -82,8 +82,8 @@
                   </div>
                   <div class="col-3 d-flex flex-column align-items-end">
                      <span class="badge badge-phoenix badge-phoenix-secondary"
-                     data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ request.user.skills_last_updated }}">
-                        {{ request.user.skills_last_updated | naturalday}}
+                     data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ usr.skills_last_updated }}">
+                        {{ usr.skills_last_updated | naturalday}}
                      </span>      
                      <span class="fs-10 text-opacity-60 fw-semibold">
                         Last Updated
@@ -120,7 +120,7 @@
                   </thead>
                   <tbody>
                      {% for skill in category.list %}
-                     {% get_user_skill request.user skill as userSkill %}
+                     {% get_user_skill user skill as userSkill %}
                      <tr>
                         <td class="ps-1">
                            <div class="my-auto">

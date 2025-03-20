@@ -29,6 +29,10 @@ from .models import (
     Project
 )
 from import_export import resources
+from django.utils.html import format_html
+from django.utils.translation import gettext_lazy as _
+from django.db.models import F, ExpressionWrapper, DurationField, Q
+from datetime import timedelta
 from guardian.admin import GuardedModelAdmin
 from import_export.admin import ImportExportModelAdmin
 
@@ -95,9 +99,124 @@ class ServiceAdmin(ImportExportModelAdmin):
 admin.site.register(Service, ServiceAdmin)
 
 
+
+class DurationListFilter(admin.SimpleListFilter):
+    title = _('Duration')
+    parameter_name = 'duration'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('short', _('Short (< 30 min)')),
+            ('medium', _('Medium (30 min - 2 hours)')),
+            ('half_day', _('Half Day (3.5 hours - 4.5 hours)')),
+            ('working_day', _('Working Day (7.5 - 8.5 hours)')),
+            ('long_day', _('Long Day (> 8.5 hours)')),
+            ('multi_day', _('Very Long (> 24 hours)')),
+            ('working_week', _('Over a Working Week (> 42.5 hours)')),
+        )
+
+    def queryset(self, request, queryset):
+        # Create a duration expression
+        queryset = queryset.annotate(
+            duration=ExpressionWrapper(
+                F('end') - F('start'),
+                output_field=DurationField()
+            )
+        )
+        
+        if self.value() == 'short':
+            return queryset.filter(duration__lt=timedelta(minutes=30))
+        if self.value() == 'medium':
+            return queryset.filter(
+                duration__gte=timedelta(minutes=30),
+                duration__lt=timedelta(hours=3.5)
+            )
+        if self.value() == 'half_day':
+            return queryset.filter(
+                duration__gte=timedelta(hours=3.5),
+                duration__lt=timedelta(hours=4.5)
+            )
+        if self.value() == 'working_day':
+            return queryset.filter(
+                duration__gte=timedelta(hours=4.5),
+                duration__lt=timedelta(hours=8.5)
+            )
+        if self.value() == 'long_day':
+            return queryset.filter(
+                duration__gte=timedelta(hours=8.5),
+                duration__lte=timedelta(hours=24)
+            )
+        if self.value() == 'multi_day':
+            return queryset.filter(
+                duration__gt=timedelta(hours=24),
+                duration__lt=timedelta(hours=42.5)
+            )
+        if self.value() == 'working_week':
+            return queryset.filter(duration__gte=timedelta(hours=42.5))
+        return queryset
+    
+
 @admin.register(TimeSlot)
 class TimeSlotAdmin(SimpleHistoryAdmin):
     readonly_fields = ['phase', 'project', "updated"]
+    # Display these fields in the list view
+    list_display = ('id', 'start', 'end', 'duration_display', 'user', "slot_type", "phase", "project", "deliveryRole", "is_onsite")
+    
+    # Add filters in the right sidebar
+    list_filter = ('start', 'end', "slot_type", DurationListFilter)
+    
+    # Fields that can be searched
+    search_fields = ('user__username', 'user__email')
+    
+    # Add date-based navigation
+    date_hierarchy = 'start'
+    
+    # Fields to display in the edit form, grouped into fieldsets
+    fieldsets = (
+        (None, {
+            'fields': ('user',)
+        }),
+        ('Time Information', {
+            'fields': ('start', 'end'),
+            'description': 'Set the start and end times for this time slot.'
+        }),
+    )
+    
+    # Calculate and format the duration
+    def duration_display(self, obj):
+        if obj.start and obj.end:
+            duration = obj.end - obj.start
+            hours, remainder = divmod(duration.total_seconds(), 3600)
+            minutes, seconds = divmod(remainder, 60)
+        
+            # Format the values before passing to format_html
+            hours_str = f"{int(hours)}"
+            minutes_str = f"{int(minutes)}"            
+            
+            # Format based on duration length
+            if hours > 0:
+                color = '#007bff' if duration.total_seconds() > 14400 else '#dc3545'  # Blue if > 4h, red if <= 4h
+                return format_html(
+                    '<span style="color: {}">{} h {} m</span>',
+                    color, hours_str, minutes_str
+                )
+            else:
+                return format_html(
+                    '<span style="color: {}">{} m</span>',
+                    '#28a745', minutes_str  # Green for short durations
+                )
+        return "-"
+    
+    # Set a descriptive name for the calculated field
+    duration_display.short_description = "Duration"
+    duration_display.admin_order_field = 'end'  # Allow sorting by end time as proxy
+    
+    # Optimize database queries
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        return queryset.select_related('user')
+
+
 
 
 admin.site.register(TimeSlotComment)

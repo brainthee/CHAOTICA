@@ -66,13 +66,9 @@ urlpatterns = [
     path("activity/", views.NoteListView.as_view(), name="view_activity"),
 
     # Own profile bits
-    path("profile/", views.view_own_profile, name="view_own_profile"),
-    path("profile/theme", views.update_own_theme, name="update_own_theme"),
-    path("profile/update", views.update_own_profile, name="update_own_profile"),
-    path("profile/update/skills", views.update_own_skills, name="update_own_skills"),
-    path("profile/update/certs", views.update_own_certs, name="update_own_certs"),
-    path("profile/onboarding/", views.view_own_onboarding, name="view_own_onboarding"),
-    path("profile/onboarding/renew/<int:pk>", views.renew_own_onboarding, name="renew_own_onboarding"),
+    path("profile/", views.view_own_profile, name="view_own_profile"), # redirect to public profile
+
+    path("profile/theme", views.update_own_theme, name="update_own_theme"),    
     path("profile/leave/", views.view_own_leave, name="view_own_leave"),
     path("profile/leave/request", views.request_own_leave, name="request_own_leave"),
     path(
@@ -81,21 +77,15 @@ urlpatterns = [
     # Other user profile bits
     path("profile/<str:email>", views.UserDetailView.as_view(), name="user_profile"),
     path(
-        "profile/<str:email>/update/",
-        views.UserUpdateView.as_view(),
-        name="user_update",
-    ),
-    path(
         "profile/<str:email>/assign_role/",
         views.user_assign_global_role,
         name="user_assign_global_role",
     ),
-    path(
-        "profile/<str:email>/delete/",
-        views.UserDeleteView.as_view(),
-        name="user_delete",
-    ),
-    path("profile/<str:email>/manage/", views.user_manage, name="user_manage"),
+    path("profile/<str:email>/update/", views.update_profile, name="update_profile"),
+    path("profile/<str:email>/update/skills", views.update_skills, name="update_skills"),
+    path("profile/<str:email>/update/certs", views.update_certs, name="update_certs"),
+    path("profile/<str:email>/onboarding/", views.view_onboarding, name="view_onboarding"),
+    path("profile/<str:email>/onboarding/renew/<int:pk>", views.renew_onboarding, name="renew_onboarding"),
     path("profile/<str:email>/schedule/timeslots/", views.user_schedule_timeslots, name="user_schedule_timeslots"),
     path("profile/<str:email>/schedule/holidays/", views.user_schedule_holidays, name="user_schedule_holidays"),
     path("profile/<str:email>/manage/merge", views.user_merge, name="user_merge"),

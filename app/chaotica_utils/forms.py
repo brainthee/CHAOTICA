@@ -24,6 +24,7 @@ from bootstrap_datepicker_plus.widgets import (
 )
 from django.core.files.images import get_image_dimensions
 from business_duration import businessDuration
+from django.contrib import messages
 
 
 class HolidayForm(forms.ModelForm):
@@ -569,142 +570,7 @@ class ProfileForm(forms.Form):
         )
 
 
-class ManageUserForm(forms.ModelForm):
-    manager = forms.ModelChoiceField(
-        queryset=User.objects.filter(is_active=True),
-        required=False,
-        widget=autocomplete.ModelSelect2(
-            url="user-autocomplete",
-            attrs={
-                "data-minimum-input-length": 3,
-            },
-        ),
-    )
-
-    acting_manager = forms.ModelChoiceField(
-        queryset=User.objects.filter(is_active=True),
-        required=False,
-        widget=autocomplete.ModelSelect2(
-            url="user-autocomplete",
-            attrs={
-                "data-minimum-input-length": 3,
-            },
-        ),
-    )
-
-    def __init__(self, *args, **kwargs):
-        super(ManageUserForm, self).__init__(*args, **kwargs)
-        self.helper = FormHelper(self)
-        self.helper.form_tag = False
-
-        self.helper.layout = Layout(
-            Row(
-                Column(
-                    Div(
-                        FloatingField("first_name"),
-                        css_class="input-group input-group-dynamic",
-                    )
-                ),
-                Column(
-                    Div(
-                        FloatingField("last_name"),
-                        css_class="input-group input-group-dynamic",
-                    )
-                ),
-            ),
-            Row(
-                Column(
-                    Div(
-                        FloatingField("email"),
-                        css_class="input-group input-group-dynamic",
-                    )
-                ),
-                Column(
-                    Div(
-                        FloatingField("location"),
-                        css_class="input-group input-group-dynamic",
-                    )
-                ),
-                Column(
-                    Div(
-                        FloatingField("country"),
-                        css_class="input-group input-group-dynamic",
-                    )
-                ),
-            ),
-            Row(
-                Column(
-                    Div(
-                        FloatingField("phone_number"),
-                        css_class="input-group input-group-dynamic",
-                    )
-                ),
-                Column(
-                    Div(
-                        FloatingField("job_title"),
-                        css_class="input-group input-group-dynamic",
-                    )
-                ),
-            ),
-            Row(
-                Column(
-                    Div(
-                        Field("profile_image"),
-                        css_class="input-group input-group-dynamic",
-                    )
-                ),
-                Column(Div(Field("languages"), css_class="")),
-            ),
-            Row(
-                Column(
-                    Row(
-                        Column(
-                            Div(
-                                Field("contracted_leave"),
-                                css_class="input-group input-group-dynamic",
-                            )
-                        ),
-                        Column(
-                            Div(
-                                Field("contracted_leave_renewal"),
-                                css_class="input-group input-group-dynamic",
-                            )
-                        ),
-                    ),
-                ),
-                Column(Div(Field("pref_timezone"), css_class="")),
-            ),
-            Row(
-                Column(Div(Field("manager"), css_class="")),
-                Column(Div(Field("acting_manager"), css_class="")),
-            ),
-        )
-
-    class Meta:
-        model = User
-        widgets = {
-            "languages": autocomplete.ModelSelect2Multiple(),
-        }
-        fields = (
-            "first_name",
-            "last_name",
-            "manager",
-            "acting_manager",
-            "profile_image",
-            "pref_timezone",
-            "email",
-            "phone_number",
-            "job_title",
-            "show_help",
-            "location",
-            "country",
-            "languages",
-            "contracted_leave",
-            "contracted_leave_renewal",
-        )
-
-
-class ProfileBasicForm(forms.ModelForm):
+class EditProfileForm(forms.ModelForm):
 
     profile_image = forms.FileField(
         label="Profile Image",
@@ -716,106 +582,47 @@ class ProfileBasicForm(forms.ModelForm):
     )
 
     def __init__(self, *args, **kwargs):
-        super(ProfileBasicForm, self).__init__(*args, **kwargs)
+        self.current_request = kwargs.pop("current_request", None)
+        super(EditProfileForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
         self.helper.form_tag = False
         self.fields["contracted_leave_renewal"].widget = DatePickerInput()
+        usr = kwargs.get("instance")
+        controlled_fields = [
+            "manager",
+            "acting_manager",
+            "contracted_leave",
+            "carry_over_leave",
+            "contracted_leave_renewal",
+        ]
+        for f in controlled_fields:
+            self.fields[f].disabled = True
 
-        self.fields["contracted_leave_renewal"].disabled = True
-        self.fields["contracted_leave"].disabled = True
+        # Controlled fields:
+        # - leave
+        # - manager(s)
+
+        if usr.has_manager():
+            # Has manager so leave is sorted by them.
+            if usr.pk == self.current_request.user.pk:
+                messages.add_message(
+                    self.current_request,
+                    messages.INFO,
+                    "You can not edit your own Work and Annual Leave Details while you have a manager.",
+                )
+            else:
+                if usr.can_be_managed_by(self.current_request.user):
+                    # We're not ourselves and we can manage them:
+                    for f in controlled_fields:
+                        self.fields[f].disabled = False
+        else:
+            print("HAS NO MANAGER")
+            # We don't have a manager. Let us edit our own fields...
+            for f in controlled_fields:
+                self.fields[f].disabled = False
+
         self.fields["show_help"].help_text = False
         self.fields["email"].disabled = True
-
-        self.helper.layout = Layout(
-            Row(
-                Column(
-                    Div(
-                        FloatingField("first_name"),
-                        css_class="input-group input-group-dynamic",
-                    )
-                ),
-                Column(
-                    Div(
-                        FloatingField("last_name"),
-                        css_class="input-group input-group-dynamic",
-                    )
-                ),
-                Column(
-                    Div(
-                        FloatingField("job_title"),
-                        css_class="input-group input-group-dynamic",
-                    )
-                ),
-            ),
-            Row(
-                Column(
-                    Div(
-                        FloatingField("email"),
-                        css_class="input-group input-group-dynamic",
-                    )
-                ),
-                Column(
-                    Div(
-                        FloatingField("notification_email"),
-                        css_class="input-group input-group-dynamic",
-                    )
-                ),
-                Column(
-                    Div(
-                        FloatingField("phone_number"),
-                        css_class="input-group input-group-dynamic",
-                    )
-                ),
-            ),
-            Row(
-                Column(
-                    Div(
-                        FloatingField("location"),
-                        css_class="input-group input-group-dynamic",
-                    )
-                ),
-                Column(
-                    Div(
-                        FloatingField("country"),
-                        css_class="input-group input-group-dynamic",
-                    )
-                ),
-            ),
-            Row(
-                Column(Div(Field("languages"), css_class="")),
-                Column(Div(Field("pref_timezone"), css_class="")),
-            ),
-            Row(
-                Column(
-                    Div(
-                        Field("profile_image"),
-                        css_class="input-group input-group-dynamic",
-                    )
-                ),
-                Column(
-                    Row(
-                        Column(
-                            Div(
-                                Field("contracted_leave"),
-                                css_class="input-group input-group-dynamic",
-                            )
-                        ),
-                        Column(
-                            Div(
-                                Field("carry_over_leave"),
-                                css_class="input-group input-group-dynamic",
-                            )
-                        ),
-                        Column(
-                            Div(
-                                Field("contracted_leave_renewal"),
-                                css_class="input-group input-group-dynamic",
-                            )
-                        ),
-                    ),
-                ),
-            ),
-        )
 
     class Meta:
         model = User
@@ -830,6 +637,8 @@ class ProfileBasicForm(forms.ModelForm):
             "email",
             "notification_email",
             "phone_number",
+            "manager",
+            "acting_manager",
             "job_title",
             "show_help",
             "location",
