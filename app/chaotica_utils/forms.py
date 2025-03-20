@@ -616,7 +616,6 @@ class EditProfileForm(forms.ModelForm):
                     for f in controlled_fields:
                         self.fields[f].disabled = False
         else:
-            print("HAS NO MANAGER")
             # We don't have a manager. Let us edit our own fields...
             for f in controlled_fields:
                 self.fields[f].disabled = False

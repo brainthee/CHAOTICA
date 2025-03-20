@@ -68,6 +68,25 @@ def can_manage_user(requesting_user, target_user):
     else:
         # All conditions failed, return None
         return None
+    
+def get_start_of_week(dt=None):
+    """
+    Returns the start (Monday) of the current week.
+    If a datetime is provided, returns the start of that week instead.
+    
+    Args:
+        dt (datetime, optional): A datetime object. Defaults to None (uses current date).
+    
+    Returns:
+        datetime.date: The Monday of the specified week at midnight.
+    """
+    if dt is None:
+        dt = datetime.now()
+    
+    # Weekday is 0 for Monday, 6 for Sunday in the datetime module
+    start_of_week = dt.date() - timedelta(days=dt.weekday())
+    
+    return start_of_week
 
 
 def calculate_percentage(part, whole, decimal_places=1):

@@ -17,6 +17,16 @@ Menu.add_item(
 Menu.add_item(
     "user",
     MenuItem(
+        "Edit Profile",
+        lambda request: reverse("update_profile", kwargs={"email": request.user.email}),
+        icon="user",
+        weight=1,
+    ),
+)
+
+Menu.add_item(
+    "user",
+    MenuItem(
         "Manage Annual Leave",
         reverse("view_own_leave"),
         icon="person-walking-arrow-right",

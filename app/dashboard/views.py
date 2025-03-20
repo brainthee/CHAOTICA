@@ -2,7 +2,7 @@ from django.http import HttpResponse
 from django.template import loader
 from django.contrib.auth.decorators import login_required
 import logging
-from chaotica_utils.utils import make_aware
+from chaotica_utils.utils import make_aware, get_start_of_week
 from django.utils import timezone
 from datetime import datetime, timedelta
 from jobtracker.models import Job, Phase, TimeSlot, OrganisationalUnit
@@ -10,6 +10,7 @@ from chaotica_utils.models import LeaveRequest, User
 from jobtracker.enums import JobStatuses, PhaseStatuses
 from chaotica_utils.views import page_defaults
 from django.db.models import Q
+from django.db.models.functions import Coalesce
 from django.views.decorators.http import require_safe
 from guardian.shortcuts import get_objects_for_user
 
@@ -78,6 +79,25 @@ def index(request):
             | Q(status=PhaseStatuses.QA_PRES)
             | Q(status=PhaseStatuses.QA_PRES_AUTHOR_UPDATES)
         )
+        .exclude(
+            Q(report_to_be_left_on_client_site=True) | Q(number_of_reports=0)
+        )  # Exclude non QA reports
+        .prefetch_related(
+            "service",
+            "job__client",
+            "project_lead",
+            "report_author",
+            "presqa_by",
+        )
+    )
+
+    twoweeks = get_start_of_week() + timedelta(weeks=2)
+    context["upcoming_reports_date"] = twoweeks
+    context["upcoming_reports"] = (
+        all_phases.annotate(
+            db_delivery_date=Coalesce("desired_delivery_date", "_delivery_date")
+        )
+        .filter(Q(status__lt=PhaseStatuses.DELIVERED) & Q(db_delivery_date__lte=twoweeks))
         .exclude(
             Q(report_to_be_left_on_client_site=True) | Q(number_of_reports=0)
         )  # Exclude non QA reports
