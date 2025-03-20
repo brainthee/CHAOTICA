@@ -1,27 +1,65 @@
-{% load menu %}{% load static %}{% load crispy_forms_tags %}{% load skill_tags %}
-<form method="post" id="profileForm" class="profileForm js-submit-modal-form" 
-   enctype='multipart/form-data' action="{% url 'update_own_profile' %}">
-    {% csrf_token %}
-    {{ form.media }}
-    <div class="card-header p-3">
+{% load menu %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load skill_tags %}
+<form method="post" id="profileForm" class="profileForm js-submit-modal-form" enctype="multipart/form-data" action="{% url 'update_profile' user.email %}">
+  {% csrf_token %}
+  {{ profileForm.media }}
 
-       <div class="row justify-content-between align-items-center">
-          <div class="col-3">
-             <h5>Basic Info</h5>
-          </div>
-          <div class="col-auto justify-content-between align-items-center">
-               {{ profileForm.show_help|as_crispy_field }}
-          </div>
-          <div class="col-3 d-flex justify-content-end">
-            <button class="btn btn-sm btn-phoenix-success mb-0 js-save-profile" data-url="{% url 'update_own_profile' %}"
-               type="button">
-               Save
-            </button>            
-          </div>
-       </div>
+  <div class="border-bottom mb-4">
+    <div class="mb-6">
+      <h4 class="mb-4">Personal Information</h4>
+      <div class="row g-3">
+        <div class="col-12 col-sm-6">
+          <div class="form-floating">{{ profileForm.first_name|as_crispy_field }}</div>
+        </div>
+        <div class="col-12 col-sm-6">
+          <div class="form-floating">{{ profileForm.last_name|as_crispy_field }}</div>
+        </div>
+        <div class="col-12 col-sm-6">
+          <div class="form-floating">{{ profileForm.job_title|as_crispy_field }}</div>
+        </div>
+        <div class="col-12 col-sm-6">
+          <div class="form-floating">{{ profileForm.location|as_crispy_field }}</div>
+        </div>
+        <div class="col-12 col-sm-6">
+          <div class="form-floating">{{ profileForm.country|as_crispy_field }}</div>
+        </div>
+        <div class="col-12 col-sm-6">
+          <div class="form-floating">{{ profileForm.languages|as_crispy_field }}</div>
+        </div>
+      </div>
 
+      <h4 class="mb-4">Preferences</h4>
+      <div class="row g-3">
+        <div class="col-12 col-sm-6">
+          <div class="form-floating">{{ profileForm.pref_timezone|as_crispy_field }}</div>
+        </div>
+        <div class="col-12 col-sm-6">
+          <div class="form-floating">{{ profileForm.profile_image|as_crispy_field }}</div>
+        </div>
+      </div>
     </div>
-    <div class="card-body">      
-       {% crispy profileForm %}
+
+    <div class="row gx-3 mb-6 gy-6 gy-sm-3">
+      <div class="col-12 col-sm-6">
+        <h4 class="mb-4">Work Details</h4>
+        <div class="form-field">{{ profileForm.manager|as_crispy_field }}</div>
+        <div class="form-floating">{{ profileForm.acting_manager|as_crispy_field }}</div>
+      </div>
+      <div class="col-12 col-sm-6">
+        <h4 class="mb-4">Annual Leave Details</h4>
+        <div class="form-floating">{{ profileForm.contracted_leave|as_crispy_field }}</div>
+        <div class="form-floating">{{ profileForm.carry_over_leave|as_crispy_field }}</div>
+        <div class="form-floating">{{ profileForm.contracted_leave_renewal|as_crispy_field }}</div>
+      </div>
     </div>
- </form>
+
+    <div class="text-end mb-6">
+      <div>
+        <button class="btn btn-phoenix-secondary me-2">Cancel Changes</button>
+        <button class="btn btn-phoenix-success js-save-profile" type="submit">Save Information</button>
+      </div>
+    </div>
+  </div>
+</form>

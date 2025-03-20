@@ -54,12 +54,14 @@ div.content span.select2-container {
   padding-left: unset !important;
 }
 
-.fc .fc-bg-event, .fc .fc-highlight, {
-  inset: unset;
-  position: unset;
-  overflow: hidden;
-  text-wrap: nowrap;
-  opacity: 0.2;
+.fc .fc-bg-event,
+.fc .fc-highlight,
+{
+inset: unset;
+position: unset;
+overflow: hidden;
+text-wrap: nowrap;
+opacity: 0.2;
 }
 
 .fc-timeline-event .fc-event-title {
@@ -71,7 +73,8 @@ div.content span.select2-container {
   vertical-align: middle !important;
 }
 
-.tox .tox-menubar, .tox .tox-mbtn {
+.tox .tox-menubar,
+.tox .tox-mbtn {
   background-color: unset !important;
   padding: unset !important;
 }
@@ -1083,18 +1086,37 @@ Do Force select2 to be phoenix compat
 
 @keyframes animate {
   0% {
-    box-shadow: 0 0 0 0 rgb(191,155,48, 0.7), 0 0 0 0 rgb(191,155,48, 0.7)
+    box-shadow: 0 0 0 0 rgb(191, 155, 48, 0.7), 0 0 0 0 rgb(191, 155, 48, 0.7)
   }
 
   40% {
-    box-shadow: 0 0 0 10px rgb(191,155,48, 0), 0 0 0 0 rgb(191,155,48, 0.7)
+    box-shadow: 0 0 0 10px rgb(191, 155, 48, 0), 0 0 0 0 rgb(191, 155, 48, 0.7)
   }
 
   80% {
-    box-shadow: 0 0 0 10px rgb(191,155,48, 0), 0 0 0 10px rgb(191,155,48, 0)
+    box-shadow: 0 0 0 10px rgb(191, 155, 48, 0), 0 0 0 10px rgb(191, 155, 48, 0)
   }
 
   100% {
-    box-shadow: 0 0 0 0 rgb(191,155,48, 0), 0 0 0 10px rgb(191,155,48, 0)
+    box-shadow: 0 0 0 0 rgb(191, 155, 48, 0), 0 0 0 10px rgb(191, 155, 48, 0)
   }
+}
+.dropdown-menu li {
+  position: relative;
+}
+
+.dropdown-menu .dropdown-submenu {
+  display: none;
+  position: absolute;
+  left: 100%;
+  top: -7px;
+}
+
+.dropdown-menu .dropdown-submenu-left {
+  right: 100%;
+  left: auto;
+}
+
+.dropdown-menu>li:hover>.dropdown-submenu {
+  display: block;
 }

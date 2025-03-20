@@ -4,10 +4,11 @@ from django.db.models.functions import Lower, TruncDate, ExtractDay
 from django.contrib.auth.models import AbstractUser, Permission
 from django.templatetags.static import static
 import uuid
-import os, datetime, pytz
+import os, pytz
 from ..enums import GlobalRoles, LeaveRequestTypes, UpcomingAvailabilityRanges
 from ..utils import calculate_percentage
-from .models import Note, LeaveRequest, Language
+from .models import Note, Language
+from .leave import LeaveRequest
 from django.conf import settings
 from django.urls import reverse
 from django.contrib.auth import get_user_model
@@ -15,7 +16,7 @@ from guardian.shortcuts import assign_perm
 import django.contrib.auth
 from guardian.shortcuts import get_objects_for_user
 from django.utils import timezone
-from datetime import timedelta, date
+from datetime import timedelta, date, datetime
 from dateutil.relativedelta import relativedelta
 from phonenumber_field.modelfields import PhoneNumberField
 from django_countries.fields import CountryField
@@ -462,11 +463,36 @@ class User(AbstractUser):
         else:
             return None
 
-    def get_manage_url(self):
+    def get_admin_url(self):
         if self.email:
-            return reverse("user_manage", kwargs={"email": self.email})
-        else:
-            return None
+            return reverse(
+                "admin:%s_%s_change" % (self._meta.app_label, self._meta.model_name),
+                args=[self.id],
+            )
+    
+    def has_manager(self):
+        return (self.manager or self.acting_manager)
+
+    def can_be_managed_by(self, requesting_user):
+        # Case 1: Self-management - user can always manage themselves
+        if requesting_user.pk == self.pk:
+            return True
+
+        # Case 2: Manager relationship check
+        # Check if requesting_user is the manager or acting_manager of target_user
+        is_manager = hasattr(self, "manager") and self.manager == requesting_user
+        is_acting_manager = (
+            hasattr(self, "acting_manager") and self.acting_manager == requesting_user
+        )
+
+        if is_manager or is_acting_manager:
+            return True
+
+        # Case 3: Permission check - user has guardian permission
+        if requesting_user.has_perm("chaotica_utils.manage_user"):
+            return True
+
+        return False
 
     def get_table_display_html(self):
         context = {}
@@ -551,7 +577,7 @@ class User(AbstractUser):
         from django.utils import timezone
 
         tz = timezone.get_current_timezone()
-        if isinstance(start_date, datetime.date) and not isinstance(
+        if isinstance(start_date, date) and not isinstance(
             start_date, datetime.datetime
         ):
             start_date = datetime.datetime.combine(
@@ -561,9 +587,7 @@ class User(AbstractUser):
             start_date = start_date.replace(tzinfo=tz)
 
         # Convert end_date to datetime (end of day if it's a date object)
-        if isinstance(end_date, datetime.date) and not isinstance(
-            end_date, datetime.datetime
-        ):
+        if isinstance(end_date, date) and not isinstance(end_date, datetime.datetime):
             # If end_date is a date, use the end of that day (23:59:59)
             end_date = datetime.datetime.combine(end_date, datetime.time.max).replace(
                 tzinfo=tz
@@ -593,7 +617,7 @@ class User(AbstractUser):
         from django.utils import timezone
 
         tz = timezone.get_current_timezone()
-        if isinstance(start_date, datetime.date) and not isinstance(
+        if isinstance(start_date, date) and not isinstance(
             start_date, datetime.datetime
         ):
             start_date = datetime.datetime.combine(
@@ -603,9 +627,7 @@ class User(AbstractUser):
             start_date = start_date.replace(tzinfo=tz)
 
         # Convert end_date to datetime (end of day if it's a date object)
-        if isinstance(end_date, datetime.date) and not isinstance(
-            end_date, datetime.datetime
-        ):
+        if isinstance(end_date, date) and not isinstance(end_date, datetime.datetime):
             # If end_date is a date, use the end of that day (23:59:59)
             end_date = datetime.datetime.combine(end_date, datetime.time.max).replace(
                 tzinfo=tz
@@ -620,7 +642,6 @@ class User(AbstractUser):
         # Find timeslots that overlap with the range
         queryset = self.timeslot_comments.filter(start__lt=end_date, end__gt=start_date)
         return queryset
-
 
     def clear_timeslots_in_range(
         self, start_date, end_date, respect_working_hours=True
@@ -645,7 +666,7 @@ class User(AbstractUser):
         tz = timezone.get_current_timezone()
 
         # Convert date to datetime (start of day)
-        if isinstance(start_date, datetime.date) and not isinstance(
+        if isinstance(start_date, date) and not isinstance(
             start_date, datetime.datetime
         ):
             start_date = datetime.datetime.combine(
@@ -655,9 +676,7 @@ class User(AbstractUser):
             start_date = start_date.replace(tzinfo=tz)
 
         # Convert end_date to datetime (end of day if it's a date object)
-        if isinstance(end_date, datetime.date) and not isinstance(
-            end_date, datetime.datetime
-        ):
+        if isinstance(end_date, date) and not isinstance(end_date, datetime.datetime):
             # If end_date is a date, use the end of that day (23:59:59)
             end_date = datetime.datetime.combine(end_date, datetime.time.max).replace(
                 tzinfo=tz
@@ -684,7 +703,16 @@ class User(AbstractUser):
                 if slot.start < start_date and slot.end > end_date:
                     # Create two new slots: one before and one after the range
                     slot_data = model_to_dict(
-                            slot, exclude=["id", "start", "end", "user", "slot_type", "phase", "project"]
+                        slot,
+                        exclude=[
+                            "id",
+                            "start",
+                            "end",
+                            "user",
+                            "slot_type",
+                            "phase",
+                            "project",
+                        ],
                     )
 
                     # For the "before" slot, adjust the end time to working hours if needed
@@ -733,7 +761,16 @@ class User(AbstractUser):
                 elif slot.start < start_date and slot.end <= end_date:
                     # Create one new slot before the range
                     slot_data = model_to_dict(
-                            slot, exclude=["id", "start", "end", "user", "slot_type", "phase", "project"]
+                        slot,
+                        exclude=[
+                            "id",
+                            "start",
+                            "end",
+                            "user",
+                            "slot_type",
+                            "phase",
+                            "project",
+                        ],
                     )
 
                     # Adjust the end time to working hours if needed
@@ -775,7 +812,16 @@ class User(AbstractUser):
                     else:
                         # Create one new slot after the range
                         slot_data = model_to_dict(
-                            slot, exclude=["id", "start", "end", "user", "slot_type", "phase", "project"]
+                            slot,
+                            exclude=[
+                                "id",
+                                "start",
+                                "end",
+                                "user",
+                                "slot_type",
+                                "phase",
+                                "project",
+                            ],
                         )
 
                         after_slot = TimeSlot.objects.create(
@@ -798,8 +844,9 @@ class User(AbstractUser):
 
         return affected_timeslots, created_timeslots
 
-
-    def clear_timeslot_comments_in_range(self, start_date, end_date, respect_working_hours=True):
+    def clear_timeslot_comments_in_range(
+        self, start_date, end_date, respect_working_hours=True
+    ):
         """
         Clear timeslots in a date range for the user.
         This method handles partial overlaps by splitting timeslots as needed.
@@ -820,7 +867,7 @@ class User(AbstractUser):
         tz = timezone.get_current_timezone()
 
         # Convert date to datetime (start of day)
-        if isinstance(start_date, datetime.date) and not isinstance(
+        if isinstance(start_date, date) and not isinstance(
             start_date, datetime.datetime
         ):
             start_date = datetime.datetime.combine(
@@ -830,9 +877,7 @@ class User(AbstractUser):
             start_date = start_date.replace(tzinfo=tz)
 
         # Convert end_date to datetime (end of day if it's a date object)
-        if isinstance(end_date, datetime.date) and not isinstance(
-            end_date, datetime.datetime
-        ):
+        if isinstance(end_date, date) and not isinstance(end_date, datetime.datetime):
             # If end_date is a date, use the end of that day (23:59:59)
             end_date = datetime.datetime.combine(end_date, datetime.time.max).replace(
                 tzinfo=tz
@@ -1147,7 +1192,21 @@ class User(AbstractUser):
                 avg_techqa_rating=Avg("techqa_report_rating"),
             )
         )
-        return (data["avg_techqa_rating"] + data["avg_presqa_rating"]) / 2
+        presqa_rating = data["avg_presqa_rating"] or 0
+        techqa_rating = data["avg_techqa_rating"] or 0
+
+        # Handle cases where one or both ratings could be None
+        if presqa_rating is None and techqa_rating is None:
+            return 0  # or None, depending on what makes sense for your application
+
+        if presqa_rating is None:
+            return techqa_rating  # Return only the techqa rating if presqa is None
+
+        if techqa_rating is None:
+            return presqa_rating  # Return only the presqa rating if techqa is None
+
+        # If both ratings are available, return their average
+        return (presqa_rating + techqa_rating) / 2
 
     def get_average_qa_rating_12mo(self, qa_field):
         from chaotica_utils.utils import last_day_of_month

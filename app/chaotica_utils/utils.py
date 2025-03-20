@@ -20,29 +20,78 @@ from django.utils.dateparse import (
 )
 from django.utils.timezone import is_aware, make_aware, now
 
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Permission
+from guardian.shortcuts import get_perms
+from django.core.exceptions import ObjectDoesNotExist
+
+
+def can_manage_user(requesting_user, target_user):
+    """
+    Determines if requesting_user has permission to manage target_user.
+
+    Permission is granted if any of these conditions are met:
+    1. requesting_user is the same as target_user (self-management)
+    2. requesting_user is the manager or acting_manager of target_user
+    3. requesting_user has the "manage_user" guardian permission
+
+    Args:
+        requesting_user: The User object requesting to manage another user
+        target_user: Either a User object or an email string
+
+    Returns:
+        User: User object if requesting_user can manage target_user, None otherwise
+    """
+    from .models import User
+    
+    # Ensure requesting_user is valid
+    if not requesting_user or not requesting_user.is_authenticated:
+        return None
+
+    # Convert target_user to a User object if it's an email string
+    if isinstance(target_user, str):
+        try:
+            target_user = User.objects.prefetch_related(
+                "unit_memberships",
+                "skills",
+            ).get(email=target_user)
+        except User.DoesNotExist:
+            return None  # Target user doesn't exist
+
+    # Ensure target_user is a valid User object
+    if not target_user or not isinstance(target_user, User):
+        return None
+
+    # Finally, use the model class to ensure consistency
+    if target_user.can_be_managed_by(requesting_user):
+        return target_user
+    else:
+        # All conditions failed, return None
+        return None
+
 
 def calculate_percentage(part, whole, decimal_places=1):
     """
     Calculate percentage with specified decimal places.
-    
+
     Args:
         part (float|int): The partial value
         whole (float|int): The total value
         decimal_places (int, optional): Number of decimal places to round to. Defaults to 1.
-    
+
     Returns:
         float: The calculated percentage rounded to specified decimal places
-        
+
     Raises:
         ZeroDivisionError: If whole is zero
         ValueError: If decimal_places is negative
     """
     if whole == 0:
         raise ZeroDivisionError("Cannot calculate percentage with zero total")
-    
+
     if decimal_places < 0:
         raise ValueError("Decimal places must be non-negative")
-        
+
     try:
         percentage = (part / whole) * 100
         return round(percentage, decimal_places)
@@ -66,6 +115,7 @@ class NoColorFormatter(logging.Formatter):
             re.sub(self.ANSI_RE, "", record.levelname),
             record.msg,
         )
+
 
 def unique_slug_generator(instance, value=None):
     """Creates a unique slug
@@ -171,6 +221,7 @@ def clean_datetime(value):
     except ValueError:
         raise SuspiciousOperation()
 
+
 def make_datetime_tzaware(value, tzinfo=timezone.utc):
     """
     Makes the DateTime TZ aware and raises SuspiciousOperation if it fails
@@ -183,7 +234,6 @@ def make_datetime_tzaware(value, tzinfo=timezone.utc):
         return value
     except ValueError:
         raise SuspiciousOperation()
-
 
 
 def clean_time(value):
@@ -208,10 +258,11 @@ def clean_duration(value):
         return parse_duration(value)
     except ValueError:
         raise SuspiciousOperation()
-    
+
 
 def datetime_startofday(dte):
     return make_datetime_tzaware(datetime.combine(dte, time.min))
+
 
 def datetime_endofday(dte):
     return make_datetime_tzaware(datetime.combine(dte, time.max))

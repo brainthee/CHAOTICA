@@ -28,7 +28,7 @@ Menu.add_item(
     "user",
     MenuItem(
         "Onboarded Clients",
-        reverse("view_own_onboarding"),
+        lambda request: reverse("view_onboarding", kwargs={"email": request.user}),
         icon="person-snowboarding",
         weight=2,
     ),

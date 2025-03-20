@@ -5,6 +5,10 @@ import pytz
 register = template.Library()
 
 @register.simple_tag
+def can_be_managed_by(user, requesting_user):
+    return user.can_be_managed_by(requesting_user)
+
+@register.simple_tag
 def get_utilisation_perc(user, org, start_date, end_date):
     return user.get_utilisation_perc(org, start_date, end_date)
 
