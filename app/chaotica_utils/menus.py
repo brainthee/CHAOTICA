@@ -7,7 +7,7 @@ from .utils import RoleMenuItem, PermMenuItem
 Menu.add_item(
     "user",
     MenuItem(
-        "Profile",
+        "View Profile",
         reverse("view_own_profile"),
         icon="user",
         weight=1,
