@@ -443,6 +443,9 @@ class JobDetailView(JobPermissionRequiredMixin, JobBaseView, DetailView):
         scope_inline_form = ScopeInlineForm(instance=context["job"])
         context["scopeInlineForm"] = scope_inline_form
 
+        context["entity_type"] = "Job"
+        context["entity_id"] = context["job"].id
+
         return context
 
 

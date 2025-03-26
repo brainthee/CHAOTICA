@@ -1,0 +1,306 @@
+{% load notification_tags %}
+
+<!-- Follow/Unfollow Modal -->
+<div class="modal fade" id="followEntityModal" tabindex="-1" aria-labelledby="followEntityModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="followEntityModalLabel">Notification Preferences</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="entity-type" value="{{ entity_type }}">
+        <input type="hidden" id="entity-id" value="{{ entity_id }}">
+        
+        <div id="follow-status-container" class="mb-3">
+          <div class="d-flex align-items-center">
+            <div class="spinner-border spinner-border-sm me-2" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+            <span>Checking notification status...</span>
+          </div>
+        </div>
+        
+        <div id="notification-settings" class="d-none">
+          <p>Select the types of notifications you want to receive:</p>
+          
+          <div id="notification-types-container">
+            <!-- Notification type checkboxes will be loaded here -->
+          </div>
+          
+          <div class="mt-3">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="email-notifications" checked>
+              <label class="form-check-label" for="email-notifications">Receive email notifications</label>
+            </div>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="app-notifications" checked>
+              <label class="form-check-label" for="app-notifications">Receive in-app notifications</label>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-danger d-none" id="unfollow-button">Unfollow</button>
+        <button type="button" class="btn btn-primary" id="save-preferences">Save preferences</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Button to trigger the modal - you can place this where needed on your entity pages -->
+<button type="button" class="btn btn-outline-primary" id="follow-button" data-bs-toggle="modal" data-bs-target="#followEntityModal">
+  <i class="fas fa-bell"></i> <span id="follow-button-text">Notification Preferences</span>
+</button>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const entityType = document.getElementById('entity-type').value;
+  const entityId = document.getElementById('entity-id').value;
+  let isFollowing = false;
+  let currentSubscriptions = [];
+  let availableNotificationTypes = [];
+  
+  // Initialize the modal when it's shown
+  document.getElementById('followEntityModal').addEventListener('show.bs.modal', function() {
+    loadNotificationStatus();
+  });
+  
+  // Load notification status
+  function loadNotificationStatus() {
+    // Show loading spinner
+    document.getElementById('follow-status-container').innerHTML = `
+      <div class="d-flex align-items-center">
+        <div class="spinner-border spinner-border-sm me-2" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <span>Checking notification status...</span>
+      </div>
+    `;
+    
+    // Hide notification settings until loaded
+    document.getElementById('notification-settings').classList.add('d-none');
+    
+    // Hide unfollow button until status is determined
+    document.getElementById('unfollow-button').classList.add('d-none');
+    
+    // Make API requests in parallel
+    Promise.all([
+      // Get subscription status for this entity
+      fetch(`/api/notifications/subscription-status/?entity_type=${entityType}&entity_id=${entityId}`).then(res => res.json()),
+      // Get available notification types
+      fetch('/api/notifications/types/').then(res => res.json())
+    ])
+    .then(([statusData, typesData]) => {
+      // Set global state
+      isFollowing = statusData.is_following;
+      currentSubscriptions = statusData.subscriptions || [];
+      
+      // Filter available notification types to only those relevant for this entity type
+      availableNotificationTypes = typesData.notification_types.filter(type => {
+        if (entityType === 'Job') {
+          return ['Job Status Change', 'Job Created'].includes(type.name);
+        } else if (entityType === 'Phase') {
+          return ['Phase Status Change', 'Phase Late to TQA', 'Phase Late to PQA', 'Phase Late to Delivery'].includes(type.name);
+        } else if (entityType === 'OrganisationalUnit') {
+          return ['Added to Organisational Unit'].includes(type.name);
+        }
+        return true; // Include all if entity type doesn't match
+      });
+      
+      // Update status message
+      if (isFollowing) {
+        document.getElementById('follow-status-container').innerHTML = `
+          <div class="alert alert-success mb-3">
+            <i class="fas fa-check-circle me-2"></i> You are currently receiving notifications for this ${entityType.toLowerCase()}.
+          </div>
+        `;
+        document.getElementById('unfollow-button').classList.remove('d-none');
+        document.getElementById('follow-button-text').textContent = 'Manage Notifications';
+      } else {
+        document.getElementById('follow-status-container').innerHTML = `
+          <div class="alert alert-secondary mb-3">
+            <i class="fas fa-bell-slash me-2"></i> You are not receiving notifications for this ${entityType.toLowerCase()}.
+          </div>
+        `;
+        document.getElementById('follow-button-text').textContent = 'Follow';
+      }
+      
+      // Render notification type checkboxes
+      renderNotificationTypes();
+      
+      // Show notification settings
+      document.getElementById('notification-settings').classList.remove('d-none');
+    })
+    .catch(error => {
+      console.error('Error loading notification status:', error);
+      document.getElementById('follow-status-container').innerHTML = `
+        <div class="alert alert-danger">
+          <i class="fas fa-exclamation-triangle me-2"></i> Error loading notification settings. Please try again.
+        </div>
+      `;
+    });
+  }
+  
+  // Render notification type checkboxes
+  function renderNotificationTypes() {
+    const container = document.getElementById('notification-types-container');
+    container.innerHTML = '';
+    
+    availableNotificationTypes.forEach(type => {
+      // Check if user is subscribed to this notification type
+      const isSubscribed = currentSubscriptions.some(sub => sub.notification_type === type.id);
+      
+      const checkbox = document.createElement('div');
+      checkbox.className = 'form-check mb-2';
+      checkbox.innerHTML = `
+        <input class="form-check-input notification-type-checkbox" type="checkbox" 
+               id="notification-type-${type.id}" value="${type.id}" ${isSubscribed ? 'checked' : ''}>
+        <label class="form-check-label" for="notification-type-${type.id}">
+          ${type.name}
+        </label>
+      `;
+      container.appendChild(checkbox);
+    });
+    
+    // Set initial values for email/app notification toggles
+    if (currentSubscriptions.length > 0) {
+      // Use the first subscription as a reference (they usually have the same settings)
+      document.getElementById('email-notifications').checked = currentSubscriptions[0].email_enabled;
+      document.getElementById('app-notifications').checked = currentSubscriptions[0].in_app_enabled;
+    }
+  }
+  
+  // Save notification preferences
+  document.getElementById('save-preferences').addEventListener('click', function() {
+    const selectedTypes = Array.from(document.querySelectorAll('.notification-type-checkbox:checked'))
+      .map(cb => parseInt(cb.value));
+      
+    const emailEnabled = document.getElementById('email-notifications').checked;
+    const appEnabled = document.getElementById('app-notifications').checked;
+    
+    if (selectedTypes.length === 0) {
+      // If no types selected, unfollow
+      unfollowEntity();
+      return;
+    }
+    
+    // Prepare the data for following
+    const data = {
+      entity_type: entityType,
+      entity_id: entityId,
+      notification_types: selectedTypes,
+      settings: {
+        email_enabled: emailEnabled,
+        in_app_enabled: appEnabled
+      }
+    };
+    
+    // Make the API request
+    fetch('/api/notifications/follow/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCsrfToken()
+      },
+      body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.status === 'success') {
+        // Show success message
+        document.getElementById('follow-status-container').innerHTML = `
+          <div class="alert alert-success">
+            <i class="fas fa-check-circle me-2"></i> ${data.message || 'Notification preferences saved successfully.'}
+          </div>
+        `;
+        
+        // Hide the modal after a delay
+        setTimeout(() => {
+          bootstrap.Modal.getInstance(document.getElementById('followEntityModal')).hide();
+          // Reload to update any follow button state
+          loadNotificationStatus();
+        }, 1500);
+      } else {
+        throw new Error(data.error || 'Unknown error');
+      }
+    })
+    .catch(error => {
+      console.error('Error saving notification preferences:', error);
+      document.getElementById('follow-status-container').innerHTML = `
+        <div class="alert alert-danger">
+          <i class="fas fa-exclamation-triangle me-2"></i> Error: ${error.message || 'Failed to save preferences.'}
+        </div>
+      `;
+    });
+  });
+  
+  // Unfollow entity
+  document.getElementById('unfollow-button').addEventListener('click', function() {
+    if (confirm(`Are you sure you want to stop receiving notifications for this ${entityType.toLowerCase()}?`)) {
+      unfollowEntity();
+    }
+  });
+  
+  function unfollowEntity() {
+    fetch('/api/notifications/unfollow/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCsrfToken()
+      },
+      body: JSON.stringify({
+        entity_type: entityType,
+        entity_id: entityId
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.status === 'success') {
+        document.getElementById('follow-status-container').innerHTML = `
+          <div class="alert alert-success">
+            <i class="fas fa-check-circle me-2"></i> ${data.message || 'You will no longer receive notifications for this item.'}
+          </div>
+        `;
+        
+        // Reset the form
+        document.querySelectorAll('.notification-type-checkbox').forEach(cb => cb.checked = false);
+        
+        // Hide the unfollow button
+        document.getElementById('unfollow-button').classList.add('d-none');
+        
+        // Update follow button text
+        document.getElementById('follow-button-text').textContent = 'Follow';
+        
+        // Hide the modal after a delay
+        setTimeout(() => {
+          bootstrap.Modal.getInstance(document.getElementById('followEntityModal')).hide();
+          // Update follow button text
+          document.getElementById('follow-button-text').textContent = 'Follow';
+        }, 1500);
+      } else {
+        throw new Error(data.error || 'Unknown error');
+      }
+    })
+    .catch(error => {
+      console.error('Error unfollowing entity:', error);
+      document.getElementById('follow-status-container').innerHTML = `
+        <div class="alert alert-danger">
+          <i class="fas fa-exclamation-triangle me-2"></i> Error: ${error.message || 'Failed to unfollow.'}
+        </div>
+      `;
+    });
+  }
+  
+  // Helper function to get CSRF token
+  function getCsrfToken() {
+    const tokenElement = document.querySelector('meta[name="csrf-token"]') || 
+                        document.querySelector('input[name="csrfmiddlewaretoken"]');
+    return tokenElement ? tokenElement.value || tokenElement.content : '';
+  }
+  
+  // Initialize on page load
+  loadNotificationStatus();
+});
+</script>

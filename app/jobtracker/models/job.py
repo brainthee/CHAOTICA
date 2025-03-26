@@ -18,10 +18,9 @@ from django.db.models import JSONField
 from django.contrib import messages
 import uuid
 from chaotica_utils.models import Note, User, get_sentinel_user
-from chaotica_utils.tasks import task_send_notifications
-from chaotica_utils.utils import AppNotification, NotificationTypes
+from chaotica_utils.utils import AppNotification, task_send_notifications
+from chaotica_utils.enums import NotificationTypes
 from chaotica_utils.views import log_system_activity
-from datetime import timedelta
 from decimal import Decimal
 from django_bleach.models import BleachField
 from constance import config
@@ -295,17 +294,23 @@ class Job(models.Model):
 
         if target_status == JobStatuses.PENDING_SCOPE:
             # Notify scoping team
+            notification = AppNotification(
+                notification_type=NotificationTypes.JOB_STATUS_CHANGE,
+                title="Job: Pending Scope",
+                message=f"{self} has just been marked as ready to scope.",
+                email_template=self.email_template,
+                link=self.get_absolute_url(),
+                entity_type=self.__class__.__name__,
+                entity_id=self.pk,
+                metadata={
+                    "job": self,
+                }
+            )
+
             # users_to_notify = self.unit.get_active_members_with_perm("can_scope_jobs")
             users_to_notify = self.unit.get_active_members_with_perm("notification_pool_scoping")
-            notice = AppNotification(
-                NotificationTypes.JOB,
-                "Job Pending Scope",
-                "{job} has just been marked as ready to scope.".format(job=self),
-                email_template,
-                action_link=self.get_absolute_url(),
-                job=self,
-            )
-            task_send_notifications(notice, users_to_notify, config.NOTIFICATION_POOL_SCOPING_EMAIL_RCPTS)
+
+            task_send_notifications(notification, users_to_notify, config.NOTIFICATION_POOL_SCOPING_EMAIL_RCPTS)
             # Lets also update the audit log
             for user in users_to_notify:
                 log_system_activity(
@@ -317,21 +322,28 @@ class Job(models.Model):
 
         elif target_status == JobStatuses.PENDING_SCOPING_SIGNOFF:
             # Notify scoping team
+
+            notification = AppNotification(
+                notification_type=NotificationTypes.JOB_STATUS_CHANGE,
+                title="Job: Scope Pending Signoff",
+                message=f"{self} is ready for scope signoff.",
+                email_template=self.email_template,
+                link=self.get_absolute_url(),
+                entity_type=self.__class__.__name__,
+                entity_id=self.pk,
+                metadata={
+                    "job": self,
+                }
+            )
+
             # users_to_notify = self.unit.get_active_members_with_perm(
             #     "can_signoff_scopes"
             # )
             users_to_notify = self.unit.get_active_members_with_perm(
                 "notification_pool_scoping"
             )
-            notice = AppNotification(
-                NotificationTypes.JOB,
-                "Job Scope Pending Signoff",
-                "{job} is ready for scope signoff.".format(job=self),
-                email_template,
-                action_link=self.get_absolute_url(),
-                job=self,
-            )
-            task_send_notifications(notice, users_to_notify, config.NOTIFICATION_POOL_SCOPING_EMAIL_RCPTS)
+            
+            task_send_notifications(notification, users_to_notify, config.NOTIFICATION_POOL_SCOPING_EMAIL_RCPTS)
             # Lets also update the audit log
             for user in users_to_notify:
                 log_system_activity(
@@ -343,19 +355,24 @@ class Job(models.Model):
 
         elif target_status == JobStatuses.SCOPING_COMPLETE:
             # Notify scheduling team
+
+            notification = AppNotification(
+                notification_type=NotificationTypes.JOB_STATUS_CHANGE,
+                title="Job: Ready to Schedule",
+                message=f"The scope for {self} has been signed off and is ready for scheduling.",
+                email_template=self.email_template,
+                link=self.get_absolute_url(),
+                entity_type=self.__class__.__name__,
+                entity_id=self.pk,
+                metadata={
+                    "job": self,
+                }
+            )
+
             # users_to_notify = self.unit.get_active_members_with_perm("can_schedule_job")
             users_to_notify = self.unit.get_active_members_with_perm("notification_pool_scheduling")
-            notice = AppNotification(
-                NotificationTypes.JOB,
-                "Job Ready to Schedule",
-                "The scope for {job} has been signed off and is ready for scheduling.".format(
-                    job=self
-                ),
-                email_template,
-                action_link=self.get_absolute_url(),
-                job=self,
-            )
-            task_send_notifications(notice, users_to_notify, config.NOTIFICATION_POOL_SCHEDULING_EMAIL_RCPTS)
+
+            task_send_notifications(notification, users_to_notify, config.NOTIFICATION_POOL_SCHEDULING_EMAIL_RCPTS)
             # Lets also update the audit log
             for user in users_to_notify:
                 log_system_activity(
@@ -606,6 +623,44 @@ class Job(models.Model):
                 self.id = int(config.JOB_ID_START) + 1
 
         return super().save(*args, **kwargs)
+    
+    
+    def follow(self, user):
+        """Let a user follow this job/phase to receive notifications"""
+        from chaotica_utils.models import NotificationSubscription
+        from chaotica_utils.enums import NotificationTypes
+        
+        # Create subscriptions for relevant notification types
+        notification_types = [
+            NotificationTypes.JOB_STATUS_CHANGE,
+            # Add other relevant notification types
+        ]
+        
+        for notification_type in notification_types:
+            NotificationSubscription.objects.get_or_create(
+                user=user,
+                notification_type=notification_type,
+                entity_type=self.__class__.__name__,
+                entity_id=self.id,
+                defaults={
+                    'email_enabled': True,
+                    'in_app_enabled': True
+                }
+            )
+        
+        return True
+
+    def unfollow(self, user):
+        """Stop a user from following this job/phase"""
+        from chaotica_utils.models import NotificationSubscription
+        
+        NotificationSubscription.objects.filter(
+            user=user,
+            entity_type=self.__class__.__name__,
+            entity_id=self.id
+        ).delete()
+        
+        return True
 
     #### FSM Methods
     MOVED_TO = "Moved to "

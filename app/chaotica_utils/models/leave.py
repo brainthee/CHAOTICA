@@ -4,7 +4,7 @@ from django.conf import settings
 from django.urls import reverse
 from django.utils import timezone
 from datetime import timedelta
-from ..tasks import task_send_notifications
+from ..utils import task_send_notifications
 from jobtracker.enums import DefaultTimeSlotTypes
 from business_duration import businessDuration
 from django.contrib.auth import get_user_model
@@ -150,70 +150,73 @@ class LeaveRequest(models.Model):
     def send_request_notification(self):
         from chaotica_utils.utils import AppNotification
 
-        # Send a notice to... people?!
         users_to_notify = self.can_approve_by()
-        notice = AppNotification(
-            NotificationTypes.PHASE,
-            "Leave Requested - Please review",
-            str(self.user) + " has requested leave. Please review the request",
-            self.EMAIL_TEMPLATE,
-            action_link=reverse("manage_leave"),
-            leave=self,
+        notification = AppNotification(
+            notification_type=NotificationTypes.LEAVE_SUBMITTED,
+            title=f"Leave Requested - {self.user}",
+            message=f"{self.user} has requested leave. Please review the request",
+            email_template=self.EMAIL_TEMPLATE,
+            link=reverse("manage_leave"),
+            entity_type=self.__class__.__name__,
+            entity_id=self.pk,
+            metadata={
+                "leave": self,
+            }
         )
-        task_send_notifications(notice, users_to_notify)
+        task_send_notifications(notification, users_to_notify)
 
     def send_approved_notification(self):
         from chaotica_utils.utils import AppNotification
 
-        # Send a notice to... people?!
-        users_to_notify = [self.user]
-        notice = AppNotification(
-            NotificationTypes.PHASE,
-            "Leave Approved",
-            "Your leave ({start_date} - {end_date}) has been approved!".format(
-                start_date=self.start_date, end_date=self.end_date
-            ),
-            self.EMAIL_TEMPLATE,
-            action_link=reverse("view_own_leave"),
-            leave=self,
+        notification = AppNotification(
+            notification_type=NotificationTypes.LEAVE_APPROVED,
+            title=f"Leave Approved",
+            message=f"Your leave ({self.start_date} - {self.end_date}) has been approved!",
+            email_template=self.EMAIL_TEMPLATE,
+            link=reverse("view_own_leave"),
+            entity_type=self.__class__.__name__,
+            entity_id=self.pk,
+            metadata={
+                "leave": self,
+            }
         )
-        task_send_notifications(notice, users_to_notify)
+        task_send_notifications(notification)
 
     def send_declined_notification(self):
         from chaotica_utils.utils import AppNotification
 
-        # Send a notice to... people?!
-        users_to_notify = [self.user]
-        notice = AppNotification(
-            NotificationTypes.PHASE,
-            "Leave DECLINED",
-            "Your leave ({start_date} - {end_date}) has been declined. Please contact {declined_by} for information.".format(
-                start_date=self.start_date,
-                end_date=self.end_date,
-                declined_by=self.declined_by,
-            ),
-            self.EMAIL_TEMPLATE,
-            action_link=reverse("view_own_leave"),
-            leave=self,
+        notification = AppNotification(
+            notification_type=NotificationTypes.LEAVE_REJECTED,
+            title=f"Leave Rejected",
+            message=f"Your leave ({self.start_date} - {self.end_date}) has been declined. Please contact {self.declined_by} for information.",
+            email_template=self.EMAIL_TEMPLATE,
+            link=reverse("view_own_leave"),
+            entity_type=self.__class__.__name__,
+            entity_id=self.pk,
+            metadata={
+                "leave": self,
+            }
         )
-        task_send_notifications(notice, users_to_notify)
+        task_send_notifications(notification)
 
     def send_cancelled_notification(self):
         from chaotica_utils.utils import AppNotification
 
-        # Send a notice to... people?!
-        users_to_notify = [self.user]
-        notice = AppNotification(
-            NotificationTypes.PHASE,
-            "Leave Cancelled",
-            "You have cancelled your leave ({start_date} - {end_date}).".format(
-                start_date=self.start_date, end_date=self.end_date
-            ),
-            self.EMAIL_TEMPLATE,
-            action_link=reverse("view_own_leave"),
-            leave=self,
+        notification = AppNotification(
+            notification_type=NotificationTypes.LEAVE_CANCELLED,
+            title=f"Leave Cancelled",
+            message=f"Your leave ({self.start_date} - {self.end_date}) has been cancelled.",
+            email_template=self.EMAIL_TEMPLATE,
+            link=reverse("view_own_leave"),
+            entity_type=self.__class__.__name__,
+            entity_id=self.pk,
+            metadata={
+                "leave": self,
+            }
         )
-        task_send_notifications(notice, users_to_notify)
+
+        task_send_notifications(notification)
+
 
     def authorise(self, approved_by):
         from jobtracker.models.timeslot import TimeSlot, TimeSlotType

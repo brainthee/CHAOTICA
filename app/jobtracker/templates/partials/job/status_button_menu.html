@@ -1,34 +1,27 @@
 <ul class="dropdown-menu dropdown-menu-end p-0" style="z-index: 9999;">
+  <li>
+    <a href="{% url 'job_update' job.slug %}" class="dropdown-item">Edit Job</a>
+  </li>
+  <li>
+    <button type="button" class="dropdown-item text-primary" id="follow-button" data-bs-toggle="modal" data-bs-target="#followEntityModal"><i class="fas fa-bell"></i> <span id="follow-button-text">Notification Preferences</span></button>
+  </li>
+  <li>
+    <button data-url="{% url 'assign_job_billingcodes' job.slug %}" class="dropdown-item js-load-modal-form">Assign Billing Codes</button>
+  </li>
+  {% if job.can_proceed_to_lost %}
     <li>
-        <a href="{% url 'job_update' job.slug %}" class="dropdown-item">
-            Edit Job
-        </a>
+      <button data-url="{% url 'job_update_workflow' job.slug 9 %}" class="dropdown-item js-update-job-workflow text-warning" data-status="Lost" data-status-id="9">Close as Lost</button>
     </li>
+  {% endif %}
+  {% if job.can_proceed_to_delete %}
     <li>
-        <button data-url="{% url 'assign_job_billingcodes' job.slug %}" 
-            class="dropdown-item js-load-modal-form" 
-            >
-                Assign Billing Codes
-        </button>
+      <button data-url="{% url 'job_update_workflow' job.slug 10 %}" class="dropdown-item js-update-job-workflow text-danger" data-status="Deleted" data-status-id="10">Delete Job</button>
     </li>
-    {% if job.can_proceed_to_lost %}
-        <li>
-            <button data-url="{% url 'job_update_workflow' job.slug 9 %}" class="dropdown-item js-update-job-workflow text-warning" 
-                data-status="Lost" data-status-id="9">Close as Lost</button>
-        </li>
-    {% endif %}
-    {% if job.can_proceed_to_delete %}
-        <li>
-            <button data-url="{% url 'job_update_workflow' job.slug 10 %}" class="dropdown-item js-update-job-workflow text-danger" 
-                data-status="Deleted" data-status-id="10">Delete Job</button>
-        </li>
-    {% endif %}
+  {% endif %}
 
-    {% if request.user.is_superuser %}
+  {% if request.user.is_superuser %}
     <li>
-        <a href="{% url 'admin:jobtracker_job_change' job.pk %}" class="dropdown-item">
-            Django Admin Page
-        </a>
+      <a href="{% url 'admin:jobtracker_job_change' job.pk %}" class="dropdown-item">Django Admin Page</a>
     </li>
-    {% endif %}
+  {% endif %}
 </ul>
