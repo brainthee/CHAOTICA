@@ -156,7 +156,7 @@
                   <p class="text-600 fw-semi-bold fs-10 mb-2">{{ user.job_title }}</p>
                 </div>
               </div>
-              <div class="overflow-auto scrollbar" style="height: 10rem;">
+              <div class="overflow-auto scrollbar" style="height: 15rem;">
                 <ul class="nav d-flex flex-column mb-2 pb-1">
 
                 {% for item in menus.user %}
@@ -172,8 +172,7 @@
                 </ul>
               </div>
 
-              <div class="card-footer p-0 border-top">
-                <div class="px-3 pt-2">
+              <div class="card-footer p-3 border-top">
                   <form method="post" action="{% url 'logout' %}">
                     {% csrf_token %}
                     <button class="btn btn-phoenix-secondary d-flex flex-center w-100" type="submit">                      
@@ -182,12 +181,6 @@
                     </button>
                   </form>
                 </div>
-                <div class="my-2 text-center fw-bold fs-10 text-600">
-                  <a class="text-600 me-1" href="#!">Privacy policy</a> &bull;
-                  <a class="text-600 mx-1" href="#!">Terms</a>&bull; 
-                  <a class="text-600 ms-1" href="#!">Cookies</a>
-                </div>
-              </div>
             </div>
           </div>
         </li>

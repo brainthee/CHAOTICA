@@ -38,11 +38,6 @@ def page_defaults(request):
     from jobtracker.models import Job, Phase
 
     context = {}
-    context["notifications"] = Notification.objects.filter(
-        user=request.user, is_read=False
-    ) | Notification.objects.filter(
-        user=request.user, is_read=True
-    )  # [10:]
     context["config"] = config
     if (
         django_settings.CHAOTICA_BIRTHDAY.month == datetime.date.today().month
@@ -87,10 +82,6 @@ def page_defaults(request):
     return context
 
 
-def is_ajax(request):
-    return request.META.get("HTTP_X_REQUESTED_WITH") == "XMLHttpRequest"
-
-
 @require_safe
 def maintenance(request):
     """
@@ -120,62 +111,6 @@ def map_view(request):
     template = loader.get_template("map_view.html")
     context = {**context, **page_defaults(request)}
     return HttpResponse(template.render(context, request))
-
-
-@require_safe
-def notifications_feed(request):
-    data = {}
-    data["notifications"] = []
-    notifications = Notification.objects.none()
-
-    if not request.user.is_authenticated:
-        # Return an explicit 403 error to allow JS to redir
-        return HttpResponseForbidden()
-
-    if is_ajax(request):
-        notifications = Notification.objects.filter(user=request.user)[:30]
-        for notice in notifications:
-            data["notifications"].append(
-                {
-                    "title": notice.title,
-                    "msg": notice.message,
-                    "icon": notice.icon,
-                    "timestamp": notice.timestamp,
-                    "is_read": notice.is_read,
-                    "url": notice.link,
-                }
-            )
-
-    context = {
-        "notifications": notifications,
-    }
-    data["html_form"] = loader.render_to_string(
-        "partials/notifications.html", context, request=request
-    )
-    return JsonResponse(data)
-
-
-@login_required
-@require_safe
-def notifications_mark_read(request):
-    notifications = Notification.objects.filter(user=request.user, is_read=False)
-    for notice in notifications:
-        notice.is_read = True
-        notice.save()
-    data = {"result": True}
-    return JsonResponse(data, safe=False)
-
-
-@login_required
-@require_safe
-def notification_mark_read(request, pk):
-    notification = get_object_or_404(Notification, user=request.user, pk=pk)
-    if not notification.is_read:
-        notification.is_read = True
-        notification.save()
-    data = {"result": True}
-    return JsonResponse(data, safe=False)
-
 
 
 @permission_required_or_403("chaotica_utils.manage_site_settings")

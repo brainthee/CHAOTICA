@@ -3,9 +3,7 @@ from django.urls import reverse
 from django.http import HttpResponseRedirect, HttpResponseBadRequest, JsonResponse
 from django.template import loader
 from django.views import View
-from django.db.models import Q, CharField, ExpressionWrapper
-from django.db.models import Value as V
-from django.db.models.functions import Concat
+from django.db.models import Q
 from django.contrib import messages
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
@@ -24,13 +22,16 @@ from ..forms import (
 )
 from ..enums import FeedbackType, PhaseStatuses, TimeSlotDeliveryRole, JobStatuses
 from .helpers import _process_assign_user
-from chaotica_utils.tasks import task_send_notifications
-from chaotica_utils.utils import AppNotification
+from chaotica_utils.utils import AppNotification, task_send_notifications
 from chaotica_utils.enums import NotificationTypes
 import logging
 from dal import autocomplete
-from ..decorators import unit_permission_required_or_403, job_permission_required_or_403
-from ..mixins import UnitPermissionRequiredMixin, JobPermissionRequiredMixin, PrefetchRelatedMixin
+from ..decorators import job_permission_required_or_403
+from ..mixins import (
+    UnitPermissionRequiredMixin,
+    JobPermissionRequiredMixin,
+    PrefetchRelatedMixin,
+)
 from chaotica_utils.utils import (
     clean_date,
 )
@@ -39,18 +40,14 @@ from chaotica_utils.utils import (
 logger = logging.getLogger(__name__)
 
 
-@job_permission_required_or_403(
-    "jobtracker.view_job_schedule", (Phase, "slug", "slug")
-)
+@job_permission_required_or_403("jobtracker.view_job_schedule", (Phase, "slug", "slug"))
 def view_phase_schedule_gantt_data(request, job_slug, slug):
     job = get_object_or_404(Job, slug=job_slug)
     phase = get_object_or_404(Phase, job=job, slug=slug)
     return JsonResponse(phase.get_gantt_json(), safe=False)
 
 
-@job_permission_required_or_403(
-    "jobtracker.view_job_schedule", (Phase, "slug", "slug")
-)
+@job_permission_required_or_403("jobtracker.view_job_schedule", (Phase, "slug", "slug"))
 def view_phase_schedule_slots(request, job_slug, slug):
     data = []
     job = get_object_or_404(Job, slug=job_slug)
@@ -66,6 +63,7 @@ def view_phase_schedule_slots(request, job_slug, slug):
 class PhaseAutocomplete(autocomplete.Select2QuerySetView):
     def get_queryset(self):
         from pprint import pprint
+
         # Don't forget to filter out results depending on the visitor !
         if not self.request.user.is_authenticated:
             return Phase.objects.none()
@@ -75,17 +73,15 @@ class PhaseAutocomplete(autocomplete.Select2QuerySetView):
         pprint(qs)
         if self.q:
             qs = qs.filter(
-                Q(title__icontains=self.q)|
-                Q(phase_id__icontains=self.q)|
-                Q(job__id__icontains=self.q)
+                Q(title__icontains=self.q)
+                | Q(phase_id__icontains=self.q)
+                | Q(job__id__icontains=self.q)
             )
         pprint(qs)
         return qs
 
 
-@job_permission_required_or_403(
-    "jobtracker.view_job_schedule", (Phase, "slug", "slug")
-)
+@job_permission_required_or_403("jobtracker.view_job_schedule", (Phase, "slug", "slug"))
 def view_phase_schedule_members(request, job_slug, slug):
     data = []
     job = get_object_or_404(Job, slug=job_slug)
@@ -143,7 +139,7 @@ def assign_phase_field(request, job_slug, slug, field):
 
 
 class PhaseBaseView(PrefetchRelatedMixin, ChaoticaBaseView, View):
-    prefetch_related = ['timeslots', 'notes', 'notes__author']
+    prefetch_related = ["timeslots", "notes", "notes__author"]
     model = Phase
     fields = "__all__"
     job_slug = None
@@ -183,6 +179,9 @@ class PhaseDetailView(JobPermissionRequiredMixin, PhaseBaseView, DetailView):
 
         info_form = PhaseForm(instance=context["phase"])
         context["info_form"] = info_form
+
+        context["entity_type"] = "Phase"
+        context["entity_id"] = context["phase"].id
 
         feedback_form = None
 
@@ -250,15 +249,14 @@ def phase_refire_notifications(request, job_slug, slug):
         reverse("phase_detail", kwargs={"job_slug": job_slug, "slug": slug})
     )
 
-@job_permission_required_or_403(
-    "jobtracker.can_update_job", (Phase, "slug", "slug")
-)
+
+@job_permission_required_or_403("jobtracker.can_update_job", (Phase, "slug", "slug"))
 def phase_update_dates(request, job_slug, slug):
     job = get_object_or_404(Job, slug=job_slug)
     phase = get_object_or_404(Phase, job=job, slug=slug)
     phase.update_stored_dates()
     messages.info(request, "Dates updated based on schedule")
-    
+
     return HttpResponseRedirect(
         reverse("phase_detail", kwargs={"job_slug": job_slug, "slug": slug})
     )
@@ -279,15 +277,20 @@ def phase_create_note(request, job_slug, slug):
             # Lets send a notification to everyone except us
             users_to_notify = phase.team().exclude(pk=request.user.pk)
             email_template = "emails/phase_content.html"
-            notice = AppNotification(
-                NotificationTypes.PHASE,
-                "{phase} - Note added to phase".format(phase=phase),
-                "A note has been added: {msg}.".format(msg=new_note.content),
-                email_template,
-                action_link=phase.get_absolute_url() + "#notes",
-                phase=phase,
+
+            notification = AppNotification(
+                notification_type=NotificationTypes.PHASE_NEW_NOTE,
+                title=f"{phase}: Note added to phase",
+                message=f"A note has been added: {new_note.content}",
+                email_template=email_template,
+                link=phase.get_absolute_url() + "#notes",
+                entity_type=phase.__class__.__name__,
+                entity_id=phase.pk,
+                metadata={
+                    "phase": phase,
+                }
             )
-            task_send_notifications(notice, users_to_notify)
+            task_send_notifications(notification, users_to_notify)
 
             return HttpResponseRedirect(
                 reverse("phase_detail", kwargs={"job_slug": job_slug, "slug": slug})
@@ -373,7 +376,7 @@ def phase_feedback_edit(request, job_slug, slug, pk):
 def phase_feedback_delete(request, job_slug, slug, pk):
     feedback = get_object_or_404(Feedback, pk=pk, phase__slug=slug, author=request.user)
     context = {}
-    
+
     data = dict()
     if request.method == "POST":
         feedback.delete()
