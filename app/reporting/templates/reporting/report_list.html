@@ -1,0 +1,229 @@
+{% extends "reporting/base.html" %}
+{% load static %}
+
+{% block title %}Reports{% endblock %}
+
+{% block report_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Reports</h2>
+    <a href="{% url 'reporting:report_wizard' %}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Create New Report
+    </a>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header">
+        <ul class="nav nav-tabs card-header-tabs" id="reportTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="my-reports-tab" data-bs-toggle="tab" data-bs-target="#my-reports" type="button" role="tab">
+                    My Reports
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="public-reports-tab" data-bs-toggle="tab" data-bs-target="#public-reports" type="button" role="tab">
+                    Public Reports
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="recent-reports-tab" data-bs-toggle="tab" data-bs-target="#recent-reports" type="button" role="tab">
+                    Recently Run
+                </button>
+            </li>
+        </ul>
+    </div>
+    <div class="card-body">
+        <div class="tab-content" id="reportTabsContent">
+            <!-- My Reports Tab -->
+            <div class="tab-pane fade show active" id="my-reports" role="tabpanel">
+                <div class="mb-3">
+                    <div class="input-group">
+                        <input type="text" class="form-control report-search" placeholder="Search reports...">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    </div>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-hover report-table">
+                        <thead>
+                            <tr>
+                                <th>Report Name</th>
+                                <th>Data Area</th>
+                                <th>Created</th>
+                                <th>Last Run</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for report in reports %}
+                                {% if report.created_by == request.user %}
+                                <tr class="report-row" data-report-id="{{ report.id }}">
+                                    <td>
+                                        <a href="{% url 'reporting:report_detail' pk=report.id %}">
+                                            {{ report.name }}
+                                        </a>
+                                        {% if report.is_private %}
+                                            <span class="badge bg-secondary">Private</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ report.data_area|title }}</td>
+                                    <td>{{ report.created_at|date:"M d, Y" }}</td>
+                                    <td>
+                                        {% if report.outputs.exists %}
+                                            {{ report.outputs.first.created_at|date:"M d, Y" }}
+                                        {% else %}
+                                            Never
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="{% url 'reporting:report_run' pk=report.id %}" class="btn btn-sm btn-primary">
+                                                <i class="fas fa-play"></i> Run
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown"></button>
+                                            <ul class="dropdown-menu">
+                                                <li>
+                                                    <a class="dropdown-item" href="{% url 'reporting:report_edit' pk=report.id %}">
+                                                        <i class="fas fa-edit"></i> Edit
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item" href="{% url 'reporting:schedule_create' report_id=report.id %}">
+                                                        <i class="fas fa-calendar"></i> Schedule
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item text-danger" href="{% url 'reporting:report_delete' pk=report.id %}">
+                                                        <i class="fas fa-trash"></i> Delete
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                            {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-4">
+                                        You haven't created any reports yet.
+                                        <a href="{% url 'reporting:report_wizard' %}">Create your first report</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Public Reports Tab -->
+            <div class="tab-pane fade" id="public-reports" role="tabpanel">
+                <div class="mb-3">
+                    <div class="input-group">
+                        <input type="text" class="form-control report-search" placeholder="Search reports...">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    </div>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-hover report-table">
+                        <thead>
+                            <tr>
+                                <th>Report Name</th>
+                                <th>Data Area</th>
+                                <th>Created By</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for report in reports %}
+                                {% if not report.is_private and report.created_by != request.user %}
+                                <tr class="report-row" data-report-id="{{ report.id }}">
+                                    <td>
+                                        <a href="{% url 'reporting:report_detail' pk=report.id %}">
+                                            {{ report.name }}
+                                        </a>
+                                    </td>
+                                    <td>{{ report.data_area|title }}</td>
+                                    <td>{{ report.created_by.get_full_name }}</td>
+                                    <td>{{ report.created_at|date:"M d, Y" }}</td>
+                                    <td>
+                                        <a href="{% url 'reporting:report_run' pk=report.id %}" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-play"></i> Run
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                            {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-4">
+                                        No public reports available.
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Recently Run Tab -->
+            <div class="tab-pane fade" id="recent-reports" role="tabpanel">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Report Name</th>
+                                <th>Format</th>
+                                <th>Run Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for output in request.user.report_outputs.all|slice:":10" %}
+                            <tr>
+                                <td>{{ output.report.name }}</td>
+                                <td>{{ output.format|upper }}</td>
+                                <td>{{ output.created_at|date:"M d, Y H:i" }}</td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="{{ output.file.url }}" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-download"></i> Download
+                                        </a>
+                                        <a href="{% url 'reporting:report_run' pk=output.report.id %}" class="btn btn-sm btn-secondary">
+                                            <i class="fas fa-sync"></i> Re-run
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-4">
+                                        You haven't run any reports recently.
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block footer_javascript_page %}
+{{ block.super }}
+<script>
+$(document).ready(function() {
+    // Report search functionality
+    $('.report-search').on('keyup', function() {
+        var searchText = $(this).val().toLowerCase();
+        var tableBody = $(this).closest('.tab-pane').find('tbody');
+        
+        tableBody.find('tr').each(function() {
+            var text = $(this).text().toLowerCase();
+            $(this).toggle(text.indexOf(searchText) > -1);
+        });
+    });
+});
+</script>
+{% endblock %}

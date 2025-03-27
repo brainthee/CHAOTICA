@@ -60,17 +60,6 @@ Menu.add_item(
 )
 
 Menu.add_item(
-    "main",
-    MenuItem(
-        "Reporting",
-        reverse("view_reports"),
-        weight=4,
-        # perm='jobtracker.view_report',
-        icon="file-lines",
-    ),
-)
-
-Menu.add_item(
     "ops",
     PermMenuItem(
         "Teams",
