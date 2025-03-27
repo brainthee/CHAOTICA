@@ -462,6 +462,18 @@ class User(AbstractUser):
             return reverse("user_profile", kwargs={"email": self.email})
         else:
             return None
+    
+    def get_profile_url(self):
+        if self.email:
+            return reverse("user_profile", kwargs={"email": self.email})
+        else:
+            return None
+
+    def get_edit_url(self):
+        if self.email:
+            return reverse("update_profile", kwargs={"email": self.email})
+        else:
+            return None
 
     def get_admin_url(self):
         if self.email:
