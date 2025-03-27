@@ -767,6 +767,13 @@ class PhaseStatuses:
         (ARCHIVED, []),
     )
 
+    INACTIVE_STATUSES = [
+        CANCELLED,
+        POSTPONED,
+        DELETED,
+        ARCHIVED,
+    ]
+
     ACTIVE_STATUSES = [
         DRAFT,
         PENDING_SCHED,
