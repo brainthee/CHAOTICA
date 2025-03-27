@@ -8,6 +8,7 @@ Menu.add_item(
     RoleMenuItem(
         "Add Job",
         reverse("job_create"),
+        check=lambda request: request.user.is_authenticated,
         icon="cubes",
         requiredRole="*",  # Any role will do!
         weight=1,
@@ -20,6 +21,7 @@ Menu.add_item(
     MenuItem(
         "My Qualifications",
         reverse("view_own_qualifications"),
+        check=lambda request: request.user.is_authenticated,
         icon="certificate",
         weight=1,
     ),
@@ -31,6 +33,7 @@ Menu.add_item(
     RoleMenuItem(
         "Jobs",
         reverse("job_list"),
+        check=lambda request: request.user.is_authenticated,
         icon="cubes",
         requiredRole="*",  # Any role will do!
         weight=1,
@@ -42,6 +45,7 @@ Menu.add_item(
     MenuItem(
         "Scheduler",
         reverse("view_scheduler"),
+        check=lambda request: request.user.is_authenticated,
         icon="calendar",
         # perm='jobtracker.view_scheduler',
         weight=2,
@@ -53,6 +57,7 @@ Menu.add_item(
     PermMenuItem(
         "Clients",
         reverse("client_list"),
+        check=lambda request: request.user.is_authenticated,
         icon="handshake",
         perm="jobtracker.view_client",
         weight=3,
@@ -64,6 +69,7 @@ Menu.add_item(
     MenuItem(
         "Reporting",
         reverse("view_reports"),
+        check=lambda request: request.user.is_authenticated,
         weight=4,
         # perm='jobtracker.view_report',
         icon="file-lines",
@@ -75,6 +81,7 @@ Menu.add_item(
     PermMenuItem(
         "Teams",
         reverse("team_list"),
+        check=lambda request: request.user.is_authenticated,
         icon="people-group",
         perm="jobtracker.view_team",
         weight=1,
@@ -86,6 +93,7 @@ Menu.add_item(
     PermMenuItem(
         "Skills",
         reverse("skill_list"),
+        check=lambda request: request.user.is_authenticated,
         icon="readme",
         perm="jobtracker.view_skill",
         icon_prefix="fab fa-",
@@ -97,6 +105,7 @@ Menu.add_item(
     PermMenuItem(
         "Services",
         reverse("service_list"),
+        check=lambda request: request.user.is_authenticated,
         perm="jobtracker.view_service",
         icon="laptop-code",
         weight=1,
@@ -107,6 +116,7 @@ Menu.add_item(
     PermMenuItem(
         "Qualifications",
         reverse("qualification_list"),
+        check=lambda request: request.user.is_authenticated,
         perm="jobtracker.view_qualification",
         icon="certificate",
         weight=1,
@@ -117,6 +127,7 @@ Menu.add_item(
     PermMenuItem(
         "Projects",
         reverse("project_list"),
+        check=lambda request: request.user.is_authenticated,
         perm="jobtracker.view_projects",
         icon="diagram-project",
         weight=3,
@@ -127,6 +138,7 @@ Menu.add_item(
     PermMenuItem(
         "Accreditation",
         reverse("qualification_list"),
+        check=lambda request: request.user.is_authenticated,
         perm="jobtracker.view_qualification",
         icon="certificate",
         weight=1,
@@ -137,6 +149,7 @@ Menu.add_item(
     PermMenuItem(
         "Workflow Checklists",
         reverse("wf_tasks_list"),
+        check=lambda request: request.user.is_authenticated,
         perm="jobtracker.view_workflowtask",
         icon="list-check",
         weight=5,
@@ -147,6 +160,7 @@ Menu.add_item(
     MenuItem(
         "Manage Leave",
         reverse("manage_leave"),
+        check=lambda request: request.user.is_authenticated,
         icon="person-walking-arrow-right",
         weight=6,
     ),
@@ -156,6 +170,7 @@ Menu.add_item(
     PermMenuItem(
         "Billing Codes",
         reverse("billingcode_list"),
+        check=lambda request: request.user.is_authenticated,
         perm="jobtracker.view_billingcode",
         icon="receipt",
         weight=5,
@@ -166,6 +181,7 @@ Menu.add_item(
     PermMenuItem(
         "Organisational Units",
         reverse("organisationalunit_list"),
+        check=lambda request: request.user.is_authenticated,
         perm="jobtracker.view_organisationalunit",
         icon="building",
         weight=10,
