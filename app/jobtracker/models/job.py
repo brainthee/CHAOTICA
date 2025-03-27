@@ -4,6 +4,7 @@ from ..enums import (
     RestrictedClassifications,
     TimeSlotDeliveryRole,
     JobSupportRole,
+    PhaseStatuses,
 )
 from ..models.client import FrameworkAgreement
 from django_fsm import FSMIntegerField, transition, can_proceed
@@ -296,7 +297,9 @@ class Job(models.Model):
         if target_status == JobStatuses.PENDING_SCOPE:
             # Notify scoping team
             # users_to_notify = self.unit.get_active_members_with_perm("can_scope_jobs")
-            users_to_notify = self.unit.get_active_members_with_perm("notification_pool_scoping")
+            users_to_notify = self.unit.get_active_members_with_perm(
+                "notification_pool_scoping"
+            )
             notice = AppNotification(
                 NotificationTypes.JOB,
                 "Job Pending Scope",
@@ -305,7 +308,9 @@ class Job(models.Model):
                 action_link=self.get_absolute_url(),
                 job=self,
             )
-            task_send_notifications(notice, users_to_notify, config.NOTIFICATION_POOL_SCOPING_EMAIL_RCPTS)
+            task_send_notifications(
+                notice, users_to_notify, config.NOTIFICATION_POOL_SCOPING_EMAIL_RCPTS
+            )
             # Lets also update the audit log
             for user in users_to_notify:
                 log_system_activity(
@@ -331,7 +336,9 @@ class Job(models.Model):
                 action_link=self.get_absolute_url(),
                 job=self,
             )
-            task_send_notifications(notice, users_to_notify, config.NOTIFICATION_POOL_SCOPING_EMAIL_RCPTS)
+            task_send_notifications(
+                notice, users_to_notify, config.NOTIFICATION_POOL_SCOPING_EMAIL_RCPTS
+            )
             # Lets also update the audit log
             for user in users_to_notify:
                 log_system_activity(
@@ -344,7 +351,9 @@ class Job(models.Model):
         elif target_status == JobStatuses.SCOPING_COMPLETE:
             # Notify scheduling team
             # users_to_notify = self.unit.get_active_members_with_perm("can_schedule_job")
-            users_to_notify = self.unit.get_active_members_with_perm("notification_pool_scheduling")
+            users_to_notify = self.unit.get_active_members_with_perm(
+                "notification_pool_scheduling"
+            )
             notice = AppNotification(
                 NotificationTypes.JOB,
                 "Job Ready to Schedule",
@@ -355,7 +364,9 @@ class Job(models.Model):
                 action_link=self.get_absolute_url(),
                 job=self,
             )
-            task_send_notifications(notice, users_to_notify, config.NOTIFICATION_POOL_SCHEDULING_EMAIL_RCPTS)
+            task_send_notifications(
+                notice, users_to_notify, config.NOTIFICATION_POOL_SCHEDULING_EMAIL_RCPTS
+            )
             # Lets also update the audit log
             for user in users_to_notify:
                 log_system_activity(
@@ -364,7 +375,6 @@ class Job(models.Model):
                         target=user.email
                     ),
                 )
-
 
     _start_date = models.DateField(
         "Start Date",
@@ -376,7 +386,7 @@ class Job(models.Model):
     def start_date(self):
         if self.desired_start_date:
             return self.desired_start_date
-        
+
         if self._start_date:
             return self._start_date
 
@@ -410,7 +420,7 @@ class Job(models.Model):
     def delivery_date(self):
         if self.desired_delivery_date:
             return self.desired_delivery_date
-        
+
         if self._delivery_date:
             return self._delivery_date
 
@@ -506,13 +516,14 @@ class Job(models.Model):
             .distinct()
         )
         return my_slots
-    
+
     def get_hours_in_day(self):
         # Priority is client
         return self.client.hours_in_day
-    
+
     def total_hrs_scheduled(self):
         from ..models import TimeSlot
+
         slots = TimeSlot.objects.filter(phase__job=self)
         total = Decimal()
         _hours_in_day = self.get_hours_in_day()
@@ -520,10 +531,10 @@ class Job(models.Model):
             # This is dumb - doesn't validate if it's half a day or something.
             total = total + _hours_in_day
         return total
-    
+
     def total_days_scheduled(self):
         hrs = self.total_hrs_scheduled()
-        return round(hrs / self.client.hours_in_day,1)
+        return round(hrs / self.client.hours_in_day, 1)
 
     def get_all_total_scheduled_by_type(self):
         data = dict()
@@ -787,7 +798,7 @@ class Job(models.Model):
                 )
             _can_proceed = False
 
-        for phase in self.phases.all():
+        for phase in self.phases.all().exclude(status__in=PhaseStatuses.INACTIVE_STATUSES):
             if phase.get_total_scoped_hours() == Decimal(0.0):
                 if notify_request:
                     messages.add_message(
@@ -900,7 +911,7 @@ class Job(models.Model):
                 )
             _can_proceed = False
 
-        for phase in self.phases.all():
+        for phase in self.phases.all().exclude(status__in=PhaseStatuses.INACTIVE_STATUSES):
             if phase.get_total_scoped_hours() == Decimal(0.0):
                 if notify_request:
                     messages.add_message(
