@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block head_css_page %}
+<link rel="stylesheet" href="{% static 'reporting/css/reporting.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-3 col-lg-2 sidebar">
+            <h4>Reports</h4>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'report_list' %}active{% endif %}" 
+                       href="{% url 'reporting:report_list' %}">
+                        <i class="fas fa-list"></i> My Reports
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'report_wizard' %}active{% endif %}" 
+                       href="{% url 'reporting:report_wizard' %}">
+                        <i class="fas fa-plus"></i> Create New Report
+                    </a>
+                </li>
+            </ul>
+            
+            {% if categories %}
+            <h5 class="mt-4">Categories</h5>
+            <ul class="nav flex-column">
+                {% for category in categories %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'reporting:report_list' %}?category={{ category.id }}">
+                        <i class="fas fa-folder"></i> {{ category.name }}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+        
+        <div class="col-md-9 col-lg-10 content">
+            {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            {% block report_content %}{% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block footer_javascript_page %}
+<script src="{% static 'reporting/js/reporting.js' %}"></script>
+<script src="{% static 'reporting/js/field-selector.js' %}"></script>
+<script src="{% static 'reporting/js/filter-builder.js' %}"></script>
+<script src="{% static 'reporting/js/sort-builder.js' %}"></script>
+<script src="{% static 'reporting/js/wizard.js' %}"></script>
+{% endblock %}
