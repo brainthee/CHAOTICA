@@ -4,6 +4,7 @@ from ..enums import (
     RestrictedClassifications,
     TimeSlotDeliveryRole,
     JobSupportRole,
+    PhaseStatuses,
 )
 from ..models.client import FrameworkAgreement
 from django_fsm import FSMIntegerField, transition, can_proceed
@@ -382,7 +383,6 @@ class Job(models.Model):
                     ),
                 )
 
-
     _start_date = models.DateField(
         "Start Date",
         null=True,
@@ -393,7 +393,7 @@ class Job(models.Model):
     def start_date(self):
         if self.desired_start_date:
             return self.desired_start_date
-        
+
         if self._start_date:
             return self._start_date
 
@@ -427,7 +427,7 @@ class Job(models.Model):
     def delivery_date(self):
         if self.desired_delivery_date:
             return self.desired_delivery_date
-        
+
         if self._delivery_date:
             return self._delivery_date
 
@@ -523,13 +523,14 @@ class Job(models.Model):
             .distinct()
         )
         return my_slots
-    
+
     def get_hours_in_day(self):
         # Priority is client
         return self.client.hours_in_day
-    
+
     def total_hrs_scheduled(self):
         from ..models import TimeSlot
+
         slots = TimeSlot.objects.filter(phase__job=self)
         total = Decimal()
         _hours_in_day = self.get_hours_in_day()
@@ -537,10 +538,10 @@ class Job(models.Model):
             # This is dumb - doesn't validate if it's half a day or something.
             total = total + _hours_in_day
         return total
-    
+
     def total_days_scheduled(self):
         hrs = self.total_hrs_scheduled()
-        return round(hrs / self.client.hours_in_day,1)
+        return round(hrs / self.client.hours_in_day, 1)
 
     def get_all_total_scheduled_by_type(self):
         data = dict()
@@ -842,7 +843,7 @@ class Job(models.Model):
                 )
             _can_proceed = False
 
-        for phase in self.phases.all():
+        for phase in self.phases.all().exclude(status__in=PhaseStatuses.INACTIVE_STATUSES):
             if phase.get_total_scoped_hours() == Decimal(0.0):
                 if notify_request:
                     messages.add_message(
@@ -955,7 +956,7 @@ class Job(models.Model):
                 )
             _can_proceed = False
 
-        for phase in self.phases.all():
+        for phase in self.phases.all().exclude(status__in=PhaseStatuses.INACTIVE_STATUSES):
             if phase.get_total_scoped_hours() == Decimal(0.0):
                 if notify_request:
                     messages.add_message(

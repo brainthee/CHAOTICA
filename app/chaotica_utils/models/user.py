@@ -464,6 +464,18 @@ class User(AbstractUser):
             return reverse("user_profile", kwargs={"email": self.email})
         else:
             return None
+    
+    def get_profile_url(self):
+        if self.email:
+            return reverse("user_profile", kwargs={"email": self.email})
+        else:
+            return None
+
+    def get_edit_url(self):
+        if self.email:
+            return reverse("update_profile", kwargs={"email": self.email})
+        else:
+            return None
 
     def get_admin_url(self):
         if self.email:
@@ -476,6 +488,9 @@ class User(AbstractUser):
         return (self.manager or self.acting_manager)
 
     def can_be_managed_by(self, requesting_user):
+        if not requesting_user:
+            return False
+        
         # Case 1: Self-management - user can always manage themselves
         if requesting_user.pk == self.pk:
             return True
