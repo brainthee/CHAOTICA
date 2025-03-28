@@ -101,7 +101,7 @@
    </div>
 </div>
 
-{% block footer_javascript_page %}
+{% block extra_js %}
 <script>
    var updateRating = function() {
       var form = $("#techRating");
@@ -128,4 +128,4 @@
 
    $("#techRating .form-select").change(updateRating);
 </script>
-{% endblock footer_javascript_page %}
+{% endblock extra_js %}

@@ -1,0 +1,242 @@
+/**
+ * Report Builder CSS
+ */
+
+/* Sidebar styles */
+.sidebar {
+    margin-bottom: 20px;
+  }
+  
+  .sidebar .list-group-item.active {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+  }
+  
+  .sidebar-heading {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1rem;
+  }
+  
+  /* Card styles */
+  .card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    margin-bottom: 1.5rem;
+  }
+  
+  .card-header {
+    background-color: rgba(0, 0, 0, 0.03);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+    padding: 0.75rem 1.25rem;
+  }
+  
+  .card-header h5 {
+    margin-bottom: 0;
+  }
+  
+  /* Table styles */
+  .table-hover tbody tr:hover {
+    background-color: rgba(13, 110, 253, 0.05);
+  }
+  
+  /* Form styles */
+  .form-control:focus,
+  .form-select:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+  }
+  
+  /* Data area card styles */
+  .data-area-card {
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+  
+  .data-area-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+  }
+  
+  .data-area-card.selected {
+    border-color: #0d6efd;
+    background-color: rgba(13, 110, 253, 0.05);
+  }
+  
+  /* Field list styles */
+  .field-list {
+    max-height: 400px;
+    overflow-y: auto;
+  }
+  
+  .field-list .list-group-item {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+  
+  .field-list .list-group-item:hover {
+    background-color: rgba(0, 0, 0, 0.03);
+  }
+  
+  /* Filter styles */
+  .filter-row {
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+  }
+  
+  .filter-row:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+  
+  .filter-expression {
+    font-size: 0.95rem;
+  }
+  
+  .filter-value {
+    font-family: monospace;
+    font-size: 0.9rem;
+    color: #495057;
+  }
+  
+  /* Sort list styles */
+  .sort-item {
+    margin-bottom: 0.5rem;
+    padding: 0.5rem;
+    background-color: #f8f9fa;
+    border-radius: 0.25rem;
+    border: 1px solid #dee2e6;
+  }
+  
+  .sort-handle {
+    cursor: grab;
+  }
+  
+  /* Paging styles */
+  .pagination {
+    margin-bottom: 0;
+  }
+  
+  /* Results table styles */
+  .results-table {
+    margin-top: 1rem;
+  }
+  
+  .results-table th {
+    position: sticky;
+    top: 0;
+    background-color: #f8f9fa;
+    z-index: 10;
+  }
+  
+  /* Toast styles */
+  .toast-container {
+    z-index: 1100;
+  }
+  
+  /* Wizard icons */
+  .step-icon {
+    width: 40px;
+    height: 40px;
+    line-height: 40px;
+    border-radius: 50%;
+    text-align: center;
+    margin: 0 auto;
+    font-size: 1.25rem;
+  }
+  
+  /* Favorite icon */
+  .favorite-toggle:hover {
+    transform: scale(1.1);
+    transition: transform 0.2s ease;
+  }
+  
+  /* Report detail badges */
+  .badge {
+    font-weight: 500;
+  }
+  
+  /* Filter tags */
+  .filter-tag {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1;
+    color: #212529;
+    background-color: #e9ecef;
+    border-radius: 0.25rem;
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .filter-tag .close {
+    margin-left: 0.5rem;
+    color: #6c757d;
+    font-size: 0.75rem;
+    cursor: pointer;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 767.98px) {
+    .sidebar {
+      margin-bottom: 1rem;
+    }
+    
+    .wizard-step .step-label {
+      font-size: 10px;
+    }
+    
+    .data-area-card {
+      margin-bottom: 1rem;
+    }
+  }
+  
+  /* Drag and drop styles */
+  .sortable-ghost {
+    opacity: 0.5;
+    background-color: #f8f9fa;
+  }
+  
+  .sortable-chosen {
+    background-color: #e9ecef;
+  }
+  
+  /* Field format styles */
+  .format-badge {
+    font-size: 0.75rem;
+    padding: 0.125rem 0.25rem;
+  }
+  
+  /* Export format icons */
+  .export-icon {
+    width: 1.5rem;
+    text-align: center;
+    margin-right: 0.5rem;
+  }
+  
+  /* Report results container */
+  .report-results {
+    overflow-x: auto;
+    max-height: 600px;
+    position: relative;
+  }
+  
+  /* Filter prompt form */
+  .filter-prompt-form {
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  
+  /* Field customization modal */
+  .field-modal .modal-title {
+    font-size: 1.1rem;
+  }
+  
+  /* Help text */
+  .help-text {
+    color: #6c757d;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+  }

@@ -1,229 +1,329 @@
 {% extends "reporting/base.html" %}
 {% load static %}
 
-{% block title %}Reports{% endblock %}
-
 {% block report_content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Reports</h2>
-    <a href="{% url 'reporting:report_wizard' %}" class="btn btn-primary">
-        <i class="fas fa-plus"></i> Create New Report
-    </a>
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h3>
+      {% if view_type == 'my' %}
+        My Reports
+      {% elif view_type == 'public' %}
+        Public Reports
+      {% elif view_type == 'favorites' %}
+        Favorite Reports
+      {% else %}
+        All Reports
+      {% endif %}
+    </h3>
+    
+    <div>
+      <a href="{% url 'reporting:wizard_start' %}" class="btn btn-primary">
+        <i class="fas fa-plus me-1"></i> New Report
+      </a>
+    </div>
+  </div>
+  
+  <div class="card mb-4">
+    <div class="card-header bg-light">
+      <form method="get" class="row g-3">
+        <div class="col-md-4">
+          <div class="input-group">
+            <input type="text" class="form-control" placeholder="Search reports..." name="search" value="{{ search_term }}">
+            <button class="btn btn-outline-secondary" type="submit">
+              <i class="fas fa-search"></i>
+            </button>
+          </div>
+        </div>
+        
+        <div class="col-md-3">
+          <select class="form-select" name="view" onchange="this.form.submit()">
+            <option value="all" {% if view_type == 'all' %}selected{% endif %}>All Reports</option>
+            <option value="my" {% if view_type == 'my' %}selected{% endif %}>My Reports</option>
+            <option value="public" {% if view_type == 'public' %}selected{% endif %}>Public Reports</option>
+            <option value="favorites" {% if view_type == 'favorites' %}selected{% endif %}>Favorites</option>
+          </select>
+        </div>
+        
+        <div class="col-md-3">
+          <select class="form-select" name="category" onchange="this.form.submit()">
+            <option value="">All Categories</option>
+            {% for category in categories %}
+              <option value="{{ category.id }}" {% if selected_category == category.id|stringformat:'s' %}selected{% endif %}>
+                {{ category.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        
+        <div class="col-md-2 text-end">
+          {% if search_term or view_type != 'all' or selected_category %}
+            <a href="{% url 'reporting:report_list' %}" class="btn btn-outline-secondary">
+              <i class="fas fa-times me-1"></i> Clear
+            </a>
+          {% endif %}
+        </div>
+      </form>
+    </div>
+    
+    <div class="card-body p-0">
+      {% if reports %}
+        <div class="table-responsive">
+          <table class="table table-hover table-striped mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Name</th>
+                <th>Data Area</th>
+                <th>Owner</th>
+                <th>Category</th>
+                <th>Last Updated</th>
+                <th class="text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for report in reports %}
+                <tr>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      {% if report in request.user.favorite_reports.all %}
+                        <i class="fas fa-star text-warning me-2" title="Favorite"></i>
+                      {% endif %}
+                      <a href="{% url 'reporting:report_detail' uuid=report.uuid %}" class="fw-bold text-primary">
+                        {{ report.name }}
+                      </a>
+                    </div>
+                    {% if report.description %}
+                      <small class="text-muted d-block">{{ report.description|truncatechars:100 }}</small>
+                    {% endif %}
+                  </td>
+                  <td>{{ report.data_area.name }}</td>
+                  <td>
+                    {% if report.owner == request.user %}
+                      <span class="badge bg-info">You</span>
+                    {% else %}
+                      {{ report.owner.get_full_name|default:report.owner.username }}
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if report.category %}
+                      <span class="badge bg-secondary">{{ report.category.name }}</span>
+                    {% else %}
+                      <span class="text-muted">Uncategorized</span>
+                    {% endif %}
+                  </td>
+                  <td>{{ report.updated_at|date:"M d, Y" }}</td>
+                  <td class="text-center">
+                    <div class="btn-group">
+                      <a href="{% url 'reporting:run_report' uuid=report.uuid %}" class="btn btn-sm btn-primary" title="Run Report">
+                        <i class="fas fa-play"></i>
+                      </a>
+                      
+                      {% if report.owner == request.user %}
+                        <a href="{% url 'reporting:wizard_edit' report_uuid=report.uuid %}" class="btn btn-sm btn-info" title="Edit Report">
+                          <i class="fas fa-edit"></i>
+                        </a>
+                        <a href="{% url 'reporting:report_delete' uuid=report.uuid %}" class="btn btn-sm btn-danger" title="Delete Report">
+                          <i class="fas fa-trash"></i>
+                        </a>
+                      {% endif %}
+                      
+                      <a href="{% url 'reporting:toggle_favorite' uuid=report.uuid %}" class="btn btn-sm {% if report in request.user.favorite_reports.all %}btn-warning{% else %}btn-outline-warning{% endif %} favorite-toggle" 
+                         data-report-uuid="{{ report.uuid }}" 
+                         data-is-favorite="{% if report in request.user.favorite_reports.all %}true{% else %}false{% endif %}"
+                         title="{% if report in request.user.favorite_reports.all %}Remove from favorites{% else %}Add to favorites{% endif %}">
+                        <i class="{% if report in request.user.favorite_reports.all %}fas{% else %}far{% endif %} fa-star"></i>
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        
+        {% if reports.has_other_pages %}
+          <div class="card-footer bg-light">
+            <nav aria-label="Report pagination">
+              <ul class="pagination justify-content-center mb-0">
+                {% if reports.has_previous %}
+                  <li class="page-item">
+                    <a class="page-link" href="?page=1{% if search_term %}&search={{ search_term }}{% endif %}{% if view_type %}&view={{ view_type }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}" aria-label="First">
+                      <span aria-hidden="true">&laquo;</span>
+                    </a>
+                  </li>
+                  <li class="page-item">
+                    <a class="page-link" href="?page={{ reports.previous_page_number }}{% if search_term %}&search={{ search_term }}{% endif %}{% if view_type %}&view={{ view_type }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}">
+                      {{ reports.previous_page_number }}
+                    </a>
+                  </li>
+                {% else %}
+                  <li class="page-item disabled">
+                    <span class="page-link">&laquo;</span>
+                  </li>
+                {% endif %}
+                
+                <li class="page-item active">
+                  <span class="page-link">{{ reports.number }}</span>
+                </li>
+                
+                {% if reports.has_next %}
+                  <li class="page-item">
+                    <a class="page-link" href="?page={{ reports.next_page_number }}{% if search_term %}&search={{ search_term }}{% endif %}{% if view_type %}&view={{ view_type }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}">
+                      {{ reports.next_page_number }}
+                    </a>
+                  </li>
+                  <li class="page-item">
+                    <a class="page-link" href="?page={{ reports.paginator.num_pages }}{% if search_term %}&search={{ search_term }}{% endif %}{% if view_type %}&view={{ view_type }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}" aria-label="Last">
+                      <span aria-hidden="true">&raquo;</span>
+                    </a>
+                  </li>
+                {% else %}
+                  <li class="page-item disabled">
+                    <span class="page-link">&raquo;</span>
+                  </li>
+                {% endif %}
+              </ul>
+            </nav>
+          </div>
+        {% endif %}
+      {% else %}
+        <div class="text-center p-5">
+          {% if search_term %}
+            <div class="mb-4">
+              <i class="fas fa-search fa-3x text-muted"></i>
+            </div>
+            <h5>No reports found matching "{{ search_term }}"</h5>
+            <p class="text-muted">Try adjusting your search criteria</p>
+            <a href="{% url 'reporting:report_list' %}" class="btn btn-outline-primary">Clear Search</a>
+          {% else %}
+            <div class="mb-4">
+              <i class="fas fa-file-alt fa-3x text-muted"></i>
+            </div>
+            {% if view_type == 'my' %}
+              <h5>You haven't created any reports yet</h5>
+              <p class="text-muted">Get started by creating your first report</p>
+              <a href="{% url 'reporting:wizard_start' %}" class="btn btn-primary">Create Report</a>
+            {% elif view_type == 'public' %}
+              <h5>No public reports available</h5>
+              <p class="text-muted">There are no public reports to display</p>
+            {% elif view_type == 'favorites' %}
+              <h5>You don't have any favorite reports</h5>
+              <p class="text-muted">Mark reports as favorites to see them here</p>
+              <a href="{% url 'reporting:report_list' %}" class="btn btn-outline-primary">Browse All Reports</a>
+            {% else %}
+              <h5>No reports available</h5>
+              <p class="text-muted">Get started by creating your first report</p>
+              <a href="{% url 'reporting:wizard_start' %}" class="btn btn-primary">Create Report</a>
+            {% endif %}
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+  
+  <div class="text-end mb-4">
+    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#createCategoryModal">
+      <i class="fas fa-folder-plus me-1"></i> Create Category
+    </button>
+  </div>
 </div>
 
-<div class="card shadow-sm">
-    <div class="card-header">
-        <ul class="nav nav-tabs card-header-tabs" id="reportTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="my-reports-tab" data-bs-toggle="tab" data-bs-target="#my-reports" type="button" role="tab">
-                    My Reports
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="public-reports-tab" data-bs-toggle="tab" data-bs-target="#public-reports" type="button" role="tab">
-                    Public Reports
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="recent-reports-tab" data-bs-toggle="tab" data-bs-target="#recent-reports" type="button" role="tab">
-                    Recently Run
-                </button>
-            </li>
-        </ul>
-    </div>
-    <div class="card-body">
-        <div class="tab-content" id="reportTabsContent">
-            <!-- My Reports Tab -->
-            <div class="tab-pane fade show active" id="my-reports" role="tabpanel">
-                <div class="mb-3">
-                    <div class="input-group">
-                        <input type="text" class="form-control report-search" placeholder="Search reports...">
-                        <span class="input-group-text"><i class="fas fa-search"></i></span>
-                    </div>
-                </div>
-                
-                <div class="table-responsive">
-                    <table class="table table-hover report-table">
-                        <thead>
-                            <tr>
-                                <th>Report Name</th>
-                                <th>Data Area</th>
-                                <th>Created</th>
-                                <th>Last Run</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for report in reports %}
-                                {% if report.created_by == request.user %}
-                                <tr class="report-row" data-report-id="{{ report.id }}">
-                                    <td>
-                                        <a href="{% url 'reporting:report_detail' pk=report.id %}">
-                                            {{ report.name }}
-                                        </a>
-                                        {% if report.is_private %}
-                                            <span class="badge bg-secondary">Private</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ report.data_area|title }}</td>
-                                    <td>{{ report.created_at|date:"M d, Y" }}</td>
-                                    <td>
-                                        {% if report.outputs.exists %}
-                                            {{ report.outputs.first.created_at|date:"M d, Y" }}
-                                        {% else %}
-                                            Never
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <div class="btn-group">
-                                            <a href="{% url 'reporting:report_run' pk=report.id %}" class="btn btn-sm btn-primary">
-                                                <i class="fas fa-play"></i> Run
-                                            </a>
-                                            <button type="button" class="btn btn-sm btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown"></button>
-                                            <ul class="dropdown-menu">
-                                                <li>
-                                                    <a class="dropdown-item" href="{% url 'reporting:report_edit' pk=report.id %}">
-                                                        <i class="fas fa-edit"></i> Edit
-                                                    </a>
-                                                </li>
-                                                <li>
-                                                    <a class="dropdown-item" href="{% url 'reporting:schedule_create' report_id=report.id %}">
-                                                        <i class="fas fa-calendar"></i> Schedule
-                                                    </a>
-                                                </li>
-                                                <li>
-                                                    <a class="dropdown-item text-danger" href="{% url 'reporting:report_delete' pk=report.id %}">
-                                                        <i class="fas fa-trash"></i> Delete
-                                                    </a>
-                                                </li>
-                                            </ul>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endif %}
-                            {% empty %}
-                                <tr>
-                                    <td colspan="5" class="text-center py-4">
-                                        You haven't created any reports yet.
-                                        <a href="{% url 'reporting:report_wizard' %}">Create your first report</a>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+<!-- Create Category Modal -->
+<div class="modal fade" id="createCategoryModal" tabindex="-1" aria-labelledby="createCategoryModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="createCategoryModalLabel">Create Report Category</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form action="{% url 'reporting:create_category' %}" method="post">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="category-name" class="form-label">Category Name</label>
+            <input type="text" class="form-control" id="category-name" name="name" required>
+          </div>
+          <div class="mb-3">
+            <label for="category-description" class="form-label">Description (Optional)</label>
+            <textarea class="form-control" id="category-description" name="description" rows="3"></textarea>
+          </div>
+          
+          {% if categories %}
+            <div class="mt-4">
+              <h6>Existing Categories</h6>
+              <ul class="list-group">
+                {% for category in categories %}
+                  <li class="list-group-item d-flex justify-content-between align-items-center">
+                    {{ category.name }}
+                    <span class="badge bg-primary rounded-pill">{{ category.reports.count }}</span>
+                  </li>
+                {% endfor %}
+              </ul>
             </div>
-            
-            <!-- Public Reports Tab -->
-            <div class="tab-pane fade" id="public-reports" role="tabpanel">
-                <div class="mb-3">
-                    <div class="input-group">
-                        <input type="text" class="form-control report-search" placeholder="Search reports...">
-                        <span class="input-group-text"><i class="fas fa-search"></i></span>
-                    </div>
-                </div>
-                
-                <div class="table-responsive">
-                    <table class="table table-hover report-table">
-                        <thead>
-                            <tr>
-                                <th>Report Name</th>
-                                <th>Data Area</th>
-                                <th>Created By</th>
-                                <th>Created</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for report in reports %}
-                                {% if not report.is_private and report.created_by != request.user %}
-                                <tr class="report-row" data-report-id="{{ report.id }}">
-                                    <td>
-                                        <a href="{% url 'reporting:report_detail' pk=report.id %}">
-                                            {{ report.name }}
-                                        </a>
-                                    </td>
-                                    <td>{{ report.data_area|title }}</td>
-                                    <td>{{ report.created_by.get_full_name }}</td>
-                                    <td>{{ report.created_at|date:"M d, Y" }}</td>
-                                    <td>
-                                        <a href="{% url 'reporting:report_run' pk=report.id %}" class="btn btn-sm btn-primary">
-                                            <i class="fas fa-play"></i> Run
-                                        </a>
-                                    </td>
-                                </tr>
-                                {% endif %}
-                            {% empty %}
-                                <tr>
-                                    <td colspan="5" class="text-center py-4">
-                                        No public reports available.
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            
-            <!-- Recently Run Tab -->
-            <div class="tab-pane fade" id="recent-reports" role="tabpanel">
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>Report Name</th>
-                                <th>Format</th>
-                                <th>Run Date</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for output in request.user.report_outputs.all|slice:":10" %}
-                            <tr>
-                                <td>{{ output.report.name }}</td>
-                                <td>{{ output.format|upper }}</td>
-                                <td>{{ output.created_at|date:"M d, Y H:i" }}</td>
-                                <td>
-                                    <div class="btn-group">
-                                        <a href="{{ output.file.url }}" class="btn btn-sm btn-primary">
-                                            <i class="fas fa-download"></i> Download
-                                        </a>
-                                        <a href="{% url 'reporting:report_run' pk=output.report.id %}" class="btn btn-sm btn-secondary">
-                                            <i class="fas fa-sync"></i> Re-run
-                                        </a>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% empty %}
-                                <tr>
-                                    <td colspan="4" class="text-center py-4">
-                                        You haven't run any reports recently.
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+          {% endif %}
         </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create Category</button>
+        </div>
+      </form>
     </div>
+  </div>
 </div>
 {% endblock %}
 
-{% block footer_javascript_page %}
+{% block extra_js %}
 {{ block.super }}
 <script>
-$(document).ready(function() {
-    // Report search functionality
-    $('.report-search').on('keyup', function() {
-        var searchText = $(this).val().toLowerCase();
-        var tableBody = $(this).closest('.tab-pane').find('tbody');
-        
-        tableBody.find('tr').each(function() {
-            var text = $(this).text().toLowerCase();
-            $(this).toggle(text.indexOf(searchText) > -1);
-        });
+  $(document).ready(function() {
+    // Handle favorite toggle via AJAX
+    $('.favorite-toggle').click(function(e) {
+      e.preventDefault();
+      
+      const button = $(this);
+      const reportUuid = button.data('report-uuid');
+      const isFavorite = button.data('is-favorite');
+      
+      $.ajax({
+        url: button.attr('href'),
+        type: 'POST',
+        headers: {
+          'X-CSRFToken': getCsrfToken()
+        },
+        success: function(data) {
+          if (data.status === 'success') {
+            // Update button state
+            button.data('is-favorite', data.is_favorite);
+            
+            // Update icon and styling
+            const icon = button.find('i');
+            if (data.is_favorite) {
+              button.removeClass('btn-outline-warning').addClass('btn-warning');
+              icon.removeClass('far').addClass('fas');
+              button.attr('title', 'Remove from favorites');
+            } else {
+              button.removeClass('btn-warning').addClass('btn-outline-warning');
+              icon.removeClass('fas').addClass('far');
+              button.attr('title', 'Add to favorites');
+            }
+            
+            // Add or remove star from report name
+            const row = button.closest('tr');
+            const starIcon = row.find('td:first-child .d-flex i.fa-star');
+            
+            if (data.is_favorite && starIcon.length === 0) {
+              row.find('td:first-child .d-flex').prepend('<i class="fas fa-star text-warning me-2" title="Favorite"></i>');
+            } else if (!data.is_favorite && starIcon.length > 0) {
+              starIcon.remove();
+            }
+          }
+        }
+      });
     });
-});
+  });
+  
+  // Helper function to get CSRF token
+  function getCsrfToken() {
+    return document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+  }
 </script>
 {% endblock %}

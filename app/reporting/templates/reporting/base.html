@@ -1,66 +1,76 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block head_css_page %}
+{% block title %}Report Builder{% endblock %}
+
+{% block extra_head %}
 <link rel="stylesheet" href="{% static 'reporting/css/reporting.css' %}">
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-md-3 col-lg-2 sidebar">
-            <h4>Reports</h4>
-            <ul class="nav flex-column">
-                <li class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'report_list' %}active{% endif %}" 
-                       href="{% url 'reporting:report_list' %}">
-                        <i class="fas fa-list"></i> My Reports
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'report_wizard' %}active{% endif %}" 
-                       href="{% url 'reporting:report_wizard' %}">
-                        <i class="fas fa-plus"></i> Create New Report
-                    </a>
-                </li>
-            </ul>
-            
-            {% if categories %}
-            <h5 class="mt-4">Categories</h5>
-            <ul class="nav flex-column">
-                {% for category in categories %}
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'reporting:report_list' %}?category={{ category.id }}">
-                        <i class="fas fa-folder"></i> {{ category.name }}
-                    </a>
-                </li>
-                {% endfor %}
-            </ul>
-            {% endif %}
+<div class="container-fluid mt-4">
+  <div class="row">
+    <!-- Sidebar Navigation -->
+    <div class="col-lg-2 sidebar">
+      <div class="card bg-light">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">Report Builder</h5>
         </div>
-        
-        <div class="col-md-9 col-lg-10 content">
-            {% if messages %}
-            <div class="messages">
-                {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-                {% endfor %}
-            </div>
-            {% endif %}
-            
-            {% block report_content %}{% endblock %}
+        <div class="card-body">
+          <div class="list-group">
+            <a href="{% url 'reporting:index' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'index' %}active{% endif %}">
+              <i class="fas fa-home fa-fw me-2"></i> Home
+            </a>
+            <a href="{% url 'reporting:report_list' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'report_list' %}active{% endif %}">
+              <i class="fas fa-list fa-fw me-2"></i> All Reports
+            </a>
+            <a href="{% url 'reporting:report_list' %}?view=my" class="list-group-item list-group-item-action {% if request.GET.view == 'my' %}active{% endif %}">
+              <i class="fas fa-user fa-fw me-2"></i> My Reports
+            </a>
+            <a href="{% url 'reporting:report_list' %}?view=favorites" class="list-group-item list-group-item-action {% if request.GET.view == 'favorites' %}active{% endif %}">
+              <i class="fas fa-star fa-fw me-2"></i> Favorites
+            </a>
+            <a href="{% url 'reporting:wizard_start' %}" class="list-group-item list-group-item-action {% if 'wizard' in request.resolver_match.url_name %}active{% endif %}">
+              <i class="fas fa-magic fa-fw me-2"></i> New Report
+            </a>
+          </div>
+          
+          {% if categories %}
+          <hr>
+          <h6 class="sidebar-heading px-3 mt-4 mb-2 text-muted">
+            <span>Categories</span>
+          </h6>
+          <div class="list-group">
+            {% for category in categories %}
+            <a href="{% url 'reporting:report_list' %}?category={{ category.id }}" class="list-group-item list-group-item-action {% if request.GET.category|stringformat:'s' == category.id|stringformat:'s' %}active{% endif %}">
+              <i class="fas fa-folder fa-fw me-2"></i> {{ category.name }}
+            </a>
+            {% endfor %}
+          </div>
+          {% endif %}
         </div>
+      </div>
     </div>
+    
+    <!-- Main Content -->
+    <div class="col-lg-10">
+      {% if messages %}
+      <div class="messages mb-4">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      
+      {% block report_content %}{% endblock %}
+    </div>
+  </div>
 </div>
 {% endblock %}
 
-{% block footer_javascript_page %}
+{% block extra_js %}
 <script src="{% static 'reporting/js/reporting.js' %}"></script>
-<script src="{% static 'reporting/js/field-selector.js' %}"></script>
-<script src="{% static 'reporting/js/filter-builder.js' %}"></script>
-<script src="{% static 'reporting/js/sort-builder.js' %}"></script>
-<script src="{% static 'reporting/js/wizard.js' %}"></script>
 {% endblock %}
