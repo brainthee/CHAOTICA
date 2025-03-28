@@ -9,12 +9,7 @@
   {% csrf_token %}
   
   <div class="row">
-    <div class="col-md-8">
-      <div class="card mb-4">
-        <div class="card-header">
-          <h5 class="mb-0">Data Areas</h5>
-        </div>
-        <div class="card-body">
+    <div class="col">
           <div class="row row-cols-1 row-cols-md-3 g-4">
             {% for data_area in data_areas %}
             <div class="col">
@@ -36,39 +31,13 @@
             </div>
             {% endfor %}
           </div>
-          
-          {{ form.population_filter }}
-          
+                    
           {% if form.data_area.errors %}
           <div class="alert alert-danger mt-3">
             {{ form.data_area.errors }}
           </div>
           {% endif %}
         </div>
-      </div>
-    </div>
-    
-    <div class="col-md-4">
-      <div class="card mb-4" id="data-area-details" style="display: none;">
-        <div class="card-header">
-          <h5 class="mb-0">Data Area Details</h5>
-        </div>
-        <div class="card-body">
-          <h5 id="detail-name"></h5>
-          <p id="detail-description" class="text-muted"></p>
-          
-          <hr>
-          
-          <div id="population-filter-container" style="display: none;">
-            <h6>Population Filter</h6>
-            <p class="small text-muted">Limit the records in your report by choosing a population filter:</p>
-            <div id="population-options">
-              <!-- Population options will be loaded here -->
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 </form>
 {% endblock %}
@@ -110,68 +79,6 @@
       $('#detail-description').text(description);
       $('#data-area-details').show();
       
-      // Load population filter options via AJAX
-      $.ajax({
-        url: "{% url 'reporting:ajax_population_filters' %}",
-        data: { data_area_id: areaId },
-        dataType: 'json',
-        success: function(data) {
-          if (data.success && Object.keys(data.population_options).length > 0) {
-            // Clear existing options
-            $('#population-options').empty();
-            
-            // Create radio buttons for each option
-            let html = '<div class="list-group">';
-            
-            // Add "All" option first
-            html += `
-              <label class="list-group-item">
-                <input class="form-check-input me-1" type="radio" name="population" value="" checked>
-                All records
-              </label>
-            `;
-            
-            // Add other options
-            $.each(data.population_options, function(key, option) {
-              html += `
-                <label class="list-group-item">
-                  <input class="form-check-input me-1" type="radio" name="population" value="${key}">
-                  ${option.label}
-                </label>
-              `;
-            });
-            
-            html += '</div>';
-            
-            // Add the options
-            $('#population-options').html(html);
-            
-            // Set up event handlers for the population radio buttons
-            $('input[name="population"]').change(function() {
-              const value = $(this).val();
-              const filterData = value ? JSON.stringify({
-                type: value,
-                label: $(this).parent().text().trim()
-              }) : '';
-              
-              // Update the hidden field
-              $('#id_population_filter').val(filterData);
-            });
-            
-            // Show the population filter container
-            $('#population-filter-container').show();
-          } else {
-            // Hide the population filter container if no options
-            $('#population-filter-container').hide();
-            $('#id_population_filter').val('');
-          }
-        },
-        error: function() {
-          // Hide the population filter container on error
-          $('#population-filter-container').hide();
-          $('#id_population_filter').val('');
-        }
-      });
     }
   });
 </script>

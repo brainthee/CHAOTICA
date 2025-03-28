@@ -41,7 +41,7 @@ def wizard_start(request, report_uuid=None):
     SessionService.reset_wizard(request)
     
     # If editing, load report data into session
-    if report:
+    if report:        
         # Set basic report info
         wizard_data = {
             'report_name': report.name,
@@ -53,49 +53,54 @@ def wizard_start(request, report_uuid=None):
         # Data area
         wizard_data['data_area'] = {
             'data_area_id': report.data_area.id,
-            'population_filter': report.population_filter,
         }
         
-        # Fields
+        # Get report fields
+        field_data = []
+        for field in list(report.get_fields()):
+            field_data.append({
+                'id': field.id,
+                'field_id': field.data_field.id,
+                'position': field.position,
+                'custom_label': field.custom_label,
+                'display_format': field.display_format,
+            })
+        
         wizard_data['fields'] = {
-            'selected_fields': [
-                {
-                    'id': field.id,
-                    'field_id': field.data_field.id,
-                    'position': field.position,
-                    'custom_label': field.custom_label,
-                    'display_format': field.display_format,
-                } for field in report.get_fields()
-            ]
+            'selected_fields': field_data
         }
         
         # Filters
+        filter_data = []
+        for filter_obj in report.get_filters():
+            filter_data.append({
+                'id': filter_obj.id,
+                'field_id': filter_obj.data_field.id,
+                'filter_type_id': filter_obj.filter_type.id,
+                'value': filter_obj.value,
+                'prompt_at_runtime': filter_obj.prompt_at_runtime,
+                'prompt_text': filter_obj.prompt_text,
+                'parent_filter_id': filter_obj.parent_filter_id,
+                'operator': filter_obj.operator,
+                'position': filter_obj.position,
+            })
+        
         wizard_data['filters'] = {
-            'filter_conditions': [
-                {
-                    'id': filter_obj.id,
-                    'field_id': filter_obj.data_field.id,
-                    'filter_type_id': filter_obj.filter_type.id,
-                    'value': filter_obj.value,
-                    'prompt_at_runtime': filter_obj.prompt_at_runtime,
-                    'prompt_text': filter_obj.prompt_text,
-                    'parent_filter_id': filter_obj.parent_filter_id,
-                    'operator': filter_obj.operator,
-                    'position': filter_obj.position,
-                } for filter_obj in report.get_filters()
-            ]
+            'filter_conditions': filter_data
         }
         
         # Sorts
+        sort_data = []
+        for sort in report.get_sorts():
+            sort_data.append({
+                'id': sort.id,
+                'field_id': sort.data_field.id,
+                'direction': sort.direction,
+                'position': sort.position,
+            })
+        
         wizard_data['sorts'] = {
-            'sort_fields': [
-                {
-                    'id': sort.id,
-                    'field_id': sort.data_field.id,
-                    'direction': sort.direction,
-                    'position': sort.position,
-                } for sort in report.get_sorts()
-            ]
+            'sort_fields': sort_data
         }
         
         # Presentation
@@ -123,11 +128,9 @@ def wizard_select_data_area(request):
     # Get existing data from session
     wizard_data = SessionService.get_wizard_data(request)
     data_area_data = wizard_data.get('data_area', {})
-    
     # Create form with session data
     initial_data = {
         'data_area': data_area_data.get('data_area_id'),
-        'population_filter': data_area_data.get('population_filter'),
     }
     
     form = SelectDataAreaForm(request.POST or None, initial=initial_data, user=request.user)
@@ -135,11 +138,9 @@ def wizard_select_data_area(request):
     if request.method == 'POST' and form.is_valid():
         # Save form data to session
         data_area_id = form.cleaned_data['data_area'].id
-        population_filter = form.cleaned_data['population_filter']
         
         SessionService.update_wizard_step(request, 'data_area', {
             'data_area_id': data_area_id,
-            'population_filter': population_filter,
         })
         
         # Continue to next step
@@ -163,9 +164,6 @@ def wizard_select_fields(request):
     # Check if we have a data area selected
     wizard_data = SessionService.get_wizard_data(request)
     data_area_data = wizard_data.get('data_area', {})
-
-    from pprint import pprint
-    pprint(wizard_data)
     
     if not data_area_data or 'data_area_id' not in data_area_data:
         messages.error(request, "Please select a data area first.")
@@ -183,8 +181,38 @@ def wizard_select_fields(request):
     fields_data = wizard_data.get('fields', {})
     selected_fields = fields_data.get('selected_fields', [])
     
-    # Create form
-    form = SelectFieldsForm(request.POST or None, data_area=data_area, user=request.user)
+    # Create initial data for the form
+    initial_data = {}
+    
+    # Group selected fields by their group
+    if selected_fields:
+        field_ids_by_group = {}
+        
+        # First, fetch all data fields that are in our selected list
+        selected_field_ids = [field_data.get('field_id') for field_data in selected_fields]
+        
+        data_fields = DataField.objects.filter(id__in=selected_field_ids)
+        
+        # Group them by their group property
+        for field in data_fields:
+            group_name = field.group or 'General'
+            field_name = f'group_{group_name}'
+            
+            if field_name not in field_ids_by_group:
+                field_ids_by_group[field_name] = []
+                
+            field_ids_by_group[field_name].append(field.id)
+        
+        # Set initial data for each group
+        initial_data = field_ids_by_group
+    
+    # Create form with initial data
+    form = SelectFieldsForm(
+        request.POST or None, 
+        data_area=data_area, 
+        user=request.user,
+        initial=initial_data
+    )
     
     if request.method == 'POST' and form.is_valid():
         # Get selected fields
@@ -213,30 +241,17 @@ def wizard_select_fields(request):
         # Continue to next step
         return redirect('reporting:wizard_define_filters')
     
-    # If we have selected fields from session, set initial values
-    if selected_fields:
-        # Convert to a dict of field IDs grouped by group name
-        initial_fields = {}
-        for field_data in selected_fields:
-            field_id = field_data.get('field_id')
-            try:
-                field = DataField.objects.get(pk=field_id)
-                group_name = field.group or 'General'
-                if f'group_{group_name}' not in initial_fields:
-                    initial_fields[f'group_{group_name}'] = []
-                initial_fields[f'group_{group_name}'].append(field_id)
-            except DataField.DoesNotExist:
-                continue
-        
-        # Set initial values for each group field
-        for field_name, field_ids in initial_fields.items():
-            if field_name in form.fields:
-                form.fields[field_name].initial = field_ids
+    # Add debug info to the template context
+    debug_info = {
+        'selected_fields': selected_fields,
+        'initial_data': initial_data,
+    }
     
     return render(request, 'reporting/wizard/select_fields.html', {
         'form': form,
         'data_area': data_area,
         'wizard_step': 'fields',
+        'debug_info': debug_info,
     })
 
 
@@ -566,7 +581,6 @@ def wizard_preview(request):
         
         # Set data area
         report.data_area_id = data_area_id
-        report.population_filter = data_area_data.get('population_filter')
         
         # Set presentation options
         presentation_data = wizard_data.get('presentation', {})

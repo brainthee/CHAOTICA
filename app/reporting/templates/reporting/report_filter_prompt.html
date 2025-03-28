@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Report Filters: {{ report.name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <h1>Report Filters: {{ report.name }}</h1>
+            <p class="text-muted">{{ report.description }}</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Enter Filter Values</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'reporting:run_report' uuid=report.uuid %}">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <p class="text-muted">This report requires additional information before it can be run. Please provide values for the following filters:</p>
+                        </div>
+
+                        {% for filter in runtime_filters %}
+                        <div class="mb-3">
+                            <label for="filter_{{ filter.id }}" class="form-label">
+                                {{ filter.prompt_text|default:filter.data_field.display_name }}
+                            </label>
+                            
+                            {% if filter.filter_type.name == 'Date' or filter.filter_type.name == 'Date Range' %}
+                                <input type="date" class="form-control" id="filter_{{ filter.id }}" name="filter_{{ filter.id }}">
+                            {% elif filter.filter_type.name == 'Boolean' %}
+                                <select class="form-select" id="filter_{{ filter.id }}" name="filter_{{ filter.id }}">
+                                    <option value="true">Yes</option>
+                                    <option value="false">No</option>
+                                </select>
+                            {% else %}
+                                <input type="text" class="form-control" id="filter_{{ filter.id }}" name="filter_{{ filter.id }}" placeholder="Enter value">
+                            {% endif %}
+
+                            <div class="form-text">{{ filter.filter_type.display_label }}</div>
+                        </div>
+                        {% endfor %}
+
+                        {% if presentation_choices %}
+                        <div class="mb-3">
+                            <label for="export_format" class="form-label">Output Format</label>
+                            <select class="form-select" id="export_format" name="export_format">
+                                {% for format_code, format_name in presentation_choices %}
+                                <option value="{{ format_code }}">{{ format_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% endif %}
+
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary">Run Report</button>
+                            <a href="{% url 'reporting:report_detail' uuid=report.uuid %}" class="btn btn-outline-secondary ms-2">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

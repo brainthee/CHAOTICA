@@ -15,11 +15,6 @@ class SelectDataAreaForm(forms.Form):
         help_text=_("Select the main focus of your report")
     )
     
-    population_filter = forms.CharField(
-        widget=forms.HiddenInput(),
-        required=False
-    )
-    
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
@@ -37,7 +32,6 @@ class SelectFieldsForm(forms.Form):
     def __init__(self, *args, **kwargs):
         data_area = kwargs.pop('data_area', None)
         user = kwargs.pop('user', None)
-        
         super().__init__(*args, **kwargs)
         
         if data_area:
@@ -68,12 +62,21 @@ class SelectFieldsForm(forms.Form):
             
             # Add a multiple choice field for each group
             for group_name, group_fields in field_groups.items():
-                self.fields[f'group_{group_name}'] = forms.ModelMultipleChoiceField(
+                field_name = f'group_{group_name}'
+                
+                self.fields[field_name] = forms.ModelMultipleChoiceField(
                     queryset=DataField.objects.filter(id__in=[f.id for f in group_fields]),
                     label=group_name,
                     required=False,
                     widget=forms.CheckboxSelectMultiple(attrs={'class': 'list-unstyled'}),
                 )
+                
+                # Debug: Check if this field has initial values
+                if self.initial and field_name in self.initial:
+                    # Try to ensure the initial value is properly set
+                    initial_ids = self.initial[field_name]
+                    self.fields[field_name].initial = initial_ids
+            
 
     def get_selected_fields(self):
         """Get all selected fields from all groups"""

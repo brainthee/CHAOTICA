@@ -15,57 +15,12 @@ def build_query_from_report(queryset, report, filter_values=None):
     """
     filter_values = filter_values or {}
     
-    # Apply population filter if provided
-    if report.population_filter:
-        queryset = apply_population_filter(queryset, report.population_filter)
-    
     # Apply report filters
     filters = report.get_filters()
     if filters:
         filter_q = build_filter_conditions(filters, filter_values)
         if filter_q:
             queryset = queryset.filter(filter_q)
-    
-    return queryset
-
-def apply_population_filter(queryset, population_filter):
-    """
-    Apply population filter to queryset
-
-    :param queryset: Base queryset
-    :param population_filter: JSON string or dict of population filter
-    :return: Modified queryset
-    """
-    if isinstance(population_filter, str):
-        try:
-            population_filter = json.loads(population_filter)
-        except json.JSONDecodeError:
-            return queryset
-    
-    # Apply the filter based on filter type
-    if not population_filter or not isinstance(population_filter, dict):
-        return queryset
-    
-    filter_type = population_filter.get('type')
-    filter_value = population_filter.get('value')
-    
-    if not filter_type or filter_value is None:
-        return queryset
-    
-    # Common population filters for different data areas
-    if filter_type == 'status':
-        queryset = queryset.filter(status=filter_value)
-    elif filter_type == 'active':
-        queryset = queryset.filter(is_active=filter_value)
-    elif filter_type == 'date_range':
-        start_date = population_filter.get('start_date')
-        end_date = population_filter.get('end_date')
-        date_field = population_filter.get('date_field', 'created_at')
-        
-        if start_date:
-            queryset = queryset.filter(**{f'{date_field}__gte': start_date})
-        if end_date:
-            queryset = queryset.filter(**{f'{date_field}__lte': end_date})
     
     return queryset
 

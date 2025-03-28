@@ -40,7 +40,7 @@ class ReportAdmin(admin.ModelAdmin):
             'fields': ['name', 'description', 'owner', 'category', 'is_private', 'uuid']
         }),
         ('Data Source', {
-            'fields': ['data_area', 'population_filter']
+            'fields': ['data_area']
         }),
         ('Presentation', {
             'fields': ['presentation_type', 'presentation_options', 'allow_presentation_choice']
