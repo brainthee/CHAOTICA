@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} - Report Export</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 20px;
+            padding: 0;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        .report-info {
+            margin-bottom: 20px;
+            color: #666;
+        }
+        .report-info p {
+            margin: 5px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th {
+            background-color: #f2f2f2;
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .footer {
+            margin-top: 30px;
+            color: #777;
+            font-size: 0.9em;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>{{ title }}</h1>
+    
+    <div class="report-info">
+        {% if report.description %}
+        <p>{{ report.description }}</p>
+        {% endif %}
+        <p>Generated: {{ generated_at|date:"F j, Y H:i:s" }}</p>
+    </div>
+    
+    <table>
+        <thead>
+            <tr>
+                {% for name in field_names %}
+                <th>{{ name }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% if data %}
+                {% for row in data %}
+                <tr>
+                    {% for value in row.values %}
+                    <td>{{ value|default:"-" }}</td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="{{ field_names|length }}" style="text-align: center;">No data found matching your criteria</td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+    
+    <div class="footer">
+        <p>This report contains {{ data|length }} records.</p>
+        <p>Created with Chaotica Reporting Engine</p>
+    </div>
+</body>
+</html>

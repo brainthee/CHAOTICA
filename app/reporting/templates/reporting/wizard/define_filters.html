@@ -115,7 +115,19 @@
   $(document).ready(function() {
     // Initialize filter conditions from existing data
     {% if filter_conditions %}
-      const initialFilters = {{ filter_conditions|safe }};
+      const initialFilters = [{% for filter in filter_conditions %}
+      {
+        'id': {{ filter.id }}, 
+        'field_id': {{ filter.field_id }}, 
+        'filter_type_id': {{ filter.filter_type_id }}, 
+        'value': '{{ filter.value }}', 
+        'prompt_at_runtime': {{ filter.prompt_at_runtime|lower }}, 
+        'prompt_text': '{{ filter.prompt_text }}', 
+        'parent_filter_id': {% if filter.parent_filter_id %}{{ filter.parent_filter_id }}{% else %}null{% endif %}, 
+        'operator': '{{ filter.operator }}', 
+        'position': {{ filter.position }}
+      },
+      {% endfor %}];
       renderFilterConditions(initialFilters);
     {% endif %}
     
@@ -326,9 +338,6 @@
         return `<span class="filter-value badge bg-warning">Prompt at runtime</span>`;
       }
       
-      if (filter.filter_type_text.toLowerCase().includes('is null')) {
-        return '';
-      }
       
       if (Array.isArray(filter.value)) {
         return `<span class="filter-value">[${filter.value.join(', ')}]</span>`;

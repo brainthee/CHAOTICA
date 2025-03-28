@@ -221,16 +221,12 @@ class RMAssignable(models.Model):
 
         except Exception as ex:
             # Something borked....
-            from pprint import pprint
-
-            pprint(ex)
             log.error("Sync error: {}".format(ex))
             self.last_sync_result = False
 
         finally:
             self.last_synced = timezone.now()
             self.save()
-            print((log_stream.getvalue() + ".")[:-1])
 
     def delete_in_rm(self):
         PROXIES = None
@@ -298,7 +294,6 @@ class RMAssignable(models.Model):
         finally:
             self.last_synced = timezone.now()
             self.save()
-            print((log_stream.getvalue() + ".")[:-1])
 
 
 class RMAssignableSlot(models.Model):
@@ -491,17 +486,12 @@ class RMAssignableSlot(models.Model):
             self.last_sync_result = True
 
         except Exception as ex:
-            # Something borked....
-            from pprint import pprint
-
-            pprint(ex)
             log.error("Sync error: {}".format(ex))
             self.last_sync_result = False
 
         finally:
             self.last_synced = timezone.now()
             self.save()
-            print((log_stream.getvalue() + ".")[:-1])
 
     def delete_in_rm(self):
         PROXIES = None
@@ -564,7 +554,6 @@ class RMAssignableSlot(models.Model):
             finally:
                 self.last_synced = timezone.now()
                 self.save()
-                print((log_stream.getvalue() + ".")[:-1])
     
 
 @receiver(pre_delete, sender=RMAssignableSlot)
@@ -760,10 +749,6 @@ class RMSyncRecord(models.Model):
 
             self.last_sync_result = True
         except Exception as ex:
-            # Something borked....
-            from pprint import pprint
-
-            pprint(ex)
             log.error("Sync error: {}".format(ex))
             self.last_sync_result = False
 
@@ -771,4 +756,3 @@ class RMSyncRecord(models.Model):
             self.last_synced = timezone.now()
             self.sync_in_progress = False
             self.save()
-            print((log_stream.getvalue() + ".")[:-1])

@@ -164,37 +164,6 @@ def get_filter_widget(request):
 
 @login_required
 @require_GET
-def get_population_filters(request):
-    """
-    Get available population filters for a data area
-    """
-    data_area_id = request.GET.get('data_area_id')
-    if not data_area_id:
-        return HttpResponseBadRequest('Missing data_area_id parameter')
-    
-    try:
-        data_area = DataArea.objects.get(pk=data_area_id)
-        population_options = data_area.get_available_populations()
-        
-        return JsonResponse({
-            'success': True,
-            'population_options': population_options
-        })
-        
-    except DataArea.DoesNotExist:
-        return JsonResponse({
-            'success': False,
-            'error': 'Data area not found'
-        }, status=404)
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=400)
-
-
-@login_required
-@require_GET
 def get_related_data_areas(request):
     """
     Get data areas related to the selected one

@@ -88,7 +88,6 @@ class SessionService:
         data_area_step = wizard_data.get('data_area', {})
         if data_area_step:
             report_data['data_area_id'] = data_area_step.get('data_area_id')
-            report_data['population_filter'] = data_area_step.get('population_filter')
         
         # Fields
         fields_step = wizard_data.get('fields', {})

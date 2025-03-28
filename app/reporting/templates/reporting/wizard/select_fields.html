@@ -38,7 +38,7 @@
                         {% for choice in field.choices %}
                           <label class="list-group-item list-group-item-action">
                             <input type="checkbox" name="{{ field_name }}" value="{{ choice.0 }}" id="id_{{ field_name }}_{{ forloop.counter0 }}" class="form-check-input me-1"
-                              {% if choice.0 in field.value %}checked{% endif %}>
+                              {% if choice.0 in field.initial %}checked{% endif %}>
                             {{ choice.1 }}
                           </label>
                         {% empty %}

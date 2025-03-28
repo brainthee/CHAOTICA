@@ -40,7 +40,6 @@ class Report(models.Model):
     
     # Report focus/data area details
     data_area = models.ForeignKey('DataArea', on_delete=models.CASCADE, related_name='reports')
-    population_filter = models.TextField(blank=True, null=True, help_text="JSON definition of the population filter")
     
     # Output format and presentation
     presentation_type = models.CharField(max_length=50, choices=PRESENTATION_CHOICES, default='excel')

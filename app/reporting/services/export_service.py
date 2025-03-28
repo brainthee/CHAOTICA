@@ -58,7 +58,7 @@ class ExportService:
         output = io.BytesIO()
         
         # Create Excel workbook and worksheet
-        workbook = xlsxwriter.Workbook(output)
+        workbook = xlsxwriter.Workbook(output, {'remove_timezone': True})
         worksheet = workbook.add_worksheet('Report')
         
         # Add a header format

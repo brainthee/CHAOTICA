@@ -70,14 +70,12 @@ class PhaseAutocomplete(autocomplete.Select2QuerySetView):
         qs = Phase.objects.phases_with_unit_permission(
             self.request.user, "jobtracker.can_view_jobs"
         )
-        pprint(qs)
         if self.q:
             qs = qs.filter(
                 Q(title__icontains=self.q)
                 | Q(phase_id__icontains=self.q)
                 | Q(job__id__icontains=self.q)
             )
-        pprint(qs)
         return qs
 
 
