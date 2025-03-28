@@ -6,8 +6,8 @@ from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from chaotica_utils.views import ChaoticaBaseView
-from chaotica_utils.utils import AppNotification, NotificationTypes
-from chaotica_utils.tasks import task_send_notifications
+from chaotica_utils.utils import AppNotification, task_send_notifications
+from chaotica_utils.enums import NotificationTypes
 from chaotica_utils.models import User
 from ..models import (
     OrganisationalUnit,
@@ -298,38 +298,12 @@ def organisationalunit_review_join_request(request, slug, member_pk):
             ).first()
             membership.roles.add(default_role)
             membership.save()
-            # send a notification to the user
-            notice = AppNotification(
-                NotificationTypes.ORGUNIT,
-                "Membership Accepted",
-                "Your request to join " + org_unit.name + " has been accepted",
-                "emails/orgunit/accepted.html",
-                orgUnit=org_unit,
-                membership=membership,
-            )
-
-            task_send_notifications(
-                notice, User.objects.filter(pk=membership.member.pk)
-            )
             data["form_is_valid"] = True
 
         elif request.POST.get("user_action") == "reject_action":
             # remove it!
             messages.warning(request, "Removed request from " + str(membership.member))
             membership.delete()
-            # send a notification to the user
-            notice = AppNotification(
-                NotificationTypes.ORGUNIT,
-                "Membership Rejected",
-                "Your request to join " + org_unit.name + " has been denied",
-                "emails/orgunit/rejected.html",
-                orgUnit=org_unit,
-                membership=membership,
-            )
-
-            task_send_notifications(
-                notice, User.objects.filter(pk=membership.member.pk)
-            )
             data["form_is_valid"] = True
         else:
             # invalid choice...

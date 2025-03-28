@@ -1,28 +1,19 @@
 from django.db import models
 from ..enums import (
     ProjectStatuses,
-    RestrictedClassifications,
     TimeSlotDeliveryRole,
-    JobSupportRole,
 )
-from ..models.client import FrameworkAgreement
-from django_fsm import FSMIntegerField, transition, can_proceed
 from django.conf import settings
-from django.utils import timezone
 from django.urls import reverse
 from simple_history.models import HistoricalRecords
 from django.db.models import Q
 from django.contrib.contenttypes.fields import GenericRelation
 from model_utils.fields import MonitorField
 from django.db.models import JSONField
-from django.contrib import messages
 import uuid
-from chaotica_utils.models import Note, User, get_sentinel_user
-from chaotica_utils.tasks import task_send_notifications
-from chaotica_utils.views import log_system_activity
+from chaotica_utils.models import Note, get_sentinel_user
 from datetime import timedelta
 from django.db.models.functions import Lower
-from decimal import Decimal
 from django_bleach.models import BleachField
 from constance import config
 from guardian.shortcuts import get_objects_for_user
@@ -35,9 +26,7 @@ class ProjectManager(models.Manager):
 
         units = get_objects_for_user(user, perm, klass=OrganisationalUnit)
 
-        matches = (
-            self.filter(Q(unit__in=units))
-        )
+        matches = self.filter(Q(unit__in=units))
         return matches
 
     def projects_for_user(self, user):
@@ -46,12 +35,9 @@ class ProjectManager(models.Manager):
         # - Lead/Author of
         # - Scoped while before scoping approved
 
-        matches = (
-            self.filter(
-                Q(phases__timeslots__user=user)  # Filter by scheduled
-            )
-            .distinct()
-        )
+        matches = self.filter(
+            Q(phases__timeslots__user=user)  # Filter by scheduled
+        ).distinct()
         return matches
 
 
@@ -65,12 +51,16 @@ class Project(models.Model):
     db_id = models.AutoField(
         primary_key=True, editable=False, verbose_name="Database ID"
     )
-    
+
     slug = models.UUIDField(
         default=uuid.uuid4, editable=False, unique=True, db_index=True
     )
     unit = models.ForeignKey(
-        "OrganisationalUnit", related_name="projects", null=True, blank=True, on_delete=models.CASCADE
+        "OrganisationalUnit",
+        related_name="projects",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
     )
     status = models.IntegerField(
         verbose_name="Job Status",
@@ -190,18 +180,20 @@ class Project(models.Model):
     @property
     def is_tracked(self):
         return self.status > ProjectStatuses.UNTRACKED
-    
+
     def get_system_notes(self):
         return self.notes.filter(is_system_note=True)
 
     def get_user_notes(self):
         return self.notes.filter(is_system_note=False)
-    
+
     def save(self, *args, **kwargs):
         # This means that the model isn't saved to the database yet
         if self._state.adding:
             # Get the maximum display_id value from the database
-            last_id = Project.objects.all().aggregate(largest=models.Max("id"))["largest"]
+            last_id = Project.objects.all().aggregate(largest=models.Max("id"))[
+                "largest"
+            ]
 
             # aggregate can return None! Check it first.
             # If it isn't none, just use the last ID specified (which should be the greatest) and add one to it

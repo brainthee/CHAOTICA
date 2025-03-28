@@ -1,0 +1,303 @@
+{% extends "reporting/base.html" %}
+{% load static %}
+
+{% block report_content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h3>{{ report.name }}</h3>
+    
+    <div class="btn-group">
+      <a href="{% url 'reporting:run_report' uuid=report.uuid %}" class="btn btn-primary">
+        <i class="fas fa-play me-1"></i> Run Report
+      </a>
+      
+      {% if can_edit %}
+        <a href="{% url 'reporting:wizard_edit' report_uuid=report.uuid %}" class="btn btn-outline-primary">
+          <i class="fas fa-edit me-1"></i> Edit
+        </a>
+      {% endif %}
+      
+      <a href="{% url 'reporting:toggle_favorite' uuid=report.uuid %}" 
+         class="btn {% if is_favorite %}btn-warning{% else %}btn-outline-warning{% endif %}" 
+         id="favorite-toggle"
+         data-report-uuid="{{ report.uuid }}" 
+         data-is-favorite="{% if is_favorite %}true{% else %}false{% endif %}"
+         title="{% if is_favorite %}Remove from favorites{% else %}Add to favorites{% endif %}">
+        <i class="{% if is_favorite %}fas{% else %}far{% endif %} fa-star"></i>
+      </a>
+      
+      {% if can_delete %}
+        <a href="{% url 'reporting:report_delete' uuid=report.uuid %}" class="btn btn-outline-danger">
+          <i class="fas fa-trash me-1"></i> Delete
+        </a>
+      {% endif %}
+    </div>
+  </div>
+  
+  <div class="row">
+    <div class="col-md-8">
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="mb-0">Report Details</h5>
+        </div>
+        <div class="card-body">
+          {% if report.description %}
+            <p class="mb-4">{{ report.description }}</p>
+          {% endif %}
+          
+          <div class="row mb-3">
+            <div class="col-md-3 fw-bold">Data Area:</div>
+            <div class="col-md-9">{{ report.data_area.name }}</div>
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-md-3 fw-bold">Owner:</div>
+            <div class="col-md-9">
+              {% if report.owner == request.user %}
+                <span class="badge bg-info">You</span>
+              {% else %}
+                {{ report.owner.get_full_name|default:report.owner.username }}
+              {% endif %}
+            </div>
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-md-3 fw-bold">Category:</div>
+            <div class="col-md-9">
+              {% if report.category %}
+                <span class="badge bg-secondary">{{ report.category.name }}</span>
+              {% else %}
+                <span class="text-muted">Uncategorized</span>
+              {% endif %}
+            </div>
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-md-3 fw-bold">Last Updated:</div>
+            <div class="col-md-9">{{ report.updated_at|date:"F j, Y, g:i a" }}</div>
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-md-3 fw-bold">Last Run:</div>
+            <div class="col-md-9">
+              {% if report.last_run_at %}
+                {{ report.last_run_at|date:"F j, Y, g:i a" }}
+              {% else %}
+                <span class="text-muted">Never</span>
+              {% endif %}
+            </div>
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-md-3 fw-bold">Default Format:</div>
+            <div class="col-md-9">
+              {% if report.presentation_type == 'excel' %}
+                <i class="fas fa-file-excel text-success me-1"></i> Excel Spreadsheet
+              {% elif report.presentation_type == 'pdf' %}
+                <i class="fas fa-file-pdf text-danger me-1"></i> PDF Document
+              {% elif report.presentation_type == 'html' %}
+                <i class="fas fa-file-code text-primary me-1"></i> Web Page (HTML)
+              {% elif report.presentation_type == 'csv' %}
+                <i class="fas fa-file-csv text-info me-1"></i> CSV File
+              {% elif report.presentation_type == 'word' %}
+                <i class="fas fa-file-word text-primary me-1"></i> Word Document
+              {% elif report.presentation_type == 'text' %}
+                <i class="fas fa-file-alt text-secondary me-1"></i> Text File
+              {% else %}
+                <i class="fas fa-file text-secondary me-1"></i> {{ report.get_presentation_type_display }}
+              {% endif %}
+              {% if report.allow_presentation_choice %}
+                <span class="badge bg-info ms-1">User choice enabled</span>
+              {% endif %}
+            </div>
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-md-3 fw-bold">Visibility:</div>
+            <div class="col-md-9">
+              {% if report.is_private %}
+                <span class="badge bg-danger">Private</span>
+                <small class="text-muted ms-2">Only visible to the owner</small>
+              {% else %}
+                <span class="badge bg-success">Public</span>
+                <small class="text-muted ms-2">Visible to all users</small>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="mb-0">Report Fields</h5>
+        </div>
+        <div class="card-body p-0">
+          {% if fields %}
+            <div class="table-responsive">
+              <table class="table table-hover mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>#</th>
+                    <th>Field</th>
+                    <th>Source</th>
+                    <th>Format</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for field in fields %}
+                    <tr>
+                      <td>{{ forloop.counter }}</td>
+                      <td>
+                        {% if field.custom_label %}
+                          <strong>{{ field.custom_label }}</strong>
+                          <small class="text-muted d-block">{{ field.data_field.display_name }}</small>
+                        {% else %}
+                          {{ field.data_field.display_name }}
+                        {% endif %}
+                      </td>
+                      <td>{{ field.data_field.field_path }}</td>
+                      <td>
+                        {% if field.display_format %}
+                          <code>{{ field.display_format }}</code>
+                        {% else %}
+                          <span class="text-muted">Default</span>
+                        {% endif %}
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="p-4 text-center">
+              <p class="text-muted mb-0">No fields defined for this report.</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-4">
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="mb-0">Filter Conditions</h5>
+        </div>
+        <div class="card-body">
+          {% if filters %}
+            <ul class="list-group list-group-flush">
+              {% for filter in filters %}
+                <li class="list-group-item">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <strong>{{ filter.data_field.display_name }}</strong>
+                      <span class="text-muted">{{ filter.filter_type.display_label }}</span>
+                      
+                      {% if filter.prompt_at_runtime %}
+                        <span class="badge bg-warning">Prompt at runtime</span>
+                      {% else %}
+                        {% if filter.value %}
+                          <span class="badge bg-light text-dark">{{ filter.value }}</span>
+                        {% endif %}
+                      {% endif %}
+                    </div>
+                    
+                    {% if not forloop.first %}
+                      <span class="badge bg-secondary">{{ filter.get_operator_display }}</span>
+                    {% endif %}
+                  </div>
+                  
+                  {% if filter.prompt_at_runtime and filter.prompt_text %}
+                    <small class="text-muted d-block mt-1">
+                      <i class="fas fa-info-circle me-1"></i> Prompt: "{{ filter.prompt_text }}"
+                    </small>
+                  {% endif %}
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="text-muted mb-0">No filters defined for this report.</p>
+          {% endif %}
+        </div>
+      </div>
+      
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="mb-0">Sort Order</h5>
+        </div>
+        <div class="card-body">
+          {% if report.sorts.exists %}
+            <ol class="list-group list-group-flush list-group-numbered">
+              {% for sort in report.sorts.all %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                  <div class="ms-2 me-auto">
+                    <div>{{ sort.data_field.display_name }}</div>
+                    <small class="text-muted">{{ sort.data_field.field_path }}</small>
+                  </div>
+                  <span class="badge bg-{% if sort.direction == 'asc' %}primary{% else %}secondary{% endif %}">
+                    {% if sort.direction == 'asc' %}
+                      <i class="fas fa-sort-up me-1"></i> Ascending
+                    {% else %}
+                      <i class="fas fa-sort-down me-1"></i> Descending
+                    {% endif %}
+                  </span>
+                </li>
+              {% endfor %}
+            </ol>
+          {% else %}
+            <p class="text-muted mb-0">No sort order defined for this report.</p>
+          {% endif %}
+        </div>
+      </div>
+      
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="mb-0">Quick Actions</h5>
+        </div>
+        <div class="card-body">
+          <div class="d-grid gap-2">
+            <a href="{% url 'reporting:run_report' uuid=report.uuid %}" class="btn btn-primary">
+              <i class="fas fa-play me-1"></i> Run Report
+            </a>
+            
+            {% if report.last_run_at %}
+              <div class="btn-group">
+                <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                  <i class="fas fa-download me-1"></i> Download As
+                </button>
+                <ul class="dropdown-menu w-100">
+                  <li>
+                    <a class="dropdown-item" href="{% url 'reporting:run_report' uuid=report.uuid %}?format=excel">
+                      <i class="fas fa-file-excel text-success me-1"></i> Excel Spreadsheet
+                    </a>
+                  </li>
+                  <li>
+                    <a class="dropdown-item" href="{% url 'reporting:run_report' uuid=report.uuid %}?format=pdf">
+                      <i class="fas fa-file-pdf text-danger me-1"></i> PDF Document
+                    </a>
+                  </li>
+                  <li>
+                    <a class="dropdown-item" href="{% url 'reporting:run_report' uuid=report.uuid %}?format=csv">
+                      <i class="fas fa-file-csv text-info me-1"></i> CSV File
+                    </a>
+                  </li>
+                  <li>
+                    <a class="dropdown-item" href="{% url 'reporting:run_report' uuid=report.uuid %}?format=html">
+                      <i class="fas fa-file-code text-primary me-1"></i> HTML Page
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            {% endif %}
+            
+            {% if can_edit %}
+              <a href="{% url 'reporting:wizard_edit' report_uuid=report.uuid %}" class="btn btn-outline-secondary">
+                <i class="fas fa-edit me-1"></i> Edit Report
+              </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,511 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% load notification_tags %}
+
+{% block title %}Notification Settings{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Notification Settings</h1>
+        <div>
+            <button id="save-settings" class="btn btn-primary">Save Changes</button>
+        </div>
+    </div>
+
+    <div class="alert alert-success d-none" id="success-alert" role="alert">
+        Notification settings updated successfully!
+    </div>
+    
+    <!-- Global notification preferences -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h3 class="card-title mb-0">Notification Preferences</h3>
+        </div>
+        <div class="card-body" id="notification-categories">
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Loading notification settings...</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Entity-specific subscriptions -->
+    <div class="card mb-4" id="entity-subscriptions-card">
+        <div class="card-header bg-light">
+            <h3 class="card-title mb-0">Followed Items</h3>
+        </div>
+        <div class="card-body">
+            <div id="entity-subscriptions">
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading your subscriptions...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Subscription Settings Modal -->
+<div class="modal fade" id="subscriptionSettingsModal" tabindex="-1" aria-labelledby="subscriptionSettingsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="subscriptionSettingsModalLabel">Edit Subscription Settings</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="subscription-id">
+                <div class="mb-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="modal-email-enabled">
+                        <label class="form-check-label" for="modal-email-enabled">Email Notifications</label>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="modal-app-enabled">
+                        <label class="form-check-label" for="modal-app-enabled">In-App Notifications</label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="save-subscription-settings">Save changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}<script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Create a self-executing function to contain all our variables in a proper scope
+      (function() {
+        // Explicitly declare all variables we'll use
+        const notificationTypesMap = new Map();
+        const categoriesMap = new Map();
+        const userSubscriptionsMap = new Map();
+        let entitySubscriptionsArray = [];
+        const changedSettingsMap = new Map();
+    
+        // Fetch notification types and user subscriptions
+        Promise.all([
+          fetch('/api/notifications/types/').then(res => res.json()),
+          fetch('/api/notifications/user-subscriptions/').then(res => res.json())
+        ])
+        .then(function(results) {
+          const typesData = results[0];
+          const subscriptionsData = results[1];
+          
+          // Process notification types
+          if (typesData && typesData.notification_types) {
+            typesData.notification_types.forEach(type => {
+              notificationTypesMap.set(type.id, type);
+            });
+          }
+          
+          // Process categories
+          if (typesData && typesData.categories) {
+            Object.entries(typesData.categories).forEach(([categoryName, notifications]) => {
+              categoriesMap.set(categoryName, notifications);
+            });
+          }
+          
+          // Process global subscriptions
+          if (subscriptionsData && subscriptionsData.global_subscriptions) {
+            subscriptionsData.global_subscriptions.forEach(sub => {
+              userSubscriptionsMap.set(sub.notification_type, {
+                id: sub.id,
+                email_enabled: sub.email_enabled,
+                in_app_enabled: sub.in_app_enabled
+              });
+            });
+          }
+          
+          // Process entity subscriptions
+          if (subscriptionsData && subscriptionsData.entity_subscriptions) {
+            entitySubscriptionsArray = subscriptionsData.entity_subscriptions;
+          }
+          
+          // Now render the UI components
+          renderNotificationCategories();
+          renderEntitySubscriptions();
+        })
+        .catch(function(error) {
+          console.error('Error fetching data:', error);
+          document.getElementById('notification-categories').innerHTML = 
+            `<div class="alert alert-danger">Error loading notification settings: ${error.message}. Please try refreshing the page.</div>`;
+          document.getElementById('entity-subscriptions').innerHTML = 
+            `<div class="alert alert-danger">Error loading subscriptions. Please try refreshing the page.</div>`;
+        });
+    
+        // Function to render notification categories
+        function renderNotificationCategories() {
+          const container = document.getElementById('notification-categories');
+          
+          if (categoriesMap.size === 0) {
+            container.innerHTML = `<div class="alert alert-info">No notification categories available.</div>`;
+            return;
+          }
+          
+          let html = '';
+          
+          categoriesMap.forEach((notifications, category) => {
+            html += `
+              <div class="mb-4">
+                <h4>${category}</h4>
+                <div class="table-responsive">
+                  <table class="table table-hover">
+                    <thead>
+                      <tr>
+                        <th style="width: 60%">Notification Type</th>
+                        <th style="width: 20%" class="text-center">Email</th>
+                        <th style="width: 20%" class="text-center">In-App</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            notifications.forEach(notification => {
+              const subscription = userSubscriptionsMap.get(notification.id) || {
+                email_enabled: false,
+                in_app_enabled: true
+              };
+              
+              html += `
+                <tr>
+                  <td>${notification.name}</td>
+                  <td class="text-center">
+                    <div class="form-check form-switch d-flex justify-content-center">
+                      <input class="form-check-input notification-setting" 
+                        type="checkbox" 
+                        data-notification-type="${notification.id}" 
+                        data-setting-type="email" 
+                        id="notification_${notification.id}_email"
+                        ${subscription.email_enabled ? 'checked' : ''}>
+                    </div>
+                  </td>
+                  <td class="text-center">
+                    <div class="form-check form-switch d-flex justify-content-center">
+                      <input class="form-check-input notification-setting" 
+                        type="checkbox" 
+                        data-notification-type="${notification.id}" 
+                        data-setting-type="app" 
+                        id="notification_${notification.id}_app"
+                        ${subscription.in_app_enabled ? 'checked' : ''}>
+                    </div>
+                  </td>
+                </tr>
+              `;
+            });
+            
+            html += `
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            `;
+          });
+          
+          container.innerHTML = html;
+          
+          // Add event listeners for the switches
+          document.querySelectorAll('.notification-setting').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+              const notificationType = this.dataset.notificationType;
+              const settingType = this.dataset.settingType;
+              const isChecked = this.checked;
+              
+              // Track the change
+              if (!changedSettingsMap.has(notificationType)) {
+                changedSettingsMap.set(notificationType, {});
+              }
+              
+              const settings = changedSettingsMap.get(notificationType);
+              settings[settingType] = isChecked;
+              changedSettingsMap.set(notificationType, settings);
+            });
+          });
+        }
+    
+        // Function to render entity subscriptions
+        function renderEntitySubscriptions() {
+          const container = document.getElementById('entity-subscriptions');
+          const card = document.getElementById('entity-subscriptions-card');
+          
+          if (entitySubscriptionsArray.length === 0) {
+            card.classList.add('d-none');
+            return;
+          }
+          
+          // Group subscriptions by entity
+          const groupedSubscriptions = {};
+          
+          entitySubscriptionsArray.forEach(sub => {
+            const key = `${sub.entity_type}_${sub.entity_id}`;
+            if (!groupedSubscriptions[key]) {
+              groupedSubscriptions[key] = {
+                entity_type: sub.entity_type,
+                entity_id: sub.entity_id,
+                subscriptions: []
+              };
+            }
+            groupedSubscriptions[key].subscriptions.push(sub);
+          });
+          
+          let html = `
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead>
+                  <tr>
+                    <th>Entity Type</th>
+                    <th>Entity ID</th>
+                    <th>Notification Types</th>
+                    <th class="text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+          `;
+          
+          for (const [key, entity] of Object.entries(groupedSubscriptions)) {
+            const notificationTypeNames = entity.subscriptions.map(sub => {
+              // Find the notification type name
+              const type = notificationTypesMap.get(sub.notification_type);
+              return type ? type.name : `Type ${sub.notification_type}`;
+            }).join(', ');
+            
+            html += `
+              <tr>
+                <td>${entity.entity_type}</td>
+                <td><a href="#" class="entity-link" data-entity-type="${entity.entity_type}" data-entity-id="${entity.entity_id}">#${entity.entity_id}</a></td>
+                <td>${notificationTypeNames}</td>
+                <td class="text-center">
+                  <button class="btn btn-sm btn-outline-primary edit-subscription" 
+                    data-entity-type="${entity.entity_type}" 
+                    data-entity-id="${entity.entity_id}">
+                    Edit
+                  </button>
+                  <button class="btn btn-sm btn-outline-danger unfollow-entity"
+                    data-entity-type="${entity.entity_type}" 
+                    data-entity-id="${entity.entity_id}">
+                    Unfollow
+                  </button>
+                </td>
+              </tr>
+            `;
+          }
+          
+          html += `
+                </tbody>
+              </table>
+            </div>
+          `;
+          
+          container.innerHTML = html;
+          card.classList.remove('d-none');
+          
+          // Add event listeners for unfollow buttons
+          document.querySelectorAll('.unfollow-entity').forEach(button => {
+            button.addEventListener('click', function() {
+              const entityType = this.dataset.entityType;
+              const entityId = this.dataset.entityId;
+              
+              if (confirm(`Are you sure you want to unfollow ${entityType} #${entityId}?`)) {
+                unfollowEntity(entityType, entityId);
+              }
+            });
+          });
+          
+          // Add event listeners for edit buttons
+          document.querySelectorAll('.edit-subscription').forEach(button => {
+            button.addEventListener('click', function() {
+              const entityType = this.dataset.entityType;
+              const entityId = this.dataset.entityId;
+              
+              // Find the subscriptions for this entity
+              const key = `${entityType}_${entityId}`;
+              const entity = groupedSubscriptions[key];
+              
+              if (entity && entity.subscriptions.length > 0) {
+                // For simplicity, just edit the first subscription
+                const subscription = entity.subscriptions[0];
+                openSubscriptionSettingsModal(subscription);
+              }
+            });
+          });
+        }
+    
+        // Function to unfollow an entity
+        function unfollowEntity(entityType, entityId) {
+          fetch('/api/notifications/unfollow/', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': getCsrfToken()
+            },
+            body: JSON.stringify({
+              entity_type: entityType,
+              entity_id: entityId
+            })
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.status === 'success') {
+              // Remove this entity from the list
+              entitySubscriptionsArray = entitySubscriptionsArray.filter(sub => 
+                !(sub.entity_type === entityType && sub.entity_id === parseInt(entityId))
+              );
+              
+              // Re-render the entity subscriptions
+              renderEntitySubscriptions();
+              
+              showSuccessAlert(data.message || 'Successfully unfollowed');
+            } else {
+              showErrorAlert(data.error || 'Failed to unfollow entity');
+            }
+          })
+          .catch(error => {
+            console.error('Error unfollowing entity:', error);
+            showErrorAlert('An error occurred. Please try again.');
+          });
+        }
+    
+        // Function to open the subscription settings modal
+        function openSubscriptionSettingsModal(subscription) {
+          document.getElementById('subscription-id').value = subscription.id;
+          document.getElementById('modal-email-enabled').checked = subscription.email_enabled;
+          document.getElementById('modal-app-enabled').checked = subscription.in_app_enabled;
+          
+          // Show the modal
+          const modalElement = document.getElementById('subscriptionSettingsModal');
+          if (modalElement) {
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
+          }
+        }
+    
+        // Function to save all notification settings
+        document.getElementById('save-settings')?.addEventListener('click', function() {
+          // Prepare the data to send
+          const updates = [];
+          
+          changedSettingsMap.forEach((settings, notificationType) => {
+            // Find if user already has a subscription for this type
+            const existingSubscription = userSubscriptionsMap.get(parseInt(notificationType));
+            
+            if (existingSubscription) {
+              // Update existing subscription
+              if (settings.email !== undefined || settings.app !== undefined) {
+                updates.push(
+                  fetch(`/api/notifications/subscription/${existingSubscription.id}/update/`, {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'X-CSRFToken': getCsrfToken()
+                    },
+                    body: JSON.stringify({
+                      email_enabled: settings.email !== undefined ? settings.email : existingSubscription.email_enabled,
+                      in_app_enabled: settings.app !== undefined ? settings.app : existingSubscription.in_app_enabled
+                    })
+                  })
+                );
+              }
+            } else {
+              // Create new subscription
+              updates.push(
+                fetch('/api/notifications/follow/', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken()
+                  },
+                  body: JSON.stringify({
+                    notification_types: [parseInt(notificationType)],
+                    entity_type: null,
+                    entity_id: null,
+                    settings: {
+                      email_enabled: settings.email !== undefined ? settings.email : false,
+                      in_app_enabled: settings.app !== undefined ? settings.app : true
+                    }
+                  })
+                })
+              );
+            }
+          });
+          
+          // Wait for all updates to complete
+          Promise.all(updates)
+            .then(() => {
+              showSuccessAlert('Notification settings updated successfully');
+              
+              // Reset changed settings
+              changedSettingsMap.clear();
+              
+              // Refresh the page to show updated settings
+              setTimeout(() => {
+                window.location.reload();
+              }, 1500);
+            })
+            .catch(error => {
+              console.error('Error saving notification settings:', error);
+              showErrorAlert('An error occurred while saving your settings. Please try again.');
+            });
+        });
+    
+        // Helper functions
+        function getCsrfToken() {
+          const metaToken = document.querySelector('meta[name="csrf-token"]');
+          const inputToken = document.querySelector('input[name="csrfmiddlewaretoken"]');
+          
+          if (metaToken) {
+            return metaToken.getAttribute('content');
+          } else if (inputToken) {
+            return inputToken.value;
+          }
+          
+          return '';
+        }
+        
+        function showSuccessAlert(message) {
+          const alert = document.getElementById('success-alert');
+          if (alert) {
+            alert.textContent = message;
+            alert.classList.remove('d-none');
+            
+            setTimeout(() => {
+              alert.classList.add('d-none');
+            }, 3000);
+          }
+        }
+        
+        function showErrorAlert(message) {
+          // Create a new alert element
+          const alert = document.createElement('div');
+          alert.className = 'alert alert-danger alert-dismissible fade show';
+          alert.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          `;
+          
+          const container = document.querySelector('.container');
+          if (container) {
+            container.prepend(alert);
+            
+            setTimeout(() => {
+              alert.classList.add('fade');
+              setTimeout(() => {
+                alert.remove();
+              }, 300);
+            }, 3000);
+          }
+        }
+      })(); // End of self-executing function
+    });
+    </script>
+{% endblock %}

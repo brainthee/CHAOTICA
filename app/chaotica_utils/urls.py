@@ -24,17 +24,20 @@ urlpatterns = [
     path("signup/", views.signup, name="signup"),
 
     # Notifications
-    path("notifications/", views.notifications_feed, name="notifications_feed"),
-    path(
-        "notifications/<int:pk>/mark_read",
-        views.notification_mark_read,
-        name="notification_mark_read",
-    ),
-    path(
-        "notifications/mark_all_read",
-        views.notifications_mark_read,
-        name="notifications_mark_read",
-    ),
+    # Notification API endpoints
+    path('api/notifications/', views.notifications_api, name='notifications_api'),
+    path('api/notifications/mark-all-read/', views.mark_all_read, name='mark_all_read'),
+    path('api/notifications/subscription/<int:subscription_id>/delete/', views.remove_notification_subscription, name='remove_notification_subscription'),
+    path('api/notifications/subscription/<int:subscription_id>/update/', views.update_subscription_settings, name='update_subscription_settings'),
+    path('api/notifications/follow/', views.follow_entity, name='follow_entity'),
+    path('api/notifications/unfollow/', views.unfollow_entity, name='unfollow_entity'),
+    path('api/notifications/subscription-status/', views.notification_subscription_status, name='notification_subscription_status'),
+    path('api/notifications/user-subscriptions/', views.get_user_subscriptions, name='get_user_subscriptions'),
+    path('api/notifications/unread-count/', views.get_unread_count, name='get_unread_count'),
+    path('api/notifications/types/', views.get_notification_types, name='get_notification_types'),
+
+    path('notifications/settings/', views.notification_settings, name='notification_settings'),
+
 
     # Annual Leave
     path("ops/leave/", views.manage_leave, name="manage_leave"),

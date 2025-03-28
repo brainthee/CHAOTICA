@@ -65,18 +65,6 @@ Menu.add_item(
 )
 
 Menu.add_item(
-    "main",
-    MenuItem(
-        "Reporting",
-        reverse("view_reports"),
-        check=lambda request: request.user.is_authenticated,
-        weight=4,
-        # perm='jobtracker.view_report',
-        icon="file-lines",
-    ),
-)
-
-Menu.add_item(
     "ops",
     PermMenuItem(
         "Teams",

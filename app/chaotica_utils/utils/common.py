@@ -1,16 +1,13 @@
-from .models import *
-from .enums import NotificationTypes
-from django.template.loader import render_to_string
+from ..models import *
 from django.conf import settings as django_settings
 from datetime import timedelta, time, timezone, datetime
 from uuid import UUID
 import re, logging
 from datetime import time
-from .enums import GlobalRoles
+from ..enums import GlobalRoles
 from django.utils.text import slugify
 from menu import MenuItem
 from django.conf import settings
-from constance import config
 from django.core.exceptions import SuspiciousOperation
 from django.utils.dateparse import (
     parse_date,
@@ -19,11 +16,6 @@ from django.utils.dateparse import (
     parse_time,
 )
 from django.utils.timezone import is_aware, make_aware, now
-
-from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Permission
-from guardian.shortcuts import get_perms
-from django.core.exceptions import ObjectDoesNotExist
 
 
 def can_manage_user(requesting_user, target_user):
@@ -42,8 +34,8 @@ def can_manage_user(requesting_user, target_user):
     Returns:
         User: User object if requesting_user can manage target_user, None otherwise
     """
-    from .models import User
-    
+    from ..models import User
+
     # Ensure requesting_user is valid
     if not requesting_user or not requesting_user.is_authenticated:
         return None
@@ -68,24 +60,25 @@ def can_manage_user(requesting_user, target_user):
     else:
         # All conditions failed, return None
         return None
-    
+
+
 def get_start_of_week(dt=None):
     """
     Returns the start (Monday) of the current week.
     If a datetime is provided, returns the start of that week instead.
-    
+
     Args:
         dt (datetime, optional): A datetime object. Defaults to None (uses current date).
-    
+
     Returns:
         datetime.date: The Monday of the specified week at midnight.
     """
     if dt is None:
         dt = datetime.now()
-    
+
     # Weekday is 0 for Monday, 6 for Sunday in the datetime module
     start_of_week = dt.date() - timedelta(days=dt.weekday())
-    
+
     return start_of_week
 
 
@@ -321,49 +314,13 @@ def ext_reverse(reversed_url):
     )
 
 
+def is_ajax(request):
+    return request.META.get("HTTP_X_REQUESTED_WITH") == "XMLHttpRequest"
+
+
 def last_day_of_month(any_day):
     # The day 28 exists in every month. 4 days later, it's always next month
     next_month = any_day.replace(day=28) + timedelta(days=4)
     # subtracting the number of the current day brings us back one month
     return next_month - timedelta(days=next_month.day)
 
-
-class AppNotification:
-    """
-    This feels wrong...?
-    """
-
-    def __init__(
-        self,
-        notification_type: NotificationTypes,
-        title: str,
-        message: str,
-        email_template: str,
-        icon: str = None,
-        action_link: str = None,
-        send_inapp: bool = True,
-        send_email: bool = True,
-        **kwargs
-    ):
-
-        self.type = notification_type
-        self.title = title
-        self.message = message
-        self.email_template = email_template
-        self.icon = icon
-        if action_link:
-            # Check if it needs to be made external
-            if not action_link.startswith(
-                "{}://{}".format(
-                    django_settings.SITE_PROTO, django_settings.SITE_DOMAIN
-                )
-            ):
-                self.action_link = ext_reverse(action_link)
-            else:
-                self.action_link = action_link
-        else:
-            self.action_link = None
-        self.send_inapp = send_inapp
-        self.send_email = send_email
-        self.context = {}
-        self.context.update(kwargs)

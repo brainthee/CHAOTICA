@@ -1,73 +1,21 @@
 from django.contrib.auth import login, authenticate
 from django.shortcuts import render, redirect
-from django.urls import reverse_lazy, reverse
-from django.conf import settings as django_settings
 from django.template import loader
-from django.utils import timezone
-from django.forms import widgets
-from django.db.models import TextField, Value, Count, F, Subquery
-from django.db.models.functions import Concat
 from django.http import (
     HttpResponseForbidden,
     JsonResponse,
     HttpResponse,
-    HttpResponseRedirect,
-    Http404,
-    HttpResponseBadRequest,
 )
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-import json, os, random, csv
 from ..forms import (
     ChaoticaUserForm,
-    ImportSiteDataForm,
-    LeaveRequestForm,
-    EditProfileForm,
-    CustomConfigForm,
-    AssignRoleForm,
     InviteUserForm,
-    MergeUserForm,
 )
-from ..mixins import PrefetchRelatedMixin
-from ..enums import GlobalRoles, NotificationTypes
-from ..tasks import (
-    task_send_notifications,
-    task_sync_global_permissions,
-    task_sync_role_permissions,
-    task_sync_role_permissions_to_default,
-)
-from dateutil.relativedelta import relativedelta
-from ..models import Notification, User, Language, Note, LeaveRequest, UserInvitation
-from ..utils import (
-    ext_reverse,
-    AppNotification,
-    is_valid_uuid,
-    clean_fullcalendar_datetime,
-)
-from django.db.models import Q
-from django.db.models import Value as V
-from django.db.models.functions import Concat
-from dal import autocomplete
+from ..models import User, UserInvitation
+from ..utils import is_valid_uuid
 from django.contrib.auth.decorators import login_required
-from django.contrib.admin.views.decorators import staff_member_required
-from django.views import View
-from guardian.shortcuts import get_objects_for_user
-from guardian.decorators import permission_required_or_403
-from django.views.generic.list import ListView
-from django.views.generic.detail import DetailView
-from django.views.generic.edit import CreateView, UpdateView, DeleteView
-from django.contrib import messages
 from django.shortcuts import get_object_or_404
 from constance import config
-from constance.utils import get_values
-import datetime
-from django.views.decorators.http import (
-    require_http_methods,
-    require_safe,
-    require_POST,
-)
-
-
-
+from django.views.decorators.http import require_http_methods
 
 
 @login_required

@@ -115,12 +115,15 @@
   </div>
 </div>
 
+{% include "partials/notifications/entity_pref.html" with entity_type=entity_type entity_id=entity_id %}
+
+
 {% endblock content %}
 
-{% block footer_javascript_page %}
+{% block extra_js %}
 <script>
 
 $("#scopePhaseForm").dirty({preventLeaving: true});
 
 </script>
-{% endblock footer_javascript_page %}
+{% endblock extra_js %}
