@@ -1,0 +1,153 @@
+{% extends "reporting/base.html" %}
+{% load static %}
+
+{% block report_content %}
+<div class="container-fluid">
+  <div class="row mb-4">
+    <div class="col">
+      <div class="jumbotron bg-light p-4 rounded">
+        <h1 class="display-5">Report Builder</h1>
+        <p class="lead">Create, manage, and run custom reports for your data.</p>
+        <hr class="my-4">
+        <p>The report builder allows you to easily create reports by selecting data areas, fields, filters, sort orders, and presentation formats.</p>
+        <a class="btn btn-primary btn-lg" href="{% url 'reporting:wizard_start' %}" role="button">
+          <i class="fas fa-magic me-2"></i> Create New Report
+        </a>
+      </div>
+    </div>
+  </div>
+  
+  <div class="row">
+    <!-- Recent Reports -->
+    <div class="col-md-4">
+      <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">Your Recent Reports</h5>
+        </div>
+        <div class="card-body">
+          {% if user_reports %}
+            <div class="list-group">
+              {% for report in user_reports %}
+                <a href="{% url 'reporting:report_detail' uuid=report.uuid %}" class="list-group-item list-group-item-action">
+                  <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1">{{ report.name }}</h6>
+                    <small>{{ report.updated_at|date:"M d, Y" }}</small>
+                  </div>
+                  <small class="text-muted">{{ report.data_area.name }}</small>
+                </a>
+              {% endfor %}
+            </div>
+            <div class="mt-3">
+              <a href="{% url 'reporting:report_list' %}?view=my" class="btn btn-outline-secondary btn-sm">View All Your Reports</a>
+            </div>
+          {% else %}
+            <p class="text-muted">You haven't created any reports yet.</p>
+            <a href="{% url 'reporting:wizard_start' %}" class="btn btn-primary">Create Your First Report</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    
+    <!-- Favorite Reports -->
+    <div class="col-md-4">
+      <div class="card mb-4">
+        <div class="card-header bg-warning text-dark">
+          <h5 class="mb-0">Your Favorites</h5>
+        </div>
+        <div class="card-body">
+          {% if favorite_reports %}
+            <div class="list-group">
+              {% for report in favorite_reports %}
+                <a href="{% url 'reporting:report_detail' uuid=report.uuid %}" class="list-group-item list-group-item-action">
+                  <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1">{{ report.name }}</h6>
+                    <small>by {{ report.owner.get_full_name|default:report.owner.username }}</small>
+                  </div>
+                  <small class="text-muted">{{ report.data_area.name }}</small>
+                </a>
+              {% endfor %}
+            </div>
+            <div class="mt-3">
+              <a href="{% url 'reporting:report_list' %}?view=favorites" class="btn btn-outline-secondary btn-sm">View All Favorites</a>
+            </div>
+          {% else %}
+            <p class="text-muted">You don't have any favorite reports yet.</p>
+            <a href="{% url 'reporting:report_list' %}" class="btn btn-warning">Browse Reports</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    
+    <!-- Public Reports -->
+    <div class="col-md-4">
+      <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+          <h5 class="mb-0">Public Reports</h5>
+        </div>
+        <div class="card-body">
+          {% if public_reports %}
+            <div class="list-group">
+              {% for report in public_reports %}
+                <a href="{% url 'reporting:report_detail' uuid=report.uuid %}" class="list-group-item list-group-item-action">
+                  <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1">{{ report.name }}</h6>
+                    <small>by {{ report.owner.get_full_name|default:report.owner.username }}</small>
+                  </div>
+                  <small class="text-muted">{{ report.data_area.name }}</small>
+                </a>
+              {% endfor %}
+            </div>
+            <div class="mt-3">
+              <a href="{% url 'reporting:report_list' %}?view=public" class="btn btn-outline-secondary btn-sm">View All Public Reports</a>
+            </div>
+          {% else %}
+            <p class="text-muted">There are no public reports available.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="row">
+    <div class="col-12">
+      <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+          <h5 class="mb-0">Quick Guide</h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <h5>Creating a Report</h5>
+              <ol>
+                <li>Start the report wizard by clicking <strong>New Report</strong>.</li>
+                <li>Select a <strong>Data Area</strong> that will be the main focus of your report.</li>
+                <li>Choose the <strong>Fields</strong> you want to include as columns.</li>
+                <li>Define any <strong>Filters</strong> to limit the data.</li>
+                <li>Set the <strong>Sort Order</strong> for your results.</li>
+                <li>Select your preferred <strong>Presentation</strong> format.</li>
+                <li>Preview and <strong>Save</strong> your report.</li>
+              </ol>
+            </div>
+            <div class="col-md-6">
+              <h5>Running a Report</h5>
+              <ul>
+                <li>Open a report from the reports list or dashboard.</li>
+                <li>Click the <strong>Run Report</strong> button.</li>
+                <li>Enter any prompted filter values if required.</li>
+                <li>View the results or download in your preferred format.</li>
+              </ul>
+              
+              <h5>Sharing Reports</h5>
+              <ul>
+                <li>Make a report public by unchecking the <strong>Private</strong> option when saving.</li>
+                <li>Categorize reports to make them easier to find.</li>
+                <li>Mark useful reports as <strong>Favorites</strong> for quick access.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

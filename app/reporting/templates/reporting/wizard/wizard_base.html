@@ -1,0 +1,131 @@
+{% extends "reporting/base.html" %}
+{% load static %}
+
+{% block extra_head %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'reporting/css/wizard.css' %}">
+{% endblock %}
+
+{% block report_content %}
+<div class="container-fluid">
+  <div class="card">
+    <div class="card-header bg-primary text-white">
+      <div class="d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Report Wizard</h5>
+        <div>
+          <form action="{% url 'reporting:wizard_cancel' %}" method="post" id="cancel-wizard-form" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-light btn-sm" onclick="return confirm('Are you sure you want to cancel? All unsaved changes will be lost.')">
+              <i class="fas fa-times"></i> Cancel
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+    
+    <div class="card-body">
+      <!-- Progress Indicator -->
+      <div class="progress-container mb-4">
+        <div class="progress" style="height: 2px;">
+          <div class="progress-bar" role="progressbar" style="width: 
+            {% if wizard_step == 'data_area' %}16.6%
+            {% elif wizard_step == 'fields' %}33.3%
+            {% elif wizard_step == 'filters' %}50%
+            {% elif wizard_step == 'sorts' %}66.6%
+            {% elif wizard_step == 'presentation' %}83.3%
+            {% elif wizard_step == 'preview' %}100%
+            {% else %}0%{% endif %}" 
+            aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+        <div class="wizard-steps">
+          <div class="wizard-step {% if wizard_step == 'data_area' %}active{% elif wizard_step %}completed{% endif %}">
+            <div class="step-icon">
+              <a href="{% if wizard_step != 'data_area' %}{% url 'reporting:wizard_select_data_area' %}{% else %}#{% endif %}" class="{% if wizard_step == 'data_area' %}active{% endif %}">
+                <span class="step-number">1</span>
+                <i class="fas fa-database"></i>
+              </a>
+            </div>
+            <div class="step-label">Data Area</div>
+          </div>
+          <div class="wizard-step {% if wizard_step == 'fields' %}active{% elif wizard_step and wizard_step != 'data_area' %}completed{% endif %}">
+            <div class="step-icon">
+              <a href="{% if wizard_step != 'fields' and wizard_step != 'data_area' %}{% url 'reporting:wizard_select_fields' %}{% else %}#{% endif %}" class="{% if wizard_step == 'fields' %}active{% endif %}">
+                <span class="step-number">2</span>
+                <i class="fas fa-columns"></i>
+              </a>
+            </div>
+            <div class="step-label">Fields</div>
+          </div>
+          <div class="wizard-step {% if wizard_step == 'filters' %}active{% elif wizard_step and wizard_step != 'data_area' and wizard_step != 'fields' %}completed{% endif %}">
+            <div class="step-icon">
+              <a href="{% if wizard_step != 'filters' and wizard_step != 'data_area' and wizard_step != 'fields' %}{% url 'reporting:wizard_define_filters' %}{% else %}#{% endif %}" class="{% if wizard_step == 'filters' %}active{% endif %}">
+                <span class="step-number">3</span>
+                <i class="fas fa-filter"></i>
+              </a>
+            </div>
+            <div class="step-label">Filters</div>
+          </div>
+          <div class="wizard-step {% if wizard_step == 'sorts' %}active{% elif wizard_step and wizard_step != 'data_area' and wizard_step != 'fields' and wizard_step != 'filters' %}completed{% endif %}">
+            <div class="step-icon">
+              <a href="{% if wizard_step != 'sorts' and wizard_step != 'data_area' and wizard_step != 'fields' and wizard_step != 'filters' %}{% url 'reporting:wizard_define_sort' %}{% else %}#{% endif %}" class="{% if wizard_step == 'sorts' %}active{% endif %}">
+                <span class="step-number">4</span>
+                <i class="fas fa-sort"></i>
+              </a>
+            </div>
+            <div class="step-label">Sort</div>
+          </div>
+          <div class="wizard-step {% if wizard_step == 'presentation' %}active{% elif wizard_step and wizard_step != 'data_area' and wizard_step != 'fields' and wizard_step != 'filters' and wizard_step != 'sorts' %}completed{% endif %}">
+            <div class="step-icon">
+              <a href="{% if wizard_step != 'presentation' and wizard_step != 'data_area' and wizard_step != 'fields' and wizard_step != 'filters' and wizard_step != 'sorts' %}{% url 'reporting:wizard_define_presentation' %}{% else %}#{% endif %}" class="{% if wizard_step == 'presentation' %}active{% endif %}">
+                <span class="step-number">5</span>
+                <i class="fas fa-file-export"></i>
+              </a>
+            </div>
+            <div class="step-label">Presentation</div>
+          </div>
+          <div class="wizard-step {% if wizard_step == 'preview' %}active{% endif %}">
+            <div class="step-icon">
+              <a href="{% if wizard_step == 'preview' %}#{% endif %}" class="{% if wizard_step == 'preview' %}active{% endif %}">
+                <span class="step-number">6</span>
+                <i class="fas fa-eye"></i>
+              </a>
+            </div>
+            <div class="step-label">Preview</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Wizard Step Content -->
+      {% block wizard_step_content %}{% endblock %}
+      
+      <!-- Navigation Buttons -->
+      <div class="wizard-navigation mt-4 d-flex justify-content-between">
+        <div>
+          {% if wizard_step != 'data_area' %}
+          <button type="button" id="prev-step" class="btn btn-outline-secondary" onclick="goBack()">
+            <i class="fas fa-arrow-left"></i> Back
+          </button>
+          {% endif %}
+        </div>
+        
+        <div>
+          {% block wizard_navigation_buttons %}
+          <button type="submit" form="wizard-form" class="btn btn-primary">
+            Next <i class="fas fa-arrow-right"></i>
+          </button>
+          {% endblock %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+  function goBack() {
+    window.history.back();
+  }
+</script>
+{% endblock %}
