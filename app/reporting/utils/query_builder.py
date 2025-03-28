@@ -148,12 +148,20 @@ def build_single_filter(filter_obj, runtime_values=None):
     
     # Handle special filter operators
     if filter_type.operator == 'exact':
+        if filter_type.name == 'Not Equals':
+            return ~Q(**{field_path: filter_value})
         return Q(**{field_path: filter_value})
     elif filter_type.operator == 'iexact':
+        if filter_type.name == 'Not Equals':
+            return ~Q(**{f'{field_path}__iexact': filter_value})
         return Q(**{f'{field_path}__iexact': filter_value})
     elif filter_type.operator == 'contains':
+        if filter_type.name == 'Does Not Contain':
+            return ~Q(**{f'{field_path}__contains': filter_value})
         return Q(**{f'{field_path}__contains': filter_value})
     elif filter_type.operator == 'icontains':
+        if filter_type.name == 'Does Not Contain':
+            return ~Q(**{f'{field_path}__icontains': filter_value})
         return Q(**{f'{field_path}__icontains': filter_value})
     elif filter_type.operator == 'startswith':
         return Q(**{f'{field_path}__startswith': filter_value})
@@ -177,18 +185,30 @@ def build_single_filter(filter_obj, runtime_values=None):
             filter_value = [v.strip() for v in filter_value.split(',')]
         elif not isinstance(filter_value, (list, tuple)):
             filter_value = [filter_value]
+            
+        if filter_type.name == 'Not In List':
+            return ~Q(**{f'{field_path}__in': filter_value})
         return Q(**{f'{field_path}__in': filter_value})
     elif filter_type.operator == 'range':
         # Handle range values
-        if isinstance(filter_value, str) and ',' in filter_value:
-            start, end = filter_value.split(',', 1)
-            return Q(**{f'{field_path}__range': (start.strip(), end.strip())})
+        if isinstance(filter_value, str):
+            if ',' in filter_value:
+                start, end = filter_value.split(',', 1)
+                return Q(**{f'{field_path}__range': (start.strip(), end.strip())})
+            else:
+                # Single value, can't do range
+                return None
+        elif isinstance(filter_value, (list, tuple)) and len(filter_value) == 2:
+            return Q(**{f'{field_path}__range': filter_value})
         return None
     elif filter_type.operator == 'isnull':
         # Convert string 'true'/'false' to boolean
         if isinstance(filter_value, str):
             filter_value = filter_value.lower() == 'true'
-        return Q(**{f'{field_path}__isnull': filter_value})
+        
+        if filter_type.name == 'Is Not Null':
+            return Q(**{f'{field_path}__isnull': False})
+        return Q(**{f'{field_path}__isnull': True})
     elif filter_type.operator == 'regex':
         return Q(**{f'{field_path}__regex': filter_value})
     elif filter_type.operator == 'iregex':

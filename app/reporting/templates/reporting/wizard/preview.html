@@ -1,0 +1,221 @@
+{% extends "reporting/wizard/wizard_base.html" %}
+{% load static %}
+
+{% block title %}Preview and Save Report - Report Wizard{% endblock %}
+
+{% block wizard_step_content %}
+<div class="card">
+  <div class="card-header">
+    <h4 class="card-title">Preview and Save Report</h4>
+    <p class="card-subtitle">Review your report configuration and save it.</p>
+  </div>
+  
+  <div class="card-body">
+    <div class="row mb-4">
+      <div class="col-md-7">
+        <form method="post" id="wizard-form">
+          {% csrf_token %}
+          
+          <h5>Report Details</h5>
+          <div class="mb-3">
+            <label for="{{ form.name.id_for_label }}" class="form-label">{{ form.name.label }}</label>
+            {{ form.name }}
+            {% if form.name.errors %}
+              <div class="invalid-feedback d-block">{{ form.name.errors }}</div>
+            {% endif %}
+          </div>
+          
+          <div class="mb-3">
+            <label for="{{ form.description.id_for_label }}" class="form-label">{{ form.description.label }}</label>
+            {{ form.description }}
+            {% if form.description.errors %}
+              <div class="invalid-feedback d-block">{{ form.description.errors }}</div>
+            {% endif %}
+            <div class="form-text">Provide a description to help others understand what this report shows.</div>
+          </div>
+          
+          <div class="mb-3">
+            <label for="{{ form.category.id_for_label }}" class="form-label">{{ form.category.label }}</label>
+            {{ form.category }}
+            {% if form.category.errors %}
+              <div class="invalid-feedback d-block">{{ form.category.errors }}</div>
+            {% endif %}
+          </div>
+          
+          <div class="mb-3 form-check">
+            {{ form.is_private }}
+            <label for="{{ form.is_private.id_for_label }}" class="form-check-label">{{ form.is_private.label }}</label>
+            {% if form.is_private.errors %}
+              <div class="invalid-feedback d-block">{{ form.is_private.errors }}</div>
+            {% endif %}
+            <div class="form-text">Private reports are only visible to you. Uncheck to make this report available to all users.</div>
+          </div>
+        </form>
+      </div>
+      
+      <div class="col-md-5">
+        <div class="card bg-light mb-3">
+          <div class="card-header">
+            <h5 class="mb-0">Report Summary</h5>
+          </div>
+          <div class="card-body">
+            <dl class="row mb-0">
+              <dt class="col-sm-4">Data Area:</dt>
+              <dd class="col-sm-8">{{ data_area.name }}</dd>
+              
+              <dt class="col-sm-4">Fields:</dt>
+              <dd class="col-sm-8">{{ selected_fields|length }}</dd>
+              
+              <dt class="col-sm-4">Filters:</dt>
+              <dd class="col-sm-8">{{ filter_conditions|length }}</dd>
+              
+              <dt class="col-sm-4">Sort Fields:</dt>
+              <dd class="col-sm-8">{{ sort_fields|length }}</dd>
+              
+              <dt class="col-sm-4">Format:</dt>
+              <dd class="col-sm-8">{{ presentation_type|title }}</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="row">
+      <div class="col-12">
+        <h5>Report Details</h5>
+        
+        <!-- Fields Table -->
+        <div class="mb-4">
+          <h6>Selected Fields</h6>
+          {% if selected_fields %}
+            <div class="table-responsive">
+              <table class="table table-sm table-bordered">
+                <thead>
+                  <tr>
+                    <th>Position</th>
+                    <th>Field</th>
+                    <th>Type</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for field in selected_fields %}
+                    <tr>
+                      <td>{{ forloop.counter }}</td>
+                      <td>{{ field.display_name }}</td>
+                      <td>{{ field.field_type.name }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="alert alert-warning">No fields selected</div>
+          {% endif %}
+        </div>
+        
+        <!-- Filter Conditions -->
+        <div class="mb-4">
+          <h6>Filter Conditions</h6>
+          {% if filter_conditions %}
+            <div class="table-responsive">
+              <table class="table table-sm table-bordered">
+                <thead>
+                  <tr>
+                    <th>Field</th>
+                    <th>Condition</th>
+                    <th>Value</th>
+                    <th>Prompt?</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for filter in filter_conditions %}
+                    <tr>
+                      <td>{{ filter.field_name }}</td>
+                      <td>{{ filter.filter_type }}</td>
+                      <td>{% if filter.prompt_at_runtime %}<em>Prompt at runtime</em>{% else %}{{ filter.value }}{% endif %}</td>
+                      <td>{{ filter.prompt_at_runtime|yesno:"Yes,No" }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="alert alert-info">No filter conditions defined</div>
+          {% endif %}
+        </div>
+        
+        <!-- Sort Fields -->
+        <div class="mb-4">
+          <h6>Sort Order</h6>
+          {% if sort_fields %}
+            <div class="table-responsive">
+              <table class="table table-sm table-bordered">
+                <thead>
+                  <tr>
+                    <th>Position</th>
+                    <th>Field</th>
+                    <th>Direction</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for sort in sort_fields %}
+                    <tr>
+                      <td>{{ forloop.counter }}</td>
+                      <td>{{ sort.field_name }}</td>
+                      <td>{{ sort.direction|title }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="alert alert-info">No sort order defined</div>
+          {% endif %}
+        </div>
+        
+        <!-- Sample Data -->
+        {% if sample_data %}
+          <div class="mb-4">
+            <h6>Sample Data</h6>
+            <div class="table-responsive">
+              <table class="table table-sm table-bordered">
+                <thead>
+                  <tr>
+                    {% for field in selected_fields %}
+                      <th>{{ field.display_name }}</th>
+                    {% endfor %}
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for row in sample_data %}
+                    <tr>
+                      {% for value in row %}
+                        <td>{{ value }}</td>
+                      {% endfor %}
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            <div class="text-muted small mt-2">Showing a sample of the data. The actual report may contain more records.</div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  
+  <div class="card-footer d-flex justify-content-between">
+    <a href="{% url 'reporting:wizard_define_presentation' %}" class="btn btn-secondary">
+      <i class="fas fa-arrow-left me-1"></i> Back
+    </a>
+    <div>
+      <a href="{% url 'reporting:wizard_cancel' %}" class="btn btn-outline-secondary me-2">
+        Cancel
+      </a>
+      <button type="submit" form="wizard-form" class="btn btn-primary">
+        Save Report <i class="fas fa-save ms-1"></i>
+      </button>
+    </div>
+  </div>
+</div>
+{% endblock %}
