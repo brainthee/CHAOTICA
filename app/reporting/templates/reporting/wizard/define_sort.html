@@ -1,0 +1,160 @@
+{% extends "reporting/wizard/wizard_base.html" %}
+{% load static %}
+{% load report_filters %}
+
+{% block title %}Define Sort Order - Report Wizard{% endblock %}
+
+{% block wizard_step_content %}
+<div class="card">
+  <div class="card-header">
+    <h4 class="card-title">Define Sort Order</h4>
+    <p class="card-subtitle">Specify how the data should be sorted in your report.</p>
+  </div>
+  
+  <div class="card-body">
+    <form method="post" id="wizard-form">
+      {% csrf_token %}
+      {{ form.sort_fields }}
+      
+      <div class="alert alert-info mb-4">
+        <i class="fas fa-info-circle me-2"></i>
+        Choose which fields to sort by and in what order. Drag and drop fields to reorder them.
+      </div>
+      
+      {% if form.errors %}
+        <div class="alert alert-danger">
+          <strong>Error:</strong> Please correct the errors below.
+          {{ form.errors }}
+        </div>
+      {% endif %}
+      
+      <div class="table-responsive">
+        <table class="table table-hover" id="sort-fields-table">
+          <thead>
+            <tr>
+              <th width="50px">Sort</th>
+              <th>Field</th>
+              <th>Direction</th>
+              <th width="80px">Order</th>
+            </tr>
+          </thead>
+          <tbody id="sortable-fields">
+            {% for field in selected_fields %}
+              <tr class="sort-field-row" data-field-id="{{ field.id }}">
+                <td>
+                  <div class="form-check">
+                    <!-- Debug output -->
+                    {% with field_checkbox_name="sort_field_"|add:field.id|stringformat:"s" %}
+                      {% if form|getattribute:field_checkbox_name %}
+                        {{ form|getattribute:field_checkbox_name }}
+                      {% else %}
+                        <!-- Field not found: {{ field_checkbox_name }} -->
+                        <input type="checkbox" name="{{ field_checkbox_name }}" id="id_{{ field_checkbox_name }}" class="form-check-input sort-field-checkbox">
+                      {% endif %}
+                    {% endwith %}
+                  </div>
+                </td>
+                <td>
+                  <label for="id_sort_field_{{ field.id }}">{{ field.display_name }}</label>
+                  <span class="text-muted d-block small">{{ field.field_type.name }}</span>
+                </td>
+                <td>
+                  <div class="sort-direction-container">
+                    {% with field_direction_name="sort_direction_"|add:field.id|stringformat:"s" %}
+                      {% if form|getattribute:field_direction_name %}
+                        {{ form|getattribute:field_direction_name }}
+                      {% else %}
+                        <!-- Direction not found: {{ field_direction_name }} -->
+                        <select name="{{ field_direction_name }}" id="id_{{ field_direction_name }}" class="form-select sort-direction">
+                          <option value="asc">Ascending</option>
+                          <option value="desc">Descending</option>
+                        </select>
+                      {% endif %}
+                    {% endwith %}
+                  </div>
+                </td>
+                <td>
+                  {% with field_position_name="sort_position_"|add:field.id|stringformat:"s" %}
+                    {% if form|getattribute:field_position_name %}
+                      {{ form|getattribute:field_position_name }}
+                    {% else %}
+                      <!-- Position not found: {{ field_position_name }} -->
+                      <input type="hidden" name="{{ field_position_name }}" id="id_{{ field_position_name }}" value="{{ forloop.counter0 }}" class="sort-position">
+                    {% endif %}
+                  {% endwith %}
+                  <span class="sort-handle ms-2"><i class="fas fa-grip-vertical"></i></span>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}<script>
+    $(function() {
+      // Set initial values for all position fields
+      function updatePositions() {
+        $("#sortable-fields tr").each(function(index) {
+          var fieldId = $(this).data("field-id");
+          $(`#id_sort_position_${fieldId}`).val(index);
+        });
+      }
+      
+      // Run once on page load
+      updatePositions();
+      
+      // Enable sorting of the table rows
+      $("#sortable-fields").sortable({
+        handle: ".sort-handle",
+        helper: function(e, tr) {
+          var $originals = tr.children();
+          var $helper = tr.clone();
+          $helper.children().each(function(index) {
+            $(this).width($originals.eq(index).width());
+          });
+          return $helper;
+        },
+        update: updatePositions
+      });
+      
+      // Toggle direction controls when checkbox is changed
+      $(".sort-field-row input[type='checkbox']").change(function() {
+        var fieldId = $(this).closest("tr").data("field-id");
+        var directionContainer = $(this).closest("tr").find(".sort-direction-container");
+        
+        if($(this).prop("checked")) {
+          directionContainer.removeClass("text-muted");
+          directionContainer.find("select").prop("disabled", false);
+        } else {
+          directionContainer.addClass("text-muted");
+          directionContainer.find("select").prop("disabled", true);
+        }
+      });
+      
+      // Initialize direction controls state
+      $(".sort-field-row input[type='checkbox']").each(function() {
+        $(this).trigger("change");
+      });
+      
+      // Form submission
+      $("#wizard-form").on("submit", function(e) {
+        // Update all position values before submission
+        updatePositions();
+        
+        // Make sure all direction selects are enabled before submission
+        $(".sort-direction-container select").prop("disabled", false);
+        
+        // For debugging
+        console.log("Form submission - position values:");
+        $("#sortable-fields tr").each(function() {
+          var fieldId = $(this).data("field-id");
+          console.log(`Field ${fieldId}: Position ${$(`#id_sort_position_${fieldId}`).val()}`);
+        });
+      });
+    });
+  </script>
+  {% endblock %}

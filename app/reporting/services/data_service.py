@@ -134,10 +134,17 @@ class DataService:
         # Define what to select and annotate
         select_fields = {}
         annotate_fields = {}
+
+        from pprint import pprint
         
         for field in fields:
             data_field = field.data_field
             field_path = data_field.field_path
+            pprint(field)
+
+            
+            # Create a string key for the field - Django expects string keys, not integers
+            field_key = f'field_{field.id}'
             
             # Handle special cases or use field directly
             if '.' in field_path:
@@ -147,10 +154,10 @@ class DataService:
                 pass
             
             # Add to appropriate dict based on field type
-            select_fields[field.id] = F(field_path)
+            select_fields[field_key] = F(field_path)
             
         # Execute the query
-        results = queryset.values(*select_fields.keys())
+        results = queryset.values(*select_fields.values())
         
         # Format the data for output
         return list(results)

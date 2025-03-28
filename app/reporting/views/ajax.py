@@ -81,12 +81,11 @@ def get_field_filter_types(request):
         field = DataField.objects.get(pk=field_id)
         field_type = field.field_type.name.lower()
         
-        # Get filter types
-        filter_types = get_filter_type_choices(field_type)
-        
         # Get available filter types from the database
-        available_filter_types = field.get_available_filter_types()
-        available_ids = [ft.id for ft in available_filter_types]
+        available_filter_types = field.get_available_filter_types().order_by('display_order')
+        
+        # Format filter types as (id, display_label) tuples for the frontend
+        filter_types = [(ft.id, ft.display_label) for ft in available_filter_types]
         
         # Get dynamic values if appropriate
         dynamic_values = get_dynamic_filter_values(field_type)
@@ -94,7 +93,6 @@ def get_field_filter_types(request):
         return JsonResponse({
             'success': True,
             'filter_types': filter_types,
-            'available_filter_type_ids': available_ids,
             'dynamic_values': dynamic_values,
             'field_type': field_type
         })

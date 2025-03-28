@@ -7,6 +7,7 @@ from django.http import JsonResponse, HttpResponseRedirect, Http404
 from django.views.generic import ListView, DetailView, DeleteView
 from django.views.decorators.http import require_POST
 from django.db.models import Q
+import logging
 
 from ..models import Report, ReportCategory, ReportFilter
 from ..services.data_service import DataService
@@ -187,8 +188,16 @@ def run_report(request, uuid):
         fields = report.get_fields()
         
     except Exception as e:
+        logger = logging.getLogger(__name__)
+
+        import traceback
+        logger.error(f"Error running report: {str(e)}")
+        logger.error(traceback.format_exc())
         messages.error(request, f"Error running report: {str(e)}")
         return redirect('reporting:report_detail', uuid=report.uuid)
+    
+        # messages.error(request, f"Error running report: {str(e)}")
+        # return redirect('reporting:report_detail', uuid=report.uuid)
     
     # Show results
     return render(request, 'reporting/report_results.html', {

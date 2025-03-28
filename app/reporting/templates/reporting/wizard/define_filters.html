@@ -155,16 +155,19 @@
             
             // Add the filter types
             $.each(data.filter_types, function(i, type) {
-              if (data.available_filter_type_ids.includes(type[0])) {
-                filterType.append(`<option value="${type[0]}">${type[1]}</option>`);
-              }
+              filterType.append(`<option value="${type[0]}">${type[1]}</option>`);
             });
+
+            // Store field type for later use
+            $('#filter_field_type').val(data.field_type);
             
             // Store field type in data attribute
             filterType.data('field-type', data.field_type);
             
             // Reset the value field
             updateValueField(data.field_type, filterType.val());
+          } else {
+            console.error('Error fetching filter types:', data.error);
           }
         }
       });

@@ -389,9 +389,10 @@ def wizard_define_sort(request):
     if sort_fields:
         for sort_data in sort_fields:
             field_id = sort_data.get('field_id')
-            form.fields[f'sort_field_{field_id}'].initial = True
-            form.fields[f'sort_direction_{field_id}'].initial = sort_data.get('direction', 'asc')
-            form.fields[f'sort_position_{field_id}'].initial = sort_data.get('position', 0)
+            if f'sort_field_{field_id}' in form.fields:
+                form.fields[f'sort_field_{field_id}'].initial = True
+                form.fields[f'sort_direction_{field_id}'].initial = sort_data.get('direction', 'asc')
+                form.fields[f'sort_position_{field_id}'].initial = sort_data.get('position', 0)
     
     return render(request, 'reporting/wizard/define_sort.html', {
         'form': form,

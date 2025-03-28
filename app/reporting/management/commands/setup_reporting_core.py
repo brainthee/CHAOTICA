@@ -3,7 +3,7 @@ from django.db import transaction
 
 from reporting.models import (
     FieldType, FilterType, RelationshipType,
-    FieldPresentation, ReportCategory
+    FieldPresentation, ReportCategory, FilterCondition
 )
 
 
@@ -241,7 +241,7 @@ class Command(BaseCommand):
             )
     
     def setup_filter_types(self):
-        """Create filter types"""
+        """Create filter types and their filter conditions"""
         self.stdout.write('Setting up filter types...')
         
         # Get field types
@@ -429,21 +429,313 @@ class Command(BaseCommand):
         ]
         
         for ft_data in filter_types:
-            filter_type, created = FilterType.objects.get_or_create(
-                name=ft_data['name'],
-                defaults={
-                    'description': ft_data['description'],
-                    'operator': ft_data['operator'],
-                    'display_label': ft_data['display_label'],
-                    'requires_value': ft_data['requires_value'],
-                    'supports_multiple_values': ft_data['supports_multiple_values'],
-                    'display_order': ft_data['display_order'],
-                }
-            )
+            try:
+                filter_type, created = FilterType.objects.get_or_create(
+                    name=ft_data['name'],
+                    defaults={
+                        'description': ft_data['description'],
+                        'operator': ft_data['operator'],
+                        'display_label': ft_data['display_label'],
+                        'requires_value': ft_data['requires_value'],
+                        'supports_multiple_values': ft_data['supports_multiple_values'],
+                        'display_order': ft_data['display_order'],
+                    }
+                )
+                
+                if created:
+                    filter_type.applicable_field_types.set(ft_data['applicable_field_types'])
+                    self.stdout.write(f"  Created filter type: {filter_type.name}")
+                else:
+                    self.stdout.write(f"  Filter type already exists: {filter_type.name}")
+            except Exception as e:
+                self.stdout.write(self.style.ERROR(f"Error creating filter type {ft_data['name']}: {str(e)}"))
+        
+        # Now set up filter conditions separately
+        self.setup_filter_conditions()
+
+    def setup_filter_conditions(self):
+        """Create filter conditions for all filter types"""
+        self.stdout.write('Setting up filter conditions...')
+        
+        # Date field types
+        try:
+            date_type = FieldType.objects.get(name='Date')
+            datetime_type = FieldType.objects.get(name='DateTime')
+            boolean_type = FieldType.objects.get(name='Boolean')
+            foreign_key_type = FieldType.objects.get(name='Foreign Key')
+        except FieldType.DoesNotExist as e:
+            self.stdout.write(self.style.ERROR(f"Error getting field types: {str(e)}"))
+            return
+        
+        # Add date-based conditions
+        date_filters = FilterType.objects.filter(
+            name__in=['Equals', 'Greater Than', 'Greater Than or Equal', 'Less Than', 'Less Than or Equal']
+        )
+        
+        if date_filters.exists():
+            self.stdout.write("  Setting up date-based conditions")
             
-            if created:
-                filter_type.applicable_field_types.set(ft_data['applicable_field_types'])
-    
+            date_conditions = [
+                {
+                    'name': 'Today',
+                    'field_type': date_type,
+                    'value': 'today',
+                    'is_dynamic': True,
+                    'display_label': 'Today',
+                    'display_order': 1,
+                },
+                {
+                    'name': 'Yesterday',
+                    'field_type': date_type,
+                    'value': 'yesterday',
+                    'is_dynamic': True,
+                    'display_label': 'Yesterday',
+                    'display_order': 2,
+                },
+                {
+                    'name': 'Tomorrow',
+                    'field_type': date_type,
+                    'value': 'tomorrow',
+                    'is_dynamic': True,
+                    'display_label': 'Tomorrow',
+                    'display_order': 3,
+                },
+                {
+                    'name': 'First Day of Month',
+                    'field_type': date_type,
+                    'value': 'first_day_month',
+                    'is_dynamic': True,
+                    'display_label': 'First day of current month',
+                    'display_order': 4,
+                },
+                {
+                    'name': 'Last Day of Month',
+                    'field_type': date_type,
+                    'value': 'last_day_month',
+                    'is_dynamic': True,
+                    'display_label': 'Last day of current month',
+                    'display_order': 5,
+                },
+            ]
+            
+            # Create date conditions for each filter type
+            for filter_type in date_filters:
+                for condition_data in date_conditions:
+                    try:
+                        condition, created = FilterCondition.objects.get_or_create(
+                            name=condition_data['name'],
+                            field_type=condition_data['field_type'],
+                            filter_type=filter_type,
+                            defaults={
+                                'value': condition_data['value'],
+                                'is_dynamic': condition_data['is_dynamic'],
+                                'display_label': condition_data['display_label'],
+                                'display_order': condition_data['display_order'],
+                            }
+                        )
+                        if created:
+                            self.stdout.write(f"    Created filter condition: {condition.name} for {filter_type.name}")
+                    except Exception as e:
+                        self.stdout.write(self.style.ERROR(f"    Error creating condition {condition_data['name']} for {filter_type.name}: {str(e)}"))
+                
+                # Also create for DateTime field type
+                for condition_data in date_conditions:
+                    try:
+                        datetime_condition = condition_data.copy()
+                        datetime_condition['field_type'] = datetime_type
+                        condition, created = FilterCondition.objects.get_or_create(
+                            name=datetime_condition['name'],
+                            field_type=datetime_condition['field_type'],
+                            filter_type=filter_type,
+                            defaults={
+                                'value': datetime_condition['value'],
+                                'is_dynamic': datetime_condition['is_dynamic'],
+                                'display_label': datetime_condition['display_label'],
+                                'display_order': datetime_condition['display_order'],
+                            }
+                        )
+                        if created:
+                            self.stdout.write(f"    Created filter condition: {condition.name} for {filter_type.name} (DateTime)")
+                    except Exception as e:
+                        self.stdout.write(self.style.ERROR(f"    Error creating DateTime condition {datetime_condition['name']} for {filter_type.name}: {str(e)}"))
+        
+        # Add range conditions for Between filter
+        between_filter = FilterType.objects.filter(name='Between').first()
+        if between_filter:
+            self.stdout.write("  Setting up date range conditions")
+            
+            range_conditions = [
+                {
+                    'name': 'This Week',
+                    'field_type': date_type,
+                    'value': 'this_week',
+                    'is_dynamic': True,
+                    'display_label': 'This week',
+                    'display_order': 1,
+                },
+                {
+                    'name': 'Last Week',
+                    'field_type': date_type,
+                    'value': 'last_week',
+                    'is_dynamic': True,
+                    'display_label': 'Last week',
+                    'display_order': 2,
+                },
+                {
+                    'name': 'This Month',
+                    'field_type': date_type,
+                    'value': 'this_month',
+                    'is_dynamic': True,
+                    'display_label': 'This month',
+                    'display_order': 3,
+                },
+                {
+                    'name': 'Last Month',
+                    'field_type': date_type,
+                    'value': 'last_month',
+                    'is_dynamic': True,
+                    'display_label': 'Last month',
+                    'display_order': 4,
+                },
+                {
+                    'name': 'This Quarter',
+                    'field_type': date_type,
+                    'value': 'this_quarter',
+                    'is_dynamic': True,
+                    'display_label': 'This quarter',
+                    'display_order': 5,
+                },
+                {
+                    'name': 'Last Quarter',
+                    'field_type': date_type,
+                    'value': 'last_quarter',
+                    'is_dynamic': True,
+                    'display_label': 'Last quarter',
+                    'display_order': 6,
+                },
+                {
+                    'name': 'This Year',
+                    'field_type': date_type,
+                    'value': 'this_year',
+                    'is_dynamic': True,
+                    'display_label': 'This year',
+                    'display_order': 7,
+                },
+                {
+                    'name': 'Last Year',
+                    'field_type': date_type,
+                    'value': 'last_year',
+                    'is_dynamic': True,
+                    'display_label': 'Last year',
+                    'display_order': 8,
+                },
+            ]
+            
+            # Create range conditions
+            for condition_data in range_conditions:
+                try:
+                    condition, created = FilterCondition.objects.get_or_create(
+                        name=condition_data['name'],
+                        field_type=condition_data['field_type'],
+                        filter_type=between_filter,
+                        defaults={
+                            'value': condition_data['value'],
+                            'is_dynamic': condition_data['is_dynamic'],
+                            'display_label': condition_data['display_label'],
+                            'display_order': condition_data['display_order'],
+                        }
+                    )
+                    if created:
+                        self.stdout.write(f"    Created filter condition: {condition.name} for Between")
+                except Exception as e:
+                    self.stdout.write(self.style.ERROR(f"    Error creating range condition {condition_data['name']}: {str(e)}"))
+            
+            # Also create for DateTime field type
+            for condition_data in range_conditions:
+                try:
+                    datetime_condition = condition_data.copy()
+                    datetime_condition['field_type'] = datetime_type
+                    condition, created = FilterCondition.objects.get_or_create(
+                        name=datetime_condition['name'],
+                        field_type=datetime_condition['field_type'],
+                        filter_type=between_filter,
+                        defaults={
+                            'value': datetime_condition['value'],
+                            'is_dynamic': datetime_condition['is_dynamic'],
+                            'display_label': datetime_condition['display_label'],
+                            'display_order': datetime_condition['display_order'],
+                        }
+                    )
+                    if created:
+                        self.stdout.write(f"    Created filter condition: {condition.name} for Between (DateTime)")
+                except Exception as e:
+                    self.stdout.write(self.style.ERROR(f"    Error creating DateTime range condition {datetime_condition['name']}: {str(e)}"))
+        
+        # Add boolean conditions
+        equals_filter = FilterType.objects.filter(name='Equals').first()
+        if equals_filter:
+            self.stdout.write("  Setting up boolean conditions")
+            
+            boolean_conditions = [
+                {
+                    'name': 'True',
+                    'field_type': boolean_type,
+                    'value': 'true',
+                    'is_dynamic': False,
+                    'display_label': 'Yes / True',
+                    'display_order': 1,
+                },
+                {
+                    'name': 'False',
+                    'field_type': boolean_type,
+                    'value': 'false',
+                    'is_dynamic': False,
+                    'display_label': 'No / False',
+                    'display_order': 2,
+                },
+            ]
+            
+            for condition_data in boolean_conditions:
+                try:
+                    condition, created = FilterCondition.objects.get_or_create(
+                        name=condition_data['name'],
+                        field_type=condition_data['field_type'],
+                        filter_type=equals_filter,
+                        defaults={
+                            'value': condition_data['value'],
+                            'is_dynamic': condition_data['is_dynamic'],
+                            'display_label': condition_data['display_label'],
+                            'display_order': condition_data['display_order'],
+                        }
+                    )
+                    if created:
+                        self.stdout.write(f"    Created filter condition: {condition.name} for Boolean")
+                except Exception as e:
+                    self.stdout.write(self.style.ERROR(f"    Error creating boolean condition {condition_data['name']}: {str(e)}"))
+        
+        # Add user conditions
+        for filter_name in ['Equals', 'Not Equals']:
+            filter_type = FilterType.objects.filter(name=filter_name).first()
+            if filter_type:
+                self.stdout.write(f"  Setting up user conditions for {filter_name}")
+                
+                try:
+                    condition, created = FilterCondition.objects.get_or_create(
+                        name='Current User',
+                        field_type=foreign_key_type,
+                        filter_type=filter_type,
+                        defaults={
+                            'value': 'current_user',
+                            'is_dynamic': True,
+                            'display_label': 'Current user',
+                            'display_order': 1,
+                        }
+                    )
+                    if created:
+                        self.stdout.write(f"    Created filter condition: Current User for {filter_name}")
+                except Exception as e:
+                    self.stdout.write(self.style.ERROR(f"    Error creating user condition for {filter_name}: {str(e)}"))
+
     def setup_report_categories(self):
         """Create initial report categories"""
         self.stdout.write('Setting up report categories...')

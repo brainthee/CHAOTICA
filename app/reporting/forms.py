@@ -149,6 +149,7 @@ class DefineFiltersForm(forms.Form):
         )
 
 
+
 class DefineSortOrderForm(forms.Form):
     """Form for defining sort order"""
     
@@ -168,7 +169,7 @@ class DefineSortOrderForm(forms.Form):
             for i, field in enumerate(fields):
                 # Field to include in sort
                 self.fields[f'sort_field_{field.id}'] = forms.BooleanField(
-                    label=field.get_display_name(),
+                    label=field.display_name,
                     required=False,
                     widget=forms.CheckboxInput(attrs={'class': 'form-check-input sort-field-checkbox'})
                 )
@@ -184,8 +185,28 @@ class DefineSortOrderForm(forms.Form):
                 # Sort position (used for drag-and-drop reordering)
                 self.fields[f'sort_position_{field.id}'] = forms.IntegerField(
                     initial=i,
+                    required=False,  # Make this field optional
                     widget=forms.HiddenInput(attrs={'class': 'sort-position'})
                 )
+    
+    def clean(self):
+        """Custom validation to handle position fields only for checked fields"""
+        cleaned_data = super().clean()
+        
+        # Only validate positions for selected fields
+        for field_name, value in self.cleaned_data.items():
+            if field_name.startswith('sort_field_') and value:
+                # This field is checked for sorting
+                field_id = field_name.replace('sort_field_', '')
+                position_field = f'sort_position_{field_id}'
+                
+                # Ensure the position field has a value
+                if position_field in self.cleaned_data and self.cleaned_data[position_field] is None:
+                    # Default to 0 if not provided
+                    self.cleaned_data[position_field] = 0
+        
+        return cleaned_data
+
 
 
 class DefinePresentationForm(forms.Form):
