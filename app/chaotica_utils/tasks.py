@@ -47,41 +47,6 @@ class task_clean_historical_records(CronJobBase):
     def do(self):
         management.call_command('clean_duplicate_history', '--auto')
         management.call_command('clean_old_history', '--auto')
-
-
-def task_send_notifications(notification, users_to_notify, additional_mails=None):
-    for u in users_to_notify:
-        # create a Notification..
-        from .models import Notification
-        _ = Notification.objects.create(
-            user=u,
-            title=notification.title,
-            icon=notification.icon,
-            message=notification.message,
-            link=notification.action_link,
-            email_template=notification.email_template,
-        )
-    
-    if additional_mails:
-        addresses = email.utils.getaddresses([additional_mails])
-        for _, email_address in addresses:
-            if email_address:
-                context = {}
-                context["SITE_DOMAIN"] = settings.SITE_DOMAIN
-                context["SITE_PROTO"] = settings.SITE_PROTO
-                context["title"] = notification.title
-                context["message"] = notification.message
-                context["icon"] = notification.icon
-                context["action_link"] = notification.action_link
-                context["user"] = ""
-                msg_html = render_to_string(notification.email_template, context)
-                send_mail(
-                    subject=notification.title,
-                    message=notification.message,
-                    from_email=None,
-                    recipient_list=[email_address],
-                    html_message=msg_html,
-                )
         
         
 class task_send_email_notifications(CronJobBase):
@@ -91,8 +56,9 @@ class task_send_email_notifications(CronJobBase):
 
     def do(self):
         from .models import Notification
-        for notification in Notification.objects.filter(is_emailed=False):
+        for notification in Notification.objects.filter(is_emailed=False, should_email=True):
             notification.send_email()
+
 
 class task_update_phase_dates(CronJobBase):
     RUN_AT_TIMES = ['3:30',]

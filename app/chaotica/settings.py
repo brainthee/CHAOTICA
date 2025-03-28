@@ -341,6 +341,7 @@ THIRD_PARTY_APPS = [
 LOCAL_APPS = [
     "chaotica_utils",
     "jobtracker",
+    "reporting",
     "dashboard",
     "rm_sync",
 ]

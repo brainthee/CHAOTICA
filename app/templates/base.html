@@ -94,7 +94,7 @@
     <script nonce="{{request.csp_nonce}}" src="https://cdn.datatables.net/2.1.4/js/dataTables.bootstrap5.js"></script>
 
     {% block head_css_section %}{% endblock head_css_section %}
-    {% block head_css_page %}{% endblock head_css_page %}
+    {% block extra_head %}{% endblock extra_head %}
 
 
     <!--   Core JS Files   -->
@@ -330,7 +330,7 @@
     {% endblock footer_javascript_site %}
 
     {% block footer_javascript_section %}{% endblock footer_javascript_section %}
-    {% block footer_javascript_page %}{% endblock footer_javascript_page %}
+    {% block extra_js %}{% endblock extra_js %}
   {% endblock footer_javascript %} 
 </body>
 

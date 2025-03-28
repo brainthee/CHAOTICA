@@ -1,0 +1,332 @@
+{% extends "reporting/wizard/wizard_base.html" %}
+{% load static %}
+{% load report_filters %}
+
+{% block wizard_step_content %}
+<h3 class="mb-4">Step 2: Select Fields</h3>
+<p class="mb-4">Select the fields you want to include in your report. These will become the columns in your report.</p>
+
+<form method="post" id="wizard-form">
+  {% csrf_token %}
+  
+  <div class="row">
+    <div class="col-md-6">
+      <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">Available Fields</h5>
+          <div>
+            <div class="input-group input-group-sm">
+              <input type="text" class="form-control" id="field-search" placeholder="Search fields...">
+              <span class="input-group-text"><i class="fas fa-search"></i></span>
+            </div>
+          </div>
+        </div>
+        <div class="card-body p-0">
+          <div class="accordion" id="fieldsAccordion">
+            {% for field_name, field in form.fields.items %}
+              {% if field_name|startswith:'group_' %}
+                {% with group_name=field_name|slice:"6:" %}
+                <div class="accordion-item">
+                  <h2 class="accordion-header" id="heading{{ group_name|slugify }}">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ group_name|slugify }}" aria-expanded="true" aria-controls="collapse{{ group_name|slugify }}">
+                      {{ group_name }}
+                    </button>
+                  </h2>
+                  <div id="collapse{{ group_name|slugify }}" class="accordion-collapse collapse show" aria-labelledby="heading{{ group_name|slugify }}" data-bs-parent="#fieldsAccordion">
+                    <div class="accordion-body p-0">
+                      <div class="list-group list-group-flush field-list">
+                        {% for choice in field.choices %}
+                          <label class="list-group-item list-group-item-action">
+                            <input type="checkbox" name="{{ field_name }}" value="{{ choice.0 }}" id="id_{{ field_name }}_{{ forloop.counter0 }}" class="form-check-input me-1"
+                              {% if choice.0 in field.value %}checked{% endif %}>
+                            {{ choice.1 }}
+                          </label>
+                        {% empty %}
+                          <div class="list-group-item">No fields available in this group.</div>
+                        {% endfor %}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                {% endwith %}
+              {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-6">
+      <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">Selected Fields</h5>
+          <div>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="clear-fields">
+              <i class="fas fa-trash-alt"></i> Clear All
+            </button>
+          </div>
+        </div>
+        <div class="card-body p-0">
+          <div class="alert alert-info m-3" id="no-fields-selected" style="display: none;">
+            <i class="fas fa-info-circle"></i> No fields selected yet. Select fields from the left to include them in your report.
+          </div>
+          
+          <ul class="list-group list-group-flush" id="selected-fields-list">
+            <!-- Selected fields will be inserted here via JavaScript -->
+          </ul>
+        </div>
+        <div class="card-footer bg-light">
+          <small class="text-muted"><i class="fas fa-info-circle"></i> Drag and drop to reorder fields. Click the customize button to edit display options.</small>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Field customization modal -->
+  <div class="modal fade" id="fieldCustomizeModal" tabindex="-1" aria-labelledby="fieldCustomizeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="fieldCustomizeModalLabel">Customize Field</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="field-customize-form">
+            <input type="hidden" id="customize-field-id">
+            
+            <div class="mb-3">
+              <label for="customize-field-label" class="form-label">Display Label</label>
+              <input type="text" class="form-control" id="customize-field-label" placeholder="Leave blank to use default">
+              <div class="form-text">Custom label to display instead of the default field name.</div>
+            </div>
+            
+            <div class="mb-3">
+              <label for="customize-field-format" class="form-label">Display Format</label>
+              <input type="text" class="form-control" id="customize-field-format" placeholder="Leave blank to use default">
+              <div class="form-text">Format string for this field (e.g., date format, number format).</div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" id="save-field-customize">Save Changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
+<script>
+  $(document).ready(function() {
+    // Initialize the list of selected fields
+    updateSelectedFieldsList();
+    
+    // Make the selected fields list sortable
+    const sortable = new Sortable(document.getElementById('selected-fields-list'), {
+      animation: 150,
+      ghostClass: 'sortable-ghost',
+      onEnd: function() {
+        // Update the field order when items are dragged
+        saveFieldOrder();
+      }
+    });
+    
+    // Handle checkbox changes
+    $('.field-list input[type="checkbox"]').change(function() {
+      updateSelectedFieldsList();
+    });
+    
+    // Handle search
+    $('#field-search').on('input', function() {
+      const searchTerm = $(this).val().toLowerCase().trim();
+      if (searchTerm === '') {
+        // Show all fields
+        $('.field-list label').show();
+        // Expand all accordions
+        $('.accordion-collapse').addClass('show');
+      } else {
+        // Hide accordions
+        $('.accordion-collapse').removeClass('show');
+        
+        // Search through fields
+        $('.field-list label').each(function() {
+          const fieldText = $(this).text().toLowerCase();
+          if (fieldText.includes(searchTerm)) {
+            $(this).show();
+            // Show the parent accordion
+            const accordionId = $(this).closest('.accordion-collapse').attr('id');
+            $('#' + accordionId).addClass('show');
+          } else {
+            $(this).hide();
+          }
+        });
+      }
+    });
+    
+    // Handle clear all button
+    $('#clear-fields').click(function() {
+      if (confirm('Are you sure you want to clear all selected fields?')) {
+        $('.field-list input[type="checkbox"]').prop('checked', false);
+        updateSelectedFieldsList();
+      }
+    });
+    
+    // Handle field customization
+    $(document).on('click', '.customize-field', function(e) {
+      e.preventDefault();
+      const fieldId = $(this).data('field-id');
+      const currentLabel = $(this).data('current-label') || '';
+      const currentFormat = $(this).data('current-format') || '';
+      
+      $('#customize-field-id').val(fieldId);
+      $('#customize-field-label').val(currentLabel);
+      $('#customize-field-format').val(currentFormat);
+      
+      const modal = new bootstrap.Modal(document.getElementById('fieldCustomizeModal'));
+      modal.show();
+    });
+    
+    // Save field customization
+    $('#save-field-customize').click(function() {
+      const fieldId = $('#customize-field-id').val();
+      const customLabel = $('#customize-field-label').val();
+      const displayFormat = $('#customize-field-format').val();
+      
+      // Send AJAX request to save the customization
+      $.ajax({
+        url: "{% url 'reporting:wizard_field_customize' %}",
+        method: 'POST',
+        data: {
+          'field_id': fieldId,
+          'custom_label': customLabel,
+          'display_format': displayFormat,
+          'csrfmiddlewaretoken': $('input[name="csrfmiddlewaretoken"]').val()
+        },
+        success: function(response) {
+          if (response.success) {
+            // Update the display in the selected fields list
+            updateCustomizedField(fieldId, customLabel, displayFormat);
+            
+            // Close the modal
+            bootstrap.Modal.getInstance(document.getElementById('fieldCustomizeModal')).hide();
+          }
+        }
+      });
+    });
+    
+    // Function to update the selected fields list
+    function updateSelectedFieldsList() {
+      const selectedFields = [];
+      
+      // Get all checked fields
+      $('.field-list input[type="checkbox"]:checked').each(function() {
+        const checkbox = $(this);
+        const fieldId = checkbox.val();
+        const fieldName = checkbox.parent().text().trim();
+        
+        selectedFields.push({
+          id: fieldId,
+          name: fieldName
+        });
+      });
+      
+      // Update the UI
+      const selectedFieldsList = $('#selected-fields-list');
+      selectedFieldsList.empty();
+      
+      if (selectedFields.length === 0) {
+        $('#no-fields-selected').show();
+      } else {
+        $('#no-fields-selected').hide();
+        
+        // Add each field to the list
+        selectedFields.forEach(function(field) {
+          selectedFieldsList.append(`
+            <li class="list-group-item d-flex justify-content-between align-items-center" data-field-id="${field.id}">
+              <div class="field-info">
+                <i class="fas fa-grip-vertical me-2 text-muted"></i>
+                <span class="field-name">${field.name}</span>
+              </div>
+              <div class="field-actions">
+                <button type="button" class="btn btn-sm btn-outline-primary customize-field" data-field-id="${field.id}">
+                  <i class="fas fa-cog"></i>
+                </button>
+              </div>
+            </li>
+          `);
+        });
+      }
+      
+      // Save the field order
+      saveFieldOrder();
+    }
+    
+    // Function to save the field order
+    function saveFieldOrder() {
+      const fieldOrder = [];
+      
+      // Get the field IDs in their current order
+      $('#selected-fields-list li').each(function() {
+        fieldOrder.push($(this).data('field-id'));
+      });
+      
+      // Send AJAX request to save the order
+      $.ajax({
+        url: "{% url 'reporting:wizard_field_reorder' %}",
+        method: 'POST',
+        data: {
+          'field_order': JSON.stringify(fieldOrder),
+          'csrfmiddlewaretoken': $('input[name="csrfmiddlewaretoken"]').val()
+        }
+      });
+    }
+    
+    // Function to update a customized field in the UI
+    function updateCustomizedField(fieldId, customLabel, displayFormat) {
+      const fieldItem = $(`#selected-fields-list li[data-field-id="${fieldId}"]`);
+      const customizeButton = fieldItem.find('.customize-field');
+      
+      // Update the button's data attributes
+      customizeButton.data('current-label', customLabel);
+      customizeButton.data('current-format', displayFormat);
+      
+      // Update the display if there's a custom label
+      if (customLabel) {
+        const originalName = fieldItem.find('.field-name').data('original-name') || 
+                             fieldItem.find('.field-name').text();
+        
+        if (!fieldItem.find('.field-name').data('original-name')) {
+          fieldItem.find('.field-name').data('original-name', originalName);
+        }
+        
+        fieldItem.find('.field-name').html(`<strong>${customLabel}</strong> <small class="text-muted">(${originalName})</small>`);
+      } else {
+        // Restore original name if custom label is removed
+        const originalName = fieldItem.find('.field-name').data('original-name');
+        if (originalName) {
+          fieldItem.find('.field-name').text(originalName);
+        }
+      }
+      
+      // Add a format indicator if there's a display format
+      if (displayFormat) {
+        if (!fieldItem.find('.format-indicator').length) {
+          fieldItem.find('.field-info').append(`
+            <span class="format-indicator badge bg-info ms-2" title="Format: ${displayFormat}">
+              <i class="fas fa-paint-brush"></i>
+            </span>
+          `);
+        } else {
+          fieldItem.find('.format-indicator').attr('title', `Format: ${displayFormat}`);
+        }
+      } else {
+        fieldItem.find('.format-indicator').remove();
+      }
+    }
+  });
+</script>
+{% endblock %}

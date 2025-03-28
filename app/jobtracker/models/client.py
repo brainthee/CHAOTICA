@@ -13,8 +13,7 @@ from constance import config
 from decimal import Decimal
 from django_bleach.models import BleachField
 from django.db.models.functions import Lower
-from chaotica_utils.tasks import task_send_notifications
-from chaotica_utils.utils import AppNotification
+from chaotica_utils.utils import AppNotification, task_send_notifications
 from chaotica_utils.views.common import log_system_activity
 from chaotica_utils.enums import NotificationTypes
 
@@ -245,17 +244,16 @@ class ClientOnboarding(models.Model):
         if self.is_due:
             # check if we should or not...
             days_till_renewal = self.days_till_renewal()
-            notice = AppNotification(
-                NotificationTypes.CLIENT,
-                "{client} Onboarding Requirements Due".format(client=self.client),
-                "Onboarding requirements are due in {days_till_renewal} for {client}. Please check the requirements, complete them and mark it as renewed.".format(
-                    days_till_renewal=days_till_renewal,
-                    client=self.client,
-                ),
-                email_template,
-                action_link=reverse('view_own_onboarding'),
+            notification = AppNotification(
+                notification_type=NotificationTypes.CLIENT_ONBOARDING_RENEWAL,
+                title=f"{self}: Onboarding Requirements Due",
+                message=f"Onboarding requirements are due in {days_till_renewal} for {self}. Please check the requirements, complete them and mark it as renewed.",
+                email_template=self.email_template,
+                link=reverse("view_own_onboarding"),
+                entity_type=self.__class__.__name__,
+                entity_id=self.pk,
             )
-            task_send_notifications(notice, [self.user])
+            task_send_notifications(notification, [self.user])
             log_system_activity(self, "Sent Onboarding Reminder")
 
     class Meta:

@@ -82,7 +82,7 @@
       </div>
 {% endblock content %}  
 
-{% block footer_javascript_page %}
+{% block extra_js %}
 <script>
   $(document).on("change", "#id_rm_id, .form-check-input", function() {   
     var url = '{% url 'rm_update_record' %}';
@@ -103,4 +103,4 @@
     });
   });
 </script>
-{% endblock footer_javascript_page %}
+{% endblock extra_js %}

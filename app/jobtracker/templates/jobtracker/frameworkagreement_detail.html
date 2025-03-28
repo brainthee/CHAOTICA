@@ -124,7 +124,7 @@
 {% endblock content %}
 
 
-{% block footer_javascript_page %}
+{% block extra_js %}
 <script>
   const { getColor, rgbaColor, getData } = window.phoenix.utils;
   var chartDom = document.getElementById('framework-usage-chart');
@@ -184,4 +184,4 @@
   options && chart.setOption(options);
 
 </script>
-{% endblock footer_javascript_page %}
+{% endblock extra_js %}

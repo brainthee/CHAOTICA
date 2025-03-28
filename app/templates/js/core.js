@@ -206,36 +206,6 @@ $(function() {
         timeoutID = setTimeout(() => search(value), 500)
     });
 
-    var polling = {% if request.user.is_authenticated %}true{% else %}false{% endif %};
-    var period = 60 * 1000; // every 60 seconds
-
-    var interval = polling && setInterval(function() {
-    if (polling) {
-        $.ajax({
-            url: "{% url 'notifications_feed' %}",
-            type: 'get',
-            dataType: 'json',
-            statusCode: {
-                403: function() { 
-                    // Reload the page - we're prob logged out...
-                    window.location.reload();
-                },
-                200: function(data) {
-                    $("#navbarDropdownNotfication").html(data.html_form);    
-                    $(".notification_read").click(readNotifications);         
-                }
-                //other codes. read the docs for more details
-            },
-        });
-    } else {
-        if (interval) {
-        clearInterval(interval);
-        }
-    }
-    }, period); 
-
-    $(".notification_read").click(readNotifications);
-
 });
 
 {% if config.KONAMI_ENABLED %}

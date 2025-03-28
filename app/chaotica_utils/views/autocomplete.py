@@ -3,7 +3,7 @@ from django.db.models import TextField, Value, Q
 from django.db.models.functions import Concat, Lower
 from django.http import JsonResponse
 from ..models import User
-from .common import is_ajax
+from ..utils import is_ajax
 from dal import autocomplete
 from django.contrib.auth.decorators import login_required
 from guardian.shortcuts import get_objects_for_user

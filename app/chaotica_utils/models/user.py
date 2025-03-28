@@ -26,6 +26,8 @@ from django.template.loader import render_to_string
 import django.core.mail
 from geopy.geocoders import Nominatim
 import pandas as pd
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 
 def get_sentinel_user():
@@ -449,7 +451,7 @@ class User(AbstractUser):
         return total
 
     def unread_notifications(self):
-        return self.notification_set.filter(is_read=False)
+        return self.notification_set.filter(read=False)
 
     def get_avatar_url(self):
         if self.profile_image:
@@ -2005,6 +2007,30 @@ class User(AbstractUser):
 
         (Q(start__gte=start_date) & Q(end__lte=end_date))
         return top_services
+
+
+@receiver(post_save, sender=User)
+def create_default_notification_settings(sender, instance, created, **kwargs):
+    """Set up default notification preferences for new users"""
+    if created:
+        from chaotica_utils.models import NotificationSubscription
+        from chaotica_utils.enums import NotificationTypes
+        
+        # Create subscriptions for basic notification types
+        default_notification_types = [
+            NotificationTypes.SYSTEM,
+            NotificationTypes.LEAVE_APPROVED,
+            NotificationTypes.LEAVE_REJECTED,
+            # Add more as needed
+        ]
+        
+        for notification_type in default_notification_types:
+            NotificationSubscription.objects.create(
+                user=instance,
+                notification_type=notification_type,
+                email_enabled=True,
+                in_app_enabled=True
+            )
 
 
 class UserCost(models.Model):

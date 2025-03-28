@@ -1,0 +1,428 @@
+{% extends "reporting/wizard/wizard_base.html" %}
+{% load static %}
+
+{% block wizard_step_content %}
+<h3 class="mb-4">Step 3: Define Filters</h3>
+<p class="mb-4">Add filters to limit the data in your report. You can create simple or complex filter conditions.</p>
+
+<form method="post" id="wizard-form">
+  {% csrf_token %}
+  {{ form.filter_conditions }}
+  
+  <div class="row">
+    <div class="col-12">
+      <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">Filter Conditions</h5>
+          <div>
+            <button type="button" class="btn btn-sm btn-primary" id="add-filter">
+              <i class="fas fa-plus"></i> Add Filter
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="clear-filters">
+              <i class="fas fa-trash-alt"></i> Clear All
+            </button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="alert alert-info" id="no-filters" {% if filter_conditions %}style="display: none;"{% endif %}>
+            <i class="fas fa-info-circle"></i> No filters defined. Click "Add Filter" to create a filter condition.
+          </div>
+          
+          <div id="filter-container" class="filter-builder" {% if not filter_conditions %}style="display: none;"{% endif %}>
+            <!-- Filter conditions will be inserted here -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Add Filter Modal -->
+  <div class="modal fade" id="addFilterModal" tabindex="-1" aria-labelledby="addFilterModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addFilterModalLabel">Add Filter Condition</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="filter-form">
+            <div class="row mb-3">
+              <div class="col-md-4">
+                <label for="filter-field" class="form-label">Field</label>
+                <select class="form-select" id="filter-field" required>
+                  <option value="">Select a field...</option>
+                  {% for field in available_fields %}
+                    <optgroup label="{{ field.group|default:'General' }}">
+                      <option value="{{ field.id }}" data-field-type="{{ field.field_type.django_field_type }}">
+                        {{ field.display_name }}
+                      </option>
+                    </optgroup>
+                  {% endfor %}
+                </select>
+              </div>
+              
+              <div class="col-md-4">
+                <label for="filter-type" class="form-label">Condition</label>
+                <select class="form-select" id="filter-type" required disabled>
+                  <option value="">Select a field first...</option>
+                </select>
+              </div>
+              
+              <div class="col-md-4">
+                <label for="filter-value" class="form-label">Value</label>
+                <div id="filter-value-container">
+                  <input type="text" class="form-control" id="filter-value" placeholder="Enter value...">
+                </div>
+              </div>
+            </div>
+            
+            <div class="form-check mb-3">
+              <input class="form-check-input" type="checkbox" id="prompt-at-runtime">
+              <label class="form-check-label" for="prompt-at-runtime">
+                Prompt for value at runtime
+              </label>
+            </div>
+            
+            <div class="mb-3" id="prompt-text-container" style="display: none;">
+              <label for="prompt-text" class="form-label">Prompt Text</label>
+              <input type="text" class="form-control" id="prompt-text" placeholder="Enter text to display to the user...">
+              <div class="form-text">This text will be shown to the user when running the report.</div>
+            </div>
+            
+            <div class="mb-3">
+              <label for="filter-operator" class="form-label">Join with other filters using</label>
+              <select class="form-select" id="filter-operator">
+                <option value="and">AND</option>
+                <option value="or">OR</option>
+              </select>
+              <div class="form-text">How this filter will be combined with other filters.</div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" id="save-filter">Add Filter</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+  $(document).ready(function() {
+    // Initialize filter conditions from existing data
+    {% if filter_conditions %}
+      const initialFilters = {{ filter_conditions|safe }};
+      renderFilterConditions(initialFilters);
+    {% endif %}
+    
+    // Handle add filter button
+    $('#add-filter').click(function() {
+      // Reset form
+      $('#filter-form').trigger("reset");
+      $('#filter-field').val('');
+      $('#filter-type').empty().append('<option value="">Select a field first...</option>').prop('disabled', true);
+      $('#filter-value-container').html('<input type="text" class="form-control" id="filter-value" placeholder="Enter value...">');
+      $('#prompt-text-container').hide();
+      
+      // Show modal
+      const modal = new bootstrap.Modal(document.getElementById('addFilterModal'));
+      modal.show();
+    });
+    
+    // Handle field selection change
+    $('#filter-field').change(function() {
+      const fieldId = $(this).val();
+      if (!fieldId) {
+        $('#filter-type').empty().append('<option value="">Select a field first...</option>').prop('disabled', true);
+        return;
+      }
+      
+      // Load filter types for this field via AJAX
+      $.ajax({
+        url: "{% url 'reporting:ajax_field_filter_types' %}",
+        data: { field_id: fieldId },
+        dataType: 'json',
+        success: function(data) {
+          if (data.success) {
+            // Populate filter type dropdown
+            const filterType = $('#filter-type');
+            filterType.empty().prop('disabled', false);
+            filterType.append('<option value="">Select a condition...</option>');
+            
+            // Add the filter types
+            $.each(data.filter_types, function(i, type) {
+              if (data.available_filter_type_ids.includes(type[0])) {
+                filterType.append(`<option value="${type[0]}">${type[1]}</option>`);
+              }
+            });
+            
+            // Store field type in data attribute
+            filterType.data('field-type', data.field_type);
+            
+            // Reset the value field
+            updateValueField(data.field_type, filterType.val());
+          }
+        }
+      });
+    });
+    
+    // Handle filter type change
+    $('#filter-type').change(function() {
+      const filterType = $(this).val();
+      const fieldType = $(this).data('field-type');
+      
+      updateValueField(fieldType, filterType);
+    });
+    
+    // Handle prompt at runtime checkbox
+    $('#prompt-at-runtime').change(function() {
+      if ($(this).is(':checked')) {
+        $('#prompt-text-container').show();
+      } else {
+        $('#prompt-text-container').hide();
+      }
+    });
+    
+    // Handle save filter button
+    $('#save-filter').click(function() {
+      const fieldId = $('#filter-field').val();
+      const fieldText = $('#filter-field option:selected').text();
+      const filterTypeId = $('#filter-type').val();
+      const filterTypeText = $('#filter-type option:selected').text();
+      
+      if (!fieldId || !filterTypeId) {
+        alert('Please select both a field and a condition.');
+        return;
+      }
+      
+      // Get the filter value
+      let filterValue;
+      const valueField = $('#filter-value-container').find('input, select').first();
+      
+      if (valueField.is('select') && valueField.prop('multiple')) {
+        // Handle multiple select
+        filterValue = Array.from(valueField.val() || []);
+      } else {
+        // Handle regular input or select
+        filterValue = valueField.val();
+      }
+      
+      // Handle boolean special case
+      if (valueField.attr('type') === 'checkbox') {
+        filterValue = valueField.is(':checked');
+      }
+      
+      // Create filter object
+      const filter = {
+        id: Date.now(), // Temporary ID for new filter
+        field_id: fieldId,
+        field_text: fieldText,
+        filter_type_id: filterTypeId,
+        filter_type_text: filterTypeText,
+        value: filterValue,
+        prompt_at_runtime: $('#prompt-at-runtime').is(':checked'),
+        prompt_text: $('#prompt-text').val(),
+        operator: $('#filter-operator').val()
+      };
+      
+      // Add to filter conditions
+      const currentFilters = getFilterConditions();
+      currentFilters.push(filter);
+      updateFilterConditions(currentFilters);
+      
+      // Close modal
+      bootstrap.Modal.getInstance(document.getElementById('addFilterModal')).hide();
+    });
+    
+    // Handle clear filters button
+    $('#clear-filters').click(function() {
+      if (confirm('Are you sure you want to clear all filter conditions?')) {
+        updateFilterConditions([]);
+      }
+    });
+    
+    // Handle remove filter button (delegated event)
+    $(document).on('click', '.remove-filter', function() {
+      const filterId = $(this).data('filter-id');
+      const filters = getFilterConditions();
+      
+      // Remove this filter
+      const updatedFilters = filters.filter(f => f.id.toString() !== filterId.toString());
+      updateFilterConditions(updatedFilters);
+    });
+    
+    // Function to get current filter conditions from the hidden field
+    function getFilterConditions() {
+      const filterJson = $('#id_filter_conditions').val();
+      if (!filterJson) {
+        return [];
+      }
+      
+      try {
+        return JSON.parse(filterJson);
+      } catch (e) {
+        return [];
+      }
+    }
+    
+    // Function to update filter conditions in the hidden field and UI
+    function updateFilterConditions(filters) {
+      // Update hidden field
+      $('#id_filter_conditions').val(JSON.stringify(filters));
+      
+      // Update UI
+      renderFilterConditions(filters);
+    }
+    
+    // Function to render filter conditions in the UI
+    function renderFilterConditions(filters) {
+      const container = $('#filter-container');
+      container.empty();
+      
+      if (filters.length === 0) {
+        $('#no-filters').show();
+        container.hide();
+        return;
+      }
+      
+      $('#no-filters').hide();
+      container.show();
+      
+      // Render each filter
+      filters.forEach((filter, index) => {
+        const filterHtml = `
+          <div class="filter-row" data-filter-id="${filter.id}">
+            <div class="d-flex justify-content-between align-items-center">
+              <div class="filter-expression">
+                <strong>${filter.field_text}</strong> 
+                <span class="text-muted">${filter.filter_type_text}</span>
+                ${renderFilterValue(filter)}
+                ${index > 0 ? `<span class="badge bg-secondary ms-2">${filter.operator.toUpperCase()}</span>` : ''}
+                ${filter.prompt_at_runtime ? `<span class="badge bg-info ms-2">Prompt: "${filter.prompt_text || 'Enter value'}"</span>` : ''}
+              </div>
+              <div class="filter-actions">
+                <button type="button" class="btn btn-sm btn-outline-danger remove-filter" data-filter-id="${filter.id}">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        container.append(filterHtml);
+      });
+    }
+    
+    // Function to render filter value in a user-friendly format
+    function renderFilterValue(filter) {
+      if (filter.prompt_at_runtime) {
+        return `<span class="filter-value badge bg-warning">Prompt at runtime</span>`;
+      }
+      
+      if (filter.filter_type_text.toLowerCase().includes('is null')) {
+        return '';
+      }
+      
+      if (Array.isArray(filter.value)) {
+        return `<span class="filter-value">[${filter.value.join(', ')}]</span>`;
+      }
+      
+      return `<span class="filter-value">${filter.value}</span>`;
+    }
+    
+    // Function to update the value field based on field type and filter type
+    function updateValueField(fieldType, filterType) {
+      if (!filterType) {
+        // Reset to text input if no filter type is selected
+        $('#filter-value-container').html('<input type="text" class="form-control" id="filter-value" placeholder="Enter value...">');
+        return;
+      }
+      
+      // Get appropriate widget for this field and filter type
+      $.ajax({
+        url: "{% url 'reporting:ajax_filter_widget' %}",
+        data: {
+          field_id: $('#filter-field').val(),
+          filter_type: filterType
+        },
+        dataType: 'json',
+        success: function(data) {
+          if (data.success) {
+            const widgetType = data.widget_type;
+            let widget = '';
+            
+            // Create appropriate widget based on type
+            switch (widgetType) {
+              case 'boolean':
+                widget = `
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="filter-value">
+                    <label class="form-check-label" for="filter-value">Yes</label>
+                  </div>
+                `;
+                break;
+                
+              case 'select':
+                widget = '<select class="form-select" id="filter-value">';
+                data.choices.forEach(choice => {
+                  widget += `<option value="${choice.value}">${choice.label}</option>`;
+                });
+                widget += '</select>';
+                break;
+                
+              case 'multi_select':
+                widget = '<select class="form-select" id="filter-value" multiple>';
+                data.choices.forEach(choice => {
+                  widget += `<option value="${choice.value}">${choice.label}</option>`;
+                });
+                widget += '</select>';
+                break;
+                
+              case 'date':
+                widget = '<input type="date" class="form-control" id="filter-value">';
+                break;
+                
+              case 'date_range':
+                widget = `
+                  <div class="input-group">
+                    <input type="date" class="form-control" id="filter-value-from" placeholder="From">
+                    <span class="input-group-text">to</span>
+                    <input type="date" class="form-control" id="filter-value-to" placeholder="To">
+                  </div>
+                `;
+                break;
+                
+              case 'number':
+                widget = '<input type="number" class="form-control" id="filter-value">';
+                break;
+                
+              case 'number_range':
+                widget = `
+                  <div class="input-group">
+                    <input type="number" class="form-control" id="filter-value-from" placeholder="From">
+                    <span class="input-group-text">to</span>
+                    <input type="number" class="form-control" id="filter-value-to" placeholder="To">
+                  </div>
+                `;
+                break;
+                
+              case 'text_list':
+                widget = '<textarea class="form-control" id="filter-value" placeholder="Enter values separated by commas"></textarea>';
+                break;
+                
+              default:
+                widget = '<input type="text" class="form-control" id="filter-value" placeholder="Enter value...">';
+            }
+            
+            $('#filter-value-container').html(widget);
+          }
+        }
+      });
+    }
+  });
+</script>
+{% endblock %}

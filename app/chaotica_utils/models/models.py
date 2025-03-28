@@ -1,27 +1,15 @@
 from django.db import models
-from django.contrib.auth.models import Permission
 import uuid
 import os
 from ..managers import SystemNoteManager
-from ..enums import GlobalRoles, LeaveRequestTypes, NotificationTypes
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.conf import settings
-from django.urls import reverse
 from django.contrib.auth import get_user_model
 from simple_history.models import HistoricalRecords
-import django.contrib.auth
-from guardian.shortcuts import assign_perm
-from django.utils import timezone
-from datetime import timedelta, date
+from datetime import date
 from django.db.models.functions import Lower
 from django_countries.fields import CountryField
-from ..tasks import task_send_notifications
-from jobtracker.enums import DefaultTimeSlotTypes
-from business_duration import businessDuration
-from constance import config
-from django.template.loader import render_to_string
-import django.core.mail
 
 
 def get_sentinel_user():
@@ -65,52 +53,6 @@ class Note(models.Model):
         verbose_name = "Note"
         verbose_name_plural = "Notes"
         ordering = ["-create_date"]
-
-
-class Notification(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    timestamp = models.DateTimeField(auto_now_add=True)
-    title = models.CharField(max_length=255, default="")
-    icon = models.CharField(max_length=255, blank=True, null=True, default="")
-    message = models.TextField(default="")
-    link = models.URLField(blank=True, null=True)
-    is_read = models.BooleanField(default=False)
-    email_template = models.CharField(max_length=255, default="")
-    is_emailed = models.BooleanField(default=False)
-
-    class Meta:
-        ordering = ["-timestamp"]
-
-    def send_email(self, resend=False):
-        self.refresh_from_db()  # Make sure we're using the latest info!
-
-        if (
-            self.user.is_active  # User must be active
-            and config.EMAIL_ENABLED  # Emails must be enabled
-            and (
-                self.is_emailed == False or resend == True
-            )  # Either we've not already sent it or we're resending it
-        ):
-            context = {}
-            context["SITE_DOMAIN"] = settings.SITE_DOMAIN
-            context["SITE_PROTO"] = settings.SITE_PROTO
-            context["title"] = self.title
-            context["message"] = self.message
-            context["icon"] = self.icon
-            context["action_link"] = self.link
-            context["user"] = self.user
-            msg_html = render_to_string(self.email_template, context)
-            django.core.mail.send_mail(
-                subject=self.title,
-                message=self.message,
-                from_email=None,
-                recipient_list=[self.user.email_address()],
-                html_message=msg_html,
-            )
-
-        # Mark it as sent regardless - don't want to create a backlog
-        self.is_emailed = True
-        self.save()
 
 
 def get_media_profile_file_path(_, filename):
