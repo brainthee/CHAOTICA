@@ -359,6 +359,7 @@ class GlobalRoles:
 
 # These permissions are applied against specific units. Dependant jobs will use these permissions too
 class UnitRoles:
+    UNKNOWN = 0
     PENDING = 1
     CONSULTANT = 2
     SALES = 3
