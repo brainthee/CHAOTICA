@@ -667,13 +667,13 @@ class EditProfileForm(forms.ModelForm):
                 main, sub = profile_image.content_type.split("/")
                 if not (main == "image" and sub in ["jpeg", "pjpeg", "gif", "png"]):
                     self.add_error(
-                        "profile_image", "Please use a JPEG, " "GIF or PNG image."
+                        "profile_image", "Please use a JPEG, GIF or PNG image."
                     )
 
                 # validate file size
-                if len(profile_image) > (1024 * 1024):
+                if len(profile_image) > (1024 * 1024 *2):
                     self.add_error(
-                        "profile_image", "Avatar file size may not exceed 1M."
+                        "profile_image", "Avatar file size may not exceed 2M."
                     )
 
             except AttributeError:

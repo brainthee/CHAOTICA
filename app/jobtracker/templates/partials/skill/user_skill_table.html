@@ -18,13 +18,13 @@
       </tr>
     </thead>
     <tbody class="list" id="purchasers-sellers-body">
-     {% for user in skill.get_users %}
+     {% for u in skill.get_users %}
         <tr class="hover-actions-trigger btn-reveal-trigger position-static">
             <td class="align-middle white-space-nowrap fw-semi-bold text-1100 ps-4 py-0">
-                {% include 'partials/users/user_table_display.html' with u=user.user %}
+                {% include 'partials/users/user_table_display.html' with u=u.user %}
             </td>
             <td class="align-middle white-space-nowrap ps-4 fw-semi-bold text-900 py-0">
-                {{ user.get_rating_display }}
+                {{ u.get_rating_display }}
             </td>
             {% comment %} <td class="align-middle white-space-nowrap fw-bold text-900 py-0">
                 {% if user.interested_in_improving_skill %}
