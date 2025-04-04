@@ -3,17 +3,10 @@
 
 {% block report_content %}
 <div class="container-fluid">
-  <div class="row mb-4">
-    <div class="col">
-      <div class="jumbotron bg-light p-4 rounded">
-        <h1 class="display-5">Report Builder</h1>
-        <p class="lead">Create, manage, and run custom reports for your data.</p>
-        <hr class="my-4">
-        <p>The report builder allows you to easily create reports by selecting data areas, fields, filters, sort orders, and presentation formats.</p>
-        <a class="btn btn-primary btn-lg" href="{% url 'reporting:wizard_start' %}" role="button">
-          <i class="fas fa-magic me-2"></i> Create New Report
-        </a>
-      </div>
+  <div class="row gy-3 mb-6 justify-content-between">
+    <div class="col col-auto">
+      <h2 class="mb-2 text-body-emphasis">Reporting</h2>
+      <h5 class="text-body-tertiary fw-semibold">The report builder allows you to easily create reports by selecting data areas, fields, filters, sort orders, and presentation formats.</h5>
     </div>
   </div>
   
@@ -21,7 +14,7 @@
     <!-- Recent Reports -->
     <div class="col-md-4">
       <div class="card mb-4">
-        <div class="card-header bg-primary text-white">
+        <div class="card-header">
           <h5 class="mb-0">Your Recent Reports</h5>
         </div>
         <div class="card-body">
@@ -38,11 +31,11 @@
               {% endfor %}
             </div>
             <div class="mt-3">
-              <a href="{% url 'reporting:report_list' %}?view=my" class="btn btn-outline-secondary btn-sm">View All Your Reports</a>
+              <a href="{% url 'reporting:report_list' %}?view=my" class="btn btn-phoenix-secondary btn-sm">View All Your Reports</a>
             </div>
           {% else %}
             <p class="text-muted">You haven't created any reports yet.</p>
-            <a href="{% url 'reporting:wizard_start' %}" class="btn btn-primary">Create Your First Report</a>
+            <a href="{% url 'reporting:wizard_start' %}" class="btn btn-phoenix-primary">Create Your First Report</a>
           {% endif %}
         </div>
       </div>
@@ -51,7 +44,7 @@
     <!-- Favorite Reports -->
     <div class="col-md-4">
       <div class="card mb-4">
-        <div class="card-header bg-warning text-dark">
+        <div class="card-header">
           <h5 class="mb-0">Your Favorites</h5>
         </div>
         <div class="card-body">
@@ -68,11 +61,11 @@
               {% endfor %}
             </div>
             <div class="mt-3">
-              <a href="{% url 'reporting:report_list' %}?view=favorites" class="btn btn-outline-secondary btn-sm">View All Favorites</a>
+              <a href="{% url 'reporting:report_list' %}?view=favorites" class="btn btn-phoenix-secondary btn-sm">View All Favorites</a>
             </div>
           {% else %}
             <p class="text-muted">You don't have any favorite reports yet.</p>
-            <a href="{% url 'reporting:report_list' %}" class="btn btn-warning">Browse Reports</a>
+            <a href="{% url 'reporting:report_list' %}" class="btn btn-phoenix-secondary">Browse Reports</a>
           {% endif %}
         </div>
       </div>
@@ -81,7 +74,7 @@
     <!-- Public Reports -->
     <div class="col-md-4">
       <div class="card mb-4">
-        <div class="card-header bg-success text-white">
+        <div class="card-header">
           <h5 class="mb-0">Public Reports</h5>
         </div>
         <div class="card-body">
@@ -98,7 +91,7 @@
               {% endfor %}
             </div>
             <div class="mt-3">
-              <a href="{% url 'reporting:report_list' %}?view=public" class="btn btn-outline-secondary btn-sm">View All Public Reports</a>
+              <a href="{% url 'reporting:report_list' %}?view=public" class="btn btn-phoenix-secondary btn-sm">View All Public Reports</a>
             </div>
           {% else %}
             <p class="text-muted">There are no public reports available.</p>
@@ -111,7 +104,7 @@
   <div class="row">
     <div class="col-12">
       <div class="card mb-4">
-        <div class="card-header bg-info text-white">
+        <div class="card-header">
           <h5 class="mb-0">Quick Guide</h5>
         </div>
         <div class="card-body">

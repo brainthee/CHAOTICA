@@ -1,6 +1,11 @@
 {% extends "reporting/base.html" %}
 {% load static %}
 
+{% block breadcrumbItem %}
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-body-emphasis" href="{% url 'reporting:index' %}">Reporting</a></li>
+<li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">Report Wizard</li>
+{% endblock %}
+
 {% block extra_head %}
 {{ block.super }}
 <link rel="stylesheet" href="{% static 'reporting/css/wizard.css' %}">
@@ -16,7 +21,7 @@
           <form action="{% url 'reporting:wizard_cancel' %}" method="post" id="cancel-wizard-form" class="d-inline">
             {% csrf_token %}
             <button type="submit" class="btn btn-outline-light btn-sm" onclick="return confirm('Are you sure you want to cancel? All unsaved changes will be lost.')">
-              <i class="fas fa-times"></i> Cancel
+              <i class="fas fs-9 fa-times"></i> Cancel
             </button>
           </form>
         </div>
@@ -41,8 +46,7 @@
           <div class="wizard-step {% if wizard_step == 'data_area' %}active{% elif wizard_step %}completed{% endif %}">
             <div class="step-icon">
               <a href="{% if wizard_step != 'data_area' %}{% url 'reporting:wizard_select_data_area' %}{% else %}#{% endif %}" class="{% if wizard_step == 'data_area' %}active{% endif %}">
-                <span class="step-number">1</span>
-                <i class="fas fa-database"></i>
+                <i class="fas fs-9 fa-database"></i>
               </a>
             </div>
             <div class="step-label">Data Area</div>
@@ -50,8 +54,7 @@
           <div class="wizard-step {% if wizard_step == 'fields' %}active{% elif wizard_step and wizard_step != 'data_area' %}completed{% endif %}">
             <div class="step-icon">
               <a href="{% if wizard_step != 'fields' and wizard_step != 'data_area' %}{% url 'reporting:wizard_select_fields' %}{% else %}#{% endif %}" class="{% if wizard_step == 'fields' %}active{% endif %}">
-                <span class="step-number">2</span>
-                <i class="fas fa-columns"></i>
+                <i class="fas fs-9 fa-columns"></i>
               </a>
             </div>
             <div class="step-label">Fields</div>
@@ -59,8 +62,7 @@
           <div class="wizard-step {% if wizard_step == 'filters' %}active{% elif wizard_step and wizard_step != 'data_area' and wizard_step != 'fields' %}completed{% endif %}">
             <div class="step-icon">
               <a href="{% if wizard_step != 'filters' and wizard_step != 'data_area' and wizard_step != 'fields' %}{% url 'reporting:wizard_define_filters' %}{% else %}#{% endif %}" class="{% if wizard_step == 'filters' %}active{% endif %}">
-                <span class="step-number">3</span>
-                <i class="fas fa-filter"></i>
+                <i class="fas fs-9 fa-filter"></i>
               </a>
             </div>
             <div class="step-label">Filters</div>
@@ -68,8 +70,7 @@
           <div class="wizard-step {% if wizard_step == 'sorts' %}active{% elif wizard_step and wizard_step != 'data_area' and wizard_step != 'fields' and wizard_step != 'filters' %}completed{% endif %}">
             <div class="step-icon">
               <a href="{% if wizard_step != 'sorts' and wizard_step != 'data_area' and wizard_step != 'fields' and wizard_step != 'filters' %}{% url 'reporting:wizard_define_sort' %}{% else %}#{% endif %}" class="{% if wizard_step == 'sorts' %}active{% endif %}">
-                <span class="step-number">4</span>
-                <i class="fas fa-sort"></i>
+                <i class="fas fs-9 fa-sort"></i>
               </a>
             </div>
             <div class="step-label">Sort</div>
@@ -77,8 +78,7 @@
           <div class="wizard-step {% if wizard_step == 'presentation' %}active{% elif wizard_step and wizard_step != 'data_area' and wizard_step != 'fields' and wizard_step != 'filters' and wizard_step != 'sorts' %}completed{% endif %}">
             <div class="step-icon">
               <a href="{% if wizard_step != 'presentation' and wizard_step != 'data_area' and wizard_step != 'fields' and wizard_step != 'filters' and wizard_step != 'sorts' %}{% url 'reporting:wizard_define_presentation' %}{% else %}#{% endif %}" class="{% if wizard_step == 'presentation' %}active{% endif %}">
-                <span class="step-number">5</span>
-                <i class="fas fa-file-export"></i>
+                <i class="fas fs-9 fa-file-export"></i>
               </a>
             </div>
             <div class="step-label">Presentation</div>
@@ -86,8 +86,7 @@
           <div class="wizard-step {% if wizard_step == 'preview' %}active{% endif %}">
             <div class="step-icon">
               <a href="{% if wizard_step == 'preview' %}#{% endif %}" class="{% if wizard_step == 'preview' %}active{% endif %}">
-                <span class="step-number">6</span>
-                <i class="fas fa-eye"></i>
+                <i class="fas fs-9 fa-eye"></i>
               </a>
             </div>
             <div class="step-label">Preview</div>
@@ -103,7 +102,7 @@
         <div>
           {% if wizard_step != 'data_area' %}
           <button type="button" id="prev-step" class="btn btn-outline-secondary" onclick="goBack()">
-            <i class="fas fa-arrow-left"></i> Back
+            <i class="fas fs-9 fa-arrow-left"></i> Back
           </button>
           {% endif %}
         </div>
@@ -111,7 +110,7 @@
         <div>
           {% block wizard_navigation_buttons %}
           <button type="submit" form="wizard-form" class="btn btn-primary">
-            Next <i class="fas fa-arrow-right"></i>
+            Next <i class="fas fs-9 fa-arrow-right"></i>
           </button>
           {% endblock %}
         </div>

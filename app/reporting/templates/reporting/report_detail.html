@@ -16,6 +16,35 @@
           <i class="fas fa-edit me-1"></i> Edit
         </a>
       {% endif %}
+                  
+      {% if report.last_run_at %}
+      <div class="btn-group">
+        <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+          <i class="fas fa-download me-1"></i> Download As
+        </button>
+        <ul class="dropdown-menu w-100">
+          <li>
+            <a class="dropdown-item" href="{% url 'reporting:run_report' uuid=report.uuid %}?format=excel">
+              <i class="fas fa-file-excel text-success me-1"></i> Excel Spreadsheet
+            </a>
+          </li>
+          <li>
+            <a class="dropdown-item" href="{% url 'reporting:run_report' uuid=report.uuid %}?format=pdf">
+              <i class="fas fa-file-pdf text-danger me-1"></i> PDF Document
+            </a>
+          </li>
+          <li><a class="dropdown-item" href="{% url 'reporting:run_report' uuid=report.uuid %}?format=csv">
+              <i class="fas fa-file-csv text-info me-1"></i> CSV File
+            </a>
+          </li>
+          <li>
+            <a class="dropdown-item" href="{% url 'reporting:run_report' uuid=report.uuid %}?format=html">
+              <i class="fas fa-file-code text-primary me-1"></i> HTML Page
+            </a>
+          </li>
+        </ul>
+      </div>
+    {% endif %}
       
       <a href="{% url 'reporting:toggle_favorite' uuid=report.uuid %}" 
          class="btn {% if is_favorite %}btn-warning{% else %}btn-outline-warning{% endif %}" 
@@ -246,55 +275,6 @@
           {% else %}
             <p class="text-muted mb-0">No sort order defined for this report.</p>
           {% endif %}
-        </div>
-      </div>
-      
-      <div class="card mb-4">
-        <div class="card-header">
-          <h5 class="mb-0">Quick Actions</h5>
-        </div>
-        <div class="card-body">
-          <div class="d-grid gap-2">
-            <a href="{% url 'reporting:run_report' uuid=report.uuid %}" class="btn btn-primary">
-              <i class="fas fa-play me-1"></i> Run Report
-            </a>
-            
-            {% if report.last_run_at %}
-              <div class="btn-group">
-                <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                  <i class="fas fa-download me-1"></i> Download As
-                </button>
-                <ul class="dropdown-menu w-100">
-                  <li>
-                    <a class="dropdown-item" href="{% url 'reporting:run_report' uuid=report.uuid %}?format=excel">
-                      <i class="fas fa-file-excel text-success me-1"></i> Excel Spreadsheet
-                    </a>
-                  </li>
-                  <li>
-                    <a class="dropdown-item" href="{% url 'reporting:run_report' uuid=report.uuid %}?format=pdf">
-                      <i class="fas fa-file-pdf text-danger me-1"></i> PDF Document
-                    </a>
-                  </li>
-                  <li>
-                    <a class="dropdown-item" href="{% url 'reporting:run_report' uuid=report.uuid %}?format=csv">
-                      <i class="fas fa-file-csv text-info me-1"></i> CSV File
-                    </a>
-                  </li>
-                  <li>
-                    <a class="dropdown-item" href="{% url 'reporting:run_report' uuid=report.uuid %}?format=html">
-                      <i class="fas fa-file-code text-primary me-1"></i> HTML Page
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            {% endif %}
-            
-            {% if can_edit %}
-              <a href="{% url 'reporting:wizard_edit' report_uuid=report.uuid %}" class="btn btn-outline-secondary">
-                <i class="fas fa-edit me-1"></i> Edit Report
-              </a>
-            {% endif %}
-          </div>
         </div>
       </div>
     </div>
