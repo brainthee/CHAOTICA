@@ -1,76 +1,138 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
+{% load menu %}
 {% load static %}
 
-{% block title %}Report Builder{% endblock %}
+{% block pageTitle %}
+  Reporting
+{% endblock %}
+{% block head_title %}
+  Reporting
+{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'reporting/css/reporting.css' %}">
+  <link rel="stylesheet" href="{% static 'reporting/css/reporting.css' %}" />
+{% endblock %}
+
+{% block breadcrumbItem %}
+  <li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">Reporting</li>
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid mt-4">
-  <div class="row">
-    <!-- Sidebar Navigation -->
-    <div class="col-lg-2 sidebar">
-      <div class="card bg-light">
-        <div class="card-header bg-primary text-white">
-          <h5 class="mb-0">Report Builder</h5>
-        </div>
-        <div class="card-body">
-          <div class="list-group">
-            <a href="{% url 'reporting:index' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'index' %}active{% endif %}">
-              <i class="fas fa-home fa-fw me-2"></i> Home
-            </a>
-            <a href="{% url 'reporting:report_list' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'report_list' %}active{% endif %}">
-              <i class="fas fa-list fa-fw me-2"></i> All Reports
-            </a>
-            <a href="{% url 'reporting:report_list' %}?view=my" class="list-group-item list-group-item-action {% if request.GET.view == 'my' %}active{% endif %}">
-              <i class="fas fa-user fa-fw me-2"></i> My Reports
-            </a>
-            <a href="{% url 'reporting:report_list' %}?view=favorites" class="list-group-item list-group-item-action {% if request.GET.view == 'favorites' %}active{% endif %}">
-              <i class="fas fa-star fa-fw me-2"></i> Favorites
-            </a>
-            <a href="{% url 'reporting:wizard_start' %}" class="list-group-item list-group-item-action {% if 'wizard' in request.resolver_match.url_name %}active{% endif %}">
-              <i class="fas fa-magic fa-fw me-2"></i> New Report
-            </a>
+
+<div class="alert alert-phoenix-warning m-4" role="alert">
+  Welcome to CHAOTICA's Reporting System! This system should be considered under active development and may contain bugs or limitations for now.
+</div>
+
+  <div class="container-fluid mt-4">
+    <div class="row">
+      <!-- Sidebar Navigation -->
+
+      <div class="email-sidebar email-sidebar-width bg-body phoenix-offcanvas phoenix-offcanvas-fixed" id="emailSidebarColumn" data-breakpoint="lg">
+        <div class="email-content scrollbar-overlay" data-simplebar="init">
+          <div class="simplebar-wrapper" style="margin: 0px;">
+            <div class="simplebar-height-auto-observer-wrapper">
+              <div class="simplebar-height-auto-observer"></div>
+            </div>
+            <div class="simplebar-mask">
+              <div class="simplebar-offset" style="right: 0px; bottom: 0px;">
+                <div class="simplebar-content-wrapper" tabindex="0" role="region" aria-label="scrollable content" style="height: 100%; overflow: hidden;">
+                  <div class="simplebar-content" style="padding: 0px;">
+                    <ul class="nav flex-column border-top border-translucent fs-9 vertical-nav mb-4">
+                      <li class="nav-item">
+                        <a class="nav-link fw-normal py-2 ps-0 pe-3 border-bottom border-translucent text-start outline-none  {% if request.resolver_match.url_name == 'index' %}active{% endif %}" aria-current="page" href="{% url 'reporting:index' %}">
+                          <div class="d-flex align-items-center">
+                            <span class="fas fa-home fa-fw me-2"></span><span class="flex-1">Home</span>
+                          </div>
+                        </a>
+                      </li>
+
+                      <li class="nav-item">
+                        <a class="nav-link fw-normal py-2 ps-0 pe-3 border-bottom border-translucent text-start outline-none  {% if request.resolver_match.url_name == 'report_list' %}active{% endif %}" aria-current="page" href="{% url 'reporting:report_list' %}">
+                          <div class="d-flex align-items-center">
+                            <span class="fas fa-list fa-fw me-2"></span><span class="flex-1">All Reports</span>
+                          </div>
+                        </a>
+                      </li>
+
+                      <li class="nav-item">
+                        <a class="nav-link fw-normal py-2 ps-0 pe-3 border-bottom border-translucent text-start outline-none  {% if request.GET.view == 'my' %}active{% endif %}" aria-current="page" href="{% url 'reporting:report_list' %}?view=my">
+                          <div class="d-flex align-items-center">
+                            <span class="fas fa-user fa-fw me-2"></span><span class="flex-1">My Reports</span>
+                          </div>
+                        </a>
+                      </li>
+
+                      <li class="nav-item">
+                        <a class="nav-link fw-normal py-2 ps-0 pe-3 border-bottom border-translucent text-start outline-none  {% if request.GET.view == 'favorites' %}active{% endif %}" aria-current="page" href="{% url 'reporting:report_list' %}?view=favorites">
+                          <div class="d-flex align-items-center">
+                            <span class="fas fa-star fa-fw me-2"></span><span class="flex-1">Favorites</span>
+                          </div>
+                        </a>
+                      </li>
+
+                      <li class="nav-item">
+                        <a class="nav-link fw-normal py-2 ps-0 pe-3 border-bottom border-translucent text-start text-success outline-none {% if 'wizard' in request.resolver_match.url_name %}active{% endif %}" aria-current="page" href="{% url 'reporting:wizard_start' %}">
+                          <div class="d-flex align-items-center">
+                            <span class="fas fa-magic fa-fw me-2"></span><span class="flex-1">New Report</span>
+                          </div>
+                        </a>
+                      </li>
+
+                    </ul>
+
+                    {% if categories %}
+                      <div class="d-flex justify-content-between">
+                        <p class="text-uppercase fs-10 text-body-tertiary text-opacity-85 mb-2 fw-bold">Categories</p>
+                      </div>
+                      <ul class="nav flex-column border-top border-translucent fs-9 vertical-nav mb-4">
+                        {% for category in categories %}
+                          <li class="nav-item">
+                            <a class="nav-link fw-normal py-2 ps-0 pe-3 border-bottom border-translucenttext-start outline-none {% if request.GET.category|stringformat:'s' == category.id|stringformat:'s' %}active{% endif %}" aria-current="page" href="{% url 'reporting:report_list' %}?category={{ category.id }}">
+                              <div class="d-flex align-items-center">
+                                <i class="fas fa-folder fa-fw me-2"></i>
+                                <span class="flex-1">{{ category.name }}</span>
+                              </div>
+                            </a>
+                          </li>
+                        {% endfor %}
+                      </ul>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="simplebar-placeholder" style="width: 220px; height: 590px;"></div>
           </div>
-          
-          {% if categories %}
-          <hr>
-          <h6 class="sidebar-heading px-3 mt-4 mb-2 text-muted">
-            <span>Categories</span>
-          </h6>
-          <div class="list-group">
-            {% for category in categories %}
-            <a href="{% url 'reporting:report_list' %}?category={{ category.id }}" class="list-group-item list-group-item-action {% if request.GET.category|stringformat:'s' == category.id|stringformat:'s' %}active{% endif %}">
-              <i class="fas fa-folder fa-fw me-2"></i> {{ category.name }}
-            </a>
+          <div class="simplebar-track simplebar-horizontal" style="visibility: hidden;">
+            <div class="simplebar-scrollbar" style="width: 0px; display: none;"></div>
+          </div>
+          <div class="simplebar-track simplebar-vertical" style="visibility: hidden;">
+            <div class="simplebar-scrollbar" style="height: 0px; display: none;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Content -->
+      <div class="col-12 col-xxl-10 px-0 border-start-xxl bg-body">
+        {% if messages %}
+          <div class="messages m-4">
+            {% for message in messages %}
+              <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
             {% endfor %}
           </div>
-          {% endif %}
-        </div>
+        {% endif %}
+
+        {% block report_content %}
+
+        {% endblock %}
       </div>
-    </div>
-    
-    <!-- Main Content -->
-    <div class="col-lg-10">
-      {% if messages %}
-      <div class="messages mb-4">
-        {% for message in messages %}
-        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-          {{ message }}
-          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-        {% endfor %}
-      </div>
-      {% endif %}
-      
-      {% block report_content %}{% endblock %}
     </div>
   </div>
-</div>
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'reporting/js/reporting.js' %}"></script>
+  <script src="{% static 'reporting/js/reporting.js' %}"></script>
 {% endblock %}
