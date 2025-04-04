@@ -55,12 +55,14 @@
                   <span class="text-sm">Skills</span>
                 </a>
              </li>
+             {% if usr == request.user %}
              <li class="nav-item pt-2">
                 <a class="nav-link text-body-emphasis d-flex" data-scroll="" href="#feeds">
                   <span class="far fa-calendar-plus me-sm-2 fs-7"></span>
                   <span class="text-sm">Feeds</span>
                 </a>
              </li>
+             {% endif %}
           </ul>
        </div>
     </div>
@@ -120,7 +122,7 @@
                   </thead>
                   <tbody>
                      {% for skill in category.list %}
-                     {% get_user_skill user skill as userSkill %}
+                     {% get_user_skill usr skill as userSkill %}
                      <tr>
                         <td class="ps-1">
                            <div class="my-auto">
@@ -175,8 +177,8 @@
          </form>
       </div>
 
-
-       <div class="card mt-4" id="feeds">
+      {% if usr == request.user %}
+      <div class="card mt-4" id="feeds">
          <div class="card-header d-flex">
             <h5>Feeds</h5>
          </div>
@@ -216,6 +218,7 @@
             </div>
          </div>
       </div>
+      {% endif %}
 
     </div>
  </div>
