@@ -133,3 +133,71 @@ def task_send_notifications(notification, specific_users=None):
             email_template=notification.email_template or "",
             should_email=user in email_recipients,
         )
+
+def auto_subscribe_users(notification_type, entity):
+    """
+    Automatically subscribe users based on defined rules for an entity.
+    
+    Args:
+        notification_type: The type of notification
+        entity: The entity (job, phase, etc.) the notification is about
+    """
+    from notifications.models import SubscriptionRule, NotificationSubscription
+    
+    # Get applicable rules for this notification type
+    rules = SubscriptionRule.objects.filter(
+        notification_type=notification_type,
+        is_active=True
+    ).prefetch_related(
+        'globalrolecriteria_criteria',
+        'orgunitrolecriteria_criteria',
+        'jobrolecriteria_criteria',
+        'dynamicrulecriteria_criteria'
+    )
+    
+    if not rules.exists():
+        return  # No rules to process
+    
+    # Get entity type
+    entity_type = entity._meta.model_name
+    entity_id = entity.id
+    
+    # Compile all matching users from all rules
+    subscribed_users = set()
+    
+    for rule in rules:
+        # Process each type of criteria
+        for criteria_type in ['globalrolecriteria', 'orgunitrolecriteria', 'jobrolecriteria', 'dynamicrulecriteria']:
+            criteria_manager = getattr(rule, f"{criteria_type}_criteria", None)
+            if not criteria_manager:
+                continue
+                
+            for criteria in criteria_manager.all():
+                matching_users = criteria.get_matching_users(entity)
+                for user in matching_users:
+                    subscribed_users.add(user)
+    
+    # Create subscriptions for all matched users
+    bulk_create_list = []
+    existing_subscriptions = NotificationSubscription.objects.filter(
+        notification_type=notification_type,
+        entity_type=entity_type,
+        entity_id=entity_id
+    ).values_list('user_id', flat=True)
+    
+    for user in subscribed_users:
+        if user.id not in existing_subscriptions:
+            bulk_create_list.append(
+                NotificationSubscription(
+                    user=user,
+                    notification_type=notification_type,
+                    entity_type=entity_type,
+                    entity_id=entity_id,
+                    email_enabled=True,
+                    in_app_enabled=True,
+                    created_by_rule=True  # Add this field to the model
+                )
+            )
+    
+    if bulk_create_list:
+        NotificationSubscription.objects.bulk_create(bulk_create_list)
