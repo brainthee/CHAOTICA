@@ -628,8 +628,8 @@ class Job(models.Model):
     
     def follow(self, user):
         """Let a user follow this job/phase to receive notifications"""
-        from chaotica_utils.models import NotificationSubscription
-        from chaotica_utils.enums import NotificationTypes
+        from notifications.models import NotificationSubscription
+        from notifications.enums import NotificationTypes
         
         # Create subscriptions for relevant notification types
         notification_types = [
@@ -653,7 +653,7 @@ class Job(models.Model):
 
     def unfollow(self, user):
         """Stop a user from following this job/phase"""
-        from chaotica_utils.models import NotificationSubscription
+        from notifications.models import NotificationSubscription
         
         NotificationSubscription.objects.filter(
             user=user,

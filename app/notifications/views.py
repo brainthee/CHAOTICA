@@ -28,8 +28,8 @@ logger = logging.getLogger(__name__)
 
 @login_required
 def notification_settings(request):
-    from chaotica_utils.models import NotificationSubscription, NotificationCategory
-    from chaotica_utils.enums import NotificationTypes
+    from notifications.models import NotificationSubscription, NotificationCategory
+    from notifications.enums import NotificationTypes
     
     # Handle form submission
     if request.method == 'POST':
@@ -185,7 +185,12 @@ def mark_all_read(request):
 
 @login_required
 @require_http_methods(["POST"])
-def remove_notification_subscription(request, subscription_id):
+def remove_notification_subscription(request):
+    subscription_id = request.GET.get('subscription_id')
+    
+    if not subscription_id or not isinstance(subscription_id, int):
+        return JsonResponse({'error': 'Invalid subscription_id'}, status=400)
+    
     """Remove a specific notification subscription"""
     subscription = get_object_or_404(
         NotificationSubscription, 
@@ -368,8 +373,13 @@ def get_unread_count(request):
 
 @login_required
 @require_POST
-def update_subscription_settings(request, subscription_id):
+def update_subscription_settings(request):
     """Update email/app enabled settings for a subscription"""
+    subscription_id = request.GET.get('subscription_id')
+    
+    if not subscription_id or not isinstance(subscription_id, int):
+        return JsonResponse({'error': 'Invalid subscription_id'}, status=400)
+    
     try:
         data = json.loads(request.body)
         email_enabled = data.get('email_enabled')
