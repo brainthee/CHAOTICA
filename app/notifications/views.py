@@ -1,62 +1,30 @@
 from django.http import JsonResponse, HttpResponse
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods, require_POST, require_GET
-from django.views.decorators.csrf import ensure_csrf_cookie
 from django.core.paginator import Paginator
-from django.db.models import Q
-from django.utils import timezone
 
-from chaotica_utils.models import Notification, NotificationSubscription, User
-from chaotica_utils.enums import NotificationTypes
+from notifications.models import Notification, NotificationSubscription
+from notifications.enums import NotificationTypes
 
 import json
 import logging
 
-from django.urls import reverse_lazy, reverse
 from django.template import loader
-from django.utils import timezone
 from django.http import (
-    HttpResponseForbidden,
     JsonResponse,
     HttpResponse,
-    HttpResponseRedirect,
-    Http404,
-    HttpResponseBadRequest,
 )
 import json
-from ..forms import (
-    ChaoticaUserForm,
-    EditProfileForm,
-    AssignRoleForm,
-    MergeUserForm,
-)
-from ..mixins import PrefetchRelatedMixin
-from ..enums import GlobalRoles
-from ..models import User, Language, UserInvitation
-from ..utils import (
-    ext_reverse,
-    clean_fullcalendar_datetime,
-    can_manage_user,
-    is_ajax,
-)
-from .common import ChaoticaBaseGlobalRoleView, page_defaults
+from chaotica_utils.views.common import page_defaults
 from django.contrib.auth.decorators import login_required
-from guardian.decorators import permission_required_or_403
-from django.views.generic.list import ListView
-from django.views.generic.detail import DetailView
-from django.views.generic.edit import CreateView
 from django.contrib import messages
 from django.shortcuts import get_object_or_404
-import datetime
 from django.views.decorators.http import (
     require_http_methods,
-    require_safe,
 )
 
 logger = logging.getLogger(__name__)
-
-
 
 @login_required
 def notification_settings(request):

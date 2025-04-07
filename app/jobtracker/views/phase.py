@@ -22,8 +22,8 @@ from ..forms import (
 )
 from ..enums import FeedbackType, PhaseStatuses, TimeSlotDeliveryRole, JobStatuses
 from .helpers import _process_assign_user
-from chaotica_utils.utils import AppNotification, task_send_notifications
-from chaotica_utils.enums import NotificationTypes
+from notifications.utils import AppNotification, task_send_notifications
+from notifications.enums import NotificationTypes
 import logging
 from dal import autocomplete
 from ..decorators import job_permission_required_or_403

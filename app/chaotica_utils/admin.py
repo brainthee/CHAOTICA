@@ -5,14 +5,11 @@ from .models import (
     User,
     UserCost,
     UserInvitation,
-    Notification,
     Group,
     Language,
     LeaveRequest,
     Holiday,
     Note,
-    NotificationSubscription,
-    NotificationCategory
 )
 
 
@@ -73,21 +70,6 @@ class UserCostAdmin(admin.ModelAdmin):
 @admin.register(UserInvitation)
 class UserInvitationAdmin(admin.ModelAdmin):
     list_display = ["invited_email", "sent", "accepted", "invited_by"]
-
-
-@admin.register(Notification)
-class NotificationAdmin(admin.ModelAdmin):
-    list_display = ["user", "timestamp", "title", "is_emailed"]
-
-@admin.register(NotificationSubscription)
-class NotificationSubscriptionAdmin(admin.ModelAdmin):
-    list_display = ['user', 'notification_type', 'entity_type', 'entity_id', 'email_enabled', 'in_app_enabled']
-    list_filter = ['notification_type', 'entity_type', 'email_enabled', 'in_app_enabled']
-    search_fields = ['user__email', 'user__first_name', 'user__last_name']
-
-@admin.register(NotificationCategory)
-class NotificationCategoryAdmin(admin.ModelAdmin):
-    list_display = ['name', 'description']
 
 admin.site.register(Group, GroupAdmin)
 admin.site.register(Language)

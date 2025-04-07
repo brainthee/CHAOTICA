@@ -19,8 +19,8 @@ from django.db.models import JSONField
 from django.contrib import messages
 import uuid
 from chaotica_utils.models import Note, User, get_sentinel_user
-from chaotica_utils.utils import AppNotification, task_send_notifications
-from chaotica_utils.enums import NotificationTypes
+from notifications.utils import AppNotification, task_send_notifications
+from notifications.enums import NotificationTypes
 from chaotica_utils.views import log_system_activity
 from decimal import Decimal
 from django_bleach.models import BleachField

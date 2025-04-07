@@ -31,6 +31,7 @@ urlpatterns = [
     path("oauth2/", include("django_auth_adfs.urls")),
     path('tinymce/', include('tinymce.urls')),
     path('reporting/', include('reporting.urls')),
+    path('notifications/', include('notifications.urls')),
     re_path(r"", include("chaotica_utils.urls")),
     re_path(r"", include("jobtracker.urls")),
     path("rm_sync/", include("rm_sync.urls")),

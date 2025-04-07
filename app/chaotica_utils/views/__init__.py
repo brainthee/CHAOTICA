@@ -5,4 +5,3 @@ from .user_management import *
 from .leave import *
 from .auth import *
 from .autocomplete import *
-from .notifications import *

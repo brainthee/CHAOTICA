@@ -6,10 +6,10 @@ from django.urls import reverse
 from django.views.decorators.http import require_safe
 from ..tasks import *
 from django.contrib import messages
-from ..utils import (
+from notifications.utils import (
     AppNotification, task_send_notifications
 )
-from ..enums import NotificationTypes
+from notifications.enums import NotificationTypes
 from ..models import User
 
 

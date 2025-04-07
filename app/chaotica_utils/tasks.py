@@ -1,13 +1,6 @@
 from django_cron import CronJobBase, Schedule
 from django.core import management
-from django_countries import countries
 from django.conf import settings
-from constance import config
-from django.utils import timezone
-import holidays
-import email.utils
-from django.template.loader import render_to_string
-from django.core.mail import send_mail
 
 
 class task_backup_site(CronJobBase):
