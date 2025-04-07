@@ -96,8 +96,8 @@
     
         // Fetch notification types and user subscriptions
         Promise.all([
-          fetch('/api/notifications/types/').then(res => res.json()),
-          fetch('/api/notifications/user-subscriptions/').then(res => res.json())
+          fetch('{% url 'get_notification_types' %}').then(res => res.json()),
+          fetch('{% url 'get_user_subscriptions' %}').then(res => res.json())
         ])
         .then(function(results) {
           const typesData = results[0];
@@ -343,7 +343,7 @@
     
         // Function to unfollow an entity
         function unfollowEntity(entityType, entityId) {
-          fetch('/api/notifications/unfollow/', {
+          fetch('{% url 'unfollow_entity' %}', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -403,7 +403,7 @@
               // Update existing subscription
               if (settings.email !== undefined || settings.app !== undefined) {
                 updates.push(
-                  fetch(`/api/notifications/subscription/${existingSubscription.id}/update/`, {
+                  fetch(`{% url 'update_subscription_settings' %}?subscription_id=${existingSubscription.id}`, {
                     method: 'POST',
                     headers: {
                       'Content-Type': 'application/json',
@@ -419,7 +419,7 @@
             } else {
               // Create new subscription
               updates.push(
-                fetch('/api/notifications/follow/', {
+                fetch('{% url 'follow_entity' %}', {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',

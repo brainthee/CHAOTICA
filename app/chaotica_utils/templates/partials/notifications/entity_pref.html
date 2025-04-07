@@ -88,9 +88,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Make API requests in parallel
     Promise.all([
       // Get subscription status for this entity
-      fetch(`/api/notifications/subscription-status/?entity_type=${entityType}&entity_id=${entityId}`).then(res => res.json()),
+      fetch(`{% url 'notification_subscription_status' %}?entity_type=${entityType}&entity_id=${entityId}`).then(res => res.json()),
       // Get available notification types
-      fetch('/api/notifications/types/').then(res => res.json())
+      fetch('{% url 'get_notification_types' %}').then(res => res.json())
     ])
     .then(([statusData, typesData]) => {
       // Set global state
@@ -198,7 +198,7 @@ document.addEventListener('DOMContentLoaded', function() {
     };
     
     // Make the API request
-    fetch('/api/notifications/follow/', {
+    fetch('{% url 'follow_entity' %}', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -244,7 +244,7 @@ document.addEventListener('DOMContentLoaded', function() {
   });
   
   function unfollowEntity() {
-    fetch('/api/notifications/unfollow/', {
+    fetch('{% url 'unfollow_entity' %}', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

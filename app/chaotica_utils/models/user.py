@@ -2013,8 +2013,8 @@ class User(AbstractUser):
 def create_default_notification_settings(sender, instance, created, **kwargs):
     """Set up default notification preferences for new users"""
     if created:
-        from chaotica_utils.models import NotificationSubscription
-        from chaotica_utils.enums import NotificationTypes
+        from notifications.models import NotificationSubscription
+        from notifications.enums import NotificationTypes
         
         # Create subscriptions for basic notification types
         default_notification_types = [

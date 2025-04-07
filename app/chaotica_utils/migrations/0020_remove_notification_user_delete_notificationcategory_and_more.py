@@ -33,7 +33,7 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(
                 blank=True,
                 null=True,
-                on_delete=models.SET(chaotica_utils.models.models.get_sentinel_user),
+                on_delete=models.SET(chaotica_utils.models.get_sentinel_user),
                 to=settings.AUTH_USER_MODEL,
             ),
         ),

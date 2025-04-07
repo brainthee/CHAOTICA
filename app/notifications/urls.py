@@ -6,8 +6,8 @@ urlpatterns = [
     # Notification API endpoints
     path('api/', views.notifications_api, name='notifications_api'),
     path('api/mark-all-read/', views.mark_all_read, name='mark_all_read'),
-    path('api/subscription/<int:subscription_id>/delete/', views.remove_notification_subscription, name='remove_notification_subscription'),
-    path('api/subscription/<int:subscription_id>/update/', views.update_subscription_settings, name='update_subscription_settings'),
+    path('api/subscription/delete/', views.remove_notification_subscription, name='remove_notification_subscription'),
+    path('api/subscription/update/', views.update_subscription_settings, name='update_subscription_settings'),
     path('api/follow/', views.follow_entity, name='follow_entity'),
     path('api/unfollow/', views.unfollow_entity, name='unfollow_entity'),
     path('api/subscription-status/', views.notification_subscription_status, name='notification_subscription_status'),
