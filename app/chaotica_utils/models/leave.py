@@ -1,10 +1,11 @@
 from django.db import models
-from ..enums import LeaveRequestTypes, NotificationTypes
+from ..enums import LeaveRequestTypes
+from notifications.enums import NotificationTypes
 from django.conf import settings
 from django.urls import reverse
 from django.utils import timezone
 from datetime import timedelta
-from ..utils import task_send_notifications
+from notifications.utils import task_send_notifications
 from jobtracker.enums import DefaultTimeSlotTypes
 from business_duration import businessDuration
 from django.contrib.auth import get_user_model

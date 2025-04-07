@@ -1,6 +1,7 @@
-from ..models import *
+from .models import NotificationSubscription, Notification
 from django.conf import settings as django_settings
-from .common import ext_reverse
+from chaotica_utils.utils import ext_reverse
+from django.db.models import QuerySet
 
 class AppNotification:
     def __init__(
@@ -36,10 +37,10 @@ class AppNotification:
         self.entity_id = entity_id
         self.metadata.update(kwargs)
 
+
     def get_subscribers(self):
         """Get all users who should receive this notification"""
-        from chaotica_utils.models import NotificationSubscription, User
-
+        from chaotica_utils.models.user import User
         # Start with specific entity subscriptions
         if self.entity_id and self.entity_type:
             specific_subscribers = NotificationSubscription.objects.filter(
@@ -65,7 +66,7 @@ class AppNotification:
 
     def get_email_subscribers(self):
         """Get all users who should receive this notification by email"""
-        from chaotica_utils.models import NotificationSubscription, User
+        from chaotica_utils.models.user import User
 
         # Similar to get_subscribers but checking email_enabled
         if self.entity_id and self.entity_type:
@@ -97,8 +98,6 @@ def task_send_notifications(notification, specific_users=None):
         notification (AppNotification): Notification to send
         specific_users (User or QuerySet, optional): Specific user or users to notify. If None, uses subscription system.
     """
-    from chaotica_utils.models import Notification
-    from django.db.models import QuerySet
     
     # Determine recipients
     if specific_users is not None:

@@ -342,6 +342,7 @@ LOCAL_APPS = [
     "chaotica_utils",
     "jobtracker",
     "reporting",
+    "notifications",
     "dashboard",
     "rm_sync",
 ]

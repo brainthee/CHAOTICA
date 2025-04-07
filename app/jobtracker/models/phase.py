@@ -14,8 +14,8 @@ from django.db.models import JSONField
 from bs4 import BeautifulSoup
 from django.contrib import messages
 from chaotica_utils.models import Note, User
-from chaotica_utils.enums import NotificationTypes
-from chaotica_utils.utils import AppNotification, task_send_notifications
+from notifications.enums import NotificationTypes
+from notifications.utils import AppNotification, task_send_notifications
 from chaotica_utils.views.common import log_system_activity
 from datetime import timedelta
 from decimal import Decimal

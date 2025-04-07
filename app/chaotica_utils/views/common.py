@@ -17,7 +17,7 @@ from ..forms import (
 )
 from ..mixins import PrefetchRelatedMixin
 from ..enums import GlobalRoles
-from ..models import Notification, User, Note
+from ..models import User, Note
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.views import View

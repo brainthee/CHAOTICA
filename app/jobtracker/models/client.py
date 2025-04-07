@@ -13,9 +13,9 @@ from constance import config
 from decimal import Decimal
 from django_bleach.models import BleachField
 from django.db.models.functions import Lower
-from chaotica_utils.utils import AppNotification, task_send_notifications
+from notifications.utils import AppNotification, task_send_notifications
 from chaotica_utils.views.common import log_system_activity
-from chaotica_utils.enums import NotificationTypes
+from notifications.enums import NotificationTypes
 
 
 class Client(models.Model):
