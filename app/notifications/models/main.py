@@ -1,6 +1,6 @@
 from django.db import models
 from django.conf import settings
-from .enums import NotificationTypes
+from ..enums import NotificationTypes
 from constance import config
 from django.template.loader import render_to_string
 import django.core.mail
