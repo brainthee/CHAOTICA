@@ -16,7 +16,7 @@ from guardian.shortcuts import assign_perm
 import django.contrib.auth
 from guardian.shortcuts import get_objects_for_user
 from django.utils import timezone
-from datetime import timedelta, date, datetime
+from datetime import timedelta, date, datetime, time
 from dateutil.relativedelta import relativedelta
 from phonenumber_field.modelfields import PhoneNumberField
 from django_countries.fields import CountryField
@@ -595,21 +595,21 @@ class User(AbstractUser):
 
         tz = timezone.get_current_timezone()
         if isinstance(start_date, date) and not isinstance(
-            start_date, datetime.datetime
+            start_date, datetime
         ):
-            start_date = datetime.datetime.combine(
-                start_date, datetime.time.min
+            start_date = datetime.combine(
+                start_date, time.min
             ).replace(tzinfo=tz)
-        elif isinstance(start_date, datetime.datetime) and start_date.tzinfo is None:
+        elif isinstance(start_date, datetime) and start_date.tzinfo is None:
             start_date = start_date.replace(tzinfo=tz)
 
         # Convert end_date to datetime (end of day if it's a date object)
-        if isinstance(end_date, date) and not isinstance(end_date, datetime.datetime):
+        if isinstance(end_date, date) and not isinstance(end_date, datetime):
             # If end_date is a date, use the end of that day (23:59:59)
-            end_date = datetime.datetime.combine(end_date, datetime.time.max).replace(
+            end_date = datetime.combine(end_date, time.max).replace(
                 tzinfo=tz
             )
-        elif isinstance(end_date, datetime.datetime) and end_date.tzinfo is None:
+        elif isinstance(end_date, datetime) and end_date.tzinfo is None:
             end_date = end_date.replace(tzinfo=tz)
 
         # Validate dates
@@ -635,21 +635,21 @@ class User(AbstractUser):
 
         tz = timezone.get_current_timezone()
         if isinstance(start_date, date) and not isinstance(
-            start_date, datetime.datetime
+            start_date, datetime
         ):
-            start_date = datetime.datetime.combine(
-                start_date, datetime.time.min
+            start_date = datetime.combine(
+                start_date, time.min
             ).replace(tzinfo=tz)
-        elif isinstance(start_date, datetime.datetime) and start_date.tzinfo is None:
+        elif isinstance(start_date, datetime) and start_date.tzinfo is None:
             start_date = start_date.replace(tzinfo=tz)
 
         # Convert end_date to datetime (end of day if it's a date object)
-        if isinstance(end_date, date) and not isinstance(end_date, datetime.datetime):
+        if isinstance(end_date, date) and not isinstance(end_date, datetime):
             # If end_date is a date, use the end of that day (23:59:59)
-            end_date = datetime.datetime.combine(end_date, datetime.time.max).replace(
+            end_date = datetime.combine(end_date, time.max).replace(
                 tzinfo=tz
             )
-        elif isinstance(end_date, datetime.datetime) and end_date.tzinfo is None:
+        elif isinstance(end_date, datetime) and end_date.tzinfo is None:
             end_date = end_date.replace(tzinfo=tz)
 
         # Validate dates
@@ -684,18 +684,18 @@ class User(AbstractUser):
 
         # Convert date to datetime (start of day)
         if isinstance(start_date, date) and not isinstance(
-            start_date, datetime.datetime
+            start_date, datetime
         ):
-            start_date = datetime.datetime.combine(
-                start_date, datetime.time.min
+            start_date = datetime.combine(
+                start_date, time.min
             ).replace(tzinfo=tz)
-        elif isinstance(start_date, datetime.datetime) and start_date.tzinfo is None:
+        elif isinstance(start_date, datetime) and start_date.tzinfo is None:
             start_date = start_date.replace(tzinfo=tz)
 
         # Convert end_date to datetime (end of day if it's a date object)
-        if isinstance(end_date, date) and not isinstance(end_date, datetime.datetime):
+        if isinstance(end_date, date) and not isinstance(end_date, datetime):
             # If end_date is a date, use the end of that day (23:59:59)
-            end_date = datetime.datetime.combine(end_date, datetime.time.max).replace(
+            end_date = datetime.combine(end_date, time.max).replace(
                 tzinfo=tz
             )
         elif isinstance(end_date, datetime.datetime) and end_date.tzinfo is None:
@@ -754,9 +754,9 @@ class User(AbstractUser):
                     if respect_working_hours:
                         adjusted_start = self.get_next_workday_start(end_date)
                     else:
-                        adjusted_start = datetime.datetime.combine(
+                        adjusted_start = datetime.combine(
                             end_date.date() + datetime.timedelta(days=1),
-                            datetime.time.min,
+                            time.min,
                         ).replace(tzinfo=end_date.tzinfo)
 
                     # Only create "after" slot if it would have non-zero duration
@@ -816,9 +816,9 @@ class User(AbstractUser):
                     if respect_working_hours:
                         adjusted_start = self.get_next_workday_start(end_date)
                     else:
-                        adjusted_start = datetime.datetime.combine(
+                        adjusted_start = datetime.combine(
                             end_date.date() + datetime.timedelta(days=1),
-                            datetime.time.min,
+                            time.min,
                         ).replace(tzinfo=end_date.tzinfo)
 
                     # Special case: If the slot ends too close to the adjusted start, don't create a new slot
@@ -887,19 +887,19 @@ class User(AbstractUser):
         if isinstance(start_date, date) and not isinstance(
             start_date, datetime.datetime
         ):
-            start_date = datetime.datetime.combine(
-                start_date, datetime.time.min
+            start_date = datetime.combine(
+                start_date, time.min
             ).replace(tzinfo=tz)
         elif isinstance(start_date, datetime.datetime) and start_date.tzinfo is None:
             start_date = start_date.replace(tzinfo=tz)
 
         # Convert end_date to datetime (end of day if it's a date object)
-        if isinstance(end_date, date) and not isinstance(end_date, datetime.datetime):
+        if isinstance(end_date, date) and not isinstance(end_date, datetime):
             # If end_date is a date, use the end of that day (23:59:59)
-            end_date = datetime.datetime.combine(end_date, datetime.time.max).replace(
+            end_date = datetime.combine(end_date, time.max).replace(
                 tzinfo=tz
             )
-        elif isinstance(end_date, datetime.datetime) and end_date.tzinfo is None:
+        elif isinstance(end_date, datetime) and end_date.tzinfo is None:
             end_date = end_date.replace(tzinfo=tz)
 
         # Validate dates
@@ -943,9 +943,9 @@ class User(AbstractUser):
                     if respect_working_hours:
                         adjusted_start = self.get_next_workday_start(end_date)
                     else:
-                        adjusted_start = datetime.datetime.combine(
+                        adjusted_start = datetime.combine(
                             end_date.date() + datetime.timedelta(days=1),
-                            datetime.time.min,
+                            time.min,
                         ).replace(tzinfo=end_date.tzinfo)
 
                     # Only create "after" slot if it would have non-zero duration
@@ -990,9 +990,9 @@ class User(AbstractUser):
                     if respect_working_hours:
                         adjusted_start = self.get_next_workday_start(end_date)
                     else:
-                        adjusted_start = datetime.datetime.combine(
+                        adjusted_start = datetime.combine(
                             end_date.date() + datetime.timedelta(days=1),
-                            datetime.time.min,
+                            time.min,
                         ).replace(tzinfo=end_date.tzinfo)
 
                     # Special case: If the slot ends too close to the adjusted start, don't create a new slot
@@ -1287,10 +1287,10 @@ class User(AbstractUser):
         """Adjust datetime to respect working hours"""
         working_hours = self.get_working_hours()
 
-        day_start = datetime.datetime.combine(
+        day_start = datetime.combine(
             dt.date(), working_hours["start"]
         ).replace(tzinfo=dt.tzinfo)
-        day_end = datetime.datetime.combine(dt.date(), working_hours["end"]).replace(
+        day_end = datetime.combine(dt.date(), working_hours["end"]).replace(
             tzinfo=dt.tzinfo
         )
 
@@ -1321,14 +1321,14 @@ class User(AbstractUser):
         # For start times: if after workday end, use next day's workday start
         if not is_end_time and dt.time() > working_hours["end"]:
             next_day = (dt + datetime.timedelta(days=1)).date()
-            return datetime.datetime.combine(next_day, working_hours["start"]).replace(
+            return datetime.combine(next_day, working_hours["start"]).replace(
                 tzinfo=dt.tzinfo
             )
 
         # For end times: if before workday start, use previous day's workday end
         if is_end_time and dt.time() < working_hours["start"]:
             prev_day = (dt - datetime.timedelta(days=1)).date()
-            return datetime.datetime.combine(prev_day, working_hours["end"]).replace(
+            return datetime.combine(prev_day, working_hours["end"]).replace(
                 tzinfo=dt.tzinfo
             )
 
@@ -1339,7 +1339,7 @@ class User(AbstractUser):
         """Get the start of the next workday"""
         next_day = (dt + datetime.timedelta(days=1)).date()
         working_hours = self.get_working_hours()
-        return datetime.datetime.combine(next_day, working_hours["start"]).replace(
+        return datetime.combine(next_day, working_hours["start"]).replace(
             tzinfo=dt.tzinfo
         )
 
