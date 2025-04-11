@@ -1,0 +1,475 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block pageTitle %}{{ rule.name }} - Subscription Rule{% endblock %}
+
+{% block head_title %}{{ rule.name }} - Subscription Rule{% endblock %}
+
+{% block breadcrumbItem %}
+  <li class="breadcrumb-item"><a class="opacity-50 text-body-emphasis" href="{% url 'notification_rules' %}">Notification Subscription Rules</a></li>
+  <li class="breadcrumb-item active" aria-current="page">{{ rule.name }}</li>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0">{{ rule.name }}</h2>
+            <p class="text-muted">{{ rule.description }}</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'notification_rule_edit' rule.id %}" class="btn btn-outline-primary">
+                <i class="fas fa-edit me-2"></i>Edit Rule
+            </a>
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="actionDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-ellipsis-v"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="actionDropdown">
+                    <li>
+                        <a class="dropdown-item" href="{% url 'notification_rule_toggle' rule.id %}">
+                            {% if rule.is_active %}
+                            <i class="fas fa-pause text-warning me-2"></i>Deactivate Rule
+                            {% else %}
+                            <i class="fas fa-play text-success me-2"></i>Activate Rule
+                            {% endif %}
+                        </a>
+                    </li>
+                    <li>
+                        <button class="dropdown-item text-danger" type="button" data-bs-toggle="modal" data-bs-target="#deleteRuleModal">
+                            <i class="fas fa-trash me-2"></i>Delete Rule
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Rule Details</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5">Notification Type</dt>
+                        <dd class="col-sm-7">{{ rule.get_notification_type_display }}</dd>
+                        
+                        <dt class="col-sm-5">Priority</dt>
+                        <dd class="col-sm-7">{{ rule.priority }}</dd>
+                        
+                        <dt class="col-sm-5">Status</dt>
+                        <dd class="col-sm-7">
+                            {% if rule.is_active %}
+                            <span class="badge bg-success">Active</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Inactive</span>
+                            {% endif %}
+                        </dd>
+                        
+                        <dt class="col-sm-5">Created</dt>
+                        <dd class="col-sm-7">{{ rule.created_at|date:"M d, Y" }}</dd>
+                        
+                        <dt class="col-sm-5">Last Updated</dt>
+                        <dd class="col-sm-7">{{ rule.updated_at|date:"M d, Y H:i" }}</dd>
+                        
+                        <dt class="col-sm-5">Total Criteria</dt>
+                        <dd class="col-sm-7">
+                            {% with total_criteria=global_criteria.count|add:org_criteria.count|add:job_criteria.count|add:phase_criteria.count|add:dynamic_criteria.count %}
+                            {{ total_criteria }} criteria
+                            {% endwith %}
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Criteria</h5>
+                    <a href="{% url 'notification_rule_add_criteria' rule.id %}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-plus me-1"></i>Add Criteria
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    <!-- Global Role Criteria -->
+                    {% if global_criteria.exists %}
+                    <div class="p-3 border-bottom">
+                        <h6 class="d-flex align-items-center mb-3">
+                            <span class="badge bg-info me-2">Global</span>
+                            Global Role Criteria
+                            <small class="ms-2 text-muted">({{ global_criteria.count }})</small>
+                        </h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Role</th>
+                                        <th class="text-end" style="width: 100px;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for criteria in global_criteria %}
+                                    <tr>
+                                        <td>{{ criteria.get_role_display }}</td>
+                                        <td class="text-end">
+                                            <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteCriteriaModal" data-criteria-id="{{ criteria.id }}" data-criteria-type="global">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Org Unit Role Criteria -->
+                    {% if org_criteria.exists %}
+                    <div class="p-3 border-bottom">
+                        <h6 class="d-flex align-items-center mb-3">
+                            <span class="badge bg-success me-2">Org</span>
+                            Organizational Unit Role Criteria
+                            <small class="ms-2 text-muted">({{ org_criteria.count }})</small>
+                        </h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Unit Role</th>
+                                        <th class="text-end" style="width: 100px;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for criteria in org_criteria %}
+                                    <tr>
+                                        <td>{{ criteria.unit_role.name }}</td>
+                                        <td class="text-end">
+                                            <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteCriteriaModal" data-criteria-id="{{ criteria.id }}" data-criteria-type="org">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Job Role Criteria -->
+                    {% if job_criteria.exists %}
+                    <div class="p-3 border-bottom">
+                        <h6 class="d-flex align-items-center mb-3">
+                            <span class="badge bg-primary me-2">Job</span>
+                            Job Role Criteria
+                            <small class="ms-2 text-muted">({{ job_criteria.count }})</small>
+                        </h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Role</th>
+                                        <th class="text-end" style="width: 100px;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for criteria in job_criteria %}
+                                    <tr>
+                                        <td>{{ criteria.role_display }}</td>
+                                        <td class="text-end">
+                                            <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteCriteriaModal" data-criteria-id="{{ criteria.id }}" data-criteria-type="job">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Phase Role Criteria -->
+                    {% if phase_criteria.exists %}
+                    <div class="p-3 border-bottom">
+                        <h6 class="d-flex align-items-center mb-3">
+                            <span class="badge bg-primary me-2">Phase</span>
+                            Phase Role Criteria
+                            <small class="ms-2 text-muted">({{ phase_criteria.count }})</small>
+                        </h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Role</th>
+                                        <th class="text-end" style="width: 100px;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for criteria in phase_criteria %}
+                                    <tr>
+                                        <td>{{ criteria.role_display }}</td>
+                                        <td class="text-end">
+                                            <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteCriteriaModal" data-criteria-id="{{ criteria.id }}" data-criteria-type="phase">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Dynamic Rule Criteria -->
+                    {% if dynamic_criteria.exists %}
+                    <div class="p-3">
+                        <h6 class="d-flex align-items-center mb-3">
+                            <span class="badge bg-warning text-dark me-2">Dynamic</span>
+                            Dynamic Criteria
+                            <small class="ms-2 text-muted">({{ dynamic_criteria.count }})</small>
+                        </h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Criteria Name</th>
+                                        <th>Parameters</th>
+                                        <th class="text-end" style="width: 100px;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for criteria in dynamic_criteria %}
+                                    <tr>
+                                        <td>{{ criteria.criteria_name }}</td>
+                                        <td>
+                                            {% if criteria.parameters %}
+                                            <code>{{ criteria.parameters|truncatechars:50 }}</code>
+                                            {% else %}
+                                            <span class="text-muted">None</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-end">
+                                            <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteCriteriaModal" data-criteria-id="{{ criteria.id }}" data-criteria-type="dynamic">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if not global_criteria.exists and not org_criteria.exists and not job_criteria.exists and not dynamic_criteria.exists %}
+                    <div class="p-5 text-center">
+                        <p class="text-muted mb-3">This subscription rule has no criteria defined.</p>
+                        <p class="mb-0">
+                            <a href="{% url 'notification_rule_add_criteria' rule.id %}" class="btn btn-outline-primary">
+                                <i class="fas fa-plus me-2"></i>Add Criteria
+                            </a>
+                        </p>
+                        <p class="text-muted mt-3"><small>Without criteria, this rule won't subscribe any users to notifications.</small></p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Subscription Stats -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white">
+            <h5 class="mb-0">Subscription Statistics</h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-4">
+                <div class="col-md-3">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="rounded-circle bg-primary bg-opacity-10 p-3">
+                                <i class="fas fa-users fa-lg text-primary"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="mb-0">Total Subscriptions</h6>
+                            <h3 class="mb-0">{{ subscription_count }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="rounded-circle bg-success bg-opacity-10 p-3">
+                                <i class="fas fa-user-plus fa-lg text-success"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="mb-0">Users Subscribed</h6>
+                            <h3 class="mb-0">{{ unique_users }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="rounded-circle bg-info bg-opacity-10 p-3">
+                                <i class="fas fa-bell fa-lg text-info"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="mb-0">Entities Covered</h6>
+                            <h3 class="mb-0">{{ entity_count }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="rounded-circle bg-warning bg-opacity-10 p-3">
+                                <i class="fas fa-envelope fa-lg text-warning"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="mb-0">Email Enabled</h6>
+                            <h3 class="mb-0">{{ email_enabled_count }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Subscriptions -->
+    {% if recent_subscriptions %}
+    <div class="card shadow-sm">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Recent Subscriptions</h5>
+            <a href="{% url 'view_rule_subscriptions' rule.id %}" class="btn btn-sm btn-outline-secondary">
+                View All
+            </a>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>User</th>
+                            <th>Entity Type</th>
+                            <th>Entity ID</th>
+                            <th>Notification Method</th>
+                            <th>Created</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for subscription in recent_subscriptions %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    {% if subscription.user.profile_image %}
+                                    <img src="{{ subscription.user.profile_image.url }}" class="rounded-circle me-2" width="32" height="32" alt="{{ subscription.user.get_full_name }}">
+                                    {% else %}
+                                    <div class="bg-secondary text-white rounded-circle me-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                        <span>{{ subscription.user.get_initials }}</span>
+                                    </div>
+                                    {% endif %}
+                                    <div>
+                                        <div class="fw-medium">{{ subscription.user.get_full_name }}</div>
+                                        <small class="text-muted">{{ subscription.user.email }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ subscription.entity_type|title }}</td>
+                            <td>
+                                <a href="#" class="text-decoration-none">{{ subscription.entity_id }}</a>
+                            </td>
+                            <td>
+                                {% if subscription.email_enabled and subscription.in_app_enabled %}
+                                <span class="badge bg-info">Email + In-App</span>
+                                {% elif subscription.email_enabled %}
+                                <span class="badge bg-primary">Email</span>
+                                {% elif subscription.in_app_enabled %}
+                                <span class="badge bg-success">In-App</span>
+                                {% else %}
+                                <span class="badge bg-secondary">None</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ subscription.created_at|date:"M d, Y" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Delete Rule Modal -->
+<div class="modal fade" id="deleteRuleModal" tabindex="-1" aria-labelledby="deleteRuleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteRuleModalLabel">Delete Subscription Rule</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this subscription rule?</p>
+                <p class="text-danger"><small>This action cannot be undone. Existing subscriptions created by this rule will remain active.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <a href="{% url 'notification_rule_delete' rule.id %}" class="btn btn-danger">Delete Rule</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Criteria Modal -->
+<div class="modal fade" id="deleteCriteriaModal" tabindex="-1" aria-labelledby="deleteCriteriaModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteCriteriaModalLabel">Delete Criteria</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this criteria?</p>
+                <p class="text-danger"><small>This may affect which users are automatically subscribed to notifications in the future.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteCriteriaForm" method="post" action="{% url 'notification_rule_delete_criteria' rule.id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="criteria_id" id="criteriaId">
+                    <input type="hidden" name="criteria_type" id="criteriaType">
+                    <button type="submit" class="btn btn-danger">Delete Criteria</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Set up the delete criteria modal
+    const deleteCriteriaModal = document.getElementById('deleteCriteriaModal');
+    if (deleteCriteriaModal) {
+        deleteCriteriaModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            const criteriaId = button.getAttribute('data-criteria-id');
+            const criteriaType = button.getAttribute('data-criteria-type');
+            
+            document.getElementById('criteriaId').value = criteriaId;
+            document.getElementById('criteriaType').value = criteriaType;
+        });
+    }
+</script>
+{% endblock %}

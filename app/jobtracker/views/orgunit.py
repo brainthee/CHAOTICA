@@ -6,7 +6,7 @@ from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from chaotica_utils.views import ChaoticaBaseView
-from notifications.utils import AppNotification, task_send_notifications
+from notifications.utils import AppNotification, send_notifications
 from notifications.enums import NotificationTypes
 from chaotica_utils.models import User
 from ..models import (

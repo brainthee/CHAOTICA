@@ -5,7 +5,7 @@ from django.conf import settings
 from django.urls import reverse
 from django.utils import timezone
 from datetime import timedelta
-from notifications.utils import task_send_notifications
+from notifications.utils import send_notifications
 from jobtracker.enums import DefaultTimeSlotTypes
 from business_duration import businessDuration
 from django.contrib.auth import get_user_model
@@ -148,10 +148,10 @@ class LeaveRequest(models.Model):
 
     EMAIL_TEMPLATE = "emails/leave.html"
 
-    def send_request_notification(self):
-        from chaotica_utils.utils import AppNotification
 
-        users_to_notify = self.can_approve_by()
+    def send_request_notification(self):
+        from notifications.utils import AppNotification
+
         notification = AppNotification(
             notification_type=NotificationTypes.LEAVE_SUBMITTED,
             title=f"Leave Requested - {self.user}",
@@ -161,13 +161,13 @@ class LeaveRequest(models.Model):
             entity_type=self.__class__.__name__,
             entity_id=self.pk,
             metadata={
-                "leave": self,
             }
         )
-        task_send_notifications(notification, users_to_notify)
+        send_notifications(notification)
+
 
     def send_approved_notification(self):
-        from chaotica_utils.utils import AppNotification
+        from notifications.utils import AppNotification
 
         notification = AppNotification(
             notification_type=NotificationTypes.LEAVE_APPROVED,
@@ -178,13 +178,12 @@ class LeaveRequest(models.Model):
             entity_type=self.__class__.__name__,
             entity_id=self.pk,
             metadata={
-                "leave": self,
             }
         )
-        task_send_notifications(notification)
+        send_notifications(notification)
 
     def send_declined_notification(self):
-        from chaotica_utils.utils import AppNotification
+        from notifications.utils import AppNotification
 
         notification = AppNotification(
             notification_type=NotificationTypes.LEAVE_REJECTED,
@@ -195,13 +194,12 @@ class LeaveRequest(models.Model):
             entity_type=self.__class__.__name__,
             entity_id=self.pk,
             metadata={
-                "leave": self,
             }
         )
-        task_send_notifications(notification)
+        send_notifications(notification)
 
     def send_cancelled_notification(self):
-        from chaotica_utils.utils import AppNotification
+        from notifications.utils import AppNotification
 
         notification = AppNotification(
             notification_type=NotificationTypes.LEAVE_CANCELLED,
@@ -212,11 +210,10 @@ class LeaveRequest(models.Model):
             entity_type=self.__class__.__name__,
             entity_id=self.pk,
             metadata={
-                "leave": self,
             }
         )
 
-        task_send_notifications(notification)
+        send_notifications(notification)
 
 
     def authorise(self, approved_by):

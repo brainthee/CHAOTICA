@@ -31,6 +31,12 @@ class NotificationSubscription(models.Model):
     )
     email_enabled = models.BooleanField(default=True)
     in_app_enabled = models.BooleanField(default=True)
+
+    created_by_rule = models.BooleanField(
+        default=False,
+        help_text="Whether this subscription was created automatically by a rule"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
         unique_together = ('user', 'notification_type', 'entity_id', 'entity_type')
@@ -41,6 +47,16 @@ class NotificationSubscription(models.Model):
         entity_str = f" for {self.entity_type} #{self.entity_id}" if self.entity_id else ""
         return f"{self.user} - {self.get_notification_type_display()}{entity_str}"
 
+class NotificationOptOut(models.Model):
+    """Records when a user has explicitly opted out of a notification"""
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    notification_type = models.IntegerField(choices=NotificationTypes.CHOICES)
+    entity_type = models.CharField(max_length=255)
+    entity_id = models.IntegerField()
+    opted_out_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ('user', 'notification_type', 'entity_type', 'entity_id')
 
 class NotificationCategory(models.Model):
     name = models.CharField(max_length=100)
@@ -80,9 +96,7 @@ class Notification(models.Model):
         return f"{self.title} - {self.user}"
 
     def send_email(self, resend=False):
-        self.refresh_from_db()  # Make sure we're using the latest info!
         try:
-
             if (
                 self.user.is_active  # User must be active
                 and config.EMAIL_ENABLED  # Emails must be enabled

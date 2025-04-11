@@ -40,17 +40,6 @@ class task_clean_historical_records(CronJobBase):
     def do(self):
         management.call_command('clean_duplicate_history', '--auto')
         management.call_command('clean_old_history', '--auto')
-        
-        
-class task_send_email_notifications(CronJobBase):
-    RUN_EVERY_MINS = 1
-    schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
-    code = 'chaotica_utils.task_send_email_notifications'
-
-    def do(self):
-        from .models import Notification
-        for notification in Notification.objects.filter(is_emailed=False, should_email=True):
-            notification.send_email()
 
 
 class task_update_phase_dates(CronJobBase):

@@ -13,7 +13,7 @@ from constance import config
 from decimal import Decimal
 from django_bleach.models import BleachField
 from django.db.models.functions import Lower
-from notifications.utils import AppNotification, task_send_notifications
+from notifications.utils import AppNotification, send_notifications
 from chaotica_utils.views.common import log_system_activity
 from notifications.enums import NotificationTypes
 
@@ -253,7 +253,7 @@ class ClientOnboarding(models.Model):
                 entity_type=self.__class__.__name__,
                 entity_id=self.pk,
             )
-            task_send_notifications(notification, [self.user])
+            send_notifications(notification, [self.user])
             log_system_activity(self, "Sent Onboarding Reminder")
 
     class Meta:

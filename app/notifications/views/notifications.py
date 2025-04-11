@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods, require_POST, require_GET
 from django.core.paginator import Paginator
 
-from notifications.models import Notification, NotificationSubscription
+from notifications.models import Notification, NotificationSubscription, NotificationOptOut
 from notifications.enums import NotificationTypes
 
 import json
@@ -258,6 +258,12 @@ def follow_entity(request):
                     'in_app_enabled': True
                 }
             )
+            NotificationOptOut.objects.filter(
+                user=request.user,
+                notification_type=request.POST.get('notification_type'),
+                entity_type=request.POST.get('entity_type'),
+                entity_id=request.POST.get('entity_id')
+            ).delete()
             if created:
                 created_count += 1
                 
@@ -275,6 +281,80 @@ def follow_entity(request):
 @require_POST
 def unfollow_entity(request):
     """Unfollow a specific entity (Job, Phase, etc.)"""
+    data = {}
+    
+    # Get the subscription details from the request
+    subscription_id = request.POST.get('subscription_id')
+
+    if subscription_id:
+        try:
+            # Find the subscription
+            subscription = NotificationSubscription.objects.get(
+                id=subscription_id, 
+                user=request.user
+            )
+            
+            # Store the details before deleting
+            notification_type = subscription.notification_type
+            entity_type = subscription.entity_type
+            entity_id = subscription.entity_id
+            
+            # Delete the subscription
+            subscription.delete()
+            
+            # Create an opt-out record to prevent auto-resubscription
+            NotificationOptOut.objects.get_or_create(
+                user=request.user,
+                notification_type=notification_type,
+                entity_type=entity_type,
+                entity_id=entity_id
+            )
+            
+            data['status'] = 'success'
+            
+        except NotificationSubscription.DoesNotExist:
+            data['status'] = 'error'
+            data['message'] = 'Subscription not found'
+    else:
+        # Alternative approach if you're using separate parameters
+        notification_type = request.POST.get('notification_type')
+        entity_type = request.POST.get('entity_type')
+        entity_id = request.POST.get('entity_id')
+        
+        if notification_type and entity_type and entity_id:
+            try:
+                notification_type = int(notification_type)
+                entity_id = int(entity_id)
+                
+                # Delete the subscription
+                deleted, _ = NotificationSubscription.objects.filter(
+                    user=request.user,
+                    notification_type=notification_type,
+                    entity_type=entity_type,
+                    entity_id=entity_id
+                ).delete()
+                
+                if deleted > 0:
+                    # Create an opt-out record
+                    NotificationOptOut.objects.get_or_create(
+                        user=request.user,
+                        notification_type=notification_type,
+                        entity_type=entity_type,
+                        entity_id=entity_id
+                    )
+                    data['status'] = 'success'
+                else:
+                    data['status'] = 'error'
+                    data['message'] = 'No subscription found to delete'
+            except (ValueError, TypeError):
+                data['status'] = 'error'
+                data['message'] = 'Invalid parameters'
+        else:
+            data['status'] = 'error'
+            data['message'] = 'Missing required parameters'
+    
+    return JsonResponse(data)
+
     try:
         data = json.loads(request.body)
         entity_type = data.get('entity_type')
@@ -289,6 +369,13 @@ def unfollow_entity(request):
             entity_type=entity_type,
             entity_id=entity_id
         ).delete()[0]
+
+        NotificationOptOut.objects.get_or_create(
+            user=request.user,
+            notification_type=notification_type,
+            entity_type=entity_type,
+            entity_id=entity_id
+        )
         
         return JsonResponse({
             'status': 'success', 

@@ -15,7 +15,7 @@ from bs4 import BeautifulSoup
 from django.contrib import messages
 from chaotica_utils.models import Note, User
 from notifications.enums import NotificationTypes
-from notifications.utils import AppNotification, task_send_notifications
+from notifications.utils import AppNotification, send_notifications
 from chaotica_utils.views.common import log_system_activity
 from datetime import timedelta
 from decimal import Decimal
@@ -851,7 +851,7 @@ class Phase(models.Model):
                         "phase": self,
                     }
                 )
-                task_send_notifications(notification, users_to_notify)
+                send_notifications(notification, users_to_notify)
                 log_system_activity(self, "Sent TQA late notification")
                 self.notifications_late_tqa_last_fired = now
                 self.save()
@@ -897,7 +897,7 @@ class Phase(models.Model):
                         "phase": self,
                     }
                 )
-                task_send_notifications(notification, users_to_notify)
+                send_notifications(notification, users_to_notify)
                 log_system_activity(self, "Sent PQA late notification")
                 self.notifications_late_pqa_last_fired = now
                 self.save()
@@ -937,7 +937,7 @@ class Phase(models.Model):
                         "phase": self,
                     }
                 )
-                task_send_notifications(notification, users_to_notify)
+                send_notifications(notification, users_to_notify)
                 log_system_activity(self, "Sent Delivery late notification")
                 self.notifications_late_delivery_last_fired = now
                 self.save()
@@ -967,7 +967,7 @@ class Phase(models.Model):
                     "phase": self,
                 }
             )
-            task_send_notifications(
+            send_notifications(
                 notification, users_to_notify, config.NOTIFICATION_POOL_SCHEDULING_EMAIL_RCPTS
             )
             # Lets also update the audit log
@@ -1000,7 +1000,7 @@ class Phase(models.Model):
                     "phase": self,
                 }
             )
-            task_send_notifications(notification, users_to_notify)
+            send_notifications(notification, users_to_notify)
             # Lets also update the audit log
             for user in users_to_notify:
                 log_system_activity(
@@ -1025,7 +1025,7 @@ class Phase(models.Model):
                     "phase": self,
                 }
             )
-            task_send_notifications(notification, users_to_notify)
+            send_notifications(notification, users_to_notify)
             # Lets also update the audit log
             for user in users_to_notify:
                 log_system_activity(
@@ -1050,7 +1050,7 @@ class Phase(models.Model):
                     "phase": self,
                 }
             )
-            task_send_notifications(notification, users_to_notify)
+            send_notifications(notification, users_to_notify)
             # Lets also update the audit log
             for user in users_to_notify:
                 log_system_activity(
@@ -1075,7 +1075,7 @@ class Phase(models.Model):
                     "phase": self,
                 }
             )
-            task_send_notifications(notification, users_to_notify)
+            send_notifications(notification, users_to_notify)
             # Lets also update the audit log
             for user in users_to_notify:
                 log_system_activity(
@@ -1100,7 +1100,7 @@ class Phase(models.Model):
                     "phase": self,
                 }
             )
-            task_send_notifications(notification, users_to_notify)
+            send_notifications(notification, users_to_notify)
             # Lets also update the audit log
             for user in users_to_notify:
                 log_system_activity(
@@ -1134,7 +1134,7 @@ class Phase(models.Model):
                     "phase": self,
                 }
             )
-            task_send_notifications(
+            send_notifications(
                 notification, users_to_notify, config.NOTIFICATION_POOL_TQA_EMAIL_RCPTS
             )
             # Lets also update the audit log
@@ -1165,7 +1165,7 @@ class Phase(models.Model):
                     "phase": self,
                 }
             )
-            task_send_notifications(notification, users_to_notify)
+            send_notifications(notification, users_to_notify)
             # Lets also update the audit log
             for user in users_to_notify:
                 log_system_activity(
@@ -1199,7 +1199,7 @@ class Phase(models.Model):
                     "phase": self,
                 }
             )
-            task_send_notifications(
+            send_notifications(
                 notification, users_to_notify, config.NOTIFICATION_POOL_PQA_EMAIL_RCPTS
             )
             # Lets also update the audit log
@@ -1231,7 +1231,7 @@ class Phase(models.Model):
                     "phase": self,
                 }
             )
-            task_send_notifications(notification, users_to_notify)
+            send_notifications(notification, users_to_notify)
             # Lets also update the audit log
             for user in users_to_notify:
                 log_system_activity(
@@ -1256,7 +1256,7 @@ class Phase(models.Model):
                     "phase": self,
                 }
             )
-            task_send_notifications(notification, users_to_notify)
+            send_notifications(notification, users_to_notify)
             # Lets also update the audit log
             for user in users_to_notify:
                 log_system_activity(
@@ -1277,7 +1277,7 @@ class Phase(models.Model):
                     "phase": self,
                 }
             )
-            task_send_notifications(notification, users_to_notify)
+            send_notifications(notification, users_to_notify)
             # Lets also update the audit log
             for user in users_to_notify:
                 log_system_activity(
@@ -1299,7 +1299,7 @@ class Phase(models.Model):
                     "phase": self,
                 }
             )
-            task_send_notifications(notification, users_to_notify)
+            send_notifications(notification, users_to_notify)
             # Lets also update the audit log
             for user in users_to_notify:
                 log_system_activity(

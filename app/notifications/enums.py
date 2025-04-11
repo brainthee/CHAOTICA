@@ -10,10 +10,13 @@ class NotificationTypes:
     PHASE_TQA_UPDATES = 13
     PHASE_PQA_UPDATES = 14
     PHASE_FEEDBACK = 15
+
+    # Leave notifications
     LEAVE_SUBMITTED = 7
     LEAVE_APPROVED = 8
     LEAVE_REJECTED = 9
     LEAVE_CANCELLED = 10
+    
     CLIENT_ONBOARDING_RENEWAL = 11
     
     CHOICES = (
