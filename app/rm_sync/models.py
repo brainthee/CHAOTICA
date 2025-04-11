@@ -28,7 +28,11 @@ class RMTaskLock(models.Model):
 
     def is_stale(self):
         now = timezone.now()
-        time_diff = (now - self.last_updated).total_seconds() / int(config.RM_SYNC_STALE_TIMEOUT) * 60
+        time_diff = (
+            (now - self.last_updated).total_seconds()
+            / int(config.RM_SYNC_STALE_TIMEOUT)
+            * 60
+        )
         return time_diff > 1
 
 
@@ -100,9 +104,9 @@ class RMAssignable(models.Model):
     def update_rm(self):
         PROXIES = None
         # PROXIES = {
-        #     "http": "http://127.0.0.1:8080",
-        #     "https": "http://127.0.0.1:8080",
-        # }
+        #            "http": "http://127.0.0.1:8082",
+        #            "https": "http://127.0.0.1:8082",
+        #        }
         RM_HEADERS = {
             "Content-Type": "application/json; charset=utf-8",
             "auth": config.RM_SYNC_API_TOKEN,
@@ -162,7 +166,9 @@ class RMAssignable(models.Model):
                     data = {
                         "name": self.phase.title,
                         "project_code": self.phase.phase_id,
-                        "project_state": "Confirmed" if self.phase.is_confirmed() else "Tentative",
+                        "project_state": (
+                            "Confirmed" if self.phase.is_confirmed() else "Tentative"
+                        ),
                         "tags": ["CHAOTICA"],
                         "client": str(self.phase.job.client),
                         "description": config.RM_WARNING_MSG
@@ -172,7 +178,9 @@ class RMAssignable(models.Model):
                     data = {
                         "name": self.project.title,
                         "project_code": str(self.project.id),
-                        "project_state": "Confirmed" if self.project.is_chargable() else "Internal",
+                        "project_state": (
+                            "Confirmed" if self.project.is_chargable() else "Internal"
+                        ),
                         "tags": ["CHAOTICA"],
                         "description": config.RM_WARNING_MSG
                         + " {}".format(ext_reverse(self.project.get_absolute_url())),
@@ -231,9 +239,9 @@ class RMAssignable(models.Model):
     def delete_in_rm(self):
         PROXIES = None
         # PROXIES = {
-        #     "http": "http://127.0.0.1:8080",
-        #     "https": "http://127.0.0.1:8080",
-        # }
+        #            "http": "http://127.0.0.1:8082",
+        #            "https": "http://127.0.0.1:8082",
+        #        }
         RM_HEADERS = {
             "Content-Type": "application/json; charset=utf-8",
             "auth": config.RM_SYNC_API_TOKEN,
@@ -319,6 +327,9 @@ class RMAssignableSlot(models.Model):
     class Meta:
         ordering = ["rm_id"]
 
+    def __str__(self):
+        return "({}) {}".format(self.rm_id, str(self.slot))
+
     def update_rm_if_stale(self):
         if (
             not self.last_synced
@@ -329,13 +340,12 @@ class RMAssignableSlot(models.Model):
             return self.update_rm()
         return False
 
-
     def update_rm(self):
         PROXIES = None
         # PROXIES = {
-        #     "http": "http://127.0.0.1:8080",
-        #     "https": "http://127.0.0.1:8080",
-        # }
+        #            "http": "http://127.0.0.1:8082",
+        #            "https": "http://127.0.0.1:8082",
+        #        }
         RM_HEADERS = {
             "Content-Type": "application/json; charset=utf-8",
             "auth": config.RM_SYNC_API_TOKEN,
@@ -409,9 +419,7 @@ class RMAssignableSlot(models.Model):
                     }
                     r_upd_assignment = requests.put(
                         "{}/api/v1/users/{}/assignments/{}".format(
-                            config.RM_SYNC_API_SITE,
-                            rm_user.rm_id,
-                            self.rm_id
+                            config.RM_SYNC_API_SITE, rm_user.rm_id, self.rm_id
                         ),
                         json=data,
                         headers=RM_HEADERS,
@@ -437,8 +445,9 @@ class RMAssignableSlot(models.Model):
                             return False
                     self.rm_data = r_upd_assignment.json()
                     self.rm_id = self.rm_data["id"]
-                    log.info("Updated assignment in RM - id: {}".format(self.rm_data["id"]))
-
+                    log.info(
+                        "Updated assignment in RM - id: {}".format(self.rm_data["id"])
+                    )
 
             if should_create:
                 # Create the assignment!
@@ -496,9 +505,9 @@ class RMAssignableSlot(models.Model):
     def delete_in_rm(self):
         PROXIES = None
         # PROXIES = {
-        #     "http": "http://127.0.0.1:8080",
-        #     "https": "http://127.0.0.1:8080",
-        # }
+        #            "http": "http://127.0.0.1:8082",
+        #            "https": "http://127.0.0.1:8082",
+        #        }
         RM_HEADERS = {
             "Content-Type": "application/json; charset=utf-8",
             "auth": config.RM_SYNC_API_TOKEN,
@@ -544,7 +553,9 @@ class RMAssignableSlot(models.Model):
                                 )
                             )
                             return False
-                    log.info("Deleted assignment in RM - id: {}".format(self.rm_data["id"]))
+                    log.info(
+                        "Deleted assignment in RM - id: {}".format(self.rm_data["id"])
+                    )
                     self.rm_id = None
                 self.last_sync_result = False
 
@@ -554,7 +565,7 @@ class RMAssignableSlot(models.Model):
             finally:
                 self.last_synced = timezone.now()
                 self.save()
-    
+
 
 @receiver(pre_delete, sender=RMAssignableSlot)
 def remove_assignment_from_rm_on_delete(sender, instance, **kwargs):
@@ -567,7 +578,9 @@ class RMSyncRecord(models.Model):
         on_delete=models.CASCADE,
         related_name="rm_sync_record",
     )
-    rm_id = models.CharField(max_length=255, unique=True, help_text="User ID in Resource Manager")
+    rm_id = models.CharField(
+        max_length=255, unique=True, help_text="User ID in Resource Manager"
+    )
     rm_data = models.JSONField(default=list, blank=True)
 
     last_synced = models.DateTimeField(null=True, blank=True)
@@ -586,19 +599,27 @@ class RMSyncRecord(models.Model):
     def __str__(self):
         return "({}) {}".format(self.rm_id, str(self.user))
 
-    def sync_records(self):
+    def sync_records(
+        self,
+        start_date=timezone.now().date(),
+        end_date=(timezone.now() + timedelta(days=365)).date(),
+    ):
+        logger = logging.getLogger("rm_sync")
+
         if self.sync_in_progress:
             # In progress - skip
             return
-        
+
+        logger.info(f"Starting sync for user: {self.user.email} (RM ID: {self.rm_id})")
+
         self.sync_in_progress = True
         self.save()
 
         PROXIES = None
         # PROXIES = {
-        #     "http": "http://127.0.0.1:8080",
-        #     "https": "http://127.0.0.1:8080",
-        # }
+        #            "http": "http://127.0.0.1:8082",
+        #            "https": "http://127.0.0.1:8082",
+        #        }
         RM_HEADERS = {
             "Content-Type": "application/json; charset=utf-8",
             "auth": config.RM_SYNC_API_TOKEN,
@@ -613,8 +634,6 @@ class RMSyncRecord(models.Model):
         log.setLevel(logging.INFO)
         log.addHandler(stream_handler)
         log.info("Starting RM Sync for {}".format(self.user))
-
-        from pprint import pprint
 
         try:
             if not config.RM_SYNC_ENABLED:
@@ -670,7 +689,8 @@ class RMSyncRecord(models.Model):
             # Ok, RM user is good. Lets get our chaotica schedule for the next year.
             log.info("- Getting Chaotica schedule")
             ch_slots = self.user.get_timeslots_objs(
-                start=timezone.now(), end=timezone.now() + timedelta(days=365)
+                start_date=start_date,
+                end_date=end_date,
             )
 
             # OK NOW FOR THE BIG BIT!!!
@@ -748,8 +768,9 @@ class RMSyncRecord(models.Model):
                             )
 
             self.last_sync_result = True
+
         except Exception as ex:
-            log.error("Sync error: {}".format(ex))
+            log.exception("Sync error: {}".format(ex))
             self.last_sync_result = False
 
         finally:
