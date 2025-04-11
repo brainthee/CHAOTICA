@@ -22,7 +22,7 @@ from ..forms import (
 )
 from ..enums import FeedbackType, PhaseStatuses, TimeSlotDeliveryRole, JobStatuses
 from .helpers import _process_assign_user
-from notifications.utils import AppNotification, task_send_notifications
+from notifications.utils import AppNotification, send_notifications
 from notifications.enums import NotificationTypes
 import logging
 from dal import autocomplete
@@ -288,7 +288,7 @@ def phase_create_note(request, job_slug, slug):
                     "phase": phase,
                 }
             )
-            task_send_notifications(notification, users_to_notify)
+            send_notifications(notification, users_to_notify)
 
             return HttpResponseRedirect(
                 reverse("phase_detail", kwargs={"job_slug": job_slug, "slug": slug})

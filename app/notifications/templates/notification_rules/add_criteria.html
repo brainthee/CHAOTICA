@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Add Criteria to {{ rule.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a class="opacity-50 text-body-emphasis" href="{% url 'notification_rules' %}">Notification Subscription Rules</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'notification_rule_detail' rule.id %}">{{ rule.name }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Add Criteria</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h3 class="mb-0">Add Criteria to {{ rule.name }}</h3>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <h5>Select Criteria Type</h5>
+                        <div class="nav nav-pills nav-justified mb-4" id="criteriaType" role="tablist">
+                            <button class="nav-link active" id="global-tab" data-bs-toggle="pill" data-bs-target="#global-content" type="button" role="tab" aria-controls="global-content" aria-selected="true">
+                                <span class="badge bg-info mb-2">Global</span>
+                                <div>Global Role</div>
+                            </button>
+                            <button class="nav-link" id="org-tab" data-bs-toggle="pill" data-bs-target="#org-content" type="button" role="tab" aria-controls="org-content" aria-selected="false">
+                                <span class="badge bg-success mb-2">Org</span>
+                                <div>Org Unit Role</div>
+                            </button>
+                            <button class="nav-link" id="job-tab" data-bs-toggle="pill" data-bs-target="#job-content" type="button" role="tab" aria-controls="job-content" aria-selected="false">
+                                <span class="badge bg-primary mb-2">Job</span>
+                                <div>Job Role</div>
+                            </button>
+                            <button class="nav-link" id="phase-tab" data-bs-toggle="pill" data-bs-target="#phase-content" type="button" role="tab" aria-controls="job-content" aria-selected="false">
+                                <span class="badge bg-primary mb-2">Phase</span>
+                                <div>Phase Role</div>
+                            </button>
+                            <button class="nav-link" id="dynamic-tab" data-bs-toggle="pill" data-bs-target="#dynamic-content" type="button" role="tab" aria-controls="dynamic-content" aria-selected="false">
+                                <span class="badge bg-warning mb-2">Dynamic</span>
+                                <div>Dynamic Criteria</div>
+                            </button>
+                        </div>
+                        
+                        <div class="tab-content" id="criteriaTypeContent">
+                            <!-- Global Role Form -->
+                            <div class="tab-pane fade show active" id="global-content" role="tabpanel" aria-labelledby="global-tab">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h6>Global Role Criteria</h6>
+                                        <p class="text-muted small">Subscribe users based on their global role in the system.</p>
+                                        
+                                        <form method="post" action="{% url 'notification_rule_add_global_criteria' rule.id %}">
+                                            {% csrf_token %}
+                                            {{ global_form|crispy }}
+                                            <div class="d-flex justify-content-end">
+                                                <button type="submit" class="btn btn-primary">
+                                                    <i class="fas fa-plus me-2"></i>Add Global Role Criteria
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Org Unit Role Form -->
+                            <div class="tab-pane fade" id="org-content" role="tabpanel" aria-labelledby="org-tab">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h6>Organizational Unit Role Criteria</h6>
+                                        <p class="text-muted small">Subscribe users based on their role within the relevant organizational unit.</p>
+                                        
+                                        <form method="post" action="{% url 'notification_rule_add_org_criteria' rule.id %}">
+                                            {% csrf_token %}
+                                            {{ org_form|crispy }}
+                                            <div class="d-flex justify-content-end">
+                                                <button type="submit" class="btn btn-primary">
+                                                    <i class="fas fa-plus me-2"></i>Add Org Unit Role Criteria
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Job Role Form -->
+                            <div class="tab-pane fade" id="job-content" role="tabpanel" aria-labelledby="job-tab">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h6>Job Role Criteria</h6>
+                                        <p class="text-muted small">Subscribe users based on their role on a job.</p>
+                                        
+                                        <form method="post" action="{% url 'notification_rule_add_job_criteria' rule.id %}">
+                                            {% csrf_token %}
+                                            
+                                            <div id="jobRoleContainer" class="mb-3">
+                                                <label class="form-label">Job Role</label>
+                                                <select name="role_id" class="form-select" id="jobRoleSelect">
+                                                    {% for role_id, role_name in job_roles %}
+                                                    <option value="{{ role_id }}">{{ role_name }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                            
+                                            <div class="d-flex justify-content-end">
+                                                <button type="submit" class="btn btn-primary">
+                                                    <i class="fas fa-plus me-2"></i>Add Job Role Criteria
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Phase Role Form -->
+                            <div class="tab-pane fade" id="phase-content" role="tabpanel" aria-labelledby="phase-tab">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h6>Phase Role Criteria</h6>
+                                        <p class="text-muted small">Subscribe users based on their role on a phase.</p>
+                                        
+                                        <form method="post" action="{% url 'notification_rule_add_phase_criteria' rule.id %}">
+                                            {% csrf_token %}
+                                            
+                                            <div id="phaseRoleContainer" class="mb-3">
+                                                <label class="form-label">Phase Role</label>
+                                                <select name="role_id" class="form-select" id="phaseRoleSelect">
+                                                    {% for role_id, role_name in phase_roles %}
+                                                    <option value="{{ role_id }}">{{ role_name }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                            
+                                            <div class="d-flex justify-content-end">
+                                                <button type="submit" class="btn btn-primary">
+                                                    <i class="fas fa-plus me-2"></i>Add Phase Role Criteria
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Dynamic Criteria Form -->
+                            <div class="tab-pane fade" id="dynamic-content" role="tabpanel" aria-labelledby="dynamic-tab">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h6>Dynamic Criteria</h6>
+                                        <p class="text-muted small">Use custom logic to determine which users to subscribe.</p>
+                                        
+                                        <form method="post" action="{% url 'notification_rule_add_dynamic_criteria' rule.id %}">
+                                            {% csrf_token %}
+                                            
+                                            <div class="mb-3">
+                                                {{ dynamic_form.criteria_name|as_crispy_field }}
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                {{ dynamic_form.parameters|as_crispy_field }}
+                                                <div class="form-text">Optional JSON parameters for the criteria function.</div>
+                                            </div>
+                                            
+                                            <div class="d-flex justify-content-end">
+                                                <button type="submit" class="btn btn-primary">
+                                                    <i class="fas fa-plus me-2"></i>Add Dynamic Criteria
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-between">
+                <a href="{% url 'notification_rule_detail' rule.id %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Rule
+                </a>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Criteria Types Explained</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6><span class="badge bg-info me-2">Global</span>Global Role Criteria</h6>
+                        <p class="small text-muted">Subscribes users based on their global system role. Use this for system-wide roles like Administrators or QA Managers.</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6><span class="badge bg-success me-2">Org</span>Org Unit Role Criteria</h6>
+                        <p class="small text-muted">Subscribes users based on their role within the relevant organizational unit, like Unit Managers or Unit Members.</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6><span class="badge bg-primary me-2">Job</span>Job Role Criteria</h6>
+                        <p class="small text-muted">Subscribes users based on specific roles on a job (Account Manager, Deputy AM).</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6><span class="badge bg-primary me-2">Phase</span>Phase Role Criteria</h6>
+                        <p class="small text-muted">Subscribes users based on specific roles on a phase (Project Lead, Report Author).</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6><span class="badge bg-warning me-2">Dynamic</span>Dynamic Criteria</h6>
+                        <p class="small text-muted">Uses custom logic for complex scenarios. Available criteria include:</p>
+                        <ul class="small">
+                            <li><code>unit_members</code> - All members of the unit</li>
+                            <li><code>timeslot_assignees</code> - Users scheduled on the job/phase</li>
+                            <li><code>client_account_managers</code> - Client account managers</li>
+                            <li><code>user_manager</code> - User's manager (for leave requests)</li>
+                            <li><code>job_support_team</code> - Job support team members</li>
+                            <li><code>team_members</code> - Members of a specific team</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% endblock %}

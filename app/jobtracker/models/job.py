@@ -19,7 +19,7 @@ from django.db.models import JSONField
 from django.contrib import messages
 import uuid
 from chaotica_utils.models import Note, User, get_sentinel_user
-from notifications.utils import AppNotification, task_send_notifications
+from notifications.utils import AppNotification, send_notifications
 from notifications.enums import NotificationTypes
 from chaotica_utils.views import log_system_activity
 from decimal import Decimal
@@ -311,7 +311,7 @@ class Job(models.Model):
             # users_to_notify = self.unit.get_active_members_with_perm("can_scope_jobs")
             users_to_notify = self.unit.get_active_members_with_perm("notification_pool_scoping")
 
-            task_send_notifications(notification, users_to_notify, config.NOTIFICATION_POOL_SCOPING_EMAIL_RCPTS)
+            send_notifications(notification, users_to_notify, config.NOTIFICATION_POOL_SCOPING_EMAIL_RCPTS)
             # Lets also update the audit log
             for user in users_to_notify:
                 log_system_activity(
@@ -344,7 +344,7 @@ class Job(models.Model):
                 "notification_pool_scoping"
             )
             
-            task_send_notifications(notification, users_to_notify, config.NOTIFICATION_POOL_SCOPING_EMAIL_RCPTS)
+            send_notifications(notification, users_to_notify, config.NOTIFICATION_POOL_SCOPING_EMAIL_RCPTS)
             # Lets also update the audit log
             for user in users_to_notify:
                 log_system_activity(
@@ -373,7 +373,7 @@ class Job(models.Model):
             # users_to_notify = self.unit.get_active_members_with_perm("can_schedule_job")
             users_to_notify = self.unit.get_active_members_with_perm("notification_pool_scheduling")
 
-            task_send_notifications(notification, users_to_notify, config.NOTIFICATION_POOL_SCHEDULING_EMAIL_RCPTS)
+            send_notifications(notification, users_to_notify, config.NOTIFICATION_POOL_SCHEDULING_EMAIL_RCPTS)
             # Lets also update the audit log
             for user in users_to_notify:
                 log_system_activity(

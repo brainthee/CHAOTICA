@@ -1,0 +1,273 @@
+{% extends "base.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block pageTitle %}Notification Subscription Rules{% endblock %}
+
+{% block head_title %}Notification Subscription Rules{% endblock %}
+
+{% block breadcrumbItem %}
+  <li class="breadcrumb-item active">Notification Subscription Rules</li>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="mb-0">Notification Subscription Rules</h1>
+            <p class="text-muted">Manage automatic subscription rules for notifications</p>
+        </div>
+        <div class="col-auto align-self-center">
+            <a href="{% url 'notification_rule_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus-circle me-2"></i>Create New Rule
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Active Rules</h5>
+            <div class="d-flex gap-2">
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="filterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-filter me-1"></i>Filter
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="filterDropdown">
+                        <li><h6 class="dropdown-header">Notification Type</h6></li>
+                        <li><a class="dropdown-item {% if not filter_type %}active{% endif %}" href="{% url 'notification_rules' %}">All Types</a></li>
+                        {% for type_id, type_name in notification_types %}
+                        <li><a class="dropdown-item {% if filter_type == type_id %}active{% endif %}" href="{% url 'notification_rules' %}?type={{ type_id }}">{{ type_name }}</a></li>
+                        {% endfor %}
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item {% if filter_active == '1' %}active{% endif %}" href="{% url 'notification_rules' %}?active=1">Active Only</a></li>
+                        <li><a class="dropdown-item {% if filter_active == '0' %}active{% endif %}" href="{% url 'notification_rules' %}?active=0">Inactive Only</a></li>
+                    </ul>
+                </div>
+                <a href="{% url 'notification_rules' %}" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-redo me-1"></i>Reset
+                </a>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Name</th>
+                            <th>Notification Type</th>
+                            <th>Priority</th>
+                            <th>Criteria</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for rule in rules %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'notification_rule_detail' rule.id %}" class="fw-medium text-decoration-none">
+                                    {{ rule.name }}
+                                </a>
+                                {% if rule.description %}
+                                <div class="small text-muted text-truncate" style="max-width: 300px;">{{ rule.description }}</div>
+                                {% endif %}
+                            </td>
+                            <td>{{ rule.get_notification_type_display }}</td>
+                            <td>{{ rule.priority }}</td>
+                            <td>
+                                <div class="d-flex flex-wrap gap-1">
+                                    {% with global_count=rule.globalrolecriteria_criteria.count %}
+                                    {% if global_count > 0 %}
+                                    <span class="badge bg-info" title="Global Roles">{{ global_count }} Global</span>
+                                    {% endif %}
+                                    {% endwith %}
+                                    
+                                    {% with org_count=rule.orgunitrolecriteria_criteria.count %}
+                                    {% if org_count > 0 %}
+                                    <span class="badge bg-success" title="Org Unit Roles">{{ org_count }} Org</span>
+                                    {% endif %}
+                                    {% endwith %}
+                                    
+                                    {% with job_count=rule.jobrolecriteria_criteria.count %}
+                                    {% if job_count > 0 %}
+                                    <span class="badge bg-primary" title="Job/Phase Roles">{{ job_count }} Job</span>
+                                    {% endif %}
+                                    {% endwith %}
+                                    
+                                    {% with phase_count=rule.phaserolecriteria_criteria.count %}
+                                    {% if phase_count > 0 %}
+                                    <span class="badge bg-primary" title="Job/Phase Roles">{{ phase_count }} Phase</span>
+                                    {% endif %}
+                                    {% endwith %}
+                                    
+                                    {% with dynamic_count=rule.dynamicrulecriteria_criteria.count %}
+                                    {% if dynamic_count > 0 %}
+                                    <span class="badge bg-warning text-dark" title="Dynamic Criteria">{{ dynamic_count }} Dynamic</span>
+                                    {% endif %}
+                                    {% endwith %}
+                                </div>
+                            </td>
+                            <td>
+                                {% if rule.is_active %}
+                                <span class="badge bg-success">Active</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="d-flex gap-1">
+                                    <a href="{% url 'notification_rule_detail' rule.id %}" class="btn btn-sm btn-outline-primary" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'notification_rule_edit' rule.id %}" class="btn btn-sm btn-outline-secondary" title="Edit Rule">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'notification_rule_toggle' rule.id %}" class="btn btn-sm {% if rule.is_active %}btn-outline-warning{% else %}btn-outline-success{% endif %}" title="{% if rule.is_active %}Deactivate{% else %}Activate{% endif %}">
+                                        <i class="fas {% if rule.is_active %}fa-pause{% else %}fa-play{% endif %}"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ rule.id }}" title="Delete Rule">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4">
+                                <div class="text-muted">
+                                    <i class="fas fa-info-circle me-2"></i>No subscription rules found.
+                                    {% if filter_type or filter_active %}
+                                    <a href="{% url 'notification_rules' %}">Clear filters</a> or 
+                                    {% endif %}
+                                    <a href="{% url 'notification_rule_create' %}">Create a new rule</a>.
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% if rules.paginator.num_pages > 1 %}
+        <div class="card-footer">
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center mb-0">
+                    {% if rules.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if filter_type %}&type={{ filter_type }}{% endif %}{% if filter_active %}&active={{ filter_active }}{% endif %}" aria-label="First">
+                            <span aria-hidden="true">&laquo;&laquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ rules.previous_page_number }}{% if filter_type %}&type={{ filter_type }}{% endif %}{% if filter_active %}&active={{ filter_active }}{% endif %}" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" aria-label="First">
+                            <span aria-hidden="true">&laquo;&laquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for i in rules.paginator.page_range %}
+                        {% if rules.number == i %}
+                        <li class="page-item active"><a class="page-link" href="#">{{ i }}</a></li>
+                        {% elif i > rules.number|add:"-3" and i < rules.number|add:"3" %}
+                        <li class="page-item"><a class="page-link" href="?page={{ i }}{% if filter_type %}&type={{ filter_type }}{% endif %}{% if filter_active %}&active={{ filter_active }}{% endif %}">{{ i }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if rules.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ rules.next_page_number }}{% if filter_type %}&type={{ filter_type }}{% endif %}{% if filter_active %}&active={{ filter_active }}{% endif %}" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ rules.paginator.num_pages }}{% if filter_type %}&type={{ filter_type }}{% endif %}{% if filter_active %}&active={{ filter_active }}{% endif %}" aria-label="Last">
+                            <span aria-hidden="true">&raquo;&raquo;</span>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" aria-label="Last">
+                            <span aria-hidden="true">&raquo;&raquo;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Help Card -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-white">
+            <h5 class="mb-0">About Subscription Rules</h5>
+        </div>
+        <div class="card-body">
+            <p class="card-text">Subscription rules automatically add users to notification subscriptions based on their roles and relationship to entities in the system.</p>
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>How It Works</h6>
+                    <ol class="small">
+                        <li>Create a rule for a specific notification type</li>
+                        <li>Add one or more criteria to determine which users should be subscribed</li>
+                        <li>When events occur (like job creation), matching users are automatically subscribed</li>
+                    </ol>
+                </div>
+                <div class="col-md-6">
+                    <h6>Criteria Types</h6>
+                    <ul class="small">
+                        <li><span class="badge bg-info">Global</span> - Users with specific global roles</li>
+                        <li><span class="badge bg-success">Org</span> - Users with specific roles in an organizational unit</li>
+                        <li><span class="badge bg-primary">Job</span> - Users with specific roles on a job or phase</li>
+                        <li><span class="badge bg-warning text-dark">Dynamic</span> - Custom logic for complex scenarios</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modals -->
+{% for rule in rules %}
+<div class="modal fade" id="deleteModal{{ rule.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ rule.id }}" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel{{ rule.id }}">Confirm Deletion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the subscription rule "<strong>{{ rule.name }}</strong>"?</p>
+                <p class="text-danger"><small>This action cannot be undone. Any automatic subscriptions created by this rule will remain.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <a href="{% url 'notification_rule_delete' rule.id %}" class="btn btn-danger">Delete Rule</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Any additional JavaScript for this page
+</script>
+{% endblock %}

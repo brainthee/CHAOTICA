@@ -1,5 +1,3 @@
-# notifications/admin.py (extended)
-
 from django.contrib import admin
 from django.utils.html import format_html
 from django.urls import reverse
@@ -101,7 +99,6 @@ class SubscriptionRuleAdmin(admin.ModelAdmin):
     get_criteria_count.short_description = 'Criteria'
     
     def get_subscriptions_count(self, obj):
-        # This requires adding a created_by_rule field to NotificationSubscription
         count = NotificationSubscription.objects.filter(
             notification_type=obj.notification_type,
             created_by_rule=True

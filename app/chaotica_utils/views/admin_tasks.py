@@ -7,7 +7,7 @@ from django.views.decorators.http import require_safe
 from ..tasks import *
 from django.contrib import messages
 from notifications.utils import (
-    AppNotification, task_send_notifications
+    AppNotification, send_notifications
 )
 from notifications.enums import NotificationTypes
 from ..models import User
@@ -83,6 +83,6 @@ def admin_send_test_notification(request):
         email_template="emails/test_email.html",
         link=reverse("home"),
     )
-    task_send_notifications(notification, request.user)
+    send_notifications(notification, request.user)
     messages.success(request, "Test Notification Sent")
     return HttpResponseRedirect(request.META.get("HTTP_REFERER"))

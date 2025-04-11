@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block pageTitle %}Subscriptions for {{ rule.name }}{% endblock %}
+
+{% block head_title %}Subscriptions for {{ rule.name }}{% endblock %}
+
+{% block breadcrumbItem %}
+  <li class="breadcrumb-item"><a class="opacity-50 text-body-emphasis" href="{% url 'notification_settings' %}">Notification Settings</a></li>
+  <li class="breadcrumb-item"><a class="opacity-50 text-body-emphasis" href="{% url 'notification_rules' %}">Subscription Rules</a></li>
+  <li class="breadcrumb-item"><a class="opacity-50 text-body-emphasis" href="{% url 'notification_rule_detail' rule.id %}">{{ rule.name }}</a></li>
+  <li class="breadcrumb-item active" aria-current="page">Subscriptions</li>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0">Subscriptions for {{ rule.name }}</h2>
+            <p class="text-muted">Users automatically subscribed by this rule</p>
+        </div>
+        <a href="{% url 'notification_rule_detail' rule.id %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Rule
+        </a>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Subscriptions</h5>
+            <div class="input-group" style="max-width: 300px;">
+                <input type="text" class="form-control" placeholder="Search subscriptions..." id="subscriptionSearchInput">
+                <button class="btn btn-outline-secondary" type="button" id="clearSearchButton" style="display: none;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" id="subscriptionsTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th>User</th>
+                            <th>Entity Type</th>
+                            <th>Entity ID</th>
+                            <th>Email</th>
+                            <th>In-App</th>
+                            <th>Created</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for subscription in subscriptions %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    {% if subscription.user.profile_image %}
+                                    <img src="{{ subscription.user.profile_image.url }}" class="rounded-circle me-2" width="32" height="32" alt="{{ subscription.user.get_full_name }}">
+                                    {% else %}
+                                    <div class="bg-secondary text-white rounded-circle me-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                        <span>{{ subscription.user.get_initials }}</span>
+                                    </div>
+                                    {% endif %}
+                                    <div>
+                                        <div class="fw-medium">{{ subscription.user.get_full_name }}</div>
+                                        <small class="text-muted">{{ subscription.user.email }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ subscription.entity_type|title }}</td>
+                            <td>
+                                {% if subscription.entity_type == 'job' %}
+                                <a href="{% url 'job_detail' subscription.entity_id %}" class="text-decoration-none">{{ subscription.entity_id }}</a>
+                                {% elif subscription.entity_type == 'phase' %}
+                                <a href="{% url 'phase_detail' subscription.entity_id %}" class="text-decoration-none">{{ subscription.entity_id }}</a>
+                                {% else %}
+                                {{ subscription.entity_id }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if subscription.email_enabled %}
+                                <span class="badge bg-success">Enabled</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Disabled</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if subscription.in_app_enabled %}
+                                <span class="badge bg-success">Enabled</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Disabled</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ subscription.created_at|date:"M d, Y H:i" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4">
+                                <div class="text-muted">
+                                    <i class="fas fa-info-circle me-2"></i>No subscriptions found for this rule.
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% if subscriptions.paginator.num_pages > 1 %}
+        <div class="card-footer">
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center mb-0">
+                    {% if subscriptions.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1" aria-label="First">
+                            <span aria-hidden="true">&laquo;&laquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ subscriptions.previous_page_number }}" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" aria-label="First">
+                            <span aria-hidden="true">&laquo;&laquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for i in subscriptions.paginator.page_range %}
+                        {% if subscriptions.number == i %}
+                        <li class="page-item active"><a class="page-link" href="#">{{ i }}</a></li>
+                        {% elif i > subscriptions.number|add:"-3" and i < subscriptions.number|add:"3" %}
+                        <li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if subscriptions.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ subscriptions.next_page_number }}" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ subscriptions.paginator.num_pages }}" aria-label="Last">
+                            <span aria-hidden="true">&raquo;&raquo;</span>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" aria-label="Last">
+                            <span aria-hidden="true">&raquo;&raquo;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('subscriptionSearchInput');
+        const clearButton = document.getElementById('clearSearchButton');
+        const table = document.getElementById('subscriptionsTable');
+        const rows = table.querySelectorAll('tbody tr');
+        
+        // Add search functionality
+        searchInput.addEventListener('keyup', function() {
+            const searchTerm = this.value.toLowerCase();
+            
+            // Show/hide clear button
+            if (searchTerm.trim() === '') {
+                clearButton.style.display = 'none';
+            } else {
+                clearButton.style.display = 'block';
+            }
+            
+            // Filter rows
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                if (text.includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+        
+        // Add clear functionality
+        clearButton.addEventListener('click', function() {
+            searchInput.value = '';
+            clearButton.style.display = 'none';
+            
+            // Show all rows
+            rows.forEach(row => {
+                row.style.display = '';
+            });
+        });
+    });
+</script>
+{% endblock %}
