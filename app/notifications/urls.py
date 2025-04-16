@@ -32,7 +32,10 @@ urlpatterns = [
     path('rules/<int:rule_id>/add-phase-criteria/', subscription_rules.notification_rule_add_phase_criteria, name='notification_rule_add_phase_criteria'),    
     path('rules/<int:rule_id>/add-dynamic-criteria/', subscription_rules.notification_rule_add_dynamic_criteria, name='notification_rule_add_dynamic_criteria'),
     path('rules/<int:rule_id>/delete-criteria/', subscription_rules.notification_rule_delete_criteria, name='notification_rule_delete_criteria'),
-    
+
+    # Reapply the rules
+    path('rules/<int:rule_id>/reapply/', subscription_rules.notification_rule_reapply, name='notification_rule_reapply'),
+
     # Rule Subscriptions
     path('rules/<int:rule_id>/subscriptions/', subscription_rules.view_rule_subscriptions, name='view_rule_subscriptions'),
 ]

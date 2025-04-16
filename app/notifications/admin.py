@@ -83,7 +83,8 @@ class SubscriptionRuleAdmin(admin.ModelAdmin):
     
     def get_notification_type_display(self, obj):
         from .enums import NotificationTypes
-        return dict(NotificationTypes.CHOICES)[obj.notification_type]
+        choices_dict = dict(NotificationTypes.CHOICES)
+        return choices_dict.get(obj.notification_type, f"Unknown ({obj.notification_type})")
     get_notification_type_display.short_description = 'Notification Type'
     
     def get_criteria_count(self, obj):
@@ -156,7 +157,8 @@ class NotificationSubscriptionAdmin(admin.ModelAdmin):
     
     def get_notification_type_display(self, obj):
         from .enums import NotificationTypes
-        return dict(NotificationTypes.CHOICES)[obj.notification_type]
+        choices_dict = dict(NotificationTypes.CHOICES)
+        return choices_dict.get(obj.notification_type, f"Unknown ({obj.notification_type})")
     get_notification_type_display.short_description = 'Notification Type'
     
     def creation_method(self, obj):

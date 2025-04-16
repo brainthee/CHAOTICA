@@ -133,6 +133,10 @@ CONSTANCE_CONFIG = {
     # 'PHASE_ID_START': (1, 'Where Phase IDs start'),
     "PROJECT_ID_START": (9000, "Where to start Project IDs"),
     # Notification Settings
+    "TQA_PRECHECK_HOURS": (
+        24,
+        "How many hours before sending another late Prechecks notficiation",
+    ),
     "TQA_LATE_HOURS": (
         24,
         "How many hours before sending another late to TQA notficiation",

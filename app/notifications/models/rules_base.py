@@ -3,6 +3,7 @@ from django.conf import settings
 from notifications.enums import NotificationTypes
 from django.utils import timezone
 from django.db.models import Q
+from .main import NotificationSubscription
 
 
 class SubscriptionRule(models.Model):
@@ -26,7 +27,50 @@ class SubscriptionRule(models.Model):
         verbose_name_plural = "Subscription Rules"
     
     def __str__(self):
-        return f"{self.name} - {dict(NotificationTypes.CHOICES)[self.notification_type]}"
+        choices_dict = dict(NotificationTypes.CHOICES)
+        choice_str = choices_dict.get(self.notification_type, f"Unknown ({self.notification_type})")
+        return f"{self.name} - {choice_str}"
+    
+    def save(self, *args, **kwargs):
+        """Override save to handle rule updates"""
+        is_update = self.pk is not None
+        
+        # Call the original save method
+        super().save(*args, **kwargs)
+        
+        # If this is an update to an existing rule, we need to update subscriptions
+        if is_update and self.is_active:
+            self.update_existing_subscriptions()
+
+    def update_existing_subscriptions(self):
+        """
+        Update all existing subscriptions that were created by this rule.
+        This is called when a rule is modified.
+        """
+        from notifications.utils import apply_rule_to_all_entities, get_entities_by_type_and_ids
+        
+        # Get all subscriptions created by this rule
+        existing_subscriptions = NotificationSubscription.objects.filter(
+            created_by_rule=True,
+            rule_id=self.id
+        )
+        
+        # Get unique entity identifiers
+        entity_types = existing_subscriptions.values_list('entity_type', flat=True).distinct()
+        
+        # For each entity type, get all IDs and reapply the rule
+        for entity_type in entity_types:
+            entity_ids = existing_subscriptions.filter(entity_type=entity_type).values_list('entity_id', flat=True).distinct()
+            
+            # Get the actual entities
+            entities = get_entities_by_type_and_ids(entity_type, entity_ids)
+            
+            # Delete existing subscriptions created by this rule
+            existing_subscriptions.filter(entity_type=entity_type).delete()
+            
+            # Reapply the rule to each entity
+            for entity in entities:
+                apply_rule_to_all_entities(self, entity)
 
 
 class BaseRuleCriteria(models.Model):

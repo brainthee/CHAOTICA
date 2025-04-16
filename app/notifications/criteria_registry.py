@@ -36,7 +36,6 @@ def unit_members(entity, params=None):
 @register_criteria("timeslot_assignees")
 def timeslot_assignees(entity, params=None):
     """Return all users scheduled on the job or phase"""
-    from jobtracker.models import TimeSlot
 
     # Determine what type of entity we have
     if hasattr(entity, "timeslots"):

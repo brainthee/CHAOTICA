@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block pageTitle %}Reapply Notification Rule - {{ rule.name }}{% endblock %}
+{% block head_title %}Reapply Notification Rule - {{ rule.name }}{% endblock %}
+
+{% block breadcrumbItem %}
+  <li class="breadcrumb-item"><a class="opacity-50 text-body-emphasis" href="{% url 'notification_rules' %}">Notification Subscription Rules</a></li>
+  <li class="breadcrumb-item"><a class="opacity-50 text-body-emphasis" href="{% url 'notification_rule_detail' rule.id %}">{{ rule.name }}</a></li>
+  <li class="breadcrumb-item active" aria-current="page">Reapply Rule</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title">Reapply Notification Rule</h5>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-warning">
+                <h4 class="alert-heading">Are you sure?</h4>
+                <p>You are about to reapply the rule <strong>"{{ rule.name }}"</strong> to all relevant entities.</p>
+                <p>This will:</p>
+                <ul>
+                    <li>Remove all existing subscriptions created by this rule</li>
+                    <li>Create new subscriptions based on current rule criteria</li>
+                    <li>Update notifications for all users affected by this rule</li>
+                </ul>
+                <p>This process might take some time depending on the number of entities and users involved.</p>
+            </div>
+            
+            <div class="rule-details mb-4">
+                <h6>Rule Details</h6>
+                <dl class="row">
+                    <dt class="col-sm-3">Notification Type:</dt>
+                    <dd class="col-sm-9">{{ rule.get_notification_type_display }}</dd>
+                    
+                    <dt class="col-sm-3">Description:</dt>
+                    <dd class="col-sm-9">{{ rule.description|default:"No description provided" }}</dd>
+                    
+                    <dt class="col-sm-3">Active:</dt>
+                    <dd class="col-sm-9">{% if rule.is_active %}<span class="badge bg-success">Yes</span>{% else %}<span class="badge bg-danger">No</span>{% endif %}</dd>
+                    
+                    <dt class="col-sm-3">Priority:</dt>
+                    <dd class="col-sm-9">{{ rule.priority }}</dd>
+                </dl>
+            </div>
+            
+            <form method="post">
+                {% csrf_token %}
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'notification_rule_detail' rule_id=rule.id %}" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-warning">Reapply Rule</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

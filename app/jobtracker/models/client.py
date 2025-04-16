@@ -253,7 +253,7 @@ class ClientOnboarding(models.Model):
                 entity_type=self.__class__.__name__,
                 entity_id=self.pk,
             )
-            send_notifications(notification, [self.user])
+            send_notifications(notification)
             log_system_activity(self, "Sent Onboarding Reminder")
 
     class Meta:

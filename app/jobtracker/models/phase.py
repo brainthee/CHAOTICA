@@ -229,7 +229,7 @@ class Phase(models.Model):
         help_text="Start date computed from the schedule.",
     )
     desired_start_date = models.DateField(
-        "Start Date",
+        "Desired Start Date",
         null=True,
         blank=True,
         help_text="If left blank, this will be automatically determined from scheduled slots",
@@ -326,6 +326,12 @@ class Phase(models.Model):
         null=True,
         help_text="Date the last notification was sent for Workflow",
     )
+    notifications_prechecks_late_last_fired = models.DateTimeField(
+        "Late Prechecks Notification last sent",
+        blank=True,
+        null=True,
+        help_text="Date the last notification was sent for Late Prechecks",
+    )
     notifications_late_tqa_last_fired = models.DateTimeField(
         "Late TQA Notification last sent",
         blank=True,
@@ -398,7 +404,6 @@ class Phase(models.Model):
         else:
             # return today's date
             return timezone.now().today()
-        
 
     def earliest_scheduled_date(self):
         # Calculate start from first delivery slot
@@ -412,25 +417,19 @@ class Phase(models.Model):
         else:
             # return today's date
             return timezone.now().today()
-    
 
     def update_stored_dates(self):
-        """Updates the stored _*_date fields based on the schedule
-        """
-        # Start date first...            
+        """Updates the stored _*_date fields based on the schedule"""
+        # Start date first...
         # Calculate start from first delivery slot
-        if self.timeslots.filter(
-            deliveryRole=TimeSlotDeliveryRole.DELIVERY
-        ).exists():
+        if self.timeslots.filter(deliveryRole=TimeSlotDeliveryRole.DELIVERY).exists():
             self._start_date = (
-                self.timeslots.filter(
-                    deliveryRole=TimeSlotDeliveryRole.DELIVERY
-                )
+                self.timeslots.filter(deliveryRole=TimeSlotDeliveryRole.DELIVERY)
                 .earliest("start")
                 .start
             ).date()
 
-        # Now due to *qa      
+        # Now due to *qa
         # Calculate start from last delivery slot
         if self.timeslots.filter(
             Q(deliveryRole=TimeSlotDeliveryRole.REPORTING)
@@ -442,28 +441,32 @@ class Phase(models.Model):
                     | Q(deliveryRole=TimeSlotDeliveryRole.DELIVERY)
                 )
                 .latest("end")
-                .end).date()
-            self._due_to_techqa = last_delivery_date + timedelta(days=config.DAYS_TO_TQA)
-            self._due_to_presqa = last_delivery_date + timedelta(days=config.DAYS_TO_PQA)
-            self._delivery_date = last_delivery_date + timedelta(days=config.DAYS_TO_DELIVERY)    
-
-        self.save()
-        
-
+                .end
+            ).date()
+            self._due_to_techqa = last_delivery_date + timedelta(
+                days=config.DAYS_TO_TQA
+            )
+            self._due_to_presqa = last_delivery_date + timedelta(
+                days=config.DAYS_TO_PQA
+            )
+            self._delivery_date = last_delivery_date + timedelta(
+                days=config.DAYS_TO_DELIVERY
+            )
 
     @property
     def start_date(self):
         if self.desired_start_date:
             return self.desired_start_date
-        
-        if self._start_date:
+        elif self._start_date:
             return self._start_date
+        else:
+            return None
 
     @property
     def due_to_techqa(self):
         if not self.should_do_qa():
             return None
-        
+
         if self.due_to_techqa_set:
             return self.due_to_techqa_set
 
@@ -552,6 +555,16 @@ class Phase(models.Model):
                     and self.due_to_presqa < self.actual_sent_to_pqa_date.date()
                 ):
                     return True
+        return False
+
+    @property
+    def is_prechecks_late(self):
+        if (
+            self.status == PhaseStatuses.PRE_CHECKS
+            and self.start_date
+            and self.start_date < timezone.now().today().date()
+        ):
+            return True
         return False
 
     ################
@@ -654,6 +667,9 @@ class Phase(models.Model):
         # lets increment the phase_number
         if not self.slug:
             self.slug = unique_slug_generator(self, str(self.phase_id) + self.title)
+
+        # Update dates
+        self.update_stored_dates()
         super(Phase, self).save(*args, **kwargs)
 
     def get_absolute_url(self):
@@ -661,11 +677,10 @@ class Phase(models.Model):
             "phase_detail", kwargs={"slug": self.slug, "job_slug": self.job.slug}
         )
 
-
     ########################################################################################
-    ## 
+    ##
     ## Main Methods
-    ## 
+    ##
     ########################################################################################
 
     def get_id(self):
@@ -682,13 +697,13 @@ class Phase(models.Model):
             return text
         else:
             return ""
-        
+
     def get_user_notes(self):
         return self.notes.filter(is_system_note=False)
 
     def get_system_notes(self):
         return self.notes.filter(is_system_note=True)
-    
+
     def is_confirmed(self):
         return self.status >= PhaseStatuses.SCHEDULED_CONFIRMED
 
@@ -729,7 +744,7 @@ class Phase(models.Model):
             "tasks": tasks,
         }
         return data
-    
+
     def get_all_total_scheduled_by_type(self):
         data = dict()
         for state in TimeSlotDeliveryRole.CHOICES:
@@ -806,15 +821,46 @@ class Phase(models.Model):
             return round(100 * float(total_scheduled) / float(total_hours), 2)
         else:
             return 0
-    
 
     ###########################################
     ## Notification Methods
     ###########################################
 
+    def fire_late_prechecks_notification(self):
+        """Fires notifications if late for pre-checks"""
+        email_template = "emails/phase_content.html"
+        now = timezone.now()
+
+        if self.is_prechecks_late:
+            # check if we should or not...
+            hours_since = 0
+            if self.notifications_prechecks_late_last_fired:
+                time_since = now - self.notifications_prechecks_late_last_fired
+                hours_since = time_since.days * 24 + time_since.seconds / 3600
+            if (
+                not self.notifications_prechecks_late_last_fired
+                or hours_since > config.TQA_PRECHECK_HOURS
+            ):
+                # Ok, either it's been greater than config.TQA_PRECHECK_HOURS or we haven't sent it...
+                notification = AppNotification(
+                    notification_type=NotificationTypes.PHASE_PRECHECKS_OVERDUE,
+                    title=f"{self} pre-checks are overdue",
+                    message=f"{self} pre-checks have not been completed and is due to start.",
+                    email_template=email_template,
+                    link=self.get_absolute_url(),
+                    entity_type=self.__class__.__name__,
+                    entity_id=self.pk,
+                    metadata={
+                        "phase": self,
+                    },
+                )
+                send_notifications(notification)
+                log_system_activity(self, "Sent Overdue Precheck notification")
+                self.notifications_prechecks_late_last_fired = now
+                self.save()
+
     def fire_late_to_tqa_notification(self):
-        """ Fires notifications if late to TQA
-        """
+        """Fires notifications if late to TQA"""
         email_template = "emails/phase_content.html"
         now = timezone.now()
 
@@ -836,9 +882,6 @@ class Phase(models.Model):
                 or hours_since > config.TQA_LATE_HOURS
             ):
                 # Ok, either it's been greater than config.TQA_LATE_HOURS or we haven't sent it...
-                # We should tell the team!
-                users_to_notify = self.team()
-
                 notification = AppNotification(
                     notification_type=NotificationTypes.PHASE_LATE_TO_TQA,
                     title=f"{self} is late to Tech QA",
@@ -849,16 +892,15 @@ class Phase(models.Model):
                     entity_id=self.pk,
                     metadata={
                         "phase": self,
-                    }
+                    },
                 )
-                send_notifications(notification, users_to_notify)
+                send_notifications(notification)
                 log_system_activity(self, "Sent TQA late notification")
                 self.notifications_late_tqa_last_fired = now
                 self.save()
 
-
     def fire_late_to_pqa_notification(self):
-        """ Fires notifications if late to PQA """
+        """Fires notifications if late to PQA"""
         email_template = "emails/phase_content.html"
         now = timezone.now()
 
@@ -882,9 +924,6 @@ class Phase(models.Model):
                 or hours_since > config.PQA_LATE_HOURS
             ):
                 # Ok, either it's been greater than config.PQA_LATE_HOURS or we haven't sent it...
-                # We should tell the team!
-                users_to_notify = self.team()
-
                 notification = AppNotification(
                     notification_type=NotificationTypes.PHASE_LATE_TO_PQA,
                     title=f"{self} is late to Pres QA",
@@ -895,16 +934,15 @@ class Phase(models.Model):
                     entity_id=self.pk,
                     metadata={
                         "phase": self,
-                    }
+                    },
                 )
-                send_notifications(notification, users_to_notify)
+                send_notifications(notification)
                 log_system_activity(self, "Sent PQA late notification")
                 self.notifications_late_pqa_last_fired = now
                 self.save()
 
-
     def fire_late_to_delivery_notification(self):
-        """ Fires notifications if late to Delivery """
+        """Fires notifications if late to Delivery"""
         email_template = "emails/phase_content.html"
         now = timezone.now()
 
@@ -923,8 +961,6 @@ class Phase(models.Model):
                 or hours_since > config.DELIVERY_LATE_HOURS
             ):
                 # Ok, either it's been greater than config.PQA_LATE_HOURS or we haven't sent it...
-                # We should tell the team!
-                users_to_notify = self.team()
                 notification = AppNotification(
                     notification_type=NotificationTypes.PHASE_LATE_TO_DELIVERY,
                     title=f"{self} is late to Delivery",
@@ -935,28 +971,28 @@ class Phase(models.Model):
                     entity_id=self.pk,
                     metadata={
                         "phase": self,
-                    }
+                    },
                 )
-                send_notifications(notification, users_to_notify)
+                send_notifications(notification)
                 log_system_activity(self, "Sent Delivery late notification")
                 self.notifications_late_delivery_last_fired = now
                 self.save()
 
     def refire_status_notification(self):
-        """ Refire status notifications """
+        """Refire status notifications"""
         self.fire_status_notification(self.status)
 
     def fire_status_notification(self, target_status):
-        """ Main status notification method """
+        """Main status notification method"""
         email_template = "emails/phase_content.html"
 
         if target_status == PhaseStatuses.PENDING_SCHED:
-            users_to_notify = self.job.unit.get_active_members_with_perm(
-                "notification_pool_scheduling"
-            )
+            # users_to_notify = self.job.unit.get_active_members_with_perm(
+            #     "notification_pool_scheduling"
+            # )
 
             notification = AppNotification(
-                notification_type=NotificationTypes.PHASE_STATUS_CHANGE,
+                notification_type=NotificationTypes.PHASE_PENDING_SCHED,
                 title=f"{self}: Ready for scheduling",
                 message=f"{self}  is ready for Scheduling.",
                 email_template=email_template,
@@ -965,19 +1001,20 @@ class Phase(models.Model):
                 entity_id=self.pk,
                 metadata={
                     "phase": self,
-                }
+                },
             )
             send_notifications(
-                notification, users_to_notify, config.NOTIFICATION_POOL_SCHEDULING_EMAIL_RCPTS
+                notification,
+                extra_recipients=config.NOTIFICATION_POOL_SCHEDULING_EMAIL_RCPTS,
             )
             # Lets also update the audit log
-            for user in users_to_notify:
-                log_system_activity(
-                    self,
-                    "Ready for Scheduling notification sent to {target}".format(
-                        target=user.email
-                    ),
-                )
+            # for user in users_to_notify:
+            #     log_system_activity(
+            #         self,
+            #         "Ready for Scheduling notification sent to {target}".format(
+            #             target=user.email
+            #         ),
+            #     )
             if config.NOTIFICATION_POOL_SCHEDULING_EMAIL_RCPTS:
                 log_system_activity(
                     self,
@@ -986,10 +1023,10 @@ class Phase(models.Model):
 
         elif target_status == PhaseStatuses.SCHEDULED_CONFIRMED:
             # Notify project team
-            users_to_notify = self.team()
+            # users_to_notify = self.team()
 
             notification = AppNotification(
-                notification_type=NotificationTypes.PHASE_STATUS_CHANGE,
+                notification_type=NotificationTypes.PHASE_SCHEDULED_CONFIRMED,
                 title=f"{self}: Schedule Confirmed",
                 message=f"The schedule for {self} is confirmed.",
                 email_template=email_template,
@@ -998,23 +1035,15 @@ class Phase(models.Model):
                 entity_id=self.pk,
                 metadata={
                     "phase": self,
-                }
+                },
             )
-            send_notifications(notification, users_to_notify)
-            # Lets also update the audit log
-            for user in users_to_notify:
-                log_system_activity(
-                    self,
-                    "Schedule Confirmed notification sent to {target}".format(
-                        target=user.email
-                    ),
-                )
+            send_notifications(notification)
 
         elif target_status == PhaseStatuses.PRE_CHECKS:
             # Notify project team
-            users_to_notify = self.team()
+            # users_to_notify = self.team()
             notification = AppNotification(
-                notification_type=NotificationTypes.PHASE_STATUS_CHANGE,
+                notification_type=NotificationTypes.PHASE_READY_PRECHECKS,
                 title=f"{self}: Ready for Pre-Checks",
                 message=f"{self} is ready for Pre-checks",
                 email_template=email_template,
@@ -1023,23 +1052,15 @@ class Phase(models.Model):
                 entity_id=self.pk,
                 metadata={
                     "phase": self,
-                }
+                },
             )
-            send_notifications(notification, users_to_notify)
-            # Lets also update the audit log
-            for user in users_to_notify:
-                log_system_activity(
-                    self,
-                    "Pre-Checks notification sent to {target}".format(
-                        target=user.email
-                    ),
-                )
+            send_notifications(notification)
 
         elif target_status == PhaseStatuses.CLIENT_NOT_READY:
             # Notify project team
-            users_to_notify = self.team()
+            # users_to_notify = self.team()
             notification = AppNotification(
-                notification_type=NotificationTypes.PHASE_STATUS_CHANGE,
+                notification_type=NotificationTypes.PHASE_CLIENT_NOT_READY,
                 title=f"{self}: Client Not Ready",
                 message=f"{self} has been marked as 'Client Not Ready'!",
                 email_template=email_template,
@@ -1048,23 +1069,15 @@ class Phase(models.Model):
                 entity_id=self.pk,
                 metadata={
                     "phase": self,
-                }
+                },
             )
-            send_notifications(notification, users_to_notify)
-            # Lets also update the audit log
-            for user in users_to_notify:
-                log_system_activity(
-                    self,
-                    "Client Not Ready notification sent to {target}".format(
-                        target=user.email
-                    ),
-                )
+            send_notifications(notification)
 
         elif target_status == PhaseStatuses.READY_TO_BEGIN:
             # Notify project team
-            users_to_notify = self.team()
+            # users_to_notify = self.team()
             notification = AppNotification(
-                notification_type=NotificationTypes.PHASE_STATUS_CHANGE,
+                notification_type=NotificationTypes.PHASE_READY,
                 title=f"{self}: Ready To Begin!",
                 message=f"Checks have been carried out and {self} is ready to begin.",
                 email_template=email_template,
@@ -1073,23 +1086,15 @@ class Phase(models.Model):
                 entity_id=self.pk,
                 metadata={
                     "phase": self,
-                }
+                },
             )
-            send_notifications(notification, users_to_notify)
-            # Lets also update the audit log
-            for user in users_to_notify:
-                log_system_activity(
-                    self,
-                    "Ready to Begin notification sent to {target}".format(
-                        target=user.email
-                    ),
-                )
+            send_notifications(notification)
 
         elif target_status == PhaseStatuses.IN_PROGRESS:
             # Notify project team
-            users_to_notify = self.team()
+            # users_to_notify = self.team()
             notification = AppNotification(
-                notification_type=NotificationTypes.PHASE_STATUS_CHANGE,
+                notification_type=NotificationTypes.PHASE_IN_PROGRESS,
                 title=f"{self}: Started",
                 message=f"{self} has started",
                 email_template=email_template,
@@ -1098,32 +1103,24 @@ class Phase(models.Model):
                 entity_id=self.pk,
                 metadata={
                     "phase": self,
-                }
+                },
             )
-            send_notifications(notification, users_to_notify)
-            # Lets also update the audit log
-            for user in users_to_notify:
-                log_system_activity(
-                    self,
-                    "In Progress notification sent to {target}".format(
-                        target=user.email
-                    ),
-                )
+            send_notifications(notification)
 
         elif target_status == PhaseStatuses.PENDING_TQA:
             # Notify qa team
-            if not self.techqa_by:
-                # users_to_notify = self.job.unit.get_active_members_with_perm(
-                #     "can_tqa_jobs"
-                # )
-                users_to_notify = self.job.unit.get_active_members_with_perm(
-                    "notification_pool_tqa"
-                )
-            else:
-                users_to_notify = User.objects.filter(pk=self.techqa_by.pk)
+            # if not self.techqa_by:
+            #     # users_to_notify = self.job.unit.get_active_members_with_perm(
+            #     #     "can_tqa_jobs"
+            #     # )
+            #     users_to_notify = self.job.unit.get_active_members_with_perm(
+            #         "notification_pool_tqa"
+            #     )
+            # else:
+            #     users_to_notify = User.objects.filter(pk=self.techqa_by.pk)
 
             notification = AppNotification(
-                notification_type=NotificationTypes.PHASE_TQA_UPDATES,
+                notification_type=NotificationTypes.PHASE_PENDING_TQA,
                 title=f"{self}: Ready for Tech QA",
                 message=f"{self} is ready for Technical QA",
                 email_template=email_template,
@@ -1132,27 +1129,14 @@ class Phase(models.Model):
                 entity_id=self.pk,
                 metadata={
                     "phase": self,
-                }
+                },
             )
             send_notifications(
-                notification, users_to_notify, config.NOTIFICATION_POOL_TQA_EMAIL_RCPTS
+                notification, extra_recipients=config.NOTIFICATION_POOL_TQA_EMAIL_RCPTS
             )
-            # Lets also update the audit log
-            for user in users_to_notify:
-                log_system_activity(
-                    self,
-                    "Ready for TQA notification sent to {target}".format(
-                        target=user.email
-                    ),
-                )
-            if config.NOTIFICATION_POOL_TQA_EMAIL_RCPTS:
-                log_system_activity(
-                    self,
-                    "Ready for TQA notification sent to configured TQA Pool",
-                )
 
         elif target_status == PhaseStatuses.QA_TECH_AUTHOR_UPDATES:
-            users_to_notify = User.objects.filter(pk=self.report_author.pk)
+            # users_to_notify = User.objects.filter(pk=self.report_author.pk)
             notification = AppNotification(
                 notification_type=NotificationTypes.PHASE_TQA_UPDATES,
                 title=f"{self}: Requires Author Updates",
@@ -1163,32 +1147,24 @@ class Phase(models.Model):
                 entity_id=self.pk,
                 metadata={
                     "phase": self,
-                }
+                },
             )
-            send_notifications(notification, users_to_notify)
-            # Lets also update the audit log
-            for user in users_to_notify:
-                log_system_activity(
-                    self,
-                    "Requires Author Updates notification sent to {target}".format(
-                        target=user.email
-                    ),
-                )
+            send_notifications(notification)
 
         elif target_status == PhaseStatuses.PENDING_PQA:
             # Notify qa team
-            if not self.presqa_by:
-                # users_to_notify = self.job.unit.get_active_members_with_perm(
-                #     "can_pqa_jobs"
-                # )
-                users_to_notify = self.job.unit.get_active_members_with_perm(
-                    "notification_pool_pqa"
-                )
-            else:
-                users_to_notify = User.objects.filter(pk=self.presqa_by.pk)
+            # if not self.presqa_by:
+            #     # users_to_notify = self.job.unit.get_active_members_with_perm(
+            #     #     "can_pqa_jobs"
+            #     # )
+            #     users_to_notify = self.job.unit.get_active_members_with_perm(
+            #         "notification_pool_pqa"
+            #     )
+            # else:
+            #     users_to_notify = User.objects.filter(pk=self.presqa_by.pk)
 
             notification = AppNotification(
-                notification_type=NotificationTypes.PHASE_PQA_UPDATES,
+                notification_type=NotificationTypes.PHASE_PENDING_PQA,
                 title=f"{self}: Ready for Pres QA",
                 message=f"{self} is ready for Presentation QA.",
                 email_template=email_template,
@@ -1197,27 +1173,14 @@ class Phase(models.Model):
                 entity_id=self.pk,
                 metadata={
                     "phase": self,
-                }
+                },
             )
             send_notifications(
-                notification, users_to_notify, config.NOTIFICATION_POOL_PQA_EMAIL_RCPTS
+                notification, extra_recipients=config.NOTIFICATION_POOL_PQA_EMAIL_RCPTS
             )
-            # Lets also update the audit log
-            for user in users_to_notify:
-                log_system_activity(
-                    self,
-                    "Ready for PQA notification sent to {target}".format(
-                        target=user.email
-                    ),
-                )
-            if config.NOTIFICATION_POOL_PQA_EMAIL_RCPTS:
-                log_system_activity(
-                    self,
-                    "Ready for TQA notification sent to configured PQA Pool",
-                )
 
         elif target_status == PhaseStatuses.QA_PRES_AUTHOR_UPDATES:
-            users_to_notify = User.objects.filter(pk=self.report_author.pk)
+            # users_to_notify = User.objects.filter(pk=self.report_author.pk)
 
             notification = AppNotification(
                 notification_type=NotificationTypes.PHASE_PQA_UPDATES,
@@ -1229,23 +1192,15 @@ class Phase(models.Model):
                 entity_id=self.pk,
                 metadata={
                     "phase": self,
-                }
+                },
             )
-            send_notifications(notification, users_to_notify)
-            # Lets also update the audit log
-            for user in users_to_notify:
-                log_system_activity(
-                    self,
-                    "Requires Author Updates notification sent to {target}".format(
-                        target=user.email
-                    ),
-                )
+            send_notifications(notification)
 
         elif target_status == PhaseStatuses.COMPLETED:
             # Notify project team
-            users_to_notify = self.team()
+            # users_to_notify = self.team()
             notification = AppNotification(
-                notification_type=NotificationTypes.PHASE_STATUS_CHANGE,
+                notification_type=NotificationTypes.PHASE_COMPLETED,
                 title=f"{self}: Ready for Delivery",
                 message=f"The report for {self} has been QA'd and is ready for delivery.",
                 email_template=email_template,
@@ -1254,17 +1209,12 @@ class Phase(models.Model):
                 entity_id=self.pk,
                 metadata={
                     "phase": self,
-                }
+                },
             )
-            send_notifications(notification, users_to_notify)
-            # Lets also update the audit log
-            for user in users_to_notify:
-                log_system_activity(
-                    self,
-                    "Completed notification sent to {target}".format(target=user.email),
-                )
+            send_notifications(notification)
+
             # Lets also send feedback
-            users_to_notify = self.team()
+            # users_to_notify = self.team()
             notification = AppNotification(
                 notification_type=NotificationTypes.PHASE_FEEDBACK,
                 title=f"{self}: Feedback",
@@ -1275,20 +1225,14 @@ class Phase(models.Model):
                 entity_id=self.pk,
                 metadata={
                     "phase": self,
-                }
+                },
             )
-            send_notifications(notification, users_to_notify)
-            # Lets also update the audit log
-            for user in users_to_notify:
-                log_system_activity(
-                    self,
-                    "Feedback notification sent to {target}".format(target=user.email),
-                )
+            send_notifications(notification)
 
         elif target_status == PhaseStatuses.POSTPONED:
-            users_to_notify = self.team()
+            # users_to_notify = self.team()
             notification = AppNotification(
-                notification_type=NotificationTypes.PHASE_STATUS_CHANGE,
+                notification_type=NotificationTypes.PHASE_POSTPONED,
                 title=f"{self}: Postponed",
                 message=f"{self} has been postponed!",
                 email_template=email_template,
@@ -1297,16 +1241,9 @@ class Phase(models.Model):
                 entity_id=self.pk,
                 metadata={
                     "phase": self,
-                }
+                },
             )
-            send_notifications(notification, users_to_notify)
-            # Lets also update the audit log
-            for user in users_to_notify:
-                log_system_activity(
-                    self,
-                    "Postponed notification sent to {target}".format(target=user.email),
-                )
-
+            send_notifications(notification)
 
     ###########################################
     ## Team Methods
@@ -1360,45 +1297,38 @@ class Phase(models.Model):
             return User.objects.filter(pk__in=user_ids)
         else:
             return None
-        
 
     def follow(self, user):
         """Let a user follow this job/phase to receive notifications"""
         from notifications.models import NotificationSubscription
         from notifications.enums import NotificationTypes
-        
+
         # Create subscriptions for relevant notification types
         notification_types = [
             NotificationTypes.JOB_STATUS_CHANGE,
             # Add other relevant notification types
         ]
-        
+
         for notification_type in notification_types:
             NotificationSubscription.objects.get_or_create(
                 user=user,
                 notification_type=notification_type,
                 entity_type=self.__class__.__name__,
                 entity_id=self.id,
-                defaults={
-                    'email_enabled': True,
-                    'in_app_enabled': True
-                }
+                defaults={"email_enabled": True, "in_app_enabled": True},
             )
-        
+
         return True
 
     def unfollow(self, user):
         """Stop a user from following this job/phase"""
         from notifications.models import NotificationSubscription
-        
-        NotificationSubscription.objects.filter(
-            user=user,
-            entity_type=self.__class__.__name__,
-            entity_id=self.id
-        ).delete()
-        
-        return True
 
+        NotificationSubscription.objects.filter(
+            user=user, entity_type=self.__class__.__name__, entity_id=self.id
+        ).delete()
+
+        return True
 
     ###########################################
     ## Workflow Methods
@@ -1442,7 +1372,6 @@ class Phase(models.Model):
             _can_proceed = False
         return _can_proceed
 
-
     #####################
     ## SCHEDULED_TENTATIVE
     #####################
@@ -1480,7 +1409,6 @@ class Phase(models.Model):
                 messages.add_message(notify_request, messages.ERROR, self.INVALID_STATE)
             _can_proceed = False
         return _can_proceed
-
 
     #####################
     ## SCHEDULED_CONFIRMED
@@ -1553,7 +1481,6 @@ class Phase(models.Model):
             _can_proceed = False
         return _can_proceed
 
-
     #####################
     ## PRE_CHECKS
     #####################
@@ -1586,7 +1513,6 @@ class Phase(models.Model):
                 messages.add_message(notify_request, messages.ERROR, self.INVALID_STATE)
             _can_proceed = False
         return _can_proceed
-
 
     #####################
     ## CLIENT_NOT_READY
@@ -1621,7 +1547,6 @@ class Phase(models.Model):
             _can_proceed = False
         return _can_proceed
 
-
     #####################
     ## READY_TO_BEGIN
     #####################
@@ -1653,7 +1578,6 @@ class Phase(models.Model):
                 messages.add_message(notify_request, messages.ERROR, self.INVALID_STATE)
             _can_proceed = False
         return _can_proceed
-
 
     #####################
     ## IN_PROGRESS
@@ -1693,7 +1617,6 @@ class Phase(models.Model):
                 messages.add_message(notify_request, messages.ERROR, self.INVALID_STATE)
             _can_proceed = False
         return _can_proceed
-
 
     #####################
     ## PENDING_TQA
@@ -1788,7 +1711,6 @@ class Phase(models.Model):
                 messages.add_message(notify_request, messages.ERROR, self.INVALID_STATE)
             _can_proceed = False
         return _can_proceed
-
 
     #####################
     ## QA_TECH
@@ -1891,7 +1813,6 @@ class Phase(models.Model):
             _can_proceed = False
         return _can_proceed
 
-
     #####################
     ## PENDING_PQA
     #####################
@@ -1938,7 +1859,6 @@ class Phase(models.Model):
                 messages.add_message(notify_request, messages.ERROR, self.INVALID_STATE)
             _can_proceed = False
         return _can_proceed
-
 
     #####################
     ## QA_PRES
@@ -1993,7 +1913,6 @@ class Phase(models.Model):
             _can_proceed = False
         return _can_proceed
 
-
     #####################
     ## QA_PRES_AUTHOR_UPDATES
     #####################
@@ -2043,7 +1962,6 @@ class Phase(models.Model):
                 messages.add_message(notify_request, messages.ERROR, self.INVALID_STATE)
             _can_proceed = False
         return _can_proceed
-
 
     #####################
     ## COMPLETED
@@ -2123,7 +2041,6 @@ class Phase(models.Model):
             _can_proceed = False
         return _can_proceed
 
-
     #####################
     ## DELIVERED
     #####################
@@ -2176,7 +2093,6 @@ class Phase(models.Model):
             _can_proceed = False
         return _can_proceed
 
-
     #####################
     ## CANCELLED
     #####################
@@ -2217,7 +2133,6 @@ class Phase(models.Model):
                 )
         return _can_proceed
 
-
     #####################
     ## POSTPONED
     #####################
@@ -2245,7 +2160,6 @@ class Phase(models.Model):
             _can_proceed = False
         return _can_proceed
 
-
     #####################
     ## DELETED
     #####################
@@ -2272,7 +2186,6 @@ class Phase(models.Model):
                 messages.add_message(notify_request, messages.ERROR, self.INVALID_STATE)
             _can_proceed = False
         return _can_proceed
-
 
     #####################
     ## ARCHIVED

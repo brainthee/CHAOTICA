@@ -296,92 +296,55 @@ class Job(models.Model):
         if target_status == JobStatuses.PENDING_SCOPE:
             # Notify scoping team
             notification = AppNotification(
-                notification_type=NotificationTypes.JOB_STATUS_CHANGE,
+                notification_type=NotificationTypes.JOB_PENDING_SCOPING,
                 title="Job: Pending Scope",
                 message=f"{self} has just been marked as ready to scope.",
-                email_template=self.email_template,
+                email_template=email_template,
                 link=self.get_absolute_url(),
                 entity_type=self.__class__.__name__,
-                entity_id=self.pk,
+                entity_id=self.id,
                 metadata={
                     "job": self,
                 }
             )
 
-            # users_to_notify = self.unit.get_active_members_with_perm("can_scope_jobs")
-            users_to_notify = self.unit.get_active_members_with_perm("notification_pool_scoping")
-
-            send_notifications(notification, users_to_notify, config.NOTIFICATION_POOL_SCOPING_EMAIL_RCPTS)
-            # Lets also update the audit log
-            for user in users_to_notify:
-                log_system_activity(
-                    self,
-                    "Pending Scope notification sent to {target}".format(
-                        target=user.email
-                    ),
-                )
+            send_notifications(notification, extra_recipients=config.NOTIFICATION_POOL_SCOPING_EMAIL_RCPTS)
 
         elif target_status == JobStatuses.PENDING_SCOPING_SIGNOFF:
             # Notify scoping team
 
             notification = AppNotification(
-                notification_type=NotificationTypes.JOB_STATUS_CHANGE,
+                notification_type=NotificationTypes.JOB_PENDING_SCOPE_SIGNOFF,
                 title="Job: Scope Pending Signoff",
                 message=f"{self} is ready for scope signoff.",
-                email_template=self.email_template,
+                email_template=email_template,
                 link=self.get_absolute_url(),
                 entity_type=self.__class__.__name__,
-                entity_id=self.pk,
+                entity_id=self.id,
                 metadata={
                     "job": self,
                 }
             )
-
-            # users_to_notify = self.unit.get_active_members_with_perm(
-            #     "can_signoff_scopes"
-            # )
-            users_to_notify = self.unit.get_active_members_with_perm(
-                "notification_pool_scoping"
-            )
             
-            send_notifications(notification, users_to_notify, config.NOTIFICATION_POOL_SCOPING_EMAIL_RCPTS)
-            # Lets also update the audit log
-            for user in users_to_notify:
-                log_system_activity(
-                    self,
-                    "Pending Scope Signoff notification sent to {target}".format(
-                        target=user.email
-                    ),
-                )
+            send_notifications(notification, extra_recipients=config.NOTIFICATION_POOL_SCOPING_EMAIL_RCPTS)
 
         elif target_status == JobStatuses.SCOPING_COMPLETE:
             # Notify scheduling team
 
             notification = AppNotification(
-                notification_type=NotificationTypes.JOB_STATUS_CHANGE,
+                notification_type=NotificationTypes.JOB_SCOPING_COMPLETE,
                 title="Job: Ready to Schedule",
                 message=f"The scope for {self} has been signed off and is ready for scheduling.",
-                email_template=self.email_template,
+                email_template=email_template,
                 link=self.get_absolute_url(),
                 entity_type=self.__class__.__name__,
-                entity_id=self.pk,
+                entity_id=self.id,
                 metadata={
                     "job": self,
                 }
             )
 
-            # users_to_notify = self.unit.get_active_members_with_perm("can_schedule_job")
-            users_to_notify = self.unit.get_active_members_with_perm("notification_pool_scheduling")
-
-            send_notifications(notification, users_to_notify, config.NOTIFICATION_POOL_SCHEDULING_EMAIL_RCPTS)
-            # Lets also update the audit log
-            for user in users_to_notify:
-                log_system_activity(
-                    self,
-                    "Scope Complete notification sent to {target}".format(
-                        target=user.email
-                    ),
-                )
+            send_notifications(notification, extra_recipients=config.NOTIFICATION_POOL_SCHEDULING_EMAIL_RCPTS)
 
     _start_date = models.DateField(
         "Start Date",
@@ -715,7 +678,7 @@ class Job(models.Model):
     # SCOPING
     @transition(
         field=status,
-        source=[JobStatuses.PENDING_SCOPE, JobStatuses.SCOPING_COMPLETE],
+        source=[JobStatuses.PENDING_SCOPE, JobStatuses.SCOPING_COMPLETE, JobStatuses.PENDING_SCOPING_SIGNOFF],
         target=JobStatuses.SCOPING,
     )
     def to_scoping(self, user=None):

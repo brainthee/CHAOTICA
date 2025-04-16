@@ -28,7 +28,7 @@ from .models import (
     OrganisationalUnitRole,
 )
 from chaotica_utils.models import Note, User
-from .enums import DefaultTimeSlotTypes, JobStatuses, PhaseStatuses
+from .enums import DefaultTimeSlotTypes, JobStatuses, PhaseStatuses, TimeSlotDeliveryRole
 from crispy_forms.helper import FormHelper
 from crispy_forms.bootstrap import StrictButton
 from crispy_forms.layout import Layout, Row, Column, Field, Div, HTML, Submit
@@ -796,6 +796,7 @@ class DeliveryTimeSlotModalForm(forms.ModelForm):
             DefaultTimeSlotTypes.DELIVERY
         )
         self.fields["slot_type"].disabled = True
+        self.fields["deliveryRole"].initial = TimeSlotDeliveryRole.DELIVERY
 
         if phase:
             self.fields["phase"].disabled = True
