@@ -13,7 +13,7 @@ Menu.add_item(
 )
 
 Menu.add_item(
-    "ops",
+    "admin",
     MenuItem(
         "Notification Subscription Rules",
         reverse("notification_rules"),

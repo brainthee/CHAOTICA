@@ -19,6 +19,8 @@ urlpatterns = [
     # Subscription Rules
     path('rules/', subscription_rules.notification_rules, name='notification_rules'),
     path('rules/create/', subscription_rules.notification_rule_create, name='notification_rule_create'),
+    path('rules/export/', subscription_rules.export_notification_rules, name='export_notification_rules'),
+    path('rules/import/', subscription_rules.import_notification_rules, name='import_notification_rules'),
     path('rules/<int:rule_id>/', subscription_rules.notification_rule_detail, name='notification_rule_detail'),
     path('rules/<int:rule_id>/edit/', subscription_rules.notification_rule_edit, name='notification_rule_edit'),
     path('rules/<int:rule_id>/delete/', subscription_rules.notification_rule_delete, name='notification_rule_delete'),
