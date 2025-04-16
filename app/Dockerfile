@@ -46,7 +46,8 @@ RUN chown chaotica:chaotica -R /app
 
 COPY --chown=chaotica:chaotica requirements*.txt ./
 
-RUN pip3 install --upgrade pip
+# pin to v24 because of https://github.com/pypa/pip/issues/13015
+RUN pip3 install --upgrade pip==24.0 
 RUN pip3 install -r requirements.txt
 RUN pip3 install git+https://github.com/coderanger/supervisor-stdout.git
 
