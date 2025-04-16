@@ -21,6 +21,9 @@
             <a href="{% url 'notification_rule_edit' rule.id %}" class="btn btn-outline-primary">
                 <i class="fas fa-edit me-2"></i>Edit Rule
             </a>
+            <a href="{% url 'notification_rule_reapply' rule_id=rule.id %}" class="btn btn-warning ms-2">
+                <i class="fas fa-sync-alt"></i> Reapply Rule
+            </a>
             <div class="dropdown">
                 <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="actionDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="fas fa-ellipsis-v"></i>
@@ -267,7 +270,7 @@
                     </div>
                     {% endif %}
                     
-                    {% if not global_criteria.exists and not org_criteria.exists and not job_criteria.exists and not dynamic_criteria.exists %}
+                    {% if not global_criteria.exists and not org_criteria.exists and not job_criteria.exists and not phase_criteria.exists and not dynamic_criteria.exists %}
                     <div class="p-5 text-center">
                         <p class="text-muted mb-3">This subscription rule has no criteria defined.</p>
                         <p class="mb-0">

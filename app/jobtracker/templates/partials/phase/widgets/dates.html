@@ -1,15 +1,18 @@
 {% load humanize %}
 {% load static %}
 
-<div class="row">
+<div class="row mx-0">
   <div class="col border-1 border-end p-2">
-    <div class="btn w-100 fs-8 fw-semi-bold d-flex flex-column d-xxl-inline-block">
+    <div class="btn w-100 fs-8 {% if phase.is_prechecks_late %}btn-outline-danger{% endif %} fw-semi-bold d-flex flex-column d-xxl-inline-block">
       <h6 class="fs-18 mb-1 font-w500 text-body-emphasis">Checks Completed</h6>
       <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ phase.pre_checks_done_date }}">
         {% if phase.pre_checks_done_date %}
           {{ phase.pre_checks_done_date|naturaltime }}
         {% else %}
           <span class="fas fa-ellipsis-h"></span>
+          {% if phase.is_prechecks_late %}
+          <p class="text-body-secondary fw-normal fs-9 mb-0">(Overdue)</p>
+          {% endif %}
         {% endif %}
       </span>
     </div>

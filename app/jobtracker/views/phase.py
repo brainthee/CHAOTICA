@@ -62,8 +62,6 @@ def view_phase_schedule_slots(request, job_slug, slug):
 
 class PhaseAutocomplete(autocomplete.Select2QuerySetView):
     def get_queryset(self):
-        from pprint import pprint
-
         # Don't forget to filter out results depending on the visitor !
         if not self.request.user.is_authenticated:
             return Phase.objects.none()
@@ -252,7 +250,7 @@ def phase_refire_notifications(request, job_slug, slug):
 def phase_update_dates(request, job_slug, slug):
     job = get_object_or_404(Job, slug=job_slug)
     phase = get_object_or_404(Phase, job=job, slug=slug)
-    phase.update_stored_dates()
+    phase.save()
     messages.info(request, "Dates updated based on schedule")
 
     return HttpResponseRedirect(
@@ -273,7 +271,6 @@ def phase_create_note(request, job_slug, slug):
             new_note.is_system_note = False
             new_note.save()
             # Lets send a notification to everyone except us
-            users_to_notify = phase.team().exclude(pk=request.user.pk)
             email_template = "emails/phase_content.html"
 
             notification = AppNotification(
@@ -288,7 +285,7 @@ def phase_create_note(request, job_slug, slug):
                     "phase": phase,
                 }
             )
-            send_notifications(notification, users_to_notify)
+            send_notifications(notification)
 
             return HttpResponseRedirect(
                 reverse("phase_detail", kwargs={"job_slug": job_slug, "slug": slug})

@@ -36,6 +36,14 @@ class NotificationSubscription(models.Model):
         default=False,
         help_text="Whether this subscription was created automatically by a rule"
     )
+    rule = models.ForeignKey(
+        'SubscriptionRule', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name="created_subscriptions",
+        help_text="The rule that created this subscription"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:

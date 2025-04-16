@@ -457,3 +457,29 @@ def view_rule_subscriptions(request, rule_id):
     }
     
     return render(request, 'notification_rules/subscriptions.html', context)
+
+
+@permission_required('notifications.change_subscriptionrule')
+def notification_rule_reapply(request, rule_id):
+    """Re-apply a subscription rule to all relevant entities"""
+    rule = get_object_or_404(SubscriptionRule, id=rule_id)
+    
+    if request.method == 'POST':
+        # First, remove existing subscriptions created by this rule
+        NotificationSubscription.objects.filter(
+            created_by_rule=True,
+            rule_id=rule.id
+        ).delete()
+        
+        # Re-apply the rule
+        from notifications.utils import apply_rule_to_all_entities
+        apply_rule_to_all_entities(rule)
+        
+        messages.success(request, f"Rule '{rule.name}' has been re-applied to all relevant entities.")
+        return redirect('notification_rule_detail', rule_id=rule_id)
+    
+    # Show confirmation page
+    context = {
+        'rule': rule,
+    }
+    return render(request, 'notification_rules/rule_reapply_confirm.html', context)

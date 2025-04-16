@@ -60,10 +60,18 @@ class task_fire_job_notifications(CronJobBase):
 
     def do(self):
         # We want to fire notifications for these scenarios:
+        # - Late to pre-checks
         # - Report late to TQA
         # - Report late to PQA
         # - Report late to Delivery
-        # - Precons Due
+
+        ## Phase pre-checks are late
+        for phase in Phase.objects.filter(
+            status=PhaseStatuses.PRE_CHECKS
+        ):
+            # Check if we're past the start date...
+            if phase.is_prechecks_late:
+                phase.fire_late_prechecks_notification()
 
         ## Report late to TQA
         for phase in Phase.objects.filter(

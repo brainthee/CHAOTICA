@@ -408,15 +408,38 @@ class User(AbstractUser):
         return get_objects_for_user(self, "can_pqa_jobs", OrganisationalUnit)
 
     def _get_last_leave_renewal_date(self):
-        today = timezone.now().date()
-        renewal_date = self.contracted_leave_renewal.replace(year=today.year)
-        if renewal_date < today:
-            return renewal_date
+        # Get current datetime in UTC
+        now_utc = timezone.now()
+        
+        # Convert to user's timezone if available
+        if hasattr(self, 'pref_timezone') and self.pref_timezone:
+            user_tz = pytz.timezone(self.pref_timezone)
+            today = now_utc.astimezone(user_tz).date()
         else:
+            # Fall back to server timezone if user preference isn't set
+            today = now_utc.date()
+        
+        # Calculate renewal date in current year
+        renewal_date = self.contracted_leave_renewal.replace(year=today.year)
+        
+        # If renewal date hasn't occurred yet this year, use last year's date
+        if renewal_date > today:
             return renewal_date.replace(year=today.year - 1)
+        else:
+            return renewal_date
 
     def _get_next_leave_renewal_date(self):
-        today = timezone.now().date()
+        # Get current datetime in UTC
+        now_utc = timezone.now()
+        
+        # Convert to user's timezone if available
+        if hasattr(self, 'pref_timezone') and self.pref_timezone:
+            user_tz = pytz.timezone(self.pref_timezone)
+            today = now_utc.astimezone(user_tz).date()
+        else:
+            # Fall back to server timezone if user preference isn't set
+            today = now_utc.date()
+
         renewal_date = self.contracted_leave_renewal.replace(year=today.year)
         if renewal_date > today:
             return renewal_date
@@ -698,7 +721,7 @@ class User(AbstractUser):
             end_date = datetime.combine(end_date, time.max).replace(
                 tzinfo=tz
             )
-        elif isinstance(end_date, datetime.datetime) and end_date.tzinfo is None:
+        elif isinstance(end_date, datetime) and end_date.tzinfo is None:
             end_date = end_date.replace(tzinfo=tz)
 
         # Validate dates
@@ -755,7 +778,7 @@ class User(AbstractUser):
                         adjusted_start = self.get_next_workday_start(end_date)
                     else:
                         adjusted_start = datetime.combine(
-                            end_date.date() + datetime.timedelta(days=1),
+                            end_date.date() + timedelta(days=1),
                             time.min,
                         ).replace(tzinfo=end_date.tzinfo)
 
@@ -817,7 +840,7 @@ class User(AbstractUser):
                         adjusted_start = self.get_next_workday_start(end_date)
                     else:
                         adjusted_start = datetime.combine(
-                            end_date.date() + datetime.timedelta(days=1),
+                            end_date.date() + timedelta(days=1),
                             time.min,
                         ).replace(tzinfo=end_date.tzinfo)
 
@@ -885,12 +908,12 @@ class User(AbstractUser):
 
         # Convert date to datetime (start of day)
         if isinstance(start_date, date) and not isinstance(
-            start_date, datetime.datetime
+            start_date, datetime
         ):
             start_date = datetime.combine(
                 start_date, time.min
             ).replace(tzinfo=tz)
-        elif isinstance(start_date, datetime.datetime) and start_date.tzinfo is None:
+        elif isinstance(start_date, datetime) and start_date.tzinfo is None:
             start_date = start_date.replace(tzinfo=tz)
 
         # Convert end_date to datetime (end of day if it's a date object)
@@ -944,7 +967,7 @@ class User(AbstractUser):
                         adjusted_start = self.get_next_workday_start(end_date)
                     else:
                         adjusted_start = datetime.combine(
-                            end_date.date() + datetime.timedelta(days=1),
+                            end_date.date() + timedelta(days=1),
                             time.min,
                         ).replace(tzinfo=end_date.tzinfo)
 
@@ -991,7 +1014,7 @@ class User(AbstractUser):
                         adjusted_start = self.get_next_workday_start(end_date)
                     else:
                         adjusted_start = datetime.combine(
-                            end_date.date() + datetime.timedelta(days=1),
+                            end_date.date() + timedelta(days=1),
                             time.min,
                         ).replace(tzinfo=end_date.tzinfo)
 
@@ -1320,14 +1343,14 @@ class User(AbstractUser):
 
         # For start times: if after workday end, use next day's workday start
         if not is_end_time and dt.time() > working_hours["end"]:
-            next_day = (dt + datetime.timedelta(days=1)).date()
+            next_day = (dt + timedelta(days=1)).date()
             return datetime.combine(next_day, working_hours["start"]).replace(
                 tzinfo=dt.tzinfo
             )
 
         # For end times: if before workday start, use previous day's workday end
         if is_end_time and dt.time() < working_hours["start"]:
-            prev_day = (dt - datetime.timedelta(days=1)).date()
+            prev_day = (dt - timedelta(days=1)).date()
             return datetime.combine(prev_day, working_hours["end"]).replace(
                 tzinfo=dt.tzinfo
             )
@@ -1337,7 +1360,7 @@ class User(AbstractUser):
     # Helper function to get next workday start
     def get_next_workday_start(self, dt):
         """Get the start of the next workday"""
-        next_day = (dt + datetime.timedelta(days=1)).date()
+        next_day = (dt + timedelta(days=1)).date()
         working_hours = self.get_working_hours()
         return datetime.combine(next_day, working_hours["start"]).replace(
             tzinfo=dt.tzinfo

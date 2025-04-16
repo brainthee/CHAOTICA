@@ -326,8 +326,6 @@ class CustomConfigForm(ConstanceForm):
 
 
 class LeaveRequestForm(forms.ModelForm):
-    # start_date = forms.DateTimeField(initial=timezone.now())
-
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop("request", None)
         super(LeaveRequestForm, self).__init__(*args, **kwargs)
@@ -351,6 +349,7 @@ class LeaveRequestForm(forms.ModelForm):
         self.fields["type_of_leave"].label = False
         self.fields["type_of_leave"].choices = LeaveRequestTypes.FORM_CHOICES
         self.fields["notes"].label = False
+        # self.fields["start_date"].widget = DateTimePickerInput(range_from="end_date")
         self.fields["start_date"].widget = DateTimePickerInput()
         self.fields["end_date"].widget = DateTimePickerInput()
 

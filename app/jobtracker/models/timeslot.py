@@ -463,11 +463,11 @@ class TimeSlot(models.Model):
             raise ValidationError("End time must come after the start")
         super(TimeSlot, self).save(*args, **kwargs)
         if self.is_delivery():
-            # Lets update the dates in case...
-            self.phase.update_stored_dates()
             # Lets see if we need to update our parent phase
             if self.phase and self.phase.status == PhaseStatuses.PENDING_SCHED:
                 # lets move to scheduled tentative!
                 if self.phase.can_to_sched_tentative():
                     self.phase.to_sched_tentative()
-                    self.phase.save()
+                                
+            # Lets update the dates in case...
+            self.phase.save()
