@@ -603,8 +603,8 @@ class CommentTimeSlotModalForm(forms.ModelForm):
         self.fields["start"].widget =  DateTimePickerInput(options={"allowInputToggle": True})
         self.fields["end"].widget =  DateTimePickerInput(range_from="start", options={"allowInputToggle": True})
         if not self.instance.pk:
-            self.fields["start"].initial = start
-            self.fields["end"].initial = end
+            self.fields["start"].initial = start.replace(tzinfo=None)
+            self.fields["end"].initial = end.replace(tzinfo=None)
             self.fields["user"].initial = resource
         self.helper.layout = Layout(
             Field("user", style="width: 100%;"),
@@ -687,8 +687,8 @@ class NonDeliveryTimeSlotModalForm(forms.ModelForm):
         self.fields["start"].widget =  DateTimePickerInput(options={"allowInputToggle": True})
         self.fields["end"].widget =  DateTimePickerInput(range_from="start", options={"allowInputToggle": True})
         if not self.instance.pk:
-            self.fields["start"].initial = start
-            self.fields["end"].initial = end
+            self.fields["start"].initial = start.replace(tzinfo=None)
+            self.fields["end"].initial = end.replace(tzinfo=None)
             self.fields["user"].initial = resource
         self.fields["slot_type"].queryset = TimeSlotType.objects.filter(
             is_assignable=True
@@ -838,11 +838,11 @@ class DeliveryTimeSlotModalForm(forms.ModelForm):
 
         self.fields["start"].widget =  DateTimePickerInput(options={"allowInputToggle": True})
         if start:
-            self.fields["start"].initial = start
+            self.fields["start"].initial = start.replace(tzinfo=None)
 
         self.fields["end"].widget =  DateTimePickerInput(range_from="start", options={"allowInputToggle": True})
         if end:
-            self.fields["end"].initial = end
+            self.fields["end"].initial = end.replace(tzinfo=None)
 
         self.helper.layout = Layout(
             Div(
@@ -987,11 +987,11 @@ class ProjectTimeSlotModalForm(forms.ModelForm):
 
         self.fields["start"].widget =  DateTimePickerInput(options={"allowInputToggle": True})
         if start:
-            self.fields["start"].initial = start
+            self.fields["start"].initial = start.replace(tzinfo=None)
 
         self.fields["end"].widget =  DateTimePickerInput(range_from="start", options={"allowInputToggle": True})
         if end:
-            self.fields["end"].initial = end
+            self.fields["end"].initial = end.replace(tzinfo=None)
 
         self.helper.layout = Layout(
             Div(

@@ -41,6 +41,7 @@ from chaotica_utils.utils import (
 from chaotica_utils.models import Holiday
 from django.contrib import messages
 import time
+import pytz
 from constance import config
 
 
@@ -537,11 +538,26 @@ def create_scheduler_internal_slot(request):
         JsonResponse: _description_
     """
     data = dict()
-    start = clean_datetime(request.GET.get("start", None))
-    end = clean_datetime(request.GET.get("end", None))
+    # start = clean_datetime(request.GET.get("start", None))
+    # end = clean_datetime(request.GET.get("end", None))
+
+    start_utc = clean_datetime(request.GET.get("start", None))
+    end_utc = clean_datetime(request.GET.get("end", None))
+
     resource_id = clean_int(request.GET.get("resource_id", None))
     if resource_id:
         resource = get_object_or_404(User, pk=resource_id)
+    
+    user_timezone = resource.pref_timezone if hasattr(resource, 'pref_timezone') and resource.pref_timezone else 'UTC'
+
+    # Convert to the user's timezone
+    if start_utc and end_utc:
+        user_tz = pytz.timezone(user_timezone)
+        start = start_utc.astimezone(user_tz)
+        end = end_utc.astimezone(user_tz)
+    else:
+        start = start_utc
+        end = end_utc
 
     if request.method == "POST":
         form = NonDeliveryTimeSlotModalForm(
