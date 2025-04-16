@@ -1,0 +1,33 @@
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+<div class="modal-dialog modal- modal-dialog-centered modal-" role="document">
+    <div class="modal-content">
+
+        <form method="post" action="{% url 'import_notification_rules' %}" class="js-submit-file-modal-form" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="modal-header bg-info">
+                <h6 class="modal-title text-white font-weight-normal" 
+                    id="modal-title-default">
+                        Import Rules
+                </h6>
+                <button type="button" class="btn-close text-body-emphasis" 
+                    data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+                
+            <div class="modal-body">
+                <p>
+                    Upload a JSON file containing notification rules.
+                </p>
+
+                <div class="input-group">
+                  <input type="file" name="rules_file" class="form-control" accept=".json" required />
+                </div>
+
+            </div>
+            <div class="modal-footer bg-info">
+                <button type="submit" class="btn btn-phoenix-primary mb-0"><i class="fa fa-upload"></i> Import</button>
+                <button type="button" class="btn btn-light shadow-none mb-0" data-bs-dismiss="modal">Close</button>
+            </div>
+          </form>
+    </div>
+ </div>

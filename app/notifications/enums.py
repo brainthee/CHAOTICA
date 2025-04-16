@@ -78,6 +78,25 @@ class NotificationTypes:
         (CLIENT_ONBOARDING_RENEWAL, "Onboarding Renewal Reminders"),
     )
 
+    descriptions = {
+        SYSTEM: "System-generated notifications",
+        JOB_STATUS_CHANGE: "When a job's status changes",
+        JOB_CREATED: "When a new job is created",
+        PHASE_STATUS_CHANGE: "When a phase's status changes",
+        PHASE_LATE_TO_TQA: "When a phase is late for TQA",
+        PHASE_LATE_TO_PQA: "When a phase is late for PQA",
+        PHASE_TQA_UPDATES: "Updates related to TQA of a phase",
+        PHASE_PQA_UPDATES: "Updates related to PQA of a phase",
+        PHASE_LATE_TO_DELIVERY: "When a phase is late for delivery",
+        PHASE_NEW_NOTE: "When a note is added to a phase",
+        PHASE_FEEDBACK: "When feedback is added to a phase",
+        LEAVE_SUBMITTED: "When leave is submitted",
+        LEAVE_APPROVED: "When leave is approved",
+        LEAVE_REJECTED: "When leave is rejected",
+        LEAVE_CANCELLED: "When leave is cancelled",
+        CLIENT_ONBOARDING_RENEWAL: "Client onboarding renewal reminders",
+    }
+
     JOB_EVENTS = [
         JOB_CREATED,
         JOB_STATUS_CHANGE,

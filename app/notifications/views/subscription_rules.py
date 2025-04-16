@@ -1,16 +1,13 @@
 from django.shortcuts import render, get_object_or_404, redirect
+from django.urls import reverse
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.db.models import Count, Q
-from django.http import JsonResponse, HttpResponseRedirect
-from django.urls import reverse
-from django.views.decorators.http import require_http_methods, require_POST
+from django.http import HttpResponse, JsonResponse
+from django.views.decorators.http import require_POST
 
 from ..models import (
-    Notification, 
     NotificationSubscription, 
-    NotificationCategory,
     SubscriptionRule,
     GlobalRoleCriteria,
     OrgUnitRoleCriteria,
@@ -28,8 +25,85 @@ from ..forms import (
     DynamicRuleCriteriaForm
 )
 from ..criteria_registry import _CRITERIA_REGISTRY
+from ..exporters import RuleExporter, RuleImporter
+from django.template import loader
 
-# Existing notification views...
+
+@login_required
+@permission_required('notifications.export_subscriptionrule')
+def export_notification_rules(request):
+    """Export selected notification rules to a JSON file"""
+    # Get rule IDs from request
+    rule_ids = request.POST.getlist('rule_ids')
+    
+    if not rule_ids:
+        messages.error(request, "No rules selected for export")
+        return redirect('notification_rules')
+    
+    # Get the rules
+    rules = SubscriptionRule.objects.filter(id__in=rule_ids)
+    
+    if not rules.exists():
+        messages.error(request, "No valid rules found for export")
+        return redirect('notification_rules')
+    
+    # Export the rules to JSON
+    exporter = RuleExporter()
+    json_data = exporter.export_rules_to_json(rules)
+    
+    # Create response with JSON file
+    response = HttpResponse(json_data, content_type='application/json')
+    response['Content-Disposition'] = 'attachment; filename="notification_rules.json"'
+    
+    return response
+
+@login_required
+@permission_required('notifications.import_subscriptionrule')
+def import_notification_rules(request):
+    """Import notification rules from a JSON file"""
+    data = dict()
+    data["form_is_valid"] = True
+
+    if request.method == "POST":
+        if 'rules_file' not in request.FILES:
+            messages.error(request, "No file was uploaded")
+            return redirect('notification_rules')
+        
+        # Get the uploaded file
+        rules_file = request.FILES['rules_file']
+        
+        try:
+            # Read file content as string
+            file_content = rules_file.read().decode('utf-8')
+            
+            # Import the rules
+            importer = RuleImporter()
+            imported_rules = importer.import_from_json(file_content)
+            
+            # Handle any errors
+            if importer.errors:
+                for error in importer.errors:
+                    messages.error(request, error)
+            
+            # Report success
+            if imported_rules:
+                messages.success(request, f"Successfully imported {len(imported_rules)} rules")
+            else:
+                messages.warning(request, "No rules were imported")
+                
+        except Exception as e:
+            messages.error(request, f"Error importing rules: {str(e)}")
+        
+        finally:
+            data["next"] = reverse('notification_rules')
+
+    context = {}
+    data["html_form"] = loader.render_to_string(
+        "modal/import_rules.html", context, request=request
+    )
+    return JsonResponse(data)
+    
+
 
 @login_required
 @permission_required('notifications.view_subscriptionrule')
@@ -42,6 +116,7 @@ def notification_rules(request):
         'globalrolecriteria_criteria',
         'orgunitrolecriteria_criteria',
         'jobrolecriteria_criteria',
+        'phaserolecriteria_criteria',
         'dynamicrulecriteria_criteria'
     )
     
@@ -63,7 +138,7 @@ def notification_rules(request):
     rules = rules.order_by('-priority', 'name')
     
     # Paginate the results
-    paginator = Paginator(rules, 10)
+    paginator = Paginator(rules, 50)
     page_number = request.GET.get('page')
     rules = paginator.get_page(page_number)
     
@@ -132,30 +207,10 @@ def notification_rule_create(request):
     else:
         form = SubscriptionRuleForm()
     
-    # Prepare notification type descriptions
-    type_descriptions = {
-        NotificationTypes.SYSTEM: "System-generated notifications",
-        NotificationTypes.JOB_STATUS_CHANGE: "When a job's status changes",
-        NotificationTypes.JOB_CREATED: "When a new job is created",
-        NotificationTypes.PHASE_STATUS_CHANGE: "When a phase's status changes",
-        NotificationTypes.PHASE_LATE_TO_TQA: "When a phase is late for TQA",
-        NotificationTypes.PHASE_LATE_TO_PQA: "When a phase is late for PQA",
-        NotificationTypes.PHASE_TQA_UPDATES: "Updates related to TQA of a phase",
-        NotificationTypes.PHASE_PQA_UPDATES: "Updates related to PQA of a phase",
-        NotificationTypes.PHASE_LATE_TO_DELIVERY: "When a phase is late for delivery",
-        NotificationTypes.PHASE_NEW_NOTE: "When a note is added to a phase",
-        NotificationTypes.PHASE_FEEDBACK: "When feedback is added to a phase",
-        NotificationTypes.LEAVE_SUBMITTED: "When leave is submitted",
-        NotificationTypes.LEAVE_APPROVED: "When leave is approved",
-        NotificationTypes.LEAVE_REJECTED: "When leave is rejected",
-        NotificationTypes.LEAVE_CANCELLED: "When leave is cancelled",
-        NotificationTypes.CLIENT_ONBOARDING_RENEWAL: "Client onboarding renewal reminders",
-    }
-    
     context = {
         'form': form,
         'notification_types': NotificationTypes.CHOICES,
-        'type_descriptions': type_descriptions,
+        'type_descriptions': NotificationTypes.descriptions,
     }
     
     return render(request, 'notification_rules/form.html', context)

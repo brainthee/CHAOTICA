@@ -1,8 +1,6 @@
 from django.db import models
-from django.conf import settings
 from notifications.enums import NotificationTypes
-from django.utils import timezone
-from django.db.models import Q
+from itertools import chain
 from .main import NotificationSubscription
 
 
@@ -71,6 +69,17 @@ class SubscriptionRule(models.Model):
             # Reapply the rule to each entity
             for entity in entities:
                 apply_rule_to_all_entities(self, entity)
+    
+    def get_all_criteria(self):
+        """Get all criteria from all related sets"""
+        # Combine all criteria types into a single list
+        return list(chain(
+            self.globalrolecriteria_criteria.all(),
+            self.orgunitrolecriteria_criteria.all(),
+            self.jobrolecriteria_criteria.all(),
+            self.phaserolecriteria_criteria.all(),
+            self.phaserolecriteria_criteria.all()
+        ))
 
 
 class BaseRuleCriteria(models.Model):
@@ -84,6 +93,27 @@ class BaseRuleCriteria(models.Model):
     
     class Meta:
         abstract = True
+    
+    def get_concrete_class(self):
+        """Get the most derived class instance"""
+        if hasattr(self, 'globalcriteria'):
+            return self.globalcriteria
+        elif hasattr(self, 'organisationalunitcriteria'):
+            return self.organisationalunitcriteria
+        elif hasattr(self, 'jobcriteria'):
+            return self.jobcriteria
+        elif hasattr(self, 'phasecriteria'):
+            return self.phasecriteria
+        elif hasattr(self, 'phaserolecriteria'):
+            return self.phaserolecriteria
+        return self
+    
+    def get_concrete_class_name(self):
+        """Get the name of the most derived class"""
+        concrete = self.get_concrete_class()
+        if concrete:
+            return concrete.__class__.__name__
+        return self.__class__.__name__
         
     def get_matching_users(self, entity):
         """Return QuerySet of users matching this criteria for the given entity"""

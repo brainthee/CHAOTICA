@@ -106,6 +106,31 @@ $(function() {
         return false;
     };
 
+    var saveFileForm = function() {
+        var form = $(this);
+        var formData = new FormData(this);
+        $.ajax({
+            url: form.attr("action"),
+            data: formData,
+            type: form.attr("method"),
+            dataType: 'json',
+            processData: false,  // tell jQuery not to process the data
+            contentType: false,  // tell jQuery not to set contentType
+            success: function(data) {
+                if (data.form_is_valid) {
+                    if (data.next) {
+                        location.href = data.next
+                    } else {
+                        location.reload();
+                    }
+                } else {
+                    $("#mainModalContent").html(data.html_form);
+                }
+            }
+        });
+        return false;
+    };
+
     var profileUpdateSkills = function() {
         var form = $(this);
         $.ajax({
@@ -149,6 +174,8 @@ $(function() {
     $("#mainModal").on("submit", ".js-workflow-phase-form", saveForm);
     $("#mainModal").on("submit", ".js-workflow-job-form", saveForm);
     $("#mainModal").on("submit", ".js-submit-modal-form", saveForm);
+    $("#mainModal").on("submit", ".js-submit-file-modal-form", saveFileForm);
+    
 
     const themeController = document.body;
 
