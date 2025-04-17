@@ -420,6 +420,11 @@ class Phase(models.Model):
 
     def update_stored_dates(self):
         """Updates the stored _*_date fields based on the schedule"""
+
+        # If we don't have a PK, we don't exist yet. Dates don't make sense at this stage.
+        if not self.pk:
+            return
+        
         # Start date first...
         # Calculate start from first delivery slot
         if self.timeslots.filter(deliveryRole=TimeSlotDeliveryRole.DELIVERY).exists():
