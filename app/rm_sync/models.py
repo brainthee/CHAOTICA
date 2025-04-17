@@ -676,11 +676,11 @@ class RMSyncRecord(models.Model):
             # Check for things like deleted, archived, etc
 
             if rm_user["archived"]:
-                log.error("RM user is archived. Stopping sync.")
+                log.info("RM user is archived. Stopping sync.")
                 return False
 
             if rm_user["deleted"]:
-                log.error("RM user is deleted. Stopping sync.")
+                log.info("RM user is deleted. Stopping sync.")
                 return False
 
             # Let's log the response just for info!
