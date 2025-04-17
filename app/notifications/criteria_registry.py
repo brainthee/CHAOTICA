@@ -76,7 +76,7 @@ def user_manager(entity, params=None):
         user_field = params["user_field"]
 
     # For leave requests, the entity has a user field
-    if hasattr(entity, user_field) and getattr(entity, user_field).manager:
+    if hasattr(entity, user_field) and getattr(entity, user_field) and getattr(entity, user_field).manager:
         managers = [getattr(entity, user_field).manager]
         if getattr(entity, user_field).acting_manager:
             managers.append(getattr(entity, user_field).acting_manager)
