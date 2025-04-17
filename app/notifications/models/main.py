@@ -115,10 +115,10 @@ class Notification(models.Model):
                 context = {
                     'user': self.user,
                     'notification': self,
-                    'title': self.notification.title,
-                    'message': self.notification.message,
-                    'link': self.notification.link,
-                    'metadata': self.notification.metadata,
+                    'title': self.title,
+                    'message': self.message,
+                    'link': self.link,
+                    'metadata': self.metadata,
                 }
                 context["SITE_DOMAIN"] = settings.SITE_DOMAIN
                 context["SITE_PROTO"] = settings.SITE_PROTO
