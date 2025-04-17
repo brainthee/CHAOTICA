@@ -41,13 +41,13 @@ class OrgUnitRoleCriteria(BaseRuleCriteria):
         if isinstance(entity, User):
             # Get their orgs...
             units = OrganisationalUnit.objects.filter(
-                members__member=entity, members__is_active=True
+                members__member=entity
             )
 
         elif isinstance(entity, LeaveRequest):
             # Get their orgs...
             units = OrganisationalUnit.objects.filter(
-                members__member=entity.user, members__is_active=True
+                members__member=entity.user
             )
 
         elif hasattr(entity, "unit"):
