@@ -130,8 +130,8 @@ class Notification(models.Model):
                 msg_html = render_to_string(self.email_template, context)
 
                 django.core.mail.send_mail(
-                    subject=self.title,
-                    message=self.email_body,
+                    subject=context["title"],
+                    message=context["message"],
                     from_email=None,
                     recipient_list=[self.user.email_address()],
                     html_message=msg_html,

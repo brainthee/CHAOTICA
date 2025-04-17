@@ -317,19 +317,19 @@ def unfollow_entity(request):
             data['message'] = 'Subscription not found'
     else:
         # Alternative approach if you're using separate parameters
-        notification_type = request.POST.get('notification_type')
+        # notification_type = request.POST.get('notification_type')
         entity_type = request.POST.get('entity_type')
         entity_id = request.POST.get('entity_id')
         
-        if notification_type and entity_type and entity_id:
+        if entity_type and entity_id:
             try:
-                notification_type = int(notification_type)
+                # notification_type = int(notification_type)
                 entity_id = int(entity_id)
                 
                 # Delete the subscription
                 deleted, _ = NotificationSubscription.objects.filter(
                     user=request.user,
-                    notification_type=notification_type,
+                    # notification_type=notification_type,
                     entity_type=entity_type,
                     entity_id=entity_id
                 ).delete()
@@ -338,7 +338,7 @@ def unfollow_entity(request):
                     # Create an opt-out record
                     NotificationOptOut.objects.get_or_create(
                         user=request.user,
-                        notification_type=notification_type,
+                        # notification_type=notification_type,
                         entity_type=entity_type,
                         entity_id=entity_id
                     )
