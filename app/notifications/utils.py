@@ -298,6 +298,9 @@ def get_entity_object(entity_type, entity_id):
         elif entity_type == "Phase":
             from jobtracker.models import Phase
             return Phase.objects.get(id=entity_id)
+        elif entity_type == "User":
+            from chaotica_utils.models import User
+            return User.objects.get(pk=entity_id)
     except:
         return None
     # Add more as needed

@@ -82,6 +82,8 @@ def admin_send_test_notification(request):
         message="This is a test notification. At ease.",
         email_template="emails/test_email.html",
         link=reverse("home"),
+        entity_type=request.user.__class__.__name__,
+        entity_id=request.user.pk,
     )
     send_notifications(notification, request.user)
     messages.success(request, "Test Notification Sent")
