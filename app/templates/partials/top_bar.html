@@ -126,21 +126,7 @@
           </div>
         </li>
 
-        <!-- Notification bell -->
-        <li class="nav-item dropdown">
-          <a class="nav-link position-relative" href="#" style="min-width: 2.5rem" 
-            role="button" data-bs-toggle="dropdown" aria-haspopup="true" 
-            aria-expanded="false" data-bs-auto-close="outside">
-            <span data-feather="bell" style="height:20px;width:20px;"></span>
-            {% if request.user.unread_notifications|length > 0 %}
-            <span class="position-absolute top-10 start-75 translate-middle badge rounded-pill bg-warning">{{ request.user.unread_notifications | length }}<span class="visually-hidden">unread messages</span>
-            {% endif %}
-          </a>
-
-          <div class="dropdown-menu dropdown-menu-end notification-dropdown-menu py-0 shadow border border-300 navbar-dropdown-caret" id="navbarDropdownNotfication" aria-labelledby="navbarDropdownNotfication">
-            {% include 'partials/notifications.html' %}
-          </div>
-        </li>
+        {% include 'partials/notifications.html' %}
         
         <li class="nav-item dropdown">
           <a class="nav-link lh-1 pe-0" id="navbarDropdownUser" href="#!" role="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-haspopup="true" aria-expanded="false">

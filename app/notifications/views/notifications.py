@@ -136,6 +136,7 @@ def notifications_api(request):
                     'type': n.notification_type,
                     'type_display': n.get_notification_type_display(),
                     'timestamp': n.timestamp.isoformat(),
+                    'timestamp_human': n.get_human_timestamp(),
                     'title': n.title,
                     'message': n.message,
                     'link': n.link,

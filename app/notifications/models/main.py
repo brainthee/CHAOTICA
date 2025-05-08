@@ -5,6 +5,9 @@ from constance import config
 from django.template.loader import render_to_string
 import django.core.mail
 import logging
+from datetime import timedelta
+from django.utils import timezone
+from django.utils.timesince import timesince
 
 logger = logging.getLogger(__name__)
 
@@ -102,6 +105,15 @@ class Notification(models.Model):
     
     def __str__(self):
         return f"{self.title} - {self.user}"
+    
+    def get_human_timestamp(self):
+        now = timezone.now()
+        difference = now - self.timestamp
+
+        if difference <= timedelta(minutes=1):
+            return 'just now'
+        return '%(time)s ago' % {'time': timesince(self.timestamp).split(', ')[0]}
+
 
     def send_email(self, resend=False):
         try:

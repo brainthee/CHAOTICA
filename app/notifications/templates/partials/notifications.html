@@ -1,0 +1,287 @@
+{% load humanize %}{% load static %}
+
+
+<!-- Notification bell -->
+<li class="nav-item dropdown">
+
+  <button class="btn dropdown-toggle notification-toggle position-relative" type="button" id="notificationDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+    <i class="fas fa-bell fs-8 "></i>
+    <span style="top: 15% !important; left: 60% !important;" class="notification-counter position-absolute translate-middle badge rounded-pill bg-warning d-none">0</span>
+  </button>
+
+  <div class="dropdown-menu dropdown-menu-end notification-dropdown-menu py-0 shadow border border-300 navbar-dropdown-caret" id="navbarDropdownNotfication" aria-labelledby="navbarDropdownNotfication">
+
+    <div class="card position-relative border-0">
+      <div class="card-header p-2">
+        <div class="d-flex justify-content-between">
+          <h5 class="text-body-emphasis mb-0">Notificatons</h5>
+          <button class="btn btn-link p-0 fs-9 fw-normal notification-mark-all-read" type="button">Mark all as read</button>
+        </div>
+      </div>
+
+      <div class="card-body p-0">
+        <div class="scrollbar-overlay simplebar-scrollable-y" style="height: 27rem;" data-simplebar="init">
+          <div class="border-300" id="notification-container">
+            <!-- Notifications will be loaded here via AJAX -->
+            <div class="p-3 text-center">
+              <div class="spinner-border spinner-border-sm" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+              <p class="mb-0 mt-2">Loading notifications...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer p-0 border-top border-0">
+        <div class="my-2 text-center fw-bold fs-10 text-600">
+          <a class="fw-bolder" href="{% url 'notification_settings' %}">Manage notifications</a>
+        </div>
+      </div>
+    </div>
+
+
+  </div>
+
+</li>
+<script>
+  $(document).ready(function() {
+    // Initial count update
+    updateNotificationCounter();
+    
+    // Set up polling for notification count
+    setInterval(updateNotificationCounter, 60000); // Update count every minute
+    
+    // Load notifications when dropdown is opened
+    $('#notificationDropdown').on('show.bs.dropdown', function() {
+      loadNotifications();
+    });
+    
+    // Function to update the notification counter
+    function updateNotificationCounter() {
+      $.ajax({
+        url: '{% url "get_unread_count" %}',
+        type: 'GET',
+        dataType: 'json',
+        success: function(data) {
+          const count = data.unread_count || 0;
+          const counter = $('.notification-counter');
+          
+          if (count > 0) {
+            counter.text(count).removeClass('d-none');
+          } else {
+            counter.text('0').addClass('d-none');
+          }
+        },
+        error: function(xhr, status, error) {
+          console.error('Error fetching notification count:', error);
+        }
+      });
+    }
+    
+    // Function to load notifications via AJAX
+    function loadNotifications() {
+      $.ajax({
+        url: '{% url "notifications_api" %}',
+        type: 'GET',
+        dataType: 'json',
+        success: function(data) {
+          renderNotifications(data.notifications);
+        },
+        error: function(xhr, status, error) {
+          $('#notification-container').html(
+            '<div class="p-3 text-center">' +
+            '<p class="mb-0 text-danger">Failed to load notifications</p>' +
+            '</div>'
+          );
+          console.error('Error fetching notifications:', error);
+        }
+      });
+    }
+    
+    // Function to render notifications
+    function renderNotifications(notifications) {
+      const container = $('#notification-container');
+      
+      if (!notifications || notifications.length === 0) {
+        container.html(
+          '<div class="px-2 px-sm-3 py-3 border-300 notification-card position-relative border-bottom">' +
+          '<div class="d-flex align-items-center justify-content-between position-relative">' +
+          '<div class="d-flex">' +
+          '<div class="flex-1 me-sm-3">' +
+          '<h4 class="fs-9 text-body-emphasis">No new notifications</h4>' +
+          '</div>' +
+          '</div>' +
+          '</div>' +
+          '</div>'
+        );
+        return;
+      }
+      
+      let html = '';
+      
+      notifications.forEach(function(notification) {
+        html += `
+          <div class="p-2 border-300 notification-card position-relative ${notification.read ? 'read' : 'unread'} border-bottom" 
+               data-notification-id="${notification.id}">
+            <a class="dropdown-item text-wrap p-0 m-0" href='${notification.link}'>
+              <div class="d-flex align-items-center justify-content-between position-relative">
+                <div class="d-flex">              
+                  <div class="flex-1 me-sm-3">
+                    <h4 class="fs-9 text-body-emphasis">
+                      ${notification.title}
+                    </h4>
+                    <p class="text-800 fs-9 mb-0">
+                      <span class="me-1 fas fa-clock"></span>
+                      ${notification.timestamp_human}
+                    </p>
+                  </div>
+                </div>
+                <div class="font-sans-serif d-none d-sm-block">
+                  <button class="btn fs-10 btn-sm dropdown-toggle dropdown-caret-none transition-none notification-dropdown-toggle" 
+                          type="button" 
+                          data-bs-toggle="dropdown" 
+                          data-boundary="window" 
+                          aria-haspopup="true" 
+                          aria-expanded="false" 
+                          data-bs-reference="parent">
+                    <span class="fas fa-ellipsis-h fs-10 text-900"></span>
+                  </button>
+                  <div class="dropdown-menu dropdown-menu-end py-2">
+                    <button class="dropdown-item notification-mark-read" data-notification-id='${notification.id}'>
+                      Mark as read
+                    </button>
+                    ${notification.entity_type && notification.entity_id ? `
+                    <div class="dropdown-divider"></div>
+                    <button class="dropdown-item notification-unfollow" 
+                            data-entity-type='${notification.entity_type}' 
+                            data-entity-id="${notification.entity_id}">
+                      Unfollow ${notification.entity_type}
+                    </button>
+                    ` : ''}
+                  </div>
+                </div>
+              </div>
+            </a>
+          </div>
+        `;
+      });
+      
+      container.html(html);
+      
+      // Reattach event handlers
+      attachEventHandlers();
+    }
+    
+    // Function to attach event handlers to notification actions
+    function attachEventHandlers() {
+      // Mark a single notification as read
+      $('.notification-mark-read').off('click').on('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const notificationId = $(this).data('notification-id');
+        if (!notificationId) return;
+        
+        $.ajax({
+          url: '{% url "notifications_api" %}',
+          type: 'POST',
+          dataType: 'json',
+          contentType: 'application/json',
+          data: JSON.stringify({
+            notification_ids: [notificationId],
+            action: 'mark_read'
+          }),
+          headers: {
+            'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val()
+          },
+          success: function(data) {
+            if (data.status === 'success') {
+              // Update UI
+              $(`.notification-card[data-notification-id="${notificationId}"]`)
+                .removeClass('unread')
+                .addClass('read');
+              
+              // Update notification counter
+              updateNotificationCounter();
+            }
+          },
+          error: function(xhr, status, error) {
+            console.error('Error marking notification as read:', error);
+          }
+        });
+      });
+      
+      // Unfollow entity
+      $('.notification-unfollow').off('click').on('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const entityType = $(this).data('entity-type');
+        const entityId = $(this).data('entity-id');
+        if (!entityType || !entityId) return;
+        
+        if (confirm(`Are you sure you want to stop receiving notifications for this ${entityType}?`)) {
+          $.ajax({
+            url: '{% url "unfollow_entity" %}',
+            type: 'POST',
+            dataType: 'json',
+            contentType: 'application/json',
+            data: JSON.stringify({
+              entity_type: entityType,
+              entity_id: entityId
+            }),
+            headers: {
+              'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val()
+            },
+            success: function(data) {
+              if (data.status === 'success') {
+                // Show success message
+                showToast('You will no longer receive notifications for this item', 'success');
+              }
+            },
+            error: function(xhr, status, error) {
+              console.error('Error unfollowing entity:', error);
+            }
+          });
+        }
+      });
+    }
+    
+    // Mark all notifications as read
+    $('.notification-mark-all-read').on('click', function(e) {
+      e.preventDefault();
+      
+      $.ajax({
+        url: '{% url "mark_all_read" %}',
+        type: 'POST',
+        dataType: 'json',
+        headers: {
+          'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val()
+        },
+        success: function(data) {
+          if (data.status === 'success') {
+            // Update UI
+            $('.notification-card.unread').removeClass('unread').addClass('read');
+            
+            // Update notification counter
+            updateNotificationCounter();
+          }
+        },
+        error: function(xhr, status, error) {
+          console.error('Error marking all notifications as read:', error);
+        }
+      });
+    });
+    
+    // Function to show toast notifications
+    function showToast(message, type = 'info') {
+      // If your site has a toast notification system, use it here
+      if (window.showToast) {
+        window.showToast(message, type);
+      } else {
+        // Simple fallback
+        alert(message);
+      }
+    }
+  });
+  </script>
