@@ -10,6 +10,8 @@ from django.http import (
 )
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 import json, os, random, csv
+
+from notifications.models.main import Notification
 from ..forms import (
     ImportSiteDataForm,
     EditProfileForm,
@@ -305,7 +307,6 @@ def get_quote(request):
     return JsonResponse(lines[random_index])
 
 
-
 class NoteBaseView(ChaoticaBaseGlobalRoleView):
     model = Note
     fields = "__all__"
@@ -327,4 +328,3 @@ class NoteListView(PrefetchRelatedMixin, NoteBaseView, ListView):
     def get_queryset(self):
         queryset = super(NoteListView, self).get_queryset()
         return queryset[:200]
-
