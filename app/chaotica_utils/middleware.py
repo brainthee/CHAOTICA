@@ -56,8 +56,12 @@ class NewInstallMiddleware(MiddlewareMixin):
             msg = "You must first update your profile!"
             if msg not in [m.message for m in get_messages(request)]:
                 messages.warning(request=request, message=msg)
-            if request.path not in excluded_profile_urls:
-                return HttpResponseRedirect(reverse("view_own_profile"))
+
+            for path in excluded_profile_urls:
+                if request.path.startswith(path):
+                    return
+
+            return HttpResponseRedirect(reverse("view_own_profile"))
 
 
 class MaintenanceModeMiddleware(MiddlewareMixin):
