@@ -37,25 +37,19 @@ from django.views.decorators.http import (
 
 
 def page_defaults(request):
-    from jobtracker.models import Job, Phase
-
     context = {}
     context["config"] = config
+    context["DJANGO_ENV"] = django_settings.DJANGO_ENV
+    context["DJANGO_VERSION"] = django_settings.DJANGO_VERSION
+
     if (
         django_settings.CHAOTICA_BIRTHDAY.month == datetime.date.today().month
         and django_settings.CHAOTICA_BIRTHDAY.day == datetime.date.today().day
     ):
-
         context["IS_APP_BIRTHDAY"] = True
         context["CHAOTICA_BIRTHDAY_YEARS_OLD"] = (
             datetime.date.today().year - django_settings.CHAOTICA_BIRTHDAY.year
         )
-
-    context["DJANGO_ENV"] = django_settings.DJANGO_ENV
-    context["DJANGO_VERSION"] = django_settings.DJANGO_VERSION
-
-    context["myJobs"] = Job.objects.jobs_for_user(request.user)
-    context["myPhases"] = Phase.objects.phases_for_user(request.user)
 
     # Lets add prompts/messages if we need to...
     # Prompt for skills review...

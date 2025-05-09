@@ -48,6 +48,9 @@ def index(request):
         job__status__in=JobStatuses.ACTIVE_STATUSES,  # Include active job statuses only
     )
 
+    context["myJobs"] = Job.objects.jobs_for_user(request.user)
+    context["myPhases"] = Phase.objects.phases_for_user(request.user)
+
     context["in_flight"] = all_phases.filter(
         Q(status=PhaseStatuses.IN_PROGRESS)
     ).prefetch_related(
