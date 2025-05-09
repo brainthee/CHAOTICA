@@ -111,6 +111,10 @@ class CustomConfigForm(ConstanceForm):
                         css_class="input-group input-group-dynamic",
                     ),
                     Div(
+                        FloatingField("PRECHECK_LATE_HOURS"),
+                        css_class="input-group input-group-dynamic",
+                    ),
+                    Div(
                         FloatingField("TQA_LATE_HOURS"),
                         css_class="input-group input-group-dynamic",
                     ),

@@ -844,9 +844,9 @@ class Phase(models.Model):
                 hours_since = time_since.days * 24 + time_since.seconds / 3600
             if (
                 not self.notifications_prechecks_late_last_fired
-                or hours_since > config.TQA_PRECHECK_HOURS
+                or hours_since > config.PRECHECK_LATE_HOURS
             ):
-                # Ok, either it's been greater than config.TQA_PRECHECK_HOURS or we haven't sent it...
+                # Ok, either it's been greater than config.PRECHECK_LATE_HOURS or we haven't sent it...
                 notification = AppNotification(
                     notification_type=NotificationTypes.PHASE_PRECHECKS_OVERDUE,
                     title=f"{self} pre-checks are overdue",
