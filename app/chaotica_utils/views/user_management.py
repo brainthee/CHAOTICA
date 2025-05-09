@@ -155,6 +155,7 @@ def update_own_theme(request):
 @require_http_methods(["GET", "POST"])
 def update_profile(request, email):
     from jobtracker.models import Skill
+    
     usr = can_manage_user(request.user, email)
     if not usr:
         return HttpResponseForbidden()
