@@ -116,6 +116,7 @@ class Notification(models.Model):
 
 
     def send_email(self, resend=False):
+        from ..utils import get_entity_object
         try:
             if (
                 self.user.is_active  # User must be active
@@ -131,6 +132,7 @@ class Notification(models.Model):
                     'message': self.message,
                     'link': self.link,
                     'metadata': self.metadata,
+                    'obj': get_entity_object(self.entity_type, self.entity_id),
                 }
                 context["SITE_DOMAIN"] = settings.SITE_DOMAIN
                 context["SITE_PROTO"] = settings.SITE_PROTO

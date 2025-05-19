@@ -129,6 +129,7 @@ class LeaveRequest(models.Model):
 
         return User.objects.filter(pk__in=user_pks).distinct()
 
+
     def can_user_auth(self, user):
         if self.cancelled:
             return False
@@ -146,8 +147,6 @@ class LeaveRequest(models.Model):
                 return True
         return False
 
-    EMAIL_TEMPLATE = "emails/leave.html"
-
 
     def send_request_notification(self):
         from notifications.utils import AppNotification
@@ -155,8 +154,7 @@ class LeaveRequest(models.Model):
         notification = AppNotification(
             notification_type=NotificationTypes.LEAVE_SUBMITTED,
             title=f"Leave Requested - {self.user}",
-            message=f"{self.user} has requested leave. Please review the request",
-            email_template=self.EMAIL_TEMPLATE,
+            email_template="emails/leave_requested.html",
             link=reverse("manage_leave"),
             entity_type=self.__class__.__name__,
             entity_id=self.pk,
@@ -173,7 +171,7 @@ class LeaveRequest(models.Model):
             notification_type=NotificationTypes.LEAVE_APPROVED,
             title=f"Leave Approved",
             message=f"Your leave ({self.start_date} - {self.end_date}) has been approved!",
-            email_template=self.EMAIL_TEMPLATE,
+            email_template="emails/leave_approved.html",
             link=reverse("view_own_leave"),
             entity_type=self.__class__.__name__,
             entity_id=self.pk,
@@ -181,6 +179,7 @@ class LeaveRequest(models.Model):
             }
         )
         send_notifications(notification)
+
 
     def send_declined_notification(self):
         from notifications.utils import AppNotification
@@ -189,7 +188,7 @@ class LeaveRequest(models.Model):
             notification_type=NotificationTypes.LEAVE_REJECTED,
             title=f"Leave Rejected",
             message=f"Your leave ({self.start_date} - {self.end_date}) has been declined. Please contact {self.declined_by} for information.",
-            email_template=self.EMAIL_TEMPLATE,
+            email_template="emails/leave_declined.html",
             link=reverse("view_own_leave"),
             entity_type=self.__class__.__name__,
             entity_id=self.pk,
@@ -198,6 +197,7 @@ class LeaveRequest(models.Model):
         )
         send_notifications(notification)
 
+
     def send_cancelled_notification(self):
         from notifications.utils import AppNotification
 
@@ -205,7 +205,7 @@ class LeaveRequest(models.Model):
             notification_type=NotificationTypes.LEAVE_CANCELLED,
             title=f"Leave Cancelled",
             message=f"Your leave ({self.start_date} - {self.end_date}) has been cancelled.",
-            email_template=self.EMAIL_TEMPLATE,
+            email_template="emails/leave_cancelled.html",
             link=reverse("view_own_leave"),
             entity_type=self.__class__.__name__,
             entity_id=self.pk,

@@ -17,7 +17,7 @@ class AppNotification:
         self,
         notification_type,
         title,
-        message,
+        message="",
         email_template=None,
         metadata=None,
         link=None,
