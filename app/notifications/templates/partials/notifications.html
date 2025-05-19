@@ -43,6 +43,40 @@
   </div>
 
 </li>
+
+
+<!-- Action menu popup that will be positioned over notification items -->
+<div id="notification-action-menu" class="position-absolute bg-white shadow rounded py-2" style="display: none; z-index: 1060; width: 180px;">
+  <button class="dropdown-item notification-mark-read-action">Mark as read</button>
+  <div class="dropdown-divider notification-unfollow-divider" style="display: none;"></div>
+  <button class="dropdown-item notification-unfollow-action" style="display: none;">Unfollow</button>
+</div>
+
+<style>
+  /* Custom styles to handle notifications */
+  .notification-card {
+    position: relative;
+  }
+  
+  .notification-card.unread {
+    background-color: rgba(13, 110, 253, 0.05);
+  }
+  
+  .notification-action-trigger {
+    cursor: pointer;
+  }
+  
+  /* Style for notification items to make sure they handle the action button correctly */
+  .notification-content-link {
+    display: block;
+    width: calc(100% - 30px);
+    text-decoration: none;
+    color: inherit;
+  }
+</style>
+
+
+
 <script>
   $(document).ready(function() {
     // Initial count update
@@ -122,9 +156,10 @@
       notifications.forEach(function(notification) {
         html += `
           <div class="p-2 border-300 notification-card position-relative ${notification.read ? 'read' : 'unread'} border-bottom" 
-               data-notification-id="${notification.id}">
-            <a class="dropdown-item text-wrap p-0 m-0" href='${notification.link}'>
-              <div class="d-flex align-items-center justify-content-between position-relative">
+               data-notification-id="${notification.id}"
+               ${notification.entity_type && notification.entity_id ? `data-entity-type="${notification.entity_type}" data-entity-id="${notification.entity_id}"` : ''}>
+            <div class="d-flex align-items-center justify-content-between position-relative">
+              <a class="notification-content-link" href="${notification.link}">
                 <div class="d-flex">              
                   <div class="flex-1 me-sm-3">
                     <h4 class="fs-9 text-body-emphasis">
@@ -136,120 +171,152 @@
                     </p>
                   </div>
                 </div>
-                <div class="font-sans-serif d-none d-sm-block">
-                  <button class="btn fs-10 btn-sm dropdown-toggle dropdown-caret-none transition-none notification-dropdown-toggle" 
-                          type="button" 
-                          data-bs-toggle="dropdown" 
-                          data-boundary="window" 
-                          aria-haspopup="true" 
-                          aria-expanded="false" 
-                          data-bs-reference="parent">
-                    <span class="fas fa-ellipsis-h fs-10 text-900"></span>
-                  </button>
-                  <div class="dropdown-menu dropdown-menu-end py-2">
-                    <button class="dropdown-item notification-mark-read" data-notification-id='${notification.id}'>
-                      Mark as read
-                    </button>
-                    ${notification.entity_type && notification.entity_id ? `
-                    <div class="dropdown-divider"></div>
-                    <button class="dropdown-item notification-unfollow" 
-                            data-entity-type='${notification.entity_type}' 
-                            data-entity-id="${notification.entity_id}">
-                      Unfollow ${notification.entity_type}
-                    </button>
-                    ` : ''}
-                  </div>
-                </div>
+              </a>
+              <div class="font-sans-serif d-none d-sm-block">
+                <button class="btn fs-10 btn-sm notification-action-trigger" type="button">
+                  <span class="fas fa-ellipsis-h fs-10 text-900"></span>
+                </button>
               </div>
-            </a>
+            </div>
           </div>
         `;
       });
       
       container.html(html);
       
-      // Reattach event handlers
-      attachEventHandlers();
+      // Hide the action menu when clicking elsewhere
+      $(document).on('click', function(e) {
+        if (!$(e.target).closest('.notification-action-trigger, #notification-action-menu').length) {
+          $('#notification-action-menu').hide();
+        }
+      });
+      
+      // Hide the action menu when the dropdown is closed
+      $('#notificationDropdown').on('hide.bs.dropdown', function() {
+        $('#notification-action-menu').hide();
+      });
     }
     
-    // Function to attach event handlers to notification actions
-    function attachEventHandlers() {
-      // Mark a single notification as read
-      $('.notification-mark-read').off('click').on('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        const notificationId = $(this).data('notification-id');
-        if (!notificationId) return;
-        
+    // Handle clicks on the action trigger
+    $(document).on('click', '.notification-action-trigger', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      // Get the notification card
+      const card = $(this).closest('.notification-card');
+      const notificationId = card.data('notification-id');
+      const entityType = card.data('entity-type');
+      const entityId = card.data('entity-id');
+      
+      // Position and show the action menu
+      const actionMenu = $('#notification-action-menu');
+      
+      // Set the notification ID for actions
+      actionMenu.data('notification-id', notificationId);
+      
+      // Configure unfollow option if entity type and ID exist
+      if (entityType && entityId) {
+        actionMenu.data('entity-type', entityType);
+        actionMenu.data('entity-id', entityId);
+        $('.notification-unfollow-action').text(`Unfollow ${entityType}`).show();
+        $('.notification-unfollow-divider').show();
+      } else {
+        $('.notification-unfollow-action').hide();
+        $('.notification-unfollow-divider').hide();
+      }
+      
+      // Position the menu next to the clicked button
+      const buttonPosition = $(this).offset();
+      const scrollTop = $(window).scrollTop();
+      const menuWidth = actionMenu.outerWidth();
+      const menuHeight = actionMenu.outerHeight();
+      
+      actionMenu.css({
+        top: buttonPosition.top - scrollTop + 'px',
+        left: (buttonPosition.left - menuWidth + 30) + 'px'
+      }).show();
+    });
+    
+    // Mark a notification as read
+    $(document).on('click', '.notification-mark-read-action', function() {
+      const actionMenu = $('#notification-action-menu');
+      const notificationId = actionMenu.data('notification-id');
+      
+      if (!notificationId) return;
+      
+      $.ajax({
+        url: '{% url "notifications_api" %}',
+        type: 'POST',
+        dataType: 'json',
+        contentType: 'application/json',
+        data: JSON.stringify({
+          notification_ids: [notificationId],
+          action: 'mark_read'
+        }),
+        headers: {
+          'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val()
+        },
+        success: function(data) {
+          if (data.status === 'success') {
+            // Update UI
+            $(`.notification-card[data-notification-id="${notificationId}"]`)
+              .removeClass('unread')
+              .addClass('read');
+            
+            // Hide the action menu
+            actionMenu.hide();
+            
+            // Update notification counter
+            updateNotificationCounter();
+          }
+        },
+        error: function(xhr, status, error) {
+          console.error('Error marking notification as read:', error);
+        }
+      });
+    });
+    
+    // Unfollow entity
+    $(document).on('click', '.notification-unfollow-action', function() {
+      const actionMenu = $('#notification-action-menu');
+      const entityType = actionMenu.data('entity-type');
+      const entityId = actionMenu.data('entity-id');
+      
+      if (!entityType || !entityId) return;
+      
+      if (confirm(`Are you sure you want to stop receiving notifications for this ${entityType}?`)) {
         $.ajax({
-          url: '{% url "notifications_api" %}',
+          url: '{% url "unfollow_entity" %}',
           type: 'POST',
           dataType: 'json',
           contentType: 'application/json',
           data: JSON.stringify({
-            notification_ids: [notificationId],
-            action: 'mark_read'
+            entity_type: entityType,
+            entity_id: entityId
           }),
           headers: {
             'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val()
           },
           success: function(data) {
             if (data.status === 'success') {
-              // Update UI
-              $(`.notification-card[data-notification-id="${notificationId}"]`)
-                .removeClass('unread')
-                .addClass('read');
+              // Hide the action menu
+              actionMenu.hide();
               
-              // Update notification counter
-              updateNotificationCounter();
+              // Show success message
+              showToast('You will no longer receive notifications for this item', 'success');
             }
           },
           error: function(xhr, status, error) {
-            console.error('Error marking notification as read:', error);
+            console.error('Error unfollowing entity:', error);
           }
         });
-      });
-      
-      // Unfollow entity
-      $('.notification-unfollow').off('click').on('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        const entityType = $(this).data('entity-type');
-        const entityId = $(this).data('entity-id');
-        if (!entityType || !entityId) return;
-        
-        if (confirm(`Are you sure you want to stop receiving notifications for this ${entityType}?`)) {
-          $.ajax({
-            url: '{% url "unfollow_entity" %}',
-            type: 'POST',
-            dataType: 'json',
-            contentType: 'application/json',
-            data: JSON.stringify({
-              entity_type: entityType,
-              entity_id: entityId
-            }),
-            headers: {
-              'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val()
-            },
-            success: function(data) {
-              if (data.status === 'success') {
-                // Show success message
-                showToast('You will no longer receive notifications for this item', 'success');
-              }
-            },
-            error: function(xhr, status, error) {
-              console.error('Error unfollowing entity:', error);
-            }
-          });
-        }
-      });
-    }
+      }
+    });
     
     // Mark all notifications as read
-    $('.notification-mark-all-read').on('click', function(e) {
+    $(document).on('click', '.notification-mark-all-read', function(e) {
       e.preventDefault();
+      e.stopPropagation();
       
       $.ajax({
         url: '{% url "mark_all_read" %}',
