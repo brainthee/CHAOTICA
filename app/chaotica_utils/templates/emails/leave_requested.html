@@ -1,0 +1,20 @@
+{% extends 'email_base.html' %}
+
+{% block title %}
+{{ title }}
+{% endblock title %}
+
+{% block content %}
+  {% if obj.user.pk == user.pk %}
+    Your request for leave between {{ obj.start_date }} to {{ obj.end_date }} has been requested.
+  {% else %}
+    {{ obj.user }} has requested leave for {{ obj.start_date }} to {{ obj.end_date }}. Please review the request.
+  {% endif %}
+{% endblock content %}
+
+{% block action_block %}
+<a href="{{ action_link }}" 
+  style="color: #ffffff; font-size: 16px; font-family: Helvetica, Arial, sans-serif; text-decoration: none; border-radius: 6px; line-height: 20px; display: block; font-weight: 700 !important; white-space: nowrap; background-color: #0d6efd; padding: 12px; border: 1px solid #0d6efd;">
+  View Leave
+</a>
+{% endblock action_block %}
