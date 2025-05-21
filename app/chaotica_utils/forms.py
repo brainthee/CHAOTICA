@@ -584,6 +584,26 @@ class EditProfileForm(forms.ModelForm):
         widget=autocomplete.ModelSelect2(),
     )
 
+    manager = forms.ModelChoiceField(
+        queryset=User.objects.filter(),
+        widget=autocomplete.ModelSelect2(
+            url="user-autocomplete",
+            attrs={
+                "data-minimum-input-length": 3,
+            },
+        ),
+    )
+
+    acting_manager = forms.ModelChoiceField(
+        queryset=User.objects.filter(),
+        widget=autocomplete.ModelSelect2(
+            url="user-autocomplete",
+            attrs={
+                "data-minimum-input-length": 3,
+            },
+        ),
+    )
+
     def __init__(self, *args, **kwargs):
         self.current_request = kwargs.pop("current_request", None)
         super(EditProfileForm, self).__init__(*args, **kwargs)
