@@ -134,6 +134,10 @@ class CustomConfigForm(ConstanceForm):
                         css_class="input-group input-group-dynamic",
                     ),
                     Div(
+                        FloatingField("DEFAULT_WORKING_DAYS"),
+                        css_class="input-group input-group-dynamic",
+                    ),
+                    Div(
                         FloatingField("LEAVE_DAYS_NOTICE"),
                         css_class="input-group input-group-dynamic",
                     ),
