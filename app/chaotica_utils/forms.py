@@ -590,6 +590,7 @@ class EditProfileForm(forms.ModelForm):
 
     manager = forms.ModelChoiceField(
         queryset=User.objects.filter(),
+        required=False,
         widget=autocomplete.ModelSelect2(
             url="user-autocomplete",
             attrs={
@@ -600,6 +601,7 @@ class EditProfileForm(forms.ModelForm):
 
     acting_manager = forms.ModelChoiceField(
         queryset=User.objects.filter(),
+        required=False,
         widget=autocomplete.ModelSelect2(
             url="user-autocomplete",
             attrs={
