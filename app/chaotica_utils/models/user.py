@@ -3,8 +3,7 @@ from django.db.models import Q, Count, When, Case, Value, Avg
 from django.db.models.functions import Lower, TruncDate, ExtractDay
 from django.contrib.auth.models import AbstractUser, Permission
 from django.templatetags.static import static
-import uuid
-import os, pytz
+import uuid, os, pytz, json
 from ..enums import GlobalRoles, LeaveRequestTypes, UpcomingAvailabilityRanges
 from ..utils import calculate_percentage
 from .models import Note, Language
@@ -1744,7 +1743,7 @@ class User(AbstractUser):
         )
         end_date = timezone.make_aware(datetime.combine(end_date, datetime.max.time()))
 
-        if not org:
+        if not org and self.unit_memberships.count()>0:
             org = self.unit_memberships.first().unit
 
         # ranged stats
@@ -1811,9 +1810,11 @@ class User(AbstractUser):
         )
 
         # Prepare org working_days
-        if not org:
+        if not org and self.unit_memberships.count() >0:
             org = self.unit_memberships.first().unit
-        working_days = org.businessHours_days
+            working_days = org.businessHours_days
+        else:
+            working_days = json.loads(config.DEFAULT_WORKING_DAYS)
 
         # First, get all timeslots that overlap with our date range
         timeslots = self.timeslots.filter(

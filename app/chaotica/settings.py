@@ -164,6 +164,7 @@ CONSTANCE_CONFIG = {
     ),
     # Work settings
     "DEFAULT_HOURS_IN_DAY": (7.5, "Default hours in a work day"),
+    "DEFAULT_WORKING_DAYS": ("[1, 2, 3, 4, 5]", "An int array with the numbers equaling the day of the week. Sunday == 0, Monday == 1 etc"),
     "LEAVE_DAYS_NOTICE": (14, "How many days notice for Annual Leave submissions?"),
     "LEAVE_ENFORCE_LIMIT": (False, "Should leave be prevented if over balance?"),
     # Theme/Look settings
