@@ -61,7 +61,7 @@ class NewInstallMiddleware(MiddlewareMixin):
                 if request.path.startswith(path):
                     return
 
-            return HttpResponseRedirect(reverse("view_own_profile"))
+            return HttpResponseRedirect(reverse("update_own_profile"))
 
 
 class MaintenanceModeMiddleware(MiddlewareMixin):

@@ -55,6 +55,7 @@ urlpatterns = [
 
     # Own profile bits
     path("profile/", views.view_own_profile, name="view_own_profile"), # redirect to public profile
+    path("profile/update", views.update_own_profile, name="update_own_profile"), # redirect to edit profile
 
     path("profile/theme", views.update_own_theme, name="update_own_theme"),    
     path("profile/leave/", views.view_own_leave, name="view_own_leave"),

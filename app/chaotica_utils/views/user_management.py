@@ -140,6 +140,15 @@ def view_own_profile(request):
 
 @login_required
 @require_safe
+def update_own_profile(request):
+    # Redirect to public profile
+    return HttpResponseRedirect(
+        redirect_to=reverse("update_profile", kwargs={"email": request.user.email})
+    )
+
+
+@login_required
+@require_safe
 def update_own_theme(request):
     if "mode" in request.GET:
         mode = request.GET.get("mode", "light")
@@ -155,13 +164,15 @@ def update_own_theme(request):
 @require_http_methods(["GET", "POST"])
 def update_profile(request, email):
     from jobtracker.models import Skill
-    
+
     usr = can_manage_user(request.user, email)
     if not usr:
         return HttpResponseForbidden()
 
     if request.method == "POST":
-        form = EditProfileForm(request.POST, request.FILES, current_request=request, instance=usr)
+        form = EditProfileForm(
+            request.POST, request.FILES, current_request=request, instance=usr
+        )
         if form.is_valid():
             obj = form.save()
             obj.profile_last_updated = timezone.now().today()
@@ -198,7 +209,7 @@ def update_profile(request, email):
                 kwargs={"cal_key": usr.schedule_feed_family_id},
             )
         )
-    
+
     context["profileForm"] = form
     template = loader.get_template("update_profile.html")
     context = {**context, **page_defaults(request)}
@@ -221,9 +232,7 @@ def update_skills(request, email):
             try:
                 skill = Skill.objects.get(slug=field)
                 value = int(request.POST.get(field))
-                skill, _ = UserSkill.objects.get_or_create(
-                    user=usr, skill=skill
-                )
+                skill, _ = UserSkill.objects.get_or_create(user=usr, skill=skill)
                 if skill.rating != value:
                     skill.rating = value
                     skill.last_updated_on = timezone.now()
@@ -241,7 +250,7 @@ def update_certs(request, email):
     usr = can_manage_user(request.user, email)
     if not usr:
         return HttpResponseForbidden()
-    
+
     return HttpResponseBadRequest()
 
 
@@ -251,7 +260,7 @@ def view_onboarding(request, email):
     usr = can_manage_user(request.user, email)
     if not usr:
         return HttpResponseForbidden()
-    
+
     context = {}
     template = loader.get_template("onboarded_clients.html")
     context = {**context, **page_defaults(request)}
@@ -264,7 +273,7 @@ def renew_onboarding(request, email, pk):
     usr = can_manage_user(request.user, email)
     if not usr:
         return HttpResponseForbidden()
-    
+
     from jobtracker.models import ClientOnboarding
 
     onboarding = get_object_or_404(ClientOnboarding, user=usr, pk=pk)
