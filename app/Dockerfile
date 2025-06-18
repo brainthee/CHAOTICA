@@ -1,9 +1,9 @@
 # pull official base image
-FROM ubuntu:24.04
+FROM debian:12
 LABEL maintainer="Adrian Lewis <brainthee@gmail.com>"
 
-ARG UID=1000
-ARG GID=1000
+ARG UID=1005
+ARG GID=1005
 
 # set environment variables
 ENV DEBIAN_FRONTEND noninteractive
@@ -47,9 +47,9 @@ RUN chown chaotica:chaotica -R /app
 COPY --chown=chaotica:chaotica requirements*.txt ./
 
 # pin to v24 because of https://github.com/pypa/pip/issues/13015
-RUN pip3 install --upgrade pip==24.0 
-RUN pip3 install -r requirements.txt
-RUN pip3 install git+https://github.com/coderanger/supervisor-stdout.git
+RUN pip3 install --break-system-packages --upgrade pip==24.0 
+RUN pip3 install --break-system-packages -r requirements.txt
+RUN pip3 install --break-system-packages git+https://github.com/coderanger/supervisor-stdout.git
 
 # Setup CRON
 COPY ./crontab.txt /crontab.txt
