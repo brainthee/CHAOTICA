@@ -115,11 +115,9 @@ class Team(models.Model):
             dict: User ID mapped to their utilization statistics
         """
         from ..models import TimeSlot
-        from pprint import pprint
         
         # Get users and their countries in one query
         users_query = self.get_activeMembers()
-        pprint(users_query)
         if user_ids:
             users_query = users_query.filter(id__in=user_ids)
 
