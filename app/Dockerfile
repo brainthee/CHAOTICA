@@ -1,5 +1,5 @@
 # pull official base image
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 LABEL maintainer="Adrian Lewis <brainthee@gmail.com>"
 
 ARG UID=1000
