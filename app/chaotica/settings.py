@@ -43,6 +43,7 @@ SITE_PROTO = os.environ.get("SITE_PROTO", default="http")
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", default="* web").split(" ")
 USE_X_FORWARDED_HOST = bool(os.environ.get("USE_X_FORWARDED_HOST", default=True))
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
 # These 4 options should not be set in dev envs
 if DJANGO_ENV != "Dev":
     CSRF_COOKIE_SECURE = bool(os.environ.get("CSRF_COOKIE_SECURE", default=True))
@@ -54,6 +55,8 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = bool(
 )
 SESSION_COOKIE_AGE = int(os.environ.get("SESSION_COOKIE_AGE", default=60 * 60 * 12))
 
+MAXMIND_LICENSE_KEY = os.environ.get("MAXMIND_LICENSE_KEY", default="")
+GEOIP_PATH = os.environ.get("GEOIP_PATH", default="/tmp/geoip")
 
 AUTH_ADFS = {
     "AUDIENCE": os.environ.get("ADFS_CLIENT_ID", default="xx"),
@@ -310,7 +313,8 @@ DEFAULT_APPS = [
     "django.contrib.admindocs",
     "django.contrib.auth",
     "django.contrib.contenttypes",
-    "django.contrib.sessions",
+    # "django.contrib.sessions",
+    "qsessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.humanize",
@@ -441,14 +445,15 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework_datatables.pagination.DatatablesPageNumberPagination",
     # 'PAGE_SIZE': 50
 }
-
+SESSION_ENGINE = "qsessions.backends.db"
 MIDDLEWARE = [
     "chaotica_utils.middleware.HealthCheckMiddleware",
     # "debug_toolbar.middleware.DebugToolbarMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "csp.middleware.CSPMiddleware",
     "django.middleware.security.SecurityMiddleware",
-    "django.contrib.sessions.middleware.SessionMiddleware",
+    # "django.contrib.sessions.middleware.SessionMiddleware",
+    "qsessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
 

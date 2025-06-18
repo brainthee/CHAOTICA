@@ -14,6 +14,7 @@ then
     echo "PostgreSQL started"
 fi
 
+sudo -Eu chaotica -- python3 manage.py download_geoip_db
 sudo -Eu chaotica -- python3 manage.py migrate --noinput
 sudo -Eu chaotica -- python3 manage.py collectstatic --noinput
 sudo -Eu chaotica -- /usr/bin/crontab /crontab.txt
