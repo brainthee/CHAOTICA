@@ -25,6 +25,7 @@ from bootstrap_datepicker_plus.widgets import (
 from django.core.files.images import get_image_dimensions
 from business_duration import businessDuration
 from django.contrib import messages
+from django_clamav.validators import validate_file_infection
 
 
 class HolidayForm(forms.ModelForm):
@@ -582,6 +583,7 @@ class EditProfileForm(forms.ModelForm):
     profile_image = forms.FileField(
         label="Profile Image",
         required=False,
+        validators=[validate_file_infection],
     )
     pref_timezone = forms.ChoiceField(
         choices=[(x, x) for x in pytz.common_timezones],
