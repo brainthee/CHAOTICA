@@ -87,8 +87,8 @@ def _filter_users_on_query(request, cleaned_data=None):
     if teams:
         users_memberof = []
         for team in teams:
-            for usr in team.active_users():
-                users_memberof.append(usr.user.pk)
+            for usr in team.get_activeMembers():
+                users_memberof.append(usr.pk)
         query.add(Q(pk__in=users_memberof), Q.AND)
 
     # If we're passed a job/phase ID - filter on that.

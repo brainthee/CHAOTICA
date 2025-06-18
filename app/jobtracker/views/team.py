@@ -11,7 +11,7 @@ from guardian.decorators import permission_required_or_403
 from ..forms import TeamForm, TeamMemberForm, AddTeamMemberForm
 from django.http import HttpResponseBadRequest, JsonResponse
 from django.template import loader
-import logging
+import logging, datetime, json
 from django.contrib import messages
 
 
@@ -48,6 +48,36 @@ class TeamDetailView(TeamBaseView, PermissionRequiredMixin, DetailView):
     permission_required = "jobtracker.view_team"
     accept_global_perms = True
     return_403 = True
+
+    def get_context_data(self, **kwargs):
+        context = super(TeamDetailView, self).get_context_data(**kwargs)
+
+        date_range_raw = self.request.GET.get("dateRange", "")
+        if " to " in date_range_raw:
+            date_range_split = date_range_raw.split(" to ")
+            if len(date_range_split) == 2:
+                context["start_date"] = timezone.datetime.strptime(
+                    date_range_split[0], "%Y-%m-%d"
+                ).date()
+                context["end_date"] = timezone.datetime.strptime(
+                    date_range_split[1], "%Y-%m-%d"
+                ).date()
+
+        if "start_date" not in context:
+            context["start_date"] = self.request.GET.get(
+                "start_date",
+                (timezone.now() - datetime.timedelta(days=30)).date(),
+            )
+            context["end_date"] = self.request.GET.get(
+                "end_date", timezone.now().date()
+            )
+        
+        context["stats"] = self.get_object().get_stats(
+            context["start_date"], context["end_date"]
+        )
+        context["stats_json"] = json.dumps(context["stats"], indent=4, default=str)
+
+        return context
 
 
 class TeamCreateView(TeamBaseView, PermissionRequiredMixin, CreateView):
