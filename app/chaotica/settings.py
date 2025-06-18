@@ -322,6 +322,7 @@ THIRD_PARTY_APPS = [
     "menu",
     "widget_tweaks",
     "guardian",
+    'django_clamav',
     "crispy_forms",
     "crispy_bootstrap5",
     "tinymce",
@@ -631,7 +632,6 @@ else:
 
 STATICFILES_DIRS = (os.path.join(BASE_DIR, "static"),)
 
-
 CORS_ALLOW_ALL_ORIGINS = True
 
 CONTENT_SECURITY_POLICY = {
@@ -746,3 +746,8 @@ EXPLORER_DATA_EXPORTERS = [
     ("excel", "explorer.exporters.ExcelExporter"),
     ("json", "explorer.exporters.JSONExporter"),
 ]
+
+CLAMAV_UNIX_SOCKET = '/var/run/clamav/clamd.ctl'
+CLAMAV_USE_TCP = False
+CLAMAV_TCP_PORT = 3310
+CLAMAV_TCP_ADDR = '127.0.0.1'

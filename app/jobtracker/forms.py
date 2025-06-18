@@ -42,6 +42,7 @@ from bootstrap_datepicker_plus.widgets import (
     DateTimePickerInput,
 )
 from tinymce.widgets import TinyMCE
+from django_clamav.validators import validate_file_infection
 
 
 class SchedulerFilter(forms.Form):
@@ -1895,6 +1896,11 @@ class OrganisationalUnitForm(forms.ModelForm):
             },
         ),
     )
+    image = forms.FileField(
+        label="Image",
+        required=False,
+        validators=[validate_file_infection],
+    )
 
     def __init__(self, *args, **kwargs):
         super(OrganisationalUnitForm, self).__init__(*args, **kwargs)
@@ -2146,6 +2152,17 @@ class TeamForm(forms.ModelForm):
                 "data-minimum-input-length": 3,
             },
         ),
+    )
+
+    profile_image = forms.FileField(
+        label="Profile Image",
+        required=False,
+        validators=[validate_file_infection],
+    )
+    cover_image = forms.FileField(
+        label="Cover Image",
+        required=False,
+        validators=[validate_file_infection],
     )
 
     def __init__(self, *args, **kwargs):
