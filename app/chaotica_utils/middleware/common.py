@@ -5,7 +5,7 @@ from django.http import (
 )
 from django.utils.deprecation import MiddlewareMixin
 from django.shortcuts import reverse, redirect
-from .models import User
+from ..models import User
 from django.urls import reverse
 from django.conf import settings
 from constance import config

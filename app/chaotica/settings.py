@@ -329,7 +329,7 @@ THIRD_PARTY_APPS = [
     'django_clamav',
     "crispy_forms",
     "crispy_bootstrap5",
-    "tinymce",
+    # "tinymce",
     "django_bleach",
     "django_fsm",
     "phonenumber_field",
@@ -401,7 +401,7 @@ BLEACH_ALLOWED_STYLES = [
 # Which protocols (and pseudo-protocols) are allowed in 'src' attributes
 # (assuming src is an allowed attribute)
 BLEACH_ALLOWED_PROTOCOLS = ["http", "https", "data"]
-BLEACH_DEFAULT_WIDGET = "tinymce.widgets.TinyMCE"
+# BLEACH_DEFAULT_WIDGET = "tinymce.widgets.TinyMCE"
 BOOTSTRAP_DATEPICKER_PLUS = {
     "app_static_url": f"{SITE_PROTO}://{SITE_DOMAIN}/static/vendors/bootstrap_datepicker_plus/",
     "options": {
@@ -448,12 +448,12 @@ REST_FRAMEWORK = {
 SESSION_ENGINE = "qsessions.backends.db"
 MIDDLEWARE = [
     "chaotica_utils.middleware.HealthCheckMiddleware",
+    "chaotica_utils.middleware.SessionMiddleware",
+    # "django.contrib.sessions.middleware.SessionMiddleware",
     # "debug_toolbar.middleware.DebugToolbarMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "csp.middleware.CSPMiddleware",
     "django.middleware.security.SecurityMiddleware",
-    # "django.contrib.sessions.middleware.SessionMiddleware",
-    "qsessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
 
@@ -482,6 +482,23 @@ ROOT_URLCONF = "chaotica.urls"
 INTERNAL_IPS = [
     "127.0.0.1",
 ]
+
+# Define trusted proxy networks
+# Only requests from these IPs/networks will have their forwarded headers trusted
+TRUSTED_PROXIES = [
+    '10.0.0.0/8',          # Private network where load balancer might be
+    '172.16.0.0/12',       # Private network
+    '192.168.0.0/16',      # Private network
+    '127.0.0.1/32',        # Localhost
+    # Add specific proxy/load balancer IPs here:
+    # '203.0.113.0/24',    # Example: CDN/proxy network
+    # '198.51.100.1/32',   # Example: specific proxy server
+]
+
+# Additional security settings
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')  # If behind HTTPS proxy
+USE_X_FORWARDED_HOST = False  # Only enable if you trust your proxy
+USE_X_FORWARDED_PORT = False  # Only enable if you trust your proxy
 
 
 TEMPLATES = [
@@ -667,57 +684,21 @@ CONTENT_SECURITY_POLICY = {
 }
 
 
-TINYMCE_JS_ROOT = os.path.join(STATIC_URL, "vendors/tinymce")
-TINYMCE_JS_URL = os.path.join(TINYMCE_JS_ROOT, "tinymce.min.js")
+# TINYMCE_JS_ROOT = os.path.join(STATIC_URL, "vendors/tinymce")
+# TINYMCE_JS_URL = os.path.join(TINYMCE_JS_ROOT, "tinymce.min.js")
 
-TINYMCE_COMPRESSOR = True
-TINYMCE_DEFAULT_CONFIG = {
-    "suffix": ".min",
-    "plugins": "advlist autolink lists link image charmap print preview anchor table media searchreplace visualblocks code",
-    "theme": "silver",
-    "selector": ".tinymce",
-    "height": "50vh",
-    "promotion": False,
-    "skin": "oxide",
-    # "menubar": False,
-    # content_style: `
-    #   .mce-content-body {
-    #     color: ${getColor('emphasis-color')};
-    #     background-color: ${getColor('tinymce-bg')};
-    #   }
-    #   .mce-content-body[data-mce-placeholder]:not(.mce-visualblocks)::before {
-    #     color: ${getColor('quaternary-color')};
-    #     font-weight: 400;
-    #     font-size: 12.8px;
-    #   }
-    # `,
-    "statusbar": True,
-    "themes": "silver",
-    # "theme_advanced_toolbar_align": 'center',
-    # "toolbar": [
-    #   { name: 'history', items: ['undo', 'redo'] },
-    #   {
-    #     name: 'formatting',
-    #     items: ['bold', 'italic', 'underline', 'strikethrough']
-    #   },
-    #   {
-    #     name: 'alignment',
-    #     items: ['alignleft', 'aligncenter', 'alignright', 'alignjustify']
-    #   },
-    #   { name: 'list', items: ['numlist', 'bullist'] },
-    #   { name: 'link', items: ['link'] }
-    # ],
-    # "setup": editor => {
-    #   editor.on('focus', () => {
-    #     const wraper = document.querySelector('.tox-sidebar-wrap');
-    #     wraper.classList.add('editor-focused');
-    #   });
-    #   editor.on('blur', () => {
-    #     const wraper = document.querySelector('.tox-sidebar-wrap');
-    #     wraper.classList.remove('editor-focused');
-    #   });
-    # }
-}
+# TINYMCE_COMPRESSOR = True
+# TINYMCE_DEFAULT_CONFIG = {
+#     "suffix": ".min",
+#     "plugins": "advlist autolink lists link image charmap preview anchor table media searchreplace visualblocks code",
+#     "theme": "silver",
+#     "selector": ".tinymce",
+#     "height": "50vh",
+#     "promotion": False,
+#     "skin": "oxide",
+#     "statusbar": True,
+#     "themes": "silver",
+# }
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
