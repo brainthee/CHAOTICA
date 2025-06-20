@@ -522,6 +522,13 @@ if not os.environ.get("SQL_ENGINE", None):
         }
     }
 else:
+    db_options = {}
+
+    if os.environ.get("RDS_TLS_USE", False):
+        db_options["ssl"] = {
+            "ca": os.environ.get("RDS_TLS_CA_PATH", "")
+        }
+
     DATABASES = {
         "default": {
             "ENGINE": os.environ.get("SQL_ENGINE", "django.db.backends.sqlite3"),
@@ -531,6 +538,7 @@ else:
             "HOST": os.environ.get("RDS_HOSTNAME", "127.0.0.1"),
             "PORT": os.environ.get("RDS_PORT", "13306"),
             "DEFAULT-CHARACTER-SET": "utf8",
+            "OPTIONS": db_options,
         }
     }
 

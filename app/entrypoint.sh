@@ -1,6 +1,21 @@
 #!/bin/sh
 
 cd /app 
+
+# Lets write the DB CA to disk if it exists
+if [[ "${RDS_TLS_USE,,}" == "true" ]]; then    
+    if [[ -z "$RDS_TLS_CA" ]]; then
+        echo "Error: RDS_TLS_CA environment variable is not set or empty"
+    else    
+      CA_CERT_PATH="/app/rds-ca-cert.pem"
+      if echo "$RDS_TLS_CA" | base64 -d > "$CA_CERT_PATH"; then
+          export RDS_TLS_CA_PATH="$CA_CERT_PATH"
+      else
+          echo "Error: Failed to decode base64 certificate"
+      fi
+    fi
+fi
+
 env > /run/chaotica.env
 
 if [ "$DATABASE" = "postgres" ]
