@@ -23,7 +23,7 @@ WORKDIR /app
 # install sys dependencies
 RUN apt-get update --fix-missing
 RUN apt-get upgrade -y
-RUN apt-get install -y build-essential git procps gcc sudo cron
+RUN apt-get install -y build-essential git procps gcc sudo cron curl
 RUN apt-get install -y python3 python3-dev python3-setuptools
 RUN apt-get install -y python3-pip python3-virtualenv
 RUN apt-get install -y clamav-daemon
