@@ -1,31 +1,26 @@
-#!/bin/sh
+#!/bin/bash
 
 cd /app 
 
 # Lets write the DB CA to disk if it exists
-if [[ "${RDS_TLS_USE,,}" == "true" ]]; then
-  if [[ -z "$RDS_TLS_URL" ]]; then
-    echo "Info: No RDS_TLS_URL"
-  else
+if [[ -n ${RDS_TLS_USE} ]]; then
+  if [[ -n ${RDS_TLS_URL} ]]; then
     CA_CERT_PATH="/app/rds-ca-cert.pem"
     if curl -s -o $CA_CERT_PATH $RDS_TLS_URL; then
         export RDS_TLS_CA_PATH="$CA_CERT_PATH"
     else
         echo "Error: Failed to download certificate"
     fi
-  fi
-
-  if [[ -z "$RDS_TLS_CA" ]]; then
-      echo "Info: No RDS_TLS_CA"
-  else    
+  elif [[ -n ${RDS_TLS_CA} ]]; then   
     CA_CERT_PATH="/app/rds-ca-cert.pem"
     if echo "$RDS_TLS_CA" | base64 -d > "$CA_CERT_PATH"; then
         export RDS_TLS_CA_PATH="$CA_CERT_PATH"
     else
         echo "Error: Failed to decode base64 certificate"
     fi
+  else
+    echo "Warning: RDS_TLS_USE set but no CA defined"
   fi
-
 fi
 
 env > /run/chaotica.env
