@@ -526,7 +526,7 @@ else:
 
     if os.environ.get("RDS_TLS_USE", False):
         db_options["ssl"] = {
-            "ca": os.environ.get("RDS_TLS_CA_PATH", "")
+            "ca": os.environ.get("RDS_TLS_CA_PATH", "/app/ca-cert.pem")
         }
 
     DATABASES = {
