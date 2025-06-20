@@ -12,7 +12,7 @@ if [[ -n ${RDS_TLS_USE} ]]; then
         echo "Error: Failed to download certificate"
     fi
   elif [[ -n ${RDS_TLS_CA} ]]; then   
-    CA_CERT_PATH="/app/rds-ca-cert.pem"
+    CA_CERT_PATH="/app/ca-cert.pem"
     if echo "$RDS_TLS_CA" | base64 -d > "$CA_CERT_PATH"; then
         export RDS_TLS_CA_PATH="$CA_CERT_PATH"
     else
