@@ -4,7 +4,7 @@ from django.contrib.auth import views as auth_views
 
 
 urlpatterns = [
-    path('auth/login/', auth_views.LoginView.as_view(redirect_authenticated_user=True), name='login'),
+    path('auth/login/', views.LoginView.as_view(redirect_authenticated_user=True), name='login'),
     path("auth/", include("django.contrib.auth.urls")),
     path("maintenance/", views.maintenance, name="maintenance"),
     re_path(r"^impersonate/", include("impersonate.urls")),
@@ -22,7 +22,6 @@ urlpatterns = [
     path("users/invite", views.user_invite, name="user_invite"),
     path("signup/<str:invite_id>", views.signup, name="signup"),
     path("signup/", views.signup, name="signup"),
-
 
     # Annual Leave
     path("ops/leave/", views.manage_leave, name="manage_leave"),

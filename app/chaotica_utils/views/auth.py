@@ -16,6 +16,26 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
 from constance import config
 from django.views.decorators.http import require_http_methods
+from django.contrib.auth import views as auth_views
+from django.urls import reverse
+
+
+class LoginView(auth_views.LoginView):
+    def get(self, request, *args, **kwargs):
+        if config.ADFS_ENABLED and config.ADFS_AUTO_LOGIN:
+            # Build ADFS URL with next parameter
+            adfs_url = reverse('django_auth_adfs:login')
+            try:
+                # This method already validates the next parameter
+                success_url = self.get_success_url()
+            except:
+                success_url = None
+            
+            if success_url:
+                adfs_url += f"?next={success_url}"
+            return redirect(adfs_url)
+        
+        return super().get(request, *args, **kwargs)
 
 
 @login_required
