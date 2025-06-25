@@ -110,6 +110,10 @@ CONSTANCE_CONFIG = {
         False,
         "Should we allow ADFS login? Ensure there is a valid configuration!",
     ),
+    "ADFS_AUTO_LOGIN": (
+        False,
+        "Should we auto redirect to ADFS login? Ensure there is a valid configuration!",
+    ),
     "REGISTRATION_ENABLED": (True, "Should we allow self-registration?"),
     "LOCAL_LOGIN_ENABLED": (True, "Should we allow logging in via local user?"),
     # Support
@@ -449,8 +453,6 @@ SESSION_ENGINE = "qsessions.backends.db"
 MIDDLEWARE = [
     "chaotica_utils.middleware.HealthCheckMiddleware",
     "chaotica_utils.middleware.SessionMiddleware",
-    # "django.contrib.sessions.middleware.SessionMiddleware",
-    # "debug_toolbar.middleware.DebugToolbarMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "csp.middleware.CSPMiddleware",
     "django.middleware.security.SecurityMiddleware",

@@ -208,6 +208,10 @@ class CustomConfigForm(ConstanceForm):
                         css_class="input-group input-group-dynamic",
                     ),
                     Div(
+                        Field("ADFS_AUTO_LOGIN"),
+                        css_class="input-group input-group-dynamic",
+                    ),
+                    Div(
                         Field("LOCAL_LOGIN_ENABLED"),
                         css_class="input-group input-group-dynamic",
                     ),
