@@ -621,38 +621,71 @@ if DBBACKUP_ENABLED == "1" or DBBACKUP_ENABLED:
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+}
 
+
+STATICFILES_LOCATION = "static"
+MEDIAFILES_LOCATION = "media"
+STATIC_BACKEND = "django.contrib.staticfiles.storage.StaticFilesStorage"
+MEDIA_BACKEND = "django.core.files.storage.FileSystemStorage"
 USE_S3 = os.environ.get("USE_S3", default=False)
 
 if USE_S3 == "1" or USE_S3:
-    # aws settings
-    AWS_ACCESS_KEY_ID = os.getenv("AWS_STORAGE_ACCESS_KEY_ID")
-    AWS_SECRET_ACCESS_KEY = os.getenv("AWS_STORAGE_SECRET_ACCESS_KEY")
-    AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME")
-    # AWS_DEFAULT_ACL = "public-read"
-    AWS_S3_OBJECT_PARAMETERS = {"CacheControl": "max-age=86400"}
-    STATICFILES_LOCATION = "static"  # staticfiles will be in 'static'
-    AWS_S3_SIGNATURE_VERSION = "s3v4"
+    STATIC_BACKEND = "storages.backends.s3.S3Storage"
+    MEDIA_BACKEND = "storages.backends.s3.S3Storage"
+    DEFAULT_S3_STORAGE_OPTIONS = {
+        "access_key": os.getenv("AWS_STORAGE_ACCESS_KEY_ID"),
+        "secret_key": os.getenv("AWS_STORAGE_SECRET_ACCESS_KEY"),
+        "bucket_name": os.getenv("AWS_STORAGE_BUCKET_NAME"),
+        # "AWS_S3_SIGNATURE_VERSION": "s3v4",
+        # "AWS_S3_OBJECT_PARAMETERS": {"CacheControl": "max-age=86400"},
+    }
 
     if os.getenv("AWS_S3_CUSTOM_DOMAIN", None):
         # Use CloudFront
-        AWS_S3_CUSTOM_DOMAIN = os.getenv("AWS_S3_CUSTOM_DOMAIN", None)
-        AWS_CLOUDFRONT_KEY = base64.b64decode(
+        DEFAULT_S3_STORAGE_OPTIONS["custom_domain"] = os.getenv("AWS_S3_CUSTOM_DOMAIN", None)
+        DEFAULT_S3_STORAGE_OPTIONS["cloudfront_key"] = base64.b64decode(
             os.environ.get("AWS_CLOUDFRONT_KEY", None)
         )
-        AWS_CLOUDFRONT_KEY_ID = os.environ.get("AWS_CLOUDFRONT_KEY_ID", None)
-        DEFAULT_FILE_STORAGE = "chaotica.custom_storages.MediaStorage"
-        STATICFILES_STORAGE = "chaotica.custom_storages.StaticStorage"
-        STATICFILES_LOCATION = "static"
-        MEDIAFILES_LOCATION = "media"
+        DEFAULT_S3_STORAGE_OPTIONS["cloudfront_key_id"] = os.environ.get("AWS_CLOUDFRONT_KEY_ID", None)
+        MEDIA_BACKEND = "chaotica.custom_storages.MediaStorage"
+        STATIC_BACKEND = "chaotica.custom_storages.StaticStorage"
     else:
         # Use S3 directly
-        AWS_S3_CUSTOM_DOMAIN = f"{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com"
-        DEFAULT_FILE_STORAGE = "storages.backends.s3.S3Storage"
-        STATICFILES_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+        DEFAULT_S3_STORAGE_OPTIONS["custom_domain"] = f'{os.getenv("AWS_STORAGE_BUCKET_NAME")}.s3.amazonaws.com'
 
-    MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/media/"
-    STATIC_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/static/"
+    MEDIA_URL = f'https://{DEFAULT_S3_STORAGE_OPTIONS["custom_domain"]}/media/'
+    STATIC_URL = f'https://{DEFAULT_S3_STORAGE_OPTIONS["custom_domain"]}/static/'
+
+    STORAGES = {
+        "default": {
+            "BACKEND": STATIC_BACKEND,
+            "OPTIONS": {
+                # add or override options defined in default
+                **DEFAULT_S3_STORAGE_OPTIONS,
+                "default_acl": "public-read",
+                "file_overwrite": True,
+            },
+        },
+
+        "public_media": {
+            "BACKEND": MEDIA_BACKEND,
+            "OPTIONS": {
+                "location": "media",
+            },
+        },
+        "staticfiles": {
+            "BACKEND": "storages.backends.s3.S3Storage",
+            "OPTIONS": {
+                # add or override options defined in default
+                **DEFAULT_S3_STORAGE_OPTIONS,
+                "location": "static",
+            },
+        }
+    }
 else:
     AWS_S3_CUSTOM_DOMAIN = ""
     MEDIA_URL = "/media/"
@@ -661,6 +694,7 @@ else:
     STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
 STATICFILES_DIRS = (os.path.join(BASE_DIR, "static"),)
+
 
 CORS_ALLOW_ALL_ORIGINS = True
 
