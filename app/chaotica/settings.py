@@ -634,9 +634,9 @@ if USE_S3 == "1" or USE_S3:
     STATICFILES_LOCATION = "static"  # staticfiles will be in 'static'
     AWS_S3_SIGNATURE_VERSION = "s3v4"
 
-    if os.getenv("AWS_STORAGE_CLOUDFRONT_DOMAIN", None):
+    if os.getenv("AWS_S3_CUSTOM_DOMAIN", None):
         # Use CloudFront
-        AWS_S3_CUSTOM_DOMAIN = os.getenv("AWS_STORAGE_CLOUDFRONT_DOMAIN", None)
+        AWS_S3_CUSTOM_DOMAIN = os.getenv("AWS_S3_CUSTOM_DOMAIN", None)
         AWS_CLOUDFRONT_KEY = base64.b64decode(
             os.environ.get("AWS_CLOUDFRONT_KEY", None)
         )
