@@ -89,7 +89,7 @@ def unit_permission_required(perm, lookup_variables=None, **kwargs):
     return decorator
 
 
-def unit_permission_required_or_403(perm, *args, **kwargs):
+def unit_permission_required_or_403(perm, lookup_variables=None, **kwargs):
     """
     Simple wrapper for permission_required decorator.
 
@@ -101,10 +101,10 @@ def unit_permission_required_or_403(perm, *args, **kwargs):
     one always set ``return_403`` parameter to ``True``.
     """
     kwargs["return_403"] = True
-    return unit_permission_required(perm, *args, **kwargs)
+    return unit_permission_required(perm, lookup_variables=None, **kwargs)
 
 
-def job_permission_required_or_403(perm, *args, **kwargs):
+def job_permission_required_or_403(perm, lookup_variables=None, **kwargs):
     login_url = kwargs.pop("login_url", settings.LOGIN_URL)
     redirect_field_name = kwargs.pop("redirect_field_name", REDIRECT_FIELD_NAME)
     return_403 = kwargs.pop("return_403", False)
@@ -121,11 +121,12 @@ def job_permission_required_or_403(perm, *args, **kwargs):
 
     def decorator(view_func):
         def _wrapped_view(request, *args, **kwargs):
+            from pprint import pprint
             # if more than one parameter is passed to the decorator we try to
             # fetch object for which check would be made
             obj = None
-            if args:
-                model, lookups = args[0], args[1:]
+            if lookup_variables:
+                model, lookups = lookup_variables[0], lookup_variables[1:]
                 # Parse model
                 if isinstance(model, str):
                     splitted = model.split(".")
@@ -178,8 +179,9 @@ def job_permission_required_or_403(perm, *args, **kwargs):
             elif isinstance(obj, Phase):
                 team = obj.job.team()
             
-            if not team:
-                response = False
+            if not team and response:
+                # Fail safe - if we can't load the obj!
+                return response
 
             if response:
                 # It's forbidden - lets check if we have specific job permissions...
