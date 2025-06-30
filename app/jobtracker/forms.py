@@ -1216,17 +1216,6 @@ class JobForm(forms.ModelForm):
 
 class PhaseForm(forms.ModelForm):
 
-    description = forms.CharField(
-        required=False,
-        widget=TinyMCE(
-            attrs={
-                "class": "tinymce",
-                "data-tinymce": '{"height":"15rem","placeholder":"Write a description here..."}',
-                "rows": 5,
-            },
-        ),
-    )
-
     def __init__(self, *args, **kwargs):
         job = None
         if "job" in kwargs:
@@ -1260,37 +1249,17 @@ class PhaseForm(forms.ModelForm):
             "due_to_techqa_set": DatePickerInput(),
             "due_to_presqa_set": DatePickerInput(),
             "desired_delivery_date": DatePickerInput(),
+            "description": forms.Textarea(attrs={'class':'tinymce'}),
+            # "description": TinyMCE(),
+            "location": forms.Textarea(attrs={'class':'tinymce'}),
+            # "location": TinyMCE(),
+            "restrictions": forms.Textarea(attrs={'class':'tinymce'}),
+            "scheduling_requirements": forms.Textarea(attrs={'class':'tinymce'}),
+            "prerequisites": forms.Textarea(attrs={'class':'tinymce'}),
+            "comm_reqs": forms.Textarea(attrs={'class':'tinymce'}),
+            "test_target": forms.Textarea(attrs={'class':'tinymce'}),
         }
         exclude = ["slug", "phase_id", "job"]
-        # fields = [
-        #     "phase_number",
-        #     "title",
-        #     "service",
-        #     "description",
-        #     "test_target",
-        #     "comm_reqs",
-        #     "delivery_hours",
-        #     "reporting_hours",
-        #     "mgmt_hours",
-        #     "qa_hours",
-        #     "oversight_hours",
-        #     "debrief_hours",
-        #     "contingency_hours",
-        #     "other_hours",
-        #     "desired_start_date",
-        #     "due_to_techqa_set",
-        #     "due_to_presqa_set",
-        #     "desired_delivery_date",
-
-        #     "is_testing_onsite",
-        #     "is_reporting_onsite",
-        #     "number_of_reports",
-        #     "report_to_be_left_on_client_site",
-        #     "location",
-        #     "restrictions",
-        #     "scheduling_requirements",
-        #     "prerequisites",
-        #     ]
 
 
 class ScopeInlineForm(forms.ModelForm):

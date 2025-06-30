@@ -86,7 +86,7 @@
          <div class="col-12 col-md-6 g-3">  
             <h6 class="mb-0">Target</h6>       
             <div class="border border-cake p-2">
-               {% if phase.test_target %}{{ phase.test_target }}{% else %}&nbsp;{% endif %}  
+               {% if phase.test_target %}{{ phase.test_target|bleach }}{% else %}&nbsp;{% endif %}  
             </div>           
          </div>
          <div class="col-12 col-md-6 g-3">      
