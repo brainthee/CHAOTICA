@@ -635,6 +635,7 @@ MEDIAFILES_LOCATION = "media"
 STATIC_BACKEND = "django.contrib.staticfiles.storage.StaticFilesStorage"
 MEDIA_BACKEND = "django.core.files.storage.FileSystemStorage"
 USE_S3 = os.environ.get("USE_S3", default=False)
+AWS_S3_CUSTOM_DOMAIN = os.getenv("AWS_S3_CUSTOM_DOMAIN", None)
 
 if USE_S3 == "1" or USE_S3:
     STATIC_BACKEND = "storages.backends.s3.S3Storage"
@@ -647,11 +648,9 @@ if USE_S3 == "1" or USE_S3:
         # "AWS_S3_OBJECT_PARAMETERS": {"CacheControl": "max-age=86400"},
     }
 
-    if os.getenv("AWS_S3_CUSTOM_DOMAIN", None):
+    if AWS_S3_CUSTOM_DOMAIN:
         # Use CloudFront
-        DEFAULT_S3_STORAGE_OPTIONS["custom_domain"] = os.getenv(
-            "AWS_S3_CUSTOM_DOMAIN", None
-        )
+        DEFAULT_S3_STORAGE_OPTIONS["custom_domain"] = AWS_S3_CUSTOM_DOMAIN
         DEFAULT_S3_STORAGE_OPTIONS["cloudfront_key"] = base64.b64decode(
             os.environ.get("AWS_CLOUDFRONT_KEY", None)
         )
