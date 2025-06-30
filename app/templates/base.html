@@ -93,6 +93,10 @@
     <script nonce="{{request.csp_nonce}}" src="https://cdn.datatables.net/2.1.4/js/dataTables.js"></script>
     <script nonce="{{request.csp_nonce}}" src="https://cdn.datatables.net/2.1.4/js/dataTables.bootstrap5.js"></script>
 
+    {% if SENTRY_FRONTEND_DSN %}
+      <script src="{{ SENTRY_FRONTEND_DSN }}" crossorigin="anonymous"></script>
+    {% endif %}
+
     {% block head_css_section %}{% endblock head_css_section %}
     {% block extra_head %}{% endblock extra_head %}
 
