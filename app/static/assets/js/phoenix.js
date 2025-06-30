@@ -153,7 +153,7 @@
 
   const settings = {
     tinymce: {
-      theme: 'oxide'
+      theme: 'oxide',
     },
     chart: {
       borderColor: 'rgba(255, 255, 255, 0.8)'
@@ -4119,7 +4119,7 @@
   const tinymceInit = () => {
     const { getColor, getData, getItemFromStore } = window.phoenix.utils;
 
-    const tinymces = document.querySelectorAll('[data-tinymce]');
+    const tinymces = document.querySelectorAll('.tinymce');
 
     if (window.tinymce) {
       // const wrapper = document.querySelector('.tox-sidebar-wrap');
@@ -4130,24 +4130,25 @@
             selector: '.tinymce',
             height: '50vh',
             skin: 'oxide',
-            menubar: false,
+            menubar: true,
+            promotion: false,
             content_style: `
-        .mce-content-body { 
-          color: ${getColor('emphasis-color')};
-          background-color: ${getColor('tinymce-bg')};
-        }
-        .mce-content-body[data-mce-placeholder]:not(.mce-visualblocks)::before {
-          color: ${getColor('quaternary-color')};
-          font-weight: 400;
-          font-size: 12.8px;
-        }
-        `,
+              .mce-content-body { 
+                color: ${getColor('emphasis-color')};
+                background-color: ${getColor('tinymce-bg')};
+              }
+              .mce-content-body[data-mce-placeholder]:not(.mce-visualblocks)::before {
+                color: ${getColor('quaternary-color')};
+                font-weight: 400;
+                font-size: 12.8px;
+              }
+            `,
             // mobile: {
             //   theme: 'mobile',
             //   toolbar: ['undo', 'bold']
             // },
             statusbar: true,
-            plugins: 'link,image,lists,table,media',
+            plugins: 'advlist autolink lists link image charmap preview anchor table media searchreplace visualblocks code',
             theme_advanced_toolbar_align: 'center',
             directionality: getItemFromStore('phoenixIsRTL') ? 'rtl' : 'ltr',
             toolbar: [

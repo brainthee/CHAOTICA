@@ -287,55 +287,5 @@ jQuery(document).ready(function($){
     });
 });
 
-tinyMCE_GZ.init(
-{% comment %} {
-    selector: '.tinymce',
-    suffix: '-min',
-    height: '50vh',
-    skin: 'oxide',
-    menubar: false,
-    content_style: `
-      .mce-content-body { 
-        color: ${getColor('emphasis-color')};
-        background-color: ${getColor('tinymce-bg')};
-      }
-      .mce-content-body[data-mce-placeholder]:not(.mce-visualblocks)::before {
-        color: ${getColor('quaternary-color')};
-        font-weight: 400;
-        font-size: 12.8px;
-      }
-    `,
-    statusbar: true,
-    plugins: 'link,image,lists,table,media',
-    themes: 'silver',
-    theme_advanced_toolbar_align: 'center',
-    directionality: getItemFromStore('phoenixIsRTL') ? 'rtl' : 'ltr',
-    toolbar: [
-      { name: 'history', items: ['undo', 'redo'] },
-      {
-        name: 'formatting',
-        items: ['bold', 'italic', 'underline', 'strikethrough']
-      },
-      {
-        name: 'alignment',
-        items: ['alignleft', 'aligncenter', 'alignright', 'alignjustify']
-      },
-      { name: 'list', items: ['numlist', 'bullist'] },
-      { name: 'link', items: ['link'] }
-    ],
-    setup: editor => {
-      editor.on('focus', () => {
-        const wraper = document.querySelector('.tox-sidebar-wrap');
-        wraper.classList.add('editor-focused');
-      });
-      editor.on('blur', () => {
-        const wraper = document.querySelector('.tox-sidebar-wrap');
-        wraper.classList.remove('editor-focused');
-      });
-    }
-  } {% endcomment %}
-  );
-
-
 
 {% endif %}

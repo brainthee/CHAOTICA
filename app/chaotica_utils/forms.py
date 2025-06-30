@@ -589,6 +589,7 @@ class EditProfileForm(forms.ModelForm):
         required=False,
         validators=[validate_file_infection],
     )
+    
     pref_timezone = forms.ChoiceField(
         choices=[(x, x) for x in pytz.common_timezones],
         widget=autocomplete.ModelSelect2(),
