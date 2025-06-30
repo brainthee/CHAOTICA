@@ -19,11 +19,12 @@ MAINTENANCE_MODE = int(os.environ.get("MAINTENANCE_MODE", default=0))
 DJANGO_ENV = os.environ.get("DJANGO_ENV", default="Dev")
 DJANGO_VERSION = os.environ.get("DJANGO_VERSION", default="bleeding-edge")
 
-SENTRY_DSN = os.environ.get("SENTRY_DSN", default=None)
+SENTRY_BACKEND_DSN = os.environ.get("SENTRY_BACKEND_DSN", default=None)
+SENTRY_FRONTEND_DSN = os.environ.get("SENTRY_FRONTEND_DSN", default=None)
 
-if SENTRY_DSN is not None:
+if SENTRY_BACKEND_DSN is not None:
     sentry_sdk.init(
-        dsn=SENTRY_DSN,
+        dsn=SENTRY_BACKEND_DSN,
         integrations=[DjangoIntegration()],
         send_default_pii=True,
         environment=DJANGO_ENV,
@@ -171,7 +172,10 @@ CONSTANCE_CONFIG = {
     ),
     # Work settings
     "DEFAULT_HOURS_IN_DAY": (7.5, "Default hours in a work day"),
-    "DEFAULT_WORKING_DAYS": ("[1, 2, 3, 4, 5]", "An int array with the numbers equaling the day of the week. Sunday == 0, Monday == 1 etc"),
+    "DEFAULT_WORKING_DAYS": (
+        "[1, 2, 3, 4, 5]",
+        "An int array with the numbers equaling the day of the week. Sunday == 0, Monday == 1 etc",
+    ),
     "LEAVE_DAYS_NOTICE": (14, "How many days notice for Annual Leave submissions?"),
     "LEAVE_ENFORCE_LIMIT": (False, "Should leave be prevented if over balance?"),
     # Theme/Look settings
@@ -330,7 +334,7 @@ THIRD_PARTY_APPS = [
     "menu",
     "widget_tweaks",
     "guardian",
-    'django_clamav',
+    "django_clamav",
     "crispy_forms",
     "crispy_bootstrap5",
     # "tinymce",
@@ -415,7 +419,7 @@ BOOTSTRAP_DATEPICKER_PLUS = {
         "date": {
             "format": "YYYY-MM-DD",
         },
-    }
+    },
 }
 DJANGO_CRON_DELETE_LOGS_OLDER_THAN = 14
 DJANGO_CRON_LOCK_BACKEND = "django_cron.backends.lock.file.FileLock"
@@ -458,11 +462,9 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
-
     # 'django.middleware.cache.UpdateCacheMiddleware',
     # 'django.middleware.common.CommonMiddleware',
     # 'django.middleware.cache.FetchFromCacheMiddleware',
-
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -476,8 +478,8 @@ if DEBUG:
     MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")
 
 # CACHE_MIDDLEWARE_ALIAS  = ' ' # cache alias
-CACHE_MIDDLEWARE_SECONDS = 600 # number of seconds each page should be cached.
-CACHE_MIDDLEWARE_KEY_PREFIX = ''  # name of site if multiple sites are used
+CACHE_MIDDLEWARE_SECONDS = 600  # number of seconds each page should be cached.
+CACHE_MIDDLEWARE_KEY_PREFIX = ""  # name of site if multiple sites are used
 
 ROOT_URLCONF = "chaotica.urls"
 
@@ -488,17 +490,17 @@ INTERNAL_IPS = [
 # Define trusted proxy networks
 # Only requests from these IPs/networks will have their forwarded headers trusted
 TRUSTED_PROXIES = [
-    '10.0.0.0/8',          # Private network where load balancer might be
-    '172.16.0.0/12',       # Private network
-    '192.168.0.0/16',      # Private network
-    '127.0.0.1/32',        # Localhost
+    "10.0.0.0/8",  # Private network where load balancer might be
+    "172.16.0.0/12",  # Private network
+    "192.168.0.0/16",  # Private network
+    "127.0.0.1/32",  # Localhost
     # Add specific proxy/load balancer IPs here:
     # '203.0.113.0/24',    # Example: CDN/proxy network
     # '198.51.100.1/32',   # Example: specific proxy server
 ]
 
 # Additional security settings
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')  # If behind HTTPS proxy
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")  # If behind HTTPS proxy
 USE_X_FORWARDED_HOST = False  # Only enable if you trust your proxy
 USE_X_FORWARDED_PORT = False  # Only enable if you trust your proxy
 
@@ -569,7 +571,6 @@ else:
 #     }
 # }
 # CONSTANCE_DATABASE_CACHE_BACKEND = 'default'
-
 
 
 # Password validation
@@ -648,16 +649,22 @@ if USE_S3 == "1" or USE_S3:
 
     if os.getenv("AWS_S3_CUSTOM_DOMAIN", None):
         # Use CloudFront
-        DEFAULT_S3_STORAGE_OPTIONS["custom_domain"] = os.getenv("AWS_S3_CUSTOM_DOMAIN", None)
+        DEFAULT_S3_STORAGE_OPTIONS["custom_domain"] = os.getenv(
+            "AWS_S3_CUSTOM_DOMAIN", None
+        )
         DEFAULT_S3_STORAGE_OPTIONS["cloudfront_key"] = base64.b64decode(
             os.environ.get("AWS_CLOUDFRONT_KEY", None)
         )
-        DEFAULT_S3_STORAGE_OPTIONS["cloudfront_key_id"] = os.environ.get("AWS_CLOUDFRONT_KEY_ID", None)
+        DEFAULT_S3_STORAGE_OPTIONS["cloudfront_key_id"] = os.environ.get(
+            "AWS_CLOUDFRONT_KEY_ID", None
+        )
         MEDIA_BACKEND = "chaotica.custom_storages.MediaStorage"
         STATIC_BACKEND = "chaotica.custom_storages.StaticStorage"
     else:
         # Use S3 directly
-        DEFAULT_S3_STORAGE_OPTIONS["custom_domain"] = f'{os.getenv("AWS_STORAGE_BUCKET_NAME")}.s3.amazonaws.com'
+        DEFAULT_S3_STORAGE_OPTIONS["custom_domain"] = (
+            f'{os.getenv("AWS_STORAGE_BUCKET_NAME")}.s3.amazonaws.com'
+        )
 
     MEDIA_URL = f'https://{DEFAULT_S3_STORAGE_OPTIONS["custom_domain"]}/media/'
     STATIC_URL = f'https://{DEFAULT_S3_STORAGE_OPTIONS["custom_domain"]}/static/'
@@ -672,7 +679,6 @@ if USE_S3 == "1" or USE_S3:
                 "file_overwrite": True,
             },
         },
-
         "public_media": {
             "BACKEND": MEDIA_BACKEND,
             "OPTIONS": {
@@ -686,7 +692,7 @@ if USE_S3 == "1" or USE_S3:
                 **DEFAULT_S3_STORAGE_OPTIONS,
                 "location": "static",
             },
-        }
+        },
     }
 else:
     AWS_S3_CUSTOM_DOMAIN = ""
@@ -777,7 +783,7 @@ EXPLORER_DATA_EXPORTERS = [
     ("json", "explorer.exporters.JSONExporter"),
 ]
 
-CLAMAV_UNIX_SOCKET = '/var/run/clamav/clamd.ctl'
+CLAMAV_UNIX_SOCKET = "/var/run/clamav/clamd.ctl"
 CLAMAV_USE_TCP = False
 CLAMAV_TCP_PORT = 3310
-CLAMAV_TCP_ADDR = '127.0.0.1'
+CLAMAV_TCP_ADDR = "127.0.0.1"
