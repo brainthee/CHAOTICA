@@ -5,7 +5,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponseRedirect, Http404
 from django.views.generic import ListView, DetailView, DeleteView
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_safe, require_http_methods
 from django.db.models import Q
 import logging
 
@@ -21,6 +21,7 @@ import json
 import datetime
 
 @login_required
+@require_safe
 def index(request):
     """
     Report builder home page
@@ -133,6 +134,7 @@ class ReportDetailView(ReportAccessMixin, DetailView):
 
 
 @login_required
+@require_http_methods(["GET", "POST"])
 def run_report(request, uuid):
     """
     Run a report and show results
@@ -294,6 +296,7 @@ def toggle_favorite(request, uuid):
 
 
 @login_required
+@require_http_methods(["GET", "POST"])
 def create_category(request):
     """
     Create a new report category

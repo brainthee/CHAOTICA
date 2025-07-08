@@ -4,7 +4,7 @@ from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponseBadRequest
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_http_methods, require_safe
 
 from ..forms import (
     SelectDataAreaForm, SelectFieldsForm, FilterConditionForm,
@@ -20,6 +20,7 @@ from ..services.data_service import DataService
 from ..permissions import can_create_report, can_edit_report
 
 @login_required
+@require_safe
 def wizard_start(request, report_uuid=None):
     """
     Start (or resume) the report wizard
@@ -157,6 +158,7 @@ def wizard_select_data_area(request):
 
 
 @login_required
+@require_http_methods(["GET", "POST"])
 def wizard_select_fields(request):
     """
     Second step of wizard: select the fields
@@ -256,6 +258,7 @@ def wizard_select_fields(request):
 
 
 @login_required
+@require_http_methods(["GET", "POST"])
 def wizard_define_filters(request):
     """
     Third step of wizard: define filters
@@ -334,6 +337,7 @@ def wizard_define_filters(request):
 
 
 @login_required
+@require_http_methods(["GET", "POST"])
 def wizard_define_sort(request):
     """
     Fourth step of wizard: define sort order
@@ -418,6 +422,7 @@ def wizard_define_sort(request):
 
 
 @login_required
+@require_http_methods(["GET", "POST"])
 def wizard_define_presentation(request):
     """
     Fifth step of wizard: define presentation options
@@ -512,6 +517,7 @@ def wizard_define_presentation(request):
 
 
 @login_required
+@require_http_methods(["GET", "POST"])
 def wizard_preview(request):
     """
     Final step of wizard: preview and save the report

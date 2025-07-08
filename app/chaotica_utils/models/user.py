@@ -1,7 +1,7 @@
 from django.db import models
 from django.db.models import Q, Count, When, Case, Value, Avg
 from django.db.models.functions import Lower, TruncDate, ExtractDay
-from django.contrib.auth.models import AbstractUser, Permission
+from django.contrib.auth.models import AbstractUser, Permission, UserManager
 from django.templatetags.static import static
 import uuid, os, pytz, json
 from ..enums import GlobalRoles, LeaveRequestTypes, UpcomingAvailabilityRanges
@@ -67,7 +67,7 @@ class Group(django.contrib.auth.models.Group):
 
         # If we reach this; this group isn't matched with a global role in code
         return False
-
+    
 
 class UserInvitation(models.Model):
     invited_email = models.EmailField(
@@ -130,7 +130,22 @@ def get_media_profile_file_path(_, filename):
     return os.path.join("profile_pics", filename)
 
 
+
+class CustomUserQuerySet(models.QuerySet):
+    def get_default_order(self):
+        return self.order_by("first_name", "last_name")
+
+class CustomUserManager(UserManager):
+
+    def get_queryset(self):
+        return CustomUserQuerySet(self.model, using=self._db)
+    
+    def get_default_order(self):
+        return self.get_queryset().get_default_order()
+
+
 class User(AbstractUser):
+    objects = CustomUserManager()
     # Fields to enforce email as the auth field
     username = None
     email = models.EmailField(

@@ -446,6 +446,7 @@ class UnitRoles:
                 "jobtracker.can_add_note_job",
                 "jobtracker.view_users_schedule",
                 "jobtracker.view_organisationalunit",
+                "jobtracker.can_deliver_job",
             ],
         ),
         (

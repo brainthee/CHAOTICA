@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.http import HttpResponse, JsonResponse
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_http_methods
 
 from ..models import (
     NotificationSubscription, 
@@ -61,7 +61,7 @@ def export_notification_rules(request):
 @permission_required('notifications.import_subscriptionrule')
 def import_notification_rules(request):
     """Import notification rules from a JSON file"""
-    data = dict()
+    data = {}
     data["form_is_valid"] = True
 
     if request.method == "POST":
@@ -196,6 +196,7 @@ def notification_rule_detail(request, rule_id):
 
 @login_required
 @permission_required('notifications.add_subscriptionrule')
+@require_http_methods(["GET", "POST"])
 def notification_rule_create(request):
     """Create a new subscription rule"""
     if request.method == 'POST':
@@ -217,6 +218,7 @@ def notification_rule_create(request):
 
 @login_required
 @permission_required('notifications.change_subscriptionrule')
+@require_http_methods(["GET", "POST"])
 def notification_rule_edit(request, rule_id):
     """Edit an existing subscription rule"""
     rule = get_object_or_404(SubscriptionRule, id=rule_id)
@@ -261,6 +263,7 @@ def notification_rule_edit(request, rule_id):
 
 @login_required
 @permission_required('notifications.delete_subscriptionrule')
+@require_http_methods(["GET", "POST"])
 def notification_rule_delete(request, rule_id):
     """Delete a subscription rule"""
     rule = get_object_or_404(SubscriptionRule, id=rule_id)
@@ -274,6 +277,7 @@ def notification_rule_delete(request, rule_id):
 
 @login_required
 @permission_required('notifications.change_subscriptionrule')
+@require_http_methods(["GET"])
 def notification_rule_toggle(request, rule_id):
     """Toggle a rule's active status"""
     rule = get_object_or_404(SubscriptionRule, id=rule_id)
@@ -291,6 +295,7 @@ def notification_rule_toggle(request, rule_id):
 
 @login_required
 @permission_required('notifications.change_subscriptionrule')
+@require_http_methods(["GET"])
 def notification_rule_add_criteria(request, rule_id):
     """Add criteria to a subscription rule"""
     rule = get_object_or_404(SubscriptionRule, id=rule_id)
@@ -491,6 +496,7 @@ def notification_rule_delete_criteria(request, rule_id):
 
 @login_required
 @permission_required('notifications.view_subscriptionrule')
+@require_http_methods(["GET"])
 def view_rule_subscriptions(request, rule_id):
     """View all subscriptions created by a rule"""
     rule = get_object_or_404(SubscriptionRule, id=rule_id)
@@ -515,6 +521,7 @@ def view_rule_subscriptions(request, rule_id):
 
 
 @permission_required('notifications.change_subscriptionrule')
+@require_http_methods(["GET", "POST"])
 def notification_rule_reapply(request, rule_id):
     """Re-apply a subscription rule to all relevant entities"""
     rule = get_object_or_404(SubscriptionRule, id=rule_id)

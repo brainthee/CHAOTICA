@@ -54,7 +54,9 @@ class OrganisationalUnit(models.Model):
     )
     businessHours_startTime = models.TimeField("Start Time", default="09:00:00")
     businessHours_endTime = models.TimeField("End Time", default="17:30:00")
-    businessHours_lunch_startTime = models.TimeField("Lunch Start Time", default="12:00:00")
+    businessHours_lunch_startTime = models.TimeField(
+        "Lunch Start Time", default="12:00:00"
+    )
     businessHours_lunch_endTime = models.TimeField("Lunch End Time", default="13:00:00")
     businessHours_days = JSONField(
         verbose_name="Days",
@@ -93,6 +95,7 @@ class OrganisationalUnit(models.Model):
             ("can_add_phases", "Can add phases"),
             ("can_delete_phases", "Can add phases"),
             ("can_schedule_job", "Can schedule phases"),
+            ("can_deliver_job", "Can deliver a job"),
             ("view_users_schedule", "View Members Schedule"),
             ("view_job_schedule", "View a Job's Schedule"),
             ("can_scope_jobs", "Can scope jobs"),
@@ -115,19 +118,16 @@ class OrganisationalUnit(models.Model):
 
     def get_working_days_in_range(self, start_date, end_date):
         working_days_list = []
-        if not (
-            isinstance(start_date, date)
-            and isinstance(end_date, date)
-        ):
-            raise TypeError(
-                "Both start_date and end_date must be date objects"
-            )
+        if not (isinstance(start_date, date) and isinstance(end_date, date)):
+            raise TypeError("Both start_date and end_date must be date objects")
 
         # Ensure that the start date is before or equal to the end date.
         if start_date > end_date:
             start_date, end_date = end_date, start_date
         # Make sure dates are in same TZ and at max range
-        start_date = timezone.make_aware(datetime.combine(start_date, datetime.min.time()))
+        start_date = timezone.make_aware(
+            datetime.combine(start_date, datetime.min.time())
+        )
         end_date = timezone.make_aware(datetime.combine(end_date, datetime.max.time()))
 
         # Now lets iter through and only add dates that we work
@@ -191,6 +191,20 @@ class OrganisationalUnit(models.Model):
         else:
             return User.objects.none()
 
+    def get_consultants(self):
+        ids = []
+        for cons in OrganisationalUnitMember.objects.filter(
+            unit=self,
+            roles__in=UnitRoles.CONSULTANT,
+            left_date__isnull=True,  # active only
+        ):
+            if cons.member.pk not in ids:
+                ids.append(cons.member.pk)
+        if ids:
+            return User.objects.filter(pk__in=ids)
+        else:
+            return User.objects.none()
+
     def get_activeMembers(self):
         return User.objects.filter(pk__in=self.get_activeMembersPKs())
 
@@ -218,14 +232,18 @@ class OrganisationalUnit(models.Model):
         )
 
     def get_active_members_with_perm(self, permission_str, include_su=False):
-        members = self.get_activeMembersPKs()
-        return (
-            get_users_with_perms(
-                self, with_superusers=include_su, only_with_perms_in=[permission_str]
-            )
-            .filter(pk__in=members)
-            .distinct()
+        members = self.get_activeMembers()  # Force evaluation
+        if not members:
+            return User.objects.none()
+
+        users_with_perms = get_users_with_perms(
+            self, with_superusers=include_su, only_with_perms_in=[permission_str]
         )
+
+        if not users_with_perms:
+            return User.objects.none()
+
+        return User.objects.filter(pk__in=users_with_perms).distinct()
 
     def get_allMembers(self):
         ids = []
@@ -486,12 +504,13 @@ class OrganisationalUnit(models.Model):
             start_date = (timezone.now().date() - timedelta(days=30)).date()
         if not end_date:
             end_date = timezone.now().date().date()
-        
-        data["upcoming_availability"] = self.get_upcoming_availability(user_ids=user_ids)
-            
+
+        data["upcoming_availability"] = self.get_upcoming_availability(
+            user_ids=user_ids
+        )
+
         return data
 
-    
     def get_upcoming_availability(self, user_ids=None):
         data = {}
         avail_start = (timezone.now() - timedelta(days=timezone.now().weekday())).date()
@@ -510,79 +529,157 @@ class OrganisationalUnit(models.Model):
                 "working_days": 0,
             }
             for _, m in data[rang].items():
-                data[rang]["totals"]["non_delivery_days"] += m[
-                    "non_delivery_days"
-                ]
-                data[rang]["totals"]["scheduled_days"] += m[
-                    "scheduled_days"
-                ]
-                data[rang]["totals"]["tentative_days"] += m[
-                    "tentative_days"
-                ]
-                data[rang]["totals"]["confirmed_days"] += m[
-                    "confirmed_days"
-                ]
-                data[rang]["totals"]["available_days"] += m[
-                    "available_days"
-                ]
-                data[rang]["totals"]["working_days"] += m[
-                    "working_days"
-                ]
+                data[rang]["totals"]["non_delivery_days"] += m["non_delivery_days"]
+                data[rang]["totals"]["scheduled_days"] += m["scheduled_days"]
+                data[rang]["totals"]["tentative_days"] += m["tentative_days"]
+                data[rang]["totals"]["confirmed_days"] += m["confirmed_days"]
+                data[rang]["totals"]["available_days"] += m["available_days"]
+                data[rang]["totals"]["working_days"] += m["working_days"]
 
-            data[rang]["totals"][
-                "non_delivery_days_percentage"
-            ] = round(
+            data[rang]["totals"]["non_delivery_days_percentage"] = round(
                 data[rang]["totals"]["non_delivery_days"]
                 / data[rang]["totals"]["working_days"]
                 * 100,
                 1,
             )
 
-            data[rang]["totals"][
-                "scheduled_days_percentage"
-            ] = round(
+            data[rang]["totals"]["scheduled_days_percentage"] = round(
                 data[rang]["totals"]["scheduled_days"]
                 / data[rang]["totals"]["working_days"]
                 * 100,
                 1,
             )
 
-            data[rang]["totals"][
-                "tentative_days_percentage"
-            ] = round(
+            data[rang]["totals"]["tentative_days_percentage"] = round(
                 data[rang]["totals"]["tentative_days"]
                 / data[rang]["totals"]["working_days"]
                 * 100,
                 1,
             )
 
-            data[rang]["totals"][
-                "confirmed_days_percentage"
-            ] = round(
+            data[rang]["totals"]["confirmed_days_percentage"] = round(
                 data[rang]["totals"]["confirmed_days"]
                 / data[rang]["totals"]["working_days"]
                 * 100,
                 1,
             )
 
-            data[rang]["totals"]["utilisation_percentage"] = (
-                round(
-                    data[rang]["totals"]["confirmed_days"]
-                    / data[rang]["totals"]["working_days"]
-                    * 100,
-                    1,
-                )
+            data[rang]["totals"]["utilisation_percentage"] = round(
+                data[rang]["totals"]["confirmed_days"]
+                / data[rang]["totals"]["working_days"]
+                * 100,
+                1,
             )
 
-            data[rang]["totals"][
-                "available_days_percentage"
-            ] = round(
+            data[rang]["totals"]["available_days_percentage"] = round(
                 data[rang]["totals"]["available_days"]
                 / data[rang]["totals"]["working_days"]
                 * 100,
                 1,
             )
         return data
+
+    def get_unit_weekly_schedule(
+        self, filtered_users=None, start_date=None, end_date=None
+    ):
+        """
+        Generate weekly schedule data for all members of an organizational unit.
+
+        Args:
+            self: OrganisationalUnit instance
+            start_date: datetime.date (defaults to start of current week)
+            end_date: datetime.date (defaults to end of current week)
+
+        Returns:
+            dict: Format as specified with users and their daily slots
+        """
+
+        # Default to current week if no dates provided
+        if start_date is None:
+            today = datetime.now().date()
+            # Get Monday of current week (assuming week starts on Monday)
+            start_date = today - timedelta(days=today.weekday())
+
+        if end_date is None:
+            end_date = start_date + timedelta(days=6)  # Sunday of the same week
+
+        # Query for timeslots that overlap with our date range
+        # This includes:
+        # 1. Slots that start within the range
+        # 2. Slots that end within the range
+        # 3. Slots that start before and end after the range (span the entire range)
+        timeslot_filter = Q(
+            # Slot starts within range
+            start__date__lte=end_date,
+            end__date__gte=start_date,
+        )
+
+        # Single query to get all unit members with their timeslots for the date range
+        # This is the most efficient approach - only 1 database query
+        if filtered_users is not None:
+            members = filtered_users.prefetch_related(
+                Prefetch(
+                    "timeslots",
+                    queryset=TimeSlot.objects.filter(timeslot_filter).select_related(
+                        "phase", "phase__job"
+                    ),
+                    to_attr="week_timeslots",
+                )
+            )
+        else:
+            members = (
+                self.members.filter(member__is_active=True)
+                .select_related("member")
+                .prefetch_related(
+                    Prefetch(
+                        "member__timeslots",
+                        queryset=TimeSlot.objects.filter(
+                            timeslot_filter
+                        ).select_related("phase", "phase__job"),
+                        to_attr="week_timeslots",
+                    )
+                )
+            )
+
+        # Generate date range for the week
+        date_range = []
+        current_date = start_date
+        while current_date <= end_date:
+            date_range.append(current_date.strftime("%d/%m/%Y"))
+            current_date += timedelta(days=1)
+
+        # Build the result dictionary
+        result = {}
+
+        for member in members:
+            user = member.member if hasattr(member, 'member') else member
+            user_schedule = {}
+
+            # Initialize all dates as empty
+            for date_str in date_range:
+                user_schedule[date_str] = ""
+                        
+            # Fill in the timeslots for each day they overlap
+            for slot in user.week_timeslots:
+                # Calculate which days this slot spans within our date range
+                slot_start_date = max(slot.start.date(), start_date)
+                slot_end_date = min(slot.end.date(), end_date)
+                
+                # Add this slot to every day it spans
+                current_slot_date = slot_start_date
+                while current_slot_date <= slot_end_date:
+                    date_str = current_slot_date.strftime("%d/%m/%Y")
+                    if user_schedule[date_str]:
+                        user_schedule[date_str].append(slot)
+                    else:
+                        user_schedule[date_str] = [slot]
+                    current_slot_date += timedelta(days=1)
+
+            result[user.pk] = {}
+            result[user.pk]["user"] = user
+            result[user.pk]["schedule"] = user_schedule
+
+        return result
 
 
 class OrganisationalUnitRole(models.Model):

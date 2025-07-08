@@ -324,3 +324,10 @@ def last_day_of_month(any_day):
     # subtracting the number of the current day brings us back one month
     return next_month - timedelta(days=next_month.day)
 
+
+def get_week(day=None):
+    if not day:
+        day = now()
+    start = day - timedelta(days=day.weekday())
+    end = start + timedelta(days=6)
+    return { 'start': start, 'end': end}

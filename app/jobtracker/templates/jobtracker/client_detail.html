@@ -71,7 +71,7 @@
         </div>
         <div class="card-body py-2">
           {% if client.specific_requirements %}
-            {{ client.specific_requirements|safe }}
+            {{ client.specific_requirements }}
           {% else %}
             <p class="mb-0">No Details</p>
           {% endif %}
@@ -86,7 +86,7 @@
         </div>
         <div class="card-body py-2">
           {% if client.specific_reporting_requirements %}
-            {{ client.specific_reporting_requirements|safe }}
+            {{ client.specific_reporting_requirements }}
           {% else %}
             <p class="mb-0">No Details</p>
           {% endif %}
