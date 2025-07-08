@@ -128,3 +128,5 @@ app/.scannerwork/
 
 app/.env*
 app/mediafiles/*
+
+.sonar/
