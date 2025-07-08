@@ -7,6 +7,28 @@ from django.http import HttpResponseForbidden, HttpResponseNotFound
 from django.shortcuts import render
 from guardian.conf import settings as guardian_settings
 from .models import Job, Phase, OrganisationalUnit, TimeSlot
+from .forms import SchedulerFilter
+from django.http import JsonResponse
+from django.db.models import Q
+from chaotica_utils.models import User
+from guardian.shortcuts import get_objects_for_user
+from .models import (
+    Job,
+    TimeSlot,
+    UserSkill,
+    Phase,
+    OrganisationalUnitMember,
+    OrganisationalUnitRole,
+    TimeSlotComment,
+)
+from .enums import UserSkillRatings
+import logging
+from chaotica_utils.utils import (
+    clean_fullcalendar_datetime,
+)
+from chaotica_utils.models import Holiday
+from constance import config
+
 
 logger = logging.getLogger(__name__)
 abspath = lambda *p: os.path.abspath(os.path.join(*p))
@@ -83,3 +105,300 @@ def get_unit_40x_or_None(
             return redirect_to_login(
                 request.get_full_path(), login_url, redirect_field_name
             )
+
+
+
+
+def _filter_users_on_query(request, cleaned_data=None):
+    query = Q()
+
+    show_inactive_users = cleaned_data.get("show_inactive_users")
+
+    # Starting users filter
+    users_pk = []
+    # This pre-loads which users we can see the schedule of.
+    # It's actually not ideal because if we view a job/phase,
+    # but say we don't have permission to see the schedule of someone - we can't see a complete schedule for that job
+    for org_unit in get_objects_for_user(
+        request.user, "jobtracker.view_users_schedule"
+    ):
+        for user in org_unit.get_allMembers():
+            if user.pk not in users_pk:
+                users_pk.append(user.pk)
+
+    onboarded_to = cleaned_data.get("onboarded_to")
+    if onboarded_to:
+        users_onboarded = []
+        for client in onboarded_to:
+            for onboarded in client.onboarded_users.all():
+                if onboarded.is_active:
+                    users_onboarded.append(onboarded.user.pk)
+        query.add(Q(pk__in=users_onboarded), Q.AND)
+
+    teams = cleaned_data.get("teams")
+    if teams:
+        users_memberof = []
+        for team in teams:
+            for usr in team.get_activeMembers():
+                users_memberof.append(usr.pk)
+        query.add(Q(pk__in=users_memberof), Q.AND)
+
+    # If we're passed a job/phase ID - filter on that.
+    jobs = cleaned_data.get("jobs")
+    if jobs:
+        for job in jobs:
+            query.add(Q(pk__in=job.team()), Q.AND)
+
+    phases = cleaned_data.get("phases")
+    if phases:
+        for phase in phases:
+            query.add(Q(pk__in=phase.team()), Q.AND)
+
+    if not jobs and not phases:
+        query.add(Q(pk__in=users_pk), Q.AND)
+
+    # Now lets apply the filters from the query...
+    ## Filter users
+    if not show_inactive_users:
+        query.add(Q(is_active=True), Q.AND)
+
+    users_q = cleaned_data.get("users")
+    if users_q:
+        query.add(Q(pk__in=users_q), Q.AND)
+
+    ## Filter org unit
+    org_units = cleaned_data.get("org_units")
+    org_unit_roles = cleaned_data.get("org_unit_roles")
+
+    if org_units:
+        query.add(
+            Q(
+                unit_memberships__in=OrganisationalUnitMember.objects.filter(
+                    unit__in=org_units,
+                    roles__in=(
+                        org_unit_roles
+                        if org_unit_roles
+                        else OrganisationalUnitRole.objects.all()
+                    ),
+                )
+            ),
+            Q.AND,
+        )
+    else:
+        if org_unit_roles:
+            query.add(
+                Q(
+                    unit_memberships__in=OrganisationalUnitMember.objects.filter(
+                        roles__in=org_unit_roles,
+                    )
+                ),
+                Q.AND,
+            )
+
+    ## Filter on skills
+    skills_specialist = cleaned_data.get("skills_specialist")
+    if skills_specialist:
+        query.add(
+            Q(
+                skills__in=UserSkill.objects.filter(
+                    skill__in=skills_specialist, rating=UserSkillRatings.SPECIALIST
+                )
+            ),
+            Q.AND,
+        )
+
+    skills_can_do_alone = cleaned_data.get("skills_can_do_alone")
+    if skills_can_do_alone:
+        query.add(
+            Q(
+                skills__in=UserSkill.objects.filter(
+                    skill__in=skills_can_do_alone,
+                    rating=UserSkillRatings.CAN_DO_ALONE,
+                )
+            ),
+            Q.AND,
+        )
+
+    skills_can_do_support = cleaned_data.get("skills_can_do_support")
+    if skills_can_do_support:
+        query.add(
+            Q(
+                skills__in=UserSkill.objects.filter(
+                    skill__in=skills_can_do_support,
+                    rating=UserSkillRatings.CAN_DO_WITH_SUPPORT,
+                )
+            ),
+            Q.AND,
+        )
+
+    # Filter on service
+    # This is a bit mind bending. Of the service(s) selected, each will have some desired/needed skills
+    # We then need to select the users based off containing a skill in either desired or needed..
+    services = cleaned_data.get("services")
+    for service in services:
+        query.add(Q(pk__in=service.can_conduct()), Q.AND)
+
+    extra_users = cleaned_data.get("include_user")
+    if extra_users:
+        query.add(
+            Q(pk__in=extra_users),
+            Q.OR,
+        )
+
+    return (
+        User.objects.filter(query)
+        .distinct()
+        .order_by("last_name", "first_name")
+        .prefetch_related("timeslots")
+    )
+
+
+def get_scheduler_members(request, filtered_users = None, start = None, end = None, use_filter_form=True):
+
+    data = []
+    selected_phases = []
+    cleaned_data = None
+
+    if use_filter_form:
+        filter_form = SchedulerFilter(request.GET)
+        if filter_form.is_valid():
+            cleaned_data = filter_form.clean()
+
+            jobs = cleaned_data.get("jobs", [])
+            for job in jobs:
+                selected_phases.append(job)
+            phases = cleaned_data.get("phases", [])
+            for phase in phases:
+                selected_phases.append(phase)
+
+    if not filtered_users:
+        filtered_users = _filter_users_on_query(request, cleaned_data).prefetch_related(
+            "unit_memberships", "unit_memberships__unit"
+        )
+
+    for user in filtered_users:
+        user_title = str(user)
+        main_org = user.unit_memberships.first()
+        data.append(
+            {
+                "id": user.pk,
+                "title": user_title,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "url": user.get_absolute_url(),
+                "html_view": user.get_table_display_html(),
+                "businessHours": (
+                    {
+                        "startTime": main_org.unit.businessHours_startTime,
+                        "endTime": main_org.unit.businessHours_endTime,
+                        "daysOfWeek": main_org.unit.businessHours_days,
+                    }
+                    if main_org
+                    else {
+                        "startTime": "",
+                        "endTime": "",
+                        "daysOfWeek": "",
+                    }
+                ),
+                "workingHours": (
+                    {
+                        "startTime": main_org.unit.businessHours_startTime,
+                        "endTime": main_org.unit.businessHours_endTime,
+                        "daysOfWeek": main_org.unit.businessHours_days,
+                    }
+                    if main_org
+                    else {
+                        "startTime": "",
+                        "endTime": "",
+                        "daysOfWeek": "",
+                    }
+                ),
+            }
+        )
+    return JsonResponse(data, safe=False)
+
+
+def get_scheduler_slots(request, filtered_users = None, start = None, end = None, use_filter_form=True):
+    data = []
+    selected_phases = []
+    cleaned_data = None
+
+    if use_filter_form:
+        filter_form = SchedulerFilter(request.GET)
+        if filter_form.is_valid():
+            cleaned_data = filter_form.clean()
+
+            jobs = cleaned_data.get("jobs", [])
+            for job in jobs:
+                selected_phases.append(job)
+            phases = cleaned_data.get("phases", [])
+            for phase in phases:
+                selected_phases.append(phase)
+
+    if not filtered_users:
+        filtered_users = _filter_users_on_query(request, cleaned_data).prefetch_related(
+            "unit_memberships", "unit_memberships__unit"
+        )
+
+    # Change FullCalendar format to DateTime
+    if not start:
+        start = clean_fullcalendar_datetime(request.GET.get("start", None))
+    if not end:
+        end = clean_fullcalendar_datetime(request.GET.get("end", None))
+
+    schedule_colours = {
+        "SCHEDULE_COLOR_PHASE_CONFIRMED_AWAY": str(
+            config.SCHEDULE_COLOR_PHASE_CONFIRMED_AWAY
+        ),
+        "SCHEDULE_COLOR_PHASE_CONFIRMED": str(config.SCHEDULE_COLOR_PHASE_CONFIRMED),
+        "SCHEDULE_COLOR_PHASE_AWAY": str(config.SCHEDULE_COLOR_PHASE_AWAY),
+        "SCHEDULE_COLOR_PHASE": str(config.SCHEDULE_COLOR_PHASE),
+        "SCHEDULE_COLOR_PROJECT": str(config.SCHEDULE_COLOR_PROJECT),
+        "SCHEDULE_COLOR_INTERNAL": str(config.SCHEDULE_COLOR_INTERNAL),
+        "SCHEDULE_COLOR_COMMENT": str(config.SCHEDULE_COLOR_COMMENT),
+    }
+
+    # Load the timeslots
+    for slot in TimeSlot.objects.filter(
+        user__in=filtered_users, end__gte=start, start__lte=end
+    ).prefetch_related(
+        "phase",
+        "phase__job",
+        "phase__job__client",
+        "project",
+        "slot_type",
+        "user",
+        "leaverequest",
+    ):
+        slot_json = slot.get_schedule_json(schedule_colours=schedule_colours)
+        if selected_phases:
+            if slot.phase and (
+                slot.phase not in selected_phases
+                and slot.phase.job not in selected_phases
+            ):
+                slot_json["display"] = "background"
+        data.append(slot_json)
+
+    # Add the holidays
+    holidays = Holiday.objects.filter(date__gte=start.date(), date__lte=end.date())
+    for user in filtered_users:
+        for hol in holidays:
+            if user.country == hol.country:
+                data.append(
+                    {
+                        "title": str(hol),
+                        "start": hol.date,
+                        "end": hol.date,
+                        "allDay": True,
+                        "display": "background",
+                        "id": hol.pk,
+                        "resourceId": user.pk,
+                    }
+                )
+
+    # Add the comments
+    for comment in TimeSlotComment.objects.filter(
+        user__in=filtered_users, end__gte=start, start__lte=end
+    ):
+        data.append(comment.get_schedule_json(schedule_colours=schedule_colours))
+    return JsonResponse(data, safe=False)

@@ -719,6 +719,7 @@ CONTENT_SECURITY_POLICY = {
             UNSAFE_EVAL,
             UNSAFE_INLINE,
             "data:",
+            "blob:",
         ],
         "upgrade-insecure-requests": True,
     },

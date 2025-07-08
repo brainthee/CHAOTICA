@@ -15,6 +15,7 @@ from ..models import (
     OrganisationalUnitRole,
 )
 from chaotica_utils.enums import UnitRoles
+from chaotica_utils.utils import get_week
 from ..decorators import unit_permission_required_or_403
 from ..forms import (
     OrganisationalUnitForm,
@@ -22,6 +23,7 @@ from ..forms import (
     OrganisationalUnitMemberRolesForm,
 )
 from ..mixins import PrefetchRelatedMixin
+from ..utils import get_scheduler_members, get_scheduler_slots
 import logging
 from django.contrib import messages
 from django.utils import timezone
@@ -74,6 +76,7 @@ class OrganisationalUnitDetailView(
 
     def get_context_data(self, **kwargs):
         context = super(OrganisationalUnitDetailView, self).get_context_data(**kwargs)
+        unit = self.get_object()
 
         date_range_raw = self.request.GET.get("dateRange", "")
         if " to " in date_range_raw:

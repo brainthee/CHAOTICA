@@ -27,6 +27,7 @@ from django.views.decorators.http import (
 logger = logging.getLogger(__name__)
 
 @login_required
+@require_http_methods(["GET", "POST"])
 def notification_settings(request):
     from notifications.models import NotificationSubscription, NotificationCategory
     from notifications.enums import NotificationTypes
