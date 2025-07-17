@@ -78,8 +78,8 @@
     <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" type="text/css" media="screen" rel="stylesheet" nonce="{{request.csp_nonce}}">
     
     <!-- jQuery -->
-    <script type="text/javascript" nonce="{{request.csp_nonce}}" src="https://code.jquery.com/jquery-3.6.3.min.js"></script>
-    <script type="text/javascript" nonce="{{request.csp_nonce}}" src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+    <script type="text/javascript" src="{% static "vendors/jquery/jquery-3.7.1.min.js" %}"></script>
+    <script type="text/javascript" src="{% static "vendors/jquery-ui-1.14.1/jquery-ui.min.js" %}"></script>
     <script type="text/javascript" src="{% static "assets/js/jquery.dirty.js" %}"></script>
 
     <!-- Misc Django JS's -->
@@ -108,7 +108,6 @@
     <script src="{% static "vendors/anchorjs/anchor.min.js" %}"></script>
     <script src="{% static "vendors/dhtmlx-gantt/dhtmlxgantt.js" %}"></script>
     <script src="{% static "vendors/is/is.min.js" %}"></script>
-    <script src="{% static "vendors/fontawesome/all.min.js" %}"></script>
     <script src="{% static "vendors/lodash/lodash.min.js" %}"></script>
     <script src="{% static "vendors/feather-icons/feather.min.js" %}"></script>
     <script src="{% static "vendors/flatpickr/flatpickr.min.js" %}"></script>
@@ -123,40 +122,28 @@
     <script src="{% static "vendors/highlight/highlight.min.js" %}"></script>
 
 
-    {% comment %} <script src="{% static "vendors/tinymce/tinymce.min.js" %}"></script>
-    <script src="{% static "vendors/tinymce/themes/silver/theme.min.js" %}"></script>    
-    <link rel="stylesheet" src="{% static "vendors/tinymce/skins/ui/oxide/skin.min.css" %}" />
-    <link rel="stylesheet" src="{% static "vendors/tinymce/skins/content/default/content.min.css" %}" />
-    <link rel="stylesheet" src="{% static "vendors/tinymce/skins/ui/oxide/content.min.css" %}" />
-    <script src="{% static "vendors/tinymce/models/dom/model.min.js" %}"></script>
-    <script src="{% static "vendors/tinymce/icons/default/icons.min.js" %}"></script>
-    <script src="{% static "vendors/tinymce/plugins/link/plugin.min.js" %}"></script>
-    <script src="{% static "vendors/tinymce/plugins/image/plugin.min.js" %}"></script>
-    <script src="{% static "vendors/tinymce/plugins/lists/plugin.min.js" %}"></script>
-    <script src="{% static "vendors/tinymce/plugins/table/plugin.min.js" %}"></script>
-    <script src="{% static "vendors/tinymce/plugins/media/plugin.min.js" %}"></script> {% endcomment %}
-
-    {% comment %} <script nonce="{{request.csp_nonce}}" src="https://cdn.tiny.cloud/1/q9n609zp86ls5162adwa7442cinatffvom2msi4l7bbv9gs4/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script> {% endcomment %}
-
     <script src="{% static "vendors/tinymce/tinymce.min.js" %}"></script>
-    {% comment %} <script src="{% url "tinymce-compressor" %}"></script> {% endcomment %}
 
     <link nonce="{{request.csp_nonce}}" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
 
-
-    <script nonce="{{request.csp_nonce}}" src="https://d3js.org/d3.v7.min.js"></script>
-    <script nonce="{{request.csp_nonce}}" src="https://cdn.jsdelivr.net/npm/d3-org-chart@2"></script>
-    <script nonce="{{request.csp_nonce}}" src="https://cdn.jsdelivr.net/npm/d3-flextree@2.1.2/build/d3-flextree.js"></script>
-
+    {% comment %} 
+    <!-- Leave out D3 for now. This will break the org chart but it's not really used -->
+    <!-- D3 -->
+    <script src="{% static "vendors/d3/d3.v7.min.js" %}"></script>
+    <script type="module" src="{% static "vendors/d3-flextree/flextree.js" %}"></script>
+    <script type="module" src="{% static "vendors/d3-org-chart/d3-org-chart.js" %}"></script> {% endcomment %}
+    
     <!-- Calendar -->
     <script src="{% static "vendors/fullcalendar/index.global.js" %}"></script>
     <script nonce="{{request.csp_nonce}}" src="https://cdn.jsdelivr.net/npm/superagent"></script>
 
-    <link rel="stylesheet" nonce="{{request.csp_nonce}}" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-contextmenu/2.7.1/jquery.contextMenu.min.css">
-    <script nonce="{{request.csp_nonce}}" src="https://cdnjs.cloudflare.com/ajax/libs/jquery-contextmenu/2.7.1/jquery.contextMenu.min.js"></script>
-    <script nonce="{{request.csp_nonce}}" src="https://cdnjs.cloudflare.com/ajax/libs/jquery-contextmenu/2.7.1/jquery.ui.position.js"></script>
-    <script src="{% static "assets/js/snow.js" %}"></script> 
 
+    <link rel="stylesheet" nonce="{{request.csp_nonce}}" href="{% static "vendors/jquery-contextMenu/jquery.contextMenu.min.css" %}">
+    <script nonce="{{request.csp_nonce}}" src="{% static "vendors/jquery-contextMenu/jquery.contextMenu.min.js" %}"></script>
+    <script nonce="{{request.csp_nonce}}" src="{% static "vendors/jquery-contextMenu/jquery.ui.position.min.js" %}"></script>
+
+
+    <script src="{% static "assets/js/snow.js" %}"></script> 
     <script src="{% static "assets/js/phoenix.js" %}"></script>
     <script>
       {% include 'js/core.js' %}

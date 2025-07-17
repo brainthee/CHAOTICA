@@ -89,9 +89,11 @@
           <li class="nav-item text-nowrap me-2" role="presentation">
             <a class="nav-link active" id="team-tab" data-bs-toggle="tab" href="#team" role="tab" aria-controls="tab-team" aria-selected="true"><span class="fa-solid fa-video me-2 tab-icon-color"></span>Team</a>
           </li>
+          {% comment %} 
+          <!-- Leave out D3 for now. This will break the org chart but it's not really used -->
           <li class="nav-item text-nowrap me-2" role="presentation">
             <a class="nav-link" id="orgchart-tab" data-bs-toggle="tab" href="#orgchart" role="tab" aria-controls="tab-orgchart" aria-selected="false" tabindex="-1"><span class="fa-solid fa-sitemap me-2 tab-icon-color"></span>Organisation Chart</a>
-          </li>
+          </li> {% endcomment %}
           <li class="nav-item text-nowrap me-2" role="presentation">
             <a class="nav-link" id="jobs-tab" data-bs-toggle="tab" href="#jobs" role="tab" aria-controls="tab-jobs" aria-selected="false" tabindex="-1"><span class="fa-solid fa-clipboard me-2 tab-icon-color"></span>Jobs</a>
           </li>
@@ -105,9 +107,11 @@
             {% include 'partials/unit/team_table.html' %}
           </div>
 
+          {% comment %} 
+          <!-- Leave out D3 for now. This will break the org chart but it's not really used -->
           <div class="tab-pane fade w-100" id="orgchart" role="tabpanel" aria-labelledby="orgchart-tab">
             {% include 'partials/unit/org_chart.html' %}
-          </div>
+          </div> {% endcomment %}
 
           <div class="tab-pane fade" id="jobs" role="tabpanel" aria-labelledby="jobs-tab">
             {% if 'can_view_jobs' in unit_perms %}
