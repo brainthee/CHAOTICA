@@ -111,7 +111,7 @@ class RMAssignable(models.Model):
             "Content-Type": "application/json; charset=utf-8",
             "auth": config.RM_SYNC_API_TOKEN,
         }
-        VERIFY_TLS = False
+        VERIFY_TLS = True
         # Setup logging
         log_stream = StringIO()
         stream_handler = logging.StreamHandler(log_stream)
@@ -246,7 +246,7 @@ class RMAssignable(models.Model):
             "Content-Type": "application/json; charset=utf-8",
             "auth": config.RM_SYNC_API_TOKEN,
         }
-        VERIFY_TLS = False
+        VERIFY_TLS = True
         # Setup logging
         log_stream = StringIO()
         stream_handler = logging.StreamHandler(log_stream)
@@ -350,7 +350,7 @@ class RMAssignableSlot(models.Model):
             "Content-Type": "application/json; charset=utf-8",
             "auth": config.RM_SYNC_API_TOKEN,
         }
-        VERIFY_TLS = False
+        VERIFY_TLS = True
         # Setup logging
         log_stream = StringIO()
         stream_handler = logging.StreamHandler(log_stream)
@@ -512,7 +512,7 @@ class RMAssignableSlot(models.Model):
             "Content-Type": "application/json; charset=utf-8",
             "auth": config.RM_SYNC_API_TOKEN,
         }
-        VERIFY_TLS = False
+        VERIFY_TLS = True
         # Setup logging
         log_stream = StringIO()
         stream_handler = logging.StreamHandler(log_stream)
@@ -624,7 +624,7 @@ class RMSyncRecord(models.Model):
             "Content-Type": "application/json; charset=utf-8",
             "auth": config.RM_SYNC_API_TOKEN,
         }
-        VERIFY_TLS = False
+        VERIFY_TLS = True
 
         # Setup logging
         log_stream = StringIO()
