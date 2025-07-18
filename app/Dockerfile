@@ -41,10 +41,10 @@ RUN service cron stop
 # Setup user
 RUN groupadd -g "${GID}" chaotica
 RUN useradd --create-home --no-log-init -u "${UID}" -g "${GID}" chaotica
-RUN chown chaotica:chaotica -R /app
+RUN chown root:root -R /app
 
 # install dependencies
-COPY --chown=chaotica:chaotica requirements*.txt ./
+COPY --chown=root:root --chmod=755 requirements*.txt ./
 
 # pin to v24 because of https://github.com/pypa/pip/issues/13015
 RUN pip3 install --break-system-packages --upgrade pip==24.0 
@@ -52,17 +52,17 @@ RUN pip3 install --break-system-packages -r requirements.txt
 RUN pip3 install --break-system-packages git+https://github.com/coderanger/supervisor-stdout.git
 
 # Setup CRON
-COPY ./crontab.txt /crontab.txt
+COPY --chown=root:root --chmod=755 ./crontab.txt /crontab.txt
 
 # Copy supervisor conf
-COPY ./supervisord.conf /etc/
+COPY --chown=root:root --chmod=755 ./supervisord.conf /etc/
 
 # copy entrypoint.sh
-COPY ./entrypoint.sh .
+COPY --chown=root:root --chmod=755 ./entrypoint.sh .
 RUN chmod +x /app/entrypoint.sh
 
 # copy project
-COPY --chown=chaotica:chaotica . .
+COPY --chown=root:root --chmod=755 . .
 
 # run entrypoint.sh
 ENTRYPOINT ["/app/entrypoint.sh"]
