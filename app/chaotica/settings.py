@@ -337,7 +337,6 @@ THIRD_PARTY_APPS = [
     "django_clamav",
     "crispy_forms",
     "crispy_bootstrap5",
-    # "tinymce",
     "django_bleach",
     "django_fsm",
     "phonenumber_field",
@@ -409,7 +408,6 @@ BLEACH_ALLOWED_STYLES = [
 # Which protocols (and pseudo-protocols) are allowed in 'src' attributes
 # (assuming src is an allowed attribute)
 BLEACH_ALLOWED_PROTOCOLS = ["http", "https", "data"]
-# BLEACH_DEFAULT_WIDGET = "tinymce.widgets.TinyMCE"
 BOOTSTRAP_DATEPICKER_PLUS = {
     "app_static_url": f"{SITE_PROTO}://{SITE_DOMAIN}/static/vendors/bootstrap_datepicker_plus/",
     "options": {
@@ -724,23 +722,6 @@ CONTENT_SECURITY_POLICY = {
         "upgrade-insecure-requests": True,
     },
 }
-
-
-# TINYMCE_JS_ROOT = os.path.join(STATIC_URL, "vendors/tinymce")
-# TINYMCE_JS_URL = os.path.join(TINYMCE_JS_ROOT, "tinymce.min.js")
-
-# TINYMCE_COMPRESSOR = True
-# TINYMCE_DEFAULT_CONFIG = {
-#     "suffix": ".min",
-#     "plugins": "advlist autolink lists link image charmap preview anchor table media searchreplace visualblocks code",
-#     "theme": "silver",
-#     "selector": ".tinymce",
-#     "height": "50vh",
-#     "promotion": False,
-#     "skin": "oxide",
-#     "statusbar": True,
-#     "themes": "silver",
-# }
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
