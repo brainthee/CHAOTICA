@@ -21,39 +21,33 @@ EXPOSE ${PORT}
 WORKDIR /app
 
 # install sys dependencies
-RUN apt-get update --fix-missing
+RUN apt-get update --fix-missing && apt-get install -y build-essential git procps gcc sudo cron curl python3 python3-dev python3-setuptools python3-pip python3-virtualenv clamav-daemon default-libmysqlclient-dev pkg-config libpq-dev mariadb-client nginx supervisor
+
 RUN apt-get upgrade -y
-RUN apt-get install -y build-essential git procps gcc sudo cron curl
-RUN apt-get install -y python3 python3-dev python3-setuptools
-RUN apt-get install -y python3-pip python3-virtualenv
-RUN apt-get install -y clamav-daemon
-RUN apt-get install -y default-libmysqlclient-dev pkg-config libpq-dev mariadb-client
-RUN apt-get install -y nginx supervisor
 
 # Cleanup
-RUN rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man
-RUN apt-get clean
+RUN rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man /var/cache/apt/archives/*
+&& apt-get clean
 
 # Stop some services
 RUN service supervisor stop
-RUN service cron stop
+&& service cron stop
 
 # Setup user
 RUN groupadd -g "${GID}" chaotica
-RUN useradd --create-home --no-log-init -u "${UID}" -g "${GID}" chaotica
-RUN chown root:root -R /app
+&& useradd --create-home --no-log-init -u "${UID}" -g "${GID}" chaotica
+&& chown root:root -R /app
 
 # install dependencies
 COPY --chown=root:root --chmod=755 requirements*.txt ./
 
 # pin to v24 because of https://github.com/pypa/pip/issues/13015
 RUN pip3 install --break-system-packages --upgrade pip==24.0 
-RUN pip3 install --break-system-packages -r requirements.txt
-RUN pip3 install --break-system-packages git+https://github.com/coderanger/supervisor-stdout.git
+&& pip3 install --break-system-packages -r requirements.txt
+&& pip3 install --break-system-packages git+https://github.com/coderanger/supervisor-stdout.git
 
 # Setup CRON
 COPY --chown=root:root --chmod=755 ./crontab.txt /crontab.txt
-
 # Copy supervisor conf
 COPY --chown=root:root --chmod=755 ./supervisord.conf /etc/
 

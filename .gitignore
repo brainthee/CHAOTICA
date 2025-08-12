@@ -130,3 +130,4 @@ app/.env*
 app/mediafiles/*
 
 .sonar/
+.sonarlint/
