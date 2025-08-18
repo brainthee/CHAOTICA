@@ -30,7 +30,7 @@ from .models import (
 from chaotica_utils.models import Note, User
 from .enums import DefaultTimeSlotTypes, JobStatuses, PhaseStatuses, TimeSlotDeliveryRole
 from crispy_forms.helper import FormHelper
-from crispy_forms.bootstrap import StrictButton
+from crispy_forms.bootstrap import StrictButton, FieldWithButtons
 from crispy_forms.layout import Layout, Row, Column, Field, Div, HTML, Submit
 from crispy_bootstrap5.bootstrap5 import FloatingField
 from dal import autocomplete, forward
@@ -547,6 +547,10 @@ class AddNote(forms.ModelForm):
         self.fields["content"].help_text = None
         self.fields["content"].label = None
         self.helper.form_show_labels = False
+
+        self.helper.layout = Layout(
+            FieldWithButtons('content', StrictButton('Submit', type='submit', css_class='btn-primary')),
+        )
 
     class Meta:
         model = Note

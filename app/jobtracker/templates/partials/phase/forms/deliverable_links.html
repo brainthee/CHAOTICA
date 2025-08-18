@@ -1,5 +1,5 @@
 {% load crispy_forms_tags %}
-<div class="card mt-3" id="basic-info">
+<div class="card" id="basic-info">
     <form method="post" id="deliverableForm" action="{% url 'phase_edit_delivery' phase.job.slug phase.slug %}" 
     class="js-submit-modal-form">
         <div class="card-header">
