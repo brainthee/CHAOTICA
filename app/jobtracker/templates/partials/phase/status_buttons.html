@@ -30,7 +30,7 @@
     {% endif %}
     {% if phase.can_proceed_to_pending_tech_qa %}
       <button data-url="{% url 'phase_update_workflow' phase.job.slug phase.slug 8 %}" class="btn btn-outline-info js-update-phase-workflow" data-status="Pending Tech QA" data-status-id="8">
-        Submit to Tech QA{% if not phase.can_to_pending_tech_qa %}
+        Submit to Tech QA Queue{% if not phase.can_to_pending_tech_qa %}
           <span class="ms-1 text-danger" data-feather="alert-triangle" style="height:12.8px;width:12.8px;"></span>
         {% endif %}
       </button>
@@ -51,7 +51,7 @@
     {% endif %}
     {% if phase.can_proceed_to_pending_pres_qa %}
       <button data-url="{% url 'phase_update_workflow' phase.job.slug phase.slug 11 %}" class="btn btn-outline-info js-update-phase-workflow" data-status="Pending Pres QA" data-status-id="8">
-        Submit to Pres QA{% if not phase.can_to_pending_pres_qa %}
+        Submit to Pres QA Queue{% if not phase.can_to_pending_pres_qa %}
           <span class="ms-1 text-danger" data-feather="alert-triangle" style="height:12.8px;width:12.8px;"></span>
         {% endif %}
       </button>
@@ -72,14 +72,14 @@
     {% endif %}
     {% if phase.can_proceed_to_completed %}
       <button data-url="{% url 'phase_update_workflow' phase.job.slug phase.slug 14 %}" class="btn btn-outline-success js-update-phase-workflow" data-status="Completed" data-status-id="12">
-        Completed{% if not phase.can_to_completed %}
+        Set as Completed{% if not phase.can_to_completed %}
           <span class="ms-1 text-danger" data-feather="alert-triangle" style="height:12.8px;width:12.8px;"></span>
         {% endif %}
       </button>
     {% endif %}
     {% if phase.can_proceed_to_delivered %}
       <button data-url="{% url 'phase_update_workflow' phase.job.slug phase.slug 15 %}" class="btn btn-outline-success js-update-phase-workflow" data-status="Delivered" data-status-id="13">
-        Mark as Delivered{% if not phase.can_to_delivered %}
+        Set as Delivered{% if not phase.can_to_delivered %}
           <span class="ms-1 text-danger" data-feather="alert-triangle" style="height:12.8px;width:12.8px;"></span>
         {% endif %}
       </button>
