@@ -1,5 +1,5 @@
 {% load humanize %}{% load crispy_forms_tags %}{% load static %}
-<div class="card mt-3" id="notes">
+<div class="card" id="notes">
     <div class="card-header pb-0">
         <div class="row align-items-center mb-3">
             <div class="col-9">
@@ -20,7 +20,7 @@
                         </div>
                     </a>
                     <div class="flex-1 pt-3">
-                        {{ note_form.content|as_crispy_field }}
+                        {% crispy note_form %}
                     </div>
                 </div>
             </form>
