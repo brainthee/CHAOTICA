@@ -4,7 +4,7 @@
             <button data-url="{% url 'job_update_workflow' job.slug 1 %}" 
                 class="btn btn-outline-info js-update-job-workflow"
                 data-status="Pending Scoping" data-status-id="1">
-                Move to Pending Scoping
+                Move to Pending Scoping Queue
                 {% if not job.can_to_pending_scope %}
                 <span class="ms-1 text-danger" data-feather="alert-triangle" style="height:12.8px;width:12.8px;"></span>
                 {% endif %} 
@@ -17,7 +17,7 @@
                 {% if job.status == 5 %}
                 Return to Scoping
                 {% else %}
-                Move to Scoping
+                Begin Scoping
                 {% endif %}
                 {% if not job.can_to_scoping %}
                 <span class="ms-1 text-danger" data-feather="alert-triangle" style="height:12.8px;width:12.8px;"></span>
@@ -38,7 +38,7 @@
             <button data-url="{% url 'job_update_workflow' job.slug 4 %}" 
                 class="btn btn-outline-info js-update-job-workflow"
                 data-status="Pending Scope Signoff" data-status-id="2">
-                Move to Signoff
+                Move to Signoff Queue
                 {% if not job.can_to_scope_pending_signoff %}
                 <span class="ms-1 text-danger" data-feather="alert-triangle" style="height:12.8px;width:12.8px;"></span>
                 {% endif %} 
