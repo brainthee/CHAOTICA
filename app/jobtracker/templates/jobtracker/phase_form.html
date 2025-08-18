@@ -64,7 +64,7 @@
 
 
                 <div class="row g-0">
-                    <div class="col-6">
+                    <div class="col-12">
                         <h4 class="card-title m-3 mb-4">Logistics</h4>
                         <div class="px-3">
                             <div class="row">
@@ -92,10 +92,10 @@
                             </div>            
                         </div>         
                                 
-                    </div>
-
-
-                    <div class="col-6 g-2">
+                    </div> 
+                </div>
+                <div class="row g-0">
+                    <div class="col-12 g-2">
                         <h4 class="card-title m-3 mb-4">Requirements</h4>
                         <div class="px-3">
                             <div class="row">
@@ -133,53 +133,7 @@
 
                     <div class="col-12 col-xl-12">
                         <div class="card mb-3">
-                            <div class="card-header">
-                                <h4 class="">Scoped Time</h4>
-                            </div>
-                            <div class="card-body p-0">
-                                <table class="table table-striped table-sm mb-0">
-                                    <thead>
-                                        <tr>
-                                            <th class="col-form-label ps-3">Type</th>
-                                            <th class="col-form-label">Total Hours</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td class="ps-3 align-middle">Delivery</td>
-                                            <td class="pt-3 pe-3 align-middle">{{ form.delivery_hours|as_crispy_field }}</td>
-                                        </tr>
-                                        <tr>
-                                            <td class="ps-3 align-middle">Reporting</td>
-                                            <td class="pt-3 pe-3 align-middle">{{ form.reporting_hours|as_crispy_field }}</td>
-                                        </tr>
-                                        <tr>
-                                            <td class="ps-3 align-middle">Management</td>
-                                            <td class="pt-3 pe-3 align-middle">{{ form.mgmt_hours|as_crispy_field }}</td>
-                                        </tr>
-                                        <tr>
-                                            <td class="ps-3 align-middle">QA</td>
-                                            <td class="pt-3 pe-3 align-middle">{{ form.qa_hours|as_crispy_field }}</td>
-                                        </tr>
-                                        <tr>
-                                            <td class="ps-3 align-middle">Oversight</td>
-                                            <td class="pt-3 pe-3 align-middle">{{ form.oversight_hours|as_crispy_field }}</td>
-                                        </tr>
-                                        <tr>
-                                            <td class="ps-3 align-middle">Debrief</td>
-                                            <td class="pt-3 pe-3 align-middle">{{ form.debrief_hours|as_crispy_field }}</td>
-                                        </tr>
-                                        <tr>
-                                            <td class="ps-3 align-middle">Contingency</td>
-                                            <td class="pt-3 pe-3 align-middle">{{ form.contingency_hours|as_crispy_field }}</td>
-                                        </tr>
-                                        <tr>
-                                            <td class="ps-3 align-middle">Other</td>
-                                            <td class="pt-3 pe-3 align-middle">{{ form.other_hours|as_crispy_field }}</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
+                           {% include 'partials/phase/forms/scoping_panel.html' %}
                         </div>
                     </div>
 

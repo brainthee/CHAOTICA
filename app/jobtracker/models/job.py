@@ -92,6 +92,7 @@ class Job(models.Model):
         blank=True,
         null=True,
         default=None,
+        help_text="Optional: External reference ID"
     )
     title = models.CharField("Job Title", max_length=250)
     history = HistoricalRecords()
@@ -101,14 +102,14 @@ class Job(models.Model):
         "Start Date",
         null=True,
         blank=True,
-        help_text="If left blank, this will be automatically determined from scheduled slots",
+        help_text="If set, will override scheduled dates",
     )
     desired_delivery_date = models.DateField(
         "Delivery date",
         null=True,
         blank=True,
         db_index=True,
-        help_text="If left blank, this will be automatically determined from scheduled slots",
+        help_text="If set, will override scheduled dates",
     )
 
     # Client fields
@@ -143,7 +144,7 @@ class Job(models.Model):
         null=True,
         blank=True,
         verbose_name="Sales Revenue",
-        help_text="Cost of the job to the client",
+        help_text="Optional: Cost of the job to the client",
     )
 
     def staff_cost(self):

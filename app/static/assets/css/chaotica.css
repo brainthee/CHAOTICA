@@ -21,6 +21,10 @@ div.content span.select2-container {
   z-index: unset !important;
 }
 
+.tox-promotion {
+  display: none !important;
+}
+
 .select2-selection__rendered {
   line-height: 31px !important;
 }

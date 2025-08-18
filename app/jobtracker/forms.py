@@ -1181,8 +1181,6 @@ class JobForm(forms.ModelForm):
     )
 
     def __init__(self, *args, **kwargs):
-        # if not self.created_by:
-        #     self.created_by = kwargs['initial']['created_by']
         self.user = kwargs.pop(
             "user"
         )  # To get request.user. Do not use kwargs.pop('user', None) due to potential security hole
@@ -1222,6 +1220,7 @@ class PhaseForm(forms.ModelForm):
             job = kwargs.pop("job")
         super(PhaseForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
+        self.fields["service"].required = True
         # Set fields not in CHANGEABLE_FIELDS to readonly
         for field in self.fields:
             if field.endswith("hours"):
@@ -1233,8 +1232,24 @@ class PhaseForm(forms.ModelForm):
             self.fields["phase_number"].initial = (
                 Phase.objects.filter(job=job).count() + 1
             )
+        
+        # Loop and set CSS 
+        for scope_field in [
+            "delivery_hours", 
+            "reporting_hours", 
+            "mgmt_hours", 
+            "qa_hours", 
+            "oversight_hours", 
+            "debrief_hours", 
+            "contingency_hours", 
+            "other_hours", 
+        ]:
+            self.fields[scope_field].widget.attrs['class'] = 'time-input'
+            self.fields[scope_field].widget.attrs['oninput'] = 'updateTotals()'
+
 
         self.fields["contingency_hours"].css_class = "mb-0"
+
         self.fields["desired_start_date"].widget = DatePickerInput(options={"format": "YYYY-MM-DD", "allowInputToggle": True})
         self.fields["due_to_techqa_set"].widget = DatePickerInput(options={"format": "YYYY-MM-DD", "allowInputToggle": True})
         self.fields["due_to_presqa_set"].widget = DatePickerInput(options={"format": "YYYY-MM-DD", "allowInputToggle": True})
@@ -1260,6 +1275,7 @@ class PhaseForm(forms.ModelForm):
             "test_target": forms.Textarea(attrs={'class':'tinymce'}),
         }
         exclude = ["slug", "phase_id", "job"]
+
 
 
 class ScopeInlineForm(forms.ModelForm):
