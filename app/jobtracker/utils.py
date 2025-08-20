@@ -302,15 +302,15 @@ def get_scheduler_members(request, filtered_users = None, start = None, end = No
                 "title": user_title,
                 "first_name": user.first_name,
                 "last_name": user.last_name,
-                "availability": user_stat['available_percentage'],
+                "availability": f"{user_stat['available_percentage']}%" if user_stat['available_percentage'] else "0%",
                 "seniority": randrange(10),
                 "url": user.get_absolute_url(),
                 "html_view": user.get_table_display_html(cleaned_data.get("compressed_view", False)),
                 "businessHours": (
                     {
-                        "startTime": main_org.unit.businessHours_startTime,
-                        "endTime": main_org.unit.businessHours_endTime,
-                        "daysOfWeek": main_org.unit.businessHours_days,
+                        "startTime": main_org.businessHours_startTime,
+                        "endTime": main_org.businessHours_endTime,
+                        "daysOfWeek": main_org.businessHours_days,
                     }
                     if main_org
                     else {
@@ -321,9 +321,9 @@ def get_scheduler_members(request, filtered_users = None, start = None, end = No
                 ),
                 "workingHours": (
                     {
-                        "startTime": main_org.unit.businessHours_startTime,
-                        "endTime": main_org.unit.businessHours_endTime,
-                        "daysOfWeek": main_org.unit.businessHours_days,
+                        "startTime": main_org.businessHours_startTime,
+                        "endTime": main_org.businessHours_endTime,
+                        "daysOfWeek": main_org.businessHours_days,
                     }
                     if main_org
                     else {
@@ -334,15 +334,9 @@ def get_scheduler_members(request, filtered_users = None, start = None, end = No
                 ),
             }
         )
-    if is_ajax(request):
-        return JsonResponse(data, safe=False)
-    else:
-        # render to a template...
-        context = {}
-        context["debug_content"] = data
-        context = {**context, **page_defaults(request)}
-        template = loader.get_template("debug.html")
-        return HttpResponse(template.render(context, request))
+    
+
+    return JsonResponse(data, safe=False)
 
 
 def get_scheduler_slots(request, filtered_users = None, start = None, end = None, use_filter_form=True):
@@ -385,6 +379,8 @@ def get_scheduler_slots(request, filtered_users = None, start = None, end = None
         "SCHEDULE_COLOR_COMMENT": str(config.SCHEDULE_COLOR_COMMENT),
     }
 
+    compressed_view = cleaned_data.get("compressed_view", False)
+
     # Load the timeslots
     for slot in TimeSlot.objects.filter(
         user__in=filtered_users, end__gte=start, start__lte=end
@@ -397,7 +393,7 @@ def get_scheduler_slots(request, filtered_users = None, start = None, end = None
         "user",
         "leaverequest",
     ):
-        slot_json = slot.get_schedule_json(schedule_colours=schedule_colours)
+        slot_json = slot.get_schedule_json(schedule_colours=schedule_colours, compressed_view=compressed_view)
         if selected_phases:
             if slot.phase and (
                 slot.phase not in selected_phases
