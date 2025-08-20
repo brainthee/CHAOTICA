@@ -33,6 +33,13 @@
     <meta name="msapplication-TileImage" content="{% static "assets/img/favicons/mstile-150x150.png" %}">
     <meta name="theme-color" content="#ffffff">
 
+    
+    <!-- jQuery -->
+    <script type="text/javascript" src="{% static "vendors/jquery/jquery-3.7.1.min.js" %}"></script>
+    <script type="text/javascript" src="{% static "vendors/jquery-ui-1.14.1/jquery-ui.min.js" %}"></script>
+    <script type="text/javascript" src="{% static "assets/js/jquery.dirty.js" %}"></script>
+
+
     <!-- Font Awesome Icons -->
     <script src="{% static "vendors/fontawesome/js/all.min.js" %}"></script>
 
@@ -72,22 +79,24 @@
 
 
     <!-- Select2 -->
-    <link href="{% static "admin/css/vendor/select2/select2.css" %}" type="text/css" media="screen" rel="stylesheet">
-    <link href="{% static "admin/css/autocomplete.css" %}" type="text/css" media="screen" rel="stylesheet">
-    <link href="{% static "autocomplete_light/select2.css" %}" type="text/css" media="screen" rel="stylesheet">        
-    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" type="text/css" media="screen" rel="stylesheet" nonce="{{request.csp_nonce}}">
-    
-    <!-- jQuery -->
-    <script type="text/javascript" src="{% static "vendors/jquery/jquery-3.7.1.min.js" %}"></script>
-    <script type="text/javascript" src="{% static "vendors/jquery-ui-1.14.1/jquery-ui.min.js" %}"></script>
-    <script type="text/javascript" src="{% static "assets/js/jquery.dirty.js" %}"></script>
+    {% comment %} <link href="{% static "admin/css/vendor/select2/select2.css" %}" type="text/css" media="screen" rel="stylesheet"> {% endcomment %}
+    {% comment %} <link href="{% static "admin/css/autocomplete.css" %}" type="text/css" media="screen" rel="stylesheet"> {% endcomment %}
+    {% comment %} <link href="{% static "autocomplete_light/select2.css" %}" type="text/css" media="screen" rel="stylesheet">         {% endcomment %}
+    {% comment %} <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" type="text/css" media="screen" rel="stylesheet" nonce="{{request.csp_nonce}}"> {% endcomment %}
+
+    {% comment %} <link href="{% static "vendors/select2/css/select2.min.css" %}" type="text/css" media="screen" rel="stylesheet">         {% endcomment %}
+    {% comment %} <link href="{% static "vendors/select2-bootstrap5/select2-bootstrap-5-theme.min.css" %}" type="text/css" media="screen" rel="stylesheet">         {% endcomment %}
+
+    {% comment %} <script src="{% static "vendors/select2/js/select2.min.js" %}"></script> {% endcomment %}
+
+    {% comment %} <script src="{% static "admin/js/vendor/select2/select2.full.js" %}"></script> {% endcomment %}
+    {% comment %} <script src="{% static "autocomplete_light/select2.js" %}"></script> {% endcomment %}
+    {% comment %} <script src="{% static "autocomplete_light/autocomplete_light.js" %}"></script>  {% endcomment %}
+
+    {% comment %} <script src="{% static "autocomplete_light/i18n/en.js" %}"></script> {% endcomment %}
 
     <!-- Misc Django JS's -->
     <script src="{% static "assets/js/moment.js" %}"></script> 
-    <script src="{% static "admin/js/vendor/select2/select2.full.js" %}"></script>
-    <script src="{% static "autocomplete_light/autocomplete_light.js" %}"></script> 
-    <script src="{% static "autocomplete_light/select2.js" %}"></script>
-    <script src="{% static "autocomplete_light/i18n/en.js" %}"></script>
 
     <!-- DataTables -->
     <link rel="stylesheet" href="{% static "vendors/DataTables/datatables.min.css" %}" />

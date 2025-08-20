@@ -28,7 +28,12 @@ from .models import (
     OrganisationalUnitRole,
 )
 from chaotica_utils.models import Note, User
-from .enums import DefaultTimeSlotTypes, JobStatuses, PhaseStatuses, TimeSlotDeliveryRole
+from .enums import (
+    DefaultTimeSlotTypes,
+    JobStatuses,
+    PhaseStatuses,
+    TimeSlotDeliveryRole,
+)
 from crispy_forms.helper import FormHelper
 from crispy_forms.bootstrap import StrictButton, FieldWithButtons
 from crispy_forms.layout import Layout, Row, Column, Field, Div, HTML, Submit
@@ -46,6 +51,27 @@ from django_clamav.validators import validate_file_infection
 
 
 class SchedulerFilter(forms.Form):
+    ordering = forms.ChoiceField(
+        required=False,
+        label="Ordering",
+        choices=(
+            ("title", "Name"),
+            ("last_name, first_name", "Last Name"),
+            ("availability", "Availability"),
+            ("seniority", "Seniority"),
+        ),
+        initial="name",
+    )
+    ordering_direction = forms.BooleanField(
+        required=False,
+        label="Reverse Direction",
+        initial=False,
+    )
+    compressed_view = forms.BooleanField(
+        required=False,
+        initial=False,
+        label="Compressed View",
+    )
     skills_specialist = forms.ModelMultipleChoiceField(
         required=False,
         label="Specialist",
@@ -95,7 +121,10 @@ class SchedulerFilter(forms.Form):
     )
     to_date = forms.DateField(
         required=False,
-        widget=DatePickerInput(range_from="from_date", options={"format": "YYYY-MM-DD", "allowInputToggle": True}),
+        widget=DatePickerInput(
+            range_from="from_date",
+            options={"format": "YYYY-MM-DD", "allowInputToggle": True},
+        ),
     )
 
     users = forms.ModelMultipleChoiceField(
@@ -161,7 +190,9 @@ class SchedulerFilter(forms.Form):
         super(SchedulerFilter, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
         self.helper.form_method = "get"
-        self.helper.form_class = "form-inline"
+        self.helper.form_class = "form-inline form-control-sm"
+        for field in self.fields:
+            self.fields[field].css_class = "form-control-sm"
         self.helper.layout = Layout(
             Row(
                 Column(
@@ -173,12 +204,14 @@ class SchedulerFilter(forms.Form):
                 ),
                 Column(
                     Submit(
-                        "apply", "Apply", css_class="btn btn-phoenix-success d-block w-100"
+                        "apply",
+                        "Apply",
+                        css_class="btn btn-phoenix-success d-block w-100",
                     ),
                 ),
             ),
             Div(
-                HTML('<h5 class="setting-panel-item-title">Date Range</h5>'),
+                HTML('<h5 class="setting-panel-item-title">General</h5>'),
                 Row(
                     Column(
                         Field(
@@ -189,6 +222,19 @@ class SchedulerFilter(forms.Form):
                     Column(
                         Field(
                             "to_date",
+                        ),
+                    ),
+                ),
+                Row(
+                    Column(
+                        Field("ordering"),
+                    ),
+                    Column(
+                        Row(
+                            Field("ordering_direction"),
+                        ),
+                        Row(
+                            Field("compressed_view"),
                         ),
                     ),
                 ),
@@ -252,6 +298,9 @@ class SchedulerFilter(forms.Form):
 
     class Meta:
         fields = (
+            "ordering",
+            "ordering_direction",
+            "compressed_view",
             "skills_specialist",
             "skills_can_do_alone",
             "skills_can_do_support",
@@ -549,7 +598,10 @@ class AddNote(forms.ModelForm):
         self.helper.form_show_labels = False
 
         self.helper.layout = Layout(
-            FieldWithButtons('content', StrictButton('Submit', type='submit', css_class='btn-primary')),
+            FieldWithButtons(
+                "content",
+                StrictButton("Submit", type="submit", css_class="btn-primary"),
+            ),
         )
 
     class Meta:
@@ -605,8 +657,12 @@ class CommentTimeSlotModalForm(forms.ModelForm):
             delete_button = None
         self.fields["user"].widget = forms.HiddenInput()
         self.fields["user"].disabled = True
-        self.fields["start"].widget =  DateTimePickerInput(options={"allowInputToggle": True})
-        self.fields["end"].widget =  DateTimePickerInput(range_from="start", options={"allowInputToggle": True})
+        self.fields["start"].widget = DateTimePickerInput(
+            options={"allowInputToggle": True}
+        )
+        self.fields["end"].widget = DateTimePickerInput(
+            range_from="start", options={"allowInputToggle": True}
+        )
         if not self.instance.pk:
             self.fields["start"].initial = start.replace(tzinfo=None)
             self.fields["end"].initial = end.replace(tzinfo=None)
@@ -648,8 +704,10 @@ class CommentTimeSlotModalForm(forms.ModelForm):
     class Meta:
         model = TimeSlotComment
         widgets = {
-            "start":  DateTimePickerInput(options={"allowInputToggle": True}),
-            "end":  DateTimePickerInput(range_from="start", options={"allowInputToggle": True}),
+            "start": DateTimePickerInput(options={"allowInputToggle": True}),
+            "end": DateTimePickerInput(
+                range_from="start", options={"allowInputToggle": True}
+            ),
         }
         fields = (
             "user",
@@ -689,8 +747,12 @@ class NonDeliveryTimeSlotModalForm(forms.ModelForm):
         self.fields["user"].widget = forms.HiddenInput()
         self.fields["user"].disabled = True
         self.fields["phase"].disabled = True
-        self.fields["start"].widget =  DateTimePickerInput(options={"allowInputToggle": True})
-        self.fields["end"].widget =  DateTimePickerInput(range_from="start", options={"allowInputToggle": True})
+        self.fields["start"].widget = DateTimePickerInput(
+            options={"allowInputToggle": True}
+        )
+        self.fields["end"].widget = DateTimePickerInput(
+            range_from="start", options={"allowInputToggle": True}
+        )
         if not self.instance.pk:
             self.fields["start"].initial = start.replace(tzinfo=None)
             self.fields["end"].initial = end.replace(tzinfo=None)
@@ -737,8 +799,10 @@ class NonDeliveryTimeSlotModalForm(forms.ModelForm):
     class Meta:
         model = TimeSlot
         widgets = {
-            "start":  DateTimePickerInput(options={"allowInputToggle": True}),
-            "end":  DateTimePickerInput(range_from="start", options={"allowInputToggle": True}),
+            "start": DateTimePickerInput(options={"allowInputToggle": True}),
+            "end": DateTimePickerInput(
+                range_from="start", options={"allowInputToggle": True}
+            ),
         }
         fields = (
             "user",
@@ -841,11 +905,15 @@ class DeliveryTimeSlotModalForm(forms.ModelForm):
             goto_button = None
             delete_button = None
 
-        self.fields["start"].widget =  DateTimePickerInput(options={"allowInputToggle": True})
+        self.fields["start"].widget = DateTimePickerInput(
+            options={"allowInputToggle": True}
+        )
         if start:
             self.fields["start"].initial = start.replace(tzinfo=None)
 
-        self.fields["end"].widget =  DateTimePickerInput(range_from="start", options={"allowInputToggle": True})
+        self.fields["end"].widget = DateTimePickerInput(
+            range_from="start", options={"allowInputToggle": True}
+        )
         if end:
             self.fields["end"].initial = end.replace(tzinfo=None)
 
@@ -897,8 +965,10 @@ class DeliveryTimeSlotModalForm(forms.ModelForm):
     class Meta:
         model = TimeSlot
         widgets = {
-            "start":  DateTimePickerInput(options={"allowInputToggle": True}),
-            "end":  DateTimePickerInput(range_from="start", options={"allowInputToggle": True}),
+            "start": DateTimePickerInput(options={"allowInputToggle": True}),
+            "end": DateTimePickerInput(
+                range_from="start", options={"allowInputToggle": True}
+            ),
         }
         fields = (
             "user",
@@ -990,11 +1060,15 @@ class ProjectTimeSlotModalForm(forms.ModelForm):
             goto_button = None
             delete_button = None
 
-        self.fields["start"].widget =  DateTimePickerInput(options={"allowInputToggle": True})
+        self.fields["start"].widget = DateTimePickerInput(
+            options={"allowInputToggle": True}
+        )
         if start:
             self.fields["start"].initial = start.replace(tzinfo=None)
 
-        self.fields["end"].widget =  DateTimePickerInput(range_from="start", options={"allowInputToggle": True})
+        self.fields["end"].widget = DateTimePickerInput(
+            range_from="start", options={"allowInputToggle": True}
+        )
         if end:
             self.fields["end"].initial = end.replace(tzinfo=None)
 
@@ -1032,8 +1106,10 @@ class ProjectTimeSlotModalForm(forms.ModelForm):
     class Meta:
         model = TimeSlot
         widgets = {
-            "start":  DateTimePickerInput(options={"allowInputToggle": True}),
-            "end":  DateTimePickerInput(range_from="start", options={"allowInputToggle": True}),
+            "start": DateTimePickerInput(options={"allowInputToggle": True}),
+            "end": DateTimePickerInput(
+                range_from="start", options={"allowInputToggle": True}
+            ),
         }
         fields = (
             "user",
@@ -1051,8 +1127,12 @@ class ChangeTimeSlotCommentDateModalForm(forms.ModelForm):
         for fieldname in self.fields:
             self.fields[fieldname].help_text = None
         self.fields["user"].widget = forms.HiddenInput()
-        self.fields["start"].widget =  DateTimePickerInput(options={"allowInputToggle": True})
-        self.fields["end"].widget =  DateTimePickerInput(range_from="start", options={"allowInputToggle": True})
+        self.fields["start"].widget = DateTimePickerInput(
+            options={"allowInputToggle": True}
+        )
+        self.fields["end"].widget = DateTimePickerInput(
+            range_from="start", options={"allowInputToggle": True}
+        )
         self.helper.layout = Layout(
             Field("user", type="hidden"),
             Div(
@@ -1082,8 +1162,10 @@ class ChangeTimeSlotCommentDateModalForm(forms.ModelForm):
     class Meta:
         model = TimeSlotComment
         widgets = {
-            "start":  DateTimePickerInput(options={"allowInputToggle": True}),
-            "end":  DateTimePickerInput(range_from="start", options={"allowInputToggle": True}),
+            "start": DateTimePickerInput(options={"allowInputToggle": True}),
+            "end": DateTimePickerInput(
+                range_from="start", options={"allowInputToggle": True}
+            ),
         }
         fields = (
             "user",
@@ -1099,8 +1181,12 @@ class ChangeTimeSlotDateModalForm(forms.ModelForm):
         for fieldname in self.fields:
             self.fields[fieldname].help_text = None
         self.fields["user"].widget = forms.HiddenInput()
-        self.fields["start"].widget =  DateTimePickerInput(options={"allowInputToggle": True})
-        self.fields["end"].widget =  DateTimePickerInput(range_from="start", options={"allowInputToggle": True})
+        self.fields["start"].widget = DateTimePickerInput(
+            options={"allowInputToggle": True}
+        )
+        self.fields["end"].widget = DateTimePickerInput(
+            range_from="start", options={"allowInputToggle": True}
+        )
         self.helper.layout = Layout(
             Field("user", type="hidden"),
             Div(
@@ -1130,8 +1216,10 @@ class ChangeTimeSlotDateModalForm(forms.ModelForm):
     class Meta:
         model = TimeSlot
         widgets = {
-            "start":  DateTimePickerInput(options={"allowInputToggle": True}),
-            "end":  DateTimePickerInput(range_from="start", options={"allowInputToggle": True}),
+            "start": DateTimePickerInput(options={"allowInputToggle": True}),
+            "end": DateTimePickerInput(
+                range_from="start", options={"allowInputToggle": True}
+            ),
         }
         fields = (
             "user",
@@ -1204,13 +1292,15 @@ class JobForm(forms.ModelForm):
             .values_list("unit")
             .distinct()
         )
-        
 
     class Meta:
         model = Job
         widgets = {
             "desired_start_date": DatePickerInput(),
-            "desired_delivery_date": DatePickerInput(range_from="desired_start_date", options={"format": "YYYY-MM-DD", "allowInputToggle": True}),
+            "desired_delivery_date": DatePickerInput(
+                range_from="desired_start_date",
+                options={"format": "YYYY-MM-DD", "allowInputToggle": True},
+            ),
             "unit": autocomplete.ModelSelect2(),
         }
         exclude = ["created_by"]
@@ -1236,28 +1326,35 @@ class PhaseForm(forms.ModelForm):
             self.fields["phase_number"].initial = (
                 Phase.objects.filter(job=job).count() + 1
             )
-        
-        # Loop and set CSS 
-        for scope_field in [
-            "delivery_hours", 
-            "reporting_hours", 
-            "mgmt_hours", 
-            "qa_hours", 
-            "oversight_hours", 
-            "debrief_hours", 
-            "contingency_hours", 
-            "other_hours", 
-        ]:
-            self.fields[scope_field].widget.attrs['class'] = 'time-input'
-            self.fields[scope_field].widget.attrs['oninput'] = 'updateTotals()'
 
+        # Loop and set CSS
+        for scope_field in [
+            "delivery_hours",
+            "reporting_hours",
+            "mgmt_hours",
+            "qa_hours",
+            "oversight_hours",
+            "debrief_hours",
+            "contingency_hours",
+            "other_hours",
+        ]:
+            self.fields[scope_field].widget.attrs["class"] = "time-input"
+            self.fields[scope_field].widget.attrs["oninput"] = "updateTotals()"
 
         self.fields["contingency_hours"].css_class = "mb-0"
 
-        self.fields["desired_start_date"].widget = DatePickerInput(options={"format": "YYYY-MM-DD", "allowInputToggle": True})
-        self.fields["due_to_techqa_set"].widget = DatePickerInput(options={"format": "YYYY-MM-DD", "allowInputToggle": True})
-        self.fields["due_to_presqa_set"].widget = DatePickerInput(options={"format": "YYYY-MM-DD", "allowInputToggle": True})
-        self.fields["desired_delivery_date"].widget = DatePickerInput(options={"format": "YYYY-MM-DD", "allowInputToggle": True})
+        self.fields["desired_start_date"].widget = DatePickerInput(
+            options={"format": "YYYY-MM-DD", "allowInputToggle": True}
+        )
+        self.fields["due_to_techqa_set"].widget = DatePickerInput(
+            options={"format": "YYYY-MM-DD", "allowInputToggle": True}
+        )
+        self.fields["due_to_presqa_set"].widget = DatePickerInput(
+            options={"format": "YYYY-MM-DD", "allowInputToggle": True}
+        )
+        self.fields["desired_delivery_date"].widget = DatePickerInput(
+            options={"format": "YYYY-MM-DD", "allowInputToggle": True}
+        )
 
         # Set some verification bits. E.g. no dodgy phase IDs, make sure service and title is required
 
@@ -1268,18 +1365,17 @@ class PhaseForm(forms.ModelForm):
             "due_to_techqa_set": DatePickerInput(),
             "due_to_presqa_set": DatePickerInput(),
             "desired_delivery_date": DatePickerInput(),
-            "description": forms.Textarea(attrs={'class':'tinymce'}),
+            "description": forms.Textarea(attrs={"class": "tinymce"}),
             # "description": TinyMCE(),
-            "location": forms.Textarea(attrs={'class':'tinymce'}),
+            "location": forms.Textarea(attrs={"class": "tinymce"}),
             # "location": TinyMCE(),
-            "restrictions": forms.Textarea(attrs={'class':'tinymce'}),
-            "scheduling_requirements": forms.Textarea(attrs={'class':'tinymce'}),
-            "prerequisites": forms.Textarea(attrs={'class':'tinymce'}),
-            "comm_reqs": forms.Textarea(attrs={'class':'tinymce'}),
-            "test_target": forms.Textarea(attrs={'class':'tinymce'}),
+            "restrictions": forms.Textarea(attrs={"class": "tinymce"}),
+            "scheduling_requirements": forms.Textarea(attrs={"class": "tinymce"}),
+            "prerequisites": forms.Textarea(attrs={"class": "tinymce"}),
+            "comm_reqs": forms.Textarea(attrs={"class": "tinymce"}),
+            "test_target": forms.Textarea(attrs={"class": "tinymce"}),
         }
         exclude = ["slug", "phase_id", "job"]
-
 
 
 class ScopeInlineForm(forms.ModelForm):
@@ -1690,15 +1786,9 @@ class ClientOnboardingUserForm(forms.ModelForm):
                     Field("user", style="width: 100%;"),
                 ),
                 Row(
-                    Column(
-                        Div(Field("onboarded"))
-                    ),
-                    Column(
-                        Div(Field("reqs_completed"))
-                    ),
-                    Column(
-                        Div(Field("offboarded"))
-                    ),
+                    Column(Div(Field("onboarded"))),
+                    Column(Div(Field("reqs_completed"))),
+                    Column(Div(Field("offboarded"))),
                 ),
                 css_class="card-body p-3",
             ),
@@ -1769,7 +1859,10 @@ class ClientFrameworkForm(forms.ModelForm):
     )
     end_date = forms.DateField(
         required=False,
-        widget=DatePickerInput(range_from="start_date", options={"format": "YYYY-MM-DD", "allowInputToggle": True}),
+        widget=DatePickerInput(
+            range_from="start_date",
+            options={"format": "YYYY-MM-DD", "allowInputToggle": True},
+        ),
     )
 
     def __init__(self, *args, **kwargs):
@@ -1917,10 +2010,19 @@ class OrganisationalUnitForm(forms.ModelForm):
         ]
         widgets = {
             "businessHours_days": forms.TextInput(),
-            "businessHours_startTime": TimePickerInput(options={"allowInputToggle": True}),
-            "businessHours_endTime": TimePickerInput(range_from="businessHours_startTime", options={"allowInputToggle": True}),
-            "businessHours_lunch_startTime": TimePickerInput(options={"allowInputToggle": True}),
-            "businessHours_lunch_endTime": TimePickerInput(range_from="businessHours_lunch_startTime", options={"allowInputToggle": True}),
+            "businessHours_startTime": TimePickerInput(
+                options={"allowInputToggle": True}
+            ),
+            "businessHours_endTime": TimePickerInput(
+                range_from="businessHours_startTime", options={"allowInputToggle": True}
+            ),
+            "businessHours_lunch_startTime": TimePickerInput(
+                options={"allowInputToggle": True}
+            ),
+            "businessHours_lunch_endTime": TimePickerInput(
+                range_from="businessHours_lunch_startTime",
+                options={"allowInputToggle": True},
+            ),
         }
 
 
@@ -2214,7 +2316,10 @@ class TeamMemberForm(forms.ModelForm):
 
     left_at = forms.DateField(
         required=False,
-        widget=DatePickerInput(range_from="joined_at", options={"format": "YYYY-MM-DD", "allowInputToggle": True}),
+        widget=DatePickerInput(
+            range_from="joined_at",
+            options={"format": "YYYY-MM-DD", "allowInputToggle": True},
+        ),
     )
 
     def __init__(self, *args, **kwargs):

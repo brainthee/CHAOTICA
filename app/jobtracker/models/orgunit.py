@@ -116,6 +116,7 @@ class OrganisationalUnit(models.Model):
             ("can_approve_leave_requests", "Can approve leave requests"),
         )
 
+
     def get_working_days_in_range(self, start_date, end_date):
         working_days_list = []
         if not (isinstance(start_date, date) and isinstance(end_date, date)):
@@ -140,6 +141,7 @@ class OrganisationalUnit(models.Model):
             current_date += timedelta(days=1)
 
         return working_days_list
+
 
     def sync_permissions(self):
         for user in self.get_allMembers():

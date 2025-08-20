@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% load menu %}
+{% load static %}
+{% load index %}
+
+{% block pageTitle %}
+  Debug Page
+{% endblock %}
+{% block head_title %}
+  Debug Page
+{% endblock %}
+
+{% block headerBlock_css %} mb-0 {% endblock %}
+{% block content_classes %} px-0 my-0 vh-100 position-fixed w-100 {% endblock %}
+{% block breadcrumb_classes %} px-5 {% endblock %}
+
+{% block breadcrumbs %}{% endblock %}
+
+{% block alerts %}
+  {% for message in messages %}
+    <div class="d-none alert m-2 alert-phoenix-{% if message.tags == 'error' %}
+        danger
+      {% else %}
+        {{ message.tags }}
+      {% endif %} show"
+      role="alert">{{ message }}</div>
+  {% endfor %}
+{% endblock %}
+
+{% block content %}
+    <div class="bg-body-emphasis w-100 {% if config.SITE_NOTICE_ENABLED %}pt-5{% endif %}">
+
+      <pre class="codewrap"><code>{{ debug_content }}</code></pre>
+      <script>
+        hljs.highlightAll();
+      </script>
+    </div>
+{% endblock %}
+
+
+{% block footer_css %}
+  fixed-bottom bg-soft
+{% endblock %}
