@@ -273,7 +273,7 @@ class TimeSlot(models.Model):
             .exclude(pk=self.pk)
         )
 
-    def get_schedule_json(self, url=None, schedule_colours=None):
+    def get_schedule_json(self, url=None, schedule_colours=None, compressed_view=False):
         if not url:
             url = self.get_target_url()
 
@@ -292,6 +292,9 @@ class TimeSlot(models.Model):
             "can_edit": True,  # Fix this
             "is_comment": False,
         }
+
+        if compressed_view:
+            data['classNames'] += " fc-title-nowrap"
 
         data["textColor"] = self.get_schedule_slot_text_colour(data["backgroundColor"])
 
