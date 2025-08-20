@@ -50,7 +50,17 @@
 
     var calendar = new FullCalendar.Calendar(calendarEl, {
         schedulerLicenseKey: 'GPL-My-Project-Is-Open-Source',
-        resourceOrder: 'first_name',
+        resourceOrder: '{% if filter_form.ordering_direction.value %}-{% endif %}{{ filter_form.ordering.value|default_if_none:"title" }}',
+        resourceAreaColumns: [
+          {
+            field: 'html_view',
+            headerContent: 'User'
+          },
+          {
+            field: 'availability',
+            headerContent: 'Availability'
+          }
+        ],
         firstDay: 1,
         initialView: 'resourceTimelineThreeMonth',
         themeSystem: 'bootstrap5',

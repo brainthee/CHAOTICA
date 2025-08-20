@@ -5,10 +5,12 @@ from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from django.http import HttpResponseForbidden, HttpResponseNotFound
 from django.shortcuts import render
+from django.template import loader
+from chaotica_utils.views import page_defaults
 from guardian.conf import settings as guardian_settings
 from .models import Job, Phase, OrganisationalUnit, TimeSlot
 from .forms import SchedulerFilter
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.db.models import Q
 from chaotica_utils.models import User
 from guardian.shortcuts import get_objects_for_user
@@ -24,10 +26,12 @@ from .models import (
 from .enums import UserSkillRatings
 import logging
 from chaotica_utils.utils import (
-    clean_fullcalendar_datetime,
+    clean_fullcalendar_datetime, is_ajax
 )
 from chaotica_utils.models import Holiday
 from constance import config
+from random import randrange
+
 
 
 logger = logging.getLogger(__name__)
@@ -111,6 +115,7 @@ def get_unit_40x_or_None(
 
 def _filter_users_on_query(request, cleaned_data=None):
     query = Q()
+
 
     show_inactive_users = cleaned_data.get("show_inactive_users")
 
@@ -254,7 +259,6 @@ def _filter_users_on_query(request, cleaned_data=None):
 
 
 def get_scheduler_members(request, filtered_users = None, start = None, end = None, use_filter_form=True):
-
     data = []
     selected_phases = []
     cleaned_data = None
@@ -276,17 +280,32 @@ def get_scheduler_members(request, filtered_users = None, start = None, end = No
             "unit_memberships", "unit_memberships__unit"
         )
 
-    for user in filtered_users:
-        user_title = str(user)
-        main_org = user.unit_memberships.first()
+    # Change FullCalendar format to DateTime
+    if not start:
+        start = clean_fullcalendar_datetime(request.GET.get("start", None))
+    if not end:
+        end = clean_fullcalendar_datetime(request.GET.get("end", None))
+
+    stats = User.objects.get_bulk_stats(
+        filtered_users,
+        start_date=start,
+        end_date=end,
+    )
+
+    for user_id, user_stat in stats['current']['by_user'].items():
+        user = user_stat['user']
+        user_title = user_stat['user_name']
+        main_org = user_stat['main_org']
         data.append(
             {
                 "id": user.pk,
                 "title": user_title,
                 "first_name": user.first_name,
                 "last_name": user.last_name,
+                "availability": user_stat['available_percentage'],
+                "seniority": randrange(10),
                 "url": user.get_absolute_url(),
-                "html_view": user.get_table_display_html(),
+                "html_view": user.get_table_display_html(cleaned_data.get("compressed_view", False)),
                 "businessHours": (
                     {
                         "startTime": main_org.unit.businessHours_startTime,
@@ -315,7 +334,15 @@ def get_scheduler_members(request, filtered_users = None, start = None, end = No
                 ),
             }
         )
-    return JsonResponse(data, safe=False)
+    if is_ajax(request):
+        return JsonResponse(data, safe=False)
+    else:
+        # render to a template...
+        context = {}
+        context["debug_content"] = data
+        context = {**context, **page_defaults(request)}
+        template = loader.get_template("debug.html")
+        return HttpResponse(template.render(context, request))
 
 
 def get_scheduler_slots(request, filtered_users = None, start = None, end = None, use_filter_form=True):

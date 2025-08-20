@@ -58,7 +58,6 @@ def view_scheduler(request):
     return HttpResponse(template.render(context, request))
 
 
-
 @login_required
 def view_scheduler_slots(request):
     return get_scheduler_slots(request)

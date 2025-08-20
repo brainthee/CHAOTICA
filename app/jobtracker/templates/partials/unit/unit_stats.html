@@ -545,7 +545,7 @@ $(function() {
       </thead>
       <tbody>
         {% for member in organisationalunit.get_activeMemberships %}
-            {% get_utilisation_percentage member.member organisationalunit start_date end_date as member_util %}        
+            {% get_utilisation_percentage member.member start_date end_date as member_util %}        
             <tr>
                 <td>
                     {% include 'partials/users/user_table_display.html' with u=member.member noorg=1 %}
