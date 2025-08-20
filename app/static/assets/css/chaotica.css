@@ -72,6 +72,10 @@ opacity: 0.2;
   white-space: unset !important;
 }
 
+.fc-title-nowrap .fc-event-title {
+  white-space: nowrap !important;
+}
+
 .fc-h-event .fc-event-title {
   display: inline-block !important;
   vertical-align: middle !important;
