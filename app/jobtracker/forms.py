@@ -614,7 +614,16 @@ class AddNote(forms.ModelForm):
 # Add Feedback form
 ##########################
 class FeedbackForm(forms.ModelForm):
-    body = forms.CharField()
+    body = forms.CharField(
+        required=False,
+        widget=TinyMCE(
+            attrs={
+                "class": "tinymce",
+                "data-tinymce": '{"height":"15rem","placeholder":"Write feedback here..."}',
+                "rows": 5,
+            },
+        ),
+    )
 
     def __init__(self, *args, **kwargs):
         super(FeedbackForm, self).__init__(*args, **kwargs)
