@@ -245,7 +245,7 @@ class OrganisationalUnit(models.Model):
         if not users_with_perms:
             return User.objects.none()
 
-        return User.objects.filter(pk__in=users_with_perms).distinct()
+        return User.objects.filter(pk__in=users_with_perms).distinct().get_default_order()
 
     def get_allMembers(self):
         ids = []

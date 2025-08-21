@@ -19,7 +19,12 @@ logger = logging.getLogger(__name__)
 def _process_assign_user(request, obj, prop, multiple=False, users=None):
     data = dict()
     if users is None:
-        users = User.objects.filter(is_active=True)
+        if prop == "techqa_by" and isinstance(obj, Phase):
+            users = obj.job.unit.get_active_members_with_perm("can_tqa_jobs")
+        elif prop == "presqa_by" and isinstance(obj, Phase):
+            users = obj.job.unit.get_active_members_with_perm("can_pqa_jobs")
+        else:
+            users = User.objects.filter(is_active=True)
     if request.method == "POST":
         if multiple:
             form = AssignMultipleUser(request.POST, users=users)

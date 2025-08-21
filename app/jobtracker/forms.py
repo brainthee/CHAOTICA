@@ -505,12 +505,8 @@ class AssignUserField(forms.Form):
 class AssignUser(forms.Form):
     user = forms.ModelChoiceField(
         required=False,
-        queryset=User.objects.filter(is_active=True),
+        queryset=User.objects.filter(is_active=True).get_default_order(),
         widget=autocomplete.ModelSelect2(
-            url="user-autocomplete",
-            attrs={
-                "data-minimum-input-length": 3,
-            },
         ),
     )
 
@@ -550,10 +546,6 @@ class AssignMultipleUser(forms.Form):
         required=False,
         queryset=User.objects.filter(is_active=True),
         widget=autocomplete.ModelSelect2Multiple(
-            url="user-autocomplete",
-            attrs={
-                "data-minimum-input-length": 3,
-            },
         ),
     )
 
