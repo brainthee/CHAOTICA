@@ -4129,6 +4129,7 @@
           {
             selector: '.tinymce',
             height: '50vh',
+            license_key: 'gpl',
             skin: 'oxide',
             menubar: true,
             promotion: false,
