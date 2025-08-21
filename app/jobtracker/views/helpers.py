@@ -1,6 +1,6 @@
 from django.http import JsonResponse
 from django.template import loader
-from ..models import Contact, Phase
+from ..models import Contact, Phase, Job
 from ..enums import PhaseStatuses
 from ..forms import (
     AssignMultipleUser,
@@ -23,6 +23,10 @@ def _process_assign_user(request, obj, prop, multiple=False, users=None):
             users = obj.job.unit.get_active_members_with_perm("can_tqa_jobs")
         elif prop == "presqa_by" and isinstance(obj, Phase):
             users = obj.job.unit.get_active_members_with_perm("can_pqa_jobs")
+        elif prop == "scoped_by" and isinstance(obj, Job):
+            users = obj.job.unit.get_active_members_with_perm("can_scope_jobs")
+        elif prop == "scoped_signed_off_by" and isinstance(obj, Job):
+            users = obj.job.unit.get_active_members_with_perm("can_signoff_scopes")
         else:
             users = User.objects.filter(is_active=True)
     if request.method == "POST":
