@@ -630,6 +630,8 @@ STORAGES = {
 
 STATICFILES_LOCATION = "static"
 MEDIAFILES_LOCATION = "media"
+TINYMCE_JS_URL = "vendors/tinymce/tinymce.min.js"
+
 STATIC_BACKEND = "django.contrib.staticfiles.storage.StaticFilesStorage"
 MEDIA_BACKEND = "django.core.files.storage.FileSystemStorage"
 USE_S3 = os.environ.get("USE_S3", default=False)
