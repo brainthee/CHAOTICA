@@ -2,7 +2,7 @@
 {% load static %}
 {% load crispy_forms_tags %}
 {% load skill_tags %}
-<form method="post" id="profileForm" class="profileForm js-submit-modal-form" enctype="multipart/form-data" action="{% url 'update_profile' user.email %}">
+<form method="post" id="profileForm" class="profileForm js-submit-modal-form" enctype="multipart/form-data" action="{% url 'update_profile' profileForm.instance.email %}">
   {% csrf_token %}
   {{ profileForm.media }}
 
