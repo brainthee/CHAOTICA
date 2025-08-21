@@ -22,22 +22,22 @@
 <div class="row mt-3 border-1 border-top bg-body-secondary h-100 px-3">
   <ul class="nav nav-underline scrollbar flex-nowrap w-100 pb-1 ps-3 mb-3" id="sectionNav" role="tablist" style="overflow-y: hidden;">
     <li class="nav-item text-nowrap me-2" role="presentation">
-      <a class="nav-link active" id="general-tab" data-bs-toggle="tab" href="#general" role="tab" aria-controls="tab-meeting" aria-selected="true">
+      <a class="nav-link active" id="general-tab" data-bs-toggle="tab" data-bs-target="#general" role="tab" aria-controls="tab-meeting" aria-selected="true">
         <span class="fa-solid fa-video me-2 tab-icon-color"></span>General
       </a>
     </li>
     <li class="nav-item text-nowrap me-2" role="presentation">
-      <a class="nav-link" id="schedule-tab" data-bs-toggle="tab" href="#schedule" role="tab" aria-controls="tab-schedule" aria-selected="false" tabindex="-1">
+      <a class="nav-link" id="schedule-tab" data-bs-toggle="tab" data-bs-target="#schedule" role="tab" aria-controls="tab-schedule" aria-selected="false" tabindex="-1">
         <span class="fa-solid fa-clipboard me-2 tab-icon-color"></span>Schedule
       </a>
     </li>
     <li class="nav-item text-nowrap me-2" role="presentation">
-      <a class="nav-link" id="dates-tab" data-bs-toggle="tab" href="#dates" role="tab" aria-controls="tab-dates" aria-selected="false" tabindex="-1">
+      <a class="nav-link" id="dates-tab" data-bs-toggle="tab" data-bs-target="#dates" role="tab" aria-controls="tab-dates" aria-selected="false" tabindex="-1">
         <span class="fa-solid fa-clipboard me-2 tab-icon-color"></span>Dates
       </a>
     </li>
     <li class="nav-item text-nowrap me-2" role="presentation">
-      <a class="nav-link" id="deliverables-tab" data-bs-toggle="tab" href="#deliverables" role="tab" aria-controls="tab-deliverables" aria-selected="false" tabindex="-1">
+      <a class="nav-link" id="deliverables-tab" data-bs-toggle="tab" data-bs-target="#deliverables" role="tab" aria-controls="tab-deliverables" aria-selected="false" tabindex="-1">
         <span class="fa-solid fa-clipboard me-2 tab-icon-color"></span>Deliverables
 
       {% if phase.status == 7 or phase.status == 10 or phase.status == 13 %}
@@ -53,12 +53,12 @@
       </a>
     </li>
     <li class="nav-item text-nowrap me-2" role="presentation">
-      <a class="nav-link" id="feedback-tab" data-bs-toggle="tab" href="#feedback" role="tab" aria-controls="tab-feedback" aria-selected="false" tabindex="-1">
+      <a class="nav-link" id="feedback-tab" data-bs-toggle="tab" data-bs-target="#feedback" role="tab" aria-controls="tab-feedback" aria-selected="false" tabindex="-1">
         <span class="fa-solid fa-chart-line me-2 tab-icon-color"></span>Feedback
       </a>
     </li>
     <li class="nav-item text-nowrap me-2" role="presentation">
-      <a class="nav-link" id="notes-tab" data-bs-toggle="tab" href="#notes" role="tab" aria-controls="tab-notes" aria-selected="false">
+      <a class="nav-link" id="notes-tab" data-bs-toggle="tab" data-bs-target="#notes" role="tab" aria-controls="tab-notes" aria-selected="false">
         <span class="fa-solid fa-square-check me-2 tab-icon-color"></span>
         Notes
         <span class="badge bg-secondary ms-2">
