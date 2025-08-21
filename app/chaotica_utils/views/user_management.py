@@ -178,21 +178,16 @@ def update_profile(request, email):
             obj.profile_last_updated = timezone.now().today()
             obj.save()
             if "location" in form.changed_data:
-                usr.update_latlong()
+                obj.update_latlong()
             usr.refresh_from_db()
     else:
         # Send the modal
         form = EditProfileForm(current_request=request, instance=usr)
 
-    context = {}
-    skills = Skill.objects.all().order_by("category", "name")
-    languages = Language.objects.all()
-    user_skills = usr.skills.all().prefetch_related("skill")
     context = {
         "usr": usr,
-        "skills": skills,
-        "userSkills": user_skills,
-        "languages": languages,
+        "skills": Skill.objects.all().prefetch_related("category").order_by("category", "name"),
+        "languages": Language.objects.all(),
     }
 
     if usr == request.user:
@@ -220,7 +215,7 @@ def update_profile(request, email):
 @require_http_methods(["GET", "POST"])
 def update_skills(request, email):
     from jobtracker.models import Skill, UserSkill
-
+    data = {}
     usr = can_manage_user(request.user, email)
     if not usr:
         return HttpResponseForbidden()
@@ -232,6 +227,7 @@ def update_skills(request, email):
             try:
                 skill = Skill.objects.get(slug=field)
                 value = int(request.POST.get(field))
+                
                 skill, _ = UserSkill.objects.get_or_create(user=usr, skill=skill)
                 if skill.rating != value:
                     skill.rating = value
@@ -241,7 +237,8 @@ def update_skills(request, email):
                 # invalid skill!
                 pass
 
-    return HttpResponseRedirect(reverse("update_profile", kwargs={"email": email}))
+    data["result"] = True
+    return JsonResponse(data)
 
 
 @login_required
