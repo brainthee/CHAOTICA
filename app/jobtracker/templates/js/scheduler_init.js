@@ -54,11 +54,17 @@
         resourceAreaColumns: [
           {
             field: 'html_view',
-            headerContent: 'User'
+            headerContent: 'User',
+            width: "70%",
           },
           {
-            field: 'availability',
-            headerContent: 'Availability'
+            field: 'util',
+            headerContent: 'Util',
+            width: "30%",
+            cellClassNames: "text-center",
+            cellContent: function(arg) {
+              return arg.resource.extendedProps.util+"%";
+            },
           }
         ],
         firstDay: 1,
