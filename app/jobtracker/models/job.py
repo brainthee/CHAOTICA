@@ -434,7 +434,6 @@ class Job(models.Model):
             tasks.append({"id": phase.phase_id, "text": str(phase), "open": True})
             for d in phase.get_gantt_json()["tasks"]:
                 d["parent"] = phase.phase_id
-                d["text"] = d["delivery_role"]
                 tasks.append(d)
         data = {
             "tasks": tasks,
