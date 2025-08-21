@@ -8,7 +8,9 @@
   </div>
   <div class="col">
     <div class="row">
-      <a class="me-3" href="{{ u.get_absolute_url }}">{{ u }}</a>
+      <a class="me-3 {% if compressed_view %}text-wrap{% endif %}" href="{{ u.get_absolute_url }}">
+        {{ u }}
+      </a>
     </div>
     {% if not noorg and not compressed_view %}
       {% for unitMembership in u.unit_memberships.all %}

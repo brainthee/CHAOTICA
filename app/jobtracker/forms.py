@@ -58,6 +58,7 @@ class SchedulerFilter(forms.Form):
             ("title", "Name"),
             ("last_name, first_name", "Last Name"),
             ("availability", "Availability"),
+            ("util", "Utilisation"),
             ("seniority", "Seniority"),
         ),
         initial="name",
