@@ -566,6 +566,17 @@ CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.redis.RedisCache',
         'LOCATION': 'redis://127.0.0.1:6379/1',
+        'OPTIONS': {
+            'CONNECTION_POOL_KWARGS': {
+                'max_connections': 50,
+                'retry_on_timeout': True,
+                'socket_connect_timeout': 5,  # seconds
+                'socket_timeout': 5,  # seconds
+            },
+            'COMPRESSOR': 'django.core.cache.backends.redis.RedisCacheCompressor',
+            'IGNORE_EXCEPTIONS': True,  # Gracefully handle Redis failures
+        },
+        'TIMEOUT': 300,  # Default cache timeout (5 minutes)
     }
 }
 CONSTANCE_DATABASE_CACHE_BACKEND = 'default'
