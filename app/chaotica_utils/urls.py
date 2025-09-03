@@ -50,6 +50,12 @@ urlpatterns = [
     path("settings/import", views.settings_import_data, name="settings_import_data"),
     path("settings/export", views.settings_export_data, name="settings_export_data"),
     path("settings/csv_template/users", views.csv_template_users, name="csv_template_users"),
+
+    path('settings/backup/db/download', views.download_db_backup, name='download_db_backup'),
+    path('settings/backup/media/download', views.download_media_backup, name='download_media_backup'),
+    path('settings/backup/db/restore', views.restore_db_backup, name='restore_db_backup'),
+    path('settings/backup/media/restore', views.restore_media_backup, name='restore_media_backup'),
+
     path("activity/", views.NoteListView.as_view(), name="view_activity"),
 
     # Own profile bits
