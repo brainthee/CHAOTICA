@@ -33,9 +33,21 @@
             </a>
           </li>
           <li class="nav-item pt-2">
-            <a class="nav-link d-flex" data-scroll="" href="#export">
+            <a class="nav-link d-flex" data-scroll="" href="#dump">
               <span class="fa fa-download text-body-emphasis me-sm-2 fs-7"></span>
-              <span class="text-sm">Data Export</span>
+              <span class="text-sm">Data Dump</span>
+            </a>
+          </li>
+          <li class="nav-item pt-2">
+            <a class="nav-link d-flex" data-scroll="" href="#dbrestore">
+              <span class="fa fa-database text-body-emphasis me-sm-2 fs-7"></span>
+              <span class="text-sm">Restore Database</span>
+            </a>
+          </li>
+          <li class="nav-item pt-2">
+            <a class="nav-link d-flex" data-scroll="" href="#mediarestore">
+              <span class="fa fa-file-zipper text-body-emphasis me-sm-2 fs-7"></span>
+              <span class="text-sm">Restore Media</span>
             </a>
           </li>
         </ul>
@@ -85,15 +97,200 @@
         </div>
       </div>
 
-      <div class="card mt-4" id="export">
+      <div class="card mt-4" id="dump">
         <div class="card-header">
           <h5>Data Export</h5>
           <span class="text-700 lh-sm mb-0">Export all site data to JSON</span>
         </div>
         <div class="card-body">
-          <div class="alert mt-3 alert-phoenix-warning" role="alert">This feature is still under development</div>
+          <div class="d-grid gap-2">
+            <a class="btn btn-phoenix-primary" type="button" href="{% url 'download_db_backup' %}">Download Database Dump</a>
+            <a class="btn btn-phoenix-primary" type="button" href="{% url 'download_media_backup' %}">Download Mediafiles Dump</a>
+          </div>                    
         </div>
       </div>
+
+      <div class="card mt-4" id="dbrestore">
+        <div class="card-header">
+          <h5>Restore Database</h5>
+          <span class="text-700 lh-sm mb-0">Options to restore the database</span>
+        </div>
+        <div class="card-body">
+          
+          <form method="post" id="db-restore-form" action="{% url 'restore_db_backup' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div id="db-restore-message"></div>
+            {% crispy dbrestore_form %}
+        
+            <div id="db-confirmation-section" class="alert alert-phoenix-warning d-none">
+                    <strong>⚠️ Warning:</strong> This action will permanently overwrite the entire database!
+                <label>
+                    I understand this will overwrite the current database
+                </label>
+            </div>
+          </form>
+
+          <script>
+              const form = document.getElementById('db-restore-form');
+              const messageDiv = document.getElementById('db-restore-message');
+              const confirmSection = document.getElementById('db-confirmation-section');
+              const submitBtn = document.getElementById('db-restore-submit-btn');
+              const confirmedRestore = document.getElementById('id_db_confirmed_restore');
+              
+              form.addEventListener('submit', async (e) => {
+                  e.preventDefault();
+        
+                  // Show processing message
+                  messageDiv.innerHTML = '<div class="alert alert-phoenix-info">Processing...</div>';
+                  
+                  // Disable submit button to prevent double submission
+                  submitBtn.disabled = true;
+                  
+                  const formData = new FormData(form);
+                  
+                  try {
+                      const response = await fetch('{% url "restore_db_backup" %}', {
+                          method: 'POST',
+                          body: formData,
+                          headers: {
+                              'X-CSRFToken': '{{ csrf_token }}'
+                          }
+                      });
+                      
+                      const data = await response.json();
+                      
+                      if (data.status === 'confirmation_required') {
+                          // Show confirmation step
+                          confirmSection.classList.remove('d-none');
+                          submitBtn.textContent = 'Restore Database';
+                          confirmedRestore.value = 'true';
+                          
+                          messageDiv.innerHTML = `
+                              <div class="alert alert-phoenix-secondary">
+                                  <strong>File verified:</strong> ${data.details.filename} (${data.details.size_mb} MB)<br>
+                                  ${data.details.warning}
+                              </div>
+                          `;
+                          submitBtn.disabled = false;
+
+                      } else if (data.status === 'success') {
+                          messageDiv.innerHTML = `<div class="alert alert-phoenix-success">${data.message}</div>`;
+                          form.reset();
+                          confirmSection.classList.add('d-none');
+                          submitBtn.textContent = 'Upload & Verify';
+                          confirmedRestore.value = 'false';
+                      } else {
+                          // Handle errors
+                          let errorMsg = data.message;
+                          if (data.errors) {
+                              errorMsg += '<br>' + Object.entries(data.errors)
+                                  .map(([field, errors]) => `${field}: ${errors.join(', ')}`)
+                                  .join('<br>');
+                          }
+                          messageDiv.innerHTML = `<div class="alert alert-phoenix-error">${errorMsg}</div>`;
+                          submitBtn.disabled = false;
+                      }
+                  } catch (error) {
+                      messageDiv.innerHTML = `<div class="alert alert-phoenix-error">Error: ${error.message}</div>`;
+                      submitBtn.disabled = false;
+                  }
+              });
+          </script>
+
+        </div>
+      </div>
+
+      <div class="card mt-4" id="mediarestore">
+        <div class="card-header">
+          <h5>Restore Media Files</h5>
+          <span class="text-700 lh-sm mb-0">Options to restore the media files</span>
+        </div>
+        <div class="card-body">
+          
+          <form method="post" id="media-restore-form" action="{% url 'restore_media_backup' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div id="media-restore-message"></div>
+            {% crispy mediarestore_form %}
+        
+            <div id="media-confirmation-section" class="alert alert-phoenix-warning d-none">
+                    <strong>⚠️ Warning:</strong> This action will permanently overwrite the entire media storage!
+                <label>
+                    I understand this will overwrite the current media files
+                </label>
+            </div>
+          </form>
+
+          <script>
+              const media_form = document.getElementById('media-restore-form');
+              const media_messageDiv = document.getElementById('media-restore-message');
+              const media_confirmSection = document.getElementById('media-confirmation-section');
+              const media_submitBtn = document.getElementById('media-restore-submit-btn');
+              const media_confirmedRestore = document.getElementById('id_media_confirmed_restore');
+              
+              media_form.addEventListener('submit', async (e) => {
+                  e.preventDefault();
+        
+                  // Show processing message
+                  media_messageDiv.innerHTML = '<div class="alert alert-phoenix-info">Processing...</div>';
+                  
+                  // Disable submit button to prevent double submission
+                  media_submitBtn.disabled = true;
+                  
+                  const media_formData = new FormData(media_form);
+                  
+                  try {
+                      const media_response = await fetch('{% url "restore_media_backup" %}', {
+                          method: 'POST',
+                          body: media_formData,
+                          headers: {
+                              'X-CSRFToken': '{{ csrf_token }}'
+                          }
+                      });
+                      
+                      const media_data = await media_response.json();
+                      
+                      if (media_data.status === 'confirmation_required') {
+                          // Show confirmation step
+                          media_confirmSection.classList.remove('d-none');
+                          media_submitBtn.textContent = 'Restore Media Files';
+                          media_confirmedRestore.value = 'true';
+                          
+                          media_messageDiv.innerHTML = `
+                              <div class="alert alert-phoenix-secondary">
+                                  <strong>File verified:</strong> ${media_data.details.filename} (${media_data.details.size_mb} MB)<br>
+                                  ${media_data.details.warning}
+                              </div>
+                          `;
+                          media_submitBtn.disabled = false;
+
+                      } else if (media_data.status === 'success') {
+                          media_messageDiv.innerHTML = `<div class="alert alert-phoenix-success">${media_data.message}</div>`;
+                          form.reset();
+                          media_confirmSection.classList.add('d-none');
+                          media_submitBtn.textContent = 'Upload & Verify';
+                          media_confirmedRestore.value = 'false';
+                      } else {
+                          // Handle errors
+                          let errorMsg = media_data.message;
+                          if (media_data.errors) {
+                              errorMsg += '<br>' + Object.entries(media_data.errors)
+                                  .map(([field, errors]) => `${field}: ${errors.join(', ')}`)
+                                  .join('<br>');
+                          }
+                          media_messageDiv.innerHTML = `<div class="alert alert-phoenix-error">${errorMsg}</div>`;
+                          media_submitBtn.disabled = false;
+                      }
+                  } catch (error) {
+                      media_messageDiv.innerHTML = `<div class="alert alert-phoenix-error">Error: ${error.message}</div>`;
+                      media_submitBtn.disabled = false;
+                  }
+              });
+          </script>
+
+        </div>
+      </div>
+
+
     </div>
   </div>
 {% endblock %}

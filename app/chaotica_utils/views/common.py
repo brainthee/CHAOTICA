@@ -16,6 +16,8 @@ from ..forms import (
     ImportSiteDataForm,
     EditProfileForm,
     CustomConfigForm,
+    DatabaseRestoreForm,
+    MediaRestoreForm,
 )
 from ..mixins import PrefetchRelatedMixin
 from ..enums import GlobalRoles
@@ -128,8 +130,15 @@ def app_settings(request):
         # Send the modal
         settings_form = CustomConfigForm(initial=get_values())
         import_form = ImportSiteDataForm()
+        dbrestore_form = DatabaseRestoreForm()
+        mediarestore_form = MediaRestoreForm()
 
-    context = {"settings_form": settings_form, "import_form": import_form}
+    context = {
+        "settings_form": settings_form,
+        "import_form": import_form,
+        "dbrestore_form": dbrestore_form,
+        "mediarestore_form": mediarestore_form,
+    }
     template = loader.get_template("app_settings.html")
     context = {**context, **page_defaults(request)}
     return HttpResponse(template.render(context, request))
