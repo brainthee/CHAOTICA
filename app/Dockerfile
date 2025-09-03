@@ -20,7 +20,8 @@ EXPOSE ${PORT}
 WORKDIR /app
 
 # install sys dependencies
-RUN apt-get update --fix-missing && apt-get install -y build-essential git procps gcc sudo cron curl python3 python3-dev python3-setuptools python3-pip python3-virtualenv clamav-daemon default-libmysqlclient-dev pkg-config libpq-dev mariadb-client nginx supervisor
+RUN apt-get update --fix-missing \
+&& apt-get install -y build-essential git procps gcc sudo cron curl python3 python3-dev python3-setuptools python3-pip python3-virtualenv clamav-daemon default-libmysqlclient-dev pkg-config libpq-dev mariadb-client nginx supervisor redis
 
 RUN apt-get upgrade -y
 
