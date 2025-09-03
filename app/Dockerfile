@@ -26,6 +26,14 @@ RUN apt-get update --fix-missing \
 
 RUN apt-get upgrade -y
 
+
+# ClamAV stuff
+RUN mkdir -p /var/log/clamav /var/lib/clamav /var/run/clamav \
+    && chown -R root:root /var/log/clamav /var/lib/clamav /var/run/clamav \
+    && chmod 755 /var/log/clamav /var/lib/clamav /var/run/clamav
+# Pre-update defs
+RUN freshclam --config-file=/etc/clamav/freshclam.conf
+
 # Cleanup
 RUN rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man /var/cache/apt/archives/* \
 && apt-get clean
@@ -48,9 +56,11 @@ RUN pip3 install --break-system-packages --upgrade pip==24.0 \
 && pip3 install --break-system-packages git+https://github.com/coderanger/supervisor-stdout.git
 
 # Setup CRON
-COPY --chown=root:root --chmod=755 ./crontab.txt /crontab.txt
+COPY --chown=root:root --chmod=755 ./.docker/config/cron/crontab.txt /crontab.txt
 # Copy supervisor conf
-COPY --chown=root:root --chmod=755 ./supervisord.conf /etc/
+COPY --chown=root:root --chmod=755 ./.docker/config/supervisord/supervisord.conf /etc/
+# Copy ClamAV confs
+COPY --chown=root:root --chmod=644 ./.docker/config/clamav/*.conf /etc/clamav/
 
 # copy entrypoint.sh
 COPY --chown=root:root --chmod=755 ./entrypoint.sh .
