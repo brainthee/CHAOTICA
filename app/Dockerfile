@@ -6,14 +6,13 @@ ARG UID=1005
 ARG GID=1005
 
 # set environment variables
-ENV DEBIAN_FRONTEND noninteractive
-ENV PYTHONUNBUFFERED 1
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONPATH .
-ENV PIP_DISABLE_PIP_VERSION_CHECK 1
-ENV LANG C.UTF-8
-ENV LC_ALL C.UTF-8
-# set default port for gunicorn
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONPATH=.
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
 ENV PORT=8000
 EXPOSE ${PORT}
 
@@ -26,24 +25,24 @@ RUN apt-get update --fix-missing && apt-get install -y build-essential git procp
 RUN apt-get upgrade -y
 
 # Cleanup
-RUN rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man /var/cache/apt/archives/*
+RUN rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man /var/cache/apt/archives/* \
 && apt-get clean
 
 # Stop some services
-RUN service supervisor stop
+RUN service supervisor stop \
 && service cron stop
 
 # Setup user
-RUN groupadd -g "${GID}" chaotica
-&& useradd --create-home --no-log-init -u "${UID}" -g "${GID}" chaotica
+RUN groupadd -g "${GID}" chaotica \
+&& useradd --create-home --no-log-init -u "${UID}" -g "${GID}" chaotica \
 && chown root:root -R /app
 
 # install dependencies
 COPY --chown=root:root --chmod=755 requirements*.txt ./
 
 # pin to v24 because of https://github.com/pypa/pip/issues/13015
-RUN pip3 install --break-system-packages --upgrade pip==24.0 
-&& pip3 install --break-system-packages -r requirements.txt
+RUN pip3 install --break-system-packages --upgrade pip==24.0 \
+&& pip3 install --break-system-packages -r requirements.txt \
 && pip3 install --break-system-packages git+https://github.com/coderanger/supervisor-stdout.git
 
 # Setup CRON
