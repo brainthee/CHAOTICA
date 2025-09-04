@@ -103,10 +103,190 @@
           <span class="text-700 lh-sm mb-0">Export all site data to JSON</span>
         </div>
         <div class="card-body">
-          <div class="d-grid gap-2">
-            <a class="btn btn-phoenix-primary" type="button" href="{% url 'download_db_backup' %}">Download Database Dump</a>
-            <a class="btn btn-phoenix-primary" type="button" href="{% url 'download_media_backup' %}">Download Mediafiles Dump</a>
-          </div>                    
+
+          <div class="row gy-5">
+            <div class="col-md-6 ">
+              <div>
+                <div class="mb-3">
+                  <div class="d-flex align-items-center">
+                    <h5 class="ms-2 text-body-emphasis mb-0">Database</h5>
+                  </div>
+                </div>
+                <p class="lh-sm mb-0 text-body-tertiary">
+                  
+                  <div id="db-status" class="alert alert-phoenix-info"></div>
+                        
+                  <div class="">
+                      <button class="btn btn-primary" id="db-create" onclick="handleBackup('db', 'new')">
+                          Create Backup
+                      </button>
+                      <button class="btn btn-success" id="db-download" style="display:none;" 
+                              onclick="handleBackup('db', 'download')">
+                          Download
+                      </button>
+                  </div>              
+                </p>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <div class="d-flex align-items-center">
+                  <h5 class="ms-2 mb-0">Static/Media Files</h5>
+                </div>
+              </div>
+              <p class="lh-sm mb-0 text-body-tertiary">
+
+                <div id="media-status" class="alert alert-phoenix-info"></div>
+                <div class="">
+                    <button class="btn btn-primary" id="media-create" onclick="handleBackup('media', 'new')">
+                        Create Backup
+                    </button>
+                    <button class="btn btn-success" id="media-download" style="display:none;" 
+                            onclick="handleBackup('media', 'download')">
+                        Download
+                    </button>
+                </div>
+              </p>
+            </div>
+          </div>
+
+          <script>
+            const intervals = {};
+        
+            async function handleBackup(type, action) {
+                const url = type === 'db' ? 
+                    '{% url "download_db_backup" %}' : 
+                    '{% url "download_media_backup" %}';
+                
+                if (action === 'download') {
+                    window.location.href = `${url}?download=true`;
+                  // Reset after download
+                  setTimeout(() => {
+                      checkStatus(type);
+                  }, 1000);
+                  return;
+                }
+                
+                if (action === 'new') {
+                  // Disable the create button
+                  const createBtn = document.getElementById(`${type}-create`);
+                  createBtn.disabled = true;
+                  
+                  const response = await fetch(`${url}?new=true`);
+                  const data = await response.json();
+                  updateStatus(type, data);
+                  startPolling(type);
+                }
+            }
+            
+            async function checkStatus(type) {
+                const url = type === 'db' ? 
+                    '{% url "download_db_backup" %}' : 
+                    '{% url "download_media_backup" %}';
+                
+                try {
+                    const response = await fetch(url);
+                    const data = await response.json();
+                    updateStatus(type, data);
+                    
+                    // Stop polling if not in progress
+                    if (!['pending', 'running', 'queued'].includes(data.status)) {
+                        stopPolling(type);
+                    }
+                } catch (error) {
+                    console.error(`Error checking ${type} status:`, error);
+                    stopPolling(type);
+                }
+            }
+            
+            function updateStatus(type, data) {
+              const statusDiv = document.getElementById(`${type}-status`);
+              const downloadBtn = document.getElementById(`${type}-download`);
+              const createBtn = document.getElementById(`${type}-create`);
+                
+              let statusHTML = '';
+              let statusClass = 'status';
+              
+              switch(data.status) {                      
+                  case 'queued':
+                  case 'pending':
+                      statusClass += ' pending';
+                      statusHTML = `⏳ In queue (position ${data.position || 1})`;
+                      downloadBtn.style.display = 'none';
+                      createBtn.style.display = 'none';
+                      break;
+                      
+                  case 'running':
+                      statusClass += ' running';
+                      statusHTML = `🔄 Creating backup...`;
+                      downloadBtn.style.display = 'none';
+                      createBtn.style.display = 'none';
+                      break;
+                      
+                  case 'ready':
+                  case 'complete':
+                      statusClass += ' ready';
+                      statusHTML = `✅ Ready (${data.file_size_mb} MB)`;
+                      downloadBtn.style.display = 'inline-block';
+                      createBtn.style.display = 'inline-block';
+                      createBtn.disabled = false;
+                      createBtn.textContent = 'Create New Backup';
+                      break;
+                      
+                  case 'failed':
+                      statusClass += ' failed';
+                      statusHTML = `❌ Failed: ${data.error || 'Unknown error'}`;
+                      downloadBtn.style.display = 'none';
+                      createBtn.style.display = 'inline-block';
+                      createBtn.disabled = false;
+                      createBtn.textContent = 'Retry Backup';
+                      break;
+                      
+                  case 'not_found':
+                  case 'expired':
+                      statusHTML = data.message || 'No active backup';
+                      downloadBtn.style.display = 'none';
+                      createBtn.style.display = 'inline-block';
+                      createBtn.disabled = false;
+                      createBtn.textContent = 'Create Backup';
+                      break;
+                      
+                  case 'no_job':
+                  default:
+                      statusHTML = 'No active backup';
+                      downloadBtn.style.display = 'none';
+                      createBtn.style.display = 'inline-block';
+                      createBtn.disabled = false;
+                      createBtn.textContent = 'Create Backup';
+                      break;
+              }
+              
+              if (statusHTML) {
+                  statusDiv.innerHTML = `<div class="${statusClass}">${statusHTML}</div>`;
+              } else {
+                  statusDiv.innerHTML = '';
+              }
+            }
+            
+            function startPolling(type) {
+                if (intervals[type]) return;
+                intervals[type] = setInterval(() => checkStatus(type), 3000);
+            }
+            
+            function stopPolling(type) {
+                if (intervals[type]) {
+                    clearInterval(intervals[type]);
+                    delete intervals[type];
+                }
+            }
+            
+            // Check status on load (without creating new jobs)
+            window.addEventListener('DOMContentLoaded', () => {
+                checkStatus('db');
+                checkStatus('media');
+            });
+          </script>
+
         </div>
       </div>
 

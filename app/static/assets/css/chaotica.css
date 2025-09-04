@@ -1136,3 +1136,38 @@ Do Force select2 to be phoenix compat
     white-space: -o-pre-wrap;    /* Opera 7 */
     word-wrap: break-word;       /* Internet Explorer 5.5+ */
 }
+
+
+.status { 
+    padding: 10px; 
+    margin: 10px 0; 
+    border-radius: 5px; 
+}
+.status.pending { 
+    background-color: #fff3cd; 
+    border: 1px solid #ffc107; 
+}
+.status.running { 
+    background-color: #d1ecf1; 
+    border: 1px solid #bee5eb; 
+}
+.status.ready { 
+    background-color: #d4edda; 
+    border: 1px solid #c3e6cb; 
+}
+.status.failed { 
+    background-color: #f8d7da; 
+    border: 1px solid #f5c6cb; 
+}
+.spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(0,0,0,.3);
+    border-radius: 50%;
+    border-top-color: #000;
+    animation: spin 1s ease-in-out infinite;
+}
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}

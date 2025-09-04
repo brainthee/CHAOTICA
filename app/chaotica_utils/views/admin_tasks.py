@@ -1,4 +1,4 @@
-from django.http import HttpResponseRedirect, HttpResponse, HttpResponseBadRequest, JsonResponse
+from django.http import HttpResponseRedirect, HttpResponse, HttpResponseBadRequest, JsonResponse, FileResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 import logging
@@ -34,24 +34,278 @@ def admin_task_update_phase_dates(request):
 @superuser_required
 @require_safe
 def download_db_backup(request):
-    # Create a temporary file
-    with tempfile.NamedTemporaryFile(delete=False, suffix='.sql.gz') as tmp_file:
-        temp_path = tmp_file.name
+    """
+    Handle database backup creation and download.
+    Creates a job on first request, checks status on subsequent requests.
+    """
     
+    # Get job ID from session
+    job_id = request.session.get('db_backup_job_id')
+    
+    # Check if we should start a new backup
+    start_new = request.GET.get('new', 'false').lower() == 'true'
+    
+    if start_new:
+        # Explicitly requested new backup - create it
+        job = ManualBackupJob.objects.create(
+            user=request.user,
+            backup_type='db',
+            status='pending'
+        )
+        request.session['db_backup_job_id'] = str(job.id)
+        
+        logger.info(f"User {request.user} created database backup job {job.id}")
+        
+        return JsonResponse({
+            'status': 'queued',
+            'job_id': str(job.id),
+            'message': 'Database backup job queued. It will be processed within the next minute.',
+            'position': ManualBackupJob.objects.filter(
+                status='pending',
+                created_at__lt=job.created_at
+            ).count() + 1
+        })
+    
+    # Just checking status - don't create new job
+    if not job_id:
+        return JsonResponse({
+            'status': 'no_job',
+            'message': 'No backup job in progress.'
+        })
+    
+    # Check existing job status
     try:
-        # Run the backup command
-        call_command('dbbackup', '-z', '-O', temp_path)
+        job = ManualBackupJob.objects.get(id=job_id)
+    except ManualBackupJob.DoesNotExist:
+        del request.session['db_backup_job_id']
+        return JsonResponse({
+            'status': 'not_found',
+            'message': 'No backup job found. Start a new backup?'
+        })
+    
+    if job.status == 'pending':
+        # Still in queue
+        position = ManualBackupJob.objects.filter(
+            status='pending',
+            created_at__lt=job.created_at
+        ).count() + 1
         
-        # Read the file and prepare response
-        with open(temp_path, 'rb') as f:
-            response = HttpResponse(f.read(), content_type='application/gzip')
-            response['Content-Disposition'] = 'attachment; filename="db_backup.sql.gz"'
+        return JsonResponse({
+            'status': 'pending',
+            'job_id': str(job.id),
+            'message': f'Backup job is in queue (position {position})',
+            'position': position
+        })
+    
+    elif job.status == 'running':
+        # Currently being processed
+        duration = (timezone.now() - job.started_at).seconds if job.started_at else 0
         
-        return response
-    finally:
-        # Clean up the temporary file
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
+        return JsonResponse({
+            'status': 'running',
+            'job_id': str(job.id),
+            'message': f'Creating database backup... ({duration} seconds)',
+            'duration': duration
+        })
+    
+    elif job.status == 'complete':
+        # Check if file still exists
+        if not os.path.exists(job.file_path):
+            # File was deleted, mark job and offer new backup
+            job.delete()
+            del request.session['db_backup_job_id']
+            return JsonResponse({
+                'status': 'expired',
+                'message': 'Backup file expired. Please create a new backup.'
+            })
+        
+        # Download the file
+        if request.GET.get('download', 'false').lower() == 'true':
+            try:
+                # Clean up session
+                del request.session['db_backup_job_id']
+                
+                # Serve the file
+                response = FileResponse(
+                    open(job.file_path, 'rb'),
+                    content_type=job.get_content_type()
+                )
+                response['Content-Disposition'] = f'attachment; filename="{job.get_filename()}"'
+                
+                return response
+                
+            except Exception as e:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': f'Error downloading file: {str(e)}'
+                })
+        
+        # Return ready status
+        file_size_mb = job.file_size / (1024 * 1024) if job.file_size else 0
+        time_taken = (job.completed_at - job.started_at).seconds if job.completed_at and job.started_at else 0
+        
+        return JsonResponse({
+            'status': 'ready',
+            'job_id': str(job.id),
+            'file_size_mb': f'{file_size_mb:.2f}',
+            'time_taken': time_taken,
+            'message': 'Database backup ready for download'
+        })
+    
+    elif job.status == 'failed':
+        # Clean up session
+        del request.session['db_backup_job_id']
+        
+        return JsonResponse({
+            'status': 'failed',
+            'error': job.error_message,
+            'message': 'Database backup creation failed'
+        })
+    
+    return JsonResponse({
+        'status': 'unknown',
+        'message': 'Unknown job status'
+    })
+
+
+@superuser_required
+@require_safe
+def download_media_backup(request):
+    """
+    Handle media backup creation and download.
+    Creates a job on first request, checks status on subsequent requests.
+    """
+    
+    # Get job ID from session
+    job_id = request.session.get('media_backup_job_id')
+    
+    # Check if we should start a new backup
+    start_new = request.GET.get('new', 'false').lower() == 'true'
+    
+    if start_new:
+        # Explicitly requested new backup - create it
+        job = ManualBackupJob.objects.create(
+            user=request.user,
+            backup_type='media',
+            status='pending'
+        )
+        request.session['media_backup_job_id'] = str(job.id)
+        
+        logger.info(f"User {request.user} created media backup job {job.id}")
+        
+        return JsonResponse({
+            'status': 'queued',
+            'job_id': str(job.id),
+            'message': 'Media backup job queued. It will be processed within the next minute.',
+            'position': ManualBackupJob.objects.filter(
+                status='pending',
+                created_at__lt=job.created_at
+            ).count() + 1
+        })
+    
+    # Just checking status - don't create new job
+    if not job_id:
+        return JsonResponse({
+            'status': 'no_job',
+            'message': 'No backup job in progress.'
+        })
+    
+    # Check existing job status
+    try:
+        job = ManualBackupJob.objects.get(id=job_id)
+    except ManualBackupJob.DoesNotExist:
+        del request.session['media_backup_job_id']
+        return JsonResponse({
+            'status': 'not_found',
+            'message': 'No backup job found. Start a new backup?'
+        })
+    
+    if job.status == 'pending':
+        # Still in queue
+        position = ManualBackupJob.objects.filter(
+            status='pending',
+            created_at__lt=job.created_at
+        ).count() + 1
+        
+        return JsonResponse({
+            'status': 'pending',
+            'job_id': str(job.id),
+            'message': f'Backup job is in queue (position {position})',
+            'position': position
+        })
+    
+    elif job.status == 'running':
+        # Currently being processed
+        duration = (timezone.now() - job.started_at).seconds if job.started_at else 0
+        
+        return JsonResponse({
+            'status': 'running',
+            'job_id': str(job.id),
+            'message': f'Creating backup... ({duration} seconds)',
+            'duration': duration
+        })
+    
+    elif job.status == 'complete':
+        # Check if file still exists
+        if not os.path.exists(job.file_path):
+            # File was deleted, mark job and offer new backup
+            job.delete()
+            del request.session['media_backup_job_id']
+            return JsonResponse({
+                'status': 'expired',
+                'message': 'Backup file expired. Please create a new backup.'
+            })
+        
+        # Download the file
+        if request.GET.get('download', 'false').lower() == 'true':
+            try:
+                # Clean up session
+                del request.session['media_backup_job_id']
+                
+                # Serve the file
+                response = FileResponse(
+                    open(job.file_path, 'rb'),
+                    content_type='application/gzip'
+                )
+                response['Content-Disposition'] = 'attachment; filename="media_backup.tar.gz"'
+                
+                # Schedule cleanup (we'll clean up old jobs in another cron job)
+                
+                return response
+                
+            except Exception as e:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': f'Error downloading file: {str(e)}'
+                })
+        
+        # Return ready status
+        file_size_mb = job.file_size / (1024 * 1024) if job.file_size else 0
+        time_taken = (job.completed_at - job.started_at).seconds if job.completed_at and job.started_at else 0
+        
+        return JsonResponse({
+            'status': 'ready',
+            'job_id': str(job.id),
+            'file_size_mb': f'{file_size_mb:.2f}',
+            'time_taken': time_taken,
+            'message': 'Media backup ready for download'
+        })
+    
+    elif job.status == 'failed':
+        # Clean up session
+        del request.session['media_backup_job_id']
+        
+        return JsonResponse({
+            'status': 'failed',
+            'error': job.error_message,
+            'message': 'Media backup creation failed'
+        })
+    
+    return JsonResponse({
+        'status': 'unknown',
+        'message': 'Unknown job status'
+    })
+
 
 
 @superuser_required
@@ -220,24 +474,6 @@ def restore_media_backup(request):
             os.remove(temp_path)
             logger.debug(f"Cleaned up temporary file: {temp_path}")
 
-
-
-@superuser_required
-@require_safe
-def download_media_backup(request):
-    with tempfile.NamedTemporaryFile(delete=False, suffix='.tar.gz') as tmp_file:
-        temp_path = tmp_file.name
-    
-    try:
-        call_command('mediabackup', '-z', '-O', temp_path)
-        
-        with open(temp_path, 'rb') as f:
-            response = HttpResponse(f.read(), content_type='application/gzip')
-            response['Content-Disposition'] = 'attachment; filename="media_backup.tar.gz"'
-        return response
-    finally:
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
 
 
 @staff_member_required
