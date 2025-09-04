@@ -685,7 +685,7 @@ if USE_S3 == "1" or USE_S3:
             "OPTIONS": {
                 # add or override options defined in default
                 **DEFAULT_S3_STORAGE_OPTIONS,
-                "default_acl": "public-read",
+                # "default_acl": "public-read",
                 "file_overwrite": True,
             },
         },

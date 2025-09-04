@@ -129,7 +129,7 @@ class UserInvitation(models.Model):
 def get_media_profile_file_path(_, filename):
     ext = filename.split(".")[-1]
     filename = "%s.%s" % (uuid.uuid4(), ext)
-    return os.path.join("profile_pics", filename)
+    return os.path.join(settings.MEDIA_ROOT, "profile_pics", filename)
 
 
 class User(AbstractUser):
