@@ -24,9 +24,9 @@ def _process_assign_user(request, obj, prop, multiple=False, users=None):
         elif prop == "presqa_by" and isinstance(obj, Phase):
             users = obj.job.unit.get_active_members_with_perm("can_pqa_jobs")
         elif prop == "scoped_by" and isinstance(obj, Job):
-            users = obj.job.unit.get_active_members_with_perm("can_scope_jobs")
+            users = obj.unit.get_active_members_with_perm("can_scope_jobs")
         elif prop == "scoped_signed_off_by" and isinstance(obj, Job):
-            users = obj.job.unit.get_active_members_with_perm("can_signoff_scopes")
+            users = obj.unit.get_active_members_with_perm("can_signoff_scopes")
         else:
             users = User.objects.filter(is_active=True)
     if request.method == "POST":
