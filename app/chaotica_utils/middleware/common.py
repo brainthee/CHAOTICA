@@ -67,10 +67,22 @@ class NewInstallMiddleware(MiddlewareMixin):
 class MaintenanceModeMiddleware(MiddlewareMixin):
     def process_request(self, request):
         path = request.META.get("PATH_INFO", "")
+        
+        # Allow access to admin login and authentication pages during maintenance
+        admin_allowed_paths = [
+            "/admin/",
+            "/admin/login/",
+            "/admin/logout/",
+            "/oauth2/",  # For ADFS authentication
+        ]
+        
+        is_admin_path_allowed = any(path.startswith(allowed_path) for allowed_path in admin_allowed_paths)
+        
         if (
             settings.MAINTENANCE_MODE
             and not request.user.is_superuser
             and path != reverse("maintenance")
+            and not is_admin_path_allowed
         ):
             response = redirect(reverse("maintenance"))
             return response
