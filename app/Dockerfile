@@ -47,7 +47,7 @@ RUN service supervisor stop \
 # Setup user
 RUN groupadd -g "${GID}" chaotica \
 && useradd --create-home --no-log-init -u "${UID}" -g "${GID}" chaotica \
-&& chown root:root -R /app
+&& chown chaotica:chaotica -R /app
 
 # install dependencies
 COPY --chown=root:root --chmod=755 requirements*.txt ./
@@ -67,7 +67,7 @@ COPY --chown=root:root --chmod=755 ./entrypoint.sh .
 RUN chmod +x /app/entrypoint.sh
 
 # copy project
-COPY --chown=root:root --chmod=755 . .
+COPY --chown=chaotica:chaotica --chmod=755 . .
 
 # run entrypoint.sh
 ENTRYPOINT ["/app/entrypoint.sh"]
