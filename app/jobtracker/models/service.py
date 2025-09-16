@@ -44,6 +44,10 @@ class Service(models.Model):
         Skill, blank=True, related_name="services_skill_desired",
         help_text="Skills desired but not essential",
     )
+    is_core = models.BooleanField(
+        "Is Core Service", help_text="If checked, this service is considered critical",
+        default=False
+    )
     data = JSONField(verbose_name="Data", null=True, blank=True, default=dict)
 
     class Meta:
