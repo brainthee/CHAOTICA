@@ -1,6 +1,9 @@
 import ipaddress
+import re
 from django.conf import settings
 from django.contrib.sessions.middleware import SessionMiddleware as DjSessionMiddleware
+from django.core.exceptions import DisallowedHost
+from django.http import HttpResponseBadRequest
 
 
 class SessionMiddleware(DjSessionMiddleware):
@@ -17,7 +20,88 @@ class SessionMiddleware(DjSessionMiddleware):
             except ValueError:
                 # Log warning about invalid proxy configuration
                 pass
+        
+        # Get allowed hosts from settings
+        self.allowed_hosts = getattr(settings, 'ALLOWED_HOSTS', [])
+        
+        # Compile regex patterns for wildcard domains
+        self.allowed_host_patterns = []
+        for host in self.allowed_hosts:
+            if host == '*':
+                # Allow all hosts (not recommended for production)
+                self.allowed_host_patterns.append(re.compile(r'.*'))
+            elif host.startswith('.'):
+                # Wildcard subdomain (e.g., '.example.com')
+                pattern = re.escape(host).replace(r'\.', r'\.?')
+                self.allowed_host_patterns.append(re.compile(f'^(.+{pattern}|{pattern[2:]})$', re.IGNORECASE))
+            elif '*' in host:
+                # Handle other wildcard patterns
+                pattern = re.escape(host).replace(r'\*', r'[^.]*')
+                self.allowed_host_patterns.append(re.compile(f'^{pattern}$', re.IGNORECASE))
+            else:
+                # Exact match
+                self.allowed_host_patterns.append(re.compile(f'^{re.escape(host)}$', re.IGNORECASE))
 
+    def validate_host(self, request):
+        """
+        Validate the HTTP_HOST header against ALLOWED_HOSTS.
+        Returns True if valid, False otherwise.
+        """
+        host = request.META.get('HTTP_HOST')
+        
+        # If no HOST header, check if we should allow it
+        if not host:
+            # You can decide whether to allow requests without HOST header
+            # For HTTP/1.0 compatibility, you might want to allow it
+            return getattr(settings, 'ALLOW_EMPTY_HOST', False)
+        
+        # Remove port if present
+        if ':' in host:
+            host_parts = host.rsplit(':', 1)
+            host = host_parts[0]
+            # Validate port number if present
+            try:
+                port = int(host_parts[1])
+                if not (1 <= port <= 65535):
+                    return False
+            except (ValueError, IndexError):
+                return False
+        
+        # Remove brackets from IPv6 addresses
+        if host.startswith('[') and host.endswith(']'):
+            host = host[1:-1]
+            # Validate IPv6 address
+            try:
+                ipaddress.IPv6Address(host)
+            except ValueError:
+                return False
+        
+        # Check for null bytes or other invalid characters
+        if '\x00' in host or '\n' in host or '\r' in host:
+            return False
+        
+        # Validate against allowed hosts
+        if not self.allowed_hosts:
+            # If ALLOWED_HOSTS is empty and DEBUG is False, reject
+            if not settings.DEBUG:
+                return False
+            # In DEBUG mode with empty ALLOWED_HOSTS, allow localhost variants
+            return host in ['localhost', '127.0.0.1', '[::1]']
+        
+        # Check against allowed host patterns
+        for pattern in self.allowed_host_patterns:
+            if pattern.match(host):
+                return True
+        
+        # Also check raw IP addresses if they're in ALLOWED_HOSTS
+        try:
+            ip = ipaddress.ip_address(host)
+            return str(ip) in self.allowed_hosts
+        except ValueError:
+            # Not an IP address, that's fine
+            pass
+        
+        return False
 
     def get_client_ip(self, request):
         """
@@ -103,6 +187,17 @@ class SessionMiddleware(DjSessionMiddleware):
         return None
 
     def process_request(self, request):
+        # Validate HTTP_HOST header first
+        if not self.validate_host(request):
+            # Log the invalid host attempt if you have logging configured
+            # logger.warning(f"Invalid HTTP_HOST header: {request.META.get('HTTP_HOST')}")
+            
+            # Return a 400 Bad Request for invalid host headers
+            return HttpResponseBadRequest(
+                "Invalid HTTP_HOST header",
+                content_type="text/plain"
+            )
+        
         # Get the real client IP using secure method
         client_ip = self.get_client_ip(request)
         

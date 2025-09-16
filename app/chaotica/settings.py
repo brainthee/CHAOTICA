@@ -41,10 +41,6 @@ SECRET_KEY = os.environ.get(
 SITE_DOMAIN = os.environ.get("SITE_DOMAIN", default="127.0.0.1:8000")
 SITE_PROTO = os.environ.get("SITE_PROTO", default="http")
 
-ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", default="* web").split(" ")
-USE_X_FORWARDED_HOST = bool(os.environ.get("USE_X_FORWARDED_HOST", default=True))
-SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-
 # These 4 options should not be set in dev envs
 if DJANGO_ENV != "Dev":
     CSRF_COOKIE_SECURE = bool(os.environ.get("CSRF_COOKIE_SECURE", default=True))
@@ -453,6 +449,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework_datatables.pagination.DatatablesPageNumberPagination",
     # 'PAGE_SIZE': 50
 }
+
 SESSION_ENGINE = "qsessions.backends.db"
 MIDDLEWARE = [
     "chaotica_utils.middleware.HealthCheckMiddleware",
@@ -463,8 +460,8 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     # 'django.middleware.cache.UpdateCacheMiddleware',
-    # 'django.middleware.common.CommonMiddleware',
     # 'django.middleware.cache.FetchFromCacheMiddleware',
+    # 'django.middleware.common.CommonMiddleware',
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -487,6 +484,12 @@ INTERNAL_IPS = [
     "127.0.0.1",
 ]
 
+# Additional security settings
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")  # If behind HTTPS proxy
+USE_X_FORWARDED_HOST = bool(os.environ.get("USE_X_FORWARDED_HOST", default=True))
+USE_X_FORWARDED_PORT = bool(os.environ.get("USE_X_FORWARDED_PORT", default=True))
+ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", default="* web").split(" ")
+
 # Define trusted proxy networks
 # Only requests from these IPs/networks will have their forwarded headers trusted
 TRUSTED_PROXIES = [
@@ -498,12 +501,6 @@ TRUSTED_PROXIES = [
     # '203.0.113.0/24',    # Example: CDN/proxy network
     # '198.51.100.1/32',   # Example: specific proxy server
 ]
-
-# Additional security settings
-SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")  # If behind HTTPS proxy
-USE_X_FORWARDED_HOST = False  # Only enable if you trust your proxy
-USE_X_FORWARDED_PORT = False  # Only enable if you trust your proxy
-
 
 TEMPLATES = [
     {
