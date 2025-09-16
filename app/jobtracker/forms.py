@@ -506,8 +506,7 @@ class AssignUser(forms.Form):
     user = forms.ModelChoiceField(
         required=False,
         queryset=User.objects.filter(is_active=True).get_default_order(),
-        widget=autocomplete.ModelSelect2(
-        ),
+        widget=autocomplete.ModelSelect2(),
     )
 
     def __init__(self, *args, **kwargs):
@@ -545,8 +544,7 @@ class AssignMultipleUser(forms.Form):
     users = forms.ModelMultipleChoiceField(
         required=False,
         queryset=User.objects.filter(is_active=True),
-        widget=autocomplete.ModelSelect2Multiple(
-        ),
+        widget=autocomplete.ModelSelect2Multiple(),
     )
 
     def __init__(self, *args, **kwargs):
@@ -720,6 +718,16 @@ class CommentTimeSlotModalForm(forms.ModelForm):
 
 
 class NonDeliveryTimeSlotModalForm(forms.ModelForm):
+    users = forms.ModelMultipleChoiceField(
+        queryset=User.objects.filter(),
+        widget=autocomplete.ModelSelect2Multiple(
+            url="user-autocomplete",
+            attrs={
+                "data-minimum-input-length": 3,
+            },
+        ),
+    )
+
     def __init__(self, *args, **kwargs):
         start = None
         if "start" in kwargs:
@@ -759,12 +767,21 @@ class NonDeliveryTimeSlotModalForm(forms.ModelForm):
             self.fields["start"].initial = start.replace(tzinfo=None)
             self.fields["end"].initial = end.replace(tzinfo=None)
             self.fields["user"].initial = resource
+            # Add user to the multi field
+            self.fields["users"].initial = resource
         self.fields["slot_type"].queryset = TimeSlotType.objects.filter(
             is_assignable=True
         )
         self.helper.layout = Layout(
-            Field("user", style="width: 100%;"),
-            Field("phase", type="hidden"),
+            Row(
+                FloatingField("users", style="width: 100%;"),
+            ),
+            Row(
+                Field("user", style="width: 100%;"),
+            ),
+            Row(
+                Field("phase", type="hidden"),
+            ),  
             Div(
                 Row(
                     Column(
@@ -827,6 +844,15 @@ class DeliveryTimeSlotModalForm(forms.ModelForm):
             },
         ),
     )
+    users = forms.ModelMultipleChoiceField(
+        queryset=User.objects.filter(),
+        widget=autocomplete.ModelSelect2Multiple(
+            url="user-autocomplete",
+            attrs={
+                "data-minimum-input-length": 3,
+            },
+        ),
+    )
 
     def __init__(self, *args, **kwargs):
         if "phase" in kwargs:
@@ -857,10 +883,14 @@ class DeliveryTimeSlotModalForm(forms.ModelForm):
         self.helper = FormHelper(self)
         for fieldname in self.fields:
             self.fields[fieldname].help_text = None
+
         self.fields["user"].widget = forms.HiddenInput()
+
         if user:
             self.fields["user"].initial = user
             self.fields["user"].disabled = user
+            # Add user to the multi field
+            self.fields["users"].initial = user
 
         self.fields["slot_type"].widget = forms.HiddenInput()
         self.fields["slot_type"].initial = TimeSlotType.get_builtin_object(
@@ -922,6 +952,9 @@ class DeliveryTimeSlotModalForm(forms.ModelForm):
         self.helper.layout = Layout(
             Div(
                 Row(
+                    Field("users", style="width: 100%;"),
+                ),
+                Row(
                     Field("phase", style="width: 100%;"),
                     Field("user", style="width: 100%;"),
                 ),
@@ -973,6 +1006,7 @@ class DeliveryTimeSlotModalForm(forms.ModelForm):
             ),
         }
         fields = (
+            "users",
             "user",
             "phase",
             "slot_type",
@@ -1368,9 +1402,7 @@ class PhaseForm(forms.ModelForm):
             "due_to_presqa_set": DatePickerInput(),
             "desired_delivery_date": DatePickerInput(),
             "description": forms.Textarea(attrs={"class": "tinymce"}),
-            # "description": TinyMCE(),
             "location": forms.Textarea(attrs={"class": "tinymce"}),
-            # "location": TinyMCE(),
             "restrictions": forms.Textarea(attrs={"class": "tinymce"}),
             "scheduling_requirements": forms.Textarea(attrs={"class": "tinymce"}),
             "prerequisites": forms.Textarea(attrs={"class": "tinymce"}),
