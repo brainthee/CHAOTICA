@@ -387,6 +387,12 @@ BLEACH_ALLOWED_TAGS = [
     "table",
     "tr",
     "td",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
+    "h6",
 ]
 # Which HTML attributes are allowed
 BLEACH_ALLOWED_ATTRIBUTES = ["href", "title", "style", "src"]

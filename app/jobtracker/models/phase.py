@@ -107,22 +107,20 @@ class Phase(models.Model):
     ################
     ## Phase Detail
     ################
-    test_target = BleachField("Test Target URL/IPs/Scope", blank=True, null=True)
-    comm_reqs = BleachField("Communication Requirements", blank=True, null=True)
-    restrictions = BleachField(
-        "Time restrictions / Special requirements", blank=True, null=True
+    test_target = BleachField(verbose_name="Test Target URL/IPs/Scope", blank=True, null=True)
+    comm_reqs = BleachField(verbose_name="Communication Requirements", blank=True, null=True)
+    restrictions = BleachField(verbose_name="Time restrictions / Special requirements", blank=True, null=True
     )
-    scheduling_requirements = BleachField(
-        "Special requirements for scheduling", blank=True, null=True
+    scheduling_requirements = BleachField(verbose_name="Special requirements for scheduling", blank=True, null=True
     )
-    prerequisites = BleachField("Pre-requisites", null=True, blank=True)
+    prerequisites = BleachField(verbose_name="Pre-requisites", null=True, blank=True)
 
     ################
     ## Logistics
     ################
     is_testing_onsite = models.BooleanField("Testing Onsite", default=False)
     is_reporting_onsite = models.BooleanField("Reporting Onsite", default=False)
-    location = BleachField("Onsite Location", blank=True, null=True, default="")
+    location = BleachField(verbose_name="Onsite Location", blank=True, null=True, default="")
     number_of_reports = models.IntegerField(
         default=1,
         help_text="If set to 0, this phase will not go through Technical or Presentation QA",
