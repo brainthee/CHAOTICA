@@ -371,42 +371,42 @@ class Team(models.Model):
                 / data[rang]["totals"]["working_days"]
                 * 100,
                 1,
-            )
+            ) if data[rang]["totals"]["working_days"] != 0 else 0
 
             data[rang]["totals"]["scheduled_days_percentage"] = round(
                 data[rang]["totals"]["scheduled_days"]
                 / data[rang]["totals"]["working_days"]
                 * 100,
                 1,
-            )
+            ) if data[rang]["totals"]["working_days"] != 0 else 0
 
             data[rang]["totals"]["tentative_days_percentage"] = round(
                 data[rang]["totals"]["tentative_days"]
                 / data[rang]["totals"]["working_days"]
                 * 100,
                 1,
-            )
+            ) if data[rang]["totals"]["working_days"] != 0 else 0
 
             data[rang]["totals"]["confirmed_days_percentage"] = round(
                 data[rang]["totals"]["confirmed_days"]
                 / data[rang]["totals"]["working_days"]
                 * 100,
                 1,
-            )
+            ) if data[rang]["totals"]["working_days"] != 0 else 0
 
             data[rang]["totals"]["utilisation_percentage"] = round(
                 data[rang]["totals"]["confirmed_days"]
                 / data[rang]["totals"]["working_days"]
                 * 100,
                 1,
-            )
+            ) if data[rang]["totals"]["working_days"] != 0 else 0
 
             data[rang]["totals"]["available_days_percentage"] = round(
                 data[rang]["totals"]["available_days"]
                 / data[rang]["totals"]["working_days"]
                 * 100,
                 1,
-            )
+            ) if data[rang]["totals"]["working_days"] != 0 else 0
         return data
 
 
