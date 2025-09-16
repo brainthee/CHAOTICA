@@ -1,7 +1,7 @@
 from django import forms
 from .models import RMSyncRecord
 from crispy_forms.helper import FormHelper
-from dal import autocomplete
+# Note: django-select2 import might be needed if widgets are added later
 
 
 class RMSyncRecordForm(forms.ModelForm):

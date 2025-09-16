@@ -16,7 +16,7 @@ from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
-from dal import autocomplete
+from django_select2.views import AutoResponseView
 from chaotica_utils.views import log_system_activity, ChaoticaBaseView
 from chaotica_utils.enums import UnitRoles
 from ..models import (
@@ -664,48 +664,90 @@ def job_update_workflow(request, slug, new_state):
 ################################################
 
 
-class JobBillingCodeAutocomplete(autocomplete.Select2QuerySetView):
+class JobBillingCodeAutocomplete(AutoResponseView):
+    def get(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return JsonResponse({'results': [], 'pagination': {'more': False}})
 
-    def get_queryset(self):
-        if not self.request.user.is_authenticated:
-            return BillingCode.objects.none()
+        # Get parameters
+        self.term = request.GET.get('term', '')
+        job_slug = request.GET.get('slug', None)
+        self.page_size = int(request.GET.get('page_size', 20))
+        self.page = int(request.GET.get('page', 1))
 
-        job_slug = self.forwarded.get("slug", None)
         if not job_slug:
-            return BillingCode.objects.none()
+            return JsonResponse({'results': [], 'pagination': {'more': False}})
 
         # TODO: return only if job allowed
-        job = Job.objects.get(slug=job_slug)
+        try:
+            job = Job.objects.get(slug=job_slug)
+        except Job.DoesNotExist:
+            return JsonResponse({'results': [], 'pagination': {'more': False}})
 
         qs = BillingCode.objects.filter(Q(client=job.client) | Q(client__isnull=True))
 
-        if self.q:
-            qs = qs.filter(code__istartswith=self.q)
+        if self.term:
+            qs = qs.filter(code__istartswith=self.term)
 
-        return qs
+        # Pagination
+        start = (self.page - 1) * self.page_size
+        end = start + self.page_size
 
-    def get_result_label(self, result):
-        return result.get_html_label()
+        results = []
+        for bc in qs[start:end]:
+            results.append({
+                'id': bc.pk,
+                'text': bc.get_html_label() if hasattr(bc, 'get_html_label') else str(bc),
+            })
+
+        has_more = qs.count() > end
+
+        return JsonResponse({
+            'results': results,
+            'pagination': {'more': has_more}
+        })
 
 
-class JobAutocomplete(autocomplete.Select2QuerySetView):
-    def get_queryset(self):
+class JobAutocomplete(AutoResponseView):
+    def get(self, request, *args, **kwargs):
         # Don't forget to filter out results depending on the visitor !
-        if not self.request.user.is_authenticated:
-            return Job.objects.none()
+        if not request.user.is_authenticated:
+            return JsonResponse({'results': [], 'pagination': {'more': False}})
+
+        # Get parameters
+        self.term = request.GET.get('term', '')
+        self.page_size = int(request.GET.get('page_size', 20))
+        self.page = int(request.GET.get('page', 1))
 
         units_with_job_perms = get_objects_for_user(
-            self.request.user, "jobtracker.can_view_jobs", OrganisationalUnit
+            request.user, "jobtracker.can_view_jobs", OrganisationalUnit
         )
 
         qs = Job.objects.filter(
             unit__in=units_with_job_perms,
         )
-        if self.q:
+        if self.term:
             qs = qs.filter(
-                Q(title__icontains=self.q)
-                | Q(overview__icontains=self.q)
-                | Q(slug__icontains=self.q)
-                | Q(id__icontains=self.q),
+                Q(title__icontains=self.term)
+                | Q(overview__icontains=self.term)
+                | Q(slug__icontains=self.term)
+                | Q(id__icontains=self.term),
             )
-        return qs
+
+        # Pagination
+        start = (self.page - 1) * self.page_size
+        end = start + self.page_size
+
+        results = []
+        for job in qs[start:end]:
+            results.append({
+                'id': job.pk,
+                'text': str(job),
+            })
+
+        has_more = qs.count() > end
+
+        return JsonResponse({
+            'results': results,
+            'pagination': {'more': has_more}
+        })

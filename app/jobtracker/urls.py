@@ -64,7 +64,6 @@ urlpatterns = [
     path(
         "scheduler/timeslots", views.view_scheduler_slots, name="view_scheduler_slots"
     ),
-    
     # Create paths
     path(
         "scheduler/timeslots/phase/create",
@@ -261,11 +260,6 @@ urlpatterns = [
         name="assign_job_field",
     ),
     # Phase CRUD
-    path(
-        "autocomplete/phases",
-        views.PhaseAutocomplete.as_view(),
-        name="phase-autocomplete",
-    ),
     path(
         "job/<str:job_slug>/phase/create/",
         views.PhaseCreateView.as_view(),
@@ -670,4 +664,9 @@ urlpatterns = [
         name="project-autocomplete",
     ),
     path("autocomplete/jobs", views.JobAutocomplete.as_view(), name="job-autocomplete"),
+    path(
+        "autocomplete/phases",
+        views.PhaseAutocomplete.as_view(),
+        name="phase-autocomplete",
+    ),
 ]

@@ -67,6 +67,7 @@ django-picklefield==3.3
 django-qsessions==2.0.0
 django-recurrence==1.11.1
 django-redis==6.0.0
+django-select2==8.4.1
 django-simple-history==3.8.0
 django-simple-menu==2.1.4
 django-sql-explorer==5.3
