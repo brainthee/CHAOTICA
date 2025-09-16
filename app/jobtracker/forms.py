@@ -77,46 +77,99 @@ class SchedulerFilter(forms.Form):
         required=False,
         label="Specialist",
         queryset=Skill.objects.all().prefetch_related("category"),
-        widget=s2forms.ModelSelect2MultipleWidget(attrs={'class': 'select2-widget'},
-            search_fields=['name__icontains', 'category__name__icontains'],),
+        widget=s2forms.ModelSelect2MultipleWidget(
+            attrs={
+                'class': 'select2-widget',
+                'data-minimum-input-length': 2,
+                'data-ajax--url': '/autocomplete/skills',
+                'data-ajax--cache': 'true',
+                'data-ajax--type': 'GET',
+            },
+        ),
     )
     skills_can_do_alone = forms.ModelMultipleChoiceField(
         required=False,
         label="Independent",
         queryset=Skill.objects.all().prefetch_related("category"),
-        widget=s2forms.ModelSelect2MultipleWidget(attrs={'class': 'select2-widget'},
-            search_fields=['name__icontains', 'category__name__icontains'],),
+        widget=s2forms.ModelSelect2MultipleWidget(
+            attrs={
+                'class': 'select2-widget',
+                'data-minimum-input-length': 2,
+                'data-ajax--url': '/autocomplete/skills',
+                'data-ajax--cache': 'true',
+                'data-ajax--type': 'GET',
+            },
+        ),
     )
     skills_can_do_support = forms.ModelMultipleChoiceField(
         required=False,
         label="Require Support",
         queryset=Skill.objects.all().prefetch_related("category"),
-        widget=s2forms.ModelSelect2MultipleWidget(attrs={'class': 'select2-widget'},
-            search_fields=['name__icontains', 'category__name__icontains'],),
+        widget=s2forms.ModelSelect2MultipleWidget(
+            attrs={
+                'class': 'select2-widget',
+                'data-minimum-input-length': 2,
+                'data-ajax--url': '/autocomplete/skills',
+                'data-ajax--cache': 'true',
+                'data-ajax--type': 'GET',
+            },
+        ),
     )
 
     teams = forms.ModelMultipleChoiceField(
         required=False,
         queryset=Team.objects.all(),
-        widget=s2forms.ModelSelect2MultipleWidget(attrs={'class': 'select2-widget'}),
+        widget=s2forms.ModelSelect2MultipleWidget(
+            attrs={
+                'class': 'select2-widget',
+                'data-minimum-input-length': 2,
+                'data-ajax--url': '/autocomplete/teams',
+                'data-ajax--cache': 'true',
+                'data-ajax--type': 'GET',
+            },
+        ),
     )
 
     services = forms.ModelMultipleChoiceField(
         required=False,
         queryset=Service.objects.all(),
-        widget=s2forms.ModelSelect2MultipleWidget(attrs={'class': 'select2-widget'}),
+        widget=s2forms.ModelSelect2MultipleWidget(
+            attrs={
+                'class': 'select2-widget',
+                'data-minimum-input-length': 2,
+                'data-ajax--url': '/autocomplete/services',
+                'data-ajax--cache': 'true',
+                'data-ajax--type': 'GET',
+            },
+        ),
     )
 
     org_units = forms.ModelMultipleChoiceField(
         required=False,
         queryset=OrganisationalUnit.objects.all(),
-        widget=s2forms.ModelSelect2MultipleWidget(attrs={'class': 'select2-widget'}),
+        widget=s2forms.ModelSelect2MultipleWidget(
+            attrs={
+                'class': 'select2-widget',
+                'data-minimum-input-length': 2,
+                'data-ajax--url': '/autocomplete/org-units',
+                'data-ajax--cache': 'true',
+                'data-ajax--type': 'GET',
+            },
+        ),
     )
 
     org_unit_roles = forms.ModelMultipleChoiceField(
         required=False,
         queryset=OrganisationalUnitRole.objects.all(),
-        widget=s2forms.ModelSelect2MultipleWidget(attrs={'class': 'select2-widget'}),
+        widget=s2forms.ModelSelect2MultipleWidget(
+            attrs={
+                'class': 'select2-widget',
+                'data-minimum-input-length': 2,
+                'data-ajax--url': '/autocomplete/org-unit-roles',
+                'data-ajax--cache': 'true',
+                'data-ajax--type': 'GET',
+            },
+        ),
     )
 
     from_date = forms.DateField(
@@ -198,7 +251,10 @@ class SchedulerFilter(forms.Form):
         widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
                 'class': 'select2-widget',
-                'data-minimum-input-length': 3,
+                'data-minimum-input-length': 2,
+                'data-ajax--url': '/autocomplete/clients',
+                'data-ajax--cache': 'true',
+                'data-ajax--type': 'GET',
             },
         ),
     )
@@ -756,7 +812,7 @@ class NonDeliveryTimeSlotModalForm(forms.ModelForm):
                 'data-ajax--cache': 'true',
                 'data-ajax--type': 'GET',
             },
-            search_fields=['first_name__icontains', 'last_name__icontains', 'email__icontains'],
+            # search_fields=['first_name__icontains', 'last_name__icontains', 'email__icontains'],
         ),
     )
 
@@ -805,9 +861,9 @@ class NonDeliveryTimeSlotModalForm(forms.ModelForm):
             is_assignable=True
         )
         self.helper.layout = Layout(
-            Row(
-                FloatingField("users", style="width: 100%;"),
-            ),
+            # Row(
+            #     Field("users", css_class="extra", style="width: 100%;"),
+            # ),
             Row(
                 Field("user", style="width: 100%;"),
             ),
@@ -882,6 +938,7 @@ class DeliveryTimeSlotModalForm(forms.ModelForm):
     )
     users = forms.ModelMultipleChoiceField(
         queryset=User.objects.filter(),
+        required=False,
         widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
                 'class': 'select2-widget',
@@ -890,7 +947,7 @@ class DeliveryTimeSlotModalForm(forms.ModelForm):
                 'data-ajax--cache': 'true',
                 'data-ajax--type': 'GET',
             },
-            search_fields=['first_name__icontains', 'last_name__icontains', 'email__icontains'],
+            # search_fields=['first_name__icontains', 'last_name__icontains', 'email__icontains'],
         ),
     )
 
@@ -991,9 +1048,9 @@ class DeliveryTimeSlotModalForm(forms.ModelForm):
 
         self.helper.layout = Layout(
             Div(
-                Row(
-                    Field("users", style="width: 100%;"),
-                ),
+                # Row(
+                #     Field("users", css_class="extra", style="width: 100%;"),
+                # ),
                 Row(
                     Field("phase", style="width: 100%;"),
                     Field("user", style="width: 100%;"),
