@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% load menu %}{% load static %}{% load humanize %}
+
+{% block pageTitle %}User Sessions{% endblock pageTitle %}
+{% block head_title %}User Sessions{% endblock head_title %}
+
+{% block headerBlock_css %}mb-6{% endblock headerBlock_css %}
+
+{% block breadcrumbItem %}
+<li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">User Sessions</li>
+{% endblock breadcrumbItem %}
+
+{% block content %}
+
+{% if request.u.show_help %}
+<div class="row">
+  <div class="col-lg-12 col-12 mt-4 mt-lg-0">
+{% include 'help/user_list.html' %}
+  </div>
+</div>
+{% endif %}
+
+
+<div class="row mb-4 gx-6 gy-3 mt-2 align-items-center">
+  <div class="col">
+    <h2 class="mb-0">User Sessions</h2>
+  </div>
+  <div class="col-3 d-flex justify-content-end">
+  </div>
+</div>
+
+<!-- Statistics Cards -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <div class="card border border-primary">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="card-subtitle mb-2">Active Sessions</h6>
+                                    <h2 class="card-title mb-0">{{ active_sessions }}</h2>
+                                </div>
+                                <div class="fs-1">
+                                    <i class="fa fa-people-group"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card stat-card border border-secondary">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="card-subtitle mb-2">Expired Sessions</h6>
+                                    <h2 class="card-title mb-0">{{ expired_sessions }}</h2>
+                                </div>
+                                <div class="fs-1">
+                                    <i class="fa fa-history"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card stat-card border border-info">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="card-subtitle mb-2">Total Sessions</h6>
+                                    <h2 class="card-title mb-0">{{ total_sessions }}</h2>
+                                </div>
+                                <div class="fs-1">
+                                    <i class="fa fa-database"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sessions Table -->
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col"> Session
+                            </th>
+                            <th scope="col">User
+                            </th>
+                            <th scope="col">IP Address
+                            </th>
+                            <th scope="col">Location
+                            </th>
+                            <th scope="col">User Agent
+                            </th>
+                            <th scope="col">Device
+                            </th>
+                            <th scope="col">Expires
+                            </th>
+                            <th scope="col" class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for session in sessions %}
+                        <tr>
+                            <td>
+                                <span class="status-indicator status-active"></span>
+                                <code class="session-key text-muted">
+                                    {{ session.session_key|truncatechars:20 }}
+                                </code>
+                            </td>
+                            <td>
+                                {% if session.user %}
+                                    <a href="/admin/auth/user/{{ session.user.id }}/" 
+                                        class="text-decoration-none">
+                                        {{ session.user }}
+                                    </a>
+                                    {% if session.user.is_staff %}
+                                        <br />
+                                        <span class="badge badge-phoenix badge-phoenix-danger ms-1">Staff</span>
+                                    {% endif %}
+                                    {% if session.user.is_superuser %}
+                                        <span class="badge badge-phoenix badge-phoenix-danger ms-1">Superuser</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted fst-italic">
+                                        <i class="fa fa-person"></i> Anonymous
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary ip-badge">
+                                    <i class="fa fa-network-wired"></i> {{ session.ip }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary ip-badge">
+                                    <i class="fa fa-globe"></i> {{ session.location }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="user-agent-text" 
+                                     data-bs-toggle="tooltip" 
+                                     data-bs-placement="top"
+                                     title="{{ session.user_agent }}">
+                                    <small class="text-muted">
+                                        {{ session.user_agent|truncatechars:50 }}
+                                    </small>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="device-text" 
+                                     data-bs-toggle="tooltip" 
+                                     data-bs-placement="top"
+                                     title="{{ session.device }}">
+                                    <small class="text-muted">
+                                        {{ session.device|truncatechars:50 }}
+                                    </small>
+                                </div>
+                            </td>
+                            <td>
+                                {% if session.expire_date %}
+                                    {% if session.is_expired %}
+                                        <span class="badge bg-danger">
+                                            <i class="fa fa-exclamation-triangle"></i>
+                                            {{ session.expire_date|date:"Y-m-d H:i" }}
+                                        </span>
+                                    {% else %}
+                                        <small class="text-muted">
+                                            <i class="fa fa-clock"></i>
+                                            {{ session.expire_date|date:"Y-m-d H:i" }}
+                                        </small>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center py-5">
+                                <div class="text-muted">
+                                    <i class="fa fa-inbox fs-1"></i>
+                                    <p class="mt-2">No active sessions found</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+{% endblock content %}
