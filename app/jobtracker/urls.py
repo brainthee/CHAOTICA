@@ -669,4 +669,35 @@ urlpatterns = [
         views.PhaseAutocomplete.as_view(),
         name="phase-autocomplete",
     ),
+    # Custom scheduler autocomplete views
+    path(
+        "autocomplete/skills",
+        views.SkillAutocomplete.as_view(),
+        name="skill-autocomplete",
+    ),
+    path(
+        "autocomplete/teams",
+        views.TeamAutocomplete.as_view(),
+        name="team-autocomplete",
+    ),
+    path(
+        "autocomplete/services",
+        views.ServiceAutocomplete.as_view(),
+        name="service-autocomplete",
+    ),
+    path(
+        "autocomplete/org-units",
+        views.OrganisationalUnitAutocomplete.as_view(),
+        name="org-unit-autocomplete",
+    ),
+    path(
+        "autocomplete/org-unit-roles",
+        views.OrganisationalUnitRoleAutocomplete.as_view(),
+        name="org-unit-role-autocomplete",
+    ),
+    path(
+        "autocomplete/clients",
+        views.ClientAutocomplete.as_view(),
+        name="client-autocomplete",
+    ),
 ]
