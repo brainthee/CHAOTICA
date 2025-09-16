@@ -311,8 +311,6 @@ TWILIO_SERVICESID = os.environ.get("TWILIO_SERVICESID", default="Hunter2")
 # Application definition
 DEFAULT_APPS = [
     # Have to add these here as they must be loaded in before everything else
-    "dal",
-    "dal_select2",
     "django.contrib.admin",
     "django.contrib.admindocs",
     "django.contrib.auth",
@@ -324,6 +322,7 @@ DEFAULT_APPS = [
     "django.contrib.humanize",
 ]
 THIRD_PARTY_APPS = [
+    'django_select2',
     "colorfield",
     "constance",
     "django_auth_adfs",

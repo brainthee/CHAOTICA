@@ -13,7 +13,7 @@ from crispy_bootstrap5.bootstrap5 import FloatingField
 from django_countries.widgets import CountrySelectWidget
 from django_countries.fields import CountryField
 from constance.admin import ConstanceForm
-from dal import autocomplete
+from django_select2 import forms as s2forms
 import pytz
 from datetime import datetime, timedelta
 from django.conf import settings
@@ -736,11 +736,15 @@ class MergeUserForm(forms.Form):
     user_to_merge = forms.ModelChoiceField(
         queryset=User.objects.filter(),
         required=True,
-        widget=autocomplete.ModelSelect2(
-            url="user-autocomplete",
+        widget=s2forms.ModelSelect2Widget(
             attrs={
-                "data-minimum-input-length": 3,
+                'class': 'select2-widget',
+                'data-minimum-input-length': 3,
+                'data-ajax--url': '/autocomplete/users',
+                'data-ajax--cache': 'true',
+                'data-ajax--type': 'GET',
             },
+            search_fields=['first_name__icontains', 'last_name__icontains', 'email__icontains'],
         ),
     )
 
@@ -772,7 +776,7 @@ class AssignRoleForm(forms.ModelForm):
     class Meta:
         model = User
         widgets = {
-            "groups": autocomplete.ModelSelect2Multiple(),
+            "groups": s2forms.ModelSelect2MultipleWidget(attrs={'class': 'select2-widget'}),
         }
         fields = ("groups",)
 
@@ -805,28 +809,36 @@ class EditProfileForm(forms.ModelForm):
     
     pref_timezone = forms.ChoiceField(
         choices=[(x, x) for x in pytz.common_timezones],
-        widget=autocomplete.ModelSelect2(),
+        widget=s2forms.ModelSelect2Widget(),
     )
 
     manager = forms.ModelChoiceField(
         queryset=User.objects.filter(),
         required=False,
-        widget=autocomplete.ModelSelect2(
-            url="user-autocomplete",
+        widget=s2forms.ModelSelect2Widget(
             attrs={
-                "data-minimum-input-length": 3,
+                'class': 'select2-widget',
+                'data-minimum-input-length': 3,
+                'data-ajax--url': '/autocomplete/users',
+                'data-ajax--cache': 'true',
+                'data-ajax--type': 'GET',
             },
+            search_fields=['first_name__icontains', 'last_name__icontains', 'email__icontains'],
         ),
     )
 
     acting_manager = forms.ModelChoiceField(
         queryset=User.objects.filter(),
         required=False,
-        widget=autocomplete.ModelSelect2(
-            url="user-autocomplete",
+        widget=s2forms.ModelSelect2Widget(
             attrs={
-                "data-minimum-input-length": 3,
+                'class': 'select2-widget',
+                'data-minimum-input-length': 3,
+                'data-ajax--url': '/autocomplete/users',
+                'data-ajax--cache': 'true',
+                'data-ajax--type': 'GET',
             },
+            search_fields=['first_name__icontains', 'last_name__icontains', 'email__icontains'],
         ),
     )
 
@@ -875,7 +887,7 @@ class EditProfileForm(forms.ModelForm):
     class Meta:
         model = User
         widgets = {
-            "languages": autocomplete.ModelSelect2Multiple(),
+            "languages": s2forms.ModelSelect2MultipleWidget(),
         }
         fields = (
             "first_name",

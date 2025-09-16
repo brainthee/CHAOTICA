@@ -4,7 +4,8 @@ from django.db.models.functions import Concat, Lower
 from django.http import JsonResponse
 from ..models import User
 from ..utils import is_ajax
-from dal import autocomplete
+from django_select2.views import AutoResponseView
+from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from guardian.shortcuts import get_objects_for_user
 from django.views.decorators.http import require_POST
@@ -15,24 +16,48 @@ from django.views.decorators.http import require_POST
 ######################################
 
 
-class UserAutocomplete(autocomplete.Select2QuerySetView):
-    def get_queryset(self):
+class UserAutocomplete(AutoResponseView):
+    def get(self, request, *args, **kwargs):
         # Don't forget to filter out results depending on the visitor !
-        if not self.request.user.is_authenticated:
-            return User.objects.none()
+        if not request.user.is_authenticated:
+            return JsonResponse({'results': [], 'pagination': {'more': False}})
+
+        # Get the search term
+        self.term = request.GET.get('term', '')
+        self.page_size = int(request.GET.get('page_size', 20))
+        self.page = int(request.GET.get('page', 1))
+
         # TODO: Do permission checks...
         qs = User.objects.all().annotate(
             full_name=Concat("first_name", Value(" "), "last_name")
         )
-        if self.q:
+
+        if self.term:
             qs = qs.filter(
-                Q(email__icontains=self.q)
-                | Q(full_name__icontains=self.q)
-                | Q(first_name__icontains=self.q)
-                | Q(last_name__icontains=self.q),
+                Q(email__icontains=self.term)
+                | Q(full_name__icontains=self.term)
+                | Q(first_name__icontains=self.term)
+                | Q(last_name__icontains=self.term),
                 is_active=True,
             )
-        return qs
+
+        # Pagination
+        start = (self.page - 1) * self.page_size
+        end = start + self.page_size
+
+        results = []
+        for user in qs[start:end]:
+            results.append({
+                'id': user.pk,
+                'text': str(user),
+            })
+
+        has_more = qs.count() > end
+
+        return JsonResponse({
+            'results': results,
+            'pagination': {'more': has_more}
+        })
 
 
 @login_required

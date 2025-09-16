@@ -8,25 +8,47 @@ from chaotica_utils.views import ChaoticaBaseView
 from ..models import Project
 from ..forms import ProjectForm
 import logging
-from dal import autocomplete
+from django_select2.views import AutoResponseView
+from django.http import JsonResponse
 
 logger = logging.getLogger(__name__)
 
 
-class ProjectAutocomplete(autocomplete.Select2QuerySetView):
-    def get_queryset(self):
+class ProjectAutocomplete(AutoResponseView):
+    def get(self, request, *args, **kwargs):
         # Don't forget to filter out results depending on the visitor !
-        if not self.request.user.is_authenticated:
-            return Project.objects.none()
-        # qs = Phase.objects.phases_with_unit_permission(
-        #     self.request.user, "jobtracker.can_view_jobs"
-        # )
-        qs = Project.objects.all()
-        if self.q:
+        if not request.user.is_authenticated:
+            return JsonResponse({'results': [], 'pagination': {'more': False}})
+
+        # Get parameters
+        self.term = request.GET.get('term', '')
+        self.page_size = int(request.GET.get('page_size', 20))
+        self.page = int(request.GET.get('page', 1))
+
+        qs = Project.objects.all().order_by('-id')
+        if self.term:
             qs = qs.filter(
-                Q(title__icontains=self.q)
+                Q(title__icontains=self.term) |
+                Q(id__icontains=self.term) 
             )
-        return qs
+
+        # Pagination
+        start = (self.page - 1) * self.page_size
+        end = start + self.page_size
+
+        results = []
+        for project in qs[start:end]:
+            results.append({
+                'id': project.pk,
+                'text': str(project),
+            })
+
+        has_more = qs.count() > end
+
+        return JsonResponse({
+            'results': results,
+            'pagination': {'more': has_more}
+        })
 
 class ProjectBaseView(PermissionRequiredMixin, ChaoticaBaseView):
     model = Project

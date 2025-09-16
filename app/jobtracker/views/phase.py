@@ -25,7 +25,7 @@ from .helpers import _process_assign_user
 from notifications.utils import AppNotification, send_notifications
 from notifications.enums import NotificationTypes
 import logging
-from dal import autocomplete
+from django_select2.views import AutoResponseView
 from ..decorators import job_permission_required_or_403
 from ..mixins import (
     UnitPermissionRequiredMixin,
@@ -60,21 +60,44 @@ def view_phase_schedule_slots(request, job_slug, slug):
     return JsonResponse(data, safe=False)
 
 
-class PhaseAutocomplete(autocomplete.Select2QuerySetView):
-    def get_queryset(self):
+class PhaseAutocomplete(AutoResponseView):
+    def get(self, request, *args, **kwargs):
         # Don't forget to filter out results depending on the visitor !
-        if not self.request.user.is_authenticated:
-            return Phase.objects.none()
+        if not request.user.is_authenticated:
+            return JsonResponse({'results': [], 'pagination': {'more': False}})
+
+        # Get parameters
+        self.term = request.GET.get('term', '')
+        self.page_size = int(request.GET.get('page_size', 20))
+        self.page = int(request.GET.get('page', 1))
+
         qs = Phase.objects.phases_with_unit_permission(
-            self.request.user, "jobtracker.can_view_jobs"
+            request.user, "jobtracker.can_view_jobs"
         )
-        if self.q:
+        if self.term:
             qs = qs.filter(
-                Q(title__icontains=self.q)
-                | Q(phase_id__icontains=self.q)
-                | Q(job__id__icontains=self.q)
+                Q(title__icontains=self.term)
+                | Q(phase_id__icontains=self.term)
+                | Q(job__id__icontains=self.term)
             )
-        return qs
+
+        # Pagination
+        start = (self.page - 1) * self.page_size
+        end = start + self.page_size
+
+        results = []
+        for phase in qs[start:end]:
+            results.append({
+                'id': phase.pk,
+                'text': str(phase),
+            })
+
+        has_more = qs.count() > end
+
+        return JsonResponse({
+            'results': results,
+            'pagination': {'more': has_more}
+        })
 
 
 @job_permission_required_or_403("jobtracker.view_job_schedule", (Phase, "slug", "slug"))
