@@ -8,6 +8,8 @@ import logging
 from datetime import timedelta
 from django.utils import timezone
 from django.utils.timesince import timesince
+from django.contrib.auth.models import AnonymousUser
+
 
 logger = logging.getLogger(__name__)
 
@@ -119,7 +121,8 @@ class Notification(models.Model):
         from ..utils import get_entity_object
         try:
             if (
-                self.user.is_active  # User must be active
+                not isinstance(self.user, AnonymousUser) # Don't do the anon user!
+                and self.user.is_active  # User must be active
                 and config.EMAIL_ENABLED  # Emails must be enabled
                 and (
                     self.is_emailed == False or resend == True
@@ -143,14 +146,18 @@ class Notification(models.Model):
                 context["user"] = self.user
                 msg_html = render_to_string(self.email_template, context)
 
-                django.core.mail.send_mail(
-                    subject=context["title"],
-                    message=context["message"],
-                    from_email=None,
-                    recipient_list=[self.user.email_address()],
-                    html_message=msg_html,
-                    fail_silently=False,
-                )
+                # Finally; check if they have an email!
+                # If they don't; just pretend to send and continue to the "is_emailed" flag. 
+                # Prevents a spam event if/when they add an email
+                if self.user.email_address():
+                    django.core.mail.send_mail(
+                        subject=context["title"],
+                        message=context["message"],
+                        from_email=None,
+                        recipient_list=[self.user.email_address()],
+                        html_message=msg_html,
+                        fail_silently=False,
+                    )
 
             # Mark it as sent regardless - don't want to create a backlog
             self.is_emailed = True
