@@ -2384,6 +2384,7 @@ class ServiceForm(forms.ModelForm):
             "owners",
             "description",
             "link",
+            "is_core",
             "skillsRequired",
             "skillsDesired",
         ]
