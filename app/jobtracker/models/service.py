@@ -63,7 +63,8 @@ class Service(models.Model):
             skills__in=UserSkill.objects.filter(
                 Q(rating=UserSkillRatings.CAN_DO_WITH_SUPPORT),
                 skill__in=self.skillsRequired.all(),
-            )
+            ),
+            is_active=True,
         )
 
     def can_lead(self):
@@ -73,7 +74,8 @@ class Service(models.Model):
                 Q(rating=UserSkillRatings.SPECIALIST)
                 | Q(rating=UserSkillRatings.CAN_DO_ALONE), 
                 skill__in=self.skillsRequired.all(),
-            )
+            ),
+            is_active=True,
         )
 
     def get_absolute_url(self):
@@ -91,7 +93,8 @@ class Service(models.Model):
 
         return User.objects.filter(
             skills__skill__in=self.skillsRequired.all(),
-            skills__rating=UserSkillRatings.SPECIALIST
+            skills__rating=UserSkillRatings.SPECIALIST,
+            is_active=True,
         ).annotate(
             specialist_count=Count('skills', filter=Q(
                 skills__skill__in=self.skillsRequired.all(),
@@ -108,7 +111,8 @@ class Service(models.Model):
 
         return User.objects.filter(
             skills__skill__in=self.skillsRequired.all(),
-            skills__rating__in=[UserSkillRatings.SPECIALIST, UserSkillRatings.CAN_DO_ALONE]
+            skills__rating__in=[UserSkillRatings.SPECIALIST, UserSkillRatings.CAN_DO_ALONE],
+            is_active=True,
         ).annotate(
             independent_count=Count('skills', filter=Q(
                 skills__skill__in=self.skillsRequired.all(),
@@ -125,7 +129,8 @@ class Service(models.Model):
 
         # Users who have all required skills
         users_with_all_skills = User.objects.filter(
-            skills__skill__in=self.skillsRequired.all()
+            skills__skill__in=self.skillsRequired.all(),
+            is_active=True,
         ).annotate(
             total_skills_count=Count('skills', filter=Q(skills__skill__in=self.skillsRequired.all()))
         ).filter(total_skills_count=required_skills_count)
@@ -144,7 +149,8 @@ class Service(models.Model):
             return User.objects.none()
 
         return User.objects.filter(
-            skills__skill__in=self.skillsRequired.all()
+            skills__skill__in=self.skillsRequired.all(),
+            is_active=True,
         ).annotate(
             partial_skills_count=Count('skills', filter=Q(skills__skill__in=self.skillsRequired.all()))
         ).filter(partial_skills_count__lt=required_skills_count).distinct()
@@ -351,7 +357,8 @@ class Service(models.Model):
             return cached_result
 
         # Get all users in the system with skills
-        all_skilled_users = User.objects.filter(skills__isnull=False).distinct()
+        all_skilled_users = User.objects.filter(skills__isnull=False,
+            is_active=True,).distinct()
 
         # Analyze required skills coverage
         required_skills_analysis = {}
@@ -371,7 +378,8 @@ class Service(models.Model):
             # Find training candidates (users close to having this skill)
             related_skills = Skill.objects.filter(category=skill.category).exclude(id=skill.id)
             training_candidates = User.objects.filter(
-                skills__skill__in=related_skills
+                skills__skill__in=related_skills,
+            is_active=True,
             ).exclude(
                 skills__skill=skill  # Exclude users who already have this skill
             ).annotate(
