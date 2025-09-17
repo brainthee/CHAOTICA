@@ -19,3 +19,4 @@ from .wf_tasks import *
 from .autocomplete import *
 
 from .api import *
+from .autocomplete import *

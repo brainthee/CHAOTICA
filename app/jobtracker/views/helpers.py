@@ -18,22 +18,28 @@ logger = logging.getLogger(__name__)
 
 def _process_assign_user(request, obj, prop, multiple=False, users=None):
     data = dict()
+    help_text = ""
     if users is None:
         if prop == "techqa_by" and isinstance(obj, Phase):
             users = obj.job.unit.get_active_members_with_perm("can_tqa_jobs")
+            help_text = "Showing users with permission to do Tech QA"
         elif prop == "presqa_by" and isinstance(obj, Phase):
             users = obj.job.unit.get_active_members_with_perm("can_pqa_jobs")
+            help_text = "Showing users with permission to do Pres QA"
         elif prop == "scoped_by" and isinstance(obj, Job):
             users = obj.unit.get_active_members_with_perm("can_scope_jobs")
+            help_text = "Showing users with permission to Scope Jobs"
         elif prop == "scoped_signed_off_by" and isinstance(obj, Job):
             users = obj.unit.get_active_members_with_perm("can_signoff_scopes")
+            help_text = "Showing users with permission to Signoff Scopes"
         else:
             users = User.objects.filter(is_active=True)
+
     if request.method == "POST":
         if multiple:
-            form = AssignMultipleUser(request.POST, users=users)
+            form = AssignMultipleUser(request.POST, users=users, help_text=help_text)
         else:
-            form = AssignUser(request.POST, users=users)
+            form = AssignUser(request.POST, users=users, help_text=help_text)
 
         if form.is_valid():
             if multiple:
@@ -73,9 +79,9 @@ def _process_assign_user(request, obj, prop, multiple=False, users=None):
             data["form_is_valid"] = False
     else:
         if multiple:
-            form = AssignMultipleUser(users=users)
+            form = AssignMultipleUser(users=users, help_text=help_text)
         else:
-            form = AssignUser(users=users)
+            form = AssignUser(users=users, help_text=help_text)
 
     context = {
         "form": form,

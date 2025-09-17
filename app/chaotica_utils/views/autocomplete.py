@@ -15,6 +15,7 @@ from django.views.decorators.http import require_POST
 # Autocomplete fields
 ######################################
 
+SEARCH_REGEX = r'.*{}.*'
 
 class UserAutocomplete(AutoResponseView):
     def get(self, request, *args, **kwargs):
@@ -27,17 +28,16 @@ class UserAutocomplete(AutoResponseView):
         self.page_size = int(request.GET.get('page_size', 20))
         self.page = int(request.GET.get('page', 1))
 
-        # TODO: Do permission checks...
         qs = User.objects.all().annotate(
             full_name=Concat("first_name", Value(" "), "last_name")
-        )
+        ).order_by("full_name")
 
         if self.term:
             qs = qs.filter(
-                Q(email__icontains=self.term)
-                | Q(full_name__icontains=self.term)
-                | Q(first_name__icontains=self.term)
-                | Q(last_name__icontains=self.term),
+                Q(email__iregex=SEARCH_REGEX.format(self.term))
+                | Q(full_name__iregex=SEARCH_REGEX.format(self.term))
+                | Q(first_name__iregex=SEARCH_REGEX.format(self.term))
+                | Q(last_name__iregex=SEARCH_REGEX.format(self.term)),
                 is_active=True,
             )
 

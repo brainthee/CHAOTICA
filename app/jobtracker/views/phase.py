@@ -60,45 +60,6 @@ def view_phase_schedule_slots(request, job_slug, slug):
     return JsonResponse(data, safe=False)
 
 
-class PhaseAutocomplete(AutoResponseView):
-    def get(self, request, *args, **kwargs):
-        # Don't forget to filter out results depending on the visitor !
-        if not request.user.is_authenticated:
-            return JsonResponse({'results': [], 'pagination': {'more': False}})
-
-        # Get parameters
-        self.term = request.GET.get('term', '')
-        self.page_size = int(request.GET.get('page_size', 20))
-        self.page = int(request.GET.get('page', 1))
-
-        qs = Phase.objects.phases_with_unit_permission(
-            request.user, "jobtracker.can_view_jobs"
-        )
-        if self.term:
-            qs = qs.filter(
-                Q(title__icontains=self.term)
-                | Q(phase_id__icontains=self.term)
-                | Q(job__id__icontains=self.term)
-            )
-
-        # Pagination
-        start = (self.page - 1) * self.page_size
-        end = start + self.page_size
-
-        results = []
-        for phase in qs[start:end]:
-            results.append({
-                'id': phase.pk,
-                'text': str(phase),
-            })
-
-        has_more = qs.count() > end
-
-        return JsonResponse({
-            'results': results,
-            'pagination': {'more': has_more}
-        })
-
 
 @job_permission_required_or_403("jobtracker.view_job_schedule", (Phase, "slug", "slug"))
 def view_phase_schedule_members(request, job_slug, slug):

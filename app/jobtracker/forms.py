@@ -567,7 +567,6 @@ class AssignUserField(forms.Form):
                 'data-ajax--cache': 'true',
                 'data-ajax--type': 'GET',
             },
-            search_fields=['first_name__icontains', 'last_name__icontains', 'email__icontains'],
         ),
     )
 
@@ -590,18 +589,30 @@ class AssignUser(forms.Form):
     user = forms.ModelChoiceField(
         required=False,
         queryset=User.objects.filter(is_active=True).get_default_order(),
-        widget=s2forms.ModelSelect2Widget(attrs={'class': 'select2-widget'}),
+        widget=s2forms.ModelSelect2Widget(
+            attrs={
+                'class': 'select2-widget',
+                'data-minimum-input-length': 3,
+                'data-ajax--url': '/autocomplete/users',
+                'data-ajax--cache': 'true',
+                'data-ajax--type': 'GET',
+            },
+        ),
     )
 
     def __init__(self, *args, **kwargs):
         if "users" in kwargs:
             users = kwargs.pop("users")
+        if "help_text" in kwargs:
+            help_text = kwargs.pop("help_text")
         super(AssignUser, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
         if users:
             self.fields["user"].queryset = users
         self.fields["user"].help_text = None
         self.fields["user"].label = None
+        if help_text:
+            self.fields["user"].help_text = help_text
         self.helper.form_show_labels = False
         self.helper.layout = Layout(
             Div(
@@ -627,17 +638,31 @@ class AssignUser(forms.Form):
 class AssignMultipleUser(forms.Form):
     users = forms.ModelMultipleChoiceField(
         required=False,
-        queryset=User.objects.filter(is_active=True),
-        widget=s2forms.ModelSelect2MultipleWidget(attrs={'class': 'select2-widget'}),
+        queryset=User.objects.filter(is_active=True).get_default_order(),
+        widget=s2forms.ModelSelect2MultipleWidget(
+            attrs={
+                'class': 'select2-widget',
+                # 'data-minimum-input-length': 3,
+                # 'data-ajax--url': '/autocomplete/users',
+                # 'data-ajax--cache': 'true',
+                # 'data-ajax--type': 'GET',
+            },
+            search_fields=['first_name__icontains', 'last_name__icontains', 'email__icontains'],
+        ),
     )
 
     def __init__(self, *args, **kwargs):
         if "users" in kwargs:
             users = kwargs.pop("users")
+        if "help_text" in kwargs:
+            help_text = kwargs.pop("help_text")
+
         super(AssignMultipleUser, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
         if users:
             self.fields["users"].queryset = users
+        if help_text:
+            self.fields["users"].help_text = help_text
         self.helper.layout = Layout(
             Div(
                 Row(
@@ -804,6 +829,7 @@ class CommentTimeSlotModalForm(forms.ModelForm):
 class NonDeliveryTimeSlotModalForm(forms.ModelForm):
     users = forms.ModelMultipleChoiceField(
         queryset=User.objects.filter(),
+        required=False,
         widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
                 'class': 'select2-widget',
@@ -913,6 +939,7 @@ class NonDeliveryTimeSlotModalForm(forms.ModelForm):
         }
         fields = (
             "user",
+            "users",
             "phase",
             "slot_type",
             # 'deliveryRole',
@@ -1380,12 +1407,6 @@ class JobForm(forms.ModelForm):
         ),
     )
 
-    indicative_services = forms.ModelMultipleChoiceField(
-        required=False,
-        queryset=Service.objects.filter(),
-        widget=s2forms.ModelSelect2MultipleWidget(attrs={'class': 'select2-widget'}),
-    )
-
     dep_account_manager = forms.ModelChoiceField(
         required=False,
         queryset=User.objects.filter(is_active=True),
@@ -1402,8 +1423,39 @@ class JobForm(forms.ModelForm):
     )
 
     client = forms.ModelChoiceField(
-        queryset=Client.objects.filter(),
-        widget=s2forms.ModelSelect2Widget(attrs={'class': 'select2-widget'}),
+        queryset=Client.objects.all(),
+        widget=s2forms.ModelSelect2Widget(
+            attrs={
+                'class': 'select2-widget',
+                'data-minimum-input-length': 2,
+                'data-ajax--url': '/autocomplete/clients',
+                'data-ajax--cache': 'true',
+                'data-ajax--type': 'GET',
+            },
+        ),
+    )
+
+    indicative_services = forms.ModelMultipleChoiceField(
+        required=False,
+        queryset=Service.objects.all(),
+        widget=s2forms.ModelSelect2MultipleWidget(
+            attrs={
+                'class': 'select2-widget',
+                'data-minimum-input-length': 2,
+                'data-ajax--url': '/autocomplete/services',
+                'data-ajax--cache': 'true',
+                'data-ajax--type': 'GET',
+            },
+        ),
+    )
+
+    unit = forms.ModelChoiceField(
+        queryset=OrganisationalUnit.objects.all(),
+        widget=s2forms.Select2Widget(
+            attrs={
+                'class': 'select2-widget',
+            },
+        ),
     )
 
     overview = forms.CharField(
@@ -1446,7 +1498,6 @@ class JobForm(forms.ModelForm):
                 range_from="desired_start_date",
                 options={"format": "YYYY-MM-DD", "allowInputToggle": True},
             ),
-            "unit": s2forms.ModelSelect2Widget(),
         }
         exclude = ["created_by"]
 
@@ -1772,14 +1823,17 @@ class ScopeForm(forms.ModelForm):
 
 class MergeClientForm(forms.Form):
     client_to_merge = forms.ModelChoiceField(
-        queryset=Client.objects.filter(),
-        required=True,
-        widget=s2forms.ModelSelect2Widget(
+        queryset=Client.objects.all(),
+        widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
                 'class': 'select2-widget',
-                'data-minimum-input-length': 3,
+                'data-minimum-input-length': 2,
+                'data-ajax--url': '/autocomplete/clients',
+                'data-ajax--cache': 'true',
+                'data-ajax--type': 'GET',
             },
         ),
+        required=True,
     )
 
     def __init__(self, *args, **kwargs):
@@ -2089,7 +2143,15 @@ class OrganisationalUnitMemberForm(forms.ModelForm):
 class OrganisationalUnitMemberRolesForm(forms.ModelForm):
     roles = forms.ModelMultipleChoiceField(
         queryset=OrganisationalUnitRole.objects.all(),
-        widget=s2forms.ModelSelect2MultipleWidget(attrs={'class': 'select2-widget'}),
+        widget=s2forms.ModelSelect2MultipleWidget(
+            attrs={
+                'class': 'select2-widget',
+                'data-minimum-input-length': 2,
+                'data-ajax--url': '/autocomplete/org-unit-roles',
+                'data-ajax--cache': 'true',
+                'data-ajax--type': 'GET',
+            },
+        ),
     )
 
     def __init__(self, *args, **kwargs):
@@ -2317,11 +2379,14 @@ class AwardingBodyForm(forms.ModelForm):
 class BillingCodeForm(forms.ModelForm):
     client = forms.ModelChoiceField(
         required=False,
-        queryset=Client.objects.filter(),  # TODO: Update to only filter clients we have permission for...
-        widget=s2forms.ModelSelect2Widget(
+        queryset=Client.objects.all(),
+        widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
                 'class': 'select2-widget',
-                'data-minimum-input-length': 3,
+                'data-minimum-input-length': 2,
+                'data-ajax--url': '/autocomplete/clients',
+                'data-ajax--cache': 'true',
+                'data-ajax--type': 'GET',
             },
         ),
     )
@@ -2367,8 +2432,16 @@ class ProjectForm(forms.ModelForm):
     )
     unit = forms.ModelChoiceField(
         required=False,
-        queryset=OrganisationalUnit.objects.filter(),
-        widget=s2forms.ModelSelect2Widget(attrs={'class': 'select2-widget'}),
+        queryset=OrganisationalUnit.objects.all(),
+        widget=s2forms.ModelSelect2MultipleWidget(
+            attrs={
+                'class': 'select2-widget',
+                'data-minimum-input-length': 2,
+                'data-ajax--url': '/autocomplete/org-units',
+                'data-ajax--cache': 'true',
+                'data-ajax--type': 'GET',
+            },
+        ),
     )
 
     overview = forms.CharField(

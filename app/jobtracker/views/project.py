@@ -1,4 +1,3 @@
-from django.db.models import Q
 from guardian.mixins import PermissionRequiredMixin
 from django.views.generic.detail import DetailView
 from django.views.generic.list import ListView
@@ -8,47 +7,9 @@ from chaotica_utils.views import ChaoticaBaseView
 from ..models import Project
 from ..forms import ProjectForm
 import logging
-from django_select2.views import AutoResponseView
-from django.http import JsonResponse
 
 logger = logging.getLogger(__name__)
 
-
-class ProjectAutocomplete(AutoResponseView):
-    def get(self, request, *args, **kwargs):
-        # Don't forget to filter out results depending on the visitor !
-        if not request.user.is_authenticated:
-            return JsonResponse({'results': [], 'pagination': {'more': False}})
-
-        # Get parameters
-        self.term = request.GET.get('term', '')
-        self.page_size = int(request.GET.get('page_size', 20))
-        self.page = int(request.GET.get('page', 1))
-
-        qs = Project.objects.all().order_by('-id')
-        if self.term:
-            qs = qs.filter(
-                Q(title__icontains=self.term) |
-                Q(id__icontains=self.term) 
-            )
-
-        # Pagination
-        start = (self.page - 1) * self.page_size
-        end = start + self.page_size
-
-        results = []
-        for project in qs[start:end]:
-            results.append({
-                'id': project.pk,
-                'text': str(project),
-            })
-
-        has_more = qs.count() > end
-
-        return JsonResponse({
-            'results': results,
-            'pagination': {'more': has_more}
-        })
 
 class ProjectBaseView(PermissionRequiredMixin, ChaoticaBaseView):
     model = Project
