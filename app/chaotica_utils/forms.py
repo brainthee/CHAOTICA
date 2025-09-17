@@ -575,9 +575,6 @@ class LeaveRequestForm(forms.ModelForm):
         self.fields["type_of_leave"].label = False
         self.fields["type_of_leave"].choices = LeaveRequestTypes.FORM_CHOICES
         self.fields["notes"].label = False
-        # self.fields["start_date"].widget = DateTimePickerInput(range_from="end_date")
-        self.fields["start_date"].widget = DateTimePickerInput()
-        self.fields["end_date"].widget = DateTimePickerInput()
 
     def clean(self):
         cleaned_data = super().clean()
@@ -641,6 +638,12 @@ class LeaveRequestForm(forms.ModelForm):
             "type_of_leave",
             "notes",
         )
+        widgets = {
+            "start_date": DateTimePickerInput(options={"allowInputToggle": True}),
+            "end_date": DateTimePickerInput(
+                range_from="start_date", options={"allowInputToggle": True}
+            ),
+        }
 
 
 class InviteUserForm(forms.ModelForm):
