@@ -596,6 +596,7 @@ urlpatterns = [
     ),
     # Skill CRUD
     path("ops/skills/", views.SkillListView.as_view(), name="skill_list"),
+    path("ops/skills/matrix/", views.SkillMatrixView.as_view(), name="skill_matrix"),
     path("ops/skill/<str:slug>/", views.SkillDetailView.as_view(), name="skill_detail"),
     path(
         "ops/skill/<str:slug>/update/",
@@ -611,6 +612,11 @@ urlpatterns = [
         "ops/skill_category/create/",
         views.SkillCatCreateView.as_view(),
         name="skill_cat_create",
+    ),
+    path(
+        "ops/skill_category/<str:slug>/",
+        views.SkillCategoryDetailView.as_view(),
+        name="skillcategory_detail",
     ),
     path(
         "ops/skill_category/<str:catSlug>/create/",

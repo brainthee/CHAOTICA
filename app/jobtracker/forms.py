@@ -2725,6 +2725,35 @@ class WFTaskForm(forms.ModelForm):
 
 
 class SkillForm(forms.ModelForm):
+    prerequisites = forms.ModelMultipleChoiceField(
+        queryset=Skill.objects.all(),
+        required=False,
+        widget=s2forms.ModelSelect2MultipleWidget(
+            attrs={
+                'class': 'select2-widget',
+                'data-minimum-input-length': 2,
+                'data-ajax--url': '/autocomplete/skills',
+                'data-ajax--cache': 'true',
+                'data-ajax--type': 'GET',
+            },
+        ),
+        help_text="Skills that should be learned before this one"
+    )
+
+    related_skills = forms.ModelMultipleChoiceField(
+        queryset=Skill.objects.all(),
+        required=False,
+        widget=s2forms.ModelSelect2MultipleWidget(
+            attrs={
+                'class': 'select2-widget',
+                'data-minimum-input-length': 2,
+                'data-ajax--url': '/autocomplete/skills',
+                'data-ajax--cache': 'true',
+                'data-ajax--type': 'GET',
+            },
+        ),
+        help_text="Skills that are commonly used together"
+    )
 
     def __init__(self, *args, **kwargs):
         super(SkillForm, self).__init__(*args, **kwargs)
@@ -2732,9 +2761,14 @@ class SkillForm(forms.ModelForm):
         self.fields["name"].label = False
         self.fields["description"].label = False
 
+        # Exclude the current skill from prerequisites and related skills to avoid self-reference
+        if self.instance and self.instance.pk:
+            self.fields["prerequisites"].queryset = Skill.objects.exclude(pk=self.instance.pk)
+            self.fields["related_skills"].queryset = Skill.objects.exclude(pk=self.instance.pk)
+
     class Meta:
         model = Skill
-        fields = ["name", "description"]
+        fields = ["name", "description", "prerequisites", "related_skills"]
 
 
 class SkillCatForm(forms.ModelForm):

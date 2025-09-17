@@ -116,14 +116,20 @@
                            <p class="mb-0">Independent</p>
                         </th>
                         <th scope="col" class="col-2 text-center">
-                           <p class="mb-0 pe-2">Specialist</p>
+                           <p class="mb-0">Specialist</p>
+                        </th>
+                        <th scope="col" class="col-2 text-center">
+                           <p class="mb-0 pe-2">
+                              <i class="fa-solid fa-star me-1 text-warning"></i>
+                              Want to Improve
+                           </p>
                         </th>
                      </tr>
                   </thead>
                   <tbody>
                      {% for skill in category.list %}
                      {% get_user_skill usr skill as userSkill %}
-                     <tr>
+                     <tr class="skill-row {% if userSkill.interested_in_improving_skill %}wants-improvement{% endif %}" data-skill-slug="{{ skill.slug }}">
                         <td class="ps-1">
                            <div class="my-auto">
                               <span class="text-xs font-weight-normal">
@@ -162,10 +168,20 @@
                         </td>
                         <td>
                            <div class="form-check form-switch mb-0 d-flex align-items-center justify-content-center">
-                              <input class="form-check-input" 
+                              <input class="form-check-input"
                               {% if userSkill.rating == 3 %}checked{% else %}{% endif %}
                                  value="3"
                                  type="radio" name="{{ skill.slug }}" id="{{ skill.slug }}">
+                           </div>
+                        </td>
+                        <td>
+                           <div class="form-check form-switch mb-0 d-flex align-items-center justify-content-center">
+                              <input class="form-check-input improve-skill-checkbox"
+                                 {% if userSkill.interested_in_improving_skill %}checked{% endif %}
+                                 type="checkbox"
+                                 name="{{ skill.slug }}_improve"
+                                 id="{{ skill.slug }}_improve"
+                                 data-skill-slug="{{ skill.slug }}">
                            </div>
                         </td>
                      </tr>
@@ -240,6 +256,48 @@
 
    $("#skills .form-check-input").change(profileUpdateSkills);
 
+   // Handle improvement checkbox changes separately
+   $("#skills .improve-skill-checkbox").change(function() {
+      var skillSlug = $(this).data('skill-slug');
+      var isImproving = $(this).is(':checked');
+      var $row = $(this).closest('tr.skill-row');
+
+      // Update visual feedback immediately
+      if (isImproving) {
+         $row.addClass('wants-improvement');
+      } else {
+         $row.removeClass('wants-improvement');
+      }
+
+      $.ajax({
+         url: "{% url 'update_skills' usr.email %}",
+         data: {
+            'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val(),
+            'action': 'update_improvement',
+            'skill_slug': skillSlug,
+            'interested_in_improving': isImproving ? '1' : '0'
+         },
+         type: 'POST',
+         dataType: 'json',
+         success: function(data) {
+            // Brief visual confirmation
+            $row.addClass('skill-updated');
+            setTimeout(function() {
+               $row.removeClass('skill-updated');
+            }, 2000);
+         },
+         error: function() {
+            // Revert visual changes on error
+            if (isImproving) {
+               $row.removeClass('wants-improvement');
+            } else {
+               $row.addClass('wants-improvement');
+            }
+            $(this).prop('checked', !isImproving);
+         }
+      });
+   });
+
    $("#profileForm").dirty({preventLeaving: true});
 
    // Update basic profile info
@@ -276,4 +334,53 @@
 
     $(".js-save-profile").click(profileUpdateBasic);
 </script>
+
+<style>
+/* Improve skill checkbox styling */
+.improve-skill-checkbox:checked {
+    background-color: #ffc107 !important;
+    border-color: #ffc107 !important;
+}
+
+.improve-skill-checkbox:checked + label {
+    color: #ffc107;
+}
+
+/* Add visual indicator when skill is marked for improvement */
+tr.skill-row.wants-improvement {
+    background-color: rgba(255, 193, 7, 0.1);
+    border-left: 3px solid #ffc107;
+}
+
+/* Add hover effect to improvement checkboxes */
+.improve-skill-checkbox:hover {
+    box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
+}
+
+/* Visual feedback for skill rows */
+.skill-row {
+    transition: all 0.2s ease;
+}
+
+/* Skill update confirmation */
+.skill-row.skill-updated {
+    background-color: rgba(40, 167, 69, 0.1);
+    border-left: 3px solid #28a745;
+}
+
+/* Header styling for improve column */
+th:last-child {
+    background-color: rgba(255, 193, 7, 0.1);
+}
+
+/* Tooltip styling for improve column header */
+.fa-star.text-warning {
+    animation: sparkle 2s infinite;
+}
+
+@keyframes sparkle {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+</style>
 {% endblock extra_js %}

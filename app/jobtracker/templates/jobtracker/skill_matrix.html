@@ -1,0 +1,375 @@
+{% extends 'base.html' %}
+{% load menu %}
+{% load static %}
+{% load skill_tags %}
+
+{% block pageTitle %}
+  Skills Matrix
+{% endblock %}
+{% block head_title %}
+  Skills Matrix
+{% endblock %}
+
+{% block breadcrumbItem %}
+  <li class="breadcrumb-item text-sm">
+    <a class="opacity-50 text-body-emphasis" href="{% url 'skill_list' %}">Skills</a>
+  </li>
+  <li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">Skills Matrix</li>
+{% endblock %}
+
+{% block content %}
+  <div class="row mb-4 gx-6 gy-3 mt-2 align-items-center">
+    <div class="col">
+      <h2 class="mb-0">Skills Matrix</h2>
+      <p class="text-body-tertiary mb-0">
+        Overview of all team member skills and proficiency levels
+        {% if from_cache %}
+          <span class="badge bg-success-subtle text-success ms-2">
+            <i class="fa-solid fa-bolt me-1"></i>Cached
+          </span>
+        {% endif %}
+      </p>
+    </div>
+    <div class="col-auto d-flex gap-2">
+      <a class="btn btn-outline-secondary" href="{% url 'skill_list' %}">
+        <i class="fa-solid fa-grid-2 me-2"></i>
+        Category View
+      </a>
+      <button class="btn btn-phoenix-secondary" onclick="toggleCompactView()">
+        <i class="fa-solid fa-compress me-2"></i>
+        Compact View
+      </button>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="card mb-4">
+    <div class="card-body py-3">
+      <form method="get" class="row g-3 align-items-end">
+        <div class="col-md-3">
+          <label for="unit-filter" class="form-label fs-9 text-uppercase">Unit</label>
+          <select name="unit" id="unit-filter" class="form-select form-select-sm">
+            <option value="">All Units</option>
+            {% for unit in all_units %}
+              <option value="{{ unit.slug }}" {% if current_unit == unit.slug %}selected{% endif %}>
+                {{ unit.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label for="team-filter" class="form-label fs-9 text-uppercase">Team</label>
+          <select name="team" id="team-filter" class="form-select form-select-sm">
+            <option value="">All Teams</option>
+            {% for team in all_teams %}
+              <option value="{{ team.slug }}" {% if current_team == team.slug %}selected{% endif %}>
+                {{ team.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label for="category-filter" class="form-label fs-9 text-uppercase">Skill Category</label>
+          <select name="category" id="category-filter" class="form-select form-select-sm">
+            <option value="">All Categories</option>
+            {% for category in all_categories %}
+              <option value="{{ category.slug }}" {% if current_category == category.slug %}selected{% endif %}>
+                {{ category.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label for="role-filter" class="form-label fs-9 text-uppercase">Org Role</label>
+          <select name="role" id="role-filter" class="form-select form-select-sm">
+            <option value="">All Roles</option>
+            {% for role in all_org_roles %}
+              <option value="{{ role.slug }}" {% if current_role == role.slug %}selected{% endif %}>
+                {{ role.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2">
+          <div class="d-flex gap-2 align-items-end h-100">
+            <button type="submit" class="btn btn-phoenix-primary btn-sm">
+              <i class="fa-solid fa-filter me-1"></i>
+              Apply
+            </button>
+            {% if current_unit or current_team or current_category or current_role %}
+              <a href="{% url 'skill_matrix' %}" class="btn btn-outline-secondary btn-sm">
+                <i class="fa-solid fa-times me-1"></i>
+                Clear
+              </a>
+            {% endif %}
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Summary Statistics -->
+  {% if current_unit or current_team or current_category or current_role %}
+    <div class="alert alert-info">
+      <i class="fa-solid fa-info-circle me-2"></i>
+      Showing {{ matrix_data|length }} users
+      {% if current_unit %}in <strong>{{ current_unit }}</strong> unit{% endif %}
+      {% if current_team %}from <strong>{{ current_team }}</strong> team{% endif %}
+      {% if current_role %}with <strong>{{ current_role }}</strong> role{% endif %}
+      {% if current_category %}for <strong>{{ current_category }}</strong> skills{% endif %}
+    </div>
+  {% endif %}
+
+  <!-- Legend -->
+  <div class="card mb-4">
+    <div class="card-body py-2">
+      <div class="d-flex flex-wrap align-items-center gap-3">
+        <small class="fw-bold text-uppercase">Legend:</small>
+        <span class="d-flex align-items-center gap-1">
+          <i class="fa-regular fa-circle text-body-tertiary fa-lg"></i>
+          <span class="text-body-tertiary">No Experience</span>
+        </span>
+        <span class="d-flex align-items-center gap-1">
+          <i class="fa-solid fa-circle-half-stroke text-warning fa-lg"></i>
+          <span class="text-warning">Need Support</span>
+        </span>
+        <span class="d-flex align-items-center gap-1">
+          <i class="fa-solid fa-circle-check text-success fa-lg"></i>
+          <span class="text-success">Can Do Alone</span>
+        </span>
+        <span class="d-flex align-items-center gap-1">
+          <i class="fa-solid fa-certificate text-primary fa-lg"></i>
+          <span class="text-primary">Specialist</span>
+        </span>
+        <span class="d-flex align-items-center gap-1">
+          <i class="fa-solid fa-star text-info"></i>
+          <span class="text-info">Wants to Improve</span>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Matrix Table -->
+  <div class="card">
+    {% if matrix_data %}
+      <div class="card-body p-0">
+        <div class="table-responsive" style="max-height: 70vh; overflow: auto;">
+          <table class="table table-sm mb-0 skills-matrix-table">
+            <thead class="sticky-top bg-body-emphasis">
+              <tr>
+                <th class="text-start ps-3 py-3 border-end" style="min-width: 180px; position: sticky; left: 0; z-index: 10; background: inherit;">
+                  Team Member
+                </th>
+                {% for category in categories %}
+                  <th colspan="{{ category.skills.count }}" class="text-center py-2 border-end text-uppercase fs-9 fw-bold">
+                    {{ category.name }}
+                    <div class="fs-10 text-muted fw-normal">{{ category.skills.count }} skills</div>
+                  </th>
+                {% endfor %}
+              </tr>
+              <tr>
+                <th class="border-end" style="position: sticky; left: 0; z-index: 10; background: inherit;"></th>
+                {% for category in categories %}
+                  {% for skill in category.skills.all %}
+                    <th class="text-center py-2 skill-header" style="min-width: 50px; writing-mode: vertical-rl; text-orientation: mixed;">
+                      <div class="skill-name" title="{{ skill.name }} - {{ skill.description }}">
+                        {{ skill.name|truncatechars:15 }}
+                      </div>
+                    </th>
+                  {% endfor %}
+                {% endfor %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in matrix_data %}
+                <tr class="matrix-row">
+                  <td class="fw-semi-bold ps-3 py-2 border-end user-cell" style="position: sticky; left: 0; z-index: 5; background: inherit;">
+                    <div class="d-flex align-items-center">
+                      <div class="me-2">
+                        {% if row.user.profile_picture %}
+                          <img src="{{ row.user.profile_picture.url }}" alt="{{ row.user.get_full_name }}" class="rounded-circle" width="24" height="24">
+                        {% else %}
+                          <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 24px; height: 24px; font-size: 12px;">
+                            {{ row.user.first_name|first }}{{ row.user.last_name|first }}
+                          </div>
+                        {% endif %}
+                      </div>
+                      <span class="text-nowrap">{{ row.user.get_full_name }}</span>
+                    </div>
+                  </td>
+                  {% for category in categories %}
+                    {% for skill in category.skills.all %}
+                      {% with skill_data=row.skills|lookup:skill.id %}
+                        <td class="text-center py-1 skill-cell" data-skill="{{ skill.name }}" data-user="{{ row.user.get_full_name }}">
+                          {% if skill_data and skill_data.rating == 0 or not skill_data %}
+                            <span class="text-body-tertiary" title="No Experience">
+                              <i class="fa-regular fa-circle fa-lg"></i>
+                            </span>
+                          {% elif skill_data and skill_data.rating == 1 %}
+                            <span class="text-warning d-inline-block position-relative" title="Need Support{% if skill_data.interested %} - Wants to Improve{% endif %}">
+                              <i class="fa-solid fa-circle-half-stroke fa-lg"></i>
+                              {% if skill_data.interested %}<i class="fa-solid fa-star text-info skill-improve-star"></i>{% endif %}
+                            </span>
+                          {% elif skill_data and skill_data.rating == 2 %}
+                            <span class="text-success d-inline-block position-relative" title="Can Do Alone{% if skill_data.interested %} - Wants to Improve{% endif %}">
+                              <i class="fa-solid fa-circle-check fa-lg"></i>
+                              {% if skill_data.interested %}<i class="fa-solid fa-star text-info skill-improve-star"></i>{% endif %}
+                            </span>
+                          {% elif skill_data and skill_data.rating == 3 %}
+                            <span class="text-primary d-inline-block position-relative" title="Specialist{% if skill_data.interested %} - Wants to Improve{% endif %}">
+                              <i class="fa-solid fa-certificate fa-lg"></i>
+                              {% if skill_data.interested %}<i class="fa-solid fa-star text-info skill-improve-star"></i>{% endif %}
+                            </span>
+                          {% else %}
+                            <span class="text-body-tertiary" title="No Experience{% if skill_data.interested %} - Wants to Improve{% endif %}">
+                              <i class="fa-regular fa-circle fa-lg"></i>
+                              {% if skill_data.interested %}<i class="fa-solid fa-star text-info skill-improve-star"></i>{% endif %}
+                            </span>
+                          {% endif %}
+                        </td>
+                      {% endwith %}
+                    {% endfor %}
+                  {% endfor %}
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    {% else %}
+      <div class="card-body text-center py-5">
+        <div class="text-body-tertiary">
+          <i class="fa-solid fa-users-slash fa-3x mb-3"></i>
+          <h5>No Users Found</h5>
+          <p class="mb-3">No users match the current filter criteria.</p>
+          {% if current_unit or current_team or current_category %}
+            <a href="{% url 'skill_matrix' %}" class="btn btn-outline-primary">
+              <i class="fa-solid fa-times me-2"></i>Clear Filters
+            </a>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.skills-matrix-table {
+    font-size: 0.875rem;
+}
+
+.skill-header {
+    background-color: var(--bs-body-bg);
+    border-bottom: 2px solid var(--bs-border-color);
+}
+
+.skill-name {
+    font-size: 0.75rem;
+    line-height: 1.2;
+}
+
+/* Improvement star positioning */
+.skill-improve-star {
+    position: absolute;
+    top: -5px;
+    right: -8px;
+    font-size: 0.7rem;
+    z-index: 1;
+}
+
+/* Animation for improvement stars */
+@keyframes sparkle {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.2); opacity: 0.8; }
+}
+
+.skill-improve-star {
+    animation: sparkle 2s infinite;
+}
+
+.matrix-row:hover {
+    background-color: var(--bs-body-secondary);
+}
+
+.user-cell {
+    background-color: var(--bs-body-bg);
+}
+
+.matrix-row:hover .user-cell {
+    background-color: var(--bs-body-secondary);
+}
+
+.skill-cell:hover {
+    background-color: var(--bs-primary-bg-subtle);
+}
+
+.skill-cell i {
+    transition: transform 0.2s ease;
+}
+
+.skill-cell:hover i {
+    transform: scale(1.1);
+}
+
+.compact-view .skill-cell i.fa-lg {
+    font-size: 0.875rem !important;
+}
+
+.compact-view .skill-cell .fa-star {
+    font-size: 0.5rem !important;
+}
+
+.compact-view .skill-name {
+    font-size: 0.7rem;
+}
+
+.fs-10 {
+    font-size: 0.7rem !important;
+}
+
+/* Filter form styling */
+.form-select-sm {
+    font-size: 0.875rem;
+}
+
+.form-label.fs-9 {
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleCompactView() {
+    document.body.classList.toggle('compact-view');
+    const btn = event.target.closest('button');
+    const icon = btn.querySelector('i');
+
+    if (document.body.classList.contains('compact-view')) {
+        icon.className = 'fa-solid fa-expand me-2';
+        btn.innerHTML = '<i class="fa-solid fa-expand me-2"></i>Normal View';
+    } else {
+        icon.className = 'fa-solid fa-compress me-2';
+        btn.innerHTML = '<i class="fa-solid fa-compress me-2"></i>Compact View';
+    }
+}
+
+// Add tooltips to skill indicators
+document.addEventListener('DOMContentLoaded', function() {
+    const indicators = document.querySelectorAll('.skill-indicator');
+    indicators.forEach(indicator => {
+        indicator.addEventListener('mouseenter', function(e) {
+            const cell = e.target.closest('.skill-cell');
+            const skill = cell.dataset.skill;
+            const user = cell.dataset.user;
+            const title = e.target.title;
+
+            // You could add a custom tooltip here if needed
+        });
+    });
+});
+</script>
+{% endblock %}

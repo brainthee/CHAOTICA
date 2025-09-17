@@ -29,23 +29,44 @@
   <div class="row mb-4 gx-6 gy-3 mt-2 align-items-center">
     <div class="col">
       <h2 class="mb-0">Skills</h2>
+      <p class="text-body-tertiary mb-0">Manage team skills and competencies</p>
     </div>
-    <div class="col-3 d-flex justify-content-end">
-      <a class="btn btn-phoenix-primary px-5" href="{% url 'skill_cat_create' %}">
-        <i class="fa-solid fa-plus me-2"></i>
-        New Skill Category
+    <div class="col-auto d-flex gap-2">
+      <a class="btn btn-outline-secondary" href="{% url 'skill_matrix' %}">
+        <i class="fa-solid fa-table me-2"></i>
+        Skills Matrix
       </a>
+      <div class="dropdown">
+        <button class="btn btn-phoenix-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+          <i class="fa-solid fa-plus me-2"></i>
+          Add New
+        </button>
+        <ul class="dropdown-menu">
+          <li><a class="dropdown-item" href="{% url 'skill_cat_create' %}">New Skill Category</a></li>
+          {% if categories %}
+            <li><hr class="dropdown-divider"></li>
+            <li><h6 class="dropdown-header">Add Skill to Category</h6></li>
+            {% for category in categories %}
+              <li><a class="dropdown-item" href="{% url 'skill_create' category.slug %}">{{ category.name }}</a></li>
+            {% endfor %}
+          {% endif %}
+        </ul>
+      </div>
     </div>
   </div>
 
   <div class="row">
     {% for category in categories %}
       <div class="col-6 mb-3 g-2">
-        <div class="card">
+        <div class="card skill-category-card h-100">
           <div class="card-header py-3 px-0 pb-0">
             <div class="row px-3 justify-content-center align-items-center">
               <div class="col my-auto">
-                <h5>{{ category.name }}</h5>
+                <h5>
+                  <a href="{% url 'skillcategory_detail' category.slug %}" class="text-decoration-none">
+                    {{ category.name }}
+                  </a>
+                </h5>
                 <p class="text-body-tertiary lh-sm mb-1">{{ category.description }}</p>
               </div>
 

@@ -73,3 +73,10 @@ class JobtrackerConfig(AppConfig):
     def ready(self):
         populate_default_unit_roles()
         populate_timeslot_types()
+
+        # Import signal handlers
+        from . import signals  # noqa: F401
+        try:
+            from .signals import skill_cache  # noqa: F401
+        except ImportError:
+            pass  # Signals module doesn't exist yet

@@ -1,0 +1,241 @@
+{% extends 'base.html' %}
+{% load menu %}
+{% load static %}
+
+{% block pageTitle %}
+  {{ skillcategory.name }}
+{% endblock %}
+{% block head_title %}
+  {{ skillcategory.name }}
+{% endblock %}
+
+{% block breadcrumbItem %}
+  <li class="breadcrumb-item text-sm">
+    <a class="opacity-50 text-body-emphasis" href="{% url 'skill_list' %}">Skills</a>
+  </li>
+  <li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">{{ skillcategory.name }}</li>
+{% endblock %}
+
+{% block content %}
+  <!-- Category Navigation -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="d-flex flex-wrap gap-2 mb-3">
+        {% for category in all_categories %}
+          <a href="{% url 'skillcategory_detail' category.slug %}"
+             class="btn btn-sm {% if category == skillcategory %}btn-primary{% else %}btn-outline-primary{% endif %}">
+            {{ category.name }}
+            <span class="badge bg-body-secondary text-body ms-1">{{ category.skills.count }}</span>
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Category Header -->
+  <div class="row mb-4 gx-6 gy-3 align-items-center">
+    <div class="col">
+      <h2 class="mb-1">{{ skillcategory.name }}</h2>
+      {% if skillcategory.description %}
+        <p class="text-body-tertiary mb-0">{{ skillcategory.description }}</p>
+      {% endif %}
+    </div>
+    <div class="col-auto d-flex gap-2">
+      <a class="btn btn-outline-secondary" href="{% url 'skill_matrix' %}">
+        <i class="fa-solid fa-table me-2"></i>
+        Skills Matrix
+      </a>
+      <a class="btn btn-phoenix-primary" href="{% url 'skill_create' skillcategory.slug %}">
+        <i class="fa-solid fa-plus me-2"></i>
+        New Skill
+      </a>
+      {% if perms.jobtracker.change_skillcategory %}
+        <a class="btn btn-outline-secondary" href="{% url 'skill_cat_update' skillcategory.slug %}">
+          <i class="fa-solid fa-edit me-2"></i>
+          Edit Category
+        </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Category Statistics -->
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="card">
+        <div class="card-body text-center">
+          <h4 class="text-primary mb-1">{{ skillcategory.skills.count }}</h4>
+          <p class="text-body-tertiary mb-0">Skills</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card">
+        <div class="card-body text-center">
+          {% with breakdown=skillcategory.get_users_breakdown_perc %}
+            <h4 class="text-success mb-1">{{ breakdown.total_users }}</h4>
+            <p class="text-body-tertiary mb-0">Team Members</p>
+          {% endwith %}
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card">
+        <div class="card-body text-center">
+          {% with breakdown=skillcategory.get_users_breakdown_perc %}
+            <h4 class="text-primary mb-1">{{ breakdown.specialist }}</h4>
+            <p class="text-body-tertiary mb-0">Specialists</p>
+          {% endwith %}
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card">
+        <div class="card-body text-center">
+          {% with breakdown=skillcategory.get_users_breakdown_perc %}
+            <h4 class="text-warning mb-1">{{ breakdown.can_do_with_support }}</h4>
+            <p class="text-body-tertiary mb-0">Need Support</p>
+          {% endwith %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Skills in Category -->
+  <div class="card">
+    <div class="card-header">
+      <h5 class="mb-0">Skills in {{ skillcategory.name }}</h5>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead>
+            <tr>
+              <th class="ps-3">Skill</th>
+              <th class="text-center">Team Coverage</th>
+              <th class="text-center">Specialists</th>
+              <th class="text-center">Can Do Alone</th>
+              <th class="text-center">Need Support</th>
+              <th class="text-center">Services</th>
+              <th class="pe-3"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for skill in skills_with_users %}
+              {% with breakdown=skill.get_users_breakdown_perc %}
+                <tr>
+                  <td class="ps-3">
+                    <div>
+                      <a href="{{ skill.get_absolute_url }}" class="fw-semi-bold text-decoration-none">
+                        {{ skill.name }}
+                      </a>
+                      {% if skill.description %}
+                        <div class="text-body-tertiary fs-9">{{ skill.description|truncatechars:80 }}</div>
+                      {% endif %}
+
+                      <!-- Prerequisites and Related Skills -->
+                      {% if skill.prerequisites.exists or skill.related_skills.exists %}
+                        <div class="mt-2">
+                          {% if skill.prerequisites.exists %}
+                            <div class="mb-1">
+                              <span class="text-body-tertiary fs-9">Prerequisites:</span>
+                              {% for prereq in skill.prerequisites.all %}
+                                <a href="{{ prereq.get_absolute_url }}" class="badge badge-phoenix-warning me-1">{{ prereq.name }}</a>
+                              {% endfor %}
+                            </div>
+                          {% endif %}
+                          {% if skill.related_skills.exists %}
+                            <div>
+                              <span class="text-body-tertiary fs-9">Related:</span>
+                              {% for related in skill.related_skills.all %}
+                                <a href="{{ related.get_absolute_url }}" class="badge badge-phoenix-info me-1">{{ related.name }}</a>
+                              {% endfor %}
+                            </div>
+                          {% endif %}
+                        </div>
+                      {% endif %}
+                    </div>
+                  </td>
+                  <td class="text-center">
+                    <div class="progress" style="height: 8px;">
+                      <div class="progress-bar bg-warning" style="width: {{ breakdown.can_do_with_support_perc }}%"></div>
+                      <div class="progress-bar bg-success" style="width: {{ breakdown.can_do_alone_perc }}%"></div>
+                      <div class="progress-bar bg-primary" style="width: {{ breakdown.specialist_perc }}%"></div>
+                    </div>
+                    <small class="text-body-tertiary">{{ breakdown.total_users }} members</small>
+                  </td>
+                  <td class="text-center">
+                    <span class="badge bg-primary-subtle text-primary">{{ breakdown.specialist }}</span>
+                  </td>
+                  <td class="text-center">
+                    <span class="badge bg-success-subtle text-success">{{ breakdown.can_do_alone }}</span>
+                  </td>
+                  <td class="text-center">
+                    <span class="badge bg-warning-subtle text-warning">{{ breakdown.can_do_with_support }}</span>
+                  </td>
+                  <td class="text-center">
+                    {% with required_count=skill.services_skill_required.count desired_count=skill.services_skill_desired.count %}
+                      {% if required_count > 0 or desired_count > 0 %}
+                        <span class="text-body-tertiary fs-9">
+                          {% if required_count > 0 %}{{ required_count }} req{% endif %}
+                          {% if required_count > 0 and desired_count > 0 %}, {% endif %}
+                          {% if desired_count > 0 %}{{ desired_count }} desired{% endif %}
+                        </span>
+                      {% else %}
+                        <span class="text-body-tertiary">-</span>
+                      {% endif %}
+                    {% endwith %}
+                  </td>
+                  <td class="pe-3">
+                    <div class="dropdown">
+                      <button class="btn btn-sm btn-phoenix-secondary" type="button" data-bs-toggle="dropdown">
+                        <i class="fa-solid fa-ellipsis-v"></i>
+                      </button>
+                      <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="{{ skill.get_absolute_url }}">View Details</a></li>
+                        {% if perms.jobtracker.change_skill %}
+                          <li><a class="dropdown-item" href="{% url 'skill_update' skill.slug %}">Edit</a></li>
+                        {% endif %}
+                        {% if perms.jobtracker.delete_skill %}
+                          <li><hr class="dropdown-divider"></li>
+                          <li><a class="dropdown-item text-danger" href="{% url 'skill_delete' skill.slug %}">Delete</a></li>
+                        {% endif %}
+                      </ul>
+                    </div>
+                  </td>
+                </tr>
+              {% endwith %}
+            {% empty %}
+              <tr>
+                <td colspan="7" class="text-center py-4">
+                  <div class="text-body-tertiary">
+                    <i class="fa-solid fa-inbox fa-2x mb-2"></i>
+                    <p>No skills in this category yet.</p>
+                    <a href="{% url 'skill_create' skillcategory.slug %}" class="btn btn-phoenix-primary">
+                      <i class="fa-solid fa-plus me-2"></i>Add First Skill
+                    </a>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.progress {
+    border-radius: 4px;
+}
+
+.badge {
+    font-size: 0.75rem;
+}
+
+.fs-9 {
+    font-size: 0.8rem;
+}
+</style>
+{% endblock %}

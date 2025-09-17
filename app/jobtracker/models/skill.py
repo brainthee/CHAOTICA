@@ -114,6 +114,21 @@ class Skill(models.Model):
     )
     slug = models.SlugField(null=False, default="", unique=True)
 
+    # Skill hierarchy support
+    prerequisites = models.ManyToManyField(
+        'self',
+        blank=True,
+        symmetrical=False,
+        related_name='dependent_skills',
+        help_text="Skills that should be learned before this one"
+    )
+    related_skills = models.ManyToManyField(
+        'self',
+        blank=True,
+        symmetrical=True,
+        help_text="Skills that are commonly used together"
+    )
+
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = unique_slug_generator(
@@ -215,6 +230,34 @@ class Skill(models.Model):
             self.slug = unique_slug_generator(self, self.name)
             self.save()
         return reverse("skill_detail", kwargs={"slug": self.slug})
+
+    def get_learning_path(self):
+        """Get skills that should be learned before this one (recursive)"""
+        path = []
+        visited = set()
+
+        def _get_prerequisites(skill):
+            if skill.id in visited:
+                return
+            visited.add(skill.id)
+
+            for prereq in skill.prerequisites.all():
+                _get_prerequisites(prereq)
+                if prereq not in path:
+                    path.append(prereq)
+
+        _get_prerequisites(self)
+        return path
+
+    def can_learn_now(self, user):
+        """Check if user meets prerequisites to learn this skill"""
+        user_skills = set(user.skills.values_list('skill_id', flat=True))
+        required_skills = set(self.prerequisites.values_list('id', flat=True))
+        return required_skills.issubset(user_skills)
+
+    def get_next_skills(self):
+        """Get skills that can be learned after mastering this one"""
+        return self.dependent_skills.all()
 
 
 class UserSkill(models.Model):

@@ -83,7 +83,13 @@
                     </td>
                     <td class="py-2 d-none d-sm-block pe-sm-2">:</td>
                     <td class="py-2">
-                      <p class="ps-6 ps-sm-0 fw-semi-bold mb-0"></p>
+                      <div class="ps-6 ps-sm-0 fw-semi-bold mb-0">
+                        {% for service in skill.services_skill_required.all %}
+                          <a href="{% url 'service_detail' service.slug %}" class="badge badge-phoenix-info me-1 mb-1">{{ service.name }}</a>
+                        {% empty %}
+                          <span class="text-muted">None</span>
+                        {% endfor %}
+                      </div>
                     </td>
                   </tr>
                   <tr>
@@ -95,7 +101,49 @@
                     </td>
                     <td class="py-2 d-none d-sm-block pe-sm-2">:</td>
                     <td class="py-2">
-                      <p class="ps-6 ps-sm-0 fw-semi-bold mb-0"></p>
+                      <div class="ps-6 ps-sm-0 fw-semi-bold mb-0">
+                        {% for service in skill.services_skill_desired.all %}
+                          <a href="{% url 'service_detail' service.slug %}" class="badge badge-phoenix-secondary me-1 mb-1">{{ service.name }}</a>
+                        {% empty %}
+                          <span class="text-muted">None</span>
+                        {% endfor %}
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="py-2">
+                      <div class="d-flex align-items-center">
+                        <div class="d-flex bg-info rounded-circle flex-center me-3" style="width:24px; height:24px"></div>
+                        <p class="fw-bold mb-0">Prerequisites</p>
+                      </div>
+                    </td>
+                    <td class="py-2 d-none d-sm-block pe-sm-2">:</td>
+                    <td class="py-2">
+                      <div class="ps-6 ps-sm-0 fw-semi-bold mb-0">
+                        {% for prereq in skill.prerequisites.all %}
+                          <a href="{{ prereq.get_absolute_url }}" class="badge badge-phoenix-warning me-1 mb-1">{{ prereq.name }}</a>
+                        {% empty %}
+                          <span class="text-muted">None</span>
+                        {% endfor %}
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="py-2">
+                      <div class="d-flex align-items-center">
+                        <div class="d-flex bg-info rounded-circle flex-center me-3" style="width:24px; height:24px"></div>
+                        <p class="fw-bold mb-0">Related Skills</p>
+                      </div>
+                    </td>
+                    <td class="py-2 d-none d-sm-block pe-sm-2">:</td>
+                    <td class="py-2">
+                      <div class="ps-6 ps-sm-0 fw-semi-bold mb-0">
+                        {% for related in skill.related_skills.all %}
+                          <a href="{{ related.get_absolute_url }}" class="badge badge-phoenix-primary me-1 mb-1">{{ related.name }}</a>
+                        {% empty %}
+                          <span class="text-muted">None</span>
+                        {% endfor %}
+                      </div>
                     </td>
                   </tr>
                 </tbody>
