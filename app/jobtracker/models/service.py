@@ -340,6 +340,257 @@ class Service(models.Model):
         cache.set(cache_key, result, 600)
         return result
 
+    def get_skills_coverage_analysis(self):
+        """Comprehensive skills coverage analysis - optimized and cached"""
+        from django.core.cache import cache
+        from django.db.models import Count, Q, Case, When, IntegerField
+
+        cache_key = f"skills_coverage_{self.id}_{self.skillsRequired.count()}_{self.skillsDesired.count()}"
+        cached_result = cache.get(cache_key)
+        if cached_result:
+            return cached_result
+
+        # Get all users in the system with skills
+        all_skilled_users = User.objects.filter(skills__isnull=False).distinct()
+
+        # Analyze required skills coverage
+        required_skills_analysis = {}
+        for skill in self.skillsRequired.all():
+            skill_users = UserSkill.objects.filter(skill=skill).select_related('user')
+
+            # Count by competency level
+            competency_breakdown = skill_users.aggregate(
+                specialists=Count('id', filter=Q(rating=UserSkillRatings.SPECIALIST)),
+                independent=Count('id', filter=Q(rating=UserSkillRatings.CAN_DO_ALONE)),
+                support_needed=Count('id', filter=Q(rating=UserSkillRatings.CAN_DO_WITH_SUPPORT))
+            )
+
+            total_with_skill = sum(competency_breakdown.values())
+            coverage_percentage = round((total_with_skill / all_skilled_users.count() * 100), 1) if all_skilled_users.count() > 0 else 0
+
+            # Find training candidates (users close to having this skill)
+            related_skills = Skill.objects.filter(category=skill.category).exclude(id=skill.id)
+            training_candidates = User.objects.filter(
+                skills__skill__in=related_skills
+            ).exclude(
+                skills__skill=skill  # Exclude users who already have this skill
+            ).annotate(
+                related_skills_count=Count('skills', filter=Q(skills__skill__in=related_skills))
+            ).filter(related_skills_count__gte=1).distinct()[:5]  # Top 5 candidates
+
+            required_skills_analysis[skill] = {
+                'total_users': total_with_skill,
+                'specialists': competency_breakdown['specialists'],
+                'independent': competency_breakdown['independent'],
+                'support_needed': competency_breakdown['support_needed'],
+                'coverage_percentage': coverage_percentage,
+                'training_candidates': training_candidates,
+                'skill_gap': max(0, 3 - competency_breakdown['specialists']),  # Ideal: 3+ specialists
+                'critical': competency_breakdown['specialists'] < 2,  # Critical if < 2 specialists
+            }
+
+        # Analyze desired skills coverage
+        desired_skills_analysis = {}
+        for skill in self.skillsDesired.all():
+            skill_users = UserSkill.objects.filter(skill=skill).select_related('user')
+
+            competency_breakdown = skill_users.aggregate(
+                specialists=Count('id', filter=Q(rating=UserSkillRatings.SPECIALIST)),
+                independent=Count('id', filter=Q(rating=UserSkillRatings.CAN_DO_ALONE)),
+                support_needed=Count('id', filter=Q(rating=UserSkillRatings.CAN_DO_WITH_SUPPORT))
+            )
+
+            total_with_skill = sum(competency_breakdown.values())
+            coverage_percentage = round((total_with_skill / all_skilled_users.count() * 100), 1) if all_skilled_users.count() > 0 else 0
+
+            desired_skills_analysis[skill] = {
+                'total_users': total_with_skill,
+                'specialists': competency_breakdown['specialists'],
+                'independent': competency_breakdown['independent'],
+                'support_needed': competency_breakdown['support_needed'],
+                'coverage_percentage': coverage_percentage,
+                'opportunity_score': round((100 - coverage_percentage), 1),  # Higher = more opportunity
+            }
+
+        # Overall service coverage metrics
+        required_skills_count = self.skillsRequired.count()
+        critical_skills = sum(1 for analysis in required_skills_analysis.values() if analysis['critical'])
+        avg_required_coverage = round(sum(analysis['coverage_percentage'] for analysis in required_skills_analysis.values()) / required_skills_count, 1) if required_skills_count > 0 else 0
+
+        desired_skills_count = self.skillsDesired.count()
+        avg_desired_coverage = round(sum(analysis['coverage_percentage'] for analysis in desired_skills_analysis.values()) / desired_skills_count, 1) if desired_skills_count > 0 else 0
+
+        result = {
+            'required_skills_analysis': required_skills_analysis,
+            'desired_skills_analysis': desired_skills_analysis,
+            'summary': {
+                'total_skilled_users': all_skilled_users.count(),
+                'required_skills_count': required_skills_count,
+                'desired_skills_count': desired_skills_count,
+                'critical_skills_count': critical_skills,
+                'avg_required_coverage': avg_required_coverage,
+                'avg_desired_coverage': avg_desired_coverage,
+                'coverage_health': 'Good' if critical_skills == 0 and avg_required_coverage >= 60 else 'Needs Attention' if critical_skills <= 1 else 'Critical'
+            }
+        }
+
+        # Cache for 15 minutes
+        cache.set(cache_key, result, 900)
+        return result
+
+    def get_performance_metrics(self):
+        """Comprehensive performance metrics and trends - optimized and cached"""
+        from django.core.cache import cache
+        from django.db.models import Count, Sum, Avg, Q, F, Case, When, IntegerField, DecimalField
+        from django.utils import timezone
+        from datetime import datetime, timedelta
+        import calendar
+
+        cache_key = f"performance_metrics_{self.id}_{self.phases.count()}"
+        cached_result = cache.get(cache_key)
+        if cached_result:
+            return cached_result
+
+        now = timezone.now()
+        current_year = now.year
+        last_year = current_year - 1
+
+        # Base queryset for completed phases
+        completed_phases = self.phases.filter(
+            status__in=PhaseStatuses.COMPLETE_STATUSES
+        ).select_related('job', 'job__client')
+
+        # Quality and delivery metrics
+        quality_metrics = completed_phases.aggregate(
+            total_completed=Count('id'),
+
+            # Delivery performance
+            on_time_deliveries=Count('id', filter=Q(actual_delivery_date__lte=F('desired_delivery_date'))),
+            early_deliveries=Count('id', filter=Q(actual_delivery_date__lt=F('desired_delivery_date'))),
+            late_deliveries=Count('id', filter=Q(actual_delivery_date__gt=F('desired_delivery_date'))),
+
+            # Hours analysis
+            total_delivery_hours=Sum('delivery_hours'),
+            avg_delivery_hours=Avg('delivery_hours'),
+            total_qa_hours=Sum('qa_hours'),
+            avg_qa_hours=Avg('qa_hours'),
+
+            # Remove efficiency calculation since estimated_hours field doesn't exist
+        )
+
+        # Monthly trend analysis for current year
+        monthly_trends = []
+        for month in range(1, 13):
+            month_data = completed_phases.filter(
+                actual_delivery_date__year=current_year,
+                actual_delivery_date__month=month
+            ).aggregate(
+                phases_delivered=Count('id'),
+                on_time_count=Count('id', filter=Q(actual_delivery_date__lte=F('desired_delivery_date'))),
+                total_hours=Sum('delivery_hours'),
+                avg_hours=Avg('delivery_hours'),
+            )
+
+            on_time_rate = 0
+            if month_data['phases_delivered'] > 0:
+                on_time_rate = round((month_data['on_time_count'] / month_data['phases_delivered'] * 100), 1)
+
+            monthly_trends.append({
+                'month': calendar.month_name[month],
+                'month_num': month,
+                'phases_delivered': month_data['phases_delivered'] or 0,
+                'on_time_rate': on_time_rate,
+                'total_hours': month_data['total_hours'] or 0,
+                'avg_hours': round(month_data['avg_hours'] or 0, 1),
+            })
+
+        # Year-over-year comparison
+        current_year_stats = completed_phases.filter(
+            actual_delivery_date__year=current_year
+        ).aggregate(
+            phases=Count('id'),
+            on_time=Count('id', filter=Q(actual_delivery_date__lte=F('desired_delivery_date'))),
+            total_hours=Sum('delivery_hours'),
+        )
+
+        last_year_stats = completed_phases.filter(
+            actual_delivery_date__year=last_year
+        ).aggregate(
+            phases=Count('id'),
+            on_time=Count('id', filter=Q(actual_delivery_date__lte=F('desired_delivery_date'))),
+            total_hours=Sum('delivery_hours'),
+        )
+
+        # Calculate year-over-year changes
+        phases_change = 0
+        on_time_change = 0
+        hours_change = 0
+
+        if last_year_stats['phases'] and last_year_stats['phases'] > 0:
+            phases_change = round(((current_year_stats['phases'] - last_year_stats['phases']) / last_year_stats['phases'] * 100), 1)
+            hours_change = round(((current_year_stats['total_hours'] or 0) - (last_year_stats['total_hours'] or 0)) / (last_year_stats['total_hours'] or 1) * 100, 1)
+
+        if last_year_stats['on_time'] and last_year_stats['on_time'] > 0 and last_year_stats['phases'] > 0:
+            last_year_rate = last_year_stats['on_time'] / last_year_stats['phases'] * 100
+            current_year_rate = (current_year_stats['on_time'] / current_year_stats['phases'] * 100) if current_year_stats['phases'] > 0 else 0
+            on_time_change = round(current_year_rate - last_year_rate, 1)
+
+        # Client satisfaction and retest analysis
+        client_metrics = {}
+        for client_data in completed_phases.values('job__client__name', 'job__client__id').annotate(
+            phase_count=Count('id'),
+            on_time_count=Count('id', filter=Q(actual_delivery_date__lte=F('desired_delivery_date'))),
+            avg_hours=Avg('delivery_hours'),
+            total_hours=Sum('delivery_hours'),
+        ).order_by('-phase_count')[:10]:
+
+            client_name = client_data['job__client__name']
+            on_time_rate = round((client_data['on_time_count'] / client_data['phase_count'] * 100), 1) if client_data['phase_count'] > 0 else 0
+
+            client_metrics[client_name] = {
+                'phases': client_data['phase_count'],
+                'on_time_rate': on_time_rate,
+                'avg_hours': round(client_data['avg_hours'] or 0, 1),
+                'total_hours': client_data['total_hours'] or 0,
+            }
+
+        # Performance benchmarks and scoring
+        total_completed = quality_metrics['total_completed'] or 0
+        on_time_rate = round((quality_metrics['on_time_deliveries'] / total_completed * 100), 1) if total_completed > 0 else 0
+        early_rate = round((quality_metrics['early_deliveries'] / total_completed * 100), 1) if total_completed > 0 else 0
+        late_rate = round((quality_metrics['late_deliveries'] / total_completed * 100), 1) if total_completed > 0 else 0
+
+        # Overall performance score (weighted average) - without efficiency since we don't have estimates
+        performance_score = round((on_time_rate * 0.6 + early_rate * 0.4), 1)
+
+        result = {
+            'quality_metrics': {
+                'total_completed': total_completed,
+                'on_time_rate': on_time_rate,
+                'early_rate': early_rate,
+                'late_rate': late_rate,
+                'performance_score': performance_score,
+                'avg_delivery_hours': round(quality_metrics['avg_delivery_hours'] or 0, 1),
+                'total_delivery_hours': quality_metrics['total_delivery_hours'] or 0,
+            },
+            'monthly_trends': monthly_trends,
+            'year_comparison': {
+                'current_year': current_year,
+                'last_year': last_year,
+                'phases_change': phases_change,
+                'on_time_change': on_time_change,
+                'hours_change': hours_change,
+                'current_year_stats': current_year_stats,
+                'last_year_stats': last_year_stats,
+            },
+            'client_metrics': client_metrics,
+            'performance_grade': 'Excellent' if performance_score >= 90 else 'Good' if performance_score >= 75 else 'Fair' if performance_score >= 60 else 'Needs Improvement'
+        }
+
+        # Cache for 20 minutes
+        cache.set(cache_key, result, 1200)
+        return result
+
     def clear_cache(self):
         """Clear all cached data for this service"""
         from django.core.cache import cache
@@ -347,6 +598,10 @@ class Service(models.Model):
         cache.delete(f"service_readiness_{self.id}_{self.skillsRequired.count()}_{self.skillsDesired.count()}")
         # Clear analytics cache
         cache.delete(f"service_analytics_{self.id}_{self.phases.count()}")
+        # Clear skills coverage cache
+        cache.delete(f"skills_coverage_{self.id}_{self.skillsRequired.count()}_{self.skillsDesired.count()}")
+        # Clear performance metrics cache
+        cache.delete(f"performance_metrics_{self.id}_{self.phases.count()}")
 
     def save(self, *args, **kwargs):
         if not self.slug:
