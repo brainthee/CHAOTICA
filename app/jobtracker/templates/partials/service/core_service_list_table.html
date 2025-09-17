@@ -81,7 +81,7 @@
       <td class="align-middle ps-0">
         <div class="d-flex flex-wrap gap-1">
           {% for skill in service.skillsRequired.all|slice:":3" %}
-            <span class="badge bg-secondary-subtle text-secondary">{{ skill.name }}</span>
+            <span class="badge bg-secondary">{{ skill.name }}</span>
           {% endfor %}
           {% if service.skillsRequired.count > 3 %}
             <span class="badge bg-light text-muted">+{{ service.skillsRequired.count|add:"-3" }}</span>

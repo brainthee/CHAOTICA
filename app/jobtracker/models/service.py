@@ -201,7 +201,8 @@ class Service(models.Model):
                 # Single query to get all skill data
                 skill_data = UserSkill.objects.filter(
                     user_id__in=capable_user_ids,
-                    skill__in=desired_skills
+                    skill__in=desired_skills,
+                    user__is_active=True,
                 ).select_related('skill').values(
                     'skill__id', 'skill__name', 'rating'
                 ).annotate(count=Count('id'))
@@ -243,15 +244,18 @@ class Service(models.Model):
             team_data[skill] = {
                 'specialists': UserSkill.objects.filter(
                     skill=skill,
-                    rating=UserSkillRatings.SPECIALIST
+                    rating=UserSkillRatings.SPECIALIST,
+                    user__is_active=True,
                 ).select_related('user'),
                 'independent': UserSkill.objects.filter(
                     skill=skill,
-                    rating=UserSkillRatings.CAN_DO_ALONE
+                    rating=UserSkillRatings.CAN_DO_ALONE,
+                    user__is_active=True,
                 ).select_related('user'),
                 'support_needed': UserSkill.objects.filter(
                     skill=skill,
-                    rating=UserSkillRatings.CAN_DO_WITH_SUPPORT
+                    rating=UserSkillRatings.CAN_DO_WITH_SUPPORT,
+                    user__is_active=True,
                 ).select_related('user'),
             }
         return team_data
@@ -363,7 +367,8 @@ class Service(models.Model):
         # Analyze required skills coverage
         required_skills_analysis = {}
         for skill in self.skillsRequired.all():
-            skill_users = UserSkill.objects.filter(skill=skill).select_related('user')
+            skill_users = UserSkill.objects.filter(skill=skill,
+                    user__is_active=True,).select_related('user')
 
             # Count by competency level
             competency_breakdown = skill_users.aggregate(
@@ -400,7 +405,8 @@ class Service(models.Model):
         # Analyze desired skills coverage
         desired_skills_analysis = {}
         for skill in self.skillsDesired.all():
-            skill_users = UserSkill.objects.filter(skill=skill).select_related('user')
+            skill_users = UserSkill.objects.filter(skill=skill,
+                    user__is_active=True,).select_related('user')
 
             competency_breakdown = skill_users.aggregate(
                 specialists=Count('id', filter=Q(rating=UserSkillRatings.SPECIALIST)),

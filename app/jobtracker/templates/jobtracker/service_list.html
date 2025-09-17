@@ -73,7 +73,7 @@
   <div class="mx-n4 px-3 py-3 mx-lg-n6 px-lg-6 bg-body-emphasis border-top border-bottom border-200 position-relative top-1">
     {% include 'partials/service/core_service_list_table.html' with services=core_services %}
   </div>
-</div>
+</div>  
 {% endif %}
 
 <!-- Other Services Section -->
@@ -83,7 +83,7 @@
     <h5 class="mb-0">Other Services</h5>
     <span class="badge bg-secondary ms-2">{{ other_services|length }} services</span>
   </div>
-  <div class="mx-n4 px-3 py-3 mx-lg-n6 px-lg-6 bg-light border-top border-bottom border-200 position-relative top-1">
+  <div class="mx-n4 px-3 py-3 mx-lg-n6 px-lg-6 bg-body-light border-top border-bottom border-200 position-relative top-1">
     {% include 'partials/service/service_list_table.html' with services=other_services %}
   </div>
 </div>
