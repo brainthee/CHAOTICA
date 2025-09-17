@@ -146,11 +146,14 @@
       <div class="row mx-1">
         <ul class="nav nav-underline scrollbar flex-nowrap w-100 pb-1 mb-3" id="sectionNav" role="tablist" style="overflow-y: hidden;">
           <li class="nav-item text-nowrap me-2" role="presentation">
-            <a class="nav-link active" id="team-tab" data-bs-toggle="tab" href="#team" role="tab" aria-controls="tab-team" aria-selected="true"><span class="fa-solid fa-video me-2 tab-icon-color"></span>Team</a>
+            <a class="nav-link active" id="team-tab" data-bs-toggle="tab" href="#team" role="tab" aria-controls="tab-team" aria-selected="true"><span class="fa-solid fa-users me-2 tab-icon-color"></span>Team</a>
           </li>
           <li class="nav-item text-nowrap me-2" role="presentation">
-            <a class="nav-link" id="services-tab" data-bs-toggle="tab" href="#services" role="tab" aria-controls="tab-services" aria-selected="false" tabindex="-1"><span class="fa-solid fa-clipboard me-2 tab-icon-color"></span>Services</a>
+            <a class="nav-link" id="skills-coverage-tab" data-bs-toggle="tab" href="#skills-coverage" role="tab" aria-controls="tab-skills-coverage" aria-selected="false" tabindex="-1"><span class="fa-solid fa-chart-bar me-2 tab-icon-color"></span>Skills Coverage</a>
           </li>
+          {% comment %} <li class="nav-item text-nowrap me-2" role="presentation">
+            <a class="nav-link" id="performance-tab" data-bs-toggle="tab" href="#performance" role="tab" aria-controls="tab-performance" aria-selected="false" tabindex="-1"><span class="fa-solid fa-chart-line me-2 tab-icon-color"></span>Performance</a>
+          </li> {% endcomment %}
           <li class="nav-item text-nowrap me-2" role="presentation">
             <a class="nav-link" id="engagements-tab" data-bs-toggle="tab" href="#engagements" role="tab" aria-controls="tab-engagements" aria-selected="false" tabindex="-1"><span class="fa-solid fa-clipboard me-2 tab-icon-color"></span>Jobs</a>
           </li>
@@ -432,7 +435,391 @@
             </div>
           </div>
 
-          <div class="tab-pane fade" id="services" role="tabpanel" aria-labelledby="services-tab"></div>
+          <div class="tab-pane fade" id="skills-coverage" role="tabpanel" aria-labelledby="skills-coverage-tab">
+            <!-- Skills Coverage Analysis -->
+            {% with coverage=service.get_skills_coverage_analysis %}
+            <div class="row mb-4">
+              <div class="col-12">
+                <h5 class="mb-3">Skills Coverage Analysis</h5>
+
+                <!-- Coverage Summary -->
+                <div class="row g-3 mb-4">
+                  <div class="col-md-3">
+                    <div class="card text-center {% if coverage.summary.coverage_health == 'Critical' %}border-danger{% elif coverage.summary.coverage_health == 'Needs Attention' %}border-warning{% else %}border-success{% endif %}">
+                      <div class="card-body py-3">
+                        <h4 class="mb-1 {% if coverage.summary.coverage_health == 'Critical' %}text-danger{% elif coverage.summary.coverage_health == 'Needs Attention' %}text-warning{% else %}text-success{% endif %}">
+                          {{ coverage.summary.coverage_health }}
+                        </h4>
+                        <p class="fs-10 mb-0 text-muted">Overall Health</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="col-md-3">
+                    <div class="card text-center">
+                      <div class="card-body py-3">
+                        <h4 class="mb-1 text-primary">{{ coverage.summary.avg_required_coverage }}%</h4>
+                        <p class="fs-10 mb-0 text-muted">Avg Required Coverage</p>
+                        <small class="text-muted d-block">{{ coverage.summary.required_skills_count }} skills</small>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="col-md-3">
+                    <div class="card text-center">
+                      <div class="card-body py-3">
+                        <h4 class="mb-1 {% if coverage.summary.critical_skills_count > 0 %}text-danger{% else %}text-success{% endif %}">{{ coverage.summary.critical_skills_count }}</h4>
+                        <p class="fs-10 mb-0 text-muted">Critical Skills</p>
+                        <small class="text-muted d-block">&lt; 2 specialists</small>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="col-md-3">
+                    <div class="card text-center">
+                      <div class="card-body py-3">
+                        <h4 class="mb-1 text-info">{{ coverage.summary.total_skilled_users }}</h4>
+                        <p class="fs-10 mb-0 text-muted">Total Skilled Users</p>
+                        <small class="text-muted d-block">Organization-wide</small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Required Skills Analysis -->
+                <div class="row mb-4">
+                  <div class="col-12">
+                    <h6 class="mb-3">Required Skills Analysis</h6>
+                    <div class="row g-3">
+                      {% for skill, analysis in coverage.required_skills_analysis.items %}
+                        <div class="col-md-6">
+                          <div class="card {% if analysis.critical %}border-danger{% elif analysis.coverage_percentage < 40 %}border-warning{% else %}border-success{% endif %}">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                              <h6 class="mb-0">{{ skill.name }}</h6>
+                              <div>
+                                {% if analysis.critical %}
+                                  <span class="badge bg-danger">Critical</span>
+                                {% endif %}
+                                <span class="badge bg-info">{{ analysis.coverage_percentage }}%</span>
+                              </div>
+                            </div>
+                            <div class="card-body">
+                              <!-- Coverage Progress Bar -->
+                              <div class="progress mb-3" style="height: 8px;">
+                                <div class="progress-bar {% if analysis.critical %}bg-danger{% elif analysis.coverage_percentage < 40 %}bg-warning{% else %}bg-success{% endif %}"
+                                     style="width: {{ analysis.coverage_percentage }}%;"></div>
+                              </div>
+
+                              <!-- Competency Breakdown -->
+                              <div class="row text-center mb-3">
+                                <div class="col-4">
+                                  <h6 class="mb-1 text-primary">{{ analysis.specialists }}</h6>
+                                  <small class="text-muted">Specialists</small>
+                                </div>
+                                <div class="col-4">
+                                  <h6 class="mb-1 text-success">{{ analysis.independent }}</h6>
+                                  <small class="text-muted">Independent</small>
+                                </div>
+                                <div class="col-4">
+                                  <h6 class="mb-1 text-warning">{{ analysis.support_needed }}</h6>
+                                  <small class="text-muted">Need Support</small>
+                                </div>
+                              </div>
+
+                              <!-- Skill Gap & Training -->
+                              {% if analysis.skill_gap > 0 %}
+                                <div class="alert alert-warning py-2 mb-2">
+                                  <small><strong>Gap:</strong> Need {{ analysis.skill_gap }} more specialist{{ analysis.skill_gap|pluralize }}</small>
+                                </div>
+                              {% endif %}
+
+                              {% if analysis.training_candidates %}
+                                <div class="mb-2">
+                                  <small class="text-muted d-block mb-1">Training Candidates:</small>
+                                  {% for candidate in analysis.training_candidates|slice:":3" %}
+                                    <span class="badge bg-secondary-subtle text-secondary me-1">{{ candidate.get_full_name }}</span>
+                                  {% endfor %}
+                                  {% if analysis.training_candidates|length > 3 %}
+                                    <span class="badge bg-light text-muted">+{{ analysis.training_candidates|length|add:"-3" }} more</span>
+                                  {% endif %}
+                                </div>
+                              {% endif %}
+                            </div>
+                          </div>
+                        </div>
+                      {% endfor %}
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Desired Skills Analysis -->
+                {% if coverage.desired_skills_analysis %}
+                  <div class="row mb-4">
+                    <div class="col-12">
+                      <h6 class="mb-3">Desired Skills Analysis</h6>
+                      <div class="row g-3">
+                        {% for skill, analysis in coverage.desired_skills_analysis.items %}
+                          <div class="col-md-4">
+                            <div class="card border-info">
+                              <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                  <h6 class="mb-0">{{ skill.name }}</h6>
+                                  <span class="badge bg-info">{{ analysis.coverage_percentage }}%</span>
+                                </div>
+
+                                <div class="progress mb-2" style="height: 6px;">
+                                  <div class="progress-bar bg-info" style="width: {{ analysis.coverage_percentage }}%;"></div>
+                                </div>
+
+                                <div class="d-flex justify-content-between">
+                                  <small class="text-muted">{{ analysis.total_users }} users have this skill</small>
+                                  <div>
+                                    <span class="badge bg-primary-subtle text-primary">{{ analysis.specialists }}</span>
+                                    <span class="badge bg-success-subtle text-success">{{ analysis.independent }}</span>
+                                    <span class="badge bg-warning-subtle text-warning">{{ analysis.support_needed }}</span>
+                                  </div>
+                                </div>
+
+                                {% if analysis.opportunity_score > 70 %}
+                                  <div class="mt-2">
+                                    <span class="badge bg-success">High Growth Opportunity</span>
+                                  </div>
+                                {% endif %}
+                              </div>
+                            </div>
+                          </div>
+                        {% endfor %}
+                      </div>
+                    </div>
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+            {% endwith %}
+          </div>
+
+          {% comment %} <div class="tab-pane fade" id="performance" role="tabpanel" aria-labelledby="performance-tab">
+            <!-- Performance Metrics Dashboard -->
+            {% with metrics=service.get_performance_metrics %}
+            <div class="row mb-4">
+              <div class="col-12">
+                <h5 class="mb-3">Service Performance Dashboard</h5>
+
+                <!-- Performance Overview Cards -->
+                <div class="row g-3 mb-4">
+                  <div class="col-md-3">
+                    <div class="card text-center {% if metrics.performance_grade == 'Excellent' %}border-success{% elif metrics.performance_grade == 'Good' %}border-primary{% elif metrics.performance_grade == 'Fair' %}border-warning{% else %}border-danger{% endif %}">
+                      <div class="card-body py-3">
+                        <h4 class="mb-1 {% if metrics.performance_grade == 'Excellent' %}text-success{% elif metrics.performance_grade == 'Good' %}text-primary{% elif metrics.performance_grade == 'Fair' %}text-warning{% else %}text-danger{% endif %}">
+                          {{ metrics.performance_grade }}
+                        </h4>
+                        <p class="fs-10 mb-0 text-muted">Overall Grade</p>
+                        <small class="text-muted d-block">{{ metrics.quality_metrics.performance_score }}/100</small>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="col-md-3">
+                    <div class="card text-center" data-bs-toggle="tooltip"
+                         title="Percentage of phases delivered on or before the promised date">
+                      <div class="card-body py-3">
+                        <h4 class="mb-1 {% if metrics.quality_metrics.on_time_rate >= 90 %}text-success{% elif metrics.quality_metrics.on_time_rate >= 75 %}text-primary{% else %}text-warning{% endif %}">
+                          {{ metrics.quality_metrics.on_time_rate }}%
+                        </h4>
+                        <p class="fs-10 mb-0 text-muted">On-Time Delivery</p>
+                        <small class="text-muted d-block">{{ metrics.quality_metrics.total_completed }} completed phases</small>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="col-md-3">
+                    <div class="card text-center" data-bs-toggle="tooltip"
+                         title="Percentage of phases delivered before the promised date">
+                      <div class="card-body py-3">
+                        <h4 class="mb-1 text-success">{{ metrics.quality_metrics.early_rate }}%</h4>
+                        <p class="fs-10 mb-0 text-muted">Early Delivery</p>
+                        <small class="text-muted d-block">Ahead of schedule</small>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="col-md-3">
+                    <div class="card text-center" data-bs-toggle="tooltip"
+                         title="Percentage of phases delivered after the promised date">
+                      <div class="card-body py-3">
+                        <h4 class="mb-1 {% if metrics.quality_metrics.late_rate <= 5 %}text-success{% elif metrics.quality_metrics.late_rate <= 15 %}text-warning{% else %}text-danger{% endif %}">
+                          {{ metrics.quality_metrics.late_rate }}%
+                        </h4>
+                        <p class="fs-10 mb-0 text-muted">Late Delivery</p>
+                        <small class="text-muted d-block">Overdue phases</small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Year-over-Year Comparison -->
+                <div class="row g-3 mb-4">
+                  <div class="col-12">
+                    <div class="card">
+                      <div class="card-header">
+                        <h6 class="mb-0">Year-over-Year Performance ({{ metrics.year_comparison.current_year }} vs {{ metrics.year_comparison.last_year }})</h6>
+                      </div>
+                      <div class="card-body">
+                        <div class="row text-center">
+                          <div class="col-md-4">
+                            <h5 class="mb-1 {% if metrics.year_comparison.phases_change > 0 %}text-success{% elif metrics.year_comparison.phases_change < 0 %}text-danger{% else %}text-muted{% endif %}">
+                              {% if metrics.year_comparison.phases_change > 0 %}+{% endif %}{{ metrics.year_comparison.phases_change }}%
+                            </h5>
+                            <p class="fs-10 mb-0 text-muted">Phases Delivered</p>
+                            <small class="text-muted d-block">{{ metrics.year_comparison.current_year_stats.phases }} vs {{ metrics.year_comparison.last_year_stats.phases }}</small>
+                          </div>
+
+                          <div class="col-md-4">
+                            <h5 class="mb-1 {% if metrics.year_comparison.on_time_change > 0 %}text-success{% elif metrics.year_comparison.on_time_change < 0 %}text-danger{% else %}text-muted{% endif %}">
+                              {% if metrics.year_comparison.on_time_change > 0 %}+{% endif %}{{ metrics.year_comparison.on_time_change }}%
+                            </h5>
+                            <p class="fs-10 mb-0 text-muted">On-Time Rate Change</p>
+                            <small class="text-muted d-block">Percentage points</small>
+                          </div>
+
+                          <div class="col-md-4">
+                            <h5 class="mb-1 {% if metrics.year_comparison.hours_change > 0 %}text-warning{% elif metrics.year_comparison.hours_change < 0 %}text-success{% else %}text-muted{% endif %}">
+                              {% if metrics.year_comparison.hours_change > 0 %}+{% endif %}{{ metrics.year_comparison.hours_change }}%
+                            </h5>
+                            <p class="fs-10 mb-0 text-muted">Hours Change</p>
+                            <small class="text-muted d-block">{{ metrics.year_comparison.current_year_stats.total_hours }}h vs {{ metrics.year_comparison.last_year_stats.total_hours }}h</small>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Monthly Trends Chart -->
+                <div class="row g-3 mb-4">
+                  <div class="col-12">
+                    <div class="card">
+                      <div class="card-header">
+                        <h6 class="mb-0">Monthly Performance Trends ({{ metrics.year_comparison.current_year }})</h6>
+                      </div>
+                      <div class="card-body">
+                        <div id="monthly-trends-chart" style="height: 300px;"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Client Performance Breakdown -->
+                {% if metrics.client_metrics %}
+                  <div class="row g-3 mb-4">
+                    <div class="col-12">
+                      <div class="card">
+                        <div class="card-header">
+                          <h6 class="mb-0">Top Client Performance</h6>
+                        </div>
+                        <div class="card-body">
+                          <div class="table-responsive">
+                            <table class="table table-sm">
+                              <thead>
+                                <tr>
+                                  <th>Client</th>
+                                  <th>Phases</th>
+                                  <th>On-Time Rate</th>
+                                  <th>Avg Hours</th>
+                                  <th>Total Hours</th>
+                                  <th>Performance</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {% for client, data in metrics.client_metrics.items %}
+                                  <tr>
+                                    <td>{{ client }}</td>
+                                    <td>{{ data.phases }}</td>
+                                    <td>
+                                      <span class="badge {% if data.on_time_rate >= 90 %}bg-success{% elif data.on_time_rate >= 75 %}bg-primary{% else %}bg-warning{% endif %}">
+                                        {{ data.on_time_rate }}%
+                                      </span>
+                                    </td>
+                                    <td>{{ data.avg_hours }}h</td>
+                                    <td>{{ data.total_hours }}h</td>
+                                    <td>
+                                      <div class="progress" style="height: 20px;">
+                                        <div class="progress-bar {% if data.on_time_rate >= 90 %}bg-success{% elif data.on_time_rate >= 75 %}bg-primary{% else %}bg-warning{% endif %}"
+                                             style="width: {{ data.on_time_rate }}%;">
+                                          {{ data.on_time_rate }}%
+                                        </div>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                {% endfor %}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                {% endif %}
+
+                <!-- Performance Insights -->
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <div class="card">
+                      <div class="card-header">
+                        <h6 class="mb-0">Key Insights</h6>
+                      </div>
+                      <div class="card-body">
+                        <ul class="list-unstyled mb-0">
+                          {% if metrics.quality_metrics.early_rate > 20 %}
+                            <li class="mb-2"><span class="badge bg-success me-2">✓</span>Excellent early delivery rate ({{ metrics.quality_metrics.early_rate }}%)</li>
+                          {% endif %}
+                          {% if metrics.quality_metrics.on_time_rate >= 90 %}
+                            <li class="mb-2"><span class="badge bg-success me-2">✓</span>Outstanding on-time performance</li>
+                          {% elif metrics.quality_metrics.on_time_rate < 75 %}
+                            <li class="mb-2"><span class="badge bg-warning me-2">!</span>On-time delivery needs improvement</li>
+                          {% endif %}
+                          {% if metrics.quality_metrics.late_rate <= 5 %}
+                            <li class="mb-2"><span class="badge bg-success me-2">✓</span>Excellent delivery timeliness</li>
+                          {% elif metrics.quality_metrics.late_rate > 20 %}
+                            <li class="mb-2"><span class="badge bg-warning me-2">!</span>High late delivery rate</li>
+                          {% endif %}
+                          {% if metrics.year_comparison.phases_change > 20 %}
+                            <li class="mb-2"><span class="badge bg-info me-2">↗</span>Strong growth in service demand</li>
+                          {% endif %}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="col-md-6">
+                    <div class="card">
+                      <div class="card-header">
+                        <h6 class="mb-0">Recommendations</h6>
+                      </div>
+                      <div class="card-body">
+                        <ul class="list-unstyled mb-0">
+                          {% if metrics.quality_metrics.on_time_rate < 85 %}
+                            <li class="mb-2"><span class="badge bg-primary me-2">→</span>Focus on delivery timeline management</li>
+                          {% endif %}
+                          {% if metrics.quality_metrics.avg_delivery_hours > 50 %}
+                            <li class="mb-2"><span class="badge bg-primary me-2">→</span>Review resource allocation for large phases</li>
+                          {% endif %}
+                          {% if metrics.year_comparison.phases_change > 50 %}
+                            <li class="mb-2"><span class="badge bg-primary me-2">→</span>Consider team capacity expansion</li>
+                          {% endif %}
+                          {% if metrics.quality_metrics.late_rate > 20 %}
+                            <li class="mb-2"><span class="badge bg-primary me-2">→</span>Implement early warning systems</li>
+                          {% endif %}
+                          <li class="mb-2"><span class="badge bg-primary me-2">→</span>Continue monitoring monthly trends</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% endwith %}
+          </div> {% endcomment %}
 
           <div class="tab-pane fade" id="engagements" role="tabpanel" aria-labelledby="engagements-tab">
             <!-- Service Usage Analytics -->
@@ -691,6 +1078,87 @@
   var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
     return new bootstrap.Tooltip(tooltipTriggerEl);
   });
+
+  // Monthly Performance Trends Chart
+  {% with metrics=service.get_performance_metrics %}
+  var monthlyChartDom = document.getElementById('monthly-trends-chart');
+  if (monthlyChartDom) {
+    var monthlyChart = echarts.init(monthlyChartDom);
+
+    var monthlyData = [
+      {% for month_data in metrics.monthly_trends %}
+        {
+          month: '{{ month_data.month }}',
+          phases: {{ month_data.phases_delivered }},
+          onTimeRate: {{ month_data.on_time_rate }},
+          totalHours: {{ month_data.total_hours }},
+          avgHours: {{ month_data.avg_hours }}
+        }{% if not forloop.last %},{% endif %}
+      {% endfor %}
+    ];
+
+    var monthlyOptions = {
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+          type: 'cross'
+        }
+      },
+      legend: {
+        data: ['Phases Delivered', 'On-Time Rate %', 'Total Hours'],
+        left: 'center'
+      },
+      xAxis: {
+        type: 'category',
+        data: monthlyData.map(item => item.month.substring(0, 3))
+      },
+      yAxis: [
+        {
+          type: 'value',
+          name: 'Count',
+          position: 'left'
+        },
+        {
+          type: 'value',
+          name: 'Percentage',
+          position: 'right',
+          max: 100
+        }
+      ],
+      series: [
+        {
+          name: 'Phases Delivered',
+          type: 'bar',
+          yAxisIndex: 0,
+          data: monthlyData.map(item => item.phases),
+          itemStyle: {
+            color: getColor('primary')
+          }
+        },
+        {
+          name: 'On-Time Rate %',
+          type: 'line',
+          yAxisIndex: 1,
+          data: monthlyData.map(item => item.onTimeRate),
+          itemStyle: {
+            color: getColor('success')
+          }
+        },
+        {
+          name: 'Total Hours',
+          type: 'line',
+          yAxisIndex: 0,
+          data: monthlyData.map(item => item.totalHours),
+          itemStyle: {
+            color: getColor('warning')
+          }
+        }
+      ]
+    };
+
+    monthlyChart.setOption(monthlyOptions);
+  }
+  {% endwith %}
 
 </script>
 {% endblock %}
