@@ -158,12 +158,277 @@
 
         <div class="tab-content" id="myTabContent">
           <div class="tab-pane fade active show" id="team" role="tabpanel" aria-labelledby="team-tab">
-            <div class="d-flex flex-wrap mb-3">
-              {% for user in service.can_lead %}
-                <div class="col-4 p-0 m-1">
-                  {% include 'partials/user/user_card.html' with user=user %}
+            <!-- Team Competency Overview -->
+            <div class="row mb-4">
+              <div class="col-12">
+                <h4 class="mb-3">Team Competency Breakdown</h4>
+
+                <!-- Service Readiness Overview -->
+                {% with breakdown=service.get_service_readiness_breakdown %}
+                <div class="alert alert-info mb-4">
+                  <div class="d-flex align-items-center">
+                    <span class="fas fa-info-circle me-2"></span>
+                    <div>
+                      <strong>Service Readiness:</strong>
+                      {{ breakdown.total_capable }} user{{ breakdown.total_capable|pluralize }} can deliver this service
+                      ({{ service.skillsRequired.count }} skill{{ service.skillsRequired.count|pluralize }} required)
+                    </div>
+                  </div>
                 </div>
-              {% endfor %}
+
+                <!-- Competency Summary Cards -->
+                <div class="row g-3 mb-4">
+                  <div class="col-md-3">
+                    <div class="card border-primary">
+                      <div class="card-body">
+                        <div class="d-flex align-items-center">
+                          <div class="flex-1">
+                            <h6 class="mb-2 text-primary">Full Specialists</h6>
+                            <div class="dropdown">
+                              <h3 class="mb-0 dropdown-toggle" role="button" data-bs-toggle="dropdown"
+                                  style="cursor: pointer;">{{ breakdown.specialists|length }}</h3>
+                              {% if breakdown.specialists %}
+                                <ul class="dropdown-menu">
+                                  {% for user in breakdown.specialists %}
+                                    <li>
+                                      <a class="dropdown-item d-flex align-items-center" href="{{ user.get_absolute_url }}">
+                                        <img class="avatar avatar-xs rounded-circle me-2"
+                                             src="{{ user.get_avatar }}" alt="{{ user.get_full_name }}">
+                                        {{ user.get_full_name }}
+                                      </a>
+                                    </li>
+                                  {% endfor %}
+                                </ul>
+                              {% endif %}
+                            </div>
+                            <p class="fs-10 mb-0 text-muted">Expert in ALL skills</p>
+                          </div>
+                          <span class="fas fa-star fa-2x text-primary opacity-50"></span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="col-md-3">
+                    <div class="card border-success">
+                      <div class="card-body">
+                        <div class="d-flex align-items-center">
+                          <div class="flex-1">
+                            <h6 class="mb-2 text-success">Fully Independent</h6>
+                            <div class="dropdown">
+                              <h3 class="mb-0 dropdown-toggle" role="button" data-bs-toggle="dropdown"
+                                  style="cursor: pointer;">{{ breakdown.independent_only|length }}</h3>
+                              {% if breakdown.independent_only %}
+                                <ul class="dropdown-menu">
+                                  {% for user in breakdown.independent_only %}
+                                    <li>
+                                      <a class="dropdown-item d-flex align-items-center" href="{{ user.get_absolute_url }}">
+                                        <img class="avatar avatar-xs rounded-circle me-2"
+                                             src="{{ user.get_avatar }}" alt="{{ user.get_full_name }}">
+                                        {{ user.get_full_name }}
+                                      </a>
+                                    </li>
+                                  {% endfor %}
+                                </ul>
+                              {% endif %}
+                            </div>
+                            <p class="fs-10 mb-0 text-muted">Can work alone on ALL skills</p>
+                          </div>
+                          <span class="fas fa-user-check fa-2x text-success opacity-50"></span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="col-md-3">
+                    <div class="card border-warning">
+                      <div class="card-body">
+                        <div class="d-flex align-items-center">
+                          <div class="flex-1">
+                            <h6 class="mb-2 text-warning">Need Support</h6>
+                            <div class="dropdown">
+                              <h3 class="mb-0 dropdown-toggle" role="button" data-bs-toggle="dropdown"
+                                  style="cursor: pointer;">{{ breakdown.support_only|length }}</h3>
+                              {% if breakdown.support_only %}
+                                <ul class="dropdown-menu">
+                                  {% for user in breakdown.support_only %}
+                                    <li>
+                                      <a class="dropdown-item d-flex align-items-center" href="{{ user.get_absolute_url }}">
+                                        <img class="avatar avatar-xs rounded-circle me-2"
+                                             src="{{ user.get_avatar }}" alt="{{ user.get_full_name }}">
+                                        {{ user.get_full_name }}
+                                      </a>
+                                    </li>
+                                  {% endfor %}
+                                </ul>
+                              {% endif %}
+                            </div>
+                            <p class="fs-10 mb-0 text-muted">Have ALL skills but need help</p>
+                          </div>
+                          <span class="fas fa-user-group fa-2x text-warning opacity-50"></span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="col-md-3">
+                    <div class="card border-danger">
+                      <div class="card-body">
+                        <div class="d-flex align-items-center">
+                          <div class="flex-1">
+                            <h6 class="mb-2 text-danger">Missing Skills</h6>
+                            <div class="dropdown">
+                              <h3 class="mb-0 dropdown-toggle" role="button" data-bs-toggle="dropdown"
+                                  style="cursor: pointer;">{{ breakdown.missing_skills|length }}</h3>
+                              {% if breakdown.missing_skills %}
+                                <ul class="dropdown-menu">
+                                  {% for user in breakdown.missing_skills %}
+                                    <li>
+                                      <a class="dropdown-item d-flex align-items-center" href="{{ user.get_absolute_url }}">
+                                        <img class="avatar avatar-xs rounded-circle me-2"
+                                             src="{{ user.get_avatar }}" alt="{{ user.get_full_name }}">
+                                        {{ user.get_full_name }}
+                                      </a>
+                                    </li>
+                                  {% endfor %}
+                                </ul>
+                              {% endif %}
+                            </div>
+                            <p class="fs-10 mb-0 text-muted">Don't have all required skills</p>
+                          </div>
+                          <span class="fas fa-user-slash fa-2x text-danger opacity-50"></span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Desired Skills Analysis -->
+                {% if service.skillsDesired.exists %}
+                  <div class="row mb-4">
+                    <div class="col-12">
+                      <h5 class="mb-3">Desired Skills Coverage</h5>
+                      <div class="row g-3">
+                        {% for skill, analysis in breakdown.desired_skills_analysis.items %}
+                          <div class="col-md-4">
+                            <div class="card border-info">
+                              <div class="card-body">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                  <h6 class="mb-0">{{ skill.name }}</h6>
+                                  <span class="badge bg-info">{{ analysis.coverage_percentage }}%</span>
+                                </div>
+                                <div class="progress mb-2" style="height: 6px;">
+                                  <div class="progress-bar bg-info" style="width: {{ analysis.coverage_percentage }}%;"></div>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                  <small class="text-muted">{{ analysis.total_with_skill }}/{{ breakdown.total_capable }} capable users</small>
+                                  <div>
+                                    <span class="badge bg-primary-subtle text-primary">{{ analysis.specialists|length }}</span>
+                                    <span class="badge bg-success-subtle text-success">{{ analysis.independent|length }}</span>
+                                    <span class="badge bg-warning-subtle text-warning">{{ analysis.support_needed|length }}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        {% endfor %}
+                      </div>
+                    </div>
+                  </div>
+                {% endif %}
+                {% endwith %}
+
+                <!-- Detailed Skills Breakdown -->
+                <h5 class="mb-3">Skills Coverage Detail</h5>
+                <div class="accordion" id="skillsAccordion">
+                  {% for skill, users_data in service.get_team_by_skill.items %}
+                    <div class="accordion-item">
+                      <h2 class="accordion-header" id="heading-{{ skill.id }}">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#collapse-{{ skill.id }}" aria-expanded="false">
+                          <div class="d-flex align-items-center w-100">
+                            <span class="badge bg-primary-subtle text-primary me-2">{{ skill.name }}</span>
+                            <span class="ms-auto me-3">
+                              <span class="badge bg-primary">{{ users_data.specialists|length }}</span>
+                              <span class="badge bg-success">{{ users_data.independent|length }}</span>
+                              <span class="badge bg-warning">{{ users_data.support_needed|length }}</span>
+                            </span>
+                          </div>
+                        </button>
+                      </h2>
+                      <div id="collapse-{{ skill.id }}" class="accordion-collapse collapse"
+                           data-bs-parent="#skillsAccordion">
+                        <div class="accordion-body">
+                          <div class="row">
+                            <!-- Specialists Column -->
+                            <div class="col-md-4">
+                              <h6 class="text-primary mb-3">Specialists</h6>
+                              {% for user_skill in users_data.specialists %}
+                                <div class="d-flex align-items-center mb-2">
+                                  <img class="avatar avatar-s rounded-circle me-2"
+                                       src="{{ user_skill.user.get_avatar }}" alt="{{ user_skill.user.get_full_name }}">
+                                  <div>
+                                    <a href="{{ user_skill.user.get_absolute_url }}" class="text-decoration-none">
+                                      {{ user_skill.user.get_full_name }}
+                                    </a>
+                                    {% if user_skill.note %}
+                                      <small class="d-block text-muted">{{ user_skill.note }}</small>
+                                    {% endif %}
+                                  </div>
+                                </div>
+                              {% empty %}
+                                <p class="text-muted fs-9">No specialists</p>
+                              {% endfor %}
+                            </div>
+
+                            <!-- Independent Column -->
+                            <div class="col-md-4">
+                              <h6 class="text-success mb-3">Can Do Alone</h6>
+                              {% for user_skill in users_data.independent %}
+                                <div class="d-flex align-items-center mb-2">
+                                  <img class="avatar avatar-s rounded-circle me-2"
+                                       src="{{ user_skill.user.get_avatar }}" alt="{{ user_skill.user.get_full_name }}">
+                                  <div>
+                                    <a href="{{ user_skill.user.get_absolute_url }}" class="text-decoration-none">
+                                      {{ user_skill.user.get_full_name }}
+                                    </a>
+                                    {% if user_skill.note %}
+                                      <small class="d-block text-muted">{{ user_skill.note }}</small>
+                                    {% endif %}
+                                  </div>
+                                </div>
+                              {% empty %}
+                                <p class="text-muted fs-9">No independent practitioners</p>
+                              {% endfor %}
+                            </div>
+
+                            <!-- Support Needed Column -->
+                            <div class="col-md-4">
+                              <h6 class="text-warning mb-3">Need Support</h6>
+                              {% for user_skill in users_data.support_needed %}
+                                <div class="d-flex align-items-center mb-2">
+                                  <img class="avatar avatar-s rounded-circle me-2"
+                                       src="{{ user_skill.user.get_avatar }}" alt="{{ user_skill.user.get_full_name }}">
+                                  <div>
+                                    <a href="{{ user_skill.user.get_absolute_url }}" class="text-decoration-none">
+                                      {{ user_skill.user.get_full_name }}
+                                    </a>
+                                    {% if user_skill.note %}
+                                      <small class="d-block text-muted">{{ user_skill.note }}</small>
+                                    {% endif %}
+                                  </div>
+                                </div>
+                              {% empty %}
+                                <p class="text-muted fs-9">No users requiring support</p>
+                              {% endfor %}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  {% endfor %}
+                </div>
+              </div>
             </div>
           </div>
 
