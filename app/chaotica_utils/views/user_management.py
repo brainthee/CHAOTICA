@@ -221,21 +221,44 @@ def update_skills(request, email):
         return HttpResponseForbidden()
 
     if request.method == "POST":
-        # Lets loop through the fields!
-        for field in request.POST:
-            # get skill..
+        # Check if this is an improvement update
+        if request.POST.get('action') == 'update_improvement':
+            skill_slug = request.POST.get('skill_slug')
+            interested = request.POST.get('interested_in_improving') == '1'
+
             try:
-                skill = Skill.objects.get(slug=field)
-                value = int(request.POST.get(field))
-                
-                skill, _ = UserSkill.objects.get_or_create(user=usr, skill=skill)
-                if skill.rating != value:
-                    skill.rating = value
-                    skill.last_updated_on = timezone.now()
-                    skill.save()
-            except:
-                # invalid skill!
-                pass
+                skill = Skill.objects.get(slug=skill_slug)
+                user_skill, created = UserSkill.objects.get_or_create(
+                    user=usr,
+                    skill=skill,
+                    defaults={'rating': 0}  # Default to no experience if creating new
+                )
+                user_skill.interested_in_improving_skill = interested
+                user_skill.last_updated_on = timezone.now()
+                user_skill.save()
+            except Skill.DoesNotExist:
+                data["error"] = "Invalid skill"
+                return JsonResponse(data, status=400)
+        else:
+            # Handle regular skill rating updates
+            for field in request.POST:
+                # Skip CSRF token and other non-skill fields
+                if field in ['csrfmiddlewaretoken', 'action', 'skill_slug', 'interested_in_improving']:
+                    continue
+
+                # get skill..
+                try:
+                    skill = Skill.objects.get(slug=field)
+                    value = int(request.POST.get(field))
+
+                    user_skill, created = UserSkill.objects.get_or_create(user=usr, skill=skill)
+                    if user_skill.rating != value:
+                        user_skill.rating = value
+                        user_skill.last_updated_on = timezone.now()
+                        user_skill.save()
+                except (Skill.DoesNotExist, ValueError, TypeError):
+                    # invalid skill or value!
+                    pass
 
     data["result"] = True
     return JsonResponse(data)

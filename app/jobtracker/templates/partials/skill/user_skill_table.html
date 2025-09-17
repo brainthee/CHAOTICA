@@ -8,12 +8,12 @@
         <th class="sort align-middle ps-4 pe-5 text-uppercase text-nowrap" scope="col">
             Rating
         </th>
-        {% comment %} <th class="sort align-middle ps-4 pe-5 text-uppercase text-nowrap" scope="col">
-            Improve
-        </th> {% endcomment %}
-        {% comment %} <th class="sort align-middle ps-4 pe-5 text-uppercase text-nowrap" scope="col">
-            Experience
-        </th> {% endcomment %}
+        <th class="sort align-middle ps-4 pe-5 text-uppercase text-nowrap" scope="col">
+            Wants to Improve
+        </th>
+        <th class="sort align-middle ps-4 pe-5 text-uppercase text-nowrap" scope="col">
+            Last Updated
+        </th>
         <th class="sort text-end align-middle pe-0 ps-4" scope="col"></th>
       </tr>
     </thead>
@@ -26,16 +26,20 @@
             <td class="align-middle white-space-nowrap ps-4 fw-semi-bold text-900 py-0">
                 {{ u.get_rating_display }}
             </td>
-            {% comment %} <td class="align-middle white-space-nowrap fw-bold text-900 py-0">
-                {% if user.interested_in_improving_skill %}
-                <span class="badge badge-phoenix-success">Yes</span>
+            <td class="align-middle white-space-nowrap fw-bold text-900 py-0">
+                {% if u.interested_in_improving_skill %}
+                <span class="badge badge-phoenix-success">
+                    <i class="fa-solid fa-check me-1"></i>Yes
+                </span>
                 {% else %}
-                <span class="badge badge-phoenix-info">No</span>
+                <span class="badge badge-phoenix-secondary">
+                    <i class="fa-solid fa-minus me-1"></i>No
+                </span>
                 {% endif %}
-            </td>         {% endcomment %}
-            {% comment %} <td class="align-middle white-space-nowrap ps-4 fw-semi-bold text-900 py-0">
-                
-            </td>     {% endcomment %}
+            </td>
+            <td class="align-middle white-space-nowrap ps-4 fw-semi-bold text-700 py-0">
+                {{ u.last_updated_on|date:"M d, Y" }}
+            </td>
             <td class="align-middle white-space-nowrap text-end pe-0 ps-4">
             </td>
         </tr>

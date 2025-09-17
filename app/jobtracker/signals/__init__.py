@@ -1,0 +1,1 @@
+# Signal handlers for the jobtracker app

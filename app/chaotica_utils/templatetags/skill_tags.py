@@ -9,3 +9,9 @@ def get_user_skill(user, skill):
         return user.skills.get(skill=skill)
     else:
         return None
+
+
+@register.filter
+def lookup(dictionary, key):
+    """Template filter to lookup dictionary values by key"""
+    return dictionary.get(key)
