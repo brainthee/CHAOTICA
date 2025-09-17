@@ -2,7 +2,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.utils import timezone
 from django.utils.html import format_html
 from django import forms
-from .models import LeaveRequest, User, Group, UserInvitation, Holiday
+from .models import LeaveRequest, User, Group, UserInvitation, Holiday, Language
 from .enums import LeaveRequestTypes
 from crispy_forms.helper import FormHelper
 from crispy_forms.bootstrap import (
@@ -812,7 +812,18 @@ class EditProfileForm(forms.ModelForm):
     
     pref_timezone = forms.ChoiceField(
         choices=[(x, x) for x in pytz.common_timezones],
-        widget=s2forms.ModelSelect2Widget(),
+        widget=s2forms.Select2Widget(),
+    )
+
+    languages = forms.ModelMultipleChoiceField(
+        queryset=Language.objects.filter(),
+        required=False,
+        widget=s2forms.ModelSelect2MultipleWidget(
+            attrs={
+                'class': 'select2-widget',
+            },
+            search_fields=['display_name__icontains', 'lang_code__icontains'],
+        ),
     )
 
     manager = forms.ModelChoiceField(
@@ -889,9 +900,6 @@ class EditProfileForm(forms.ModelForm):
 
     class Meta:
         model = User
-        widgets = {
-            "languages": s2forms.ModelSelect2MultipleWidget(),
-        }
         fields = (
             "first_name",
             "last_name",
