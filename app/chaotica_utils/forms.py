@@ -765,6 +765,17 @@ class MergeUserForm(forms.Form):
 
 class AssignRoleForm(forms.ModelForm):
 
+    groups = forms.ModelMultipleChoiceField(
+        queryset=Group.objects.filter(),
+        required=False,
+        widget=s2forms.Select2MultipleWidget(
+            attrs={
+                'class': 'select2-widget',
+            },
+        ),
+    )
+
+
     def __init__(self, *args, **kwargs):
         super(AssignRoleForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
@@ -778,9 +789,6 @@ class AssignRoleForm(forms.ModelForm):
 
     class Meta:
         model = User
-        widgets = {
-            "groups": s2forms.ModelSelect2MultipleWidget(attrs={'class': 'select2-widget'}),
-        }
         fields = ("groups",)
 
 
