@@ -48,6 +48,8 @@ from bootstrap_datepicker_plus.widgets import (
 )
 from tinymce.widgets import TinyMCE
 from django_clamav.validators import validate_file_infection
+from guardian.shortcuts import assign_perm, remove_perm
+
 
 
 class SchedulerFilter(forms.Form):
@@ -2609,14 +2611,30 @@ class ServiceForm(forms.ModelForm):
 
     skillsRequired = forms.ModelMultipleChoiceField(
         required=False,
-        queryset=Skill.objects.all(),
-        widget=s2forms.ModelSelect2MultipleWidget(attrs={'class': 'select2-widget'}),
+        queryset=Skill.objects.all().prefetch_related("category"),
+        widget=s2forms.ModelSelect2MultipleWidget(
+            attrs={
+                'class': 'select2-widget',
+                'data-minimum-input-length': 2,
+                'data-ajax--url': '/autocomplete/skills',
+                'data-ajax--cache': 'true',
+                'data-ajax--type': 'GET',
+            },
+        ),
     )
 
     skillsDesired = forms.ModelMultipleChoiceField(
         required=False,
-        queryset=Skill.objects.all(),
-        widget=s2forms.ModelSelect2MultipleWidget(attrs={'class': 'select2-widget'}),
+        queryset=Skill.objects.all().prefetch_related("category"),
+        widget=s2forms.ModelSelect2MultipleWidget(
+            attrs={
+                'class': 'select2-widget',
+                'data-minimum-input-length': 2,
+                'data-ajax--url': '/autocomplete/skills',
+                'data-ajax--cache': 'true',
+                'data-ajax--type': 'GET',
+            },
+        ),
     )
 
     def __init__(self, *args, **kwargs):
@@ -2629,6 +2647,26 @@ class ServiceForm(forms.ModelForm):
         self.fields["link"].label = False
         self.fields["skillsRequired"].label = False
         self.fields["skillsDesired"].label = False
+    
+    def save(self, commit=True):
+        instance = super().save(commit=commit)
+
+        if commit and instance.pk:
+            # Clear existing owner permissions
+            from guardian.models import UserObjectPermission
+            UserObjectPermission.objects.filter(
+                content_type__app_label='jobtracker',
+                content_type__model='service',
+                object_pk=instance.pk
+            ).delete()
+
+            # Assign permissions to new owners
+            for owner in self.cleaned_data.get('owners', []):
+                assign_perm('change_service', owner, instance)
+                assign_perm('delete_service', owner, instance)
+
+        return instance
+
 
     class Meta:
         model = Service
