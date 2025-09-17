@@ -23,6 +23,7 @@
 <div class="row mb-4 gx-6 gy-3 mt-2 align-items-center">
   <div class="col">
     <h2 class="mb-0">Services</h2>
+    <p class="text-muted mb-0">{{ risk_stats.total_core_services }} core services, {{ risk_stats.core_at_risk }} at risk</p>
   </div>
   <div class="col-3 d-flex justify-content-end">
     <a class="btn btn-phoenix-primary px-5" href="{% url 'service_create' %}">
@@ -32,9 +33,60 @@
   </div>
 </div>
 
+<!-- Risk Overview Dashboard -->
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-body text-center py-3">
+        <h4 class="mb-1 text-primary">{{ risk_stats.total_core_services }}</h4>
+        <p class="fs-10 mb-0 text-muted">Core Services</p>
+      </div>
+    </div>
+  </div>
 
-<div class="mx-n4 px-3 py-3 mx-lg-n6 px-lg-6 bg-body-emphasis border-top border-bottom border-200 position-relative top-1">
-  {% include 'partials/service/service_list_table.html' %}
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-body text-center py-3">
+        <h4 class="mb-1 text-info">{{ other_services|length }}</h4>
+        <p class="fs-10 mb-0 text-muted">Other Services</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-body text-center py-3">
+        <h4 class="mb-1 text-secondary">{{ service_list|length }}</h4>
+        <p class="fs-10 mb-0 text-muted">Total Services</p>
+      </div>
+    </div>
+  </div>
 </div>
+
+<!-- Core Services Section -->
+{% if core_services %}
+<div class="mb-4">
+  <div class="d-flex align-items-center mb-3">
+    <h5 class="mb-0">Core Services</h5>
+    <span class="badge bg-secondary ms-2">{{ core_services|length }} services</span>
+  </div>
+  <div class="mx-n4 px-3 py-3 mx-lg-n6 px-lg-6 bg-body-emphasis border-top border-bottom border-200 position-relative top-1">
+    {% include 'partials/service/core_service_list_table.html' with services=core_services %}
+  </div>
+</div>
+{% endif %}
+
+<!-- Other Services Section -->
+{% if other_services %}
+<div class="mb-4">
+  <div class="d-flex align-items-center mb-3">
+    <h5 class="mb-0">Other Services</h5>
+    <span class="badge bg-secondary ms-2">{{ other_services|length }} services</span>
+  </div>
+  <div class="mx-n4 px-3 py-3 mx-lg-n6 px-lg-6 bg-light border-top border-bottom border-200 position-relative top-1">
+    {% include 'partials/service/service_list_table.html' with services=other_services %}
+  </div>
+</div>
+{% endif %}
 
 {% endblock content %}

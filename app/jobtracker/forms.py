@@ -2505,6 +2505,17 @@ class TeamForm(forms.ModelForm):
         validators=[validate_file_infection],
     )
 
+    description = forms.CharField(
+        required=False,
+        widget=TinyMCE(
+            attrs={
+                "class": "tinymce",
+                "data-tinymce": '{"height":"15rem","placeholder":"Write a description here..."}',
+                "rows": 5,
+            },
+        ),
+    )
+
     def __init__(self, *args, **kwargs):
         super(TeamForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
@@ -2633,6 +2644,17 @@ class ServiceForm(forms.ModelForm):
                 'data-ajax--url': '/autocomplete/skills',
                 'data-ajax--cache': 'true',
                 'data-ajax--type': 'GET',
+            },
+        ),
+    )
+
+    description = forms.CharField(
+        required=False,
+        widget=TinyMCE(
+            attrs={
+                "class": "tinymce",
+                "data-tinymce": '{"height":"15rem","placeholder":"Write a description here..."}',
+                "rows": 5,
             },
         ),
     )

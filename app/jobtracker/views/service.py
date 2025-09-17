@@ -29,9 +29,60 @@ class ServiceBaseView(PermissionRequiredMixin, ChaoticaBaseView):
 
 
 class ServiceListView(ServiceBaseView, ListView):
-    """View to list all jobs.
-    Use the 'job_list' variable in the template
-    to access all job objects"""
+    """Enhanced view to list services with core service focus and risk assessment"""
+
+    def get_queryset(self):
+        from django.db.models import Count, Q, Case, When, IntegerField
+        from ..enums import UserSkillRatings
+
+        # Optimize queryset with annotations for risk assessment
+        return Service.objects.select_related().prefetch_related(
+            'skillsRequired', 'skillsDesired', 'owners'
+        ).annotate(
+            # Count specialists for risk assessment
+            specialist_count=Count(
+                'skillsRequired__users',
+                filter=Q(skillsRequired__users__rating=UserSkillRatings.SPECIALIST),
+                distinct=True
+            ),
+            # Count total people with skills
+            skilled_people_count=Count(
+                'skillsRequired__users',
+                distinct=True
+            ),
+            # Count active phases
+            active_phases_count=Count(
+                'phases',
+                filter=Q(phases__status__in=[7, 8, 9, 10, 11, 12, 13]),  # Active statuses
+                distinct=True
+            ),
+            # Risk score calculation (0 = high risk, higher = lower risk)
+            risk_score=Case(
+                When(specialist_count=0, then=0),  # Critical risk
+                When(specialist_count=1, then=1),  # High risk
+                When(specialist_count=2, then=2),  # Medium risk
+                default=3,  # Low risk
+                output_field=IntegerField()
+            )
+        ).order_by('-is_core', 'risk_score', 'name')  # Core services first, then by risk
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Separate core and non-core services for better presentation
+        services = context['service_list']
+        context['core_services'] = [s for s in services if s.is_core]
+        context['other_services'] = [s for s in services if not s.is_core]
+
+        # Risk statistics
+        core_at_risk = sum(1 for s in context['core_services'] if s.risk_score <= 1)
+        context['risk_stats'] = {
+            'total_core_services': len(context['core_services']),
+            'core_at_risk': core_at_risk,
+            'risk_percentage': round((core_at_risk / len(context['core_services']) * 100), 1) if context['core_services'] else 0
+        }
+
+        return context
 
 
 class ServiceDetailView(
