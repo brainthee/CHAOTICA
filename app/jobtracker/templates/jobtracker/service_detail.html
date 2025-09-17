@@ -435,9 +435,184 @@
           <div class="tab-pane fade" id="services" role="tabpanel" aria-labelledby="services-tab"></div>
 
           <div class="tab-pane fade" id="engagements" role="tabpanel" aria-labelledby="engagements-tab">
-            {% get_phases_for_user request.user service.phases.all as phases %}
+            <!-- Service Usage Analytics -->
+            {% with analytics=service.get_service_usage_analytics %}
+            <div class="row mb-4">
+              <div class="col-12">
+                <h5 class="mb-3">Service Usage Overview</h5>
 
-            {% include 'partials/phase/phase_list_table.html' with phases=phases no_schedule_bar=1 %}
+                <!-- Key Metrics Cards -->
+                <div class="row g-3 mb-4">
+                  <div class="col-md-3">
+                    <div class="card text-center" data-bs-toggle="tooltip"
+                         title="Total number of phases using this service across all time">
+                      <div class="card-body py-3">
+                        <h4 class="mb-1 text-primary">{{ analytics.total_phases }}</h4>
+                        <p class="fs-10 mb-0 text-muted">Total Phases</p>
+                        <small class="text-muted d-block">All time</small>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="col-md-2">
+                    <div class="card text-center" data-bs-toggle="tooltip"
+                         title="Phases currently in progress, ready to begin, or in QA">
+                      <div class="card-body py-3">
+                        <h4 class="mb-1 text-success">{{ analytics.active_phases|length }}</h4>
+                        <p class="fs-10 mb-0 text-muted">Active</p>
+                        <small class="text-muted d-block">In progress</small>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="col-md-2">
+                    <div class="card text-center" data-bs-toggle="tooltip"
+                         title="Phases that are scheduled or planned but not yet started">
+                      <div class="card-body py-3">
+                        <h4 class="mb-1 text-info">{{ analytics.upcoming_phases|length }}</h4>
+                        <p class="fs-10 mb-0 text-muted">Upcoming</p>
+                        <small class="text-muted d-block">Scheduled</small>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="col-md-2">
+                    <div class="card text-center" data-bs-toggle="tooltip"
+                         title="Phases that have been completed and delivered to the client">
+                      <div class="card-body py-3">
+                        <h4 class="mb-1 text-secondary">{{ analytics.completed_phases|length }}</h4>
+                        <p class="fs-10 mb-0 text-muted">Completed</p>
+                        <small class="text-muted d-block">Delivered</small>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="col-md-3">
+                    <div class="card text-center" data-bs-toggle="tooltip"
+                         title="Total hours allocated across all phases for this service (delivery, reporting, management, QA, etc.)">
+                      <div class="card-body py-3">
+                        <h4 class="mb-1 text-warning">{{ analytics.total_allocated_hours }}</h4>
+                        <p class="fs-10 mb-0 text-muted">Total Hours</p>
+                        <small class="text-muted d-block">Allocated</small>
+                      </div>
+                    </div>
+                  </div>
+
+                  {% comment %} <div class="col-md-2">
+                    <div class="card text-center" data-bs-toggle="tooltip"
+                         title="Percentage of completed phases that were delivered on or before the desired delivery date">
+                      <div class="card-body py-3">
+                        <h4 class="mb-1 text-success">{{ analytics.on_time_rate }}%</h4>
+                        <p class="fs-10 mb-0 text-muted">On Time Rate</p>
+                        <small class="text-muted d-block">Delivery performance</small>
+                      </div>
+                    </div>
+                  </div> {% endcomment %}
+                </div>
+
+                <!-- Client & Unit Breakdown -->
+                <div class="row g-3 mb-4">
+                  <div class="col-md-6">
+                    <div class="card">
+                      <div class="card-header">
+                        <h6 class="mb-0">Top Clients</h6>
+                      </div>
+                      <div class="card-body">
+                        {% for client in analytics.client_breakdown|slice:":5" %}
+                          <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span>{{ client.job__client__name }}</span>
+                            <div>
+                              <span class="badge bg-primary-subtle text-primary me-2">{{ client.phase_count }} phases</span>
+                              {% if client.total_hours %}
+                                <span class="badge bg-info-subtle text-info">{{ client.total_hours }}h</span>
+                              {% endif %}
+                            </div>
+                          </div>
+                        {% empty %}
+                          <p class="text-muted mb-0">No client data available</p>
+                        {% endfor %}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="col-md-6">
+                    <div class="card">
+                      <div class="card-header">
+                        <h6 class="mb-0">Top Units</h6>
+                      </div>
+                      <div class="card-body">
+                        {% for unit in analytics.unit_breakdown|slice:":5" %}
+                          <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span>{{ unit.job__unit__name }}</span>
+                            <div>
+                              <span class="badge bg-primary-subtle text-primary me-2">{{ unit.phase_count }} phases</span>
+                              {% if unit.total_hours %}
+                                <span class="badge bg-info-subtle text-info">{{ unit.total_hours }}h</span>
+                              {% endif %}
+                            </div>
+                          </div>
+                        {% empty %}
+                          <p class="text-muted mb-0">No unit data available</p>
+                        {% endfor %}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% endwith %}
+
+            <!-- Phase Status Tabs -->
+            <div class="row mb-3">
+              <div class="col-12">
+                <ul class="nav nav-pills" id="phaseStatusTabs" role="tablist">
+                  <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="active-phases-tab" data-bs-toggle="pill"
+                            data-bs-target="#active-phases" type="button" role="tab">
+                      Active <span class="badge bg-success ms-1">{{ analytics.active_phases|length }}</span>
+                    </button>
+                  </li>
+                  <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="upcoming-phases-tab" data-bs-toggle="pill"
+                            data-bs-target="#upcoming-phases" type="button" role="tab">
+                      Upcoming <span class="badge bg-info ms-1">{{ analytics.upcoming_phases|length }}</span>
+                    </button>
+                  </li>
+                  <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="completed-phases-tab" data-bs-toggle="pill"
+                            data-bs-target="#completed-phases" type="button" role="tab">
+                      Completed <span class="badge bg-secondary ms-1">{{ analytics.completed_phases|length }}</span>
+                    </button>
+                  </li>
+                  <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="all-phases-tab" data-bs-toggle="pill"
+                            data-bs-target="#all-phases" type="button" role="tab">
+                      All <span class="badge bg-primary ms-1">{{ analytics.total_phases }}</span>
+                    </button>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Phase Lists by Status -->
+            <div class="tab-content" id="phaseStatusContent">
+              <div class="tab-pane fade show active" id="active-phases" role="tabpanel">
+                {% include 'partials/phase/phase_list_table.html' with phases=analytics.active_phases no_schedule_bar=1 %}
+              </div>
+
+              <div class="tab-pane fade" id="upcoming-phases" role="tabpanel">
+                {% include 'partials/phase/phase_list_table.html' with phases=analytics.upcoming_phases no_schedule_bar=1 %}
+              </div>
+
+              <div class="tab-pane fade" id="completed-phases" role="tabpanel">
+                {% include 'partials/phase/phase_list_table.html' with phases=analytics.completed_phases no_schedule_bar=1 %}
+              </div>
+
+              <div class="tab-pane fade" id="all-phases" role="tabpanel">
+                {% get_phases_for_user request.user service.phases.all as all_phases %}
+                {% include 'partials/phase/phase_list_table.html' with phases=all_phases no_schedule_bar=1 %}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -510,6 +685,12 @@
     }
   };
   options && chart.setOption(options);
+
+  // Initialize Bootstrap tooltips
+  var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+  var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl);
+  });
 
 </script>
 {% endblock %}

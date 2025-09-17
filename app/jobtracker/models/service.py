@@ -83,71 +83,86 @@ class Service(models.Model):
         return reverse("service_detail", kwargs={"slug": self.slug})
 
     def get_users_specialist(self):
-        """Get users who are specialists in ALL required skills"""
-        required_skills = self.skillsRequired.all()
-        if not required_skills:
+        """Get users who are specialists in ALL required skills - optimized"""
+        from django.db.models import Count, Q
+        required_skills_count = self.skillsRequired.count()
+        if not required_skills_count:
             return User.objects.none()
 
-        users_with_all_specialist = []
-        for user in User.objects.filter(skills__skill__in=required_skills).distinct():
-            user_skills = UserSkill.objects.filter(user=user, skill__in=required_skills)
-            if (user_skills.count() == required_skills.count() and
-                user_skills.filter(rating=UserSkillRatings.SPECIALIST).count() == required_skills.count()):
-                users_with_all_specialist.append(user.id)
-
-        return User.objects.filter(id__in=users_with_all_specialist)
+        return User.objects.filter(
+            skills__skill__in=self.skillsRequired.all(),
+            skills__rating=UserSkillRatings.SPECIALIST
+        ).annotate(
+            specialist_count=Count('skills', filter=Q(
+                skills__skill__in=self.skillsRequired.all(),
+                skills__rating=UserSkillRatings.SPECIALIST
+            ))
+        ).filter(specialist_count=required_skills_count).distinct()
 
     def get_users_can_do_alone(self):
-        """Get users who can do the service independently (all skills at CAN_DO_ALONE or higher)"""
-        required_skills = self.skillsRequired.all()
-        if not required_skills:
+        """Get users who can do the service independently - optimized"""
+        from django.db.models import Count, Q
+        required_skills_count = self.skillsRequired.count()
+        if not required_skills_count:
             return User.objects.none()
 
-        users_can_do_alone = []
-        for user in User.objects.filter(skills__skill__in=required_skills).distinct():
-            user_skills = UserSkill.objects.filter(user=user, skill__in=required_skills)
-            if (user_skills.count() == required_skills.count() and
-                user_skills.filter(rating__in=[UserSkillRatings.SPECIALIST, UserSkillRatings.CAN_DO_ALONE]).count() == required_skills.count()):
-                users_can_do_alone.append(user.id)
-
-        return User.objects.filter(id__in=users_can_do_alone)
+        return User.objects.filter(
+            skills__skill__in=self.skillsRequired.all(),
+            skills__rating__in=[UserSkillRatings.SPECIALIST, UserSkillRatings.CAN_DO_ALONE]
+        ).annotate(
+            independent_count=Count('skills', filter=Q(
+                skills__skill__in=self.skillsRequired.all(),
+                skills__rating__in=[UserSkillRatings.SPECIALIST, UserSkillRatings.CAN_DO_ALONE]
+            ))
+        ).filter(independent_count=required_skills_count).distinct()
 
     def get_users_can_do_with_support(self):
-        """Get users who have ALL required skills but need support in at least one"""
-        required_skills = self.skillsRequired.all()
-        if not required_skills:
+        """Get users who have ALL required skills but need support - optimized"""
+        from django.db.models import Count, Q
+        required_skills_count = self.skillsRequired.count()
+        if not required_skills_count:
             return User.objects.none()
 
-        users_need_support = []
-        for user in User.objects.filter(skills__skill__in=required_skills).distinct():
-            user_skills = UserSkill.objects.filter(user=user, skill__in=required_skills)
-            if user_skills.count() == required_skills.count():
-                # Has all required skills, check if any need support
-                if user_skills.filter(rating=UserSkillRatings.CAN_DO_WITH_SUPPORT).exists():
-                    users_need_support.append(user.id)
+        # Users who have all required skills
+        users_with_all_skills = User.objects.filter(
+            skills__skill__in=self.skillsRequired.all()
+        ).annotate(
+            total_skills_count=Count('skills', filter=Q(skills__skill__in=self.skillsRequired.all()))
+        ).filter(total_skills_count=required_skills_count)
 
-        return User.objects.filter(id__in=users_need_support)
+        # Of those, find users who have at least one skill requiring support
+        return users_with_all_skills.filter(
+            skills__skill__in=self.skillsRequired.all(),
+            skills__rating=UserSkillRatings.CAN_DO_WITH_SUPPORT
+        ).distinct()
 
     def get_users_missing_skills(self):
-        """Get users who have some but not all required skills"""
-        required_skills = self.skillsRequired.all()
-        if not required_skills:
+        """Get users who have some but not all required skills - optimized"""
+        from django.db.models import Count, Q
+        required_skills_count = self.skillsRequired.count()
+        if not required_skills_count:
             return User.objects.none()
 
-        users_with_partial_skills = []
-        for user in User.objects.filter(skills__skill__in=required_skills).distinct():
-            user_skills = UserSkill.objects.filter(user=user, skill__in=required_skills)
-            if user_skills.count() < required_skills.count():
-                users_with_partial_skills.append(user.id)
-
-        return User.objects.filter(id__in=users_with_partial_skills)
+        return User.objects.filter(
+            skills__skill__in=self.skillsRequired.all()
+        ).annotate(
+            partial_skills_count=Count('skills', filter=Q(skills__skill__in=self.skillsRequired.all()))
+        ).filter(partial_skills_count__lt=required_skills_count).distinct()
 
     def get_service_readiness_breakdown(self):
-        """Get comprehensive breakdown of service readiness including desired skills"""
+        """Get comprehensive breakdown of service readiness including desired skills - cached and optimized"""
+        from django.core.cache import cache
+        from django.db.models import Count, Q
+
+        cache_key = f"service_readiness_{self.id}_{self.skillsRequired.count()}_{self.skillsDesired.count()}"
+        cached_result = cache.get(cache_key)
+        if cached_result:
+            return cached_result
+
         required_skills = self.skillsRequired.all()
         desired_skills = self.skillsDesired.all()
 
-        if not required_skills:
+        if not required_skills.exists():
             return {
                 'specialists': User.objects.none(),
                 'independent_only': User.objects.none(),
@@ -157,51 +172,63 @@ class Service(models.Model):
                 'desired_skills_analysis': {}
             }
 
+        # Get all users with counts in a single query
         specialists = self.get_users_specialist()
         independent = self.get_users_can_do_alone()
         need_support = self.get_users_can_do_with_support()
         missing_skills = self.get_users_missing_skills()
 
-        # Remove specialists from independent count (they're already counted as specialists)
-        independent_only = independent.exclude(id__in=specialists.values_list('id', flat=True))
-        # Remove specialists and independent from support count
-        support_only = need_support.exclude(id__in=specialists.values_list('id', flat=True)).exclude(id__in=independent.values_list('id', flat=True))
+        # Use exclude to avoid additional queries
+        specialist_ids = list(specialists.values_list('id', flat=True))
+        independent_ids = list(independent.values_list('id', flat=True))
 
-        # Analyze desired skills for capable users
-        capable_users = specialists.union(independent_only, support_only)
+        independent_only = independent.exclude(id__in=specialist_ids)
+        support_only = need_support.exclude(id__in=specialist_ids + independent_ids)
+
+        # Optimize desired skills analysis
         desired_skills_analysis = {}
+        if desired_skills.exists():
+            # Get all capable users in one query
+            capable_user_ids = specialist_ids + list(independent_only.values_list('id', flat=True)) + list(support_only.values_list('id', flat=True))
 
-        for skill in desired_skills:
-            users_with_skill = capable_users.filter(
-                skills__skill=skill
-            ).distinct()
+            if capable_user_ids:
+                # Single query to get all skill data
+                skill_data = UserSkill.objects.filter(
+                    user_id__in=capable_user_ids,
+                    skill__in=desired_skills
+                ).select_related('skill').values(
+                    'skill__id', 'skill__name', 'rating'
+                ).annotate(count=Count('id'))
 
-            skill_breakdown = {
-                'total_with_skill': users_with_skill.count(),
-                'specialists': users_with_skill.filter(
-                    skills__skill=skill,
-                    skills__rating=UserSkillRatings.SPECIALIST
-                ),
-                'independent': users_with_skill.filter(
-                    skills__skill=skill,
-                    skills__rating=UserSkillRatings.CAN_DO_ALONE
-                ),
-                'support_needed': users_with_skill.filter(
-                    skills__skill=skill,
-                    skills__rating=UserSkillRatings.CAN_DO_WITH_SUPPORT
-                ),
-                'coverage_percentage': round((users_with_skill.count() / capable_users.count() * 100), 1) if capable_users.count() > 0 else 0
-            }
-            desired_skills_analysis[skill] = skill_breakdown
+                # Group by skill
+                for skill in desired_skills:
+                    skill_ratings = [d for d in skill_data if d['skill__id'] == skill.id]
 
-        return {
+                    total_with_skill = sum(d['count'] for d in skill_ratings)
+                    specialists_count = sum(d['count'] for d in skill_ratings if d['rating'] == UserSkillRatings.SPECIALIST)
+                    independent_count = sum(d['count'] for d in skill_ratings if d['rating'] == UserSkillRatings.CAN_DO_ALONE)
+                    support_count = sum(d['count'] for d in skill_ratings if d['rating'] == UserSkillRatings.CAN_DO_WITH_SUPPORT)
+
+                    desired_skills_analysis[skill] = {
+                        'total_with_skill': total_with_skill,
+                        'specialists_count': specialists_count,
+                        'independent_count': independent_count,
+                        'support_count': support_count,
+                        'coverage_percentage': round((total_with_skill / len(capable_user_ids) * 100), 1) if capable_user_ids else 0
+                    }
+
+        result = {
             'specialists': specialists,
             'independent_only': independent_only,
             'support_only': support_only,
             'missing_skills': missing_skills,
-            'total_capable': specialists.count() + independent_only.count() + support_only.count(),
+            'total_capable': len(specialist_ids) + independent_only.count() + support_only.count(),
             'desired_skills_analysis': desired_skills_analysis
         }
+
+        # Cache for 5 minutes
+        cache.set(cache_key, result, 300)
+        return result
 
     def get_team_by_skill(self):
         """Get team members grouped by skill and competency level"""
@@ -223,7 +250,108 @@ class Service(models.Model):
             }
         return team_data
 
+    def get_service_usage_analytics(self):
+        """Get comprehensive analytics about service usage across phases/jobs - optimized and cached"""
+        from django.core.cache import cache
+        from django.db.models import Count, Sum, Avg, Q, F
+        from django.utils import timezone
+        from ..enums import PhaseStatuses, JobStatuses
+        import datetime
+
+        cache_key = f"service_analytics_{self.id}_{self.phases.count()}"
+        cached_result = cache.get(cache_key)
+        if cached_result:
+            return cached_result
+
+        now = timezone.now()
+        current_year = now.year
+        last_month = now - datetime.timedelta(days=30)
+
+        # Single query with all the data we need
+        phases_qs = self.phases.select_related('job', 'job__client', 'job__unit')
+
+        # Get all analytics in fewer queries - split aggregates to avoid conflicts
+        all_phases_data = phases_qs.aggregate(
+            total_count=Count('id'),
+            active_count=Count('id', filter=Q(status__in=PhaseStatuses.ACTIVE_STATUSES)),
+            completed_count=Count('id', filter=Q(status__in=PhaseStatuses.COMPLETE_STATUSES)),
+            upcoming_count=Count('id', filter=Q(status__in=PhaseStatuses.PENDING_STATUSES)),
+            recent_count=Count('id', filter=Q(actual_start_date__gte=last_month)),
+            this_year_count=Count('id', filter=Q(actual_start_date__year=current_year)),
+            on_time_count=Count('id', filter=Q(
+                status__in=PhaseStatuses.COMPLETE_STATUSES,
+                actual_delivery_date__lte=F('desired_delivery_date')
+            )),
+            delivery_hours=Sum('delivery_hours'),
+            reporting_hours=Sum('reporting_hours'),
+            mgmt_hours=Sum('mgmt_hours'),
+            qa_hours=Sum('qa_hours'),
+            oversight_hours=Sum('oversight_hours'),
+            debrief_hours=Sum('debrief_hours'),
+            contingency_hours=Sum('contingency_hours'),
+            other_hours=Sum('other_hours'),
+        )
+
+        # Separate query for average duration on completed phases only
+        avg_duration_data = phases_qs.filter(
+            status__in=PhaseStatuses.COMPLETE_STATUSES
+        ).aggregate(avg_duration=Avg('delivery_hours'))
+
+        # Calculate total hours
+        total_hours = sum(h for h in [
+            all_phases_data['delivery_hours'], all_phases_data['reporting_hours'],
+            all_phases_data['mgmt_hours'], all_phases_data['qa_hours'],
+            all_phases_data['oversight_hours'], all_phases_data['debrief_hours'],
+            all_phases_data['contingency_hours'], all_phases_data['other_hours']
+        ] if h is not None)
+
+        # Client and Unit breakdown in single queries
+        client_breakdown = phases_qs.values('job__client__name', 'job__client__id').annotate(
+            phase_count=Count('id'),
+            total_hours=Sum('delivery_hours')
+        ).order_by('-phase_count')[:10]  # Limit to top 10
+
+        unit_breakdown = phases_qs.values('job__unit__name', 'job__unit__id').annotate(
+            phase_count=Count('id'),
+            total_hours=Sum('delivery_hours')
+        ).order_by('-phase_count')[:10]  # Limit to top 10
+
+        # Get querysets for template use
+        active_phases = phases_qs.filter(status__in=PhaseStatuses.ACTIVE_STATUSES)
+        completed_phases = phases_qs.filter(status__in=PhaseStatuses.COMPLETE_STATUSES)
+        upcoming_phases = phases_qs.filter(status__in=PhaseStatuses.PENDING_STATUSES)
+
+        result = {
+            'total_phases': all_phases_data['total_count'],
+            'active_phases': active_phases,
+            'completed_phases': completed_phases,
+            'upcoming_phases': upcoming_phases,
+            'recent_phases': all_phases_data['recent_count'],
+            'this_year_phases': all_phases_data['this_year_count'],
+            'total_allocated_hours': total_hours,
+            'client_breakdown': list(client_breakdown),
+            'unit_breakdown': list(unit_breakdown),
+            'completion_rate': round((all_phases_data['completed_count'] / all_phases_data['total_count'] * 100), 1) if all_phases_data['total_count'] > 0 else 0,
+            'on_time_rate': round((all_phases_data['on_time_count'] / all_phases_data['completed_count'] * 100), 1) if all_phases_data['completed_count'] > 0 else 0,
+            'avg_phase_duration': round(avg_duration_data['avg_duration'] or 0, 1),
+        }
+
+        # Cache for 10 minutes
+        cache.set(cache_key, result, 600)
+        return result
+
+    def clear_cache(self):
+        """Clear all cached data for this service"""
+        from django.core.cache import cache
+        # Clear service readiness cache
+        cache.delete(f"service_readiness_{self.id}_{self.skillsRequired.count()}_{self.skillsDesired.count()}")
+        # Clear analytics cache
+        cache.delete(f"service_analytics_{self.id}_{self.phases.count()}")
+
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = unique_slug_generator(self, self.name)
+        # Clear cache when service is updated
+        if self.pk:
+            self.clear_cache()
         return super().save(*args, **kwargs)

@@ -774,13 +774,21 @@ class PhaseStatuses:
         ARCHIVED,
     ]
 
-    ACTIVE_STATUSES = [
-        DRAFT,
-        PENDING_SCHED,
+    PENDING_STATUSES = [
         SCHEDULED_TENTATIVE,
         SCHEDULED_CONFIRMED,
         PRE_CHECKS,
         CLIENT_NOT_READY,
+        READY_TO_BEGIN,
+    ]
+
+    ACTIVE_STATUSES = [
+        # DRAFT,
+        # PENDING_SCHED,
+        # SCHEDULED_TENTATIVE,
+        # SCHEDULED_CONFIRMED,
+        # PRE_CHECKS,
+        # CLIENT_NOT_READY,
         READY_TO_BEGIN,
         IN_PROGRESS,
         PENDING_TQA,
@@ -789,6 +797,20 @@ class PhaseStatuses:
         PENDING_PQA,
         QA_PRES,
         QA_PRES_AUTHOR_UPDATES,
+        # COMPLETED,
+        # DELIVERED,
+    ]
+
+    QA_STATUSES = [
+        PENDING_TQA,
+        QA_TECH,
+        QA_TECH_AUTHOR_UPDATES,
+        PENDING_PQA,
+        QA_PRES,
+        QA_PRES_AUTHOR_UPDATES,
+    ]
+
+    COMPLETE_STATUSES = [
         COMPLETED,
         DELIVERED,
     ]
