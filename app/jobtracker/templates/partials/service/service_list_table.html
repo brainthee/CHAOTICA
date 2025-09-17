@@ -1,47 +1,94 @@
 <div class="table-responsive scrollbar mx-n1 px-1">
-  <table class="table fs-9 datatable mb-0">
+  <table class="table fs-9 mb-0">
     <caption>Services</caption>
     <thead>
       <tr>
-        <th class="sort white-space-nowrap align-middle ps-0" scope="col" data-sort="projectName" style="width:30%;">
+        <th class="sort white-space-nowrap align-middle ps-0" scope="col" style="width:30%;">
           Name
         </th>
-        <th class="sort white-space-nowrap align-middle ps-0" scope="col" data-sort="projectDesc">
+        <th class="sort white-space-nowrap align-middle ps-0" scope="col" style="width:15%;">
+          Specialists
+        </th>
+        <th class="sort white-space-nowrap align-middle ps-0" scope="col" style="width:15%;">
+          Active Phases
+        </th>
+        <th class="sort white-space-nowrap align-middle ps-0" scope="col" style="width:25%;">
           Description
         </th>
-        <th class="sort white-space-nowrap align-middle ps-0" scope="col" data-sort="projectLink" style="width:10%;">
-          Link
-        </th>
-        <th class="sort align-middle text-end" scope="col" style="width:10%;">
+        <th class="sort align-middle text-end" scope="col" style="width:15%;">
+          Actions
         </th>
       </tr>
     </thead>
     <tbody>
-    {% for service in service_list %}
+    {% for service in services|default:service_list %}
     <tr>
 
-      <td class="align-middle time white-space-nowrap ps-0 projectName">
-        <a class="fw-bold fs-8" href="{{ service.get_absolute_url }}">
-          {{ service.name }}
-        </a>
+      <td class="align-middle ps-0">
+        <div class="d-flex align-items-center">
+          {% if service.is_core %}
+            <span class="fas fa-star text-warning me-2" title="Core Service"></span>
+          {% endif %}
+          <div>
+            <a class="fw-bold fs-8" href="{{ service.get_absolute_url }}">
+              {{ service.name }}
+            </a>
+            {% if service.link %}
+              <div>
+                <a href="{{ service.link }}" class="text-decoration-none fs-10 text-info">
+                  <i class="fas fa-external-link-alt me-1"></i>More Info
+                </a>
+              </div>
+            {% endif %}
+          </div>
+        </div>
       </td>
 
-      <td class="align-middle time white-space-nowrap ps-0 projectDesc">
+      <td class="align-middle ps-0">
+        <div class="d-flex align-items-center">
+          <h6 class="mb-0 {% if service.specialist_count == 0 %}text-danger{% elif service.specialist_count <= 2 %}text-warning{% else %}text-success{% endif %}">
+            {{ service.specialist_count|default:0 }}
+          </h6>
+          <span class="text-muted ms-1">/ {{ service.skilled_people_count|default:0 }}</span>
+        </div>
+        <small class="text-muted">specialists / total</small>
+      </td>
+
+      <td class="align-middle ps-0">
+        {% if service.active_phases_count > 0 %}
+          <span class="badge bg-info">{{ service.active_phases_count }}</span>
+          <small class="d-block text-muted">active phases</small>
+        {% else %}
+          <span class="text-muted">No active phases</span>
+        {% endif %}
+      </td>
+
+      <td class="align-middle ps-0">
         {% if service.description %}
-          {{ service.description }}
+          <div class="text-muted">{{ service.description|truncatechars:80 }}</div>
         {% endif %}
       </td>
 
-      <td class="align-middle time white-space-nowrap ps-0 projectLink">
-        {% if service.link %}
-        <a href="{{ service.link }}">More Info</a>
-        {% endif %}
-      </td>
-
-      <td class="align-middle text-end white-space-nowrap pe-0 action">
+      <td class="align-middle text-end pe-0">
+        <div class="btn-group" role="group">
+          <a href="{{ service.get_absolute_url }}" class="btn btn-sm btn-outline-primary" title="View Details">
+            <i class="fas fa-eye"></i>
+          </a>
+          {% if perms.jobtracker.change_service %}
+            <a href="{% url 'service_update' service.slug %}" class="btn btn-sm btn-outline-secondary" title="Edit">
+              <i class="fas fa-edit"></i>
+            </a>
+          {% endif %}
+        </div>
       </td>
     </tr>
-    {% endfor %}        
+    {% empty %}
+    <tr>
+      <td colspan="5" class="text-center text-muted py-4">
+        No services found.
+      </td>
+    </tr>
+    {% endfor %}
     </tbody>
   </table>
 </div>

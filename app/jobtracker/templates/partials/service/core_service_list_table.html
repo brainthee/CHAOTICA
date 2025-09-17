@@ -1,0 +1,114 @@
+<div class="table-responsive scrollbar mx-n1 px-1">
+  <table class="table fs-9 mb-0">
+    <caption>Core Services</caption>
+    <thead>
+      <tr>
+        <th class="sort white-space-nowrap align-middle ps-0" scope="col" style="width:25%;">
+          Service Name
+        </th>
+        <th class="sort white-space-nowrap align-middle ps-0" scope="col" style="width:15%;">
+          Risk Status
+        </th>
+        <th class="sort white-space-nowrap align-middle ps-0" scope="col" style="width:15%;">
+          Specialists
+        </th>
+        <th class="sort white-space-nowrap align-middle ps-0" scope="col" style="width:15%;">
+          Active Phases
+        </th>
+        <th class="sort white-space-nowrap align-middle ps-0" scope="col" style="width:20%;">
+          Required Skills
+        </th>
+        <th class="sort align-middle text-end" scope="col" style="width:10%;">
+          Actions
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for service in services %}
+    <tr class="{% if service.risk_score == 0 %}table-danger{% elif service.risk_score == 1 %}table-warning{% endif %}">
+
+      <td class="align-middle ps-0">
+        <div class="d-flex align-items-center">
+          {% if service.is_core %}
+            <span class="fas fa-star text-warning me-2" title="Core Service"></span>
+          {% endif %}
+          <div>
+            <a class="fw-bold fs-8" href="{{ service.get_absolute_url }}">
+              {{ service.name }}
+            </a>
+            {% if service.description %}
+              <div class="text-muted fs-10">{{ service.description|truncatechars:60 }}</div>
+            {% endif %}
+          </div>
+        </div>
+      </td>
+
+      <td class="align-middle ps-0">
+        {% if service.risk_score == 0 %}
+          <span class="badge bg-danger">Critical Risk</span>
+          <small class="d-block text-danger">No specialists</small>
+        {% elif service.risk_score == 1 %}
+          <span class="badge bg-warning">High Risk</span>
+          <small class="d-block text-warning">1 specialist only</small>
+        {% elif service.risk_score == 2 %}
+          <span class="badge bg-info">Medium Risk</span>
+          <small class="d-block text-info">2 specialists</small>
+        {% else %}
+          <span class="badge bg-success">Low Risk</span>
+          <small class="d-block text-success">3+ specialists</small>
+        {% endif %}
+      </td>
+
+      <td class="align-middle ps-0">
+        <div class="d-flex align-items-center">
+          <h6 class="mb-0 {% if service.specialist_count == 0 %}text-danger{% elif service.specialist_count <= 2 %}text-warning{% else %}text-success{% endif %}">
+            {{ service.specialist_count }}
+          </h6>
+          <span class="text-muted ms-1">/ {{ service.skilled_people_count }}</span>
+        </div>
+        <small class="text-muted">specialists / total</small>
+      </td>
+
+      <td class="align-middle ps-0">
+        {% if service.active_phases_count > 0 %}
+          <span class="badge bg-primary">{{ service.active_phases_count }}</span>
+          <small class="d-block text-muted">active phases</small>
+        {% else %}
+          <span class="text-muted">No active phases</span>
+        {% endif %}
+      </td>
+
+      <td class="align-middle ps-0">
+        <div class="d-flex flex-wrap gap-1">
+          {% for skill in service.skillsRequired.all|slice:":3" %}
+            <span class="badge bg-secondary-subtle text-secondary">{{ skill.name }}</span>
+          {% endfor %}
+          {% if service.skillsRequired.count > 3 %}
+            <span class="badge bg-light text-muted">+{{ service.skillsRequired.count|add:"-3" }}</span>
+          {% endif %}
+        </div>
+      </td>
+
+      <td class="align-middle text-end pe-0">
+        <div class="btn-group" role="group">
+          <a href="{{ service.get_absolute_url }}" class="btn btn-sm btn-outline-primary" title="View Details">
+            <i class="fas fa-eye"></i>
+          </a>
+          {% if perms.jobtracker.change_service %}
+            <a href="{% url 'service_update' service.slug %}" class="btn btn-sm btn-outline-secondary" title="Edit">
+              <i class="fas fa-edit"></i>
+            </a>
+          {% endif %}
+        </div>
+      </td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="6" class="text-center text-muted py-4">
+        No core services found. <a href="{% url 'service_create' %}">Create one</a>
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
