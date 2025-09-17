@@ -70,7 +70,7 @@ class ServiceListView(ServiceBaseView, ListView):
         context = super().get_context_data(**kwargs)
 
         # Separate core and non-core services for better presentation
-        services = context['service_list']
+        services = context['service_list'].order_by("name")
         context['core_services'] = [s for s in services if s.is_core]
         context['other_services'] = [s for s in services if not s.is_core]
 
