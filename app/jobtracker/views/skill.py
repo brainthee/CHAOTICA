@@ -154,7 +154,8 @@ class SkillMatrixView(PermissionRequiredMixin, ChaoticaBaseView, TemplateView):
 
         # Try to get from cache first
         cache_key = self.get_cache_key(filters)
-        cached_data = cache.get(cache_key)
+        # cached_data = cache.get(cache_key)
+        cached_data = None
 
         if cached_data is not None:
             # Use cached data if available
@@ -182,7 +183,7 @@ class SkillMatrixView(PermissionRequiredMixin, ChaoticaBaseView, TemplateView):
         # Apply org role filter
         if role_filter:
             users_query = users_query.filter(
-                unit_memberships__roles__slug=role_filter,
+                unit_memberships__roles__id=role_filter,
                 unit_memberships__left_date__isnull=True
             ).distinct()
 
@@ -242,24 +243,25 @@ class SkillMatrixView(PermissionRequiredMixin, ChaoticaBaseView, TemplateView):
         }
 
         # Cache the matrix data for 5 minutes
-        cache.set(cache_key, cacheable_data, 300)
+        # cache.set(cache_key, cacheable_data, 300)
 
         # Add non-cacheable data
         context.update(cacheable_data)
 
         # Filter options (these change less frequently, cache separately)
         filter_options_key = 'skill_matrix_filter_options'
-        filter_options = cache.get(filter_options_key)
+        # filter_options = cache.get(filter_options_key)
+        filter_options = None
 
         if filter_options is None:
             filter_options = {
                 'all_units': list(OrganisationalUnit.objects.all().order_by('name').values('slug', 'name')),
                 'all_teams': list(Team.objects.all().order_by('name').values('slug', 'name')),
                 'all_categories': list(SkillCategory.objects.all().order_by('name').values('slug', 'name')),
-                'all_org_roles': list(OrganisationalUnitRole.objects.all().order_by('name').values('name')),
+                'all_org_roles': list(OrganisationalUnitRole.objects.all().order_by('name').values('name', 'id')),
             }
             # Cache filter options for 30 minutes
-            cache.set(filter_options_key, filter_options, 1800)
+            # cache.set(filter_options_key, filter_options, 1800)
 
         context.update(filter_options)
 
