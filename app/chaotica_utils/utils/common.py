@@ -16,7 +16,10 @@ from django.utils.dateparse import (
     parse_time,
 )
 from django.utils.timezone import is_aware, make_aware, now
+from django.contrib.auth import get_user_model
 
+def get_sentinel_user():
+    return get_user_model().objects.get_or_create(email="deleted@chaotica.app")[0]
 
 def can_manage_user(requesting_user, target_user):
     """

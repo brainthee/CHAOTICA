@@ -29,10 +29,7 @@ from geopy.geocoders import Nominatim
 import pandas as pd
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-
-
-def get_sentinel_user():
-    return get_user_model().objects.get_or_create(email="deleted@chaotica.app")[0]
+from ..utils import get_sentinel_user
 
 
 class Group(django.contrib.auth.models.Group):

@@ -10,10 +10,7 @@ from simple_history.models import HistoricalRecords
 from datetime import date
 from django.db.models.functions import Lower
 from django_countries.fields import CountryField
-
-
-def get_sentinel_user():
-    return get_user_model().objects.get_or_create(email="deleted@chaotica.app")[0]
+from ..utils import get_sentinel_user
 
 
 class Note(models.Model):
