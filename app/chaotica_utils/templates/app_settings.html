@@ -50,6 +50,12 @@
               <span class="text-sm">Restore Media</span>
             </a>
           </li>
+          <li class="nav-item pt-2">
+            <a class="nav-link d-flex" data-scroll="" href="#health-api-key">
+              <span class="fa fa-key text-body-emphasis me-sm-2 fs-7"></span>
+              <span class="text-sm">Health Check API Key</span>
+            </a>
+          </li>
         </ul>
       </div>
     </div>
@@ -470,6 +476,99 @@
         </div>
       </div>
 
+      <div class="card mt-4" id="health-api-key">
+        <div class="card-header">
+          <h5>Health Check API Key</h5>
+          <span class="text-700 lh-sm mb-0">Manage your API key for accessing the health check endpoint</span>
+        </div>
+        <div class="card-body">
+          {% if user.is_superuser or user.is_staff %}
+            <div id="api-key-section">
+              <div class="mb-3">
+                <label class="form-label">Your API Key</label>
+                <div class="input-group">
+                  <input type="text" class="form-control font-monospace" id="api-key-value" readonly value="{{ api_key }}" style="background-color: #f8f9fa;">
+                  <button class="btn btn-outline-secondary" type="button" onclick="copyApiKey()">
+                    <i class="fa fa-copy"></i> Copy
+                  </button>
+                </div>
+                <div class="form-text">Use this key with the parameter <code>?api_key=YOUR_KEY</code> when accessing <code>/health/</code></div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Last Used</label>
+                <p class="text-muted">
+                  {% if api_key_last_used %}
+                    {{ api_key_last_used|date:"Y-m-d H:i:s" }}
+                  {% else %}
+                    Never
+                  {% endif %}
+                </p>
+              </div>
+
+              <div class="mb-3">
+                <button type="button" class="btn btn-warning" onclick="regenerateApiKey()">
+                  <i class="fa fa-refresh"></i> Regenerate Key
+                </button>
+                <div class="form-text text-warning">Warning: Regenerating will invalidate the current key</div>
+              </div>
+            </div>
+
+            <div id="api-key-message" class="mt-3"></div>
+
+            <script>
+              function copyApiKey() {
+                const apiKeyInput = document.getElementById('api-key-value');
+                apiKeyInput.select();
+                apiKeyInput.setSelectionRange(0, 99999);
+                navigator.clipboard.writeText(apiKeyInput.value);
+
+                const messageDiv = document.getElementById('api-key-message');
+                messageDiv.innerHTML = '<div class="alert alert-success">API key copied to clipboard!</div>';
+                setTimeout(() => {
+                  messageDiv.innerHTML = '';
+                }, 3000);
+              }
+
+              async function regenerateApiKey() {
+                if (!confirm('Are you sure you want to regenerate your API key? The current key will be invalidated.')) {
+                  return;
+                }
+
+                try {
+                  const response = await fetch('{% url "regenerate_health_api_key" %}', {
+                    method: 'POST',
+                    headers: {
+                      'X-CSRFToken': '{{ csrf_token }}',
+                      'Content-Type': 'application/json'
+                    }
+                  });
+
+                  if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('api-key-value').value = data.new_key;
+
+                    const messageDiv = document.getElementById('api-key-message');
+                    messageDiv.innerHTML = '<div class="alert alert-success">API key regenerated successfully!</div>';
+                    setTimeout(() => {
+                      messageDiv.innerHTML = '';
+                    }, 5000);
+                  } else {
+                    throw new Error('Failed to regenerate API key');
+                  }
+                } catch (error) {
+                  const messageDiv = document.getElementById('api-key-message');
+                  messageDiv.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+                }
+              }
+            </script>
+          {% else %}
+            <div class="alert alert-warning">
+              You need to be a staff member or superuser to manage API keys.
+            </div>
+          {% endif %}
+        </div>
+      </div>
 
     </div>
   </div>

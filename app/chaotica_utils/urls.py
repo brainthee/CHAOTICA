@@ -9,6 +9,7 @@ urlpatterns = [
     path("maintenance/", views.maintenance, name="maintenance"),
     re_path(r"^impersonate/", include("impersonate.urls")),
     path("quote", views.get_quote, name="get_quote"),
+    path("health/", views.HealthCheckView.as_view(), name="health_check"),
 
     # Autocomplete/search
     path(
@@ -51,6 +52,7 @@ urlpatterns = [
     path("settings/import", views.settings_import_data, name="settings_import_data"),
     path("settings/export", views.settings_export_data, name="settings_export_data"),
     path("settings/csv_template/users", views.csv_template_users, name="csv_template_users"),
+    path("settings/regenerate_api_key", views.regenerate_health_api_key, name="regenerate_health_api_key"),
 
     path('settings/backup/db/download', views.download_db_backup, name='download_db_backup'),
     path('settings/backup/media/download', views.download_media_backup, name='download_media_backup'),
