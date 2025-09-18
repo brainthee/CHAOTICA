@@ -86,7 +86,7 @@
 
 
     {% if SENTRY_FRONTEND_DSN %}
-      <script src="{{ SENTRY_FRONTEND_DSN }}" crossorigin="anonymous"></script>
+      <script src="{{ SENTRY_FRONTEND_DSN }}" crossorigin="anonymous" async></script>
     {% endif %}
 
     {% block head_css_section %}{% endblock head_css_section %}
