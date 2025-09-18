@@ -49,6 +49,7 @@ from bootstrap_datepicker_plus.widgets import (
 from tinymce.widgets import TinyMCE
 from django_clamav.validators import validate_file_infection
 from guardian.shortcuts import assign_perm, remove_perm
+from django.conf import settings
 
 
 
@@ -2209,11 +2210,14 @@ class OrganisationalUnitForm(forms.ModelForm):
     image = forms.FileField(
         label="Image",
         required=False,
-        validators=[validate_file_infection],
     )
 
     def __init__(self, *args, **kwargs):
         super(OrganisationalUnitForm, self).__init__(*args, **kwargs)
+
+        if getattr(settings, 'CLAMAV_ENABLED', True):
+            self.fields['image'].validators.append(validate_file_infection)
+
         self.helper = FormHelper(self)
         self.fields["name"].label = False
         self.fields["description"].label = False
@@ -2497,12 +2501,10 @@ class TeamForm(forms.ModelForm):
     profile_image = forms.FileField(
         label="Profile Image",
         required=False,
-        validators=[validate_file_infection],
     )
     cover_image = forms.FileField(
         label="Cover Image",
         required=False,
-        validators=[validate_file_infection],
     )
 
     description = forms.CharField(
@@ -2518,6 +2520,13 @@ class TeamForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(TeamForm, self).__init__(*args, **kwargs)
+
+        if getattr(settings, 'CLAMAV_ENABLED', True):
+            self.fields['profile_image'].validators.append(validate_file_infection)
+
+        if getattr(settings, 'CLAMAV_ENABLED', True):
+            self.fields['cover_image'].validators.append(validate_file_infection)
+
         self.helper = FormHelper(self)
         self.fields["name"].label = False
         self.fields["description"].label = False

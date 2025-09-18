@@ -815,7 +815,6 @@ class EditProfileForm(forms.ModelForm):
     profile_image = forms.FileField(
         label="Profile Image",
         required=False,
-        validators=[validate_file_infection],
     )
     
     pref_timezone = forms.ChoiceField(
@@ -867,6 +866,10 @@ class EditProfileForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.current_request = kwargs.pop("current_request", None)
         super(EditProfileForm, self).__init__(*args, **kwargs)
+
+        if getattr(settings, 'CLAMAV_ENABLED', True):
+            self.fields['profile_image'].validators.append(validate_file_infection)
+
         self.helper = FormHelper(self)
         self.helper.form_tag = False
         self.fields["contracted_leave_renewal"].widget = DatePickerInput()
