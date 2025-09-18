@@ -38,6 +38,11 @@ SECRET_KEY = os.environ.get(
     default="this-aint-secure-honest-f7r-nrel3@s^c5gl!%l8-i)eeea++xm_(qpl+!=$1$_40nh=ym",
 )
 
+HEALTH_CHECK_API_KEY = os.environ.get(
+    "HEALTH_CHECK_API_KEY",
+    default="health-check-api-key-change-in-production",
+)
+
 SITE_DOMAIN = os.environ.get("SITE_DOMAIN", default="127.0.0.1:8000")
 SITE_PROTO = os.environ.get("SITE_PROTO", default="http")
 
@@ -781,7 +786,8 @@ EXPLORER_DATA_EXPORTERS = [
     ("json", "explorer.exporters.JSONExporter"),
 ]
 
-CLAMAV_UNIX_SOCKET = "/var/run/clamav/clamd.ctl"
-CLAMAV_USE_TCP = False
-CLAMAV_TCP_PORT = 3310
-CLAMAV_TCP_ADDR = "127.0.0.1"
+CLAMAV_ENABLED = os.environ.get("CLAMAV_ENABLED", default=True)
+CLAMAV_UNIX_SOCKET = os.environ.get("CLAMAV_UNIX_SOCKET", default="/var/run/clamav/clamd.ctl")
+CLAMAV_USE_TCP = os.environ.get("CLAMAV_USE_TCP", default=False)
+CLAMAV_TCP_PORT = os.environ.get("CLAMAV_TCP_PORT", default=3310)
+CLAMAV_TCP_ADDR = os.environ.get("CLAMAV_TCP_ADDR", default="127.0.0.1")

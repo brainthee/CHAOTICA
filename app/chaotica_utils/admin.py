@@ -10,6 +10,7 @@ from .models import (
     LeaveRequest,
     Holiday,
     Note,
+    HealthCheckAPIKey,
 )
 
 class CustomUserAdmin(GuardedModelAdmin):
@@ -106,3 +107,15 @@ class LeaveRequestAdmin(admin.ModelAdmin):
 class HolidayAdmin(admin.ModelAdmin):
     list_display = ["date", "country", "reason"]
     list_filter = ["country"]
+
+
+@admin.register(HealthCheckAPIKey)
+class HealthCheckAPIKeyAdmin(admin.ModelAdmin):
+    list_display = ["user", "key", "created_at", "last_used", "is_active"]
+    list_filter = ["is_active", "created_at"]
+    search_fields = ["user__email", "user__first_name", "user__last_name", "key"]
+    readonly_fields = ["key", "created_at", "last_used"]
+
+    def has_add_permission(self, request):
+        # Prevent manual creation - keys should be created through the app
+        return False

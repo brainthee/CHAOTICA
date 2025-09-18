@@ -28,6 +28,7 @@ from django.views import View
 from guardian.decorators import permission_required_or_403
 from django.views.generic.list import ListView
 from django.contrib import messages
+from django.views.decorators.http import require_http_methods
 from django.shortcuts import get_object_or_404
 from constance import config
 from constance.utils import get_values
@@ -133,11 +134,22 @@ def app_settings(request):
         dbrestore_form = DatabaseRestoreForm()
         mediarestore_form = MediaRestoreForm()
 
+    # Get or create API key for the user (if they have permissions)
+    api_key = None
+    api_key_last_used = None
+    if request.user.is_superuser or request.user.is_staff:
+        from ..models import HealthCheckAPIKey
+        api_key_obj = HealthCheckAPIKey.get_or_create_for_user(request.user)
+        api_key = str(api_key_obj.key)
+        api_key_last_used = api_key_obj.last_used
+
     context = {
         "settings_form": settings_form,
         "import_form": import_form,
         "dbrestore_form": dbrestore_form,
         "mediarestore_form": mediarestore_form,
+        "api_key": api_key,
+        "api_key_last_used": api_key_last_used,
     }
     template = loader.get_template("app_settings.html")
     context = {**context, **page_defaults(request)}
@@ -331,3 +343,27 @@ class NoteListView(PrefetchRelatedMixin, NoteBaseView, ListView):
     def get_queryset(self):
         queryset = super(NoteListView, self).get_queryset()
         return queryset[:200]
+
+
+@login_required
+@require_http_methods(["POST"])
+def regenerate_health_api_key(request):
+    """Regenerate health check API key for the requesting user"""
+    if not (request.user.is_superuser or request.user.is_staff):
+        return JsonResponse({'error': 'Insufficient permissions'}, status=403)
+
+    try:
+        from ..models import HealthCheckAPIKey
+
+        api_key = HealthCheckAPIKey.get_or_create_for_user(request.user)
+        new_key = api_key.regenerate_key()
+
+        return JsonResponse({
+            'success': True,
+            'new_key': str(new_key)
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)

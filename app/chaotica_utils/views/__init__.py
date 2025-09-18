@@ -6,3 +6,4 @@ from .sessions import *
 from .leave import *
 from .auth import *
 from .autocomplete import *
+from .health import *
