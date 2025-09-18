@@ -8,12 +8,8 @@ from datetime import timedelta
 from notifications.utils import send_notifications
 from jobtracker.enums import DefaultTimeSlotTypes
 from business_duration import businessDuration
-from django.contrib.auth import get_user_model
 from constance import config
-
-
-def get_sentinel_user():
-    return get_user_model().objects.get_or_create(email="deleted@chaotica.app")[0]
+from ..utils import get_sentinel_user
 
 
 class LeaveRequest(models.Model):

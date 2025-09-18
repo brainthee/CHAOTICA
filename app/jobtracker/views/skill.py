@@ -10,6 +10,7 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from chaotica_utils.views import ChaoticaBaseView
 from chaotica_utils.models import User
+from chaotica_utils.utils import get_sentinel_user
 from ..models import Skill, SkillCategory, UserSkill
 from ..forms import SkillForm, SkillCatForm
 from ..mixins import PrefetchRelatedMixin
@@ -164,7 +165,8 @@ class SkillMatrixView(PermissionRequiredMixin, ChaoticaBaseView, TemplateView):
             return context
 
         # Start with active users
-        users_query = User.objects.filter(is_active=True)
+        users_query = User.objects.filter(
+            is_active=True, groups__isnull=False,)
 
         # Apply unit filter
         if unit_filter:
@@ -195,9 +197,7 @@ class SkillMatrixView(PermissionRequiredMixin, ChaoticaBaseView, TemplateView):
                     'skill', 'rating', 'interested_in_improving_skill', 'user'
                 )
             )
-        ).only(
-            'id', 'first_name', 'last_name', 'email', 'profile_image'
-        ).order_by('first_name', 'last_name')
+        ).get_default_order()
 
         # Get all skills organized by category (with optional category filter)
         categories_query = SkillCategory.objects.all()
