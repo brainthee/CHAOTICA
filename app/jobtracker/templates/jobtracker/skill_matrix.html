@@ -31,14 +31,6 @@
       </p>
     </div>
     <div class="col-auto d-flex gap-2">
-      <a class="btn btn-outline-secondary" href="{% url 'skill_list' %}">
-        <i class="fa-solid fa-grid-2 me-2"></i>
-        Category View
-      </a>
-      <button class="btn btn-phoenix-secondary" onclick="toggleCompactView()">
-        <i class="fa-solid fa-compress me-2"></i>
-        Compact View
-      </button>
     </div>
   </div>
 
@@ -84,7 +76,7 @@
           <select name="role" id="role-filter" class="form-select form-select-sm">
             <option value="">All Roles</option>
             {% for role in all_org_roles %}
-              <option value="{{ role.slug }}" {% if current_role == role.slug %}selected{% endif %}>
+              <option value="{{ role.id }}" {% if current_role == role.id %}selected{% endif %}>
                 {{ role.name }}
               </option>
             {% endfor %}
@@ -110,7 +102,7 @@
 
   <!-- Summary Statistics -->
   {% if current_unit or current_team or current_category or current_role %}
-    <div class="alert alert-info">
+    <div class="alert alert-outline-info">
       <i class="fa-solid fa-info-circle me-2"></i>
       Showing {{ matrix_data|length }} users
       {% if current_unit %}in <strong>{{ current_unit }}</strong> unit{% endif %}
@@ -157,23 +149,22 @@
           <table class="table table-sm mb-0 skills-matrix-table">
             <thead class="sticky-top bg-body-emphasis">
               <tr>
-                <th class="text-start ps-3 py-3 border-end" style="min-width: 180px; position: sticky; left: 0; z-index: 10; background: inherit;">
-                  Team Member
+                <th class="text-start ps-3 py-3 border-end bg-body" style="min-width: 180px; position: sticky; left: 0; z-index: 10; background: inherit;">
                 </th>
                 {% for category in categories %}
-                  <th colspan="{{ category.skills.count }}" class="text-center py-2 border-end text-uppercase fs-9 fw-bold">
+                  <th colspan="{{ category.skills.count }}" class="text-center py-2 border-end text-uppercase fs-9 fw-bold bg-body">
                     {{ category.name }}
                     <div class="fs-10 text-muted fw-normal">{{ category.skills.count }} skills</div>
                   </th>
                 {% endfor %}
               </tr>
               <tr>
-                <th class="border-end" style="position: sticky; left: 0; z-index: 10; background: inherit;"></th>
+                <th class="border-end bg-body" style="position: sticky; left: 0; z-index: 10; background: inherit;"></th>
                 {% for category in categories %}
                   {% for skill in category.skills.all %}
-                    <th class="text-center py-2 skill-header" style="min-width: 50px; writing-mode: vertical-rl; text-orientation: mixed;">
+                    <th class="py-2 skill-header text-end border-end border-bottom top-50" style="min-width: 50px; writing-mode: vertical-rl; text-orientation: mixed;">
                       <div class="skill-name" title="{{ skill.name }} - {{ skill.description }}">
-                        {{ skill.name|truncatechars:15 }}
+                        {{ skill.name|truncatechars:25 }}
                       </div>
                     </th>
                   {% endfor %}
@@ -183,47 +174,51 @@
             <tbody>
               {% for row in matrix_data %}
                 <tr class="matrix-row">
-                  <td class="fw-semi-bold ps-3 py-2 border-end user-cell" style="position: sticky; left: 0; z-index: 5; background: inherit;">
+                  <td class="fw-semi-bold ps-3 py-2 border-end user-cell bg-body" style="position: sticky; left: 0; z-index: 5; background: inherit;">
                     <div class="d-flex align-items-center">
-                      <div class="me-2">
-                        {% if row.user.profile_picture %}
-                          <img src="{{ row.user.profile_picture.url }}" alt="{{ row.user.get_full_name }}" class="rounded-circle" width="24" height="24">
-                        {% else %}
-                          <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 24px; height: 24px; font-size: 12px;">
-                            {{ row.user.first_name|first }}{{ row.user.last_name|first }}
-                          </div>
-                        {% endif %}
-                      </div>
-                      <span class="text-nowrap">{{ row.user.get_full_name }}</span>
+
+                      {% include 'partials/users/user_table_display.html' with u=row.user compressed_view=1 %}
+
                     </div>
                   </td>
                   {% for category in categories %}
                     {% for skill in category.skills.all %}
                       {% with skill_data=row.skills|lookup:skill.id %}
-                        <td class="text-center py-1 skill-cell" data-skill="{{ skill.name }}" data-user="{{ row.user.get_full_name }}">
+                        <td class="text-center py-3 skill-cell border-end" data-skill="{{ skill.name }}" data-user="{{ row.user }}">
                           {% if skill_data and skill_data.rating == 0 or not skill_data %}
-                            <span class="text-body-tertiary" title="No Experience">
+                            <span class="text-body-tertiary d-inline-block position-relative" title="No Experience{% if skill_data.interested %} - Wants to Improve{% endif %}">
                               <i class="fa-regular fa-circle fa-lg"></i>
+                              {% if skill_data.interested %}
+                              <i class="fa-solid fa-star text-info skill-improve-star"></i>
+                              {% endif %}
                             </span>
                           {% elif skill_data and skill_data.rating == 1 %}
                             <span class="text-warning d-inline-block position-relative" title="Need Support{% if skill_data.interested %} - Wants to Improve{% endif %}">
                               <i class="fa-solid fa-circle-half-stroke fa-lg"></i>
-                              {% if skill_data.interested %}<i class="fa-solid fa-star text-info skill-improve-star"></i>{% endif %}
+                              {% if skill_data.interested %}
+                              <i class="fa-solid fa-star text-info skill-improve-star"></i>
+                              {% endif %}
                             </span>
                           {% elif skill_data and skill_data.rating == 2 %}
                             <span class="text-success d-inline-block position-relative" title="Can Do Alone{% if skill_data.interested %} - Wants to Improve{% endif %}">
                               <i class="fa-solid fa-circle-check fa-lg"></i>
-                              {% if skill_data.interested %}<i class="fa-solid fa-star text-info skill-improve-star"></i>{% endif %}
+                              {% if skill_data.interested %}
+                              <i class="fa-solid fa-star text-info skill-improve-star"></i>
+                              {% endif %}
                             </span>
                           {% elif skill_data and skill_data.rating == 3 %}
                             <span class="text-primary d-inline-block position-relative" title="Specialist{% if skill_data.interested %} - Wants to Improve{% endif %}">
                               <i class="fa-solid fa-certificate fa-lg"></i>
-                              {% if skill_data.interested %}<i class="fa-solid fa-star text-info skill-improve-star"></i>{% endif %}
+                              {% if skill_data.interested %}
+                              <i class="fa-solid fa-star text-info skill-improve-star"></i>
+                              {% endif %}
                             </span>
                           {% else %}
-                            <span class="text-body-tertiary" title="No Experience{% if skill_data.interested %} - Wants to Improve{% endif %}">
+                            <span class="text-body-tertiary d-inline-block position-relative" title="No Experience{% if skill_data.interested %} - Wants to Improve{% endif %}">
                               <i class="fa-regular fa-circle fa-lg"></i>
-                              {% if skill_data.interested %}<i class="fa-solid fa-star text-info skill-improve-star"></i>{% endif %}
+                              {% if skill_data.interested %}
+                              <i class="fa-solid fa-star text-info skill-improve-star"></i>
+                              {% endif %}
                             </span>
                           {% endif %}
                         </td>
@@ -251,6 +246,7 @@
       </div>
     {% endif %}
   </div>
+  {% include 'partials/loading.html' %}
 {% endblock %}
 
 {% block extra_css %}
@@ -312,18 +308,6 @@
     transform: scale(1.1);
 }
 
-.compact-view .skill-cell i.fa-lg {
-    font-size: 0.875rem !important;
-}
-
-.compact-view .skill-cell .fa-star {
-    font-size: 0.5rem !important;
-}
-
-.compact-view .skill-name {
-    font-size: 0.7rem;
-}
-
 .fs-10 {
     font-size: 0.7rem !important;
 }
@@ -343,33 +327,10 @@
 
 {% block extra_js %}
 <script>
-function toggleCompactView() {
-    document.body.classList.toggle('compact-view');
-    const btn = event.target.closest('button');
-    const icon = btn.querySelector('i');
-
-    if (document.body.classList.contains('compact-view')) {
-        icon.className = 'fa-solid fa-expand me-2';
-        btn.innerHTML = '<i class="fa-solid fa-expand me-2"></i>Normal View';
-    } else {
-        icon.className = 'fa-solid fa-compress me-2';
-        btn.innerHTML = '<i class="fa-solid fa-compress me-2"></i>Compact View';
-    }
-}
-
-// Add tooltips to skill indicators
+// Hide the loader when done.
 document.addEventListener('DOMContentLoaded', function() {
-    const indicators = document.querySelectorAll('.skill-indicator');
-    indicators.forEach(indicator => {
-        indicator.addEventListener('mouseenter', function(e) {
-            const cell = e.target.closest('.skill-cell');
-            const skill = cell.dataset.skill;
-            const user = cell.dataset.user;
-            const title = e.target.title;
-
-            // You could add a custom tooltip here if needed
-        });
-    });
+  $('#loading').hide();
 });
+
 </script>
 {% endblock %}
