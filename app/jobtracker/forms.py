@@ -27,7 +27,7 @@ from .models import (
     BillingCode,
     OrganisationalUnitRole,
 )
-from chaotica_utils.models import Note, User
+from chaotica_utils.models import Note, User, JobLevel
 from .enums import (
     DefaultTimeSlotTypes,
     JobStatuses,
@@ -83,7 +83,7 @@ class SchedulerFilter(forms.Form):
         widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
                 'class': 'select2-widget',
-                'data-minimum-input-length': 2,
+                'data-minimum-input-length': 0,
                 'data-ajax--url': '/autocomplete/skills',
                 'data-ajax--cache': 'true',
                 'data-ajax--type': 'GET',
@@ -97,7 +97,7 @@ class SchedulerFilter(forms.Form):
         widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
                 'class': 'select2-widget',
-                'data-minimum-input-length': 2,
+                'data-minimum-input-length': 0,
                 'data-ajax--url': '/autocomplete/skills',
                 'data-ajax--cache': 'true',
                 'data-ajax--type': 'GET',
@@ -125,7 +125,7 @@ class SchedulerFilter(forms.Form):
         widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
                 'class': 'select2-widget',
-                'data-minimum-input-length': 2,
+                'data-minimum-input-length': 0,
                 'data-ajax--url': '/autocomplete/teams',
                 'data-ajax--cache': 'true',
                 'data-ajax--type': 'GET',
@@ -139,7 +139,7 @@ class SchedulerFilter(forms.Form):
         widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
                 'class': 'select2-widget',
-                'data-minimum-input-length': 2,
+                'data-minimum-input-length': 0,
                 'data-ajax--url': '/autocomplete/services',
                 'data-ajax--cache': 'true',
                 'data-ajax--type': 'GET',
@@ -153,7 +153,7 @@ class SchedulerFilter(forms.Form):
         widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
                 'class': 'select2-widget',
-                'data-minimum-input-length': 2,
+                'data-minimum-input-length': 0,
                 'data-ajax--url': '/autocomplete/org-units',
                 'data-ajax--cache': 'true',
                 'data-ajax--type': 'GET',
@@ -167,11 +167,24 @@ class SchedulerFilter(forms.Form):
         widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
                 'class': 'select2-widget',
-                'data-minimum-input-length': 2,
+                'data-minimum-input-length': 0,
                 'data-ajax--url': '/autocomplete/org-unit-roles',
                 'data-ajax--cache': 'true',
                 'data-ajax--type': 'GET',
             },
+        ),
+    )
+
+    job_levels = forms.ModelMultipleChoiceField(
+        required=False,
+        label="Job Levels",
+        queryset=JobLevel.objects.filter(is_active=True).order_by('order'),
+        widget=s2forms.ModelSelect2MultipleWidget(
+            attrs={
+                'class': 'select2-widget',
+                'data-minimum-input-length': 0,
+            },
+            search_fields=['short_label__icontains', 'long_label__icontains'],            
         ),
     )
 
@@ -335,6 +348,12 @@ class SchedulerFilter(forms.Form):
                     Column(
                         Field("org_unit_roles", style="width: 100%;"),
                     ),
+                ),
+                Row(
+                    Column(
+                        Field("job_levels", style="width: 100%;"),
+                    ),
+                    Column(),
                 ),
                 Row(
                     Column(
