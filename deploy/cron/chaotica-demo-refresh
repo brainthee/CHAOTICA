@@ -1,0 +1,11 @@
+# CHAOTICA Demo Data Refresh - Daily at 2 AM
+# Place this file in /etc/cron.d/chaotica-demo-refresh
+
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+# For standard deployment
+0 2 * * * root /opt/chaotica/deploy/scripts/refresh_demo_data.sh >> /var/log/chaotica-demo-refresh.log 2>&1
+
+# For Docker deployment (uncomment if using Docker)
+# 0 2 * * * root cd /opt/chaotica/deploy/docker-compose && ./refresh_demo_data.sh >> /var/log/chaotica-demo-refresh.log 2>&1
