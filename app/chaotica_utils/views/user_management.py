@@ -462,3 +462,95 @@ def user_assign_global_role(request, email):
         "modals/assign_user_role.html", context, request=request
     )
     return JsonResponse(data)
+
+
+@login_required
+@require_safe
+def user_feedback_summary(request, email):
+    """Display feedback summary for a specific user's authored reports"""
+    user = get_object_or_404(User, email=email)
+
+    # Handle date range filtering
+    start_date = None
+    end_date = None
+
+    # Check for date range in request
+    date_range_raw = request.GET.get("dateRange", "")
+    if " to " in date_range_raw:
+        date_range_split = date_range_raw.split(" to ")
+        if len(date_range_split) == 2:
+            try:
+                start_date = timezone.datetime.strptime(date_range_split[0], "%Y-%m-%d").date()
+                end_date = timezone.datetime.strptime(date_range_split[1], "%Y-%m-%d").date()
+            except ValueError:
+                # Invalid date format, ignore
+                pass
+
+    # Fallback to individual date parameters
+    if not start_date:
+        start_date_param = request.GET.get("start_date")
+        if start_date_param:
+            try:
+                start_date = timezone.datetime.strptime(start_date_param, "%Y-%m-%d").date()
+            except ValueError:
+                pass
+
+    if not end_date:
+        end_date_param = request.GET.get("end_date")
+        if end_date_param:
+            try:
+                end_date = timezone.datetime.strptime(end_date_param, "%Y-%m-%d").date()
+            except ValueError:
+                pass
+
+    # Default to last 12 months if no dates specified
+    if not start_date and not end_date:
+        end_date = timezone.now().date()
+        start_date = end_date - datetime.timedelta(days=365)
+
+    # Get user's authored reports with QA data
+    reports = user.get_reports().select_related(
+        'techqa_by', 'presqa_by', 'service', 'job'
+    ).prefetch_related('job__client', 'feedback__author')
+
+    # Apply date filtering if dates are provided
+    if start_date:
+        reports = reports.filter(actual_completed_date__gte=start_date)
+    if end_date:
+        reports = reports.filter(actual_completed_date__lte=end_date)
+
+    # Calculate summary statistics
+    total_reports = reports.count()
+    techqa_ratings = [r.techqa_report_rating for r in reports if r.techqa_report_rating is not None]
+    presqa_ratings = [r.presqa_report_rating for r in reports if r.presqa_report_rating is not None]
+
+    avg_techqa_rating = sum(techqa_ratings) / len(techqa_ratings) if techqa_ratings else None
+    avg_presqa_rating = sum(presqa_ratings) / len(presqa_ratings) if presqa_ratings else None
+
+    # Calculate combined average if both ratings exist
+    combined_avg_rating = None
+    if avg_techqa_rating and avg_presqa_rating:
+        combined_avg_rating = (avg_techqa_rating + avg_presqa_rating) / 2
+
+    # Format date range for display
+    date_range_display = ""
+    if start_date and end_date:
+        date_range_display = f"{start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}"
+
+    context = {
+        'user_profile': user,
+        'reports': reports,
+        'total_reports': total_reports,
+        'techqa_reports_count': len(techqa_ratings),
+        'presqa_reports_count': len(presqa_ratings),
+        'avg_techqa_rating': avg_techqa_rating,
+        'avg_presqa_rating': avg_presqa_rating,
+        'combined_avg_rating': combined_avg_rating,
+        'start_date': start_date,
+        'end_date': end_date,
+        'date_range_display': date_range_display,
+    }
+
+    template = loader.get_template("chaotica_utils/user_feedback_summary.html")
+    context = {**context, **page_defaults(request)}
+    return HttpResponse(template.render(context, request))

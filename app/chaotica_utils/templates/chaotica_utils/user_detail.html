@@ -28,7 +28,18 @@
     </div>
 
     <div class="col-12 g-2 col-xl-8 ps-3 pt-0">
+
+      <!-- Action Buttons -->
       <div class="row mb-3">
+        <div class="col-12">
+          <a href="{% url 'user_feedback_summary' email=user.email %}" class="btn btn-phoenix btn-phoenix-primary btn-sm">
+            <i class="fas fa-chart-line me-1"></i> Feedback Summary
+          </a>
+        </div>
+      </div>
+      
+      <div class="row mb-3">
+
         <div class="scrollbar">
           <ul class="nav nav-underline fs-9 flex-nowrap mb-3 pb-1" id="myTab" role="tablist">
             <li class="nav-item me-3" role="presentation">

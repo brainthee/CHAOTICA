@@ -101,6 +101,7 @@ urlpatterns = [
         views.user_manage_status,
         name="user_manage_status",
     ),
+    path("profile/<str:email>/feedback/", views.user_feedback_summary, name="user_feedback_summary"),
     # Admin tasks/triggers
         
     path(

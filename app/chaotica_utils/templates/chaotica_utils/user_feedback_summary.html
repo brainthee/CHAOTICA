@@ -1,0 +1,354 @@
+{% extends 'base.html' %}
+{% load menu %}
+{% load static %}
+{% load humanize %}
+
+{% block pageTitle %}
+  Feedback Summary - {{ user_profile }}
+{% endblock %}
+
+{% block head_title %}
+  Feedback Summary - {{ user_profile }}
+{% endblock %}
+
+{% block breadcrumbItem %}
+  <li class="breadcrumb-item"><a href="{% url 'user_list' %}">Users</a></li>
+  <li class="breadcrumb-item"><a href="{{ user_profile.get_absolute_url }}">{{ user_profile }}</a></li>
+  <li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">Feedback Summary</li>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4 gx-6 gy-3 mt-2 align-items-center">
+  <div class="col">
+    <h2 class="mb-0">Feedback Summary</h2>
+    <span class="text-700 lh-sm mb-0">QA feedback for {{ user_profile }}'s authored reports</span>
+    {% if date_range_display %}
+      <div class="mt-1">
+        <small class="text-primary">
+          <i class="fa fa-calendar me-1"></i>
+          Showing reports from {{ date_range_display }}
+        </small>
+      </div>
+    {% endif %}
+  </div>
+  <div class="col-auto">
+    <a href="{{ user_profile.get_absolute_url }}" class="btn btn-phoenix btn-phoenix-secondary">
+      <i class="fa fa-arrow-left"></i> Back to Profile
+    </a>
+  </div>
+</div>
+
+<!-- Date Range Filter -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-body">
+        <form method="GET" class="row g-3 align-items-end">
+          <div class="col-md-4">
+            <label for="start_date" class="form-label">Start Date</label>
+            <input type="date" class="form-control" id="start_date" name="start_date" value="{{ start_date|date:'Y-m-d' }}">
+          </div>
+          <div class="col-md-4">
+            <label for="end_date" class="form-label">End Date</label>
+            <input type="date" class="form-control" id="end_date" name="end_date" value="{{ end_date|date:'Y-m-d' }}">
+          </div>
+          <div class="col-md-4">
+            <button type="submit" class="btn btn-phoenix btn-phoenix-primary">
+              <i class="fa fa-filter me-1"></i> Filter Reports
+            </button>
+            <a href="{% url 'user_feedback_summary' email=user_profile.email %}" class="btn btn-phoenix btn-phoenix-secondary ms-2">
+              <i class="fa fa-refresh me-1"></i> Reset
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Summary Statistics -->
+<div class="row mb-4">
+  <div class="col-xl-3 col-sm-6 mb-3">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h6 class="text-body-tertiary fw-semibold mb-1">Total Reports</h6>
+            <h4 class="mb-0">{{ total_reports }}</h4>
+          </div>
+          <div class="text-primary">
+            <i class="fa fa-file-text fa-2x"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-3 col-sm-6 mb-3">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h6 class="text-body-tertiary fw-semibold mb-1">TechQA Reviews</h6>
+            <h4 class="mb-0">{{ techqa_reports_count }}</h4>
+            {% if avg_techqa_rating %}
+              <small class="text-success">Avg: {{ avg_techqa_rating|floatformat:1 }}/5</small>
+            {% endif %}
+          </div>
+          <div class="text-info">
+            <i class="fa fa-cog fa-2x"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-3 col-sm-6 mb-3">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h6 class="text-body-tertiary fw-semibold mb-1">PresQA Reviews</h6>
+            <h4 class="mb-0">{{ presqa_reports_count }}</h4>
+            {% if avg_presqa_rating %}
+              <small class="text-success">Avg: {{ avg_presqa_rating|floatformat:1 }}/5</small>
+            {% endif %}
+          </div>
+          <div class="text-warning">
+            <i class="fa fa-person-chalkboard fa-2x"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-3 col-sm-6 mb-3">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h6 class="text-body-tertiary fw-semibold mb-1">Overall Rating</h6>
+            {% if avg_techqa_rating and avg_presqa_rating %}
+              <h4 class="mb-0">{{ combined_avg_rating|floatformat:1 }}/5</h4>
+              <small class="text-body-tertiary">Combined average</small>
+            {% elif avg_techqa_rating %}
+              <h4 class="mb-0">{{ avg_techqa_rating|floatformat:1 }}/5</h4>
+              <small class="text-body-tertiary">TechQA only</small>
+            {% elif avg_presqa_rating %}
+              <h4 class="mb-0">{{ avg_presqa_rating|floatformat:1 }}/5</h4>
+              <small class="text-body-tertiary">PresQA only</small>
+            {% else %}
+              <h4 class="mb-0 text-body-tertiary">N/A</h4>
+              <small class="text-body-tertiary">No ratings yet</small>
+            {% endif %}
+          </div>
+          <div class="text-success">
+            <i class="fa fa-star fa-2x"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Reports Table -->
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">Report Feedback History</h5>
+      </div>
+      <div class="card-body">
+        {% if reports %}
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <thead>
+                <tr>
+                  <th>Report</th>
+                  <th>Service</th>
+                  <th>Client</th>
+                  <th>TechQA By</th>
+                  <th>TechQA Rating</th>
+                  <th>PresQA By</th>
+                  <th>PresQA Rating</th>
+                  <th>Completed</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for report in reports %}
+                <tr class="report-row">
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <div>
+                        <a href="{{ report.get_absolute_url }}" class="fw-semibold">
+                          {{ report.get_id }} {{ report.title }}
+                        </a>
+                        {% if report.job %}
+                          <div class="text-body-tertiary small">{{ report.job.title }}</div>
+                        {% endif %}
+                        <!-- Late submission indicators -->
+                        <div class="mt-1">
+                          {% if report.was_submitted_late_tqa %}
+                            <span class="badge bg-warning-subtle text-warning me-1">
+                              <i class="fa fa-clock me-1"></i>Late to TQA
+                            </span>
+                          {% endif %}
+                          {% if report.was_submitted_late_pqa %}
+                            <span class="badge bg-warning-subtle text-warning me-1">
+                              <i class="fa fa-clock me-1"></i>Late to PQA
+                            </span>
+                          {% endif %}
+                          {% if report.was_submitted_late_delivery %}
+                            <span class="badge bg-danger-subtle text-danger me-1">
+                              <i class="fa fa-clock me-1"></i>Late to Delivery
+                            </span>
+                          {% endif %}
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    {% if report.service %}
+                      <span class="badge bg-primary-subtle text-primary">{{ report.service }}</span>
+                    {% else %}
+                      <span class="text-body-tertiary">-</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if report.job.client %}
+                      <a href="{{ report.job.client.get_absolute_url }}">
+                      {{ report.job.client }}</a>
+                    {% else %}
+                      <span class="text-body-tertiary">-</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if report.techqa_by %}
+                      <a href="{{ report.techqa_by.get_absolute_url }}">{{ report.techqa_by.get_full_name|default:report.techqa_by.email }}</a>
+                    {% else %}
+                      <span class="text-body-tertiary">Not assigned</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if report.techqa_report_rating is not None %}
+                      {% include 'partials/feedback_stars.html' with feedback=report.techqa_report_rating feedbackStr=report.get_techqa_report_rating_display %}
+                    {% else %}
+                      <span class="text-body-tertiary">No rating</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if report.presqa_by %}
+                      <a href="{{ report.presqa_by.get_absolute_url }}">{{ report.presqa_by.get_full_name|default:report.presqa_by.email }}</a>
+                    {% else %}
+                      <span class="text-body-tertiary">Not assigned</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if report.presqa_report_rating is not None %}
+                      {% include 'partials/feedback_stars.html' with feedback=report.presqa_report_rating feedbackStr=report.get_presqa_report_rating_display %}
+                    {% else %}
+                      <span class="text-body-tertiary">No rating</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if report.actual_completed_date %}
+                      {{ report.actual_completed_date|date:"Y-m-d" }}
+                    {% else %}
+                      <span class="text-body-tertiary">In progress</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% include 'partials/phase/status_badge.html' with phase=report badge_size='sm' %}
+                  </td>
+                </tr>
+                <!-- Feedback Content Row -->
+                <tr class="" id="feedback-{{ forloop.counter }}">
+                  <td colspan="9" class="p-0">
+                    <div class="card border-0 shadow-none">
+                      <div class="card-body">
+                        <div class="row">
+                          <!-- TechQA Feedback -->
+                          <div class="col-md-6">
+                            <h6 class="text-primary fw-bold mb-3">
+                              <i class="fa fa-cog me-2"></i>Technical QA Feedback
+                            </h6>
+                            {% with techqa_feedback=report.feedback_techqa %}
+                              {% if techqa_feedback %}
+                                {% for feedback in techqa_feedback %}
+                                  <div class="mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                      <small class="text-body-tertiary">
+                                        <strong>{{ feedback.author.get_full_name|default:feedback.author.email }}</strong>
+                                        - {{ feedback.created_on|date:"M d, Y H:i" }}
+                                      </small>
+                                    </div>
+                                    <div class="border-start border-primary border-3 ps-3">
+                                      {{ feedback.body|safe|default:"<em class='text-body-tertiary'>No feedback provided</em>" }}
+                                    </div>
+                                  </div>
+                                {% endfor %}
+                              {% else %}
+                                <div class="text-center py-3">
+                                  <div class="text-body-tertiary">
+                                    <i class="fa fa-inbox fa-2x mb-2"></i>
+                                    <p class="mb-0">No technical QA feedback available</p>
+                                  </div>
+                                </div>
+                              {% endif %}
+                            {% endwith %}
+                          </div>
+
+                          <!-- PresQA Feedback -->
+                          <div class="col-md-6">
+                            <h6 class="text-warning fw-bold mb-3">
+                              <i class="fa fa-person-chalkboard me-2"></i>Presentation QA Feedback
+                            </h6>
+                            {% with presqa_feedback=report.feedback_presqa %}
+                              {% if presqa_feedback %}
+                                {% for feedback in presqa_feedback %}
+                                  <div class="mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                      <small class="text-body-tertiary">
+                                        <strong>{{ feedback.author.get_full_name|default:feedback.author.email }}</strong>
+                                        - {{ feedback.created_on|date:"M d, Y H:i" }}
+                                      </small>
+                                    </div>
+                                    <div class="border-start border-warning border-3 ps-3">
+                                      {{ feedback.body|safe|default:"<em class='text-body-tertiary'>No feedback provided</em>" }}
+                                    </div>
+                                  </div>
+                                {% endfor %}
+                              {% else %}
+                                <div class="text-center py-3">
+                                  <div class="text-body-tertiary">
+                                    <i class="fa fa-inbox fa-2x mb-2"></i>
+                                    <p class="mb-0">No presentation QA feedback available</p>
+                                  </div>
+                                </div>
+                              {% endif %}
+                            {% endwith %}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="text-center py-4">
+            <div class="text-body-tertiary mb-3">
+              <i class="fa fa-file-text fa-3x"></i>
+            </div>
+            <h5 class="text-body-tertiary">No Reports Found</h5>
+            <p class="text-body-tertiary">{{ user_profile }} hasn't authored any reports yet.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
