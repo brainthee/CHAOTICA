@@ -6,7 +6,7 @@ from django.http import (
     JsonResponse,
     HttpResponse,
 )
-from ..forms import (
+from ..forms.common import (
     ChaoticaUserForm,
     InviteUserForm,
 )

@@ -8,7 +8,7 @@ from django.http import (
     HttpResponseRedirect,
     HttpResponseBadRequest,
 )
-from ..forms import LeaveRequestForm
+from ..forms.common import LeaveRequestForm
 from dateutil.relativedelta import relativedelta
 from ..models import LeaveRequest
 from .common import page_defaults

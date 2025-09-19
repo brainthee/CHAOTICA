@@ -774,6 +774,12 @@ class PhaseStatuses:
         ARCHIVED,
     ]
 
+    IGNORED_STATUSES = [
+        CANCELLED,
+        POSTPONED,
+        DELETED,
+    ]
+
     PENDING_STATUSES = [
         SCHEDULED_TENTATIVE,
         SCHEDULED_CONFIRMED,

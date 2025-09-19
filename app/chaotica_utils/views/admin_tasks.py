@@ -5,7 +5,7 @@ import logging
 from django.urls import reverse
 from django.views.decorators.http import require_safe, require_http_methods
 from ..tasks import *
-from ..forms import DatabaseRestoreForm, MediaRestoreForm
+from ..forms.common import DatabaseRestoreForm, MediaRestoreForm
 from django.contrib import messages
 from notifications.utils import (
     AppNotification, send_notifications

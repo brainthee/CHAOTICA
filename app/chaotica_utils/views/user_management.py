@@ -28,9 +28,9 @@ from .common import ChaoticaBaseGlobalRoleView, page_defaults
 from django.contrib.auth.decorators import login_required
 from guardian.decorators import permission_required_or_403
 from django.views.generic.list import ListView
+from django.contrib import messages
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView
-from django.contrib import messages
 from django.shortcuts import get_object_or_404
 import datetime
 from django.views.decorators.http import (
@@ -164,15 +164,46 @@ def update_own_theme(request):
 @require_http_methods(["GET", "POST"])
 def update_profile(request, email):
     from jobtracker.models import Skill
+    from ..utils import can_manage_job_level
+    from ..models import JobLevel, UserJobLevel
+    from ..forms.job_levels import UpdateUserJobLevelForm
 
     usr = can_manage_user(request.user, email)
     if not usr:
         return HttpResponseForbidden()
 
+    # Check if user can manage job levels
+    can_manage_levels = can_manage_job_level(request.user, usr)
+    current_job_level = UserJobLevel.get_current_level(usr)
+
     if request.method == "POST":
         form = EditProfileForm(
             request.POST, request.FILES, current_request=request, instance=usr
         )
+
+        # Handle job level assignment if user has permission
+        if can_manage_levels:
+            job_level_form = UpdateUserJobLevelForm(request.POST)
+            if job_level_form.is_valid():
+                job_level = job_level_form.cleaned_data.get('job_level_id')
+                job_level_notes = job_level_form.cleaned_data.get('job_level_notes', '')
+                clear_job_level = job_level_form.cleaned_data.get('clear_job_level', False)
+
+                if job_level:
+                    # Only create new assignment if it's different from current
+                    if not current_job_level or current_job_level.job_level != job_level:
+                        UserJobLevel.assign_level(
+                            user=usr,
+                            job_level=job_level,
+                            notes=job_level_notes
+                        )
+                        messages.success(request, f"Job level updated to {job_level.short_label}")
+                elif clear_job_level and current_job_level:
+                    # Mark current level as inactive if clearing
+                    current_job_level.is_current = False
+                    current_job_level.save()
+                    messages.success(request, "Job level cleared")
+
         if form.is_valid():
             obj = form.save()
             obj.profile_last_updated = timezone.now().today()
@@ -180,14 +211,24 @@ def update_profile(request, email):
             if "location" in form.changed_data:
                 obj.update_latlong()
             usr.refresh_from_db()
+            current_job_level = UserJobLevel.get_current_level(usr)  # Refresh job level
     else:
         # Send the modal
         form = EditProfileForm(current_request=request, instance=usr)
+
+    # Create job level form for display
+    if can_manage_levels:
+        job_level_form = UpdateUserJobLevelForm()
+    else:
+        job_level_form = None
 
     context = {
         "usr": usr,
         "skills": Skill.objects.all().prefetch_related("category").order_by("category", "name"),
         "languages": Language.objects.all(),
+        "current_job_level": current_job_level,
+        "can_manage_job_level": can_manage_levels,
+        "job_level_form": job_level_form,
     }
 
     if usr == request.user:

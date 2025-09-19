@@ -47,6 +47,16 @@ urlpatterns = [
         name="holiday_delete",
     ),
 
+    # Job Levels
+    path("ops/job-levels/", views.job_level_list, name="job_level_list"),
+    path("ops/job-levels/create/", views.job_level_create, name="job_level_create"),
+    path("ops/job-levels/<int:pk>/edit/", views.job_level_edit, name="job_level_edit"),
+    path("ops/job-levels/<int:pk>/delete/", views.job_level_delete, name="job_level_delete"),
+    path("ops/job-levels/assign/", views.assign_job_level, name="assign_job_level"),
+    path("ops/job-levels/history/", views.user_job_level_history, name="user_job_level_history"),
+    path("ops/job-levels/import/", views.import_job_level_assignments, name="import_job_level_assignments"),
+    path("ops/job-levels/template/", views.download_job_level_template, name="download_job_level_template"),
+
     # Settings
     path("settings/", views.app_settings, name="app_settings"),
     path("settings/import", views.settings_import_data, name="settings_import_data"),

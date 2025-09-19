@@ -12,7 +12,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 import json, os, random, csv
 
 from notifications.models.main import Notification
-from ..forms import (
+from ..forms.common import (
     ImportSiteDataForm,
     EditProfileForm,
     CustomConfigForm,

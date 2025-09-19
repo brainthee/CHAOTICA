@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% load menu %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block pageTitle %}
+  Assign Job Level
+{% endblock %}
+
+{% block head_title %}
+  Assign Job Level
+{% endblock %}
+
+{% block breadcrumbItem %}
+  <li class="breadcrumb-item">Operations</li>
+  <li class="breadcrumb-item"><a href="{% url 'job_level_list' %}">Job Levels</a></li>
+  <li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">Assign</li>
+{% endblock %}
+
+{% block content %}
+
+<div class="row mb-4 gx-6 gy-3 mt-2 align-items-center">
+    <div class="col-lg-8 mx-auto">
+      <div class="card">
+        <div class="card-header">
+    <h2 class="mb-0">Assign Job Level</h2>
+          <span class="text-700 lh-sm mb-0">Assign or update a user's career level</span>
+        </div>
+        <div class="card-body">
+          <form method="post" novalidate>
+            {{ form.media }}
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+              <div class="alert alert-danger">
+                {{ form.non_field_errors }}
+              </div>
+            {% endif %}
+
+            <div class="mb-3">
+              {{ form.user |as_crispy_field }}
+              {% if form.user.errors %}
+                <div class="text-danger">{{ form.user.errors }}</div>
+              {% endif %}
+            </div>
+
+            <div class="mb-3">
+              {{ form.job_level |as_crispy_field }}
+              {% if form.job_level.errors %}
+                <div class="text-danger">{{ form.job_level.errors }}</div>
+              {% endif %}
+            </div>
+
+            <div class="mb-3">
+              {{ form.assigned_date |as_crispy_field }}
+              {% if form.assigned_date.errors %}
+                <div class="text-danger">{{ form.assigned_date.errors }}</div>
+              {% endif %}
+            </div>
+
+            <div class="mb-3">
+              {{ form.notes |as_crispy_field }}
+              {% if form.notes.errors %}
+                <div class="text-danger">{{ form.notes.errors }}</div>
+              {% endif %}
+            </div>
+
+            <div class="alert alert-outline-warning">
+              <i class="fa fa-exclamation-triangle"></i>
+              <strong>Note:</strong> Assigning a new level will mark any previous level assignments as inactive.
+              This action creates a promotion/change record in the user's history.
+            </div>
+
+            <div class="row">
+              <div class="col-auto">
+                <button type="submit" class="btn btn-primary">
+                  <i class="fa fa-user-plus"></i> Assign Job Level
+                </button>
+              </div>
+              <div class="col-auto">
+                <a href="{% url 'job_level_list' %}" class="btn btn-outline-secondary">
+                  <i class="fa fa-times"></i> Cancel
+                </a>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

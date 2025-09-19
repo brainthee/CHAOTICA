@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+{% load menu %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block pageTitle %}
+  Import Job Level Assignments
+{% endblock %}
+
+{% block head_title %}
+  Import Job Level Assignments
+{% endblock %}
+
+{% block breadcrumbItem %}
+  <li class="breadcrumb-item">Operations</li>
+  <li class="breadcrumb-item"><a href="{% url 'job_level_list' %}">Job Levels</a></li>
+  <li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">Import</li>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4 gx-6 gy-3 mt-2 align-items-center">
+    <div class="col-lg-8 mx-auto">
+      <div class="card">
+        <div class="card-header">
+          <h2>Import Job Level Assignments</h2>
+          <span class="text-700 lh-sm mb-0">Bulk import job level assignments from CSV file</span>
+        </div>
+        <div class="card-body">
+          <div class="alert alert-outline-info mb-4">
+            <h6>CSV File Format</h6>
+            <p class="mb-2">Your CSV file must contain the following columns:</p>
+            <ul class="mb-2">
+              <li><strong>email</strong> - User's email address</li>
+              <li><strong>job_level_short_label</strong> - Job level short label (e.g., CL1, CL2)</li>
+              <li><strong>assigned_date</strong> - Assignment date in YYYY-MM-DD format</li>
+            </ul>
+            <div class="mt-3">
+              <a href="{% url 'download_job_level_template' %}" class="btn btn-sm btn-outline-primary">
+                <i class="fa fa-download"></i> Download Template CSV
+              </a>
+            </div>
+          </div>
+
+          <form method="post" enctype="multipart/form-data" novalidate>
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+              <div class="alert alert-danger">
+                {{ form.non_field_errors }}
+              </div>
+            {% endif %}
+
+            <div class="mb-3">
+              {{ form.csv_file|as_crispy_field }}
+            </div>
+
+            <div class="mb-3">
+              <div class="form-check">
+                {{ form.update_existing }}
+                <label class="form-check-label" for="{{ form.update_existing.id_for_label }}">
+                  {{ form.update_existing.label }}
+                </label>
+                {% if form.update_existing.help_text %}
+                  <div class="form-text">{{ form.update_existing.help_text }}</div>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="alert alert-outline-warning">
+              <i class="fa fa-exclamation-triangle"></i>
+              <strong>Important Notes:</strong>
+              <ul class="mb-0 mt-2">
+                <li>Users must already exist in the system</li>
+                <li>Job levels must be active and exist in the system</li>
+                <li>Assignment dates cannot be in the future</li>
+                <li>The import process will be performed in a single transaction - if any row fails, no assignments will be created</li>
+              </ul>
+            </div>
+
+            <div class="row mt-4">
+              <div class="col-auto">
+                <button type="submit" class="btn btn-primary">
+                  <i class="fa fa-upload"></i> Import Assignments
+                </button>
+              </div>
+              <div class="col-auto">
+                <a href="{% url 'job_level_list' %}" class="btn btn-outline-secondary">
+                  <i class="fa fa-times"></i> Cancel
+                </a>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% if messages %}
+    <script>
+      // Scroll to messages if there are any
+      document.addEventListener('DOMContentLoaded', function() {
+        window.scrollTo(0, 0);
+      });
+    </script>
+  {% endif %}
+{% endblock %}

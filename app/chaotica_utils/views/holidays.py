@@ -7,7 +7,7 @@ from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from chaotica_utils.views import log_system_activity, ChaoticaBaseView
 from ..models import Holiday
-from ..forms import HolidayForm, HolidayImportLibForm
+from ..forms.common import HolidayForm, HolidayImportLibForm
 import logging
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required

@@ -11,11 +11,22 @@ from .models import (
     Holiday,
     Note,
     HealthCheckAPIKey,
+    JobLevel,
+    UserJobLevel,
 )
+
+
+class UserJobLevelInline(admin.TabularInline):
+    model = UserJobLevel
+    extra = 0
+    readonly_fields = ["created_at"]
+    fields = ["job_level", "assigned_date", "is_current", "notes", "created_at"]
+
 
 class CustomUserAdmin(GuardedModelAdmin):
     list_display = ["email", "first_name", "last_name", "is_active"]
     search_fields = ['email', 'first_name', 'last_name']
+    inlines = [UserJobLevelInline]
     fieldsets = (
         # *UserAdmin.fieldsets,  # original form fieldsets, expanded
         (
@@ -119,3 +130,28 @@ class HealthCheckAPIKeyAdmin(admin.ModelAdmin):
     def has_add_permission(self, request):
         # Prevent manual creation - keys should be created through the app
         return False
+
+
+@admin.register(JobLevel)
+class JobLevelAdmin(admin.ModelAdmin):
+    list_display = ["short_label", "long_label", "order", "is_active", "created_at"]
+    list_filter = ["is_active", "created_at"]
+    search_fields = ["short_label", "long_label"]
+    ordering = ["order"]
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj:  # Editing an existing object
+            return ["created_at", "updated_at"]
+        return ["created_at", "updated_at"]
+
+
+@admin.register(UserJobLevel)
+class UserJobLevelAdmin(admin.ModelAdmin):
+    list_display = ["user", "job_level", "assigned_date", "is_current"]
+    list_filter = ["is_current", "assigned_date", "job_level"]
+    search_fields = ["user__email", "user__first_name", "user__last_name", "job_level__short_label"]
+    readonly_fields = ["created_at"]
+    date_hierarchy = "assigned_date"
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('user', 'job_level')

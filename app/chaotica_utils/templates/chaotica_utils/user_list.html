@@ -12,28 +12,18 @@
 
 {% block content %}
 
-{% if request.u.show_help %}
-<div class="row">
-  <div class="col-lg-12 col-12 mt-4 mt-lg-0">
-{% include 'help/user_list.html' %}
-  </div>
-</div>
-{% endif %}
-
-
 <div class="row mb-4 gx-6 gy-3 mt-2 align-items-center">
   <div class="col">
     <h2 class="mb-0">Users</h2>
   </div>
   <div class="col-3 d-flex justify-content-end">
-{% if config.INVITE_ENABLED %}
-    <button data-url="{% url 'user_invite' %}" 
-      class="btn btn-phoenix-primary js-load-modal-form">
-      <i class="fa-solid fa-plus me-2"></i>
-      Invite User
-    </button>
+    {% if config.INVITE_ENABLED %}
+      <button data-url="{% url 'user_invite' %}" 
+        class="btn btn-phoenix-primary js-load-modal-form">
+        <i class="fa-solid fa-plus me-2"></i>
+        Invite User
+      </button>
     {% endif %}
-
   </div>
 </div>
 
