@@ -2168,7 +2168,7 @@ class OrganisationalUnitMemberRolesForm(forms.ModelForm):
         widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
                 'class': 'select2-widget',
-                'data-minimum-input-length': 2,
+                'data-minimum-input-length': 0,
                 'data-ajax--url': '/autocomplete/org-unit-roles',
                 'data-ajax--cache': 'true',
                 'data-ajax--type': 'GET',

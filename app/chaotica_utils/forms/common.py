@@ -772,6 +772,7 @@ class AssignRoleForm(forms.ModelForm):
         widget=s2forms.Select2MultipleWidget(
             attrs={
                 'class': 'select2-widget',
+                'data-minimum-input-length': 0,
             },
         ),
     )
