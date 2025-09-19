@@ -18,7 +18,6 @@ from datetime import datetime
 import io
 
 
-@staff_member_required
 @require_http_methods(["GET"])
 def job_level_list(request):
     """List all job levels"""
@@ -324,7 +323,7 @@ def download_job_level_template(request):
     writer.writerow(['email', 'job_level_short_label', 'assigned_date'])
 
     # Add example rows
-    writer.writerow(['user@example.com', 'CL1', '2024-01-01'])
-    writer.writerow(['another@example.com', 'CL2', '2024-01-15'])
+    writer.writerow(['user@example.com', 'JL1', '2024-01-01'])
+    writer.writerow(['another@example.com', 'JL2', '2024-01-15'])
 
     return response

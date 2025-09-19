@@ -16,35 +16,33 @@
 {% endblock %}
 
 {% block content %}
+<div class="row mb-4 gx-6 gy-3 mt-2 align-items-center">
+  <div class="col">
+    <h2 class="mb-0">Job Levels</h2>
+    <span class="text-700 lh-sm mb-0">Manage career levels and organizational hierarchy</span>
+  </div>
+  <div class="col-6 d-flex justify-content-end">
+    {% if can_manage %}
+      <a href="{% url 'job_level_create' %}" class="btn btn-phoenix btn-phoenix-primary">
+        <i class="fa fa-plus"></i> Add Job Level
+      </a>
+      <a href="{% url 'assign_job_level' %}" class="btn btn-phoenix btn-phoenix-primary">
+        <i class="fa fa-user-plus"></i> Assign Level
+      </a>
+      <a href="{% url 'import_job_level_assignments' %}" class="btn btn-phoenix btn-phoenix-success">
+        <i class="fa fa-upload"></i> Import CSV
+      </a>
+      <a href="{% url 'user_job_level_history' %}" class="btn btn-phoenix btn-phoenix-secondary">
+        <i class="fa fa-history"></i> History
+      </a>
+    {% endif %}    
+  </div>
+</div>
+
+
   <div class="row mb-3">
     <div class="col-lg-12">
       <div class="card">
-        <div class="card-header">
-          <div class="row">
-            <div class="col-auto my-auto">
-              <div class="h-100">
-                <h5>Job Levels</h5>
-                <span class="text-700 lh-sm mb-0">Manage career levels and organizational hierarchy</span>
-              </div>
-            </div>
-            <div class="col-lg-4 col-md-6 my-sm-auto text-end ms-sm-auto me-sm-0 mx-auto mt-3">
-              {% if can_manage %}
-                <a href="{% url 'job_level_create' %}" class="btn btn-primary">
-                  <i class="fa fa-plus"></i> Add Job Level
-                </a>
-                <a href="{% url 'assign_job_level' %}" class="btn btn-outline-primary">
-                  <i class="fa fa-user-plus"></i> Assign Level
-                </a>
-                <a href="{% url 'import_job_level_assignments' %}" class="btn btn-outline-success">
-                  <i class="fa fa-upload"></i> Import CSV
-                </a>
-                <a href="{% url 'user_job_level_history' %}" class="btn btn-outline-secondary">
-                  <i class="fa fa-history"></i> History
-                </a>
-              {% endif %}
-            </div>
-          </div>
-        </div>
         <div class="card-body">
           {% if job_levels %}
             <div class="table-responsive">
@@ -85,8 +83,7 @@
                       <td>{{ level.created_at|date:"Y-m-d" }}</td>
                       {% if can_manage %}
                         <td>
-                          <div class="btn-group btn-group-sm" role="group">
-                            <a href="{% url 'job_level_edit' level.pk %}" class="btn btn-outline-primary">
+                            <a href="{% url 'job_level_edit' level.pk %}" type="button" class="btn btn-sm  btn-phoenix btn-phoenix-primary">
                               <i class="fa fa-edit"></i>
                             </a>
                             {% if level.is_active %}
@@ -94,12 +91,11 @@
                                     style="display: inline;"
                                     onsubmit="return confirm('Are you sure you want to deactivate this job level?');">
                                 {% csrf_token %}
-                                <button type="submit" class="btn btn-outline-danger">
+                                <button type="submit" class="btn btn-sm btn-phoenix btn-phoenix-danger">
                                   <i class="fa fa-trash"></i>
                                 </button>
                               </form>
                             {% endif %}
-                          </div>
                         </td>
                       {% endif %}
                     </tr>
