@@ -23,7 +23,7 @@
     <div class="col-lg-8 mx-auto">
       <div class="card">
         <div class="card-header">
-    <h2 class="mb-0">Assign Job Level</h2>
+          <h2 class="mb-0">Assign Job Level</h2>
           <span class="text-700 lh-sm mb-0">Assign or update a user's career level</span>
         </div>
         <div class="card-body">
@@ -65,7 +65,7 @@
               {% endif %}
             </div>
 
-            <div class="alert alert-outline-warning">
+            <div class="alert alert-phoenix-warning">
               <i class="fa fa-exclamation-triangle"></i>
               <strong>Note:</strong> Assigning a new level will mark any previous level assignments as inactive.
               This action creates a promotion/change record in the user's history.
@@ -73,12 +73,12 @@
 
             <div class="row">
               <div class="col-auto">
-                <button type="submit" class="btn btn-primary">
+                <button type="submit" class="btn btn-phoenix btn-phoenix-primary">
                   <i class="fa fa-user-plus"></i> Assign Job Level
                 </button>
               </div>
               <div class="col-auto">
-                <a href="{% url 'job_level_list' %}" class="btn btn-outline-secondary">
+                <a href="{% url 'job_level_list' %}" class="btn btn-phoenix btn-phoenix-secondary">
                   <i class="fa fa-times"></i> Cancel
                 </a>
               </div>
