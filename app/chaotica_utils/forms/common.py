@@ -568,7 +568,7 @@ class LeaveRequestForm(forms.ModelForm):
         )
         self.initial["end_date"] = timezone.make_aware(
             datetime.combine(
-                (timezone.now().date() + timedelta(days=1)), working_hours["end"]
+                (timezone.now().date() + timedelta(weeks=4)), working_hours["end"]
             )
         )
 
@@ -641,7 +641,8 @@ class LeaveRequestForm(forms.ModelForm):
         widgets = {
             "start_date": DateTimePickerInput(options={"allowInputToggle": True}),
             "end_date": DateTimePickerInput(
-                range_from="start_date", options={"allowInputToggle": True}
+                # range_from="start_date", 
+                options={"allowInputToggle": True}
             ),
         }
 
