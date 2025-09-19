@@ -334,3 +334,50 @@ def get_week(day=None):
     start = day - timedelta(days=day.weekday())
     end = start + timedelta(days=6)
     return { 'start': start, 'end': end}
+
+
+def can_manage_job_level(requesting_user, target_user):
+    """
+    Determines if requesting_user can manage job levels for target_user.
+
+    Job level management permission is granted if:
+    1. requesting_user is the manager or acting_manager of target_user
+    2. target_user has no manager AND requesting_user is the same as target_user
+    3. requesting_user is staff/superuser
+
+    Args:
+        requesting_user: The User object requesting to manage job level
+        target_user: The User object whose job level is being managed
+
+    Returns:
+        bool: True if requesting_user can manage target_user's job level
+    """
+    from ..models import User
+
+    # Ensure requesting_user is valid
+    if not requesting_user or not requesting_user.is_authenticated:
+        return False
+
+    # Convert target_user to User object if it's an email string
+    if isinstance(target_user, str):
+        try:
+            target_user = User.objects.get(email=target_user)
+        except User.DoesNotExist:
+            return False
+
+    # Staff/superuser can manage anyone's job level
+    if requesting_user.is_staff or requesting_user.is_superuser:
+        return True
+
+    # Manager or acting manager can manage their reports' job levels
+    if (target_user.manager == requesting_user or
+        target_user.acting_manager == requesting_user):
+        return True
+
+    # Users can manage their own job level only if they have no manager
+    if (requesting_user == target_user and
+        not target_user.manager and
+        not target_user.acting_manager):
+        return True
+
+    return False

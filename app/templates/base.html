@@ -194,7 +194,7 @@
         {% endblock content %}
 
         {% block footer %}
-        <footer class="footer {% block footer_css %}position-absolute{% endblock footer_css %}">
+        <footer class="footer {% block footer_css %}{% endblock footer_css %}">
           {% include 'partials/footer.html' %}
         </footer>
         {% endblock footer %}

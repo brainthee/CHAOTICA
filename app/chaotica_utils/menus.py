@@ -60,6 +60,19 @@ Menu.add_item(
     ),
 )
 
+Menu.add_item(
+    "ops",
+    PermMenuItem(
+        "Manage Job Levels",
+        reverse("job_level_list"),
+        check=lambda request: request.user.is_authenticated,
+        icon="money-bill-trend-up",
+        perm="chaotica_utils.manage_holidays",
+        weight=8,
+    ),
+)
+
+
 # Admin menu
 Menu.add_item(
     "admin",

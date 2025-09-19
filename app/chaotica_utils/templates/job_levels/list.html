@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% load menu %}
+{% load static %}
+
+{% block pageTitle %}
+  Job Levels
+{% endblock %}
+
+{% block head_title %}
+  Job Levels
+{% endblock %}
+
+{% block breadcrumbItem %}
+  <li class="breadcrumb-item">Operations</li>
+  <li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">Job Levels</li>
+{% endblock %}
+
+{% block content %}
+  <div class="row mb-3">
+    <div class="col-lg-12">
+      <div class="card">
+        <div class="card-header">
+          <div class="row">
+            <div class="col-auto my-auto">
+              <div class="h-100">
+                <h5>Job Levels</h5>
+                <span class="text-700 lh-sm mb-0">Manage career levels and organizational hierarchy</span>
+              </div>
+            </div>
+            <div class="col-lg-4 col-md-6 my-sm-auto text-end ms-sm-auto me-sm-0 mx-auto mt-3">
+              {% if can_manage %}
+                <a href="{% url 'job_level_create' %}" class="btn btn-primary">
+                  <i class="fa fa-plus"></i> Add Job Level
+                </a>
+                <a href="{% url 'assign_job_level' %}" class="btn btn-outline-primary">
+                  <i class="fa fa-user-plus"></i> Assign Level
+                </a>
+                <a href="{% url 'import_job_level_assignments' %}" class="btn btn-outline-success">
+                  <i class="fa fa-upload"></i> Import CSV
+                </a>
+                <a href="{% url 'user_job_level_history' %}" class="btn btn-outline-secondary">
+                  <i class="fa fa-history"></i> History
+                </a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          {% if job_levels %}
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead>
+                  <tr>
+                    <th>Order</th>
+                    <th>Short Label</th>
+                    <th>Long Label</th>
+                    <th>Status</th>
+                    <th>Users Assigned</th>
+                    <th>Created</th>
+                    {% if can_manage %}
+                      <th>Actions</th>
+                    {% endif %}
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for level in job_levels %}
+                    <tr>
+                      <td>
+                        <span class="badge bg-primary">{{ level.order }}</span>
+                      </td>
+                      <td>
+                        <strong>{{ level.short_label }}</strong>
+                      </td>
+                      <td>{{ level.long_label }}</td>
+                      <td>
+                        {% if level.is_active %}
+                          <span class="badge bg-success">Active</span>
+                        {% else %}
+                          <span class="badge bg-secondary">Inactive</span>
+                        {% endif %}
+                      </td>
+                      <td>
+                        {{ level.current_user_count|default:0 }}
+                      </td>
+                      <td>{{ level.created_at|date:"Y-m-d" }}</td>
+                      {% if can_manage %}
+                        <td>
+                          <div class="btn-group btn-group-sm" role="group">
+                            <a href="{% url 'job_level_edit' level.pk %}" class="btn btn-outline-primary">
+                              <i class="fa fa-edit"></i>
+                            </a>
+                            {% if level.is_active %}
+                              <form method="post" action="{% url 'job_level_delete' level.pk %}"
+                                    style="display: inline;"
+                                    onsubmit="return confirm('Are you sure you want to deactivate this job level?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-danger">
+                                  <i class="fa fa-trash"></i>
+                                </button>
+                              </form>
+                            {% endif %}
+                          </div>
+                        </td>
+                      {% endif %}
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="text-center py-4">
+              <p class="text-muted">No job levels configured yet.</p>
+              {% if can_manage %}
+                <a href="{% url 'job_level_create' %}" class="btn btn-primary">
+                  <i class="fa fa-plus"></i> Create First Job Level
+                </a>
+              {% endif %}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

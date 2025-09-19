@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+{% load menu %}
+{% load static %}
+
+{% block pageTitle %}
+  Job Level History
+{% endblock %}
+
+{% block head_title %}
+  Job Level History
+{% endblock %}
+
+{% block breadcrumbItem %}
+  <li class="breadcrumb-item">Operations</li>
+  <li class="breadcrumb-item"><a href="{% url 'job_level_list' %}">Job Levels</a></li>
+  <li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">History</li>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4 gx-6 gy-3 mt-2 align-items-center">
+  <div class="col">
+    <h2 class="mb-0">Job Level Assignment History</h2>
+    <span class="text-700 lh-sm mb-0">Track career progression and level changes</span>
+  </div>
+  <div class="col-3 d-flex justify-content-end">
+    <a href="{% url 'job_level_list' %}" class="btn btn-outline-secondary mx-2">
+      <i class="fa fa-arrow-left"></i> Back to Levels
+    </a>
+    <a href="{% url 'assign_job_level' %}" class="btn btn-primary">
+      <i class="fa fa-user-plus"></i> Assign Level
+    </a>    
+  </div>
+</div>
+
+
+  <div class="row mb-3">
+    <div class="col-lg-12">
+      <div class="card">
+        <div class="card-body">
+          <!-- Filters -->
+          <form method="get" class="mb-4">
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label for="search_email" class="form-label">Search by Email</label>
+                <input type="text" class="form-control" id="search_email" name="search_email"
+                       value="{{ search_email }}" placeholder="user@example.com">
+              </div>
+              <div class="col-md-4">
+                <label for="level_filter" class="form-label">Filter by Level</label>
+                <select class="form-select" id="level_filter" name="level_filter">
+                  <option value="">All Levels</option>
+                  {% for level in job_levels %}
+                    <option value="{{ level.pk }}"
+                            {% if level_filter == level.pk|stringformat:"s" %}selected{% endif %}>
+                      {{ level.short_label }} - {{ level.long_label }}
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-outline-primary me-2">
+                  <i class="fa fa-search"></i> Filter
+                </button>
+                <a href="{% url 'user_job_level_history' %}" class="btn btn-outline-secondary">
+                  <i class="fa fa-times"></i> Clear
+                </a>
+              </div>
+            </div>
+          </form>
+
+          {% if page_obj.object_list %}
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead>
+                  <tr>
+                    <th>User</th>
+                    <th>Job Level</th>
+                    <th>Assigned Date</th>
+                    <th>Status</th>
+                    <th>Notes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for assignment in page_obj.object_list %}
+                    <tr {% if assignment.is_current %}class="table-success"{% endif %}>
+                      <td>
+                        <div>
+                          <strong>{{ assignment.user.email }}</strong>
+                          <br>
+                          <small class="text-muted">{{ assignment.user.first_name }} {{ assignment.user.last_name }}</small>
+                        </div>
+                      </td>
+                      <td>
+                        <span class="badge bg-primary">{{ assignment.job_level.short_label }}</span>
+                        <br>
+                        <small class="text-muted">{{ assignment.job_level.long_label }}</small>
+                      </td>
+                      <td>{{ assignment.assigned_date|date:"Y-m-d" }}</td>
+                      <td>
+                        {% if assignment.is_current %}
+                          <span class="badge bg-success">Current</span>
+                        {% else %}
+                          <span class="badge bg-secondary">Previous</span>
+                        {% endif %}
+                      </td>
+                      <td>
+                        {% if assignment.notes %}
+                          <span title="{{ assignment.notes }}" data-bs-toggle="tooltip">
+                            {{ assignment.notes|truncatechars:50 }}
+                          </span>
+                        {% else %}
+                          <em class="text-muted">No notes</em>
+                        {% endif %}
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+              <nav aria-label="Job level history pagination">
+                <ul class="pagination justify-content-center">
+                  {% if page_obj.has_previous %}
+                    <li class="page-item">
+                      <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_email %}&search_email={{ search_email }}{% endif %}{% if level_filter %}&level_filter={{ level_filter }}{% endif %}">Previous</a>
+                    </li>
+                  {% endif %}
+
+                  {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                      <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                      </li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                      <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if search_email %}&search_email={{ search_email }}{% endif %}{% if level_filter %}&level_filter={{ level_filter }}{% endif %}">{{ num }}</a>
+                      </li>
+                    {% endif %}
+                  {% endfor %}
+
+                  {% if page_obj.has_next %}
+                    <li class="page-item">
+                      <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_email %}&search_email={{ search_email }}{% endif %}{% if level_filter %}&level_filter={{ level_filter }}{% endif %}">Next</a>
+                    </li>
+                  {% endif %}
+                </ul>
+              </nav>
+            {% endif %}
+
+            <div class="text-muted">
+              Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ page_obj.paginator.count }} assignments
+            </div>
+
+          {% else %}
+            <div class="text-center py-4">
+              <p class="text-muted">No job level assignments found.</p>
+              {% if not search_email and not level_filter %}
+                <a href="{% url 'assign_job_level' %}" class="btn btn-primary">
+                  <i class="fa fa-user-plus"></i> Assign First Level
+                </a>
+              {% endif %}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Enable tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+  </script>
+{% endblock %}

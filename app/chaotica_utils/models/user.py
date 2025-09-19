@@ -553,6 +553,17 @@ class User(AbstractUser):
             self.phase_where_report_author.prefetch_related(
                 "job", "service", "feedback", "project_lead"
             )
+            .filter(~Q(status__in=PhaseStatuses.IGNORED_STATUSES))
+            .order_by("-actual_sent_to_tqa_date", "-job__id", "-id")
+        )
+
+    def get_active_reports(self):
+        from jobtracker.enums import PhaseStatuses
+
+        return (
+            self.phase_where_report_author.prefetch_related(
+                "job", "service", "feedback", "project_lead"
+            )
             .filter(status__in=PhaseStatuses.ACTIVE_STATUSES)
             .order_by("-job__id", "-id")
         )

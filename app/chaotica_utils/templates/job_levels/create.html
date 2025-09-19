@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% load menu %}
+{% load static %}
+
+{% block pageTitle %}
+  Create Job Level
+{% endblock %}
+
+{% block head_title %}
+  Create Job Level
+{% endblock %}
+
+{% block breadcrumbItem %}
+  <li class="breadcrumb-item">Operations</li>
+  <li class="breadcrumb-item"><a href="{% url 'job_level_list' %}">Job Levels</a></li>
+  <li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">Create</li>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4 gx-6 gy-3 mt-2 align-items-center">
+    <div class="col-lg-8 mx-auto">
+      <div class="card">
+        <div class="card-header">
+          <h2>Create New Job Level</h2>
+          <span class="text-700 lh-sm mb-0">Add a new career level to the organization</span>
+        </div>
+        <div class="card-body">
+          <form method="post" novalidate>
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+              <div class="alert alert-danger">
+                {{ form.non_field_errors }}
+              </div>
+            {% endif %}
+
+            <div class="mb-3">
+              <label for="{{ form.short_label.id_for_label }}" class="form-label">
+                {{ form.short_label.label }} <span class="text-danger">*</span>
+              </label>
+              {{ form.short_label }}
+              {% if form.short_label.help_text %}
+                <div class="form-text">{{ form.short_label.help_text }}</div>
+              {% endif %}
+              {% if form.short_label.errors %}
+                <div class="text-danger">{{ form.short_label.errors }}</div>
+              {% endif %}
+            </div>
+
+            <div class="mb-3">
+              <label for="{{ form.long_label.id_for_label }}" class="form-label">
+                {{ form.long_label.label }} <span class="text-danger">*</span>
+              </label>
+              {{ form.long_label }}
+              {% if form.long_label.help_text %}
+                <div class="form-text">{{ form.long_label.help_text }}</div>
+              {% endif %}
+              {% if form.long_label.errors %}
+                <div class="text-danger">{{ form.long_label.errors }}</div>
+              {% endif %}
+            </div>
+
+            <div class="mb-3">
+              <label for="{{ form.order.id_for_label }}" class="form-label">
+                {{ form.order.label }} <span class="text-danger">*</span>
+              </label>
+              {{ form.order }}
+              {% if form.order.help_text %}
+                <div class="form-text">{{ form.order.help_text }}</div>
+              {% endif %}
+              {% if form.order.errors %}
+                <div class="text-danger">{{ form.order.errors }}</div>
+              {% endif %}
+            </div>
+
+            <div class="mb-3">
+              <div class="form-check">
+                {{ form.is_active }}
+                <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                  {{ form.is_active.label }}
+                </label>
+                {% if form.is_active.help_text %}
+                  <div class="form-text">{{ form.is_active.help_text }}</div>
+                {% endif %}
+                {% if form.is_active.errors %}
+                  <div class="text-danger">{{ form.is_active.errors }}</div>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-auto">
+                <button type="submit" class="btn btn-primary">
+                  <i class="fa fa-save"></i> Create Job Level
+                </button>
+              </div>
+              <div class="col-auto">
+                <a href="{% url 'job_level_list' %}" class="btn btn-outline-secondary">
+                  <i class="fa fa-times"></i> Cancel
+                </a>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
