@@ -12,7 +12,7 @@ from .models import Job, Phase, OrganisationalUnit, TimeSlot
 from .forms import SchedulerFilter
 from django.http import JsonResponse, HttpResponse
 from django.db.models import Q
-from chaotica_utils.models import User
+from chaotica_utils.models import User, UserJobLevel
 from guardian.shortcuts import get_objects_for_user
 from .models import (
     Job,
@@ -243,6 +243,19 @@ def _filter_users_on_query(request, cleaned_data=None):
     for service in services:
         query.add(Q(pk__in=service.can_conduct()), Q.AND)
 
+    # Filter by job levels
+    job_levels = cleaned_data.get("job_levels")
+    if job_levels:
+        users_with_job_levels = []
+        for level in job_levels:
+            current_assignments = UserJobLevel.objects.filter(
+                job_level=level,
+                is_current=True
+            ).values_list('user_id', flat=True)
+            users_with_job_levels.extend(current_assignments)
+        if users_with_job_levels:
+            query.add(Q(pk__in=users_with_job_levels), Q.AND)
+
     extra_users = cleaned_data.get("include_user")
     if extra_users:
         query.add(
@@ -277,7 +290,7 @@ def get_scheduler_members(request, filtered_users = None, start = None, end = No
 
     if not filtered_users:
         filtered_users = _filter_users_on_query(request, cleaned_data).prefetch_related(
-            "unit_memberships", "unit_memberships__unit"
+            "unit_memberships", "unit_memberships__unit", "job_level_history", "job_level_history__job_level"
         )
 
     # Change FullCalendar format to DateTime
@@ -296,6 +309,12 @@ def get_scheduler_members(request, filtered_users = None, start = None, end = No
         user = user_stat['user']
         user_title = user_stat['user_name']
         main_org = user_stat['main_org']
+
+        # Get user's current job level
+        current_job_level = UserJobLevel.get_current_level(user)
+        job_level_order = current_job_level.job_level.order if current_job_level else 999
+        job_level_label = str(current_job_level.job_level) if current_job_level else "No Level"
+
         data.append(
             {
                 "id": user.pk,
@@ -304,7 +323,8 @@ def get_scheduler_members(request, filtered_users = None, start = None, end = No
                 "last_name": user.last_name,
                 "availability": user_stat['available_percentage'] if user_stat['available_percentage'] else 0,
                 "util": user_stat['utilisation_percentage'] if user_stat['utilisation_percentage'] else 0,
-                "seniority": randrange(10),
+                "seniority": job_level_order,
+                "job_level": job_level_label,
                 "url": user.get_absolute_url(),
                 "html_view": user.get_table_display_html(cleaned_data.get("compressed_view", False)),
                 "businessHours": (
@@ -359,7 +379,7 @@ def get_scheduler_slots(request, filtered_users = None, start = None, end = None
 
     if not filtered_users:
         filtered_users = _filter_users_on_query(request, cleaned_data).prefetch_related(
-            "unit_memberships", "unit_memberships__unit"
+            "unit_memberships", "unit_memberships__unit", "job_level_history__job_level"
         )
 
     # Change FullCalendar format to DateTime

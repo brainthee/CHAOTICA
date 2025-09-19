@@ -567,6 +567,12 @@ class User(AbstractUser):
             .filter(status__in=PhaseStatuses.ACTIVE_STATUSES)
             .order_by("-job__id", "-id")
         )
+    
+    def get_current_level(self):
+        if self.job_level_history.filter(is_current=True).exists():
+            return self.job_level_history.get(is_current=True)
+        else:
+            return None
 
     def get_jobs(self):
         from jobtracker.models import Job

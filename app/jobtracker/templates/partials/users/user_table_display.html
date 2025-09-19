@@ -12,9 +12,16 @@
         {{ u }}
       </a>
     </div>
+    
+    {% if u.get_current_level and not nojl and not compressed_view %}
+      {% include 'partials/users/joblevel_badge.html' with level=u.get_current_level %}
+    {% endif %}
+
     {% if not noorg and not compressed_view %}
       {% for unitMembership in u.unit_memberships.all %}
-        <a href="{{ unitMembership.unit.get_absolute_url }}">{% include 'partials/unit/unit_badge_role_colour.html' with unitMembership=unitMembership %}</a>
+        <a href="{{ unitMembership.unit.get_absolute_url }}">
+          {% include 'partials/unit/unit_badge_role_colour.html' with unitMembership=unitMembership %}
+        </a>
       {% endfor %}
     {% endif %}
 
