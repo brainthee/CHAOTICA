@@ -5,7 +5,12 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
 APP_DIR="$PROJECT_ROOT/app"
-LOG_FILE="/var/log/chaotica-demo-refresh.log"
+LOG_FILE="$PROJECT_ROOT/chaotica-demo-refresh.log"
+
+# Activate virtual environment if it exists
+if [ -f "$PROJECT_ROOT/venv/bin/activate" ]; then
+    source "$PROJECT_ROOT/venv/bin/activate"
+fi
 
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
@@ -22,7 +27,7 @@ log "Collecting static files..."
 python3 manage.py collectstatic --noinput
 
 log "Creating superuser if not exists..."
-echo "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter().exists() or User.objects.create_superuser('admin', 'admin@chaotica-demo.com', 'DemoAdmin123')" | python3 manage.py shell
+echo "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(email='admin@chaotica-demo.com').exists() or User.objects.create_superuser('admin@chaotica-demo.com', 'DemoAdmin123!')" | python3 manage.py shell
 
 log "Clearing existing demo data..."
 python3 manage.py generate_demo_data --clear

@@ -14,7 +14,8 @@ from jobtracker.models import (
     OrganisationalUnit, OrganisationalUnitMember, OrganisationalUnitRole,
     Contact, BillingCode, UserSkill, FrameworkAgreement, Feedback
 )
-from jobtracker.enums import PhaseStatuses, FeedbackType, TechQARatings, PresQARatings, UserSkillRatings
+from jobtracker.enums import PhaseStatuses, FeedbackType, TechQARatings, PresQARatings, UserSkillRatings, JobStatuses, TimeSlotDeliveryRole
+from chaotica_utils.enums import LeaveRequestTypes
 from chaotica_utils.models import LeaveRequest, UserCost
 from notifications.models import NotificationSubscription
 
@@ -66,19 +67,21 @@ class Command(BaseCommand):
 
         if options['clear']:
             self.clear_existing_data()
+            self.stdout.write(self.style.SUCCESS('Demo data cleared successfully!'))
+        else:
 
-        self.create_organisational_units()
-        self.create_job_levels()
-        self.create_skills()
-        self.create_services()
-        self.create_timeslot_types()
-        self.create_users(options['users'])
-        self.create_clients(options['clients'])
-        self.create_jobs_and_phases(options['jobs'])
-        self.create_timeslots()
-        self.create_leave_requests()
+            self.create_organisational_units()
+            self.create_job_levels()
+            self.create_skills()
+            self.create_services()
+            self.create_timeslot_types()
+            self.create_users(options['users'])
+            self.create_clients(options['clients'])
+            self.create_jobs_and_phases(options['jobs'])
+            self.create_timeslots()
+            self.create_leave_requests()
 
-        self.stdout.write(self.style.SUCCESS('Demo data generation completed successfully!'))
+            self.stdout.write(self.style.SUCCESS('Demo data generation completed successfully!'))
 
     def clear_existing_data(self):
         self.stdout.write('Clearing existing data...')
@@ -89,7 +92,35 @@ class Command(BaseCommand):
         ]
         for model in models_to_clear:
             model.objects.all().delete()
-        User.objects.filter(is_superuser=False).delete()
+        User.objects.all().exclude(email="admin@chaotica-demo.com").delete()
+
+        # Reset SQLite sequences for all tables to avoid ID conflicts
+        from django.db import connection
+        with connection.cursor() as cursor:
+            # Reset sequences for all models we cleared
+            tables_to_reset = [
+                'chaotica_utils_user',
+                'jobtracker_timeslot',
+                'jobtracker_timeslottype',
+                'jobtracker_phase',
+                'jobtracker_job',
+                'jobtracker_frameworkagreement',
+                'jobtracker_contact',
+                'jobtracker_client',
+                'jobtracker_userskill',
+                'chaotica_utils_usercost',
+                'chaotica_utils_leaverequest',
+                'jobtracker_service',
+                'jobtracker_skill',
+                'jobtracker_organisationalunitmember',
+                'jobtracker_organisationalunit',
+                'chaotica_utils_joblevel'
+            ]
+            for table in tables_to_reset:
+                cursor.execute(f"DELETE FROM sqlite_sequence WHERE name='{table}';")
+
+            # Also reset the main sqlite_sequence table to start fresh
+            cursor.execute("DELETE FROM sqlite_sequence;")
 
     def create_organisational_units(self):
         self.stdout.write('Creating organisational units...')
@@ -104,16 +135,18 @@ class Command(BaseCommand):
         ]
 
         for name, short, desc, start_time, end_time, timezone_name in unit_data:
-            unit = OrganisationalUnit.objects.create(
-                name=name,
+            unit, created = OrganisationalUnit.objects.get_or_create(
                 slug=short,
-                description=desc,
-                businessHours_startTime=start_time,
-                businessHours_endTime=end_time,
-                businessHours_days='1,2,3,4,5',
-                # lunchHours_startTime='12:00',
-                # lunchHours_endTime='13:00',
-                # lunchHours_days='1,2,3,4,5'
+                defaults={
+                    'name': name,
+                    'description': desc,
+                    'businessHours_startTime': start_time,
+                    'businessHours_endTime': end_time,
+                    'businessHours_days': [1,2,3,4,5],
+                    # 'lunchHours_startTime': '12:00',
+                    # 'lunchHours_endTime': '13:00',
+                    # 'lunchHours_days': '1,2,3,4,5'
+                }
             )
             self.units.append(unit)
 
@@ -131,7 +164,10 @@ class Command(BaseCommand):
         ]
 
         for short_label, name, order in levels:
-            level = JobLevel.objects.create(short_label=short_label, long_label=name, order=order)
+            level, created = JobLevel.objects.get_or_create(
+                short_label=short_label,
+                defaults={'long_label': name, 'order': order}
+            )
             self.job_levels.append(level)
 
     def create_skills(self):
@@ -163,10 +199,12 @@ class Command(BaseCommand):
         for category, skill_list in skill_categories.items():
             cat, _ = SkillCategory.objects.get_or_create(name=category)
             for skill_name in skill_list:
-                skill = Skill.objects.create(
+                skill, created = Skill.objects.get_or_create(
                     name=skill_name,
-                    category=cat,
-                    description=f'{skill_name} expertise'
+                    defaults={
+                        'category': cat,
+                        'description': f'{skill_name} expertise'
+                    }
                 )
                 self.skills.append(skill)
 
@@ -190,10 +228,12 @@ class Command(BaseCommand):
         ]
 
         for name, desc, is_core in service_data:
-            service = Service.objects.create(
+            service, created = Service.objects.get_or_create(
                 name=name,
-                description=desc,
-                is_core=is_core
+                defaults={
+                    'description': desc,
+                    'is_core': is_core
+                }
             )
             num_skills = random.randint(3, 8)
             required_skills = random.sample(self.skills, min(num_skills, len(self.skills)))
@@ -215,9 +255,9 @@ class Command(BaseCommand):
         ]
 
         for name, deliverable, color in types:
-            ts_type = TimeSlotType.objects.create(
+            ts_type, created = TimeSlotType.objects.get_or_create(
                 name=name,
-                is_delivery=deliverable,
+                defaults={'is_delivery': deliverable}
             )
             self.timeslot_types.append(ts_type)
 
@@ -258,19 +298,17 @@ class Command(BaseCommand):
             region_short = unit.slug
             region_info = region_data.get(region_short, region_data['UK'])
 
-            user, _ = User.objects.get_or_create(
+            user = User.objects.create_user(
                 email=email,
-                defaults={
-                    'first_name': first_name,
-                    'last_name': last_name,
-                    'password': 'DemoPass123!',
-                    'job_title': random.choice([jl.long_label for jl in self.job_levels]),
-                    'location': random.choice(region_info['locations']),
-                    'country': region_short,
-                    'pref_timezone': region_info['timezone'],
-                    'contracted_leave': 25,
-                    'carry_over_leave': random.randint(0, 5)
-                }
+                password='DemoPass123!',
+                first_name=first_name,
+                last_name=last_name,
+                job_title=random.choice([jl.long_label for jl in self.job_levels]),
+                location=random.choice(region_info['locations']),
+                country=region_short,
+                pref_timezone=region_info['timezone'],
+                contracted_leave=25,
+                carry_over_leave=random.randint(0, 5)
             )
 
             role, _ = OrganisationalUnitRole.objects.get_or_create(
@@ -324,21 +362,24 @@ class Command(BaseCommand):
             client.account_managers.set(random.sample(self.users, min(num_ams, len(self.users))))
 
             for j in range(random.randint(1, 4)):
+                contact_name = fake.name().split(' ')
                 Contact.objects.create(
-                    client=client,
-                    name=fake.name(),
+                    company=client,
+                    first_name=contact_name[0] if len(contact_name) > 0 else '',
+                    last_name=contact_name[1] if len(contact_name) > 1 else '',
                     email=fake.company_email(),
-                    job_title=random.choice(['CISO', 'Security Manager', 'IT Director', 'CTO'])
+                    jobtitle=random.choice(['CISO', 'Security Manager', 'IT Director', 'CTO'])
                 )
 
             if random.random() > 0.3:
                 FrameworkAgreement.objects.create(
                     client=client,
-                    title=f'{company_name} Master Services Agreement',
-                    value=Decimal(random.randint(50000, 500000)),
+                    name=f'{company_name} Master Services Agreement',
+                    total_days=random.randint(50, 500),
                     start_date=timezone.now().date() - timedelta(days=random.randint(30, 365)),
                     end_date=timezone.now().date() + timedelta(days=random.randint(90, 730)),
-                    is_active=True
+                    allow_over_allocation=True,
+                    closed=False
                 )
 
             self.clients.append(client)
@@ -373,19 +414,20 @@ class Command(BaseCommand):
                 client=client,
                 unit=random.choice(self.units),
                 account_manager=random.choice(list(client.account_managers.all()) + self.users[:5]),
+                created_by=random.choice(self.users),
                 desired_start_date=job_start_date,
                 desired_delivery_date=job_end_date,
                 revenue=Decimal(random.randint(15000, 200000)),
-                status='DRAFT'
+                status=JobStatuses.DRAFT
             )
 
             job.scoped_by.set(random.sample(self.users, min(random.randint(2, 4), len(self.users))))
 
             billing_code = BillingCode.objects.create(
-                name=f'BC-{job.id:05d}',
-                code=f'{job.id:05d}',
-                job=job,
-                is_visible=True
+                code=f'BC-{job.id:05d}',
+                client=client,
+                is_chargeable=True,
+                is_recoverable=True
             )
             job.charge_codes.add(billing_code)
 
@@ -401,7 +443,7 @@ class Command(BaseCommand):
                     phase_number=p + 1,
                     title=f'Phase {p + 1}: {service.name}',
                     service=service,
-                    status=PhaseStatuses.PENDING,
+                    status=PhaseStatuses.PENDING_SCHED,
                     project_lead=random.choice(self.users),
                     report_author=random.choice(self.users),
                     delivery_hours=random.randint(16, 80),
@@ -409,19 +451,17 @@ class Command(BaseCommand):
                     mgmt_hours=random.randint(4, 16),
                     qa_hours=random.randint(4, 12),
                     contingency_hours=random.randint(0, 8),
-                    start_date_type='SPECIFIC',
                     desired_start_date=current_phase_date,
                     desired_delivery_date=current_phase_date + timedelta(days=phase_duration),
                     feedback_scope_correct=None
                 )
 
-                consultants = random.sample(self.users, min(random.randint(2, 5), len(self.users)))
-                phase.consultants_allocated.set(consultants)
+                # Note: consultants_allocated field doesn't exist on Phase model
 
                 if random.random() > 0.3:
-                    phase.techqa_by = random.choice([u for u in self.users if u not in consultants])
+                    phase.techqa_by = random.choice(self.users)
                 if random.random() > 0.3:
-                    phase.presqa_by = random.choice([u for u in self.users if u not in consultants])
+                    phase.presqa_by = random.choice(self.users)
 
                 phase.save()
                 self.phases.append(phase)
@@ -453,43 +493,43 @@ class Command(BaseCommand):
                 self.progress_phase_partially(phase)
             else:
                 status_choice = random.choice([
-                    PhaseStatuses.PENDING, PhaseStatuses.SCOPING, PhaseStatuses.SCOPED,
-                    PhaseStatuses.PENDING_SCHED, PhaseStatuses.SCHEDULED
+                    PhaseStatuses.SCHEDULED_CONFIRMED, PhaseStatuses.PRE_CHECKS, PhaseStatuses.IN_PROGRESS,
+                    PhaseStatuses.PENDING_SCHED, PhaseStatuses.SCHEDULED_CONFIRMED
                 ])
                 phase.status = status_choice
-                if status_choice >= PhaseStatuses.SCOPED:
+                if status_choice >= PhaseStatuses.IN_PROGRESS:
                     phase.feedback_scope_correct = random.choice([True, True, True, False])
                 phase.save()
 
         job_phases = list(phases)
         if job_phases:
             max_phase_status = max(p.status for p in job_phases)
-            if max_phase_status >= PhaseStatuses.COMPLETE:
-                job.status = 'COMPLETED'
+            if max_phase_status >= PhaseStatuses.COMPLETED:
+                job.status = JobStatuses.COMPLETED
             elif max_phase_status >= PhaseStatuses.IN_PROGRESS:
-                job.status = 'IN_PROGRESS'
-            elif max_phase_status >= PhaseStatuses.SCHEDULED:
-                job.status = 'SCHEDULED'
-            elif max_phase_status >= PhaseStatuses.SCOPED:
-                job.status = 'SCOPED'
+                job.status = JobStatuses.IN_PROGRESS
+            elif max_phase_status >= PhaseStatuses.SCHEDULED_CONFIRMED:
+                job.status = JobStatuses.PENDING_START
+            elif max_phase_status >= PhaseStatuses.SCHEDULED_TENTATIVE:
+                job.status = JobStatuses.SCOPING_COMPLETE
             else:
-                job.status = random.choice(['DRAFT', 'SCOPING'])
+                job.status = random.choice([JobStatuses.DRAFT, JobStatuses.SCOPING])
             job.save()
 
     def progress_phase_to_completion(self, phase):
 
-        phase.status = PhaseStatuses.COMPLETE
+        phase.status = PhaseStatuses.COMPLETED
         phase.feedback_scope_correct = True
 
         if phase.techqa_by:
             phase.techqa_report_rating = random.choice([
-                TechQARatings.NEEDS_WORK, TechQARatings.GOOD,
+                TechQARatings.MAJOR_CHANGES_NEEDED, TechQARatings.GOOD,
                 TechQARatings.GOOD, TechQARatings.EXCELLENT
             ])
 
         if phase.presqa_by:
             phase.presqa_report_rating = random.choice([
-                PresQARatings.NEEDS_WORK, PresQARatings.GOOD,
+                PresQARatings.MAJOR_CHANGES_NEEDED, PresQARatings.GOOD,
                 PresQARatings.GOOD, PresQARatings.EXCELLENT
             ])
 
@@ -500,24 +540,24 @@ class Command(BaseCommand):
     def progress_phase_partially(self, phase):
 
         status_options = [
-            PhaseStatuses.SCOPED, PhaseStatuses.SCHEDULED, PhaseStatuses.IN_PROGRESS,
-            PhaseStatuses.REPORTING, PhaseStatuses.PENDING_TQA, PhaseStatuses.QA_TECH,
+            PhaseStatuses.SCHEDULED_TENTATIVE, PhaseStatuses.SCHEDULED_CONFIRMED, PhaseStatuses.IN_PROGRESS,
+            PhaseStatuses.PENDING_TQA, PhaseStatuses.QA_TECH,
             PhaseStatuses.PENDING_PQA, PhaseStatuses.QA_PRES
         ]
 
         phase.status = random.choice(status_options)
 
-        if phase.status >= PhaseStatuses.SCOPED:
+        if phase.status >= PhaseStatuses.SCHEDULED_TENTATIVE:
             phase.feedback_scope_correct = random.choice([True, True, True, False])
 
         if phase.status >= PhaseStatuses.QA_TECH and phase.techqa_by:
             phase.techqa_report_rating = random.choice([
-                TechQARatings.NEEDS_WORK, TechQARatings.GOOD, TechQARatings.EXCELLENT
+                TechQARatings.SIGNIFICANT_CHANGES_NEEDED, TechQARatings.GOOD, TechQARatings.EXCELLENT
             ])
 
         if phase.status >= PhaseStatuses.QA_PRES and phase.presqa_by:
             phase.presqa_report_rating = random.choice([
-                PresQARatings.NEEDS_WORK, PresQARatings.GOOD, PresQARatings.EXCELLENT
+                PresQARatings.SIGNIFICANT_CHANGES_NEEDED, PresQARatings.GOOD, PresQARatings.EXCELLENT
             ])
 
         phase.save()
@@ -583,23 +623,24 @@ class Command(BaseCommand):
 
         phases_with_activity = Phase.objects.filter(
             status__in=[
-                PhaseStatuses.SCHEDULED, PhaseStatuses.IN_PROGRESS, PhaseStatuses.REPORTING,
+                PhaseStatuses.SCHEDULED_CONFIRMED, PhaseStatuses.IN_PROGRESS,
                 PhaseStatuses.PENDING_TQA, PhaseStatuses.QA_TECH, PhaseStatuses.PENDING_PQA,
-                PhaseStatuses.QA_PRES, PhaseStatuses.COMPLETE
+                PhaseStatuses.QA_PRES, PhaseStatuses.COMPLETED
             ]
         )
 
         for phase in phases_with_activity:
-            consultants = list(phase.consultants_allocated.all())
-            if not consultants or not phase.desired_start_date:
+            # Use random users as consultants since consultants_allocated doesn't exist
+            consultants = random.sample(self.users, min(3, len(self.users)))
+            if not phase.desired_start_date:
                 continue
 
             phase_start = phase.desired_start_date
             phase_end = phase.desired_delivery_date or (phase_start + timedelta(days=10))
 
-            if phase.status >= PhaseStatuses.COMPLETE:
+            if phase.status >= PhaseStatuses.COMPLETED:
                 delivery_end = phase_end
-            elif phase.status >= PhaseStatuses.REPORTING:
+            elif phase.status >= PhaseStatuses.PENDING_TQA:
                 delivery_end = phase_end - timedelta(days=2)
             elif phase.status >= PhaseStatuses.IN_PROGRESS:
                 delivery_end = min(timezone.now().date(), phase_end - timedelta(days=1))
@@ -632,12 +673,12 @@ class Command(BaseCommand):
                     )
                     end_time = start_time + timedelta(hours=hours_today)
 
-                    if phase.status >= PhaseStatuses.REPORTING:
-                        role = random.choice(['REPORTING', 'REPORTING', 'DELIVERY', 'QA'])
+                    if phase.status >= PhaseStatuses.PENDING_TQA:
+                        role = random.choice([TimeSlotDeliveryRole.REPORTING, TimeSlotDeliveryRole.REPORTING, TimeSlotDeliveryRole.DELIVERY, TimeSlotDeliveryRole.QA])
                     elif phase.status >= PhaseStatuses.IN_PROGRESS:
-                        role = random.choice(['DELIVERY', 'DELIVERY', 'DELIVERY', 'MANAGEMENT'])
+                        role = random.choice([TimeSlotDeliveryRole.DELIVERY, TimeSlotDeliveryRole.DELIVERY, TimeSlotDeliveryRole.DELIVERY, TimeSlotDeliveryRole.MANAGEMENT])
                     else:
-                        role = 'DELIVERY'
+                        role = TimeSlotDeliveryRole.DELIVERY
 
                     is_onsite = False
                     if phase.service and 'Infrastructure' in phase.service.name:
@@ -661,10 +702,10 @@ class Command(BaseCommand):
                 day_count += 1
 
             if phase.status >= PhaseStatuses.QA_TECH and phase.techqa_by:
-                self.create_qa_timeslots(phase, phase.techqa_by, 'QA', qa_type='Tech')
+                self.create_qa_timeslots(phase, phase.techqa_by, TimeSlotDeliveryRole.QA, qa_type='Tech')
 
             if phase.status >= PhaseStatuses.QA_PRES and phase.presqa_by:
-                self.create_qa_timeslots(phase, phase.presqa_by, 'QA', qa_type='Pres')
+                self.create_qa_timeslots(phase, phase.presqa_by, TimeSlotDeliveryRole.QA, qa_type='Pres')
 
     def create_qa_timeslots(self, phase, qa_user, role, qa_type='Tech'):
         delivery_type = next((t for t in self.timeslot_types if t.is_delivery), None)
@@ -708,8 +749,6 @@ class Command(BaseCommand):
     def create_leave_requests(self):
         self.stdout.write('Creating leave requests...')
 
-        leave_types = ['annual', 'sick', 'unpaid', 'other']
-
         for user in random.sample(self.users, min(len(self.users) // 2, len(self.users))):
             num_requests = random.randint(1, 3)
 
@@ -721,7 +760,7 @@ class Command(BaseCommand):
                     user=user,
                     start_date=start,
                     end_date=end,
-                    type_of_leave=random.choice(leave_types),
+                    type_of_leave=random.choice(LeaveRequestTypes.CHOICES)[0],
                     notes=fake.sentence() if random.random() > 0.5 else '',
                     authorised=random.random() > 0.3
                 )
@@ -730,7 +769,7 @@ class Command(BaseCommand):
                     leave.authorised_by = user.manager
                     leave.save()
 
-                    leave_type = next((t for t in self.timeslot_types if 'LEAVE' in t.short_name), None)
+                    leave_type = next((t for t in self.timeslot_types if 'LEAVE' in t.name), None)
                     if leave_type:
                         current = start
                         while current <= end:
