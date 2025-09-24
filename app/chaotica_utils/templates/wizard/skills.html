@@ -1,0 +1,68 @@
+{% extends "wizard/base.html" %}
+
+{% block wizard_content %}
+<h2 class="mb-4"><i class="fas fa-award me-2"></i> Setup Skills</h2>
+<p class="text-muted mb-4">
+    Define skill categories and the skills your team members can have.
+</p>
+
+<form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="current_step" value="skills">
+
+    <div class="mb-4">
+        <label for="{{ form.categories.id_for_label }}" class="form-label">
+            <strong>Skill Categories</strong>
+        </label>
+        {{ form.categories }}
+        {% if form.categories.errors %}
+        <div class="text-danger small">{{ form.categories.errors.0 }}</div>
+        {% endif %}
+        <div class="form-text">{{ form.categories.help_text }}</div>
+    </div>
+
+    <div class="mb-3">
+        <label for="{{ form.skills.id_for_label }}" class="form-label">
+            <strong>Skills (Optional)</strong>
+        </label>
+        {{ form.skills }}
+        {% if form.skills.errors %}
+        <div class="text-danger small">{{ form.skills.errors.0 }}</div>
+        {% endif %}
+        <div class="form-text">{{ form.skills.help_text }}</div>
+    </div>
+
+    <div class="alert alert-light">
+        <h6>Example Setup:</h6>
+        <div class="row">
+            <div class="col-md-6">
+                <strong>Categories:</strong>
+                <ul class="mb-0">
+                    <li>Technical Skills</li>
+                    <li>Soft Skills</li>
+                    <li>Certifications</li>
+                    <li>Tools</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <strong>Skills Format:</strong>
+                <ul class="mb-0">
+                    <li>Technical Skills: Python Programming</li>
+                    <li>Technical Skills: Web Application Testing</li>
+                    <li>Certifications: OSCP</li>
+                    <li>Tools: Burp Suite</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between mt-4">
+        <a href="?step=services" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i> Back
+        </a>
+        <button type="submit" class="btn btn-wizard-primary">
+            Setup Skills <i class="fas fa-arrow-right ms-2"></i>
+        </button>
+    </div>
+</form>
+{% endblock %}

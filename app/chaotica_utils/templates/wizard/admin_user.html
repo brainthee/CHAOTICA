@@ -1,0 +1,80 @@
+{% extends "wizard/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block wizard_content %}
+<h2 class="mb-4"><i class="fas fa-user-shield me-2"></i> Create Admin User</h2>
+<p class="text-muted mb-4">
+    This will be your superuser account with full administrative privileges.
+    You can create additional users later.
+</p>
+
+<form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="current_step" value="admin_user">
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-floating mb-3">
+                {{ form.first_name }}
+                <label for="{{ form.first_name.id_for_label }}">First Name</label>
+                {% if form.first_name.errors %}
+                <div class="text-danger small">{{ form.first_name.errors.0 }}</div>
+                {% endif %}
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-floating mb-3">
+                {{ form.last_name }}
+                <label for="{{ form.last_name.id_for_label }}">Last Name</label>
+                {% if form.last_name.errors %}
+                <div class="text-danger small">{{ form.last_name.errors.0 }}</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="form-floating mb-3">
+        {{ form.email }}
+        <label for="{{ form.email.id_for_label }}">Email Address</label>
+        {% if form.email.errors %}
+        <div class="text-danger small">{{ form.email.errors.0 }}</div>
+        {% endif %}
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-floating mb-3">
+                {{ form.password1 }}
+                <label for="{{ form.password1.id_for_label }}">Password</label>
+                {% if form.password1.errors %}
+                <div class="text-danger small">{{ form.password1.errors.0 }}</div>
+                {% endif %}
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-floating mb-3">
+                {{ form.password2 }}
+                <label for="{{ form.password2.id_for_label }}">Confirm Password</label>
+                {% if form.password2.errors %}
+                <div class="text-danger small">{{ form.password2.errors.0 }}</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {% if form.password1.help_text %}
+    <div class="alert alert-info">
+        <small>{{ form.password1.help_text|safe }}</small>
+    </div>
+    {% endif %}
+
+    <div class="d-flex justify-content-between mt-4">
+        <a href="?step=welcome" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i> Back
+        </a>
+        <button type="submit" class="btn btn-wizard-primary">
+            Create Admin User <i class="fas fa-arrow-right ms-2"></i>
+        </button>
+    </div>
+</form>
+{% endblock %}

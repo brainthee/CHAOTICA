@@ -8,3 +8,4 @@ from .auth import *
 from .autocomplete import *
 from .health import *
 from .job_levels import *
+from .setup_wizard import *
