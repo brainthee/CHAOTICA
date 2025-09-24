@@ -1,0 +1,115 @@
+{% extends "wizard/base.html" %}
+
+{% block wizard_content %}
+<div class="text-center">
+    <i class="fas fa-check-circle fa-5x text-success mb-4"></i>
+    <h2>Setup Complete!</h2>
+    <p class="lead mb-4">
+        Your CHAOTICA instance has been successfully configured.
+    </p>
+
+    <div class="row text-start mb-4">
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-user-shield text-primary"></i> Admin User</h5>
+                    <p class="card-text">{{ summary.admin_user }}</p>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-building text-primary"></i> Organisation</h5>
+                    <p class="card-text">{{ summary.organisation }}</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-briefcase text-primary"></i> Services</h5>
+                    {% if summary.services %}
+                    <ul class="mb-0">
+                        {% for service in summary.services|slice:":5" %}
+                        <li>{{ service }}</li>
+                        {% endfor %}
+                        {% if summary.services|length > 5 %}
+                        <li><em>... and {{ summary.services|length|add:"-5" }} more</em></li>
+                        {% endif %}
+                    </ul>
+                    {% else %}
+                    <p class="card-text">None created</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-tags text-primary"></i> Skill Categories</h5>
+                    {% if summary.categories %}
+                    <ul class="mb-0">
+                        {% for category in summary.categories %}
+                        <li>{{ category }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="card-text">None created</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-award text-primary"></i> Skills</h5>
+                    {% if summary.skills %}
+                    <p class="card-text">{{ summary.skills|length }} skills created</p>
+                    {% else %}
+                    <p class="card-text">None created</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-users text-primary"></i> Clients</h5>
+                    {% if summary.clients %}
+                    <ul class="mb-0">
+                        {% for client in summary.clients|slice:":5" %}
+                        <li>{{ client }}</li>
+                        {% endfor %}
+                        {% if summary.clients|length > 5 %}
+                        <li><em>... and {{ summary.clients|length|add:"-5" }} more</em></li>
+                        {% endif %}
+                    </ul>
+                    {% else %}
+                    <p class="card-text">None created</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="alert alert-success">
+        <h5><i class="fas fa-rocket"></i> What's Next?</h5>
+        <ul class="mb-0 text-start">
+            <li>Invite team members to join your organisation</li>
+            <li>Configure additional settings in the admin panel</li>
+            <li>Create your first job or project</li>
+            <li>Set up notification rules</li>
+        </ul>
+    </div>
+
+    <a href="{% url 'dashboard' %}" class="btn btn-lg btn-wizard-primary">
+        Go to Dashboard <i class="fas fa-arrow-right ms-2"></i>
+    </a>
+</div>
+{% endblock %}
+
+{% block wizard_footer %}
+<div class="wizard-footer">
+    <div class="w-100 text-center text-muted">
+        <small>You can manage all these settings from the admin panel</small>
+    </div>
+</div>
+{% endblock %}

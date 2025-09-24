@@ -1,0 +1,42 @@
+{% extends "wizard/base.html" %}
+
+{% block wizard_content %}
+<div class="text-center">
+    <i class="fas fa-rocket fa-5x text-primary mb-4"></i>
+    <h2>Welcome to CHAOTICA!</h2>
+    <p class="lead mb-4">
+        <strong>C</strong>entralised <strong>H</strong>ub for <strong>A</strong>ssigning
+        <strong>O</strong>perational <strong>T</strong>asks,
+        <strong>I</strong>nteractive <strong>C</strong>alendaring and <strong>A</strong>lerts
+    </p>
+
+    <div class="alert alert-info text-start">
+        <h5><i class="fas fa-info-circle"></i> What We'll Setup</h5>
+        <p>This wizard will guide you through the initial configuration:</p>
+        <ul>
+            <li>Create your admin user account</li>
+            <li>Setup your first organisational unit</li>
+            <li>Define initial services offered</li>
+            <li>Configure skill categories and skills</li>
+            <li>Add your initial clients</li>
+        </ul>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="current_step" value="welcome">
+        <button type="submit" class="btn btn-lg btn-wizard-primary">
+            Let's Get Started <i class="fas fa-arrow-right ms-2"></i>
+        </button>
+    </form>
+</div>
+{% endblock %}
+
+{% block wizard_footer %}
+<div class="wizard-footer">
+    <div></div>
+    <div class="text-muted">
+        <small>This wizard will only run once during initial setup</small>
+    </div>
+</div>
+{% endblock %}

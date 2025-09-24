@@ -21,12 +21,24 @@ class HealthCheckMiddleware(MiddlewareMixin):
 
 class NewInstallMiddleware(MiddlewareMixin):
     def process_request(self, request):
-        new_install = User.objects.all().count() <= 1
-        excluded_paths = ["/media", "/static", "/admin"]
-        new_install_excluded_urls = [
-            "/signup/",
-            "/quote",
-        ]
+        # Check if setup is needed - check for all essential components
+        from jobtracker.models import OrganisationalUnit, Service, SkillCategory, Client
+
+        # Setup is complete only when we have ALL of these:
+        # 1. At least one user
+        # 2. At least one org unit
+        # 3. At least one service
+        # 4. At least one skill category
+        # 5. At least one client
+        setup_needed = (
+            User.objects.all().count() == 0 or
+            OrganisationalUnit.objects.all().count() == 0 or
+            Service.objects.all().count() == 0 or
+            SkillCategory.objects.all().count() == 0 or
+            Client.objects.all().count() == 0
+        )
+
+        excluded_paths = ["/media", "/static", "/admin", "/setup"]
         for path in excluded_paths:
             if request.path.startswith(path):
                 return
@@ -37,31 +49,33 @@ class NewInstallMiddleware(MiddlewareMixin):
                 # Nuh huh!
                 return HttpResponseForbidden()
 
-        # Check if it's a new install and we should force signup
-        if new_install and not request.user.is_authenticated:
-            if request.path not in new_install_excluded_urls:
-                # Redirect to signup page...
-                return HttpResponseRedirect(reverse("signup"))
+        # Check if setup wizard is needed
+        if setup_needed:
+            # Redirect to setup wizard...
+            return HttpResponseRedirect(reverse("setup_wizard"))
+        
+        # Lets not force a profile update
+        # # Check if we should force a profile complete (aka first login)
+        # excluded_profile_urls = [
+        #     "/profile/",
+        #     "/profile/update",
+        #     "/profile/update/skills",
+        #     "/oauth2/logout",
+        #     "/auth/logout/",
+        #     "/impersonate/stop/",  # Allow us to stop impersonating even if profile needs updating
+        #     "/setup",  # Also exclude setup wizard from profile update requirement
+        #     "/notifications/api",
+        # ]
+        # if request.user.is_authenticated and not request.user.profile_last_updated:
+        #     msg = "You must first update your profile!"
+        #     if msg not in [m.message for m in get_messages(request)]:
+        #         messages.warning(request=request, message=msg)
 
-        # Check if we should force a profile complete (aka first login)
-        excluded_profile_urls = [
-            "/profile/",
-            "/profile/update",
-            "/profile/update/skills",
-            "/oauth2/logout",
-            "/auth/logout/",
-            "/impersonate/stop/",  # Allow us to stop impersonating even if profile needs updating
-        ]
-        if request.user.is_authenticated and not request.user.profile_last_updated:
-            msg = "You must first update your profile!"
-            if msg not in [m.message for m in get_messages(request)]:
-                messages.warning(request=request, message=msg)
+        #     for path in excluded_profile_urls:
+        #         if request.path.startswith(path):
+        #             return
 
-            for path in excluded_profile_urls:
-                if request.path.startswith(path):
-                    return
-
-            return HttpResponseRedirect(reverse("update_own_profile"))
+        #     return HttpResponseRedirect(reverse("update_own_profile"))
 
 
 class MaintenanceModeMiddleware(MiddlewareMixin):
