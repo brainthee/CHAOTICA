@@ -100,6 +100,11 @@
           <li class="nav-item text-nowrap me-2" role="presentation">
             <a class="nav-link" id="stats-tab" data-bs-toggle="tab" href="#stats" role="tab" aria-controls="tab-stats" aria-selected="false" tabindex="-1"><span class="fa-solid fa-clipboard me-2 tab-icon-color"></span>Stats</a>
           </li>
+          {% if 'can_view_all_reviews' in unit_perms %}
+          <li class="nav-item text-nowrap me-2" role="presentation">
+            <a class="nav-link" id="reviews-tab" data-bs-toggle="tab" href="#reviews" role="tab" aria-controls="tab-reviews" aria-selected="false" tabindex="-1"><span class="fa-solid fa-star me-2 tab-icon-color"></span>Reviews</a>
+          </li>
+          {% endif %}
         </ul>
 
         <div class="tab-content" id="myTabContent">
@@ -122,7 +127,13 @@
           <div class="tab-pane fade" id="stats" role="tabpanel" aria-labelledby="stats-tab">
             {% include 'partials/unit/unit_stats.html' %}
           </div>
-          
+
+          {% if 'can_view_all_reviews' in unit_perms %}
+          <div class="tab-pane fade" id="reviews" role="tabpanel" aria-labelledby="reviews-tab">
+            {% include 'partials/review_org_display.html' %}
+          </div>
+          {% endif %}
+
         </div>
       </div>
     </div>

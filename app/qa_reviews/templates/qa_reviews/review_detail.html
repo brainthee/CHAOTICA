@@ -1,0 +1,339 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block head_title %}QA Review - {{ phase.phase_id }}{% endblock %}
+
+
+{% block content %}
+<div class="card mb-3">
+    <div class="card-header">
+        <div class="row">
+            <div class="col-md-8">
+                <h2 class="mb-2 lh-sm">QA Review: {{ phase.phase_id }}</h2>
+                <p class="mb-0">{{ phase }}</p>
+            </div>
+            <div class="col-md-4 text-right">
+                {% include 'partials/review_status_badge.html' %}
+                <p class="mt-2 mb-0">Started: {{ review.started_at|date:"Y-m-d H:i" }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5><i class="fas fa-briefcase"></i> Job Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <span class="text-body-highlight mb-0">Job:</span>
+                    </div>
+                    <div class="col-md-6">
+                        <span class="mb-0 text-body-secondary">
+                            <a href="{{ job.get_absolute_url }}">
+                                {{ job }}
+                            </a>
+                        </span>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <span class="text-body-highlight mb-0">Client:</span>
+                    </div>
+                    <div class="col-md-6">
+                        <span class="mb-0 text-body-secondary">
+                            <a href="{{ job.client.get_absolute_url }}">
+                                {{ job.client.name }}
+                            </a>
+                        </span>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <span class="text-body-highlight mb-0">Unit:</span>
+                    </div>
+                    <div class="col-md-6">
+                        <span class="mb-0 text-body-secondary">{{ job.unit.name }}</span>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <span class="text-body-highlight mb-0">Delivery Date:</span>
+                    </div>
+                    <div class="col-md-6">
+                        <span class="mb-0 text-body-secondary">{{ job.delivery_date|date:"Y-m-d"|default:"Not set" }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5><i class="fas fa-tasks"></i> Phase Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <span class="text-body-highlight mb-0">Phase ID:</span>
+                    </div>
+                    <div class="col-md-6">
+                        <span class="mb-0 text-body-secondary">
+                            <a href="{{ phase.get_absolute_url }}">
+                                {{ phase.phase_id }}
+                            </a>
+                        </span>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <span class="text-body-highlight mb-0">Service:</span>
+                    </div>
+                    <div class="col-md-6">
+                        <span class="mb-0 text-body-secondary">{{ phase.service.name|default:"N/A" }}</span>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <span class="text-body-highlight mb-0">Project Lead:</span>
+                    </div>
+                    <div class="col-md-6">
+                        <span class="mb-0 text-body-secondary">{{ phase.project_lead.get_full_name|default:phase.project_lead.username|default:"Not assigned" }}</span>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <span class="text-body-highlight mb-0">Report Author:</span>
+                    </div>
+                    <div class="col-md-6">
+                        <span class="mb-0 text-body-secondary">{{ phase.report_author.get_full_name|default:phase.report_author.username }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5><i class="fas fa-file-alt"></i> Deliverables</h5>
+            </div>
+            <div class="card-body">
+
+                {% if phase.linkDeliverable %}
+                <div class="mb-2">
+                    <strong>Link to Deliverable:</strong>
+                    <div class="border border-cake p-2">
+                        {{ phase.linkDeliverable }}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if phase.linkTechData %}
+                <div class="mb-2">
+                    <strong>Link to Technical Data:</strong>
+                    <div class="border border-cake p-2">
+                        {{ phase.linkTechData }}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if phase.linkReportData %}
+                <div class="mb-2">
+                    <strong>Link to Report Data:</strong>
+                    <div class="border border-cake p-2">
+                        {{ phase.linkReportData }}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if phase.description %}
+                <div class="mb-2">
+                    <strong>Description:</strong>
+                    <div class="border border-cake p-2">
+                        {{ phase.description }}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if phase.test_target %}
+                <div class="mb-2">
+                    <strong>Test Target/Scope:</strong>
+                    <div class="border border-cake p-2">
+                        {{ phase.test_target }}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5><i class="fas fa-clipboard-check"></i> QA Feedback Reference</h5>
+            </div>
+            <div class="card-body">
+
+                <div class="row">
+                    <div class="col-md-6 px-3">
+                        <h6><i class="fas fa-cogs"></i> Technical QA</h6>
+                        {% if phase.techqa_by %}
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>Reviewed by:</strong>
+                                </div>
+                                <div class="col-md-6">
+                                    {{ phase.techqa_by.get_full_name|default:phase.techqa_by.username }}
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        {% if phase.techqa_report_rating %}
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>Rating:</strong> 
+                                </div>
+                                <div class="col-md-6">
+                                    {% include 'partials/feedback_stars.html' with feedback=phase.techqa_report_rating feedbackStr=phase.get_techqa_report_rating_display %}
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        {% with tech_feedback=phase.feedback_techqa %}
+                            {% if tech_feedback %}
+                                <div class="row">
+                                        <strong>Feedback:</strong>
+                                </div>
+                                <div class="row px-2">
+                                    {% for feedback in tech_feedback %}
+                                        <div class="m-2 p-2 border border-cake">
+                                            <small class="text-muted">{{ feedback.created_on|date:"Y-m-d H:i" }}</small><br>
+                                            {{ feedback.body|linebreaksbr }}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        {% endwith %}
+                    </div>
+
+                    <div class="col-md-6 px-3">
+                        <h6><i class="fas fa-person-chalkboard"></i> Presentation QA</h6>
+                        {% if phase.presqa_by %}
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>Reviewed by:</strong> 
+                                </div>
+                                <div class="col-md-6">
+                                    {{ phase.presqa_by.get_full_name|default:phase.presqa_by.username }}
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        {% if phase.presqa_report_rating %}
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>Rating:</strong> 
+                                </div>
+                                <div class="col-md-6">
+                                    {% include 'partials/feedback_stars.html' with feedback=phase.presqa_report_rating feedbackStr=phase.get_presqa_report_rating_display %}
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        {% with pres_feedback=phase.feedback_presqa %}
+                            {% if pres_feedback %}
+                                <div class="row">
+                                    <strong>Feedback:</strong>
+                                </div>
+                                <div class="row px-2">
+                                    {% for feedback in pres_feedback %}
+                                        <div class="m-2 p-2 border border-cake">
+                                            <small class="text-muted">{{ feedback.created_on|date:"Y-m-d H:i" }}</small><br>
+                                            {{ feedback.body|linebreaksbr }}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        {% endwith %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form method="post" id="reviewForm">
+    {% csrf_token %}
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5><i class="fas fa-comments"></i> Review Notes</h5>
+                </div>
+                <div class="card-body">
+                    <div class="notes-section">
+                        <textarea name="notes" class="form-control" rows="6" placeholder="Enter your review notes here...">{{ review.notes }}</textarea>
+                        <small class="text-muted">Provide constructive feedback and observations about the deliverable.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="action-buttons">
+        {% if review.status == 'started' or review.status == 'in_progress' %}
+            <button type="submit" name="action" value="save" class="btn btn-phoenix-secondary">
+                <i class="fas fa-save"></i> Save Progress
+            </button>
+            {% if review.reviewer == user %}
+                <button type="submit" name="action" value="complete" class="btn btn-phoenix-success"
+                        onclick="return confirm('Are you sure you want to complete this review? This action cannot be undone.');">
+                    <i class="fas fa-check"></i> Complete Review
+                </button>
+            {% endif %}
+        {% endif %}
+        <a href="{% url 'qa_reviews:wheel_selection' %}" class="btn btn-phoenix-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Selection
+        </a>
+    </div>
+</form>
+
+{% if review.status == 'started' or review.status == 'in_progress' %}
+    {% if review.reviewer == user or user.is_staff %}
+        <div class="mt-3">
+            <form method="post" action="{% url 'qa_reviews:abort_review' review.id %}" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-phoenix-danger btn-sm"
+                        onclick="return confirm('Are you sure you want to abort this review? This action cannot be undone.');">
+                    <i class="fas fa-times"></i> Abort Review
+                </button>
+            </form>
+        </div>
+    {% endif %}
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-save functionality
+    let saveTimeout;
+    $('#reviewForm input, #reviewForm textarea').on('change input', function() {
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(function() {
+            // Could implement auto-save here if desired
+            console.log('Changes detected');
+        }, 2000);
+    });
+</script>
+{% endblock %}

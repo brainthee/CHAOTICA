@@ -362,6 +362,7 @@ LOCAL_APPS = [
     "notifications",
     "dashboard",
     "rm_sync",
+    "qa_reviews",
 ]
 
 INSTALLED_APPS = DEFAULT_APPS + THIRD_PARTY_APPS + LOCAL_APPS
