@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block head_title %}QA Review History{% endblock %}
+
+{% block extra_css %}
+<style>
+    .nav-tabs {
+        margin-bottom: 20px;
+    }
+
+    .status-badge {
+        padding: 3px 10px;
+        border-radius: 15px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .status-completed { background: #d4edda; color: #155724; }
+    .status-in_progress { background: #d1ecf1; color: #0c5460; }
+    .status-started { background: #fff3cd; color: #856404; }
+    .status-cancelled { background: #f8d7da; color: #721c24; }
+
+    .rating-stars {
+        color: #ffc107;
+    }
+
+    .table-responsive {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">QA Review History</h1>
+
+            <ul class="nav nav-tabs" id="reviewTabs" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link active" id="conducted-tab" data-toggle="tab" href="#conducted" role="tab">
+                        Reviews Conducted ({{ conducted_reviews.count }})
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="received-tab" data-toggle="tab" href="#received" role="tab">
+                        Reviews Received ({{ received_reviews.count }})
+                    </a>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="reviewTabContent">
+                <div class="tab-pane fade show active" id="conducted" role="tabpanel">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>Date Started</th>
+                                    <th>Phase</th>
+                                    <th>Job</th>
+                                    <th>Reviewed User</th>
+                                    <th>Status</th>
+                                    <th>Notes</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for review in conducted_reviews %}
+                                <tr>
+                                    <td>{{ review.started_at|date:"Y-m-d H:i" }}</td>
+                                    <td>{{ review.phase.phase_id }}</td>
+                                    <td>{{ review.phase.job.title|truncatechars:30 }}</td>
+                                    <td>{{ review.reviewed_user.get_full_name|default:review.reviewed_user.username }}</td>
+                                    <td>
+                                        <span class="status-badge status-{{ review.status }}">
+                                            {{ review.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if review.notes %}
+                                            <div class="small" title="{{ review.notes }}">
+                                                {{ review.notes|truncatechars:50 }}
+                                            </div>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if review.status != 'completed' %}
+                                            <a href="{% url 'qa_reviews:review_detail' review.id %}" class="btn btn-sm btn-primary">
+                                                Continue
+                                            </a>
+                                        {% else %}
+                                            <a href="{% url 'qa_reviews:review_detail' review.id %}" class="btn btn-sm btn-outline-primary">
+                                                View
+                                            </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted">No reviews conducted yet.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="received" role="tabpanel">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>Date Completed</th>
+                                    <th>Phase</th>
+                                    <th>Job</th>
+                                    <th>Reviewer</th>
+                                    <th>Feedback Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for review in received_reviews %}
+                                <tr>
+                                    <td>{{ review.completed_at|date:"Y-m-d" }}</td>
+                                    <td>{{ review.phase.phase_id }}</td>
+                                    <td>{{ review.phase.job.title|truncatechars:30 }}</td>
+                                    <td>{{ review.reviewer.get_full_name|default:review.reviewer.username }}</td>
+                                    <td>
+                                        {% if review.notes %}
+                                            <div title="{{ review.notes }}">
+                                                {{ review.notes|truncatechars:80 }}
+                                            </div>
+                                        {% else %}
+                                            <em class="text-muted">No notes provided</em>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">No completed reviews received yet.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,88 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4>QA Reviews</h4>
+  {% if 'can_conduct_review' in unit_perms %}
+    <a href="{% url 'qa_reviews:wheel_selection' %}?unit={{ organisationalunit.id }}" class="btn btn-primary"><i class="fas fa-random me-2"></i>Start New Review</a>
+  {% endif %}
+</div>
+
+<div class="row mb-4">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-clock me-2"></i>In Progress Reviews ({{ in_progress_reviews.count }})</h5>
+      </div>
+      <div class="card-body">
+        {% if in_progress_reviews %}
+          <div class="table-responsive">
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th>Phase</th>
+                  <th>Report Author</th>
+                  <th>Reviewer</th>
+                  <th>Started</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for review in in_progress_reviews %}
+                  <tr>
+                    <td>{{ review.phase.phase_id }}</td>
+                    <td>{{ review.reviewed_user.get_full_name|default:review.reviewed_user.username }}</td>
+                    <td>{{ review.reviewer.get_full_name|default:review.reviewer.username }}</td>
+                    <td>{{ review.started_at|date:'Y-m-d' }}</td>
+                    <td>
+                      <a href="{% url 'qa_reviews:review_detail' review.id %}" class="btn btn-sm btn-outline-primary">View</a>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="text-muted mb-0">No reviews currently in progress.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-check-circle me-2"></i>Recent Completed Reviews ({{ recent_reviews.count }})</h5>
+      </div>
+      <div class="card-body">
+        {% if recent_reviews %}
+          <div class="table-responsive">
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th>Phase</th>
+                  <th>Report Author</th>
+                  <th>Reviewer</th>
+                  <th>Completed</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for review in recent_reviews %}
+                  <tr>
+                    <td>{{ review.phase.phase_id }}</td>
+                    <td>{{ review.reviewed_user.get_full_name|default:review.reviewed_user.username }}</td>
+                    <td>{{ review.reviewer.get_full_name|default:review.reviewer.username }}</td>
+                    <td>{{ review.completed_at|date:'Y-m-d' }}</td>
+                    <td>
+                      <a href="{% url 'qa_reviews:review_detail' review.id %}" class="btn btn-sm btn-outline-secondary">View</a>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="text-muted mb-0">No recent completed reviews.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,426 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block head_title %}QA Review - Random Selection{% endblock %}
+
+{% block extra_css %}
+<style>
+    .wheel-container {
+        position: relative;
+        width: 80vmin;
+        height: 80vmin;
+        max-width: 700px;
+        max-height: 700px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .wheel {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        position: relative;
+        border: 8px solid #333;
+        box-shadow: 0 0 20px rgba(0,0,0,0.3);
+        transition: transform 4s cubic-bezier(0.25, 0.1, 0.25, 1);
+    }
+
+    .wheel svg {
+        width: 100%;
+        height: 100%;
+    }
+
+    .wheel-text {
+        font-weight: bold;
+        fill: white;
+        font-size: 14px;
+        text-anchor: middle;
+        dominant-baseline: central;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    .wheel-text {
+        filter: drop-shadow(1px 1px 2px rgba(0,0,0,0.8));
+    }
+
+    .wheel-pointer {
+        position: absolute;
+        right: -4%;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 0;
+        height: 0;
+        border-top: clamp(15px, 3vmin, 30px) solid transparent;
+        border-bottom: clamp(15px, 3vmin, 30px) solid transparent;
+        border-right: clamp(30px, 5vmin, 50px) solid #dc3545;
+        z-index: 10;
+    }
+
+    .spinning {
+        animation: spin 4s cubic-bezier(0.25, 0.1, 0.25, 1);
+    }
+
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(var(--rotation)); }
+    }
+
+    .results-container {
+        margin-top: 30px;
+        display: none;
+    }
+
+    .phase-table {
+        margin-top: 20px;
+    }
+
+    .config-section {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 30px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">QA Review - Random Selection</h1>
+
+            <div class="config-section">
+                <h3>Configuration</h3>
+                <form method="post" id="configForm">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="unit_id">Select Unit:</label>
+                                <select name="unit_id" id="unit_id" class="form-control">
+                                    <option value="">-- Select Unit --</option>
+                                    {% for unit in units %}
+                                        <option value="{{ unit.id }}" {% if selected_unit and selected_unit.id == unit.id %}selected{% endif %}>
+                                            {{ unit.name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="weeks_back">Weeks to Look Back:</label>
+                                <input type="number" name="weeks_back" id="weeks_back" class="form-control"
+                                       value="{{ weeks_back }}" min="1" max="52">
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label>&nbsp;</label>
+                                <button type="submit" class="btn btn-primary form-control">Load Users</button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            {% if selected_unit %}
+            <div class="wheel-section">
+                <h3 class="text-center mb-4">Spin the Wheel to Select a Random User</h3>
+
+                <div class="row justify-content-center">
+                    <div class="col-12">
+                        <div class="wheel-container">
+                            <div class="wheel-pointer"></div>
+                            <div class="wheel" id="wheel">
+                                <!-- Segments will be added dynamically -->
+                            </div>
+                        </div>
+
+                        <div class="text-center mt-4 mb-4">
+                            <button id="spinBtn" class="btn btn-lg btn-success" disabled>
+                                <i class="fas fa-sync-alt"></i> Loading Users...
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="results-container" id="results">
+                    <div class="alert alert-success">
+                        <h4>Selected User: <span id="selectedUserName"></span></h4>
+                        <p>Email: <span id="selectedUserEmail"></span></p>
+                    </div>
+
+                    <div class="phase-table">
+                        <h4>Available Reports for Review</h4>
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Phase ID</th>
+                                    <th>Job Title</th>
+                                    <th>Phase Title</th>
+                                    <th>Delivery Date</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="phasesTableBody">
+                                <!-- Phases will be added dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let users = [];
+    let isSpinning = false;
+
+    {% if selected_unit %}
+    // Load eligible users when page loads
+    $(document).ready(function() {
+        loadEligibleUsers();
+    });
+
+    function loadEligibleUsers() {
+        console.log('Loading users for unit:', '{{ selected_unit.id }}', 'weeks back:', '{{ weeks_back }}');
+        $.post('{% url "qa_reviews:get_eligible_users" %}', {
+            'unit_id': '{{ selected_unit.id }}',
+            'weeks_back': '{{ weeks_back }}',
+            'csrfmiddlewaretoken': '{{ csrf_token }}'
+        })
+        .done(function(response) {
+            users = response.users;
+            if (users.length > 0) {
+                createWheel(users);
+                $('#spinBtn').prop('disabled', false).html('<i class="fas fa-sync-alt"></i> Spin the Wheel!');
+            } else {
+                $('#spinBtn').prop('disabled', true).html('No Eligible Users Found');
+                Swal.fire({
+                    icon: 'info',
+                    title: 'No Users Found',
+                    text: 'No users found with completed reports in the selected timeframe. Try extending the time range or check if there are any completed reports in this unit.',
+                    confirmButtonText: 'OK'
+                });
+            }
+        })
+        .fail(function(xhr) {
+            const errorMsg = xhr.responseJSON ? xhr.responseJSON.error : 'Failed to load users';
+            Swal.fire({
+                icon: 'error',
+                title: 'Loading Error',
+                text: errorMsg,
+                confirmButtonText: 'OK'
+            });
+        });
+    }
+
+    function formatNameForWheel(name) {
+        if (!name) return '';
+
+        // If name is short enough, use as-is
+        if (name.length <= 12) return name;
+
+        // Try splitting on space for first/last name
+        const parts = name.trim().split(/\s+/);
+        if (parts.length >= 2) {
+            const firstName = parts[0];
+            const lastName = parts[parts.length - 1];
+
+            // Try "First L." format
+            const firstInitial = `${firstName} ${lastName.charAt(0)}.`;
+            if (firstInitial.length <= 12) return firstInitial;
+
+            // Try two lines: "First\nLast"
+            if (firstName.length <= 10 && lastName.length <= 10) {
+                return `${firstName}\n${lastName}`;
+            }
+
+            // Try "First\nL."
+            if (firstName.length <= 10) {
+                return `${firstName}\n${lastName.charAt(0)}.`;
+            }
+        }
+
+        // Fallback: truncate with ellipsis
+        return name.substring(0, 10) + '...';
+    }
+
+    function createWheel(users) {
+        const wheel = $('#wheel');
+        wheel.empty();
+
+        const colors = [
+            '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8',
+            '#6C5CE7', '#FD79A8', '#FDCB6E', '#6C63FF', '#A8E6CF'
+        ];
+
+        const radius = 240;
+        const centerX = 250;
+        const centerY = 250;
+
+        // Create SVG element
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', '0 0 500 500');
+
+        const segmentAngle = 2 * Math.PI / users.length;
+
+        users.forEach((user, index) => {
+            const startAngle = index * segmentAngle; // Start from right (0 degrees)
+            const endAngle = (index + 1) * segmentAngle;
+
+            const x1 = centerX + radius * Math.cos(startAngle);
+            const y1 = centerY + radius * Math.sin(startAngle);
+            const x2 = centerX + radius * Math.cos(endAngle);
+            const y2 = centerY + radius * Math.sin(endAngle);
+
+            const largeArc = segmentAngle > Math.PI ? 1 : 0;
+
+            // Create path for segment
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            const pathData = `M ${centerX} ${centerY} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`;
+            path.setAttribute('d', pathData);
+            path.setAttribute('fill', colors[index % colors.length]);
+            path.setAttribute('stroke', '#333');
+            path.setAttribute('stroke-width', '2');
+            svg.appendChild(path);
+
+            // Add text
+            const textAngle = startAngle + segmentAngle / 2;
+            const textRadius = radius * 0.7;
+            const textX = centerX + textRadius * Math.cos(textAngle);
+            const textY = centerY + textRadius * Math.sin(textAngle);
+
+            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text.setAttribute('x', textX);
+            text.setAttribute('y', textY);
+            text.setAttribute('class', 'wheel-text');
+
+            // Text follows the exact angle of the slice's radial line
+            // No adjustment - text runs along the radius from center to edge
+            let textRotation = textAngle * 180 / Math.PI;
+
+            text.setAttribute('transform', `rotate(${textRotation} ${textX} ${textY})`);
+
+            // Smart name formatting for better display
+            let displayName = user.name || user.username;
+            let formattedName = formatNameForWheel(displayName);
+
+            if (formattedName.includes('\n')) {
+                // Split into two lines
+                const lines = formattedName.split('\n');
+                const tspan1 = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+                const tspan2 = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+
+                tspan1.textContent = lines[0];
+                tspan1.setAttribute('x', textX);
+                tspan1.setAttribute('dy', '-0.3em');
+
+                tspan2.textContent = lines[1];
+                tspan2.setAttribute('x', textX);
+                tspan2.setAttribute('dy', '1.2em');
+
+                text.appendChild(tspan1);
+                text.appendChild(tspan2);
+            } else {
+                text.textContent = formattedName;
+            }
+
+            svg.appendChild(text);
+        });
+
+        wheel.append(svg);
+    }
+
+    $('#spinBtn').click(function() {
+        console.log('Spin button clicked! Users:', users.length, 'isSpinning:', isSpinning);
+        if (isSpinning || users.length === 0) {
+            console.log('Spin cancelled - isSpinning:', isSpinning, 'users.length:', users.length);
+            return;
+        }
+
+        isSpinning = true;
+        $('#results').hide();
+        $(this).prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Spinning...');
+
+        // Reset wheel rotation and transition for fresh spin
+        const wheel = $('#wheel');
+        wheel.css('transition', 'none');
+        wheel.css('transform', 'rotate(0deg)');
+
+        // Force reflow to apply the reset
+        wheel[0].offsetHeight;
+
+        // Re-enable transition
+        wheel.css('transition', 'transform 4s cubic-bezier(0.25, 0.1, 0.25, 1)');
+
+        // Actually get random selection from server
+        $.post('{% url "qa_reviews:spin_wheel" %}', {
+            'unit_id': '{{ selected_unit.id }}',
+            'weeks_back': '{{ weeks_back }}',
+            'csrfmiddlewaretoken': '{{ csrf_token }}'
+        })
+        .done(function(response) {
+            const selectedUser = response.selected_user;
+            const phases = response.phases;
+
+            // Find index of selected user
+            const selectedIndex = users.findIndex(u => u.id === selectedUser.id);
+            const segmentAngle = 360 / users.length;
+            // Calculate target angle for right-side pointer (0 degrees is at 3 o'clock)
+            const targetAngle = 360 - (selectedIndex * segmentAngle + segmentAngle/2);
+            const spins = 5; // Number of full rotations
+            const finalRotation = (spins * 360) + targetAngle;
+
+            // Animate wheel to final position
+            wheel.css('transform', `rotate(${finalRotation}deg)`);
+
+            // Show results after animation
+            setTimeout(function() {
+                $('#selectedUserName').text(selectedUser.name);
+                $('#selectedUserEmail').text(selectedUser.email);
+
+                // Populate phases table
+                const tbody = $('#phasesTableBody');
+                tbody.empty();
+
+                phases.forEach(function(phase) {
+                    const row = $('<tr>');
+                    row.append($('<td>').text(phase.phase_id));
+                    row.append($('<td>').text(phase.job_title));
+                    row.append($('<td>').text(phase.title));
+                    row.append($('<td>').text(phase.delivery_date ? new Date(phase.delivery_date).toLocaleDateString() : 'N/A'));
+                    row.append($('<td>').html(
+                        `<a href="/qa-reviews/begin-review/${phase.id}/" class="btn btn-sm btn-primary">
+                            <i class="fas fa-clipboard-check"></i> Begin Review
+                        </a>`
+                    ));
+                    tbody.append(row);
+                });
+
+                $('#results').fadeIn();
+                $('#spinBtn').prop('disabled', false).html('<i class="fas fa-sync-alt"></i> Spin Again');
+                isSpinning = false;
+            }, 4000);
+        })
+        .fail(function(xhr) {
+            const errorMsg = xhr.responseJSON ? xhr.responseJSON.error : 'Unknown error occurred';
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: errorMsg,
+                confirmButtonText: 'OK'
+            });
+            $('#spinBtn').prop('disabled', false).html('<i class="fas fa-sync-alt"></i> Spin the Wheel!');
+            isSpinning = false;
+        });
+    });
+    {% endif %}
+</script>
+{% endblock %}

@@ -30,6 +30,7 @@ from django.utils import timezone
 import datetime, json
 from guardian.decorators import permission_required_or_403
 from guardian.mixins import PermissionRequiredMixin
+from qa_reviews.models import QAReview
 
 
 logger = logging.getLogger(__name__)
@@ -102,6 +103,22 @@ class OrganisationalUnitDetailView(
             context["start_date"], context["end_date"]
         )
         context["stats_json"] = json.dumps(context["stats"], indent=4, default=str)
+
+        # Add QA review data for users with permission
+        if self.request.user.has_perm("can_view_all_reviews", unit):
+            # In progress reviews for this unit
+            context['in_progress_reviews'] = QAReview.objects.filter(
+                phase__job__unit=unit,
+                status__in=['started', 'in_progress']
+            ).select_related('phase', 'reviewer', 'phase__job').order_by('-started_at')
+
+            # Recent completed reviews (last 30 days)
+            thirty_days_ago = timezone.now() - datetime.timedelta(days=30)
+            context['recent_reviews'] = QAReview.objects.filter(
+                phase__job__unit=unit,
+                status='completed',
+                completed_at__gte=thirty_days_ago
+            ).select_related('phase', 'reviewer', 'phase__job').order_by('-completed_at')[:10]
 
         return context
 

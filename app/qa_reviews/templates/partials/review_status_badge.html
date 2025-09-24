@@ -1,0 +1,3 @@
+<div class="badge badge-phoenix badge-phoenix-{% if review.status == 'completed' %}success{% elif review.status == 'cancelled' %}warning{% else %}info{% endif%}">
+    {{ review.get_status_display }}
+</div>

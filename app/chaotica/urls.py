@@ -32,6 +32,7 @@ urlpatterns = [
     path("select2/", include("django_select2.urls")),
     path('reporting/', include('reporting.urls')),
     path('notifications/', include('notifications.urls')),
+    path('qa-reviews/', include('qa_reviews.urls')),
     re_path(r"", include("chaotica_utils.urls")),
     re_path(r"", include("jobtracker.urls")),
     path("rm_sync/", include("rm_sync.urls")),
