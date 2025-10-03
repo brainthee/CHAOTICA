@@ -1,0 +1,38 @@
+{% extends "wizard/base.html" %}
+
+{% block wizard_content %}
+<h2 class="mb-4"><i class="fas fa-users me-2"></i> Add Initial Clients</h2>
+<p class="text-muted mb-4">
+    Add some initial client organizations. You can add more detailed information
+    and additional clients later.
+</p>
+
+<form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="current_step" value="clients">
+
+    <div class="mb-3">
+        <label for="{{ form.clients.id_for_label }}" class="form-label">Client Names</label>
+        {{ form.clients }}
+        {% if form.clients.errors %}
+        <div class="text-danger small">{{ form.clients.errors.0 }}</div>
+        {% endif %}
+        <div class="form-text">{{ form.clients.help_text }}</div>
+    </div>
+
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i>
+        <strong>Note:</strong> {{ wizard_data.admin_user_name }} will be set as the account manager
+        for these clients. You can modify this later.
+    </div>
+
+    <div class="d-flex justify-content-between mt-4">
+        <a href="?step=skills" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i> Back
+        </a>
+        <button type="submit" class="btn btn-wizard-primary">
+            Add Clients <i class="fas fa-arrow-right ms-2"></i>
+        </button>
+    </div>
+</form>
+{% endblock %}

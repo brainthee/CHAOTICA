@@ -24,6 +24,7 @@ urlpatterns = [
     path("sessions/", views.SessionListView.as_view(), name="session_list"),
     path("signup/<str:invite_id>", views.signup, name="signup"),
     path("signup/", views.signup, name="signup"),
+    path("setup/", views.SetupWizardView.as_view(), name="setup_wizard"),
 
     # Annual Leave
     path("ops/leave/", views.manage_leave, name="manage_leave"),
