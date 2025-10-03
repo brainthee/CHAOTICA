@@ -448,6 +448,10 @@ class CustomConfigForm(ConstanceForm):
                 Column(
                     HTML('<h4 class="mb-4">Site Notice</h4>'),
                     Div(
+                        Field("MAINTENANCE_MODE"),
+                        css_class="input-group input-group-dynamic",
+                    ),
+                    Div(
                         Field("SITE_NOTICE_ENABLED"),
                         css_class="input-group input-group-dynamic",
                     ),

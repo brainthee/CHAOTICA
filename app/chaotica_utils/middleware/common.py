@@ -50,7 +50,7 @@ class NewInstallMiddleware(MiddlewareMixin):
                 return HttpResponseForbidden()
 
         # Check if setup wizard is needed
-        if setup_needed:
+        if setup_needed and not config.MAINTENANCE_MODE:
             # Redirect to setup wizard...
             return HttpResponseRedirect(reverse("setup_wizard"))
         
@@ -93,7 +93,7 @@ class MaintenanceModeMiddleware(MiddlewareMixin):
         is_admin_path_allowed = any(path.startswith(allowed_path) for allowed_path in admin_allowed_paths)
         
         if (
-            settings.MAINTENANCE_MODE
+            config.MAINTENANCE_MODE
             and not request.user.is_superuser
             and path != reverse("maintenance")
             and not is_admin_path_allowed

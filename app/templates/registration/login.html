@@ -45,10 +45,17 @@
   <form id="login-form" method="post" role="form">
     {% csrf_token %}
 
+      {% if DEMO_ENV %}
+      <div class="alert alert-phoenix-info" role="alert">
+        This is a demo environment and will reset periodically. <br />
+        Login with: <strong>{{ DEMO_USER }}</strong> and <strong>{{ DEMO_PASS }}</strong>
+      </div>
+      {% endif %}
+
     <div class="mb-3 text-start">
       <label class="form-label" for="email">Email</label>
       <div class="form-icon-container">
-        <input class="form-control form-icon-input" id="id_username" name="username" type="email" placeholder="Email Address" />
+        <input class="form-control form-icon-input" id="id_username" name="username" type="email" placeholder="Email Address" {% if DEMO_ENV %}value="{{ DEMO_USER }}"{% endif %}/>
         <span class="fas fa-envelope text-900 fs-9 form-icon"></span>
       </div>
     </div>
@@ -56,7 +63,7 @@
     <div class="mb-3 text-start">
       <label class="form-label" for="password">Password</label>
       <div class="form-icon-container">
-        <input class="form-control form-icon-input" id="id_password" name="password" type="password" placeholder="Password" />
+        <input class="form-control form-icon-input" id="id_password" name="password" type="password" placeholder="Password" {% if DEMO_ENV %}value="{{ DEMO_PASS }}"{% endif %}/>
         <span class="fas fa-key text-900 fs-9 form-icon"></span>
       </div>
     </div>
