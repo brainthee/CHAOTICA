@@ -92,35 +92,78 @@ class Command(BaseCommand):
         ]
         for model in models_to_clear:
             model.objects.all().delete()
-        User.objects.all().exclude(email="admin@chaotica-demo.com").delete()
+        User.objects.all().exclude(email="admin@demo.chaotica.app").delete()
 
-        # Reset SQLite sequences for all tables to avoid ID conflicts
+        # Reset auto-increment sequences for all tables to avoid ID conflicts
         from django.db import connection
-        with connection.cursor() as cursor:
-            # Reset sequences for all models we cleared
-            tables_to_reset = [
-                'chaotica_utils_user',
-                'jobtracker_timeslot',
-                'jobtracker_timeslottype',
-                'jobtracker_phase',
-                'jobtracker_job',
-                'jobtracker_frameworkagreement',
-                'jobtracker_contact',
-                'jobtracker_client',
-                'jobtracker_userskill',
-                'chaotica_utils_usercost',
-                'chaotica_utils_leaverequest',
-                'jobtracker_service',
-                'jobtracker_skill',
-                'jobtracker_organisationalunitmember',
-                'jobtracker_organisationalunit',
-                'chaotica_utils_joblevel'
-            ]
-            for table in tables_to_reset:
-                cursor.execute(f"DELETE FROM sqlite_sequence WHERE name='{table}';")
 
-            # Also reset the main sqlite_sequence table to start fresh
-            cursor.execute("DELETE FROM sqlite_sequence;")
+        # Only reset sequences if using SQLite
+        if connection.vendor == 'sqlite':
+            with connection.cursor() as cursor:
+                # Reset sequences for all models we cleared
+                tables_to_reset = [
+                    'chaotica_utils_user',
+                    'jobtracker_timeslot',
+                    'jobtracker_timeslottype',
+                    'jobtracker_phase',
+                    'jobtracker_job',
+                    'jobtracker_frameworkagreement',
+                    'jobtracker_contact',
+                    'jobtracker_client',
+                    'jobtracker_userskill',
+                    'chaotica_utils_usercost',
+                    'chaotica_utils_leaverequest',
+                    'jobtracker_service',
+                    'jobtracker_skill',
+                    'jobtracker_organisationalunitmember',
+                    'jobtracker_organisationalunit',
+                    'chaotica_utils_joblevel'
+                ]
+                for table in tables_to_reset:
+                    cursor.execute(f"DELETE FROM sqlite_sequence WHERE name='{table}';")
+
+                # Also reset the main sqlite_sequence table to start fresh
+                cursor.execute("DELETE FROM sqlite_sequence;")
+        elif connection.vendor == 'mysql':
+            # For MySQL, reset auto_increment values
+            with connection.cursor() as cursor:
+                tables_to_reset = [
+                    'chaotica_utils_user',
+                    'jobtracker_timeslot',
+                    'jobtracker_timeslottype',
+                    'jobtracker_phase',
+                    'jobtracker_job',
+                    'jobtracker_frameworkagreement',
+                    'jobtracker_contact',
+                    'jobtracker_client',
+                    'jobtracker_userskill',
+                    'chaotica_utils_usercost',
+                    'chaotica_utils_leaverequest',
+                    'jobtracker_service',
+                    'jobtracker_skill',
+                    'jobtracker_organisationalunitmember',
+                    'jobtracker_organisationalunit',
+                    'chaotica_utils_joblevel'
+                ]
+                for table in tables_to_reset:
+                    cursor.execute(f"ALTER TABLE {table} AUTO_INCREMENT = 1;")
+        elif connection.vendor == 'postgresql':
+            # For PostgreSQL, reset sequences
+            from django.db import connection
+            with connection.cursor() as cursor:
+                models_to_reset = [
+                    User, TimeSlot, TimeSlotType, Phase, Job, FrameworkAgreement,
+                    Contact, Client, UserSkill, UserCost, LeaveRequest, Service,
+                    Skill, OrganisationalUnitMember, OrganisationalUnit, JobLevel
+                ]
+                for model in models_to_reset:
+                    table_name = model._meta.db_table
+                    sequence_name = f"{table_name}_id_seq"
+                    try:
+                        cursor.execute(f"ALTER SEQUENCE {sequence_name} RESTART WITH 1;")
+                    except Exception:
+                        # Sequence might not exist or have a different name
+                        pass
 
     def create_organisational_units(self):
         self.stdout.write('Creating organisational units...')
@@ -292,7 +335,7 @@ class Command(BaseCommand):
         for i in range(count):
             first_name = fake.first_name()
             last_name = fake.last_name()
-            email = f"{first_name.lower()}.{last_name.lower()}@chaotica-demo.com"
+            email = f"{first_name.lower()}.{last_name.lower()}@demo.chaotica.app"
 
             unit = random.choice(self.units)
             region_short = unit.slug
