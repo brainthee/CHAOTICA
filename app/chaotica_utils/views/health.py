@@ -308,6 +308,7 @@ class HealthCheckView(View):
             from jobtracker.models import Job, Phase
             from jobtracker.enums import JobStatuses, PhaseStatuses
             from notifications.models import Notification
+            from qsessions.models import Session
 
             User = get_user_model()
 
@@ -316,6 +317,10 @@ class HealthCheckView(View):
                     'total': User.objects.count(),
                     'active': User.objects.filter(is_active=True).count(),
                     'with_roles': User.objects.filter(is_active=True, groups__isnull=False).count()
+                },
+                'sessions': {
+                    'total': Session.objects.count(),
+                    'active': Session.objects.filter(expire_date__gt=timezone.now()).order_by('-expire_date').count(),
                 },
                 'jobs': {
                     'total': Job.objects.count(),
