@@ -1,7 +1,7 @@
 from django.db import models
-from django.contrib.auth.models import UserManager
+from django.contrib.auth.models import BaseUserManager
 from django.db.models import (
-    Q, Count, Sum, Case, When, Value, IntegerField, 
+    Q, Count, Sum, Case, When, Value, IntegerField,
     DateField, F, Prefetch, Exists, OuterRef, BooleanField
 )
 from django.db.models.functions import TruncDate
@@ -17,7 +17,7 @@ class CustomUserQuerySet(models.QuerySet):
         return self.order_by("first_name", "last_name")
 
 
-class CustomUserManager(UserManager):
+class CustomUserManager(BaseUserManager):
 
     def get_queryset(self):
         return CustomUserQuerySet(self.model, using=self._db)
