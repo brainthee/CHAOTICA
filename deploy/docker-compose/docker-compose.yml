@@ -11,8 +11,8 @@ services:
       - 8000
     environment:
       - DEBUG=0 # Set to 1 to enable Django's Debug mode
-      - SECRET_KEY=CHANGE_ME # No really - change it!
-      - DJANGO_ENV=dev
+      - SECRET_KEY=Hunter2
+      - DJANGO_ENV=Demo
       - DJANGO_VERSION=latest
       - RUN_COLLECTSTATIC=false
       - TZ=Europe/London
@@ -24,6 +24,11 @@ services:
       - RDS_PASSWORD=Hunter2 # Change this if in production...
       - RDS_HOSTNAME=db
       - RDS_PORT=3306
+
+      - HEALTH_CHECK_API_KEY=Hunter2
+      - DEMO_ENV=true
+      - DEMO_USER=admin@demo.chaotica.app
+      - DEMO_PASS=DemoAdmin123!
     depends_on:
       - db
 
@@ -46,7 +51,7 @@ services:
       - media_volume:/app/mediafiles
       - ./nginx.conf:/etc/nginx/conf.d/chaotica.conf
     ports:
-      - 1338:80
+      - 80:80
     depends_on:
       - web
 

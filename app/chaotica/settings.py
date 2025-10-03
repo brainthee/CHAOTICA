@@ -14,13 +14,16 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 DEBUG = int(os.environ.get("DEBUG", default=0))
-MAINTENANCE_MODE = int(os.environ.get("MAINTENANCE_MODE", default=0))
 
 DJANGO_ENV = os.environ.get("DJANGO_ENV", default="Dev")
 DJANGO_VERSION = os.environ.get("DJANGO_VERSION", default="bleeding-edge")
 
 SENTRY_BACKEND_DSN = os.environ.get("SENTRY_BACKEND_DSN", default=None)
 SENTRY_FRONTEND_DSN = os.environ.get("SENTRY_FRONTEND_DSN", default=None)
+
+DEMO_ENV = os.environ.get("DEMO_ENV", default=False)
+DEMO_USER = os.environ.get("DEMO_USER", default=None)
+DEMO_PASS = os.environ.get("DEMO_PASS", default=None)
 
 if SENTRY_BACKEND_DSN is not None:
     sentry_sdk.init(
@@ -262,6 +265,7 @@ CONSTANCE_CONFIG = {
         "Warning message to display in project descriptions.",
     ),
     "RM_SYNC_STALE_TIMEOUT": (60, "Amount of minutes before a sync task is stale"),
+    "MAINTENANCE_MODE": (False, "Toggle maintenance mode"),
 }
 
 CONSTANCE_BACKEND = "constance.backends.database.DatabaseBackend"

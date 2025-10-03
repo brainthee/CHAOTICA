@@ -42,8 +42,13 @@ from django.views.decorators.http import (
 def page_defaults(request):
     context = {}
     context["config"] = config
+    
     context["DJANGO_ENV"] = django_settings.DJANGO_ENV
     context["DJANGO_VERSION"] = django_settings.DJANGO_VERSION
+
+    context["DEMO_ENV"] = django_settings.DEMO_ENV
+    context["DEMO_USER"] = django_settings.DEMO_USER
+    context["DEMO_PASS"] = django_settings.DEMO_PASS
 
     if (
         django_settings.CHAOTICA_BIRTHDAY.month == datetime.date.today().month
@@ -92,7 +97,7 @@ def maintenance(request):
     Returns:
         HttpResponseRedirect, HttpResponse: Either the page or a redirect to home
     """
-    if not django_settings.MAINTENANCE_MODE:
+    if not config.MAINTENANCE_MODE:
         return HttpResponseRedirect(reverse("home"))
     template = loader.get_template("maintenance.html")
     context = {}
