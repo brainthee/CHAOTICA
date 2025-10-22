@@ -2,6 +2,7 @@
 {% load widget_tweaks %}
 {% load i18n static %}
 {% load crispy_forms_tags %}
+{% load humanize %}
 
 {% block head_title %}Login{% endblock head_title %}
 
@@ -47,8 +48,9 @@
 
       {% if DEMO_ENV %}
       <div class="alert alert-phoenix-info" role="alert">
-        This is a demo environment and will reset periodically. <br />
-        Login with: <strong>{{ DEMO_USER }}</strong> and <strong>{{ DEMO_PASS }}</strong>
+        This is a demo environment and will reset in <code>{{ DEMO_TIME_REMAINING |naturaltime }}</code> <br /><br />
+        <strong>Username: </strong> <code>{{ DEMO_USER }}</code> <br />
+        <strong>Password: </strong> <code>{{ DEMO_PASS }}</code>
       </div>
       {% endif %}
 

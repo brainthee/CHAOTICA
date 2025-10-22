@@ -32,11 +32,11 @@ from django.views.decorators.http import require_http_methods
 from django.shortcuts import get_object_or_404
 from constance import config
 from constance.utils import get_values
-import datetime
 from django.views.decorators.http import (
     require_http_methods,
     require_safe,
 )
+from datetime import datetime, timedelta
 
 
 def page_defaults(request):
@@ -49,19 +49,38 @@ def page_defaults(request):
     context["DEMO_ENV"] = django_settings.DEMO_ENV
     context["DEMO_USER"] = django_settings.DEMO_USER
     context["DEMO_PASS"] = django_settings.DEMO_PASS
+    # Calculate how long till reset
+    now = timezone.now()
+    
+    reset_time = datetime.strptime(django_settings.DEMO_RESET_TIME, '%H:%M').time()
 
+    # Create next reset datetime in the current timezone
+    next_reset = timezone.datetime.combine(
+        now.date(),
+        reset_time,
+        tzinfo=timezone.get_current_timezone()
+    )
+
+    # If we've already passed the reset time today, get tomorrow's
+    if now.time() >= reset_time:
+        next_reset += timedelta(days=1)
+
+    # Calculate time remaining in seconds
+    context["DEMO_TIME_REMAINING"] = next_reset
+
+    # Figure out if it's our birthday!
     if (
-        django_settings.CHAOTICA_BIRTHDAY.month == datetime.date.today().month
-        and django_settings.CHAOTICA_BIRTHDAY.day == datetime.date.today().day
+        django_settings.CHAOTICA_BIRTHDAY.month == now.today().month
+        and django_settings.CHAOTICA_BIRTHDAY.day == now.today().day
     ):
         context["IS_APP_BIRTHDAY"] = True
         context["CHAOTICA_BIRTHDAY_YEARS_OLD"] = (
-            datetime.date.today().year - django_settings.CHAOTICA_BIRTHDAY.year
+            now.today().year - django_settings.CHAOTICA_BIRTHDAY.year
         )
 
     # Lets add prompts/messages if we need to...
     # Prompt for skills review...
-    if request.user.skills_last_updated():
+    if request.user.is_authenticated and request.user.skills_last_updated():
         days_since_updated = (timezone.now() - request.user.skills_last_updated()).days
         if days_since_updated > config.SKILLS_REVIEW_DAYS:
             messages.info(
@@ -74,7 +93,7 @@ def page_defaults(request):
             message="Make sure you remember to populate your skills! Please visit your Profile page",
         )
 
-    if request.user.profile_last_updated:
+    if request.user.is_authenticated and request.user.profile_last_updated:
         days_since_profile_updated = (
             timezone.now().date() - request.user.profile_last_updated
         ).days
