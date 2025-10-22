@@ -12,6 +12,7 @@ from ..forms.common import (
 )
 from ..models import User, UserInvitation
 from ..utils import is_valid_uuid
+from ..views import page_defaults
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
 from constance import config
@@ -34,8 +35,14 @@ class LoginView(auth_views.LoginView):
             if success_url:
                 adfs_url += f"?next={success_url}"
             return redirect(adfs_url)
-        
+
         return super().get(request, *args, **kwargs)
+    
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context = {**context, **page_defaults(self.request)}
+        return context
 
 
 @login_required

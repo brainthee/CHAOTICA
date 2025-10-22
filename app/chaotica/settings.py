@@ -24,6 +24,7 @@ SENTRY_FRONTEND_DSN = os.environ.get("SENTRY_FRONTEND_DSN", default=None)
 DEMO_ENV = os.environ.get("DEMO_ENV", default=False)
 DEMO_USER = os.environ.get("DEMO_USER", default=None)
 DEMO_PASS = os.environ.get("DEMO_PASS", default=None)
+DEMO_RESET_TIME = os.environ.get("DEMO_RESET_TIME", default=None)
 
 if SENTRY_BACKEND_DSN is not None:
     sentry_sdk.init(
