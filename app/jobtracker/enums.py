@@ -789,12 +789,12 @@ class PhaseStatuses:
     ]
 
     ACTIVE_STATUSES = [
-        # DRAFT,
-        # PENDING_SCHED,
-        # SCHEDULED_TENTATIVE,
-        # SCHEDULED_CONFIRMED,
-        # PRE_CHECKS,
-        # CLIENT_NOT_READY,
+        DRAFT,
+        PENDING_SCHED,
+        SCHEDULED_TENTATIVE,
+        SCHEDULED_CONFIRMED,
+        PRE_CHECKS,
+        CLIENT_NOT_READY,
         READY_TO_BEGIN,
         IN_PROGRESS,
         PENDING_TQA,
