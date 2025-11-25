@@ -1,0 +1,11 @@
+<span class="alert alert-phoenix-danger" role="alert">
+    This overlaps with days the consultant is unavailable. Please review their schedule and amend the dates.
+</span>
+
+<ul class="list-group list-group-flush">
+    {% for oSlot in unavailable_slots %}
+    <li class="list-group-item">
+        {{ oSlot }} 
+    </li>
+    {% endfor %}
+</ul>

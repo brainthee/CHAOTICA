@@ -13,6 +13,32 @@
       </a>
     </div>
     
+    {% if not noloc and not compressed_view %}
+      <div class="row">
+        <p class="text-body-secondary fs-9 mb-0">
+          <span class="fa-solid fa-earth text-body pe-1"></span>
+          {% if u.location %}
+          {{ u.location }}
+          {% else %}
+          <span class="text-body-tertiary text-opacity-85 fw-semibold fs-10">No Data</span>
+          {% endif %}
+        </p>
+      </div>
+    {% endif %}
+    
+    {% if not notitle and not compressed_view %}
+      <div class="row">
+        <p class="text-body-secondary fs-9 mb-0">
+          <span class="fa-solid fa-person-chalkboard text-body pe-1"></span>
+          {% if u.job_title %}
+          {{ u.job_title }}
+          {% else %}
+          <span class="text-body-tertiary text-opacity-85 fw-semibold fs-10">No Data</span>
+          {% endif %}
+        </p>
+      </div>
+    {% endif %}
+    
     {% if u.get_current_level and not nojl and not compressed_view %}
       {% include 'partials/users/joblevel_badge.html' with level=u.get_current_level %}
     {% endif %}
@@ -27,12 +53,6 @@
 
     {% if not u.is_active %}
     <span class="badge badge-phoenix badge-phoenix-warning">INACTIVE</span>
-    {% endif %}
-    
-    {% if not notitle and u.job_title and not compressed_view %}
-      <div class="row">
-        <p class="mb-0 text-xs">{{ u.job_title }}</p>
-      </div>
     {% endif %}
   </div>
 </div>
