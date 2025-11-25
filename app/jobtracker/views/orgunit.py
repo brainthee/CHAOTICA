@@ -261,10 +261,10 @@ def organisationalunit_manage_roles(request, slug, member_pk):
         OrganisationalUnitMember, unit=org_unit, pk=member_pk
     )
 
-    # Silly thing... lets not be able to modify our own account!
+    # Silly thing... lets not be able to modify our own account unless we're an admin
     if OrganisationalUnitMember.objects.filter(
         member=request.user, pk=member_pk
-    ).exists():
+    ).exists() and not request.user.is_superuser:
         # Naughty naughty...
         return HttpResponseBadRequest()
 
