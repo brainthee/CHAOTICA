@@ -33,19 +33,30 @@ from guardian.shortcuts import get_objects_for_user
 
 class PhaseManager(models.Manager):
 
-    def phases_with_unit_permission(self, user, perm):
+    def phases_with_unit_permission(
+        self,
+        user,
+        perm,
+        phase_statuses=PhaseStatuses.ACTIVE_STATUSES,
+        job_statuses=JobStatuses.ACTIVE_STATUSES,
+    ):
         from ..models import OrganisationalUnit
 
         units = get_objects_for_user(user, perm, klass=OrganisationalUnit)
 
         matches = self.filter(
             Q(job__unit__in=units),
-            status__in=PhaseStatuses.ACTIVE_STATUSES,  # Include active phase statuses only
-            job__status__in=JobStatuses.ACTIVE_STATUSES,  # Include active job statuses only
+            status__in=phase_statuses,  # Include active phase statuses only
+            job__status__in=job_statuses,  # Include active job statuses only
         )
         return matches
 
-    def phases_for_user(self, user):
+    def phases_for_user(
+        self,
+        user,
+        phase_statuses=PhaseStatuses.ACTIVE_STATUSES,
+        job_statuses=JobStatuses.ACTIVE_STATUSES,
+    ):
         # Job's we're interested in:
         # - Scheduled on
         # - Lead/Author of
@@ -54,8 +65,8 @@ class PhaseManager(models.Manager):
             Q(timeslots__user=user)  # Filter by scheduled
             | Q(report_author=user)  # Filter for report author
             | Q(project_lead=user),  # filter for lead
-            status__in=PhaseStatuses.ACTIVE_STATUSES,  # Include active phase statuses only
-            job__status__in=JobStatuses.ACTIVE_STATUSES,  # Include active job statuses only
+            status__in=phase_statuses,  # Include active phase statuses only
+            job__status__in=job_statuses,  # Include active job statuses only
         ).distinct()
         return matches
 
@@ -107,11 +118,17 @@ class Phase(models.Model):
     ################
     ## Phase Detail
     ################
-    test_target = BleachField(verbose_name="Test Target URL/IPs/Scope", blank=True, null=True)
-    comm_reqs = BleachField(verbose_name="Communication Requirements", blank=True, null=True)
-    restrictions = BleachField(verbose_name="Time restrictions / Special requirements", blank=True, null=True
+    test_target = BleachField(
+        verbose_name="Test Target URL/IPs/Scope", blank=True, null=True
     )
-    scheduling_requirements = BleachField(verbose_name="Special requirements for scheduling", blank=True, null=True
+    comm_reqs = BleachField(
+        verbose_name="Communication Requirements", blank=True, null=True
+    )
+    restrictions = BleachField(
+        verbose_name="Time restrictions / Special requirements", blank=True, null=True
+    )
+    scheduling_requirements = BleachField(
+        verbose_name="Special requirements for scheduling", blank=True, null=True
     )
     prerequisites = BleachField(verbose_name="Pre-requisites", null=True, blank=True)
 
@@ -120,7 +137,9 @@ class Phase(models.Model):
     ################
     is_testing_onsite = models.BooleanField("Testing Onsite", default=False)
     is_reporting_onsite = models.BooleanField("Reporting Onsite", default=False)
-    location = BleachField(verbose_name="Onsite Location", blank=True, null=True, default="")
+    location = BleachField(
+        verbose_name="Onsite Location", blank=True, null=True, default=""
+    )
     number_of_reports = models.IntegerField(
         default=1,
         help_text="If set to 0, this phase will not go through Technical or Presentation QA",
@@ -422,7 +441,7 @@ class Phase(models.Model):
         # If we don't have a PK, we don't exist yet. Dates don't make sense at this stage.
         if not self.pk:
             return
-        
+
         # Start date first...
         # Calculate start from first delivery slot
         if self.timeslots.filter(deliveryRole=TimeSlotDeliveryRole.DELIVERY).exists():
@@ -724,14 +743,16 @@ class Phase(models.Model):
     def get_gantt_json(self):
         tasks = []
 
-        tasks.append({
-            "id": f"{self.phase_id}-start",
-            "open": True,
-            "progress": 0,
-            "text": "Start",
-            "start_date": self.start_date,
-            "type": "gantt.config.types.milestone", 
-        })
+        tasks.append(
+            {
+                "id": f"{self.phase_id}-start",
+                "open": True,
+                "progress": 0,
+                "text": "Start",
+                "start_date": self.start_date,
+                "type": "gantt.config.types.milestone",
+            }
+        )
         for slot in self.timeslots.filter(phase=self).order_by("deliveryRole"):
             user_text = str(slot.user)
             if slot.is_onsite:
@@ -753,33 +774,39 @@ class Phase(models.Model):
         # Add milestones...
         # Start
         # TQA
-        tasks.append({
-            "id": f"{self.phase_id}-tqa",
-            "open": True,
-            "progress": 0,
-            "text": "Tech QA",
-            "start_date": self.due_to_techqa,
-            "type": "gantt.config.types.milestone", 
-        })
+        tasks.append(
+            {
+                "id": f"{self.phase_id}-tqa",
+                "open": True,
+                "progress": 0,
+                "text": "Tech QA",
+                "start_date": self.due_to_techqa,
+                "type": "gantt.config.types.milestone",
+            }
+        )
         # PQA
-        tasks.append({
-            "id": f"{self.phase_id}-pqa",
-            "open": True,
-            "progress": 0,
-            "text": "Pres QA",
-            "start_date": self.due_to_presqa,
-            "type": "gantt.config.types.milestone", 
-        })
+        tasks.append(
+            {
+                "id": f"{self.phase_id}-pqa",
+                "open": True,
+                "progress": 0,
+                "text": "Pres QA",
+                "start_date": self.due_to_presqa,
+                "type": "gantt.config.types.milestone",
+            }
+        )
         # Delivery
-        tasks.append({
-            "id": f"{self.phase_id}-delivery",
-            "open": True,
-            "progress": 0,
-            "text": "Delivery to Client",
-            "start_date": self.delivery_date,
-            "type": "gantt.config.types.milestone", 
-        })
-        
+        tasks.append(
+            {
+                "id": f"{self.phase_id}-delivery",
+                "open": True,
+                "progress": 0,
+                "text": "Delivery to Client",
+                "start_date": self.delivery_date,
+                "type": "gantt.config.types.milestone",
+            }
+        )
+
         data = {
             "tasks": tasks,
         }
