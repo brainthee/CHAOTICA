@@ -338,15 +338,29 @@ def create_scheduler_project_slot(request):
             slot = form.save(commit=False)
             slots = slot.overlapping_slots()
             if slots and not force:
-                # Overlapping slots!
-                data["form_is_valid"] = False
-                data["logic_checks_failed"] = True
-                data["logic_checks_can_bypass"] = True
-                data["logic_checks_feedback"] = loader.render_to_string(
-                    "partials/scheduler/logicchecks/overlaps.html",
-                    {"slot": slot, "overlapping_slots": slots},
-                    request=request,
-                )
+                # Check if any of these are unavailable
+                if slots.filter(slot_type__is_working=False).exists():
+                    # Unavailable
+                    unavailable_slots = slots.filter(slot_type__is_working=False)
+                    # Overlapping slots!
+                    data["form_is_valid"] = False
+                    data["logic_checks_failed"] = True
+                    data["logic_checks_can_bypass"] = False
+                    data["logic_checks_feedback"] += loader.render_to_string(
+                        "partials/scheduler/logicchecks/unavailable.html",
+                        {"slot": slot, "unavailable_slots": unavailable_slots},
+                        request=request,
+                    )
+                else:
+                    # Overlapping slots!
+                    data["form_is_valid"] = False
+                    data["logic_checks_failed"] = True
+                    data["logic_checks_can_bypass"] = True
+                    data["logic_checks_feedback"] = loader.render_to_string(
+                        "partials/scheduler/logicchecks/overlaps.html",
+                        {"slot": slot, "overlapping_slots": slots},
+                        request=request,
+                    )
             else:
                 slot.save()
                 data["form_is_valid"] = True
@@ -428,15 +442,29 @@ def create_scheduler_phase_slot(request):
                 if not force:
                     # These logic checks can be bypassed
                     if slots:
-                        # Overlapping slots!
-                        data["form_is_valid"] = False
-                        data["logic_checks_failed"] = True
-                        data["logic_checks_can_bypass"] = True
-                        data["logic_checks_feedback"] += loader.render_to_string(
-                            "partials/scheduler/logicchecks/overlaps.html",
-                            {"slot": slot, "overlapping_slots": slots},
-                            request=request,
-                        )
+                        # Check if any of these are unavailable
+                        if slots.filter(slot_type__is_working=False).exists():
+                            # Unavailable
+                            unavailable_slots = slots.filter(slot_type__is_working=False)
+                            # Overlapping slots!
+                            data["form_is_valid"] = False
+                            data["logic_checks_failed"] = True
+                            data["logic_checks_can_bypass"] = False
+                            data["logic_checks_feedback"] += loader.render_to_string(
+                                "partials/scheduler/logicchecks/unavailable.html",
+                                {"slot": slot, "unavailable_slots": unavailable_slots},
+                                request=request,
+                            )
+                        else:
+                            # Overlapping slots!
+                            data["form_is_valid"] = False
+                            data["logic_checks_failed"] = True
+                            data["logic_checks_can_bypass"] = True
+                            data["logic_checks_feedback"] += loader.render_to_string(
+                                "partials/scheduler/logicchecks/overlaps.html",
+                                {"slot": slot, "overlapping_slots": slots},
+                                request=request,
+                            )
 
                     if (
                         slot.phase.job.client.onboarding_required
