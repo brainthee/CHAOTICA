@@ -149,12 +149,13 @@ class Notification(models.Model):
                 # Finally; check if they have an email!
                 # If they don't; just pretend to send and continue to the "is_emailed" flag. 
                 # Prevents a spam event if/when they add an email
-                if self.user.email_address():
+                email = self.user.email_address()
+                if email and "@" in email:
                     django.core.mail.send_mail(
                         subject=context["title"],
                         message=context["message"],
                         from_email=None,
-                        recipient_list=[self.user.email_address()],
+                        recipient_list=[email],
                         html_message=msg_html,
                         fail_silently=False,
                     )
@@ -163,4 +164,4 @@ class Notification(models.Model):
             self.is_emailed = True
             self.save()
         except Exception as e:
-            logger.error(f"Failed to send email to {self.user.email_address()}: {str(e)}")
+            logger.error(f"Failed to send email to {self.user.email_address()} - {self}: {str(e)}")
