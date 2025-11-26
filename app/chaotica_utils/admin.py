@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import GroupAdmin
 from guardian.admin import GuardedModelAdmin
 from .models import (
+    Quote,
     User,
     UserCost,
     UserInvitation,
@@ -91,6 +92,7 @@ class UserInvitationAdmin(admin.ModelAdmin):
 admin.site.register(Group, GroupAdmin)
 admin.site.register(Language)
 admin.site.register(Note)
+admin.site.register(Quote)
 
 @admin.register(LeaveRequest)
 class LeaveRequestAdmin(admin.ModelAdmin):
