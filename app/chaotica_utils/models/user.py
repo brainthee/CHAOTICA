@@ -4,6 +4,7 @@ from django.db.models.functions import Lower, TruncDate
 from django.contrib.auth.models import AbstractUser, Permission
 from django.templatetags.static import static
 import uuid, os, pytz, json
+from email.utils import parseaddr
 import time as t
 from ..enums import GlobalRoles, LeaveRequestTypes, UpcomingAvailabilityRanges
 from ..utils import calculate_percentage
@@ -361,11 +362,14 @@ class User(AbstractUser):
 
         return True
 
+
     def email_address(self):
-        if self.notification_email:
+        if self.notification_email and parseaddr(self.notification_email)[1]:
             return self.notification_email
-        else:
+        elif self.email and parseaddr(self.email)[1]:
             return self.email
+        else:
+            return None
 
     def update_latlong(self):
         if self.location:
