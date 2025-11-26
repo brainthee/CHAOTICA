@@ -21,7 +21,7 @@ from ..forms.common import (
 )
 from ..mixins import PrefetchRelatedMixin
 from ..enums import GlobalRoles
-from ..models import User, Note
+from ..models import User, Note, Quote
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.views import View
@@ -45,6 +45,8 @@ def page_defaults(request):
     
     context["DJANGO_ENV"] = django_settings.DJANGO_ENV
     context["DJANGO_VERSION"] = django_settings.DJANGO_VERSION
+
+    context["quote"] = Quote.objects.filter(enabled=True).order_by('?')[0]
 
     context["DEMO_ENV"] = django_settings.DEMO_ENV
     context["DEMO_USER"] = django_settings.DEMO_USER

@@ -1,13 +1,17 @@
 <div class="row g-0 justify-content-between align-items-center h-100">
-  <div class="col-12 col-sm-auto text-center">
-    <p class="mb-0 mt-2 mt-sm-0 text-900">
-      Thank you for using <a class="mx-1" href="https://github.com/brainthee/chaotica">CHAOTICA</a>
-      <span class="d-none d-sm-inline-block mx-1">|</span>
-      {% now 'Y' %} &copy;
-    </p>
+  <div class="col-12 col-sm-auto text-start">
+    {% if quote %}
+    <blockquote class="blockquote">
+      <p class="mb-0 mt-2 text-body-secondary fs-8">{{ quote.content }}</p>
+    </blockquote>
+    <figcaption class="blockquote-footer">{{ quote.author }}</figcaption>
+    {% endif %}
   </div>
+
   <div class="col-12 col-sm-auto text-center">
     <p class="fs-10 mb-0 text-body-tertiary text-opacity-85 fw-semibold">
+      GitHub: <a class="mx-1" href="https://github.com/brainthee/chaotica">CHAOTICA</a>
+      <span class="fa-solid fa-circle text-body-quaternary text-opacity-50" data-fa-transform="shrink-10 down-2"></span>
       Environment: {{ DJANGO_ENV }}
       <span class="fa-solid fa-circle text-body-quaternary text-opacity-50" data-fa-transform="shrink-10 down-2"></span>
       Version: {{ DJANGO_VERSION }}
