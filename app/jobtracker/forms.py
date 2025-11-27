@@ -581,13 +581,13 @@ class AssignUserField(forms.Form):
     user = forms.ModelMultipleChoiceField(
         required=False,
         queryset=User.objects.filter(is_active=True),
-        widget=s2forms.ModelSelect2MultipleWidget(
+        widget=s2forms.Select2MultipleWidget(
             attrs={
                 'class': 'select2-widget',
-                'data-minimum-input-length': 3,
-                'data-ajax--url': '/autocomplete/users',
-                'data-ajax--cache': 'true',
-                'data-ajax--type': 'GET',
+                # 'data-minimum-input-length': 3,
+                # 'data-ajax--url': '/autocomplete/users',
+                # 'data-ajax--cache': 'true',
+                # 'data-ajax--type': 'GET',
             },
         ),
     )
@@ -611,13 +611,13 @@ class AssignUser(forms.Form):
     user = forms.ModelChoiceField(
         required=False,
         queryset=User.objects.filter(is_active=True).get_default_order(),
-        widget=s2forms.ModelSelect2Widget(
+        widget=s2forms.Select2Widget(
             attrs={
                 'class': 'select2-widget',
-                'data-minimum-input-length': 3,
-                'data-ajax--url': '/autocomplete/users',
-                'data-ajax--cache': 'true',
-                'data-ajax--type': 'GET',
+                # 'data-minimum-input-length': 3,
+                # 'data-ajax--url': '/autocomplete/users',
+                # 'data-ajax--cache': 'true',
+                # 'data-ajax--type': 'GET',
             },
         ),
     )
@@ -661,7 +661,7 @@ class AssignMultipleUser(forms.Form):
     users = forms.ModelMultipleChoiceField(
         required=False,
         queryset=User.objects.filter(is_active=True).get_default_order(),
-        widget=s2forms.ModelSelect2MultipleWidget(
+        widget=s2forms.Select2MultipleWidget(
             attrs={
                 'class': 'select2-widget',
                 # 'data-minimum-input-length': 3,
@@ -669,7 +669,7 @@ class AssignMultipleUser(forms.Form):
                 # 'data-ajax--cache': 'true',
                 # 'data-ajax--type': 'GET',
             },
-            search_fields=['first_name__icontains', 'last_name__icontains', 'email__icontains'],
+            # search_fields=['first_name__icontains', 'last_name__icontains', 'email__icontains'],
         ),
     )
 

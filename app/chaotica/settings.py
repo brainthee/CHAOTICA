@@ -481,6 +481,7 @@ MIDDLEWARE = [
     # 'django.middleware.cache.FetchFromCacheMiddleware',
     # 'django.middleware.common.CommonMiddleware',
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "chaotica_utils.middleware.CurrentUserMiddleware",  # Must be after AuthenticationMiddleware
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "simple_history.middleware.HistoryRequestMiddleware",

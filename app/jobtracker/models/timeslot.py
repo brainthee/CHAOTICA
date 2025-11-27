@@ -12,6 +12,8 @@ from constance import config
 from django.contrib.contenttypes.fields import GenericRelation
 from chaotica_utils.models import Note, UserCost
 from chaotica_utils.utils import ext_reverse
+from chaotica_utils.views.common import log_system_activity
+from chaotica_utils.middleware.common import get_current_user
 from django.core.exceptions import ValidationError
 from business_duration import businessDuration
 from decimal import Decimal
@@ -448,6 +450,14 @@ class TimeSlot(models.Model):
 
     def delete(self):
         phase = self.phase
+        
+        # Log deletion for delivery timeslots before deleting
+        if self.is_delivery() and phase:
+            current_user = get_current_user()
+            msg = f"Slot deleted: {self.user.get_full_name()} ({self.get_deliveryRole_display()}) from {self.start.strftime('%Y-%m-%d')} to {self.end.strftime('%Y-%m-%d')}"
+            log_system_activity(phase.job, msg, author=current_user)
+            log_system_activity(phase, msg, author=current_user)
+        
         super(TimeSlot, self).delete()
         if self.is_delivery():
             # Ok we're deleted... lets check if we should move the phase status back to pending
@@ -464,7 +474,51 @@ class TimeSlot(models.Model):
     def save(self, *args, **kwargs):
         if self.start > self.end:
             raise ValidationError("End time must come after the start")
+        
+        # Track if this is a new object or an update
+        is_new = self.pk is None
+        
+        # For updates, fetch the old values before saving
+        old_start = None
+        old_end = None
+        old_user = None
+        old_role = None
+        if not is_new:
+            try:
+                old_instance = TimeSlot.objects.get(pk=self.pk)
+                old_start = old_instance.start
+                old_end = old_instance.end
+                old_user = old_instance.user
+                old_role = old_instance.get_deliveryRole_display()
+            except TimeSlot.DoesNotExist:
+                pass
+        
         super(TimeSlot, self).save(*args, **kwargs)
+        
+        # Log system activity for delivery timeslots
+        if self.is_delivery() and self.phase:
+            current_user = get_current_user()
+            if is_new:
+                msg = f"Slot created: {self.user.get_full_name()} ({self.get_deliveryRole_display()}) {self.start.strftime('%Y-%m-%d')} to {self.end.strftime('%Y-%m-%d')}"
+            else:
+                # Check what changed and build a descriptive message
+                changes = []
+                if old_user and old_user != self.user:
+                    changes.append(f"user: {old_user.get_full_name()} → {self.user.get_full_name()}")
+                if old_role and old_role != self.get_deliveryRole_display():
+                    changes.append(f"role: {old_role} → {self.get_deliveryRole_display()}")
+                if old_start and old_start != self.start:
+                    changes.append(f"start: {old_start.strftime('%Y-%m-%d')} → {self.start.strftime('%Y-%m-%d')}")
+                if old_end and old_end != self.end:
+                    changes.append(f"end: {old_end.strftime('%Y-%m-%d')} → {self.end.strftime('%Y-%m-%d')}")
+                
+                if changes:
+                    msg = f"Slot updated: {', '.join(changes)}"
+                else:
+                    msg = f"Slot updated: {self.user.get_full_name()} ({self.get_deliveryRole_display()})"
+            log_system_activity(self.phase.job, msg, author=current_user)
+            log_system_activity(self.phase, msg, author=current_user)
+        
         if self.is_delivery():
             # Lets see if we need to update our parent phase
             if self.phase and self.phase.status == PhaseStatuses.PENDING_SCHED:
