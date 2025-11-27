@@ -3,9 +3,12 @@
 
 <nav class="navbar navbar-top fixed-top navbar-expand-xl" id="dualNav">
   <div class="w-100">
+        {% if config.CHRISTMAS_LIGHTS_ENABLED %}
+          {% include 'partials/christmas_lights.html' %}
+        {% endif %}
     {% include 'partials/page_alerts.html' %}
     
-    <div class="d-flex flex-between-center dual-nav-first-layer">
+    <div class="d-flex flex-between-center dual-nav-first-layer {% if config.CHRISTMAS_LIGHTS_ENABLED %}pt-5{% endif %}">
 
       <div class="navbar-logo">
 
@@ -33,6 +36,7 @@
           </div>
         </li>
         {% endif %}
+
 
         <li class="nav-item">
           <div class="dropdown theme-control-dropdown" data-bs-tooltip="tooltip" data-bs-placement="left" title="Switch theme">

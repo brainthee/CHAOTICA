@@ -185,6 +185,8 @@ CONSTANCE_CONFIG = {
     "LEAVE_ENFORCE_LIMIT": (False, "Should leave be prevented if over balance?"),
     # Theme/Look settings
     "SNOW_ENABLED": (False, "Should it snow?"),
+    "CHRISTMAS_LIGHTS_ENABLED": (False, "Show Christmas Lights at the top?"),
+    "CHRISTMAS_TREE_ENABLED": (False, "Show Christmas Tree as animation rather than normal one for scheduler?"),
     "KONAMI_ENABLED": (True, "Should the Konami easter-egg be enabled?"),
     # Site Notice
     "SITE_NOTICE_ENABLED": (False, "Show a site wide notice"),
