@@ -408,6 +408,14 @@ class CustomConfigForm(ConstanceForm):
                         css_class="input-group input-group-dynamic",
                     ),
                     Div(
+                        Field("CHRISTMAS_LIGHTS_ENABLED"),
+                        css_class="input-group input-group-dynamic",
+                    ),
+                    Div(
+                        Field("CHRISTMAS_TREE_ENABLED"),
+                        css_class="input-group input-group-dynamic",
+                    ),
+                    Div(
                         Field("KONAMI_ENABLED"),
                         css_class="input-group input-group-dynamic",
                     ),
