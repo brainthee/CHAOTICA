@@ -11,6 +11,25 @@ from django.conf import settings
 from constance import config
 from django.contrib import messages
 from django.contrib.messages import get_messages
+import threading
+
+# Thread-local storage for current user
+_thread_locals = threading.local()
+
+
+def get_current_user():
+    """
+    Get the current user from thread-local storage.
+    Returns None if no user is set (e.g., in management commands, background tasks).
+    """
+    return getattr(_thread_locals, 'user', None)
+
+
+def set_current_user(user):
+    """
+    Set the current user in thread-local storage.
+    """
+    _thread_locals.user = user
 
 
 class HealthCheckMiddleware(MiddlewareMixin):
@@ -76,6 +95,28 @@ class NewInstallMiddleware(MiddlewareMixin):
         #             return
 
         #     return HttpResponseRedirect(reverse("update_own_profile"))
+
+
+class CurrentUserMiddleware:
+    """
+    Middleware that stores the current user in thread-local storage.
+    This allows models to access request.user without passing it explicitly.
+    """
+    
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        # Store the user before processing the request
+        set_current_user(getattr(request, 'user', None))
+        
+        try:
+            response = self.get_response(request)
+        finally:
+            # Clean up after the request to avoid memory leaks
+            set_current_user(None)
+        
+        return response
 
 
 class MaintenanceModeMiddleware(MiddlewareMixin):
