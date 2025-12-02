@@ -160,6 +160,16 @@ def index(request):
             Q(user__manager=request.user) | Q(user__acting_manager=request.user)
         )
 
+
+    context["pendingDelivery"] = Phase.objects.filter(
+        Q(
+            job__unit__in=get_objects_for_user(
+                request.user, "can_deliver_jobs", klass=OrganisationalUnit
+            )
+        ),
+        Q(status=PhaseStatuses.COMPLETED)
+    ).prefetch_related("job__unit", "job__client")
+
     context = {**context, **page_defaults(request)}
     template = loader.get_template("dashboard_index.html")
     return HttpResponse(template.render(context, request))
