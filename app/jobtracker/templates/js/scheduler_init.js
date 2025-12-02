@@ -11,7 +11,7 @@
     var addUser = function() {
       var form = $(this);
       $("#id_user > option").each(function() {
-        if(this.value) {
+        if(this.value && this.selected) {
           urlParams = urlParams+"&include_user="+this.value;
         }
       });
