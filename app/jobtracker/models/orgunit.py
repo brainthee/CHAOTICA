@@ -103,6 +103,7 @@ class OrganisationalUnit(models.Model):
             ("can_signoff_own_scopes", "Can signoff own scopes"),
             ("can_tqa_jobs", "Can TQA jobs"),
             ("can_pqa_jobs", "Can PQA jobs"),
+            ("can_deliver_jobs", "Can Deliver jobs"),
             ("can_conduct_review", "Can conduct reviews"),
             ("can_view_all_reviews", "Can view all reviews"),
             # Notification pools

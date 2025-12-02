@@ -410,6 +410,11 @@ class User(AbstractUser):
 
         return get_objects_for_user(self, "can_pqa_jobs", OrganisationalUnit)
 
+    def can_deliver(self):
+        from jobtracker.models.orgunit import OrganisationalUnit
+
+        return get_objects_for_user(self, "can_deliver_jobs", OrganisationalUnit)
+
     def _get_last_leave_renewal_date(self):
         # Get current datetime in UTC
         now_utc = timezone.now()
