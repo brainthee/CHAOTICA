@@ -84,3 +84,109 @@ def py_date_to_js_date(date):
             )
     else:
         return ""
+
+
+# Bulk workflow eligibility filters
+# These check if any phase can proceed without triggering side effects
+@register.filter
+def any_can_proceed_to_pending_sched(phases):
+    try:
+        return any(phase.can_proceed_to_pending_sched() for phase in phases)
+    except:
+        return False
+
+
+@register.filter
+def any_can_proceed_to_sched_confirmed(phases):
+    try:
+        return any(phase.can_proceed_to_sched_confirmed() for phase in phases)
+    except:
+        return False
+
+
+@register.filter
+def any_can_proceed_to_pre_checks(phases):
+    try:
+        return any(phase.can_proceed_to_pre_checks() for phase in phases)
+    except:
+        return False
+
+
+@register.filter
+def any_can_proceed_to_not_ready(phases):
+    try:
+        return any(phase.can_proceed_to_not_ready() for phase in phases)
+    except:
+        return False
+
+
+@register.filter
+def any_can_proceed_to_ready(phases):
+    try:
+        return any(phase.can_proceed_to_ready() for phase in phases)
+    except:
+        return False
+
+
+@register.filter
+def any_can_proceed_to_pending_tech_qa(phases):
+    try:
+        return any(phase.can_proceed_to_pending_tech_qa() for phase in phases)
+    except:
+        return False
+
+
+@register.filter
+def any_can_proceed_to_tech_qa(phases):
+    try:
+        return any(phase.can_proceed_to_tech_qa() for phase in phases)
+    except:
+        return False
+
+
+@register.filter
+def any_can_proceed_to_tech_qa_updates(phases):
+    try:
+        return any(phase.can_proceed_to_tech_qa_updates() for phase in phases)
+    except:
+        return False
+
+
+@register.filter
+def any_can_proceed_to_pending_pres_qa(phases):
+    try:
+        return any(phase.can_proceed_to_pending_pres_qa() for phase in phases)
+    except:
+        return False
+
+
+@register.filter
+def any_can_proceed_to_pres_qa(phases):
+    try:
+        return any(phase.can_proceed_to_pres_qa() for phase in phases)
+    except:
+        return False
+
+
+@register.filter
+def any_can_proceed_to_pres_qa_updates(phases):
+    try:
+        return any(phase.can_proceed_to_pres_qa_updates() for phase in phases)
+    except:
+        return False
+
+
+@register.filter
+def any_can_proceed_to_completed(phases):
+    try:
+        return any(phase.can_proceed_to_completed() for phase in phases)
+    except:
+        return False
+
+
+@register.filter
+def any_can_proceed_to_delivered(phases):
+    try:
+        return any(phase.can_proceed_to_delivered() for phase in phases)
+    except:
+        return False

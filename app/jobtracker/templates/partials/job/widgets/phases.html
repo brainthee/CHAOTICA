@@ -1,3 +1,4 @@
+{% load index %}
 <div class="card mt-3" id="basic-info">
   <div class="card-header">
      <div class="row">
@@ -10,9 +11,35 @@
         </div>
         <div class="col-lg-4 text-end">
            {% if job.status < 8 and job.status > 1 %}
-           <a href="{% url 'phase_create' job.slug %}" class="btn btn-phoenix-success btn-sm">
-              Add Phase
-           </a>
+           <div class="btn-group" role="group">
+              <button type="button" class="btn btn-phoenix-info btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                 <span class="fas fa-tasks me-1"></span>Bulk Actions
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end">
+                 <li><h6 class="dropdown-header">Change Status for All Phases</h6></li>
+                 {% with phases=job.phases.all %}
+                 <li><button data-url="{% url 'phases_bulk_workflow_modal' job.slug 1 %}" class="dropdown-item js-bulk-workflow-phases" data-status="Pending Scheduling" {% if not phases|any_can_proceed_to_pending_sched %}disabled{% endif %}>Mark Pending Scheduling</button></li>
+                 <li><button data-url="{% url 'phases_bulk_workflow_modal' job.slug 3 %}" class="dropdown-item js-bulk-workflow-phases" data-status="Schedule Confirmed" {% if not phases|any_can_proceed_to_sched_confirmed %}disabled{% endif %}>Confirm Schedule</button></li>
+                 <li><button data-url="{% url 'phases_bulk_workflow_modal' job.slug 4 %}" class="dropdown-item js-bulk-workflow-phases" data-status="Pre-checks" {% if not phases|any_can_proceed_to_pre_checks %}disabled{% endif %}>Move to Pre-checks</button></li>
+                 <li><button data-url="{% url 'phases_bulk_workflow_modal' job.slug 5 %}" class="dropdown-item js-bulk-workflow-phases" data-status="Client Not Ready" {% if not phases|any_can_proceed_to_not_ready %}disabled{% endif %}>Mark Client Not Ready</button></li>
+                 <li><button data-url="{% url 'phases_bulk_workflow_modal' job.slug 6 %}" class="dropdown-item js-bulk-workflow-phases" data-status="Ready to Begin" {% if not phases|any_can_proceed_to_ready %}disabled{% endif %}>Mark Ready to Begin</button></li>
+                 <li><hr class="dropdown-divider"></li>
+                 <li><button data-url="{% url 'phases_bulk_workflow_modal' job.slug 8 %}" class="dropdown-item js-bulk-workflow-phases" data-status="Pending Tech QA" {% if not phases|any_can_proceed_to_pending_tech_qa %}disabled{% endif %}>Submit to Tech QA Queue</button></li>
+                 <li><button data-url="{% url 'phases_bulk_workflow_modal' job.slug 9 %}" class="dropdown-item js-bulk-workflow-phases" data-status="Tech QA" {% if not phases|any_can_proceed_to_tech_qa %}disabled{% endif %}>Begin Tech QA</button></li>
+                 <li><button data-url="{% url 'phases_bulk_workflow_modal' job.slug 10 %}" class="dropdown-item js-bulk-workflow-phases" data-status="Author Tech Updates" {% if not phases|any_can_proceed_to_tech_qa_updates %}disabled{% endif %}>Return for Author Tech Updates</button></li>
+                 <li><hr class="dropdown-divider"></li>
+                 <li><button data-url="{% url 'phases_bulk_workflow_modal' job.slug 11 %}" class="dropdown-item js-bulk-workflow-phases" data-status="Pending Pres QA" {% if not phases|any_can_proceed_to_pending_pres_qa %}disabled{% endif %}>Submit to Pres QA Queue</button></li>
+                 <li><button data-url="{% url 'phases_bulk_workflow_modal' job.slug 12 %}" class="dropdown-item js-bulk-workflow-phases" data-status="Pres QA" {% if not phases|any_can_proceed_to_pres_qa %}disabled{% endif %}>Begin Pres QA</button></li>
+                 <li><button data-url="{% url 'phases_bulk_workflow_modal' job.slug 13 %}" class="dropdown-item js-bulk-workflow-phases" data-status="Author Pres Updates" {% if not phases|any_can_proceed_to_pres_qa_updates %}disabled{% endif %}>Return for Author Pres Updates</button></li>
+                 <li><hr class="dropdown-divider"></li>
+                 <li><button data-url="{% url 'phases_bulk_workflow_modal' job.slug 14 %}" class="dropdown-item js-bulk-workflow-phases" data-status="Completed" {% if not phases|any_can_proceed_to_completed %}disabled{% endif %}>Set as Completed</button></li>
+                 <li><button data-url="{% url 'phases_bulk_workflow_modal' job.slug 15 %}" class="dropdown-item js-bulk-workflow-phases" data-status="Delivered" {% if not phases|any_can_proceed_to_delivered %}disabled{% endif %}>Set as Delivered</button></li>
+                 {% endwith %}
+              </ul>
+              <a href="{% url 'phase_create' job.slug %}" class="btn btn-phoenix-success btn-sm">
+                 Add Phase
+              </a>
+           </div>
            {% endif %}
         </div>
      </div>
