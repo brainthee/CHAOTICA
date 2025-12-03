@@ -421,21 +421,45 @@ class JobListView(JobBaseView, UserPassesTestMixin, ListView):
 
 
 class JobDetailView(JobPermissionRequiredMixin, JobBaseView, DetailView):
-    prefetch_related = [
-        'notes', 
-        'notes__author', 
-        'account_manager', 
-        'dep_account_manager', 
-        'scoped_by', 
-        'phases', 
-        'phases__timeslots',
-        'phases__report_author',
-        'phases__project_lead',
-        'phases__techqa_by',
-        'phases__presqa_by',
-        ]
     permission_required = "jobtracker.can_view_jobs"
     return_403 = True
+    # Override parent's prefetch_related to avoid conflicts
+    prefetch_related = []
+    
+    def get_queryset(self):
+        from django.db.models import Prefetch
+        from ..models import OrganisationalUnitMember, Phase, TimeSlot
+        
+        # Get base queryset without parent's prefetch
+        qs = Job.objects.filter(slug=self.kwargs.get('slug'))
+        
+        # Prefetch unit memberships ordered so .first() doesn't cause extra queries
+        unit_membership_qs = OrganisationalUnitMember.objects.select_related('unit').order_by(
+            'member__last_name', 'member__first_name'
+        )
+        
+        # Prefetch timeslots with users and their unit memberships
+        timeslot_qs = TimeSlot.objects.select_related('user').prefetch_related(
+            Prefetch('user__unit_memberships', queryset=unit_membership_qs)
+        )
+        
+        # Prefetch phases with all related data
+        phase_qs = Phase.objects.select_related(
+            'service', 'report_author', 'project_lead', 'techqa_by', 'presqa_by'
+        ).prefetch_related(
+            Prefetch('timeslots', queryset=timeslot_qs),
+            Prefetch('report_author__unit_memberships', queryset=unit_membership_qs),
+            Prefetch('project_lead__unit_memberships', queryset=unit_membership_qs),
+        )
+        
+        return qs.prefetch_related(
+            'notes', 
+            'notes__author', 
+            'account_manager', 
+            'dep_account_manager', 
+            'scoped_by',
+            Prefetch('phases', queryset=phase_qs),
+        )
 
     def get_context_data(self, **kwargs):
         context = super(JobDetailView, self).get_context_data(**kwargs)

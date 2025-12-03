@@ -45,7 +45,10 @@
         <td data-sort="{{ phase.delivery_date|date:'Y-m-d' }}">{{ phase.delivery_date }}</td>
         {% if not no_schedule_bar %}
         <td>
-          {% include 'partials/phase/widgets/scheduled_progress_bar.html' %}
+          <small class="text-body-tertiary">
+            Scheduled: {{ phase.get_total_scheduled_hours_simple }}h <br />
+            Scoped: {{ phase.get_total_scoped_hours }}h
+          </small>
         </td>
         {% endif %}
         <td>
