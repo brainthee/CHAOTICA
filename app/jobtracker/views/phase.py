@@ -744,3 +744,285 @@ def phase_update_workflow(request, job_slug, slug, new_state):
 class PhaseDeleteView(UnitPermissionRequiredMixin, PhaseBaseView, DeleteView):
     permission_required = "jobtracker.can_delete_phases"
     """View to delete a job"""
+
+
+@job_permission_required_or_403("jobtracker.can_update_job", (Job, "slug", "job_slug"))
+def phases_bulk_workflow_modal(request, job_slug, new_state):
+    """
+    Display modal for bulk workflow status change across all phases in a job.
+    Shows which phases can proceed and which cannot.
+    """
+    job = get_object_or_404(Job, slug=job_slug)
+    data = dict()
+    context = {}
+    new_state_str = None
+    
+    try:
+        for state in PhaseStatuses.CHOICES:
+            if state[0] == new_state:
+                new_state_str = state[1]
+        if new_state_str == None:
+            raise TypeError()
+    except Exception:
+        return HttpResponseBadRequest()
+    
+    # Get all phases for this job
+    phases = job.phases.all()
+    
+    # Check which phases can proceed to this state
+    eligible_phases = []
+    ineligible_phases = []
+    
+    for phase in phases:
+        can_proceed = False
+        reason = None
+        
+        # Check eligibility based on the new state using can_proceed_to_* methods
+        # These don't trigger messages, unlike can_to_* methods
+        if new_state == PhaseStatuses.PENDING_SCHED:
+            can_proceed = phase.can_proceed_to_pending_sched()
+        elif new_state == PhaseStatuses.SCHEDULED_TENTATIVE:
+            can_proceed = phase.can_proceed_to_sched_tentative()
+        elif new_state == PhaseStatuses.SCHEDULED_CONFIRMED:
+            can_proceed = phase.can_proceed_to_sched_confirmed()
+        elif new_state == PhaseStatuses.PRE_CHECKS:
+            can_proceed = phase.can_proceed_to_pre_checks()
+        elif new_state == PhaseStatuses.CLIENT_NOT_READY:
+            can_proceed = phase.can_proceed_to_not_ready()
+        elif new_state == PhaseStatuses.READY_TO_BEGIN:
+            can_proceed = phase.can_proceed_to_ready()
+        elif new_state == PhaseStatuses.IN_PROGRESS:
+            can_proceed = phase.can_proceed_to_in_progress()
+        elif new_state == PhaseStatuses.PENDING_TQA:
+            can_proceed = phase.can_proceed_to_pending_tech_qa()
+        elif new_state == PhaseStatuses.QA_TECH:
+            can_proceed = phase.can_proceed_to_tech_qa()
+        elif new_state == PhaseStatuses.QA_TECH_AUTHOR_UPDATES:
+            can_proceed = phase.can_proceed_to_tech_qa_updates()
+        elif new_state == PhaseStatuses.PENDING_PQA:
+            can_proceed = phase.can_proceed_to_pending_pres_qa()
+        elif new_state == PhaseStatuses.QA_PRES:
+            can_proceed = phase.can_proceed_to_pres_qa()
+        elif new_state == PhaseStatuses.QA_PRES_AUTHOR_UPDATES:
+            can_proceed = phase.can_proceed_to_pres_qa_updates()
+        elif new_state == PhaseStatuses.COMPLETED:
+            can_proceed = phase.can_proceed_to_completed()
+        elif new_state == PhaseStatuses.DELIVERED:
+            can_proceed = phase.can_proceed_to_delivered()
+        elif new_state == PhaseStatuses.CANCELLED:
+            can_proceed = phase.can_proceed_to_cancelled()
+        elif new_state == PhaseStatuses.POSTPONED:
+            can_proceed = phase.can_proceed_to_postponed()
+        elif new_state == PhaseStatuses.DELETED:
+            can_proceed = phase.can_proceed_to_delete()
+        elif new_state == PhaseStatuses.ARCHIVED:
+            can_proceed = phase.can_proceed_to_archived()
+        else:
+            return HttpResponseBadRequest()
+        
+        if can_proceed:
+            eligible_phases.append(phase)
+        else:
+            ineligible_phases.append(phase)
+    
+    # Get workflow tasks for this state
+    tasks = WorkflowTask.objects.filter(
+        appliedModel=WorkflowTask.WF_PHASE, status=new_state
+    )
+    
+    context["job"] = job
+    context["new_state_str"] = new_state_str
+    context["new_state"] = new_state
+    context["eligible_phases"] = eligible_phases
+    context["ineligible_phases"] = ineligible_phases
+    context["tasks"] = tasks
+    context["has_eligible"] = len(eligible_phases) > 0
+    
+    data["html_form"] = loader.render_to_string(
+        "jobtracker/modals/phases_bulk_workflow.html", context, request=request
+    )
+    return JsonResponse(data)
+
+
+@job_permission_required_or_403("jobtracker.can_update_job", (Job, "slug", "job_slug"))
+def phases_bulk_workflow_execute(request, job_slug, new_state):
+    """
+    Execute bulk workflow status change for selected phases.
+    """
+    if request.method != "POST":
+        return HttpResponseBadRequest()
+    
+    job = get_object_or_404(Job, slug=job_slug)
+    data = dict()
+    
+    # Get selected phase IDs from POST data
+    phase_ids = request.POST.getlist('phase_ids[]')
+    
+    if not phase_ids:
+        data["form_is_valid"] = False
+        data["error"] = "No phases selected"
+        return JsonResponse(data)
+    
+    # Process each selected phase
+    success_count = 0
+    error_count = 0
+    
+    for phase_id in phase_ids:
+        try:
+            phase = Phase.objects.get(id=phase_id, job=job)
+            
+            # Apply the workflow change based on new_state
+            if new_state == PhaseStatuses.PENDING_SCHED:
+                if phase.can_to_pending_sched(request):
+                    phase.to_pending_sched(request.user)
+                    phase.save()
+                    success_count += 1
+                else:
+                    error_count += 1
+            elif new_state == PhaseStatuses.SCHEDULED_TENTATIVE:
+                if phase.can_to_sched_tentative(request):
+                    phase.to_sched_tentative(request.user)
+                    phase.save()
+                    success_count += 1
+                else:
+                    error_count += 1
+            elif new_state == PhaseStatuses.SCHEDULED_CONFIRMED:
+                if phase.can_to_sched_confirmed(request):
+                    phase.to_sched_confirmed(request.user)
+                    phase.save()
+                    success_count += 1
+                else:
+                    error_count += 1
+            elif new_state == PhaseStatuses.PRE_CHECKS:
+                if phase.can_to_pre_checks(request):
+                    phase.to_pre_checks(request.user)
+                    phase.save()
+                    success_count += 1
+                else:
+                    error_count += 1
+            elif new_state == PhaseStatuses.CLIENT_NOT_READY:
+                if phase.can_to_not_ready(request):
+                    phase.to_not_ready(request.user)
+                    phase.save()
+                    success_count += 1
+                else:
+                    error_count += 1
+            elif new_state == PhaseStatuses.READY_TO_BEGIN:
+                if phase.can_to_ready(request):
+                    phase.to_ready(request.user)
+                    phase.save()
+                    success_count += 1
+                else:
+                    error_count += 1
+            elif new_state == PhaseStatuses.IN_PROGRESS:
+                if phase.can_to_in_progress(request):
+                    phase.to_in_progress(request.user)
+                    phase.save()
+                    success_count += 1
+                else:
+                    error_count += 1
+            elif new_state == PhaseStatuses.PENDING_TQA:
+                if phase.can_to_pending_tech_qa(request):
+                    phase.to_pending_tech_qa(request.user)
+                    phase.save()
+                    success_count += 1
+                else:
+                    error_count += 1
+            elif new_state == PhaseStatuses.QA_TECH:
+                if phase.can_to_tech_qa(request):
+                    phase.to_tech_qa(request.user)
+                    phase.save()
+                    success_count += 1
+                else:
+                    error_count += 1
+            elif new_state == PhaseStatuses.QA_TECH_AUTHOR_UPDATES:
+                if phase.can_to_tech_qa_updates(request):
+                    phase.to_tech_qa_updates(request.user)
+                    phase.save()
+                    success_count += 1
+                else:
+                    error_count += 1
+            elif new_state == PhaseStatuses.PENDING_PQA:
+                if phase.can_to_pending_pres_qa(request):
+                    phase.to_pending_pres_qa(request.user)
+                    phase.save()
+                    success_count += 1
+                else:
+                    error_count += 1
+            elif new_state == PhaseStatuses.QA_PRES:
+                if phase.can_to_pres_qa(request):
+                    phase.to_pres_qa(request.user)
+                    phase.save()
+                    success_count += 1
+                else:
+                    error_count += 1
+            elif new_state == PhaseStatuses.QA_PRES_AUTHOR_UPDATES:
+                if phase.can_to_pres_qa_updates(request):
+                    phase.to_pres_qa_updates(request.user)
+                    phase.save()
+                    success_count += 1
+                else:
+                    error_count += 1
+            elif new_state == PhaseStatuses.COMPLETED:
+                if phase.can_to_completed(request):
+                    phase.to_completed(request.user)
+                    phase.save()
+                    success_count += 1
+                else:
+                    error_count += 1
+            elif new_state == PhaseStatuses.DELIVERED:
+                if phase.can_to_delivered(request):
+                    phase.to_delivered(request.user)
+                    phase.save()
+                    success_count += 1
+                else:
+                    error_count += 1
+            elif new_state == PhaseStatuses.CANCELLED:
+                if phase.can_to_cancelled(request):
+                    phase.to_cancelled(request.user)
+                    phase.save()
+                    success_count += 1
+                else:
+                    error_count += 1
+            elif new_state == PhaseStatuses.POSTPONED:
+                if phase.can_to_postponed(request):
+                    phase.to_postponed(request.user)
+                    phase.save()
+                    success_count += 1
+                else:
+                    error_count += 1
+            elif new_state == PhaseStatuses.DELETED:
+                if phase.can_to_deleted(request):
+                    phase.to_deleted(request.user)
+                    phase.save()
+                    success_count += 1
+                else:
+                    error_count += 1
+            elif new_state == PhaseStatuses.ARCHIVED:
+                if phase.can_to_archived(request):
+                    phase.to_archived(request.user)
+                    phase.save()
+                    success_count += 1
+                else:
+                    error_count += 1
+            else:
+                error_count += 1
+                
+        except Phase.DoesNotExist:
+            error_count += 1
+            continue
+    
+    if success_count > 0:
+        messages.success(
+            request, 
+            f"Successfully updated {success_count} phase(s)."
+        )
+    
+    if error_count > 0:
+        messages.warning(
+            request,
+            f"Failed to update {error_count} phase(s)."
+        )
+    
+    data["form_is_valid"] = True
+    return JsonResponse(data)

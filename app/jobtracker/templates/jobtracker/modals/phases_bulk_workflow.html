@@ -1,0 +1,115 @@
+<div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+    <div class="modal-content {% if not has_eligible %}shadow-warning{% endif %}">
+        <form method="post" action="{% url 'phases_bulk_workflow_execute' job.slug new_state %}" class="js-bulk-workflow-phases-form">
+            {% csrf_token %}            
+            <div class="modal-header {% if not has_eligible %}bg-warning{% endif %}">
+                <h6 class="modal-title {% if not has_eligible %}text-white{% endif %} font-weight-normal" 
+                    id="modal-title-default">
+                        Bulk Move to {{ new_state_str }}
+                </h6>
+                <button type="button" class="btn-close text-body-emphasis" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+                {% if not has_eligible %}
+                    <div class="alert alert-warning">
+                        <strong>No eligible phases found.</strong> None of the phases in this job can be moved to <mark>{{ new_state_str }}</mark> at this time.
+                    </div>
+                {% else %}
+                    {% if tasks %}
+                    <p class="mb-2">Verify the following items to continue:</p>
+                    <ul class="list-group mb-3">
+                        {% for task in tasks %}
+                        <li class="list-group-item pb-0">
+                            <div class="form-check ps-0">
+                                <input class="form-check-input ms-0 me-2" type="checkbox" value=""
+                                    id="task-{{ forloop.counter }}" required>
+                                <label class="custom-control-label" for="task-{{ forloop.counter }}">
+                                    {{ task.task }}
+                                </label>
+                            </div>                            
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+
+                    <p class="mb-2">Select phases to move to <mark>{{ new_state_str }}</mark>:</p>
+                    
+                    {% if eligible_phases %}
+                    <div class="mb-3">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="select-all-phases">
+                            <label class="form-check-label fw-bold" for="select-all-phases">
+                                Select All Eligible Phases
+                            </label>
+                        </div>
+                        <div class="list-group">
+                            {% for phase in eligible_phases %}
+                            <label class="list-group-item d-flex align-items-center">
+                                <input class="form-check-input me-2 phase-checkbox" type="checkbox" 
+                                       name="phase_ids[]" value="{{ phase.id }}" 
+                                       id="phase-{{ phase.id }}">
+                                <div class="flex-grow-1">
+                                    <span class="fw-semibold">{{ phase.phase_number }}:{{ phase.title }}</span>
+                                    <span class="badge badge-phoenix badge-phoenix-{% include 'partials/phase/status_colour.html' %} ms-2">
+                                        {{ phase.get_status_display }}
+                                    </span>
+                                </div>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if ineligible_phases %}
+                    <div class="mb-3">
+                        <p class="text-muted mb-2"><small>The following phases cannot be moved to this status:</small></p>
+                        <div class="list-group">
+                            {% for phase in ineligible_phases %}
+                            <div class="list-group-item d-flex align-items-center opacity-50">
+                                <input class="form-check-input me-2" type="checkbox" disabled>
+                                <div class="flex-grow-1">
+                                    <span class="fw-semibold">{{ phase.phase_number }}:{{ phase.title }}</span>
+                                    <span class="badge badge-phoenix badge-phoenix-{% include 'partials/phase/status_colour.html' %} ms-2">
+                                        {{ phase.get_status_display }}
+                                    </span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <p class="text-muted"><small>Only eligible phases are shown as selectable. Disabled phases do not meet the requirements for this status change.</small></p>
+                {% endif %}
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light shadow-none mb-0" data-bs-dismiss="modal">Close</button>
+                {% if has_eligible %}
+                <button type="submit" class="btn btn-phoenix-primary mb-0">Apply to Selected Phases</button>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Select all functionality
+document.getElementById('select-all-phases')?.addEventListener('change', function(e) {
+    const checkboxes = document.querySelectorAll('.phase-checkbox');
+    checkboxes.forEach(cb => cb.checked = e.target.checked);
+});
+
+// Update select-all checkbox when individual checkboxes change
+document.querySelectorAll('.phase-checkbox').forEach(cb => {
+    cb.addEventListener('change', function() {
+        const allCheckboxes = document.querySelectorAll('.phase-checkbox');
+        const checkedCheckboxes = document.querySelectorAll('.phase-checkbox:checked');
+        const selectAllCheckbox = document.getElementById('select-all-phases');
+        if (selectAllCheckbox) {
+            selectAllCheckbox.checked = allCheckboxes.length === checkedCheckboxes.length;
+        }
+    });
+});
+</script>

@@ -291,6 +291,16 @@ urlpatterns = [
         name="phase_update_workflow",
     ),
     path(
+        "job/<str:job_slug>/phases/bulk-workflow/<int:new_state>",
+        views.phases_bulk_workflow_modal,
+        name="phases_bulk_workflow_modal",
+    ),
+    path(
+        "job/<str:job_slug>/phases/bulk-workflow/<int:new_state>/execute",
+        views.phases_bulk_workflow_execute,
+        name="phases_bulk_workflow_execute",
+    ),
+    path(
         "job/<str:job_slug>/phase/<str:slug>/update/",
         views.PhaseUpdateView.as_view(),
         name="phase_update",

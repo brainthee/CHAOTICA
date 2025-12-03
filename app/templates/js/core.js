@@ -131,6 +131,41 @@ $(function() {
         return false;
     };
 
+    var saveBulkWorkflowForm = function() {
+        var form = $(this);
+        var selectedPhases = form.find('input[name="phase_ids[]"]:checked');
+        
+        if (selectedPhases.length === 0) {
+            alert('Please select at least one phase to update.');
+            return false;
+        }
+        
+        $.ajax({
+            url: form.attr("action"),
+            data: form.serialize(),
+            type: form.attr("method"),
+            dataType: 'json',
+            success: function(data) {
+                if (data.form_is_valid) {
+                    if (data.next) {
+                        location.href = data.next
+                    } else {
+                        location.reload();
+                    }
+                } else {
+                    if (data.error) {
+                        alert(data.error);
+                    }
+                    $("#mainModalContent").html(data.html_form);
+                }
+            },
+            error: function(xhr, status, error) {
+                alert('An error occurred while processing the bulk action.');
+            }
+        });
+        return false;
+    };
+
     var profileUpdateSkills = function() {
         var form = $(this);
         $.ajax({
@@ -169,10 +204,12 @@ $(function() {
 
     $(".js-update-job-workflow").click(loadWorkflowConf);
     $(".js-update-phase-workflow").click(loadWorkflowConf);
+    $(".js-bulk-workflow-phases").click(loadWorkflowConf);
     $(".js-load-modal-form").click(loadForm);
     $(".datatable").on("click", ".js-load-modal-form", loadForm);
     $("#mainModal").on("submit", ".js-workflow-phase-form", saveForm);
     $("#mainModal").on("submit", ".js-workflow-job-form", saveForm);
+    $("#mainModal").on("submit", ".js-bulk-workflow-phases-form", saveBulkWorkflowForm);
     $("#mainModal").on("submit", ".js-submit-modal-form", saveForm);
     $("#mainModal").on("submit", ".js-submit-file-modal-form", saveFileForm);
     
