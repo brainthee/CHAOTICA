@@ -50,6 +50,7 @@ from tinymce.widgets import TinyMCE
 from django_clamav.validators import validate_file_infection
 from guardian.shortcuts import assign_perm, remove_perm
 from django.conf import settings
+from cities_light.models import City
 
 
 
@@ -63,6 +64,7 @@ class SchedulerFilter(forms.Form):
             ("availability", "Availability"),
             ("util", "Utilisation"),
             ("seniority", "Seniority"),
+            ("distance", "Distance"),
         ),
         initial="name",
     )
@@ -75,6 +77,23 @@ class SchedulerFilter(forms.Form):
         required=False,
         initial=False,
         label="Compressed View",
+    )
+    filter_by_city = forms.ModelChoiceField(
+        required=False,
+        label="Filter by Distance from City",
+        queryset=City.objects.all(),
+        widget=s2forms.ModelSelect2Widget(
+            attrs={
+                'class': 'select2-widget',
+                'data-placeholder': 'Select a city to filter by distance...',
+                'data-minimum-input-length': 2,
+            },
+            search_fields=['name__icontains', 'search_names__icontains'],
+            data_url='/autocomplete/cities',
+            data_ajax__cache='true',
+            data_ajax__type='GET',
+        ),
+        help_text="Select a city to order users by straight-line distance from here"
     )
     skills_specialist = forms.ModelMultipleChoiceField(
         required=False,
@@ -331,6 +350,11 @@ class SchedulerFilter(forms.Form):
                         ),
                     ),
                 ),
+                Row(
+                    Column(
+                        Field("filter_by_city", style="width: 100%;"),
+                    ),
+                ),
                 css_class="setting-panel-item",
             ),
             Div(
@@ -400,6 +424,7 @@ class SchedulerFilter(forms.Form):
             "ordering",
             "ordering_direction",
             "compressed_view",
+            "filter_by_city",
             "skills_specialist",
             "skills_can_do_alone",
             "skills_can_do_support",

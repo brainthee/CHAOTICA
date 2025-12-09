@@ -3,7 +3,6 @@ from django.utils import timezone
 from django.utils.html import format_html
 from django import forms
 from ..models import LeaveRequest, User, Group, UserInvitation, Holiday, Language
-from ..enums import LeaveRequestTypes
 from crispy_forms.helper import FormHelper
 from crispy_forms.bootstrap import (
     StrictButton,
@@ -32,6 +31,7 @@ import gzip
 import logging
 from django.core.exceptions import ValidationError
 import tarfile
+from cities_light.models import City
 
 
 
@@ -862,18 +862,15 @@ class EditProfileForm(forms.ModelForm):
         ),
     )
 
-    acting_manager = forms.ModelChoiceField(
-        queryset=User.objects.filter(),
+    city = forms.ModelChoiceField(
+        queryset=City.objects.filter(),
         required=False,
         widget=s2forms.ModelSelect2Widget(
             attrs={
                 'class': 'select2-widget',
-                'data-minimum-input-length': 3,
-                'data-ajax--url': '/autocomplete/users',
-                'data-ajax--cache': 'true',
-                'data-ajax--type': 'GET',
+                'data-placeholder': 'Select your city...',
             },
-            search_fields=['first_name__icontains', 'last_name__icontains', 'email__icontains'],
+            search_fields=['name__icontains', 'search_names__icontains'],
         ),
     )
 
@@ -937,8 +934,8 @@ class EditProfileForm(forms.ModelForm):
             "acting_manager",
             "job_title",
             "alias",
+            "city",
             "show_help",
-            "location",
             "country",
             "languages",
             "contracted_leave",

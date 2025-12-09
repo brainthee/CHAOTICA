@@ -17,9 +17,10 @@
       <div class="row">
         <p class="text-body-secondary fs-9 mb-0">
           <span class="fa-solid fa-earth text-body pe-1"></span>
-          {% if u.location %}
-          {{ u.location }}
-          {% else %}
+
+                  {% if u.city %}
+                    {{ u.city.name }}, {{ u.city.country.name }}
+                  {% else %}
           <span class="text-body-tertiary text-opacity-85 fw-semibold fs-10">No Data</span>
           {% endif %}
         </p>

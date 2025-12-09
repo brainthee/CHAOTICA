@@ -2,11 +2,12 @@ from django.template import loader
 from django.db.models import TextField, Value, Q
 from django.db.models.functions import Concat, Lower
 from django.http import JsonResponse
+from cities_light.models import City
+from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
+from django_select2.views import AutoResponseView
 from ..models import User
 from ..utils import is_ajax
-from django_select2.views import AutoResponseView
-from django.http import JsonResponse
-from django.contrib.auth.decorators import login_required
 from guardian.shortcuts import get_objects_for_user
 from django.views.decorators.http import require_POST
 
@@ -16,6 +17,34 @@ from django.views.decorators.http import require_POST
 ######################################
 
 SEARCH_REGEX = r'.*{}.*'
+
+@login_required
+def city_autocomplete(request):
+    """AJAX view for city autocomplete that returns JSON compatible with select2"""
+    term = request.GET.get('term', '').strip()
+    
+    cities = City.objects.all()
+    
+    if term:
+        cities = cities.filter(
+            Q(name__icontains=term) |
+            Q(search_names__icontains=term)
+        )
+    
+    # Limit results for performance
+    cities = cities[:50]
+    
+    results = []
+    for city in cities:
+        results.append({
+            'id': city.pk,
+            'text': f"{city.name}, {city.country.name}"
+        })
+    
+    return JsonResponse({
+        'results': results,
+        'pagination': {'more': False}
+    })
 
 class UserAutocomplete(AutoResponseView):
     def get(self, request, *args, **kwargs):
