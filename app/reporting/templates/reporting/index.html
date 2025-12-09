@@ -3,10 +3,51 @@
 
 {% block report_content %}
 <div class="container-fluid">
-  <div class="row gy-3 mb-6 justify-content-between">
+  <div class="row gy-3 mb-3 justify-content-between">
     <div class="col col-auto">
       <h2 class="mb-2 text-body-emphasis">Reporting</h2>
       <h5 class="text-body-tertiary fw-semibold">The report builder allows you to easily create reports by selecting data areas, fields, filters, sort orders, and presentation formats.</h5>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-12">
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="mb-0">Quick Guide</h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <h5>Creating a Report</h5>
+              <ol>
+                <li>Start the report wizard by clicking <strong>New Report</strong>.</li>
+                <li>Select a <strong>Data Area</strong> that will be the main focus of your report.</li>
+                <li>Choose the <strong>Fields</strong> you want to include as columns.</li>
+                <li>Define any <strong>Filters</strong> to limit the data.</li>
+                <li>Set the <strong>Sort Order</strong> for your results.</li>
+                <li>Select your preferred <strong>Presentation</strong> format.</li>
+                <li>Preview and <strong>Save</strong> your report.</li>
+              </ol>
+            </div>
+            <div class="col-md-6">
+              <h5>Running a Report</h5>
+              <ul>
+                <li>Open a report from the reports list or dashboard.</li>
+                <li>Click the <strong>Run Report</strong> button.</li>
+                <li>Enter any prompted filter values if required.</li>
+                <li>View the results or download in your preferred format.</li>
+              </ul>
+              
+              <h5>Sharing Reports</h5>
+              <ul>
+                <li>Make a report public by unchecking the <strong>Private</strong> option when saving.</li>
+                <li>Categorize reports to make them easier to find.</li>
+                <li>Mark useful reports as <strong>Favorites</strong> for quick access.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
   
@@ -101,46 +142,5 @@
     </div>
   </div>
   
-  <div class="row">
-    <div class="col-12">
-      <div class="card mb-4">
-        <div class="card-header">
-          <h5 class="mb-0">Quick Guide</h5>
-        </div>
-        <div class="card-body">
-          <div class="row">
-            <div class="col-md-6">
-              <h5>Creating a Report</h5>
-              <ol>
-                <li>Start the report wizard by clicking <strong>New Report</strong>.</li>
-                <li>Select a <strong>Data Area</strong> that will be the main focus of your report.</li>
-                <li>Choose the <strong>Fields</strong> you want to include as columns.</li>
-                <li>Define any <strong>Filters</strong> to limit the data.</li>
-                <li>Set the <strong>Sort Order</strong> for your results.</li>
-                <li>Select your preferred <strong>Presentation</strong> format.</li>
-                <li>Preview and <strong>Save</strong> your report.</li>
-              </ol>
-            </div>
-            <div class="col-md-6">
-              <h5>Running a Report</h5>
-              <ul>
-                <li>Open a report from the reports list or dashboard.</li>
-                <li>Click the <strong>Run Report</strong> button.</li>
-                <li>Enter any prompted filter values if required.</li>
-                <li>View the results or download in your preferred format.</li>
-              </ul>
-              
-              <h5>Sharing Reports</h5>
-              <ul>
-                <li>Make a report public by unchecking the <strong>Private</strong> option when saving.</li>
-                <li>Categorize reports to make them easier to find.</li>
-                <li>Mark useful reports as <strong>Favorites</strong> for quick access.</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
 </div>
 {% endblock %}

@@ -443,6 +443,11 @@ class JobStatuses:
         (ARCHIVED, "secondary"),
     )
 
+    @classmethod
+    def ALL(cls):
+        """Return all phase status values dynamically"""
+        return [status for status, _ in cls.CHOICES]
+
 
 class PhaseStatuses:
     DRAFT = 0
@@ -803,8 +808,6 @@ class PhaseStatuses:
         PENDING_PQA,
         QA_PRES,
         QA_PRES_AUTHOR_UPDATES,
-        # COMPLETED,
-        # DELIVERED,
     ]
 
     QA_STATUSES = [
@@ -819,6 +822,7 @@ class PhaseStatuses:
     COMPLETE_STATUSES = [
         COMPLETED,
         DELIVERED,
+        ARCHIVED,
     ]
 
     BS_COLOURS = (
@@ -843,6 +847,11 @@ class PhaseStatuses:
         (DELETED, "secondary"),
         (ARCHIVED, "secondary"),
     )
+
+    @classmethod
+    def ALL(cls):
+        """Return all phase status values dynamically"""
+        return [status for status, _ in cls.CHOICES]
 
 
 class JobRelation:
