@@ -41,6 +41,19 @@ $(document).ready(function() {
             dropdownParent: $('#mainModal .modal-content')
         });
     });
+    
+    // Fix for select2 dropdowns in offcanvas panels
+    $('#settings-offcanvas').on('shown.bs.offcanvas', function (e) {
+        $('.select2-widget').select2({
+            dropdownParent: $('#settings-offcanvas .offcanvas-body')
+        });
+        // Re-initialize select2 for any newly loaded content
+        $('#settings-offcanvas .offcanvas-body').on('DOMNodeInserted', '.select2-widget', function() {
+            $(this).select2({
+                dropdownParent: $('#settings-offcanvas .offcanvas-body')
+            });
+        });
+    });
 });
 
 $(function() {

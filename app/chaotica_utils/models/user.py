@@ -179,15 +179,15 @@ class User(AbstractUser):
         verbose_name="Alias/Nickname", max_length=255, null=True, blank=True, default="", 
         help_text="A nickname or preferred display name for this user"
     )
-    location = models.CharField(
-        verbose_name="Location", max_length=255, null=True, blank=True, default=""
+    city = models.ForeignKey(
+        'cities_light.City',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Location",
+        help_text="Select your primary city/location"
     )
-    longitude = models.DecimalField(
-        max_digits=22, decimal_places=16, blank=True, null=True
-    )
-    latitude = models.DecimalField(
-        max_digits=22, decimal_places=16, blank=True, null=True
-    )
+    # Removed: location, longitude, latitude fields (coordinates now come from City model)
 
     country = CountryField(
         default="GB", help_text="Used to determine which holidays apply."
@@ -376,17 +376,21 @@ class User(AbstractUser):
             return None
 
     def update_latlong(self):
-        if self.location:
-            try:
-                loc = Nominatim(user_agent="CHAOTICA")
-                getLoc = loc.geocode(self.location)
-                self.longitude = getLoc.longitude
-                self.latitude = getLoc.latitude
-                self.save()
-            except:
-                pass  # Don't care.
+        # Coordinates now come from the City model via city.longitude/latitude
+        # This method is kept for backward compatibility but no longer geocodes
+        pass
+
+    def __str__(self):
+        if self.first_name and self.last_name:
+            base_name = "{} {}".format(self.first_name, self.last_name)
+            if self.alias:
+                base_name = "{} ({})".format(base_name, self.alias)
+            if self.city:
+                return "{} - {}".format(base_name, self.city.name)
+            else:
+                return base_name
         else:
-            return None
+            return "{}".format(self.email)
 
     def skills_last_updated(self):
         if self.skills.all().count():
@@ -1693,6 +1697,70 @@ class User(AbstractUser):
 
         (Q(start__gte=start_date) & Q(end__lte=end_date))
         return top_services
+
+
+    def get_distance_to_city(self, target_city):
+        """
+        Calculate distance in kilometers between user's city and target city using Haversine formula.
+        Returns None if either city lacks coordinates.
+        """
+        if not self.city or not target_city:
+            return None
+        
+        if not (self.city.latitude and self.city.longitude and 
+                target_city.latitude and target_city.longitude):
+            return None
+        
+        # Haversine formula
+        import math
+        
+        # Convert to radians
+        lat1 = math.radians(self.city.latitude)
+        lon1 = math.radians(self.city.longitude)
+        lat2 = math.radians(target_city.latitude)
+        lon2 = math.radians(target_city.longitude)
+        
+        # Differences
+        dlat = lat2 - lat1
+        dlon = lon2 - lon1
+        
+        # Haversine formula
+        a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+        
+        # Earth's radius in kilometers
+        R = 6371.0
+        
+        return R * c
+
+    def get_distance_to_coordinates(self, target_lat, target_lon):
+        """
+        Calculate distance in kilometers between user's city and target coordinates.
+        Returns None if user city lacks coordinates.
+        """
+        if not self.city or not (self.city.latitude and self.city.longitude):
+            return None
+        
+        import math
+        
+        # Convert to radians
+        lat1 = math.radians(self.city.latitude)
+        lon1 = math.radians(self.city.longitude)
+        lat2 = math.radians(target_lat)
+        lon2 = math.radians(target_lon)
+        
+        # Differences
+        dlat = lat2 - lat1
+        dlon = lon2 - lon1
+        
+        # Haversine formula
+        a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+        
+        # Earth's radius in kilometers
+        R = 6371.0
+        
+        return R * c
 
 
 @receiver(post_save, sender=User)

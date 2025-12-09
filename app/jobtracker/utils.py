@@ -305,7 +305,40 @@ def get_scheduler_members(request, filtered_users = None, start = None, end = No
         end_date=end,
     )
 
-    for user_id, user_stat in stats['current']['by_user'].items():
+    # Check if we need to order by distance
+    filter_by_city = cleaned_data.get("filter_by_city") if cleaned_data else None
+    ordering = cleaned_data.get("ordering", "title") if cleaned_data else "title"
+    ordering_direction = cleaned_data.get("ordering_direction", False) if cleaned_data else False
+    
+    if filter_by_city and ordering == "distance":
+        # Sort users by distance to the selected city
+        user_distance_pairs = []
+        for user_id, user_stat in stats['current']['by_user'].items():
+            user = user_stat['user']
+            distance = user.get_distance_to_city(filter_by_city)
+            user_distance_pairs.append((user_stat, distance))
+        
+        # Sort by distance (closest first by default, or farthest first if reverse)
+        reverse_sort = ordering_direction
+        user_distance_pairs.sort(key=lambda x: (x[1] is None, x[1] or float('inf')), reverse=reverse_sort)
+    else:
+        # Convert to list for consistent processing
+        user_distance_pairs = [(user_stat, None) for user_stat in stats['current']['by_user'].values()]
+        
+        # Apply other ordering if not distance-based
+        if ordering == "title":
+            user_distance_pairs.sort(key=lambda x: x[0]['user_name'], reverse=ordering_direction)
+        elif ordering == "last_name, first_name":
+            user_distance_pairs.sort(key=lambda x: (x[0]['user'].last_name, x[0]['user'].first_name), reverse=ordering_direction)
+        elif ordering == "availability":
+            user_distance_pairs.sort(key=lambda x: x[0]['available_percentage'] or 0, reverse=ordering_direction)
+        elif ordering == "util":
+            user_distance_pairs.sort(key=lambda x: x[0]['utilisation_percentage'] or 0, reverse=ordering_direction)
+        elif ordering == "seniority":
+            # This would need to be implemented based on job levels
+            pass
+
+    for user_stat, distance in user_distance_pairs:
         user = user_stat['user']
         user_title = user_stat['user_name']
         main_org = user_stat['main_org']
@@ -327,6 +360,8 @@ def get_scheduler_members(request, filtered_users = None, start = None, end = No
                 "job_level": job_level_label,
                 "url": user.get_absolute_url(),
                 "html_view": user.get_table_display_html(cleaned_data.get("compressed_view", False)),
+                "distance": round(distance, 1) if distance is not None else None,
+                "distance_display": f"{round(distance, 1)} km" if distance is not None else "N/A",
                 "businessHours": (
                     {
                         "startTime": main_org.businessHours_startTime,

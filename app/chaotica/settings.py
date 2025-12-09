@@ -297,6 +297,11 @@ CONSTANCE_ADDITIONAL_FIELDS = {
     ],
 }
 
+# Cities Light Configuration
+CITIES_LIGHT_TRANSLATION_LANGUAGES = ['en']
+CITIES_LIGHT_INCLUDE_COUNTRIES = ['GB', 'US', 'CA', 'AU', 'DE', 'FR', 'NL', 'BE', 'IE', 'IT', 'ES']
+CITIES_LIGHT_INCLUDE_CITY_TYPES = ['PPL', 'PPLA', 'PPLA2', 'PPLA3', 'PPLA4', 'PPLC', 'PPLF', 'PPLG', 'PPLL', 'PPLR', 'PPLS', 'STLMT']
+
 
 AUTHENTICATION_BACKENDS = (
     "django.contrib.auth.backends.ModelBackend",
@@ -361,6 +366,7 @@ THIRD_PARTY_APPS = [
     "dbbackup",  # django-dbbackup
     "corsheaders",
     "csp",
+    "cities_light",  # City database for location validation
 ]
 LOCAL_APPS = [
     "chaotica_utils",

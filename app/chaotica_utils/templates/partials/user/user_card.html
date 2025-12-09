@@ -63,8 +63,8 @@
                   <span class="fa-solid fa-route"></span>
                 </div>
                 <p class="fs-9 mb-0">
-                  {% if user.location %}
-                    {{ user.location }}
+                  {% if user.city %}
+                    {{ user.city.name }}, {{ user.city.country.name }}
                   {% else %}
                     No info
                   {% endif %}
