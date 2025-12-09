@@ -936,6 +936,7 @@ class EditProfileForm(forms.ModelForm):
             "manager",
             "acting_manager",
             "job_title",
+            "alias",
             "show_help",
             "location",
             "country",

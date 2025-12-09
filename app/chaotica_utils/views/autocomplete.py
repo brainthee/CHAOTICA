@@ -37,7 +37,8 @@ class UserAutocomplete(AutoResponseView):
                 Q(email__iregex=SEARCH_REGEX.format(self.term))
                 | Q(full_name__iregex=SEARCH_REGEX.format(self.term))
                 | Q(first_name__iregex=SEARCH_REGEX.format(self.term))
-                | Q(last_name__iregex=SEARCH_REGEX.format(self.term)),
+                | Q(last_name__iregex=SEARCH_REGEX.format(self.term))
+                | (Q(alias__iregex=SEARCH_REGEX.format(self.term)) & Q(alias__isnull=False)),
                 is_active=True,
             )
 
@@ -205,10 +206,12 @@ def site_search(request):
             ),
             lower_email=Lower("email"),
             lower_notification_email=Lower("notification_email"),
+            lower_alias=Lower("alias"),
         ).filter(
             Q(full_name__contains=q)
             | Q(lower_email__contains=q)
             | Q(lower_notification_email__contains=q)
+            | (Q(lower_alias__contains=q) & Q(alias__isnull=False))
         )[
             :result_limit
         ]
