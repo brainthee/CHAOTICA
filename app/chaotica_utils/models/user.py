@@ -175,6 +175,10 @@ class User(AbstractUser):
     job_title = models.CharField(
         verbose_name="Job Title", max_length=255, null=True, blank=True, default=""
     )
+    alias = models.CharField(
+        verbose_name="Alias/Nickname", max_length=255, null=True, blank=True, default="", 
+        help_text="A nickname or preferred display name for this user"
+    )
     location = models.CharField(
         verbose_name="Location", max_length=255, null=True, blank=True, default=""
     )
@@ -1177,7 +1181,11 @@ class User(AbstractUser):
 
     def __str__(self):
         if self.first_name and self.last_name:
-            return "{} {}".format(self.first_name, self.last_name)
+            base_name = "{} {}".format(self.first_name, self.last_name)
+            if self.alias:
+                return "{} ({})".format(base_name, self.alias)
+            else:
+                return base_name
         else:
             return "{}".format(self.email)
 

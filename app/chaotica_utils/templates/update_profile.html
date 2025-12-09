@@ -24,8 +24,13 @@
                      {{ usr }}
                   </h5>
                   <p class="mb-0 font-weight-normal text-sm">
-                     {{ usr.job_title }}
+                     {% if usr.job_title %}{{ usr.job_title }}{% endif %}
                   </p>
+                  {% if usr.alias %}
+                    <p class="mb-0 font-weight-normal text-sm">
+                      "{{ usr.alias }}"
+                    </p>
+                  {% endif %}
                </div>
             </div>
             <div class="col-sm-auto ms-sm-auto mt-sm-0 mt-3 d-flex">
