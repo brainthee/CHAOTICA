@@ -122,9 +122,16 @@
                                 {% endif %}
                             </td>
                             <td>
-                                <span class="badge bg-secondary ip-badge">
-                                    <i class="fa fa-network-wired"></i> {{ session.ip }}
-                                </span>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge bg-secondary ip-badge">
+                                        <i class="fa fa-network-wired"></i> {{ session.ip }}
+                                    </span>
+                                    {% if session.ip_tag %}
+                                        <span class="badge" style="background-color: {{ session.ip_tag.color }}; color: white;">
+                                            <i class="fa fa-tag"></i> {{ session.ip_tag.name }}
+                                        </span>
+                                    {% endif %}
+                                </div>
                             </td>
                             <td>
                                 <span class="badge bg-secondary ip-badge">
