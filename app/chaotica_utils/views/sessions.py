@@ -8,7 +8,8 @@ from django.utils import timezone
 from django.db.models import Q
 import json
 from datetime import datetime
-from ..models import User
+from ..models import User, IPTag, IPCIDRRange
+import ipaddress
 
 
 
@@ -36,6 +37,36 @@ class SessionListView(PrefetchRelatedMixin, SessionBaseView, ListView):
     Use the 'job_list' variable in the template
     to access all job objects"""
 
+    
+    def get_ip_tag(self, ip_address):
+        """
+        Get the IP tag for a given IP address by checking against CIDR ranges.
+        Returns the first matching tag or None.
+        """
+        if not ip_address:
+            return None
+        
+        try:
+            ip_obj = ipaddress.ip_address(ip_address)
+        except ValueError:
+            return None
+        
+        # Get all active CIDR ranges
+        cidr_ranges = IPCIDRRange.objects.filter(
+            is_active=True,
+            tag__is_active=True
+        ).select_related('tag')
+        
+        for cidr_range in cidr_ranges:
+            try:
+                network = cidr_range.get_network()
+                if ip_obj in network:
+                    return cidr_range.tag
+            except ValueError:
+                # Skip invalid CIDR ranges
+                continue
+        
+        return None
     
     def get_queryset(self):
         """
@@ -65,5 +96,13 @@ class SessionListView(PrefetchRelatedMixin, SessionBaseView, ListView):
         
 
         context['current_time'] = timezone.now()
+        
+        # Add IP tags to sessions
+        sessions_with_tags = []
+        for session in context['sessions']:
+            session.ip_tag = self.get_ip_tag(session.ip)
+            sessions_with_tags.append(session)
+        
+        context['sessions'] = sessions_with_tags
         
         return context

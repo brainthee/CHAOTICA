@@ -14,6 +14,8 @@ from .models import (
     HealthCheckAPIKey,
     JobLevel,
     UserJobLevel,
+    IPTag,
+    IPCIDRRange,
 )
 
 
@@ -157,3 +159,41 @@ class UserJobLevelAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('user', 'job_level')
+
+
+class IPCIDRRangeInline(admin.TabularInline):
+    model = IPCIDRRange
+    extra = 0
+    fields = ["cidr", "description", "is_active"]
+    readonly_fields = ["created_at", "updated_at"]
+
+
+@admin.register(IPTag)
+class IPTagAdmin(admin.ModelAdmin):
+    list_display = ["name", "description", "color", "is_active", "created_at"]
+    list_filter = ["is_active", "created_at"]
+    search_fields = ["name", "description"]
+    readonly_fields = ["created_at", "updated_at"]
+    inlines = [IPCIDRRangeInline]
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj:  # Editing an existing object
+            return ["created_at", "updated_at"]
+        return ["created_at", "updated_at"]
+
+
+@admin.register(IPCIDRRange)
+class IPCIDRRangeAdmin(admin.ModelAdmin):
+    list_display = ["tag", "cidr", "description", "is_active", "created_at"]
+    list_filter = ["is_active", "created_at", "tag"]
+    search_fields = ["tag__name", "cidr", "description"]
+    readonly_fields = ["created_at", "updated_at"]
+    autocomplete_fields = ["tag"]
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj:  # Editing an existing object
+            return ["created_at", "updated_at"]
+        return ["created_at", "updated_at"]
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('tag')
