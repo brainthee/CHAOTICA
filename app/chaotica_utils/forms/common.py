@@ -3,6 +3,7 @@ from django.utils import timezone
 from django.utils.html import format_html
 from django import forms
 from ..models import LeaveRequest, User, Group, UserInvitation, Holiday, Language
+from ..enums import LeaveRequestTypes
 from crispy_forms.helper import FormHelper
 from crispy_forms.bootstrap import (
     StrictButton,
