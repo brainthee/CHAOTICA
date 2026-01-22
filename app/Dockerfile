@@ -34,7 +34,7 @@ RUN mkdir -p /var/log/clamav /var/lib/clamav /var/run/clamav \
 # Copy ClamAV confs
 COPY --chown=root:root --chmod=644 ./.docker/config/clamav/*.conf /etc/clamav/
 # Pre-update defs
-RUN freshclam --config-file=/etc/clamav/freshclam.conf
+# RUN freshclam --config-file=/etc/clamav/freshclam.conf
 
 # Cleanup
 RUN rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man /var/cache/apt/archives/* \
