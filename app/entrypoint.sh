@@ -10,7 +10,7 @@ chown -R root:root /var/log/clamav /var/lib/clamav /var/run/clamav
 # Check if virus database exists, if not download it
 if [ ! -f /var/lib/clamav/main.cvd ] && [ ! -f /var/lib/clamav/main.cld ]; then
     echo "Downloading initial ClamAV virus database..."
-    freshclam --config-file=/etc/clamav/freshclam.conf
+    # freshclam --config-file=/etc/clamav/freshclam.conf
 fi
 
 # Lets write the DB CA to disk if it exists
