@@ -185,13 +185,14 @@ class Command(BaseCommand):
     def generate_weekly_aggregation(self, jobs, start_date, end_date):
         """
         Generate weekly aggregation data for all weeks in the date range.
-        Returns a list of dicts with week_start, week_end, active_projects, consultants_scheduled.
+        Returns a list of dicts with week_start, week_end, active_jobs, consultants_scheduled.
         """
         weeks = self.get_week_boundaries(start_date, end_date)
         weeks_data = []
 
         for week_start, week_end in weeks:
             active_jobs_in_week = set()
+            active_phases_in_week = set()
             consultants_in_week = set()
 
             # Iterate through all jobs and their phases
@@ -203,14 +204,16 @@ class Command(BaseCommand):
                         if self.is_timeslot_in_week(timeslot, week_start, week_end):
                             job_has_timeslot_this_week = True
                             consultants_in_week.add(timeslot.user.id)
-                            active_jobs_in_week.add(phase.id)
+                            active_phases_in_week.add(phase.id)
 
-                # if job_has_timeslot_this_week:
+                if job_has_timeslot_this_week:
+                    active_jobs_in_week.add(job.id)
 
             weeks_data.append({
                 'week_start': week_start,
                 'week_end': week_end,
-                'active_projects': len(active_jobs_in_week),
+                'active_jobs': len(active_jobs_in_week),
+                'active_phases': len(active_phases_in_week),
                 'consultants_scheduled': len(consultants_in_week)
             })
 
@@ -241,7 +244,8 @@ class Command(BaseCommand):
             writer.writerow([
                 'Week Start Date',
                 'Week End Date',
-                'Active Projects',
+                'Active Jobs',
+                'Active Phases',
                 'Consultants Scheduled'
             ])
 
@@ -250,14 +254,16 @@ class Command(BaseCommand):
                 writer.writerow([
                     week['week_start'].strftime('%Y-%m-%d'),
                     week['week_end'].strftime('%Y-%m-%d'),
-                    week['active_projects'],
+                    week['active_jobs'],
+                    week['active_phases'],
                     week['consultants_scheduled']
                 ])
 
             # Write summary row if we have data
             if weeks_data:
                 total_weeks = len(weeks_data)
-                avg_projects = sum(w['active_projects'] for w in weeks_data) / total_weeks
+                avg_projects = sum(w['active_jobs'] for w in weeks_data) / total_weeks
+                avg_phases = sum(w['active_phases'] for w in weeks_data) / total_weeks
                 avg_consultants = sum(w['consultants_scheduled'] for w in weeks_data) / total_weeks
 
                 writer.writerow([])  # Empty row for separation
