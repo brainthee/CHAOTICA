@@ -1,0 +1,126 @@
+{% load static %}
+
+<div class="mx-n4 mb-3 px-3 py-3 mx-lg-n6 px-lg-6 bg-body-emphasis border-top border-bottom border-200 position-relative top-1">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h5 class="mb-0">Weekly Debrief</h5>
+      <span class="text-body-secondary fs-9">
+        {{ week_start|date:"D d M" }} – {{ week_friday|date:"D d M Y" }}
+      </span>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <a href="?week={{ debrief_prev_week }}#debrief" class="btn btn-sm btn-phoenix-secondary">
+        <span class="fa-solid fa-chevron-left me-1"></span>Prev
+      </a>
+      {% if debrief_week_offset != "0" %}
+        <a href="?week=0#debrief" class="btn btn-sm btn-phoenix-secondary">
+          Today
+        </a>
+      {% endif %}
+      <a href="?week={{ debrief_next_week }}#debrief" class="btn btn-sm btn-phoenix-secondary">
+        Next<span class="fa-solid fa-chevron-right ms-1"></span>
+      </a>
+    </div>
+  </div>
+
+  {% for member in members_data %}
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="d-flex align-items-center mb-3">
+          <div class="avatar avatar-xl me-3">
+            <img class="rounded-circle" src="{{ member.user.get_avatar_url }}" alt="{{ member.user.get_full_name }}" />
+          </div>
+          <div>
+            <h5 class="mb-0">
+              <a href="{{ member.user.get_absolute_url }}" class="text-body-emphasis">{{ member.user.get_full_name }}</a>
+            </h5>
+          </div>
+        </div>
+
+        {# Mon-Fri schedule bar #}
+        <div class="row g-2 mb-3">
+          {% for day_idx, day_data in member.daily_slots.items %}
+            <div class="col">
+              <div class="text-center small fw-semibold text-body-tertiary mb-1">
+                {{ day_data.date|date:"D d" }}
+              </div>
+              <div class="border rounded p-1 bg-body-tertiary" style="min-height: 40px;">
+                {% if day_data.slots %}
+                  {% for slot in day_data.slots %}
+                    {% if slot.phase %}
+                      <a href="{{ slot.phase.get_absolute_url }}" class="text-decoration-none d-block">
+                        <div class="badge text-wrap w-100 mb-1"
+                             title="{{ slot.get_schedule_title }}"
+                             style="font-size: 0.7rem; background-color: {{ slot.get_schedule_slot_colour }}; color: {{ slot.get_schedule_slot_text_colour }};">
+                          {{ slot.phase.phase_id }}
+                        </div>
+                      </a>
+                    {% else %}
+                      <div class="badge text-wrap w-100 mb-1"
+                           title="{{ slot.get_schedule_title }}"
+                           style="font-size: 0.7rem; background-color: {{ slot.get_schedule_slot_colour }}; color: {{ slot.get_schedule_slot_text_colour }};">
+                        {{ slot.slot_type.name|truncatechars:12 }}
+                      </div>
+                    {% endif %}
+                  {% endfor %}
+                {% else %}
+                  <div class="text-center text-body-quaternary small py-1">—</div>
+                {% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+
+        {# Phases this week #}
+        {% if member.phases_this_week %}
+          <h6 class="text-body-tertiary mb-2">Phases this week</h6>
+          <div class="table-responsive">
+            <table class="table table-sm table-striped mb-0 fs-9">
+              <thead>
+                <tr>
+                  <th>Phase</th>
+                  <th>Client — Title</th>
+                  <th>Service</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for entry in member.phases_this_week %}
+                  <tr>
+                    <td>
+                      <a href="{{ entry.phase.get_absolute_url }}">{{ entry.phase.phase_id }}</a>
+                    </td>
+                    <td>{{ entry.phase.job.client }} — {{ entry.phase.title }}</td>
+                    <td>{% if entry.phase.service %}{{ entry.phase.service }}{% else %}—{% endif %}</td>
+                    <td>{{ entry.role }}</td>
+                    <td>{% include 'partials/phase/status_badge.html' with phase=entry.phase %}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="text-body-tertiary fs-9 mb-0"><em>No phases scheduled this week</em></p>
+        {% endif %}
+
+        {# Next week pre-checks warnings #}
+        {% if member.next_week_warnings %}
+          <div class="alert alert-phoenix-warning mt-3 mb-0 py-2 px-3 fs-9">
+            <span class="fa-solid fa-triangle-exclamation me-1"></span>
+            <strong>Next week — pre-checks not complete:</strong>
+            {% for phase in member.next_week_warnings %}
+              <a href="{{ phase.get_absolute_url }}">{{ phase.phase_id }}</a>
+              ({% include 'partials/phase/status_badge.html' with phase=phase %}){% if not forloop.last %}, {% endif %}
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  {% empty %}
+    <div class="text-center text-body-tertiary py-5">
+      <span class="fa-solid fa-users-slash fa-3x mb-3 d-block"></span>
+      <p>No active team members found.</p>
+    </div>
+  {% endfor %}
+</div>

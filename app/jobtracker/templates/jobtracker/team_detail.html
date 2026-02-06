@@ -142,6 +142,11 @@
           <li class="nav-item text-nowrap me-2" role="presentation">
             <a class="nav-link" id="stats-tab" data-bs-toggle="tab" href="#stats" role="tab" aria-controls="tab-stats" aria-selected="false" tabindex="-1"><span class="fa-solid fa-clipboard me-2 tab-icon-color"></span>Stats</a>
           </li>
+          {% if is_team_owner %}
+            <li class="nav-item text-nowrap me-2" role="presentation">
+              <a class="nav-link" id="debrief-tab" data-bs-toggle="tab" href="#debrief" role="tab" aria-controls="tab-debrief" aria-selected="false" tabindex="-1"><span class="fa-solid fa-clipboard-list me-2 tab-icon-color"></span>Debrief</a>
+            </li>
+          {% endif %}
         </ul>
 
         <div class="tab-content" id="myTabContent">
@@ -155,13 +160,32 @@
             {% include 'partials/team/team_stats.html' %}
           </div>
 
+          {% if is_team_owner %}
+            <div class="tab-pane fade" id="debrief" role="tabpanel" aria-labelledby="debrief-tab">
+              {% include 'partials/team/team_debrief.html' %}
+            </div>
+          {% endif %}
+
         </div>
       </div>
     </div>
   </div>
 {% endblock %}
 
-
+{% block extra_js %}
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      var hash = window.location.hash;
+      var params = new URLSearchParams(window.location.search);
+      if (hash === '#debrief' || params.has('week')) {
+        var tab = document.querySelector('#debrief-tab');
+        if (tab) {
+          new bootstrap.Tab(tab).show();
+        }
+      }
+    });
+  </script>
+{% endblock %}
 
 {% block offcanvas %}
   <div class="offcanvas offcanvas-end settings-panel border-0" id="settings-offcanvas" tabindex="-1" aria-labelledby="settings-offcanvas">
