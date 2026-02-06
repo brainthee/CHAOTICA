@@ -157,12 +157,18 @@
           </div>
 
           <div class="tab-pane fade" id="stats" role="tabpanel" aria-labelledby="stats-tab">
-            {% include 'partials/team/team_stats.html' %}
+            <div id="stats-content" class="text-center py-5">
+              <div class="spinner-border text-primary" role="status"></div>
+              <p class="mt-2 text-body-secondary">Loading stats...</p>
+            </div>
           </div>
 
           {% if is_team_owner %}
             <div class="tab-pane fade" id="debrief" role="tabpanel" aria-labelledby="debrief-tab">
-              {% include 'partials/team/team_debrief.html' %}
+              <div id="debrief-content" class="text-center py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="mt-2 text-body-secondary">Loading debrief...</p>
+              </div>
             </div>
           {% endif %}
 
@@ -174,16 +180,78 @@
 
 {% block extra_js %}
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      var hash = window.location.hash;
-      var params = new URLSearchParams(window.location.search);
-      if (hash === '#debrief' || params.has('week')) {
-        var tab = document.querySelector('#debrief-tab');
-        if (tab) {
-          new bootstrap.Tab(tab).show();
-        }
+    (function() {
+      var statsLoaded = false;
+      var debriefLoaded = false;
+      var statsUrl = "{% url 'team_stats_partial' team.slug %}";
+      var debriefUrl = "{% url 'team_debrief_partial' team.slug %}";
+
+      function loadTab(url, containerId, extraParams) {
+        var fullUrl = extraParams ? url + '?' + extraParams : url;
+        fetch(fullUrl, {
+          headers: {'X-Requested-With': 'XMLHttpRequest'}
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          document.getElementById(containerId).innerHTML = data.html;
+        })
+        .catch(function() {
+          document.getElementById(containerId).innerHTML =
+            '<div class="text-center py-5 text-danger">Failed to load. Please refresh the page.</div>';
+        });
       }
-    });
+
+      // Load stats when tab is shown
+      var statsTab = document.getElementById('stats-tab');
+      if (statsTab) {
+        statsTab.addEventListener('shown.bs.tab', function() {
+          if (!statsLoaded) {
+            statsLoaded = true;
+            loadTab(statsUrl, 'stats-content');
+          }
+        });
+      }
+
+      // Load debrief when tab is shown
+      var debriefTab = document.getElementById('debrief-tab');
+      if (debriefTab) {
+        debriefTab.addEventListener('shown.bs.tab', function() {
+          if (!debriefLoaded) {
+            debriefLoaded = true;
+            var params = new URLSearchParams(window.location.search);
+            var weekParam = params.get('week');
+            loadTab(debriefUrl, 'debrief-content', weekParam ? 'week=' + weekParam : '');
+          }
+        });
+      }
+
+      // Handle week navigation inside debrief (delegated click handler)
+      document.addEventListener('click', function(e) {
+        var link = e.target.closest('a[data-debrief-week]');
+        if (link) {
+          e.preventDefault();
+          var week = link.getAttribute('data-debrief-week');
+          var container = document.getElementById('debrief-content');
+          container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><p class="mt-2 text-body-secondary">Loading debrief...</p></div>';
+          loadTab(debriefUrl, 'debrief-content', 'week=' + week);
+        }
+      });
+
+      // Auto-activate debrief tab if ?week= param present
+      document.addEventListener('DOMContentLoaded', function() {
+        var hash = window.location.hash;
+        var params = new URLSearchParams(window.location.search);
+        if (hash === '#debrief' || params.has('week')) {
+          if (debriefTab) {
+            new bootstrap.Tab(debriefTab).show();
+          }
+        } else if (hash === '#stats') {
+          if (statsTab) {
+            new bootstrap.Tab(statsTab).show();
+          }
+        }
+      });
+    })();
   </script>
 {% endblock %}
 
@@ -202,10 +270,7 @@
       </div>
     </div>
     <div class="offcanvas-body scrollbar pt-0" id="themeController">
-      <pre><code>{{ stats_json }}</code></pre>
-      <script>
-        hljs.highlightAll();
-      </script>
+      <p class="text-body-secondary">Open the Stats tab to load data.</p>
     </div>
   </div>
   <a class="card setting-toggle" href="#settings-offcanvas" data-bs-toggle="offcanvas">
