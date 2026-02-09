@@ -46,8 +46,9 @@ def page_defaults(request):
     context["DJANGO_ENV"] = django_settings.DJANGO_ENV
     context["DJANGO_VERSION"] = django_settings.DJANGO_VERSION
 
-    if Quote.objects.filter(enabled=True).exists():
-        context["quote"] = Quote.objects.filter(enabled=True).order_by('?')[0]
+    quote = Quote.objects.filter(enabled=True).order_by('?').first()
+    if quote:
+        context["quote"] = quote
 
     context["DEMO_ENV"] = django_settings.DEMO_ENV
     context["DEMO_USER"] = django_settings.DEMO_USER
