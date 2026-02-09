@@ -11,8 +11,10 @@ from django.http import (
 from ..forms.common import LeaveRequestForm
 from dateutil.relativedelta import relativedelta
 from ..models import LeaveRequest
+from ..models.job_levels import UserJobLevel
 from .common import page_defaults
-from django.db.models import Q
+from constance import config
+from django.db.models import Q, Exists, OuterRef, Prefetch
 from django.contrib.auth.decorators import login_required
 from guardian.shortcuts import get_objects_for_user
 from django.shortcuts import get_object_or_404
@@ -63,16 +65,18 @@ def request_own_leave(request):
 def manage_leave(request):
     context = {}
     from jobtracker.models import OrganisationalUnit, TimeSlot
+    from jobtracker.models.orgunit import OrganisationalUnitMember
+    from jobtracker.enums import DefaultTimeSlotTypes
 
     units_with_perm = get_objects_for_user(
         request.user, "can_view_all_leave_requests", OrganisationalUnit
     )
 
-    leave_list = (
+    history_cutoff = timezone.now() - relativedelta(months=config.LEAVE_HISTORY_MONTHS)
+    all_leave = list(
         LeaveRequest.objects.filter(
-            # Only show this last calendar's year...
-            start_date__gte=timezone.now()
-            - relativedelta(years=1),
+            # Show future leave and past leave within the configured history window
+            Q(end_date__gte=timezone.now()) | Q(start_date__gte=history_cutoff),
         )
         .filter(
             Q(
@@ -82,10 +86,55 @@ def manage_leave(request):
             | Q(user__acting_manager=request.user)  # where we're acting manager
             | Q(user=request.user)  # and our own of course....
         )
-        .prefetch_related("user", "user__unit_memberships", "user__timeslots")
+        .select_related(
+            "user",
+            "user__manager",
+            "user__acting_manager",
+            "user__city",
+            "user__city__country",
+            "user__manager__city",
+            "user__manager__city__country",
+            "user__acting_manager__city",
+            "user__acting_manager__city__country",
+        )
+        .prefetch_related(
+            Prefetch(
+                "user__unit_memberships",
+                queryset=OrganisationalUnitMember.objects.select_related("unit"),
+            ),
+            Prefetch(
+                "user__job_level_history",
+                queryset=UserJobLevel.objects.filter(is_current=True).select_related("job_level"),
+                to_attr="_current_levels",
+            ),
+            Prefetch(
+                "user__manager__job_level_history",
+                queryset=UserJobLevel.objects.filter(is_current=True).select_related("job_level"),
+                to_attr="_current_levels",
+            ),
+            Prefetch(
+                "user__acting_manager__job_level_history",
+                queryset=UserJobLevel.objects.filter(is_current=True).select_related("job_level"),
+                to_attr="_current_levels",
+            ),
+        )
+        .annotate(
+            has_overlapping_work=Exists(
+                TimeSlot.objects.filter(
+                    user=OuterRef("user"),
+                    slot_type=DefaultTimeSlotTypes.DELIVERY,
+                    start__lte=OuterRef("end_date"),
+                    end__gte=OuterRef("start_date"),
+                )
+            )
+        )
+        .distinct()
     )
-    pending_leave = leave_list.filter(authorised=False, cancelled=False, declined=False)
-    leave_list = leave_list.exclude(authorised=False, cancelled=False, declined=False)
+
+    # Split in Python (avoids running the query + prefetches twice)
+    pending_leave = [l for l in all_leave if not l.authorised and not l.cancelled and not l.declined]
+    leave_list = [l for l in all_leave if l.authorised or l.cancelled or l.declined]
+
     context = {
         "leave_list": leave_list,
         "pending_leave": pending_leave,

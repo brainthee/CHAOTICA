@@ -357,6 +357,10 @@ class CustomConfigForm(ConstanceForm):
                         css_class="input-group input-group-dynamic",
                     ),
                     Div(
+                        FloatingField("LEAVE_HISTORY_MONTHS"),
+                        css_class="input-group input-group-dynamic",
+                    ),
+                    Div(
                         Field("LEAVE_ENFORCE_LIMIT"),
                         css_class="input-group input-group-dynamic",
                     ),

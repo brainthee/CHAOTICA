@@ -182,6 +182,7 @@ CONSTANCE_CONFIG = {
         "An int array with the numbers equaling the day of the week. Sunday == 0, Monday == 1 etc",
     ),
     "LEAVE_DAYS_NOTICE": (14, "How many days notice for Annual Leave submissions?"),
+    "LEAVE_HISTORY_MONTHS": (3, "How many months of past leave to show on the manage leave page"),
     "LEAVE_ENFORCE_LIMIT": (False, "Should leave be prevented if over balance?"),
     # Theme/Look settings
     "SNOW_ENABLED": (False, "Should it snow?"),
