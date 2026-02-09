@@ -81,7 +81,7 @@ class Team(models.Model):
     def active_memberships(self):
         now = timezone.now()
         return self.users.filter(
-            Q(left_at__isnull=True) | Q(left_at__gte=now), joined_at__lte=now
+            Q(left_at__isnull=True) | Q(left_at__gte=now), joined_at__lte=now, user__is_active=True,
         )
 
     def get_absolute_url(self):
