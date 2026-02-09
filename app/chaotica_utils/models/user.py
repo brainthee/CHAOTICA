@@ -586,6 +586,9 @@ class User(AbstractUser):
         )
     
     def get_current_level(self):
+        # Fast path: use prefetched data when available
+        if hasattr(self, '_current_levels'):
+            return self._current_levels[0] if self._current_levels else None
         if self.job_level_history.filter(is_current=True).exists():
             return self.job_level_history.get(is_current=True)
         else:
