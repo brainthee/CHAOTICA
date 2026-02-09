@@ -224,16 +224,32 @@ class OrganisationalUnit(models.Model):
         )
 
     def get_activeMemberships(self):
-        return self.members.filter(
-            left_date__isnull=True,
-            member__is_active=True,
-        ).prefetch_related(
-            "member",
-            "member__unit_memberships",
-            "roles",
-            "member__manager",
-            "member__timeslots",
-            "member__timeslots__phase",
+        from chaotica_utils.models.job_levels import UserJobLevel
+
+        return (
+            self.members.filter(
+                left_date__isnull=True,
+                member__is_active=True,
+            )
+            .select_related(
+                "member__city",
+                "member__city__country",
+                "member__manager",
+            )
+            .prefetch_related(
+                Prefetch(
+                    "member__unit_memberships",
+                    queryset=OrganisationalUnitMember.objects.select_related("unit"),
+                ),
+                "roles",
+                Prefetch(
+                    "member__job_level_history",
+                    queryset=UserJobLevel.objects.filter(is_current=True).select_related(
+                        "job_level"
+                    ),
+                    to_attr="_current_levels",
+                ),
+            )
         )
 
     def get_active_members_with_perm(self, permission_str, include_su=False):

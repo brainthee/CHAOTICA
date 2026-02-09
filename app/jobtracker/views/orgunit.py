@@ -5,6 +5,8 @@ from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
+from django.db.models import Count
+from django.contrib.auth.decorators import login_required
 from chaotica_utils.views import ChaoticaBaseView
 from notifications.utils import AppNotification, send_notifications
 from notifications.enums import NotificationTypes
@@ -13,6 +15,7 @@ from ..models import (
     OrganisationalUnit,
     OrganisationalUnitMember,
     OrganisationalUnitRole,
+    Job,
 )
 from chaotica_utils.enums import UnitRoles
 from chaotica_utils.utils import get_week
@@ -66,61 +69,115 @@ class OrganisationalUnitDetailView(
     OrganisationalUnitBaseView,
     DetailView,
 ):
-    prefetch_related = [
-        "jobs",
-        "jobs__client",
-        "members",
-        "members__roles",
-    ]
+    prefetch_related = []
     permission_required = "jobtracker.view_organisationalunit"
     accept_global_perms = True
 
+    def get_queryset(self):
+        return super().get_queryset().select_related("lead")
+
+    def get_object(self, queryset=None):
+        # Cache to avoid re-evaluating queryset + prefetches on every call
+        # (guardian check_permissions, DetailView.get, and get_context_data all call this)
+        if not hasattr(self, "_cached_object"):
+            self._cached_object = super().get_object(queryset)
+        return self._cached_object
+
     def get_context_data(self, **kwargs):
-        context = super(OrganisationalUnitDetailView, self).get_context_data(**kwargs)
-        unit = self.get_object()
+        context = super().get_context_data(**kwargs)
+        unit = self.object
 
-        date_range_raw = self.request.GET.get("dateRange", "")
-        if " to " in date_range_raw:
-            date_range_split = date_range_raw.split(" to ")
-            if len(date_range_split) == 2:
-                context["start_date"] = timezone.datetime.strptime(
-                    date_range_split[0], "%Y-%m-%d"
-                ).date()
-                context["end_date"] = timezone.datetime.strptime(
-                    date_range_split[1], "%Y-%m-%d"
-                ).date()
+        # Pre-compute active membership check (avoids get_activeMembers query in template)
+        context["is_active_member"] = unit.members.filter(
+            member=self.request.user,
+            left_date__isnull=True,
+        ).exists()
 
-        if "start_date" not in context:
-            context["start_date"] = self.request.GET.get(
-                "start_date",
-                (timezone.now() - datetime.timedelta(days=30)).date(),
-            )
-            context["end_date"] = self.request.GET.get(
-                "end_date", timezone.now().date()
-            )
-        
-        context["stats"] = self.get_object().get_stats(
-            context["start_date"], context["end_date"]
-        )
-        context["stats_json"] = json.dumps(context["stats"], indent=4, default=str)
+        # Evaluate memberships once with proper prefetches
+        context["active_memberships"] = list(unit.get_activeMemberships())
 
         # Add QA review data for users with permission
         if self.request.user.has_perm("can_view_all_reviews", unit):
             # In progress reviews for this unit
-            context['in_progress_reviews'] = QAReview.objects.filter(
-                phase__job__unit=unit,
-                status__in=['started', 'in_progress']
-            ).select_related('phase', 'reviewer', 'phase__job').order_by('-started_at')
+            context['in_progress_reviews'] = list(
+                QAReview.objects.filter(
+                    phase__job__unit=unit,
+                    status__in=['started', 'in_progress']
+                ).select_related(
+                    'phase', 'reviewer', 'reviewed_user', 'phase__job'
+                ).order_by('-started_at')
+            )
 
             # Recent completed reviews (last 30 days)
             thirty_days_ago = timezone.now() - datetime.timedelta(days=30)
-            context['recent_reviews'] = QAReview.objects.filter(
-                phase__job__unit=unit,
-                status='completed',
-                completed_at__gte=thirty_days_ago
-            ).select_related('phase', 'reviewer', 'phase__job').order_by('-completed_at')[:10]
+            context['recent_reviews'] = list(
+                QAReview.objects.filter(
+                    phase__job__unit=unit,
+                    status='completed',
+                    completed_at__gte=thirty_days_ago
+                ).select_related(
+                    'phase', 'reviewer', 'reviewed_user', 'phase__job'
+                ).order_by('-completed_at')[:10]
+            )
 
         return context
+
+
+@login_required
+@permission_required_or_403(
+    "jobtracker.view_organisationalunit",
+    (OrganisationalUnit, "slug", "slug"),
+)
+def orgunit_stats_partial(request, slug):
+    unit = get_object_or_404(OrganisationalUnit, slug=slug)
+    context = {}
+
+    date_range_raw = request.GET.get("dateRange", "")
+    if " to " in date_range_raw:
+        date_range_split = date_range_raw.split(" to ")
+        if len(date_range_split) == 2:
+            context["start_date"] = timezone.datetime.strptime(
+                date_range_split[0], "%Y-%m-%d"
+            ).date()
+            context["end_date"] = timezone.datetime.strptime(
+                date_range_split[1], "%Y-%m-%d"
+            ).date()
+
+    if "start_date" not in context:
+        context["start_date"] = request.GET.get(
+            "start_date",
+            (timezone.now() - datetime.timedelta(days=30)).date(),
+        )
+        context["end_date"] = request.GET.get(
+            "end_date", timezone.now().date()
+        )
+
+    context["stats"] = unit.get_stats(context["start_date"], context["end_date"])
+    context["stats_json"] = json.dumps(context["stats"], indent=4, default=str)
+    context["organisationalunit"] = unit
+
+    html = loader.render_to_string(
+        "partials/unit/unit_stats.html", context, request=request
+    )
+    return JsonResponse({"html": html, "stats_json": context["stats_json"]})
+
+
+@login_required
+@permission_required_or_403(
+    "jobtracker.view_organisationalunit",
+    (OrganisationalUnit, "slug", "slug"),
+)
+def orgunit_jobs_partial(request, slug):
+    unit = get_object_or_404(OrganisationalUnit, slug=slug)
+    job_list = list(
+        unit.jobs.annotate(phase_count=Count("phases")).select_related("client")
+    )
+    html = loader.render_to_string(
+        "partials/job/job_list_table.html",
+        {"job_list": job_list, "disableAjax": True},
+        request=request,
+    )
+    return JsonResponse({"html": html})
 
 
 class OrganisationalUnitDeleteView(
