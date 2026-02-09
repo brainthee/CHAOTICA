@@ -9,6 +9,11 @@
       </span>
     </div>
     <div class="d-flex align-items-center gap-2">
+      <select id="debrief-sort" class="form-select form-select-sm" style="width: auto;" data-current-week="{{ debrief_week_offset }}">
+        <option value="first_name" {% if debrief_sort == "first_name" %}selected{% endif %}>Sort: First Name</option>
+        <option value="last_name" {% if debrief_sort == "last_name" %}selected{% endif %}>Sort: Surname</option>
+        <option value="random" {% if debrief_sort == "random" %}selected{% endif %}>Sort: Random</option>
+      </select>
       <a href="#" data-debrief-week="{{ debrief_prev_week }}" class="btn btn-sm btn-phoenix-secondary">
         <span class="fa-solid fa-chevron-left me-1"></span>Prev
       </a>
@@ -20,6 +25,74 @@
       <a href="#" data-debrief-week="{{ debrief_next_week }}" class="btn btn-sm btn-phoenix-secondary">
         Next<span class="fa-solid fa-chevron-right ms-1"></span>
       </a>
+    </div>
+  </div>
+
+  {# Week summary #}
+  <div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3">
+      <div class="card bg-body-tertiary border-0 h-100">
+        <div class="card-body py-2 px-3">
+          <div class="d-flex align-items-center">
+            <div class="me-3">
+              <span class="fa-solid fa-chart-pie fs-6 {% if summary_utilisation_pct >= 75 %}text-success{% elif summary_utilisation_pct >= 40 %}text-warning{% else %}text-danger{% endif %}"></span>
+            </div>
+            <div>
+              <div class="fs-7 fw-bold mb-0">{{ summary_utilisation_pct }}%</div>
+              <div class="fs-10 text-body-tertiary">Utilised ({{ summary_confirmed_days }}/{{ summary_working_days }} days confirmed)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+      <div class="card bg-body-tertiary border-0 h-100">
+        <div class="card-body py-2 px-3">
+          <div class="d-flex align-items-center">
+            <div class="me-3">
+              <span class="fa-solid fa-triangle-exclamation fs-6 {% if summary_phases_not_ready == 0 %}text-success{% else %}text-danger{% endif %}"></span>
+            </div>
+            <div>
+              <div class="fs-7 fw-bold mb-0">{{ summary_phases_not_ready }}</div>
+              <div class="fs-10 text-body-tertiary">Phases not ready to begin</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+      <div class="card bg-body-tertiary border-0 h-100">
+        <div class="card-body py-2 px-3">
+          <div class="d-flex align-items-center">
+            <div class="me-3">
+              <span class="fa-solid fa-clipboard-check fs-6 {% if summary_prechecks_pending == 0 %}text-success{% else %}text-warning{% endif %}"></span>
+            </div>
+            <div>
+              <div class="fs-7 fw-bold mb-0">{{ summary_prechecks_pending }}</div>
+              <div class="fs-10 text-body-tertiary">Pre-checks pending</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+      <div class="card bg-body-tertiary border-0 h-100">
+        <div class="card-body py-2 px-3">
+          <div class="d-flex align-items-center">
+            <div class="me-3">
+              <span class="fa-solid fa-user-clock fs-6 {% if summary_unscheduled %}text-warning{% else %}text-success{% endif %}"></span>
+            </div>
+            <div>
+              <div class="fs-7 fw-bold mb-0">{{ summary_unscheduled|length }}</div>
+              <div class="fs-10 text-body-tertiary">
+                Unscheduled{% if summary_unscheduled %}:
+                  {% for u in summary_unscheduled %}{{ u.first_name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 

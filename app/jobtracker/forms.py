@@ -2624,6 +2624,37 @@ class AddTeamMemberForm(forms.ModelForm):
         ]
 
 
+class BulkAddTeamMemberForm(forms.Form):
+    emails = forms.CharField(
+        widget=forms.Textarea(attrs={
+            'rows': 6,
+            'placeholder': 'Enter email addresses, one per line or separated by commas',
+            'class': 'form-control',
+        }),
+        help_text='Paste email addresses separated by commas, semicolons, or one per line.',
+    )
+
+    def __init__(self, *args, **kwargs):
+        self.team = kwargs.pop("team", None)
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.helper.form_tag = False
+        self.helper.layout = Layout(
+            Field("emails"),
+        )
+        self.fields["emails"].label = False
+
+    def clean_emails(self):
+        raw = self.cleaned_data['emails']
+        # Split on commas, semicolons, and newlines
+        import re
+        parts = re.split(r'[,;\n\r]+', raw)
+        emails = [e.strip().lower() for e in parts if e.strip()]
+        if not emails:
+            raise forms.ValidationError("Please enter at least one email address.")
+        return emails
+
+
 class TeamMemberForm(forms.ModelForm):
 
     joined_at = forms.DateField(

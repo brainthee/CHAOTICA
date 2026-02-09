@@ -597,6 +597,11 @@ urlpatterns = [
         name="teammember_add",
     ),
     path(
+        "team/<str:slug>/members/bulk-add",
+        views.teammember_bulk_add,
+        name="teammember_bulk_add",
+    ),
+    path(
         "team/<str:slug>/members/edit/<int:member_pk>",
         views.teammember_change,
         name="teammember_change",

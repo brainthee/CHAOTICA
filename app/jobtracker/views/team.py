@@ -7,16 +7,17 @@ from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from chaotica_utils.views import ChaoticaBaseView
 from chaotica_utils.utils import get_week
+from chaotica_utils.models import User
 from ..models import Team, TeamMember, TimeSlot
 from ..enums import PhaseStatuses
 from guardian.decorators import permission_required_or_403
-from ..forms import TeamForm, TeamMemberForm, AddTeamMemberForm
+from ..forms import TeamForm, TeamMemberForm, AddTeamMemberForm, BulkAddTeamMemberForm
 from django.http import HttpResponseBadRequest, HttpResponseForbidden, JsonResponse
 from django.template import loader
 from django.contrib.auth.decorators import login_required
 from constance import config
 from collections import defaultdict
-import logging, datetime, json
+import logging, datetime, json, random
 from django.contrib import messages
 
 
@@ -162,8 +163,16 @@ def team_debrief_partial(request, slug):
     nws_date = next_week_start.date() if hasattr(next_week_start, 'date') else next_week_start
     nwe_date = next_week_end.date() if hasattr(next_week_end, 'date') else next_week_end
 
-    members = team.get_activeMembers().order_by('first_name', 'last_name')
-    member_pks = list(members.values_list('pk', flat=True))
+    sort = request.GET.get('sort', 'first_name')
+    if sort == 'last_name':
+        members = team.get_activeMembers().order_by('last_name', 'first_name')
+    elif sort == 'random':
+        members = list(team.get_activeMembers())
+        random.shuffle(members)
+    else:
+        sort = 'first_name'
+        members = team.get_activeMembers().order_by('first_name', 'last_name')
+    member_pks = [m.pk for m in members]
 
     # Single bulk query for this week's slots for ALL members
     all_this_week_slots = list(
@@ -214,6 +223,12 @@ def team_debrief_partial(request, slug):
         day_dates.append(d.date() if hasattr(d, 'date') else d)
 
     members_data = []
+    # Summary accumulators
+    total_members = len(member_pks)
+    members_unscheduled = []
+    phases_not_ready = {}       # pk -> phase (status < READY_TO_BEGIN)
+    phases_prechecks_pending = {}  # pk -> phase (PRE_CHECKS or CLIENT_NOT_READY)
+
     for member in members:
         this_week_slots = slots_by_user.get(member.pk, [])
 
@@ -245,6 +260,15 @@ def team_debrief_partial(request, slug):
                     'phase': slot.phase,
                     'role': slot.get_deliveryRole_display(),
                 })
+                # Summary tracking
+                if slot.phase.status < PhaseStatuses.READY_TO_BEGIN:
+                    phases_not_ready[slot.phase.pk] = slot.phase
+                if slot.phase.status in (PhaseStatuses.PRE_CHECKS, PhaseStatuses.CLIENT_NOT_READY):
+                    phases_prechecks_pending[slot.phase.pk] = slot.phase
+
+        # Track unscheduled members
+        if not this_week_slots:
+            members_unscheduled.append(member)
 
         # Next week pre-checks warnings
         next_week_warnings = []
@@ -262,6 +286,23 @@ def team_debrief_partial(request, slug):
             'next_week_warnings': next_week_warnings,
         })
 
+    # Compute utilisation using the same calculation as stats/availability
+    util_data = team.calculate_bulk_utilization(ws_date, wf_date, member_pks)
+    util_totals = {
+        'confirmed_days': 0,
+        'tentative_days': 0,
+        'non_delivery_days': 0,
+        'available_days': 0,
+        'working_days': 0,
+    }
+    for user_id, stats in util_data.items():
+        for key in util_totals:
+            util_totals[key] += stats[key]
+
+    utilisation_pct = round(
+        util_totals['confirmed_days'] / util_totals['working_days'] * 100, 1
+    ) if util_totals['working_days'] else 0
+
     context = {
         'team': team,
         'members_data': members_data,
@@ -271,6 +312,17 @@ def team_debrief_partial(request, slug):
         'debrief_week_offset': str(week_offset),
         'debrief_prev_week': str(week_offset - 1),
         'debrief_next_week': str(week_offset + 1),
+        'debrief_sort': sort,
+        # Summary
+        'summary_total_members': total_members,
+        'summary_utilisation_pct': utilisation_pct,
+        'summary_confirmed_days': util_totals['confirmed_days'],
+        'summary_working_days': util_totals['working_days'],
+        'summary_tentative_days': util_totals['tentative_days'],
+        'summary_available_days': util_totals['available_days'],
+        'summary_prechecks_pending': len(phases_prechecks_pending),
+        'summary_phases_not_ready': len(phases_not_ready),
+        'summary_unscheduled': members_unscheduled,
     }
 
     html = loader.render_to_string(
@@ -310,6 +362,60 @@ def teammember_add(request, slug):
     context = {"team": team, "form": form}
     data["html_form"] = loader.render_to_string(
         "jobtracker/modals/teammember_form.html", context, request=request
+    )
+    return JsonResponse(data)
+
+
+@permission_required_or_403(
+    "jobtracker.change_team", (Team, "slug", "slug")
+)
+def teammember_bulk_add(request, slug):
+    data = dict()
+    team = get_object_or_404(Team, slug=slug)
+
+    data["form_is_valid"] = False
+
+    if request.method == "POST":
+        form = BulkAddTeamMemberForm(request.POST, team=team)
+        if form.is_valid():
+            emails = form.cleaned_data['emails']
+            added = []
+            skipped = []
+            not_found = []
+
+            for email in emails:
+                try:
+                    user = User.objects.get(email__iexact=email, is_active=True)
+                except User.DoesNotExist:
+                    not_found.append(email)
+                    continue
+
+                if TeamMember.objects.filter(user=user, team=team, left_at__isnull=True).exists():
+                    skipped.append(email)
+                else:
+                    TeamMember.objects.create(
+                        team=team,
+                        user=user,
+                        joined_at=timezone.now(),
+                    )
+                    added.append(email)
+
+            data["form_is_valid"] = True
+            parts = []
+            if added:
+                parts.append(f"{len(added)} member(s) added")
+            if skipped:
+                parts.append(f"{len(skipped)} already in team")
+            if not_found:
+                parts.append(f"{len(not_found)} not found: {', '.join(not_found)}")
+            if parts:
+                messages.success(request, "Bulk add: " + ". ".join(parts) + ".")
+    else:
+        form = BulkAddTeamMemberForm(team=team)
+
+    context = {"team": team, "form": form}
+    data["html_form"] = loader.render_to_string(
+        "jobtracker/modals/teammember_bulk_form.html", context, request=request
     )
     return JsonResponse(data)
 
