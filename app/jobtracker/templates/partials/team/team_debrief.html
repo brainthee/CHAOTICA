@@ -29,70 +29,30 @@
   </div>
 
   {# Week summary #}
-  <div class="row g-3 mb-4">
-    <div class="col-sm-6 col-lg-3">
-      <div class="card bg-body-tertiary border-0 h-100">
-        <div class="card-body py-2 px-3">
-          <div class="d-flex align-items-center">
-            <div class="me-3">
-              <span class="fa-solid fa-chart-pie fs-6 {% if summary_utilisation_pct >= 75 %}text-success{% elif summary_utilisation_pct >= 40 %}text-warning{% else %}text-danger{% endif %}"></span>
-            </div>
-            <div>
-              <div class="fs-7 fw-bold mb-0">{{ summary_utilisation_pct }}%</div>
-              <div class="fs-10 text-body-tertiary">Utilised ({{ summary_confirmed_days }}/{{ summary_working_days }} days confirmed)</div>
-            </div>
-          </div>
-        </div>
-      </div>
+  <div class="d-flex flex-row flex-fill mb-3">
+    <div class="col text-center border-translucent border-end py-3">
+      <i class="fa-solid fa-chart-pie fs-6 lh-1 {% if summary_utilisation_pct >= 75 %}text-success{% elif summary_utilisation_pct >= 40 %}text-warning{% else %}text-danger{% endif %}"></i>
+      <h2 class="fs-6 pt-3">{{ summary_utilisation_pct }}%</h2>
+      <p class="fs-9 mb-0">Utilised</p>
+      <p class="text-body-secondary fs-10 mb-0">{{ summary_confirmed_days }}/{{ summary_working_days }} days confirmed</p>
     </div>
-    <div class="col-sm-6 col-lg-3">
-      <div class="card bg-body-tertiary border-0 h-100">
-        <div class="card-body py-2 px-3">
-          <div class="d-flex align-items-center">
-            <div class="me-3">
-              <span class="fa-solid fa-triangle-exclamation fs-6 {% if summary_phases_not_ready == 0 %}text-success{% else %}text-danger{% endif %}"></span>
-            </div>
-            <div>
-              <div class="fs-7 fw-bold mb-0">{{ summary_phases_not_ready }}</div>
-              <div class="fs-10 text-body-tertiary">Phases not ready to begin</div>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div class="col text-center border-translucent border-end py-3">
+      <i class="fa-solid fa-clipboard-check fs-6 lh-1 {% if summary_prechecks_pending == 0 %}text-success{% else %}text-warning{% endif %}"></i>
+      <h2 class="fs-6 pt-3">{{ summary_prechecks_pending }}</h2>
+      <p class="fs-9 mb-0">Pre-checks Pending</p>
     </div>
-    <div class="col-sm-6 col-lg-3">
-      <div class="card bg-body-tertiary border-0 h-100">
-        <div class="card-body py-2 px-3">
-          <div class="d-flex align-items-center">
-            <div class="me-3">
-              <span class="fa-solid fa-clipboard-check fs-6 {% if summary_prechecks_pending == 0 %}text-success{% else %}text-warning{% endif %}"></span>
-            </div>
-            <div>
-              <div class="fs-7 fw-bold mb-0">{{ summary_prechecks_pending }}</div>
-              <div class="fs-10 text-body-tertiary">Pre-checks pending</div>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div class="col text-center border-translucent border-end py-3">
+      <i class="fa-solid fa-triangle-exclamation fs-6 lh-1 {% if summary_phases_not_ready == 0 %}text-success{% else %}text-danger{% endif %}"></i>
+      <h2 class="fs-6 pt-3">{{ summary_phases_not_ready }}</h2>
+      <p class="fs-9 mb-0">Not Ready to Begin</p>
     </div>
-    <div class="col-sm-6 col-lg-3">
-      <div class="card bg-body-tertiary border-0 h-100">
-        <div class="card-body py-2 px-3">
-          <div class="d-flex align-items-center">
-            <div class="me-3">
-              <span class="fa-solid fa-user-clock fs-6 {% if summary_unscheduled %}text-warning{% else %}text-success{% endif %}"></span>
-            </div>
-            <div>
-              <div class="fs-7 fw-bold mb-0">{{ summary_unscheduled|length }}</div>
-              <div class="fs-10 text-body-tertiary">
-                Unscheduled{% if summary_unscheduled %}:
-                  {% for u in summary_unscheduled %}{{ u.first_name }}{% if not forloop.last %}, {% endif %}{% endfor %}
-                {% endif %}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div class="col text-center border-translucent py-3">
+      <i class="fa-solid fa-user-clock fs-6 lh-1 {% if summary_unscheduled %}text-warning{% else %}text-success{% endif %}"></i>
+      <h2 class="fs-6 pt-3">{{ summary_unscheduled|length }}</h2>
+      <p class="fs-9 mb-0">Unscheduled</p>
+      {% if summary_unscheduled %}
+        <p class="text-body-secondary fs-10 mb-0">{% for u in summary_unscheduled %}{{ u.first_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+      {% endif %}
     </div>
   </div>
 
