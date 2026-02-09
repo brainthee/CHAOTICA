@@ -1,0 +1,27 @@
+{% load crispy_forms_tags %}
+<div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+  <div class="modal-content">
+    <form method="post" action="{{ request.get_full_path }}" class="js-submit-modal-form" data-bulk-add="true">
+      {% csrf_token %}
+      <div class="modal-header">
+        <h6 class="modal-title font-weight-normal" id="modal-title-default">
+          Bulk Add Members
+        </h6>
+        <button type="button" class="btn-close text-body-emphasis" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-body-secondary fs-9 mb-3">
+          Paste email addresses below, separated by commas, semicolons, or one per line.
+          Only existing active users will be added.
+        </p>
+        {% crispy form %}
+        <div id="bulk-add-results" class="d-none mt-3"></div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="submit" class="btn btn-phoenix-primary mb-0">Add Members</button>
+        <button type="button" class="btn btn-light shadow-none mb-0" data-bs-dismiss="modal">Close</button>
+      </div>
+    </form>
+  </div>
+</div>

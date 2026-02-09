@@ -90,6 +90,10 @@
                     <span class="fa-solid fa-plus me-2"></span>
                     Add User
                   </button>
+                  <button data-url="{% url 'teammember_bulk_add' team.slug %}" class="btn btn-phoenix-secondary lh-1 js-load-modal-form">
+                    <span class="fa-solid fa-users me-2"></span>
+                    Bulk Add
+                  </button>
                 {% endif %}
               </div>
 
@@ -185,6 +189,7 @@
       var debriefLoaded = false;
       var statsUrl = "{% url 'team_stats_partial' team.slug %}";
       var debriefUrl = "{% url 'team_debrief_partial' team.slug %}";
+      var debriefSort = 'first_name';
 
       function loadTab(url, containerId, extraParams) {
         var fullUrl = extraParams ? url + '?' + extraParams : url;
@@ -199,6 +204,20 @@
           document.getElementById(containerId).innerHTML =
             '<div class="text-center py-5 text-danger">Failed to load. Please refresh the page.</div>';
         });
+      }
+
+      function getDebriefParams(weekOverride) {
+        var params = [];
+        var week = weekOverride !== undefined ? weekOverride : null;
+        if (week !== null) params.push('week=' + week);
+        if (debriefSort && debriefSort !== 'first_name') params.push('sort=' + debriefSort);
+        return params.join('&');
+      }
+
+      function loadDebrief(weekOverride) {
+        var container = document.getElementById('debrief-content');
+        container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><p class="mt-2 text-body-secondary">Loading debrief...</p></div>';
+        loadTab(debriefUrl, 'debrief-content', getDebriefParams(weekOverride));
       }
 
       // Load stats when tab is shown
@@ -220,7 +239,7 @@
             debriefLoaded = true;
             var params = new URLSearchParams(window.location.search);
             var weekParam = params.get('week');
-            loadTab(debriefUrl, 'debrief-content', weekParam ? 'week=' + weekParam : '');
+            loadDebrief(weekParam || 0);
           }
         });
       }
@@ -231,9 +250,16 @@
         if (link) {
           e.preventDefault();
           var week = link.getAttribute('data-debrief-week');
-          var container = document.getElementById('debrief-content');
-          container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><p class="mt-2 text-body-secondary">Loading debrief...</p></div>';
-          loadTab(debriefUrl, 'debrief-content', 'week=' + week);
+          loadDebrief(week);
+        }
+      });
+
+      // Handle sort dropdown change (delegated since it's inside AJAX content)
+      document.addEventListener('change', function(e) {
+        if (e.target && e.target.id === 'debrief-sort') {
+          debriefSort = e.target.value;
+          var week = e.target.getAttribute('data-current-week') || '0';
+          loadDebrief(week);
         }
       });
 
