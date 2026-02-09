@@ -43,7 +43,7 @@
             {% if 'change_organisationalunit' in unit_perms %}
               <a href="{% url 'organisationalunit_update' organisationalunit.slug %}" class="btn btn-outline-secondary ms-2">Edit</a>
             {% endif %}
-            {% if request.user not in organisationalunit.get_activeMembers %}
+            {% if not is_active_member %}
               <a href="#" data-url="{% url 'organisationalunit_join' organisationalunit.slug %}" class="btn btn-outline-success ms-auto js-load-modal-form">Join</a>
             {% endif %}
           </div>
@@ -120,12 +120,18 @@
 
           <div class="tab-pane fade" id="jobs" role="tabpanel" aria-labelledby="jobs-tab">
             {% if 'can_view_jobs' in unit_perms %}
-              {% include 'partials/job/job_list_table.html' with job_list=organisationalunit.jobs.all disableAjax=1 only %}
+              <div id="jobs-content" class="text-center py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="mt-2 text-body-secondary">Loading jobs...</p>
+              </div>
             {% endif %}
           </div>
 
           <div class="tab-pane fade" id="stats" role="tabpanel" aria-labelledby="stats-tab">
-            {% include 'partials/unit/unit_stats.html' %}
+            <div id="stats-content" class="text-center py-5">
+              <div class="spinner-border text-primary" role="status"></div>
+              <p class="mt-2 text-body-secondary">Loading stats...</p>
+            </div>
           </div>
 
           {% if 'can_view_all_reviews' in unit_perms %}
@@ -155,7 +161,7 @@
       </div>
     </div>
     <div class="offcanvas-body scrollbar pt-0" id="themeController">
-      <pre><code>{{ stats_json }}</code></pre>
+      <pre><code id="stats-json-display">Loading stats data...</code></pre>
       <script>
         hljs.highlightAll();
       </script>
@@ -170,4 +176,57 @@
       </div><small class="text-uppercase text-700 fw-bold py-2 pe-2 ps-1 rounded-end">Detail</small>
     </div>
   </a>
+{% endblock %}
+
+{% block extra_js %}
+  <script>
+    (function() {
+      var statsLoaded = false;
+      var jobsLoaded = false;
+      var statsUrl = "{% url 'orgunit_stats_partial' organisationalunit.slug %}";
+      var jobsUrl = "{% url 'orgunit_jobs_partial' organisationalunit.slug %}";
+
+      function loadTab(url, containerId, callback) {
+        fetch(url, {
+          headers: {'X-Requested-With': 'XMLHttpRequest'}
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          document.getElementById(containerId).innerHTML = data.html;
+          if (callback) callback(data);
+        })
+        .catch(function() {
+          document.getElementById(containerId).innerHTML =
+            '<div class="text-center py-5 text-danger">Failed to load. Please refresh the page.</div>';
+        });
+      }
+
+      // Load stats when tab is shown
+      var statsTab = document.getElementById('stats-tab');
+      if (statsTab) {
+        statsTab.addEventListener('shown.bs.tab', function() {
+          if (!statsLoaded) {
+            statsLoaded = true;
+            loadTab(statsUrl, 'stats-content', function(data) {
+              if (data.stats_json) {
+                document.getElementById('stats-json-display').textContent = data.stats_json;
+                hljs.highlightAll();
+              }
+            });
+          }
+        });
+      }
+
+      // Load jobs when tab is shown
+      var jobsTab = document.getElementById('jobs-tab');
+      if (jobsTab) {
+        jobsTab.addEventListener('shown.bs.tab', function() {
+          if (!jobsLoaded) {
+            jobsLoaded = true;
+            loadTab(jobsUrl, 'jobs-content');
+          }
+        });
+      }
+    })();
+  </script>
 {% endblock %}

@@ -40,7 +40,7 @@
         
           <td class="align-middle end ps-3 py-4">{{ job.delivery_date }}</td>
         
-          <td class="align-middle phases ps-3 py-4">{{ job.phases_set.count }}</td>
+          <td class="align-middle phases ps-3 py-4">{{ job.phase_count|default:"" }}</td>
         
           <td class="align-middle text-end status_display">
             {% include 'partials/job/status_badge.html' with badge_size='sm' %}
