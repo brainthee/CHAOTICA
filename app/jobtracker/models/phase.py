@@ -832,25 +832,6 @@ class Phase(models.Model):
             total_scheduled = total_scheduled + Decimal(sch_hrs)
         return round(total_scheduled, 2)
     
-    def get_total_scheduled_hours_simple(self):
-        """
-        Efficient version that just counts timeslot hours without business hours calculation.
-        Use this for display in lists where performance matters.
-        """
-        from django.db.models import Sum, FloatField
-        from django.db.models.functions import Cast
-        
-        # Use raw SQL for MySQL TIMESTAMPDIFF which returns hours directly
-        from django.db.models.expressions import RawSQL
-        
-        result = self.timeslots.aggregate(
-            total_hours=Sum(
-                RawSQL('TIMESTAMPDIFF(SECOND, start, end) / 3600.0', []),
-                output_field=FloatField()
-            )
-        )
-        return round(Decimal(result['total_hours'] or 0), 2)
-
     def get_total_scoped_by_type(self, slot_type):
         total_scoped = Decimal(0.0)
         # Ugly.... but yolo
@@ -903,8 +884,6 @@ class Phase(models.Model):
     def get_total_scheduled_days(self):
         return round(self.get_total_scheduled_hours() / self.get_hours_in_day(), 2)
 
-    def get_total_scheduled_days_simple(self):
-        return round(self.get_total_scheduled_hours_simple() / self.get_hours_in_day(), 2)
 
     def get_total_scoped_days_by_type(self, slot_type):
         return round(self.get_total_scoped_by_type(slot_type) / self.get_hours_in_day(), 2)

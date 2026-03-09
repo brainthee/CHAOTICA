@@ -1,4 +1,4 @@
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.http import HttpResponseRedirect, HttpResponseBadRequest, JsonResponse
 from django.template import loader
@@ -293,6 +293,18 @@ class PhaseScheduleView(UnitPermissionRequiredMixin, PhaseBaseView, DetailView):
         types_in_use = context["phase"].get_all_total_scheduled_by_type()
         context["TimeSlotDeliveryRolesInUse"] = types_in_use
         return context
+
+
+@job_permission_required_or_403("jobtracker.view_job_schedule", (Phase, "slug", "slug"))
+def view_phase_schedule_util(request, job_slug, slug):
+    job = get_object_or_404(Job, slug=job_slug)
+    phase = get_object_or_404(Phase, job=job, slug=slug)
+    context = {
+        "phase": phase,
+        "job": job,
+        "TimeSlotDeliveryRoles": TimeSlotDeliveryRole.CHOICES,
+    }
+    return render(request, "partials/scheduler/schedule_util.html", context)
 
 
 class PhaseUpdateView(UnitPermissionRequiredMixin, PhaseBaseView, UpdateView):

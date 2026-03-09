@@ -1,4 +1,4 @@
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.http import (
     HttpResponseRedirect,
@@ -561,6 +561,16 @@ class JobScheduleView(UnitPermissionRequiredMixin, JobBaseView, DetailView):
         types_in_use = context["job"].get_all_total_scheduled_by_type()
         context["TimeSlotDeliveryRolesInUse"] = types_in_use
         return context
+
+
+@job_permission_required_or_403("jobtracker.view_job_schedule", (Job, "slug", "slug"))
+def view_job_schedule_util(request, slug):
+    job = get_object_or_404(Job, slug=slug)
+    context = {
+        "job": job,
+        "TimeSlotDeliveryRoles": TimeSlotDeliveryRole.CHOICES,
+    }
+    return render(request, "partials/scheduler/schedule_util.html", context)
 
 
 class JobDeleteView(UnitPermissionRequiredMixin, JobBaseView, DeleteView):

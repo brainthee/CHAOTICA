@@ -46,7 +46,7 @@
         {% if not no_schedule_bar %}
         <td>
           <small class="text-body-tertiary">
-            Scheduled: {{ phase.get_total_scheduled_days_simple }}d ({{ phase.get_total_scheduled_hours_simple }}h) <br />
+            Scheduled: {{ phase.get_total_scheduled_days }}d ({{ phase.get_total_scheduled_hours }}h) <br />
             Scoped: {{ phase.get_total_scoped_days }}d ({{ phase.get_total_scoped_hours }}h)
           </small>
         </td>
