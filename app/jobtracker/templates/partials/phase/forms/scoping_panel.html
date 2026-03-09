@@ -78,7 +78,7 @@
 <input type="hidden" id="hours_per_day" name="hours_per_day" value="{{ job.get_hours_in_day }}">
 
 <script>
-    let currentUnit = 'days';
+    let currentUnit = 'hours'; // Always start as hours (DB stores hours)
 
     function getHoursPerDay() {
         return parseFloat(document.getElementById('hours_per_day').value) || 7.5;
@@ -87,14 +87,18 @@
     function setHoursPerDay(hours) {
         document.getElementById('hours_per_day').value = hours;
         document.getElementById('hours-per-day-display').textContent = hours;
-        updateConversions();
+        if (currentUnit === 'days') {
+            // Re-convert displayed values with new rate
+            convertDisplayValues('hours', 'days');
+            updateTotals();
+        }
     }
 
     function updateTotals() {
         const inputs = document.querySelectorAll('.time-input');
         let total = 0;
 
-        // Sum all current values
+        // Sum all current displayed values
         inputs.forEach(input => {
             const value = parseFloat(input.value) || 0;
             total += value;
@@ -103,97 +107,94 @@
         const hoursPerDay = getHoursPerDay();
 
         if (currentUnit === 'days') {
-            // Currently in days mode
             const totalHours = total * hoursPerDay;
             document.getElementById('total-display').textContent = `${total.toFixed(2)} Days`;
             document.getElementById('total-hours').textContent = totalHours.toFixed(1);
         } else {
-            // Currently in hours mode
             const totalDays = total / hoursPerDay;
-            document.getElementById('total-display').textContent = `${totalDays.toFixed(1)} Days`;
+            document.getElementById('total-display').textContent = `${totalDays.toFixed(2)} Days`;
             document.getElementById('total-hours').textContent = total.toFixed(1);
-            // Update the parenthetical to show days instead
-            document.querySelector('.text-muted .ms-2').innerHTML = `(<span id="total-days">${totalDays.toFixed(2)}</span> days)`;
         }
-
     }
 
-    function toggleScopeUnit() {
-        const useDays = document.getElementById('scopeDaysChecked').checked;
-        const unit = useDays ? 'days' : 'hours';
-        
-        if (unit === currentUnit) return;
-        
+    function convertDisplayValues(fromUnit, toUnit) {
         const hoursPerDay = getHoursPerDay();
-        
-        // Convert all current values
         const inputs = document.querySelectorAll('.time-input');
         inputs.forEach(input => {
             const currentValue = parseFloat(input.value) || 0;
             if (currentValue > 0) {
-                if (unit === 'days') {
-                    // Convert hours to days using current hours per day setting
+                if (toUnit === 'days') {
                     input.value = (currentValue / hoursPerDay).toFixed(3);
                 } else {
-                    // Convert days to hours using current hours per day setting
                     input.value = (currentValue * hoursPerDay).toFixed(1);
                 }
             }
         });
-        
-        // Update UI
-        currentUnit = unit;
-        document.getElementById('unit-label').textContent = unit === 'hours' ? 'Hours' : 'Days';
-        
+    }
+
+    function toggleScopeUnit() {
+        const useDays = document.getElementById('scopeDaysChecked').checked;
+        const newUnit = useDays ? 'days' : 'hours';
+
+        if (newUnit === currentUnit) return;
+
+        // Convert displayed values
+        convertDisplayValues(currentUnit, newUnit);
+
+        // Update UI state
+        currentUnit = newUnit;
+        document.getElementById('unit-label').textContent = newUnit === 'hours' ? 'Hours' : 'Days';
+
         // Show/hide hours per day setting
         const hoursPerDayDiv = document.getElementById('hours-per-day-setting');
-        if (unit === 'days') {
-            hoursPerDayDiv.classList.remove('d-none');
-        } else {
-            hoursPerDayDiv.classList.add('d-none');
-        }
-        
-        // Update input steps and field names
+        hoursPerDayDiv.classList.toggle('d-none', newUnit !== 'days');
+
+        // Update input steps (field names stay as _hours always)
+        const inputs = document.querySelectorAll('.time-input');
         inputs.forEach(input => {
-            if (unit === 'days') {
-                // Dynamic step based on hours per day (e.g., 1/8 for 8 hours, 1/7.5 for 7.5 hours)
-                input.step = (1 / hoursPerDay).toFixed(4);
-                input.name = input.name.replace('_hours', '_days');
-            } else {
-                input.step = '0.5'; // 0.5 hour increments
-                input.name = input.name.replace('_days', '_hours');
-            }
+            input.step = newUnit === 'days' ? 'any' : '0.5';
         });
-        // Update totals after conversion
+
         updateTotals();
     }
 
-    function updateConversions() {
-        // If we're in days mode, re-convert all values with the new hours per day setting
+    function convertToHoursBeforeSubmit() {
+        // If currently displaying days, submit hours via hidden inputs
+        // so the visible day values don't flash to hours
         if (currentUnit === 'days') {
-            // Temporarily switch to hours and back to days to trigger conversion with new rate
-            currentUnit = 'hours';
-            toggleUnit('days');
-        }
-        
-        // Update step values for day inputs
-        const hoursPerDay = getHoursPerDay();
-        const inputs = document.querySelectorAll('.time-input');
-        if (currentUnit === 'days') {
-            inputs.forEach(input => {
-                input.step = (1 / hoursPerDay).toFixed(4);
+            const hoursPerDay = getHoursPerDay();
+            document.querySelectorAll('.time-input').forEach(input => {
+                const dayValue = parseFloat(input.value) || 0;
+                const hidden = document.createElement('input');
+                hidden.type = 'hidden';
+                hidden.name = input.name;
+                hidden.value = (dayValue * hoursPerDay).toFixed(2);
+                input.form.appendChild(hidden);
+                input.removeAttribute('name');
             });
         }
     }
 
     document.addEventListener('DOMContentLoaded', function() {
-        {% comment %} document.getElementById('id_delivery_hours').value = '2';
-        document.getElementById('id_reporting_hours').value = '1';
-        document.getElementById('id_mgmt_hours').value = '1.5'; {% endcomment %}
-        
         // Initialize the display with the current value
         document.getElementById('hours-per-day-display').textContent = getHoursPerDay();
+
+        // Convert initial hours values from DB to days for display
+        // (checkbox starts checked = days mode)
+        convertDisplayValues('hours', 'days');
+        currentUnit = 'days';
+
+        // Allow any decimal value in days mode
+        document.querySelectorAll('.time-input').forEach(input => {
+            input.step = 'any';
+        });
+
         updateTotals();
 
+        // Attach submit handler to convert back to hours before form submission
+        const form = document.querySelector('.time-input')?.closest('form');
+        if (form) {
+            form.addEventListener('submit', convertToHoursBeforeSubmit);
+        }
     });
 </script>

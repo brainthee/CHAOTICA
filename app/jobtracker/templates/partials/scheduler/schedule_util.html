@@ -1,7 +1,21 @@
 {% load menu %}{% load static %}{% load crispy_forms_tags %}{% load index %}
 <div class="card mb-3">
   <div class="card-header">
-    <h4>Utilisation</h4>
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h4 class="mb-0">Utilisation</h4>
+      <div class="form-check form-switch">
+        <input class="form-check-input" id="utilDaysChecked" type="checkbox" checked onchange="toggleUtilUnit()" />
+        <label class="form-check-label" for="utilDaysChecked">Show as Days</label>
+      </div>
+    </div>
+    <div id="util-hours-per-day-setting" data-bs-toggle="tooltip" data-bs-placement="bottom"
+    title="Value set at the client level">
+      <div class="alert alert-phoenix-info mb-0 px-3 py-1" role="alert">
+        Hours per day:
+        <strong>{% if phase %}{{ phase.job.get_hours_in_day }}{% else %}{{ job.get_hours_in_day }}{% endif %}</strong>
+        <span class="far fs-10 fa-circle-question text-primary position-absolute ms-1 mt-1 top-0"></span>
+      </div>
+    </div>
   </div>
   <div class="card-body p-0">
     <div class="table-responsive">
@@ -25,12 +39,20 @@
               {% if v > 0 %}
                 {% get_total_scoped_by_type phase v as totalScoped %}
                 {% get_total_scheduled_by_type phase v as totalScheduled %}
+                {% get_total_scoped_days_by_type phase v as totalScopedDays %}
+                {% get_total_scheduled_days_by_type phase v as totalScheduledDays %}
                 {% get_slot_type_usage_perc phase v as typePerc %}
                 {% if totalScheduled > 0 or totalScoped > 0 %}
                   <tr class="table-{% if typePerc > 100 %}danger{% elif typePerc == 100 and totalScoped > 0 %}success{% elif typePerc == 100 %}danger{% elif typePerc > 75 %}warning{% elif typePerc > 0.0 %}info{% else %}light{% endif %}">
                     <td class="align-middle ps-1">{{ t }}</td>
-                    <td class="align-middle">{{ totalScoped }}hrs</td>
-                    <td class="align-middle">{{ totalScheduled }}hrs</td>
+                    <td class="align-middle">
+                      <span class="util-days">{{ totalScopedDays }}d</span>
+                      <span class="util-hours d-none">{{ totalScoped }}hrs</span>
+                    </td>
+                    <td class="align-middle">
+                      <span class="util-days">{{ totalScheduledDays }}d</span>
+                      <span class="util-hours d-none">{{ totalScheduled }}hrs</span>
+                    </td>
                     <td class="align-end text-end pe-1">
                       {{ typePerc }}%
                     </td>
@@ -46,13 +68,21 @@
                 {% if v > 0 %}
                   {% get_total_scoped_by_type j_phase v as totalScoped %}
                   {% get_total_scheduled_by_type j_phase v as totalScheduled %}
+                  {% get_total_scoped_days_by_type j_phase v as totalScopedDays %}
+                  {% get_total_scheduled_days_by_type j_phase v as totalScheduledDays %}
                   {% get_slot_type_usage_perc j_phase v as typePerc %}
                   {% if totalScheduled > 0 or totalScoped > 0 %}
                     <tr class="table-{% if typePerc > 100 %}danger{% elif typePerc == 100 and totalScoped > 0 %}success{% elif typePerc == 100 %}danger{% elif typePerc > 75 %}warning{% elif typePerc > 0.0 %}info{% else %}light{% endif %}">
                       <td class="align-start ps-1">{{ j_phase.get_id }}</td>
                       <td class="align-middle">{{ t }}</td>
-                      <td class="align-middle">{{ totalScoped }}hrs</td>
-                      <td class="align-middle">{{ totalScheduled }}hrs</td>
+                      <td class="align-middle">
+                        <span class="util-days">{{ totalScopedDays }}d</span>
+                        <span class="util-hours d-none">{{ totalScoped }}hrs</span>
+                      </td>
+                      <td class="align-middle">
+                        <span class="util-days">{{ totalScheduledDays }}d</span>
+                        <span class="util-hours d-none">{{ totalScheduled }}hrs</span>
+                      </td>
                       <td class="align-end text-end pe-1">
                         {{ typePerc }}%
                       </td>
@@ -68,3 +98,12 @@
     </div>
   </div>
 </div>
+
+<script>
+function toggleUtilUnit() {
+    const useDays = document.getElementById('utilDaysChecked').checked;
+    document.querySelectorAll('.util-days').forEach(el => el.classList.toggle('d-none', !useDays));
+    document.querySelectorAll('.util-hours').forEach(el => el.classList.toggle('d-none', useDays));
+    document.getElementById('util-hours-per-day-setting').classList.toggle('d-none', !useDays);
+}
+</script>

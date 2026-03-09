@@ -1076,8 +1076,11 @@ class DeliveryTimeSlotModalForm(forms.ModelForm):
         else:
             if job:
                 phases = Phase.objects.filter(job=job)
-                self.fields["phase"].widget = s2forms.ModelSelect2Widget()
                 self.fields["phase"].queryset = phases
+                self.fields["phase"].widget = forms.Select(
+                    attrs={'class': 'form-select'},
+                    choices=[("", "---------")] + [(p.pk, str(p)) for p in phases],
+                )
 
         if self.instance.phase:
             delete_button = StrictButton(
@@ -1126,7 +1129,12 @@ class DeliveryTimeSlotModalForm(forms.ModelForm):
                 #     Field("users", css_class="extra", style="width: 100%;"),
                 # ),
                 Row(
-                    Field("phase", style="width: 100%;"),
+                    Column(
+                        Div(
+                            FloatingField("phase"),
+                            css_class="input-group input-group-dynamic",
+                        )
+                    ),
                     Field("user", style="width: 100%;"),
                 ),
                 Row(
