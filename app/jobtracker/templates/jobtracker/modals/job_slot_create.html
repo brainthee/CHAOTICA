@@ -52,6 +52,7 @@
                         location.href = data.next
                     } else {
                         calendar.refetchEvents();
+                      refreshUtilisation();
                       $("#mainModal").modal("hide");
                     }
                 } else {

@@ -47,7 +47,9 @@
       <div class="col-12 h-100">
         <div class="bg-body-secondary h-100 p-3">
           {% include 'partials/scheduler/schedule_add_user.html' %}
-          {% include 'partials/scheduler/schedule_util.html' %}
+          <div id="schedule-util-container">
+            {% include 'partials/scheduler/schedule_util.html' %}
+          </div>
           {% include 'partials/scheduler/schedule_job_status.html' %}
         </div>
       </div>

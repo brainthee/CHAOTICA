@@ -227,6 +227,11 @@ urlpatterns = [
         name="view_job_schedule_slots",
     ),
     path(
+        "job/<str:slug>/schedule/util",
+        views.view_job_schedule_util,
+        name="view_job_schedule_util",
+    ),
+    path(
         "job/<str:slug>/schedule/slot",
         views.change_job_schedule_slot,
         name="change_job_schedule_slot",
@@ -375,6 +380,11 @@ urlpatterns = [
         "job/<str:job_slug>/phase/<str:slug>/schedule/members",
         views.view_phase_schedule_members,
         name="view_phase_schedule_members",
+    ),
+    path(
+        "job/<str:job_slug>/phase/<str:slug>/schedule/util",
+        views.view_phase_schedule_util,
+        name="view_phase_schedule_util",
     ),
     path(
         "job/<str:job_slug>/phase/<str:slug>/assign/<str:field>",

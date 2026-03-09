@@ -28,6 +28,27 @@
       return new Date(d.setDate(diff));
     }
 
+    var utilUrl = "{% if phase %}{% url 'view_phase_schedule_util' phase.job.slug phase.slug %}{% elif job %}{% url 'view_job_schedule_util' job.slug %}{% endif %}";
+
+    function refreshUtilisation() {
+      if (!utilUrl) return;
+      var container = document.getElementById('schedule-util-container');
+      if (!container) return;
+      // Preserve toggle state
+      var showDays = true;
+      var checkbox = document.getElementById('utilDaysChecked');
+      if (checkbox) showDays = checkbox.checked;
+      $.get(utilUrl, function(html) {
+        container.innerHTML = html;
+        // Restore toggle state
+        var newCheckbox = document.getElementById('utilDaysChecked');
+        if (newCheckbox && !showDays) {
+          newCheckbox.checked = false;
+          toggleUtilUnit();
+        }
+      });
+    }
+
     function getResources(fetchInfo, handleData) {
       $.ajax({
         url: "{% url 'view_scheduler_members' %}" + urlParams + "&start="+fetchInfo.startStr+"&end="+fetchInfo.endStr,
@@ -344,6 +365,7 @@
                     info.revert();
                   } else {
                     calendar.refetchEvents();
+                    refreshUtilisation();
                   }
                 }
               });
@@ -386,7 +408,8 @@
                     );    
                     info.revert();
                   } else {
-                    location.reload();
+                    calendar.refetchEvents();
+                    refreshUtilisation();
                   }
                 }
               });

@@ -48,7 +48,9 @@
           data: form.serialize(),
           dataType: 'json',
           complete: function(data) {
-              location.reload();
+              calendar.refetchEvents();
+              refreshUtilisation();
+              $("#mainModal").modal("hide");
           }
       });
   };
