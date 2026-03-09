@@ -48,6 +48,16 @@ def get_total_scoped_by_type(obj, slot_type):
 
 
 @register.simple_tag
+def get_total_scoped_days_by_type(obj, slot_type):
+    return obj.get_total_scoped_days_by_type(slot_type)
+
+
+@register.simple_tag
+def get_total_scheduled_days_by_type(obj, slot_type):
+    return obj.get_total_scheduled_days_by_type(slot_type)
+
+
+@register.simple_tag
 def get_unit_role_display(role):
     return UnitRoles.CHOICES[role][1]
 

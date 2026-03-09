@@ -524,12 +524,21 @@ class Job(models.Model):
 
     def get_all_total_scoped_by_type(self):
         data = dict()
+        hours_in_day = self.get_hours_in_day()
         for state in TimeSlotDeliveryRole.CHOICES:
+            hrs = self.get_total_scoped_by_type(state[0])
             data[state[0]] = {
                 "type": state[1],
-                "hrs": self.get_total_scoped_by_type(state[0]),
+                "hrs": hrs,
+                "days": round(hrs / hours_in_day, 2) if hours_in_day else 0,
             }
         return data
+
+    def get_total_scoped_days_by_type(self, slot_type):
+        return round(self.get_total_scoped_by_type(slot_type) / self.get_hours_in_day(), 2)
+
+    def get_total_scheduled_days_by_type(self, slot_type):
+        return round(self.get_total_scheduled_by_type(slot_type) / self.get_hours_in_day(), 2)
 
     def get_total_scoped_by_type(self, slot_type):
         phases = self.phases.all()
