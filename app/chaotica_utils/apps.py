@@ -1,29 +1,19 @@
 from django.apps import AppConfig
-from django.db import connections
-from .enums import GlobalRoles
 from django.conf import settings
 
 
-def table_exists(table_name: str) -> bool:
-    return table_name in connections["default"].introspection.table_names()
-
-
-def populate_groups():
+def populate_groups(sender, **kwargs):
     from .models import Group
-    from django.contrib.auth.models import Permission
+    from .enums import GlobalRoles
 
-    if (
-        table_exists("auth_permission")
-        and Permission.objects.filter(codename="view_client").exists()
-    ):  # check DB is intact
-        # create default groups
-        for global_role in GlobalRoles.CHOICES:
-            group, created = Group.objects.get_or_create(
-                name=settings.GLOBAL_GROUP_PREFIX + global_role[1]
-            )
-            # Only run this on startup if the group doesn't exist
-            if created:
-                group.sync_global_permissions()
+    # create default groups
+    for global_role in GlobalRoles.CHOICES:
+        group, created = Group.objects.get_or_create(
+            name=settings.GLOBAL_GROUP_PREFIX + global_role[1]
+        )
+        # Only sync permissions on startup if the group doesn't exist
+        if created:
+            group.sync_global_permissions()
 
 
 class ChaoticaUtilsConfig(AppConfig):
@@ -31,4 +21,6 @@ class ChaoticaUtilsConfig(AppConfig):
     name = "chaotica_utils"
 
     def ready(self):
-        populate_groups()
+        from django.db.models.signals import post_migrate
+
+        post_migrate.connect(populate_groups, sender=self)
