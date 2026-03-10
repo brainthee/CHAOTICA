@@ -313,265 +313,140 @@ class CustomConfigForm(ConstanceForm):
             if field in settings.CONSTANCE_CONFIG:
                 self.fields[field].help_text = settings.CONSTANCE_CONFIG[field][1]
 
+        def section(title, *fields):
+            """Wrap fields in a bordered section with a heading."""
+            return Div(
+                HTML(f'<h5 class="mb-3 text-body-emphasis">{title}</h5>'),
+                *fields,
+                css_class="border rounded p-3 mb-4",
+            )
+
+        def fg(field_name, floating=True):
+            """Shorthand for a form group div."""
+            inner = FloatingField(field_name) if floating else Field(field_name)
+            return Div(inner, css_class="input-group input-group-dynamic")
+
         self.helper.layout = Layout(
+            # ── Work & Scheduling ──
             Row(
                 Column(
-                    HTML('<h4 class="mb-4">Job/Phase Settings</h4>'),
-                    Div(
-                        FloatingField("JOB_ID_START"),
-                        css_class="input-group input-group-dynamic",
+                    section("Work Settings",
+                        fg("DEFAULT_HOURS_IN_DAY"),
+                        fg("DEFAULT_WORKING_DAYS"),
                     ),
-                    Div(
-                        FloatingField("PROJECT_ID_START"),
-                        css_class="input-group input-group-dynamic",
-                    ),
-                    Div(
-                        FloatingField("PRECHECK_LATE_HOURS"),
-                        css_class="input-group input-group-dynamic",
-                    ),
-                    Div(
-                        FloatingField("TQA_LATE_HOURS"),
-                        css_class="input-group input-group-dynamic",
-                    ),
-                    Div(
-                        FloatingField("PQA_LATE_HOURS"),
-                        css_class="input-group input-group-dynamic",
-                    ),
-                    Div(
-                        FloatingField("DELIVERY_LATE_HOURS"),
-                        css_class="input-group input-group-dynamic",
+                    section("Leave",
+                        fg("LEAVE_DAYS_NOTICE"),
+                        fg("LEAVE_HISTORY_MONTHS"),
+                        fg("LEAVE_ENFORCE_LIMIT", floating=False),
                     ),
                 ),
                 Column(
-                    HTML('<h4 class="mb-4">Work Settings</h4>'),
-                    Div(
-                        FloatingField("DEFAULT_HOURS_IN_DAY"),
-                        css_class="input-group input-group-dynamic",
+                    section("Phase Deadlines",
+                        fg("DAYS_TO_TQA"),
+                        fg("DAYS_TO_PQA"),
+                        fg("DAYS_TO_DELIVERY"),
                     ),
-                    Div(
-                        FloatingField("DEFAULT_WORKING_DAYS"),
-                        css_class="input-group input-group-dynamic",
+                    section("Late Notification Intervals",
+                        fg("PRECHECK_LATE_HOURS"),
+                        fg("TQA_LATE_HOURS"),
+                        fg("PQA_LATE_HOURS"),
+                        fg("DELIVERY_LATE_HOURS"),
                     ),
-                    Div(
-                        FloatingField("LEAVE_DAYS_NOTICE"),
-                        css_class="input-group input-group-dynamic",
+                ),
+                Column(
+                    section("Job/Phase IDs",
+                        fg("JOB_ID_START"),
+                        fg("PROJECT_ID_START"),
                     ),
-                    Div(
-                        FloatingField("LEAVE_HISTORY_MONTHS"),
-                        css_class="input-group input-group-dynamic",
+                    section("Schedule Thresholds",
+                        HTML('<p class="text-body-tertiary fs-9 mb-3">Controls the colour of scheduled vs scoped indicators. Over 100% (red) and 0% (grey) are hard-coded.</p>'),
+                        fg("SCHEDULE_THRESHOLD_SUCCESS"),
+                        fg("SCHEDULE_THRESHOLD_INFO"),
                     ),
-                    Div(
-                        Field("LEAVE_ENFORCE_LIMIT"),
-                        css_class="input-group input-group-dynamic",
-                    ),
-                    HTML('<h4 class="mb-4">Schedule Thresholds</h4>'),
-                    HTML('<p class="text-body-tertiary fs-9 mb-3">Controls the colour of the scheduled vs scoped indicators. Over 100% (red/danger) and 0% (grey) are hard-coded.</p>'),
-                    Div(
-                        FloatingField("SCHEDULE_THRESHOLD_SUCCESS"),
-                        css_class="input-group input-group-dynamic",
-                    ),
-                    Div(
-                        FloatingField("SCHEDULE_THRESHOLD_INFO"),
-                        css_class="input-group input-group-dynamic",
-                    ),
-                    HTML('<h4 class="mb-4">Phase Deadlines</h4>'),
-                    Div(
-                        FloatingField("DAYS_TO_TQA"),
-                        css_class="input-group input-group-dynamic",
-                    ),
-                    Div(
-                        FloatingField("DAYS_TO_PQA"),
-                        css_class="input-group input-group-dynamic",
-                    ),
-                    Div(
-                        FloatingField("DAYS_TO_DELIVERY"),
-                        css_class="input-group input-group-dynamic",
+                    section("Reminders",
+                        fg("SKILLS_REVIEW_DAYS", floating=False),
+                        fg("PROFILE_REVIEW_DAYS", floating=False),
                     ),
                 ),
             ),
+            # ── Auth & Access ──
             Row(
                 Column(
-                    HTML('<h4 class="mb-4">Reminder Settings</h4>'),
-                    Div(
-                        Field("SKILLS_REVIEW_DAYS"),
-                        css_class="input-group input-group-dynamic",
-                    ),
-                    Div(
-                        Field("PROFILE_REVIEW_DAYS"),
-                        css_class="input-group input-group-dynamic",
+                    section("Authentication",
+                        fg("ADFS_ENABLED", floating=False),
+                        fg("ADFS_AUTO_LOGIN", floating=False),
+                        fg("LOCAL_LOGIN_ENABLED", floating=False),
+                        fg("EMAIL_ENABLED", floating=False),
                     ),
                 ),
                 Column(
-                    HTML('<h4 class="mb-4">Support Settings</h4>'),
-                    Div(
-                        Field("SUPPORT_DOC_URL"),
-                        css_class="input-group input-group-dynamic",
-                    ),
-                    Div(
-                        Field("SUPPORT_MAILBOX"),
-                        css_class="input-group input-group-dynamic",
-                    ),
-                    Div(
-                        Field("SUPPORT_ISSUES"),
-                        css_class="input-group input-group-dynamic",
+                    section("Registration & Invites",
+                        fg("REGISTRATION_ENABLED", floating=False),
+                        fg("INVITE_ENABLED", floating=False),
+                        fg("USER_INVITE_EXPIRY"),
                     ),
                 ),
                 Column(
-                    HTML('<h4 class="mb-4">Theme Settings</h4>'),
-                    Div(
-                        Field("SNOW_ENABLED"),
-                        css_class="input-group input-group-dynamic",
-                    ),
-                    Div(
-                        Field("CHRISTMAS_LIGHTS_ENABLED"),
-                        css_class="input-group input-group-dynamic",
-                    ),
-                    Div(
-                        Field("CHRISTMAS_TREE_ENABLED"),
-                        css_class="input-group input-group-dynamic",
-                    ),
-                    Div(
-                        Field("KONAMI_ENABLED"),
-                        css_class="input-group input-group-dynamic",
+                    section("Site Notice",
+                        fg("MAINTENANCE_MODE", floating=False),
+                        fg("SITE_NOTICE_ENABLED", floating=False),
+                        fg("SITE_NOTICE_COLOUR"),
+                        fg("SITE_NOTICE_MSG"),
                     ),
                 ),
             ),
+            # ── Appearance ──
             Row(
                 Column(
-                    HTML('<h4 class="mb-4">Auth Settings</h4>'),
-                    Div(
-                        Field("ADFS_ENABLED"),
-                        css_class="input-group input-group-dynamic",
-                    ),
-                    Div(
-                        Field("ADFS_AUTO_LOGIN"),
-                        css_class="input-group input-group-dynamic",
-                    ),
-                    Div(
-                        Field("LOCAL_LOGIN_ENABLED"),
-                        css_class="input-group input-group-dynamic",
-                    ),
-                    Div(
-                        Field("REGISTRATION_ENABLED"),
-                        css_class="input-group input-group-dynamic",
-                    ),
-                    Div(
-                        Field("INVITE_ENABLED"),
-                        css_class="input-group input-group-dynamic",
-                    ),
-                    Div(
-                        FloatingField("USER_INVITE_EXPIRY"),
-                        css_class="input-group input-group-dynamic",
-                    ),
-                    Div(
-                        Field("EMAIL_ENABLED"),
-                        css_class="input-group input-group-dynamic",
+                    section("Schedule Colours",
+                        fg("SCHEDULE_COLOR_AVAILABLE", floating=False),
+                        fg("SCHEDULE_COLOR_UNAVAILABLE", floating=False),
+                        fg("SCHEDULE_COLOR_INTERNAL", floating=False),
+                        fg("SCHEDULE_COLOR_PROJECT", floating=False),
+                        fg("SCHEDULE_COLOR_COMMENT", floating=False),
                     ),
                 ),
                 Column(
-                    HTML('<h4 class="mb-4">Site Notice</h4>'),
-                    Div(
-                        Field("MAINTENANCE_MODE"),
-                        css_class="input-group input-group-dynamic",
+                    section("Phase Colours",
+                        fg("SCHEDULE_COLOR_PHASE", floating=False),
+                        fg("SCHEDULE_COLOR_PHASE_CONFIRMED", floating=False),
+                        fg("SCHEDULE_COLOR_PHASE_AWAY", floating=False),
+                        fg("SCHEDULE_COLOR_PHASE_CONFIRMED_AWAY", floating=False),
                     ),
-                    Div(
-                        Field("SITE_NOTICE_ENABLED"),
-                        css_class="input-group input-group-dynamic",
-                    ),
-                    Div(
-                        FloatingField("SITE_NOTICE_COLOUR"),
-                        css_class="input-group input-group-dynamic",
-                    ),
-                    Div(
-                        FloatingField("SITE_NOTICE_MSG"),
-                        css_class="input-group input-group-dynamic",
+                ),
+                Column(
+                    section("Theme",
+                        fg("SNOW_ENABLED", floating=False),
+                        fg("CHRISTMAS_LIGHTS_ENABLED", floating=False),
+                        fg("CHRISTMAS_TREE_ENABLED", floating=False),
+                        fg("KONAMI_ENABLED", floating=False),
                     ),
                 ),
             ),
-            Row(
-                HTML('<h4 class="mb-4">Schedule Colours</h4>'),
-                Column(
-                    Div(
-                        Field("SCHEDULE_COLOR_AVAILABLE"),
-                        css_class="input-group input-group-dynamic",
-                    ),
-                    Div(
-                        Field("SCHEDULE_COLOR_UNAVAILABLE"),
-                        css_class="input-group input-group-dynamic",
-                    ),
-                    Div(
-                        Field("SCHEDULE_COLOR_INTERNAL"),
-                        css_class="input-group input-group-dynamic",
-                    ),
-                    Div(
-                        Field("SCHEDULE_COLOR_PROJECT"),
-                        css_class="input-group input-group-dynamic",
-                    ),
-                ),
-                Column(
-                    Div(
-                        Field("SCHEDULE_COLOR_PHASE"),
-                        css_class="input-group input-group-dynamic",
-                    ),
-                    Div(
-                        Field("SCHEDULE_COLOR_PHASE_CONFIRMED"),
-                        css_class="input-group input-group-dynamic",
-                    ),
-                    Div(
-                        Field("SCHEDULE_COLOR_PHASE_AWAY"),
-                        css_class="input-group input-group-dynamic",
-                    ),
-                    Div(
-                        Field("SCHEDULE_COLOR_PHASE_CONFIRMED_AWAY"),
-                        css_class="input-group input-group-dynamic",
-                    ),
-                    Div(
-                        Field("SCHEDULE_COLOR_COMMENT"),
-                        css_class="input-group input-group-dynamic",
-                    ),
-                ),
-            ),
+            # ── Integrations & Notifications ──
             Row(
                 Column(
-                    HTML('<h4 class="mb-4">Resource Manager Settings</h4>'),
-                    Div(
-                        Field("RM_SYNC_ENABLED"),
-                        css_class="input-group input-group-dynamic",
-                    ),
-                    Div(
-                        Field("RM_SYNC_API_SITE"),
-                        css_class="input-group input-group-dynamic",
-                    ),
-                    Div(
-                        Field("RM_SYNC_API_TOKEN"),
-                        css_class="input-group input-group-dynamic",
-                    ),
-                    Div(
-                        Field("RM_SYNC_STALE_TIMEOUT"),
-                        css_class="input-group input-group-dynamic",
-                    ),
-                    Div(
-                        Field("RM_WARNING_MSG"),
-                        css_class="input-group input-group-dynamic",
+                    section("Resource Manager",
+                        fg("RM_SYNC_ENABLED", floating=False),
+                        fg("RM_SYNC_API_SITE", floating=False),
+                        fg("RM_SYNC_API_TOKEN", floating=False),
+                        fg("RM_SYNC_STALE_TIMEOUT", floating=False),
+                        fg("RM_WARNING_MSG", floating=False),
                     ),
                 ),
                 Column(
-                    HTML('<h4 class="mb-4">Additional Notification Recipients</h4>'),
-                    Div(
-                        Field("NOTIFICATION_POOL_SCOPING_EMAIL_RCPTS"),
-                        css_class="input-group input-group-dynamic",
+                    section("Notification Recipients",
+                        fg("NOTIFICATION_POOL_SCOPING_EMAIL_RCPTS", floating=False),
+                        fg("NOTIFICATION_POOL_SCHEDULING_EMAIL_RCPTS", floating=False),
+                        fg("NOTIFICATION_POOL_TQA_EMAIL_RCPTS", floating=False),
+                        fg("NOTIFICATION_POOL_PQA_EMAIL_RCPTS", floating=False),
                     ),
-                    Div(
-                        Field("NOTIFICATION_POOL_SCHEDULING_EMAIL_RCPTS"),
-                        css_class="input-group input-group-dynamic",
-                    ),
-                    Div(
-                        Field("NOTIFICATION_POOL_TQA_EMAIL_RCPTS"),
-                        css_class="input-group input-group-dynamic",
-                    ),
-                    Div(
-                        Field("NOTIFICATION_POOL_PQA_EMAIL_RCPTS"),
-                        css_class="input-group input-group-dynamic",
+                ),
+                Column(
+                    section("Support Links",
+                        fg("SUPPORT_DOC_URL", floating=False),
+                        fg("SUPPORT_MAILBOX", floating=False),
+                        fg("SUPPORT_ISSUES", floating=False),
                     ),
                 ),
             ),

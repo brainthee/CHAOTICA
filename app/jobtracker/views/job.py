@@ -573,6 +573,13 @@ def view_job_schedule_util(request, slug):
     return render(request, "partials/scheduler/schedule_util.html", context)
 
 
+@job_permission_required_or_403("jobtracker.view_job_schedule", (Job, "slug", "slug"))
+def view_job_schedule_phase_status(request, slug):
+    job = get_object_or_404(Job, slug=slug)
+    context = {"job": job}
+    return render(request, "partials/scheduler/schedule_job_status.html", context)
+
+
 class JobDeleteView(UnitPermissionRequiredMixin, JobBaseView, DeleteView):
     permission_required = "jobtracker.can_delete_job"
     return_403 = True

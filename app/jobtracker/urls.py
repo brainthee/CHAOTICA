@@ -232,6 +232,11 @@ urlpatterns = [
         name="view_job_schedule_util",
     ),
     path(
+        "job/<str:slug>/schedule/phase-status",
+        views.view_job_schedule_phase_status,
+        name="view_job_schedule_phase_status",
+    ),
+    path(
         "job/<str:slug>/schedule/slot",
         views.change_job_schedule_slot,
         name="change_job_schedule_slot",
