@@ -10,6 +10,63 @@ plugins:
         python:
           options:
             docstring_style: sphinx
+nav:
+  - Home: index.md
+  - Quickstart: quickstart.md
+  - Definitions: definitions.md
+  - Installation:
+    - Environment Variables: installation/vars.md
+    - Deployment:
+      - Docker: installation/deployment/docker.md
+      - Kubernetes: installation/deployment/k8.md
+      - AWS Elastic Beanstalk: installation/deployment/aws_beanstalk.md
+  - User Guide:
+    - Jobs:
+      - Managing Jobs: user_guide/Jobs/managing_jobs.md
+      - Lifecycle: user_guide/Jobs/lifecycle.md
+      - Phases:
+        - Managing Phases: user_guide/Jobs/phases/managing_phases.md
+        - Phase Lifecycle: user_guide/Jobs/phases/lifecycle.md
+    - Clients:
+      - Adding Clients: user_guide/clients/adding_clients.md
+      - Managing Contacts: user_guide/clients/managing_contacts.md
+    - Team & Users:
+      - User Management: user_guide/team/user_management.md
+    - Scheduling:
+      - Overview: user_guide/scheduling/overview.md
+      - Filtering: user_guide/scheduling/filtering.md
+    - Operations:
+      - Managing Leave: user_guide/operations/managing_leave.md
+    - Workflows:
+      - Quality Assurance: user_guide/workflows/quality_assurance.md
+      - Assessment Process: user_guide/workflows/assessment_process.md
+    - Reporting:
+      - Overview: user_guide/reporting/overview.md
+      - Custom Reports: user_guide/reporting/custom_reports.md
+    - Notifications:
+      - Managing Notifications: user_guide/notifications/overview.md
+  - Integration:
+    - Azure AD/ADFS: integration/azure_ad.md
+    - Email Systems: integration/email.md
+    - External APIs: integration/apis.md
+  - Administration:
+    - Application Settings: administration/chaotica_settings.md
+    - Permissions: administration/permissions.md
+    - System Management: administration/system_management.md
+  - Development:
+    - Getting Started: development/getting_started.md
+    - API Documentation: development/api_documentation.md
+    - Testing: development/testing.md
+  - Security:
+    - Access Control: security/access_control.md
+    - Data Protection: security/data_protection.md
+  - Troubleshooting:
+    - Common Issues: troubleshooting/common_issues.md
+    - Performance: troubleshooting/performance.md
+  - Reference:
+    - Configuration: reference/configuration.md
+    - Database Schema: reference/database_schema.md
+    - Changelog: reference/changelog.md
 markdown_extensions:
   - pymdownx.extra:
       pymdownx.superfences:
