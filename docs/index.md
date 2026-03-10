@@ -6,7 +6,7 @@ CHAOTICA stands for: **C**entralised **H**ub for **A**ssigning **O**perational *
 
     This project is under active development.
 
-Check out the [usage](usage.md) section for further information, including how to [install](usage.md#installation) the project.
+Check out the [Quickstart](quickstart.md) guide for getting started quickly, or browse the full documentation using the navigation menu.
 
 ## What is CHAOTICA?
 
