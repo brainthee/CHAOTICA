@@ -12,20 +12,25 @@
         <thead>
           <tr>
             <th class="sort border-top ps-1" data-sort="name">Phase</th>
-            <th class="sort border-top" data-sort="email">Status</th>
+            <th class="sort border-top" data-sort="scheduled">Scheduled</th>
+            <th class="sort border-top" data-sort="status">Status</th>
           </tr>
         </thead>
         <tbody class="list">
-          <!-- Do this for every phase -->
           {% for j_phase in job.phases.all %}
+            {% with perc=j_phase.get_total_scheduled_perc sched_days=j_phase.get_total_scheduled_days scoped_days=j_phase.get_total_scoped_days sched_hrs=j_phase.get_total_scheduled_hours scoped_hrs=j_phase.get_total_scoped_hours t_success=config.SCHEDULE_THRESHOLD_SUCCESS t_info=config.SCHEDULE_THRESHOLD_INFO %}
             <tr>
               <td class="phase">
-                <a href="{{ j_phase.get_absolute_url }}">{{ j_phase }}</a>
+                <a href="{{ j_phase.get_absolute_url }}">{{ j_phase.phase_id }}: {{ j_phase.title }}</a>
+              </td>
+              <td class="text-nowrap">
+                <span class="badge badge-phoenix badge-phoenix-{% if perc > 100 %}danger{% elif perc >= t_success %}success{% elif perc >= t_info %}info{% elif perc > 0 %}warning{% else %}secondary{% endif %} fs-10" data-bs-toggle="tooltip" data-bs-placement="left" title="Scheduled: {{ sched_days }}d ({{ sched_hrs }}h) / Scoped: {{ scoped_days }}d ({{ scoped_hrs }}h)">{{ perc }}%</span>
               </td>
               <td>
                 {% include 'partials/phase/status_badge.html' with phase=j_phase %}
               </td>
             </tr>
+            {% endwith %}
           {% endfor %}
         </tbody>
       </table>

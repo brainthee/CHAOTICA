@@ -364,6 +364,16 @@ class CustomConfigForm(ConstanceForm):
                         Field("LEAVE_ENFORCE_LIMIT"),
                         css_class="input-group input-group-dynamic",
                     ),
+                    HTML('<h4 class="mb-4">Schedule Thresholds</h4>'),
+                    HTML('<p class="text-body-tertiary fs-9 mb-3">Controls the colour of the scheduled vs scoped indicators. Over 100% (red/danger) and 0% (grey) are hard-coded.</p>'),
+                    Div(
+                        FloatingField("SCHEDULE_THRESHOLD_SUCCESS"),
+                        css_class="input-group input-group-dynamic",
+                    ),
+                    Div(
+                        FloatingField("SCHEDULE_THRESHOLD_INFO"),
+                        css_class="input-group input-group-dynamic",
+                    ),
                     HTML('<h4 class="mb-4">Phase Deadlines</h4>'),
                     Div(
                         FloatingField("DAYS_TO_TQA"),

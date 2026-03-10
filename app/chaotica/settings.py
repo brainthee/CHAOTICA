@@ -177,6 +177,9 @@ CONSTANCE_CONFIG = {
     ),
     # Work settings
     "DEFAULT_HOURS_IN_DAY": (7.5, "Default hours in a work day"),
+    # Schedule thresholds (% of scoped time scheduled)
+    "SCHEDULE_THRESHOLD_SUCCESS": (90, "Minimum % scheduled to show as green (fully scheduled)"),
+    "SCHEDULE_THRESHOLD_INFO": (50, "Minimum % scheduled to show as blue (partially scheduled)"),
     "DEFAULT_WORKING_DAYS": (
         "[1, 2, 3, 4, 5]",
         "An int array with the numbers equaling the day of the week. Sunday == 0, Monday == 1 etc",
