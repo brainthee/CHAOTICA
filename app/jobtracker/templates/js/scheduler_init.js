@@ -29,6 +29,7 @@
     }
 
     var utilUrl = "{% if phase %}{% url 'view_phase_schedule_util' phase.job.slug phase.slug %}{% elif job %}{% url 'view_job_schedule_util' job.slug %}{% endif %}";
+    var phaseStatusUrl = "{% if job %}{% url 'view_job_schedule_phase_status' job.slug %}{% endif %}";
 
     function refreshUtilisation() {
       if (!utilUrl) return;
@@ -46,6 +47,19 @@
           newCheckbox.checked = false;
           toggleUtilUnit();
         }
+      });
+    }
+
+    function refreshPhaseStatus() {
+      if (!phaseStatusUrl) return;
+      var container = document.getElementById('schedule-phase-status-container');
+      if (!container) return;
+      $.get(phaseStatusUrl, function(html) {
+        container.innerHTML = html;
+        // Re-init tooltips in the refreshed content
+        container.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el) {
+          new bootstrap.Tooltip(el);
+        });
       });
     }
 
@@ -366,6 +380,7 @@
                   } else {
                     calendar.refetchEvents();
                     refreshUtilisation();
+                    refreshPhaseStatus();
                   }
                 }
               });
@@ -410,6 +425,7 @@
                   } else {
                     calendar.refetchEvents();
                     refreshUtilisation();
+                    refreshPhaseStatus();
                   }
                 }
               });

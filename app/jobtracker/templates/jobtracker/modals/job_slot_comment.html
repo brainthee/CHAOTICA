@@ -54,6 +54,7 @@
           complete: function(data) {
               calendar.refetchEvents();
               refreshUtilisation();
+              refreshPhaseStatus();
               $("#mainModal").modal("hide");
           }
       });
@@ -75,6 +76,7 @@
                 } else {
                     calendar.refetchEvents();
                   refreshUtilisation();
+                  refreshPhaseStatus();
                   $("#mainModal").modal("hide");
                 }
             } else {

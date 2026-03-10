@@ -43,7 +43,7 @@
                 {% get_total_scheduled_days_by_type phase v as totalScheduledDays %}
                 {% get_slot_type_usage_perc phase v as typePerc %}
                 {% if totalScheduled > 0 or totalScoped > 0 %}
-                  <tr class="table-{% if typePerc > 100 %}danger{% elif typePerc == 100 and totalScoped > 0 %}success{% elif typePerc == 100 %}danger{% elif typePerc > 75 %}warning{% elif typePerc > 0.0 %}info{% else %}light{% endif %}">
+                  <tr>
                     <td class="align-middle ps-1">{{ t }}</td>
                     <td class="align-middle">
                       <span class="util-days">{{ totalScopedDays }}d</span>
@@ -54,12 +54,30 @@
                       <span class="util-hours d-none">{{ totalScheduled }}hrs</span>
                     </td>
                     <td class="align-end text-end pe-1">
-                      {{ typePerc }}%
+                      <span class="badge badge-phoenix badge-phoenix-{% if typePerc > 100 %}danger{% elif typePerc == 100 and totalScoped > 0 %}success{% elif typePerc == 100 %}danger{% elif typePerc > 75 %}warning{% elif typePerc > 0.0 %}info{% else %}secondary{% endif %} fs-10">{{ typePerc }}%</span>
                     </td>
                   </tr>
                 {% endif %}
               {% endif %}
             {% endfor %}
+            {% with phaseScopedHrs=phase.get_total_scoped_hours phaseSchedHrs=phase.get_total_scheduled_hours phaseScopedDays=phase.get_total_scoped_days phaseSchedDays=phase.get_total_scheduled_days phasePerc=phase.get_total_scheduled_perc %}
+            {% if phaseScopedHrs > 0 or phaseSchedHrs > 0 %}
+              <tr class="fw-bold border-top border-translucent">
+                <td class="align-middle ps-1">Total</td>
+                <td class="align-middle">
+                  <span class="util-days">{{ phaseScopedDays }}d</span>
+                  <span class="util-hours d-none">{{ phaseScopedHrs }}hrs</span>
+                </td>
+                <td class="align-middle">
+                  <span class="util-days">{{ phaseSchedDays }}d</span>
+                  <span class="util-hours d-none">{{ phaseSchedHrs }}hrs</span>
+                </td>
+                <td class="align-end text-end pe-1">
+                  <span class="badge badge-phoenix badge-phoenix-{% if phasePerc > 100 %}danger{% elif phasePerc == 100 and phaseScopedHrs > 0 %}success{% elif phasePerc == 100 %}danger{% elif phasePerc > 75 %}warning{% elif phasePerc > 0.0 %}info{% else %}secondary{% endif %} fs-10">{{ phasePerc }}%</span>
+                </td>
+              </tr>
+            {% endif %}
+            {% endwith %}
           {% else %}
             <!-- Do this for every phase -->
             {% for j_phase in job.phases.all %}
@@ -72,7 +90,7 @@
                   {% get_total_scheduled_days_by_type j_phase v as totalScheduledDays %}
                   {% get_slot_type_usage_perc j_phase v as typePerc %}
                   {% if totalScheduled > 0 or totalScoped > 0 %}
-                    <tr class="table-{% if typePerc > 100 %}danger{% elif typePerc == 100 and totalScoped > 0 %}success{% elif typePerc == 100 %}danger{% elif typePerc > 75 %}warning{% elif typePerc > 0.0 %}info{% else %}light{% endif %}">
+                    <tr>
                       <td class="align-start ps-1">{{ j_phase.get_id }}</td>
                       <td class="align-middle">{{ t }}</td>
                       <td class="align-middle">
@@ -84,12 +102,31 @@
                         <span class="util-hours d-none">{{ totalScheduled }}hrs</span>
                       </td>
                       <td class="align-end text-end pe-1">
-                        {{ typePerc }}%
+                        <span class="badge badge-phoenix badge-phoenix-{% if typePerc > 100 %}danger{% elif typePerc == 100 and totalScoped > 0 %}success{% elif typePerc == 100 %}danger{% elif typePerc > 75 %}warning{% elif typePerc > 0.0 %}info{% else %}secondary{% endif %} fs-10">{{ typePerc }}%</span>
                       </td>
                     </tr>
                   {% endif %}
                 {% endif %}
               {% endfor %}
+              {% with phaseScopedHrs=j_phase.get_total_scoped_hours phaseSchedHrs=j_phase.get_total_scheduled_hours phaseScopedDays=j_phase.get_total_scoped_days phaseSchedDays=j_phase.get_total_scheduled_days phasePerc=j_phase.get_total_scheduled_perc %}
+              {% if phaseScopedHrs > 0 or phaseSchedHrs > 0 %}
+                <tr class="fw-bold border-bottom border-translucent">
+                  <td class="align-start ps-1"></td>
+                  <td class="align-middle">Total</td>
+                  <td class="align-middle">
+                    <span class="util-days">{{ phaseScopedDays }}d</span>
+                    <span class="util-hours d-none">{{ phaseScopedHrs }}hrs</span>
+                  </td>
+                  <td class="align-middle">
+                    <span class="util-days">{{ phaseSchedDays }}d</span>
+                    <span class="util-hours d-none">{{ phaseSchedHrs }}hrs</span>
+                  </td>
+                  <td class="align-end text-end pe-1">
+                    <span class="badge badge-phoenix badge-phoenix-{% if phasePerc > 100 %}danger{% elif phasePerc == 100 and phaseScopedHrs > 0 %}success{% elif phasePerc == 100 %}danger{% elif phasePerc > 75 %}warning{% elif phasePerc > 0.0 %}info{% else %}secondary{% endif %} fs-10">{{ phasePerc }}%</span>
+                  </td>
+                </tr>
+              {% endif %}
+              {% endwith %}
 
             {% endfor %}
           {% endif %}
