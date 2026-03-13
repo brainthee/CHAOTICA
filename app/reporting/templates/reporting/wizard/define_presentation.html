@@ -4,14 +4,10 @@
 {% block title %}Define Presentation - Report Wizard{% endblock %}
 
 {% block wizard_step_content %}
-<div class="card">
-  <div class="card-header">
-    <h4 class="card-title">Define Presentation</h4>
-    <p class="card-subtitle">Choose how your report will be presented and exported.</p>
-  </div>
-  
-  <div class="card-body">
-    <form method="post" id="wizard-form">
+<h3 class="mb-2">Step 5: Define Presentation</h3>
+<p class="mb-4">Choose how your report will be presented and exported.</p>
+
+<form method="post" id="wizard-form">
       {% csrf_token %}
       
       <div class="row mb-4">
@@ -39,7 +35,7 @@
         </div>
         
         <div class="col-md-6">
-          <div class="card bg-light">
+          <div class="card">
             <div class="card-body">
               <h5 class="card-title">Format Description</h5>
               <div id="format-description">
@@ -182,8 +178,6 @@
         </div>
       </div>
     </form>
-  </div>
-</div>
 {% endblock %}
 
 {% block extra_js %}

@@ -215,8 +215,10 @@ def update_report_field(request, uuid):
     
     try:
         report = get_object_or_404(Report, uuid=uuid)
+        if not report.can_edit(request.user):
+            return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
         field = get_object_or_404(ReportField, id=field_id, report=report)
-        
+
         # Update properties
         if 'custom_label' in request.POST:
             field.custom_label = request.POST.get('custom_label')
@@ -251,6 +253,8 @@ def reorder_report_fields(request, uuid):
     """
     try:
         report = get_object_or_404(Report, uuid=uuid)
+        if not report.can_edit(request.user):
+            return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
         field_order = json.loads(request.POST.get('field_order', '[]'))
         
         if not field_order:
@@ -286,7 +290,9 @@ def preview_report_data(request, uuid):
     """
     try:
         report = get_object_or_404(Report, uuid=uuid)
-        
+        if not report.can_view(request.user):
+            return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
+
         # Set a limit for the preview
         limit = int(request.GET.get('limit', 10))
         

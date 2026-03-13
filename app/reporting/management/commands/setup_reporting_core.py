@@ -78,7 +78,8 @@ class Command(BaseCommand):
                 'django_field_type': 'IntegerField',
                 'default_format': None,
                 'can_filter': True,
-                'can_sort': True
+                'can_sort': True,
+                'can_aggregate': True,
             },
             {
                 'name': 'Decimal',
@@ -86,7 +87,8 @@ class Command(BaseCommand):
                 'django_field_type': 'DecimalField',
                 'default_format': '0.00',
                 'can_filter': True,
-                'can_sort': True
+                'can_sort': True,
+                'can_aggregate': True,
             },
             {
                 'name': 'Boolean',
@@ -163,17 +165,18 @@ class Command(BaseCommand):
         ]
         
         for ft_data in field_types:
-            field_type, created = FieldType.objects.get_or_create(
+            field_type, created = FieldType.objects.update_or_create(
                 name=ft_data['name'],
                 defaults={
                     'description': ft_data['description'],
                     'django_field_type': ft_data['django_field_type'],
                     'default_format': ft_data['default_format'],
                     'can_filter': ft_data['can_filter'],
-                    'can_sort': ft_data['can_sort']
+                    'can_sort': ft_data['can_sort'],
+                    'can_aggregate': ft_data.get('can_aggregate', False),
                 }
             )
-            
+
             # Add field presentations for this field type
             if created:
                 self.setup_field_presentations(field_type)

@@ -79,7 +79,7 @@ class ExportService:
         # Write the data rows
         row_num = 1
         for row in data:
-            for col_num, cell_value in enumerate(row.values()):
+            for col_num, cell_value in zip(range(len(field_names)), row.values()):
                 worksheet.write(row_num, col_num, cell_value)
             row_num += 1
         
@@ -291,17 +291,18 @@ class ExportService:
         # Determine column widths
         col_widths = [len(name) for name in field_names]
         for row in data:
-            for i, value in enumerate(row.values()):
+            for i, (name, value) in enumerate(zip(field_names, row.values())):
                 col_widths[i] = max(col_widths[i], len(str(value)))
-        
+
         # Write headers
         header_row = ' | '.join(name.ljust(col_widths[i]) for i, name in enumerate(field_names))
         buffer.write(header_row + '\n')
         buffer.write('-' * len(header_row) + '\n')
-        
+
         # Write data rows
         for row in data:
-            row_str = ' | '.join(str(value).ljust(col_widths[i]) for i, value in enumerate(row.values()))
+            values = list(row.values())[:len(field_names)]
+            row_str = ' | '.join(str(value).ljust(col_widths[i]) for i, value in enumerate(values))
             buffer.write(row_str + '\n')
         
         # Create response

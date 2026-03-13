@@ -38,7 +38,7 @@
                         {% for choice in field.choices %}
                           <label class="list-group-item list-group-item-action">
                             <input type="checkbox" name="{{ field_name }}" value="{{ choice.0 }}" id="id_{{ field_name }}_{{ forloop.counter0 }}" class="form-check-input me-1"
-                              {% if choice.0 in field.initial %}checked{% endif %}>
+                              {% if field.initial and choice.0 in field.initial %}checked{% endif %}>
                             {{ choice.1 }}
                           </label>
                         {% empty %}
@@ -75,8 +75,8 @@
             <!-- Selected fields will be inserted here via JavaScript -->
           </ul>
         </div>
-        <div class="card-footer bg-light">
-          <small class="text-muted"><i class="fas fa-info-circle"></i> Drag and drop to reorder fields. Click the customize button to edit display options.</small>
+        <div class="card-footer">
+          <small class="text-body-secondary"><i class="fas fa-info-circle"></i> Drag and drop to reorder fields. Click the customize button to edit display options.</small>
         </div>
       </div>
     </div>
@@ -93,17 +93,31 @@
         <div class="modal-body">
           <form id="field-customize-form">
             <input type="hidden" id="customize-field-id">
-            
+            <input type="hidden" id="customize-field-can-aggregate" value="0">
+
             <div class="mb-3">
               <label for="customize-field-label" class="form-label">Display Label</label>
               <input type="text" class="form-control" id="customize-field-label" placeholder="Leave blank to use default">
               <div class="form-text">Custom label to display instead of the default field name.</div>
             </div>
-            
+
             <div class="mb-3">
               <label for="customize-field-format" class="form-label">Display Format</label>
               <input type="text" class="form-control" id="customize-field-format" placeholder="Leave blank to use default">
               <div class="form-text">Format string for this field (e.g., date format, number format).</div>
+            </div>
+
+            <div class="mb-3">
+              <label for="customize-field-aggregation" class="form-label">Aggregation</label>
+              <select class="form-select" id="customize-field-aggregation">
+                <option value="">None</option>
+                <option value="count">Count</option>
+                <option value="sum" class="agg-numeric">Sum</option>
+                <option value="avg" class="agg-numeric">Average</option>
+                <option value="min" class="agg-numeric">Min</option>
+                <option value="max" class="agg-numeric">Max</option>
+              </select>
+              <div class="form-text">Apply an aggregation function. When any field is aggregated, non-aggregated fields become group-by columns.</div>
             </div>
           </form>
         </div>
@@ -121,6 +135,15 @@
 {{ block.super }}
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
 <script>
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.appendChild(document.createTextNode(str));
+    return div.innerHTML;
+  }
+
+  // Field metadata: maps field ID to whether it supports numeric aggregation
+  const fieldCanAggregate = {{ field_aggregation_map|safe }};
+
   $(document).ready(function() {
     // Initialize the list of selected fields
     updateSelectedFieldsList();
@@ -181,11 +204,26 @@
       const fieldId = $(this).data('field-id');
       const currentLabel = $(this).data('current-label') || '';
       const currentFormat = $(this).data('current-format') || '';
-      
+      const currentAggregation = $(this).data('current-aggregation') || '';
+      const canAggregate = $(this).data('can-aggregate') || false;
+
       $('#customize-field-id').val(fieldId);
       $('#customize-field-label').val(currentLabel);
       $('#customize-field-format').val(currentFormat);
-      
+      $('#customize-field-aggregation').val(currentAggregation);
+      $('#customize-field-can-aggregate').val(canAggregate ? '1' : '0');
+
+      // Show/hide numeric aggregation options based on field type
+      if (canAggregate) {
+        $('#customize-field-aggregation .agg-numeric').show();
+      } else {
+        $('#customize-field-aggregation .agg-numeric').hide();
+        // If current value is a numeric agg but field doesn't support it, reset
+        if (['sum', 'avg', 'min', 'max'].includes(currentAggregation)) {
+          $('#customize-field-aggregation').val('');
+        }
+      }
+
       const modal = new bootstrap.Modal(document.getElementById('fieldCustomizeModal'));
       modal.show();
     });
@@ -195,7 +233,8 @@
       const fieldId = $('#customize-field-id').val();
       const customLabel = $('#customize-field-label').val();
       const displayFormat = $('#customize-field-format').val();
-      
+      const aggregationFunction = $('#customize-field-aggregation').val();
+
       // Send AJAX request to save the customization
       $.ajax({
         url: "{% url 'reporting:wizard_field_customize' %}",
@@ -204,16 +243,20 @@
           'field_id': fieldId,
           'custom_label': customLabel,
           'display_format': displayFormat,
+          'aggregation_function': aggregationFunction,
           'csrfmiddlewaretoken': $('input[name="csrfmiddlewaretoken"]').val()
         },
         success: function(response) {
           if (response.success) {
             // Update the display in the selected fields list
-            updateCustomizedField(fieldId, customLabel, displayFormat);
-            
+            updateCustomizedField(fieldId, customLabel, displayFormat, aggregationFunction);
+
             // Close the modal
             bootstrap.Modal.getInstance(document.getElementById('fieldCustomizeModal')).hide();
           }
+        },
+        error: function() {
+          alert('Failed to save field customization. Please try again.');
         }
       });
     });
@@ -245,6 +288,7 @@
         
         // Add each field to the list
         selectedFields.forEach(function(field) {
+          const canAgg = fieldCanAggregate[String(field.id)] || false;
           selectedFieldsList.append(`
             <li class="list-group-item d-flex justify-content-between align-items-center" data-field-id="${field.id}">
               <div class="field-info">
@@ -252,7 +296,7 @@
                 <span class="field-name">${field.name}</span>
               </div>
               <div class="field-actions">
-                <button type="button" class="btn btn-sm btn-outline-primary customize-field" data-field-id="${field.id}">
+                <button type="button" class="btn btn-sm btn-outline-primary customize-field" data-field-id="${field.id}" data-can-aggregate="${canAgg}">
                   <i class="fas fa-cog"></i>
                 </button>
               </div>
@@ -281,29 +325,33 @@
         data: {
           'field_order': JSON.stringify(fieldOrder),
           'csrfmiddlewaretoken': $('input[name="csrfmiddlewaretoken"]').val()
+        },
+        error: function() {
+          console.error('Failed to save field order.');
         }
       });
     }
     
     // Function to update a customized field in the UI
-    function updateCustomizedField(fieldId, customLabel, displayFormat) {
+    function updateCustomizedField(fieldId, customLabel, displayFormat, aggregationFunction) {
       const fieldItem = $(`#selected-fields-list li[data-field-id="${fieldId}"]`);
       const customizeButton = fieldItem.find('.customize-field');
-      
+
       // Update the button's data attributes
       customizeButton.data('current-label', customLabel);
       customizeButton.data('current-format', displayFormat);
-      
+      customizeButton.data('current-aggregation', aggregationFunction || '');
+
       // Update the display if there's a custom label
       if (customLabel) {
-        const originalName = fieldItem.find('.field-name').data('original-name') || 
+        const originalName = fieldItem.find('.field-name').data('original-name') ||
                              fieldItem.find('.field-name').text();
-        
+
         if (!fieldItem.find('.field-name').data('original-name')) {
           fieldItem.find('.field-name').data('original-name', originalName);
         }
-        
-        fieldItem.find('.field-name').html(`<strong>${customLabel}</strong> <small class="text-muted">(${originalName})</small>`);
+
+        fieldItem.find('.field-name').html(`<strong>${escapeHtml(customLabel)}</strong> <small class="text-muted">(${escapeHtml(originalName)})</small>`);
       } else {
         // Restore original name if custom label is removed
         const originalName = fieldItem.find('.field-name').data('original-name');
@@ -311,7 +359,7 @@
           fieldItem.find('.field-name').text(originalName);
         }
       }
-      
+
       // Add a format indicator if there's a display format
       if (displayFormat) {
         if (!fieldItem.find('.format-indicator').length) {
@@ -325,6 +373,22 @@
         }
       } else {
         fieldItem.find('.format-indicator').remove();
+      }
+
+      // Add an aggregation indicator
+      const aggLabels = {'count': 'Count', 'sum': 'Sum', 'avg': 'Avg', 'min': 'Min', 'max': 'Max'};
+      if (aggregationFunction && aggLabels[aggregationFunction]) {
+        if (!fieldItem.find('.agg-indicator').length) {
+          fieldItem.find('.field-info').append(`
+            <span class="agg-indicator badge bg-warning text-dark ms-2" title="Aggregation: ${aggLabels[aggregationFunction]}">
+              <i class="fas fa-calculator"></i> ${aggLabels[aggregationFunction]}
+            </span>
+          `);
+        } else {
+          fieldItem.find('.agg-indicator').attr('title', `Aggregation: ${aggLabels[aggregationFunction]}`).html(`<i class="fas fa-calculator"></i> ${aggLabels[aggregationFunction]}`);
+        }
+      } else {
+        fieldItem.find('.agg-indicator').remove();
       }
     }
   });

@@ -65,6 +65,7 @@ def wizard_start(request, report_uuid=None):
                 'position': field.position,
                 'custom_label': field.custom_label,
                 'display_format': field.display_format,
+                'aggregation_function': field.aggregation_function or '',
             })
         
         wizard_data['fields'] = {
@@ -77,7 +78,9 @@ def wizard_start(request, report_uuid=None):
             filter_data.append({
                 'id': filter_obj.id,
                 'field_id': filter_obj.data_field.id,
+                'field_text': filter_obj.data_field.display_name,
                 'filter_type_id': filter_obj.filter_type.id,
+                'filter_type_text': filter_obj.filter_type.display_label,
                 'value': filter_obj.value,
                 'prompt_at_runtime': filter_obj.prompt_at_runtime,
                 'prompt_text': filter_obj.prompt_text,
@@ -189,22 +192,23 @@ def wizard_select_fields(request):
     # Group selected fields by their group
     if selected_fields:
         field_ids_by_group = {}
-        
+
         # First, fetch all data fields that are in our selected list
         selected_field_ids = [field_data.get('field_id') for field_data in selected_fields]
-        
+
         data_fields = DataField.objects.filter(id__in=selected_field_ids)
-        
+
         # Group them by their group property
         for field in data_fields:
             group_name = field.group or 'General'
             field_name = f'group_{group_name}'
-            
+
             if field_name not in field_ids_by_group:
                 field_ids_by_group[field_name] = []
-                
+
+            # Use integer PKs to match ModelChoiceIterator choice values
             field_ids_by_group[field_name].append(field.id)
-        
+
         # Set initial data for each group
         initial_data = field_ids_by_group
     
@@ -234,6 +238,7 @@ def wizard_select_fields(request):
                 'position': existing_data.get('position', i),
                 'custom_label': existing_data.get('custom_label', ''),
                 'display_format': existing_data.get('display_format', ''),
+                'aggregation_function': existing_data.get('aggregation_function', ''),
             })
         
         SessionService.update_wizard_step(request, 'fields', {
@@ -249,11 +254,20 @@ def wizard_select_fields(request):
         'initial_data': initial_data,
     }
     
+    # Build a map of field_id -> can_aggregate for the JS
+    all_fields = DataField.objects.filter(
+        data_area=data_area, is_available=True
+    ).select_related('field_type')
+    field_aggregation_map = {
+        str(f.id): f.field_type.can_aggregate for f in all_fields
+    }
+
     return render(request, 'reporting/wizard/select_fields.html', {
         'form': form,
         'data_area': data_area,
         'wizard_step': 'fields',
         'debug_info': debug_info,
+        'field_aggregation_map': json.dumps(field_aggregation_map),
     })
 
 
@@ -537,7 +551,11 @@ def wizard_preview(request):
     
     # Get data for preview
     data_area_id = data_area_data['data_area_id']
-    data_area = DataArea.objects.get(pk=data_area_id)
+    try:
+        data_area = DataArea.objects.get(pk=data_area_id)
+    except DataArea.DoesNotExist:
+        messages.error(request, "Invalid data area selected.")
+        return redirect('reporting:wizard_select_data_area')
     
     # Get selected fields
     selected_fields_data = fields_data.get('selected_fields', [])
@@ -613,6 +631,7 @@ def wizard_preview(request):
                     position=i,
                     custom_label=field_data.get('custom_label', ''),
                     display_format=field_data.get('display_format', ''),
+                    aggregation_function=field_data.get('aggregation_function', ''),
                 )
                 report_field.save()
             except DataField.DoesNotExist:
@@ -707,15 +726,18 @@ def wizard_field_customize(request):
     fields_data = wizard_data.get('fields', {})
     selected_fields = fields_data.get('selected_fields', [])
     
+    aggregation_function = request.POST.get('aggregation_function', '')
+
     # Find the field and update it
     updated = False
     for field in selected_fields:
         if str(field.get('field_id')) == str(field_id):
             field['custom_label'] = custom_label
             field['display_format'] = display_format
+            field['aggregation_function'] = aggregation_function
             updated = True
             break
-    
+
     # If field not found, add it
     if not updated:
         selected_fields.append({
@@ -723,6 +745,7 @@ def wizard_field_customize(request):
             'position': len(selected_fields),
             'custom_label': custom_label,
             'display_format': display_format,
+            'aggregation_function': aggregation_function,
         })
     
     # Save back to session

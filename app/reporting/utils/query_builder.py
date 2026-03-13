@@ -242,7 +242,7 @@ def convert_value_to_proper_type(value, field_type):
             # If none of the formats worked, try the datetime parser
             from dateutil import parser
             return parser.parse(value)
-        except:
+        except (ValueError, TypeError, ImportError):
             # Return current date as fallback
             return datetime.date.today()
     

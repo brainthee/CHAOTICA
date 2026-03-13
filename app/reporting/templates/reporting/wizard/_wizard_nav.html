@@ -1,0 +1,30 @@
+<div class="wizard-navigation d-flex justify-content-between">
+  <div>
+    {% if wizard_step == 'fields' %}
+    <a href="{% url 'reporting:wizard_select_data_area' %}" class="btn btn-outline-secondary">
+      <i class="fas fs-9 fa-arrow-left"></i> Back
+    </a>
+    {% elif wizard_step == 'filters' %}
+    <a href="{% url 'reporting:wizard_select_fields' %}" class="btn btn-outline-secondary">
+      <i class="fas fs-9 fa-arrow-left"></i> Back
+    </a>
+    {% elif wizard_step == 'sorts' %}
+    <a href="{% url 'reporting:wizard_define_filters' %}" class="btn btn-outline-secondary">
+      <i class="fas fs-9 fa-arrow-left"></i> Back
+    </a>
+    {% elif wizard_step == 'presentation' %}
+    <a href="{% url 'reporting:wizard_define_sort' %}" class="btn btn-outline-secondary">
+      <i class="fas fs-9 fa-arrow-left"></i> Back
+    </a>
+    {% elif wizard_step == 'preview' %}
+    <a href="{% url 'reporting:wizard_define_presentation' %}" class="btn btn-outline-secondary">
+      <i class="fas fs-9 fa-arrow-left"></i> Back
+    </a>
+    {% endif %}
+  </div>
+  <div>
+    <button type="submit" form="wizard-form" class="btn btn-primary">
+      Next <i class="fas fs-9 fa-arrow-right"></i>
+    </button>
+  </div>
+</div>
