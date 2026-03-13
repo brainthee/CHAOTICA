@@ -1,10 +1,10 @@
 import io
 import csv
-import datetime
 import json
 from django.http import HttpResponse, FileResponse
 from django.template.loader import render_to_string
 from django.utils.text import slugify
+from django.utils import timezone
 
 class ExportService:
     """
@@ -34,7 +34,7 @@ class ExportService:
         export_method = export_methods.get(format_type, ExportService.export_to_csv)
         
         # Generate filename
-        filename = f"{slugify(report.name)}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        filename = f"{slugify(report.name)}_{timezone.now().strftime('%Y%m%d_%H%M%S')}"
         
         # Get the fields information
         fields = report.get_fields()
@@ -184,7 +184,7 @@ class ExportService:
             'field_names': field_names,
             'data': data,
             'title': report.name if report else 'Report',
-            'generated_at': datetime.datetime.now(),
+            'generated_at': timezone.now(),
         }
         
         # Render the HTML content
@@ -241,7 +241,7 @@ class ExportService:
             document.add_heading(report.name, level=1)
         
         # Add generated timestamp
-        document.add_paragraph(f"Generated: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        document.add_paragraph(f"Generated: {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}")
         
         # Add a table
         table = document.add_table(rows=1, cols=len(field_names))
@@ -286,7 +286,7 @@ class ExportService:
             buffer.write('=' * len(report.name) + '\n\n')
         
         # Write generated timestamp
-        buffer.write(f"Generated: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+        buffer.write(f"Generated: {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
         
         # Determine column widths
         col_widths = [len(name) for name in field_names]

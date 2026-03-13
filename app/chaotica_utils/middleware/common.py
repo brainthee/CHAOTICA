@@ -12,7 +12,7 @@ from django.conf import settings
 from constance import config
 from django.contrib import messages
 from django.contrib.messages import get_messages
-import pytz
+import zoneinfo
 import threading
 
 # Thread-local storage for current user
@@ -154,7 +154,7 @@ class TimezoneMiddleware:
     def __call__(self, request):
         if hasattr(request, 'user') and request.user.is_authenticated:
             tz_name = getattr(request.user, 'pref_timezone', None) or 'UTC'
-            dj_timezone.activate(pytz.timezone(tz_name))
+            dj_timezone.activate(zoneinfo.ZoneInfo(tz_name))
         else:
             dj_timezone.deactivate()
         return self.get_response(request)

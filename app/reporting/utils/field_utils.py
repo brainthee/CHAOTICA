@@ -1,6 +1,7 @@
 from django.db import models
 from django.db.models.fields.related import ForeignKey, ManyToManyField
 from django.contrib.contenttypes.fields import GenericForeignKey
+from django.utils import timezone
 
 def get_model_fields(model_class, exclude_fields=None, include_relations=True):
     """
@@ -157,9 +158,10 @@ def format_field_value(value, field_type, format_string=None):
         return value.strftime('%Y-%m-%d')
     
     if field_type == 'datetime' and hasattr(value, 'strftime'):
+        local_value = timezone.localtime(value) if hasattr(value, 'tzinfo') and value.tzinfo else value
         if format_string:
-            return value.strftime(format_string)
-        return value.strftime('%Y-%m-%d %H:%M:%S')
+            return local_value.strftime(format_string)
+        return local_value.strftime('%Y-%m-%d %H:%M:%S')
     
     if field_type == 'decimal' or field_type == 'float':
         if format_string:

@@ -408,13 +408,13 @@ class RMAssignableSlot(models.Model):
 
                 # Lets see if we should update!
                 if not should_create and (
-                    self.rm_data["starts_at"] != self.slot.start.strftime("%d-%m-%Y")
-                    or self.rm_data["ends_at"] != self.slot.end.strftime("%d-%m-%Y")
+                    self.rm_data["starts_at"] != timezone.localtime(self.slot.start).strftime("%d-%m-%Y")
+                    or self.rm_data["ends_at"] != timezone.localtime(self.slot.end).strftime("%d-%m-%Y")
                 ):
                     # Dates are wrong - lets update
                     data = {
-                        "starts_at": self.slot.start.strftime("%d-%m-%Y"),
-                        "ends_at": self.slot.end.strftime("%d-%m-%Y"),
+                        "starts_at": timezone.localtime(self.slot.start).strftime("%d-%m-%Y"),
+                        "ends_at": timezone.localtime(self.slot.end).strftime("%d-%m-%Y"),
                         "user_id": rm_user.rm_id,
                     }
                     r_upd_assignment = requests.put(
@@ -452,8 +452,8 @@ class RMAssignableSlot(models.Model):
             if should_create:
                 # Create the assignment!
                 data = {
-                    "starts_at": self.slot.start.strftime("%d-%m-%Y"),
-                    "ends_at": self.slot.end.strftime("%d-%m-%Y"),
+                    "starts_at": timezone.localtime(self.slot.start).strftime("%d-%m-%Y"),
+                    "ends_at": timezone.localtime(self.slot.end).strftime("%d-%m-%Y"),
                     "assignable_id": rm_ass.rm_id,
                     "user_id": rm_user.rm_id,
                     "note": config.RM_WARNING_MSG

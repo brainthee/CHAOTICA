@@ -77,7 +77,7 @@ def get_start_of_week(dt=None):
         datetime.date: The Monday of the specified week at midnight.
     """
     if dt is None:
-        dt = datetime.now()
+        dt = now()
 
     # Weekday is 0 for Monday, 6 for Sunday in the datetime module
     start_of_week = dt.date() - timedelta(days=dt.weekday())
@@ -181,16 +181,21 @@ class PermMenuItem(MenuItem):
 
 
 def clean_fullcalendar_datetime(date):
-    # 2023-10-23T00:00:00+01:00
-    # 2023-10-23T00:00:00+01:00
-    # 2023-10-30T00:00:00Z
-    # 2023-10-30T00:00:00Z
-    if date == None:
+    # FullCalendar sends ISO 8601 strings like:
+    #   2023-10-23T00:00:00+01:00
+    #   2023-10-30T00:00:00.000Z
+    if date is None:
         return None
     try:
-        datetime_pattern = re.compile(r"(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})")
-        dt_format = "%Y-%m-%dT%H:%M:%S"
-        ret = datetime.strptime(datetime_pattern.search(date).group(), dt_format)
+        ret = parse_datetime(date)
+        if ret is None:
+            # parse_datetime failed — log and fall back to the original regex approach
+            logging.getLogger(__name__).warning("parse_datetime failed for: %r, falling back to regex", date)
+            datetime_pattern = re.compile(r"(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})")
+            match = datetime_pattern.search(date)
+            if not match:
+                raise ValueError("Unparseable datetime")
+            ret = datetime.strptime(match.group(), "%Y-%m-%dT%H:%M:%S")
         if not is_aware(ret):
             ret = make_aware(ret)
         return ret
