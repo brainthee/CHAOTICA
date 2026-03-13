@@ -9,9 +9,13 @@ def startswith(value, arg):
 
 @register.filter(name='getattribute')
 def getattribute(obj, attr):
-    """Get attribute dynamically from an object"""
+    """Get attribute dynamically from an object (supports Django forms via __getitem__)"""
     if hasattr(obj, attr):
         return getattr(obj, attr)
+    try:
+        return obj[attr]
+    except (KeyError, IndexError, TypeError):
+        pass
     try:
         return obj.get(attr)
     except (TypeError, KeyError, AttributeError):

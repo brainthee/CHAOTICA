@@ -78,6 +78,16 @@
                         </a>
                       </li>
 
+                      {% if request.user.is_superuser %}
+                      <li class="nav-item">
+                        <a class="nav-link fw-normal py-2 ps-0 pe-3 border-bottom border-translucent text-start outline-none {% if 'admin' in request.resolver_match.url_name %}active{% endif %}" aria-current="page" href="{% url 'reporting:admin_dashboard' %}">
+                          <div class="d-flex align-items-center">
+                            <span class="fas fa-cogs fa-fw me-2"></span><span class="flex-1">Admin</span>
+                          </div>
+                        </a>
+                      </li>
+                      {% endif %}
+
                     </ul>
 
                     {% if categories %}
@@ -87,7 +97,7 @@
                       <ul class="nav flex-column border-top border-translucent fs-9 vertical-nav mb-4">
                         {% for category in categories %}
                           <li class="nav-item">
-                            <a class="nav-link fw-normal py-2 ps-0 pe-3 border-bottom border-translucenttext-start outline-none {% if request.GET.category|stringformat:'s' == category.id|stringformat:'s' %}active{% endif %}" aria-current="page" href="{% url 'reporting:report_list' %}?category={{ category.id }}">
+                            <a class="nav-link fw-normal py-2 ps-0 pe-3 border-bottom border-translucent text-start outline-none {% if request.GET.category|stringformat:'s' == category.id|stringformat:'s' %}active{% endif %}" aria-current="page" href="{% url 'reporting:report_list' %}?category={{ category.id }}">
                               <div class="d-flex align-items-center">
                                 <i class="fas fa-folder fa-fw me-2"></i>
                                 <span class="flex-1">{{ category.name }}</span>

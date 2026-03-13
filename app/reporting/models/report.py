@@ -65,7 +65,7 @@ class Report(models.Model):
         return reverse('reporting:run_report', kwargs={'uuid': self.uuid})
     
     def edit_url(self):
-        return reverse('reporting:edit_report', kwargs={'uuid': self.uuid})
+        return reverse('reporting:wizard_edit', kwargs={'uuid': self.uuid})
     
     def is_owned_by(self, user):
         return self.owner == user
@@ -110,23 +110,45 @@ class Report(models.Model):
 
 class ReportField(models.Model):
     """Represents a column in a report"""
+    AGGREGATION_CHOICES = [
+        ('', 'None'),
+        ('count', 'Count'),
+        ('sum', 'Sum'),
+        ('avg', 'Average'),
+        ('min', 'Minimum'),
+        ('max', 'Maximum'),
+    ]
+
     report = models.ForeignKey(Report, on_delete=models.CASCADE, related_name='fields')
     data_field = models.ForeignKey('DataField', on_delete=models.CASCADE, related_name='report_fields')
     position = models.PositiveIntegerField(default=0)
     custom_label = models.CharField(max_length=255, blank=True, null=True)
-    display_format = models.CharField(max_length=255, blank=True, null=True, 
+    display_format = models.CharField(max_length=255, blank=True, null=True,
                                       help_text="Optional format string for rendering this field")
-    
+    aggregation_function = models.CharField(max_length=10, choices=AGGREGATION_CHOICES, blank=True, default='')
+
     def __str__(self):
         if self.custom_label:
             return f"{self.custom_label} ({self.data_field})"
         return str(self.data_field)
-    
+
     def get_display_name(self):
         """Get the display name for this field (custom or default)"""
         if self.custom_label:
             return self.custom_label
-        return self.data_field.name
+        base_name = self.data_field.display_name or self.data_field.name
+        if self.aggregation_function:
+            func_labels = {
+                'count': 'Count of',
+                'sum': 'Sum of',
+                'avg': 'Average of',
+                'min': 'Minimum of',
+                'max': 'Maximum of',
+            }
+            prefix = func_labels.get(self.aggregation_function, '')
+            if prefix:
+                return f"{prefix} {base_name}"
+        return base_name
     
     class Meta:
         ordering = ['position']

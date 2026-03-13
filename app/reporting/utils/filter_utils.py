@@ -86,10 +86,6 @@ def get_dynamic_filter_values(field_type):
             ('this_year', 'This year'),
             ('last_year', 'Last year'),
         ]
-    elif field_type in ('foreign_key', 'many_to_many') and field_type.endswith('__user'):
-        return [
-            ('current_user', 'Current user'),
-        ]
     else:
         return []
 

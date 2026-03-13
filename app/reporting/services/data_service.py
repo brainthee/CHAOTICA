@@ -129,20 +129,56 @@ class DataService:
     @staticmethod
     def _execute_query(queryset, fields):
         """
-        Execute the query and format the results
+        Execute the query and format the results.
+        Supports aggregation: if any field has an aggregation_function set,
+        non-aggregated fields become GROUP BY columns via .values(),
+        and aggregated fields use .annotate().
         """
-        # Get the field paths to select
-        field_paths = []
-        
-        for field in fields:
-            data_field = field.data_field
-            field_path = data_field.field_path
-            
-            # Add the field path to the list
-            field_paths.append(field_path)
-        
-        # Execute the query with the field paths
-        results = queryset.values(*field_paths)
-        
-        # Format the data for output
-        return list(results)
+        AGGREGATION_MAP = {
+            'count': Count,
+            'sum': Sum,
+            'avg': Avg,
+            'min': Min,
+            'max': Max,
+        }
+
+        # Separate fields into group-by and aggregated
+        group_by_fields = []
+        annotations = {}
+        has_aggregation = any(
+            getattr(field, 'aggregation_function', '') for field in fields
+        )
+
+        if has_aggregation:
+            for field in fields:
+                field_path = field.data_field.field_path
+                agg_func = getattr(field, 'aggregation_function', '')
+                if agg_func and agg_func in AGGREGATION_MAP:
+                    # Create a unique alias for the annotation
+                    alias = f"{agg_func}_{field_path}".replace('__', '_')
+                    agg_class = AGGREGATION_MAP[agg_func]
+                    annotations[alias] = agg_class(field_path)
+                else:
+                    group_by_fields.append(field_path)
+
+            results = queryset.values(*group_by_fields).annotate(**annotations).order_by()
+
+            # Reorder result keys to match the original field order
+            ordered_results = []
+            for row in results:
+                ordered_row = {}
+                for field in fields:
+                    field_path = field.data_field.field_path
+                    agg_func = getattr(field, 'aggregation_function', '')
+                    if agg_func and agg_func in AGGREGATION_MAP:
+                        alias = f"{agg_func}_{field_path}".replace('__', '_')
+                        ordered_row[alias] = row.get(alias)
+                    else:
+                        ordered_row[field_path] = row.get(field_path)
+                ordered_results.append(ordered_row)
+            return ordered_results
+        else:
+            # No aggregation — original behaviour
+            field_paths = [field.data_field.field_path for field in fields]
+            results = queryset.values(*field_paths)
+            return list(results)

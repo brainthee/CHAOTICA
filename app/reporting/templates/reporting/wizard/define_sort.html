@@ -5,14 +5,10 @@
 {% block title %}Define Sort Order - Report Wizard{% endblock %}
 
 {% block wizard_step_content %}
-<div class="card">
-  <div class="card-header">
-    <h4 class="card-title">Define Sort Order</h4>
-    <p class="card-subtitle">Specify how the data should be sorted in your report.</p>
-  </div>
-  
-  <div class="card-body">
-    <form method="post" id="wizard-form">
+<h3 class="mb-2">Step 4: Define Sort Order</h3>
+<p class="mb-4">Specify how the data should be sorted in your report.</p>
+
+<form method="post" id="wizard-form">
       {% csrf_token %}
       {{ form.sort_fields }}
       
@@ -90,8 +86,6 @@
         </table>
       </div>
     </form>
-  </div>
-</div>
 {% endblock %}
 
 {% block extra_js %}<script>

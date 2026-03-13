@@ -1,0 +1,116 @@
+{% extends "reporting/base.html" %}
+
+{% block report_content %}
+<div class="m-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h3>Field Validation Results</h3>
+    <div>
+      {% if total_invalid > 0 %}
+      <form method="post" action="{% url 'reporting:admin_delete_invalid_fields' %}" class="d-inline">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger" onclick="return confirm('This will disable all invalid fields. Continue?')">
+          <i class="fas fa-ban"></i> Disable {{ total_invalid }} Invalid Field{{ total_invalid|pluralize }}
+        </button>
+      </form>
+      {% endif %}
+      <a href="{% url 'reporting:admin_dashboard' %}" class="btn btn-outline-secondary ms-2">
+        <i class="fas fa-arrow-left"></i> Back to Admin
+      </a>
+    </div>
+  </div>
+
+  <div class="row mb-4">
+    <div class="col-md-4">
+      <div class="card border-success">
+        <div class="card-body text-center">
+          <h2 class="mb-0 text-success">{{ total_valid }}</h2>
+          <p class="text-body-secondary mb-0">Valid Fields</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card border-warning">
+        <div class="card-body text-center">
+          <h2 class="mb-0 text-warning">{{ total_warnings }}</h2>
+          <p class="text-body-secondary mb-0">Warnings</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card border-danger">
+        <div class="card-body text-center">
+          <h2 class="mb-0 text-danger">{{ total_invalid }}</h2>
+          <p class="text-body-secondary mb-0">Invalid Fields</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% for area_result in results %}
+  <div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">
+        <i class="fas {{ area_result.data_area.icon_class|default:'fa-table' }} me-2"></i>
+        {{ area_result.data_area.name }}
+        <small class="text-body-secondary">({{ area_result.data_area.content_type.app_label }}.{{ area_result.data_area.model_name }})</small>
+      </h5>
+      <div>
+        {% if area_result.invalid %}
+          <span class="badge bg-danger">{{ area_result.invalid|length }} invalid</span>
+        {% endif %}
+        {% if area_result.warnings %}
+          <span class="badge bg-warning text-dark">{{ area_result.warnings|length }} warning{{ area_result.warnings|length|pluralize }}</span>
+        {% endif %}
+        <span class="badge bg-success">{{ area_result.valid|length }} valid</span>
+      </div>
+    </div>
+    <div class="card-body p-0">
+      <table class="table table-hover mb-0 fs-9">
+        <thead>
+          <tr>
+            <th style="width: 30px;"></th>
+            <th>Display Name</th>
+            <th>Field Path</th>
+            <th>Field Type</th>
+            <th>Resolved As</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in area_result.invalid %}
+          <tr class="table-danger">
+            <td><i class="fas fa-times-circle text-danger"></i></td>
+            <td>{% if item.field %}{{ item.field.display_name }}{% else %}<em>N/A</em>{% endif %}</td>
+            <td><code>{% if item.field %}{{ item.field.field_path }}{% else %}-{% endif %}</code></td>
+            <td>{% if item.field %}{{ item.field.field_type.name }}{% else %}-{% endif %}</td>
+            <td>-</td>
+            <td><small>{{ item.error }}</small></td>
+          </tr>
+          {% endfor %}
+          {% for item in area_result.warnings %}
+          <tr class="table-warning">
+            <td><i class="fas fa-exclamation-triangle text-warning"></i></td>
+            <td>{{ item.field.display_name }}</td>
+            <td><code>{{ item.field_path }}</code></td>
+            <td>{{ item.field.field_type.name }}</td>
+            <td><code>{{ item.resolved_type }}</code></td>
+            <td><small>{{ item.error }}</small></td>
+          </tr>
+          {% endfor %}
+          {% for item in area_result.valid %}
+          <tr>
+            <td><i class="fas fa-check-circle text-success"></i></td>
+            <td>{{ item.field.display_name }}</td>
+            <td><code>{{ item.field_path }}</code></td>
+            <td>{{ item.field.field_type.name }}</td>
+            <td><code>{{ item.resolved_type }}</code></td>
+            <td>-</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

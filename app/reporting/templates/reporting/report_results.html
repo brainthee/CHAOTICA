@@ -26,7 +26,7 @@
                                 </button>
                                 <ul class="dropdown-menu" aria-labelledby="exportDropdown">
                                     {% for format_code, format_name in presentation_choices %}
-                                    <li><a class="dropdown-item" href="?format={{ format_code }}{% for key, value in filter_values.items %}&filter_{{ key }}={{ value }}{% endfor %}">{{ format_name }}</a></li>
+                                    <li><a class="dropdown-item" href="?format={{ format_code }}{% for key, value in filter_values.items %}&filter_{{ key }}={{ value|urlencode }}{% endfor %}">{{ format_name }}</a></li>
                                     {% endfor %}
                                 </ul>
                             </div>

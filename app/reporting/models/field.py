@@ -19,7 +19,10 @@ class FieldType(models.Model):
     
     # Whether this field type can be used for sorting
     can_sort = models.BooleanField(default=True)
-    
+
+    # Whether this field type supports numeric aggregation (Sum/Avg/Min/Max)
+    can_aggregate = models.BooleanField(default=False)
+
     def __str__(self):
         return self.name
     

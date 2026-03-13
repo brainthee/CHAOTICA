@@ -1,0 +1,151 @@
+{% extends "reporting/base.html" %}
+
+{% block report_content %}
+<div class="m-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h3>Report Health Check</h3>
+    <a href="{% url 'reporting:admin_dashboard' %}" class="btn btn-outline-secondary">
+      <i class="fas fa-arrow-left"></i> Back to Admin
+    </a>
+  </div>
+
+  <div class="row mb-4">
+    <div class="col-md-4">
+      <div class="card border-success">
+        <div class="card-body text-center">
+          <h2 class="mb-0 text-success">{{ total_ok }}</h2>
+          <p class="text-body-secondary mb-0">Healthy Reports</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card border-warning">
+        <div class="card-body text-center">
+          <h2 class="mb-0 text-warning">{{ total_warning }}</h2>
+          <p class="text-body-secondary mb-0">Reports with Warnings</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card border-danger">
+        <div class="card-body text-center">
+          <h2 class="mb-0 text-danger">{{ total_error }}</h2>
+          <p class="text-body-secondary mb-0">Broken Reports</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% if total_error > 0 or total_warning > 0 %}
+  <div class="alert alert-info">
+    <i class="fas fa-info-circle"></i>
+    Reports with errors will fail when run. Fix the underlying field definitions via
+    <a href="{% url 'reporting:admin_validate_fields' %}">Field Validation</a>,
+    or edit/delete the affected reports.
+  </div>
+  {% endif %}
+
+  {% for result in report_results %}
+  {% if result.status != 'ok' %}
+  <div class="card mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <div>
+        {% if result.status == 'error' %}
+          <i class="fas fa-times-circle text-danger me-2"></i>
+        {% else %}
+          <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+        {% endif %}
+        <strong>{{ result.report.name }}</strong>
+        <small class="text-body-secondary ms-2">
+          Owner: {{ result.report.owner.get_full_name|default:result.report.owner.email }}
+          | Data Area: {{ result.report.data_area.name }}
+          | Format: {{ result.report.get_presentation_type_display }}
+        </small>
+      </div>
+      <div>
+        <span class="badge bg-{% if result.status == 'error' %}danger{% else %}warning text-dark{% endif %}">
+          {{ result.issues|length }} issue{{ result.issues|length|pluralize }}
+        </span>
+        <a href="{% url 'reporting:report_detail' uuid=result.report.uuid %}" class="btn btn-sm btn-outline-secondary ms-2">
+          <i class="fas fa-eye"></i> View
+        </a>
+      </div>
+    </div>
+    <div class="card-body p-0">
+      <table class="table table-hover mb-0 fs-9">
+        <thead>
+          <tr>
+            <th style="width: 30px;"></th>
+            <th style="width: 80px;">Component</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for issue in result.issues %}
+          <tr class="{% if issue.severity == 'error' %}table-danger{% else %}table-warning{% endif %}">
+            <td>
+              {% if issue.severity == 'error' %}
+                <i class="fas fa-times-circle text-danger"></i>
+              {% else %}
+                <i class="fas fa-exclamation-triangle text-warning"></i>
+              {% endif %}
+            </td>
+            <td><span class="badge bg-secondary">{{ issue.component }}</span></td>
+            <td><small>{{ issue.detail }}</small></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+  {% endfor %}
+
+  {% if total_ok > 0 %}
+  <div class="card mb-3">
+    <div class="card-header">
+      <i class="fas fa-check-circle text-success me-2"></i>
+      <strong>{{ total_ok }} Healthy Report{{ total_ok|pluralize }}</strong>
+    </div>
+    <div class="card-body p-0">
+      <table class="table table-hover mb-0 fs-9">
+        <thead>
+          <tr>
+            <th style="width: 30px;"></th>
+            <th>Report</th>
+            <th>Owner</th>
+            <th>Data Area</th>
+            <th>Fields</th>
+            <th>Filters</th>
+            <th>Sorts</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for result in report_results %}
+          {% if result.status == 'ok' %}
+          <tr>
+            <td><i class="fas fa-check-circle text-success"></i></td>
+            <td>
+              <a href="{% url 'reporting:report_detail' uuid=result.report.uuid %}">{{ result.report.name }}</a>
+            </td>
+            <td>{{ result.report.owner.get_full_name|default:result.report.owner.email }}</td>
+            <td>{{ result.report.data_area.name }}</td>
+            <td>{{ result.report.fields.count }}</td>
+            <td>{{ result.report.filters.count }}</td>
+            <td>{{ result.report.sorts.count }}</td>
+          </tr>
+          {% endif %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if not report_results %}
+  <div class="alert alert-info">
+    <i class="fas fa-info-circle"></i> No reports found.
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

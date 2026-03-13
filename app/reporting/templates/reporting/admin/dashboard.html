@@ -1,0 +1,132 @@
+{% extends "reporting/base.html" %}
+
+{% block report_content %}
+<div class="m-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h3>Reporting Administration</h3>
+    <div>
+      <a href="{% url 'reporting:admin_validate_fields' %}" class="btn btn-primary">
+        <i class="fas fa-check-circle"></i> Validate Fields
+      </a>
+      <a href="{% url 'reporting:admin_validate_reports' %}" class="btn btn-outline-primary ms-2">
+        <i class="fas fa-file-medical-alt"></i> Report Health Check
+      </a>
+    </div>
+  </div>
+
+  <div class="row mb-4">
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-body text-center">
+          <h2 class="mb-0">{{ data_areas|length }}</h2>
+          <p class="text-body-secondary mb-0">Data Areas</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-body text-center">
+          {% with total_fields=0 %}
+          <h2 class="mb-0" id="total-fields-count">-</h2>
+          {% endwith %}
+          <p class="text-body-secondary mb-0">Data Fields</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-body text-center">
+          <h2 class="mb-0">{{ data_sources|length }}</h2>
+          <p class="text-body-secondary mb-0">Data Sources (Relationships)</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4">
+    <div class="card-header">
+      <h5 class="mb-0">Data Areas</h5>
+    </div>
+    <div class="card-body p-0">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Model</th>
+            <th>Fields</th>
+            <th>Default Sort</th>
+            <th>Available</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for area in data_areas %}
+          <tr>
+            <td><i class="fas {{ area.icon_class|default:'fa-table' }} me-2"></i>{{ area.name }}</td>
+            <td><code>{{ area.content_type.app_label }}.{{ area.model_name }}</code></td>
+            <td>{{ area.fields.count }}</td>
+            <td><code>{{ area.default_sort_field|default:"-" }}</code></td>
+            <td>
+              {% if area.is_available %}
+                <span class="badge bg-success">Yes</span>
+              {% else %}
+                <span class="badge bg-secondary">No</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card mb-4">
+    <div class="card-header">
+      <h5 class="mb-0">Data Source Relationships</h5>
+    </div>
+    <div class="card-body p-0">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th>From</th>
+            <th>To</th>
+            <th>Type</th>
+            <th>Join Field</th>
+            <th>Available</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for source in data_sources %}
+          <tr>
+            <td>{{ source.from_area.name }}</td>
+            <td>{{ source.to_area.name }}</td>
+            <td>{{ source.relationship_type.name }}</td>
+            <td><code>{{ source.join_field }}</code></td>
+            <td>
+              {% if source.is_available %}
+                <span class="badge bg-success">Yes</span>
+              {% else %}
+                <span class="badge bg-secondary">No</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Count total fields
+  document.addEventListener('DOMContentLoaded', function() {
+    const counts = document.querySelectorAll('tbody tr td:nth-child(3)');
+    let total = 0;
+    counts.forEach(function(td, i) {
+      if (i < {{ data_areas|length }}) {
+        total += parseInt(td.textContent) || 0;
+      }
+    });
+    document.getElementById('total-fields-count').textContent = total;
+  });
+</script>
+{% endblock %}

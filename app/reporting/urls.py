@@ -1,5 +1,6 @@
 from django.urls import path
 from .views import wizard, reports, ajax
+from .views import admin as reporting_admin
 
 app_name = 'reporting'
 
@@ -36,4 +37,10 @@ urlpatterns = [
     path('ajax/reports/<uuid:uuid>/update-field/', ajax.update_report_field, name='ajax_update_report_field'),
     path('ajax/reports/<uuid:uuid>/reorder-fields/', ajax.reorder_report_fields, name='ajax_reorder_report_fields'),
     path('ajax/reports/<uuid:uuid>/preview-data/', ajax.preview_report_data, name='ajax_preview_report_data'),
+
+    # Admin
+    path('admin/', reporting_admin.admin_dashboard, name='admin_dashboard'),
+    path('admin/validate-fields/', reporting_admin.validate_fields, name='admin_validate_fields'),
+    path('admin/delete-invalid-fields/', reporting_admin.delete_invalid_fields, name='admin_delete_invalid_fields'),
+    path('admin/validate-reports/', reporting_admin.validate_reports, name='admin_validate_reports'),
 ]
