@@ -625,7 +625,7 @@ class OrganisationalUnit(models.Model):
 
         # Default to current week if no dates provided
         if start_date is None:
-            today = datetime.now().date()
+            today = timezone.localdate()
             # Get Monday of current week (assuming week starts on Monday)
             start_date = today - timedelta(days=today.weekday())
 
@@ -691,8 +691,9 @@ class OrganisationalUnit(models.Model):
             # Fill in the timeslots for each day they overlap
             for slot in user.week_timeslots:
                 # Calculate which days this slot spans within our date range
-                slot_start_date = max(slot.start.date(), start_date)
-                slot_end_date = min(slot.end.date(), end_date)
+                # Convert to local time before extracting date to handle UTC offset
+                slot_start_date = max(timezone.localtime(slot.start).date(), start_date)
+                slot_end_date = min(timezone.localtime(slot.end).date(), end_date)
                 
                 # Add this slot to every day it spans
                 current_slot_date = slot_start_date

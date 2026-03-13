@@ -18,7 +18,7 @@ from ..permissions import (
 )
 
 import json
-import datetime
+from django.utils import timezone
 
 @login_required
 @require_safe
@@ -183,7 +183,7 @@ def run_report(request, uuid):
         data = DataService.get_report_data(report, request.user, filter_values)
         
         # Set last_run_at datetime
-        report.last_run_at = datetime.datetime.now()
+        report.last_run_at = timezone.now()
         report.save(update_fields=['last_run_at'])
         
         # Get the fields for display
@@ -239,7 +239,7 @@ def export_report(request, uuid, format_type, filter_values=None):
         data = DataService.get_report_data(report, request.user, filter_values)
         
         # Set last_run_at datetime
-        report.last_run_at = datetime.datetime.now()
+        report.last_run_at = timezone.now()
         report.save(update_fields=['last_run_at'])
         
         # Get the fields for display

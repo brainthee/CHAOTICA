@@ -15,9 +15,10 @@ from chaotica_utils.utils import ext_reverse
 from chaotica_utils.views.common import log_system_activity
 from chaotica_utils.middleware.common import get_current_user
 from django.core.exceptions import ValidationError
+from django.utils import timezone as dj_timezone
 from business_duration import businessDuration
 from decimal import Decimal
-import pytz
+import zoneinfo
 from simple_history.models import HistoricalRecords
 from django.db.models.functions import Lower
 
@@ -326,10 +327,10 @@ class TimeSlot(models.Model):
         """Resolve timezone for business hours: org unit → user pref → UTC."""
         org = self.user.unit_memberships.first()
         if org and getattr(org.unit, 'businessHours_timezone', None):
-            return pytz.timezone(org.unit.businessHours_timezone)
+            return zoneinfo.ZoneInfo(org.unit.businessHours_timezone)
         if self.user.pref_timezone:
-            return pytz.timezone(self.user.pref_timezone)
-        return pytz.UTC
+            return zoneinfo.ZoneInfo(self.user.pref_timezone)
+        return zoneinfo.ZoneInfo('UTC')
 
     def get_business_hours(self):
         """
@@ -389,18 +390,18 @@ class TimeSlot(models.Model):
         while current_date <= end_date:
             # Create datetime objects for this day's business hours and lunch period
             # Using local_tz so wall-clock times are correct for DST
-            day_business_start = local_tz.localize(
-                datetime.datetime.combine(current_date, business_start_time)
-            )
-            day_business_end = local_tz.localize(
-                datetime.datetime.combine(current_date, business_end_time)
-            )
-            day_lunch_start = local_tz.localize(
-                datetime.datetime.combine(current_date, lunch_start_time)
-            )
-            day_lunch_end = local_tz.localize(
-                datetime.datetime.combine(current_date, lunch_end_time)
-            )
+            day_business_start = datetime.datetime.combine(
+                current_date, business_start_time
+            ).replace(tzinfo=local_tz)
+            day_business_end = datetime.datetime.combine(
+                current_date, business_end_time
+            ).replace(tzinfo=local_tz)
+            day_lunch_start = datetime.datetime.combine(
+                current_date, lunch_start_time
+            ).replace(tzinfo=local_tz)
+            day_lunch_end = datetime.datetime.combine(
+                current_date, lunch_end_time
+            ).replace(tzinfo=local_tz)
 
             # Check if this day's timeslot overlaps with lunch
             day_slot_start = max(local_start, day_business_start) if current_date == local_start.date() else day_business_start
@@ -465,7 +466,7 @@ class TimeSlot(models.Model):
         # Log deletion for delivery timeslots before deleting
         if self.is_delivery() and phase:
             current_user = get_current_user()
-            msg = f"Slot deleted: {self.user.get_full_name()} ({self.get_deliveryRole_display()}) from {self.start.strftime('%Y-%m-%d')} to {self.end.strftime('%Y-%m-%d')}"
+            msg = f"Slot deleted: {self.user.get_full_name()} ({self.get_deliveryRole_display()}) from {dj_timezone.localtime(self.start).strftime('%Y-%m-%d')} to {dj_timezone.localtime(self.end).strftime('%Y-%m-%d')}"
             log_system_activity(phase.job, msg, author=current_user)
             log_system_activity(phase, msg, author=current_user)
         
@@ -510,7 +511,7 @@ class TimeSlot(models.Model):
         if self.is_delivery() and self.phase:
             current_user = get_current_user()
             if is_new:
-                msg = f"Slot created: {self.user.get_full_name()} ({self.get_deliveryRole_display()}) {self.start.strftime('%Y-%m-%d')} to {self.end.strftime('%Y-%m-%d')}"
+                msg = f"Slot created: {self.user.get_full_name()} ({self.get_deliveryRole_display()}) {dj_timezone.localtime(self.start).strftime('%Y-%m-%d')} to {dj_timezone.localtime(self.end).strftime('%Y-%m-%d')}"
             else:
                 # Check what changed and build a descriptive message
                 changes = []
@@ -519,9 +520,9 @@ class TimeSlot(models.Model):
                 if old_role and old_role != self.get_deliveryRole_display():
                     changes.append(f"role: {old_role} → {self.get_deliveryRole_display()}")
                 if old_start and old_start != self.start:
-                    changes.append(f"start: {old_start.strftime('%Y-%m-%d')} → {self.start.strftime('%Y-%m-%d')}")
+                    changes.append(f"start: {dj_timezone.localtime(old_start).strftime('%Y-%m-%d')} → {dj_timezone.localtime(self.start).strftime('%Y-%m-%d')}")
                 if old_end and old_end != self.end:
-                    changes.append(f"end: {old_end.strftime('%Y-%m-%d')} → {self.end.strftime('%Y-%m-%d')}")
+                    changes.append(f"end: {dj_timezone.localtime(old_end).strftime('%Y-%m-%d')} → {dj_timezone.localtime(self.end).strftime('%Y-%m-%d')}")
                 
                 if changes:
                     msg = f"Slot updated: {', '.join(changes)}"
