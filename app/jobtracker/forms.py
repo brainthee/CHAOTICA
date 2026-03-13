@@ -1,4 +1,5 @@
 from django import forms
+from django.utils import timezone
 from django.urls import reverse
 from .models import (
     Contact,
@@ -820,8 +821,8 @@ class CommentTimeSlotModalForm(forms.ModelForm):
             range_from="start", options={"allowInputToggle": True}
         )
         if not self.instance.pk:
-            self.fields["start"].initial = start.replace(tzinfo=None)
-            self.fields["end"].initial = end.replace(tzinfo=None)
+            self.fields["start"].initial = timezone.localtime(start).replace(tzinfo=None)
+            self.fields["end"].initial = timezone.localtime(end).replace(tzinfo=None)
             self.fields["user"].initial = resource
         self.helper.layout = Layout(
             Field("user", style="width: 100%;"),
@@ -925,8 +926,8 @@ class NonDeliveryTimeSlotModalForm(forms.ModelForm):
             range_from="start", options={"allowInputToggle": True}
         )
         if not self.instance.pk:
-            self.fields["start"].initial = start.replace(tzinfo=None)
-            self.fields["end"].initial = end.replace(tzinfo=None)
+            self.fields["start"].initial = timezone.localtime(start).replace(tzinfo=None)
+            self.fields["end"].initial = timezone.localtime(end).replace(tzinfo=None)
             self.fields["user"].initial = resource
             # Add user to the multi field
             self.fields["users"].initial = resource
@@ -1115,13 +1116,13 @@ class DeliveryTimeSlotModalForm(forms.ModelForm):
             options={"allowInputToggle": True}
         )
         if start:
-            self.fields["start"].initial = start.replace(tzinfo=None)
+            self.fields["start"].initial = timezone.localtime(start).replace(tzinfo=None)
 
         self.fields["end"].widget = DateTimePickerInput(
             range_from="start", options={"allowInputToggle": True}
         )
         if end:
-            self.fields["end"].initial = end.replace(tzinfo=None)
+            self.fields["end"].initial = timezone.localtime(end).replace(tzinfo=None)
 
         self.helper.layout = Layout(
             Div(
@@ -1283,13 +1284,13 @@ class ProjectTimeSlotModalForm(forms.ModelForm):
             options={"allowInputToggle": True}
         )
         if start:
-            self.fields["start"].initial = start.replace(tzinfo=None)
+            self.fields["start"].initial = timezone.localtime(start).replace(tzinfo=None)
 
         self.fields["end"].widget = DateTimePickerInput(
             range_from="start", options={"allowInputToggle": True}
         )
         if end:
-            self.fields["end"].initial = end.replace(tzinfo=None)
+            self.fields["end"].initial = timezone.localtime(end).replace(tzinfo=None)
 
         self.helper.layout = Layout(
             Div(
@@ -2291,6 +2292,7 @@ class OrganisationalUnitForm(forms.ModelForm):
             "businessHours_lunch_startTime",
             "businessHours_lunch_endTime",
             "businessHours_days",
+            "businessHours_timezone",
         ]
         widgets = {
             "businessHours_days": forms.TextInput(),

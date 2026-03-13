@@ -12,6 +12,7 @@ from guardian.shortcuts import (
     get_users_with_perms,
 )
 from django.db.models import JSONField
+import pytz
 import uuid, os, random
 from chaotica_utils.models import User, get_sentinel_user, Holiday
 from ..models import TimeSlot
@@ -64,6 +65,13 @@ class OrganisationalUnit(models.Model):
         blank=True,
         default=_default_business_days,
         help_text="An int array with the numbers equaling the day of the week. Sunday == 0, Monday == 1 etc",
+    )
+    businessHours_timezone = models.CharField(
+        verbose_name="Business Hours Timezone",
+        max_length=63,
+        choices=[(tz, tz) for tz in pytz.common_timezones],
+        default="Europe/London",
+        help_text="Timezone that business hours are defined in (e.g., Europe/London, Europe/Berlin)",
     )
     approval_required = models.BooleanField(
         "Approval Required",

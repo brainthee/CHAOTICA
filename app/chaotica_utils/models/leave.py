@@ -10,6 +10,7 @@ from jobtracker.enums import DefaultTimeSlotTypes
 from business_duration import businessDuration
 from constance import config
 from ..utils import get_sentinel_user
+import pytz
 
 
 class LeaveRequest(models.Model):
@@ -87,17 +88,33 @@ class LeaveRequest(models.Model):
         unit = "hour"
         days = 0
         working_hours = self.user.get_working_hours()
+
+        # Resolve business hours timezone: org unit → user pref → UTC
+        org = self.user.unit_memberships.first()
+        if org and getattr(org.unit, 'businessHours_timezone', None):
+            local_tz = pytz.timezone(org.unit.businessHours_timezone)
+        elif self.user.pref_timezone:
+            local_tz = pytz.timezone(self.user.pref_timezone)
+        else:
+            local_tz = pytz.UTC
+
+        # Convert UTC datetimes to local time so wall-clock times match
+        # the business hour boundaries (which are defined in local time)
+        local_start = self.start_date.astimezone(local_tz)
+        local_end = self.end_date.astimezone(local_tz)
+
         hours = businessDuration(
-            self.start_date,
-            self.end_date,
+            local_start,
+            local_end,
             unit=unit,
             starttime=working_hours["start"],
             endtime=working_hours["end"],
         )
+        # Calculate hours in a working day from clock times (DST-independent)
         hours_in_working_day = (
-            timezone.datetime.combine(timezone.now().date(), working_hours["end"])
-            - timezone.datetime.combine(timezone.now().date(), working_hours["start"])
-        ).total_seconds() / 3600
+            working_hours["end"].hour * 60 + working_hours["end"].minute
+            - working_hours["start"].hour * 60 - working_hours["start"].minute
+        ) / 60.0
         if hours:
             days = hours / hours_in_working_day
         return round(days, 2)
