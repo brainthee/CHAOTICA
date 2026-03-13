@@ -17,6 +17,7 @@ from chaotica_utils.middleware.common import get_current_user
 from django.core.exceptions import ValidationError
 from business_duration import businessDuration
 from decimal import Decimal
+import pytz
 from simple_history.models import HistoricalRecords
 from django.db.models.functions import Lower
 
@@ -321,80 +322,90 @@ class TimeSlot(models.Model):
             )
         return data
     
+    def _get_business_tz(self):
+        """Resolve timezone for business hours: org unit → user pref → UTC."""
+        org = self.user.unit_memberships.first()
+        if org and getattr(org.unit, 'businessHours_timezone', None):
+            return pytz.timezone(org.unit.businessHours_timezone)
+        if self.user.pref_timezone:
+            return pytz.timezone(self.user.pref_timezone)
+        return pytz.UTC
+
     def get_business_hours(self):
         """
         Calculate business hours for a timeslot, accounting for lunch breaks.
         Returns the number of billable hours, excluding non-business hours and lunch breaks.
         """
         import datetime
-        
+
         unit = "hour"
         org = self.user.unit_memberships.first()
-        
+
+        # Resolve the timezone that business hours are defined in, and convert
+        # slot times to that timezone so wall-clock comparisons are correct
+        # across DST transitions.
+        local_tz = self._get_business_tz()
+        local_start = self.start.astimezone(local_tz)
+        local_end = self.end.astimezone(local_tz)
+
         # Get business hours boundaries
         if org:
             business_start_time = org.unit.businessHours_startTime
             business_end_time = org.unit.businessHours_endTime
-            # Define lunch break (default: 12:00 - 13:00)
             lunch_start_time = org.unit.businessHours_lunch_startTime
             lunch_end_time = org.unit.businessHours_lunch_endTime
         else:
             # Default business hours if no organization
             business_start_time = datetime.time(9, 0)  # 9:00 AM
             business_end_time = datetime.time(17, 30)  # 5:30 PM
-            # Define lunch break (default: 12:00 - 13:00)
             lunch_start_time = datetime.time(12, 0)  # 12:00 PM
             lunch_end_time = datetime.time(13, 0)    # 1:00 PM
-        
-        # Define lunch break (default: 12:00 - 13:00)
-        # Calculate lunch duration dynamically from start and end times
-        # Create datetime objects for today with these times to calculate difference properly
-        today = datetime.date.today()
-        lunch_start_dt = datetime.datetime.combine(today, lunch_start_time)
-        lunch_end_dt = datetime.datetime.combine(today, lunch_end_time)
-        lunch_duration = (lunch_end_dt - lunch_start_dt).total_seconds() / 3600.0  # in hours
-        
-        # Calculate raw business hours
+
+        # Calculate lunch duration from start and end times (pure clock-time arithmetic)
+        lunch_duration = (
+            lunch_end_time.hour * 60 + lunch_end_time.minute
+            - lunch_start_time.hour * 60 - lunch_start_time.minute
+        ) / 60.0  # in hours
+
+        # Calculate raw business hours using local-time datetimes
         if org:
             raw_hours = businessDuration(
-                self.start,
-                self.end,
+                local_start,
+                local_end,
                 unit=unit,
                 starttime=business_start_time,
                 endtime=business_end_time,
             )
         else:
-            raw_hours = businessDuration(self.start, self.end, unit=unit)
-        
+            raw_hours = businessDuration(local_start, local_end, unit=unit)
+
         # Count the number of lunch breaks to subtract
         lunch_breaks_count = 0
-        
+
         # For multi-day slots, we need to count lunch breaks for each day
-        current_date = self.start.date()
-        end_date = self.end.date()
-        
+        current_date = local_start.date()
+        end_date = local_end.date()
+
         while current_date <= end_date:
             # Create datetime objects for this day's business hours and lunch period
-            day_business_start = datetime.datetime.combine(
-                current_date, business_start_time
-            ).replace(tzinfo=self.start.tzinfo)
-            
-            day_business_end = datetime.datetime.combine(
-                current_date, business_end_time
-            ).replace(tzinfo=self.start.tzinfo)
-            
-            day_lunch_start = datetime.datetime.combine(
-                current_date, lunch_start_time
-            ).replace(tzinfo=self.start.tzinfo)
-            
-            day_lunch_end = datetime.datetime.combine(
-                current_date, lunch_end_time
-            ).replace(tzinfo=self.start.tzinfo)
-            
+            # Using local_tz so wall-clock times are correct for DST
+            day_business_start = local_tz.localize(
+                datetime.datetime.combine(current_date, business_start_time)
+            )
+            day_business_end = local_tz.localize(
+                datetime.datetime.combine(current_date, business_end_time)
+            )
+            day_lunch_start = local_tz.localize(
+                datetime.datetime.combine(current_date, lunch_start_time)
+            )
+            day_lunch_end = local_tz.localize(
+                datetime.datetime.combine(current_date, lunch_end_time)
+            )
+
             # Check if this day's timeslot overlaps with lunch
-            day_slot_start = max(self.start, day_business_start) if current_date == self.start.date() else day_business_start
-            day_slot_end = min(self.end, day_business_end) if current_date == self.end.date() else day_business_end
-            
+            day_slot_start = max(local_start, day_business_start) if current_date == local_start.date() else day_business_start
+            day_slot_end = min(local_end, day_business_end) if current_date == local_end.date() else day_business_end
+
             # Only count lunch if the day's business hours aren't empty
             if day_slot_start < day_slot_end:
                 # Check if lunch overlaps with today's business hours for this slot
@@ -403,16 +414,16 @@ class TimeSlot(models.Model):
                     lunch_overlap_start = max(day_slot_start, day_lunch_start)
                     lunch_overlap_end = min(day_slot_end, day_lunch_end)
                     lunch_overlap_hours = (lunch_overlap_end - lunch_overlap_start).total_seconds() / 3600
-                    
+
                     # Add the overlapping portion to our count (usually 1.0 for a full day)
                     lunch_breaks_count += lunch_overlap_hours / lunch_duration
-            
+
             # Move to next day
             current_date += datetime.timedelta(days=1)
-        
+
         # Subtract lunch breaks from raw business hours
         adjusted_hours = raw_hours - lunch_breaks_count
-        
+
         # Ensure we don't return negative hours
         return Decimal(max(0, adjusted_hours))
     

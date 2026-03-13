@@ -4,6 +4,7 @@ from django.http import (
     HttpResponseRedirect,
 )
 from django.utils.deprecation import MiddlewareMixin
+from django.utils import timezone as dj_timezone
 from django.shortcuts import reverse, redirect
 from ..models import User
 from django.urls import reverse
@@ -11,6 +12,7 @@ from django.conf import settings
 from constance import config
 from django.contrib import messages
 from django.contrib.messages import get_messages
+import pytz
 import threading
 
 # Thread-local storage for current user
@@ -141,3 +143,18 @@ class MaintenanceModeMiddleware(MiddlewareMixin):
         ):
             response = redirect(reverse("maintenance"))
             return response
+
+
+class TimezoneMiddleware:
+    """Activates the authenticated user's preferred timezone for each request."""
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        if hasattr(request, 'user') and request.user.is_authenticated:
+            tz_name = getattr(request.user, 'pref_timezone', None) or 'UTC'
+            dj_timezone.activate(pytz.timezone(tz_name))
+        else:
+            dj_timezone.deactivate()
+        return self.get_response(request)
