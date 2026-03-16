@@ -1,13 +1,46 @@
 {% if qualification_list %}
-<ul class="list-group list-group-flush">
-  {% for qualification in qualification_list %}
-  <li class="list-group-item">
-    <a class="fw-bold fs-8" href="{{ qualification.get_absolute_url }}">
-      {{ qualification.name }}{% if qualification.short_name %} - ({{ qualification.short_name }}){% endif %}
-    </a>
-  </li>
-  {% endfor %}
-</ul>
+<div class="table-responsive">
+  <table class="table table-sm fs-9 mb-0">
+    <thead>
+      <tr>
+        <th class="text-body-tertiary ps-3">Qualification</th>
+        <th class="text-body-tertiary" style="width: 100px;">Code</th>
+        <th class="text-body-tertiary" style="width: 120px;">Validity</th>
+        <th class="text-body-tertiary text-center" style="width: 80px;">Holders</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for qualification in qualification_list %}
+      <tr class="qualification-row" data-tags="{% for tag in qualification.tags.all %}{{ tag.slug }} {% endfor %}">
+        <td class="ps-3 py-2">
+          <a class="fw-semibold text-body-emphasis" href="{{ qualification.get_absolute_url }}">
+            {{ qualification.name }}
+          </a>
+        </td>
+        <td class="py-2 text-body-tertiary">
+          {{ qualification.short_name|default:"—" }}
+        </td>
+        <td class="py-2 text-body-tertiary fs-10">
+          {{ qualification.validity_period_display }}
+        </td>
+        <td class="py-2 text-center">
+          {% if qualification.annotated_awarded_count is not None %}
+            {% if qualification.annotated_awarded_count > 0 %}
+              <span class="badge badge-phoenix badge-phoenix-success">{{ qualification.annotated_awarded_count }}</span>
+            {% else %}
+              <span class="badge badge-phoenix badge-phoenix-secondary">0</span>
+            {% endif %}
+          {% else %}
+            <span class="badge badge-phoenix badge-phoenix-secondary">—</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
 {% else %}
-<div class="alert alert-phoenix-info" role="alert">No qualifications registered</div>
+<div class="p-3">
+  <div class="alert alert-phoenix-info mb-0" role="alert">No qualifications registered</div>
+</div>
 {% endif %}

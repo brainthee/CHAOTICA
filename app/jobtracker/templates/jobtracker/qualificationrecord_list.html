@@ -12,15 +12,17 @@
 
 {% block content %}
 
-<div class="row mb-2 gx-6 gy-3 mt-0 align-items-center">
+<div class="row mb-4 gx-6 gy-3 mt-0 align-items-center">
   <div class="col">
     <h2 class="mb-0">My Qualifications</h2>
   </div>
-  <div class="col-6">
-
-
-  </div>
-  <div class="col-3 d-flex justify-content-end">
+  <div class="col-auto d-flex justify-content-end gap-2">
+    {% if has_direct_reports %}
+    <a href="{% url 'view_team_qualifications' %}" class="btn btn-phoenix-secondary px-4">
+      <i class="fa-solid fa-users me-2"></i>
+      Team Qualifications
+    </a>
+    {% endif %}
     <button class="btn btn-phoenix-primary px-5 js-load-modal-form" data-url="{% url 'add_own_qualification' %}">
       <i class="fa-solid fa-plus me-2"></i>
       Add Qualification
@@ -28,67 +30,297 @@
   </div>
 </div>
 
-<div class="mx-n4 px-3 py-3 mx-lg-n6 px-lg-6 bg-body-emphasis border-top border-bottom border-200 position-relative top-1">
+{# Stat Cards #}
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex align-items-center">
+          <span class="fa-solid fa-certificate fs-7 text-success me-3"></span>
+          <div>
+            <p class="text-body-tertiary fs-10 mb-0">Awarded</p>
+            <h3 class="text-success mb-0">{{ awarded_count }}</h3>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex align-items-center">
+          <span class="fa-solid fa-spinner fs-7 text-primary me-3"></span>
+          <div>
+            <p class="text-body-tertiary fs-10 mb-0">In Progress</p>
+            <h3 class="text-primary mb-0">{{ in_progress_count }}</h3>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex align-items-center">
+          <span class="fa-solid fa-clock fs-7 text-warning me-3"></span>
+          <div>
+            <p class="text-body-tertiary fs-10 mb-0">Expiring Soon</p>
+            <h3 class="text-warning mb-0">{{ expiring_count }}</h3>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex align-items-center">
+          <span class="fa-solid fa-triangle-exclamation fs-7 text-danger me-3"></span>
+          <div>
+            <p class="text-body-tertiary fs-10 mb-0">Lapsed</p>
+            <h3 class="text-danger mb-0">{{ lapsed_count }}</h3>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# Alert banners for expiring qualifications #}
+{% if critical_records %}
+<div class="alert alert-phoenix-danger d-flex align-items-center mb-3" role="alert">
+  <span class="fa-solid fa-circle-exclamation me-3 fs-7"></span>
+  <div>
+    <strong>Expiring within 30 days:</strong>
+    {% for record in critical_records %}
+      {{ record.qualification }} ({{ record.days_to_lapse }} day{{ record.days_to_lapse|pluralize }}){% if not forloop.last %}, {% endif %}
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% if expiring_records %}
+<div class="alert alert-phoenix-warning d-flex align-items-center mb-3" role="alert">
+  <span class="fa-solid fa-clock me-3 fs-7"></span>
+  <div>
+    <strong>Expiring within 90 days:</strong>
+    {% for record in expiring_records %}
+      {{ record.qualification }} ({{ record.days_to_lapse }} day{{ record.days_to_lapse|pluralize }}){% if not forloop.last %}, {% endif %}
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{# Main qualification table #}
+<div class="mx-n4 px-3 py-3 mx-lg-n6 px-lg-6 bg-body-emphasis border-top border-bottom border-translucent position-relative top-1">
 
   <div class="table-responsive scrollbar mx-n1 px-1">
     <table class="table table-sm fs-9 datatable mb-0">
       <caption>Qualification List</caption>
       <thead>
         <tr>
-          <th class="sort align-middle ps-3" scope="col" data-sort="awarding_body" style="width:10%;">
+          <th class="sort align-middle ps-3" scope="col" style="width:12%;">
             Awarding Body
           </th>
-          <th class="sort align-middle ps-3" scope="col" data-sort="name" style="width:10%;">
-            Name
+          <th class="sort align-middle ps-3" scope="col" style="width:16%;">
+            Qualification
           </th>
-          <th class="sort align-middle ps-3" scope="col" data-sort="awarded" style="width:10%;">
-            Awarded Date
-          </th>
-          <th class="sort align-middle ps-3" scope="col" data-sort="lapse" style="width:15%;">
-            Lapse Date
-          </th>
-          <th class="sort align-middle ps-3" scope="col" data-sort="status" style="width:10%;">
+          <th class="sort align-middle ps-3" scope="col" style="width:10%;">
             Status
           </th>
-          <th class="sort align-end text-end" scope="col" style="width:10%;">
+          <th class="sort align-middle ps-3" scope="col" style="width:10%;">
+            Awarded Date
+          </th>
+          <th class="sort align-middle ps-3" scope="col" style="width:10%;">
+            Lapse Date
+          </th>
+          <th class="sort align-middle ps-3" scope="col" style="width:10%;">
+            Days Remaining
+          </th>
+          <th class="sort align-middle ps-3" scope="col" style="width:10%;">
+            Cert. Number
+          </th>
+          <th class="sort text-end align-middle pe-0 ps-4" scope="col" style="width:12%;">
           </th>
         </tr>
       </thead>
       <tbody>
       {% for record in qualificationrecord_list %}
-      <tr>
-          <td class="align-middle time white-space-nowrap ps-0 projectName py-4">
+      <tr class="{% if record.expiry_urgency == 'expired' %}table-danger{% elif record.expiry_urgency == 'critical' %}table-warning{% endif %}">
+          <td class="align-middle white-space-nowrap ps-3 py-4">
               {{ record.qualification.awarding_body }}
           </td>
-  
-          <td class="align-middle white-space-nowrap unit ps-3 py-4">
-              {{ record.qualification }}
+
+          <td class="align-middle white-space-nowrap ps-3 py-4">
+              <a href="{{ record.qualification.get_absolute_url }}" class="fw-semibold text-body-emphasis">
+                {{ record.qualification }}
+              </a>
           </td>
-  
-          <td class="align-middle white-space-nowrap unit ps-3 py-4">
-              {{ record.awarded_date }}
-          </td>
-  
-          <td class="align-middle white-space-nowrap client ps-3 py-4">
-              {{ record.lapse_date }}
-          </td>
-  
-          <td class="align-middle white-space-nowrap end ps-3 py-4">
+
+          <td class="align-middle white-space-nowrap ps-3 py-4">
             {% include 'partials/qualification/qualification_record_status_badge.html' with record=record %}
           </td>
-  
+
+          <td class="align-middle white-space-nowrap ps-3 py-4">
+              {{ record.awarded_date|default:"—" }}
+          </td>
+
+          <td class="align-middle white-space-nowrap ps-3 py-4">
+              {{ record.lapse_date|default:"—" }}
+          </td>
+
+          <td class="align-middle white-space-nowrap ps-3 py-4">
+            {% if record.expiry_urgency == 'expired' %}
+              <span class="badge badge-phoenix badge-phoenix-danger">Expired</span>
+            {% elif record.expiry_urgency == 'critical' %}
+              <span class="text-danger fw-bold"><i class="fa-solid fa-clock me-1"></i>{{ record.days_to_lapse }} day{{ record.days_to_lapse|pluralize }}</span>
+            {% elif record.expiry_urgency == 'warning' %}
+              <span class="text-warning"><i class="fa-solid fa-clock me-1"></i>{{ record.days_to_lapse }} day{{ record.days_to_lapse|pluralize }}</span>
+            {% elif record.expiry_urgency == 'ok' %}
+              <span class="text-success">{{ record.days_to_lapse }} day{{ record.days_to_lapse|pluralize }}</span>
+            {% else %}
+              <span class="text-body-tertiary">N/A</span>
+            {% endif %}
+          </td>
+
+          <td class="align-middle white-space-nowrap ps-3 py-4">
+            {{ record.certificate_number|default:"—" }}
+          </td>
+
           <td class="align-middle text-end white-space-nowrap pe-0 action">
-            <button class="btn btn-sm btn-phoenix-primary js-load-modal-form" 
-              data-url="{% url 'update_own_qualification' record.pk %}" type="button">
-              Edit
-            </button>
+            <div class="d-flex gap-1 justify-content-end">
+              {# Quick-action buttons based on current status #}
+              {% if record.status == 3 %}{# IN_PROGRESS #}
+                <button class="btn btn-sm btn-phoenix-warning js-quick-transition"
+                  data-url="{% url 'transition_own_qualification' record.pk 'mark_attempted' %}"
+                  data-date-field="attempt_date" data-date-label="Date of Attempt" type="button">
+                  <i class="fa-solid fa-pen-to-square me-1"></i>Attempted
+                </button>
+              {% elif record.status == 5 %}{# ATTEMPTED #}
+                <button class="btn btn-sm btn-phoenix-success js-quick-transition"
+                  data-url="{% url 'transition_own_qualification' record.pk 'mark_awarded' %}"
+                  data-date-field="awarded_date" data-date-label="Date Awarded" type="button">
+                  <i class="fa-solid fa-award me-1"></i>Awarded
+                </button>
+                <button class="btn btn-sm btn-phoenix-danger js-quick-transition"
+                  data-url="{% url 'transition_own_qualification' record.pk 'mark_unsuccessful' %}" type="button">
+                  <i class="fa-solid fa-xmark me-1"></i>Failed
+                </button>
+              {% elif record.status == 8 %}{# LAPSED #}
+                <button class="btn btn-sm btn-phoenix-primary js-quick-transition"
+                  data-url="{% url 'transition_own_qualification' record.pk 'start_renewal' %}" type="button">
+                  <i class="fa-solid fa-rotate me-1"></i>Renew
+                </button>
+              {% endif %}
+              <button class="btn btn-sm btn-phoenix-secondary js-load-modal-form"
+                data-url="{% url 'update_own_qualification' record.pk %}" type="button">
+                <i class="fa-solid fa-pencil me-1"></i>Edit
+              </button>
+            </div>
           </td>
         </tr>
-      {% endfor %}        
+      {% endfor %}
       </tbody>
     </table>
   </div>
-  
+
 </div>
 
-{% endblock content %}  
+{% if not qualificationrecord_list %}
+<div class="alert alert-phoenix-info mt-3" role="alert">
+  No qualifications recorded yet. Click "Add Qualification" to get started.
+</div>
+{% endif %}
+
+{% endblock content %}
+
+{% block extra_js %}
+{# Date prompt modal for quick transitions #}
+<div class="modal fade" id="datePromptModal" tabindex="-1">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title" id="datePromptLabel">Enter Date</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <label for="datePromptInput" class="form-label fs-9" id="datePromptFieldLabel">Date</label>
+        <input type="date" class="form-control form-control-sm" id="datePromptInput">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-sm btn-phoenix-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-sm btn-phoenix-primary" id="datePromptConfirm">Confirm</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+$(function() {
+  var dateModal = new bootstrap.Modal(document.getElementById("datePromptModal"));
+  var pendingUrl = null;
+  var pendingDateField = null;
+
+  function getCSRF() {
+    return $("[name=csrfmiddlewaretoken]").val() || document.cookie.match(/csrftoken=([^;]+)/)?.[1];
+  }
+
+  function submitTransition(url, data) {
+    $.ajax({
+      url: url,
+      type: "POST",
+      data: data,
+      headers: {"X-CSRFToken": getCSRF()},
+      success: function(resp) {
+        if (resp.success) location.reload();
+      },
+      error: function(xhr) {
+        var msg = xhr.responseJSON ? xhr.responseJSON.error : "An error occurred.";
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: msg,
+        });
+      }
+    });
+  }
+
+  $(".datatable").on("click", ".js-quick-transition", function(e) {
+    e.preventDefault();
+    var btn = $(this);
+    var url = btn.data("url");
+    var dateField = btn.data("date-field");
+    var dateLabel = btn.data("date-label");
+
+    if (dateField) {
+      // Show date prompt
+      pendingUrl = url;
+      pendingDateField = dateField;
+      $("#datePromptLabel").text(dateLabel || "Enter Date");
+      $("#datePromptFieldLabel").text(dateLabel || "Date");
+      // Default to today
+      $("#datePromptInput").val(new Date().toISOString().split("T")[0]);
+      dateModal.show();
+    } else {
+      submitTransition(url, {});
+    }
+  });
+
+  $("#datePromptConfirm").on("click", function() {
+    var dateVal = $("#datePromptInput").val();
+    if (!dateVal) {
+      $("#datePromptInput").addClass("is-invalid");
+      return;
+    }
+    var data = {};
+    data[pendingDateField] = dateVal;
+    dateModal.hide();
+    submitTransition(pendingUrl, data);
+  });
+
+  $("#datePromptInput").on("input", function() {
+    $(this).removeClass("is-invalid");
+  });
+});
+</script>
+{% endblock extra_js %}

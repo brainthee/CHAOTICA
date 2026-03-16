@@ -1,0 +1,3971 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../quality_assurance/">
+      
+      
+        <link rel="next" href="../../reporting/overview/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
+    
+    
+      
+        <title>Assessment Process - CHAOTICA Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#security-assessment-process" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="CHAOTICA Documentation" class="md-header__button md-logo" aria-label="CHAOTICA Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            CHAOTICA Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Assessment Process
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="CHAOTICA Documentation" class="md-nav__button md-logo" aria-label="CHAOTICA Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    CHAOTICA Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../definitions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Definitions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Installation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../installation/vars/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Environment Variables
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_2" id="__nav_4_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deployment
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Deployment
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../installation/deployment/docker/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docker
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../installation/deployment/k8/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kubernetes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../installation/deployment/aws_beanstalk/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AWS Elastic Beanstalk
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_1" id="__nav_5_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Jobs
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Jobs
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Jobs/managing_jobs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Managing Jobs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Jobs/lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_1_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_1_3" id="__nav_5_1_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Phases
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_5_1_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_1_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Phases
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Jobs/phases/managing_phases/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Managing Phases
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Jobs/phases/lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Phase Lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_2" id="__nav_5_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clients
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Clients
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../clients/adding_clients/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding Clients
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../clients/managing_contacts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Managing Contacts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../clients/framework_agreements/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Framework Agreements
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_3" id="__nav_5_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Organisational Units
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Organisational Units
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../organisational_units/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_4" id="__nav_5_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Team & Users
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Team & Users
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../team/user_management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Management
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_5" id="__nav_5_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Qualifications
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Qualifications
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../qualifications/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../qualifications/administration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Administration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_6" id="__nav_5_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scheduling
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Scheduling
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../scheduling/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../scheduling/validation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Validation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../scheduling/filtering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Filtering
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_7" id="__nav_5_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Operations
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Operations
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../operations/managing_leave/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Managing Leave
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_8" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5_8" id="__nav_5_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Workflows
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_8_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Workflows
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quality_assurance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quality Assurance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Assessment Process
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Assessment Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#assessment-methodology-overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Assessment Methodology Overview
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Assessment Methodology Overview">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#core-principles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Core Principles
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#assessment-lifecycle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Assessment Lifecycle
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-1-scoping-and-planning" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 1: Scoping and Planning
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 1: Scoping and Planning">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#initial-scoping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Initial Scoping
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#resource-planning" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resource Planning
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-2-team-assignment-and-preparation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 2: Team Assignment and Preparation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 2: Team Assignment and Preparation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#team-assembly" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Team Assembly
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pre-assessment-preparation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pre-Assessment Preparation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-3-assessment-execution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 3: Assessment Execution
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 3: Assessment Execution">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#kickoff-and-initial-activities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Kickoff and Initial Activities
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#testing-methodology" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing Methodology
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#evidence-collection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Evidence Collection
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#daily-operations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Daily Operations
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-4-analysis-and-documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 4: Analysis and Documentation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 4: Analysis and Documentation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#finding-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Finding Analysis
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#report-writing-process" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Report Writing Process
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#evidence-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Evidence Integration
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-5-quality-assurance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 5: Quality Assurance
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 5: Quality Assurance">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#technical-quality-assurance-tqa" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Technical Quality Assurance (TQA)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#peer-quality-assurance-pqa" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Peer Quality Assurance (PQA)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-6-client-delivery" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 6: Client Delivery
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 6: Client Delivery">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#delivery-preparation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Delivery Preparation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#client-presentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Client Presentation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-delivery-support" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Post-Delivery Support
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#service-specific-methodologies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Service-Specific Methodologies
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Service-Specific Methodologies">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#web-application-assessment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Web Application Assessment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#infrastructure-assessment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Infrastructure Assessment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#penetration-testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Penetration Testing
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#continuous-improvement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Continuous Improvement
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Continuous Improvement">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#process-enhancement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Process Enhancement
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#knowledge-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Knowledge Management
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#risk-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Risk Management
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Risk Management">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#assessment-risks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Assessment Risks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#risk-mitigation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Risk Mitigation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-topics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related Topics
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_9" id="__nav_5_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reporting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reporting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reporting/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reporting/custom_reports/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Custom Reports
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_10" id="__nav_5_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Notifications
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Notifications
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notifications/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Managing Notifications
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integration
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Integration
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../integration/azure_ad/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Azure AD/ADFS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../integration/email/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Email Systems
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../integration/apis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    External APIs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Administration
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Administration
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../administration/chaotica_settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Application Settings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../administration/permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Permissions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../administration/system_management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    System Management
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Development
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../development/getting_started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../development/api_documentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Documentation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../development/testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Security
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../security/access_control/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Access Control
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../security/data_protection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Protection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/common_issues/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Common Issues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Performance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/database_schema/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Database Schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#assessment-methodology-overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Assessment Methodology Overview
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Assessment Methodology Overview">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#core-principles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Core Principles
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#assessment-lifecycle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Assessment Lifecycle
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-1-scoping-and-planning" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 1: Scoping and Planning
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 1: Scoping and Planning">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#initial-scoping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Initial Scoping
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#resource-planning" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resource Planning
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-2-team-assignment-and-preparation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 2: Team Assignment and Preparation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 2: Team Assignment and Preparation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#team-assembly" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Team Assembly
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pre-assessment-preparation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pre-Assessment Preparation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-3-assessment-execution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 3: Assessment Execution
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 3: Assessment Execution">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#kickoff-and-initial-activities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Kickoff and Initial Activities
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#testing-methodology" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing Methodology
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#evidence-collection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Evidence Collection
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#daily-operations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Daily Operations
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-4-analysis-and-documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 4: Analysis and Documentation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 4: Analysis and Documentation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#finding-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Finding Analysis
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#report-writing-process" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Report Writing Process
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#evidence-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Evidence Integration
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-5-quality-assurance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 5: Quality Assurance
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 5: Quality Assurance">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#technical-quality-assurance-tqa" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Technical Quality Assurance (TQA)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#peer-quality-assurance-pqa" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Peer Quality Assurance (PQA)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-6-client-delivery" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 6: Client Delivery
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 6: Client Delivery">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#delivery-preparation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Delivery Preparation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#client-presentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Client Presentation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-delivery-support" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Post-Delivery Support
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#service-specific-methodologies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Service-Specific Methodologies
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Service-Specific Methodologies">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#web-application-assessment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Web Application Assessment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#infrastructure-assessment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Infrastructure Assessment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#penetration-testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Penetration Testing
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#continuous-improvement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Continuous Improvement
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Continuous Improvement">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#process-enhancement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Process Enhancement
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#knowledge-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Knowledge Management
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#risk-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Risk Management
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Risk Management">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#assessment-risks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Assessment Risks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#risk-mitigation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Risk Mitigation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-topics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related Topics
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="security-assessment-process">Security Assessment Process<a class="headerlink" href="#security-assessment-process" title="Permanent link">&para;</a></h1>
+<p>The security assessment process in CHAOTICA follows a structured methodology designed to deliver consistent, thorough, and professional security assessments. This guide outlines the complete process from initial scoping through final delivery.</p>
+<h2 id="assessment-methodology-overview">Assessment Methodology Overview<a class="headerlink" href="#assessment-methodology-overview" title="Permanent link">&para;</a></h2>
+<h3 id="core-principles">Core Principles<a class="headerlink" href="#core-principles" title="Permanent link">&para;</a></h3>
+<p><strong>Systematic Approach</strong>:
+- Standardized methodologies for each service type
+- Consistent testing procedures and techniques
+- Repeatable processes for quality assurance
+- Comprehensive documentation requirements</p>
+<p><strong>Risk-Based Focus</strong>:
+- Business impact-driven assessment priorities
+- Client environment and risk tolerance consideration
+- Practical and actionable recommendations
+- Clear communication of risk and remediation</p>
+<p><strong>Professional Excellence</strong>:
+- Industry standard methodologies and frameworks
+- Continuous improvement and best practice adoption
+- Quality assurance and peer review processes
+- Client-focused delivery and communication</p>
+<h3 id="assessment-lifecycle">Assessment Lifecycle<a class="headerlink" href="#assessment-lifecycle" title="Permanent link">&para;</a></h3>
+<pre class="mermaid"><code>graph TD
+    A[Job Creation] --&gt; B[Scoping &amp; Planning]
+    B --&gt; C[Team Assignment]
+    C --&gt; D[Kickoff &amp; Access]
+    D --&gt; E[Testing &amp; Assessment]
+    E --&gt; F[Finding Analysis]
+    F --&gt; G[Report Writing]
+    G --&gt; H[Technical QA]
+    H --&gt; I[Peer QA]
+    I --&gt; J[Client Delivery]
+    J --&gt; K[Follow-up &amp; Support]</code></pre>
+<h2 id="phase-1-scoping-and-planning">Phase 1: Scoping and Planning<a class="headerlink" href="#phase-1-scoping-and-planning" title="Permanent link">&para;</a></h2>
+<h3 id="initial-scoping">Initial Scoping<a class="headerlink" href="#initial-scoping" title="Permanent link">&para;</a></h3>
+<p><strong>Scope Definition</strong>:
+- Target systems and applications identification
+- Assessment boundaries and limitations
+- Testing windows and time constraints
+- Access requirements and procedures
+- Special considerations and restrictions</p>
+<p><strong>Client Requirements Analysis</strong>:
+- Business objectives and priorities
+- Compliance and regulatory requirements
+- Risk tolerance and sensitivity levels
+- Previous assessment history and context
+- Specific client concerns or focus areas</p>
+<p><strong>Scoping Activities</strong>:
+1. <strong>Requirements Gathering</strong>
+   - Client questionnaire completion
+   - Stakeholder interviews
+   - Technical environment review
+   - Constraint and limitation identification</p>
+<ol>
+<li><strong>Scope Documentation</strong></li>
+<li>Detailed scope statement creation</li>
+<li>Assumptions and dependencies listing</li>
+<li>Testing approach definition</li>
+<li>
+<p>Timeline and milestone planning</p>
+</li>
+<li>
+<p><strong>Client Approval</strong></p>
+</li>
+<li>Scope review and client feedback</li>
+<li>Modifications and adjustments</li>
+<li>Final scope approval and sign-off</li>
+<li>Statement of work finalization</li>
+</ol>
+<h3 id="resource-planning">Resource Planning<a class="headerlink" href="#resource-planning" title="Permanent link">&para;</a></h3>
+<p><strong>Team Composition</strong>:
+- Required skills and expertise identification
+- Team size and role assignments
+- Experience level requirements
+- Specialty knowledge needs</p>
+<p><strong>Timeline Development</strong>:
+- Assessment phase duration estimates
+- Testing window coordination
+- Report writing and review timeframes
+- Client interaction and meeting schedules</p>
+<p><strong>Tool and Resource Requirements</strong>:
+- Testing tools and software licenses
+- Hardware and infrastructure needs
+- Access credentials and permissions
+- Documentation and template resources</p>
+<h2 id="phase-2-team-assignment-and-preparation">Phase 2: Team Assignment and Preparation<a class="headerlink" href="#phase-2-team-assignment-and-preparation" title="Permanent link">&para;</a></h2>
+<h3 id="team-assembly">Team Assembly<a class="headerlink" href="#team-assembly" title="Permanent link">&para;</a></h3>
+<p><strong>Role Assignments</strong>:
+- <strong>Project Lead</strong>: Overall coordination and client relationship
+- <strong>Senior Consultant</strong>: Technical leadership and complex testing
+- <strong>Consultants</strong>: Core assessment and testing work
+- <strong>Report Author</strong>: Documentation and report writing
+- <strong>TQA Reviewer</strong>: Technical quality assurance
+- <strong>PQA Reviewer</strong>: Professional quality assurance</p>
+<p><strong>Skill Matching</strong>:
+- Technical expertise alignment
+- Client industry experience
+- Service-specific knowledge
+- Language and communication skills</p>
+<h3 id="pre-assessment-preparation">Pre-Assessment Preparation<a class="headerlink" href="#pre-assessment-preparation" title="Permanent link">&para;</a></h3>
+<p><strong>Team Briefing</strong>:
+- Project background and objectives
+- Client context and environment
+- Scope boundaries and limitations
+- Team roles and responsibilities
+- Communication protocols and procedures</p>
+<p><strong>Technical Preparation</strong>:
+- Tool setup and configuration
+- Testing environment preparation
+- Methodology review and customization
+- Evidence collection procedures
+- Documentation templates preparation</p>
+<p><strong>Access Coordination</strong>:
+- VPN and network access setup
+- Application credentials and permissions
+- Physical site access arrangements
+- Emergency contact procedures
+- Communication channel establishment</p>
+<h2 id="phase-3-assessment-execution">Phase 3: Assessment Execution<a class="headerlink" href="#phase-3-assessment-execution" title="Permanent link">&para;</a></h2>
+<h3 id="kickoff-and-initial-activities">Kickoff and Initial Activities<a class="headerlink" href="#kickoff-and-initial-activities" title="Permanent link">&para;</a></h3>
+<p><strong>Client Kickoff Meeting</strong>:
+- Project introduction and team presentation
+- Scope confirmation and expectation setting
+- Access procedure finalization
+- Communication protocol establishment
+- Timeline and milestone confirmation</p>
+<p><strong>Initial Reconnaissance</strong>:
+- Target environment discovery
+- System and service enumeration
+- Architecture and topology mapping
+- Initial vulnerability identification
+- Attack surface analysis</p>
+<h3 id="testing-methodology">Testing Methodology<a class="headerlink" href="#testing-methodology" title="Permanent link">&para;</a></h3>
+<p><strong>Systematic Testing Approach</strong>:
+1. <strong>Information Gathering</strong>
+   - Open source intelligence (OSINT)
+   - Network and service discovery
+   - Application fingerprinting
+   - Technology stack identification</p>
+<ol>
+<li><strong>Vulnerability Identification</strong></li>
+<li>Automated scanning and analysis</li>
+<li>Manual testing and validation</li>
+<li>Configuration review</li>
+<li>
+<p>Code analysis (if applicable)</p>
+</li>
+<li>
+<p><strong>Exploitation and Validation</strong></p>
+</li>
+<li>Proof-of-concept development</li>
+<li>Impact demonstration</li>
+<li>Privilege escalation testing</li>
+<li>
+<p>Lateral movement assessment</p>
+</li>
+<li>
+<p><strong>Post-Exploitation Analysis</strong></p>
+</li>
+<li>Data access and extraction</li>
+<li>Persistence mechanism testing</li>
+<li>System compromise assessment</li>
+<li>Business impact evaluation</li>
+</ol>
+<h3 id="evidence-collection">Evidence Collection<a class="headerlink" href="#evidence-collection" title="Permanent link">&para;</a></h3>
+<p><strong>Documentation Standards</strong>:
+- Screenshot capture and annotation
+- Command output recording
+- Network traffic analysis
+- Log file collection and analysis
+- Video recordings for complex demonstrations</p>
+<p><strong>Evidence Management</strong>:
+- Secure storage and encryption
+- Version control and organization
+- Access control and permissions
+- Retention and disposal procedures
+- Chain of custody maintenance</p>
+<h3 id="daily-operations">Daily Operations<a class="headerlink" href="#daily-operations" title="Permanent link">&para;</a></h3>
+<p><strong>Progress Tracking</strong>:
+- Daily standup meetings (for larger teams)
+- Progress updates to project lead
+- Issue and blocker identification
+- Timeline adjustment as needed
+- Client communication coordination</p>
+<p><strong>Quality Control</strong>:
+- Peer review of findings
+- Evidence validation and verification
+- False positive identification and removal
+- Consistent documentation standards
+- Regular checkpoint reviews</p>
+<h2 id="phase-4-analysis-and-documentation">Phase 4: Analysis and Documentation<a class="headerlink" href="#phase-4-analysis-and-documentation" title="Permanent link">&para;</a></h2>
+<h3 id="finding-analysis">Finding Analysis<a class="headerlink" href="#finding-analysis" title="Permanent link">&para;</a></h3>
+<p><strong>Risk Assessment</strong>:
+- Likelihood and impact evaluation
+- Business context consideration
+- Exploitability assessment
+- Remediation complexity analysis
+- Regulatory compliance impact</p>
+<p><strong>Risk Rating Matrix</strong>:
+<div class="highlight"><pre><span></span><code>Impact vs Likelihood Matrix:
+                Low    Medium   High
+High Impact     Medium  High    Critical
+Medium Impact   Low     Medium  High
+Low Impact      Info    Low     Medium
+</code></pre></div></p>
+<p><strong>Finding Categorization</strong>:
+- <strong>Critical</strong>: Immediate business risk, easy exploitation
+- <strong>High</strong>: Significant risk, moderate exploitation difficulty
+- <strong>Medium</strong>: Notable risk, requires specific conditions
+- <strong>Low</strong>: Limited risk, difficult to exploit
+- <strong>Informational</strong>: No direct risk, awareness item</p>
+<h3 id="report-writing-process">Report Writing Process<a class="headerlink" href="#report-writing-process" title="Permanent link">&para;</a></h3>
+<p><strong>Report Structure</strong>:
+1. <strong>Executive Summary</strong>
+   - Business-focused overview
+   - Key findings and recommendations
+   - Risk summary and priorities
+   - Strategic recommendations</p>
+<ol>
+<li><strong>Technical Details</strong></li>
+<li>Methodology and approach</li>
+<li>Detailed finding descriptions</li>
+<li>Evidence and proof-of-concept</li>
+<li>
+<p>Technical remediation guidance</p>
+</li>
+<li>
+<p><strong>Recommendations</strong></p>
+</li>
+<li>Prioritized action items</li>
+<li>Implementation guidance</li>
+<li>Resource requirements</li>
+<li>Timeline recommendations</li>
+</ol>
+<p><strong>Writing Guidelines</strong>:
+- Clear and concise language
+- Appropriate technical depth for audience
+- Consistent terminology and formatting
+- Professional presentation standards
+- Client-specific customization</p>
+<h3 id="evidence-integration">Evidence Integration<a class="headerlink" href="#evidence-integration" title="Permanent link">&para;</a></h3>
+<p><strong>Supporting Materials</strong>:
+- Screenshot organization and annotation
+- Code snippets and configurations
+- Network diagrams and visualizations
+- Tool outputs and scan results
+- Video demonstrations (if applicable)</p>
+<p><strong>Quality Assurance</strong>:
+- Evidence validation and verification
+- Consistent formatting and presentation
+- Proper attribution and sourcing
+- Client confidentiality protection
+- Secure handling procedures</p>
+<h2 id="phase-5-quality-assurance">Phase 5: Quality Assurance<a class="headerlink" href="#phase-5-quality-assurance" title="Permanent link">&para;</a></h2>
+<h3 id="technical-quality-assurance-tqa">Technical Quality Assurance (TQA)<a class="headerlink" href="#technical-quality-assurance-tqa" title="Permanent link">&para;</a></h3>
+<p><strong>TQA Focus Areas</strong>:
+- Technical accuracy verification
+- Methodology compliance confirmation
+- Evidence sufficiency validation
+- Risk rating appropriateness
+- Recommendation practicality</p>
+<p><strong>TQA Process</strong>:
+1. Complete technical review of all findings
+2. Evidence validation and verification
+3. Risk assessment confirmation
+4. Methodology compliance check
+5. Feedback provision and iteration</p>
+<h3 id="peer-quality-assurance-pqa">Peer Quality Assurance (PQA)<a class="headerlink" href="#peer-quality-assurance-pqa" title="Permanent link">&para;</a></h3>
+<p><strong>PQA Focus Areas</strong>:
+- Professional presentation quality
+- Client readiness assessment
+- Communication effectiveness
+- Deliverable completeness
+- Brand and standard compliance</p>
+<p><strong>PQA Process</strong>:
+1. Professional quality review
+2. Client-specific customization verification
+3. Executive summary effectiveness check
+4. Final presentation polish
+5. Delivery preparation and approval</p>
+<h2 id="phase-6-client-delivery">Phase 6: Client Delivery<a class="headerlink" href="#phase-6-client-delivery" title="Permanent link">&para;</a></h2>
+<h3 id="delivery-preparation">Delivery Preparation<a class="headerlink" href="#delivery-preparation" title="Permanent link">&para;</a></h3>
+<p><strong>Final Deliverable Package</strong>:
+- Main assessment report (PDF)
+- Executive presentation slides
+- Evidence package (if required)
+- Remediation guidance documents
+- Follow-up meeting materials</p>
+<p><strong>Quality Verification</strong>:
+- Final format and presentation check
+- Client branding and customization
+- Confidentiality markings verification
+- Distribution list confirmation
+- Delivery method selection</p>
+<h3 id="client-presentation">Client Presentation<a class="headerlink" href="#client-presentation" title="Permanent link">&para;</a></h3>
+<p><strong>Delivery Meeting</strong>:
+- Executive summary presentation
+- Key findings discussion
+- Risk prioritization and impact
+- Remediation planning guidance
+- Questions and clarification session</p>
+<p><strong>Presentation Best Practices</strong>:
+- Business-focused messaging
+- Clear risk communication
+- Actionable recommendations
+- Interactive discussion facilitation
+- Follow-up planning</p>
+<h3 id="post-delivery-support">Post-Delivery Support<a class="headerlink" href="#post-delivery-support" title="Permanent link">&para;</a></h3>
+<p><strong>Client Support Services</strong>:
+- Clarification and question answering
+- Additional evidence provision
+- Remediation guidance and support
+- Progress tracking assistance
+- Follow-up assessment planning</p>
+<p><strong>Documentation and Closure</strong>:
+- Client feedback collection
+- Lessons learned documentation
+- Process improvement identification
+- Project closure and archival
+- Relationship maintenance</p>
+<h2 id="service-specific-methodologies">Service-Specific Methodologies<a class="headerlink" href="#service-specific-methodologies" title="Permanent link">&para;</a></h2>
+<h3 id="web-application-assessment">Web Application Assessment<a class="headerlink" href="#web-application-assessment" title="Permanent link">&para;</a></h3>
+<p><strong>OWASP-Based Approach</strong>:
+- OWASP Top 10 comprehensive coverage
+- Business logic flaw identification
+- Authentication and authorization testing
+- Session management evaluation
+- Input validation and sanitization</p>
+<p><strong>Testing Techniques</strong>:
+- Manual code review and testing
+- Automated scanning integration
+- Dynamic application security testing
+- Static code analysis (if applicable)
+- API security assessment</p>
+<h3 id="infrastructure-assessment">Infrastructure Assessment<a class="headerlink" href="#infrastructure-assessment" title="Permanent link">&para;</a></h3>
+<p><strong>Network Security Focus</strong>:
+- Network architecture review
+- Firewall and segmentation testing
+- Server and service hardening
+- Access control evaluation
+- Monitoring and logging assessment</p>
+<p><strong>System Security Testing</strong>:
+- Operating system hardening
+- Patch management evaluation
+- Service configuration review
+- Privilege escalation testing
+- Data protection mechanisms</p>
+<h3 id="penetration-testing">Penetration Testing<a class="headerlink" href="#penetration-testing" title="Permanent link">&para;</a></h3>
+<p><strong>Adversarial Simulation</strong>:
+- Red team methodology adoption
+- Attack chain development
+- Stealth and evasion techniques
+- Persistence mechanism testing
+- Exfiltration simulation</p>
+<p><strong>Kill Chain Approach</strong>:
+1. Reconnaissance and information gathering
+2. Initial access and foothold establishment
+3. Privilege escalation and lateral movement
+4. Persistence and stealth maintenance
+5. Data access and exfiltration
+6. Impact demonstration and cleanup</p>
+<h2 id="continuous-improvement">Continuous Improvement<a class="headerlink" href="#continuous-improvement" title="Permanent link">&para;</a></h2>
+<h3 id="process-enhancement">Process Enhancement<a class="headerlink" href="#process-enhancement" title="Permanent link">&para;</a></h3>
+<p><strong>Regular Reviews</strong>:
+- Methodology effectiveness evaluation
+- Client feedback integration
+- Industry best practice adoption
+- Tool and technique updates
+- Team skill development planning</p>
+<p><strong>Metrics and KPIs</strong>:
+- Assessment quality scores
+- Client satisfaction ratings
+- Time-to-delivery metrics
+- Finding accuracy rates
+- Team productivity measures</p>
+<h3 id="knowledge-management">Knowledge Management<a class="headerlink" href="#knowledge-management" title="Permanent link">&para;</a></h3>
+<p><strong>Documentation and Templates</strong>:
+- Methodology guide maintenance
+- Report template improvements
+- Finding database development
+- Best practice documentation
+- Training material updates</p>
+<p><strong>Team Development</strong>:
+- Regular training and certification
+- Knowledge sharing sessions
+- Peer mentoring programs
+- Conference and industry participation
+- Cross-service experience development</p>
+<h2 id="risk-management">Risk Management<a class="headerlink" href="#risk-management" title="Permanent link">&para;</a></h2>
+<h3 id="assessment-risks">Assessment Risks<a class="headerlink" href="#assessment-risks" title="Permanent link">&para;</a></h3>
+<p><strong>Technical Risks</strong>:
+- System availability and stability
+- Data integrity and confidentiality
+- Network performance impact
+- Unintended system disruption
+- Evidence corruption or loss</p>
+<p><strong>Business Risks</strong>:
+- Client relationship impact
+- Legal and regulatory compliance
+- Intellectual property protection
+- Professional liability exposure
+- Reputation and brand risk</p>
+<h3 id="risk-mitigation">Risk Mitigation<a class="headerlink" href="#risk-mitigation" title="Permanent link">&para;</a></h3>
+<p><strong>Preventive Measures</strong>:
+- Comprehensive testing procedures
+- Backup and recovery planning
+- Insurance and liability coverage
+- Professional standard compliance
+- Regular training and certification</p>
+<p><strong>Contingency Planning</strong>:
+- Issue escalation procedures
+- Emergency response protocols
+- Client communication plans
+- Technical recovery procedures
+- Legal and compliance support</p>
+<h2 id="related-topics">Related Topics<a class="headerlink" href="#related-topics" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../quality_assurance/">Quality Assurance</a> - Detailed QA processes and procedures</li>
+<li><a href="../../Jobs/phases/managing_phases/">Managing Phases</a> - Phase management and execution</li>
+<li><a href="../../team/user_management/">Team Management</a> - Team coordination and resource management</li>
+<li><a href="../../reporting/overview/">Reporting</a> - Report generation and delivery processes</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": [], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/gh/rod2ik/cdn@main/mkdocs/javascripts/mkdocs-graphviz.js"></script>
+      
+    
+  </body>
+</html>

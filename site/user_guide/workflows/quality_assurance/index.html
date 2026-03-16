@@ -1,0 +1,3710 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../../operations/managing_leave/">
+      
+      
+        <link rel="next" href="../assessment_process/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
+    
+    
+      
+        <title>Quality Assurance - CHAOTICA Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#quality-assurance-workflows" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="CHAOTICA Documentation" class="md-header__button md-logo" aria-label="CHAOTICA Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            CHAOTICA Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Quality Assurance
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="CHAOTICA Documentation" class="md-nav__button md-logo" aria-label="CHAOTICA Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    CHAOTICA Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../definitions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Definitions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Installation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../installation/vars/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Environment Variables
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_2" id="__nav_4_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deployment
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Deployment
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../installation/deployment/docker/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docker
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../installation/deployment/k8/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kubernetes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../installation/deployment/aws_beanstalk/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AWS Elastic Beanstalk
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_1" id="__nav_5_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Jobs
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Jobs
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Jobs/managing_jobs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Managing Jobs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Jobs/lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_1_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_1_3" id="__nav_5_1_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Phases
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_5_1_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_1_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Phases
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Jobs/phases/managing_phases/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Managing Phases
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Jobs/phases/lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Phase Lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_2" id="__nav_5_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clients
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Clients
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../clients/adding_clients/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding Clients
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../clients/managing_contacts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Managing Contacts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../clients/framework_agreements/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Framework Agreements
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_3" id="__nav_5_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Organisational Units
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Organisational Units
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../organisational_units/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_4" id="__nav_5_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Team & Users
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Team & Users
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../team/user_management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Management
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_5" id="__nav_5_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Qualifications
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Qualifications
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../qualifications/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../qualifications/administration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Administration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_6" id="__nav_5_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scheduling
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Scheduling
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../scheduling/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../scheduling/validation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Validation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../scheduling/filtering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Filtering
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_7" id="__nav_5_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Operations
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Operations
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../operations/managing_leave/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Managing Leave
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_8" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5_8" id="__nav_5_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Workflows
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_8_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Workflows
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quality Assurance
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quality Assurance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#qa-framework-overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        QA Framework Overview
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="QA Framework Overview">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#quality-assurance-philosophy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quality Assurance Philosophy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#qa-roles-and-responsibilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        QA Roles and Responsibilities
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#technical-quality-assurance-tqa" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Technical Quality Assurance (TQA)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Technical Quality Assurance (TQA)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tqa-objectives" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TQA Objectives
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tqa-process" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TQA Process
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="TQA Process">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-pre-tqa-preparation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Pre-TQA Preparation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-tqa-review-process" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. TQA Review Process
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-tqa-feedback-and-revision" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. TQA Feedback and Revision
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-tqa-approval" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. TQA Approval
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tqa-best-practices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TQA Best Practices
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#peer-quality-assurance-pqa" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Peer Quality Assurance (PQA)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Peer Quality Assurance (PQA)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pqa-objectives" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PQA Objectives
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pqa-process" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PQA Process
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="PQA Process">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-pre-pqa-preparation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Pre-PQA Preparation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-pqa-review-process" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. PQA Review Process
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-pqa-feedback-and-final-revision" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. PQA Feedback and Final Revision
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-pqa-approval-and-release" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. PQA Approval and Release
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#specialized-qa-processes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Specialized QA Processes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Specialized QA Processes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#high-risk-assessment-qa" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        High-Risk Assessment QA
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#multi-service-qa-coordination" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multi-Service QA Coordination
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#remote-qa-process" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Remote QA Process
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#qa-metrics-and-improvement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        QA Metrics and Improvement
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="QA Metrics and Improvement">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#quality-metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quality Metrics
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#continuous-improvement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Continuous Improvement
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#qa-process-challenges" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        QA Process Challenges
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#technology-support" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Technology Support
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Technology Support">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#chaotica-qa-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CHAOTICA QA Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#quality-templates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quality Templates
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-topics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related Topics
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../assessment_process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Assessment Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_9" id="__nav_5_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reporting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reporting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reporting/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reporting/custom_reports/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Custom Reports
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_10" id="__nav_5_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Notifications
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Notifications
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notifications/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Managing Notifications
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integration
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Integration
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../integration/azure_ad/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Azure AD/ADFS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../integration/email/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Email Systems
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../integration/apis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    External APIs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Administration
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Administration
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../administration/chaotica_settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Application Settings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../administration/permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Permissions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../administration/system_management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    System Management
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Development
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../development/getting_started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../development/api_documentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Documentation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../development/testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Security
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../security/access_control/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Access Control
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../security/data_protection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Protection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/common_issues/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Common Issues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Performance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/database_schema/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Database Schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#qa-framework-overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        QA Framework Overview
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="QA Framework Overview">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#quality-assurance-philosophy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quality Assurance Philosophy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#qa-roles-and-responsibilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        QA Roles and Responsibilities
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#technical-quality-assurance-tqa" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Technical Quality Assurance (TQA)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Technical Quality Assurance (TQA)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tqa-objectives" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TQA Objectives
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tqa-process" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TQA Process
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="TQA Process">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-pre-tqa-preparation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Pre-TQA Preparation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-tqa-review-process" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. TQA Review Process
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-tqa-feedback-and-revision" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. TQA Feedback and Revision
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-tqa-approval" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. TQA Approval
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tqa-best-practices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TQA Best Practices
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#peer-quality-assurance-pqa" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Peer Quality Assurance (PQA)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Peer Quality Assurance (PQA)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pqa-objectives" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PQA Objectives
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pqa-process" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PQA Process
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="PQA Process">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-pre-pqa-preparation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Pre-PQA Preparation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-pqa-review-process" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. PQA Review Process
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-pqa-feedback-and-final-revision" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. PQA Feedback and Final Revision
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-pqa-approval-and-release" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. PQA Approval and Release
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#specialized-qa-processes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Specialized QA Processes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Specialized QA Processes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#high-risk-assessment-qa" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        High-Risk Assessment QA
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#multi-service-qa-coordination" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multi-Service QA Coordination
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#remote-qa-process" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Remote QA Process
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#qa-metrics-and-improvement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        QA Metrics and Improvement
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="QA Metrics and Improvement">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#quality-metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quality Metrics
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#continuous-improvement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Continuous Improvement
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#qa-process-challenges" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        QA Process Challenges
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#technology-support" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Technology Support
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Technology Support">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#chaotica-qa-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CHAOTICA QA Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#quality-templates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quality Templates
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-topics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related Topics
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="quality-assurance-workflows">Quality Assurance Workflows<a class="headerlink" href="#quality-assurance-workflows" title="Permanent link">&para;</a></h1>
+<p>Quality Assurance (QA) is a cornerstone of CHAOTICA's approach to security assessment delivery. The system implements a dual-review process consisting of Technical Quality Assurance (TQA) and Peer Quality Assurance (PQA) to ensure consistent, high-quality deliverables.</p>
+<h2 id="qa-framework-overview">QA Framework Overview<a class="headerlink" href="#qa-framework-overview" title="Permanent link">&para;</a></h2>
+<h3 id="quality-assurance-philosophy">Quality Assurance Philosophy<a class="headerlink" href="#quality-assurance-philosophy" title="Permanent link">&para;</a></h3>
+<p><strong>Objectives</strong>:
+- Ensure technical accuracy of all findings and recommendations
+- Maintain consistency across reports and deliverables
+- Verify completeness of assessment coverage
+- Validate evidence and supporting materials
+- Confirm appropriate risk ratings and business impact
+- Ensure professional presentation and client readiness</p>
+<p><strong>Two-Stage Process</strong>:
+1. <strong>Technical Quality Assurance (TQA)</strong>: Technical accuracy and completeness
+2. <strong>Peer Quality Assurance (PQA)</strong>: Professional quality and client readiness</p>
+<h3 id="qa-roles-and-responsibilities">QA Roles and Responsibilities<a class="headerlink" href="#qa-roles-and-responsibilities" title="Permanent link">&para;</a></h3>
+<p><strong>TQA Reviewer</strong>:
+- Senior technical practitioner in the relevant service area
+- Deep expertise in methodologies and tools used
+- Experience in similar client environments
+- Independent of the testing team (conflict of interest avoidance)</p>
+<p><strong>PQA Reviewer</strong>:
+- Experienced consultant with strong report writing skills
+- Different person from TQA reviewer (independent perspective)
+- Focus on presentation, clarity, and professional standards
+- Client relationship experience preferred</p>
+<p><strong>Report Author</strong>:
+- Primary responsibility for report content and quality
+- Responds to QA feedback and implements improvements
+- Maintains technical accuracy throughout review process
+- Ensures final deliverable meets all requirements</p>
+<p><strong>Project Lead</strong>:
+- Coordinates QA process and timelines
+- Resolves conflicts and escalates issues
+- Ensures QA feedback is properly addressed
+- Signs off on final deliverable quality</p>
+<h2 id="technical-quality-assurance-tqa">Technical Quality Assurance (TQA)<a class="headerlink" href="#technical-quality-assurance-tqa" title="Permanent link">&para;</a></h2>
+<h3 id="tqa-objectives">TQA Objectives<a class="headerlink" href="#tqa-objectives" title="Permanent link">&para;</a></h3>
+<p><strong>Technical Verification</strong>:
+- Validate technical accuracy of all findings
+- Confirm testing methodology was properly applied
+- Verify evidence supports conclusions drawn
+- Check for false positives and incorrect interpretations</p>
+<p><strong>Completeness Assessment</strong>:
+- Ensure all scope areas were adequately covered
+- Verify testing was comprehensive and thorough
+- Confirm no significant gaps in assessment
+- Validate that industry standards were followed</p>
+<p><strong>Risk Assessment Validation</strong>:
+- Review risk ratings for appropriateness
+- Confirm business impact assessments are realistic
+- Verify likelihood and impact scoring
+- Ensure risk matrix is properly applied</p>
+<h3 id="tqa-process">TQA Process<a class="headerlink" href="#tqa-process" title="Permanent link">&para;</a></h3>
+<h4 id="1-pre-tqa-preparation">1. Pre-TQA Preparation<a class="headerlink" href="#1-pre-tqa-preparation" title="Permanent link">&para;</a></h4>
+<p><strong>Report Author Responsibilities</strong>:
+- Complete initial report draft with all sections
+- Include all evidence and supporting materials
+- Perform self-review and initial quality check
+- Ensure report follows organizational templates
+- Package all materials for TQA reviewer</p>
+<p><strong>Required Materials</strong>:
+- Complete report draft in final format
+- All screenshots and evidence files
+- Testing notes and methodology documentation
+- Tool outputs and scan results
+- Proof-of-concept code or demonstrations
+- Client-specific context and constraints</p>
+<h4 id="2-tqa-review-process">2. TQA Review Process<a class="headerlink" href="#2-tqa-review-process" title="Permanent link">&para;</a></h4>
+<p><strong>Week 1: Initial Review</strong>
+- TQA reviewer receives materials and begins review
+- Focus on technical content and methodology
+- Identify any major technical issues or gaps
+- Document initial feedback and concerns</p>
+<p><strong>Technical Review Checklist</strong>:
+- [ ] Testing methodology appropriately applied
+- [ ] All findings technically accurate and verified
+- [ ] Evidence sufficient to support each conclusion
+- [ ] No false positives or misinterpretations
+- [ ] Risk ratings justified and appropriate
+- [ ] Recommendations practical and actionable
+- [ ] Industry standards and best practices followed
+- [ ] Testing coverage adequate for scope</p>
+<p><strong>Week 2: Detailed Analysis</strong>
+- Deep dive into complex findings and recommendations
+- Validate technical details and impact assessments
+- Review evidence quality and completeness
+- Prepare comprehensive feedback document</p>
+<h4 id="3-tqa-feedback-and-revision">3. TQA Feedback and Revision<a class="headerlink" href="#3-tqa-feedback-and-revision" title="Permanent link">&para;</a></h4>
+<p><strong>Feedback Categories</strong>:
+- <strong>Critical</strong>: Must be fixed before proceeding (technical errors, false positives)
+- <strong>Major</strong>: Should be addressed (incomplete evidence, unclear explanations)
+- <strong>Minor</strong>: Suggested improvements (additional context, better explanations)
+- <strong>Editorial</strong>: Style and presentation improvements</p>
+<p><strong>Feedback Format</strong>:
+<div class="highlight"><pre><span></span><code>Finding: [Finding Title or Section]
+Issue: [Description of the problem]
+Recommendation: [Suggested correction or improvement]
+Priority: [Critical/Major/Minor/Editorial]
+</code></pre></div></p>
+<p><strong>Revision Process</strong>:
+1. Report author reviews all TQA feedback
+2. Addresses critical and major issues first
+3. Implements suggested improvements where appropriate
+4. Documents any feedback not implemented with rationale
+5. Resubmits revised report for TQA approval</p>
+<h4 id="4-tqa-approval">4. TQA Approval<a class="headerlink" href="#4-tqa-approval" title="Permanent link">&para;</a></h4>
+<p><strong>Approval Criteria</strong>:
+- All critical issues resolved
+- Major issues adequately addressed
+- Technical accuracy verified
+- Evidence supporting all conclusions
+- Appropriate methodology applied</p>
+<p><strong>TQA Sign-off</strong>:
+- Formal approval in CHAOTICA system
+- Updated report status to "TQA Complete"
+- Handover to PQA process
+- Documentation of approval decision</p>
+<h3 id="tqa-best-practices">TQA Best Practices<a class="headerlink" href="#tqa-best-practices" title="Permanent link">&para;</a></h3>
+<p><strong>For TQA Reviewers</strong>:
+- Allocate sufficient time for thorough review
+- Focus on technical accuracy over presentation
+- Provide specific, actionable feedback
+- Explain reasoning behind recommendations
+- Consider client context and constraints
+- Maintain professional and constructive tone</p>
+<p><strong>For Report Authors</strong>:
+- Submit complete, self-reviewed materials
+- Respond promptly to feedback requests
+- Ask questions if feedback is unclear
+- Document rationale for any disagreements
+- Maintain open communication throughout process
+- View feedback as improvement opportunity</p>
+<h2 id="peer-quality-assurance-pqa">Peer Quality Assurance (PQA)<a class="headerlink" href="#peer-quality-assurance-pqa" title="Permanent link">&para;</a></h2>
+<h3 id="pqa-objectives">PQA Objectives<a class="headerlink" href="#pqa-objectives" title="Permanent link">&para;</a></h3>
+<p><strong>Professional Quality</strong>:
+- Ensure report is client-ready and professional
+- Verify clear, concise, and appropriate language
+- Check consistency with organizational standards
+- Validate executive summary effectiveness</p>
+<p><strong>Communication Excellence</strong>:
+- Confirm technical content is appropriately explained
+- Verify audience-appropriate level of detail
+- Ensure recommendations are clear and actionable
+- Check for proper risk communication</p>
+<p><strong>Client Readiness</strong>:
+- Final check before client delivery
+- Ensure all client-specific requirements met
+- Verify contractual deliverables are included
+- Confirm professional presentation standards</p>
+<h3 id="pqa-process">PQA Process<a class="headerlink" href="#pqa-process" title="Permanent link">&para;</a></h3>
+<h4 id="1-pre-pqa-preparation">1. Pre-PQA Preparation<a class="headerlink" href="#1-pre-pqa-preparation" title="Permanent link">&para;</a></h4>
+<p><strong>Prerequisites</strong>:
+- TQA process must be completed and approved
+- All technical issues resolved
+- Report in near-final format
+- Client deliverable requirements confirmed</p>
+<p><strong>Materials Required</strong>:
+- TQA-approved report
+- Client statement of work or contract
+- Organizational report templates and standards
+- Previous client reports for consistency
+- Branding and formatting guidelines</p>
+<h4 id="2-pqa-review-process">2. PQA Review Process<a class="headerlink" href="#2-pqa-review-process" title="Permanent link">&para;</a></h4>
+<p><strong>Professional Standards Review</strong>:
+- Report structure and organization
+- Language clarity and professionalism
+- Executive summary quality and impact
+- Consistent terminology and formatting
+- Appropriate technical depth for audience</p>
+<p><strong>Client-Specific Review</strong>:
+- Contractual deliverables included
+- Client branding and formatting applied
+- Confidentiality and handling markings
+- Distribution and access controls
+- Client-specific terminology usage</p>
+<p><strong>PQA Review Checklist</strong>:
+- [ ] Executive summary clearly communicates key points
+- [ ] Language appropriate for intended audience
+- [ ] Report structure logical and easy to follow
+- [ ] Consistent formatting and presentation
+- [ ] All contractual requirements met
+- [ ] Professional appearance and branding
+- [ ] Recommendations clear and actionable
+- [ ] Risk communication effective
+- [ ] Supporting materials properly integrated</p>
+<h4 id="3-pqa-feedback-and-final-revision">3. PQA Feedback and Final Revision<a class="headerlink" href="#3-pqa-feedback-and-final-revision" title="Permanent link">&para;</a></h4>
+<p><strong>Focus Areas</strong>:
+- Presentation and readability improvements
+- Executive summary enhancement
+- Client communication optimization
+- Professional polish and final touches</p>
+<p><strong>Final Revision</strong>:
+- Address all PQA feedback
+- Final formatting and presentation polish
+- Spell check and grammar review
+- Generate final PDF and deliverable packages
+- Prepare presentation materials if required</p>
+<h4 id="4-pqa-approval-and-release">4. PQA Approval and Release<a class="headerlink" href="#4-pqa-approval-and-release" title="Permanent link">&para;</a></h4>
+<p><strong>Final Approval</strong>:
+- PQA reviewer confirms client readiness
+- Project lead signs off on deliverable
+- Report status updated to "PQA Complete"
+- Ready for client delivery</p>
+<h2 id="specialized-qa-processes">Specialized QA Processes<a class="headerlink" href="#specialized-qa-processes" title="Permanent link">&para;</a></h2>
+<h3 id="high-risk-assessment-qa">High-Risk Assessment QA<a class="headerlink" href="#high-risk-assessment-qa" title="Permanent link">&para;</a></h3>
+<p><strong>Additional Requirements</strong>:
+- Senior reviewer involvement
+- Extended review periods
+- Additional technical validation
+- Management oversight and approval
+- Enhanced documentation requirements</p>
+<p><strong>Risk Factors</strong>:
+- Critical infrastructure assessments
+- High-profile client engagements
+- Novel attack techniques or findings
+- Regulatory compliance requirements
+- Significant business impact potential</p>
+<h3 id="multi-service-qa-coordination">Multi-Service QA Coordination<a class="headerlink" href="#multi-service-qa-coordination" title="Permanent link">&para;</a></h3>
+<p><strong>Cross-Service Reviews</strong>:
+- Coordination between different service areas
+- Consistency across multiple assessment types
+- Integrated findings and recommendations
+- Unified client communication approach</p>
+<p><strong>Portfolio QA</strong>:
+- Multiple related assessments
+- Framework agreement deliverables
+- Consistent messaging across engagements
+- Strategic client relationship considerations</p>
+<h3 id="remote-qa-process">Remote QA Process<a class="headerlink" href="#remote-qa-process" title="Permanent link">&para;</a></h3>
+<p><strong>Distributed Team QA</strong>:
+- Digital collaboration tools usage
+- Secure document sharing procedures
+- Video conference review sessions
+- Time zone coordination considerations
+- Enhanced communication protocols</p>
+<h2 id="qa-metrics-and-improvement">QA Metrics and Improvement<a class="headerlink" href="#qa-metrics-and-improvement" title="Permanent link">&para;</a></h2>
+<h3 id="quality-metrics">Quality Metrics<a class="headerlink" href="#quality-metrics" title="Permanent link">&para;</a></h3>
+<p><strong>TQA Metrics</strong>:
+- Time from submission to initial feedback
+- Number of revision cycles required
+- Critical and major issue identification rates
+- TQA approval time and efficiency
+- Technical accuracy improvement tracking</p>
+<p><strong>PQA Metrics</strong>:
+- Client satisfaction with deliverable quality
+- Professional presentation scores
+- Communication effectiveness ratings
+- Time to final approval
+- Post-delivery feedback incorporation</p>
+<p><strong>Overall QA Metrics</strong>:
+- End-to-end QA process duration
+- Client acceptance rates
+- Follow-up question frequency
+- Repeat client engagement rates
+- Team satisfaction with QA process</p>
+<h3 id="continuous-improvement">Continuous Improvement<a class="headerlink" href="#continuous-improvement" title="Permanent link">&para;</a></h3>
+<p><strong>Process Enhancement</strong>:
+- Regular QA process reviews
+- Feedback from reviewers and authors
+- Client input on deliverable quality
+- Industry best practice adoption
+- Tool and template improvements</p>
+<p><strong>Training and Development</strong>:
+- QA reviewer skill development
+- Report writing training programs
+- Technical accuracy workshops
+- Client communication enhancement
+- Quality standard updates</p>
+<h3 id="qa-process-challenges">QA Process Challenges<a class="headerlink" href="#qa-process-challenges" title="Permanent link">&para;</a></h3>
+<p><strong>Common Issues</strong>:
+- Time pressure and deadline constraints
+- Resource availability for thorough review
+- Consistency across different reviewers
+- Balancing technical detail with readability
+- Managing client expectations</p>
+<p><strong>Mitigation Strategies</strong>:
+- Early QA planning and resource allocation
+- Standardized checklists and procedures
+- Regular reviewer calibration sessions
+- Template and guide improvements
+- Proactive client communication</p>
+<h2 id="technology-support">Technology Support<a class="headerlink" href="#technology-support" title="Permanent link">&para;</a></h2>
+<h3 id="chaotica-qa-features">CHAOTICA QA Features<a class="headerlink" href="#chaotica-qa-features" title="Permanent link">&para;</a></h3>
+<p><strong>Workflow Management</strong>:
+- Automated QA process tracking
+- Review assignment and notification
+- Status updates and milestone tracking
+- Document version control
+- Audit trail maintenance</p>
+<p><strong>Collaboration Tools</strong>:
+- In-line commenting and feedback
+- Reviewer assignment management
+- Notification and reminder systems
+- Progress tracking dashboards
+- Integration with project timelines</p>
+<h3 id="quality-templates">Quality Templates<a class="headerlink" href="#quality-templates" title="Permanent link">&para;</a></h3>
+<p><strong>Standardized Components</strong>:
+- Report templates and structures
+- Finding description formats
+- Risk assessment matrices
+- Recommendation frameworks
+- Executive summary templates</p>
+<p><strong>Customization Options</strong>:
+- Client-specific branding
+- Service-specific content
+- Industry-focused messaging
+- Compliance-driven formats
+- Regional adaptation capabilities</p>
+<h2 id="related-topics">Related Topics<a class="headerlink" href="#related-topics" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../../Jobs/phases/managing_phases/">Managing Phases</a> - Phase execution and QA integration</li>
+<li><a href="../assessment_process/">Assessment Process</a> - Overall assessment methodology</li>
+<li><a href="../../team/user_management/">User Management</a> - QA reviewer assignment and permissions</li>
+<li><a href="../../reporting/overview/">Reporting</a> - Report generation and delivery</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": [], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/gh/rod2ik/cdn@main/mkdocs/javascripts/mkdocs-graphviz.js"></script>
+      
+    
+  </body>
+</html>

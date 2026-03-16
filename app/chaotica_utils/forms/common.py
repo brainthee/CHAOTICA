@@ -443,6 +443,10 @@ class CustomConfigForm(ConstanceForm):
                     ),
                 ),
                 Column(
+                    section("Calendar Feeds",
+                        fg("CALENDAR_FEED_ENABLED", floating=False),
+                        fg("CALENDAR_FAMILY_FEED_ENABLED", floating=False),
+                    ),
                     section("Support Links",
                         fg("SUPPORT_DOC_URL", floating=False),
                         fg("SUPPORT_MAILBOX", floating=False),

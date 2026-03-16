@@ -33,6 +33,7 @@ from .enums import (
     DefaultTimeSlotTypes,
     JobStatuses,
     PhaseStatuses,
+    QualificationStatus,
     TimeSlotDeliveryRole,
 )
 from crispy_forms.helper import FormHelper
@@ -40,6 +41,8 @@ from crispy_forms.bootstrap import StrictButton, FieldWithButtons
 from crispy_forms.layout import Layout, Row, Column, Field, Div, HTML, Submit
 from crispy_bootstrap5.bootstrap5 import FloatingField
 from django_select2 import forms as s2forms
+from django.db.models import Q
+from django.db.models.functions import Lower
 from django.utils.html import format_html
 from chaotica_utils.enums import UnitRoles
 from bootstrap_datepicker_plus.widgets import (
@@ -2344,6 +2347,7 @@ class QualificationForm(forms.ModelForm):
         self.fields["guidance_url"].label = False
         self.fields["validity_period"].label = False
         self.fields["tags"].label = False
+        self.fields["description"].label = False
 
     class Meta:
         model = Qualification
@@ -2351,10 +2355,27 @@ class QualificationForm(forms.ModelForm):
             "name",
             "short_name",
             "tags",
+            "description",
             "validity_period",
+            "verification_required",
             "url",
             "guidance_url",
         ]
+
+
+class QualificationSelect2Widget(s2forms.ModelSelect2Widget):
+    search_fields = ['name__icontains']  # fallback, not actually used
+
+    def filter_queryset(self, request, term, queryset=None, **kwargs):
+        if queryset is None:
+            queryset = self.get_queryset()
+        q = term.lower()
+        return queryset.annotate(
+            lower_name=Lower("name"),
+            lower_short_name=Lower("short_name"),
+        ).filter(
+            Q(lower_name__contains=q) | Q(lower_short_name__contains=q)
+        )
 
 
 class OwnQualificationRecordForm(forms.ModelForm):
@@ -2362,7 +2383,7 @@ class OwnQualificationRecordForm(forms.ModelForm):
     qualification = forms.ModelChoiceField(
         required=True,
         queryset=Qualification.objects.all(),
-        widget=s2forms.ModelSelect2Widget(
+        widget=QualificationSelect2Widget(
             attrs={
                 'class': 'select2-widget',
                 'data-minimum-input-length': 3,
@@ -2386,26 +2407,53 @@ class OwnQualificationRecordForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(OwnQualificationRecordForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
-        self.helper.layout = Layout(
-            Div(
-                Row(
-                    Column(Field("qualification", style="width: 100%;")),
+
+        # Restrict status choices based on current status
+        current_status = self.instance.status if self.instance.pk else None
+        allowed = QualificationStatus.ALLOWED_TRANSITIONS.get(current_status, [])
+        valid_statuses = set(allowed)
+        if current_status is not None:
+            valid_statuses.add(current_status)
+        self.fields["status"].choices = [
+            (val, label) for val, label in QualificationStatus.CHOICES
+            if val in valid_statuses
+        ]
+
+        # Build layout rows based on current status
+        # For early statuses, hide awarded-specific fields
+        awarded_fields = [
+            QualificationStatus.AWARDED,
+            QualificationStatus.LAPSED,
+        ]
+        show_awarded_fields = current_status in awarded_fields or (
+            allowed and QualificationStatus.AWARDED in allowed
+        )
+
+        layout_rows = [
+            Row(
+                Column(Field("qualification", style="width: 100%;")),
+            ),
+            Row(
+                Column(
+                    Div(
+                        FloatingField("status"),
+                        css_class="input-group input-group-dynamic",
+                    )
                 ),
-                Row(
-                    Column(
-                        Div(
-                            FloatingField("status"),
-                            css_class="input-group input-group-dynamic",
-                        )
-                    ),
+            ),
+            Row(
+                Column(
+                    Div(
+                        Field("attempt_date"),
+                        css_class="input-group input-group-dynamic",
+                    )
                 ),
+            ),
+        ]
+
+        if show_awarded_fields:
+            layout_rows.append(
                 Row(
-                    Column(
-                        Div(
-                            Field("attempt_date"),
-                            css_class="input-group input-group-dynamic",
-                        )
-                    ),
                     Column(
                         Div(
                             Field("awarded_date"),
@@ -2419,6 +2467,42 @@ class OwnQualificationRecordForm(forms.ModelForm):
                         )
                     ),
                 ),
+            )
+            layout_rows.append(
+                Row(
+                    Column(
+                        Div(
+                            Field("certificate_number"),
+                            css_class="input-group input-group-dynamic",
+                        )
+                    ),
+                ),
+            )
+            layout_rows.append(
+                Row(
+                    Column(
+                        Div(
+                            Field("certificate_file"),
+                            css_class="input-group input-group-dynamic",
+                        )
+                    ),
+                ),
+            )
+
+        layout_rows.append(
+            Row(
+                Column(
+                    Div(
+                        Field("notes", rows=2),
+                        css_class="input-group input-group-dynamic",
+                    )
+                ),
+            ),
+        )
+
+        self.helper.layout = Layout(
+            Div(
+                *layout_rows,
                 css_class="card-body p-3",
             ),
             Div(
@@ -2442,6 +2526,9 @@ class OwnQualificationRecordForm(forms.ModelForm):
             "attempt_date",
             "awarded_date",
             "lapse_date",
+            "certificate_number",
+            "notes",
+            "certificate_file",
         ]
 
 
@@ -2451,10 +2538,12 @@ class AwardingBodyForm(forms.ModelForm):
         super(AwardingBodyForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
         self.fields["name"].label = False
+        self.fields["description"].label = False
+        self.fields["url"].label = False
 
     class Meta:
         model = AwardingBody
-        fields = ["name"]
+        fields = ["name", "description", "url", "logo"]
 
 
 class BillingCodeForm(forms.ModelForm):

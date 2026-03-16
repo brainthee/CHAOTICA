@@ -15,18 +15,30 @@
 
 {% block content %}
 
+{# Header #}
 <div class="row px-5">
   <div class="col-12">
     <div class="row align-items-center justify-content-between g-3 mt-0 mb-0">
       <div class="col-6 col-md-auto">
-        <h2 class="mb-2">
-          Qualification Detail
+        <h2 class="mb-0">
+          {{ qualification }}
         </h2>
+        <p class="text-body-tertiary fs-9 mb-0">{{ qualification.awarding_body }}</p>
       </div>
 
       <div class="col-md-auto">
-        <div class="d-flex">
-            <a href="{% url 'qualification_update' qualification.awarding_body.slug qualification.slug %}" class="btn btn-outline-secondary ms-auto">
+        <div class="d-flex gap-2">
+            {% if qualification.url %}
+            <a href="{{ qualification.url }}" target="_blank" class="btn btn-phoenix-secondary">
+              <i class="fa-solid fa-up-right-from-square me-1"></i> Qualification Link
+            </a>
+            {% endif %}
+            {% if qualification.guidance_url %}
+            <a href="{{ qualification.guidance_url }}" target="_blank" class="btn btn-phoenix-secondary">
+              <i class="fa-solid fa-book me-1"></i> Guidance
+            </a>
+            {% endif %}
+            <a href="{% url 'qualification_update' qualification.awarding_body.slug qualification.slug %}" class="btn btn-outline-secondary">
             Edit
             </a>
         </div>
@@ -35,47 +47,275 @@
   </div>
 </div>
 
+{# Info cards row #}
+<div class="row px-5 g-3 mt-3 mb-3">
 
-<div class="row justify-content-between ms-3 me-3 g-3 mt-0 mb-0">
-  <div class="col-6">
-    <div class="card">
+  {# Left: Qualification Info #}
+  <div class="col-12 col-xl-5">
+    <div class="card h-100">
+      <div class="card-header pb-0">
+        <h5 class="mb-0">Qualification Details</h5>
+      </div>
       <div class="card-body">
-
-        <div class="row align-items-center g-3">
-          <div class="col-12 ">
-            <h3 class="fw-bolder mb-2 line-clamp-1">
-              {{ qualification.awarding_body }} {{ qualification }}
-            </h3>
-          </div>
+        <table class="table table-sm fs-9 mb-0">
+          <tbody>
+            <tr>
+              <td class="text-body-tertiary fw-semibold" style="width: 140px;">Awarding Body</td>
+              <td>
+                {% if qualification.awarding_body.url %}
+                  <a href="{{ qualification.awarding_body.url }}" target="_blank">{{ qualification.awarding_body }} <i class="fa-solid fa-up-right-from-square fs-10"></i></a>
+                {% else %}
+                  {{ qualification.awarding_body }}
+                {% endif %}
+              </td>
+            </tr>
+            <tr>
+              <td class="text-body-tertiary fw-semibold">Full Name</td>
+              <td>{{ qualification.name }}</td>
+            </tr>
+            {% if qualification.short_name %}
+            <tr>
+              <td class="text-body-tertiary fw-semibold">Short Name</td>
+              <td>{{ qualification.short_name }}</td>
+            </tr>
+            {% endif %}
+            <tr>
+              <td class="text-body-tertiary fw-semibold">Validity</td>
+              <td>{{ qualification.validity_period_display }}</td>
+            </tr>
+            {% if qualification.tags.all %}
+            <tr>
+              <td class="text-body-tertiary fw-semibold">Tags</td>
+              <td>
+                {% for tag in qualification.tags.all %}
+                  <span class="badge badge-tag me-1 mb-1">{{ tag.name }}</span>
+                {% endfor %}
+              </td>
+            </tr>
+            {% endif %}
+          </tbody>
+        </table>
+        {% if qualification.description %}
+        <div class="border-top border-translucent pt-3 mt-2">
+          <p class="text-body-secondary fs-9 mb-0">{{ qualification.description|linebreaksbr }}</p>
         </div>
-
+        {% endif %}
       </div>
     </div>
   </div>
 
-  <div class="col-6">
+  {# Right: Status Overview #}
+  <div class="col-12 col-xl-7">
+    <div class="card h-100">
+      <div class="card-header pb-0">
+        <h5 class="mb-0">Status Overview</h5>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-6 col-md-3">
+            <div class="text-center p-3 rounded-3 bg-success-subtle">
+              <h3 class="text-success mb-1">{{ awarded_count }}</h3>
+              <p class="text-body-tertiary fs-10 mb-0">Awarded</p>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="text-center p-3 rounded-3 bg-primary-subtle">
+              <h3 class="text-primary mb-1">{{ in_progress_count }}</h3>
+              <p class="text-body-tertiary fs-10 mb-0">In Progress</p>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="text-center p-3 rounded-3 bg-warning-subtle">
+              <h3 class="text-warning mb-1">{{ expiring_soon_count }}</h3>
+              <p class="text-body-tertiary fs-10 mb-0">Expiring Soon</p>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="text-center p-3 rounded-3 bg-danger-subtle">
+              <h3 class="text-danger mb-1">{{ lapsed_count }}</h3>
+              <p class="text-body-tertiary fs-10 mb-0">Lapsed</p>
+            </div>
+          </div>
+        </div>
+
+        {% if expiring_soon_count > 0 %}
+        <div class="alert alert-phoenix-warning mt-3 mb-0 fs-9" role="alert">
+          <i class="fa-solid fa-clock me-2"></i>
+          <strong>{{ expiring_soon_count }}</strong> holder{{ expiring_soon_count|pluralize }} expiring within 90 days.
+        </div>
+        {% endif %}
+      </div>
+    </div>
   </div>
+
 </div>
 
 
+{# Tabs section #}
 <div class="row g-0 mt-3 border-1 border-top bg-body-secondary h-100">
     <div class="col-12 px-6 pt-3 border-1 border-end">
 
-        <div class="row mx-1">  
+        <div class="row mx-1">
             <ul class="nav nav-underline scrollbar flex-nowrap w-100 pb-1 mb-3" id="sectionNav" role="tablist" style="overflow-y: hidden;">
                 <li class="nav-item text-nowrap me-2" role="presentation">
-                    <a class="nav-link active" id="team-tab" data-bs-toggle="tab" href="#team" role="tab" aria-controls="tab-team" aria-selected="true">
-                    <span class="fa-solid fa-video me-2 tab-icon-color"></span>Team
+                    <a class="nav-link active" id="holders-tab" data-bs-toggle="tab" href="#holders" role="tab" aria-controls="tab-holders" aria-selected="true">
+                    <span class="fa-solid fa-users me-2 tab-icon-color"></span>Holders
+                    {% if awarded_count %}<span class="badge badge-phoenix badge-phoenix-success ms-1">{{ awarded_count }}</span>{% endif %}
+                    </a>
+                </li>
+                <li class="nav-item text-nowrap me-2" role="presentation">
+                    <a class="nav-link" id="inprogress-tab" data-bs-toggle="tab" href="#inprogress" role="tab" aria-controls="tab-inprogress" aria-selected="false">
+                    <span class="fa-solid fa-spinner me-2 tab-icon-color"></span>In Progress
+                    {% if in_progress_count %}<span class="badge badge-phoenix badge-phoenix-primary ms-1">{{ in_progress_count }}</span>{% endif %}
+                    </a>
+                </li>
+                <li class="nav-item text-nowrap me-2" role="presentation">
+                    <a class="nav-link" id="allrecords-tab" data-bs-toggle="tab" href="#allrecords" role="tab" aria-controls="tab-allrecords" aria-selected="false">
+                    <span class="fa-solid fa-clock-rotate-left me-2 tab-icon-color"></span>All Records
                     </a>
                 </li>
             </ul>
 
-            <div class="tab-content" id="myTabContent">
-                <div class="tab-pane fade active show" id="team" role="tabpanel" aria-labelledby="team-tab">
+            <div class="tab-content" id="qualificationTabContent">
 
+                {# Tab 1: Holders #}
+                <div class="tab-pane fade active show" id="holders" role="tabpanel" aria-labelledby="holders-tab">
+                  {% if awarded_records %}
+                  <div class="table-responsive scrollbar">
+                    <table class="table table-sm fs-9 datatable mb-0">
+                      <caption>Holders of {{ qualification }}</caption>
+                      <thead>
+                        <tr>
+                          <th class="sort align-middle ps-3" scope="col">User</th>
+                          <th class="sort align-middle" scope="col">Awarded Date</th>
+                          <th class="sort align-middle" scope="col">Lapse Date</th>
+                          <th class="sort align-middle" scope="col">Days Remaining</th>
+                          <th class="sort align-middle" scope="col">Cert. Number</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% for record in awarded_records %}
+                        <tr class="{% if record.expiry_urgency == 'expired' %}table-danger{% elif record.expiry_urgency == 'critical' %}table-warning{% elif record.expiry_urgency == 'warning' %}table-warning{% endif %}">
+                          <td class="ps-3 py-3">
+                            <a href="{{ record.user.get_absolute_url }}" class="fw-semibold text-body-emphasis">
+                              {{ record.user.get_full_name }}
+                            </a>
+                          </td>
+                          <td class="py-3">{{ record.awarded_date|default:"—" }}</td>
+                          <td class="py-3">{{ record.lapse_date|default:"—" }}</td>
+                          <td class="py-3">
+                            {% if record.expiry_urgency == 'expired' %}
+                              <span class="badge badge-phoenix badge-phoenix-danger">Expired</span>
+                            {% elif record.expiry_urgency == 'critical' %}
+                              <span class="text-danger fw-bold"><i class="fa-solid fa-clock me-1"></i>{{ record.days_to_lapse }} day{{ record.days_to_lapse|pluralize }}</span>
+                            {% elif record.expiry_urgency == 'warning' %}
+                              <span class="text-warning"><i class="fa-solid fa-clock me-1"></i>{{ record.days_to_lapse }} day{{ record.days_to_lapse|pluralize }}</span>
+                            {% elif record.expiry_urgency == 'ok' %}
+                              <span class="text-success">{{ record.days_to_lapse }} day{{ record.days_to_lapse|pluralize }}</span>
+                            {% else %}
+                              <span class="text-body-tertiary">N/A</span>
+                            {% endif %}
+                          </td>
+                          <td class="py-3">{{ record.certificate_number|default:"—" }}</td>
+                        </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+                  {% else %}
+                  <div class="text-center py-5 text-body-tertiary">
+                    <i class="fa-solid fa-users fs-3 mb-3 d-block"></i>
+                    <p>No one currently holds this qualification.</p>
+                  </div>
+                  {% endif %}
                 </div>
+
+                {# Tab 2: In Progress #}
+                <div class="tab-pane fade" id="inprogress" role="tabpanel" aria-labelledby="inprogress-tab">
+                  {% if in_progress_records %}
+                  <div class="table-responsive scrollbar">
+                    <table class="table table-sm fs-9 datatable mb-0">
+                      <caption>In Progress Records for {{ qualification }}</caption>
+                      <thead>
+                        <tr>
+                          <th class="sort align-middle ps-3" scope="col">User</th>
+                          <th class="sort align-middle" scope="col">Status</th>
+                          <th class="sort align-middle" scope="col">Attempt Date</th>
+                          <th class="sort align-middle" scope="col">Notes</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% for record in in_progress_records %}
+                        <tr>
+                          <td class="ps-3 py-3">
+                            <a href="{{ record.user.get_absolute_url }}" class="fw-semibold text-body-emphasis">
+                              {{ record.user.get_full_name }}
+                            </a>
+                          </td>
+                          <td class="py-3">
+                            {% include 'partials/qualification/qualification_record_status_badge.html' with record=record %}
+                          </td>
+                          <td class="py-3">{{ record.attempt_date|default:"—" }}</td>
+                          <td class="py-3 text-body-secondary">{{ record.notes|default:"—"|truncatewords:20 }}</td>
+                        </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+                  {% else %}
+                  <div class="text-center py-5 text-body-tertiary">
+                    <i class="fa-solid fa-spinner fs-3 mb-3 d-block"></i>
+                    <p>No one is currently working towards this qualification.</p>
+                  </div>
+                  {% endif %}
+                </div>
+
+                {# Tab 3: All Records #}
+                <div class="tab-pane fade" id="allrecords" role="tabpanel" aria-labelledby="allrecords-tab">
+                  {% if all_records %}
+                  <div class="table-responsive scrollbar">
+                    <table class="table table-sm fs-9 datatable mb-0">
+                      <caption>All Records for {{ qualification }}</caption>
+                      <thead>
+                        <tr>
+                          <th class="sort align-middle ps-3" scope="col">User</th>
+                          <th class="sort align-middle" scope="col">Status</th>
+                          <th class="sort align-middle" scope="col">Attempt Date</th>
+                          <th class="sort align-middle" scope="col">Awarded Date</th>
+                          <th class="sort align-middle" scope="col">Lapse Date</th>
+                          <th class="sort align-middle" scope="col">Last Updated</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% for record in all_records %}
+                        <tr class="{% if record.expiry_urgency == 'expired' %}table-danger{% endif %}">
+                          <td class="ps-3 py-3">
+                            <a href="{{ record.user.get_absolute_url }}" class="fw-semibold text-body-emphasis">
+                              {{ record.user.get_full_name }}
+                            </a>
+                          </td>
+                          <td class="py-3">
+                            {% include 'partials/qualification/qualification_record_status_badge.html' with record=record %}
+                          </td>
+                          <td class="py-3">{{ record.attempt_date|default:"—" }}</td>
+                          <td class="py-3">{{ record.awarded_date|default:"—" }}</td>
+                          <td class="py-3">{{ record.lapse_date|default:"—" }}</td>
+                          <td class="py-3 text-body-tertiary fs-10">{{ record.last_updated_on|date:"d M Y H:i" }}</td>
+                        </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+                  {% else %}
+                  <div class="text-center py-5 text-body-tertiary">
+                    <i class="fa-solid fa-clock-rotate-left fs-3 mb-3 d-block"></i>
+                    <p>No records found for this qualification.</p>
+                  </div>
+                  {% endif %}
+                </div>
+
             </div>
-        
+
         </div>
     </div>
 </div>

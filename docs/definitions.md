@@ -58,7 +58,7 @@ Something that makes you special :)
 
 ### Qualification
 
-Something special you got!
+A professional certification, accreditation, or credential held by team members. CHAOTICA tracks qualification status through a defined lifecycle (In Progress → Attempted → Awarded), monitors expiry dates, and optionally requires manager verification. See the [Qualifications Guide](user_guide/qualifications/overview.md) for details.
 
 ### Accreditation
 

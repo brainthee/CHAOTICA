@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+{% load menu %}{% load static %}
+
+{% block pageTitle %}Team Qualifications{% endblock pageTitle %}
+{% block head_title %}Team Qualifications{% endblock head_title %}
+
+{% block headerBlock_css %}mb-6{% endblock headerBlock_css %}
+
+{% block breadcrumbItem %}
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-body-emphasis" href="{% url 'view_own_qualifications' %}">My Qualifications</a></li>
+<li class="breadcrumb-item active" aria-current="page">Team Qualifications</li>
+{% endblock breadcrumbItem %}
+
+{% block content %}
+
+<div class="row mb-4 gx-6 gy-3 mt-0 align-items-center">
+  <div class="col">
+    <h2 class="mb-0">Team Qualifications</h2>
+    <p class="text-body-tertiary fs-9 mb-0">Qualifications held by your direct reports</p>
+  </div>
+  <div class="col-auto d-flex justify-content-end">
+    <a href="{% url 'view_own_qualifications' %}" class="btn btn-phoenix-secondary px-4">
+      <i class="fa-solid fa-arrow-left me-2"></i>
+      My Qualifications
+    </a>
+  </div>
+</div>
+
+{# Stat Cards #}
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex align-items-center">
+          <span class="fa-solid fa-certificate fs-7 text-success me-3"></span>
+          <div>
+            <p class="text-body-tertiary fs-10 mb-0">Team Awarded</p>
+            <h3 class="text-success mb-0">{{ awarded_count }}</h3>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex align-items-center">
+          <span class="fa-solid fa-question-circle fs-7 text-warning me-3"></span>
+          <div>
+            <p class="text-body-tertiary fs-10 mb-0">Unverified</p>
+            <h3 class="text-warning mb-0">{{ unverified_count }}</h3>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex align-items-center">
+          <span class="fa-solid fa-clock fs-7 text-warning me-3"></span>
+          <div>
+            <p class="text-body-tertiary fs-10 mb-0">Expiring Soon</p>
+            <h3 class="text-warning mb-0">{{ expiring_count }}</h3>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex align-items-center">
+          <span class="fa-solid fa-triangle-exclamation fs-7 text-danger me-3"></span>
+          <div>
+            <p class="text-body-tertiary fs-10 mb-0">Lapsed</p>
+            <h3 class="text-danger mb-0">{{ lapsed_count }}</h3>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# Unverified alert #}
+{% if unverified_records %}
+<div class="alert alert-phoenix-warning d-flex align-items-center mb-3" role="alert">
+  <span class="fa-solid fa-question-circle me-3 fs-7"></span>
+  <div>
+    <strong>{{ unverified_count }} qualification{{ unverified_count|pluralize }} awaiting verification.</strong>
+    Review and verify awarded qualifications below.
+  </div>
+</div>
+{% endif %}
+
+{# Main table #}
+<div class="mx-n4 px-3 py-3 mx-lg-n6 px-lg-6 bg-body-emphasis border-top border-bottom border-translucent position-relative top-1">
+
+  <div class="table-responsive scrollbar mx-n1 px-1">
+    <table class="table table-sm fs-9 datatable mb-0">
+      <caption>Team Qualification Records</caption>
+      <thead>
+        <tr>
+          <th class="sort align-middle ps-3" scope="col" style="width:14%;">User</th>
+          <th class="sort align-middle ps-3" scope="col" style="width:12%;">Awarding Body</th>
+          <th class="sort align-middle ps-3" scope="col" style="width:16%;">Qualification</th>
+          <th class="sort align-middle ps-3" scope="col" style="width:8%;">Status</th>
+          <th class="sort align-middle ps-3" scope="col" style="width:10%;">Awarded Date</th>
+          <th class="sort align-middle ps-3" scope="col" style="width:10%;">Lapse Date</th>
+          <th class="sort align-middle ps-3" scope="col" style="width:10%;">Days Remaining</th>
+          <th class="sort align-middle ps-3 text-center" scope="col" style="width:8%;">Verified</th>
+          <th class="sort text-end align-middle pe-0 ps-4" scope="col" style="width:8%;"></th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for record in qualificationrecord_list %}
+      <tr class="{% if record.expiry_urgency == 'expired' %}table-danger{% elif record.expiry_urgency == 'critical' %}table-warning{% endif %}">
+          <td class="align-middle white-space-nowrap ps-3 py-3">
+            <a href="{{ record.user.get_absolute_url }}" class="fw-semibold text-body-emphasis">
+              {{ record.user.get_full_name }}
+            </a>
+          </td>
+
+          <td class="align-middle white-space-nowrap ps-3 py-3">
+              {{ record.qualification.awarding_body }}
+          </td>
+
+          <td class="align-middle white-space-nowrap ps-3 py-3">
+              <a href="{{ record.qualification.get_absolute_url }}" class="text-body-emphasis">
+                {{ record.qualification }}
+              </a>
+          </td>
+
+          <td class="align-middle white-space-nowrap ps-3 py-3">
+            {% include 'partials/qualification/qualification_record_status_badge.html' with record=record %}
+          </td>
+
+          <td class="align-middle white-space-nowrap ps-3 py-3">
+              {{ record.awarded_date|default:"—" }}
+          </td>
+
+          <td class="align-middle white-space-nowrap ps-3 py-3">
+              {{ record.lapse_date|default:"—" }}
+          </td>
+
+          <td class="align-middle white-space-nowrap ps-3 py-3">
+            {% if record.expiry_urgency == 'expired' %}
+              <span class="badge badge-phoenix badge-phoenix-danger">Expired</span>
+            {% elif record.expiry_urgency == 'critical' %}
+              <span class="text-danger fw-bold"><i class="fa-solid fa-clock me-1"></i>{{ record.days_to_lapse }} day{{ record.days_to_lapse|pluralize }}</span>
+            {% elif record.expiry_urgency == 'warning' %}
+              <span class="text-warning"><i class="fa-solid fa-clock me-1"></i>{{ record.days_to_lapse }} day{{ record.days_to_lapse|pluralize }}</span>
+            {% elif record.expiry_urgency == 'ok' %}
+              <span class="text-success">{{ record.days_to_lapse }} day{{ record.days_to_lapse|pluralize }}</span>
+            {% else %}
+              <span class="text-body-tertiary">N/A</span>
+            {% endif %}
+          </td>
+
+          <td class="align-middle text-center ps-3 py-3">
+            {% if record.status == 6 and record.qualification.verification_required %}
+              {% if record.verified_by %}
+                <span data-bs-tooltip="tooltip" title="Verified by {{ record.verified_by.get_full_name }} on {{ record.verified_on|date:'d M Y' }}">
+                  <i class="fa-solid fa-circle-check text-success"></i>
+                </span>
+              {% else %}
+                <span data-bs-tooltip="tooltip" title="Awaiting verification">
+                  <i class="fa-solid fa-question-circle text-warning"></i>
+                </span>
+              {% endif %}
+            {% elif record.status == 6 %}
+              <span class="text-body-tertiary">N/A</span>
+            {% else %}
+              <span class="text-body-tertiary">—</span>
+            {% endif %}
+          </td>
+
+          <td class="align-middle text-end white-space-nowrap pe-0 action">
+            {% if record.status == 6 and record.qualification.verification_required and not record.verified_by %}
+              <button class="btn btn-sm btn-phoenix-success js-verify-action"
+                data-url="{% url 'verify_qualification' record.pk %}" type="button">
+                <i class="fa-solid fa-check me-1"></i>Verify
+              </button>
+            {% elif record.status == 6 and record.qualification.verification_required and record.verified_by %}
+              <button class="btn btn-sm btn-phoenix-secondary js-verify-action"
+                data-url="{% url 'unverify_qualification' record.pk %}" type="button">
+                Unverify
+              </button>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+{% if not qualificationrecord_list %}
+<div class="alert alert-phoenix-info mt-3" role="alert">
+  No qualification records found for your direct reports.
+</div>
+{% endif %}
+
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+$(function() {
+  $(".datatable").on("click", ".js-verify-action", function(e) {
+    e.preventDefault();
+    var btn = $(this);
+    var url = btn.data("url");
+    $.ajax({
+      url: url,
+      type: "POST",
+      headers: {"X-CSRFToken": $("[name=csrfmiddlewaretoken]").val() || document.cookie.match(/csrftoken=([^;]+)/)?.[1]},
+      success: function(data) {
+        if (data.success) {
+          location.reload();
+        }
+      },
+      error: function(xhr) {
+        var msg = xhr.responseJSON ? xhr.responseJSON.error : "An error occurred.";
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: msg,
+        });
+      }
+    });
+  });
+});
+</script>
+{% endblock extra_js %}

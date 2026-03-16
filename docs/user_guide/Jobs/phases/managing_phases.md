@@ -474,6 +474,6 @@ graph TD
 
 - [Job Lifecycle](../lifecycle.md) - Overall job management and workflow
 - [Team Management](../../team/overview.md) - Managing phase teams and resources
-- [Quality Assurance](../../processes/quality_assurance.md) - Detailed QA processes
+- [Quality Assurance](../../workflows/quality_assurance.md) - Detailed QA processes
 - [Reporting](../../reporting/overview.md) - Report generation and delivery
 - [Scheduling](../../scheduling/overview.md) - Resource scheduling and planning

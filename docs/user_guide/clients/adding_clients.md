@@ -208,50 +208,16 @@ Internal notes and communications:
 
 ## Framework Agreements
 
-Framework agreements enable efficient management of ongoing client relationships with pre-negotiated terms.
+Framework agreements are pre-negotiated contractual arrangements that track day budgets across multiple jobs for a client. They can be created from the Framework Agreements tab on the client detail page.
 
-### When to Use Framework Agreements
+Key features include:
 
-- **Recurring Engagements**: Regular security assessments
-- **Multi-Year Contracts**: Annual security programs
-- **Volume Discounts**: Bulk purchasing arrangements  
-- **Preferred Vendor Status**: Established partnership relationships
+- **Budget tracking** — days used, scheduled, and available across all associated jobs
+- **Allocation controls** — allow or block over-allocation, or close the framework entirely
+- **Breakdown dashboard** — per-job, team, delivery role, service, and monthly burn-down analytics
+- **Scheduler integration** — automatic validation checks when scheduling against framework jobs
 
-### Setting Up Framework Agreements
-
-1. **Agreement Structure**:
-   ```
-   Name: [Client] - [Year] Security Services Framework
-   Duration: Typically 1-3 years
-   Value: Total contracted amount
-   Terms: Payment terms and conditions
-   ```
-
-2. **Service Scope**:
-   - Define included service types
-   - Specify any excluded services
-   - Set rate cards for different service levels
-   - Include any volume discounts or incentives
-
-3. **Resource Allocation**:
-   - Reserve team capacity for framework work
-   - Define response time commitments  
-   - Set escalation procedures for urgent requests
-   - Plan for peak demand periods
-
-### Managing Framework Agreements
-
-**Tracking Utilization**:
-- Monitor spend against total framework value
-- Track service usage by type and frequency
-- Generate utilization reports for client reviews
-- Alert when approaching spending thresholds
-
-**Renewal Process**:
-- Set up alerts for upcoming expirations
-- Review performance and outcomes
-- Gather client feedback and requirements
-- Negotiate renewal terms and adjustments
+For full details, see the dedicated [Framework Agreements](framework_agreements.md) page.
 
 ## Client Classification System
 

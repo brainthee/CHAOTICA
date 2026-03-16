@@ -1,6 +1,6 @@
 from django.urls import include, path
 from . import views
-from .feeds import ScheduleFeed, ScheduleFamilyFeed
+from .feeds import schedule_feed_view, family_feed_view
 from rest_framework import routers
 
 router = routers.DefaultRouter()
@@ -31,22 +31,48 @@ urlpatterns = [
         views.update_own_qualification,
         name="update_own_qualification",
     ),
+    path(
+        "profile/qualifications/<int:pk>/transition/<str:action>",
+        views.transition_own_qualification,
+        name="transition_own_qualification",
+    ),
+    path(
+        "profile/qualifications/team/",
+        views.TeamQualificationListView.as_view(),
+        name="view_team_qualifications",
+    ),
+    path(
+        "profile/qualifications/<int:pk>/verify",
+        views.verify_qualification,
+        name="verify_qualification",
+    ),
+    path(
+        "profile/qualifications/<int:pk>/unverify",
+        views.unverify_qualification,
+        name="unverify_qualification",
+    ),
     # Misc
     path("stats/", views.view_stats, name="view_stats"),
     path("reports/", views.view_reports, name="view_reports"),
     # Scheduler
     path("schedule/feed/reset", views.reset_cal_feed, name="reset_cal_feed"),
+    path("schedule/feed/toggle", views.toggle_cal_feed, name="toggle_cal_feed"),
     path(
         "schedule/feed/family/reset",
         views.reset_cal_family_feed,
         name="reset_cal_family_feed",
     ),
     path(
+        "schedule/feed/family/toggle",
+        views.toggle_cal_family_feed,
+        name="toggle_cal_family_feed",
+    ),
+    path(
         "schedule/feed/family/<str:cal_key>",
-        ScheduleFamilyFeed(),
+        family_feed_view,
         name="view_own_schedule_feed_family",
     ),
-    path("schedule/feed/<str:cal_key>", ScheduleFeed(), name="view_own_schedule_feed"),
+    path("schedule/feed/<str:cal_key>", schedule_feed_view, name="view_own_schedule_feed"),
     path(
         "schedule/timeslots",
         views.view_own_schedule_timeslots,

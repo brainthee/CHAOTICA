@@ -53,6 +53,30 @@ def reset_cal_family_feed(request):
 
 
 @login_required
+def toggle_cal_feed(request):
+    if request.method == "POST":
+        request.user.schedule_feed_enabled = not request.user.schedule_feed_enabled
+        request.user.save(update_fields=["schedule_feed_enabled"])
+        if request.user.schedule_feed_enabled:
+            messages.success(request, "Calendar feed enabled.")
+        else:
+            messages.info(request, "Calendar feed disabled.")
+    return HttpResponseRedirect(reverse("view_own_profile") + "#feeds")
+
+
+@login_required
+def toggle_cal_family_feed(request):
+    if request.method == "POST":
+        request.user.schedule_feed_family_enabled = not request.user.schedule_feed_family_enabled
+        request.user.save(update_fields=["schedule_feed_family_enabled"])
+        if request.user.schedule_feed_family_enabled:
+            messages.success(request, "Family calendar feed enabled.")
+        else:
+            messages.info(request, "Family calendar feed disabled.")
+    return HttpResponseRedirect(reverse("view_own_profile") + "#feeds")
+
+
+@login_required
 def view_stats(request):
     context = {}
     template = loader.get_template("stats.html")

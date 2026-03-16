@@ -1,0 +1,12 @@
+
+<div class="alert alert-danger" role="alert">
+    <p>
+    This phase is associated with the framework agreement <strong>{{ framework.name }}</strong> which does not allow over-allocation.
+    </p>
+    <p>
+        Budget: {{ framework.total_days }}d &mdash;
+        Already allocated: {{ days_allocated }}d &mdash;
+        This slot: {{ slot_days }}d &mdash;
+        Would total: {{ new_total }}d
+    </p>
+</div>

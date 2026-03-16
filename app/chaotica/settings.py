@@ -273,6 +273,9 @@ CONSTANCE_CONFIG = {
     ),
     "RM_SYNC_STALE_TIMEOUT": (60, "Amount of minutes before a sync task is stale"),
     "MAINTENANCE_MODE": (False, "Toggle maintenance mode"),
+    # Calendar Feed settings
+    "CALENDAR_FEED_ENABLED": (True, "Enable the calendar feed (iCal) for users to subscribe to their schedule"),
+    "CALENDAR_FAMILY_FEED_ENABLED": (True, "Enable the family-friendly calendar feed showing only location/status"),
 }
 
 CONSTANCE_BACKEND = "constance.backends.database.DatabaseBackend"
@@ -457,6 +460,7 @@ CRON_CLASSES = [
     "jobtracker.tasks.task_progress_workflows",
     "jobtracker.tasks.task_fire_job_notifications",
     "jobtracker.tasks.task_fire_onboarding_reminders",
+    "jobtracker.tasks.task_check_qualification_expiry",
     "rm_sync.tasks.task_sync_rm_schedule",
 ]
 

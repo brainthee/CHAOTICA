@@ -1,1 +1,12 @@
 <span class="badge badge-phoenix badge-phoenix-{{ record.status_bs_colour }}">{{ record.get_status_display }}</span>
+{% if record.status == 6 and record.qualification.verification_required %}{% comment %}AWARDED + verification enabled{% endcomment %}
+  {% if record.verified_by %}
+    <span data-bs-tooltip="tooltip" title="Verified by {{ record.verified_by.get_full_name }} on {{ record.verified_on|date:'d M Y' }}">
+      <i class="fa-solid fa-circle-check text-success ms-1"></i>
+    </span>
+  {% elif record.user.manager_id or record.user.acting_manager_id %}
+    <span data-bs-tooltip="tooltip" title="Awaiting manager verification">
+      <i class="fa-solid fa-question-circle text-warning ms-1"></i>
+    </span>
+  {% endif %}
+{% endif %}

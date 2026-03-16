@@ -1,0 +1,2604 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../managing_phases/">
+      
+      
+        <link rel="next" href="../../../clients/adding_clients/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
+    
+    
+      
+        <title>Phase Lifecycle - CHAOTICA Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("../../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#lifecycle" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../../.." title="CHAOTICA Documentation" class="md-header__button md-logo" aria-label="CHAOTICA Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            CHAOTICA Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Phase Lifecycle
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../../.." title="CHAOTICA Documentation" class="md-nav__button md-logo" aria-label="CHAOTICA Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    CHAOTICA Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../definitions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Definitions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Installation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../installation/vars/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Environment Variables
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_2" id="__nav_4_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deployment
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Deployment
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../installation/deployment/docker/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docker
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../installation/deployment/k8/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kubernetes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../installation/deployment/aws_beanstalk/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AWS Elastic Beanstalk
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_1" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5_1" id="__nav_5_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Jobs
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_1_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Jobs
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../managing_jobs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Managing Jobs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_1_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5_1_3" id="__nav_5_1_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Phases
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_5_1_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5_1_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Phases
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../managing_phases/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Managing Phases
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Phase Lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_2" id="__nav_5_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clients
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Clients
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../clients/adding_clients/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding Clients
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../clients/managing_contacts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Managing Contacts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../clients/framework_agreements/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Framework Agreements
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_3" id="__nav_5_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Organisational Units
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Organisational Units
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../organisational_units/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_4" id="__nav_5_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Team & Users
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Team & Users
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../team/user_management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Management
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_5" id="__nav_5_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Qualifications
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Qualifications
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../qualifications/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../qualifications/administration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Administration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_6" id="__nav_5_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scheduling
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Scheduling
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../scheduling/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../scheduling/validation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Validation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../scheduling/filtering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Filtering
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_7" id="__nav_5_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Operations
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Operations
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../operations/managing_leave/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Managing Leave
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_8" id="__nav_5_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Workflows
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Workflows
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../workflows/quality_assurance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quality Assurance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../workflows/assessment_process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Assessment Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_9" id="__nav_5_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reporting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reporting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reporting/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reporting/custom_reports/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Custom Reports
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_10" id="__nav_5_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Notifications
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Notifications
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../notifications/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Managing Notifications
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integration
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Integration
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../integration/azure_ad/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Azure AD/ADFS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../integration/email/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Email Systems
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../integration/apis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    External APIs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Administration
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Administration
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../administration/chaotica_settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Application Settings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../administration/permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Permissions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../administration/system_management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    System Management
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Development
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../development/getting_started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../development/api_documentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Documentation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../development/testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Security
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../security/access_control/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Access Control
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../security/data_protection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Protection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../troubleshooting/common_issues/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Common Issues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../troubleshooting/performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Performance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../reference/configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../reference/database_schema/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Database Schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../reference/changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="lifecycle">Lifecycle<a class="headerlink" href="#lifecycle" title="Permanent link">&para;</a></h1>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This page will be populated with more documentation soon.</p>
+</div>
+<p>Like a job, a Phase also has a <code>status</code> which follows a strict workflow. Even more of the functionality within CHAOTICA for a phase is tied to it's status and will also affect a Job's status.</p>
+<p>The raw state diagram is below and shows the allowed transitions between states. (Yes, I know it's mental to read)</p>
+<p><span class="graphviz-light-dark" data-library-default="#789abc" data-default="#789abc" data-light="#000000" data-dark="#ffffff"></span><svg width="1557pt" height="3462pt" viewBox="0.00 0.00 1557.00 3461.87" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" class="graphviz dot"><g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 3457.87)"><title>%3</title><polygon fill="transparent" stroke="transparent" points="-4,4 -4,-3457.87 1553,-3457.87 1553,4 -4,4"/><g id="clust1" class="cluster"><title>cluster_jobtracker_Phase_status</title><polygon fill="transparent" stroke="#789abc" points="8,-8 8,-3445.87 1470,-3445.87 1470,-8 8,-8"/><text text-anchor="middle" x="739" y="-3430.67" font-family="Times,serif" font-size="14.00" fill="#789abc">jobtracker.Phase.status</text></g><!-- jobtracker.Phase.status.18 --><g id="node1" class="node"><title>jobtracker.Phase.status.18</title><ellipse fill="none" stroke="#789abc" cx="1094" cy="-3246.88" rx="46.59" ry="46.59"/><text text-anchor="middle" x="1094" y="-3243.18" font-family="Times,serif" font-size="14.00" fill="#789abc">Deleted</text></g><!-- jobtracker.Phase.status.19 --><g id="node9" class="node"><title>jobtracker.Phase.status.19</title><ellipse fill="none" stroke="#789abc" cx="1368" cy="-3097.09" rx="51.99" ry="51.99"/><text text-anchor="middle" x="1368" y="-3093.39" font-family="Times,serif" font-size="14.00" fill="#789abc">Archived</text></g><!-- jobtracker.Phase.status.18&#45;&gt;jobtracker.Phase.status.19 --><g id="edge64" class="edge"><title>jobtracker.Phase.status.18&#45;&gt;jobtracker.Phase.status.19</title><path fill="none" stroke="#789abc" d="M1140.49,-3239.51C1204.26,-3229.88 1314.26,-3209.74 1343,-3182.09 1349.76,-3175.58 1354.72,-3167.33 1358.34,-3158.56"/><polygon fill="#789abc" stroke="#789abc" points="1361.73,-3159.48 1361.78,-3148.89 1355.13,-3157.14 1361.73,-3159.48"/><text text-anchor="middle" x="1395.5" y="-3170.89" font-family="Times,serif" font-size="14.00" fill="#789abc">to_archived</text></g><!-- jobtracker.Phase.status.16 --><g id="node11" class="node"><title>jobtracker.Phase.status.16</title><ellipse fill="none" stroke="#789abc" cx="568" cy="-71.9" rx="55.79" ry="55.79"/><text text-anchor="middle" x="568" y="-68.2" font-family="Times,serif" font-size="14.00" fill="#789abc">Cancelled</text></g><!-- jobtracker.Phase.status.18&#45;&gt;jobtracker.Phase.status.16 --><g id="edge22" class="edge"><title>jobtracker.Phase.status.18&#45;&gt;jobtracker.Phase.status.16</title><path fill="none" stroke="#789abc" d="M1139.13,-3233.5C1167.23,-3223.69 1202.23,-3207.37 1225,-3182.09 1276.29,-3125.14 1208.21,-3073.56 1254,-3012.09 1265.89,-2996.14 1282.43,-3009.53 1295,-2994.09 1343.4,-2934.65 1323.17,-2901.31 1328,-2824.81 1331.32,-2772.29 1353.14,-1920.71 1323,-1877.58 1311.13,-1860.59 1295.98,-1872.76 1280,-1859.58 1273.82,-1854.48 1276.75,-1848.89 1270,-1844.58 1226.03,-1816.49 1190.64,-1863.71 1154,-1826.58 1102.77,-1774.66 1172.15,-1724.31 1131,-1664.09 1121.79,-1650.62 1107.24,-1660.18 1099,-1646.09 1095.63,-1640.34 1095.85,-1636.97 1099,-1631.09 1105.81,-1618.37 1118.7,-1625.53 1126,-1613.09 1160.55,-1554.18 1138,-1528.19 1138,-1459.9 1138,-1459.9 1138,-1459.9 1138,-583.16 1138,-460.3 1152.54,-422.28 1106,-308.58 1102.16,-299.2 1096.28,-299.77 1092,-290.58 1070.53,-244.52 1103.98,-214.67 1068,-178.79 1007.56,-118.52 755.56,-89.03 634.07,-78.1"/><polygon fill="#789abc" stroke="#789abc" points="634.06,-74.58 623.79,-77.19 633.44,-81.55 634.06,-74.58"/><text text-anchor="middle" x="1143" y="-1634.89" font-family="Times,serif" font-size="14.00" fill="#789abc">to_cancelled</text></g><!-- jobtracker.Phase.status.17 --><g id="node15" class="node"><title>jobtracker.Phase.status.17</title><ellipse fill="none" stroke="#789abc" cx="870" cy="-2934.95" rx="59.29" ry="59.29"/><text text-anchor="middle" x="870" y="-2931.25" font-family="Times,serif" font-size="14.00" fill="#789abc">Postponed</text></g><!-- jobtracker.Phase.status.18&#45;&gt;jobtracker.Phase.status.17 --><g id="edge28" class="edge"><title>jobtracker.Phase.status.18&#45;&gt;jobtracker.Phase.status.17</title><path fill="none" stroke="#789abc" d="M1047.48,-3238.58C997.92,-3228.1 921.52,-3203.67 884,-3149.09 855,-3106.9 853.21,-3048.22 857.71,-3003.12"/><polygon fill="#789abc" stroke="#789abc" points="861.19,-3003.46 858.83,-2993.13 854.24,-3002.68 861.19,-3003.46"/><text text-anchor="middle" x="932" y="-3093.39" font-family="Times,serif" font-size="14.00" fill="#789abc">to_postponed</text></g><!-- jobtracker.Phase.status.3 --><g id="node2" class="node"><title>jobtracker.Phase.status.3</title><ellipse fill="none" stroke="#789abc" cx="393" cy="-2463.78" rx="104.78" ry="104.78"/><text text-anchor="middle" x="393" y="-2460.08" font-family="Times,serif" font-size="14.00" fill="#789abc">Schedule Confirmed</text></g><!-- jobtracker.Phase.status.3&#45;&gt;jobtracker.Phase.status.18 --><g id="edge57" class="edge"><title>jobtracker.Phase.status.3&#45;&gt;jobtracker.Phase.status.18</title><path fill="none" stroke="#789abc" d="M298.48,-2509.12C264.9,-2531.9 237.28,-2563.03 246,-2601.42 288.84,-2790.11 312.66,-2843.37 434,-2994.09 504.3,-3081.42 532.09,-3100.25 633,-3149.09 688.6,-3175.99 707.68,-3168.82 768,-3182.09 862.36,-3202.84 972.84,-3223.75 1037.92,-3235.73"/><polygon fill="#789abc" stroke="#789abc" points="1037.5,-3239.21 1047.97,-3237.57 1038.77,-3232.32 1037.5,-3239.21"/><text text-anchor="middle" x="471.5" y="-2931.25" font-family="Times,serif" font-size="14.00" fill="#789abc">to_deleted</text></g><!-- jobtracker.Phase.status.2 --><g id="node8" class="node"><title>jobtracker.Phase.status.2</title><ellipse fill="none" stroke="#789abc" cx="515" cy="-2208.7" rx="99.38" ry="99.38"/><text text-anchor="middle" x="515" y="-2205" font-family="Times,serif" font-size="14.00" fill="#789abc">Schedule Tentative</text></g><!-- jobtracker.Phase.status.3&#45;&gt;jobtracker.Phase.status.2 --><g id="edge70" class="edge"><title>jobtracker.Phase.status.3&#45;&gt;jobtracker.Phase.status.2</title><path fill="none" stroke="#789abc" d="M464.9,-2387.36C475.73,-2372.88 485.7,-2357.19 493,-2341.14 496.44,-2333.57 499.35,-2325.54 501.81,-2317.32"/><polygon fill="#789abc" stroke="#789abc" points="505.21,-2318.17 504.5,-2307.6 498.46,-2316.31 505.21,-2318.17"/><text text-anchor="middle" x="565" y="-2329.94" font-family="Times,serif" font-size="14.00" fill="#789abc">to_sched_tentative</text></g><!-- jobtracker.Phase.status.3&#45;&gt;jobtracker.Phase.status.16 --><g id="edge15" class="edge"><title>jobtracker.Phase.status.3&#45;&gt;jobtracker.Phase.status.16</title><path fill="none" stroke="#789abc" d="M346.47,-2369.79C343.08,-2360.29 340.15,-2350.64 338,-2341.14 310.2,-2218.5 333.33,-2184.01 332,-2058.26 330.99,-1963.29 330.96,-1939.54 332,-1844.58 332.77,-1774.19 383.94,-1266.9 341,-1211.12 321.93,-1186.35 292.88,-1217.25 273,-1193.12 247.3,-1161.92 263.49,-1051.97 261,-1011.63 253.34,-887.54 245,-856.68 245,-732.35 245,-732.35 245,-732.35 245,-233.69 245,-189.39 253.77,-168.17 292,-145.79 357.57,-107.42 443.58,-88.86 502.04,-80.15"/><polygon fill="#789abc" stroke="#789abc" points="502.86,-83.57 512.26,-78.68 501.86,-76.64 502.86,-83.57"/><text text-anchor="middle" x="317" y="-1181.92" font-family="Times,serif" font-size="14.00" fill="#789abc">to_cancelled</text></g><!-- jobtracker.Phase.status.3&#45;&gt;jobtracker.Phase.status.17 --><g id="edge5" class="edge"><title>jobtracker.Phase.status.3&#45;&gt;jobtracker.Phase.status.17</title><path fill="none" stroke="#789abc" d="M374.59,-2566.8C360.45,-2658.95 347.91,-2785.9 378,-2824.81 429.09,-2890.86 677.53,-2919.09 800.61,-2929.18"/><polygon fill="#789abc" stroke="#789abc" points="800.44,-2932.68 810.69,-2929.99 801,-2925.7 800.44,-2932.68"/><text text-anchor="middle" x="426" y="-2718.41" font-family="Times,serif" font-size="14.00" fill="#789abc">to_postponed</text></g><!-- jobtracker.Phase.status.4 --><g id="node17" class="node"><title>jobtracker.Phase.status.4</title><ellipse fill="none" stroke="#789abc" cx="194" cy="-2208.7" rx="61.19" ry="61.19"/><text text-anchor="middle" x="194" y="-2205" font-family="Times,serif" font-size="14.00" fill="#789abc">Pre&#45;checks</text></g><!-- jobtracker.Phase.status.3&#45;&gt;jobtracker.Phase.status.4 --><g id="edge39" class="edge"><title>jobtracker.Phase.status.3&#45;&gt;jobtracker.Phase.status.4</title><path fill="none" stroke="#789abc" d="M310.82,-2398.8C292.43,-2385.25 272.8,-2371.37 254,-2359.14 240.32,-2350.25 231.67,-2354.29 222,-2341.14 209.05,-2323.54 201.83,-2301.22 197.88,-2279.99"/><polygon fill="#789abc" stroke="#789abc" points="201.31,-2279.31 196.24,-2270.01 194.41,-2280.45 201.31,-2279.31"/><text text-anchor="middle" x="272" y="-2329.94" font-family="Times,serif" font-size="14.00" fill="#789abc">to_pre_checks</text></g><!-- jobtracker.Phase.status.1 --><g id="node18" class="node"><title>jobtracker.Phase.status.1</title><ellipse fill="none" stroke="#789abc" cx="586" cy="-2722.11" rx="102.88" ry="102.88"/><text text-anchor="middle" x="586" y="-2718.41" font-family="Times,serif" font-size="14.00" fill="#789abc">Pending Scheduling</text></g><!-- jobtracker.Phase.status.3&#45;&gt;jobtracker.Phase.status.1 --><g id="edge32" class="edge"><title>jobtracker.Phase.status.3&#45;&gt;jobtracker.Phase.status.1</title><path fill="none" stroke="#789abc" d="M375.42,-2567.04C377.52,-2579.54 382.01,-2591.41 390,-2601.42 412.46,-2629.57 436.89,-2603.12 469,-2619.42 481.67,-2625.86 494.1,-2633.96 505.84,-2642.78"/><polygon fill="#789abc" stroke="#789abc" points="503.8,-2645.63 513.85,-2648.99 508.08,-2640.1 503.8,-2645.63"/><text text-anchor="middle" x="453.5" y="-2590.22" font-family="Times,serif" font-size="14.00" fill="#789abc">to_pending_sched</text></g><!-- jobtracker.Phase.status.11 --><g id="node3" class="node"><title>jobtracker.Phase.status.11</title><ellipse fill="none" stroke="#789abc" cx="851" cy="-884.24" rx="127.28" ry="127.28"/><text text-anchor="middle" x="851" y="-880.54" font-family="Times,serif" font-size="14.00" fill="#789abc">Pending Presentation QA</text></g><!-- jobtracker.Phase.status.11&#45;&gt;jobtracker.Phase.status.18 --><g id="edge21" class="edge"><title>jobtracker.Phase.status.11&#45;&gt;jobtracker.Phase.status.18</title><path fill="none" stroke="#789abc" d="M891.48,-1005.15C899.76,-1038.8 906,-1075.67 906,-1110.38 906,-1549.75 906,-1549.75 906,-1549.75 906,-1594.87 904.43,-1615.94 938,-1646.09 966.08,-1671.31 996.41,-1635.45 1021,-1664.09 1032.78,-1677.81 1028.82,-1808.62 1031,-1826.58 1032.79,-1841.37 1027.76,-1847.88 1037,-1859.58 1049.33,-1875.19 1066.06,-1861.66 1078,-1877.58 1135.48,-1954.19 1040.3,-2021.57 1106,-2091.26 1135.18,-2122.21 1172.45,-2076.85 1200,-2109.26 1235.42,-2150.92 1207.95,-2546.77 1206,-2601.42 1197.22,-2846.82 1199.59,-2912.73 1133,-3149.09 1128.77,-3164.11 1122.97,-3179.98 1117.14,-3194.42"/><polygon fill="#789abc" stroke="#789abc" points="1113.89,-3193.11 1113.31,-3203.69 1120.36,-3195.78 1113.89,-3193.11"/><text text-anchor="middle" x="1143.5" y="-2080.06" font-family="Times,serif" font-size="14.00" fill="#789abc">to_deleted</text></g><!-- jobtracker.Phase.status.12 --><g id="node5" class="node"><title>jobtracker.Phase.status.12</title><ellipse fill="none" stroke="#789abc" cx="950" cy="-657.76" rx="48.19" ry="48.19"/><text text-anchor="middle" x="950" y="-654.06" font-family="Times,serif" font-size="14.00" fill="#789abc">Pres QA</text></g><!-- jobtracker.Phase.status.11&#45;&gt;jobtracker.Phase.status.12 --><g id="edge16" class="edge"><title>jobtracker.Phase.status.11&#45;&gt;jobtracker.Phase.status.12</title><path fill="none" stroke="#789abc" d="M896.72,-765.09C902.64,-751.09 908.81,-737.09 915,-723.85 917.28,-718.99 919.75,-713.97 922.28,-708.98"/><polygon fill="#789abc" stroke="#789abc" points="925.4,-710.57 926.89,-700.08 919.19,-707.35 925.4,-710.57"/><text text-anchor="middle" x="953.5" y="-727.65" font-family="Times,serif" font-size="14.00" fill="#789abc">to_pres_qa</text></g><!-- jobtracker.Phase.status.11&#45;&gt;jobtracker.Phase.status.16 --><g id="edge46" class="edge"><title>jobtracker.Phase.status.11&#45;&gt;jobtracker.Phase.status.16</title><path fill="none" stroke="#789abc" d="M778.14,-779.41C769.39,-765.94 760.81,-752.19 753,-738.85 712.28,-669.32 731.87,-630.59 672,-576.66 655.07,-561.41 637.89,-576.72 624,-558.66 567.8,-485.57 596.87,-236.94 583,-145.79 582.56,-142.92 582.09,-139.98 581.58,-137.03"/><polygon fill="#789abc" stroke="#789abc" points="584.98,-136.14 579.77,-126.92 578.09,-137.38 584.98,-136.14"/><text text-anchor="middle" x="668" y="-446.42" font-family="Times,serif" font-size="14.00" fill="#789abc">to_cancelled</text></g><!-- jobtracker.Phase.status.11&#45;&gt;jobtracker.Phase.status.17 --><g id="edge58" class="edge"><title>jobtracker.Phase.status.11&#45;&gt;jobtracker.Phase.status.17</title><path fill="none" stroke="#789abc" d="M870.32,-1010.34C870.98,-1016.85 871.54,-1023.31 872,-1029.63 872.48,-1036.28 872.08,-1037.96 872,-1044.63 869.56,-1240.13 863.44,-1288.9 861,-1484.4 860.28,-1541.59 847.86,-1557.43 861,-1613.09 863.05,-1621.79 867.95,-1622.38 870,-1631.09 871.53,-1637.58 872.79,-1640.03 870,-1646.09 864.86,-1657.26 854.14,-1652.92 849,-1664.09 818.82,-1729.7 843.58,-1754.56 849,-1826.58 850.11,-1841.37 843.33,-1849.27 854,-1859.58 903.55,-1907.47 958.97,-1829.15 1008,-1877.58 1044.95,-1914.07 1034.57,-2301.39 1068,-2341.14 1085.37,-2361.8 1109.99,-2337.41 1126,-2359.14 1158.86,-2403.75 1159.13,-2813.39 1126,-2857.81 1103.49,-2887.99 1006.5,-2910.52 938.6,-2922.96"/><polygon fill="#789abc" stroke="#789abc" points="937.61,-2919.58 928.39,-2924.8 938.85,-2926.47 937.61,-2919.58"/><text text-anchor="middle" x="902" y="-1848.38" font-family="Times,serif" font-size="14.00" fill="#789abc">to_postponed</text></g><!-- jobtracker.Phase.status.14 --><g id="node4" class="node"><title>jobtracker.Phase.status.14</title><ellipse fill="none" stroke="#789abc" cx="1038" cy="-450.12" rx="61.19" ry="61.19"/><text text-anchor="middle" x="1038" y="-446.42" font-family="Times,serif" font-size="14.00" fill="#789abc">Completed</text></g><!-- jobtracker.Phase.status.14&#45;&gt;jobtracker.Phase.status.18 --><g id="edge38" class="edge"><title>jobtracker.Phase.status.14&#45;&gt;jobtracker.Phase.status.18</title><path fill="none" stroke="#789abc" d="M1070.08,-502.25C1092.33,-542.62 1118,-601.21 1118,-656.76 1118,-1459.9 1118,-1459.9 1118,-1459.9 1118,-1528.02 1147.53,-1554.37 1113,-1613.09 1105.12,-1626.49 1090.66,-1617.56 1083,-1631.09 1079.72,-1636.89 1079.81,-1640.24 1083,-1646.09 1090.09,-1659.07 1102.76,-1651.81 1111,-1664.09 1151.92,-1725.07 1098.71,-1766.54 1141,-1826.58 1150.17,-1839.6 1158.43,-1836.22 1172,-1844.58 1182.39,-1850.98 1183.62,-1855.16 1195,-1859.58 1241.19,-1877.49 1272.02,-1840.61 1305,-1877.58 1353.9,-1932.38 1321,-2134.25 1321,-2207.7 1321,-2594.92 1321,-2594.92 1321,-2594.92 1321,-2773.95 1350.66,-2835.82 1267,-2994.09 1261.41,-3004.67 1252.53,-3001.49 1247,-3012.09 1218.63,-3066.49 1245.91,-3089.83 1230,-3149.09 1225.87,-3164.47 1226.8,-3170.38 1216,-3182.09 1197.48,-3202.16 1171.19,-3217.02 1147.76,-3227.33"/><polygon fill="#789abc" stroke="#789abc" points="1146.12,-3224.22 1138.26,-3231.33 1148.83,-3230.67 1146.12,-3224.22"/><text text-anchor="middle" x="1232.5" y="-1848.38" font-family="Times,serif" font-size="14.00" fill="#789abc">to_deleted</text></g><!-- jobtracker.Phase.status.14&#45;&gt;jobtracker.Phase.status.16 --><g id="edge45" class="edge"><title>jobtracker.Phase.status.14&#45;&gt;jobtracker.Phase.status.16</title><path fill="none" stroke="#789abc" d="M1018.29,-392.27C989.89,-313.61 936.32,-177.65 895,-145.79 854.76,-114.76 717.14,-92.13 633.8,-80.89"/><polygon fill="#789abc" stroke="#789abc" points="634.04,-77.39 623.67,-79.54 633.12,-84.33 634.04,-77.39"/><text text-anchor="middle" x="1020" y="-230.99" font-family="Times,serif" font-size="14.00" fill="#789abc">to_cancelled</text></g><!-- jobtracker.Phase.status.15 --><g id="node12" class="node"><title>jobtracker.Phase.status.15</title><ellipse fill="none" stroke="#789abc" cx="1157" cy="-234.69" rx="55.79" ry="55.79"/><text text-anchor="middle" x="1157" y="-230.99" font-family="Times,serif" font-size="14.00" fill="#789abc">Delivered</text></g><!-- jobtracker.Phase.status.14&#45;&gt;jobtracker.Phase.status.15 --><g id="edge40" class="edge"><title>jobtracker.Phase.status.14&#45;&gt;jobtracker.Phase.status.15</title><path fill="none" stroke="#789abc" d="M1017.02,-392.37C1010.63,-365 1008.95,-332.92 1025,-308.58 1036.18,-291.63 1048.95,-299.89 1067,-290.58 1078.29,-284.75 1090.08,-278.05 1101.27,-271.37"/><polygon fill="#789abc" stroke="#789abc" points="1103.34,-274.21 1110.09,-266.04 1099.72,-268.22 1103.34,-274.21"/><text text-anchor="middle" x="1069" y="-312.38" font-family="Times,serif" font-size="14.00" fill="#789abc">to_delivered</text></g><!-- jobtracker.Phase.status.14&#45;&gt;jobtracker.Phase.status.17 --><g id="edge8" class="edge"><title>jobtracker.Phase.status.14&#45;&gt;jobtracker.Phase.status.17</title><path fill="none" stroke="#789abc" d="M1055.9,-508.75C1062.06,-533.98 1067.17,-564.07 1066,-591.66 1062.89,-665.28 1057.67,-683.39 1052,-756.85 1042.14,-884.68 1049.47,-917.62 1032,-1044.63 997.13,-1298.11 907.04,-1359.49 941,-1613.09 943.02,-1628.16 939,-1635.6 950,-1646.09 976.69,-1671.54 1006.49,-1636.54 1031,-1664.09 1089.05,-1729.34 995.52,-1792.12 1051,-1859.58 1068.42,-1880.75 1091.07,-1857.74 1110,-1877.58 1167.21,-1937.53 1107.03,-1991.41 1156,-2058.26 1164.97,-2070.5 1174.1,-2065.71 1185,-2076.26 1190.76,-2081.83 1189.16,-2085.77 1195,-2091.26 1206.61,-2102.17 1217.59,-2095.73 1226,-2109.26 1278.51,-2193.78 1241,-2233.14 1241,-2332.64 1241,-2723.11 1241,-2723.11 1241,-2723.11 1241,-2860.55 1046.17,-2909.51 938.89,-2926.06"/><polygon fill="#789abc" stroke="#789abc" points="938.16,-2922.63 928.79,-2927.56 939.19,-2929.55 938.16,-2922.63"/><text text-anchor="middle" x="998" y="-1634.89" font-family="Times,serif" font-size="14.00" fill="#789abc">to_postponed</text></g><!-- jobtracker.Phase.status.12&#45;&gt;jobtracker.Phase.status.18 --><g id="edge76" class="edge"><title>jobtracker.Phase.status.12&#45;&gt;jobtracker.Phase.status.18</title><path fill="none" stroke="#789abc" d="M981.44,-694.66C987.88,-703.67 993.93,-713.69 998,-723.85 1070.47,-904.71 1052,-965.59 1041,-1160.12 1034.1,-1282.16 1047.87,-1317.18 1010,-1433.4 1001.92,-1458.19 987.67,-1459.19 981,-1484.4 966.38,-1539.7 945.73,-1568.07 981,-1613.09 1001.61,-1639.4 1027.78,-1610.38 1054,-1631.09 1060.47,-1636.2 1068.33,-1656.28 1071,-1664.09 1094.74,-1733.58 1053.3,-1770.74 1101,-1826.58 1116.61,-1844.85 1134.49,-1828.11 1152,-1844.58 1188.17,-1878.57 1192.33,-2015.19 1217,-2058.26 1232.63,-2085.53 1254.26,-2080.1 1266,-2109.26 1325.38,-2256.77 1271.63,-2665.89 1266,-2824.81 1263.33,-2900.19 1284.33,-2925.03 1254,-2994.09 1249.58,-3004.17 1241.94,-3002.26 1237,-3012.09 1202.55,-3080.64 1251.31,-3119.46 1207,-3182.09 1192.48,-3202.6 1169.16,-3217.35 1147.46,-3227.47"/><polygon fill="#789abc" stroke="#789abc" points="1146.02,-3224.28 1138.29,-3231.52 1148.85,-3230.68 1146.02,-3224.28"/><text text-anchor="middle" x="1254.5" y="-1964.22" font-family="Times,serif" font-size="14.00" fill="#789abc">to_deleted</text></g><!-- jobtracker.Phase.status.12&#45;&gt;jobtracker.Phase.status.14 --><g id="edge51" class="edge"><title>jobtracker.Phase.status.12&#45;&gt;jobtracker.Phase.status.14</title><path fill="none" stroke="#789abc" d="M954.58,-609.83C956.49,-598.75 959.19,-587.12 963,-576.66 971.52,-553.29 984.51,-529.41 997.3,-508.84"/><polygon fill="#789abc" stroke="#789abc" points="1000.35,-510.56 1002.75,-500.24 994.44,-506.81 1000.35,-510.56"/><text text-anchor="middle" x="1011" y="-580.46" font-family="Times,serif" font-size="14.00" fill="#789abc">to_completed</text></g><!-- jobtracker.Phase.status.12&#45;&gt;jobtracker.Phase.status.16 --><g id="edge25" class="edge"><title>jobtracker.Phase.status.12&#45;&gt;jobtracker.Phase.status.16</title><path fill="none" stroke="#789abc" d="M951.13,-609.5C952.98,-524.18 955.71,-352.21 948,-341.58 933.14,-321.1 913.58,-339.61 894,-323.58 836.61,-276.59 866.24,-228.29 811,-178.79 759.54,-132.68 684.85,-104.23 631.88,-88.58"/><polygon fill="#789abc" stroke="#789abc" points="632.83,-85.22 622.25,-85.81 630.89,-91.94 632.83,-85.22"/><text text-anchor="middle" x="938" y="-312.38" font-family="Times,serif" font-size="14.00" fill="#789abc">to_cancelled</text></g><!-- jobtracker.Phase.status.12&#45;&gt;jobtracker.Phase.status.17 --><g id="edge29" class="edge"><title>jobtracker.Phase.status.12&#45;&gt;jobtracker.Phase.status.17</title><path fill="none" stroke="#789abc" d="M979.24,-696.2C984.49,-704.84 989.19,-714.31 992,-723.85 1001.04,-754.53 1006.69,-986.43 987,-1011.63 968.01,-1035.92 942.44,-1008.48 920,-1029.63 908.75,-1040.23 912,-1047.46 909,-1062.63 858.63,-1317.03 881.66,-1387.55 902,-1646.09 908.34,-1726.71 871.11,-1766.29 925,-1826.58 947.56,-1851.81 967.38,-1832.49 999,-1844.58 1012.19,-1849.62 1014.3,-1853.4 1027,-1859.58 1044.9,-1868.28 1056.28,-1861.49 1068,-1877.58 1096.12,-1916.15 1057.67,-2056.14 1090,-2091.26 1119.4,-2123.2 1157.17,-2076.8 1186,-2109.26 1219.04,-2146.46 1201,-2282.89 1201,-2332.64 1201,-2723.11 1201,-2723.11 1201,-2723.11 1201,-2789.97 1185.35,-2814.99 1134,-2857.81 1078.79,-2903.84 997.09,-2922.06 939.23,-2929.27"/><polygon fill="#789abc" stroke="#789abc" points="938.6,-2925.81 929.07,-2930.45 939.41,-2932.77 938.6,-2925.81"/><text text-anchor="middle" x="973" y="-1741.63" font-family="Times,serif" font-size="14.00" fill="#789abc">to_postponed</text></g><!-- jobtracker.Phase.status.13 --><g id="node19" class="node"><title>jobtracker.Phase.status.13</title><ellipse fill="none" stroke="#789abc" cx="830" cy="-450.12" rx="108.58" ry="108.58"/><text text-anchor="middle" x="830" y="-446.42" font-family="Times,serif" font-size="14.00" fill="#789abc">Author Pres Updates</text></g><!-- jobtracker.Phase.status.12&#45;&gt;jobtracker.Phase.status.13 --><g id="edge44" class="edge"><title>jobtracker.Phase.status.12&#45;&gt;jobtracker.Phase.status.13</title><path fill="none" stroke="#789abc" d="M914.45,-625.26C906.22,-619.28 897.17,-613.66 888,-609.66 845.4,-591.08 814.9,-627.24 785,-591.66 775.65,-580.53 772.65,-567.44 773.65,-553.79"/><polygon fill="#789abc" stroke="#789abc" points="777.13,-554.16 775.05,-543.78 770.2,-553.19 777.13,-554.16"/><text text-anchor="middle" x="855.5" y="-580.46" font-family="Times,serif" font-size="14.00" fill="#789abc">to_pres_qa_updates</text></g><!-- jobtracker.Phase.status.6 --><g id="node6" class="node"><title>jobtracker.Phase.status.6</title><ellipse fill="none" stroke="#789abc" cx="516" cy="-1745.33" rx="81.49" ry="81.49"/><text text-anchor="middle" x="516" y="-1741.63" font-family="Times,serif" font-size="14.00" fill="#789abc">Ready to Begin</text></g><!-- jobtracker.Phase.status.6&#45;&gt;jobtracker.Phase.status.18 --><g id="edge48" class="edge"><title>jobtracker.Phase.status.6&#45;&gt;jobtracker.Phase.status.18</title><path fill="none" stroke="#789abc" d="M568.49,-1807.68C586.73,-1829.47 607.09,-1854.36 625,-1877.58 696.36,-1970.05 678.09,-2030.75 778,-2091.26 827.14,-2121.02 867.61,-2066.52 906,-2109.26 915.14,-2119.44 920.85,-2587.79 922,-2601.42 922.68,-2609.53 996.73,-3175.16 1001,-3182.09 1011.06,-3198.4 1027.02,-3211.56 1042.9,-3221.6"/><polygon fill="#789abc" stroke="#789abc" points="1041.3,-3224.72 1051.67,-3226.86 1044.89,-3218.72 1041.3,-3224.72"/><text text-anchor="middle" x="959.5" y="-2590.22" font-family="Times,serif" font-size="14.00" fill="#789abc">to_deleted</text></g><!-- jobtracker.Phase.status.6&#45;&gt;jobtracker.Phase.status.16 --><g id="edge69" class="edge"><title>jobtracker.Phase.status.6&#45;&gt;jobtracker.Phase.status.16</title><path fill="none" stroke="#789abc" d="M462.5,-1684.05C435.75,-1647.74 409,-1599.09 409,-1549.75 409,-1549.75 409,-1549.75 409,-1184.62 409,-1129.99 423.15,-1108.83 394,-1062.63 371.5,-1026.97 335.06,-1048.16 314,-1011.63 251.93,-904.01 302,-856.59 302,-732.35 302,-732.35 302,-732.35 302,-233.69 302,-140.15 423.95,-99.56 502.71,-83.11"/><polygon fill="#789abc" stroke="#789abc" points="503.45,-86.53 512.56,-81.12 502.07,-79.66 503.45,-86.53"/><text text-anchor="middle" x="358" y="-880.54" font-family="Times,serif" font-size="14.00" fill="#789abc">to_cancelled</text></g><!-- jobtracker.Phase.status.6&#45;&gt;jobtracker.Phase.status.17 --><g id="edge83" class="edge"><title>jobtracker.Phase.status.6&#45;&gt;jobtracker.Phase.status.17</title><path fill="none" stroke="#789abc" d="M552.04,-1818.21C587.6,-1890.63 642.26,-2006.14 682,-2109.26 715.35,-2195.78 683.03,-2239.17 745,-2308.14 758.3,-2322.95 768.5,-2316.67 786,-2326.14 796.73,-2331.95 797.87,-2336.14 809,-2341.14 836.74,-2353.6 856.54,-2334.98 875,-2359.14 905.06,-2398.5 885.5,-2722.37 875.2,-2865.91"/><polygon fill="#789abc" stroke="#789abc" points="871.7,-2865.7 874.47,-2875.92 878.68,-2866.2 871.7,-2865.7"/><text text-anchor="middle" x="857" y="-2329.94" font-family="Times,serif" font-size="14.00" fill="#789abc">to_postponed</text></g><!-- jobtracker.Phase.status.7 --><g id="node20" class="node"><title>jobtracker.Phase.status.7</title><ellipse fill="none" stroke="#789abc" cx="607" cy="-1548.75" rx="64.19" ry="64.19"/><text text-anchor="middle" x="607" y="-1545.05" font-family="Times,serif" font-size="14.00" fill="#789abc">In Progress</text></g><!-- jobtracker.Phase.status.6&#45;&gt;jobtracker.Phase.status.7 --><g id="edge33" class="edge"><title>jobtracker.Phase.status.6&#45;&gt;jobtracker.Phase.status.7</title><path fill="none" stroke="#789abc" d="M550.14,-1671.32C558.56,-1653.32 567.53,-1634.14 575.8,-1616.46"/><polygon fill="#789abc" stroke="#789abc" points="578.99,-1617.9 580.06,-1607.36 572.65,-1614.93 578.99,-1617.9"/><text text-anchor="middle" x="618.5" y="-1634.89" font-family="Times,serif" font-size="14.00" fill="#789abc">to_in_progress</text></g><!-- jobtracker.Phase.status.0 --><g id="node7" class="node"><title>jobtracker.Phase.status.0</title><ellipse fill="none" stroke="#789abc" cx="516" cy="-3379.77" rx="35.19" ry="35.19"/><text text-anchor="middle" x="516" y="-3376.07" font-family="Times,serif" font-size="14.00" fill="#789abc">Draft</text></g><!-- jobtracker.Phase.status.0&#45;&gt;jobtracker.Phase.status.18 --><g id="edge36" class="edge"><title>jobtracker.Phase.status.0&#45;&gt;jobtracker.Phase.status.18</title><path fill="none" stroke="#789abc" d="M550.43,-3370.98C646.89,-3349.13 920.49,-3287.17 1038.59,-3260.43"/><polygon fill="#789abc" stroke="#789abc" points="1039.53,-3263.8 1048.51,-3258.18 1037.99,-3256.98 1039.53,-3263.8"/><text text-anchor="middle" x="842.5" y="-3315.48" font-family="Times,serif" font-size="14.00" fill="#789abc">to_deleted</text></g><!-- jobtracker.Phase.status.0&#45;&gt;jobtracker.Phase.status.16 --><g id="edge77" class="edge"><title>jobtracker.Phase.status.0&#45;&gt;jobtracker.Phase.status.16</title><path fill="none" stroke="#789abc" d="M551.04,-3377.69C722.06,-3371.93 1461,-3341.62 1461,-3247.88 1461,-3247.88 1461,-3247.88 1461,-2332.64 1461,-1944.76 1461,-1847.79 1461,-1459.9 1461,-1459.9 1461,-1459.9 1461,-233.69 1461,-208.39 1464.01,-196.54 1446,-178.79 1404.16,-137.55 1375.86,-156 1318,-145.79 1067.76,-101.65 765.48,-82.53 634.2,-75.87"/><polygon fill="#789abc" stroke="#789abc" points="634.08,-72.36 623.91,-75.35 633.73,-79.35 634.08,-72.36"/><text text-anchor="middle" x="1505" y="-1741.63" font-family="Times,serif" font-size="14.00" fill="#789abc">to_cancelled</text></g><!-- jobtracker.Phase.status.0&#45;&gt;jobtracker.Phase.status.17 --><g id="edge4" class="edge"><title>jobtracker.Phase.status.0&#45;&gt;jobtracker.Phase.status.17</title><path fill="none" stroke="#789abc" d="M487.31,-3359.33C443.95,-3327.99 363.42,-3261.68 332,-3182.09 318.97,-3149.09 311.51,-3084.18 409,-3012.09 469.96,-2967.02 687.66,-2947.17 800.72,-2939.75"/><polygon fill="#789abc" stroke="#789abc" points="801.24,-2943.22 810.99,-2939.09 800.79,-2936.23 801.24,-2943.22"/><text text-anchor="middle" x="380" y="-3170.89" font-family="Times,serif" font-size="14.00" fill="#789abc">to_postponed</text></g><!-- jobtracker.Phase.status.0&#45;&gt;jobtracker.Phase.status.1 --><g id="edge19" class="edge"><title>jobtracker.Phase.status.0&#45;&gt;jobtracker.Phase.status.1</title><path fill="none" stroke="#789abc" d="M483.16,-3366.47C446.09,-3351.84 384.73,-3325.37 337,-3293.68 227.15,-3220.72 132.82,-3170.04 175,-3045.09 205.26,-2955.47 226.06,-2929.4 304,-2875.81 370.4,-2830.14 408.07,-2864.86 478,-2824.81 488.3,-2818.9 498.39,-2811.83 508.02,-2804.2"/><polygon fill="#789abc" stroke="#789abc" points="510.47,-2806.72 515.99,-2797.67 506.03,-2801.3 510.47,-2806.72"/><text text-anchor="middle" x="238.5" y="-3093.39" font-family="Times,serif" font-size="14.00" fill="#789abc">to_pending_sched</text></g><!-- jobtracker.Phase.status.2&#45;&gt;jobtracker.Phase.status.18 --><g id="edge18" class="edge"><title>jobtracker.Phase.status.2&#45;&gt;jobtracker.Phase.status.18</title><path fill="none" stroke="#789abc" d="M427.02,-2255.51C368.13,-2287.95 298.04,-2330.6 279,-2359.14 217.39,-2451.53 229.53,-2748.15 247,-2857.81 260.65,-2943.48 283.16,-2960.41 302,-3045.09 308.69,-3075.16 300.48,-3161.08 323,-3182.09 374.92,-3230.51 867.07,-3242.46 1036.79,-3245.16"/><polygon fill="#789abc" stroke="#789abc" points="1036.97,-3248.66 1047.02,-3245.31 1037.08,-3241.66 1036.97,-3248.66"/><text text-anchor="middle" x="284.5" y="-2846.61" font-family="Times,serif" font-size="14.00" fill="#789abc">to_deleted</text></g><!-- jobtracker.Phase.status.2&#45;&gt;jobtracker.Phase.status.3 --><g id="edge78" class="edge"><title>jobtracker.Phase.status.2&#45;&gt;jobtracker.Phase.status.3</title><path fill="none" stroke="#789abc" d="M424.52,-2250.72C394.58,-2269.2 364.68,-2294.18 348,-2326.14 342.18,-2337.3 340.39,-2349.36 341.28,-2361.53"/><polygon fill="#789abc" stroke="#789abc" points="337.85,-2362.31 342.62,-2371.77 344.79,-2361.4 337.85,-2362.31"/><text text-anchor="middle" x="418.5" y="-2329.94" font-family="Times,serif" font-size="14.00" fill="#789abc">to_sched_confirmed</text></g><!-- jobtracker.Phase.status.2&#45;&gt;jobtracker.Phase.status.16 --><g id="edge26" class="edge"><title>jobtracker.Phase.status.2&#45;&gt;jobtracker.Phase.status.16</title><path fill="none" stroke="#789abc" d="M520.3,-2109.11C520.09,-2040.9 511.88,-1949.78 477,-1877.58 463.06,-1848.71 439.7,-1855.55 426,-1826.58 385.24,-1740.39 414.03,-1708 405,-1613.09 400.4,-1564.77 395.97,-1215.49 365,-1178.12 346.42,-1155.7 321.34,-1181.89 302,-1160.12 257.6,-1110.14 284.9,-1078.13 278,-1011.63 265.18,-888.04 265,-856.61 265,-732.35 265,-732.35 265,-732.35 265,-233.69 265,-127.17 412.9,-91.01 502.04,-78.88"/><polygon fill="#789abc" stroke="#789abc" points="502.6,-82.34 512.07,-77.58 501.71,-75.4 502.6,-82.34"/><text text-anchor="middle" x="346" y="-1107.68" font-family="Times,serif" font-size="14.00" fill="#789abc">to_cancelled</text></g><!-- jobtracker.Phase.status.2&#45;&gt;jobtracker.Phase.status.17 --><g id="edge54" class="edge"><title>jobtracker.Phase.status.2&#45;&gt;jobtracker.Phase.status.17</title><path fill="none" stroke="#789abc" d="M596.19,-2266.39C619.91,-2281.34 646.36,-2296.52 672,-2308.14 718.48,-2329.22 733.02,-2326.8 782,-2341.14 809.95,-2349.33 827.46,-2335.89 845,-2359.14 859,-2377.71 859.42,-2550.18 845,-2568.42 823.47,-2595.65 790.53,-2559.2 769,-2586.42 764.86,-2591.65 768.02,-2594.83 769,-2601.42 783.28,-2697.55 819.57,-2804.36 844.53,-2870.35"/><polygon fill="#789abc" stroke="#789abc" points="841.29,-2871.69 848.12,-2879.78 847.83,-2869.19 841.29,-2871.69"/><text text-anchor="middle" x="817" y="-2590.22" font-family="Times,serif" font-size="14.00" fill="#789abc">to_postponed</text></g><!-- jobtracker.Phase.status.2&#45;&gt;jobtracker.Phase.status.1 --><g id="edge14" class="edge"><title>jobtracker.Phase.status.2&#45;&gt;jobtracker.Phase.status.1</title><path fill="none" stroke="#789abc" d="M601.92,-2257.77C634.83,-2282.13 659.34,-2312.55 636,-2341.14 610.76,-2372.07 573.24,-2328.21 548,-2359.14 518.59,-2395.17 517.51,-2533.31 548,-2568.42 585.38,-2611.47 637.62,-2543.38 675,-2586.42 691.3,-2605.2 685.62,-2627.14 671.22,-2647.8"/><polygon fill="#789abc" stroke="#789abc" points="668.3,-2645.85 665.06,-2655.94 673.88,-2650.08 668.3,-2645.85"/><text text-anchor="middle" x="611.5" y="-2460.08" font-family="Times,serif" font-size="14.00" fill="#789abc">to_pending_sched</text></g><!-- jobtracker.Phase.status.19&#45;&gt;jobtracker.Phase.status.18 --><g id="edge43" class="edge"><title>jobtracker.Phase.status.19&#45;&gt;jobtracker.Phase.status.18</title><path fill="none" stroke="#789abc" d="M1325.4,-3127.56C1315.13,-3134.63 1304.19,-3142.15 1294,-3149.09 1288.58,-3152.78 1250.77,-3178.96 1245,-3182.09 1213.63,-3199.07 1176.79,-3214.71 1147.34,-3226.26"/><polygon fill="#789abc" stroke="#789abc" points="1145.72,-3223.13 1137.66,-3230.01 1148.25,-3229.66 1145.72,-3223.13"/><text text-anchor="middle" x="1304.5" y="-3170.89" font-family="Times,serif" font-size="14.00" fill="#789abc">to_deleted</text></g><!-- jobtracker.Phase.status.19&#45;&gt;jobtracker.Phase.status.16 --><g id="edge37" class="edge"><title>jobtracker.Phase.status.19&#45;&gt;jobtracker.Phase.status.16</title><path fill="none" stroke="#789abc" d="M1383.44,-3047.21C1392.03,-3015.77 1401,-2973.85 1401,-2935.95 1401,-2935.95 1401,-2935.95 1401,-2332.64 1401,-2231.38 1434.59,-1960.87 1377,-1877.58 1365.68,-1861.21 1351.5,-1872.06 1336,-1859.58 1321.87,-1848.2 1317.96,-1843.7 1312,-1826.58 1304.86,-1806.04 1317.81,-1647.88 1304,-1631.09 1282.23,-1604.61 1250.22,-1640.01 1229,-1613.09 1193.59,-1568.18 1228.9,-1541.6 1229,-1484.4 1229.67,-1084.74 1232,-984.83 1232,-585.16 1232,-585.16 1232,-585.16 1232,-233.69 1232,-191.8 1234.17,-166.91 1198,-145.79 1103.5,-90.6 775.93,-77.17 634.2,-73.92"/><polygon fill="#789abc" stroke="#789abc" points="633.99,-70.42 623.91,-73.7 633.84,-77.41 633.99,-70.42"/><text text-anchor="middle" x="1273" y="-1545.05" font-family="Times,serif" font-size="14.00" fill="#789abc">to_cancelled</text></g><!-- jobtracker.Phase.status.19&#45;&gt;jobtracker.Phase.status.17 --><g id="edge74" class="edge"><title>jobtracker.Phase.status.19&#45;&gt;jobtracker.Phase.status.17</title><path fill="none" stroke="#789abc" d="M1318.43,-3080.15C1228.19,-3051.13 1037.11,-2989.69 935.98,-2957.17"/><polygon fill="#789abc" stroke="#789abc" points="936.77,-2953.75 926.18,-2954.02 934.63,-2960.41 936.77,-2953.75"/><text text-anchor="middle" x="1196" y="-3015.89" font-family="Times,serif" font-size="14.00" fill="#789abc">to_postponed</text></g><!-- jobtracker.Phase.status.10 --><g id="node10" class="node"><title>jobtracker.Phase.status.10</title><ellipse fill="none" stroke="#789abc" cx="537" cy="-884.24" rx="108.58" ry="108.58"/><text text-anchor="middle" x="537" y="-880.54" font-family="Times,serif" font-size="14.00" fill="#789abc">Author Tech Updates</text></g><!-- jobtracker.Phase.status.10&#45;&gt;jobtracker.Phase.status.18 --><g id="edge24" class="edge"><title>jobtracker.Phase.status.10&#45;&gt;jobtracker.Phase.status.18</title><path fill="none" stroke="#789abc" d="M507.99,-989.14C508.01,-1009.41 512.75,-1029.14 526,-1044.63 559.63,-1083.94 607.37,-1023.32 641,-1062.63 655.09,-1079.09 652.63,-1141.84 641,-1160.12 612.29,-1205.25 560.71,-1165.99 532,-1211.12 478.97,-1294.48 491.61,-1343.25 532,-1433.4 541.01,-1453.51 549.11,-1456.93 569,-1466.4 614.12,-1487.89 641.37,-1452.69 680,-1484.4 745.88,-1538.48 728.79,-1580.83 747,-1664.09 762.47,-1734.83 742.93,-1755.97 759,-1826.58 764.4,-1850.32 772.15,-1854.21 779,-1877.58 802.04,-1956.15 758.52,-1998.98 815,-2058.26 837.75,-2082.14 857.39,-2061.72 887,-2076.26 896.66,-2081 897.15,-2085.15 906,-2091.26 918.79,-2100.1 927.49,-2096.25 936,-2109.26 1048.6,-2281.47 922.92,-2375.71 995,-2568.42 998.37,-2577.43 1004.21,-2577.22 1007,-2586.42 1008.93,-2592.8 1007.01,-2594.76 1007,-2601.42 1006.78,-2711.59 1006,-2739.13 1006,-2849.31 1006,-3098.09 1006,-3098.09 1006,-3098.09 1006,-3138.72 1030.86,-3177.91 1054.15,-3205.72"/><polygon fill="#789abc" stroke="#789abc" points="1051.79,-3208.34 1060.98,-3213.61 1057.09,-3203.76 1051.79,-3208.34"/><text text-anchor="middle" x="943.5" y="-2080.06" font-family="Times,serif" font-size="14.00" fill="#789abc">to_deleted</text></g><!-- jobtracker.Phase.status.10&#45;&gt;jobtracker.Phase.status.16 --><g id="edge53" class="edge"><title>jobtracker.Phase.status.10&#45;&gt;jobtracker.Phase.status.16</title><path fill="none" stroke="#789abc" d="M511.18,-778.56C492.44,-700.57 469.6,-600.62 465,-558.66 454.49,-462.75 447.44,-436.45 465,-341.58 478.94,-266.28 513.12,-184.82 538.3,-131.57"/><polygon fill="#789abc" stroke="#789abc" points="541.58,-132.83 542.73,-122.29 535.26,-129.81 541.58,-132.83"/><text text-anchor="middle" x="509" y="-446.42" font-family="Times,serif" font-size="14.00" fill="#789abc">to_cancelled</text></g><!-- jobtracker.Phase.status.10&#45;&gt;jobtracker.Phase.status.17 --><g id="edge66" class="edge"><title>jobtracker.Phase.status.10&#45;&gt;jobtracker.Phase.status.17</title><path fill="none" stroke="#789abc" d="M496.63,-985.02C457.42,-1095.47 408.71,-1278.37 445,-1433.4 465.31,-1520.18 463.06,-1559.15 534,-1613.09 567.86,-1638.83 599.98,-1599.09 628,-1631.09 661.5,-1669.35 637.24,-1808.86 641,-1859.58 648.4,-1959.4 616.51,-2232.44 682,-2308.14 704.43,-2334.07 724.65,-2314.81 757,-2326.14 771.82,-2331.33 774.26,-2335.72 789,-2341.14 817.54,-2351.63 836.02,-2335.39 855,-2359.14 870.55,-2378.6 870.97,-2717.1 870.4,-2865.34"/><polygon fill="#789abc" stroke="#789abc" points="866.9,-2865.67 870.36,-2875.68 873.9,-2865.7 866.9,-2865.67"/><text text-anchor="middle" x="689" y="-1848.38" font-family="Times,serif" font-size="14.00" fill="#789abc">to_postponed</text></g><!-- jobtracker.Phase.status.8 --><g id="node16" class="node"><title>jobtracker.Phase.status.8</title><ellipse fill="none" stroke="#789abc" cx="652" cy="-1322.26" rx="111.28" ry="111.28"/><text text-anchor="middle" x="652" y="-1318.56" font-family="Times,serif" font-size="14.00" fill="#789abc">Pending Technical QA</text></g><!-- jobtracker.Phase.status.10&#45;&gt;jobtracker.Phase.status.8 --><g id="edge3" class="edge"><title>jobtracker.Phase.status.10&#45;&gt;jobtracker.Phase.status.8</title><path fill="none" stroke="#789abc" d="M511.36,-989.8C503.22,-1042.31 500.7,-1106.09 520,-1160.12 529.85,-1187.69 546.67,-1213.94 565.07,-1236.94"/><polygon fill="#789abc" stroke="#789abc" points="562.58,-1239.43 571.63,-1244.94 567.99,-1234.99 562.58,-1239.43"/><text text-anchor="middle" x="590.5" y="-1107.68" font-family="Times,serif" font-size="14.00" fill="#789abc">to_pending_tech_qa</text></g><!-- jobtracker.Phase.status.16&#45;&gt;jobtracker.Phase.status.18 --><g id="edge68" class="edge"><title>jobtracker.Phase.status.16&#45;&gt;jobtracker.Phase.status.18</title><path fill="none" stroke="#789abc" d="M624.14,-72.77C744.6,-73.79 1035.93,-83.15 1270,-145.79 1352.55,-167.88 1441,-148.23 1441,-233.69 1441,-1459.9 1441,-1459.9 1441,-1459.9 1441,-1528.36 1467.05,-1559.07 1425,-1613.09 1410.75,-1631.4 1394.51,-1617.1 1376,-1631.09 1361.53,-1642.02 1357.61,-1646.84 1352,-1664.09 1329.67,-1732.77 1320.17,-1761.75 1352,-1826.58 1368.34,-1859.85 1400.5,-1844.9 1418,-1877.58 1465.8,-1966.84 1441,-2231.39 1441,-2332.64 1441,-3020.59 1441,-3020.59 1441,-3020.59 1441,-3056.48 1463.97,-3154.51 1441,-3182.09 1404.75,-3225.6 1239.8,-3239.54 1151,-3243.92"/><polygon fill="#789abc" stroke="#789abc" points="1150.65,-3240.44 1140.83,-3244.4 1150.98,-3247.43 1150.65,-3240.44"/><text text-anchor="middle" x="1413.5" y="-1634.89" font-family="Times,serif" font-size="14.00" fill="#789abc">to_deleted</text></g><!-- jobtracker.Phase.status.16&#45;&gt;jobtracker.Phase.status.19 --><g id="edge59" class="edge"><title>jobtracker.Phase.status.16&#45;&gt;jobtracker.Phase.status.19</title><path fill="none" stroke="#789abc" d="M624.07,-72.65C801.49,-73.35 1339,-87.55 1339,-233.69 1339,-1459.9 1339,-1459.9 1339,-1459.9 1339,-1550.71 1333.56,-1573.3 1332,-1664.09 1330.76,-1736.3 1302.92,-1760.47 1332,-1826.58 1340.74,-1846.44 1350.61,-1846.59 1368,-1859.58 1380.46,-1868.88 1389.87,-1864.32 1398,-1877.58 1450.96,-1963.88 1421,-2231.39 1421,-2332.64 1421,-2935.95 1421,-2935.95 1421,-2935.95 1421,-2972.15 1408.64,-3010.73 1395.86,-3040.95"/><polygon fill="#789abc" stroke="#789abc" points="1392.5,-3039.89 1391.71,-3050.46 1398.92,-3042.69 1392.5,-3039.89"/><text text-anchor="middle" x="1379.5" y="-1545.05" font-family="Times,serif" font-size="14.00" fill="#789abc">to_archived</text></g><!-- jobtracker.Phase.status.16&#45;&gt;jobtracker.Phase.status.17 --><g id="edge27" class="edge"><title>jobtracker.Phase.status.16&#45;&gt;jobtracker.Phase.status.17</title><path fill="none" stroke="#789abc" d="M512.14,-74.64C430.81,-78.96 276.49,-93.92 157,-145.79 109.63,-166.35 81,-182.04 81,-233.69 81,-1038.13 81,-1038.13 81,-1038.13 81,-1222.75 113.65,-1267.02 123,-1451.4 132.63,-1641.49 90.68,-1687.49 81,-1877.58 65.37,-2184.39 27.87,-2270.79 104,-2568.42 110.26,-2592.88 119.71,-2595.95 129,-2619.42 164.12,-2708.21 135.14,-2748.1 192,-2824.81 207.64,-2845.9 216.16,-2849.31 241,-2857.81 298.32,-2877.4 452.81,-2868.93 513,-2875.81 614.09,-2887.36 730.23,-2907.58 801.87,-2920.87"/><polygon fill="#789abc" stroke="#789abc" points="801.64,-2924.38 812.11,-2922.78 802.92,-2917.5 801.64,-2924.38"/><text text-anchor="middle" x="171" y="-1455.2" font-family="Times,serif" font-size="14.00" fill="#789abc">to_postponed</text></g><!-- jobtracker.Phase.status.15&#45;&gt;jobtracker.Phase.status.18 --><g id="edge61" class="edge"><title>jobtracker.Phase.status.15&#45;&gt;jobtracker.Phase.status.18</title><path fill="none" stroke="#789abc" d="M1157.4,-290.96C1157.68,-334.05 1158,-395.39 1158,-449.12 1158,-1459.9 1158,-1459.9 1158,-1459.9 1158,-1528.23 1140.58,-1551.9 1171,-1613.09 1176.32,-1623.8 1186.13,-1620.17 1191,-1631.09 1193.71,-1637.18 1192.38,-1639.57 1191,-1646.09 1189.18,-1654.65 1184.82,-1655.53 1183,-1664.09 1168.01,-1734.73 1136.99,-1770.92 1183,-1826.58 1210.1,-1859.36 1238.81,-1825.84 1277,-1844.58 1286.05,-1849.01 1285.36,-1854.39 1294,-1859.58 1313.53,-1871.31 1328.49,-1859.23 1342,-1877.58 1363.79,-1907.16 1361,-2170.96 1361,-2207.7 1361,-2851.31 1361,-2851.31 1361,-2851.31 1361,-2915.45 1362.61,-2934.07 1340,-2994.09 1330.49,-3019.36 1319.25,-3021.03 1307,-3045.09 1284.54,-3089.23 1294.54,-3107.93 1267,-3149.09 1260.53,-3158.75 1255.5,-3158.19 1248,-3167.09 1242.84,-3173.21 1244.13,-3176.92 1238,-3182.09 1211.97,-3204 1177.23,-3219.69 1148.39,-3230.02"/><polygon fill="#789abc" stroke="#789abc" points="1147.16,-3226.74 1138.85,-3233.32 1149.45,-3233.35 1147.16,-3226.74"/><text text-anchor="middle" x="1220.5" y="-1741.63" font-family="Times,serif" font-size="14.00" fill="#789abc">to_deleted</text></g><!-- jobtracker.Phase.status.15&#45;&gt;jobtracker.Phase.status.19 --><g id="edge63" class="edge"><title>jobtracker.Phase.status.15&#45;&gt;jobtracker.Phase.status.19</title><path fill="none" stroke="#789abc" d="M1165.36,-290.37C1171.22,-333.41 1178,-394.95 1178,-449.12 1178,-1459.9 1178,-1459.9 1178,-1459.9 1178,-1528.31 1166.32,-1550.1 1193,-1613.09 1200.5,-1630.8 1205.58,-1634.6 1221,-1646.09 1236.96,-1657.98 1249.64,-1648.49 1262,-1664.09 1307.59,-1721.66 1267.44,-1757.37 1292,-1826.58 1297.59,-1842.32 1297.25,-1848.78 1310,-1859.58 1328.67,-1875.37 1347.4,-1857.95 1362,-1877.58 1392.21,-1918.18 1381,-2282.03 1381,-2332.64 1381,-2851.31 1381,-2851.31 1381,-2851.31 1381,-2929.45 1382.95,-2949.17 1377,-3027.09 1376.8,-3029.77 1376.56,-3032.5 1376.3,-3035.25"/><polygon fill="#789abc" stroke="#789abc" points="1372.81,-3034.98 1375.25,-3045.29 1379.77,-3035.7 1372.81,-3034.98"/><text text-anchor="middle" x="1262.5" y="-1634.89" font-family="Times,serif" font-size="14.00" fill="#789abc">to_archived</text></g><!-- jobtracker.Phase.status.15&#45;&gt;jobtracker.Phase.status.16 --><g id="edge20" class="edge"><title>jobtracker.Phase.status.15&#45;&gt;jobtracker.Phase.status.16</title><path fill="none" stroke="#789abc" d="M1129.23,-185.86C1118.04,-170.68 1103.77,-155.37 1087,-145.79 1010.99,-102.38 756.1,-83.05 634.12,-76.12"/><polygon fill="#789abc" stroke="#789abc" points="633.98,-72.61 623.8,-75.55 633.59,-79.6 633.98,-72.61"/><text text-anchor="middle" x="1150" y="-149.59" font-family="Times,serif" font-size="14.00" fill="#789abc">to_cancelled</text></g><!-- jobtracker.Phase.status.15&#45;&gt;jobtracker.Phase.status.17 --><g id="edge11" class="edge"><title>jobtracker.Phase.status.15&#45;&gt;jobtracker.Phase.status.17</title><path fill="none" stroke="#789abc" d="M1152.07,-290.41C1133.57,-494.08 1067.4,-1208.05 1029,-1433.4 1025.09,-1456.36 1019.68,-1461.27 1017,-1484.4 1010.41,-1541.21 984.76,-1565.85 1017,-1613.09 1029.38,-1631.22 1045.6,-1617.71 1063,-1631.09 1069.55,-1636.13 1068.71,-1639.74 1074,-1646.09 1081.04,-1654.54 1086.02,-1654.28 1091,-1664.09 1124.24,-1729.57 1075.41,-1769.01 1121,-1826.58 1133.36,-1842.18 1146.22,-1832.45 1162,-1844.58 1168.77,-1849.78 1166.61,-1855.31 1174,-1859.58 1219.94,-1886.11 1257.03,-1837.68 1292,-1877.58 1325.33,-1915.61 1301,-2282.07 1301,-2332.64 1301,-2723.11 1301,-2723.11 1301,-2723.11 1301,-2882.12 1061.37,-2921.22 939.47,-2930.83"/><polygon fill="#789abc" stroke="#789abc" points="939.19,-2927.34 929.48,-2931.57 939.71,-2934.32 939.19,-2927.34"/><text text-anchor="middle" x="1065" y="-1545.05" font-family="Times,serif" font-size="14.00" fill="#789abc">to_postponed</text></g><!-- jobtracker.Phase.status.5 --><g id="node13" class="node"><title>jobtracker.Phase.status.5</title><ellipse fill="none" stroke="#789abc" cx="198" cy="-1967.92" rx="90.18" ry="90.18"/><text text-anchor="middle" x="198" y="-1964.22" font-family="Times,serif" font-size="14.00" fill="#789abc">Client Not Ready</text></g><!-- jobtracker.Phase.status.5&#45;&gt;jobtracker.Phase.status.18 --><g id="edge50" class="edge"><title>jobtracker.Phase.status.5&#45;&gt;jobtracker.Phase.status.18</title><path fill="none" stroke="#789abc" d="M143.96,-2040.33C130.41,-2061.51 117.37,-2085.44 109,-2109.26 -0.58,-2421.16 34,-2518.71 34,-2849.31 34,-3098.09 34,-3098.09 34,-3098.09 34,-3176.83 113.71,-3162.6 190,-3182.09 351.43,-3223.32 864.52,-3239.99 1036.89,-3244.52"/><polygon fill="#789abc" stroke="#789abc" points="1036.94,-3248.02 1047.02,-3244.78 1037.12,-3241.03 1036.94,-3248.02"/><text text-anchor="middle" x="70.5" y="-2718.41" font-family="Times,serif" font-size="14.00" fill="#789abc">to_deleted</text></g><!-- jobtracker.Phase.status.5&#45;&gt;jobtracker.Phase.status.6 --><g id="edge6" class="edge"><title>jobtracker.Phase.status.5&#45;&gt;jobtracker.Phase.status.6</title><path fill="none" stroke="#789abc" d="M266.67,-1909.2C292.8,-1888.08 323.22,-1864.5 352,-1844.58 378.84,-1825.99 409.26,-1807.19 436.56,-1791.08"/><polygon fill="#789abc" stroke="#789abc" points="438.45,-1794.02 445.3,-1785.94 434.9,-1787.99 438.45,-1794.02"/><text text-anchor="middle" x="383" y="-1848.38" font-family="Times,serif" font-size="14.00" fill="#789abc">to_ready</text></g><!-- jobtracker.Phase.status.5&#45;&gt;jobtracker.Phase.status.16 --><g id="edge72" class="edge"><title>jobtracker.Phase.status.5&#45;&gt;jobtracker.Phase.status.16</title><path fill="none" stroke="#789abc" d="M209.81,-1878.07C222.44,-1778.17 241.65,-1610.99 249,-1466.4 249.34,-1459.74 251.85,-1457.43 249,-1451.4 243.59,-1439.98 232.67,-1444.69 227,-1433.4 189.98,-1359.7 260.43,-1127.9 210,-1062.63 193.5,-1041.27 168.08,-1066.31 152,-1044.63 109.8,-987.73 151,-956.08 151,-885.24 151,-885.24 151,-885.24 151,-233.69 151,-184.02 177.81,-172 220,-145.79 307.14,-91.66 427.79,-77.09 501.73,-73.53"/><polygon fill="#789abc" stroke="#789abc" points="502,-77.02 511.84,-73.1 501.7,-70.03 502,-77.02"/><text text-anchor="middle" x="196" y="-1033.43" font-family="Times,serif" font-size="14.00" fill="#789abc">to_cancelled</text></g><!-- jobtracker.Phase.status.5&#45;&gt;jobtracker.Phase.status.17 --><g id="edge1" class="edge"><title>jobtracker.Phase.status.5&#45;&gt;jobtracker.Phase.status.17</title><path fill="none" stroke="#789abc" d="M150.23,-2044.69C139.68,-2064.94 129.9,-2087.31 124,-2109.26 122.45,-2115.02 98.43,-2539.65 114,-2568.42 133.71,-2604.85 164.08,-2588.83 192,-2619.42 261.67,-2695.75 226.62,-2753.06 301,-2824.81 325.18,-2848.13 336.92,-2847.84 369,-2857.81 518.71,-2904.33 702.74,-2922.98 800.78,-2930.02"/><polygon fill="#789abc" stroke="#789abc" points="800.64,-2933.52 810.86,-2930.72 801.13,-2926.53 800.64,-2933.52"/><text text-anchor="middle" x="162" y="-2460.08" font-family="Times,serif" font-size="14.00" fill="#789abc">to_postponed</text></g><!-- jobtracker.Phase.status.9 --><g id="node14" class="node"><title>jobtracker.Phase.status.9</title><ellipse fill="none" stroke="#789abc" cx="734" cy="-1111.38" rx="48.99" ry="48.99"/><text text-anchor="middle" x="734" y="-1107.68" font-family="Times,serif" font-size="14.00" fill="#789abc">Tech QA</text></g><!-- jobtracker.Phase.status.9&#45;&gt;jobtracker.Phase.status.18 --><g id="edge34" class="edge"><title>jobtracker.Phase.status.9&#45;&gt;jobtracker.Phase.status.18</title><path fill="none" stroke="#789abc" d="M765.08,-1149.28C771.46,-1158.28 777.57,-1168.18 782,-1178.12 865.86,-1366.05 849.77,-1427.24 878,-1631.09 889.95,-1717.34 834.21,-1760.57 891,-1826.58 915.34,-1854.86 938.21,-1831.09 973,-1844.58 985.44,-1849.4 986.96,-1853.84 999,-1859.58 1019.19,-1869.19 1032.23,-1859.95 1046,-1877.58 1070.9,-1909.45 1061.66,-2018.31 1068,-2058.26 1071.62,-2081.07 1074.11,-2086.49 1078,-2109.26 1085.52,-2153.29 1077.46,-2274.64 1107,-2308.14 1126.83,-2330.62 1153.85,-2302.28 1172,-2326.14 1176.04,-2331.45 1172.1,-2334.48 1172,-2341.14 1167.5,-2631.64 1173.26,-2705.36 1141,-2994.09 1133.29,-3063.12 1134.81,-3081.02 1121,-3149.09 1118.15,-3163.12 1114.36,-3178.1 1110.51,-3191.99"/><polygon fill="#789abc" stroke="#789abc" points="1107.07,-3191.3 1107.72,-3201.87 1113.8,-3193.2 1107.07,-3191.3"/><text text-anchor="middle" x="1144.5" y="-2205" font-family="Times,serif" font-size="14.00" fill="#789abc">to_deleted</text></g><!-- jobtracker.Phase.status.9&#45;&gt;jobtracker.Phase.status.11 --><g id="edge9" class="edge"><title>jobtracker.Phase.status.9&#45;&gt;jobtracker.Phase.status.11</title><path fill="none" stroke="#789abc" d="M725.49,-1063.32C725.11,-1052.02 726.16,-1040.18 730,-1029.63 735.93,-1013.31 744.61,-997.56 754.63,-982.83"/><polygon fill="#789abc" stroke="#789abc" points="757.76,-984.46 760.68,-974.28 752.05,-980.42 757.76,-984.46"/><text text-anchor="middle" x="801" y="-1033.43" font-family="Times,serif" font-size="14.00" fill="#789abc">to_pending_pres_qa</text></g><!-- jobtracker.Phase.status.9&#45;&gt;jobtracker.Phase.status.10 --><g id="edge42" class="edge"><title>jobtracker.Phase.status.9&#45;&gt;jobtracker.Phase.status.10</title><path fill="none" stroke="#789abc" d="M693.62,-1083.25C680.51,-1075.52 665.57,-1067.81 651,-1062.63 603.91,-1045.9 572.74,-1082.39 540,-1044.63 529.34,-1032.34 523.42,-1017.28 520.62,-1001.38"/><polygon fill="#789abc" stroke="#789abc" points="524.08,-1000.83 519.27,-991.39 517.14,-1001.77 524.08,-1000.83"/><text text-anchor="middle" x="610" y="-1033.43" font-family="Times,serif" font-size="14.00" fill="#789abc">to_tech_qa_updates</text></g><!-- jobtracker.Phase.status.9&#45;&gt;jobtracker.Phase.status.16 --><g id="edge81" class="edge"><title>jobtracker.Phase.status.9&#45;&gt;jobtracker.Phase.status.16</title><path fill="none" stroke="#789abc" d="M709.63,-1068.91C705.87,-1061.06 702.43,-1052.76 700,-1044.63 663.16,-921.43 685.33,-884.53 670,-756.85 662.13,-691.3 693.88,-658.99 650,-609.66 628.65,-585.66 599.98,-616.82 580,-591.66 566.15,-574.21 566.54,-273.89 567.43,-138.34"/><polygon fill="#789abc" stroke="#789abc" points="570.93,-138.12 567.5,-128.09 563.93,-138.07 570.93,-138.12"/><text text-anchor="middle" x="624" y="-580.46" font-family="Times,serif" font-size="14.00" fill="#789abc">to_cancelled</text></g><!-- jobtracker.Phase.status.9&#45;&gt;jobtracker.Phase.status.17 --><g id="edge60" class="edge"><title>jobtracker.Phase.status.9&#45;&gt;jobtracker.Phase.status.17</title><path fill="none" stroke="#789abc" d="M763.93,-1150.15C769.31,-1158.87 774.12,-1168.45 777,-1178.12 778.9,-1184.51 777.07,-1186.45 777,-1193.12 775.89,-1299.93 777.96,-1326.75 772,-1433.4 767.08,-1521.49 758,-1542.96 754,-1631.09 753.7,-1637.75 753.09,-1639.49 754,-1646.09 754.11,-1646.85 813.78,-1858.84 814,-1859.58 840.29,-1948.26 806.21,-1997.54 876,-2058.26 913.04,-2090.49 952.48,-2039.47 985,-2076.26 1021.25,-2117.27 987.11,-2516.7 1005,-2568.42 1008.23,-2577.75 1014.96,-2577.03 1018,-2586.42 1051.39,-2689.69 1014.6,-2728.27 965,-2824.81 953.5,-2847.19 936.45,-2868.77 919.96,-2886.75"/><polygon fill="#789abc" stroke="#789abc" points="917.23,-2884.54 912.94,-2894.23 922.34,-2889.33 917.23,-2884.54"/><text text-anchor="middle" x="924" y="-1964.22" font-family="Times,serif" font-size="14.00" fill="#789abc">to_postponed</text></g><!-- jobtracker.Phase.status.17&#45;&gt;jobtracker.Phase.status.18 --><g id="edge79" class="edge"><title>jobtracker.Phase.status.17&#45;&gt;jobtracker.Phase.status.18</title><path fill="none" stroke="#789abc" d="M824.97,-2974.27C806,-2993.37 786.01,-3018.13 776,-3045.09 759.91,-3088.42 748.49,-3111.95 776,-3149.09 807.29,-3191.32 955.05,-3222.46 1037.69,-3236.91"/><polygon fill="#789abc" stroke="#789abc" points="1037.23,-3240.38 1047.68,-3238.63 1038.42,-3233.48 1037.23,-3240.38"/><text text-anchor="middle" x="813.5" y="-3093.39" font-family="Times,serif" font-size="14.00" fill="#789abc">to_deleted</text></g><!-- jobtracker.Phase.status.17&#45;&gt;jobtracker.Phase.status.16 --><g id="edge10" class="edge"><title>jobtracker.Phase.status.17&#45;&gt;jobtracker.Phase.status.16</title><path fill="none" stroke="#789abc" d="M812.15,-2922.39C741.77,-2908.82 619.19,-2886.78 513,-2875.81 490.65,-2873.5 124.53,-2874.04 109,-2857.81 98.82,-2847.16 110.79,-2839.48 112,-2824.81 119.53,-2733.84 163.46,-2694.82 112,-2619.42 99.62,-2601.29 81.74,-2616.73 66,-2601.42 54.58,-2590.32 55.55,-2583.95 52,-2568.42 29.46,-2469.84 43.79,-2442.24 41,-2341.14 28.51,-1888.91 34,-1775.66 34,-1323.26 34,-1323.26 34,-1323.26 34,-233.69 34,-190.39 41.17,-171.51 76,-145.79 142.4,-96.76 384.01,-80.31 502.11,-75.12"/><polygon fill="#789abc" stroke="#789abc" points="502.27,-78.61 512.12,-74.69 501.98,-71.62 502.27,-78.61"/><text text-anchor="middle" x="77" y="-1455.2" font-family="Times,serif" font-size="14.00" fill="#789abc">to_cancelled</text></g><!-- jobtracker.Phase.status.17&#45;&gt;jobtracker.Phase.status.1 --><g id="edge73" class="edge"><title>jobtracker.Phase.status.17&#45;&gt;jobtracker.Phase.status.1</title><path fill="none" stroke="#789abc" d="M810.91,-2929.95C720.19,-2922.44 553.28,-2902.75 517,-2857.81 504.7,-2842.57 505.41,-2824.8 512.59,-2807.25"/><polygon fill="#789abc" stroke="#789abc" points="515.8,-2808.64 516.9,-2798.11 509.47,-2805.66 515.8,-2808.64"/><text text-anchor="middle" x="580.5" y="-2846.61" font-family="Times,serif" font-size="14.00" fill="#789abc">to_pending_sched</text></g><!-- jobtracker.Phase.status.8&#45;&gt;jobtracker.Phase.status.18 --><g id="edge47" class="edge"><title>jobtracker.Phase.status.8&#45;&gt;jobtracker.Phase.status.18</title><path fill="none" stroke="#789abc" d="M716.71,-1412.71C781.56,-1502.45 871.97,-1627.88 873,-1631.09 877.53,-1645.15 870.61,-1649.4 869,-1664.09 861.12,-1735.87 823.81,-1770.24 869,-1826.58 892.08,-1855.34 914.9,-1833.26 950,-1844.58 954.43,-1846 1024.18,-1873.87 1027,-1877.58 1041.61,-1896.79 1079.23,-2284.7 1085,-2308.14 1088.73,-2323.3 1086.1,-2329.97 1097,-2341.14 1112.33,-2356.85 1130.15,-2341.34 1143,-2359.14 1202.21,-2441.16 1152.33,-2485.3 1155,-2586.42 1157.8,-2692.38 1156.41,-2719.15 1148,-2824.81 1137.51,-2956.56 1115.22,-3110.35 1102.81,-3190.65"/><polygon fill="#789abc" stroke="#789abc" points="1099.35,-3190.13 1101.27,-3200.54 1106.26,-3191.2 1099.35,-3190.13"/><text text-anchor="middle" x="1134.5" y="-2329.94" font-family="Times,serif" font-size="14.00" fill="#789abc">to_deleted</text></g><!-- jobtracker.Phase.status.8&#45;&gt;jobtracker.Phase.status.16 --><g id="edge67" class="edge"><title>jobtracker.Phase.status.8&#45;&gt;jobtracker.Phase.status.16</title><path fill="none" stroke="#789abc" d="M656.41,-1210.9C658.23,-1160.25 660.11,-1099.4 661,-1044.63 661.52,-1012.65 671.84,-784.04 655,-756.85 629.36,-715.44 583.18,-747.54 558,-705.85 530.27,-659.94 558,-638.8 558,-585.16 558,-585.16 558,-585.16 558,-233.69 558,-202.16 559.94,-167.23 562.11,-138"/><polygon fill="#789abc" stroke="#789abc" points="565.61,-138.15 562.88,-127.91 558.63,-137.61 565.61,-138.15"/><text text-anchor="middle" x="602" y="-654.06" font-family="Times,serif" font-size="14.00" fill="#789abc">to_cancelled</text></g><!-- jobtracker.Phase.status.8&#45;&gt;jobtracker.Phase.status.9 --><g id="edge17" class="edge"><title>jobtracker.Phase.status.8&#45;&gt;jobtracker.Phase.status.9</title><path fill="none" stroke="#789abc" d="M686.11,-1216.28C690.85,-1203.33 695.87,-1190.35 701,-1178.12 702.96,-1173.46 705.1,-1168.66 707.32,-1163.89"/><polygon fill="#789abc" stroke="#789abc" points="710.52,-1165.31 711.67,-1154.78 704.21,-1162.3 710.52,-1165.31"/><text text-anchor="middle" x="739" y="-1181.92" font-family="Times,serif" font-size="14.00" fill="#789abc">to_tech_qa</text></g><!-- jobtracker.Phase.status.8&#45;&gt;jobtracker.Phase.status.17 --><g id="edge82" class="edge"><title>jobtracker.Phase.status.8&#45;&gt;jobtracker.Phase.status.17</title><path fill="none" stroke="#789abc" d="M705.72,-1419.63C710.1,-1430.13 714,-1440.84 717,-1451.4 762.81,-1612.36 715.19,-1662.68 749,-1826.58 752.12,-1841.72 753.48,-1845.56 760,-1859.58 763.95,-1868.08 768.04,-1868.68 771,-1877.58 786.04,-1922.83 758.12,-2056.71 791,-2091.26 829.69,-2131.92 877.05,-2068.85 916,-2109.26 987.22,-2183.14 906.49,-2484.12 965,-2568.42 975.2,-2583.12 991.6,-2571.21 1001,-2586.42 1016.53,-2611.55 942.74,-2778.7 899.52,-2871.73"/><polygon fill="#789abc" stroke="#789abc" points="896.23,-2870.5 895.18,-2881.04 902.57,-2873.46 896.23,-2870.5"/><text text-anchor="middle" x="839" y="-2080.06" font-family="Times,serif" font-size="14.00" fill="#789abc">to_postponed</text></g><!-- jobtracker.Phase.status.4&#45;&gt;jobtracker.Phase.status.18 --><g id="edge23" class="edge"><title>jobtracker.Phase.status.4&#45;&gt;jobtracker.Phase.status.18</title><path fill="none" stroke="#789abc" d="M156.32,-2257.07C136.53,-2285.01 114.3,-2322.08 104,-2359.14 79.1,-2448.76 95.89,-2475.76 104,-2568.42 106.01,-2591.35 109.98,-2596.61 113,-2619.42 128.5,-2736.57 81.96,-3060.36 160,-3149.09 218.11,-3215.16 842.53,-3238.63 1036.71,-3244.36"/><polygon fill="#789abc" stroke="#789abc" points="1036.89,-3247.87 1046.99,-3244.66 1037.09,-3240.87 1036.89,-3247.87"/><text text-anchor="middle" x="150.5" y="-2846.61" font-family="Times,serif" font-size="14.00" fill="#789abc">to_deleted</text></g><!-- jobtracker.Phase.status.4&#45;&gt;jobtracker.Phase.status.6 --><g id="edge41" class="edge"><title>jobtracker.Phase.status.4&#45;&gt;jobtracker.Phase.status.6</title><path fill="none" stroke="#789abc" d="M234.21,-2162.58C252.48,-2141.42 273.99,-2115.57 292,-2091.26 357.64,-2002.69 425.58,-1895.49 469.17,-1824.35"/><polygon fill="#789abc" stroke="#789abc" points="472.4,-1825.78 474.63,-1815.42 466.43,-1822.13 472.4,-1825.78"/><text text-anchor="middle" x="464" y="-1964.22" font-family="Times,serif" font-size="14.00" fill="#789abc">to_ready</text></g><!-- jobtracker.Phase.status.4&#45;&gt;jobtracker.Phase.status.16 --><g id="edge49" class="edge"><title>jobtracker.Phase.status.4&#45;&gt;jobtracker.Phase.status.16</title><path fill="none" stroke="#789abc" d="M154.99,-2161.65C133.93,-2133.7 110.04,-2096.19 99,-2058.26 76.57,-1981.15 84.76,-1956.61 99,-1877.58 103.29,-1853.77 109.89,-1849.37 118,-1826.58 171.81,-1675.28 175.55,-1633.97 234,-1484.4 237.19,-1476.25 240.18,-1474.97 242,-1466.4 243.38,-1459.88 245.33,-1457.18 242,-1451.4 234.05,-1437.59 221.1,-1445.73 211,-1433.4 205.92,-1427.2 119.31,-1168.03 118,-1160.12 109.15,-1106.63 118,-1092.35 118,-1038.13 118,-1038.13 118,-1038.13 118,-233.69 118,-182.62 145.1,-166 192,-145.79 294.71,-101.53 424.77,-83.96 501.9,-77.12"/><polygon fill="#789abc" stroke="#789abc" points="502.29,-80.6 511.96,-76.26 501.7,-73.62 502.29,-80.6"/><text text-anchor="middle" x="162" y="-1107.68" font-family="Times,serif" font-size="14.00" fill="#789abc">to_cancelled</text></g><!-- jobtracker.Phase.status.4&#45;&gt;jobtracker.Phase.status.5 --><g id="edge56" class="edge"><title>jobtracker.Phase.status.4&#45;&gt;jobtracker.Phase.status.5</title><path fill="none" stroke="#789abc" d="M195.01,-2147.45C195.41,-2123.56 195.88,-2095.44 196.33,-2068.68"/><polygon fill="#789abc" stroke="#789abc" points="199.83,-2068.56 196.5,-2058.5 192.83,-2068.44 199.83,-2068.56"/><text text-anchor="middle" x="242" y="-2080.06" font-family="Times,serif" font-size="14.00" fill="#789abc">to_not_ready</text></g><!-- jobtracker.Phase.status.4&#45;&gt;jobtracker.Phase.status.17 --><g id="edge62" class="edge"><title>jobtracker.Phase.status.4&#45;&gt;jobtracker.Phase.status.17</title><path fill="none" stroke="#789abc" d="M200.06,-2269.75C202.66,-2292.22 206.02,-2317.92 210,-2341.14 211.39,-2349.22 212.33,-2351.12 214,-2359.14 236.34,-2466.53 192.9,-2515.43 261,-2601.42 273.1,-2616.71 288.4,-2604.54 301,-2619.42 361.99,-2691.46 303.66,-2745.6 355,-2824.81 402.98,-2898.82 671.39,-2923.27 800.54,-2930.82"/><polygon fill="#789abc" stroke="#789abc" points="800.54,-2934.33 810.72,-2931.4 800.94,-2927.34 800.54,-2934.33"/><text text-anchor="middle" x="309" y="-2590.22" font-family="Times,serif" font-size="14.00" fill="#789abc">to_postponed</text></g><!-- jobtracker.Phase.status.1&#45;&gt;jobtracker.Phase.status.18 --><g id="edge31" class="edge"><title>jobtracker.Phase.status.1&#45;&gt;jobtracker.Phase.status.18</title><path fill="none" stroke="#789abc" d="M514.04,-2795.77C502.82,-2815.2 497.18,-2836.69 505,-2857.81 564.24,-3017.79 633.94,-3028.88 755,-3149.09 771.11,-3165.08 773.61,-3172.09 794,-3182.09 872.92,-3220.78 974.78,-3236.1 1037.2,-3242.1"/><polygon fill="#789abc" stroke="#789abc" points="1036.97,-3245.59 1047.25,-3243.02 1037.61,-3238.62 1036.97,-3245.59"/><text text-anchor="middle" x="653.5" y="-3015.89" font-family="Times,serif" font-size="14.00" fill="#789abc">to_deleted</text></g><!-- jobtracker.Phase.status.1&#45;&gt;jobtracker.Phase.status.3 --><g id="edge30" class="edge"><title>jobtracker.Phase.status.1&#45;&gt;jobtracker.Phase.status.3</title><path fill="none" stroke="#789abc" d="M546.18,-2627.28C538.63,-2613.09 530.18,-2599.01 521,-2586.42 509.04,-2570.03 494.72,-2553.99 480.04,-2539.21"/><polygon fill="#789abc" stroke="#789abc" points="482.39,-2536.61 472.82,-2532.06 477.47,-2541.58 482.39,-2536.61"/><text text-anchor="middle" x="600.5" y="-2590.22" font-family="Times,serif" font-size="14.00" fill="#789abc">to_sched_confirmed</text></g><!-- jobtracker.Phase.status.1&#45;&gt;jobtracker.Phase.status.2 --><g id="edge65" class="edge"><title>jobtracker.Phase.status.1&#45;&gt;jobtracker.Phase.status.2</title><path fill="none" stroke="#789abc" d="M657.97,-2648.77C668.64,-2634.16 678.04,-2618.12 684,-2601.42 688.95,-2587.58 746.94,-2530.78 675,-2359.14 660.56,-2324.7 633.64,-2294.68 605.94,-2270.76"/><polygon fill="#789abc" stroke="#789abc" points="608.02,-2267.94 598.11,-2264.18 603.51,-2273.29 608.02,-2267.94"/><text text-anchor="middle" x="777" y="-2460.08" font-family="Times,serif" font-size="14.00" fill="#789abc">to_sched_tentative</text></g><!-- jobtracker.Phase.status.1&#45;&gt;jobtracker.Phase.status.16 --><g id="edge71" class="edge"><title>jobtracker.Phase.status.1&#45;&gt;jobtracker.Phase.status.16</title><path fill="none" stroke="#789abc" d="M517.28,-2645.79C505.06,-2635.66 491.8,-2626.38 478,-2619.42 437.67,-2599.1 419.61,-2618.97 378,-2601.42 367.43,-2596.97 367.46,-2591.14 357,-2586.42 324.57,-2571.8 301.15,-2596.27 279,-2568.42 221.09,-2495.63 238.26,-2442.76 279,-2359.14 284.69,-2347.47 296.31,-2352.81 302,-2341.14 304.92,-2335.15 302.04,-2332.81 302,-2326.14 300.89,-2126.77 308.13,-2076.64 297,-1877.58 286.37,-1687.5 289.16,-1638.5 254,-1451.4 252.47,-1443.24 250.21,-1441.62 249,-1433.4 222.78,-1255.83 246.52,-1209.01 240,-1029.63 235.19,-897.43 225,-864.64 225,-732.35 225,-732.35 225,-732.35 225,-233.69 225,-190.58 229.71,-169.06 266,-145.79 338.19,-99.5 437.2,-82.59 501.87,-76.42"/><polygon fill="#789abc" stroke="#789abc" points="502.3,-79.9 511.94,-75.52 501.67,-72.93 502.3,-79.9"/><text text-anchor="middle" x="293" y="-1318.56" font-family="Times,serif" font-size="14.00" fill="#789abc">to_cancelled</text></g><!-- jobtracker.Phase.status.1&#45;&gt;jobtracker.Phase.status.17 --><g id="edge84" class="edge"><title>jobtracker.Phase.status.1&#45;&gt;jobtracker.Phase.status.17</title><path fill="none" stroke="#789abc" d="M629.82,-2815.14C640.34,-2830.87 652.74,-2845.94 667,-2857.81 705.78,-2890.08 759.62,-2909.44 802.1,-2920.55"/><polygon fill="#789abc" stroke="#789abc" points="801.26,-2923.95 811.81,-2923 802.97,-2917.16 801.26,-2923.95"/><text text-anchor="middle" x="715" y="-2846.61" font-family="Times,serif" font-size="14.00" fill="#789abc">to_postponed</text></g><!-- jobtracker.Phase.status.13&#45;&gt;jobtracker.Phase.status.18 --><g id="edge55" class="edge"><title>jobtracker.Phase.status.13&#45;&gt;jobtracker.Phase.status.18</title><path fill="none" stroke="#789abc" d="M894.19,-538.24C911.85,-557.85 932.2,-577.14 954,-591.66 974.7,-605.45 989.85,-591.64 1007,-609.66 1053.9,-658.94 1039.58,-689.48 1049,-756.85 1064.69,-868.99 1058.43,-898.79 1049,-1011.63 1048.3,-1019.97 1025.8,-1151.95 1024,-1160.12 1018.93,-1183.07 1015.1,-1188.18 1010,-1211.12 988.26,-1308.96 994.62,-1335.76 972,-1433.4 966.67,-1456.42 960.37,-1461.02 957,-1484.4 952.92,-1512.71 938.89,-1590.95 957,-1613.09 982.55,-1644.33 1018.66,-1601.41 1046,-1631.09 1080.64,-1668.69 1039.71,-1820.77 1073,-1859.58 1092.52,-1882.33 1118.01,-1855.24 1138,-1877.58 1192.23,-1938.19 1122.94,-1989.89 1167,-2058.26 1172.56,-2066.89 1239.1,-2100.24 1244,-2109.26 1290,-2193.97 1245.56,-2229.75 1246,-2326.14 1247.7,-2694.32 1287.48,-2807.13 1151,-3149.09 1144.23,-3166.04 1134.79,-3183.54 1125.54,-3198.92"/><polygon fill="#789abc" stroke="#789abc" points="1122.39,-3197.36 1120.13,-3207.71 1128.35,-3201.03 1122.39,-3197.36"/><text text-anchor="middle" x="1110.5" y="-1848.38" font-family="Times,serif" font-size="14.00" fill="#789abc">to_deleted</text></g><!-- jobtracker.Phase.status.13&#45;&gt;jobtracker.Phase.status.11 --><g id="edge2" class="edge"><title>jobtracker.Phase.status.13&#45;&gt;jobtracker.Phase.status.11</title><path fill="none" stroke="#789abc" d="M774.89,-543.99C765.01,-564.92 756.21,-587.51 751,-609.66 741.21,-651.28 740.15,-664.5 751,-705.85 756.63,-727.3 765.5,-748.88 775.69,-769.25"/><polygon fill="#789abc" stroke="#789abc" points="772.61,-770.92 780.3,-778.21 778.84,-767.72 772.61,-770.92"/><text text-anchor="middle" x="822" y="-654.06" font-family="Times,serif" font-size="14.00" fill="#789abc">to_pending_pres_qa</text></g><!-- jobtracker.Phase.status.13&#45;&gt;jobtracker.Phase.status.16 --><g id="edge75" class="edge"><title>jobtracker.Phase.status.13&#45;&gt;jobtracker.Phase.status.16</title><path fill="none" stroke="#789abc" d="M768.99,-360.3C727.26,-299.71 670.55,-217.71 620,-145.79 615.54,-139.44 610.84,-132.8 606.16,-126.21"/><polygon fill="#789abc" stroke="#789abc" points="608.92,-124.05 600.28,-117.93 603.22,-128.11 608.92,-124.05"/><text text-anchor="middle" x="763" y="-230.99" font-family="Times,serif" font-size="14.00" fill="#789abc">to_cancelled</text></g><!-- jobtracker.Phase.status.13&#45;&gt;jobtracker.Phase.status.17 --><g id="edge7" class="edge"><title>jobtracker.Phase.status.13&#45;&gt;jobtracker.Phase.status.17</title><path fill="none" stroke="#789abc" d="M768.72,-539.86C756.58,-561.75 745.57,-585.79 739,-609.66 691.53,-782.22 696.33,-833.64 715,-1011.63 716.56,-1026.54 711.63,-1033.8 722,-1044.63 744.22,-1067.82 772.32,-1037.24 792,-1062.63 871.51,-1165.17 749.27,-1518.01 770,-1646.09 819.45,-1951.61 819.75,-1841.57 843,-1859.58 894.69,-1899.61 943.18,-1830.93 989,-1877.58 1017.29,-1906.38 1002.76,-2018.23 1008,-2058.26 1010.98,-2081.01 1013.13,-2086.5 1016,-2109.26 1027.11,-2197.36 1005.25,-2224.48 1035,-2308.14 1040.91,-2324.75 1042.91,-2330.55 1057,-2341.14 1078.24,-2357.1 1098.3,-2337.71 1114,-2359.14 1127.75,-2377.9 1118.75,-2545.66 1114,-2568.42 1088.57,-2690.14 1076.84,-2725.51 1002,-2824.81 981.41,-2852.12 952.67,-2876.93 927.26,-2895.97"/><polygon fill="#789abc" stroke="#789abc" points="925.12,-2893.2 919.14,-2901.94 929.27,-2898.84 925.12,-2893.2"/><text text-anchor="middle" x="818" y="-1634.89" font-family="Times,serif" font-size="14.00" fill="#789abc">to_postponed</text></g><!-- jobtracker.Phase.status.7&#45;&gt;jobtracker.Phase.status.18 --><g id="edge52" class="edge"><title>jobtracker.Phase.status.7&#45;&gt;jobtracker.Phase.status.18</title><path fill="none" stroke="#789abc" d="M646.98,-1599.24C662.47,-1619.05 680.05,-1642.3 695,-1664.09 752.55,-1747.96 728.3,-1804.8 814,-1859.58 843.78,-1878.61 946.72,-1852.89 972,-1877.58 976.65,-1882.11 1003.37,-2102.79 1004,-2109.26 1019.95,-2273.2 1046,-2684.59 1046,-2849.31 1046,-3098.09 1046,-3098.09 1046,-3098.09 1046,-3131.78 1057.42,-3167.77 1069.12,-3195.8"/><polygon fill="#789abc" stroke="#789abc" points="1065.91,-3197.19 1073.09,-3204.99 1072.34,-3194.42 1065.91,-3197.19"/><text text-anchor="middle" x="1072.5" y="-2460.08" font-family="Times,serif" font-size="14.00" fill="#789abc">to_deleted</text></g><!-- jobtracker.Phase.status.7&#45;&gt;jobtracker.Phase.status.14 --><g id="edge35" class="edge"><title>jobtracker.Phase.status.7&#45;&gt;jobtracker.Phase.status.14</title><path fill="none" stroke="#789abc" d="M663.3,-1517.3C697.6,-1496.8 740.7,-1467.36 772,-1433.4 855.61,-1342.68 870.08,-1309.51 911,-1193.12 935.38,-1123.78 887.08,-1084.5 936,-1029.63 956.23,-1006.94 982.66,-1035.09 1002,-1011.63 1058.98,-942.52 986.82,-687.01 1032,-609.66 1039.27,-597.21 1052.19,-604.38 1059,-591.66 1071.23,-568.81 1069.89,-541.05 1064.05,-516.25"/><polygon fill="#789abc" stroke="#789abc" points="1067.43,-515.34 1061.51,-506.55 1060.66,-517.11 1067.43,-515.34"/><text text-anchor="middle" x="984" y="-1033.43" font-family="Times,serif" font-size="14.00" fill="#789abc">to_completed</text></g><!-- jobtracker.Phase.status.7&#45;&gt;jobtracker.Phase.status.16 --><g id="edge13" class="edge"><title>jobtracker.Phase.status.7&#45;&gt;jobtracker.Phase.status.16</title><path fill="none" stroke="#789abc" d="M561.05,-1502.99C550.74,-1491.63 540.39,-1479.05 532,-1466.4 523.09,-1452.98 522.18,-1448.66 517,-1433.4 415.53,-1134.71 406,-1047.81 406,-732.35 406,-732.35 406,-732.35 409,-233.69 409,-174.8 463.59,-129.72 508.79,-102.48"/><polygon fill="#789abc" stroke="#789abc" points="510.83,-105.34 517.69,-97.27 507.29,-99.3 510.83,-105.34"/><text text-anchor="middle" x="450" y="-727.65" font-family="Times,serif" font-size="14.00" fill="#789abc">to_cancelled</text></g><!-- jobtracker.Phase.status.7&#45;&gt;jobtracker.Phase.status.17 --><g id="edge80" class="edge"><title>jobtracker.Phase.status.7&#45;&gt;jobtracker.Phase.status.17</title><path fill="none" stroke="#789abc" d="M629.73,-1609.22C652.33,-1666.26 689.29,-1754.16 729,-1826.58 733.62,-1835.01 737.72,-1835.54 741,-1844.58 812.13,-2040.35 662.41,-2161.15 810,-2308.14 840.45,-2338.47 877.59,-2293.05 905,-2326.14 909.25,-2331.28 905.12,-2334.48 905,-2341.14 901.22,-2556.2 909.32,-2610.77 888,-2824.81 886.64,-2838.41 884.65,-2852.9 882.48,-2866.72"/><polygon fill="#789abc" stroke="#789abc" points="879.01,-2866.21 880.87,-2876.64 885.92,-2867.33 879.01,-2866.21"/><text text-anchor="middle" x="858" y="-2205" font-family="Times,serif" font-size="14.00" fill="#789abc">to_postponed</text></g><!-- jobtracker.Phase.status.7&#45;&gt;jobtracker.Phase.status.8 --><g id="edge12" class="edge"><title>jobtracker.Phase.status.7&#45;&gt;jobtracker.Phase.status.8</title><path fill="none" stroke="#789abc" d="M577.48,-1491.44C573.8,-1478.36 572.42,-1464.45 576,-1451.4 578.51,-1442.24 581.87,-1433.06 585.78,-1424.07"/><polygon fill="#789abc" stroke="#789abc" points="589.05,-1425.33 590.04,-1414.78 582.69,-1422.41 589.05,-1425.33"/><text text-anchor="middle" x="646.5" y="-1455.2" font-family="Times,serif" font-size="14.00" fill="#789abc">to_pending_tech_qa</text></g></g></svg></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../../..", "features": [], "search": "../../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/gh/rod2ik/cdn@main/mkdocs/javascripts/mkdocs-graphviz.js"></script>
+      
+    
+  </body>
+</html>

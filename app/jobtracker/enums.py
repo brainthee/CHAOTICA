@@ -970,3 +970,29 @@ class QualificationStatus:
         (UNSUCCESSFUL, "danger"),
         (LAPSED, "secondary"),
     )
+
+    # Allowed user self-service status transitions
+    # Key = current status, Value = list of statuses the user can move to
+    ALLOWED_TRANSITIONS = {
+        None: [UNKNOWN, IN_PROGRESS],  # New record
+        UNKNOWN: [IN_PROGRESS, PENDING],
+        IN_PROGRESS: [PENDING, ATTEMPTED, UNSUCCESSFUL],
+        PENDING: [ATTEMPTED],
+        ATTEMPTED: [AWARDED, UNSUCCESSFUL],
+        AWARDED: [],  # No self-service changes; managed by managers/cron
+        UNSUCCESSFUL: [IN_PROGRESS],  # Retry
+        LAPSED: [IN_PROGRESS],  # Renewal
+        REVOKED: [],
+        SUSPENDED: [],
+    }
+
+    # Quick-action map: action name → target status
+    QUICK_ACTIONS = {
+        "mark_attempted": ATTEMPTED,
+        "mark_awarded": AWARDED,
+        "mark_unsuccessful": UNSUCCESSFUL,
+        "start_renewal": IN_PROGRESS,
+    }
+
+    # The typical progression path for the stepper UI
+    PROGRESSION_STEPS = [IN_PROGRESS, PENDING, ATTEMPTED, AWARDED]

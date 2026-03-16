@@ -1,0 +1,3842 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../../user_guide/notifications/overview/">
+      
+      
+        <link rel="next" href="../email/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
+    
+    
+      
+        <title>Azure AD/ADFS - CHAOTICA Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#azure-adadfs-integration" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="CHAOTICA Documentation" class="md-header__button md-logo" aria-label="CHAOTICA Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            CHAOTICA Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Azure AD/ADFS
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="CHAOTICA Documentation" class="md-nav__button md-logo" aria-label="CHAOTICA Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    CHAOTICA Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../definitions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Definitions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Installation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../installation/vars/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Environment Variables
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_2" id="__nav_4_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deployment
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Deployment
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../installation/deployment/docker/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docker
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../installation/deployment/k8/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kubernetes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../installation/deployment/aws_beanstalk/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AWS Elastic Beanstalk
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_1" id="__nav_5_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Jobs
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Jobs
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/Jobs/managing_jobs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Managing Jobs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/Jobs/lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_1_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_1_3" id="__nav_5_1_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Phases
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_5_1_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_1_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Phases
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/Jobs/phases/managing_phases/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Managing Phases
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/Jobs/phases/lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Phase Lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_2" id="__nav_5_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clients
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Clients
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/clients/adding_clients/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding Clients
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/clients/managing_contacts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Managing Contacts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/clients/framework_agreements/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Framework Agreements
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_3" id="__nav_5_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Organisational Units
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Organisational Units
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/organisational_units/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_4" id="__nav_5_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Team & Users
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Team & Users
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/team/user_management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Management
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_5" id="__nav_5_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Qualifications
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Qualifications
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/qualifications/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/qualifications/administration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Administration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_6" id="__nav_5_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scheduling
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Scheduling
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/scheduling/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/scheduling/validation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Validation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/scheduling/filtering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Filtering
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_7" id="__nav_5_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Operations
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Operations
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/operations/managing_leave/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Managing Leave
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_8" id="__nav_5_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Workflows
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Workflows
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/workflows/quality_assurance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quality Assurance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/workflows/assessment_process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Assessment Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_9" id="__nav_5_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reporting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reporting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/reporting/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/reporting/custom_reports/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Custom Reports
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_10" id="__nav_5_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Notifications
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Notifications
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/notifications/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Managing Notifications
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integration
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Integration
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Azure AD/ADFS
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Azure AD/ADFS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Overview">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#benefits-of-azure-ad-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Benefits of Azure AD Integration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#supported-authentication-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Supported Authentication Methods
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#azure-ad-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Azure AD Configuration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Azure AD Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prerequisites
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-1-register-application-in-azure-ad" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 1: Register Application in Azure AD
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-2-configure-chaotica-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 2: Configure CHAOTICA Settings
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-3-user-and-group-mapping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 3: User and Group Mapping
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adfs-on-premises-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADFS On-Premises Configuration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ADFS On-Premises Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#adfs-server-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADFS Server Setup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#chaotica-adfs-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CHAOTICA ADFS Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#user-provisioning" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        User Provisioning
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="User Provisioning">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#automatic-user-creation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Automatic User Creation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#role-and-permission-mapping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Role and Permission Mapping
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#advanced-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Advanced Configuration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Advanced Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#conditional-access-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conditional Access Integration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom-claims-and-attributes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom Claims and Attributes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#multi-tenant-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multi-Tenant Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testing-and-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing and Validation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Testing and Validation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#testing-sso-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing SSO Integration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#troubleshooting-authentication" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Troubleshooting Authentication
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#diagnostic-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Diagnostic Tools
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#security-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Security Considerations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Security Considerations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#security-best-practices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Security Best Practices
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#compliance-and-audit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compliance and Audit
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#maintenance-and-operations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Maintenance and Operations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Maintenance and Operations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#regular-maintenance-tasks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Regular Maintenance Tasks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#monitoring-and-alerting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Monitoring and Alerting
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-topics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related Topics
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../email/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Email Systems
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../apis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    External APIs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Administration
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Administration
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../administration/chaotica_settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Application Settings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../administration/permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Permissions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../administration/system_management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    System Management
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Development
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/getting_started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/api_documentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Documentation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Security
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/access_control/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Access Control
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/data_protection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Protection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/common_issues/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Common Issues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Performance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/database_schema/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Database Schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Overview">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#benefits-of-azure-ad-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Benefits of Azure AD Integration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#supported-authentication-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Supported Authentication Methods
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#azure-ad-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Azure AD Configuration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Azure AD Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prerequisites
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-1-register-application-in-azure-ad" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 1: Register Application in Azure AD
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-2-configure-chaotica-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 2: Configure CHAOTICA Settings
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-3-user-and-group-mapping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 3: User and Group Mapping
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adfs-on-premises-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADFS On-Premises Configuration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ADFS On-Premises Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#adfs-server-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADFS Server Setup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#chaotica-adfs-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CHAOTICA ADFS Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#user-provisioning" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        User Provisioning
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="User Provisioning">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#automatic-user-creation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Automatic User Creation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#role-and-permission-mapping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Role and Permission Mapping
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#advanced-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Advanced Configuration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Advanced Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#conditional-access-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conditional Access Integration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom-claims-and-attributes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom Claims and Attributes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#multi-tenant-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multi-Tenant Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testing-and-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing and Validation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Testing and Validation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#testing-sso-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing SSO Integration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#troubleshooting-authentication" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Troubleshooting Authentication
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#diagnostic-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Diagnostic Tools
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#security-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Security Considerations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Security Considerations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#security-best-practices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Security Best Practices
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#compliance-and-audit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compliance and Audit
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#maintenance-and-operations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Maintenance and Operations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Maintenance and Operations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#regular-maintenance-tasks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Regular Maintenance Tasks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#monitoring-and-alerting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Monitoring and Alerting
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-topics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related Topics
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="azure-adadfs-integration">Azure AD/ADFS Integration<a class="headerlink" href="#azure-adadfs-integration" title="Permanent link">&para;</a></h1>
+<p>CHAOTICA supports integration with Azure Active Directory (Azure AD) and Active Directory Federation Services (ADFS) for single sign-on (SSO) and automated user provisioning. This guide covers setup, configuration, and troubleshooting.</p>
+<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
+<h3 id="benefits-of-azure-ad-integration">Benefits of Azure AD Integration<a class="headerlink" href="#benefits-of-azure-ad-integration" title="Permanent link">&para;</a></h3>
+<p><strong>Single Sign-On (SSO)</strong>:
+- Users authenticate once with their corporate credentials
+- Seamless access to CHAOTICA without separate login
+- Reduced password fatigue and security risks
+- Centralized access management</p>
+<p><strong>Automated User Management</strong>:
+- Automatic user account creation from Azure AD
+- Role and group mapping from directory services
+- Synchronized profile information and attributes
+- Automated deprovisioning when users leave</p>
+<p><strong>Enhanced Security</strong>:
+- Centralized security policies and compliance
+- Multi-factor authentication support
+- Conditional access policies
+- Enterprise-grade audit logging</p>
+<h3 id="supported-authentication-methods">Supported Authentication Methods<a class="headerlink" href="#supported-authentication-methods" title="Permanent link">&para;</a></h3>
+<p><strong>Azure Active Directory</strong>:
+- OAuth 2.0 / OpenID Connect
+- SAML 2.0 federation
+- Modern authentication protocols
+- Cloud-based directory service</p>
+<p><strong>Active Directory Federation Services (ADFS)</strong>:
+- On-premises federation service
+- SAML 2.0 assertions
+- Windows Integrated Authentication
+- Hybrid cloud scenarios</p>
+<h2 id="azure-ad-configuration">Azure AD Configuration<a class="headerlink" href="#azure-ad-configuration" title="Permanent link">&para;</a></h2>
+<h3 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h3>
+<p><strong>Azure AD Requirements</strong>:
+- Azure AD tenant with appropriate licensing
+- Global Administrator or Application Administrator role
+- CHAOTICA instance with HTTPS enabled
+- Domain verification completed</p>
+<p><strong>CHAOTICA Requirements</strong>:
+- HTTPS configured with valid SSL certificate
+- ADFS integration enabled in settings
+- Appropriate environment variables configured
+- Network connectivity to Azure AD endpoints</p>
+<h3 id="step-1-register-application-in-azure-ad">Step 1: Register Application in Azure AD<a class="headerlink" href="#step-1-register-application-in-azure-ad" title="Permanent link">&para;</a></h3>
+<ol>
+<li><strong>Access Azure Portal</strong></li>
+<li>Navigate to https://portal.azure.com</li>
+<li>Sign in with Global Administrator account</li>
+<li>
+<p>Go to Azure Active Directory</p>
+</li>
+<li>
+<p><strong>Create App Registration</strong>
+   <div class="highlight"><pre><span></span><code>Name: CHAOTICA Security Platform
+Supported account types: Accounts in this organizational directory only
+Redirect URI: https://your-chaotica-instance.com/oauth2/callback
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>Configure Application Settings</strong></p>
+</li>
+<li>Note the Application (client) ID</li>
+<li>Note the Directory (tenant) ID</li>
+<li>Create client secret and note the value</li>
+<li>
+<p>Configure additional redirect URIs if needed</p>
+</li>
+<li>
+<p><strong>Set API Permissions</strong>
+   <div class="highlight"><pre><span></span><code>Microsoft Graph Permissions:
+- User.Read (Delegated) - Read user profile
+- User.ReadBasic.All (Application) - Read all users&#39; basic profiles
+- Group.Read.All (Application) - Read all groups (optional)
+- Directory.Read.All (Application) - Read directory data (optional)
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>Grant Admin Consent</strong></p>
+</li>
+<li>Click "Grant admin consent for [Tenant Name]"</li>
+<li>Confirm the consent for all configured permissions</li>
+</ol>
+<h3 id="step-2-configure-chaotica-settings">Step 2: Configure CHAOTICA Settings<a class="headerlink" href="#step-2-configure-chaotica-settings" title="Permanent link">&para;</a></h3>
+<p><strong>Environment Variables</strong>:
+<div class="highlight"><pre><span></span><code><span class="c1"># Azure AD Configuration</span>
+<span class="nv">ADFS_CLIENT_ID</span><span class="o">=</span>your-application-client-id
+<span class="nv">ADFS_CLIENT_SECRET</span><span class="o">=</span>your-client-secret-value
+<span class="nv">ADFS_TENANT_ID</span><span class="o">=</span>your-directory-tenant-id
+
+<span class="c1"># Optional: Custom authority URL</span>
+<span class="nv">ADFS_AUTHORITY</span><span class="o">=</span>https://login.microsoftonline.com/your-tenant-id
+
+<span class="c1"># Enable Azure AD authentication</span>
+<span class="nv">ADFS_ENABLED</span><span class="o">=</span>True
+<span class="nv">ADFS_AUTO_LOGIN</span><span class="o">=</span>False<span class="w">  </span><span class="c1"># Set to True to redirect automatically</span>
+</code></pre></div></p>
+<p><strong>CHAOTICA Application Settings</strong>:
+Navigate to Django admin → Constance → Config:
+<div class="highlight"><pre><span></span><code>ADFS_ENABLED: True
+ADFS_AUTO_LOGIN: False (or True for automatic redirect)
+REGISTRATION_ENABLED: False (disable self-registration)
+LOCAL_LOGIN_ENABLED: True (allow fallback to local accounts)
+</code></pre></div></p>
+<h3 id="step-3-user-and-group-mapping">Step 3: User and Group Mapping<a class="headerlink" href="#step-3-user-and-group-mapping" title="Permanent link">&para;</a></h3>
+<p><strong>Claim Mapping Configuration</strong>:
+<div class="highlight"><pre><span></span><code><span class="c1"># In settings.py (advanced configuration)</span>
+<span class="n">AUTH_ADFS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;AUDIENCE&quot;</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ADFS_CLIENT_ID&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;CLIENT_ID&quot;</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ADFS_CLIENT_ID&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;CLIENT_SECRET&quot;</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ADFS_CLIENT_SECRET&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;CLAIM_MAPPING&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;first_name&quot;</span><span class="p">:</span> <span class="s2">&quot;given_name&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;last_name&quot;</span><span class="p">:</span> <span class="s2">&quot;family_name&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;email&quot;</span><span class="p">:</span> <span class="s2">&quot;email&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;username&quot;</span><span class="p">:</span> <span class="s2">&quot;upn&quot;</span>  <span class="c1"># User Principal Name</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;GROUPS_CLAIM&quot;</span><span class="p">:</span> <span class="s2">&quot;groups&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;MIRROR_GROUPS&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="s2">&quot;USERNAME_CLAIM&quot;</span><span class="p">:</span> <span class="s2">&quot;upn&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;TENANT_ID&quot;</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ADFS_TENANT_ID&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;RELYING_PARTY_ID&quot;</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ADFS_CLIENT_ID&quot;</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<p><strong>Group-to-Role Mapping</strong>:
+<div class="highlight"><pre><span></span><code><span class="c1"># Custom group mapping (in settings.py)</span>
+<span class="n">ADFS_GROUP_TO_ROLE_MAPPING</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;CHAOTICA-Administrators&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Global: Admin&quot;</span><span class="p">],</span>
+    <span class="s2">&quot;CHAOTICA-Managers&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Global: Delivery Manager&quot;</span><span class="p">],</span>
+    <span class="s2">&quot;CHAOTICA-Consultants&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Global: User&quot;</span><span class="p">],</span>
+    <span class="s2">&quot;CHAOTICA-Sales&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Global: Sales Manager&quot;</span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<h2 id="adfs-on-premises-configuration">ADFS On-Premises Configuration<a class="headerlink" href="#adfs-on-premises-configuration" title="Permanent link">&para;</a></h2>
+<h3 id="adfs-server-setup">ADFS Server Setup<a class="headerlink" href="#adfs-server-setup" title="Permanent link">&para;</a></h3>
+<p><strong>Prerequisites</strong>:
+- Windows Server with ADFS role installed
+- SSL certificate for ADFS service
+- Active Directory domain controller access
+- Network connectivity from CHAOTICA to ADFS</p>
+<p><strong>ADFS Configuration Steps</strong>:</p>
+<ol>
+<li>
+<p><strong>Create Relying Party Trust</strong>
+   <div class="highlight"><pre><span></span><code>Display Name: CHAOTICA Security Platform
+Identifier: https://your-chaotica-instance.com
+SAML 2.0 SSO URL: https://your-chaotica-instance.com/oauth2/callback
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>Configure Claims Rules</strong>
+   <div class="highlight"><pre><span></span><code><span class="cm">&lt;!-- UPN Claim Rule --&gt;</span>
+c:[Type<span class="w"> </span>==<span class="w"> </span>&quot;http://schemas.xmlsoap.org/ws/2005/05/identity/claims/upn&quot;]
+=&gt;<span class="w"> </span>issue(Type<span class="w"> </span>=<span class="w"> </span>&quot;upn&quot;,<span class="w"> </span>Value<span class="w"> </span>=<span class="w"> </span>c.Value);
+
+<span class="cm">&lt;!-- Email Claim Rule --&gt;</span>
+c:[Type<span class="w"> </span>==<span class="w"> </span>&quot;http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress&quot;]
+=&gt;<span class="w"> </span>issue(Type<span class="w"> </span>=<span class="w"> </span>&quot;email&quot;,<span class="w"> </span>Value<span class="w"> </span>=<span class="w"> </span>c.Value);
+
+<span class="cm">&lt;!-- Name Claims --&gt;</span>
+c:[Type<span class="w"> </span>==<span class="w"> </span>&quot;http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname&quot;]
+=&gt;<span class="w"> </span>issue(Type<span class="w"> </span>=<span class="w"> </span>&quot;given_name&quot;,<span class="w"> </span>Value<span class="w"> </span>=<span class="w"> </span>c.Value);
+
+c:[Type<span class="w"> </span>==<span class="w"> </span>&quot;http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname&quot;]
+=&gt;<span class="w"> </span>issue(Type<span class="w"> </span>=<span class="w"> </span>&quot;family_name&quot;,<span class="w"> </span>Value<span class="w"> </span>=<span class="w"> </span>c.Value);
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>Group Claims Configuration</strong>
+   <div class="highlight"><pre><span></span><code><span class="cm">&lt;!-- Group Membership Claims --&gt;</span>
+c:[Type<span class="w"> </span>==<span class="w"> </span>&quot;http://schemas.microsoft.com/ws/2008/06/identity/claims/groupsid&quot;,<span class="w"> </span>
+<span class="w">   </span>Value<span class="w"> </span>=~<span class="w"> </span>&quot;(?i)^CHAOTICA-&quot;]
+=&gt;<span class="w"> </span>issue(Type<span class="w"> </span>=<span class="w"> </span>&quot;groups&quot;,<span class="w"> </span>Value<span class="w"> </span>=<span class="w"> </span>c.Value);
+</code></pre></div></p>
+</li>
+</ol>
+<h3 id="chaotica-adfs-configuration">CHAOTICA ADFS Configuration<a class="headerlink" href="#chaotica-adfs-configuration" title="Permanent link">&para;</a></h3>
+<p><strong>Environment Variables for ADFS</strong>:
+<div class="highlight"><pre><span></span><code><span class="c1"># ADFS Server Configuration</span>
+<span class="nv">ADFS_CLIENT_ID</span><span class="o">=</span>https://your-chaotica-instance.com
+<span class="nv">ADFS_AUTHORITY</span><span class="o">=</span>https://your-adfs-server.domain.com/adfs
+<span class="nv">ADFS_TENANT_ID</span><span class="o">=</span>your-adfs-realm-or-domain
+
+<span class="c1"># Certificate configuration (if using certificate-based auth)</span>
+<span class="nv">ADFS_CERTIFICATE_PATH</span><span class="o">=</span>/path/to/certificate.crt
+<span class="nv">ADFS_PRIVATE_KEY_PATH</span><span class="o">=</span>/path/to/private.key
+</code></pre></div></p>
+<h2 id="user-provisioning">User Provisioning<a class="headerlink" href="#user-provisioning" title="Permanent link">&para;</a></h2>
+<h3 id="automatic-user-creation">Automatic User Creation<a class="headerlink" href="#automatic-user-creation" title="Permanent link">&para;</a></h3>
+<p><strong>First-Time Login Process</strong>:
+1. User attempts to access CHAOTICA
+2. Redirected to Azure AD/ADFS for authentication
+3. User authenticates with corporate credentials
+4. CHAOTICA receives authentication response with claims
+5. System creates new user account with mapped attributes
+6. User is logged in and redirected to dashboard</p>
+<p><strong>User Attribute Mapping</strong>:
+<div class="highlight"><pre><span></span><code><span class="c1"># Example user creation from claims</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_user_from_claims</span><span class="p">(</span><span class="n">claims</span><span class="p">):</span>
+    <span class="n">user_data</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;username&#39;</span><span class="p">:</span> <span class="n">claims</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;upn&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+        <span class="s1">&#39;email&#39;</span><span class="p">:</span> <span class="n">claims</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;email&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+        <span class="s1">&#39;first_name&#39;</span><span class="p">:</span> <span class="n">claims</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;given_name&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+        <span class="s1">&#39;last_name&#39;</span><span class="p">:</span> <span class="n">claims</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;family_name&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+        <span class="s1">&#39;is_active&#39;</span><span class="p">:</span> <span class="kc">True</span>
+    <span class="p">}</span>
+
+    <span class="c1"># Create user account</span>
+    <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="o">**</span><span class="n">user_data</span><span class="p">)</span>
+
+    <span class="c1"># Map groups to roles</span>
+    <span class="n">groups</span> <span class="o">=</span> <span class="n">claims</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;groups&#39;</span><span class="p">,</span> <span class="p">[])</span>
+    <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">groups</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">ADFS_GROUP_TO_ROLE_MAPPING</span><span class="p">:</span>
+            <span class="c1"># Assign roles based on group membership</span>
+            <span class="n">assign_role</span><span class="p">(</span><span class="n">user</span><span class="p">,</span> <span class="n">ADFS_GROUP_TO_ROLE_MAPPING</span><span class="p">[</span><span class="n">group</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">user</span>
+</code></pre></div></p>
+<h3 id="role-and-permission-mapping">Role and Permission Mapping<a class="headerlink" href="#role-and-permission-mapping" title="Permanent link">&para;</a></h3>
+<p><strong>Organizational Unit Assignment</strong>:
+<div class="highlight"><pre><span></span><code><span class="c1"># Map Azure AD groups to organizational units</span>
+<span class="n">ADFS_GROUP_TO_UNIT_MAPPING</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;CHAOTICA-London-Team&quot;</span><span class="p">:</span> <span class="s2">&quot;london-office&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;CHAOTICA-NYC-Team&quot;</span><span class="p">:</span> <span class="s2">&quot;new-york-office&quot;</span><span class="p">,</span> 
+    <span class="s2">&quot;CHAOTICA-Remote-Team&quot;</span><span class="p">:</span> <span class="s2">&quot;remote-consultants&quot;</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<p><strong>Dynamic Role Assignment</strong>:
+<div class="highlight"><pre><span></span><code><span class="c1"># Role assignment based on claims</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">assign_roles_from_claims</span><span class="p">(</span><span class="n">user</span><span class="p">,</span> <span class="n">claims</span><span class="p">):</span>
+    <span class="n">groups</span> <span class="o">=</span> <span class="n">claims</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;groups&#39;</span><span class="p">,</span> <span class="p">[])</span>
+
+    <span class="c1"># Clear existing roles</span>
+    <span class="n">user</span><span class="o">.</span><span class="n">groups</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+
+    <span class="c1"># Assign new roles based on current group membership</span>
+    <span class="k">for</span> <span class="n">group_name</span> <span class="ow">in</span> <span class="n">groups</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">group_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;CHAOTICA-&#39;</span><span class="p">):</span>
+            <span class="n">role</span> <span class="o">=</span> <span class="n">map_group_to_role</span><span class="p">(</span><span class="n">group_name</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">role</span><span class="p">:</span>
+                <span class="n">user</span><span class="o">.</span><span class="n">groups</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">role</span><span class="p">)</span>
+</code></pre></div></p>
+<h2 id="advanced-configuration">Advanced Configuration<a class="headerlink" href="#advanced-configuration" title="Permanent link">&para;</a></h2>
+<h3 id="conditional-access-integration">Conditional Access Integration<a class="headerlink" href="#conditional-access-integration" title="Permanent link">&para;</a></h3>
+<p><strong>Azure AD Conditional Access</strong>:
+- Device compliance requirements
+- Location-based access policies
+- Risk-based authentication
+- Multi-factor authentication enforcement</p>
+<p><strong>Configuration Example</strong>:
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;conditionalAccess&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;requireMFA&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;allowedLocations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;office-network&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;vpn-ranges&quot;</span><span class="p">],</span>
+<span class="w">        </span><span class="nt">&quot;requiredDeviceCompliance&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;sessionControls&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="nt">&quot;signInFrequency&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;24h&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;persistentBrowser&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<h3 id="custom-claims-and-attributes">Custom Claims and Attributes<a class="headerlink" href="#custom-claims-and-attributes" title="Permanent link">&para;</a></h3>
+<p><strong>Extended User Attributes</strong>:
+<div class="highlight"><pre><span></span><code><span class="c1"># Custom claim mapping for extended attributes</span>
+<span class="n">CUSTOM_CLAIM_MAPPING</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;employee_id&quot;</span><span class="p">:</span> <span class="s2">&quot;extension_EmployeeID&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;department&quot;</span><span class="p">:</span> <span class="s2">&quot;department&quot;</span><span class="p">,</span> 
+    <span class="s2">&quot;manager&quot;</span><span class="p">:</span> <span class="s2">&quot;manager&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;job_title&quot;</span><span class="p">:</span> <span class="s2">&quot;jobTitle&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;office_location&quot;</span><span class="p">:</span> <span class="s2">&quot;officeLocation&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;phone_number&quot;</span><span class="p">:</span> <span class="s2">&quot;telephoneNumber&quot;</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<p><strong>Profile Enhancement</strong>:
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">enhance_user_profile</span><span class="p">(</span><span class="n">user</span><span class="p">,</span> <span class="n">claims</span><span class="p">):</span>
+    <span class="n">profile</span><span class="p">,</span> <span class="n">created</span> <span class="o">=</span> <span class="n">UserProfile</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get_or_create</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">user</span><span class="p">)</span>
+
+    <span class="c1"># Map extended attributes</span>
+    <span class="n">profile</span><span class="o">.</span><span class="n">employee_id</span> <span class="o">=</span> <span class="n">claims</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;extension_EmployeeID&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="n">profile</span><span class="o">.</span><span class="n">department</span> <span class="o">=</span> <span class="n">claims</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;department&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="n">profile</span><span class="o">.</span><span class="n">job_title</span> <span class="o">=</span> <span class="n">claims</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;jobTitle&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="n">profile</span><span class="o">.</span><span class="n">office_location</span> <span class="o">=</span> <span class="n">claims</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;officeLocation&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="n">profile</span><span class="o">.</span><span class="n">phone</span> <span class="o">=</span> <span class="n">claims</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;telephoneNumber&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+
+    <span class="n">profile</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+</code></pre></div></p>
+<h3 id="multi-tenant-configuration">Multi-Tenant Configuration<a class="headerlink" href="#multi-tenant-configuration" title="Permanent link">&para;</a></h3>
+<p><strong>Supporting Multiple Azure AD Tenants</strong>:
+<div class="highlight"><pre><span></span><code><span class="c1"># Multi-tenant configuration</span>
+<span class="n">MULTI_TENANT_CONFIG</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;tenant1.onmicrosoft.com&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;client_id&quot;</span><span class="p">:</span> <span class="s2">&quot;tenant1-client-id&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;client_secret&quot;</span><span class="p">:</span> <span class="s2">&quot;tenant1-secret&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;authority&quot;</span><span class="p">:</span> <span class="s2">&quot;https://login.microsoftonline.com/tenant1-id&quot;</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;tenant2.onmicrosoft.com&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;client_id&quot;</span><span class="p">:</span> <span class="s2">&quot;tenant2-client-id&quot;</span><span class="p">,</span> 
+        <span class="s2">&quot;client_secret&quot;</span><span class="p">:</span> <span class="s2">&quot;tenant2-secret&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;authority&quot;</span><span class="p">:</span> <span class="s2">&quot;https://login.microsoftonline.com/tenant2-id&quot;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<h2 id="testing-and-validation">Testing and Validation<a class="headerlink" href="#testing-and-validation" title="Permanent link">&para;</a></h2>
+<h3 id="testing-sso-integration">Testing SSO Integration<a class="headerlink" href="#testing-sso-integration" title="Permanent link">&para;</a></h3>
+<p><strong>Manual Testing Checklist</strong>:
+- [ ] User can access CHAOTICA login page
+- [ ] SSO redirect to Azure AD/ADFS works
+- [ ] Authentication with corporate credentials succeeds
+- [ ] User account is created with correct attributes
+- [ ] Group memberships are mapped to appropriate roles
+- [ ] User can access authorized resources
+- [ ] Logout process works correctly</p>
+<p><strong>Automated Testing</strong>:
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">pytest</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.test</span><span class="w"> </span><span class="kn">import</span> <span class="n">TestCase</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.contrib.auth.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">User</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">TestAzureADIntegration</span><span class="p">(</span><span class="n">TestCase</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_user_creation_from_claims</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">claims</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;upn&#39;</span><span class="p">:</span> <span class="s1">&#39;john.doe@company.com&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;email&#39;</span><span class="p">:</span> <span class="s1">&#39;john.doe@company.com&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;given_name&#39;</span><span class="p">:</span> <span class="s1">&#39;John&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;family_name&#39;</span><span class="p">:</span> <span class="s1">&#39;Doe&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;groups&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;CHAOTICA-Consultants&#39;</span><span class="p">]</span>
+        <span class="p">}</span>
+
+        <span class="n">user</span> <span class="o">=</span> <span class="n">create_user_from_claims</span><span class="p">(</span><span class="n">claims</span><span class="p">)</span>
+
+        <span class="k">assert</span> <span class="n">user</span><span class="o">.</span><span class="n">username</span> <span class="o">==</span> <span class="s1">&#39;john.doe@company.com&#39;</span>
+        <span class="k">assert</span> <span class="n">user</span><span class="o">.</span><span class="n">email</span> <span class="o">==</span> <span class="s1">&#39;john.doe@company.com&#39;</span>
+        <span class="k">assert</span> <span class="n">user</span><span class="o">.</span><span class="n">first_name</span> <span class="o">==</span> <span class="s1">&#39;John&#39;</span>
+        <span class="k">assert</span> <span class="n">user</span><span class="o">.</span><span class="n">groups</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Global: User&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span>
+</code></pre></div></p>
+<h3 id="troubleshooting-authentication">Troubleshooting Authentication<a class="headerlink" href="#troubleshooting-authentication" title="Permanent link">&para;</a></h3>
+<p><strong>Common Issues and Solutions</strong>:</p>
+<ol>
+<li>
+<p><strong>Redirect URI Mismatch</strong>
+   <div class="highlight"><pre><span></span><code>Error: AADSTS50011 - Redirect URI mismatch
+Solution: Verify redirect URI in Azure AD matches CHAOTICA configuration
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>Insufficient Permissions</strong>
+   <div class="highlight"><pre><span></span><code>Error: AADSTS65001 - Consent required
+Solution: Grant admin consent for required permissions in Azure AD
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>Token Validation Errors</strong>
+   <div class="highlight"><pre><span></span><code>Error: Invalid signature or token expired
+Solution: Check system clocks, certificate configuration, and token lifetime
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>User Creation Failures</strong>
+   <div class="highlight"><pre><span></span><code>Error: User account creation failed
+Solution: Verify claim mapping and required user attributes
+</code></pre></div></p>
+</li>
+</ol>
+<h3 id="diagnostic-tools">Diagnostic Tools<a class="headerlink" href="#diagnostic-tools" title="Permanent link">&para;</a></h3>
+<p><strong>Logging Configuration</strong>:
+<div class="highlight"><pre><span></span><code><span class="c1"># Enhanced logging for ADFS integration</span>
+<span class="n">LOGGING</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;version&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="s1">&#39;handlers&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;adfs_file&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;class&#39;</span><span class="p">:</span> <span class="s1">&#39;logging.FileHandler&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;filename&#39;</span><span class="p">:</span> <span class="s1">&#39;/var/log/chaotica/adfs.log&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;level&#39;</span><span class="p">:</span> <span class="s1">&#39;DEBUG&#39;</span><span class="p">,</span>
+        <span class="p">}</span>
+    <span class="p">},</span>
+    <span class="s1">&#39;loggers&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;django_auth_adfs&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;handlers&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;adfs_file&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;level&#39;</span><span class="p">:</span> <span class="s1">&#39;DEBUG&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;propagate&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<p><strong>Token Inspection</strong>:
+<div class="highlight"><pre><span></span><code><span class="c1"># Debug token contents</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">jwt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">inspect_token</span><span class="p">(</span><span class="n">token</span><span class="p">):</span>
+    <span class="c1"># Decode without verification for debugging</span>
+    <span class="n">decoded</span> <span class="o">=</span> <span class="n">jwt</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">token</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;verify_signature&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">})</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">decoded</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+</code></pre></div></p>
+<h2 id="security-considerations">Security Considerations<a class="headerlink" href="#security-considerations" title="Permanent link">&para;</a></h2>
+<h3 id="security-best-practices">Security Best Practices<a class="headerlink" href="#security-best-practices" title="Permanent link">&para;</a></h3>
+<p><strong>Certificate Management</strong>:
+- Use proper SSL certificates for all endpoints
+- Regularly rotate client secrets and certificates
+- Store secrets securely using environment variables or key vaults
+- Monitor certificate expiration dates</p>
+<p><strong>Network Security</strong>:
+- Use HTTPS for all authentication flows
+- Implement proper firewall rules
+- Consider network isolation for ADFS servers
+- Monitor authentication traffic and logs</p>
+<p><strong>Access Controls</strong>:
+- Implement principle of least privilege
+- Regularly review group memberships and role assignments
+- Use conditional access policies where possible
+- Monitor for unusual authentication patterns</p>
+<h3 id="compliance-and-audit">Compliance and Audit<a class="headerlink" href="#compliance-and-audit" title="Permanent link">&para;</a></h3>
+<p><strong>Audit Logging</strong>:
+<div class="highlight"><pre><span></span><code><span class="c1"># Log all authentication events</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="n">auth_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;auth.adfs&#39;</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">log_authentication_event</span><span class="p">(</span><span class="n">event_type</span><span class="p">,</span> <span class="n">user</span><span class="p">,</span> <span class="n">details</span><span class="p">):</span>
+    <span class="n">auth_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ADFS Auth: </span><span class="si">{</span><span class="n">event_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">extra</span><span class="o">=</span><span class="p">{</span>
+        <span class="s1">&#39;user&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">username</span> <span class="k">if</span> <span class="n">user</span> <span class="k">else</span> <span class="s1">&#39;anonymous&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;event_type&#39;</span><span class="p">:</span> <span class="n">event_type</span><span class="p">,</span>
+        <span class="s1">&#39;details&#39;</span><span class="p">:</span> <span class="n">details</span><span class="p">,</span>
+        <span class="s1">&#39;ip_address&#39;</span><span class="p">:</span> <span class="n">get_client_ip</span><span class="p">(),</span>
+        <span class="s1">&#39;user_agent&#39;</span><span class="p">:</span> <span class="n">get_user_agent</span><span class="p">()</span>
+    <span class="p">})</span>
+</code></pre></div></p>
+<p><strong>Compliance Reporting</strong>:
+- Regular access reviews and attestations
+- Authentication success/failure reporting
+- User provisioning and deprovisioning audits
+- Role and permission change tracking</p>
+<h2 id="maintenance-and-operations">Maintenance and Operations<a class="headerlink" href="#maintenance-and-operations" title="Permanent link">&para;</a></h2>
+<h3 id="regular-maintenance-tasks">Regular Maintenance Tasks<a class="headerlink" href="#regular-maintenance-tasks" title="Permanent link">&para;</a></h3>
+<p><strong>Monthly Tasks</strong>:
+- Review and rotate client secrets (as needed)
+- Check certificate expiration dates
+- Review user access and role assignments
+- Monitor authentication success rates</p>
+<p><strong>Quarterly Tasks</strong>:
+- Full integration testing
+- Security assessment of configuration
+- Review group-to-role mappings
+- Update documentation and procedures</p>
+<h3 id="monitoring-and-alerting">Monitoring and Alerting<a class="headerlink" href="#monitoring-and-alerting" title="Permanent link">&para;</a></h3>
+<p><strong>Key Metrics to Monitor</strong>:
+- Authentication success/failure rates
+- User provisioning failures
+- Token validation errors
+- Certificate expiration warnings
+- Unusual access patterns</p>
+<p><strong>Alerting Configuration</strong>:
+<div class="highlight"><pre><span></span><code><span class="c1"># Example alert configuration</span>
+<span class="n">AUTHENTICATION_ALERTS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;high_failure_rate&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;threshold&#39;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>  <span class="c1"># 10% failure rate</span>
+        <span class="s1">&#39;window&#39;</span><span class="p">:</span> <span class="s1">&#39;15m&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;recipients&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;security@company.com&#39;</span><span class="p">]</span>
+    <span class="p">},</span>
+    <span class="s1">&#39;certificate_expiry&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;threshold&#39;</span><span class="p">:</span> <span class="s1">&#39;30d&#39;</span><span class="p">,</span>  <span class="c1"># 30 days before expiry</span>
+        <span class="s1">&#39;recipients&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;it-ops@company.com&#39;</span><span class="p">]</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<h2 id="related-topics">Related Topics<a class="headerlink" href="#related-topics" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../../user_guide/team/user_management/">User Management</a> - User account and permission management</li>
+<li><a href="../../security/access_control/">Security</a> - Security policies and access control</li>
+<li><a href="../../administration/system_management/">Administration</a> - System configuration and maintenance</li>
+<li><a href="../../development/api_documentation/">API Documentation</a> - API authentication methods</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/gh/rod2ik/cdn@main/mkdocs/javascripts/mkdocs-graphviz.js"></script>
+      
+    
+  </body>
+</html>

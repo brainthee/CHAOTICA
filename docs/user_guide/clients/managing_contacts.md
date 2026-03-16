@@ -431,4 +431,4 @@ Escalation Path: Who to escalate to from this contact
 - [Adding Clients](adding_clients.md) - Creating and managing client records
 - [Jobs Management](../Jobs/managing_jobs.md) - Linking contacts to specific engagements
 - [Communication Tools](../communication/overview.md) - Communication systems and tools
-- [Security Management](../security/access_control.md) - Security and access control
+- [Security Management](../../security/access_control.md) - Security and access control
