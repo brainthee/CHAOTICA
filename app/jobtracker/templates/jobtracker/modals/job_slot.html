@@ -39,24 +39,58 @@
 <script>
   $(function() {
 
-  var loadForm2 = function() {
-      var btn = $(this);
-      var form = $('.js-submit-modal-form')
-      $.ajax({
-          url: btn.attr("data-url"),
-          type: 'POST',
-          data: form.serialize(),
-          dataType: 'json',
-          complete: function(data) {
-              calendar.refetchEvents();
-              refreshUtilisation();
-              refreshPhaseStatus();
-              $("#mainModal").modal("hide");
-          }
-      });
-  };
+    var saveSlotForm = function() {
+        var form = $(this);
+        $.ajax({
+            url: form.attr("action"),
+            data: form.serialize(),
+            type: form.attr("method"),
+            dataType: 'json',
+            success: function(data) {
+                if (data.form_is_valid) {
+                    calendar.refetchEvents();
+                    refreshUtilisation();
+                    refreshPhaseStatus();
+                    $("#mainModal").modal("hide");
+                } else {
+                  if (data.logic_checks_failed) {
+                    if (data.logic_checks_can_bypass) {
+                      Swal.fire({
+                        title: "Warning",
+                        icon: "question",
+                        html: data.logic_checks_feedback,
+                        showCancelButton: true,
+                        confirmButtonText: "Save",
+                        denyButtonText: `Don't save`
+                      }).then((result) => {
+                        if (result.isConfirmed) {
+                          $('<input>').attr({
+                              type: 'hidden',
+                              id: 'force',
+                              name: 'force',
+                              value: '1',
+                          }).appendTo('.js-submit-modal-form');
+                          $(".js-submit-modal-form").submit();
+                        }
+                      });
+                    } else {
+                      Swal.fire({
+                        title: "Error",
+                        icon: "exclamation",
+                        html: data.logic_checks_feedback,
+                        denyButtonText: `Dismiss`
+                      });
+                    }
+                  } else {
+                    $("#mainModalContent").html(data.html_form);
+                  }
+                }
+            }
+        });
+        return false;
+    };
 
-  $(".js-load-modal-form").click(loadForm2);
+    $(".js-submit-modal-form").submit(saveSlotForm);
 
   });
  </script>

@@ -30,10 +30,17 @@ nav:
     - Clients:
       - Adding Clients: user_guide/clients/adding_clients.md
       - Managing Contacts: user_guide/clients/managing_contacts.md
+      - Framework Agreements: user_guide/clients/framework_agreements.md
+    - Organisational Units:
+      - Overview: user_guide/organisational_units/overview.md
     - Team & Users:
       - User Management: user_guide/team/user_management.md
+    - Qualifications:
+      - Overview: user_guide/qualifications/overview.md
+      - Administration: user_guide/qualifications/administration.md
     - Scheduling:
       - Overview: user_guide/scheduling/overview.md
+      - Validation: user_guide/scheduling/validation.md
       - Filtering: user_guide/scheduling/filtering.md
     - Operations:
       - Managing Leave: user_guide/operations/managing_leave.md

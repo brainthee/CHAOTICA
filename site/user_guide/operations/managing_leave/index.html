@@ -1,0 +1,3932 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../../scheduling/filtering/">
+      
+      
+        <link rel="next" href="../../workflows/quality_assurance/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
+    
+    
+      
+        <title>Managing Leave - CHAOTICA Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#managing-leave" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="CHAOTICA Documentation" class="md-header__button md-logo" aria-label="CHAOTICA Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            CHAOTICA Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Managing Leave
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="CHAOTICA Documentation" class="md-nav__button md-logo" aria-label="CHAOTICA Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    CHAOTICA Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../definitions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Definitions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Installation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../installation/vars/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Environment Variables
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_2" id="__nav_4_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deployment
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Deployment
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../installation/deployment/docker/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docker
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../installation/deployment/k8/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kubernetes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../installation/deployment/aws_beanstalk/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AWS Elastic Beanstalk
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_1" id="__nav_5_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Jobs
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Jobs
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Jobs/managing_jobs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Managing Jobs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Jobs/lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_1_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_1_3" id="__nav_5_1_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Phases
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_5_1_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_1_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Phases
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Jobs/phases/managing_phases/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Managing Phases
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Jobs/phases/lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Phase Lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_2" id="__nav_5_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clients
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Clients
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../clients/adding_clients/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding Clients
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../clients/managing_contacts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Managing Contacts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../clients/framework_agreements/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Framework Agreements
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_3" id="__nav_5_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Organisational Units
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Organisational Units
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../organisational_units/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_4" id="__nav_5_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Team & Users
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Team & Users
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../team/user_management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Management
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_5" id="__nav_5_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Qualifications
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Qualifications
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../qualifications/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../qualifications/administration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Administration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_6" id="__nav_5_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scheduling
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Scheduling
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../scheduling/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../scheduling/validation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Validation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../scheduling/filtering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Filtering
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_7" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5_7" id="__nav_5_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Operations
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_7_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Operations
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Managing Leave
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Managing Leave
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#leave-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Leave Types
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Leave Types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#standard-leave-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Standard Leave Types
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom-leave-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom Leave Types
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#requesting-leave" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Requesting Leave
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Requesting Leave">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prerequisites
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-by-step-process" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step-by-Step Process
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#leave-request-guidelines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Leave Request Guidelines
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#approval-process" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Approval Process
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Approval Process">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#approval-hierarchy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Approval Hierarchy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#approval-criteria" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Approval Criteria
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#approval-timeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Approval Timeline
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#managing-leave-balance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Managing Leave Balance
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Managing Leave Balance">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#leave-entitlements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Leave Entitlements
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#balance-monitoring" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Balance Monitoring
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#manager-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Manager Functions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Manager Functions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#reviewing-requests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reviewing Requests
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#team-leave-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Team Leave Management
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#leave-analytics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Leave Analytics
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#system-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        System Features
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="System Features">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#notifications-and-alerts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Notifications and Alerts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#calendar-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Calendar Integration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reporting-and-analytics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reporting and Analytics
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#integration-with-other-systems" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Integration with Other Systems
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Integration with Other Systems">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#hr-systems" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HR Systems
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#project-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Project Management
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#best-practices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Best Practices
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Best Practices">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#for-employees" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        For Employees
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#for-managers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        For Managers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#for-organizations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        For Organizations
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Troubleshooting
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Troubleshooting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#common-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common Issues
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#policy-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Policy Questions
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration Settings
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Configuration Settings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#administrative-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Administrative Settings
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-topics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related Topics
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_8" id="__nav_5_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Workflows
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Workflows
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../workflows/quality_assurance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quality Assurance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../workflows/assessment_process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Assessment Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_9" id="__nav_5_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reporting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reporting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reporting/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reporting/custom_reports/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Custom Reports
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_10" id="__nav_5_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Notifications
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Notifications
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notifications/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Managing Notifications
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integration
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Integration
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../integration/azure_ad/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Azure AD/ADFS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../integration/email/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Email Systems
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../integration/apis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    External APIs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Administration
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Administration
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../administration/chaotica_settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Application Settings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../administration/permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Permissions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../administration/system_management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    System Management
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Development
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../development/getting_started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../development/api_documentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Documentation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../development/testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Security
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../security/access_control/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Access Control
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../security/data_protection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Protection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/common_issues/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Common Issues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Performance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/database_schema/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Database Schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#leave-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Leave Types
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Leave Types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#standard-leave-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Standard Leave Types
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom-leave-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom Leave Types
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#requesting-leave" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Requesting Leave
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Requesting Leave">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prerequisites
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-by-step-process" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step-by-Step Process
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#leave-request-guidelines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Leave Request Guidelines
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#approval-process" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Approval Process
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Approval Process">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#approval-hierarchy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Approval Hierarchy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#approval-criteria" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Approval Criteria
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#approval-timeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Approval Timeline
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#managing-leave-balance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Managing Leave Balance
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Managing Leave Balance">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#leave-entitlements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Leave Entitlements
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#balance-monitoring" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Balance Monitoring
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#manager-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Manager Functions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Manager Functions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#reviewing-requests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reviewing Requests
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#team-leave-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Team Leave Management
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#leave-analytics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Leave Analytics
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#system-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        System Features
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="System Features">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#notifications-and-alerts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Notifications and Alerts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#calendar-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Calendar Integration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reporting-and-analytics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reporting and Analytics
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#integration-with-other-systems" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Integration with Other Systems
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Integration with Other Systems">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#hr-systems" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HR Systems
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#project-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Project Management
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#best-practices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Best Practices
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Best Practices">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#for-employees" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        For Employees
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#for-managers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        For Managers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#for-organizations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        For Organizations
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Troubleshooting
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Troubleshooting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#common-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common Issues
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#policy-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Policy Questions
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration Settings
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Configuration Settings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#administrative-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Administrative Settings
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-topics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related Topics
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="managing-leave">Managing Leave<a class="headerlink" href="#managing-leave" title="Permanent link">&para;</a></h1>
+<p>CHAOTICA includes a leave management system to help track team availability and ensure proper resource planning. This guide covers requesting, approving, and managing leave requests.</p>
+<div class="admonition note">
+<p class="admonition-title">Internal Use Only</p>
+<p>The leave tracking system is for internal convenience only and is not a replacement for corporate HR functions. Always follow your organization's official HR policies and procedures.</p>
+</div>
+<h2 id="leave-types">Leave Types<a class="headerlink" href="#leave-types" title="Permanent link">&para;</a></h2>
+<h3 id="standard-leave-types">Standard Leave Types<a class="headerlink" href="#standard-leave-types" title="Permanent link">&para;</a></h3>
+<p><strong>Annual Leave</strong>
+- Vacation time and planned time off
+- Requires advance notice (configurable, default 14 days)
+- Subject to approval by manager
+- Counts against annual leave balance</p>
+<p><strong>Sick Leave</strong>
+- Unplanned absence due to illness
+- Can be requested retrospectively
+- Usually requires minimal approval process
+- May require medical documentation for extended periods</p>
+<p><strong>Personal Leave</strong>
+- Personal time off for family or personal matters
+- Planned absence for personal reasons
+- Requires manager approval
+- May count against leave balance</p>
+<p><strong>Training Leave</strong>
+- Time off for professional development
+- Conference attendance and training courses
+- Often encouraged and approved readily
+- May be funded by organization</p>
+<p><strong>Maternity/Paternity Leave</strong>
+- Extended leave for new parents
+- Longer duration (weeks/months)
+- Requires advance planning
+- Follows legal and company policies</p>
+<p><strong>Emergency Leave</strong>
+- Unplanned urgent personal matters
+- Family emergencies or critical situations
+- Flexible approval process
+- Case-by-case consideration</p>
+<h3 id="custom-leave-types">Custom Leave Types<a class="headerlink" href="#custom-leave-types" title="Permanent link">&para;</a></h3>
+<p>Organizations can configure additional leave types:
+- Bereavement leave
+- Jury duty
+- Military service
+- Study leave
+- Sabbatical leave
+- Unpaid leave</p>
+<h2 id="requesting-leave">Requesting Leave<a class="headerlink" href="#requesting-leave" title="Permanent link">&para;</a></h2>
+<h3 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Active user account with appropriate permissions</li>
+<li>Understanding of your leave balance and entitlements</li>
+<li>Awareness of team workload and commitments</li>
+<li>Knowledge of advance notice requirements</li>
+</ul>
+<h3 id="step-by-step-process">Step-by-Step Process<a class="headerlink" href="#step-by-step-process" title="Permanent link">&para;</a></h3>
+<ol>
+<li><strong>Navigate to Leave Management</strong></li>
+<li>Go to your user dashboard</li>
+<li>Click "Leave" in the navigation menu</li>
+<li>
+<p>Click "Request Leave"</p>
+</li>
+<li>
+<p><strong>Select Leave Type</strong>
+   <div class="highlight"><pre><span></span><code>Leave Type: Select appropriate type from dropdown
+Category: Planned/Unplanned
+Priority: Normal/Urgent
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>Define Leave Period</strong>
+   <div class="highlight"><pre><span></span><code>Start Date: First day of leave
+End Date: Last day of leave (inclusive)
+Partial Days: Half days or specific hours (if supported)
+Working Days Only: Exclude weekends and holidays
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>Provide Details</strong>
+   <div class="highlight"><pre><span></span><code>Reason: Brief explanation for the leave
+Comments: Additional context or information
+Contact Information: How to reach you if needed
+Emergency Contact: Alternative contact if urgent
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>Coverage Planning</strong>
+   <div class="highlight"><pre><span></span><code>Coverage Arrangements: Who will handle your work
+Handover Notes: Key information for coverage person
+Critical Dates: Important deadlines during your absence
+Client Communication: How clients should be handled
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>Submit Request</strong></p>
+</li>
+<li>Review all information for accuracy</li>
+<li>Submit request to your manager</li>
+<li>Monitor request status in the system</li>
+<li>Follow up if needed</li>
+</ol>
+<h3 id="leave-request-guidelines">Leave Request Guidelines<a class="headerlink" href="#leave-request-guidelines" title="Permanent link">&para;</a></h3>
+<p><strong>Advance Notice</strong>:
+- Annual leave: Default 14 days notice (configurable)
+- Training: As much notice as possible
+- Personal leave: Reasonable notice based on circumstances
+- Emergency leave: Submit as soon as possible</p>
+<p><strong>Duration Considerations</strong>:
+- Short leave (1-3 days): Minimal impact planning
+- Medium leave (1-2 weeks): Detailed coverage arrangements
+- Extended leave (&gt;2 weeks): Comprehensive handover planning
+- Recurring leave: Consider impact on team and clients</p>
+<h2 id="approval-process">Approval Process<a class="headerlink" href="#approval-process" title="Permanent link">&para;</a></h2>
+<h3 id="approval-hierarchy">Approval Hierarchy<a class="headerlink" href="#approval-hierarchy" title="Permanent link">&para;</a></h3>
+<p><strong>Direct Manager</strong>:
+- Primary approval for most leave requests
+- Considers team workload and coverage
+- Reviews business impact
+- Approves within policy guidelines</p>
+<p><strong>Department Manager</strong>:
+- Extended leave approval (&gt;2 weeks)
+- Cross-team impact considerations
+- Resource planning coordination
+- Policy exception decisions</p>
+<p><strong>HR Approval</strong>:
+- Leave policy compliance
+- Legal requirement verification
+- Extended absence coordination
+- Return-to-work planning</p>
+<h3 id="approval-criteria">Approval Criteria<a class="headerlink" href="#approval-criteria" title="Permanent link">&para;</a></h3>
+<p><strong>Factors Considered</strong>:
+- Team workload and availability
+- Client commitments and deadlines
+- Coverage arrangements adequacy
+- Leave balance and entitlements
+- Business impact assessment
+- Policy compliance</p>
+<p><strong>Automatic Approvals</strong>:
+- Sick leave (with limits)
+- Emergency leave (retrospective approval)
+- Training leave (pre-approved categories)
+- Standard annual leave (within guidelines)</p>
+<p><strong>Manager Review Required</strong>:
+- Extended leave periods
+- Peak business periods
+- Insufficient coverage
+- Multiple team members requesting same period
+- Policy exceptions</p>
+<h3 id="approval-timeline">Approval Timeline<a class="headerlink" href="#approval-timeline" title="Permanent link">&para;</a></h3>
+<p><strong>Standard Processing</strong>:
+- Routine requests: 2-3 business days
+- Extended leave: 5-10 business days
+- Emergency requests: Same day (retrospective)
+- Complex requests: Up to 2 weeks</p>
+<p><strong>Factors Affecting Timeline</strong>:
+- Manager availability
+- Coverage complexity
+- Client impact assessment
+- Policy compliance review
+- Resource planning requirements</p>
+<h2 id="managing-leave-balance">Managing Leave Balance<a class="headerlink" href="#managing-leave-balance" title="Permanent link">&para;</a></h2>
+<h3 id="leave-entitlements">Leave Entitlements<a class="headerlink" href="#leave-entitlements" title="Permanent link">&para;</a></h3>
+<p><strong>Annual Entitlement</strong>:
+- Based on employment contract
+- Pro-rated for part-time employees
+- Adjusted for start date during year
+- May increase with tenure</p>
+<p><strong>Carry Forward</strong>:
+- Unused leave may carry forward
+- Usually limited amount (e.g., 5-10 days)
+- Use-it-or-lose-it policies may apply
+- Dependent on organization policy</p>
+<p><strong>Leave Accrual</strong>:
+- Monthly or pay-period accrual
+- Based on hours worked
+- Pro-rated for part-time staff
+- Capped at maximum balance</p>
+<h3 id="balance-monitoring">Balance Monitoring<a class="headerlink" href="#balance-monitoring" title="Permanent link">&para;</a></h3>
+<p><strong>Current Balance</strong>:
+- Available leave days remaining
+- Pending requests impact
+- Future entitlements
+- Projected year-end balance</p>
+<p><strong>Usage Tracking</strong>:
+- Leave taken year-to-date
+- Average monthly usage
+- Seasonal patterns
+- Comparison with previous years</p>
+<p><strong>Planning Tools</strong>:
+- Leave planner calendar
+- Balance projection tools
+- Team leave overview
+- Conflict identification</p>
+<h2 id="manager-functions">Manager Functions<a class="headerlink" href="#manager-functions" title="Permanent link">&para;</a></h2>
+<h3 id="reviewing-requests">Reviewing Requests<a class="headerlink" href="#reviewing-requests" title="Permanent link">&para;</a></h3>
+<p><strong>Request Assessment</strong>:
+- Team availability and workload
+- Client impact and commitments
+- Coverage adequacy
+- Business continuity</p>
+<p><strong>Approval Workflow</strong>:
+1. Receive notification of request
+2. Review request details and context
+3. Assess team impact and coverage
+4. Consult with stakeholders if needed
+5. Approve, decline, or request modifications
+6. Communicate decision to requestor</p>
+<h3 id="team-leave-management">Team Leave Management<a class="headerlink" href="#team-leave-management" title="Permanent link">&para;</a></h3>
+<p><strong>Leave Calendar</strong>:
+- Visual overview of team leave
+- Identify potential conflicts
+- Plan for peak absence periods
+- Coordinate coverage arrangements</p>
+<p><strong>Resource Planning</strong>:
+- Project timeline adjustments
+- Client communication planning
+- Temporary resource arrangements
+- Cross-training initiatives</p>
+<p><strong>Policy Enforcement</strong>:
+- Ensure compliance with leave policies
+- Handle policy exceptions appropriately
+- Document decisions and rationale
+- Maintain fairness and consistency</p>
+<h3 id="leave-analytics">Leave Analytics<a class="headerlink" href="#leave-analytics" title="Permanent link">&para;</a></h3>
+<p><strong>Team Metrics</strong>:
+- Leave utilization rates
+- Average leave duration
+- Seasonal patterns
+- Approval/denial rates</p>
+<p><strong>Planning Insights</strong>:
+- Identify peak leave periods
+- Plan resource requirements
+- Assess policy effectiveness
+- Support workforce planning</p>
+<h2 id="system-features">System Features<a class="headerlink" href="#system-features" title="Permanent link">&para;</a></h2>
+<h3 id="notifications-and-alerts">Notifications and Alerts<a class="headerlink" href="#notifications-and-alerts" title="Permanent link">&para;</a></h3>
+<p><strong>Automated Notifications</strong>:
+- Request submission confirmations
+- Approval status updates
+- Reminder notifications
+- Balance threshold alerts</p>
+<p><strong>Manager Alerts</strong>:
+- New requests requiring approval
+- Overdue approval notifications
+- Team leave conflicts
+- Policy compliance issues</p>
+<p><strong>Team Notifications</strong>:
+- Colleague leave announcements
+- Coverage arrangement updates
+- Schedule change notifications
+- Return date confirmations</p>
+<h3 id="calendar-integration">Calendar Integration<a class="headerlink" href="#calendar-integration" title="Permanent link">&para;</a></h3>
+<p><strong>Personal Calendars</strong>:
+- Sync with Outlook/Google Calendar
+- Leave periods marked as busy
+- Automatic meeting declines
+- Out-of-office message triggers</p>
+<p><strong>Team Calendars</strong>:
+- Shared team leave calendar
+- Resource availability overview
+- Project planning integration
+- Client-facing calendar updates</p>
+<h3 id="reporting-and-analytics">Reporting and Analytics<a class="headerlink" href="#reporting-and-analytics" title="Permanent link">&para;</a></h3>
+<p><strong>Individual Reports</strong>:
+- Leave balance statements
+- Usage history and patterns
+- Pending request summaries
+- Future entitlement projections</p>
+<p><strong>Management Reports</strong>:
+- Team leave summaries
+- Department-wide analytics
+- Policy compliance reports
+- Resource planning data</p>
+<h2 id="integration-with-other-systems">Integration with Other Systems<a class="headerlink" href="#integration-with-other-systems" title="Permanent link">&para;</a></h2>
+<h3 id="hr-systems">HR Systems<a class="headerlink" href="#hr-systems" title="Permanent link">&para;</a></h3>
+<p><strong>Data Synchronization</strong>:
+- Employee information updates
+- Leave entitlement calculations
+- Policy rule enforcement
+- Payroll system integration</p>
+<p><strong>Compliance Reporting</strong>:
+- Legal requirement compliance
+- Audit trail maintenance
+- Policy adherence monitoring
+- Documentation management</p>
+<h3 id="project-management">Project Management<a class="headerlink" href="#project-management" title="Permanent link">&para;</a></h3>
+<p><strong>Schedule Impact</strong>:
+- Project timeline adjustments
+- Resource reallocation
+- Milestone date updates
+- Client communication triggers</p>
+<p><strong>Capacity Planning</strong>:
+- Team availability forecasting
+- Skills gap identification
+- Resource demand planning
+- Training need assessment</p>
+<h2 id="best-practices">Best Practices<a class="headerlink" href="#best-practices" title="Permanent link">&para;</a></h2>
+<h3 id="for-employees">For Employees<a class="headerlink" href="#for-employees" title="Permanent link">&para;</a></h3>
+<p><strong>Planning Ahead</strong>:
+- Plan leave well in advance
+- Consider team and client impacts
+- Coordinate with colleagues
+- Maintain adequate coverage</p>
+<p><strong>Communication</strong>:
+- Provide clear handover instructions
+- Set up out-of-office messages
+- Inform clients appropriately
+- Update project stakeholders</p>
+<p><strong>Flexibility</strong>:
+- Be willing to adjust dates if needed
+- Consider alternative arrangements
+- Support team coverage needs
+- Maintain professional relationships</p>
+<h3 id="for-managers">For Managers<a class="headerlink" href="#for-managers" title="Permanent link">&para;</a></h3>
+<p><strong>Fair and Consistent</strong>:
+- Apply policies consistently
+- Consider individual circumstances
+- Document decisions clearly
+- Communicate rationale</p>
+<p><strong>Business Continuity</strong>:
+- Plan for peak leave periods
+- Develop coverage strategies
+- Cross-train team members
+- Maintain client relationships</p>
+<p><strong>Employee Support</strong>:
+- Encourage leave taking
+- Support work-life balance
+- Plan around personal needs
+- Foster team collaboration</p>
+<h3 id="for-organizations">For Organizations<a class="headerlink" href="#for-organizations" title="Permanent link">&para;</a></h3>
+<p><strong>Policy Development</strong>:
+- Clear and comprehensive policies
+- Regular policy reviews
+- Legal compliance assurance
+- Employee feedback incorporation</p>
+<p><strong>System Optimization</strong>:
+- User-friendly interfaces
+- Efficient approval workflows
+- Comprehensive reporting
+- Integration with other systems</p>
+<h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
+<h3 id="common-issues">Common Issues<a class="headerlink" href="#common-issues" title="Permanent link">&para;</a></h3>
+<p><strong>Request Delays</strong>:
+- Check manager availability
+- Verify all required information provided
+- Follow up on pending approvals
+- Escalate if necessary</p>
+<p><strong>Balance Discrepancies</strong>:
+- Verify calculation methodology
+- Check for unrecorded leave
+- Review policy changes
+- Contact system administrators</p>
+<p><strong>Coverage Problems</strong>:
+- Identify alternative coverage options
+- Negotiate date changes
+- Consider partial leave arrangements
+- Plan additional handover time</p>
+<p><strong>System Access Issues</strong>:
+- Verify user permissions
+- Check system availability
+- Clear browser cache
+- Contact technical support</p>
+<h3 id="policy-questions">Policy Questions<a class="headerlink" href="#policy-questions" title="Permanent link">&para;</a></h3>
+<p><strong>Leave Entitlements</strong>:
+- Consult employee handbook
+- Contact HR department
+- Review legal requirements
+- Seek manager clarification</p>
+<p><strong>Approval Processes</strong>:
+- Follow established workflows
+- Understand approval criteria
+- Document special circumstances
+- Maintain communication records</p>
+<h2 id="configuration-settings">Configuration Settings<a class="headerlink" href="#configuration-settings" title="Permanent link">&para;</a></h2>
+<h3 id="administrative-settings">Administrative Settings<a class="headerlink" href="#administrative-settings" title="Permanent link">&para;</a></h3>
+<p>System administrators can configure:</p>
+<p><strong>Leave Types</strong>:
+- Add custom leave categories
+- Set approval requirements
+- Configure balance calculations
+- Define carry-forward rules</p>
+<p><strong>Notice Periods</strong>:
+- Set minimum notice requirements
+- Configure automatic approvals
+- Define escalation procedures
+- Set manager response times</p>
+<p><strong>Balance Management</strong>:
+- Configure accrual rates
+- Set maximum balances
+- Define carry-forward limits
+- Manage leave year dates</p>
+<p><strong>Integration Settings</strong>:
+- Calendar synchronization
+- HR system connections
+- Notification preferences
+- Reporting parameters</p>
+<h2 id="related-topics">Related Topics<a class="headerlink" href="#related-topics" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../../team/user_management/">User Management</a> - Managing user accounts and permissions</li>
+<li><a href="../../scheduling/overview/">Scheduling</a> - Resource scheduling and planning</li>
+<li><a href="../../team/overview/">Team Management</a> - Team coordination and management</li>
+<li><a href="../../reporting/overview/">Reporting</a> - Leave reporting and analytics</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": [], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/gh/rod2ik/cdn@main/mkdocs/javascripts/mkdocs-graphviz.js"></script>
+      
+    
+  </body>
+</html>

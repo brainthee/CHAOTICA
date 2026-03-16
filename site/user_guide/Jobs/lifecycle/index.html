@@ -1,0 +1,2602 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../managing_jobs/">
+      
+      
+        <link rel="next" href="../phases/managing_phases/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
+    
+    
+      
+        <title>Lifecycle - CHAOTICA Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#lifecycle" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="CHAOTICA Documentation" class="md-header__button md-logo" aria-label="CHAOTICA Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            CHAOTICA Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Lifecycle
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="CHAOTICA Documentation" class="md-nav__button md-logo" aria-label="CHAOTICA Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    CHAOTICA Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../definitions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Definitions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Installation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../installation/vars/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Environment Variables
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_2" id="__nav_4_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deployment
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Deployment
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../installation/deployment/docker/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docker
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../installation/deployment/k8/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kubernetes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../installation/deployment/aws_beanstalk/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AWS Elastic Beanstalk
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_1" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5_1" id="__nav_5_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Jobs
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_1_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Jobs
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../managing_jobs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Managing Jobs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_1_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_1_3" id="__nav_5_1_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Phases
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_5_1_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_1_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Phases
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../phases/managing_phases/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Managing Phases
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../phases/lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Phase Lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_2" id="__nav_5_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clients
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Clients
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../clients/adding_clients/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding Clients
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../clients/managing_contacts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Managing Contacts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../clients/framework_agreements/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Framework Agreements
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_3" id="__nav_5_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Organisational Units
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Organisational Units
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../organisational_units/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_4" id="__nav_5_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Team & Users
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Team & Users
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../team/user_management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Management
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_5" id="__nav_5_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Qualifications
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Qualifications
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../qualifications/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../qualifications/administration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Administration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_6" id="__nav_5_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scheduling
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Scheduling
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../scheduling/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../scheduling/validation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Validation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../scheduling/filtering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Filtering
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_7" id="__nav_5_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Operations
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Operations
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../operations/managing_leave/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Managing Leave
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_8" id="__nav_5_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Workflows
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Workflows
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../workflows/quality_assurance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quality Assurance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../workflows/assessment_process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Assessment Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_9" id="__nav_5_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reporting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reporting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reporting/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reporting/custom_reports/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Custom Reports
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_10" id="__nav_5_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Notifications
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Notifications
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notifications/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Managing Notifications
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integration
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Integration
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../integration/azure_ad/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Azure AD/ADFS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../integration/email/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Email Systems
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../integration/apis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    External APIs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Administration
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Administration
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../administration/chaotica_settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Application Settings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../administration/permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Permissions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../administration/system_management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    System Management
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Development
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../development/getting_started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../development/api_documentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Documentation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../development/testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Security
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../security/access_control/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Access Control
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../security/data_protection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Protection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/common_issues/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Common Issues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Performance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/database_schema/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Database Schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="lifecycle">Lifecycle<a class="headerlink" href="#lifecycle" title="Permanent link">&para;</a></h1>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This page will be populated with more documentation soon.</p>
+</div>
+<p>A job has a <code>status</code> which follows a strict workflow. Much of the functionality within CHAOTICA for a job is tied to it's status.</p>
+<p>The raw state diagram is below and shows the allowed transitions between states.</p>
+<p><span class="graphviz-light-dark" data-library-default="#789abc" data-default="#789abc" data-light="#000000" data-dark="#ffffff"></span><svg width="893pt" height="1733pt" viewBox="0.00 0.00 892.91 1733.08" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" class="graphviz dot"><g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 1729.08)"><title>%3</title><polygon fill="transparent" stroke="transparent" points="-4,4 -4,-1729.08 888.91,-1729.08 888.91,4 -4,4"/><g id="clust1" class="cluster"><title>cluster_jobtracker_Job_status</title><polygon fill="transparent" stroke="#789abc" points="8.91,-8 8.91,-1717.08 809.91,-1717.08 809.91,-8 8.91,-8"/><text text-anchor="middle" x="409.41" y="-1701.88" font-family="Times,serif" font-size="14.00" fill="#789abc">jobtracker.Job.status</text></g><!-- jobtracker.Job.status.10 --><g id="node1" class="node"><title>jobtracker.Job.status.10</title><ellipse fill="none" stroke="#789abc" cx="325.91" cy="-66.8" rx="46.61" ry="46.61"/><ellipse fill="none" stroke="#789abc" cx="325.91" cy="-66.8" rx="50.59" ry="50.59"/><text text-anchor="middle" x="325.91" y="-63.1" font-family="Times,serif" font-size="14.00" fill="#789abc">Deleted</text></g><!-- jobtracker.Job.status.3 --><g id="node2" class="node"><title>jobtracker.Job.status.3</title><ellipse fill="none" stroke="#789abc" cx="257.91" cy="-1542.45" rx="143.77" ry="143.77"/><text text-anchor="middle" x="257.91" y="-1538.75" font-family="Times,serif" font-size="14.00" fill="#789abc">Additional Scoping Required</text></g><!-- jobtracker.Job.status.3&#45;&gt;jobtracker.Job.status.10 --><g id="edge10" class="edge"><title>jobtracker.Job.status.3&#45;&gt;jobtracker.Job.status.10</title><path fill="none" stroke="#789abc" d="M146.19,-1452.06C116.18,-1422.17 87.05,-1386.52 68.91,-1347.81 -61.3,-1069.99 34.91,-965.26 31.91,-658.46 31.85,-651.79 31.79,-650.13 31.91,-643.46 32.58,-607.29 34.91,-598.29 34.91,-562.12 34.91,-562.12 34.91,-562.12 34.91,-219.59 34.91,-116.65 179.83,-83.4 265.13,-72.75"/><polygon fill="#789abc" stroke="#789abc" points="265.7,-76.21 275.22,-71.56 264.88,-69.26 265.7,-76.21"/><text text-anchor="middle" x="64.91" y="-647.26" font-family="Times,serif" font-size="14.00" fill="#789abc">to_delete</text></g><!-- jobtracker.Job.status.9 --><g id="node5" class="node"><title>jobtracker.Job.status.9</title><ellipse fill="none" stroke="#789abc" cx="265.91" cy="-561.12" rx="30.59" ry="30.59"/><text text-anchor="middle" x="265.91" y="-557.42" font-family="Times,serif" font-size="14.00" fill="#789abc">Lost</text></g><!-- jobtracker.Job.status.3&#45;&gt;jobtracker.Job.status.9 --><g id="edge7" class="edge"><title>jobtracker.Job.status.3&#45;&gt;jobtracker.Job.status.9</title><path fill="none" stroke="#789abc" d="M186.49,-1417.74C174.95,-1394.93 163.87,-1370.99 154.91,-1347.81 78.84,-1150.93 34.97,-1083.56 83.91,-878.25 111.5,-762.52 196.6,-646.41 239.95,-592.79"/><polygon fill="#789abc" stroke="#789abc" points="242.67,-594.99 246.29,-585.04 237.25,-590.57 242.67,-594.99"/><text text-anchor="middle" x="107.91" y="-969.44" font-family="Times,serif" font-size="14.00" fill="#789abc">to_lost</text></g><!-- jobtracker.Job.status.4 --><g id="node11" class="node"><title>jobtracker.Job.status.4</title><ellipse fill="none" stroke="#789abc" cx="562.91" cy="-1233.42" rx="114.28" ry="114.28"/><text text-anchor="middle" x="562.91" y="-1229.72" font-family="Times,serif" font-size="14.00" fill="#789abc">Pending Scope Signoff</text></g><!-- jobtracker.Job.status.3&#45;&gt;jobtracker.Job.status.4 --><g id="edge2" class="edge"><title>jobtracker.Job.status.3&#45;&gt;jobtracker.Job.status.4</title><path fill="none" stroke="#789abc" d="M359.05,-1439.64C396.76,-1401.67 439.22,-1358.93 475.59,-1322.32"/><polygon fill="#789abc" stroke="#789abc" points="478.22,-1324.64 482.78,-1315.08 473.25,-1319.71 478.22,-1324.64"/><text text-anchor="middle" x="518.41" y="-1369.61" font-family="Times,serif" font-size="14.00" fill="#789abc">to_scope_pending_signoff</text></g><!-- jobtracker.Job.status.1 --><g id="node3" class="node"><title>jobtracker.Job.status.1</title><ellipse fill="none" stroke="#789abc" cx="228.91" cy="-973.14" rx="88.28" ry="88.28"/><text text-anchor="middle" x="228.91" y="-969.44" font-family="Times,serif" font-size="14.00" fill="#789abc">Pending Scoping</text></g><!-- jobtracker.Job.status.1&#45;&gt;jobtracker.Job.status.10 --><g id="edge16" class="edge"><title>jobtracker.Job.status.1&#45;&gt;jobtracker.Job.status.10</title><path fill="none" stroke="#789abc" d="M202.13,-888.61C199.26,-879.07 196.47,-869.47 193.91,-860.25 147.59,-693.2 153.91,-645.62 153.91,-472.27 153.91,-472.27 153.91,-472.27 156.91,-219.59 156.91,-157.71 220.38,-114.67 269.53,-90.61"/><polygon fill="#789abc" stroke="#789abc" points="271.3,-93.65 278.84,-86.2 268.3,-87.32 271.3,-93.65"/><text text-anchor="middle" x="186.91" y="-467.57" font-family="Times,serif" font-size="14.00" fill="#789abc">to_delete</text></g><!-- jobtracker.Job.status.1&#45;&gt;jobtracker.Job.status.9 --><g id="edge13" class="edge"><title>jobtracker.Job.status.1&#45;&gt;jobtracker.Job.status.9</title><path fill="none" stroke="#789abc" d="M205.44,-887.7C192.53,-827.84 182.49,-746.13 200.91,-676.46 208.85,-646.45 226.68,-616.06 241.67,-594.17"/><polygon fill="#789abc" stroke="#789abc" points="244.58,-596.11 247.46,-585.92 238.85,-592.09 244.58,-596.11"/><text text-anchor="middle" x="224.91" y="-748.15" font-family="Times,serif" font-size="14.00" fill="#789abc">to_lost</text></g><!-- jobtracker.Job.status.2 --><g id="node6" class="node"><title>jobtracker.Job.status.2</title><ellipse fill="none" stroke="#789abc" cx="320.91" cy="-751.85" rx="48.19" ry="48.19"/><text text-anchor="middle" x="320.91" y="-748.15" font-family="Times,serif" font-size="14.00" fill="#789abc">Scoping</text></g><!-- jobtracker.Job.status.1&#45;&gt;jobtracker.Job.status.2 --><g id="edge25" class="edge"><title>jobtracker.Job.status.1&#45;&gt;jobtracker.Job.status.2</title><path fill="none" stroke="#789abc" d="M203.31,-888.24C202.7,-873.33 204.88,-858.38 211.91,-845.25 218.72,-832.53 227.54,-836.12 238.91,-827.25 252.47,-816.67 266.56,-804.41 279.16,-792.92"/><polygon fill="#789abc" stroke="#789abc" points="281.81,-795.24 286.79,-785.9 277.07,-790.09 281.81,-795.24"/><text text-anchor="middle" x="249.91" y="-849.05" font-family="Times,serif" font-size="14.00" fill="#789abc">to_scoping</text></g><!-- jobtracker.Job.status.5 --><g id="node4" class="node"><title>jobtracker.Job.status.5</title><ellipse fill="none" stroke="#789abc" cx="706.91" cy="-973.14" rx="94.78" ry="94.78"/><text text-anchor="middle" x="706.91" y="-969.44" font-family="Times,serif" font-size="14.00" fill="#789abc">Scoping Complete</text></g><!-- jobtracker.Job.status.5&#45;&gt;jobtracker.Job.status.10 --><g id="edge21" class="edge"><title>jobtracker.Job.status.5&#45;&gt;jobtracker.Job.status.10</title><path fill="none" stroke="#789abc" d="M763.86,-896.88C776.98,-875.48 789.09,-851.39 795.91,-827.25 877.3,-539.25 826.36,-414.58 655.91,-168.59 643.73,-151.02 639.77,-145.67 620.91,-135.59 546.28,-95.69 448.81,-79.17 386.77,-72.39"/><polygon fill="#789abc" stroke="#789abc" points="387.05,-68.9 376.75,-71.35 386.33,-75.87 387.05,-68.9"/><text text-anchor="middle" x="851.91" y="-467.57" font-family="Times,serif" font-size="14.00" fill="#789abc">to_delete</text></g><!-- jobtracker.Job.status.5&#45;&gt;jobtracker.Job.status.9 --><g id="edge14" class="edge"><title>jobtracker.Job.status.5&#45;&gt;jobtracker.Job.status.9</title><path fill="none" stroke="#789abc" d="M639.14,-906.47C626.13,-896.04 612.11,-886.12 597.91,-878.25 595.82,-877.09 435.64,-828.89 433.91,-827.25 382.02,-778.07 416.21,-736.83 377.91,-676.46 355.88,-641.74 321.9,-608.95 297.14,-587.46"/><polygon fill="#789abc" stroke="#789abc" points="299.33,-584.73 289.45,-580.89 294.78,-590.05 299.33,-584.73"/><text text-anchor="middle" x="457.91" y="-748.15" font-family="Times,serif" font-size="14.00" fill="#789abc">to_lost</text></g><!-- jobtracker.Job.status.5&#45;&gt;jobtracker.Job.status.2 --><g id="edge26" class="edge"><title>jobtracker.Job.status.5&#45;&gt;jobtracker.Job.status.2</title><path fill="none" stroke="#789abc" d="M635.42,-910.15C617.65,-897.66 597.93,-885.99 577.91,-878.25 509.53,-851.78 478.84,-894.32 413.91,-860.25 388.44,-846.88 366.88,-823.41 350.95,-801.82"/><polygon fill="#789abc" stroke="#789abc" points="353.79,-799.76 345.13,-793.66 348.09,-803.83 353.79,-799.76"/><text text-anchor="middle" x="451.91" y="-849.05" font-family="Times,serif" font-size="14.00" fill="#789abc">to_scoping</text></g><!-- jobtracker.Job.status.7 --><g id="node8" class="node"><title>jobtracker.Job.status.7</title><ellipse fill="none" stroke="#789abc" cx="566.91" cy="-561.12" rx="64.19" ry="64.19"/><text text-anchor="middle" x="566.91" y="-557.42" font-family="Times,serif" font-size="14.00" fill="#789abc">In Progress</text></g><!-- jobtracker.Job.status.5&#45;&gt;jobtracker.Job.status.7 --><g id="edge28" class="edge"><title>jobtracker.Job.status.5&#45;&gt;jobtracker.Job.status.7</title><path fill="none" stroke="#789abc" d="M697.13,-878.38C687.38,-796.03 670.85,-683.32 649.91,-643.46 643.42,-631.1 634.37,-619.48 624.63,-609.1"/><polygon fill="#789abc" stroke="#789abc" points="626.93,-606.45 617.43,-601.77 621.94,-611.35 626.93,-606.45"/><text text-anchor="middle" x="742.41" y="-748.15" font-family="Times,serif" font-size="14.00" fill="#789abc">to_in_progress</text></g><!-- jobtracker.Job.status.6 --><g id="node10" class="node"><title>jobtracker.Job.status.6</title><ellipse fill="none" stroke="#789abc" cx="565.91" cy="-751.85" rx="75.29" ry="75.29"/><text text-anchor="middle" x="565.91" y="-748.15" font-family="Times,serif" font-size="14.00" fill="#789abc">Pending Start</text></g><!-- jobtracker.Job.status.5&#45;&gt;jobtracker.Job.status.6 --><g id="edge29" class="edge"><title>jobtracker.Job.status.5&#45;&gt;jobtracker.Job.status.6</title><path fill="none" stroke="#789abc" d="M638.4,-906.99C625.52,-896.57 611.74,-886.51 597.91,-878.25 578.71,-866.78 563.59,-878.68 550.91,-860.25 545.37,-852.19 542.69,-842.98 541.95,-833.41"/><polygon fill="#789abc" stroke="#789abc" points="545.45,-833.31 541.84,-823.35 538.45,-833.39 545.45,-833.31"/><text text-anchor="middle" x="611.41" y="-849.05" font-family="Times,serif" font-size="14.00" fill="#789abc">to_pending_start</text></g><!-- jobtracker.Job.status.9&#45;&gt;jobtracker.Job.status.10 --><g id="edge4" class="edge"><title>jobtracker.Job.status.9&#45;&gt;jobtracker.Job.status.10</title><path fill="none" stroke="#789abc" d="M257.64,-531.57C250.8,-511.27 239.66,-484.11 223.91,-463.77 215.96,-453.51 207.25,-457.1 200.91,-445.77 167.05,-385.26 171.05,-358.52 184.91,-290.58 199.88,-217.22 207.46,-196.56 250.91,-135.59 258.62,-124.77 268.33,-114.42 278.18,-105.21"/><polygon fill="#789abc" stroke="#789abc" points="280.64,-107.7 285.71,-98.4 275.95,-102.51 280.64,-107.7"/><text text-anchor="middle" x="217.91" y="-294.38" font-family="Times,serif" font-size="14.00" fill="#789abc">to_delete</text></g><!-- jobtracker.Job.status.11 --><g id="node12" class="node"><title>jobtracker.Job.status.11</title><ellipse fill="none" stroke="#789abc" cx="326.91" cy="-220.59" rx="51.99" ry="51.99"/><text text-anchor="middle" x="326.91" y="-216.89" font-family="Times,serif" font-size="14.00" fill="#789abc">Archived</text></g><!-- jobtracker.Job.status.9&#45;&gt;jobtracker.Job.status.11 --><g id="edge12" class="edge"><title>jobtracker.Job.status.9&#45;&gt;jobtracker.Job.status.11</title><path fill="none" stroke="#789abc" d="M273.45,-531.12C279.27,-508.09 287.25,-475.01 292.91,-445.77 303.55,-390.8 312.87,-327.7 319.04,-282.48"/><polygon fill="#789abc" stroke="#789abc" points="322.51,-282.92 320.39,-272.54 315.58,-281.98 322.51,-282.92"/><text text-anchor="middle" x="349.91" y="-380.98" font-family="Times,serif" font-size="14.00" fill="#789abc">to_archive</text></g><!-- jobtracker.Job.status.2&#45;&gt;jobtracker.Job.status.10 --><g id="edge30" class="edge"><title>jobtracker.Job.status.2&#45;&gt;jobtracker.Job.status.10</title><path fill="none" stroke="#789abc" d="M326.13,-703.79C327.53,-685.01 328.32,-663.2 326.91,-643.46 322.23,-577.77 342.06,-551.82 305.91,-496.77 282.15,-460.58 244.04,-483.56 222.91,-445.77 196.4,-398.37 196.89,-371.25 222.91,-323.58 230,-310.6 243.12,-318.16 250.91,-305.58 283.15,-253.5 246.47,-226.67 265.91,-168.59 271.86,-150.83 281.27,-132.82 290.9,-117.04"/><polygon fill="#789abc" stroke="#789abc" points="293.9,-118.84 296.25,-108.51 287.97,-115.12 293.9,-118.84"/><text text-anchor="middle" x="255.91" y="-380.98" font-family="Times,serif" font-size="14.00" fill="#789abc">to_delete</text></g><!-- jobtracker.Job.status.2&#45;&gt;jobtracker.Job.status.3 --><g id="edge3" class="edge"><title>jobtracker.Job.status.2&#45;&gt;jobtracker.Job.status.3</title><path fill="none" stroke="#789abc" d="M342.3,-795.01C349.02,-810.41 355.55,-828.23 358.91,-845.25 360.2,-851.79 359.2,-853.59 358.91,-860.25 350.95,-1044.51 315.9,-1254.06 289.31,-1391.51"/><polygon fill="#789abc" stroke="#789abc" points="285.81,-1391.21 287.33,-1401.69 292.68,-1392.54 285.81,-1391.21"/><text text-anchor="middle" x="423.41" y="-1089.83" font-family="Times,serif" font-size="14.00" fill="#789abc">to_additional_scope_req</text></g><!-- jobtracker.Job.status.2&#45;&gt;jobtracker.Job.status.9 --><g id="edge23" class="edge"><title>jobtracker.Job.status.2&#45;&gt;jobtracker.Job.status.9</title><path fill="none" stroke="#789abc" d="M298.78,-709.06C291.41,-693.55 283.84,-675.56 278.91,-658.46 273.64,-640.16 270.49,-619.27 268.62,-601.63"/><polygon fill="#789abc" stroke="#789abc" points="272.1,-601.28 267.65,-591.67 265.13,-601.96 272.1,-601.28"/><text text-anchor="middle" x="302.91" y="-647.26" font-family="Times,serif" font-size="14.00" fill="#789abc">to_lost</text></g><!-- jobtracker.Job.status.2&#45;&gt;jobtracker.Job.status.4 --><g id="edge22" class="edge"><title>jobtracker.Job.status.2&#45;&gt;jobtracker.Job.status.4</title><path fill="none" stroke="#789abc" d="M345.5,-793.5C354.06,-809.19 362.98,-827.6 368.91,-845.25 400.89,-940.46 335.13,-997.76 406.91,-1068.03 445.76,-1106.06 487.83,-1049.29 527.91,-1086.03 535.5,-1092.98 541.58,-1101.26 546.43,-1110.29"/><polygon fill="#789abc" stroke="#789abc" points="543.4,-1112.06 550.9,-1119.55 549.71,-1109.02 543.4,-1112.06"/><text text-anchor="middle" x="497.41" y="-969.44" font-family="Times,serif" font-size="14.00" fill="#789abc">to_scope_pending_signoff</text></g><!-- jobtracker.Job.status.0 --><g id="node7" class="node"><title>jobtracker.Job.status.0</title><ellipse fill="none" stroke="#789abc" cx="198.91" cy="-1233.42" rx="35.19" ry="35.19"/><text text-anchor="middle" x="198.91" y="-1229.72" font-family="Times,serif" font-size="14.00" fill="#789abc">Draft</text></g><!-- jobtracker.Job.status.0&#45;&gt;jobtracker.Job.status.10 --><g id="edge9" class="edge"><title>jobtracker.Job.status.0&#45;&gt;jobtracker.Job.status.10</title><path fill="none" stroke="#789abc" d="M171.66,-1211.22C137.7,-1182.88 81.38,-1129.07 58.91,-1068.03 29.77,-988.87 50.78,-962.2 58.91,-878.25 69.14,-772.66 143.83,-740.91 101.91,-643.46 97.32,-632.77 87.89,-635.97 82.91,-625.46 53.71,-563.76 71.91,-540.53 71.91,-472.27 71.91,-472.27 71.91,-472.27 71.91,-219.59 71.91,-129.62 190.79,-91.71 265.89,-76.73"/><polygon fill="#789abc" stroke="#789abc" points="266.56,-80.17 275.73,-74.85 265.25,-73.29 266.56,-80.17"/><text text-anchor="middle" x="115.91" y="-557.42" font-family="Times,serif" font-size="14.00" fill="#789abc">to_delete</text></g><!-- jobtracker.Job.status.0&#45;&gt;jobtracker.Job.status.1 --><g id="edge5" class="edge"><title>jobtracker.Job.status.0&#45;&gt;jobtracker.Job.status.1</title><path fill="none" stroke="#789abc" d="M196.78,-1198.24C195.48,-1168.47 194.91,-1124.21 199.91,-1086.03 200.67,-1080.23 201.63,-1074.3 202.74,-1068.35"/><polygon fill="#789abc" stroke="#789abc" points="206.22,-1068.81 204.74,-1058.32 199.35,-1067.44 206.22,-1068.81"/><text text-anchor="middle" x="263.41" y="-1089.83" font-family="Times,serif" font-size="14.00" fill="#789abc">to_pending_scope</text></g><!-- jobtracker.Job.status.0&#45;&gt;jobtracker.Job.status.9 --><g id="edge6" class="edge"><title>jobtracker.Job.status.0&#45;&gt;jobtracker.Job.status.9</title><path fill="none" stroke="#789abc" d="M218.26,-1203.73C235.89,-1179.1 263.72,-1143.77 293.91,-1119.03 306.83,-1108.44 318.38,-1115.4 326.91,-1101.03 328.4,-1098.52 346.46,-923.02 325.91,-878.25 323.58,-873.16 292.26,-848.76 287.91,-845.25 277.54,-836.87 269.87,-839.17 263.91,-827.25 233.94,-767.31 263.33,-743.47 263.91,-676.46 264.13,-651.72 264.61,-623.97 265.04,-602.01"/><polygon fill="#789abc" stroke="#789abc" points="268.55,-601.8 265.25,-591.73 261.55,-601.66 268.55,-601.8"/><text text-anchor="middle" x="329.91" y="-849.05" font-family="Times,serif" font-size="14.00" fill="#789abc">to_lost</text></g><!-- jobtracker.Job.status.7&#45;&gt;jobtracker.Job.status.10 --><g id="edge17" class="edge"><title>jobtracker.Job.status.7&#45;&gt;jobtracker.Job.status.10</title><path fill="none" stroke="#789abc" d="M572.9,-496.67C580.73,-399.4 589.51,-219.35 552.91,-168.59 513.94,-114.54 439.3,-89.01 386.25,-77.27"/><polygon fill="#789abc" stroke="#789abc" points="386.79,-73.81 376.28,-75.17 385.34,-80.66 386.79,-73.81"/><text text-anchor="middle" x="611.91" y="-294.38" font-family="Times,serif" font-size="14.00" fill="#789abc">to_delete</text></g><!-- jobtracker.Job.status.8 --><g id="node9" class="node"><title>jobtracker.Job.status.8</title><ellipse fill="none" stroke="#789abc" cx="497.91" cy="-384.68" rx="61.19" ry="61.19"/><text text-anchor="middle" x="497.91" y="-380.98" font-family="Times,serif" font-size="14.00" fill="#789abc">Completed</text></g><!-- jobtracker.Job.status.7&#45;&gt;jobtracker.Job.status.8 --><g id="edge20" class="edge"><title>jobtracker.Job.status.7&#45;&gt;jobtracker.Job.status.8</title><path fill="none" stroke="#789abc" d="M516.47,-521C504.51,-508.89 493.36,-494.54 486.91,-478.77 483.76,-471.06 482.3,-462.71 481.99,-454.29"/><polygon fill="#789abc" stroke="#789abc" points="485.5,-454.07 482.15,-444.02 478.5,-453.96 485.5,-454.07"/><text text-anchor="middle" x="530.41" y="-467.57" font-family="Times,serif" font-size="14.00" fill="#789abc">to_complete</text></g><!-- jobtracker.Job.status.8&#45;&gt;jobtracker.Job.status.10 --><g id="edge11" class="edge"><title>jobtracker.Job.status.8&#45;&gt;jobtracker.Job.status.10</title><path fill="none" stroke="#789abc" d="M496.5,-323.36C495.18,-312.3 493.11,-300.97 489.91,-290.58 466.67,-215.08 452.59,-197.01 402.91,-135.59 394.34,-125 384.02,-114.68 373.75,-105.42"/><polygon fill="#789abc" stroke="#789abc" points="375.77,-102.53 365.95,-98.56 371.15,-107.79 375.77,-102.53"/><text text-anchor="middle" x="515.91" y="-216.89" font-family="Times,serif" font-size="14.00" fill="#789abc">to_delete</text></g><!-- jobtracker.Job.status.8&#45;&gt;jobtracker.Job.status.11 --><g id="edge18" class="edge"><title>jobtracker.Job.status.8&#45;&gt;jobtracker.Job.status.11</title><path fill="none" stroke="#789abc" d="M453.87,-341.93C428.66,-318.03 397.09,-288.11 371.74,-264.08"/><polygon fill="#789abc" stroke="#789abc" points="374.09,-261.49 364.42,-257.15 369.27,-266.57 374.09,-261.49"/><text text-anchor="middle" x="448.91" y="-294.38" font-family="Times,serif" font-size="14.00" fill="#789abc">to_archive</text></g><!-- jobtracker.Job.status.6&#45;&gt;jobtracker.Job.status.10 --><g id="edge15" class="edge"><title>jobtracker.Job.status.6&#45;&gt;jobtracker.Job.status.10</title><path fill="none" stroke="#789abc" d="M620.42,-699.74C630.64,-687.26 639.97,-673.22 645.91,-658.46 661.92,-618.69 650.91,-604.99 650.91,-562.12 650.91,-562.12 650.91,-562.12 650.91,-219.59 650.91,-104.34 481.07,-76.39 386.95,-69.75"/><polygon fill="#789abc" stroke="#789abc" points="386.9,-66.24 376.69,-69.09 386.45,-73.23 386.9,-66.24"/><text text-anchor="middle" x="683.91" y="-380.98" font-family="Times,serif" font-size="14.00" fill="#789abc">to_delete</text></g><!-- jobtracker.Job.status.6&#45;&gt;jobtracker.Job.status.9 --><g id="edge19" class="edge"><title>jobtracker.Job.status.6&#45;&gt;jobtracker.Job.status.9</title><path fill="none" stroke="#789abc" d="M509.78,-701.08C499.15,-692.49 487.91,-683.93 476.91,-676.46 418.9,-637.08 345.99,-600.07 302.83,-579.32"/><polygon fill="#789abc" stroke="#789abc" points="304.1,-576.05 293.56,-574.9 301.08,-582.37 304.1,-576.05"/><text text-anchor="middle" x="467.91" y="-647.26" font-family="Times,serif" font-size="14.00" fill="#789abc">to_lost</text></g><!-- jobtracker.Job.status.6&#45;&gt;jobtracker.Job.status.7 --><g id="edge27" class="edge"><title>jobtracker.Job.status.6&#45;&gt;jobtracker.Job.status.7</title><path fill="none" stroke="#789abc" d="M541.59,-680.38C539.63,-668.13 539.04,-655.47 540.91,-643.46 541.51,-639.61 542.26,-635.7 543.12,-631.78"/><polygon fill="#789abc" stroke="#789abc" points="546.53,-632.57 545.48,-622.03 539.73,-630.92 546.53,-632.57"/><text text-anchor="middle" x="593.41" y="-647.26" font-family="Times,serif" font-size="14.00" fill="#789abc">to_in_progress</text></g><!-- jobtracker.Job.status.4&#45;&gt;jobtracker.Job.status.10 --><g id="edge8" class="edge"><title>jobtracker.Job.status.4&#45;&gt;jobtracker.Job.status.10</title><path fill="none" stroke="#789abc" d="M582.26,-1120.37C584.61,-1102.9 586.63,-1085.01 587.91,-1068.03 591.09,-1025.98 612.86,-912.25 587.91,-878.25 584.29,-873.32 488.83,-846.77 482.91,-845.25 443.4,-835.12 418.77,-858.79 392.91,-827.25 371.67,-801.33 379.28,-707.07 392.91,-676.46 397.78,-665.54 408.05,-669.38 412.91,-658.46 415.87,-651.82 395.8,-142.26 392.91,-135.59 388.18,-124.68 380.82,-114.55 372.68,-105.63"/><polygon fill="#789abc" stroke="#789abc" points="375.18,-103.17 365.71,-98.42 370.15,-108.04 375.18,-103.17"/><text text-anchor="middle" x="444.91" y="-557.42" font-family="Times,serif" font-size="14.00" fill="#789abc">to_delete</text></g><!-- jobtracker.Job.status.4&#45;&gt;jobtracker.Job.status.5 --><g id="edge24" class="edge"><title>jobtracker.Job.status.4&#45;&gt;jobtracker.Job.status.5</title><path fill="none" stroke="#789abc" d="M618.38,-1132.93C630.77,-1110.7 643.86,-1087.23 656.06,-1065.35"/><polygon fill="#789abc" stroke="#789abc" points="659.23,-1066.84 661.04,-1056.41 653.12,-1063.44 659.23,-1066.84"/><text text-anchor="middle" x="709.91" y="-1089.83" font-family="Times,serif" font-size="14.00" fill="#789abc">to_scope_complete</text></g><!-- jobtracker.Job.status.11&#45;&gt;jobtracker.Job.status.10 --><g id="edge1" class="edge"><title>jobtracker.Job.status.11&#45;&gt;jobtracker.Job.status.10</title><path fill="none" stroke="#789abc" d="M326.57,-168.2C326.49,-155.24 326.4,-141.22 326.31,-127.88"/><polygon fill="#789abc" stroke="#789abc" points="329.81,-127.82 326.24,-117.85 322.81,-127.87 329.81,-127.82"/><text text-anchor="middle" x="358.91" y="-139.39" font-family="Times,serif" font-size="14.00" fill="#789abc">to_delete</text></g></g></svg></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": [], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/gh/rod2ik/cdn@main/mkdocs/javascripts/mkdocs-graphviz.js"></script>
+      
+    
+  </body>
+</html>

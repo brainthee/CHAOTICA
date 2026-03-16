@@ -48,6 +48,61 @@ from constance import config
 logger = logging.getLogger(__name__)
 
 
+def _check_framework_slot(framework, updated_slot, old_slot, request, force=False):
+    """Check framework constraints (closed, over-allocation) for a modified slot.
+    Returns a data dict if blocked, or None if OK."""
+    if framework.closed:
+        return {
+            "form_is_valid": False,
+            "logic_checks_failed": True,
+            "logic_checks_can_bypass": False,
+            "logic_checks_feedback": loader.render_to_string(
+                "partials/scheduler/logicchecks/framework_closed.html",
+                {"framework": framework},
+                request=request,
+            ),
+        }
+    hours_in_day = framework.get_hours_in_day()
+    old_days = round(old_slot.get_business_hours() / hours_in_day, 1) if hours_in_day else 0
+    new_days = round(updated_slot.get_business_hours() / hours_in_day, 1) if hours_in_day else 0
+    days_allocated = framework.days_allocated()
+    new_total = days_allocated - old_days + new_days
+    if new_total > framework.total_days:
+        if not framework.allow_over_allocation:
+            return {
+                "form_is_valid": False,
+                "logic_checks_failed": True,
+                "logic_checks_can_bypass": False,
+                "logic_checks_feedback": loader.render_to_string(
+                    "partials/scheduler/logicchecks/framework_over_allocated.html",
+                    {
+                        "framework": framework,
+                        "days_allocated": days_allocated - old_days,
+                        "slot_days": new_days,
+                        "new_total": new_total,
+                    },
+                    request=request,
+                ),
+            }
+        elif not force:
+            return {
+                "form_is_valid": False,
+                "logic_checks_failed": True,
+                "logic_checks_can_bypass": True,
+                "logic_checks_feedback": loader.render_to_string(
+                    "partials/scheduler/logicchecks/framework_over_budget_warning.html",
+                    {
+                        "framework": framework,
+                        "days_allocated": days_allocated - old_days,
+                        "slot_days": new_days,
+                        "new_total": new_total,
+                    },
+                    request=request,
+                ),
+            }
+    return None
+
+
 @login_required
 def view_scheduler(request):
     context = {}
@@ -179,9 +234,21 @@ def change_scheduler_slot_date(request, pk=None):
     slot = get_object_or_404(TimeSlot, pk=pk)
     data = dict()
     if request.method == "POST":
+        force = request.POST.get("force", None)
         form = ChangeTimeSlotDateModalForm(request.POST, instance=slot)
         if form.is_valid():
-            form.save()
+            updated_slot = form.save(commit=False)
+            # Framework checks for delivery slots
+            if updated_slot.is_delivery() and updated_slot.phase:
+                framework = updated_slot.phase.job.associated_framework
+                if framework:
+                    _data = _check_framework_slot(framework, updated_slot, slot, request, force=force)
+                    if _data:
+                        _data["html_form"] = loader.render_to_string(
+                            "jobtracker/modals/job_slot.html", {"form": form}, request=request
+                        )
+                        return JsonResponse(_data)
+            updated_slot.save()
             data["form_is_valid"] = True
         else:
             data["form_is_valid"] = False
@@ -215,6 +282,7 @@ def change_scheduler_slot(request, pk=None):
     data = dict()
 
     if request.method == "POST":
+        force = request.POST.get("force", None)
         if slot.is_delivery():
             form = DeliveryTimeSlotModalForm(request.POST, instance=slot)
         elif slot.is_project():
@@ -223,7 +291,18 @@ def change_scheduler_slot(request, pk=None):
             form = NonDeliveryTimeSlotModalForm(request.POST, instance=slot)
 
         if form.is_valid():
-            form.save()
+            updated_slot = form.save(commit=False)
+            # Framework checks for delivery slots
+            if updated_slot.is_delivery() and updated_slot.phase:
+                framework = updated_slot.phase.job.associated_framework
+                if framework:
+                    _data = _check_framework_slot(framework, updated_slot, slot, request, force=force)
+                    if _data:
+                        _data["html_form"] = loader.render_to_string(
+                            "jobtracker/modals/job_slot.html", {"form": form}, request=request
+                        )
+                        return JsonResponse(_data)
+            updated_slot.save()
             data["form_is_valid"] = True
         else:
             data["form_is_valid"] = False
@@ -413,7 +492,46 @@ def create_scheduler_phase_slot(request):
             slots = slot.overlapping_slots()
             data["logic_checks_failed"] = False
 
+            # Non-bypassable: framework closed check
+            framework = slot.phase.job.associated_framework
+            if framework and framework.closed:
+                data["form_is_valid"] = False
+                data["logic_checks_failed"] = True
+                data["logic_checks_can_bypass"] = False
+                data["logic_checks_feedback"] = loader.render_to_string(
+                    "partials/scheduler/logicchecks/framework_closed.html",
+                    {"framework": framework},
+                    request=request,
+                )
+
+            # Non-bypassable: framework over-allocation check
             if (
+                not data["logic_checks_failed"]
+                and framework
+                and not framework.allow_over_allocation
+            ):
+                slot_hours = slot.get_business_hours()
+                hours_in_day = framework.get_hours_in_day()
+                slot_days = round(slot_hours / hours_in_day, 1) if hours_in_day else 0
+                days_allocated = framework.days_allocated()
+                new_total = days_allocated + slot_days
+                if new_total > framework.total_days:
+                    data["form_is_valid"] = False
+                    data["logic_checks_failed"] = True
+                    data["logic_checks_can_bypass"] = False
+                    data["logic_checks_feedback"] = loader.render_to_string(
+                        "partials/scheduler/logicchecks/framework_over_allocated.html",
+                        {
+                            "framework": framework,
+                            "days_allocated": days_allocated,
+                            "slot_days": slot_days,
+                            "new_total": new_total,
+                        },
+                        request=request,
+                    )
+
+            # Non-bypassable: onboarding required check
+            if not data["logic_checks_failed"] and (
                 slot.phase.job.client.onboarding_required
                 and not slot.phase.job.client.onboarded_users.filter(
                     user=user, client=slot.phase.job.client
@@ -427,9 +545,36 @@ def create_scheduler_phase_slot(request):
                     {"slot": slot, "phase": slot.phase},
                     request=request,
                 )
-            else:
+
+            if not data["logic_checks_failed"]:
                 if not force:
                     # These logic checks can be bypassed
+
+                    # Bypassable: framework over-budget warning (allows over-allocation)
+                    if (
+                        framework
+                        and framework.allow_over_allocation
+                    ):
+                        slot_hours = slot.get_business_hours()
+                        hours_in_day = framework.get_hours_in_day()
+                        slot_days = round(slot_hours / hours_in_day, 1) if hours_in_day else 0
+                        days_allocated = framework.days_allocated()
+                        new_total = days_allocated + slot_days
+                        if new_total > framework.total_days:
+                            data["form_is_valid"] = False
+                            data["logic_checks_failed"] = True
+                            data["logic_checks_can_bypass"] = True
+                            data["logic_checks_feedback"] += loader.render_to_string(
+                                "partials/scheduler/logicchecks/framework_over_budget_warning.html",
+                                {
+                                    "framework": framework,
+                                    "days_allocated": days_allocated,
+                                    "slot_days": slot_days,
+                                    "new_total": new_total,
+                                },
+                                request=request,
+                            )
+
                     if slots:
                         # Check if any of these are unavailable
                         if slots.filter(slot_type__is_working=False).exists():

@@ -210,8 +210,18 @@ class User(AbstractUser):
     schedule_feed_id = models.UUIDField(
         verbose_name="Calendar Feed Key", default=uuid.uuid4
     )
+    schedule_feed_enabled = models.BooleanField(
+        verbose_name="Calendar Feed Enabled",
+        help_text="Allow your schedule to be accessed via the calendar feed URL",
+        default=False,
+    )
     schedule_feed_family_id = models.UUIDField(
         verbose_name="Calendar Feed Family Key", default=uuid.uuid4
+    )
+    schedule_feed_family_enabled = models.BooleanField(
+        verbose_name="Family Calendar Feed Enabled",
+        help_text="Allow your family-friendly schedule to be accessed via the calendar feed URL",
+        default=False,
     )
     groups = models.ManyToManyField(
         Group,

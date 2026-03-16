@@ -1,21 +1,57 @@
 {% load widget_tweaks %}
 {% load crispy_forms_tags %}
-<div class="modal-dialog modal- modal-dialog-centered modal-" role="document">
+<div class="modal-dialog modal-lg modal-dialog-centered" role="document">
     <div class="modal-content">
-        <form method="post" action="{{ request.get_full_path }}" class="js-submit-modal-form">
-            {% csrf_token %}            
+        <form method="post" action="{{ request.get_full_path }}" class="js-submit-modal-form" enctype="multipart/form-data">
+            {% csrf_token %}
             <div class="modal-header">
-                <h6 class="modal-title font-weight-normal" 
+                <h6 class="modal-title font-weight-normal"
                     id="modal-title-default">
                         {% if form.instance.pk %}
                         Edit Qualification
                         {% else %}
                         Add Qualification
-                        {% endif %}      
+                        {% endif %}
                 </h6>
-                <button type="button" class="btn-close text-body-emphasis" 
+                <button type="button" class="btn-close text-body-emphasis"
                     data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
+
+            {% if form.instance.pk %}
+            <div class="px-4 pt-3 pb-0">
+                <div class="d-flex justify-content-between align-items-center position-relative" style="max-width: 500px; margin: 0 auto;">
+                    <div class="position-absolute top-50 start-0 end-0" style="height: 2px; background: var(--phoenix-border-color); z-index: 0;"></div>
+                    {% with current=form.instance.status %}
+                    {% comment %}Steps: In Progress(3) → Pending(4) → Attempted(5) → Awarded(6){% endcomment %}
+                    <div class="text-center position-relative" style="z-index: 1;">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-1 {% if current > 3 %}bg-success text-white{% elif current == 3 %}bg-primary text-white{% else %}bg-body-tertiary text-body-tertiary{% endif %}" style="width: 28px; height: 28px;">
+                            {% if current > 3 %}<i class="fa-solid fa-check fs-10"></i>{% else %}<span class="fs-10">1</span>{% endif %}
+                        </div>
+                        <span class="fs-10 {% if current == 3 %}fw-bold text-primary{% elif current > 3 %}text-success{% else %}text-body-tertiary{% endif %}">In Progress</span>
+                    </div>
+                    <div class="text-center position-relative" style="z-index: 1;">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-1 {% if current > 4 %}bg-success text-white{% elif current == 4 %}bg-primary text-white{% else %}bg-body-tertiary text-body-tertiary{% endif %}" style="width: 28px; height: 28px;">
+                            {% if current > 4 %}<i class="fa-solid fa-check fs-10"></i>{% else %}<span class="fs-10">2</span>{% endif %}
+                        </div>
+                        <span class="fs-10 {% if current == 4 %}fw-bold text-primary{% elif current > 4 %}text-success{% else %}text-body-tertiary{% endif %}">Pending</span>
+                    </div>
+                    <div class="text-center position-relative" style="z-index: 1;">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-1 {% if current > 5 %}bg-success text-white{% elif current == 5 %}bg-primary text-white{% else %}bg-body-tertiary text-body-tertiary{% endif %}" style="width: 28px; height: 28px;">
+                            {% if current > 5 %}<i class="fa-solid fa-check fs-10"></i>{% else %}<span class="fs-10">3</span>{% endif %}
+                        </div>
+                        <span class="fs-10 {% if current == 5 %}fw-bold text-primary{% elif current > 5 %}text-success{% else %}text-body-tertiary{% endif %}">Attempted</span>
+                    </div>
+                    <div class="text-center position-relative" style="z-index: 1;">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-1 {% if current == 6 %}bg-success text-white{% else %}bg-body-tertiary text-body-tertiary{% endif %}" style="width: 28px; height: 28px;">
+                            {% if current == 6 %}<i class="fa-solid fa-check fs-10"></i>{% else %}<span class="fs-10">4</span>{% endif %}
+                        </div>
+                        <span class="fs-10 {% if current == 6 %}fw-bold text-success{% else %}text-body-tertiary{% endif %}">Awarded</span>
+                    </div>
+                    {% endwith %}
+                </div>
+            </div>
+            {% endif %}
+
             <ul class="errorlist">
                 {% if form.non_field_errors %}
                     <li>{{ form.non_field_errors }}</li>

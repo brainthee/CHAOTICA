@@ -1,9 +1,12 @@
+import logging
 from datetime import date
 from django_cron import CronJobBase, Schedule
 from django.db.models import Q
 from django.utils import timezone
-from .enums import PhaseStatuses, JobStatuses
+from .enums import PhaseStatuses, JobStatuses, QualificationStatus
 from .models.phase import Phase, Job
+
+logger = logging.getLogger(__name__)
 
 
 class task_progress_workflows(CronJobBase):
@@ -117,3 +120,22 @@ class task_fire_onboarding_reminders(CronJobBase):
             if onboarding.is_due():
                 # Send a reminder...
                 onboarding.send_reminder()
+
+
+class task_check_qualification_expiry(CronJobBase):
+    RUN_EVERY_MINS = 1440  # once a day
+    schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
+    code = "jobtracker.task_check_qualification_expiry"
+
+    def do(self):
+        from jobtracker.models import QualificationRecord
+
+        today = timezone.now().date()
+        lapsed = QualificationRecord.objects.filter(
+            status=QualificationStatus.AWARDED,
+            lapse_date__isnull=False,
+            lapse_date__lte=today,
+        )
+        count = lapsed.update(status=QualificationStatus.LAPSED)
+        if count:
+            logger.info("Auto-lapsed %d qualification record(s).", count)

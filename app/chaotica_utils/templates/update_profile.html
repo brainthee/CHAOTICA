@@ -198,45 +198,81 @@
          </form>
       </div>
 
-      {% if usr == request.user %}
+      {% if usr == request.user and config.CALENDAR_FEED_ENABLED or usr == request.user and config.CALENDAR_FAMILY_FEED_ENABLED %}
       <div class="card mt-4" id="feeds">
          <div class="card-header d-flex">
             <h5>Feeds</h5>
          </div>
 
          <div class="card-body">
-            <div class="row mb-2">
+            {% if config.CALENDAR_FEED_ENABLED %}
+            <div class="row mb-3 align-items-center">
                <div class="col-2">
                   <p class="my-auto">
                      Calendar Subscription <br />
                      Schedule
                   </p>
                </div>
-               <div class="col d-flex">
-                  <p class="font-monospace border border-cake text-sm ms-auto my-auto me-3 p-2">
-                       <a href="{{ feed_url }}">{{ feed_url }}</a>
-                   </p>
+               <div class="col">
+                  {% if usr.schedule_feed_enabled %}
+                  <div class="d-flex align-items-center">
+                     <p class="font-monospace border border-cake text-sm ms-auto my-auto me-3 p-2">
+                        <a href="{{ feed_url }}">{{ feed_url }}</a>
+                     </p>
+                  </div>
+                  {% else %}
+                  <p class="text-body-secondary my-auto">Feed is disabled. Enable it to get your subscription URL.</p>
+                  {% endif %}
                </div>
-               <div class="col-1 d-flex justify-content-end">
-                  <button class="btn btn-sm btn-phoenix-danger mb-0 js-load-modal-form" data-url="{% url 'reset_cal_feed' %}" type="button">Reset</button>
+               <div class="col-auto d-flex gap-2 justify-content-end">
+                  <form method="post" action="{% url 'toggle_cal_feed' %}">
+                     {% csrf_token %}
+                     {% if usr.schedule_feed_enabled %}
+                     <button class="btn btn-sm btn-phoenix-warning mb-0" type="submit">Disable</button>
+                     {% else %}
+                     <button class="btn btn-sm btn-phoenix-success mb-0" type="submit">Enable</button>
+                     {% endif %}
+                  </form>
+                  {% if usr.schedule_feed_enabled %}
+                  <button class="btn btn-sm btn-phoenix-danger mb-0 js-load-modal-form" data-url="{% url 'reset_cal_feed' %}" type="button">Reset Key</button>
+                  {% endif %}
                </div>
             </div>
-            <div class="row mb-2">
+            {% endif %}
+            {% if config.CALENDAR_FAMILY_FEED_ENABLED %}
+            <div class="row mb-3 align-items-center">
                <div class="col-2">
                   <p class="my-auto">
                      Calendar Subscription <br />
                      Family Friendly
                   </p>
                </div>
-               <div class="col d-flex">
-                  <p class="font-monospace border border-cake text-sm ms-auto my-auto me-3 p-2">
-                     <a href="{{ feed_family_url }}">{{ feed_family_url }}</a>
-                   </p>
+               <div class="col">
+                  {% if usr.schedule_feed_family_enabled %}
+                  <div class="d-flex align-items-center">
+                     <p class="font-monospace border border-cake text-sm ms-auto my-auto me-3 p-2">
+                        <a href="{{ feed_family_url }}">{{ feed_family_url }}</a>
+                     </p>
+                  </div>
+                  {% else %}
+                  <p class="text-body-secondary my-auto">Feed is disabled. Enable it to get your subscription URL.</p>
+                  {% endif %}
                </div>
-               <div class="col-1 d-flex justify-content-end">
-                  <button class="btn btn-sm btn-phoenix-danger mb-0 js-load-modal-form" data-url="{% url 'reset_cal_family_feed' %}" type="button">Reset</button>
+               <div class="col-auto d-flex gap-2 justify-content-end">
+                  <form method="post" action="{% url 'toggle_cal_family_feed' %}">
+                     {% csrf_token %}
+                     {% if usr.schedule_feed_family_enabled %}
+                     <button class="btn btn-sm btn-phoenix-warning mb-0" type="submit">Disable</button>
+                     {% else %}
+                     <button class="btn btn-sm btn-phoenix-success mb-0" type="submit">Enable</button>
+                     {% endif %}
+                  </form>
+                  {% if usr.schedule_feed_family_enabled %}
+                  <button class="btn btn-sm btn-phoenix-danger mb-0 js-load-modal-form" data-url="{% url 'reset_cal_family_feed' %}" type="button">Reset Key</button>
+                  {% endif %}
                </div>
             </div>
+            {% endif %}
          </div>
       </div>
       {% endif %}

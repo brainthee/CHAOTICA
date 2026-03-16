@@ -168,7 +168,27 @@ class NotificationSubscriptionAdmin(admin.ModelAdmin):
 # Keep existing admin registrations
 @admin.register(Notification)
 class NotificationAdmin(admin.ModelAdmin):
-    list_display = ["user", "timestamp", "title", "is_emailed"]
+    list_display = ["user", "timestamp", "title", "is_emailed", "should_email", "read"]
+    list_filter = ["is_emailed", "should_email", "read", "notification_type"]
+    search_fields = ["title", "message", "user__username", "user__first_name", "user__last_name"]
+    actions = ["mark_as_emailed", "send_email_now"]
+
+    @admin.action(description="Mark selected as emailed (without sending)")
+    def mark_as_emailed(self, request, queryset):
+        count = queryset.update(is_emailed=True)
+        self.message_user(request, f"{count} notification(s) marked as emailed.")
+
+    @admin.action(description="Send email now")
+    def send_email_now(self, request, queryset):
+        sent = 0
+        failed = 0
+        for notification in queryset.filter(should_email=True):
+            try:
+                notification.send_email(resend=True)
+                sent += 1
+            except Exception:
+                failed += 1
+        self.message_user(request, f"{sent} email(s) sent, {failed} failed.")
 
 @admin.register(NotificationCategory)
 class NotificationCategoryAdmin(admin.ModelAdmin):

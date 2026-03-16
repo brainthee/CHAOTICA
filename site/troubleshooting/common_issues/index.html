@@ -1,0 +1,4017 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../../security/data_protection/">
+      
+      
+        <link rel="next" href="../performance/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
+    
+    
+      
+        <title>Common Issues - CHAOTICA Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#common-issues-and-troubleshooting" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="CHAOTICA Documentation" class="md-header__button md-logo" aria-label="CHAOTICA Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            CHAOTICA Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Common Issues
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="CHAOTICA Documentation" class="md-nav__button md-logo" aria-label="CHAOTICA Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    CHAOTICA Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../definitions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Definitions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Installation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../installation/vars/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Environment Variables
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_2" id="__nav_4_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deployment
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Deployment
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../installation/deployment/docker/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docker
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../installation/deployment/k8/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kubernetes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../installation/deployment/aws_beanstalk/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AWS Elastic Beanstalk
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_1" id="__nav_5_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Jobs
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Jobs
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/Jobs/managing_jobs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Managing Jobs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/Jobs/lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_1_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_1_3" id="__nav_5_1_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Phases
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_5_1_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_1_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Phases
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/Jobs/phases/managing_phases/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Managing Phases
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/Jobs/phases/lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Phase Lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_2" id="__nav_5_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Clients
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Clients
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/clients/adding_clients/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding Clients
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/clients/managing_contacts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Managing Contacts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/clients/framework_agreements/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Framework Agreements
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_3" id="__nav_5_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Organisational Units
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Organisational Units
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/organisational_units/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_4" id="__nav_5_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Team & Users
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Team & Users
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/team/user_management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Management
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_5" id="__nav_5_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Qualifications
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Qualifications
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/qualifications/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/qualifications/administration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Administration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_6" id="__nav_5_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scheduling
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Scheduling
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/scheduling/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/scheduling/validation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Validation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/scheduling/filtering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Filtering
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_7" id="__nav_5_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Operations
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Operations
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/operations/managing_leave/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Managing Leave
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_8" id="__nav_5_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Workflows
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Workflows
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/workflows/quality_assurance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quality Assurance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/workflows/assessment_process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Assessment Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_9" id="__nav_5_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reporting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reporting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/reporting/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/reporting/custom_reports/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Custom Reports
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_10" id="__nav_5_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Notifications
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Notifications
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/notifications/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Managing Notifications
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integration
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Integration
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integration/azure_ad/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Azure AD/ADFS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integration/email/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Email Systems
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../integration/apis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    External APIs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Administration
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Administration
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../administration/chaotica_settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Application Settings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../administration/permissions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Permissions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../administration/system_management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    System Management
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Development
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/getting_started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/api_documentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Documentation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Security
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/access_control/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Access Control
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/data_protection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Protection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Common Issues
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Common Issues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#login-and-authentication-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Login and Authentication Issues
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Login and Authentication Issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#unable-to-login" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Unable to Login
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#azure-adadfs-authentication-problems" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Azure AD/ADFS Authentication Problems
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#performance-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Performance Issues
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Performance Issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#slow-page-loading" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Slow Page Loading
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#high-cpu-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        High CPU Usage
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#database-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Database Issues
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Database Issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#connection-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Connection Errors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#migration-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Migration Issues
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#data-integrity-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data Integrity Issues
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#email-and-notification-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Email and Notification Issues
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Email and Notification Issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#email-not-sending" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Email Not Sending
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#notification-delivery-problems" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Notification Delivery Problems
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#job-and-project-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Job and Project Issues
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Job and Project Issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobs-not-progressing-through-workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Jobs Not Progressing Through Workflow
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#missing-or-incorrect-data-in-jobs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Missing or Incorrect Data in Jobs
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scheduling-and-calendar-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scheduling and Calendar Issues
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Scheduling and Calendar Issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#schedule-conflicts-not-detected" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Schedule Conflicts Not Detected
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#calendar-integration-problems" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Calendar Integration Problems
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#file-upload-and-storage-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File Upload and Storage Issues
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="File Upload and Storage Issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#file-upload-failures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File Upload Failures
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#system-integration-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        System Integration Issues
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="System Integration Issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#api-authentication-failures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        API Authentication Failures
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#third-party-integration-failures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Third-Party Integration Failures
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#preventive-measures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Preventive Measures
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Preventive Measures">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#system-health-monitoring" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        System Health Monitoring
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#regular-maintenance-tasks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Regular Maintenance Tasks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#monitoring-and-alerting-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Monitoring and Alerting Setup
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#getting-help" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Getting Help
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Getting Help">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#support-resources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Support Resources
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#emergency-procedures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Emergency Procedures
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-topics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related Topics
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Performance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/database_schema/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Database Schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#login-and-authentication-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Login and Authentication Issues
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Login and Authentication Issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#unable-to-login" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Unable to Login
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#azure-adadfs-authentication-problems" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Azure AD/ADFS Authentication Problems
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#performance-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Performance Issues
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Performance Issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#slow-page-loading" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Slow Page Loading
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#high-cpu-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        High CPU Usage
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#database-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Database Issues
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Database Issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#connection-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Connection Errors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#migration-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Migration Issues
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#data-integrity-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data Integrity Issues
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#email-and-notification-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Email and Notification Issues
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Email and Notification Issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#email-not-sending" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Email Not Sending
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#notification-delivery-problems" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Notification Delivery Problems
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#job-and-project-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Job and Project Issues
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Job and Project Issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#jobs-not-progressing-through-workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Jobs Not Progressing Through Workflow
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#missing-or-incorrect-data-in-jobs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Missing or Incorrect Data in Jobs
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scheduling-and-calendar-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scheduling and Calendar Issues
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Scheduling and Calendar Issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#schedule-conflicts-not-detected" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Schedule Conflicts Not Detected
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#calendar-integration-problems" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Calendar Integration Problems
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#file-upload-and-storage-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File Upload and Storage Issues
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="File Upload and Storage Issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#file-upload-failures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File Upload Failures
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#system-integration-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        System Integration Issues
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="System Integration Issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#api-authentication-failures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        API Authentication Failures
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#third-party-integration-failures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Third-Party Integration Failures
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#preventive-measures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Preventive Measures
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Preventive Measures">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#system-health-monitoring" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        System Health Monitoring
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#regular-maintenance-tasks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Regular Maintenance Tasks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#monitoring-and-alerting-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Monitoring and Alerting Setup
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#getting-help" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Getting Help
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Getting Help">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#support-resources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Support Resources
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#emergency-procedures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Emergency Procedures
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-topics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related Topics
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="common-issues-and-troubleshooting">Common Issues and Troubleshooting<a class="headerlink" href="#common-issues-and-troubleshooting" title="Permanent link">&para;</a></h1>
+<p>This comprehensive troubleshooting guide addresses the most frequently encountered issues in CHAOTICA, providing step-by-step solutions and preventive measures.</p>
+<h2 id="login-and-authentication-issues">Login and Authentication Issues<a class="headerlink" href="#login-and-authentication-issues" title="Permanent link">&para;</a></h2>
+<h3 id="unable-to-login">Unable to Login<a class="headerlink" href="#unable-to-login" title="Permanent link">&para;</a></h3>
+<p><strong>Symptoms</strong>:
+- Login page displays but credentials don't work
+- Error messages about invalid username/password
+- Redirected back to login page after attempting to login</p>
+<p><strong>Common Causes and Solutions</strong>:</p>
+<ol>
+<li>
+<p><strong>Incorrect Credentials</strong>
+   <div class="highlight"><pre><span></span><code>Solution:
+- Verify username and password are correct
+- Check for caps lock or typing errors
+- Try password reset if available
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>Account Locked or Disabled</strong>
+   <div class="highlight"><pre><span></span><code>Solution:
+- Contact administrator to check account status
+- Review account lockout policies
+- Wait for automatic unlock period if applicable
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>Database Connection Issues</strong>
+   <div class="highlight"><pre><span></span><code>Diagnosis:
+python manage.py shell
+from django.contrib.auth.models import User
+User.objects.count()  # Should return number of users
+
+Solution:
+- Check database connectivity
+- Verify database credentials in settings
+- Restart database service if needed
+</code></pre></div></p>
+</li>
+</ol>
+<h3 id="azure-adadfs-authentication-problems">Azure AD/ADFS Authentication Problems<a class="headerlink" href="#azure-adadfs-authentication-problems" title="Permanent link">&para;</a></h3>
+<p><strong>ADFS Redirect Loop</strong>:
+<div class="highlight"><pre><span></span><code>Symptoms: Continuous redirects between CHAOTICA and ADFS
+Diagnosis: Check browser developer tools network tab
+Solution:
+1. Verify ADFS configuration matches CHAOTICA settings
+2. Check redirect URIs are correctly configured
+3. Ensure system clocks are synchronized
+4. Validate SSL certificates on both systems
+</code></pre></div></p>
+<p><strong>Token Validation Errors</strong>:
+<div class="highlight"><pre><span></span><code>Error: &quot;Invalid token signature&quot;
+Solution:
+1. Check certificate configuration in ADFS
+2. Verify token signing certificate hasn&#39;t expired
+3. Ensure certificate thumbprint matches configuration
+4. Restart ADFS service after certificate changes
+</code></pre></div></p>
+<h2 id="performance-issues">Performance Issues<a class="headerlink" href="#performance-issues" title="Permanent link">&para;</a></h2>
+<h3 id="slow-page-loading">Slow Page Loading<a class="headerlink" href="#slow-page-loading" title="Permanent link">&para;</a></h3>
+<p><strong>Symptoms</strong>:
+- Pages take more than 5-10 seconds to load
+- Timeouts when accessing certain features
+- Unresponsive interface elements</p>
+<p><strong>Diagnostic Steps</strong>:
+<div class="highlight"><pre><span></span><code><span class="c1"># Check system resources</span>
+htop<span class="w">                    </span><span class="c1"># CPU and memory usage</span>
+df<span class="w"> </span>-h<span class="w">                  </span><span class="c1"># Disk space</span>
+iostat<span class="w"> </span>-x<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="m">5</span><span class="w">         </span><span class="c1"># Disk I/O performance</span>
+netstat<span class="w"> </span>-an<span class="w">           </span><span class="c1"># Network connections</span>
+</code></pre></div></p>
+<p><strong>Common Solutions</strong>:</p>
+<ol>
+<li>
+<p><strong>Database Performance</strong>
+   <div class="highlight"><pre><span></span><code><span class="c1">-- Check slow queries (PostgreSQL)</span>
+<span class="k">SELECT</span><span class="w"> </span><span class="n">query</span><span class="p">,</span><span class="w"> </span><span class="n">calls</span><span class="p">,</span><span class="w"> </span><span class="n">total_time</span><span class="p">,</span><span class="w"> </span><span class="n">mean_time</span><span class="w"> </span>
+<span class="k">FROM</span><span class="w"> </span><span class="n">pg_stat_statements</span><span class="w"> </span>
+<span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">total_time</span><span class="w"> </span><span class="k">DESC</span><span class="w"> </span><span class="k">LIMIT</span><span class="w"> </span><span class="mi">10</span><span class="p">;</span>
+
+<span class="c1">-- Check database connections</span>
+<span class="k">SELECT</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">pg_stat_activity</span><span class="p">;</span>
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>Memory Issues</strong>
+   <div class="highlight"><pre><span></span><code><span class="c1"># Check Django memory usage</span>
+python<span class="w"> </span>manage.py<span class="w"> </span>check<span class="w"> </span>--deploy
+
+<span class="c1"># Monitor memory with specific focus on Django processes</span>
+ps<span class="w"> </span>aux<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>python<span class="w"> </span><span class="p">|</span><span class="w"> </span>awk<span class="w"> </span><span class="s1">&#39;{print $2, $4, $6, $11}&#39;</span>
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>Cache Configuration</strong>
+   <div class="highlight"><pre><span></span><code><span class="c1"># Verify cache backend in settings.py</span>
+<span class="n">CACHES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;default&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;BACKEND&#39;</span><span class="p">:</span> <span class="s1">&#39;django.core.cache.backends.redis.RedisCache&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;LOCATION&#39;</span><span class="p">:</span> <span class="s1">&#39;redis://127.0.0.1:6379/1&#39;</span><span class="p">,</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="c1"># Test cache functionality</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.core.cache</span><span class="w"> </span><span class="kn">import</span> <span class="n">cache</span>
+<span class="n">cache</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;test_key&#39;</span><span class="p">,</span> <span class="s1">&#39;test_value&#39;</span><span class="p">,</span> <span class="mi">30</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;test_key&#39;</span><span class="p">))</span>  <span class="c1"># Should return &#39;test_value&#39;</span>
+</code></pre></div></p>
+</li>
+</ol>
+<h3 id="high-cpu-usage">High CPU Usage<a class="headerlink" href="#high-cpu-usage" title="Permanent link">&para;</a></h3>
+<p><strong>Diagnosis</strong>:
+<div class="highlight"><pre><span></span><code><span class="c1"># Identify CPU-intensive processes</span>
+top<span class="w"> </span>-p<span class="w"> </span><span class="k">$(</span>pgrep<span class="w"> </span>-d<span class="s1">&#39;,&#39;</span><span class="w"> </span>python<span class="k">)</span>
+
+<span class="c1"># Check for infinite loops or heavy operations</span>
+strace<span class="w"> </span>-p<span class="w"> </span>&lt;python_process_id&gt;<span class="w"> </span>-c
+
+<span class="c1"># Monitor Django process performance</span>
+python<span class="w"> </span>manage.py<span class="w"> </span>shell
+import<span class="w"> </span>psutil
+<span class="k">for</span><span class="w"> </span>p<span class="w"> </span><span class="k">in</span><span class="w"> </span>psutil.process_iter<span class="o">([</span><span class="s1">&#39;pid&#39;</span>,<span class="w"> </span><span class="s1">&#39;name&#39;</span>,<span class="w"> </span><span class="s1">&#39;cpu_percent&#39;</span><span class="o">])</span>:
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="s1">&#39;python&#39;</span><span class="w"> </span><span class="k">in</span><span class="w"> </span>p.info<span class="o">[</span><span class="s1">&#39;name&#39;</span><span class="o">]</span>:
+<span class="w">        </span>print<span class="o">(</span>p.info<span class="o">)</span>
+</code></pre></div></p>
+<p><strong>Solutions</strong>:
+1. Check for inefficient database queries
+2. Review background task processing (Celery)
+3. Optimize report generation and data processing
+4. Consider scaling horizontally with load balancing</p>
+<h2 id="database-issues">Database Issues<a class="headerlink" href="#database-issues" title="Permanent link">&para;</a></h2>
+<h3 id="connection-errors">Connection Errors<a class="headerlink" href="#connection-errors" title="Permanent link">&para;</a></h3>
+<p><strong>Error</strong>: "Unable to connect to database"</p>
+<p><strong>Diagnosis and Solutions</strong>:
+<div class="highlight"><pre><span></span><code><span class="c1"># Test database connectivity</span>
+python<span class="w"> </span>manage.py<span class="w"> </span>dbshell
+
+<span class="c1"># Check database service status</span>
+systemctl<span class="w"> </span>status<span class="w"> </span>postgresql<span class="w">  </span><span class="c1"># or mysql/mariadb</span>
+
+<span class="c1"># Verify connection settings</span>
+python<span class="w"> </span>manage.py<span class="w"> </span>shell
+from<span class="w"> </span>django.db<span class="w"> </span>import<span class="w"> </span>connection
+<span class="nv">cursor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>connection.cursor<span class="o">()</span>
+cursor.execute<span class="o">(</span><span class="s2">&quot;SELECT 1&quot;</span><span class="o">)</span>
+print<span class="o">(</span>cursor.fetchone<span class="o">())</span>
+</code></pre></div></p>
+<p><strong>Common Fixes</strong>:
+1. Restart database service
+2. Check firewall rules and network connectivity
+3. Verify database credentials and permissions
+4. Check connection pool settings</p>
+<h3 id="migration-issues">Migration Issues<a class="headerlink" href="#migration-issues" title="Permanent link">&para;</a></h3>
+<p><strong>Error</strong>: "Migration failed" or "Table already exists"</p>
+<p><strong>Solutions</strong>:
+<div class="highlight"><pre><span></span><code><span class="c1"># Check migration status</span>
+python<span class="w"> </span>manage.py<span class="w"> </span>showmigrations
+
+<span class="c1"># Fake apply problematic migration</span>
+python<span class="w"> </span>manage.py<span class="w"> </span>migrate<span class="w"> </span>--fake-initial
+
+<span class="c1"># Reset migrations (DANGEROUS - backup first!)</span>
+python<span class="w"> </span>manage.py<span class="w"> </span>migrate<span class="w"> </span>&lt;app_name&gt;<span class="w"> </span>zero
+python<span class="w"> </span>manage.py<span class="w"> </span>makemigrations<span class="w"> </span>&lt;app_name&gt;
+python<span class="w"> </span>manage.py<span class="w"> </span>migrate
+
+<span class="c1"># Manual migration repair</span>
+python<span class="w"> </span>manage.py<span class="w"> </span>shell
+from<span class="w"> </span>django.db<span class="w"> </span>import<span class="w"> </span>connection
+<span class="nv">cursor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>connection.cursor<span class="o">()</span>
+cursor.execute<span class="o">(</span><span class="s2">&quot;SELECT * FROM django_migrations WHERE app=&#39;&lt;app_name&gt;&#39;&quot;</span><span class="o">)</span>
+</code></pre></div></p>
+<h3 id="data-integrity-issues">Data Integrity Issues<a class="headerlink" href="#data-integrity-issues" title="Permanent link">&para;</a></h3>
+<p><strong>Symptoms</strong>:
+- Inconsistent data across related tables
+- Foreign key constraint violations
+- Missing or orphaned records</p>
+<p><strong>Diagnosis Tools</strong>:
+<div class="highlight"><pre><span></span><code><span class="c1"># Check for orphaned records</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.db</span><span class="w"> </span><span class="kn">import</span> <span class="n">models</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">jobtracker.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Job</span><span class="p">,</span> <span class="n">Phase</span>
+
+<span class="c1"># Find phases without valid jobs</span>
+<span class="n">orphaned_phases</span> <span class="o">=</span> <span class="n">Phase</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">job__isnull</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Found </span><span class="si">{</span><span class="n">orphaned_phases</span><span class="o">.</span><span class="n">count</span><span class="p">()</span><span class="si">}</span><span class="s2"> orphaned phases&quot;</span><span class="p">)</span>
+
+<span class="c1"># Find jobs with invalid client references</span>
+<span class="n">invalid_jobs</span> <span class="o">=</span> <span class="n">Job</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">client__isnull</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Found </span><span class="si">{</span><span class="n">invalid_jobs</span><span class="o">.</span><span class="n">count</span><span class="p">()</span><span class="si">}</span><span class="s2"> jobs with invalid clients&quot;</span><span class="p">)</span>
+</code></pre></div></p>
+<h2 id="email-and-notification-issues">Email and Notification Issues<a class="headerlink" href="#email-and-notification-issues" title="Permanent link">&para;</a></h2>
+<h3 id="email-not-sending">Email Not Sending<a class="headerlink" href="#email-not-sending" title="Permanent link">&para;</a></h3>
+<p><strong>Symptoms</strong>:
+- Users not receiving notifications
+- System emails failing silently
+- SMTP connection errors in logs</p>
+<p><strong>Diagnostic Steps</strong>:
+<div class="highlight"><pre><span></span><code><span class="c1"># Test email configuration</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.core.mail</span><span class="w"> </span><span class="kn">import</span> <span class="n">send_mail</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.conf</span><span class="w"> </span><span class="kn">import</span> <span class="n">settings</span>
+
+<span class="c1"># Check email settings</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Email Backend:&quot;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">EMAIL_BACKEND</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;SMTP Host:&quot;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">EMAIL_HOST</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;SMTP Port:&quot;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">EMAIL_PORT</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Use TLS:&quot;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">EMAIL_USE_TLS</span><span class="p">)</span>
+
+<span class="c1"># Send test email</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">send_mail</span><span class="p">(</span>
+        <span class="s1">&#39;Test Email&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;This is a test message.&#39;</span><span class="p">,</span>
+        <span class="n">settings</span><span class="o">.</span><span class="n">DEFAULT_FROM_EMAIL</span><span class="p">,</span>
+        <span class="p">[</span><span class="s1">&#39;test@example.com&#39;</span><span class="p">],</span>
+        <span class="n">fail_silently</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Test email sent successfully&quot;</span><span class="p">)</span>
+<span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Email sending failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div></p>
+<p><strong>Common Solutions</strong>:
+1. Verify SMTP server settings and credentials
+2. Check firewall rules for SMTP port access
+3. Validate SSL/TLS configuration
+4. Test email server connectivity manually</p>
+<h3 id="notification-delivery-problems">Notification Delivery Problems<a class="headerlink" href="#notification-delivery-problems" title="Permanent link">&para;</a></h3>
+<p><strong>Missing Notifications</strong>:
+<div class="highlight"><pre><span></span><code><span class="c1"># Check notification system status</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">notifications.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Notification</span>
+
+<span class="c1"># Recent notifications</span>
+<span class="n">recent_notifications</span> <span class="o">=</span> <span class="n">Notification</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+    <span class="n">created__gte</span><span class="o">=</span><span class="n">timezone</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="mi">24</span><span class="p">)</span>
+<span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s1">&#39;-created&#39;</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">notification</span> <span class="ow">in</span> <span class="n">recent_notifications</span><span class="p">[:</span><span class="mi">10</span><span class="p">]:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;To: </span><span class="si">{</span><span class="n">notification</span><span class="o">.</span><span class="n">recipient</span><span class="si">}</span><span class="s2">, Status: </span><span class="si">{</span><span class="n">notification</span><span class="o">.</span><span class="n">status</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Failed notifications</span>
+<span class="n">failed_notifications</span> <span class="o">=</span> <span class="n">Notification</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+    <span class="n">status</span><span class="o">=</span><span class="s1">&#39;failed&#39;</span><span class="p">,</span>
+    <span class="n">created__gte</span><span class="o">=</span><span class="n">timezone</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">7</span><span class="p">)</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed notifications in last week: </span><span class="si">{</span><span class="n">failed_notifications</span><span class="o">.</span><span class="n">count</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div></p>
+<h2 id="job-and-project-issues">Job and Project Issues<a class="headerlink" href="#job-and-project-issues" title="Permanent link">&para;</a></h2>
+<h3 id="jobs-not-progressing-through-workflow">Jobs Not Progressing Through Workflow<a class="headerlink" href="#jobs-not-progressing-through-workflow" title="Permanent link">&para;</a></h3>
+<p><strong>Symptoms</strong>:
+- Jobs stuck in particular status
+- Status transitions not available
+- Workflow buttons not responding</p>
+<p><strong>Diagnostic Steps</strong>:
+<div class="highlight"><pre><span></span><code><span class="c1"># Check job status and available transitions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">jobtracker.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Job</span>
+
+<span class="n">job</span> <span class="o">=</span> <span class="n">Job</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="mi">2501</span><span class="p">)</span>  <span class="c1"># Replace with actual job ID</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Current status: </span><span class="si">{</span><span class="n">job</span><span class="o">.</span><span class="n">get_status_display</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Check available transitions</span>
+<span class="n">available_transitions</span> <span class="o">=</span> <span class="n">job</span><span class="o">.</span><span class="n">get_available_transitions</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Available transitions:&quot;</span><span class="p">,</span> <span class="n">available_transitions</span><span class="p">)</span>
+
+<span class="c1"># Check user permissions for transitions</span>
+<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s1">&#39;example_user&#39;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">transition</span> <span class="ow">in</span> <span class="n">available_transitions</span><span class="p">:</span>
+    <span class="n">can_transition</span> <span class="o">=</span> <span class="n">job</span><span class="o">.</span><span class="n">can_transition</span><span class="p">(</span><span class="n">transition</span><span class="p">,</span> <span class="n">user</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">transition</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">can_transition</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div></p>
+<p><strong>Common Solutions</strong>:
+1. Check user permissions for status transitions
+2. Verify job has all required fields populated
+3. Check for blocking validation rules
+4. Review organizational unit permissions</p>
+<h3 id="missing-or-incorrect-data-in-jobs">Missing or Incorrect Data in Jobs<a class="headerlink" href="#missing-or-incorrect-data-in-jobs" title="Permanent link">&para;</a></h3>
+<p><strong>Data Inconsistency Issues</strong>:
+<div class="highlight"><pre><span></span><code><span class="c1"># Verify job data integrity</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.db</span><span class="w"> </span><span class="kn">import</span> <span class="n">models</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">jobtracker.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Job</span><span class="p">,</span> <span class="n">Phase</span>
+
+<span class="c1"># Check jobs with missing required data</span>
+<span class="n">incomplete_jobs</span> <span class="o">=</span> <span class="n">Job</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+    <span class="n">models</span><span class="o">.</span><span class="n">Q</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="o">|</span> 
+    <span class="n">models</span><span class="o">.</span><span class="n">Q</span><span class="p">(</span><span class="n">client__isnull</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">|</span>
+    <span class="n">models</span><span class="o">.</span><span class="n">Q</span><span class="p">(</span><span class="n">unit__isnull</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Jobs with missing data: </span><span class="si">{</span><span class="n">incomplete_jobs</span><span class="o">.</span><span class="n">count</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Check phases without time slots</span>
+<span class="n">phases_without_slots</span> <span class="o">=</span> <span class="n">Phase</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">timeslots__isnull</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Phases without time slots: </span><span class="si">{</span><span class="n">phases_without_slots</span><span class="o">.</span><span class="n">count</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div></p>
+<h2 id="scheduling-and-calendar-issues">Scheduling and Calendar Issues<a class="headerlink" href="#scheduling-and-calendar-issues" title="Permanent link">&para;</a></h2>
+<h3 id="schedule-conflicts-not-detected">Schedule Conflicts Not Detected<a class="headerlink" href="#schedule-conflicts-not-detected" title="Permanent link">&para;</a></h3>
+<p><strong>Problem</strong>: Double-booked resources or conflicting assignments</p>
+<p><strong>Diagnosis</strong>:
+<div class="highlight"><pre><span></span><code><span class="c1"># Check for scheduling conflicts</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">jobtracker.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimeSlot</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.db.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Q</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span>
+
+<span class="c1"># Find overlapping time slots for same user</span>
+<span class="n">user_id</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># Replace with actual user ID</span>
+<span class="n">overlapping_slots</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="n">user_slots</span> <span class="o">=</span> <span class="n">TimeSlot</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">user_id</span><span class="o">=</span><span class="n">user_id</span><span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s1">&#39;start_date&#39;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">slot1</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">user_slots</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">slot2</span> <span class="ow">in</span> <span class="n">user_slots</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">:]:</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">slot1</span><span class="o">.</span><span class="n">start_date</span> <span class="o">&lt;</span> <span class="n">slot2</span><span class="o">.</span><span class="n">end_date</span> <span class="ow">and</span> 
+            <span class="n">slot1</span><span class="o">.</span><span class="n">end_date</span> <span class="o">&gt;</span> <span class="n">slot2</span><span class="o">.</span><span class="n">start_date</span><span class="p">):</span>
+            <span class="n">overlapping_slots</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">slot1</span><span class="p">,</span> <span class="n">slot2</span><span class="p">))</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">overlapping_slots</span><span class="p">)</span><span class="si">}</span><span class="s2"> scheduling conflicts&quot;</span><span class="p">)</span>
+</code></pre></div></p>
+<h3 id="calendar-integration-problems">Calendar Integration Problems<a class="headerlink" href="#calendar-integration-problems" title="Permanent link">&para;</a></h3>
+<p><strong>iCal Feed Issues</strong>:
+<div class="highlight"><pre><span></span><code><span class="c1"># Test calendar feed generation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.test</span><span class="w"> </span><span class="kn">import</span> <span class="n">RequestFactory</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">jobtracker.feeds</span><span class="w"> </span><span class="kn">import</span> <span class="n">ScheduleFeed</span>
+
+<span class="n">factory</span> <span class="o">=</span> <span class="n">RequestFactory</span><span class="p">()</span>
+<span class="n">request</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;/schedule/feed/test-key&#39;</span><span class="p">)</span>
+
+<span class="n">feed</span> <span class="o">=</span> <span class="n">ScheduleFeed</span><span class="p">()</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">feed</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">cal_key</span><span class="o">=</span><span class="s1">&#39;test-key&#39;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Calendar feed generated successfully&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Content length: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Calendar feed generation failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div></p>
+<h2 id="file-upload-and-storage-issues">File Upload and Storage Issues<a class="headerlink" href="#file-upload-and-storage-issues" title="Permanent link">&para;</a></h2>
+<h3 id="file-upload-failures">File Upload Failures<a class="headerlink" href="#file-upload-failures" title="Permanent link">&para;</a></h3>
+<p><strong>Symptoms</strong>:
+- Files not uploading or saving
+- Error messages about file size or type
+- Storage quota exceeded errors</p>
+<p><strong>Diagnostic Steps</strong>:
+<div class="highlight"><pre><span></span><code><span class="c1"># Check storage configuration</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.conf</span><span class="w"> </span><span class="kn">import</span> <span class="n">settings</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Media Root:&quot;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">MEDIA_ROOT</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Media URL:&quot;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">MEDIA_URL</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;File Upload Max Size:&quot;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">DATA_UPLOAD_MAX_MEMORY_SIZE</span><span class="p">)</span>
+
+<span class="c1"># Check storage space</span>
+<span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">MEDIA_ROOT</span><span class="p">):</span>
+    <span class="n">total</span><span class="p">,</span> <span class="n">used</span><span class="p">,</span> <span class="n">free</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">statvfs</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">MEDIA_ROOT</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Storage - Total: </span><span class="si">{</span><span class="n">total</span><span class="si">}</span><span class="s2">, Used: </span><span class="si">{</span><span class="n">used</span><span class="si">}</span><span class="s2">, Free: </span><span class="si">{</span><span class="n">free</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Media root directory does not exist&quot;</span><span class="p">)</span>
+
+<span class="c1"># Test file operations</span>
+<span class="n">test_file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">MEDIA_ROOT</span><span class="p">,</span> <span class="s1">&#39;test.txt&#39;</span><span class="p">)</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">test_file_path</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;test&#39;</span><span class="p">)</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">test_file_path</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;File operations working correctly&quot;</span><span class="p">)</span>
+<span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;File operation failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div></p>
+<h2 id="system-integration-issues">System Integration Issues<a class="headerlink" href="#system-integration-issues" title="Permanent link">&para;</a></h2>
+<h3 id="api-authentication-failures">API Authentication Failures<a class="headerlink" href="#api-authentication-failures" title="Permanent link">&para;</a></h3>
+<p><strong>Problem</strong>: External systems cannot authenticate with CHAOTICA API</p>
+<p><strong>Diagnosis</strong>:
+<div class="highlight"><pre><span></span><code><span class="c1"># Verify API token functionality</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rest_framework.authtoken.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Token</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.contrib.auth.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">User</span>
+
+<span class="c1"># Check if user has valid token</span>
+<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s1">&#39;api_user&#39;</span><span class="p">)</span>  <span class="c1"># Replace with actual user</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">token</span> <span class="o">=</span> <span class="n">Token</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">user</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Token exists: </span><span class="si">{</span><span class="n">token</span><span class="o">.</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">Token</span><span class="o">.</span><span class="n">DoesNotExist</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;No token found for user&quot;</span><span class="p">)</span>
+
+<span class="c1"># Test API endpoint access</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
+<span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+    <span class="s1">&#39;http://localhost:8000/api/jobs/&#39;</span><span class="p">,</span>
+    <span class="n">headers</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;Authorization&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;Token </span><span class="si">{</span><span class="n">token</span><span class="o">.</span><span class="n">key</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">}</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;API Response: </span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div></p>
+<h3 id="third-party-integration-failures">Third-Party Integration Failures<a class="headerlink" href="#third-party-integration-failures" title="Permanent link">&para;</a></h3>
+<p><strong>Common Integration Problems</strong>:
+1. <strong>Network Connectivity</strong>
+   <div class="highlight"><pre><span></span><code><span class="c1"># Test external service connectivity</span>
+curl<span class="w"> </span>-I<span class="w"> </span>https://external-service.com/api
+nslookup<span class="w"> </span>external-service.com
+telnet<span class="w"> </span>external-service.com<span class="w"> </span><span class="m">443</span>
+</code></pre></div></p>
+<ol>
+<li>
+<p><strong>Certificate Issues</strong>
+   <div class="highlight"><pre><span></span><code><span class="c1"># Check SSL certificate validity</span>
+openssl<span class="w"> </span>s_client<span class="w"> </span>-connect<span class="w"> </span>external-service.com:443<span class="w"> </span>-servername<span class="w"> </span>external-service.com
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>API Key/Token Issues</strong>
+   <div class="highlight"><pre><span></span><code><span class="c1"># Test external API authentication</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
+<span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+    <span class="s1">&#39;https://external-service.com/api/test&#39;</span><span class="p">,</span>
+    <span class="n">headers</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;Authorization&#39;</span><span class="p">:</span> <span class="s1">&#39;Bearer your-token&#39;</span><span class="p">},</span>
+    <span class="n">timeout</span><span class="o">=</span><span class="mi">30</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Status: </span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="si">}</span><span class="s2">, Response: </span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div></p>
+</li>
+</ol>
+<h2 id="preventive-measures">Preventive Measures<a class="headerlink" href="#preventive-measures" title="Permanent link">&para;</a></h2>
+<h3 id="system-health-monitoring">System Health Monitoring<a class="headerlink" href="#system-health-monitoring" title="Permanent link">&para;</a></h3>
+<p><strong>Automated Health Checks</strong>:
+<div class="highlight"><pre><span></span><code><span class="c1"># Create health check script</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.core.management.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseCommand</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.db</span><span class="w"> </span><span class="kn">import</span> <span class="n">connection</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.core.cache</span><span class="w"> </span><span class="kn">import</span> <span class="n">cache</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Command</span><span class="p">(</span><span class="n">BaseCommand</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">options</span><span class="p">):</span>
+        <span class="n">health_status</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;database&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_database</span><span class="p">(),</span>
+            <span class="s1">&#39;cache&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_cache</span><span class="p">(),</span>
+            <span class="s1">&#39;email&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_email</span><span class="p">(),</span>
+            <span class="s1">&#39;storage&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_storage</span><span class="p">()</span>
+        <span class="p">}</span>
+
+        <span class="k">for</span> <span class="n">component</span><span class="p">,</span> <span class="n">status</span> <span class="ow">in</span> <span class="n">health_status</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">status</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✓ </span><span class="si">{</span><span class="n">component</span><span class="si">}</span><span class="s2"> is healthy&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✗ </span><span class="si">{</span><span class="n">component</span><span class="si">}</span><span class="s2"> has issues&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_database</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">cursor</span> <span class="o">=</span> <span class="n">connection</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
+            <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;SELECT 1&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">cache</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;health_check&#39;</span><span class="p">,</span> <span class="s1">&#39;ok&#39;</span><span class="p">,</span> <span class="mi">60</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;health_check&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;ok&#39;</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+</code></pre></div></p>
+<h3 id="regular-maintenance-tasks">Regular Maintenance Tasks<a class="headerlink" href="#regular-maintenance-tasks" title="Permanent link">&para;</a></h3>
+<p><strong>Weekly Tasks</strong>:
+<div class="highlight"><pre><span></span><code><span class="ch">#!/bin/bash</span>
+<span class="c1"># weekly_maintenance.sh</span>
+
+<span class="c1"># Database maintenance</span>
+python<span class="w"> </span>manage.py<span class="w"> </span>clearsessions
+python<span class="w"> </span>manage.py<span class="w"> </span>cleanup_notifications
+
+<span class="c1"># Log rotation and cleanup</span>
+find<span class="w"> </span>/var/log/chaotica<span class="w"> </span>-name<span class="w"> </span><span class="s2">&quot;*.log&quot;</span><span class="w"> </span>-mtime<span class="w"> </span>+30<span class="w"> </span>-delete
+
+<span class="c1"># Cache cleanup</span>
+python<span class="w"> </span>manage.py<span class="w"> </span>shell<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;from django.core.cache import cache; cache.clear()&quot;</span>
+
+<span class="c1"># System updates check</span>
+apt<span class="w"> </span>list<span class="w"> </span>--upgradable
+
+<span class="c1"># Backup verification</span>
+python<span class="w"> </span>manage.py<span class="w"> </span>check_backup_integrity
+</code></pre></div></p>
+<h3 id="monitoring-and-alerting-setup">Monitoring and Alerting Setup<a class="headerlink" href="#monitoring-and-alerting-setup" title="Permanent link">&para;</a></h3>
+<p><strong>Basic Monitoring Script</strong>:
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">psutil</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">check_system_health</span><span class="p">():</span>
+    <span class="n">alerts</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># CPU usage</span>
+    <span class="n">cpu_percent</span> <span class="o">=</span> <span class="n">psutil</span><span class="o">.</span><span class="n">cpu_percent</span><span class="p">(</span><span class="n">interval</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">cpu_percent</span> <span class="o">&gt;</span> <span class="mi">80</span><span class="p">:</span>
+        <span class="n">alerts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;High CPU usage: </span><span class="si">{</span><span class="n">cpu_percent</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Memory usage  </span>
+    <span class="n">memory</span> <span class="o">=</span> <span class="n">psutil</span><span class="o">.</span><span class="n">virtual_memory</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">memory</span><span class="o">.</span><span class="n">percent</span> <span class="o">&gt;</span> <span class="mi">85</span><span class="p">:</span>
+        <span class="n">alerts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;High memory usage: </span><span class="si">{</span><span class="n">memory</span><span class="o">.</span><span class="n">percent</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Disk usage</span>
+    <span class="n">disk</span> <span class="o">=</span> <span class="n">psutil</span><span class="o">.</span><span class="n">disk_usage</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
+    <span class="n">disk_percent</span> <span class="o">=</span> <span class="p">(</span><span class="n">disk</span><span class="o">.</span><span class="n">used</span> <span class="o">/</span> <span class="n">disk</span><span class="o">.</span><span class="n">total</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100</span>
+    <span class="k">if</span> <span class="n">disk_percent</span> <span class="o">&gt;</span> <span class="mi">90</span><span class="p">:</span>
+        <span class="n">alerts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Low disk space: </span><span class="si">{</span><span class="n">disk_percent</span><span class="si">}</span><span class="s2">% used&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Web service availability</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;http://localhost:8000/health/&#39;</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">!=</span> <span class="mi">200</span><span class="p">:</span>
+            <span class="n">alerts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Web service unhealthy: HTTP </span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">requests</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">RequestException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">alerts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Web service unreachable: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">alerts</span>
+
+<span class="c1"># Send alerts if any issues found</span>
+<span class="n">alerts</span> <span class="o">=</span> <span class="n">check_system_health</span><span class="p">()</span>
+<span class="k">if</span> <span class="n">alerts</span><span class="p">:</span>
+    <span class="c1"># Send email, Slack message, etc.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;System health alerts:&quot;</span><span class="p">,</span> <span class="n">alerts</span><span class="p">)</span>
+</code></pre></div></p>
+<h2 id="getting-help">Getting Help<a class="headerlink" href="#getting-help" title="Permanent link">&para;</a></h2>
+<h3 id="support-resources">Support Resources<a class="headerlink" href="#support-resources" title="Permanent link">&para;</a></h3>
+<p><strong>Documentation and Guides</strong>:
+- Check this troubleshooting guide first
+- Review relevant user guide sections
+- Consult API documentation for integration issues
+- Search the knowledge base</p>
+<p><strong>Log Files and Diagnostics</strong>:
+<div class="highlight"><pre><span></span><code><span class="c1"># Key log files to check</span>
+tail<span class="w"> </span>-f<span class="w"> </span>/var/log/chaotica/chaotica.log<span class="w">     </span><span class="c1"># Application logs</span>
+tail<span class="w"> </span>-f<span class="w"> </span>/var/log/nginx/access.log<span class="w">           </span><span class="c1"># Web server access</span>
+tail<span class="w"> </span>-f<span class="w"> </span>/var/log/postgresql/postgresql.log<span class="w">  </span><span class="c1"># Database logs</span>
+journalctl<span class="w"> </span>-u<span class="w"> </span>chaotica<span class="w"> </span>-f<span class="w">                   </span><span class="c1"># Systemd service logs</span>
+</code></pre></div></p>
+<p><strong>Information to Collect for Support</strong>:
+- Exact error messages and screenshots
+- Steps to reproduce the issue
+- System information (OS, Python version, etc.)
+- Recent changes or updates
+- Relevant log file excerpts
+- Output from diagnostic commands</p>
+<h3 id="emergency-procedures">Emergency Procedures<a class="headerlink" href="#emergency-procedures" title="Permanent link">&para;</a></h3>
+<p><strong>System Recovery Steps</strong>:
+1. <strong>Database Issues</strong>: Restore from backup
+2. <strong>Application Crashes</strong>: Restart services and check logs
+3. <strong>Performance Issues</strong>: Scale resources or restart services
+4. <strong>Security Incidents</strong>: Follow incident response procedures
+5. <strong>Data Loss</strong>: Activate disaster recovery procedures</p>
+<p><strong>Emergency Contacts</strong>:
+- System Administrator: [Contact Information]
+- Database Administrator: [Contact Information]<br />
+- Security Team: [Contact Information]
+- Management Escalation: [Contact Information]</p>
+<h2 id="related-topics">Related Topics<a class="headerlink" href="#related-topics" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../performance/">Performance Optimization</a> - Detailed performance tuning guide</li>
+<li><a href="../../security/access_control/">Security</a> - Security policies and procedures</li>
+<li><a href="../../administration/system_management/">Administration</a> - System management procedures</li>
+<li><a href="../../development/getting_started/">Development</a> - Development environment troubleshooting</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/gh/rod2ik/cdn@main/mkdocs/javascripts/mkdocs-graphviz.js"></script>
+      
+    
+  </body>
+</html>
