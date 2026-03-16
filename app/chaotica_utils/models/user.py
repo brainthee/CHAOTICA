@@ -1290,27 +1290,39 @@ class User(AbstractUser):
         return (presqa_rating + techqa_rating) / 2
 
     def get_average_qa_rating_12mo(self, qa_field):
-        from chaotica_utils.utils import last_day_of_month
+        from django.db.models.functions import TruncMonth
 
-        # Get the last 12 months of tech feedback
+        today = timezone.now()
+        start = (today - relativedelta(months=12)).replace(day=1)
+
+        # Single query: group by month, compute average per month
+        monthly = (
+            self.get_reports()
+            .filter(
+                actual_completed_date__gte=start,
+                actual_completed_date__lte=today,
+            )
+            .exclude(**{qa_field: None})
+            .exclude(**{qa_field: 0})
+            .annotate(month=TruncMonth("actual_completed_date"))
+            .values("month")
+            .annotate(avg=Avg(qa_field))
+            .order_by("month")
+        )
+
+        # Build a lookup from the query results
+        avg_by_month = {row["month"].date(): row["avg"] or 0 for row in monthly}
+
+        # Fill in all 13 months (some may have no data)
         months = []
         data = []
-        today = timezone.now()
         for i in range(12, -1, -1):
-            month = today - relativedelta(months=i)
-            start_month = month + relativedelta(day=1)
-            end_month = last_day_of_month(start_month)
-            avg = self.get_average_qa_rating(
-                qa_field, from_range=start_month, to_range=end_month
-            )
-            months.append(str(start_month.date()))
-            data.append(avg)
+            month_dt = today - relativedelta(months=i)
+            first_of_month = month_dt.replace(day=1).date()
+            months.append(str(first_of_month))
+            data.append(avg_by_month.get(first_of_month, 0))
 
-        data = {
-            "months": months,
-            "data": data,
-        }
-        return data
+        return {"months": months, "data": data}
 
     def get_average_techqa_feedback_12mo(self):
         return self.get_average_qa_rating_12mo("techqa_report_rating")

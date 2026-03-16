@@ -8,9 +8,7 @@
 </div>
 
   <div class="col text-end">
-    {% with avg_tqa_rating=request.user.get_average_techqa_feedback %}
-      {% include 'partials/feedback_stars.html' with feedback=avg_tqa_rating %}
-    {% endwith %}
+    {% include 'partials/feedback_stars.html' with feedback=avg_tqa_rating %}
   </div>
 </div>
 
@@ -40,7 +38,7 @@
         type: 'category',
         position: 'bottom',
         show: true,
-        data: {{ request.user.get_average_techqa_feedback_12mo.months |safe }},
+        data: {{ tqa_feedback_12mo.months |safe }},
         axisLabel: {
           formatter: value => window.dayjs(value).format('MMM, YY'),
           color: getColor('gray-800'),
@@ -69,7 +67,7 @@
     series: [
       {
         type: 'line',
-        data: {{ request.user.get_average_techqa_feedback_12mo.data }},
+        data: {{ tqa_feedback_12mo.data }},
         lineStyle: {
           width: 2,
           color: getColor('info')

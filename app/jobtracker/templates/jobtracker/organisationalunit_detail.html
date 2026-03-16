@@ -97,6 +97,11 @@
           <li class="nav-item text-nowrap me-2" role="presentation">
             <a class="nav-link" id="jobs-tab" data-bs-toggle="tab" href="#jobs" role="tab" aria-controls="tab-jobs" aria-selected="false" tabindex="-1"><span class="fa-solid fa-clipboard me-2 tab-icon-color"></span>Jobs</a>
           </li>
+          {% if 'can_view_jobs' in unit_perms %}
+          <li class="nav-item text-nowrap me-2" role="presentation">
+            <a class="nav-link" id="board-tab" data-bs-toggle="tab" href="#board" role="tab" aria-controls="tab-board" aria-selected="false" tabindex="-1"><span class="fa-solid fa-columns me-2 tab-icon-color"></span>Board</a>
+          </li>
+          {% endif %}
           <li class="nav-item text-nowrap me-2" role="presentation">
             <a class="nav-link" id="stats-tab" data-bs-toggle="tab" href="#stats" role="tab" aria-controls="tab-stats" aria-selected="false" tabindex="-1"><span class="fa-solid fa-clipboard me-2 tab-icon-color"></span>Stats</a>
           </li>
@@ -126,6 +131,15 @@
               </div>
             {% endif %}
           </div>
+
+          {% if 'can_view_jobs' in unit_perms %}
+          <div class="tab-pane fade" id="board" role="tabpanel" aria-labelledby="board-tab" style="margin: 0 -2.75rem;">
+            <div id="board-content" class="text-center py-5">
+              <div class="spinner-border text-primary" role="status"></div>
+              <p class="mt-2 text-body-secondary">Loading board...</p>
+            </div>
+          </div>
+          {% endif %}
 
           <div class="tab-pane fade" id="stats" role="tabpanel" aria-labelledby="stats-tab">
             <div id="stats-content" class="text-center py-5">
@@ -183,8 +197,10 @@
     (function() {
       var statsLoaded = false;
       var jobsLoaded = false;
+      var boardLoaded = false;
       var statsUrl = "{% url 'orgunit_stats_partial' organisationalunit.slug %}";
       var jobsUrl = "{% url 'orgunit_jobs_partial' organisationalunit.slug %}";
+      var boardUrl = "{% url 'orgunit_board_partial' organisationalunit.slug %}";
 
       function loadTab(url, containerId, callback) {
         fetch(url, {
@@ -224,6 +240,17 @@
           if (!jobsLoaded) {
             jobsLoaded = true;
             loadTab(jobsUrl, 'jobs-content');
+          }
+        });
+      }
+
+      // Load board when tab is shown
+      var boardTab = document.getElementById('board-tab');
+      if (boardTab) {
+        boardTab.addEventListener('shown.bs.tab', function() {
+          if (!boardLoaded) {
+            boardLoaded = true;
+            loadTab(boardUrl, 'board-content');
           }
         });
       }

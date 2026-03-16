@@ -285,15 +285,42 @@ class FrameworkAgreement(models.Model):
     def __str__(self):
         return "{} ({}-{})".format(self.name, self.start_date, self.end_date)
 
+    def _get_framework_slots(self):
+        """Get all timeslots for jobs in this framework."""
+        from ..models import TimeSlot
+        return TimeSlot.objects.filter(phase__job__associated_framework=self)
+
+    def get_hours_in_day(self):
+        return self.client.hours_in_day
+
+    def _slots_to_days(self, slots):
+        total = Decimal()
+        for slot in slots:
+            total += slot.get_business_hours()
+        hours_in_day = self.get_hours_in_day()
+        return round(total / hours_in_day, 1) if hours_in_day else 0
+
+    def days_used(self):
+        """Days from timeslots that have already passed."""
+        return self._slots_to_days(
+            self._get_framework_slots().filter(end__lt=timezone.now())
+        )
+
+    def days_scheduled(self):
+        """Days from timeslots in the future."""
+        return self._slots_to_days(
+            self._get_framework_slots().filter(start__gte=timezone.now())
+        )
+
+    def days_available(self):
+        """Remaining unallocated days."""
+        return self.total_days - self.days_used() - self.days_scheduled()
+
     def days_remaining(self):
-        days_allocated = self.days_allocated()
-        return self.total_days - days_allocated
+        return self.days_available()
 
     def days_allocated(self):
-        total = 0
-        for job in self.associated_jobs.all():
-            total = total + job.total_days_scheduled()
-        return total
+        return self._slots_to_days(self._get_framework_slots())
 
     def perc_allocated(self):
         if self.total_days:
@@ -302,8 +329,38 @@ class FrameworkAgreement(models.Model):
             return 0
 
     def is_over_allocated(self):
-        days_allocated = self.days_allocated()
-        return days_allocated > self.total_days
+        return self.days_allocated() > self.total_days
+
+    @classmethod
+    def bulk_compute_days(cls, frameworks):
+        """Fetch all timeslots for multiple frameworks in one query and
+        attach _days_allocated, _perc_allocated, _is_over_allocated to each."""
+        if not frameworks:
+            return
+        from ..models import TimeSlot
+
+        fw_by_id = {fw.pk: fw for fw in frameworks}
+        slots = (
+            TimeSlot.objects.filter(
+                phase__job__associated_framework__in=fw_by_id.keys()
+            )
+            .select_related('phase__job')
+            .prefetch_related('user__unit_memberships__unit')
+        )
+
+        # Accumulate hours per framework
+        hours_by_fw = {pk: Decimal() for pk in fw_by_id}
+        for slot in slots:
+            fw_id = slot.phase.job.associated_framework_id
+            if fw_id in hours_by_fw:
+                hours_by_fw[fw_id] += slot.get_business_hours()
+
+        for pk, fw in fw_by_id.items():
+            hours_in_day = fw.get_hours_in_day()
+            days = round(hours_by_fw[pk] / hours_in_day, 1) if hours_in_day else 0
+            fw.computed_days_allocated = days
+            fw.computed_perc_allocated = round((days / fw.total_days) * 100, 2) if fw.total_days else 0
+            fw.computed_is_over_allocated = days > fw.total_days
 
 
 class Contact(models.Model):

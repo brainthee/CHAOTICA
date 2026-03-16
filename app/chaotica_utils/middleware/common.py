@@ -9,6 +9,7 @@ from django.shortcuts import reverse, redirect
 from ..models import User
 from django.urls import reverse
 from django.conf import settings
+from django.core.cache import cache
 from constance import config
 from django.contrib import messages
 from django.contrib.messages import get_messages
@@ -42,22 +43,25 @@ class HealthCheckMiddleware(MiddlewareMixin):
 
 class NewInstallMiddleware(MiddlewareMixin):
     def process_request(self, request):
-        # Check if setup is needed - check for all essential components
-        from jobtracker.models import OrganisationalUnit, Service, SkillCategory, Client
+        # Check if setup is needed - check for all essential components.
+        # Cache the result so we don't run 5 COUNT queries on every request.
+        setup_needed = cache.get('chaotica_setup_needed')
+        if setup_needed is None:
+            from jobtracker.models import OrganisationalUnit, Service, SkillCategory, Client
 
-        # Setup is complete only when we have ALL of these:
-        # 1. At least one user
-        # 2. At least one org unit
-        # 3. At least one service
-        # 4. At least one skill category
-        # 5. At least one client
-        setup_needed = (
-            User.objects.all().count() == 0 or
-            OrganisationalUnit.objects.all().count() == 0 or
-            Service.objects.all().count() == 0 or
-            SkillCategory.objects.all().count() == 0 or
-            Client.objects.all().count() == 0
-        )
+            setup_needed = (
+                User.objects.count() == 0 or
+                OrganisationalUnit.objects.count() == 0 or
+                Service.objects.count() == 0 or
+                SkillCategory.objects.count() == 0 or
+                Client.objects.count() == 0
+            )
+            if not setup_needed:
+                # Setup complete — cache indefinitely (cleared on server restart)
+                cache.set('chaotica_setup_needed', False, None)
+            else:
+                # Re-check on next request (don't cache True for long)
+                cache.set('chaotica_setup_needed', True, 5)
 
         excluded_paths = ["/media", "/static", "/admin", "/setup"]
         for path in excluded_paths:

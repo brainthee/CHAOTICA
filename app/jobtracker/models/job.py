@@ -496,10 +496,8 @@ class Job(models.Model):
 
         slots = TimeSlot.objects.filter(phase__job=self)
         total = Decimal()
-        _hours_in_day = self.get_hours_in_day()
         for slot in slots:
-            # This is dumb - doesn't validate if it's half a day or something.
-            total = total + _hours_in_day
+            total = total + slot.get_business_hours()
         return total
 
     def total_days_scheduled(self):

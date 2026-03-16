@@ -6,10 +6,10 @@ from chaotica_utils.utils import make_aware, get_start_of_week
 from django.utils import timezone
 from datetime import datetime, timedelta
 from jobtracker.models import Job, Phase, TimeSlot, OrganisationalUnit
-from chaotica_utils.models import LeaveRequest, User
+from chaotica_utils.models import LeaveRequest, User, UserJobLevel
 from jobtracker.enums import JobStatuses, PhaseStatuses
 from chaotica_utils.views import page_defaults
-from django.db.models import Q
+from django.db.models import Q, Prefetch
 from django.db.models.functions import Coalesce
 from django.views.decorators.http import require_safe
 from guardian.shortcuts import get_objects_for_user
@@ -83,12 +83,12 @@ def index(request):
     # Eagerly evaluate querysets with list() so the template can use
     # |length instead of .count (avoids duplicate COUNT queries)
     context["myJobs"] = list(
-        Job.objects.jobs_for_user(request.user).prefetch_related(
-            "client", "unit", "phases"
-        )
+        Job.objects.jobs_for_user(request.user).select_related(
+            "client", "unit"
+        ).prefetch_related("phases")
     )
     context["myPhases"] = list(
-        Phase.objects.phases_for_user(request.user).prefetch_related(
+        Phase.objects.phases_for_user(request.user).select_related(
             "service", "job__client", "project_lead", "report_author"
         )
     )
@@ -96,7 +96,7 @@ def index(request):
     context["in_flight"] = list(
         all_phases.filter(
             Q(status=PhaseStatuses.IN_PROGRESS)
-        ).prefetch_related(
+        ).select_related(
             "service",
             "job__client",
             "project_lead",
@@ -114,7 +114,7 @@ def index(request):
             .exclude(
                 Q(report_to_be_left_on_client_site=True) | Q(number_of_reports=0)
             )
-            .prefetch_related(
+            .select_related(
                 "service",
                 "job__client",
                 "project_lead",
@@ -135,7 +135,7 @@ def index(request):
             .exclude(
                 Q(report_to_be_left_on_client_site=True) | Q(number_of_reports=0)
             )
-            .prefetch_related(
+            .select_related(
                 "service",
                 "job__client",
                 "project_lead",
@@ -156,7 +156,7 @@ def index(request):
         .exclude(
             Q(report_to_be_left_on_client_site=True) | Q(number_of_reports=0)
         )
-        .prefetch_related(
+        .select_related(
             "service",
             "job__client",
             "project_lead",
@@ -171,16 +171,15 @@ def index(request):
             timeslots__start__date__lte=week_end_date,
         )
         .distinct()
-        .prefetch_related(
+        .select_related(
             "service",
             "project_lead",
             "report_author",
             "techqa_by",
             "presqa_by",
-            "timeslots",
-            "job",
             "job__client",
         )
+        .prefetch_related("timeslots")
     )
 
     if can_scope:
@@ -190,7 +189,8 @@ def index(request):
                 Q(status=JobStatuses.PENDING_SCOPE)
                 | Q(status=JobStatuses.SCOPING_ADDITIONAL_INFO_REQUIRED)
                 | Q(status=JobStatuses.SCOPING),
-            ).prefetch_related("unit", "client", "phases", "scoped_by")
+            ).select_related("unit", "client")
+            .prefetch_related("phases", "scoped_by")
         )
     else:
         context["pendingScoping"] = []
@@ -200,29 +200,68 @@ def index(request):
             Job.objects.filter(
                 Q(unit__in=units_can_signoff),
                 status=JobStatuses.PENDING_SCOPING_SIGNOFF,
-            ).prefetch_related("unit", "client", "phases")
+            ).select_related("unit", "client")
+            .prefetch_related("phases")
         )
     else:
         context["scopesToSignoff"] = []
 
     if is_people_mgr:
+        current_levels_prefetch = Prefetch(
+            'job_level_history',
+            queryset=UserJobLevel.objects.filter(is_current=True),
+            to_attr='_current_levels',
+        )
         context["team"] = User.objects.filter(
             Q(manager=request.user) | Q(acting_manager=request.user),
             is_active=True,
+        ).select_related(
+            'city__country',
+        ).prefetch_related(
+            'unit_memberships__unit',
+            current_levels_prefetch,
+            'qualifications__qualification__awarding_body',
+            'skills__skill__category',
         )
         context["team_leave"] = LeaveRequest.objects.filter(
             Q(user__manager=request.user) | Q(user__acting_manager=request.user)
-        ).select_related("user")
+        ).select_related(
+            'user__city__country',
+        ).prefetch_related(
+            'user__unit_memberships__unit',
+            Prefetch(
+                'user__job_level_history',
+                queryset=UserJobLevel.objects.filter(is_current=True),
+                to_attr='_current_levels',
+            ),
+        )
 
     if can_deliver:
         context["pendingDelivery"] = list(
             Phase.objects.filter(
                 Q(job__unit__in=units_can_deliver),
                 Q(status=PhaseStatuses.COMPLETED)
-            ).prefetch_related("job__unit", "job__client")
+            ).select_related(
+                "project_lead", "job__client", "job__account_manager",
+            ).prefetch_related("job__unit")
         )
     else:
         context["pendingDelivery"] = []
+
+    # Pre-compute consultant stats so the template doesn't hit the DB
+    context["consultant_stats"] = {
+        "jobs_participated": request.user.get_jobs().count(),
+        "jobs_led": request.user.phase_where_project_lead.count(),
+        "reports_authored": request.user.phase_where_report_author.count(),
+        "scoped": request.user.engagements_that_scoped.count(),
+        "qaed": request.user.techqaed_phases.count(),
+    }
+
+    # Pre-compute feedback data (avoids 26+ queries from 12-month loops)
+    context["avg_tqa_rating"] = request.user.get_average_techqa_feedback()
+    context["avg_pqa_rating"] = request.user.get_average_presqa_feedback()
+    context["tqa_feedback_12mo"] = request.user.get_average_techqa_feedback_12mo()
+    context["pqa_feedback_12mo"] = request.user.get_average_presqa_feedback_12mo()
 
     context = {**context, **page_defaults(request)}
     template = loader.get_template("dashboard_index.html")

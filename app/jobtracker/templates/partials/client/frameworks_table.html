@@ -22,7 +22,7 @@
                         Closed
                     </span>
                     {% endif %}
-                    {% if framework.is_over_allocated %}
+                    {% if framework.computed_is_over_allocated %}
                     <span class="badge badge-phoenix badge-phoenix-danger">
                         Over Allocated
                     </span>
@@ -39,21 +39,21 @@
                     {{ framework.end_date }}
                 </p>
             </td>
-            <td class="align-middle text-center text-sm pe-3">                
+            <td class="align-middle text-center text-sm pe-3">
                 <p class="text-body-secondary fs-10 mb-0">
-                    {{ framework.days_allocated }} / {{ framework.total_days }}
+                    {{ framework.computed_days_allocated }} / {{ framework.total_days }}
                 </p>
                 <div class="progress" style="height:3px;">
-                    <div class="progress-bar bg-{% if framework.closed %}secondary{% elif framework.days_remaining > framework.total_days %}danger{% else %}success{% endif %}" style="width: {{ framework.perc_allocated }}%" role="progressbar" 
-                        aria-valuenow="{{ framework.days_allocated }}" aria-valuemin="0" aria-valuemax="{{ framework.total_days }}">
+                    <div class="progress-bar bg-{% if framework.closed %}secondary{% elif framework.computed_is_over_allocated %}danger{% else %}success{% endif %}" style="width: {{ framework.computed_perc_allocated }}%" role="progressbar"
+                        aria-valuenow="{{ framework.computed_days_allocated }}" aria-valuemin="0" aria-valuemax="{{ framework.total_days }}">
                     </div>
-                </div>           
+                </div>
             </td>
         </tr>
     {% empty %}
         <tr>
             <td colspan="4">
-                <p class="text-xs px-3 text-secondary mb-0">No frameworks found</p>  
+                <p class="text-xs px-3 text-secondary mb-0">No frameworks found</p>
             </td>
         </tr>
     {% endfor %}

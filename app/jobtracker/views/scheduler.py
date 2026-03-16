@@ -461,9 +461,9 @@ def create_scheduler_phase_slot(request):
                             user=user
                         ).exists()
                     ):
-                        onboarding = slot.phase.job.client.onboarded_users.get(
-                            user=user, client=slot.phase.job.client
-                        )
+                        onboarding = slot.phase.job.client.onboarded_users.filter(
+                            user=user
+                        ).first()
                         if onboarding.is_stale:
                             data["form_is_valid"] = False
                             data["logic_checks_failed"] = True

@@ -1,0 +1,86 @@
+<div data-kanban-container class="kanban-container py-3" style="height: auto; overflow-x: auto; overflow-y: visible;">
+  {% for column in columns %}
+  <div class="kanban-column rounded-3" style="height: auto; vertical-align: top;">
+    <div class="kanban-column-underline-{{ column.underline }} position-relative" data-kanban-header style="background-color: var(--phoenix-kanban-column-bg); border-radius: inherit; border-bottom-left-radius: 0; border-bottom-right-radius: 0;">
+      <div class="kanban-column-header d-flex align-items-center justify-content-between py-3 px-3">
+        <div class="d-flex align-items-center">
+          <h5 class="kanban-column-title mb-0">{{ column.title }}</h5>
+          <span class="kanban-title-badge">{{ column.count }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="kanban-items-container p-3">
+      {% for phase in column.phases %}
+      <a href="{{ phase.get_absolute_url }}" class="sortable-item card mb-2 text-decoration-none border border-translucent">
+        <div class="card-body p-3">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <span class="badge bg-{{ phase.status_bs_colour }} fs-10">{{ phase.get_status_display }}</span>
+            {% if phase.service %}
+            <span class="fs-10 text-body-secondary">{{ phase.service }}</span>
+            {% endif %}
+          </div>
+          <h6 class="mb-1 fs-9 text-body">{{ phase.phase_id }}: {{ phase.title }}</h6>
+          <p class="mb-2 fs-10 text-body-secondary text-truncate">{{ phase.job.client }} &ndash; {{ phase.job }}</p>
+          <div class="d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center">
+              {% if phase.project_lead %}
+              <div class="avatar avatar-s me-1" title="{{ phase.project_lead.get_full_name }}">
+                <img class="rounded-circle" src="{{ phase.project_lead.get_avatar_url }}" alt="{{ phase.project_lead.get_full_name }}">
+              </div>
+              <span class="fs-10 text-body-secondary">{{ phase.project_lead.get_full_name }}</span>
+              {% endif %}
+            </div>
+            <div class="fs-10 text-body-tertiary">
+              {% if phase.start_date %}{{ phase.start_date|date:"d M" }}{% endif %}
+              {% if phase.start_date and phase.delivery_date %} &ndash; {% endif %}
+              {% if phase.delivery_date %}{{ phase.delivery_date|date:"d M" }}{% endif %}
+            </div>
+          </div>
+        </div>
+      </a>
+      {% empty %}
+      <p class="text-body-tertiary fs-10 text-center mb-0">No phases</p>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<script>
+(function() {
+  var container = document.querySelector('#board-content [data-kanban-container]');
+  if (!container) return;
+
+  // JS-based sticky headers (CSS sticky doesn't work inside overflow-x: auto)
+  var headers = container.querySelectorAll('[data-kanban-header]');
+  var navbarHeight = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--phoenix-navbar-top-height')) || 0;
+  // Convert rem to px
+  var fontSize = parseFloat(getComputedStyle(document.documentElement).fontSize);
+  var stickyTop = navbarHeight * fontSize;
+
+  function updateStickyHeaders() {
+    headers.forEach(function(header) {
+      var column = header.parentElement;
+      var columnRect = column.getBoundingClientRect();
+      var headerHeight = header.offsetHeight;
+
+      if (columnRect.top < stickyTop && columnRect.bottom > stickyTop + headerHeight) {
+        // Column is scrolled past the top — pin header
+        header.style.position = 'relative';
+        header.style.top = (stickyTop - columnRect.top) + 'px';
+        header.style.zIndex = '5';
+      } else {
+        // Column header in natural position
+        header.style.position = '';
+        header.style.top = '';
+        header.style.zIndex = '';
+      }
+    });
+  }
+
+  // Find the scrolling ancestor (the main page scroller)
+  var scroller = document.querySelector('.content') || document.querySelector('main') || window;
+  window.addEventListener('scroll', updateStickyHeaders, true);
+  updateStickyHeaders();
+})();
+</script>
