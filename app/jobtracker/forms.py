@@ -2041,8 +2041,29 @@ class ClientOnboardingUserForm(forms.ModelForm):
                 "offboarded", "This can not be set before the onboarding date"
             )
 
+        # Prevent duplicate active/pending/stale records for the same user+client
+        user = cleaned_data.get("user")
+        if user and self.client:
+            from django.db.models import Q
+            existing = ClientOnboarding.objects.filter(
+                client=self.client,
+                user=user,
+            ).exclude(pk=self.instance.pk)
+            non_offboarded = existing.filter(
+                Q(offboarded__isnull=True) | Q(offboarded__gte=timezone.now())
+            )
+            if non_offboarded.exists():
+                self.add_error(
+                    "user",
+                    "This user already has an active, pending, or stale onboarding "
+                    "record for this client. Offboard them first before re-onboarding.",
+                )
+
     def __init__(self, *args, **kwargs):
+        self.client = kwargs.pop('client', None)
         super(ClientOnboardingUserForm, self).__init__(*args, **kwargs)
+        if self.client:
+            self.instance.client = self.client
         self.helper = FormHelper(self)
         self.fields["reqs_completed"].required = False
         self.fields["offboarded"].required = False

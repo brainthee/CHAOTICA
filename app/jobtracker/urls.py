@@ -587,6 +587,11 @@ urlpatterns = [
         name="orgunit_jobs_partial",
     ),
     path(
+        "ops/unit/<str:slug>/board/",
+        views.orgunit_board_partial,
+        name="orgunit_board_partial",
+    ),
+    path(
         "ops/unit/<str:slug>/update/",
         views.OrganisationalUnitUpdateView.as_view(),
         name="organisationalunit_update",

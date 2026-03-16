@@ -35,7 +35,6 @@
   </div>
 </div>
 
-
 <div class="row justify-content-between ms-3 me-3 g-2 mt-0 mb-0 pb-3">
   <div class="col-4 g-2">
     <div class="card h-100">
@@ -50,6 +49,9 @@
             {% endif %}
             {% if frameworkagreement.allow_over_allocation %}
               <span class="badge badge-phoenix badge-phoenix-warning">Over Allocation Allowed</span>
+            {% endif %}
+            {% if frameworkagreement.computed_is_over_allocated %}
+              <span class="badge badge-phoenix badge-phoenix-danger">Over Allocated</span>
             {% endif %}
 
             <table class="w-100 table-stats table-stats">
@@ -95,11 +97,44 @@
                       </p>
                   </td>
                 </tr>
+                <tr>
+                  <td class="">
+                      <p class="fw-bold mb-0">Used</p>
+                  </td>
+                  <td class=" d-none d-sm-block pe-sm-2">:</td>
+                  <td class="">
+                      <p class="ps-6 ps-sm-0 fw-semi-bold mb-0">
+                        {{ frameworkagreement.computed_days_used }}
+                      </p>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="">
+                      <p class="fw-bold mb-0">Scheduled</p>
+                  </td>
+                  <td class=" d-none d-sm-block pe-sm-2">:</td>
+                  <td class="">
+                      <p class="ps-6 ps-sm-0 fw-semi-bold mb-0">
+                        {{ frameworkagreement.computed_days_scheduled }}
+                      </p>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="">
+                      <p class="fw-bold mb-0">Available</p>
+                  </td>
+                  <td class=" d-none d-sm-block pe-sm-2">:</td>
+                  <td class="">
+                      <p class="ps-6 ps-sm-0 fw-semi-bold mb-0">
+                        {{ frameworkagreement.computed_days_available }}
+                      </p>
+                  </td>
+                </tr>
               </tbody>
             </table>
 
           </div>
-        </div>  
+        </div>
       </div>
     </div>
   </div>
@@ -113,15 +148,302 @@
   </div>
 </div>
 
-<div class="row g-0 mt-3 border-1 border-top bg-body-secondary h-100">
-  <div class="col-12 px-6 pt-3 border-1 border-end">
-    <div class="row mx-1">  
-      {% include 'partials/job/job_list_table.html' with job_list=frameworkagreement.associated_jobs.all disableAjax=1 only%}
-    </div>        
+<div class="row mt-3 border-1 border-top bg-body-secondary h-100 px-3">
+  <ul class="nav nav-underline scrollbar flex-nowrap w-100 pb-1 ps-3 mb-3" id="sectionNav" role="tablist" style="overflow-y: hidden;">
+    <li class="nav-item text-nowrap me-2" role="presentation">
+      <a class="nav-link active" id="jobs-tab" data-bs-toggle="tab" data-bs-target="#jobs" role="tab" aria-selected="true">
+        <span class="fa-solid fa-briefcase me-2 tab-icon-color"></span>Jobs
+        <span class="badge bg-secondary ms-2">{{ jobs_data|length }}</span>
+      </a>
+    </li>
+    <li class="nav-item text-nowrap me-2" role="presentation">
+      <a class="nav-link" id="breakdown-tab" data-bs-toggle="tab" data-bs-target="#breakdown" role="tab" aria-selected="false" tabindex="-1">
+        <span class="fa-solid fa-chart-pie me-2 tab-icon-color"></span>Breakdown
+      </a>
+    </li>
+  </ul>
+
+  <div class="tab-content m-0 p-0 w-100" id="framework_tabs">
+
+    <!-- Jobs Tab -->
+    <div class="tab-pane p-2 fade active show" id="jobs" role="tabpanel" aria-labelledby="jobs-tab">
+      <div class="table-responsive">
+        <table class="table table-sm fs-9 mb-0">
+          <thead>
+            <tr>
+              <th class="sort border-top ps-1">Job / Phase</th>
+              <th class="sort border-top" style="width:10%;">Status</th>
+              <th class="sort border-top text-end" style="width:10%;">Used</th>
+              <th class="sort border-top text-end" style="width:10%;">Scheduled</th>
+              <th class="sort border-top text-end pe-1" style="width:10%;">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for entry in jobs_data %}
+            <tr class="fw-bold border-top border-translucent">
+              <td class="align-middle ps-1">
+                <a href="{{ entry.job.get_absolute_url }}">{{ entry.job.id }}: {{ entry.job.title }}</a>
+              </td>
+              <td class="align-middle">
+                {% include 'partials/job/status_badge.html' with job=entry.job badge_size='sm' %}
+              </td>
+              <td class="align-middle text-end">{{ entry.used_days }}d</td>
+              <td class="align-middle text-end">{{ entry.scheduled_days }}d</td>
+              <td class="align-middle text-end pe-1">{{ entry.total_days }}d</td>
+            </tr>
+            {% for phase_entry in entry.phases %}
+            <tr class="text-body-secondary">
+              <td class="align-middle ps-4">
+                <a class="text-body-secondary" href="{{ phase_entry.phase.get_absolute_url }}">{{ phase_entry.phase.get_id }}: {{ phase_entry.phase.title }}</a>
+              </td>
+              <td class="align-middle">
+                {% include 'partials/phase/status_badge.html' with phase=phase_entry.phase badge_size='sm' %}
+              </td>
+              <td class="align-middle text-end">{{ phase_entry.used_days }}d</td>
+              <td class="align-middle text-end">{{ phase_entry.scheduled_days }}d</td>
+              <td class="align-middle text-end pe-1">{{ phase_entry.total_days }}d</td>
+            </tr>
+            {% endfor %}
+            {% empty %}
+            <tr>
+              <td colspan="5" class="text-center text-body-secondary py-3">No jobs associated with this framework</td>
+            </tr>
+            {% endfor %}
+            {% if jobs_data %}
+            <tr class="fw-bold border-top border-translucent">
+              <td class="align-middle ps-1" colspan="2">Total</td>
+              <td class="align-middle text-end">{{ roles_total_used }}d</td>
+              <td class="align-middle text-end">{{ roles_total_scheduled }}d</td>
+              <td class="align-middle text-end pe-1">{{ roles_total }}d</td>
+            </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Breakdown Tab -->
+    <div class="tab-pane p-2 fade" id="breakdown" role="tabpanel" aria-labelledby="breakdown-tab">
+
+      <!-- Stat cards row -->
+      <div class="row g-3 mb-4">
+        <div class="col-md-3">
+          <div class="card h-100">
+            <div class="card-body text-center py-3">
+              <p class="text-body-secondary fs-9 mb-1">Jobs</p>
+              <h3 class="fw-bold text-body mb-0">{{ job_count }}</h3>
+              <p class="text-body-tertiary fs-10 mb-0">under this framework</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card h-100">
+            <div class="card-body text-center py-3">
+              <p class="text-body-secondary fs-9 mb-1">Phases</p>
+              <h3 class="fw-bold text-body mb-0">{{ phase_count }}</h3>
+              <p class="text-body-tertiary fs-10 mb-0">with scheduled time</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card h-100">
+            <div class="card-body text-center py-3">
+              <p class="text-body-secondary fs-9 mb-1">Avg Days / Job</p>
+              <h3 class="fw-bold text-body mb-0">{{ avg_days_per_job }}</h3>
+              <p class="text-body-tertiary fs-10 mb-0">mean allocation per job</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card h-100">
+            <div class="card-body text-center py-3">
+              <p class="text-body-secondary fs-9 mb-1">Avg Days / Phase</p>
+              <h3 class="fw-bold text-body mb-0">{{ avg_days_per_phase }}</h3>
+              <p class="text-body-tertiary fs-10 mb-0">mean allocation per phase</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Team + Delivery Role tables side by side -->
+      <div class="row g-3 mb-4">
+        <div class="col-md-6">
+          <div class="card h-100">
+            <div class="card-header p-3 border-bottom">
+              <h5 class="text-body mb-0">Team</h5>
+              <p class="text-body-secondary fs-10 mb-0">Individual allocation across all jobs in the framework.</p>
+            </div>
+            <div class="card-body p-0">
+              <div class="table-responsive">
+                <table class="table table-sm fs-9 mb-0">
+                  <thead>
+                    <tr>
+                      <th class="sort border-top ps-3">Person</th>
+                      <th class="sort border-top text-end" style="width:15%;">Used</th>
+                      <th class="sort border-top text-end" style="width:15%;">Scheduled</th>
+                      <th class="sort border-top text-end pe-3" style="width:15%;">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for entry in users_data %}
+                    <tr>
+                      <td class="align-middle ps-3">{% include 'partials/users/user_link.html' with user_profile=entry.user %}</td>
+                      <td class="align-middle text-end">{{ entry.used_days }}d</td>
+                      <td class="align-middle text-end">{{ entry.scheduled_days }}d</td>
+                      <td class="align-middle text-end pe-3">{{ entry.total_days }}d</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                      <td colspan="4" class="text-center text-body-secondary py-3">No team members scheduled</td>
+                    </tr>
+                    {% endfor %}
+                    {% if users_data %}
+                    <tr class="fw-bold border-top border-translucent">
+                      <td class="align-middle ps-3">Total</td>
+                      <td class="align-middle text-end">{{ roles_total_used }}d</td>
+                      <td class="align-middle text-end">{{ roles_total_scheduled }}d</td>
+                      <td class="align-middle text-end pe-3">{{ roles_total }}d</td>
+                    </tr>
+                    {% endif %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="card h-100">
+            <div class="card-header p-3 border-bottom">
+              <h5 class="text-body mb-0">Delivery Type</h5>
+              <p class="text-body-secondary fs-10 mb-0">Time split by delivery role (testing, reporting, QA, etc.).</p>
+            </div>
+            <div class="card-body p-0">
+              <div class="table-responsive">
+                <table class="table table-sm fs-9 mb-0">
+                  <thead>
+                    <tr>
+                      <th class="sort border-top ps-3">Type</th>
+                      <th class="sort border-top text-end" style="width:15%;">Used</th>
+                      <th class="sort border-top text-end" style="width:15%;">Scheduled</th>
+                      <th class="sort border-top text-end pe-3" style="width:15%;">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for entry in roles_data %}
+                    <tr>
+                      <td class="align-middle ps-3">{{ entry.role_name }}</td>
+                      <td class="align-middle text-end">{{ entry.used_days }}d</td>
+                      <td class="align-middle text-end">{{ entry.scheduled_days }}d</td>
+                      <td class="align-middle text-end pe-3">{{ entry.total_days }}d</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                      <td colspan="4" class="text-center text-body-secondary py-3">No scheduled time</td>
+                    </tr>
+                    {% endfor %}
+                    {% if roles_data %}
+                    <tr class="fw-bold border-top border-translucent">
+                      <td class="align-middle ps-3">Total</td>
+                      <td class="align-middle text-end">{{ roles_total_used }}d</td>
+                      <td class="align-middle text-end">{{ roles_total_scheduled }}d</td>
+                      <td class="align-middle text-end pe-3">{{ roles_total }}d</td>
+                    </tr>
+                    {% endif %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Services table + pie chart -->
+      <div class="row g-3 mb-4">
+        <div class="col-md-8">
+          <div class="card h-100">
+            <div class="card-header p-3 border-bottom">
+              <h5 class="text-body mb-0">Services</h5>
+              <p class="text-body-secondary fs-10 mb-0">Days allocated per service type across all phases.</p>
+            </div>
+            <div class="card-body p-0">
+              <div class="table-responsive">
+                <table class="table table-sm fs-9 mb-0">
+                  <thead>
+                    <tr>
+                      <th class="sort border-top ps-3">Service</th>
+                      <th class="sort border-top text-end" style="width:12%;">Used</th>
+                      <th class="sort border-top text-end" style="width:12%;">Scheduled</th>
+                      <th class="sort border-top text-end pe-3" style="width:12%;">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for entry in services_data %}
+                    <tr>
+                      <td class="align-middle ps-3">{{ entry.service.name }}</td>
+                      <td class="align-middle text-end">{{ entry.used_days }}d</td>
+                      <td class="align-middle text-end">{{ entry.scheduled_days }}d</td>
+                      <td class="align-middle text-end pe-3">{{ entry.total_days }}d</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                      <td colspan="4" class="text-center text-body-secondary py-3">No services recorded</td>
+                    </tr>
+                    {% endfor %}
+                    {% if services_data %}
+                    <tr class="fw-bold border-top border-translucent">
+                      <td class="align-middle ps-3">Total</td>
+                      <td class="align-middle text-end">{{ roles_total_used }}d</td>
+                      <td class="align-middle text-end">{{ roles_total_scheduled }}d</td>
+                      <td class="align-middle text-end pe-3">{{ roles_total }}d</td>
+                    </tr>
+                    {% endif %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card h-100">
+            <div class="card-header p-3 border-bottom">
+              <h5 class="text-body mb-0">Services Split</h5>
+              <p class="text-body-secondary fs-10 mb-0">Proportion of total days by service.</p>
+            </div>
+            <div class="card-body d-flex align-items-center justify-content-center">
+              {% if services_data %}
+              <div id="services-pie-chart" style="width:100%; min-height:250px;"></div>
+              {% else %}
+              <p class="text-body-secondary fs-9 mb-0">No services recorded</p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Monthly burn-down chart -->
+      <div class="row g-3 mb-4">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header p-3 border-bottom">
+              <h5 class="text-body mb-0">Monthly Burn-down</h5>
+              <p class="text-body-secondary fs-10 mb-0">Days consumed each month with a running cumulative total against the budget line.</p>
+            </div>
+            <div class="card-body">
+              {% if monthly_data %}
+              <div id="monthly-burndown-chart" style="width:100%; min-height:300px;"></div>
+              {% else %}
+              <p class="text-body-secondary fs-9 mb-0">No completed timeslots yet.</p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
   </div>
 </div>
-
-
 
 {% endblock content %}
 
@@ -129,47 +451,28 @@
 {% block extra_js %}
 <script>
   const { getColor, rgbaColor, getData } = window.phoenix.utils;
-  var chartDom = document.getElementById('framework-usage-chart');
 
+  // Usage donut chart (on the summary row — always visible)
+  var chartDom = document.getElementById('framework-usage-chart');
   var chart = echarts.init(chartDom);
-  options = {
+  chart.setOption({
     legend: {
         left: 'center',
-        textStyle: {
-        color: getColor('gray-600')
-        }
+        textStyle: { color: getColor('gray-600') }
     },
-    series: [
-        {
+    series: [{
         type: 'pie',
         radius: ['40%', '70%'],
         center: ['50%', '55%'],
         avoidLabelOverlap: false,
-        label: {
-            show: false,
-            position: 'center'
-        },
-        labelLine: {
-            show: false
-        },
+        label: { show: false, position: 'center' },
+        labelLine: { show: false },
         data: [
-            {
-                value: {{ frameworkagreement.days_allocated }},
-                name: 'Allocated',
-                itemStyle: {
-                    color: getColor('success')
-                }
-            },
-            {
-                value: {{ frameworkagreement.days_remaining }},
-                name: 'Available',
-                itemStyle: {
-                    color: getColor('secondary')
-                }
-            },
+            { value: {{ frameworkagreement.computed_days_used }}, name: 'Used', itemStyle: { color: getColor('success') } },
+            { value: {{ frameworkagreement.computed_days_scheduled }}, name: 'Scheduled', itemStyle: { color: getColor('info') } },
+            { value: Math.max(0, {{ frameworkagreement.computed_days_available }}), name: 'Available', itemStyle: { color: getColor('secondary') } }
         ]
-        }
-    ],
+    }],
     tooltip: {
         trigger: 'item',
         padding: [7, 10],
@@ -178,12 +481,148 @@
         textStyle: { color: getColor('dark') },
         borderWidth: 1,
         transitionDuration: 0,
-        axisPointer: {
-            type: 'none'
-        }
+        formatter: function(params) { return params.name + ': ' + params.value + 'd'; },
+        axisPointer: { type: 'none' }
     }
-  };
-  options && chart.setOption(options);
+  });
 
+  // Breakdown tab charts — init on first tab show so containers are visible
+  var breakdownChartsInited = false;
+  var breakdownTab = document.getElementById('breakdown-tab');
+  if (breakdownTab) {
+    breakdownTab.addEventListener('shown.bs.tab', function() {
+      if (breakdownChartsInited) return;
+      breakdownChartsInited = true;
+      initBreakdownCharts();
+    });
+  }
+
+  function initBreakdownCharts() {
+    var serviceColors = [
+      getColor('primary'), getColor('info'), getColor('warning'),
+      getColor('success'), getColor('danger'), getColor('secondary'),
+      '#8b5cf6', '#f97316', '#06b6d4', '#84cc16'
+    ];
+
+    {% if services_data %}
+    // Services pie chart
+    var servicesPieDom = document.getElementById('services-pie-chart');
+    if (servicesPieDom) {
+      var servicesPie = echarts.init(servicesPieDom);
+      servicesPie.setOption({
+        legend: {
+          orient: 'vertical',
+          left: 'left',
+          textStyle: { color: getColor('gray-600'), fontSize: 11 }
+        },
+        series: [{
+          type: 'pie',
+          radius: ['35%', '65%'],
+          center: ['60%', '50%'],
+          avoidLabelOverlap: false,
+          label: { show: false },
+          labelLine: { show: false },
+          data: [
+            {% for entry in services_data %}
+            {
+              value: {{ entry.total_days }},
+              name: '{{ entry.service.name|escapejs }}',
+              itemStyle: { color: serviceColors[{{ forloop.counter0 }} % serviceColors.length] }
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+          ]
+        }],
+        tooltip: {
+          trigger: 'item',
+          padding: [7, 10],
+          backgroundColor: getColor('gray-100'),
+          borderColor: getColor('gray-300'),
+          textStyle: { color: getColor('dark') },
+          borderWidth: 1,
+          transitionDuration: 0,
+          formatter: function(params) {
+            return params.name + ': ' + params.value + 'd (' + params.percent + '%)';
+          }
+        }
+      });
+      window.addEventListener('resize', function() { servicesPie.resize(); });
+    }
+    {% endif %}
+
+    {% if monthly_data %}
+    // Monthly burn-down chart
+    var burndownDom = document.getElementById('monthly-burndown-chart');
+    if (burndownDom) {
+      var burndownChart = echarts.init(burndownDom);
+      burndownChart.setOption({
+        tooltip: {
+          trigger: 'axis',
+          padding: [7, 10],
+          backgroundColor: getColor('gray-100'),
+          borderColor: getColor('gray-300'),
+          textStyle: { color: getColor('dark') },
+          borderWidth: 1,
+          transitionDuration: 0,
+          formatter: function(params) {
+            var result = params[0].axisValue + '<br/>';
+            params.forEach(function(p) {
+              result += p.marker + ' ' + p.seriesName + ': ' + p.value + 'd<br/>';
+            });
+            return result;
+          }
+        },
+        legend: {
+          data: ['Monthly', 'Cumulative', 'Budget'],
+          textStyle: { color: getColor('gray-600') }
+        },
+        grid: {
+          left: '3%', right: '4%', bottom: '3%',
+          containLabel: true
+        },
+        xAxis: {
+          type: 'category',
+          boundaryGap: true,
+          data: [{% for entry in monthly_data %}'{{ entry.month }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+          axisLabel: { color: getColor('gray-600') },
+          axisLine: { lineStyle: { color: getColor('gray-300') } }
+        },
+        yAxis: {
+          type: 'value',
+          axisLabel: { color: getColor('gray-600'), formatter: '{value}d' },
+          splitLine: { lineStyle: { color: getColor('gray-200') } }
+        },
+        series: [
+          {
+            name: 'Monthly',
+            type: 'bar',
+            data: [{% for entry in monthly_data %}{{ entry.days }}{% if not forloop.last %},{% endif %}{% endfor %}],
+            itemStyle: { color: getColor('primary'), borderRadius: [4, 4, 0, 0] }
+          },
+          {
+            name: 'Cumulative',
+            type: 'line',
+            data: [{% for entry in monthly_data %}{{ entry.cumulative }}{% if not forloop.last %},{% endif %}{% endfor %}],
+            itemStyle: { color: getColor('warning') },
+            lineStyle: { width: 2 },
+            symbol: 'circle',
+            symbolSize: 6
+          },
+          {
+            name: 'Budget',
+            type: 'line',
+            data: [{% for entry in monthly_data %}{{ frameworkagreement.total_days }}{% if not forloop.last %},{% endif %}{% endfor %}],
+            itemStyle: { color: getColor('danger') },
+            lineStyle: { width: 2, type: 'dashed' },
+            symbol: 'none'
+          }
+        ]
+      });
+      window.addEventListener('resize', function() { burndownChart.resize(); });
+    }
+    {% endif %}
+  }
+
+  // Resize usage chart on window resize
+  window.addEventListener('resize', function() { chart.resize(); });
 </script>
 {% endblock extra_js %}

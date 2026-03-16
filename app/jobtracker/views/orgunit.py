@@ -16,7 +16,9 @@ from ..models import (
     OrganisationalUnitMember,
     OrganisationalUnitRole,
     Job,
+    Phase,
 )
+from ..enums import PhaseStatuses
 from chaotica_utils.enums import UnitRoles
 from chaotica_utils.utils import get_week
 from ..decorators import unit_permission_required_or_403
@@ -175,6 +177,62 @@ def orgunit_jobs_partial(request, slug):
     html = loader.render_to_string(
         "partials/job/job_list_table.html",
         {"job_list": job_list, "disableAjax": True},
+        request=request,
+    )
+    return JsonResponse({"html": html})
+
+
+KANBAN_COLUMNS = [
+    {"title": "Scoping", "underline": "secondary", "statuses": [PhaseStatuses.DRAFT, PhaseStatuses.PENDING_SCHED]},
+    {"title": "Scheduling", "underline": "warning", "statuses": [PhaseStatuses.SCHEDULED_TENTATIVE, PhaseStatuses.SCHEDULED_CONFIRMED]},
+    {"title": "Pre-Delivery", "underline": "primary", "statuses": [PhaseStatuses.PRE_CHECKS, PhaseStatuses.CLIENT_NOT_READY, PhaseStatuses.READY_TO_BEGIN]},
+    {"title": "In Progress", "underline": "danger", "statuses": [PhaseStatuses.IN_PROGRESS]},
+    {"title": "QA", "underline": "info", "statuses": [PhaseStatuses.PENDING_TQA, PhaseStatuses.QA_TECH, PhaseStatuses.QA_TECH_AUTHOR_UPDATES, PhaseStatuses.PENDING_PQA, PhaseStatuses.QA_PRES, PhaseStatuses.QA_PRES_AUTHOR_UPDATES]},
+    {"title": "Completed", "underline": "success", "statuses": [PhaseStatuses.COMPLETED]},
+    {"title": "Delivered", "underline": "success", "statuses": [PhaseStatuses.DELIVERED]},
+]
+
+KANBAN_EXCLUDED_STATUSES = [
+    PhaseStatuses.CANCELLED,
+    PhaseStatuses.POSTPONED,
+    PhaseStatuses.DELETED,
+    PhaseStatuses.ARCHIVED,
+]
+
+
+@login_required
+@permission_required_or_403(
+    "jobtracker.view_organisationalunit",
+    (OrganisationalUnit, "slug", "slug"),
+)
+def orgunit_board_partial(request, slug):
+    unit = get_object_or_404(OrganisationalUnit, slug=slug)
+    phases = list(
+        Phase.objects.filter(job__unit=unit)
+        .exclude(status__in=KANBAN_EXCLUDED_STATUSES)
+        .select_related("job", "job__client", "service", "project_lead")
+        .order_by("status", "_start_date")
+    )
+
+    status_to_phases = {}
+    for phase in phases:
+        status_to_phases.setdefault(phase.status, []).append(phase)
+
+    columns = []
+    for col_def in KANBAN_COLUMNS:
+        col_phases = []
+        for s in col_def["statuses"]:
+            col_phases.extend(status_to_phases.get(s, []))
+        columns.append({
+            "title": col_def["title"],
+            "underline": col_def["underline"],
+            "phases": col_phases,
+            "count": len(col_phases),
+        })
+
+    html = loader.render_to_string(
+        "partials/unit/unit_board.html",
+        {"columns": columns},
         request=request,
     )
     return JsonResponse({"html": html})
