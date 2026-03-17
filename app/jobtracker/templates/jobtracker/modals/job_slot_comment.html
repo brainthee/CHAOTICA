@@ -54,6 +54,7 @@
           complete: function(data) {
               calendar.refetchEvents();
               refreshUtilisation();
+              refreshUserBreakdown();
               refreshPhaseStatus();
               $("#mainModal").modal("hide");
           }
@@ -76,6 +77,7 @@
                 } else {
                     calendar.refetchEvents();
                   refreshUtilisation();
+                  refreshUserBreakdown();
                   refreshPhaseStatus();
                   $("#mainModal").modal("hide");
                 }

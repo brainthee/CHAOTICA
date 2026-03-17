@@ -258,9 +258,24 @@ urlpatterns = [
         name="view_job_schedule_util",
     ),
     path(
+        "job/<str:slug>/schedule/user-breakdown",
+        views.view_job_schedule_user_breakdown,
+        name="view_job_schedule_user_breakdown",
+    ),
+    path(
         "job/<str:slug>/schedule/phase-status",
         views.view_job_schedule_phase_status,
         name="view_job_schedule_phase_status",
+    ),
+    path(
+        "job/<str:slug>/schedule/clear",
+        views.clear_job_schedule,
+        name="job_schedule_clear",
+    ),
+    path(
+        "job/<str:slug>/schedule/move-slots",
+        views.move_job_schedule_slots,
+        name="job_schedule_move_slots",
     ),
     path(
         "job/<str:slug>/schedule/slot",
@@ -413,9 +428,24 @@ urlpatterns = [
         name="view_phase_schedule_members",
     ),
     path(
+        "job/<str:job_slug>/phase/<str:slug>/schedule/user-breakdown",
+        views.view_phase_schedule_user_breakdown,
+        name="view_phase_schedule_user_breakdown",
+    ),
+    path(
         "job/<str:job_slug>/phase/<str:slug>/schedule/util",
         views.view_phase_schedule_util,
         name="view_phase_schedule_util",
+    ),
+    path(
+        "job/<str:job_slug>/phase/<str:slug>/schedule/clear",
+        views.clear_phase_schedule,
+        name="phase_schedule_clear",
+    ),
+    path(
+        "job/<str:job_slug>/phase/<str:slug>/schedule/move-slots",
+        views.move_phase_schedule_slots,
+        name="phase_schedule_move_slots",
     ),
     path(
         "job/<str:job_slug>/phase/<str:slug>/assign/<str:field>",

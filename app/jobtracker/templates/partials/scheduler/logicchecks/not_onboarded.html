@@ -1,9 +1,5 @@
-
-<div class="alert alert-danger" role="alert">
-    <p>
-    This client requires onboarded resources. 
-</p>
-    <p>
-        {{ slot.user }} is not onboarded.
+<div class="alert alert-danger mb-3" role="alert">
+    <p class="mb-0">
+        <strong>Not onboarded:</strong> This client requires onboarded resources. <strong>{{ slot.user }}</strong> is not onboarded.
     </p>
 </div>

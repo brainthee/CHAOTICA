@@ -292,7 +292,31 @@ class PhaseScheduleView(UnitPermissionRequiredMixin, PhaseBaseView, DetailView):
 
         types_in_use = context["phase"].get_all_total_scheduled_by_type()
         context["TimeSlotDeliveryRolesInUse"] = types_in_use
+        context["scheduled_users"] = context["phase"].team_scheduled()
+        role_names = dict(TimeSlotDeliveryRole.CHOICES)
+        context["delivery_roles_in_use"] = [
+            (role_id, role_names[role_id])
+            for role_id, hours in types_in_use.items()
+            if hours > 0 and role_id != TimeSlotDeliveryRole.NA
+        ]
+        from .scheduler import get_user_schedule_breakdown
+        context["user_breakdown"] = get_user_schedule_breakdown(
+            context["job"], context["phase"]
+        )
+        context["hours_in_day"] = context["phase"].get_hours_in_day()
         return context
+
+
+@job_permission_required_or_403("jobtracker.view_job_schedule", (Phase, "slug", "slug"))
+def view_phase_schedule_user_breakdown(request, job_slug, slug):
+    from .scheduler import get_user_schedule_breakdown
+    job = get_object_or_404(Job, slug=job_slug)
+    phase = get_object_or_404(Phase, job=job, slug=slug)
+    context = {
+        "user_breakdown": get_user_schedule_breakdown(job, phase),
+        "hours_in_day": phase.get_hours_in_day(),
+    }
+    return render(request, "partials/scheduler/schedule_user_breakdown.html", context)
 
 
 @job_permission_required_or_403("jobtracker.view_job_schedule", (Phase, "slug", "slug"))

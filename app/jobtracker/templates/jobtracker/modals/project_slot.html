@@ -50,6 +50,7 @@
           complete: function(data) {
               calendar.refetchEvents();
               refreshUtilisation();
+              refreshUserBreakdown();
               refreshPhaseStatus();
               $("#mainModal").modal("hide");
           }

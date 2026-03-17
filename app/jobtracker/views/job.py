@@ -560,6 +560,16 @@ class JobScheduleView(UnitPermissionRequiredMixin, JobBaseView, DetailView):
 
         types_in_use = context["job"].get_all_total_scheduled_by_type()
         context["TimeSlotDeliveryRolesInUse"] = types_in_use
+        context["scheduled_users"] = context["job"].team_scheduled()
+        role_names = dict(TimeSlotDeliveryRole.CHOICES)
+        context["delivery_roles_in_use"] = [
+            (role_id, role_names[role_id])
+            for role_id, hours in types_in_use.items()
+            if hours > 0 and role_id != TimeSlotDeliveryRole.NA
+        ]
+        from .scheduler import get_user_schedule_breakdown
+        context["user_breakdown"] = get_user_schedule_breakdown(context["job"])
+        context["hours_in_day"] = context["job"].get_hours_in_day()
         return context
 
 
@@ -571,6 +581,17 @@ def view_job_schedule_util(request, slug):
         "TimeSlotDeliveryRoles": TimeSlotDeliveryRole.CHOICES,
     }
     return render(request, "partials/scheduler/schedule_util.html", context)
+
+
+@job_permission_required_or_403("jobtracker.view_job_schedule", (Job, "slug", "slug"))
+def view_job_schedule_user_breakdown(request, slug):
+    from .scheduler import get_user_schedule_breakdown
+    job = get_object_or_404(Job, slug=slug)
+    context = {
+        "user_breakdown": get_user_schedule_breakdown(job),
+        "hours_in_day": job.get_hours_in_day(),
+    }
+    return render(request, "partials/scheduler/schedule_user_breakdown.html", context)
 
 
 @job_permission_required_or_403("jobtracker.view_job_schedule", (Job, "slug", "slug"))

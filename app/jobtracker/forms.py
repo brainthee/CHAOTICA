@@ -788,6 +788,34 @@ class FeedbackForm(forms.ModelForm):
         fields = ("body",)
 
 
+class MoveScheduleSlotsForm(forms.Form):
+    from_user = forms.ModelChoiceField(
+        queryset=User.objects.none(),
+        label="Move from",
+        widget=s2forms.Select2Widget(
+            attrs={"class": "select2-widget"},
+        ),
+    )
+    to_user = forms.ModelChoiceField(
+        queryset=User.objects.filter(is_active=True),
+        label="Move to",
+        widget=s2forms.Select2Widget(
+            attrs={"class": "select2-widget"},
+        ),
+    )
+
+    def __init__(self, *args, scheduled_users=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if scheduled_users is not None:
+            self.fields["from_user"].queryset = scheduled_users
+        self.helper = FormHelper(self)
+        self.helper.form_tag = False
+        self.helper.layout = Layout(
+            Field("from_user", style="width: 100%;"),
+            Field("to_user", style="width: 100%;"),
+        )
+
+
 class CommentTimeSlotModalForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         start = None

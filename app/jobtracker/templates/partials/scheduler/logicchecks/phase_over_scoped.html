@@ -1,0 +1,26 @@
+<div class="alert alert-phoenix-warning mb-3" role="alert">
+    <p class="mb-2">
+        <strong>Over-scoped:</strong> This slot will exceed the scoped <strong>{{ delivery_role_name }}</strong> time for <strong>{{ phase }}</strong>.
+    </p>
+    <table class="table table-sm table-borderless mb-0 fs-9">
+        <tbody>
+            <tr>
+                <td class="text-body-secondary py-0">Scoped</td>
+                <td class="py-0">{{ scoped_hours }}h ({{ scoped_days }}d)</td>
+            </tr>
+            <tr>
+                <td class="text-body-secondary py-0">Already scheduled</td>
+                <td class="py-0">{{ scheduled_hours }}h ({{ scheduled_days }}d)</td>
+            </tr>
+            <tr>
+                <td class="text-body-secondary py-0">This slot</td>
+                <td class="py-0">{{ slot_hours }}h ({{ slot_days }}d)</td>
+            </tr>
+            <tr class="border-top border-translucent">
+                <td class="text-body-secondary py-0"><strong>Would total</strong></td>
+                <td class="py-0"><strong>{{ new_total_hours }}h ({{ new_total_days }}d)</strong></td>
+            </tr>
+        </tbody>
+    </table>
+    <p class="mb-0 mt-2 fs-9 text-body-secondary">Confirm you wish to proceed over the scoped allocation.</p>
+</div>

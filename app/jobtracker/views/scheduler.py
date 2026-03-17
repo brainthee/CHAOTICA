@@ -18,7 +18,7 @@ from ..models import (
     OrganisationalUnitRole,
     TimeSlotComment,
 )
-from ..decorators import unit_permission_required_or_403
+from ..decorators import unit_permission_required_or_403, job_permission_required_or_403
 from ..forms import (
     NonDeliveryTimeSlotModalForm,
     SchedulerFilter,
@@ -27,8 +27,9 @@ from ..forms import (
     ProjectTimeSlotModalForm,
     CommentTimeSlotModalForm,
     ChangeTimeSlotCommentDateModalForm,
+    MoveScheduleSlotsForm,
 )
-from ..enums import UserSkillRatings
+from ..enums import UserSkillRatings, TimeSlotDeliveryRole
 from ..utils import get_scheduler_slots, get_scheduler_members
 import logging
 from django.contrib.auth.decorators import login_required
@@ -101,6 +102,61 @@ def _check_framework_slot(framework, updated_slot, old_slot, request, force=Fals
                 ),
             }
     return None
+
+
+def _check_phase_scoped(slot, request, force=False, old_slot=None):
+    """Check if scheduling this slot would exceed the phase's scoped hours
+    for the slot's delivery role. Returns a data dict if warning needed, or None if OK.
+    This is a bypassable warning — schedulers can force-save."""
+    phase = slot.phase
+    if not phase or not slot.deliveryRole:
+        return None
+
+    scoped_hours = phase.get_total_scoped_by_type(slot.deliveryRole)
+    if scoped_hours <= 0:
+        return None  # No scope set — nothing to warn about
+
+    scheduled_hours = float(phase.get_total_scheduled_by_type(slot.deliveryRole))
+    slot_hours = float(slot.get_business_hours())
+    scoped_hours = float(scoped_hours)
+
+    # For edits, subtract the old slot's hours to avoid double-counting
+    if old_slot and old_slot.pk and old_slot.deliveryRole == slot.deliveryRole:
+        scheduled_hours -= float(old_slot.get_business_hours())
+
+    new_total_hours = scheduled_hours + slot_hours
+    if new_total_hours <= scoped_hours:
+        return None  # Within scope
+
+    if force:
+        return None  # User chose to bypass
+
+    hours_in_day = float(phase.get_hours_in_day()) if phase.get_hours_in_day() else 0
+    delivery_role_name = dict(TimeSlotDeliveryRole.CHOICES).get(
+        slot.deliveryRole, "Unknown"
+    )
+
+    return {
+        "form_is_valid": False,
+        "logic_checks_failed": True,
+        "logic_checks_can_bypass": True,
+        "logic_checks_feedback": loader.render_to_string(
+            "partials/scheduler/logicchecks/phase_over_scoped.html",
+            {
+                "phase": phase,
+                "delivery_role_name": delivery_role_name,
+                "scoped_hours": round(scoped_hours, 1),
+                "scoped_days": round(scoped_hours / hours_in_day, 1) if hours_in_day else 0,
+                "scheduled_hours": round(scheduled_hours, 1),
+                "scheduled_days": round(scheduled_hours / hours_in_day, 1) if hours_in_day else 0,
+                "slot_hours": round(slot_hours, 1),
+                "slot_days": round(slot_hours / hours_in_day, 1) if hours_in_day else 0,
+                "new_total_hours": round(new_total_hours, 1),
+                "new_total_days": round(new_total_hours / hours_in_day, 1) if hours_in_day else 0,
+            },
+            request=request,
+        ),
+    }
 
 
 @login_required
@@ -248,6 +304,12 @@ def change_scheduler_slot_date(request, pk=None):
                             "jobtracker/modals/job_slot.html", {"form": form}, request=request
                         )
                         return JsonResponse(_data)
+                _data = _check_phase_scoped(updated_slot, request, force=force, old_slot=slot)
+                if _data:
+                    _data["html_form"] = loader.render_to_string(
+                        "jobtracker/modals/job_slot.html", {"form": form}, request=request
+                    )
+                    return JsonResponse(_data)
             updated_slot.save()
             data["form_is_valid"] = True
         else:
@@ -302,6 +364,12 @@ def change_scheduler_slot(request, pk=None):
                             "jobtracker/modals/job_slot.html", {"form": form}, request=request
                         )
                         return JsonResponse(_data)
+                _data = _check_phase_scoped(updated_slot, request, force=force, old_slot=slot)
+                if _data:
+                    _data["html_form"] = loader.render_to_string(
+                        "jobtracker/modals/job_slot.html", {"form": form}, request=request
+                    )
+                    return JsonResponse(_data)
             updated_slot.save()
             data["form_is_valid"] = True
         else:
@@ -550,6 +618,14 @@ def create_scheduler_phase_slot(request):
                 if not force:
                     # These logic checks can be bypassed
 
+                    # Bypassable: phase over-scoped warning
+                    _scoped_data = _check_phase_scoped(slot, request)
+                    if _scoped_data:
+                        data["form_is_valid"] = False
+                        data["logic_checks_failed"] = True
+                        data["logic_checks_can_bypass"] = True
+                        data["logic_checks_feedback"] += _scoped_data["logic_checks_feedback"]
+
                     # Bypassable: framework over-budget warning (allows over-allocation)
                     if (
                         framework
@@ -761,3 +837,183 @@ class ProjectSlotDeleteView(ChaoticaBaseView, DeleteView):
         if "slug" in self.kwargs:
             context["project"] = get_object_or_404(Project, slug=self.kwargs["slug"])
         return context
+
+
+def get_user_schedule_breakdown(job, phase=None):
+    """Build a per-user, per-role hour breakdown for a job or phase.
+
+    Returns a list of dicts:
+        [{'user': User, 'roles': [{'role_name': str, 'hours': Decimal, 'days': Decimal}], 'total_hours': Decimal, 'total_days': Decimal}]
+    """
+    from decimal import Decimal
+
+    if phase:
+        slots = TimeSlot.objects.filter(phase=phase).select_related("user")
+        hours_in_day = phase.get_hours_in_day()
+    else:
+        slots = TimeSlot.objects.filter(phase__job=job).select_related("user")
+        hours_in_day = job.get_hours_in_day()
+
+    role_names = dict(TimeSlotDeliveryRole.CHOICES)
+
+    # Accumulate {user_id: {role_id: hours}}
+    user_data = {}
+    user_objects = {}
+    for slot in slots:
+        uid = slot.user_id
+        if uid not in user_data:
+            user_data[uid] = {}
+            user_objects[uid] = slot.user
+        role_id = slot.deliveryRole
+        hours = slot.get_business_hours()
+        user_data[uid][role_id] = user_data[uid].get(role_id, Decimal(0)) + hours
+
+    result = []
+    for uid, roles in user_data.items():
+        user_roles = []
+        total_hours = Decimal(0)
+        for role_id, hours in sorted(roles.items()):
+            if role_id == TimeSlotDeliveryRole.NA:
+                continue
+            total_hours += hours
+            days = round(hours / hours_in_day, 2) if hours_in_day else Decimal(0)
+            user_roles.append({
+                "role_name": role_names.get(role_id, "Unknown"),
+                "hours": round(hours, 2),
+                "days": days,
+            })
+        total_days = round(total_hours / hours_in_day, 2) if hours_in_day else Decimal(0)
+        result.append({
+            "user": user_objects[uid],
+            "roles": user_roles,
+            "total_hours": round(total_hours, 2),
+            "total_days": total_days,
+        })
+
+    result.sort(key=lambda x: str(x["user"]))
+    return result
+
+
+def _get_clear_queryset(job, phase, clear_type, clear_id):
+    """Build the TimeSlot queryset for a clear operation."""
+    if phase:
+        qs = TimeSlot.objects.filter(phase=phase)
+    else:
+        qs = TimeSlot.objects.filter(phase__job=job)
+
+    if clear_type == "user" and clear_id:
+        qs = qs.filter(user_id=clear_id)
+    elif clear_type == "role" and clear_id is not None:
+        qs = qs.filter(deliveryRole=clear_id)
+
+    return qs
+
+
+def _get_clear_description(clear_type, clear_id, job, phase):
+    """Build a human-readable description of what will be cleared."""
+    scope = str(phase) if phase else str(job)
+    if clear_type == "user" and clear_id:
+        user = User.objects.filter(pk=clear_id).first()
+        user_name = str(user) if user else "Unknown"
+        return f"all slots for {user_name} on {scope}"
+    elif clear_type == "role" and clear_id is not None:
+        role_name = dict(TimeSlotDeliveryRole.CHOICES).get(clear_id, "Unknown")
+        return f"all {role_name} slots on {scope}"
+    else:
+        return f"all slots on {scope}"
+
+
+@job_permission_required_or_403("jobtracker.can_schedule_job", (Job, "slug", "slug"))
+def clear_job_schedule(request, slug):
+    """Clear timeslots for a job schedule. GET returns count, POST performs deletion."""
+    job = get_object_or_404(Job, slug=slug)
+    clear_type = request.GET.get("clear_type", "all") if request.method == "GET" else request.POST.get("clear_type", "all")
+    clear_id = clean_int(request.GET.get("clear_id") if request.method == "GET" else request.POST.get("clear_id"))
+
+    qs = _get_clear_queryset(job, None, clear_type, clear_id)
+
+    if request.method == "POST":
+        count = qs.count()
+        qs.delete()
+        return JsonResponse({"form_is_valid": True, "deleted": count})
+
+    return JsonResponse({
+        "count": qs.count(),
+        "description": _get_clear_description(clear_type, clear_id, job, None),
+    })
+
+
+@job_permission_required_or_403("jobtracker.can_schedule_job", (Phase, "slug", "slug"))
+def clear_phase_schedule(request, job_slug, slug):
+    """Clear timeslots for a phase schedule. GET returns count, POST performs deletion."""
+    job = get_object_or_404(Job, slug=job_slug)
+    phase = get_object_or_404(Phase, job=job, slug=slug)
+    clear_type = request.GET.get("clear_type", "all") if request.method == "GET" else request.POST.get("clear_type", "all")
+    clear_id = clean_int(request.GET.get("clear_id") if request.method == "GET" else request.POST.get("clear_id"))
+
+    qs = _get_clear_queryset(job, phase, clear_type, clear_id)
+
+    if request.method == "POST":
+        count = qs.count()
+        qs.delete()
+        return JsonResponse({"form_is_valid": True, "deleted": count})
+
+    return JsonResponse({
+        "count": qs.count(),
+        "description": _get_clear_description(clear_type, clear_id, job, phase),
+    })
+
+
+@job_permission_required_or_403("jobtracker.can_schedule_job", (Job, "slug", "slug"))
+def move_job_schedule_slots(request, slug):
+    """Move timeslots from one user to another for a job."""
+    job = get_object_or_404(Job, slug=slug)
+    data = dict()
+    scheduled_users = job.team_scheduled()
+
+    if request.method == "POST":
+        form = MoveScheduleSlotsForm(request.POST, scheduled_users=scheduled_users)
+        if form.is_valid():
+            from_user = form.cleaned_data["from_user"]
+            to_user = form.cleaned_data["to_user"]
+            count = TimeSlot.objects.filter(phase__job=job, user=from_user).update(user=to_user)
+            data["form_is_valid"] = True
+            data["moved"] = count
+        else:
+            data["form_is_valid"] = False
+    else:
+        form = MoveScheduleSlotsForm(scheduled_users=scheduled_users)
+
+    context = {"form": form, "job": job}
+    data["html_form"] = loader.render_to_string(
+        "jobtracker/modals/move_schedule_slots.html", context, request=request
+    )
+    return JsonResponse(data)
+
+
+@job_permission_required_or_403("jobtracker.can_schedule_job", (Phase, "slug", "slug"))
+def move_phase_schedule_slots(request, job_slug, slug):
+    """Move timeslots from one user to another for a phase."""
+    job = get_object_or_404(Job, slug=job_slug)
+    phase = get_object_or_404(Phase, job=job, slug=slug)
+    data = dict()
+    scheduled_users = phase.team_scheduled()
+
+    if request.method == "POST":
+        form = MoveScheduleSlotsForm(request.POST, scheduled_users=scheduled_users)
+        if form.is_valid():
+            from_user = form.cleaned_data["from_user"]
+            to_user = form.cleaned_data["to_user"]
+            count = phase.timeslots.filter(user=from_user).update(user=to_user)
+            data["form_is_valid"] = True
+            data["moved"] = count
+        else:
+            data["form_is_valid"] = False
+    else:
+        form = MoveScheduleSlotsForm(scheduled_users=scheduled_users)
+
+    context = {"form": form, "phase": phase, "job": job}
+    data["html_form"] = loader.render_to_string(
+        "jobtracker/modals/move_schedule_slots.html", context, request=request
+    )
+    return JsonResponse(data)

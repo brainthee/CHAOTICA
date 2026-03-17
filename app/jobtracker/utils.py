@@ -75,7 +75,8 @@ def get_unit_40x_or_None(
                     unit = obj
             else:
                 # get our own units
-                unit = request.user.unit_memberships.first().unit
+                membership = request.user.unit_memberships.first()
+                unit = membership.unit if membership else None
             if unit:
                 if any_perm:
                     has_permissions = any(

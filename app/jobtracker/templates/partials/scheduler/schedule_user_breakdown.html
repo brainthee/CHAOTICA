@@ -1,0 +1,62 @@
+{% load menu %}{% load static %}
+<div class="card mb-3">
+  <div class="card-header">
+    <div class="d-flex justify-content-between align-items-center">
+      <h4 class="mb-0">Team Allocation</h4>
+      <div class="form-check form-switch">
+        <input class="form-check-input" id="breakdownDaysChecked" type="checkbox" checked onchange="toggleBreakdownUnit()" />
+        <label class="form-check-label" for="breakdownDaysChecked">Days</label>
+      </div>
+    </div>
+  </div>
+  <div class="card-body p-0">
+    {% if user_breakdown %}
+    <div class="table-responsive">
+      <table class="table table-sm fs-9 mb-0">
+        <thead>
+          <tr>
+            <th class="sort border-top ps-1">Person</th>
+            <th class="sort border-top">Role</th>
+            <th class="sort border-top text-end pe-1">Hours</th>
+          </tr>
+        </thead>
+        <tbody class="list">
+          {% for entry in user_breakdown %}
+            {% for role in entry.roles %}
+            <tr>
+              {% if forloop.first %}
+              <td class="align-middle ps-1 fw-semibold" rowspan="{{ entry.roles|length|add:1 }}">
+                {{ entry.user.get_full_name }}
+              </td>
+              {% endif %}
+              <td class="align-middle">{{ role.role_name }}</td>
+              <td class="align-middle text-end pe-1">
+                <span class="breakdown-days">{{ role.days }}d</span>
+                <span class="breakdown-hours d-none">{{ role.hours }}h</span>
+              </td>
+            </tr>
+            {% endfor %}
+            <tr class="border-bottom border-translucent">
+              <td class="align-middle fw-bold">Total</td>
+              <td class="align-middle text-end pe-1 fw-bold">
+                <span class="breakdown-days">{{ entry.total_days }}d</span>
+                <span class="breakdown-hours d-none">{{ entry.total_hours }}h</span>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="p-3 text-body-secondary fs-9">No slots scheduled.</div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+function toggleBreakdownUnit() {
+    const useDays = document.getElementById('breakdownDaysChecked').checked;
+    document.querySelectorAll('.breakdown-days').forEach(el => el.classList.toggle('d-none', !useDays));
+    document.querySelectorAll('.breakdown-hours').forEach(el => el.classList.toggle('d-none', useDays));
+}
+</script>

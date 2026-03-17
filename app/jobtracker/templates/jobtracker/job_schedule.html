@@ -46,7 +46,10 @@
     <div class="col-12 col-md-3 px-0 border-start-xxl border-300 border-top-0">
       <div class="col-12 h-100">
         <div class="bg-body-secondary h-100 p-3">
-          {% include 'partials/scheduler/schedule_add_user.html' %}
+          {% include 'partials/scheduler/schedule_tools.html' %}
+          <div id="schedule-user-breakdown-container">
+            {% include 'partials/scheduler/schedule_user_breakdown.html' %}
+          </div>
           <div id="schedule-util-container">
             {% include 'partials/scheduler/schedule_util.html' %}
           </div>
