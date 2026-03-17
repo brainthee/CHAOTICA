@@ -137,8 +137,13 @@
     <script src="{% static "vendors/jquery-contextMenu/jquery.ui.position.min.js" %}"></script>
 
 
-    <script src="{% static "assets/js/snow.js" %}"></script> 
+    <script src="{% static "assets/js/snow.js" %}"></script>
     <script src="{% static "assets/js/phoenix.js" %}"></script>
+    {% if config.EASTEREGG_GAMES_ENABLED %}
+    <script src="{% static "assets/js/games/game-core.js" %}"></script>
+    <script src="{% static "assets/js/games/dom-destroyer.js" %}"></script>
+    <script src="{% static "assets/js/games/game-menu.js" %}"></script>
+    {% endif %}
     <script>
       {% include 'js/core.js' %}
     </script>

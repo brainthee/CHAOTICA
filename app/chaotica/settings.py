@@ -192,6 +192,7 @@ CONSTANCE_CONFIG = {
     "CHRISTMAS_LIGHTS_ENABLED": (False, "Show Christmas Lights at the top?"),
     "CHRISTMAS_TREE_ENABLED": (False, "Show Christmas Tree as animation rather than normal one for scheduler?"),
     "KONAMI_ENABLED": (True, "Should the Konami easter-egg be enabled?"),
+    "EASTEREGG_GAMES_ENABLED": (False, "Enable stress-relief game easter eggs (DOM Destroyer, Schedule Blaster, Rage Quit)?"),
     # Site Notice
     "SITE_NOTICE_ENABLED": (False, "Show a site wide notice"),
     "SITE_NOTICE_MSG": ("", "Message to display across the site"),
