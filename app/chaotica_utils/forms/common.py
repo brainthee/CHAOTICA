@@ -420,6 +420,7 @@ class CustomConfigForm(ConstanceForm):
                         fg("CHRISTMAS_LIGHTS_ENABLED", floating=False),
                         fg("CHRISTMAS_TREE_ENABLED", floating=False),
                         fg("KONAMI_ENABLED", floating=False),
+                        fg("EASTEREGG_GAMES_ENABLED", floating=False),
                     ),
                 ),
             ),

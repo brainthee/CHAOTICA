@@ -285,7 +285,12 @@ $(function() {
 
 });
 
-{% if config.KONAMI_ENABLED %}
+{% if config.EASTEREGG_GAMES_ENABLED %}
+jQuery(document).ready(function($){
+    window.CHAOS_AUDIO_URL = "{% static 'assets/data/holodeck-laugh.mp3' %}";
+    ChaosGames.initMenu();
+});
+{% elif config.KONAMI_ENABLED %}
 jQuery(document).ready(function($){
 
     var data = localStorage.safetyProtocols;
@@ -309,7 +314,7 @@ jQuery(document).ready(function($){
             $("html").addClass("holodeck");
             localStorage.safetyProtocols = "true";
         }
-        
+
         let timerInterval;
         Swal.fire({
         title: "Warning",

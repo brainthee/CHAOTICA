@@ -76,6 +76,10 @@
   <script>
   {% include 'js/scheduler_init.js' %}
 </script>
+{% if config.EASTEREGG_GAMES_ENABLED %}
+  <script src="{% static "assets/js/games/schedule-blaster.js" %}"></script>
+  <script src="{% static "assets/js/games/rage-quit.js" %}"></script>
+{% endif %}
 {% endblock %}
 
 {% block footer_css %}
