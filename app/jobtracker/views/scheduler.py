@@ -1,4 +1,5 @@
 from django.shortcuts import get_object_or_404
+from django.core.exceptions import PermissionDenied
 from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest
 from django.template import loader
 from django.db.models import Q, Prefetch
@@ -47,6 +48,18 @@ from constance import config
 
 
 logger = logging.getLogger(__name__)
+
+
+def _verify_slot_unit_access(request, slot):
+    """Verify the requesting user has scheduling permission on the slot's unit.
+    Works for both TimeSlot (has phase/project) and TimeSlotComment (user-only)."""
+    unit = None
+    if hasattr(slot, 'phase') and slot.phase:
+        unit = slot.phase.job.unit
+    elif hasattr(slot, 'project') and slot.project:
+        unit = slot.project.unit if hasattr(slot.project, 'unit') else None
+    if unit and not request.user.has_perm("jobtracker.can_schedule_job", unit):
+        raise PermissionDenied
 
 
 def _check_framework_slot(framework, updated_slot, old_slot, request, force=False):
@@ -217,6 +230,7 @@ def change_scheduler_slot_comment_date(request, pk=None):
         # We only do this because we want to generate the URL in JS land
         return HttpResponseBadRequest()
     slot = get_object_or_404(TimeSlotComment, pk=pk)
+    _verify_slot_unit_access(request, slot)
     data = dict()
     if request.method == "POST":
         form = ChangeTimeSlotCommentDateModalForm(request.POST, instance=slot)
@@ -252,6 +266,7 @@ def change_scheduler_slot_comment(request, pk=None):
         # We only do this because we want to generate the URL in JS land
         return HttpResponseBadRequest()
     slot = get_object_or_404(TimeSlotComment, pk=pk)
+    _verify_slot_unit_access(request, slot)
     data = dict()
     if request.method == "POST":
         form = CommentTimeSlotModalForm(request.POST, instance=slot)
@@ -288,6 +303,7 @@ def change_scheduler_slot_date(request, pk=None):
         # We only do this because we want to generate the URL in JS land
         return HttpResponseBadRequest()
     slot = get_object_or_404(TimeSlot, pk=pk)
+    _verify_slot_unit_access(request, slot)
     data = dict()
     if request.method == "POST":
         force = request.POST.get("force", None)
@@ -341,6 +357,7 @@ def change_scheduler_slot(request, pk=None):
         # We only do this because we want to generate the URL in JS land
         return HttpResponseBadRequest()
     slot = get_object_or_404(TimeSlot, pk=pk)
+    _verify_slot_unit_access(request, slot)
     data = dict()
 
     if request.method == "POST":
@@ -770,6 +787,12 @@ def clear_scheduler_range(request):
     end = datetime_endofday(end)
 
     resource = get_object_or_404(User, pk=resource_id)
+    # Verify requester has scheduling permission on at least one unit the resource belongs to
+    resource_units = [m.unit for m in resource.unit_memberships.select_related("unit").all()]
+    if resource_units and not any(
+        request.user.has_perm("jobtracker.can_schedule_job", u) for u in resource_units
+    ):
+        raise PermissionDenied
     timeslots = resource.get_timeslots_objs(start, end)
     comments = resource.get_timeslot_comments_objs(start, end)
 
@@ -926,15 +949,20 @@ def _get_clear_description(clear_type, clear_id, job, phase):
 @job_permission_required_or_403("jobtracker.can_schedule_job", (Job, "slug", "slug"))
 def clear_job_schedule(request, slug):
     """Clear timeslots for a job schedule. GET returns count, POST performs deletion."""
+    VALID_CLEAR_TYPES = ("all", "user", "role")
     job = get_object_or_404(Job, slug=slug)
     clear_type = request.GET.get("clear_type", "all") if request.method == "GET" else request.POST.get("clear_type", "all")
+    if clear_type not in VALID_CLEAR_TYPES:
+        return HttpResponseBadRequest("Invalid clear_type")
     clear_id = clean_int(request.GET.get("clear_id") if request.method == "GET" else request.POST.get("clear_id"))
 
     qs = _get_clear_queryset(job, None, clear_type, clear_id)
 
     if request.method == "POST":
         count = qs.count()
+        description = _get_clear_description(clear_type, clear_id, job, None)
         qs.delete()
+        logger.info("Schedule cleared by %s: %d slots — %s", request.user, count, description)
         return JsonResponse({"form_is_valid": True, "deleted": count})
 
     return JsonResponse({
@@ -946,16 +974,21 @@ def clear_job_schedule(request, slug):
 @job_permission_required_or_403("jobtracker.can_schedule_job", (Phase, "slug", "slug"))
 def clear_phase_schedule(request, job_slug, slug):
     """Clear timeslots for a phase schedule. GET returns count, POST performs deletion."""
+    VALID_CLEAR_TYPES = ("all", "user", "role")
     job = get_object_or_404(Job, slug=job_slug)
     phase = get_object_or_404(Phase, job=job, slug=slug)
     clear_type = request.GET.get("clear_type", "all") if request.method == "GET" else request.POST.get("clear_type", "all")
+    if clear_type not in VALID_CLEAR_TYPES:
+        return HttpResponseBadRequest("Invalid clear_type")
     clear_id = clean_int(request.GET.get("clear_id") if request.method == "GET" else request.POST.get("clear_id"))
 
     qs = _get_clear_queryset(job, phase, clear_type, clear_id)
 
     if request.method == "POST":
         count = qs.count()
+        description = _get_clear_description(clear_type, clear_id, job, phase)
         qs.delete()
+        logger.info("Schedule cleared by %s: %d slots — %s", request.user, count, description)
         return JsonResponse({"form_is_valid": True, "deleted": count})
 
     return JsonResponse({
@@ -971,18 +1004,21 @@ def move_job_schedule_slots(request, slug):
     data = dict()
     scheduled_users = job.team_scheduled()
 
+    unit = job.unit
+
     if request.method == "POST":
-        form = MoveScheduleSlotsForm(request.POST, scheduled_users=scheduled_users)
+        form = MoveScheduleSlotsForm(request.POST, scheduled_users=scheduled_users, unit=unit)
         if form.is_valid():
             from_user = form.cleaned_data["from_user"]
             to_user = form.cleaned_data["to_user"]
             count = TimeSlot.objects.filter(phase__job=job, user=from_user).update(user=to_user)
+            logger.info("Slots moved by %s: %d slots from %s to %s on job %s", request.user, count, from_user, to_user, job)
             data["form_is_valid"] = True
             data["moved"] = count
         else:
             data["form_is_valid"] = False
     else:
-        form = MoveScheduleSlotsForm(scheduled_users=scheduled_users)
+        form = MoveScheduleSlotsForm(scheduled_users=scheduled_users, unit=unit)
 
     context = {"form": form, "job": job}
     data["html_form"] = loader.render_to_string(
@@ -999,18 +1035,21 @@ def move_phase_schedule_slots(request, job_slug, slug):
     data = dict()
     scheduled_users = phase.team_scheduled()
 
+    unit = job.unit
+
     if request.method == "POST":
-        form = MoveScheduleSlotsForm(request.POST, scheduled_users=scheduled_users)
+        form = MoveScheduleSlotsForm(request.POST, scheduled_users=scheduled_users, unit=unit)
         if form.is_valid():
             from_user = form.cleaned_data["from_user"]
             to_user = form.cleaned_data["to_user"]
             count = phase.timeslots.filter(user=from_user).update(user=to_user)
+            logger.info("Slots moved by %s: %d slots from %s to %s on phase %s", request.user, count, from_user, to_user, phase)
             data["form_is_valid"] = True
             data["moved"] = count
         else:
             data["form_is_valid"] = False
     else:
-        form = MoveScheduleSlotsForm(scheduled_users=scheduled_users)
+        form = MoveScheduleSlotsForm(scheduled_users=scheduled_users, unit=unit)
 
     context = {"form": form, "phase": phase, "job": job}
     data["html_form"] = loader.render_to_string(

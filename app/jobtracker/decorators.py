@@ -101,7 +101,7 @@ def unit_permission_required_or_403(perm, lookup_variables=None, **kwargs):
     one always set ``return_403`` parameter to ``True``.
     """
     kwargs["return_403"] = True
-    return unit_permission_required(perm, lookup_variables=None, **kwargs)
+    return unit_permission_required(perm, lookup_variables=lookup_variables, **kwargs)
 
 
 def job_permission_required_or_403(perm, lookup_variables=None, **kwargs):
