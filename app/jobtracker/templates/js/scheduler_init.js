@@ -17,6 +17,7 @@
       });
       calendar.refetchResources();
       calendar.refetchEvents();
+      $("#addUserModal").modal("hide");
     };
 
     $('#addUserToResource').click(addUser);
@@ -30,6 +31,7 @@
 
     var utilUrl = "{% if phase %}{% url 'view_phase_schedule_util' phase.job.slug phase.slug %}{% elif job %}{% url 'view_job_schedule_util' job.slug %}{% endif %}";
     var phaseStatusUrl = "{% if job %}{% url 'view_job_schedule_phase_status' job.slug %}{% endif %}";
+    var userBreakdownUrl = "{% if phase %}{% url 'view_phase_schedule_user_breakdown' phase.job.slug phase.slug %}{% elif job %}{% url 'view_job_schedule_user_breakdown' job.slug %}{% endif %}";
 
     function refreshUtilisation() {
       if (!utilUrl) return;
@@ -46,6 +48,23 @@
         if (newCheckbox && !showDays) {
           newCheckbox.checked = false;
           toggleUtilUnit();
+        }
+      });
+    }
+
+    function refreshUserBreakdown() {
+      if (!userBreakdownUrl) return;
+      var container = document.getElementById('schedule-user-breakdown-container');
+      if (!container) return;
+      var showDays = true;
+      var checkbox = document.getElementById('breakdownDaysChecked');
+      if (checkbox) showDays = checkbox.checked;
+      $.get(userBreakdownUrl, function(html) {
+        container.innerHTML = html;
+        var newCheckbox = document.getElementById('breakdownDaysChecked');
+        if (newCheckbox && !showDays) {
+          newCheckbox.checked = false;
+          toggleBreakdownUnit();
         }
       });
     }
@@ -380,6 +399,7 @@
                   } else {
                     calendar.refetchEvents();
                     refreshUtilisation();
+                    refreshUserBreakdown();
                     refreshPhaseStatus();
                   }
                 }
@@ -425,6 +445,7 @@
                   } else {
                     calendar.refetchEvents();
                     refreshUtilisation();
+                    refreshUserBreakdown();
                     refreshPhaseStatus();
                   }
                 }
@@ -437,4 +458,101 @@
       });
     
     calendar.render();
+
+    // --- Schedule Tools ---
+
+    // Clear Schedule
+    var clearUrl = "{% if phase %}{% url 'phase_schedule_clear' job.slug phase.slug %}{% elif job %}{% url 'job_schedule_clear' job.slug %}{% endif %}";
+
+    $(document).on('click', '.js-clear-schedule', function(e) {
+      e.preventDefault();
+      if (!clearUrl) return;
+      var clearType = $(this).data('clear-type') || 'all';
+      var clearId = $(this).data('clear-id') || '';
+
+      // GET to fetch count and description
+      $.ajax({
+        url: clearUrl + '?clear_type=' + clearType + '&clear_id=' + clearId,
+        type: 'get',
+        dataType: 'json',
+        success: function(data) {
+          if (data.count === 0) {
+            Swal.fire('Nothing to clear', 'No matching timeslots found.', 'info');
+            return;
+          }
+          Swal.fire({
+            title: 'Clear Schedule',
+            html: 'Are you sure you want to clear <strong>' + data.count + '</strong> timeslot' + (data.count !== 1 ? 's' : '') + '?<br><span class="text-body-secondary">' + data.description + '</span>',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Clear',
+            confirmButtonColor: '#e63757',
+          }).then(function(result) {
+            if (result.isConfirmed) {
+              $.ajax({
+                url: clearUrl,
+                type: 'POST',
+                data: {
+                  'clear_type': clearType,
+                  'clear_id': clearId,
+                  'csrfmiddlewaretoken': csrf.val(),
+                },
+                dataType: 'json',
+                success: function(data) {
+                  if (data.form_is_valid) {
+                    Swal.fire('Cleared', data.deleted + ' timeslot' + (data.deleted !== 1 ? 's' : '') + ' removed.', 'success');
+                    calendar.refetchEvents();
+                    calendar.refetchResources();
+                    refreshUtilisation();
+                    refreshUserBreakdown();
+                    refreshPhaseStatus();
+                  } else {
+                    Swal.fire('Error', 'Something went wrong.', 'error');
+                  }
+                }
+              });
+            }
+          });
+        }
+      });
+    });
+
+    // Move Slots - load modal
+    $(document).on('click', '.js-load-move-slots-form', function() {
+      var btn = $(this);
+      $.ajax({
+        url: btn.attr("data-url"),
+        type: 'get',
+        dataType: 'json',
+        success: function(data) {
+          $("#mainModalContent").html(data.html_form);
+          $("#mainModal").modal("show");
+        }
+      });
+    });
+
+    // Move Slots - submit handler
+    $("#mainModal").on("submit", ".js-schedule-tool-form", function() {
+      var form = $(this);
+      $.ajax({
+        url: form.attr("action"),
+        data: form.serialize(),
+        type: form.attr("method"),
+        dataType: 'json',
+        success: function(data) {
+          if (data.form_is_valid) {
+            $("#mainModal").modal("hide");
+            calendar.refetchResources();
+            calendar.refetchEvents();
+            refreshUtilisation();
+            refreshUserBreakdown();
+            refreshPhaseStatus();
+            Swal.fire('Moved', data.moved + ' timeslot' + (data.moved !== 1 ? 's' : '') + ' moved.', 'success');
+          } else {
+            $("#mainModalContent").html(data.html_form);
+          }
+        }
+      });
+      return false;
+    });
     

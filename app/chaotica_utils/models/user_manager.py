@@ -242,7 +242,7 @@ class CustomUserManager(BaseUserManager):
                 'user': user,
                 'user_email': user.email,
                 'user_name': str(user),
-                'main_org': user.unit_memberships.first().unit,
+                'main_org': membership.unit if (membership := user.unit_memberships.first()) else None,
                 'total_days': total_days,
                 'working_days': working_days_count,
                 'non_working_days': non_working_days_count,

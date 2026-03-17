@@ -50,6 +50,7 @@
                 if (data.form_is_valid) {
                     calendar.refetchEvents();
                     refreshUtilisation();
+                    refreshUserBreakdown();
                     refreshPhaseStatus();
                     $("#mainModal").modal("hide");
                 } else {

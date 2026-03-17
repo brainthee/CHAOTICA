@@ -1,14 +1,12 @@
-<span class="alert alert-phoenix-warning" role="alert">
-    There are overlapping slots with those dates:
-</span>
-
-<ul class="list-group list-group-flush">
-    {% for oSlot in overlapping_slots %}
-    <li class="list-group-item">
-        {{ oSlot }} <br />
-        ({{ oSlot.start }} - {{ oSlot.end }})
-    </li>
-    {% endfor %}
-</ul>
-
-Confirm you wish to proceed with an overlapping slot?
+<div class="alert alert-phoenix-warning mb-3" role="alert">
+    <p class="mb-2"><strong>Overlapping slots:</strong> This conflicts with existing scheduled time.</p>
+    <ul class="list-group list-group-flush mb-2">
+        {% for oSlot in overlapping_slots %}
+        <li class="list-group-item px-0 py-1 fs-9">
+            {{ oSlot }}<br>
+            <span class="text-body-secondary">{{ oSlot.start }} &ndash; {{ oSlot.end }}</span>
+        </li>
+        {% endfor %}
+    </ul>
+    <p class="mb-0 fs-9 text-body-secondary">Confirm you wish to proceed with an overlapping slot.</p>
+</div>

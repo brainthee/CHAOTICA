@@ -1,13 +1,26 @@
-
-<div class="alert alert-phoenix-warning" role="alert">
-    <p>
-    This phase is associated with the framework agreement <strong>{{ framework.name }}</strong> which is over budget.
-    Over-allocation is allowed but please ensure this has been approved.
+<div class="alert alert-phoenix-warning mb-3" role="alert">
+    <p class="mb-2">
+        <strong>Over budget:</strong> Framework <strong>{{ framework.name }}</strong> is over budget. Over-allocation is allowed but please ensure this has been approved.
     </p>
-    <p>
-        Budget: {{ framework.total_days }}d &mdash;
-        Already allocated: {{ days_allocated }}d &mdash;
-        This slot: {{ slot_days }}d &mdash;
-        Would total: {{ new_total }}d
-    </p>
+    <table class="table table-sm table-borderless mb-0 fs-9">
+        <tbody>
+            <tr>
+                <td class="text-body-secondary py-0">Budget</td>
+                <td class="py-0">{{ framework.total_days }}d</td>
+            </tr>
+            <tr>
+                <td class="text-body-secondary py-0">Already allocated</td>
+                <td class="py-0">{{ days_allocated }}d</td>
+            </tr>
+            <tr>
+                <td class="text-body-secondary py-0">This slot</td>
+                <td class="py-0">{{ slot_days }}d</td>
+            </tr>
+            <tr class="border-top border-translucent">
+                <td class="text-body-secondary py-0"><strong>Would total</strong></td>
+                <td class="py-0"><strong>{{ new_total }}d</strong></td>
+            </tr>
+        </tbody>
+    </table>
+    <p class="mb-0 mt-2 fs-9 text-body-secondary">Confirm you wish to proceed over the framework budget.</p>
 </div>

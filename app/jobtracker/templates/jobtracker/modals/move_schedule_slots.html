@@ -1,0 +1,52 @@
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+<div class="modal-dialog modal-dialog-centered" role="document">
+  <div class="modal-content">
+    <form method="post" action="{{ request.get_full_path }}" class="js-schedule-tool-form">
+      {{ form.media }}
+      {% csrf_token %}
+      <div class="modal-header">
+        <h6 class="modal-title font-weight-normal" id="modal-title-default">
+          Move Slots{% if phase %} - {{ phase }}{% elif job %} - {{ job }}{% endif %}
+        </h6>
+        <button type="button" class="btn-close text-body-emphasis" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <ul class="errorlist">
+        {% if form.non_field_errors %}
+          <li>{{ form.non_field_errors }}</li>
+        {% endif %}
+        {% for field in form %}
+          {% if field.errors %}
+            <li>
+              {{ field.label }}
+              <ul class="errorlist">
+                {% for error in field.errors %}
+                  <li>{{ error }}</li>
+                {% endfor %}
+              </ul>
+            </li>
+          {% endif %}
+        {% endfor %}
+      </ul>
+      <div class="modal-body">
+        <p class="text-body-secondary fs-9">Move all scheduled timeslots from one person to another.</p>
+        {% crispy form %}
+      </div>
+      <div class="modal-footer">
+        <button type="submit" class="btn btn-phoenix-warning">
+          <i class="fas fa-exchange-alt me-1"></i> Move Slots
+        </button>
+        <button type="button" class="btn btn-light shadow-none" data-bs-dismiss="modal">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  $(function() {
+    // Init Select2 in modal
+    $('.select2-widget').select2({
+      dropdownParent: $('#mainModal .modal-content')
+    });
+  });
+</script>
