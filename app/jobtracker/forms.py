@@ -804,10 +804,15 @@ class MoveScheduleSlotsForm(forms.Form):
         ),
     )
 
-    def __init__(self, *args, scheduled_users=None, **kwargs):
+    def __init__(self, *args, scheduled_users=None, unit=None, **kwargs):
         super().__init__(*args, **kwargs)
         if scheduled_users is not None:
             self.fields["from_user"].queryset = scheduled_users
+        if unit is not None:
+            unit_user_ids = unit.members.values_list("member_id", flat=True)
+            self.fields["to_user"].queryset = User.objects.filter(
+                is_active=True, pk__in=unit_user_ids
+            )
         self.helper = FormHelper(self)
         self.helper.form_tag = False
         self.helper.layout = Layout(
