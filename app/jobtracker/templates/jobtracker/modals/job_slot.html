@@ -91,6 +91,26 @@
         return false;
     };
 
+    var loadForm2 = function() {
+        var btn = $(this);
+        var form = $('.js-submit-modal-form')
+        $.ajax({
+            url: btn.attr("data-url"),
+            type: 'POST',
+            data: form.serialize(),
+            dataType: 'json',
+            complete: function(data) {
+                calendar.refetchEvents();
+                refreshUtilisation();
+                refreshUserBreakdown();
+                refreshPhaseStatus();
+                $("#mainModal").modal("hide");
+            }
+        });
+    };
+
+    $(".js-load-modal-form").click(loadForm2);
+
     $(".js-submit-modal-form").submit(saveSlotForm);
 
   });
