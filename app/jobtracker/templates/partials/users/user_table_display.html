@@ -9,7 +9,11 @@
   <div class="col">
     <div class="row">
       <a class="me-3 {% if compressed_view %}text-wrap{% endif %}" href="{{ u.get_absolute_url }}">
+        {% if not compressed_view %}
         {{ u }}
+        {% else %}
+        {{ u.first_name }} {{ u.last_name }}
+        {% endif %}
       </a>
     </div>
     
