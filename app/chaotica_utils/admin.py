@@ -1,5 +1,5 @@
 from django.contrib import admin
-from django.contrib.auth.admin import GroupAdmin
+from django.contrib.auth.admin import GroupAdmin, UserAdmin
 from guardian.admin import GuardedModelAdmin
 from .models import (
     Quote,
@@ -26,17 +26,18 @@ class UserJobLevelInline(admin.TabularInline):
     fields = ["job_level", "assigned_date", "is_current", "notes", "created_at"]
 
 
-class CustomUserAdmin(GuardedModelAdmin):
+class CustomUserAdmin(UserAdmin, GuardedModelAdmin):
     list_display = ["email", "first_name", "last_name", "is_active"]
     search_fields = ['email', 'first_name', 'last_name']
+    ordering = ["email"]
     inlines = [UserJobLevelInline]
     fieldsets = (
-        # *UserAdmin.fieldsets,  # original form fieldsets, expanded
         (
             None,
             {
                 "classes": ("wide",),
                 "fields": (
+                    "password",
                     "email",
                     "notification_email",
                     "first_name",
