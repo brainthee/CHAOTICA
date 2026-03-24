@@ -1,5 +1,6 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.contrib.auth.admin import GroupAdmin, UserAdmin
+from django.contrib.auth.hashers import UNUSABLE_PASSWORD_PREFIX
 from guardian.admin import GuardedModelAdmin
 from .models import (
     Quote,
@@ -19,6 +20,36 @@ from .models import (
 )
 
 
+class HasManagerFilter(admin.SimpleListFilter):
+    title = "has manager"
+    parameter_name = "has_manager"
+
+    def lookups(self, request, model_admin):
+        return [("yes", "Yes"), ("no", "No")]
+
+    def queryset(self, request, queryset):
+        if self.value() == "yes":
+            return queryset.filter(manager__isnull=False)
+        if self.value() == "no":
+            return queryset.filter(manager__isnull=True)
+        return queryset
+
+
+class HasUsablePasswordFilter(admin.SimpleListFilter):
+    title = "has usable password"
+    parameter_name = "has_password"
+
+    def lookups(self, request, model_admin):
+        return [("yes", "Yes"), ("no", "No")]
+
+    def queryset(self, request, queryset):
+        if self.value() == "yes":
+            return queryset.exclude(password__startswith=UNUSABLE_PASSWORD_PREFIX)
+        if self.value() == "no":
+            return queryset.filter(password__startswith=UNUSABLE_PASSWORD_PREFIX)
+        return queryset
+
+
 class UserJobLevelInline(admin.TabularInline):
     model = UserJobLevel
     extra = 0
@@ -27,10 +58,46 @@ class UserJobLevelInline(admin.TabularInline):
 
 
 class CustomUserAdmin(UserAdmin, GuardedModelAdmin):
-    list_display = ["email", "first_name", "last_name", "is_active"]
+    list_display = ["email", "first_name", "last_name", "is_active", "is_staff", "last_login"]
     search_fields = ['email', 'first_name', 'last_name']
     ordering = ["email"]
+    list_filter = [
+        "is_active",
+        "is_staff",
+        "is_superuser",
+        HasManagerFilter,
+        HasUsablePasswordFilter,
+        "country",
+        "date_joined",
+        "last_login",
+        "groups",
+    ]
+    actions = ["clear_passwords", "deactivate_users", "activate_users"]
     inlines = [UserJobLevelInline]
+
+    @admin.action(description="Clear password (force SSO/reset)")
+    def clear_passwords(self, request, queryset):
+        count = 0
+        for user in queryset:
+            user.set_unusable_password()
+            user.save(update_fields=["password"])
+            count += 1
+        self.message_user(request, f"Password cleared for {count} user(s).")
+
+    @admin.action(description="Deactivate selected users")
+    def deactivate_users(self, request, queryset):
+        if request.user in queryset:
+            self.message_user(
+                request, "You cannot deactivate yourself.", level=messages.WARNING
+            )
+            queryset = queryset.exclude(pk=request.user.pk)
+        count = queryset.update(is_active=False)
+        self.message_user(request, f"{count} user(s) deactivated.")
+
+    @admin.action(description="Activate selected users")
+    def activate_users(self, request, queryset):
+        count = queryset.update(is_active=True)
+        self.message_user(request, f"{count} user(s) activated.")
     fieldsets = (
         (
             None,
