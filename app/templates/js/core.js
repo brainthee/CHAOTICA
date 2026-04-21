@@ -58,8 +58,13 @@ $(document).ready(function() {
 
 $(function() {
 
-    new DataTable('table.datatable', {
+    const dt = new DataTable('table.datatable', {
         {% include 'js/dtDefaultConfig.js' %}
+    });
+    dt.tables().every(function () {
+        const th = this.table().header().querySelector('th.default-sort');
+        if (!th) return;
+        this.order([th.cellIndex, th.classList.contains("sort-desc") ? 'desc' : 'asc']).draw();
     });
 
     var loadForm = function() {
