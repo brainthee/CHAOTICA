@@ -12,6 +12,7 @@ load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+APP_VAR = Path(os.environ.get("APPVAR", default=BASE_DIR))
 
 DEBUG = int(os.environ.get("DEBUG", default=0))
 
@@ -816,3 +817,6 @@ CLAMAV_UNIX_SOCKET = os.environ.get("CLAMAV_UNIX_SOCKET", default="/var/run/clam
 CLAMAV_USE_TCP = os.environ.get("CLAMAV_USE_TCP", default=False)
 CLAMAV_TCP_PORT = os.environ.get("CLAMAV_TCP_PORT", default=3310)
 CLAMAV_TCP_ADDR = os.environ.get("CLAMAV_TCP_ADDR", default="127.0.0.1")
+
+CITIES_LIGHT_DATA_DIR = APP_VAR / "cities_light"
+CITIES_LIGHT_DATA_DIR.mkdir(parents=True, exist_ok=True)

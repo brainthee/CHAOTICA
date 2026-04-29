@@ -16,6 +16,7 @@ ENV LC_ALL=C.UTF-8
 ENV PORT=8000
 ENV USE_REDIS=true
 ENV RUN_COLLECTSTATIC=true
+ENV APPVAR=/var/lib/chaotica/
 EXPOSE ${PORT}
 
 # set work directory
@@ -48,6 +49,8 @@ RUN service supervisor stop \
 RUN groupadd -g "${GID}" chaotica \
 && useradd --create-home --no-log-init -u "${UID}" -g "${GID}" chaotica \
 && chown chaotica:chaotica -R /app
+# create app var directory
+RUN mkdir -p ${APPVAR}  && chown -R chaotica:chaotica ${APPVAR}
 
 # install dependencies
 COPY --chown=root:root --chmod=755 requirements*.txt ./

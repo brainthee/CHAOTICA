@@ -60,6 +60,7 @@ fi
 
 sudo -Eu chaotica -- python3 manage.py download_geoip_db
 sudo -Eu chaotica -- python3 manage.py migrate --noinput
+sudo -Eu chaotica -- python3 manage.py cities_light
 if [ "$RUN_COLLECTSTATIC" = "true" ]; then
     echo "Running collectstatic..."
     sudo -Eu chaotica -- python3 manage.py collectstatic --noinput
