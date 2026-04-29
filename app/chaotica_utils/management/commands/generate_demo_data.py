@@ -18,6 +18,7 @@ from jobtracker.enums import PhaseStatuses, FeedbackType, TechQARatings, PresQAR
 from chaotica_utils.enums import LeaveRequestTypes
 from chaotica_utils.models import LeaveRequest, UserCost
 from notifications.models import NotificationSubscription
+from cities_light.models import City
 
 User = get_user_model()
 fake = Faker()
@@ -347,7 +348,7 @@ class Command(BaseCommand):
                 first_name=first_name,
                 last_name=last_name,
                 job_title=random.choice([jl.long_label for jl in self.job_levels]),
-                location=random.choice(region_info['locations']),
+                city=random.choice(City.objects.all()),
                 country=region_short,
                 pref_timezone=region_info['timezone'],
                 contracted_leave=25,

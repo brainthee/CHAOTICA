@@ -16,7 +16,12 @@ ENV LC_ALL=C.UTF-8
 ENV PORT=8000
 ENV USE_REDIS=true
 ENV RUN_COLLECTSTATIC=true
+ENV APPVAR=/var/lib/chaotica/
 EXPOSE ${PORT}
+
+# create app var directory
+RUN mkdir -p ${APPVAR}
+RUN chown -R chaotica:chaotica ${APPVAR}
 
 # set work directory
 WORKDIR /app
