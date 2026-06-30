@@ -99,7 +99,7 @@ class OrganisationalUnit(models.Model):
             ("can_delete_job", "Can delete jobs"),
             ("can_add_note_job", "Can add a note to jobs"),
             ("can_assign_poc_job", "Can assign a Point of Contact to jobs"),
-            ("can_manage_framework_job", "Can assign a Point of Contact to jobs"),
+            ("can_manage_framework_job", "Can assign a framework to jobs"),
             ("can_add_phases", "Can add phases"),
             ("can_delete_phases", "Can add phases"),
             ("can_schedule_job", "Can schedule phases"),

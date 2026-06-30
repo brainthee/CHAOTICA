@@ -209,6 +209,7 @@ class GlobalRoles:
                 "jobtracker.add_frameworkagreement",
                 "jobtracker.change_frameworkagreement",
                 "jobtracker.delete_frameworkagreement",
+                "jobtracker.can_manage_framework_job",
                 # Client Contacts
                 "jobtracker.view_contact",
                 "jobtracker.add_contact",
@@ -245,6 +246,7 @@ class GlobalRoles:
                 # Client Frameworks
                 "jobtracker.view_frameworkagreement",
                 "jobtracker.add_frameworkagreement",
+                "jobtracker.can_manage_framework_job",
                 # Client Contacts
                 "jobtracker.view_contact",
                 "jobtracker.add_contact",
