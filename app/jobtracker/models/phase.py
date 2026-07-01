@@ -1829,7 +1829,7 @@ class Phase(models.Model):
         if notify_request:
             if (
                 self.techqa_by is None
-                or notify_request.user.pk is not self.techqa_by.pk
+                or notify_request.user.pk != self.techqa_by.pk
             ):
                 # Check if we have tqa perm...
                 if notify_request.user.has_perm("can_tqa_jobs", self.job.unit):
@@ -1977,7 +1977,7 @@ class Phase(models.Model):
         if notify_request:
             if (
                 self.presqa_by is None
-                or notify_request.user.pk is not self.presqa_by.pk
+                or notify_request.user.pk != self.presqa_by.pk
             ):
                 # Check if we have tqa perm...
                 if notify_request.user.has_perm("can_pqa_jobs", self.job.unit):

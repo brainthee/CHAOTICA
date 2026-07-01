@@ -818,10 +818,9 @@ class Job(models.Model):
                 if notify_request:
                     messages.add_message(
                         notify_request,
-                        messages.ERROR,
+                        messages.WARNING,
                         "Phase with no hours: " + str(phase),
                     )
-                _can_proceed = False
 
         # Do general check
         can_proceed_result = can_proceed(self.to_scope_pending_signoff)
@@ -931,10 +930,9 @@ class Job(models.Model):
                 if notify_request:
                     messages.add_message(
                         notify_request,
-                        messages.ERROR,
+                        messages.WARNING,
                         "Phase with no hours: " + str(phase),
                     )
-                _can_proceed = False
 
         # Do general check
         can_proceed_result = can_proceed(self.to_scope_complete)
@@ -1046,6 +1044,11 @@ class Job(models.Model):
         log_system_activity(
             self, self.MOVED_TO + JobStatuses.CHOICES[JobStatuses.LOST][1], author=user
         )
+        # Cancel any remaining phases. to_cancelled() also deletes the phase's
+        # timeslots, so a lost job stops occupying the schedule (BUG-006).
+        for phase in self.phases.all():
+            if phase.can_to_cancelled():
+                phase.to_cancelled(user=user)
         self.fire_status_notification(JobStatuses.LOST)
 
     def can_proceed_to_lost(self):

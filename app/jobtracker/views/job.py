@@ -40,7 +40,7 @@ from ..forms import (
     AssignJobBillingCode,
     JobSupportTeamRoleForm,
 )
-from ..enums import JobStatuses, TimeSlotDeliveryRole, DefaultTimeSlotTypes
+from ..enums import JobStatuses, PhaseStatuses, TimeSlotDeliveryRole, DefaultTimeSlotTypes
 from .helpers import _process_assign_user, _process_assign_contact
 import logging
 
@@ -708,12 +708,30 @@ def job_update_workflow(request, slug, new_state):
     tasks = WorkflowTask.objects.filter(
         appliedModel=WorkflowTask.WF_JOB, status=new_state
     )
+
+    # Moving a job to LOST cascades to cancelling its phases, which deletes
+    # their scheduled timeslots. Surface how much will be cleared so the UI
+    # can make the user explicitly acknowledge it (BUG-006).
+    warn_clear_slots = False
+    slot_count = 0
+    phase_count = 0
+    if new_state == JobStatuses.LOST:
+        affected_phases = job.phases.exclude(
+            status__in=PhaseStatuses.INACTIVE_STATUSES
+        )
+        phase_count = affected_phases.count()
+        slot_count = TimeSlot.objects.filter(phase__in=affected_phases).count()
+        warn_clear_slots = slot_count > 0
+
     context = {
         "job": job,
         "can_proceed": can_proceed,
         "new_state_str": new_state_str,
         "new_state": new_state,
         "tasks": tasks,
+        "warn_clear_slots": warn_clear_slots,
+        "slot_count": slot_count,
+        "phase_count": phase_count,
     }
     data["html_form"] = loader.render_to_string(
         "jobtracker/modals/job_workflow.html", context, request=request

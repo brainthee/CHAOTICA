@@ -99,23 +99,47 @@ $(function() {
 
     var saveForm = function() {
         var form = $(this);
-        $.ajax({
-            url: form.attr("action"),
-            data: form.serialize(),
-            type: form.attr("method"),
-            dataType: 'json',
-            success: function(data) {
-                if (data.form_is_valid) {
-                    if (data.next) {
-                        location.href = data.next
+        var submit = function() {
+            $.ajax({
+                url: form.attr("action"),
+                data: form.serialize(),
+                type: form.attr("method"),
+                dataType: 'json',
+                success: function(data) {
+                    if (data.form_is_valid) {
+                        if (data.next) {
+                            location.href = data.next
+                        } else {
+                            location.reload();
+                        }
                     } else {
-                        location.reload();
+                        $("#mainModalContent").html(data.html_form);
                     }
-                } else {
-                    $("#mainModalContent").html(data.html_form);
                 }
-            }
-        });
+            });
+        };
+        // Some transitions (e.g. marking a job as Lost) cancel phases and clear
+        // their scheduled slots. Force an explicit acknowledgement first.
+        if (form.data("confirm-clear-slots")) {
+            var phaseCount = form.data("phase-count");
+            var slotCount = form.data("slot-count");
+            Swal.fire({
+                title: "Clear scheduled work?",
+                html: "This will cancel <strong>" + phaseCount + "</strong> phase(s) and permanently remove <strong>" + slotCount + "</strong> scheduled slot(s) from the schedule.<br><br>This cannot be undone.",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonText: "Yes, cancel phases & clear schedule",
+                cancelButtonText: "No, keep them",
+                customClass: { confirmButton: "btn btn-danger", cancelButton: "btn btn-light" },
+                buttonsStyling: false
+            }).then(function(result) {
+                if (result.isConfirmed) {
+                    submit();
+                }
+            });
+            return false;
+        }
+        submit();
         return false;
     };
 
