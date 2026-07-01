@@ -437,7 +437,10 @@ BLEACH_ALLOWED_STYLES = [
 # (assuming src is an allowed attribute)
 BLEACH_ALLOWED_PROTOCOLS = ["http", "https", "data"]
 BOOTSTRAP_DATEPICKER_PLUS = {
-    "app_static_url": f"{SITE_PROTO}://{SITE_DOMAIN}/static/vendors/bootstrap_datepicker_plus/",
+    # Same-origin static path; the absolute URL is finalised from STATIC_URL below
+    # (an absolute http://SITE_DOMAIN/... here is cross-origin and gets CORB-blocked
+    # whenever the running host/port differs from SITE_DOMAIN).
+    "app_static_url": "/static/vendors/bootstrap_datepicker_plus/",
     "options": {
         "allowInputToggle": True,
     },
@@ -746,6 +749,10 @@ else:
     STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
 STATICFILES_DIRS = (os.path.join(BASE_DIR, "static"),)
+
+# Point the datepicker widget at the same static origin the rest of the app uses
+# (dev: /static/, prod: the S3/CDN domain) so its JS/CSS aren't CORB-blocked.
+BOOTSTRAP_DATEPICKER_PLUS["app_static_url"] = f"{STATIC_URL}vendors/bootstrap_datepicker_plus/"
 
 
 CORS_ALLOW_ALL_ORIGINS = True

@@ -157,14 +157,14 @@ def index(request):
     twoweeks = get_start_of_week() + timedelta(weeks=2)
     context["upcoming_reports_date"] = twoweeks
     context["upcoming_reports"] = list(
-        all_phases.filter(Q(status__lt=PhaseStatuses.DELIVERED) & Q(db_delivery_date__lte=twoweeks))
+        all_phases.annotate(
+            db_delivery_date=Coalesce("desired_delivery_date", "_delivery_date")
+        )
+        .filter(Q(status__lt=PhaseStatuses.DELIVERED) & Q(db_delivery_date__lte=twoweeks))
         .exclude(
             Q(report_to_be_left_on_client_site=True) | Q(number_of_reports=0)
         )
-        .annotate(
-            db_delivery_date=Coalesce("desired_delivery_date", "_delivery_date")
-        )
-            .order_by("db_delivery_date")
+        .order_by("db_delivery_date")
         .select_related(
             "service",
             "job__client",
