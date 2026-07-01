@@ -804,8 +804,9 @@ class MoveScheduleSlotsForm(forms.Form):
         ),
     )
 
-    def __init__(self, *args, scheduled_users=None, unit=None, **kwargs):
+    def __init__(self, *args, scheduled_users=None, unit=None, client=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self.client = client
         if scheduled_users is not None:
             self.fields["from_user"].queryset = scheduled_users
         if unit is not None:
@@ -819,6 +820,24 @@ class MoveScheduleSlotsForm(forms.Form):
             Field("from_user", style="width: 100%;"),
             Field("to_user", style="width: 100%;"),
         )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        to_user = cleaned_data.get("to_user")
+        # Don't let a bulk move reassign delivery work to a user who isn't
+        # onboarded for the client (BUG-004 — the raw .update() bypassed this).
+        if (
+            to_user
+            and self.client is not None
+            and self.client.onboarding_required
+            and not self.client.onboarded_users.filter(user=to_user).exists()
+        ):
+            self.add_error(
+                "to_user",
+                "This user is not onboarded for the client and cannot be "
+                "scheduled on this work.",
+            )
+        return cleaned_data
 
 
 class CommentTimeSlotModalForm(forms.ModelForm):
@@ -1232,6 +1251,16 @@ class DeliveryTimeSlotModalForm(forms.ModelForm):
             "end",
         )
 
+    def clean(self):
+        cleaned_data = super().clean()
+        start = cleaned_data.get("start")
+        end = cleaned_data.get("end")
+        # Return a clean field error rather than letting TimeSlot.save() raise
+        # an unhandled ValidationError (which 500s the edit) — BUG-008.
+        if start and end and start >= end:
+            self.add_error("end", "End must be after the start.")
+        return cleaned_data
+
 
 class ProjectTimeSlotModalForm(forms.ModelForm):
     project = forms.ModelChoiceField(
@@ -1482,6 +1511,15 @@ class ChangeTimeSlotDateModalForm(forms.ModelForm):
             "start",
             "end",
         )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        start = cleaned_data.get("start")
+        end = cleaned_data.get("end")
+        # Clean field error instead of an unhandled ValidationError (BUG-008).
+        if start and end and start >= end:
+            self.add_error("end", "End must be after the start.")
+        return cleaned_data
 
 
 class JobForm(forms.ModelForm):

@@ -41,71 +41,32 @@ logger = logging.getLogger(__name__)
 
 
 @job_permission_required_or_403("jobtracker.view_job_schedule", (Phase, "slug", "slug"))
-def view_phase_schedule_gantt_data(request, job_slug, slug):
-    job = get_object_or_404(Job, slug=job_slug)
-    phase = get_object_or_404(Phase, job=job, slug=slug)
-    return JsonResponse(phase.get_gantt_json(), safe=False)
-
-
-@job_permission_required_or_403("jobtracker.view_job_schedule", (Phase, "slug", "slug"))
 def view_phase_schedule_slots(request, job_slug, slug):
-    data = []
+    # Delegate to the shared vis-timeline builder, hard-scoped to this phase.
+    from ..utils import get_scheduler_slots, merge_include_users
+
     job = get_object_or_404(Job, slug=job_slug)
     phase = get_object_or_404(Phase, job=job, slug=slug)
-    start = clean_date(request.GET.get("start", None))
-    end = clean_date(request.GET.get("end", None))
-    phase_members = phase.team()
-    for member_slot in phase_members:
-        data = data + member_slot.get_timeslots(start=start, end=end, phase_focus=phase)
-    return JsonResponse(data, safe=False)
-
+    return get_scheduler_slots(
+        request,
+        filtered_users=merge_include_users(request, phase.team()),
+        use_filter_form=False,
+        scope_phases=[phase],
+    )
 
 
 @job_permission_required_or_403("jobtracker.view_job_schedule", (Phase, "slug", "slug"))
 def view_phase_schedule_members(request, job_slug, slug):
-    data = []
+    from ..utils import get_scheduler_members, merge_include_users
+
     job = get_object_or_404(Job, slug=job_slug)
     phase = get_object_or_404(Phase, job=job, slug=slug)
-    scheduled_users = phase.team()
-    if scheduled_users:
-        for user in scheduled_users:
-            role = ""
-            if phase.project_lead == user:
-                if role:
-                    role += ",Lead"
-                else:
-                    role += "Lead"
-            if phase.report_author == user:
-                if role:
-                    role += ", Author"
-                else:
-                    role += "Author"
-            if phase.techqa_by == user:
-                if role:
-                    role += ", TQA"
-                else:
-                    role += "TQA"
-            if phase.presqa_by == user:
-                if role:
-                    role += ", PQA"
-                else:
-                    role += "PQA"
-            user_title = str(user)
-            if role:
-                user_title = user_title + " (" + role + ")"
-            data.append(
-                {
-                    "id": user.pk,
-                    "title": user_title,
-                    "role": role,
-                    "businessHours": {
-                        "startTime": job.unit.businessHours_startTime,
-                        "endTime": job.unit.businessHours_endTime,
-                        "daysOfWeek": job.unit.businessHours_days,
-                    },
-                }
-            )
-    return JsonResponse(data, safe=False)
+    return get_scheduler_members(
+        request,
+        filtered_users=merge_include_users(request, phase.team()),
+        use_filter_form=False,
+        phase_roles=phase,
+    )
 
 
 @job_permission_required_or_403("jobtracker.can_update_job", (Phase, "slug", "slug"))

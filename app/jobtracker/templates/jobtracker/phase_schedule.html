@@ -37,16 +37,19 @@
   px-5
 {% endblock %}
 
+{% block extra_css %}
+  {% include 'partials/scheduler/vis_scheduler_css.html' %}
+{% endblock %}
+
 {% block content %}
+  {% csrf_token %}
   {% include 'partials/phase/page_header.html' %}
 
   <div class="row min-vh-100 g-0 mt-3 border-1 border-top bg-body-secondary">
-    <div class="col-12 col-md-9 px-3 pt-3 border-1 border-end">
-      <div class="card h-100">
-        <div class="card-body p-0">
-          <div class="calendar" data-bs-toggle="calendar" id="calendar"></div>
-        </div>
-      </div>
+    <div class="col-12 col-md-9 px-0 border-1 border-end">
+      {% include 'partials/scheduler/vis_scheduler_toolbar.html' %}
+      <div id="sched-progress" class="sched-progress" role="progressbar" aria-hidden="true"></div>
+      <div id="vis-timeline"></div>
     </div>
 
     <div class="col-12 col-md-3 px-0 border-start-xxl border-300 border-top-0">
@@ -66,7 +69,29 @@
 {% endblock %}
 
 {% block extra_js %}
+  <script src="{% static 'vendors/vis-timeline/vis-timeline-graph2d.min.js' %}"></script>
   <script>
-  {% include 'js/scheduler_init.js' with earliest_scheduled_date=earliest_scheduled_date %}
-</script>
+    window.SCHEDULER_CONFIG = {
+      scope: 'phase',
+      membersUrl: "{% url 'view_phase_schedule_members' phase.job.slug phase.slug %}",
+      slotsUrl: "{% url 'view_phase_schedule_slots' phase.job.slug phase.slug %}",
+      changeDateUrl: "{% url 'change_scheduler_slot_date' %}",
+      changeCommentDateUrl: "{% url 'change_scheduler_slot_comment_date' %}",
+      createUrls: {
+        assign_phase: "{% url 'create_scheduler_phase_slot' %}",
+        assign_project: "{% url 'create_scheduler_project_slot' %}",
+        assign_internal: "{% url 'create_scheduler_internal_slot' %}",
+        add_comment: "{% url 'create_scheduler_comment' %}",
+        clear: "{% url 'clear_scheduler_range' %}"
+      },
+      createExtraParams: "&job={{ phase.job.pk }}&phase={{ phase.pk }}",
+      clearUrl: "{% url 'phase_schedule_clear' phase.job.slug phase.slug %}",
+      cards: {
+        util: "{% url 'view_phase_schedule_util' phase.job.slug phase.slug %}",
+        userBreakdown: "{% url 'view_phase_schedule_user_breakdown' phase.job.slug phase.slug %}",
+        phaseStatus: null
+      }
+    };
+  </script>
+  <script>{% include 'js/scheduler_vis_init.js' %}</script>
 {% endblock %}

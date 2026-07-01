@@ -272,7 +272,18 @@ def _filter_users_on_query(request, cleaned_data=None):
     )
 
 
-def get_scheduler_members(request, filtered_users = None, start = None, end = None, use_filter_form=True):
+def merge_include_users(request, users):
+    """Union any ?include_user=<pk> users into a scoped member list, so the
+    schedule 'Add User' tool can surface someone not yet scheduled on the
+    job/phase. Returns a User QuerySet (get_bulk_stats needs a queryset)."""
+    ids = {u.pk for u in users}
+    for i in request.GET.getlist("include_user"):
+        if str(i).isdigit():
+            ids.add(int(i))
+    return User.objects.filter(pk__in=ids)
+
+
+def get_scheduler_members(request, filtered_users = None, start = None, end = None, use_filter_form=True, phase_roles=None):
     data = []
     selected_phases = []
     cleaned_data = None
@@ -289,7 +300,7 @@ def get_scheduler_members(request, filtered_users = None, start = None, end = No
             for phase in phases:
                 selected_phases.append(phase)
 
-    if not filtered_users:
+    if filtered_users is None:
         filtered_users = _filter_users_on_query(request, cleaned_data).prefetch_related(
             "unit_memberships", "unit_memberships__unit", "job_level_history", "job_level_history__job_level"
         )
@@ -344,6 +355,20 @@ def get_scheduler_members(request, filtered_users = None, start = None, end = No
         user_title = user_stat['user_name']
         main_org = user_stat['main_org']
 
+        # In phase-scoped mode, annotate the member with their phase role(s).
+        if phase_roles is not None:
+            roles = []
+            if phase_roles.project_lead_id == user.pk:
+                roles.append("Lead")
+            if phase_roles.report_author_id == user.pk:
+                roles.append("Author")
+            if phase_roles.techqa_by_id == user.pk:
+                roles.append("TQA")
+            if phase_roles.presqa_by_id == user.pk:
+                roles.append("PQA")
+            if roles:
+                user_title = user_title + " (" + ", ".join(roles) + ")"
+
         # Get user's current job level
         current_job_level = UserJobLevel.get_current_level(user)
         job_level_order = current_job_level.job_level.order if current_job_level else 999
@@ -360,7 +385,7 @@ def get_scheduler_members(request, filtered_users = None, start = None, end = No
                 "seniority": job_level_order,
                 "job_level": job_level_label,
                 "url": user.get_absolute_url(),
-                "html_view": user.get_table_display_html(cleaned_data.get("compressed_view", False)),
+                "html_view": user.get_table_display_html(cleaned_data.get("compressed_view", False) if cleaned_data else False),
                 "distance": round(distance, 1) if distance is not None else None,
                 "distance_display": f"{round(distance, 1)} km" if distance is not None else "N/A",
                 "businessHours": (
@@ -396,7 +421,7 @@ def get_scheduler_members(request, filtered_users = None, start = None, end = No
     return JsonResponse(data, safe=False)
 
 
-def get_scheduler_slots(request, filtered_users = None, start = None, end = None, use_filter_form=True):
+def get_scheduler_slots(request, filtered_users = None, start = None, end = None, use_filter_form=True, scope_phases=None):
     data = []
     selected_phases = []
     cleaned_data = None
@@ -413,7 +438,7 @@ def get_scheduler_slots(request, filtered_users = None, start = None, end = None
             for phase in phases:
                 selected_phases.append(phase)
 
-    if not filtered_users:
+    if filtered_users is None:
         filtered_users = _filter_users_on_query(request, cleaned_data).prefetch_related(
             "unit_memberships", "unit_memberships__unit", "job_level_history__job_level"
         )
@@ -436,12 +461,17 @@ def get_scheduler_slots(request, filtered_users = None, start = None, end = None
         "SCHEDULE_COLOR_COMMENT": str(config.SCHEDULE_COLOR_COMMENT),
     }
 
-    compressed_view = cleaned_data.get("compressed_view", False)
+    compressed_view = cleaned_data.get("compressed_view", False) if cleaned_data else False
 
     # Load the timeslots
-    for slot in TimeSlot.objects.filter(
+    slot_qs = TimeSlot.objects.filter(
         user__in=filtered_users, end__gte=start, start__lte=end
-    ).prefetch_related(
+    )
+    if scope_phases is not None:
+        # Hard job/phase scope — restrict to that job/phase's slots
+        # (vs. the soft grey-out applied by the `jobs`/`phases` filters).
+        slot_qs = slot_qs.filter(phase__in=scope_phases)
+    for slot in slot_qs.prefetch_related(
         "phase",
         "phase__job",
         "phase__job__client",

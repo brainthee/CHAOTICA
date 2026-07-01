@@ -740,78 +740,6 @@ class Phase(models.Model):
     ## Schedule Methods
     ###########################################
 
-    def get_gantt_json(self):
-        tasks = []
-
-        tasks.append(
-            {
-                "id": f"{self.phase_id}-start",
-                "open": True,
-                "progress": 0,
-                "text": "Start",
-                "start_date": self.start_date,
-                "type": "gantt.config.types.milestone",
-            }
-        )
-        for slot in self.timeslots.filter(phase=self).order_by("deliveryRole"):
-            user_text = str(slot.user)
-            if slot.is_onsite:
-                user_text = user_text + " (Onsite)"
-            info = {
-                "id": slot.pk,
-                "user_id": slot.user.pk,
-                "user": user_text,
-                "slot_type_ID": slot.slot_type.pk,
-                "slot_type_name": slot.slot_type.name,
-                "delivery_role_id": slot.deliveryRole,
-                "delivery_role": slot.get_deliveryRole_display(),
-                "text": slot.get_deliveryRole_display(),
-                "start_date": slot.start,
-                "end_date": slot.end,
-            }
-            tasks.append(info)
-
-        # Add milestones...
-        # Start
-        # TQA
-        tasks.append(
-            {
-                "id": f"{self.phase_id}-tqa",
-                "open": True,
-                "progress": 0,
-                "text": "Tech QA",
-                "start_date": self.due_to_techqa,
-                "type": "gantt.config.types.milestone",
-            }
-        )
-        # PQA
-        tasks.append(
-            {
-                "id": f"{self.phase_id}-pqa",
-                "open": True,
-                "progress": 0,
-                "text": "Pres QA",
-                "start_date": self.due_to_presqa,
-                "type": "gantt.config.types.milestone",
-            }
-        )
-        # Delivery
-        tasks.append(
-            {
-                "id": f"{self.phase_id}-delivery",
-                "open": True,
-                "progress": 0,
-                "text": "Delivery to Client",
-                "start_date": self.delivery_date,
-                "type": "gantt.config.types.milestone",
-            }
-        )
-
-        data = {
-            "tasks": tasks,
-        }
-        return data
-
     def get_all_total_scheduled_by_type(self):
         data = dict()
         for state in TimeSlotDeliveryRole.CHOICES:
@@ -879,17 +807,21 @@ class Phase(models.Model):
         return hours
 
     def get_total_scoped_days(self):
-        return round(self.get_total_scoped_hours() / self.get_hours_in_day(), 2)
+        hid = self.get_hours_in_day()
+        return round(self.get_total_scoped_hours() / hid, 2) if hid else 0
 
     def get_total_scheduled_days(self):
-        return round(self.get_total_scheduled_hours() / self.get_hours_in_day(), 2)
+        hid = self.get_hours_in_day()
+        return round(self.get_total_scheduled_hours() / hid, 2) if hid else 0
 
 
     def get_total_scoped_days_by_type(self, slot_type):
-        return round(self.get_total_scoped_by_type(slot_type) / self.get_hours_in_day(), 2)
+        hid = self.get_hours_in_day()
+        return round(self.get_total_scoped_by_type(slot_type) / hid, 2) if hid else 0
 
     def get_total_scheduled_days_by_type(self, slot_type):
-        return round(self.get_total_scheduled_by_type(slot_type) / self.get_hours_in_day(), 2)
+        hid = self.get_hours_in_day()
+        return round(self.get_total_scheduled_by_type(slot_type) / hid, 2) if hid else 0
 
     def get_slot_type_usage_perc(self, slot_type):
         # First, get the total for the slot_type

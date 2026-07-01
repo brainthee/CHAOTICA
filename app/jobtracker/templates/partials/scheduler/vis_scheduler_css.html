@@ -1,0 +1,87 @@
+{% load static %}
+<link href="{% static 'vendors/vis-timeline/vis-timeline-graph2d.min.css' %}" rel="stylesheet">
+<style>
+  /* Height is managed in JS so it sits above the fixed footer */
+  #vis-timeline { border: none; }
+  .vis-timeline { border: none; font-size: 0.8rem; }
+  /* Resource (group) label column */
+  .vis-labelset .vis-label,
+  .vis-foreground .vis-group {
+    border-bottom: 1px solid var(--phoenix-border-color-translucent);
+  }
+  .vis-label .vis-inner { display: block; padding: 0; width: 250px; }
+  .sched-res {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 8px; width: 250px; padding: 3px 10px; box-sizing: border-box;
+  }
+  .sched-res .meta { min-width: 0; line-height: 1.15; }
+  .sched-res .name {
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600;
+  }
+  .sched-res .lvl {
+    display: block; font-weight: 400; font-size: 0.7rem;
+    color: var(--phoenix-secondary-color);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .sched-res .badge { flex: 0 0 auto; }
+  /* Subtle, non-blocking loading indicator */
+  .sched-loading { display: inline-flex; align-items: center; opacity: 0; transition: opacity 0.15s ease; pointer-events: none; }
+  .sched-loading[hidden] { display: inline-flex; }
+  .sched-loading.is-active { opacity: 1; }
+  /* Top indeterminate progress bar */
+  .sched-progress {
+    position: relative; height: 3px; margin-bottom: -3px; overflow: hidden;
+    opacity: 0; transition: opacity 0.25s ease; pointer-events: none; z-index: 5;
+  }
+  .sched-progress.is-active { opacity: 1; }
+  .sched-progress::before {
+    content: ''; position: absolute; top: 0; bottom: 0; width: 35%; border-radius: 3px;
+    background: linear-gradient(90deg, transparent, var(--phoenix-primary), transparent);
+    animation: sched-progress-slide 1.15s ease-in-out infinite;
+  }
+  @keyframes sched-progress-slide { 0% { left: -35%; } 100% { left: 100%; } }
+  @media (prefers-reduced-motion: reduce) {
+    .sched-progress::before { animation: none; left: 0; width: 100%; opacity: 0.4; }
+  }
+  /* select2 inside a Bootstrap modal — force full width + vertically centre */
+  #mainModal .select2-container { width: 100% !important; }
+  #mainModal .select2-selection--single { height: calc(3.5rem + 2px); display: flex; align-items: center; }
+  #mainModal .select2-selection--single .select2-selection__rendered { padding-left: 0.75rem; line-height: 1.4; }
+  #mainModal .select2-selection--single .select2-selection__arrow { height: 100%; }
+  /* Items */
+  .vis-item { border-radius: 0.4rem; border-width: 1px; font-size: 0.72rem; }
+  .vis-item.vis-selected { box-shadow: 0 0 0 2px var(--phoenix-primary); }
+  .vis-item .vis-item-content { padding: 2px 6px; }
+  .vis-item.cmt { border-style: dashed; }
+  /* Current time bar */
+  .vis-current-time { background-color: var(--phoenix-danger); }
+  /* Non-working days: shade weekend columns (only visible at day scale) */
+  .vis-grid.vis-saturday, .vis-grid.vis-sunday { background-color: rgba(100, 110, 130, 0.10); }
+  .vis-time-axis .vis-text.vis-saturday, .vis-time-axis .vis-text.vis-sunday { color: var(--phoenix-secondary-color); }
+  /* Today */
+  .vis-grid.vis-today { background-color: rgba(255, 193, 7, 0.10); }
+  .vis-time-axis .vis-text.vis-today { font-weight: 700; color: var(--phoenix-warning); }
+  .vis-time-axis .vis-text.vis-major { font-weight: 600; }
+  .sched-legend .dot.weekend { background: rgba(100, 110, 130, 0.35); }
+  .sched-legend .dot.holiday { background: rgba(220, 53, 69, 0.30); }
+  /* Range-select mode */
+  #vis-timeline.selecting-mode .vis-panel.vis-center,
+  #vis-timeline.selecting-mode .vis-foreground .vis-group { cursor: crosshair; }
+  .vis-item.vis-background.sched-selection {
+    background-color: rgba(13, 110, 253, 0.20); border: 1px dashed var(--phoenix-primary);
+  }
+  /* Not-yet-loaded time regions: hatched band spanning all rows */
+  .vis-item.vis-background.sched-unloaded {
+    background-image: repeating-linear-gradient(45deg,
+      rgba(120, 130, 150, 0.13) 0, rgba(120, 130, 150, 0.13) 8px,
+      rgba(120, 130, 150, 0.04) 8px, rgba(120, 130, 150, 0.04) 16px);
+    border: none; animation: sched-unloaded-pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes sched-unloaded-pulse { 0%,100% { opacity: 0.65; } 50% { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .vis-item.vis-background.sched-unloaded { animation: none; } }
+  .sched-toolbar { gap: 0.5rem; }
+  .sched-legend .dot {
+    display: inline-block; width: 0.7rem; height: 0.7rem; border-radius: 0.2rem;
+    margin-right: 0.25rem; vertical-align: middle;
+  }
+</style>

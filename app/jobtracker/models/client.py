@@ -258,6 +258,17 @@ class ClientOnboarding(models.Model):
 
     class Meta:
         ordering = [Lower("client"), "user"]
+        constraints = [
+            # One active (non-offboarded) onboarding per user+client. Historical
+            # offboarded rows are still allowed (BUG-005). The form guard in
+            # ClientOnboardingUserForm also covers the future-dated offboard case
+            # that a partial DB condition can't express.
+            models.UniqueConstraint(
+                fields=["user", "client"],
+                condition=models.Q(offboarded__isnull=True),
+                name="unique_active_onboarding_per_user_client",
+            )
+        ]
 
 
 class FrameworkAgreement(models.Model):

@@ -428,18 +428,6 @@ class Job(models.Model):
         # Lets get the hours,
         return round(total_scoped_hrs / self.client.hours_in_day, 2)
 
-    def get_gantt_json(self):
-        tasks = []
-        for phase in self.phases.all():
-            tasks.append({"id": phase.phase_id, "text": str(phase), "open": True})
-            for d in phase.get_gantt_json()["tasks"]:
-                d["parent"] = phase.phase_id
-                tasks.append(d)
-        data = {
-            "tasks": tasks,
-        }
-        return data
-
     # Gets scheduled users and assigned users (e.g. lead/author/qa etc)
     def team(self):
         ids = []
@@ -489,7 +477,11 @@ class Job(models.Model):
 
     def get_hours_in_day(self):
         # Priority is client
-        return self.client.hours_in_day
+        hours = self.client.hours_in_day
+        if not hours:
+            from django.conf import settings
+            hours = Decimal(settings.DEFAULT_HOURS_IN_DAY)
+        return hours
 
     def total_hrs_scheduled(self):
         from ..models import TimeSlot
@@ -502,7 +494,8 @@ class Job(models.Model):
 
     def total_days_scheduled(self):
         hrs = self.total_hrs_scheduled()
-        return round(hrs / self.client.hours_in_day, 1)
+        hid = self.get_hours_in_day()
+        return round(hrs / hid, 1) if hid else 0
 
     def get_all_total_scheduled_by_type(self):
         data = dict()

@@ -101,7 +101,12 @@
 
     </div>
     <div class="tab-pane p-2 fade" id="schedule" role="tabpanel" aria-labelledby="schedule-tab">
-      {% include 'partials/phase/widgets/gantt.html' %}
+      <div class="text-center py-6">
+        <p class="text-body-secondary mb-3">Open the interactive scheduler to view and edit this phase's schedule.</p>
+        <a href="{% url 'phase_schedule' phase.job.slug phase.slug %}" class="btn btn-phoenix-primary">
+          <span class="fas fa-calendar-days me-1"></span> Open Scheduler
+        </a>
+      </div>
     </div>
     <div class="tab-pane p-2 fade" id="dates" role="tabpanel" aria-labelledby="dates-tab">
       {% include 'partials/phase/dates_view.html' %}          

@@ -172,9 +172,49 @@ def _check_phase_scoped(slot, request, force=False, old_slot=None):
     }
 
 
+def _check_onboarding(slot, request, force=False):
+    """Enforce client onboarding for a delivery slot's assigned user.
+
+    Returns a logic-check data dict (or None), mirroring the return shape of
+    _check_phase_scoped so it drops into any slot create/change path.
+    Non-bypassable if the user has no onboarding record for the client;
+    a bypassable "stale" warning if their onboarding has lapsed."""
+    if not slot.is_delivery() or not slot.phase:
+        return None
+    client = slot.phase.job.client
+    if not client.onboarding_required:
+        return None
+
+    onboarding = client.onboarded_users.filter(user=slot.user).first()
+    if onboarding is None:
+        return {
+            "form_is_valid": False,
+            "logic_checks_failed": True,
+            "logic_checks_can_bypass": False,
+            "logic_checks_feedback": loader.render_to_string(
+                "partials/scheduler/logicchecks/not_onboarded.html",
+                {"slot": slot, "phase": slot.phase},
+                request=request,
+            ),
+        }
+
+    if onboarding.is_stale and not force:
+        return {
+            "form_is_valid": False,
+            "logic_checks_failed": True,
+            "logic_checks_can_bypass": True,
+            "logic_checks_feedback": loader.render_to_string(
+                "partials/scheduler/logicchecks/stale_onboarding.html",
+                {"slot": slot, "phase": slot.phase},
+                request=request,
+            ),
+        }
+    return None
+
+
 @login_required
 def view_scheduler(request):
-    context = {}
+    context = {"scheduler_scope": "global"}
     template = loader.get_template("scheduler.html")
     context = {**context, **page_defaults(request)}
     context["filter_form"] = SchedulerFilter(request.GET)
@@ -326,6 +366,13 @@ def change_scheduler_slot_date(request, pk=None):
                         "jobtracker/modals/job_slot.html", {"form": form}, request=request
                     )
                     return JsonResponse(_data)
+                # Non-bypassable if reassigning to a not-onboarded user (BUG-004)
+                _data = _check_onboarding(updated_slot, request, force=force)
+                if _data:
+                    _data["html_form"] = loader.render_to_string(
+                        "jobtracker/modals/job_slot.html", {"form": form}, request=request
+                    )
+                    return JsonResponse(_data)
             updated_slot.save()
             data["form_is_valid"] = True
         else:
@@ -382,6 +429,13 @@ def change_scheduler_slot(request, pk=None):
                         )
                         return JsonResponse(_data)
                 _data = _check_phase_scoped(updated_slot, request, force=force, old_slot=slot)
+                if _data:
+                    _data["html_form"] = loader.render_to_string(
+                        "jobtracker/modals/job_slot.html", {"form": form}, request=request
+                    )
+                    return JsonResponse(_data)
+                # Non-bypassable if reassigning to a not-onboarded user (BUG-004)
+                _data = _check_onboarding(updated_slot, request, force=force)
                 if _data:
                     _data["html_form"] = loader.render_to_string(
                         "jobtracker/modals/job_slot.html", {"form": form}, request=request
@@ -615,21 +669,15 @@ def create_scheduler_phase_slot(request):
                         request=request,
                     )
 
-            # Non-bypassable: onboarding required check
-            if not data["logic_checks_failed"] and (
-                slot.phase.job.client.onboarding_required
-                and not slot.phase.job.client.onboarded_users.filter(
-                    user=user, client=slot.phase.job.client
-                ).exists()
-            ):
-                data["form_is_valid"] = False
-                data["logic_checks_failed"] = True
-                data["logic_checks_can_bypass"] = False
-                data["logic_checks_feedback"] = loader.render_to_string(
-                    "partials/scheduler/logicchecks/not_onboarded.html",
-                    {"slot": slot, "phase": slot.phase},
-                    request=request,
-                )
+            # Onboarding: non-bypassable if the user isn't onboarded for the
+            # client, bypassable "stale" warning otherwise (see _check_onboarding).
+            if not data["logic_checks_failed"]:
+                _onboard = _check_onboarding(slot, request, force=force)
+                if _onboard:
+                    data["form_is_valid"] = False
+                    data["logic_checks_failed"] = True
+                    data["logic_checks_can_bypass"] = _onboard["logic_checks_can_bypass"]
+                    data["logic_checks_feedback"] += _onboard["logic_checks_feedback"]
 
             if not data["logic_checks_failed"]:
                 if not force:
@@ -690,25 +738,6 @@ def create_scheduler_phase_slot(request):
                             data["logic_checks_feedback"] += loader.render_to_string(
                                 "partials/scheduler/logicchecks/overlaps.html",
                                 {"slot": slot, "overlapping_slots": slots},
-                                request=request,
-                            )
-
-                    if (
-                        slot.phase.job.client.onboarding_required
-                        and slot.phase.job.client.onboarded_users.filter(
-                            user=user
-                        ).exists()
-                    ):
-                        onboarding = slot.phase.job.client.onboarded_users.filter(
-                            user=user
-                        ).first()
-                        if onboarding.is_stale:
-                            data["form_is_valid"] = False
-                            data["logic_checks_failed"] = True
-                            data["logic_checks_can_bypass"] = True
-                            data["logic_checks_feedback"] += loader.render_to_string(
-                                "partials/scheduler/logicchecks/stale_onboarding.html",
-                                {"slot": slot, "phase": phase},
                                 request=request,
                             )
 
@@ -1007,7 +1036,7 @@ def move_job_schedule_slots(request, slug):
     unit = job.unit
 
     if request.method == "POST":
-        form = MoveScheduleSlotsForm(request.POST, scheduled_users=scheduled_users, unit=unit)
+        form = MoveScheduleSlotsForm(request.POST, scheduled_users=scheduled_users, unit=unit, client=job.client)
         if form.is_valid():
             from_user = form.cleaned_data["from_user"]
             to_user = form.cleaned_data["to_user"]
@@ -1018,7 +1047,7 @@ def move_job_schedule_slots(request, slug):
         else:
             data["form_is_valid"] = False
     else:
-        form = MoveScheduleSlotsForm(scheduled_users=scheduled_users, unit=unit)
+        form = MoveScheduleSlotsForm(scheduled_users=scheduled_users, unit=unit, client=job.client)
 
     context = {"form": form, "job": job}
     data["html_form"] = loader.render_to_string(
@@ -1038,7 +1067,7 @@ def move_phase_schedule_slots(request, job_slug, slug):
     unit = job.unit
 
     if request.method == "POST":
-        form = MoveScheduleSlotsForm(request.POST, scheduled_users=scheduled_users, unit=unit)
+        form = MoveScheduleSlotsForm(request.POST, scheduled_users=scheduled_users, unit=unit, client=job.client)
         if form.is_valid():
             from_user = form.cleaned_data["from_user"]
             to_user = form.cleaned_data["to_user"]
@@ -1049,7 +1078,7 @@ def move_phase_schedule_slots(request, job_slug, slug):
         else:
             data["form_is_valid"] = False
     else:
-        form = MoveScheduleSlotsForm(scheduled_users=scheduled_users, unit=unit)
+        form = MoveScheduleSlotsForm(scheduled_users=scheduled_users, unit=unit, client=job.client)
 
     context = {"form": form, "phase": phase, "job": job}
     data["html_form"] = loader.render_to_string(

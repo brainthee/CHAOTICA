@@ -417,7 +417,8 @@ class TimeSlot(models.Model):
                     lunch_overlap_hours = (lunch_overlap_end - lunch_overlap_start).total_seconds() / 3600
 
                     # Add the overlapping portion to our count (usually 1.0 for a full day)
-                    lunch_breaks_count += lunch_overlap_hours / lunch_duration
+                    if lunch_duration:
+                        lunch_breaks_count += lunch_overlap_hours / lunch_duration
 
             # Move to next day
             current_date += datetime.timedelta(days=1)

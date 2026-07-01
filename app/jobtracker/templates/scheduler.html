@@ -21,25 +21,26 @@
   px-5
 {% endblock %}
 
-{% block breadcrumbs %}
+{% block breadcrumbs %}{% endblock %}
 
-{% endblock %}
 {% block alerts %}
-  {% comment %}This is ugly... but we have to "read" the messages otherwise next time they visit a normal page, it'll be full of messages!{% endcomment %}
-
+  {% comment %}Read the messages so they don't spill onto the next normal page.{% endcomment %}
   {% for message in messages %}
-    <div class="d-none alert m-2 alert-phoenix-{% if message.tags == 'error' %}
-        danger
-      {% else %}
-        {{ message.tags }}
-      {% endif %} show"
-      role="alert">{{ message }}</div>
+    <div class="d-none alert m-2 alert-phoenix-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} show" role="alert">{{ message }}</div>
   {% endfor %}
 {% endblock %}
 
+{% block extra_css %}
+  {% include 'partials/scheduler/vis_scheduler_css.html' %}
+{% endblock %}
+
 {% block content %}
-  <div class="calendar bg-body-emphasis w-100 {% if config.SITE_NOTICE_ENABLED %}pt-5{% endif %}" data-bs-toggle="calendar" id="calendar"></div>
-  {% include 'partials/loading.html' %}
+  {% csrf_token %}
+  <div class="bg-body-emphasis w-100 {% if config.SITE_NOTICE_ENABLED %}pt-5{% endif %}">
+    {% include 'partials/scheduler/vis_scheduler_toolbar.html' %}
+    <div id="sched-progress" class="sched-progress" role="progressbar" aria-hidden="true"></div>
+    <div id="vis-timeline"></div>
+  </div>
 {% endblock %}
 
 {% block offcanvas %}
@@ -48,7 +49,7 @@
       <div class="pt-1 w-100 mb-3 d-flex justify-content-between align-items-start">
         <div>
           <h5 class="mb-2 me-2 lh-sm">
-            <span class="fas fa-palette me-2 fs-8"></span>
+            <span class="fas fa-filter me-2 fs-8"></span>
             Filter Schedule
           </h5>
           <p class="mb-0 fs-9">Use the filters below to refine resources displayed</p>
@@ -57,6 +58,7 @@
       </div>
     </div>
     <div class="offcanvas-body scrollbar pt-0" id="themeController">
+      {{ filter_form.media }}
       {% crispy filter_form %}
     </div>
   </div>
@@ -73,13 +75,31 @@
 {% endblock %}
 
 {% block extra_js %}
+  <script src="{% static 'vendors/vis-timeline/vis-timeline-graph2d.min.js' %}"></script>
   <script>
-  {% include 'js/scheduler_init.js' %}
-</script>
-{% if config.EASTEREGG_GAMES_ENABLED %}
-  <script src="{% static "assets/js/games/schedule-blaster.js" %}"></script>
-  <script src="{% static "assets/js/games/rage-quit.js" %}"></script>
-{% endif %}
+    window.SCHEDULER_CONFIG = {
+      scope: 'global',
+      membersUrl: "{% url 'view_scheduler_members' %}",
+      slotsUrl: "{% url 'view_scheduler_slots' %}",
+      changeDateUrl: "{% url 'change_scheduler_slot_date' %}",
+      changeCommentDateUrl: "{% url 'change_scheduler_slot_comment_date' %}",
+      createUrls: {
+        assign_phase: "{% url 'create_scheduler_phase_slot' %}",
+        assign_project: "{% url 'create_scheduler_project_slot' %}",
+        assign_internal: "{% url 'create_scheduler_internal_slot' %}",
+        add_comment: "{% url 'create_scheduler_comment' %}",
+        clear: "{% url 'clear_scheduler_range' %}"
+      },
+      createExtraParams: '',
+      resetUrl: "{% url 'view_scheduler' %}",
+      cards: null
+    };
+  </script>
+  <script>{% include 'js/scheduler_vis_init.js' %}</script>
+  {% if config.EASTEREGG_GAMES_ENABLED %}
+    <script src="{% static "assets/js/games/schedule-blaster.js" %}"></script>
+    <script src="{% static "assets/js/games/rage-quit.js" %}"></script>
+  {% endif %}
 {% endblock %}
 
 {% block footer_css %}
