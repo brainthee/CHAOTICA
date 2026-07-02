@@ -734,7 +734,9 @@ class OrganisationalUnitRole(models.Model):
         for role in UnitRoles.DEFAULTS:
             if self.pk == role["pk"]:
                 self.permissions.clear()
-                for perm in UnitRoles.PERMISSIONS[role["pk"]][1]:
+                # PERMISSIONS is a 0-based tuple (index 0 == pk 1), matching the
+                # seeder in jobtracker/apps.py which indexes with pk-1.
+                for perm in UnitRoles.PERMISSIONS[role["pk"] - 1][1]:
                     if perm:
                         codeword = perm
                         if "." in perm:

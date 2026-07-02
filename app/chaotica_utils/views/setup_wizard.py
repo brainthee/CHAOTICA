@@ -3,11 +3,13 @@ from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django.contrib import messages
 from django.contrib.auth import login
+from django.contrib.auth.views import redirect_to_login
 from django.views.generic import View
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_protect
 from django.db import transaction
+from django.core.cache import cache
 
 from chaotica_utils.models import User
 from chaotica_utils.wizard_steps import (
@@ -33,24 +35,52 @@ class SetupWizardView(View):
         'complete'
     ]
 
+    # Steps that are reachable on a genuinely fresh install (no users yet)
+    # without authentication — just enough to bootstrap the first superuser.
+    _bootstrap_steps = ('welcome', 'admin_user')
+
     @method_decorator(never_cache)
     @method_decorator(csrf_protect)
-    def dispatch(self, *args, **kwargs):
-        # Check if setup is already done - must have ALL essential components
-        from jobtracker.models import OrganisationalUnit, Service, SkillCategory, Client
+    def dispatch(self, request, *args, **kwargs):
+        # A fresh install has no users at all — this is the only situation in
+        # which the wizard may be used anonymously (to create the first admin).
+        fresh_install = not User.objects.exists()
 
-        setup_complete = (
-            User.objects.count() > 0 and
-            OrganisationalUnit.objects.count() > 0 and
-            Service.objects.count() > 0 and
-            SkillCategory.objects.count() > 0 and
-            Client.objects.count() > 0
-        )
-
-        if setup_complete:
-            messages.warning(self.request, "Setup wizard has already been completed.")
+        if not fresh_install and not self._is_superuser(request):
+            # Once any user exists, the wizard is superuser-only. Anonymous
+            # users are sent to log in; authenticated non-superusers are denied.
+            # This closes the unauthenticated "log in as existing superuser" hole.
+            if not request.user.is_authenticated:
+                return redirect_to_login(request.get_full_path())
+            messages.error(request, "Only administrators can access the setup wizard.")
             return redirect('dashboard')
-        return super().dispatch(*args, **kwargs)
+
+        return super().dispatch(request, *args, **kwargs)
+
+    @staticmethod
+    def _is_superuser(request):
+        return request.user.is_authenticated and request.user.is_superuser
+
+    def _step_allowed(self, request, step):
+        """Every step beyond bootstrapping requires an authenticated superuser."""
+        if step in self._bootstrap_steps:
+            # 'admin_user' is only open while there is genuinely no user yet;
+            # once a superuser exists it must be an authenticated superuser.
+            if step == 'admin_user' and User.objects.exists():
+                return self._is_superuser(request)
+            return True
+        return self._is_superuser(request)
+
+    def _get_wizard_user(self, request, wizard_data):
+        """Resolve the admin user for the wizard: prefer the session-stored id,
+        fall back to the authenticated superuser (guaranteed past the admin_user
+        step by the access gate). Avoids member=None IntegrityErrors and stale
+        session ids raising DoesNotExist."""
+        user_id = wizard_data.get('admin_user_id')
+        user = User.objects.filter(pk=user_id).first() if user_id else None
+        if user is None and self._is_superuser(request):
+            user = request.user
+        return user
 
     def get(self, request):
         step = request.GET.get('step', None)
@@ -62,6 +92,13 @@ class SetupWizardView(View):
         if step not in self.steps:
             step = 'welcome'
 
+        # Guard steps that require an authenticated superuser
+        if not self._step_allowed(request, step):
+            if not request.user.is_authenticated:
+                return redirect_to_login(request.get_full_path())
+            messages.error(request, "Only administrators can access this step.")
+            return redirect('dashboard')
+
         # Only clear session if explicitly on welcome and nothing exists yet
         if step == 'welcome' and not self.has_existing_data():
             request.session.pop('wizard_data', None)
@@ -71,6 +108,15 @@ class SetupWizardView(View):
 
     def post(self, request):
         step = request.POST.get('current_step', 'welcome')
+
+        # Guard steps that require an authenticated superuser (prevents an
+        # anonymous user on a fresh install from creating org/services/etc.
+        # without first bootstrapping an admin).
+        if not self._step_allowed(request, step):
+            if not request.user.is_authenticated:
+                return redirect_to_login(request.get_full_path())
+            messages.error(request, "Only administrators can access this step.")
+            return redirect('dashboard')
 
         if step == 'welcome':
             return redirect(f'{request.path}?step=admin_user')
@@ -101,15 +147,15 @@ class SetupWizardView(View):
             'step_index': self.steps.index(step),
             'total_steps': len(self.steps),
             'wizard_data': wizard_data,
-            'progress_percent': (self.steps.index(step) / len(self.steps)) * 100,
+            # Divide by (total_steps - 1) so the final step reads 100%.
+            'progress_percent': (self.steps.index(step) / max(1, len(self.steps) - 1)) * 100,
         }
 
         if step == 'admin_user':
             context['form'] = WizardUserForm()
 
         elif step == 'organisation':
-            user_id = wizard_data.get('admin_user_id')
-            user = User.objects.get(pk=user_id) if user_id else None
+            user = self._get_wizard_user(request, wizard_data)
             context['form'] = WizardOrganisationForm(user=user)
 
         elif step == 'services':
@@ -130,18 +176,15 @@ class SetupWizardView(View):
     @transaction.atomic
     def handle_admin_user(self, request):
         """Handle admin user creation"""
-        # Check if admin user already exists
+        # If an admin already exists we do NOT log anyone in — reaching this
+        # step at all now requires an authenticated superuser (enforced by
+        # dispatch/_step_allowed), so just record the current admin and move on.
         if User.objects.filter(is_superuser=True).exists():
-            # Skip to next step if admin already exists
-            user = User.objects.filter(is_superuser=True).first()
+            user = request.user if self._is_superuser(request) else User.objects.filter(is_superuser=True).first()
             wizard_data = request.session.get('wizard_data', {})
             wizard_data['admin_user_id'] = user.pk
             wizard_data['admin_user_name'] = f"{user.first_name} {user.last_name}"
             request.session['wizard_data'] = wizard_data
-
-            if not request.user.is_authenticated:
-                # Log the user in if not already
-                login(request, user, backend='django.contrib.auth.backends.ModelBackend')
 
             messages.info(request, "Admin user already exists, continuing setup...")
             return redirect(f'{request.path}?step=organisation')
@@ -154,13 +197,17 @@ class SetupWizardView(View):
             user.is_superuser = True
             user.save()
 
+            # First user now exists — invalidate the cached setup flag so the
+            # middleware recomputes immediately (avoids a stale-True redirect loop).
+            cache.delete('chaotica_setup_needed')
+
             # Store in session
             wizard_data = request.session.get('wizard_data', {})
             wizard_data['admin_user_id'] = user.pk
             wizard_data['admin_user_name'] = f"{user.first_name} {user.last_name}"
             request.session['wizard_data'] = wizard_data
 
-            # Log the user in
+            # Log the user in (they just created their own account)
             login(request, user, backend='django.contrib.auth.backends.ModelBackend')
 
             messages.success(request, f"Admin user '{user.email}' created successfully!")
@@ -176,8 +223,7 @@ class SetupWizardView(View):
         from jobtracker.models import OrganisationalUnit, OrganisationalUnitMember, OrganisationalUnitRole
 
         wizard_data = request.session.get('wizard_data', {})
-        user_id = wizard_data.get('admin_user_id')
-        user = User.objects.get(pk=user_id) if user_id else None
+        user = self._get_wizard_user(request, wizard_data)
 
         form = WizardOrganisationForm(request.POST, user=user)
 
@@ -192,17 +238,25 @@ class SetupWizardView(View):
             # Add the admin user as a member with manager role
             from chaotica_utils.enums import UnitRoles
 
-            # Get or create manager role
-            manager_role, _ = OrganisationalUnitRole.objects.get_or_create(
+            # Get or create manager role. The role is normally seeded (with its
+            # permissions) by a post_migrate signal; if it was somehow absent,
+            # populate its default permissions so the admin isn't left powerless.
+            manager_role, role_created = OrganisationalUnitRole.objects.get_or_create(
                 pk=UnitRoles.MANAGER,
                 defaults={'name': 'Manager', 'manage_role': True}
             )
+            if role_created:
+                manager_role.sync_default_permissions()
 
             membership = OrganisationalUnitMember.objects.create(
                 unit=org_unit,
                 member=user
             )
             membership.roles.add(manager_role)
+            # roles.add() is an M2M op and does not trigger save()/perm sync —
+            # sync explicitly so the admin actually receives the unit's guardian
+            # object permissions for their roles.
+            org_unit.sync_permissions()
 
             # Store in session
             wizard_data['org_unit_id'] = org_unit.pk
@@ -305,21 +359,26 @@ class SetupWizardView(View):
             created_clients = []
 
             wizard_data = request.session.get('wizard_data', {})
-            user_id = wizard_data.get('admin_user_id')
-            user = User.objects.get(pk=user_id) if user_id else None
+            user = self._get_wizard_user(request, wizard_data)
 
             for client_name in clients:
                 client, created = Client.objects.get_or_create(
                     name=client_name,
                     defaults={'short_name': client_name[:20]}
                 )
-                if created and user:
-                    client.account_managers.add(user)
+                if created:
+                    if user:
+                        client.account_managers.add(user)
                     created_clients.append(client_name)
 
             # Store in session
             wizard_data['clients'] = created_clients
             request.session['wizard_data'] = wizard_data
+
+            # Final step done — clear the cached setup flag so the middleware
+            # recomputes on the next request (belt-and-braces alongside the
+            # invalidation at admin-user creation).
+            cache.delete('chaotica_setup_needed')
 
             messages.success(request, f"Created {len(created_clients)} clients!")
             return redirect(f'{request.path}?step=complete')
