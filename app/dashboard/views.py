@@ -9,7 +9,7 @@ from jobtracker.models import Job, Phase, TimeSlot, OrganisationalUnit
 from chaotica_utils.models import LeaveRequest, User, UserJobLevel
 from jobtracker.enums import JobStatuses, PhaseStatuses
 from chaotica_utils.views import page_defaults
-from django.db.models import Q, Prefetch
+from django.db.models import Q, Prefetch, Count
 from django.db.models.functions import Coalesce
 from django.views.decorators.http import require_safe
 from guardian.shortcuts import get_objects_for_user
@@ -271,6 +271,92 @@ def index(request):
     context["avg_pqa_rating"] = request.user.get_average_presqa_feedback()
     context["tqa_feedback_12mo"] = request.user.get_average_techqa_feedback_12mo()
     context["pqa_feedback_12mo"] = request.user.get_average_presqa_feedback_12mo()
+
+    # --- Alarms ---
+    today = timezone.now().date()
+    alarm_base = Phase.objects.filter(
+        job__unit__in=units_can_view,
+        job__status__in=JobStatuses.ACTIVE_STATUSES,
+        status__in=PhaseStatuses.ACTIVE_STATUSES,
+    )
+
+    alarms = {}
+
+    alarms["delivery_overdue"] = list(
+        alarm_base.annotate(
+            db_delivery_date=Coalesce("desired_delivery_date", "_delivery_date")
+        ).filter(db_delivery_date__lt=today).select_related(
+            "service", "job__client", "project_lead", "report_author"
+        )
+    )
+
+    alarms["tqa_overdue"] = list(
+        alarm_base.annotate(
+            db_tqa_date=Coalesce("due_to_techqa_set", "_due_to_techqa")
+        ).filter(
+            db_tqa_date__lt=today,
+            status__in=[
+                PhaseStatuses.IN_PROGRESS, PhaseStatuses.PENDING_TQA,
+                PhaseStatuses.QA_TECH, PhaseStatuses.QA_TECH_AUTHOR_UPDATES,
+            ],
+        ).select_related("service", "job__client", "project_lead", "report_author", "techqa_by")
+    )
+
+    alarms["pqa_overdue"] = list(
+        alarm_base.annotate(
+            db_pqa_date=Coalesce("due_to_presqa_set", "_due_to_presqa")
+        ).filter(
+            db_pqa_date__lt=today,
+            status__in=[
+                PhaseStatuses.PENDING_PQA, PhaseStatuses.QA_PRES,
+                PhaseStatuses.QA_PRES_AUTHOR_UPDATES,
+            ],
+        ).select_related("service", "job__client", "project_lead", "report_author", "presqa_by")
+    )
+
+    alarms["no_techqa"] = list(
+        alarm_base.filter(
+            techqa_by__isnull=True,
+            status__in=[
+                PhaseStatuses.PENDING_TQA, PhaseStatuses.QA_TECH,
+                PhaseStatuses.QA_TECH_AUTHOR_UPDATES,
+            ],
+        ).select_related("service", "job__client", "project_lead", "report_author")
+    )
+
+    alarms["no_presqa"] = list(
+        alarm_base.filter(
+            presqa_by__isnull=True,
+            status__in=[
+                PhaseStatuses.PENDING_PQA, PhaseStatuses.QA_PRES,
+                PhaseStatuses.QA_PRES_AUTHOR_UPDATES,
+            ],
+        ).select_related("service", "job__client", "project_lead", "report_author")
+    )
+
+    alarms["unscheduled"] = list(
+        alarm_base.filter(
+            status__in=[
+                PhaseStatuses.SCHEDULED_TENTATIVE, PhaseStatuses.SCHEDULED_CONFIRMED,
+                PhaseStatuses.PRE_CHECKS, PhaseStatuses.CLIENT_NOT_READY,
+                PhaseStatuses.READY_TO_BEGIN, PhaseStatuses.IN_PROGRESS,
+            ]
+        ).annotate(
+            timeslot_count=Count("timeslots")
+        ).filter(timeslot_count=0).select_related("service", "job__client", "project_lead")
+    )
+
+    alarms["job_overdue"] = list(
+        Job.objects.filter(
+            unit__in=units_can_view,
+            status__in=JobStatuses.ACTIVE_STATUSES,
+        ).annotate(
+            db_delivery_date=Coalesce("desired_delivery_date", "_delivery_date")
+        ).filter(db_delivery_date__lt=today).select_related("client", "unit")
+    )
+
+    context["alarms"] = alarms
+    context["alarm_count"] = sum(len(v) for v in alarms.values())
 
     context = {**context, **page_defaults(request)}
     template = loader.get_template("dashboard_index.html")

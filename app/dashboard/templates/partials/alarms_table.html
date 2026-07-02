@@ -1,0 +1,198 @@
+<h2 class="mb-3 lh-sm">Alarms</h2>
+<h5 class="mb-3 text-body-tertiary fw-semibold">
+  Phases and jobs that need attention across your units.
+</h5>
+
+{% if not alarm_count %}
+  <div class="alert alert-phoenix-success" role="alert">
+    <span class="fas fa-check-circle me-2"></span>No alarms — everything looks good.
+  </div>
+{% endif %}
+
+{% if alarms.delivery_overdue %}
+<div class="card mb-3 border-danger">
+  <div class="card-header bg-danger-subtle">
+    <h5 class="mb-0 text-danger">
+      <span class="fas fa-exclamation-triangle me-2"></span>Delivery Overdue
+      <span class="badge bg-danger ms-2">{{ alarms.delivery_overdue|length }}</span>
+    </h5>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-sm mb-0">
+      <thead><tr><th>Phase</th><th>Client</th><th>Status</th><th>Delivery Date</th><th>Lead</th></tr></thead>
+      <tbody>
+        {% for phase in alarms.delivery_overdue %}
+        <tr>
+          <td><a href="{{ phase.get_absolute_url }}">{{ phase.title }}</a></td>
+          <td>{{ phase.job.client }}</td>
+          <td><span class="badge badge-phoenix badge-phoenix-{{ phase.get_status_bs_colour }}">{{ phase.get_status_display }}</span></td>
+          <td class="text-danger">{% if phase.delivery_date %}{{ phase.delivery_date }}{% else %}&mdash;{% endif %}</td>
+          <td>{% if phase.project_lead %}{{ phase.project_lead.get_full_name }}{% else %}&mdash;{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% if alarms.tqa_overdue %}
+<div class="card mb-3 border-warning">
+  <div class="card-header bg-warning-subtle">
+    <h5 class="mb-0 text-warning-emphasis">
+      <span class="fas fa-clock me-2"></span>Tech QA Overdue
+      <span class="badge bg-warning text-dark ms-2">{{ alarms.tqa_overdue|length }}</span>
+    </h5>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-sm mb-0">
+      <thead><tr><th>Phase</th><th>Client</th><th>Status</th><th>TQA Due</th><th>Tech QA</th></tr></thead>
+      <tbody>
+        {% for phase in alarms.tqa_overdue %}
+        <tr>
+          <td><a href="{{ phase.get_absolute_url }}">{{ phase.title }}</a></td>
+          <td>{{ phase.job.client }}</td>
+          <td><span class="badge badge-phoenix badge-phoenix-{{ phase.get_status_bs_colour }}">{{ phase.get_status_display }}</span></td>
+          <td class="text-warning">{% if phase.due_to_techqa %}{{ phase.due_to_techqa }}{% else %}&mdash;{% endif %}</td>
+          <td>{% if phase.techqa_by %}{{ phase.techqa_by.get_full_name }}{% else %}&mdash;{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% if alarms.pqa_overdue %}
+<div class="card mb-3 border-warning">
+  <div class="card-header bg-warning-subtle">
+    <h5 class="mb-0 text-warning-emphasis">
+      <span class="fas fa-clock me-2"></span>Presentation QA Overdue
+      <span class="badge bg-warning text-dark ms-2">{{ alarms.pqa_overdue|length }}</span>
+    </h5>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-sm mb-0">
+      <thead><tr><th>Phase</th><th>Client</th><th>Status</th><th>PQA Due</th><th>Pres QA</th></tr></thead>
+      <tbody>
+        {% for phase in alarms.pqa_overdue %}
+        <tr>
+          <td><a href="{{ phase.get_absolute_url }}">{{ phase.title }}</a></td>
+          <td>{{ phase.job.client }}</td>
+          <td><span class="badge badge-phoenix badge-phoenix-{{ phase.get_status_bs_colour }}">{{ phase.get_status_display }}</span></td>
+          <td class="text-warning">{% if phase.due_to_presqa %}{{ phase.due_to_presqa }}{% else %}&mdash;{% endif %}</td>
+          <td>{% if phase.presqa_by %}{{ phase.presqa_by.get_full_name }}{% else %}&mdash;{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% if alarms.no_techqa %}
+<div class="card mb-3 border-info">
+  <div class="card-header bg-info-subtle">
+    <h5 class="mb-0 text-info-emphasis">
+      <span class="fas fa-user-times me-2"></span>No Tech QA Assigned
+      <span class="badge bg-info ms-2">{{ alarms.no_techqa|length }}</span>
+    </h5>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-sm mb-0">
+      <thead><tr><th>Phase</th><th>Client</th><th>Status</th><th>Lead</th><th>Author</th></tr></thead>
+      <tbody>
+        {% for phase in alarms.no_techqa %}
+        <tr>
+          <td><a href="{{ phase.get_absolute_url }}">{{ phase.title }}</a></td>
+          <td>{{ phase.job.client }}</td>
+          <td><span class="badge badge-phoenix badge-phoenix-{{ phase.get_status_bs_colour }}">{{ phase.get_status_display }}</span></td>
+          <td>{% if phase.project_lead %}{{ phase.project_lead.get_full_name }}{% else %}&mdash;{% endif %}</td>
+          <td>{% if phase.report_author %}{{ phase.report_author.get_full_name }}{% else %}&mdash;{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% if alarms.no_presqa %}
+<div class="card mb-3 border-info">
+  <div class="card-header bg-info-subtle">
+    <h5 class="mb-0 text-info-emphasis">
+      <span class="fas fa-user-times me-2"></span>No Presentation QA Assigned
+      <span class="badge bg-info ms-2">{{ alarms.no_presqa|length }}</span>
+    </h5>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-sm mb-0">
+      <thead><tr><th>Phase</th><th>Client</th><th>Status</th><th>Lead</th><th>Author</th></tr></thead>
+      <tbody>
+        {% for phase in alarms.no_presqa %}
+        <tr>
+          <td><a href="{{ phase.get_absolute_url }}">{{ phase.title }}</a></td>
+          <td>{{ phase.job.client }}</td>
+          <td><span class="badge badge-phoenix badge-phoenix-{{ phase.get_status_bs_colour }}">{{ phase.get_status_display }}</span></td>
+          <td>{% if phase.project_lead %}{{ phase.project_lead.get_full_name }}{% else %}&mdash;{% endif %}</td>
+          <td>{% if phase.report_author %}{{ phase.report_author.get_full_name }}{% else %}&mdash;{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% if alarms.unscheduled %}
+<div class="card mb-3 border-secondary">
+  <div class="card-header bg-secondary-subtle">
+    <h5 class="mb-0 text-secondary-emphasis">
+      <span class="fas fa-calendar-times me-2"></span>Active Phases with No Schedule
+      <span class="badge bg-secondary ms-2">{{ alarms.unscheduled|length }}</span>
+    </h5>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-sm mb-0">
+      <thead><tr><th>Phase</th><th>Client</th><th>Status</th><th>Lead</th></tr></thead>
+      <tbody>
+        {% for phase in alarms.unscheduled %}
+        <tr>
+          <td><a href="{{ phase.get_absolute_url }}">{{ phase.title }}</a></td>
+          <td>{{ phase.job.client }}</td>
+          <td><span class="badge badge-phoenix badge-phoenix-{{ phase.get_status_bs_colour }}">{{ phase.get_status_display }}</span></td>
+          <td>{% if phase.project_lead %}{{ phase.project_lead.get_full_name }}{% else %}&mdash;{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% if alarms.job_overdue %}
+<div class="card mb-3 border-danger">
+  <div class="card-header bg-danger-subtle">
+    <h5 class="mb-0 text-danger">
+      <span class="fas fa-briefcase me-2"></span>Jobs Overdue
+      <span class="badge bg-danger ms-2">{{ alarms.job_overdue|length }}</span>
+    </h5>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-sm mb-0">
+      <thead><tr><th>Job</th><th>Client</th><th>Unit</th><th>Status</th><th>Delivery Date</th></tr></thead>
+      <tbody>
+        {% for job in alarms.job_overdue %}
+        <tr>
+          <td><a href="{{ job.get_absolute_url }}">{{ job.title }}</a></td>
+          <td>{{ job.client }}</td>
+          <td>{{ job.unit }}</td>
+          <td><span class="badge badge-phoenix badge-phoenix-{{ job.get_status_bs_colour }}">{{ job.get_status_display }}</span></td>
+          <td class="text-danger">{% if job.delivery_date %}{{ job.delivery_date }}{% else %}&mdash;{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}

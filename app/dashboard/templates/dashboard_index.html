@@ -145,6 +145,13 @@
           <span class="d-none d-sm-inline">Team Leave Requests</span>
         </a>
         {% endif %}
+        <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center"
+          id="alarmsTab" data-bs-toggle="tab" data-bs-target="#alarmsTabContent" role="tab" aria-controls="alarmsTabContent" aria-selected="false">
+          <span class="fa fa-bell me-sm-2 fs-7"></span>
+          <span class="d-none d-sm-inline">Alarms
+            {% if alarm_count %}<span class="badge bg-danger ms-1">{{ alarm_count }}</span>{% endif %}
+          </span>
+        </a>
       </div>
     </div>
 
@@ -316,7 +323,11 @@
         </div>
       </div>
       {% endif %}
-      
+
+      <div class="tab-pane fade h-100 p-3" id="alarmsTabContent" role="tabpanel" aria-labelledby="alarmsTab">
+        {% include 'partials/alarms_table.html' %}
+      </div>
+
     </div>
   </div>
 </div>
