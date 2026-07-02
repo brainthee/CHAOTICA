@@ -8,16 +8,28 @@ from django.db import transaction
 from django.utils import timezone
 from faker import Faker
 
-from chaotica_utils.models import JobLevel
+from chaotica_utils.models import JobLevel, UserJobLevel
 from jobtracker.models import (
     Job, Phase, Client, Service, Skill, SkillCategory, TimeSlot, TimeSlotType,
     OrganisationalUnit, OrganisationalUnitMember, OrganisationalUnitRole,
     Contact, BillingCode, UserSkill, FrameworkAgreement, Feedback
 )
-from jobtracker.enums import PhaseStatuses, FeedbackType, TechQARatings, PresQARatings, UserSkillRatings, JobStatuses, TimeSlotDeliveryRole
+from jobtracker.enums import (
+    PhaseStatuses, FeedbackType, TechQARatings, PresQARatings, UserSkillRatings,
+    JobStatuses, TimeSlotDeliveryRole, DefaultTimeSlotTypes
+)
 from chaotica_utils.enums import LeaveRequestTypes
 from chaotica_utils.models import LeaveRequest, UserCost
-from notifications.models import NotificationSubscription
+
+# Map organisational-unit slugs to valid ISO 3166-1 alpha-2 country codes.
+# The unit slugs use 'UK' but the correct ISO code for the United Kingdom is 'GB'.
+UNIT_SLUG_TO_COUNTRY = {
+    'UK': 'GB',
+    'DE': 'DE',
+    'US': 'US',
+    'AU': 'AU',
+    'NL': 'NL',
+}
 
 User = get_user_model()
 fake = Faker()
@@ -68,25 +80,38 @@ class Command(BaseCommand):
         if options['clear']:
             self.clear_existing_data()
             self.stdout.write(self.style.SUCCESS('Demo data cleared successfully!'))
-        else:
 
-            self.create_organisational_units()
-            self.create_job_levels()
-            self.create_skills()
-            self.create_services()
-            self.create_timeslot_types()
-            self.create_users(options['users'])
-            self.create_clients(options['clients'])
-            self.create_jobs_and_phases(options['jobs'])
-            self.create_timeslots()
-            self.create_leave_requests()
+        self.load_builtin_timeslot_types()
+        self.create_organisational_units()
+        self.create_job_levels()
+        self.create_skills()
+        self.create_services()
+        self.create_users(options['users'])
+        self.create_clients(options['clients'])
+        self.create_jobs_and_phases(options['jobs'])
+        self.create_timeslots()
+        self.create_leave_requests()
 
-            self.stdout.write(self.style.SUCCESS('Demo data generation completed successfully!'))
+        self.stdout.write(self.style.SUCCESS('Demo data generation completed successfully!'))
+
+    def load_builtin_timeslot_types(self):
+        """Reference the built-in TimeSlotTypes (seeded by post_migrate) rather
+        than minting new ones, so demo slots use the correct pks/flags and are
+        recognised by TimeSlot.is_delivery()."""
+        self.delivery_type = TimeSlotType.get_builtin_object(DefaultTimeSlotTypes.DELIVERY)
+        self.leave_type = TimeSlotType.get_builtin_object(DefaultTimeSlotTypes.LEAVE)
 
     def clear_existing_data(self):
         self.stdout.write('Clearing existing data...')
+        # NOTE: TimeSlotType is deliberately NOT cleared — the built-in types
+        # (pk 1-13) are seeded by a post_migrate signal only when the table is
+        # empty, and TimeSlot.slot_type is CASCADE, so wiping them would delete
+        # every real timeslot and leave the app without its required types.
+        # Order matters: Feedback has PROTECT FKs to both Phase and User, so it
+        # must be deleted before them. Phase has PROTECT FKs to Service and User,
+        # so Phase is deleted before Service and before the User deletion below.
         models_to_clear = [
-            TimeSlot, TimeSlotType, Phase, Job, FrameworkAgreement, Contact, Client,
+            Feedback, TimeSlot, Phase, Job, FrameworkAgreement, Contact, Client,
             UserSkill, UserCost, LeaveRequest, Service, Skill,
             OrganisationalUnitMember, OrganisationalUnit, JobLevel
         ]
@@ -104,7 +129,6 @@ class Command(BaseCommand):
                 tables_to_reset = [
                     'chaotica_utils_user',
                     'jobtracker_timeslot',
-                    'jobtracker_timeslottype',
                     'jobtracker_phase',
                     'jobtracker_job',
                     'jobtracker_frameworkagreement',
@@ -130,7 +154,6 @@ class Command(BaseCommand):
                 tables_to_reset = [
                     'chaotica_utils_user',
                     'jobtracker_timeslot',
-                    'jobtracker_timeslottype',
                     'jobtracker_phase',
                     'jobtracker_job',
                     'jobtracker_frameworkagreement',
@@ -152,7 +175,7 @@ class Command(BaseCommand):
             from django.db import connection
             with connection.cursor() as cursor:
                 models_to_reset = [
-                    User, TimeSlot, TimeSlotType, Phase, Job, FrameworkAgreement,
+                    User, TimeSlot, Phase, Job, FrameworkAgreement,
                     Contact, Client, UserSkill, UserCost, LeaveRequest, Service,
                     Skill, OrganisationalUnitMember, OrganisationalUnit, JobLevel
                 ]
@@ -284,26 +307,6 @@ class Command(BaseCommand):
             service.skillsDesired.set(required_skills[num_skills//2:])
             self.services.append(service)
 
-    def create_timeslot_types(self):
-        self.stdout.write('Creating timeslot types...')
-
-        self.timeslot_types = []
-        types = [
-            ('Client Delivery', True, '#28a745'),
-            ('Internal Project', False, '#17a2b8'),
-            ('Training', False, '#ffc107'),
-            ('Annual Leave', False, '#6c757d'),
-            ('Sick Leave', False, '#dc3545'),
-            ('Admin', False, '#6610f2'),
-        ]
-
-        for name, deliverable, color in types:
-            ts_type, created = TimeSlotType.objects.get_or_create(
-                name=name,
-                defaults={'is_delivery': deliverable}
-            )
-            self.timeslot_types.append(ts_type)
-
     def create_users(self, count):
         self.stdout.write(f'Creating {count} users...')
 
@@ -336,10 +339,15 @@ class Command(BaseCommand):
             first_name = fake.first_name()
             last_name = fake.last_name()
             email = f"{first_name.lower()}.{last_name.lower()}@demo.chaotica.app"
+            # Guard against faker name collisions colliding on the unique email
+            if User.objects.filter(email=email).exists():
+                email = f"{first_name.lower()}.{last_name.lower()}.{i}@demo.chaotica.app"
 
             unit = random.choice(self.units)
             region_short = unit.slug
             region_info = region_data.get(region_short, region_data['UK'])
+            location_name = random.choice(region_info['locations'])
+            country_code = UNIT_SLUG_TO_COUNTRY.get(region_short, 'GB')
 
             user = User.objects.create_user(
                 email=email,
@@ -347,12 +355,25 @@ class Command(BaseCommand):
                 first_name=first_name,
                 last_name=last_name,
                 job_title=random.choice([jl.long_label for jl in self.job_levels]),
-                location=random.choice(region_info['locations']),
-                country=region_short,
+                country=country_code,
                 pref_timezone=region_info['timezone'],
                 contracted_leave=25,
                 carry_over_leave=random.randint(0, 5)
             )
+
+            # Best-effort assign a real cities_light City (the old free-text
+            # `location` field was removed in favour of the `city` FK). Left
+            # null if no matching city is loaded — city is nullable.
+            try:
+                from cities_light.models import City
+                city = City.objects.filter(
+                    name=location_name, country__code2=country_code
+                ).first()
+                if city:
+                    user.city = city
+                    user.save(update_fields=['city'])
+            except Exception:
+                pass
 
             role, _ = OrganisationalUnitRole.objects.get_or_create(
                 name='Member',
@@ -376,9 +397,10 @@ class Command(BaseCommand):
                     rating=random.choice(UserSkillRatings.CHOICES)[0]
                 )
 
+            # Job levels live in the UserJobLevel model (with an is_current
+            # flag), not as a field on User. assign_level() handles is_current.
             if random.random() > 0.3:
-                user.job_level = random.choice(self.job_levels)
-                user.save()
+                UserJobLevel.assign_level(user, random.choice(self.job_levels))
 
             self.users.append(user)
 
@@ -660,9 +682,7 @@ class Command(BaseCommand):
     def create_timeslots(self):
         self.stdout.write('Creating timeslots...')
 
-        delivery_type = next((t for t in self.timeslot_types if t.is_delivery), None)
-        if not delivery_type:
-            return
+        delivery_type = self.delivery_type
 
         phases_with_activity = Phase.objects.filter(
             status__in=[
@@ -751,8 +771,8 @@ class Command(BaseCommand):
                 self.create_qa_timeslots(phase, phase.presqa_by, TimeSlotDeliveryRole.QA, qa_type='Pres')
 
     def create_qa_timeslots(self, phase, qa_user, role, qa_type='Tech'):
-        delivery_type = next((t for t in self.timeslot_types if t.is_delivery), None)
-        if not delivery_type or not phase.desired_delivery_date:
+        delivery_type = self.delivery_type
+        if not phase.desired_delivery_date:
             return
 
         qa_start = phase.desired_delivery_date + timedelta(days=1)
@@ -796,8 +816,17 @@ class Command(BaseCommand):
             num_requests = random.randint(1, 3)
 
             for _ in range(num_requests):
-                start = timezone.now().date() + timedelta(days=random.randint(-30, 90))
-                end = start + timedelta(days=random.randint(1, 10))
+                start_date = timezone.now().date() + timedelta(days=random.randint(-30, 90))
+                end_date = start_date + timedelta(days=random.randint(1, 10))
+
+                # start_date/end_date are DateTimeFields — build aware datetimes
+                # spanning the leave (business-hours start to end-of-day end).
+                start = timezone.make_aware(
+                    datetime.combine(start_date, datetime.strptime('09:00', '%H:%M').time())
+                )
+                end = timezone.make_aware(
+                    datetime.combine(end_date, datetime.strptime('17:30', '%H:%M').time())
+                )
 
                 leave = LeaveRequest.objects.create(
                     user=user,
@@ -809,26 +838,17 @@ class Command(BaseCommand):
                 )
 
                 if leave.authorised and user.manager:
+                    # Mirror LeaveRequest.authorise() (leave.py) — a single
+                    # timeslot spanning the whole request using the built-in
+                    # LEAVE type — but without firing notifications during seeding.
                     leave.authorised_by = user.manager
+                    leave.authorised_on = timezone.now()
+
+                    ts = TimeSlot.objects.create(
+                        user=user,
+                        slot_type=self.leave_type,
+                        start=start,
+                        end=end,
+                    )
+                    leave.timeslot = ts
                     leave.save()
-
-                    leave_type = next((t for t in self.timeslot_types if 'LEAVE' in t.name), None)
-                    if leave_type:
-                        current = start
-                        while current <= end:
-                            if current.weekday() < 5:
-                                start_time = timezone.make_aware(
-                                    datetime.combine(current, datetime.strptime('09:00', '%H:%M').time())
-                                )
-                                end_time = start_time + timedelta(hours=7.5)
-
-                                ts = TimeSlot.objects.create(
-                                    user=user,
-                                    slot_type=leave_type,
-                                    start=start_time,
-                                    end=end_time
-                                )
-                                leave.timeslot = ts
-                                leave.save()
-                                break
-                            current += timedelta(days=1)

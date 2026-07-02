@@ -47,15 +47,11 @@ class NewInstallMiddleware(MiddlewareMixin):
         # Cache the result so we don't run 5 COUNT queries on every request.
         setup_needed = cache.get('chaotica_setup_needed')
         if setup_needed is None:
-            from jobtracker.models import OrganisationalUnit, Service, SkillCategory, Client
-
-            setup_needed = (
-                User.objects.count() == 0 or
-                OrganisationalUnit.objects.count() == 0 or
-                Service.objects.count() == 0 or
-                SkillCategory.objects.count() == 0 or
-                Client.objects.count() == 0
-            )
+            # Setup is "needed" only on a genuinely fresh install (no users).
+            # Empty clients/services/skills is a legitimate operating state and
+            # must NOT force the whole app into the wizard (which previously
+            # caused an app-wide lockout and an unauthenticated login bypass).
+            setup_needed = User.objects.count() == 0
             if not setup_needed:
                 # Setup complete — cache indefinitely (cleared on server restart)
                 cache.set('chaotica_setup_needed', False, None)
