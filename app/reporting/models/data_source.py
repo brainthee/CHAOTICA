@@ -89,13 +89,35 @@ class DataSource(models.Model):
 
 class DataField(models.Model):
     """Represents an available field in a data area"""
+
+    SOURCE_ORM = 'orm'
+    SOURCE_RESOLVER = 'resolver'
+    SOURCE_TYPE_CHOICES = [
+        (SOURCE_ORM, 'ORM Lookup'),
+        (SOURCE_RESOLVER, 'Computed Resolver'),
+    ]
+
     data_area = models.ForeignKey(DataArea, on_delete=models.CASCADE, related_name='fields')
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
-    
+
     # Field technical details
     field_path = models.CharField(max_length=255, help_text="Path to the field in the model")
     field_type = models.ForeignKey('FieldType', on_delete=models.CASCADE)
+
+    # How this field's value is produced. 'orm' fields are resolved via ORM
+    # lookups (the default, using field_path). 'resolver' fields are computed in
+    # Python by a whitelisted callable in reporting.resolvers (keyed by
+    # resolver_key) - used for model properties/methods that .values() cannot
+    # express (e.g. scheduled days by role, assigned engineers).
+    source_type = models.CharField(
+        max_length=20, choices=SOURCE_TYPE_CHOICES, default=SOURCE_ORM,
+        help_text="How this field is computed: a plain ORM lookup or a whitelisted resolver.",
+    )
+    resolver_key = models.CharField(
+        max_length=100, blank=True, null=True,
+        help_text="Key into reporting.resolvers.REPORTING_RESOLVERS; used only when source_type='resolver'.",
+    )
     
     # Display information
     display_name = models.CharField(max_length=100)

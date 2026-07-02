@@ -6,6 +6,7 @@ from django.core.exceptions import PermissionDenied
 
 from ..models import DataArea, DataField, Report, ReportField, ReportFilter, ReportSort
 from ..utils.query_builder import build_query_from_report
+from ..resolvers import REPORTING_RESOLVERS
 
 class DataService:
     """
@@ -72,20 +73,33 @@ class DataService:
         
         # Get the fields to retrieve
         fields = report.get_fields()
-        
-        # Apply sorting
+
+        # Apply sorting. Resolver (computed) fields are not real DB columns, so
+        # they can't be used in an ORM order_by - skip them here.
         sorts = report.get_sorts()
         if sorts:
             sort_params = []
             for sort in sorts:
+                if getattr(sort.data_field, 'source_type', DataField.SOURCE_ORM) == DataField.SOURCE_RESOLVER:
+                    continue
                 field_path = sort.data_field.field_path
                 if sort.direction == 'desc':
                     field_path = f"-{field_path}"
                 sort_params.append(field_path)
-            
+
             if sort_params:
                 queryset = queryset.order_by(*sort_params)
-        
+
+        # If the report uses any computed (resolver) fields, we can't rely on
+        # .values() - fall back to iterating model instances and resolving each
+        # field in Python. Otherwise use the fast ORM path unchanged.
+        has_resolver = any(
+            getattr(f.data_field, 'source_type', DataField.SOURCE_ORM) == DataField.SOURCE_RESOLVER
+            for f in fields
+        )
+        if has_resolver:
+            return DataService._execute_instance_query(queryset, fields, user)
+
         # Execute the query and return the results
         return DataService._execute_query(queryset, fields)
     
@@ -102,28 +116,24 @@ class DataService:
         if hasattr(model_class, 'filter_by_user_permissions'):
             return model_class.filter_by_user_permissions(queryset, user)
         
-        # Default permission handling based on your application's needs
-        # For example, if the model has an 'owner' field:
-        if user.is_superuser:
+        # Superusers see everything.
+        if user and user.is_superuser:
             return queryset
-            
-        # The following are examples of how you might implement permission filtering
-        # Uncomment and modify based on your application's needs
-        
-        # Example 1: Using guardian's get_objects_for_user
-        # from guardian.shortcuts import get_objects_for_user
-        # return get_objects_for_user(user, f'{model_name}.view_{model_name}', queryset)
-        
-        # Example 2: Filter by ownership
-        # if hasattr(model_class, 'owner'):
-        #     return queryset.filter(owner=user)
-            
-        # Example 3: Custom permission scheme based on model name
-        # if model_name == 'job':
-        #     return queryset.filter(Q(unit__in=user.units.all()) | Q(created_by=user))
-        # elif model_name == 'project':
-        #     return queryset.filter(team__members=user)
-        
+
+        # For everyone else (including dedicated reporting/service accounts used
+        # by scheduled reports), never expose Protectively Marked / restricted
+        # engagements. This is intentionally org-wide otherwise: we scope OUT
+        # restricted jobs rather than scoping DOWN to a user's own units, so a
+        # non-superuser reporting account can still produce a complete
+        # cross-org report (e.g. the weekly tentative-projects chaser) without
+        # leaking restricted work.
+        field_names = {f.name for f in model_class._meta.get_fields()}
+        if 'is_restricted' in field_names:
+            queryset = queryset.exclude(is_restricted=True)
+        elif 'job' in field_names:
+            # Phase (and other job-owned areas) — exclude via the parent job.
+            queryset = queryset.exclude(job__is_restricted=True)
+
         return queryset
     
     @staticmethod
@@ -182,3 +192,81 @@ class DataService:
             field_paths = [field.data_field.field_path for field in fields]
             results = queryset.values(*field_paths)
             return list(results)
+
+    @staticmethod
+    def _field_visible(data_field, user):
+        """Whether ``user`` may see this field's value.
+
+        Mirrors the wizard's field filtering (``get_data_area_fields``): a field
+        is only hidden when it is flagged sensitive AND declares a required
+        permission the user lacks (superusers always pass).
+        """
+        if data_field.is_sensitive and data_field.requires_permission:
+            if user and (user.is_superuser or user.has_perm(data_field.requires_permission)):
+                return True
+            return False
+        return True
+
+    @staticmethod
+    def _walk_path(instance, field_path):
+        """Resolve an ORM-style ``a__b__c`` path in Python via getattr.
+
+        Reuses the already-fetched (select_related/prefetch_related) objects
+        rather than issuing new queries, and tolerates a null anywhere in the
+        chain.
+        """
+        value = instance
+        for part in field_path.split('__'):
+            if value is None:
+                return None
+            value = getattr(value, part, None)
+        return value
+
+    @staticmethod
+    def _execute_instance_query(queryset, fields, user):
+        """Instance-resolution path for reports containing computed fields.
+
+        Applies the union of every used resolver's select_related/prefetch_related
+        hints (so the whole result set is fetched without N+1 queries), then
+        resolves each field per row: resolver fields via their whitelisted
+        callable, ORM fields via a Python getattr walk. Sensitive fields the user
+        can't see are redacted to ``None``.
+        """
+        # Mixing GROUP BY / aggregation with per-instance resolvers is not
+        # supported - the two execution models are incompatible.
+        if any(getattr(f, 'aggregation_function', '') for f in fields):
+            raise ValueError(
+                "Aggregation functions cannot be combined with computed (resolver) fields in the same report."
+            )
+
+        select_related = set()
+        prefetch_related = set()
+        for f in fields:
+            if getattr(f.data_field, 'source_type', DataField.SOURCE_ORM) == DataField.SOURCE_RESOLVER:
+                resolver = REPORTING_RESOLVERS.get(f.data_field.resolver_key)
+                if resolver:
+                    select_related.update(resolver.select_related)
+                    prefetch_related.update(resolver.prefetch_related)
+
+        if select_related:
+            queryset = queryset.select_related(*select_related)
+        if prefetch_related:
+            queryset = queryset.prefetch_related(*prefetch_related)
+
+        ctx = {'user': user}
+        results = []
+        for instance in queryset:
+            row = {}
+            for f in fields:
+                data_field = f.data_field
+                key = data_field.field_path
+                if not DataService._field_visible(data_field, user):
+                    row[key] = None
+                    continue
+                if getattr(data_field, 'source_type', DataField.SOURCE_ORM) == DataField.SOURCE_RESOLVER:
+                    resolver = REPORTING_RESOLVERS.get(data_field.resolver_key)
+                    row[key] = resolver.fn(instance, ctx) if resolver else None
+                else:
+                    row[key] = DataService._walk_path(instance, data_field.field_path)
+            results.append(row)
+        return results

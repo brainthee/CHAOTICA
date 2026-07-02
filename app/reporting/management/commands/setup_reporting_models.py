@@ -89,6 +89,8 @@ class Command(BaseCommand):
                     'group': field_data['group'],
                     'is_sensitive': field_data.get('is_sensitive', False),
                     'requires_permission': field_data.get('requires_permission'),
+                    'source_type': field_data.get('source_type', DataField.SOURCE_ORM),
+                    'resolver_key': field_data.get('resolver_key'),
                     'is_available': True,
                 }
             )
@@ -341,6 +343,22 @@ class Command(BaseCommand):
             {'name': 'is_reporting_onsite', 'display_name': 'Reporting Onsite', 'field_path': 'is_reporting_onsite', 'field_type': boolean_type, 'group': 'Logistics'},
             {'name': 'report_to_be_left_on_client_site', 'display_name': 'Report Left on Client Site', 'field_path': 'report_to_be_left_on_client_site', 'field_type': boolean_type, 'group': 'Logistics'},
             {'name': 'location', 'display_name': 'Location', 'field_path': 'location', 'field_type': text_type, 'group': 'Logistics'},
+            # Email addresses (used e.g. to split a scheduled report per manager)
+            {'name': 'account_manager_email', 'display_name': 'Account Manager Email', 'field_path': 'job__account_manager__email', 'field_type': text_type, 'group': 'Job'},
+            {'name': 'project_lead_email', 'display_name': 'Project Lead Email', 'field_path': 'project_lead__email', 'field_type': text_type, 'group': 'Resources'},
+            # Computed / scheduled columns (resolved in Python from timeslots etc.)
+            {'name': 'effective_start_date', 'display_name': 'Start Date (effective)', 'field_path': 'resolver:start_date', 'field_type': date_type, 'group': 'Scheduled',
+             'source_type': DataField.SOURCE_RESOLVER, 'resolver_key': 'phase.start_date'},
+            {'name': 'days_testing', 'display_name': 'Days Testing', 'field_path': 'resolver:days_testing', 'field_type': decimal_type, 'group': 'Scheduled',
+             'source_type': DataField.SOURCE_RESOLVER, 'resolver_key': 'phase.days_testing'},
+            {'name': 'days_reporting', 'display_name': 'Days Reporting', 'field_path': 'resolver:days_reporting', 'field_type': decimal_type, 'group': 'Scheduled',
+             'source_type': DataField.SOURCE_RESOLVER, 'resolver_key': 'phase.days_reporting'},
+            {'name': 'assigned_engineers', 'display_name': 'Assigned To', 'field_path': 'resolver:assigned_engineers', 'field_type': text_type, 'group': 'Scheduled',
+             'source_type': DataField.SOURCE_RESOLVER, 'resolver_key': 'phase.assigned_engineers'},
+            {'name': 'project_manager', 'display_name': 'Project Manager', 'field_path': 'resolver:project_manager', 'field_type': text_type, 'group': 'Scheduled',
+             'source_type': DataField.SOURCE_RESOLVER, 'resolver_key': 'phase.project_manager'},
+            {'name': 'status_label', 'display_name': 'Status (label)', 'field_path': 'resolver:status_label', 'field_type': text_type, 'group': 'Status',
+             'source_type': DataField.SOURCE_RESOLVER, 'resolver_key': 'phase.status_label'},
         ]
 
         self._sync_fields(data_area, fields)
