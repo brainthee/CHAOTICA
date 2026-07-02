@@ -30,8 +30,8 @@ from ..forms import (
     ChangeTimeSlotCommentDateModalForm,
     MoveScheduleSlotsForm,
 )
-from ..enums import UserSkillRatings, TimeSlotDeliveryRole
-from ..utils import get_scheduler_slots, get_scheduler_members
+from ..enums import UserSkillRatings, TimeSlotDeliveryRole, PhaseStatuses, DefaultTimeSlotTypes
+from ..utils import get_scheduler_slots, get_scheduler_members, assigned_role_map
 import logging
 from django.contrib.auth.decorators import login_required
 from chaotica_utils.utils import (
@@ -43,6 +43,7 @@ from chaotica_utils.utils import (
 )
 from chaotica_utils.models import Holiday
 from django.contrib import messages
+from django.utils.html import escape
 import time
 from constance import config
 
@@ -466,6 +467,298 @@ def change_scheduler_slot(request, pk=None):
 ## Timeslot Creation Methods
 
 
+def _selected_users(request):
+    """Resolve target users for a create/clear action. Supports batch via a
+    `users` CSV param; falls back to a single `resource_id`. Order preserved."""
+    raw = request.GET.get("batch_users") or request.POST.get("batch_users") or ""
+    ids = [int(x) for x in raw.split(",") if x.strip().isdigit()]
+    if not ids:
+        rid = clean_int(request.GET.get("resource_id") or request.POST.get("resource_id"))
+        if rid:
+            ids = [rid]
+    by_pk = {u.pk: u for u in User.objects.filter(pk__in=ids)}
+    return [by_pk[i] for i in ids if i in by_pk]
+
+
+def _evaluate_delivery_slot(slot, request, force, check_overlaps=True):
+    """Run all delivery-slot logic checks for ONE unsaved slot (no save).
+    Mirrors the inline checks in create_scheduler_phase_slot.
+    Set check_overlaps=False to skip the overlap branch (the single-user create
+    path handles overlaps via the around/over/destructive chooser instead).
+    Returns {"failed": bool, "can_bypass": bool, "feedback": str}."""
+    result = {"failed": False, "can_bypass": True, "feedback": ""}
+    slots = slot.overlapping_slots()
+    framework = slot.phase.job.associated_framework
+
+    # Non-bypassable: framework closed
+    if framework and framework.closed:
+        return {"failed": True, "can_bypass": False,
+                "feedback": loader.render_to_string(
+                    "partials/scheduler/logicchecks/framework_closed.html",
+                    {"framework": framework}, request=request)}
+
+    # Non-bypassable: framework over-allocation
+    if framework and not framework.allow_over_allocation:
+        slot_hours = slot.get_business_hours()
+        hours_in_day = framework.get_hours_in_day()
+        slot_days = round(slot_hours / hours_in_day, 1) if hours_in_day else 0
+        days_allocated = framework.days_allocated()
+        new_total = days_allocated + slot_days
+        if new_total > framework.total_days:
+            return {"failed": True, "can_bypass": False,
+                    "feedback": loader.render_to_string(
+                        "partials/scheduler/logicchecks/framework_over_allocated.html",
+                        {"framework": framework, "days_allocated": days_allocated,
+                         "slot_days": slot_days, "new_total": new_total}, request=request)}
+
+    # Onboarding: non-bypassable if not onboarded, bypassable "stale" warning
+    _onboard = _check_onboarding(slot, request, force=force)
+    if _onboard:
+        return {"failed": True, "can_bypass": _onboard["logic_checks_can_bypass"],
+                "feedback": _onboard["logic_checks_feedback"]}
+
+    # Bypassable checks (skipped entirely when forcing)
+    if not force:
+        _scoped = _check_phase_scoped(slot, request)
+        if _scoped:
+            result["failed"] = True
+            result["can_bypass"] = True
+            result["feedback"] += _scoped["logic_checks_feedback"]
+
+        if framework and framework.allow_over_allocation:
+            slot_hours = slot.get_business_hours()
+            hours_in_day = framework.get_hours_in_day()
+            slot_days = round(slot_hours / hours_in_day, 1) if hours_in_day else 0
+            days_allocated = framework.days_allocated()
+            new_total = days_allocated + slot_days
+            if new_total > framework.total_days:
+                result["failed"] = True
+                result["can_bypass"] = True
+                result["feedback"] += loader.render_to_string(
+                    "partials/scheduler/logicchecks/framework_over_budget_warning.html",
+                    {"framework": framework, "days_allocated": days_allocated,
+                     "slot_days": slot_days, "new_total": new_total}, request=request)
+
+        if check_overlaps and slots:
+            if slots.filter(slot_type__is_working=False).exists():
+                result["failed"] = True
+                result["can_bypass"] = False
+                result["feedback"] += loader.render_to_string(
+                    "partials/scheduler/logicchecks/unavailable.html",
+                    {"slot": slot, "unavailable_slots": slots.filter(slot_type__is_working=False)},
+                    request=request)
+            else:
+                result["failed"] = True
+                result["can_bypass"] = True
+                result["feedback"] += loader.render_to_string(
+                    "partials/scheduler/logicchecks/overlaps.html",
+                    {"slot": slot, "overlapping_slots": slots}, request=request)
+    return result
+
+
+def _evaluate_project_slot(slot, request, force):
+    """Overlap checks for ONE unsaved project slot (mirrors create_scheduler_project_slot)."""
+    result = {"failed": False, "can_bypass": True, "feedback": ""}
+    if force:
+        return result
+    slots = slot.overlapping_slots()
+    if slots:
+        if slots.filter(slot_type__is_working=False).exists():
+            result["failed"] = True
+            result["can_bypass"] = False
+            result["feedback"] += loader.render_to_string(
+                "partials/scheduler/logicchecks/unavailable.html",
+                {"slot": slot, "unavailable_slots": slots.filter(slot_type__is_working=False)},
+                request=request)
+        else:
+            result["failed"] = True
+            result["can_bypass"] = True
+            result["feedback"] += loader.render_to_string(
+                "partials/scheduler/logicchecks/overlaps.html",
+                {"slot": slot, "overlapping_slots": slots}, request=request)
+    return result
+
+
+def _run_batch_create(request, users, build_slot, evaluate, force):
+    """Create one slot per user, running per-user `evaluate` checks.
+    Returns the JsonResponse `data` dict. Single-user is the loop-of-one."""
+    data = {"logic_checks_feedback": ""}
+    batch = len(users) > 1
+    evals = []
+    for u in users:
+        slot = build_slot(u)
+        ev = evaluate(slot, request, force) if evaluate else {"failed": False, "can_bypass": True, "feedback": ""}
+        evals.append((u, slot, ev))
+
+    needs_confirm = [t for t in evals if t[2]["failed"] and t[2]["can_bypass"]]
+    blocked = [t for t in evals if t[2]["failed"] and not t[2]["can_bypass"]]
+    clean = [t for t in evals if not t[2]["failed"]]
+
+    # First submit with outstanding bypassable warnings → ask to force.
+    if needs_confirm and not force:
+        data["form_is_valid"] = False
+        data["logic_checks_failed"] = True
+        data["logic_checks_can_bypass"] = True
+        fb = ""
+        if batch:
+            fb += "<p>{} of {} selected people have warnings:</p>".format(
+                len(needs_confirm), len(evals))
+            if blocked:
+                fb += "<p class='text-danger'>{} will be skipped (blocked): {}</p>".format(
+                    len(blocked), escape(", ".join(str(u) for u, _, _ in blocked)))
+        for u, _s, e in needs_confirm:
+            if batch:
+                fb += "<hr class='my-2'><strong>{}</strong>".format(escape(str(u)))
+            fb += e["feedback"]
+        data["logic_checks_feedback"] = fb
+        return data
+
+    # Save clean (+ forced bypassable); skip blocked.
+    to_save = clean + (needs_confirm if force else [])
+    for _u, s, _e in to_save:
+        s.save()
+    data["form_is_valid"] = True
+    if batch:
+        summary = "Booked {} {}.".format(len(to_save), "person" if len(to_save) == 1 else "people")
+        if blocked:
+            summary += " Skipped {} (blocked): {}.".format(
+                len(blocked), ", ".join(str(u) for u, _, _ in blocked))
+        data["summary"] = summary
+    return data
+
+
+def _occupied_dates(user, start, end, slot_type_pks=None):
+    """Set of calendar dates the user already has a slot on within [start, end]."""
+    from datetime import timedelta
+    dates = set()
+    qs = user.get_timeslots_objs(start, end)
+    if slot_type_pks is not None:
+        qs = qs.filter(slot_type_id__in=slot_type_pks)
+    for slot in qs:
+        d, last = slot.start.date(), slot.end.date()
+        while d <= last:
+            dates.add(d)
+            d += timedelta(days=1)
+    return dates
+
+
+def working_day_runs(user, start, end, occupied):
+    """Runs of consecutive bookable working days in [start, end]. A day is
+    bookable if it's a working day (org business days), not a holiday, and not in
+    `occupied`. Non-working days DON'T break a run (a slot may span weekends); an
+    occupied working day does. Returns [(run_start_date, run_end_date), ...]."""
+    from datetime import timedelta
+    org = user.unit_memberships.first()
+    business_days = (
+        org.unit.businessHours_days if org and org.unit.businessHours_days
+        else [1, 2, 3, 4, 5]
+    )
+    holidays = set(
+        Holiday.objects.filter(
+            country=user.country, date__gte=start.date(), date__lte=end.date()
+        ).values_list("date", flat=True)
+    )
+    runs = []
+    run_start = run_end = None
+    cur, last = start.date(), end.date()
+    while cur <= last:
+        # Their scheme: Sunday==0, Monday==1 … matches (weekday()+1) for Mon-Fri.
+        if (cur.weekday() + 1) in business_days and cur not in holidays:
+            if cur not in occupied:
+                if run_start is None:
+                    run_start = cur
+                run_end = cur
+            elif run_start is not None:
+                runs.append((run_start, run_end))
+                run_start = run_end = None
+        cur += timedelta(days=1)
+    if run_start is not None:
+        runs.append((run_start, run_end))
+    return runs
+
+
+def _slot_dt(user, day, which):
+    """Combine a date with the user's working start/end time (tz-aware)."""
+    from datetime import datetime
+    from django.utils import timezone
+    wh = user.get_working_hours()
+    t = wh["start"] if which == "start" else wh["end"]
+    return datetime.combine(day, t).replace(tzinfo=timezone.get_current_timezone())
+
+
+def _create_delivery_single(request, base, force):
+    """Single-user delivery create with the overlap chooser (around/over/
+    destructive). `base` is the unsaved slot for the whole requested range."""
+    # Non-overlap pre-checks (framework / onboarding / phase-scope). Overlaps are
+    # handled below via the chooser, so skip them here.
+    ev = _evaluate_delivery_slot(base, request, force, check_overlaps=False)
+    if ev["failed"] and not (force and ev["can_bypass"]):
+        return {
+            "form_is_valid": False,
+            "logic_checks_failed": True,
+            "logic_checks_can_bypass": ev["can_bypass"],
+            "logic_checks_feedback": ev["feedback"],
+        }
+
+    overlaps = base.overlapping_slots()
+    overlap_mode = request.POST.get("overlap_mode")
+
+    if overlaps.exists() and not overlap_mode:
+        counts = {
+            "unavailable": overlaps.filter(slot_type__is_working=False).count(),
+            "delivery": overlaps.filter(slot_type_id=DefaultTimeSlotTypes.DELIVERY).count(),
+            "project": overlaps.filter(slot_type_id=DefaultTimeSlotTypes.INTERNAL_PROJECT).count(),
+        }
+        counts["internal"] = (
+            overlaps.count() - counts["unavailable"] - counts["delivery"] - counts["project"]
+        )
+        return {
+            "form_is_valid": False,
+            "needs_overlap_choice": True,
+            "logic_checks_failed": True,
+            "logic_checks_feedback": loader.render_to_string(
+                "partials/scheduler/logicchecks/overlap_choice.html",
+                {"slot": base, "counts": counts}, request=request),
+        }
+
+    def _clone(day_start, day_end):
+        return TimeSlot(
+            user=base.user, phase=base.phase, slot_type=base.slot_type,
+            deliveryRole=base.deliveryRole, is_onsite=base.is_onsite,
+            start=day_start, end=day_end,
+        )
+
+    if overlap_mode == "around":
+        occupied = _occupied_dates(base.user, base.start, base.end)
+        runs = working_day_runs(base.user, base.start, base.end, occupied)
+        for run_start, run_end in runs:
+            _clone(_slot_dt(base.user, run_start, "start"),
+                   _slot_dt(base.user, run_end, "end")).save()
+        created = len(runs)
+        return {
+            "form_is_valid": True,
+            "summary": (
+                "Booked {} slot{} around existing commitments.".format(created, "" if created == 1 else "s")
+                if created else "No free working days in that range — nothing booked."
+            ),
+        }
+
+    if overlap_mode == "destructive":
+        base.user.clear_timeslots_in_range(
+            base.start, base.end,
+            slot_type_pks=[DefaultTimeSlotTypes.DELIVERY, DefaultTimeSlotTypes.INTERNAL_PROJECT],
+        )
+        base.save()
+        return {
+            "form_is_valid": True,
+            "summary": "Cleared overlapping delivery/project work and booked the range.",
+        }
+
+    # over (default) — book the whole range on top of existing slots
+    base.save()
+    return {"form_is_valid": True}
+
+
 @unit_permission_required_or_403("jobtracker.can_schedule_job")
 def create_scheduler_internal_slot(request):
     """Creates an Internal type of TimeSlot
@@ -476,30 +769,40 @@ def create_scheduler_internal_slot(request):
     Returns:
         JsonResponse: _description_
     """
-    data = dict()
-    # start = clean_datetime(request.GET.get("start", None))
-    # end = clean_datetime(request.GET.get("end", None))
-
+    data = {"logic_checks_feedback": ""}
     start = clean_datetime(request.GET.get("start", None))
     end = clean_datetime(request.GET.get("end", None))
 
-    resource_id = clean_int(request.GET.get("resource_id", None))
-    if resource_id:
-        resource = get_object_or_404(User, pk=resource_id)
+    users = _selected_users(request)
+    resource = users[0] if users else None
 
     if request.method == "POST":
         form = NonDeliveryTimeSlotModalForm(
             request.POST, start=start, end=end, resource=resource
         )
         if form.is_valid():
-            form.save()
-            data["form_is_valid"] = True
+            base = form.save(commit=False)
+
+            def build_slot(u):
+                return TimeSlot(
+                    user=u,
+                    phase=base.phase,
+                    project=base.project,
+                    slot_type=base.slot_type,
+                    deliveryRole=base.deliveryRole,
+                    is_onsite=base.is_onsite,
+                    start=base.start,
+                    end=base.end,
+                )
+
+            # Internal/leave slots have no logic checks — straight batch create.
+            data = _run_batch_create(request, users, build_slot, None, None)
         else:
-            data["form_is_valid"] = False
+            data = {"form_is_valid": False}
     else:
         form = NonDeliveryTimeSlotModalForm(start=start, end=end, resource=resource)
 
-    context = {"form": form}
+    context = {"form": form, "batch_users": users if len(users) > 1 else None}
     data["html_form"] = loader.render_to_string(
         "jobtracker/modals/job_slot_create.html", context, request=request
     )
@@ -516,21 +819,14 @@ def create_scheduler_project_slot(request):
     Returns:
         JsonResponse: _description_
     """
-    data = dict()
+    data = {"logic_checks_feedback": ""}
     start = clean_datetime(request.GET.get("start", None))
     end = clean_datetime(request.GET.get("end", None))
-    resource_id = clean_int(request.GET.get("resource_id", None))
     project_id = clean_int(request.GET.get("project", None))
 
-    if resource_id:
-        user = get_object_or_404(User, pk=resource_id)
-    else:
-        user = None
-
-    if project_id:
-        project = get_object_or_404(Project, pk=project_id)
-    else:
-        project = None
+    users = _selected_users(request)
+    user = users[0] if users else None
+    project = get_object_or_404(Project, pk=project_id) if project_id else None
 
     if request.method == "POST":
         force = request.POST.get("force", None)
@@ -542,37 +838,23 @@ def create_scheduler_project_slot(request):
             project=project,
         )
         if form.is_valid():
-            slot = form.save(commit=False)
-            slots = slot.overlapping_slots()
-            if slots and not force:
-                # Check if any of these are unavailable
-                if slots.filter(slot_type__is_working=False).exists():
-                    # Unavailable
-                    unavailable_slots = slots.filter(slot_type__is_working=False)
-                    # Overlapping slots!
-                    data["form_is_valid"] = False
-                    data["logic_checks_failed"] = True
-                    data["logic_checks_can_bypass"] = False
-                    data["logic_checks_feedback"] += loader.render_to_string(
-                        "partials/scheduler/logicchecks/unavailable.html",
-                        {"slot": slot, "unavailable_slots": unavailable_slots},
-                        request=request,
-                    )
-                else:
-                    # Overlapping slots!
-                    data["form_is_valid"] = False
-                    data["logic_checks_failed"] = True
-                    data["logic_checks_can_bypass"] = True
-                    data["logic_checks_feedback"] = loader.render_to_string(
-                        "partials/scheduler/logicchecks/overlaps.html",
-                        {"slot": slot, "overlapping_slots": slots},
-                        request=request,
-                    )
-            else:
-                slot.save()
-                data["form_is_valid"] = True
+            base = form.save(commit=False)
+
+            def build_slot(u):
+                return TimeSlot(
+                    user=u,
+                    phase=base.phase,
+                    project=base.project,
+                    slot_type=base.slot_type,
+                    deliveryRole=base.deliveryRole,
+                    is_onsite=base.is_onsite,
+                    start=base.start,
+                    end=base.end,
+                )
+
+            data = _run_batch_create(request, users, build_slot, _evaluate_project_slot, force)
         else:
-            data["form_is_valid"] = False
+            data = {"form_is_valid": False}
     else:
         form = ProjectTimeSlotModalForm(
             start=start,
@@ -581,7 +863,7 @@ def create_scheduler_project_slot(request):
             project=project,
         )
 
-    context = {"form": form}
+    context = {"form": form, "batch_users": users if len(users) > 1 else None}
     data["html_form"] = loader.render_to_string(
         "jobtracker/modals/project_slot_create.html", context, request=request
     )
@@ -598,25 +880,18 @@ def create_scheduler_phase_slot(request):
     Returns:
         JsonResponse: _description_
     """
-    data = dict()
-    data["logic_checks_feedback"] = ""
+    data = {"logic_checks_feedback": ""}
     start = clean_datetime(request.GET.get("start", None))
     end = clean_datetime(request.GET.get("end", None))
-    resource_id = clean_int(request.GET.get("resource_id", None))
     job_id = clean_int(request.GET.get("job", None))
     phase_id = clean_int(request.GET.get("phase", None))
 
-    if resource_id:
-        user = get_object_or_404(User, pk=resource_id)
-    else:
-        user = None
+    users = _selected_users(request)
+    user = users[0] if users else None
 
     if job_id:
         job = get_object_or_404(Job, pk=job_id)
-        if phase_id:
-            phase = get_object_or_404(Phase, pk=phase_id)
-        else:
-            phase = None
+        phase = get_object_or_404(Phase, pk=phase_id) if phase_id else None
     else:
         job = None
         phase = None
@@ -627,133 +902,32 @@ def create_scheduler_phase_slot(request):
             request.POST, start=start, end=end, user=user, phase=phase, job=job
         )
         if form.is_valid():
-            slot = form.save(commit=False)
-            slots = slot.overlapping_slots()
-            data["logic_checks_failed"] = False
+            base = form.save(commit=False)
 
-            # Non-bypassable: framework closed check
-            framework = slot.phase.job.associated_framework
-            if framework and framework.closed:
-                data["form_is_valid"] = False
-                data["logic_checks_failed"] = True
-                data["logic_checks_can_bypass"] = False
-                data["logic_checks_feedback"] = loader.render_to_string(
-                    "partials/scheduler/logicchecks/framework_closed.html",
-                    {"framework": framework},
-                    request=request,
-                )
-
-            # Non-bypassable: framework over-allocation check
-            if (
-                not data["logic_checks_failed"]
-                and framework
-                and not framework.allow_over_allocation
-            ):
-                slot_hours = slot.get_business_hours()
-                hours_in_day = framework.get_hours_in_day()
-                slot_days = round(slot_hours / hours_in_day, 1) if hours_in_day else 0
-                days_allocated = framework.days_allocated()
-                new_total = days_allocated + slot_days
-                if new_total > framework.total_days:
-                    data["form_is_valid"] = False
-                    data["logic_checks_failed"] = True
-                    data["logic_checks_can_bypass"] = False
-                    data["logic_checks_feedback"] = loader.render_to_string(
-                        "partials/scheduler/logicchecks/framework_over_allocated.html",
-                        {
-                            "framework": framework,
-                            "days_allocated": days_allocated,
-                            "slot_days": slot_days,
-                            "new_total": new_total,
-                        },
-                        request=request,
+            if len(users) > 1:
+                def build_slot(u):
+                    return TimeSlot(
+                        user=u,
+                        phase=base.phase,
+                        slot_type=base.slot_type,
+                        deliveryRole=base.deliveryRole,
+                        is_onsite=base.is_onsite,
+                        start=base.start,
+                        end=base.end,
                     )
 
-            # Onboarding: non-bypassable if the user isn't onboarded for the
-            # client, bypassable "stale" warning otherwise (see _check_onboarding).
-            if not data["logic_checks_failed"]:
-                _onboard = _check_onboarding(slot, request, force=force)
-                if _onboard:
-                    data["form_is_valid"] = False
-                    data["logic_checks_failed"] = True
-                    data["logic_checks_can_bypass"] = _onboard["logic_checks_can_bypass"]
-                    data["logic_checks_feedback"] += _onboard["logic_checks_feedback"]
-
-            if not data["logic_checks_failed"]:
-                if not force:
-                    # These logic checks can be bypassed
-
-                    # Bypassable: phase over-scoped warning
-                    _scoped_data = _check_phase_scoped(slot, request)
-                    if _scoped_data:
-                        data["form_is_valid"] = False
-                        data["logic_checks_failed"] = True
-                        data["logic_checks_can_bypass"] = True
-                        data["logic_checks_feedback"] += _scoped_data["logic_checks_feedback"]
-
-                    # Bypassable: framework over-budget warning (allows over-allocation)
-                    if (
-                        framework
-                        and framework.allow_over_allocation
-                    ):
-                        slot_hours = slot.get_business_hours()
-                        hours_in_day = framework.get_hours_in_day()
-                        slot_days = round(slot_hours / hours_in_day, 1) if hours_in_day else 0
-                        days_allocated = framework.days_allocated()
-                        new_total = days_allocated + slot_days
-                        if new_total > framework.total_days:
-                            data["form_is_valid"] = False
-                            data["logic_checks_failed"] = True
-                            data["logic_checks_can_bypass"] = True
-                            data["logic_checks_feedback"] += loader.render_to_string(
-                                "partials/scheduler/logicchecks/framework_over_budget_warning.html",
-                                {
-                                    "framework": framework,
-                                    "days_allocated": days_allocated,
-                                    "slot_days": slot_days,
-                                    "new_total": new_total,
-                                },
-                                request=request,
-                            )
-
-                    if slots:
-                        # Check if any of these are unavailable
-                        if slots.filter(slot_type__is_working=False).exists():
-                            # Unavailable
-                            unavailable_slots = slots.filter(slot_type__is_working=False)
-                            # Overlapping slots!
-                            data["form_is_valid"] = False
-                            data["logic_checks_failed"] = True
-                            data["logic_checks_can_bypass"] = False
-                            data["logic_checks_feedback"] += loader.render_to_string(
-                                "partials/scheduler/logicchecks/unavailable.html",
-                                {"slot": slot, "unavailable_slots": unavailable_slots},
-                                request=request,
-                            )
-                        else:
-                            # Overlapping slots!
-                            data["form_is_valid"] = False
-                            data["logic_checks_failed"] = True
-                            data["logic_checks_can_bypass"] = True
-                            data["logic_checks_feedback"] += loader.render_to_string(
-                                "partials/scheduler/logicchecks/overlaps.html",
-                                {"slot": slot, "overlapping_slots": slots},
-                                request=request,
-                            )
-
-                if not data["logic_checks_failed"] or (
-                    data["logic_checks_failed"] and force
-                ):
-                    slot.save()
-                    data["form_is_valid"] = True
+                data = _run_batch_create(request, users, build_slot, _evaluate_delivery_slot, force)
+            else:
+                # Single resource → offer around / over / destructive on overlaps.
+                data = _create_delivery_single(request, base, force)
         else:
-            data["form_is_valid"] = False
+            data = {"form_is_valid": False}
     else:
         form = DeliveryTimeSlotModalForm(
             start=start, end=end, user=user, phase=phase, job=job
         )
 
-    context = {"form": form}
+    context = {"form": form, "batch_users": users if len(users) > 1 else None}
     data["html_form"] = loader.render_to_string(
         "jobtracker/modals/job_slot_create.html", context, request=request
     )
@@ -770,26 +944,35 @@ def create_scheduler_comment(request):
     Returns:
         JsonResponse: _description_
     """
-    data = dict()
+    data = {"logic_checks_feedback": ""}
     start = clean_datetime(request.GET.get("start", None))
     end = clean_datetime(request.GET.get("end", None))
-    resource_id = clean_int(request.GET.get("resource_id", None))
-    if resource_id:
-        resource = get_object_or_404(User, pk=resource_id)
+
+    users = _selected_users(request)
+    resource = users[0] if users else None
 
     if request.method == "POST":
         form = CommentTimeSlotModalForm(
             request.POST, start=start, end=end, resource=resource
         )
         if form.is_valid():
-            form.save()
-            data["form_is_valid"] = True
+            base = form.save(commit=False)
+
+            def build_slot(u):
+                return TimeSlotComment(
+                    user=u,
+                    comment=base.comment,
+                    start=base.start,
+                    end=base.end,
+                )
+
+            data = _run_batch_create(request, users, build_slot, None, None)
         else:
-            data["form_is_valid"] = False
+            data = {"form_is_valid": False}
     else:
         form = CommentTimeSlotModalForm(start=start, end=end, resource=resource)
 
-    context = {"form": form}
+    context = {"form": form, "batch_users": users if len(users) > 1 else None}
     data["html_form"] = loader.render_to_string(
         "jobtracker/modals/job_slot_comment.html", context, request=request
     )
@@ -809,32 +992,62 @@ def clear_scheduler_range(request):
     data = dict()
     start = clean_datetime(request.GET.get("start", None))
     end = clean_datetime(request.GET.get("end", None))
-    resource_id = clean_int(request.GET.get("resource_id", None))
-    if start is None or end is None or resource_id is None:
+    users = _selected_users(request)
+    if start is None or end is None or not users:
         return HttpResponseBadRequest()
     start = datetime_startofday(start)
     end = datetime_endofday(end)
 
-    resource = get_object_or_404(User, pk=resource_id)
-    # Verify requester has scheduling permission on at least one unit the resource belongs to
-    resource_units = [m.unit for m in resource.unit_memberships.select_related("unit").all()]
-    if resource_units and not any(
-        request.user.has_perm("jobtracker.can_schedule_job", u) for u in resource_units
-    ):
-        raise PermissionDenied
-    timeslots = resource.get_timeslots_objs(start, end)
-    comments = resource.get_timeslot_comments_objs(start, end)
+    # Optional job/phase scope — restrict clearing to that job/phase's slots.
+    job_id = clean_int(request.GET.get("job") or request.POST.get("job"))
+    phase_id = clean_int(request.GET.get("phase") or request.POST.get("phase"))
+    scope_phases = None
+    if phase_id:
+        scope_phases = Phase.objects.filter(pk=phase_id)
+    elif job_id:
+        scope_phases = Phase.objects.filter(job_id=job_id)
+
+    # Verify requester can schedule for each resource's units
+    for resource in users:
+        resource_units = [m.unit for m in resource.unit_memberships.select_related("unit").all()]
+        if resource_units and not any(
+            request.user.has_perm("jobtracker.can_schedule_job", u) for u in resource_units
+        ):
+            raise PermissionDenied
+
+    # Preview querysets across all selected users
+    timeslots = TimeSlot.objects.filter(user__in=users, start__lt=end, end__gt=start)
+    if scope_phases is not None:
+        timeslots = timeslots.filter(phase__in=scope_phases)
+    # Comments aren't job/phase-bound, so only clear them for an unscoped range clear
+    comments = (
+        TimeSlotComment.objects.filter(user__in=users, start__lt=end, end__gt=start)
+        if scope_phases is None
+        else TimeSlotComment.objects.none()
+    )
 
     if request.method == "POST":
         if request.POST.get("user_action") == "approve_action":
-            # Ok, user has confirmed. Lets do it!
-            resource.clear_timeslots_in_range(start, end)
-            resource.clear_timeslot_comments_in_range(start, end)
+            if scope_phases is None:
+                # Per-user split-aware clear (also clears comments)
+                for resource in users:
+                    resource.clear_timeslots_in_range(start, end)
+                    resource.clear_timeslot_comments_in_range(start, end)
+            else:
+                timeslots.delete()
             data["form_is_valid"] = True
         else:
             data["form_is_valid"] = False
 
-    context = {"start": start, "end": end, "resource": resource, "timeslots": timeslots, "comments": comments}
+    context = {
+        "start": start,
+        "end": end,
+        "resource": users[0] if len(users) == 1 else None,
+        "users": users,
+        "batch": len(users) > 1,
+        "timeslots": timeslots,
+        "comments": comments,
+    }
     data["html_form"] = loader.render_to_string(
         "jobtracker/modals/clear_timeslot_range.html", context, request=request
     )
@@ -891,6 +1104,107 @@ class ProjectSlotDeleteView(ChaoticaBaseView, DeleteView):
         return context
 
 
+def get_schedule_utilisation(job, phase=None):
+    """Structured scoped-vs-scheduled matrix for the Utilisation widget.
+
+    Returns {"phases": [row, ...], "grand_total": {...}|None, "hours_in_day": Decimal}
+    where each row = {phase, status, confirmed, needs_attention, roles: [...],
+    total: {...}, milestone: {...}}. Centralises the maths so the template can
+    show scoped / scheduled / REMAINING / % + confirmed-vs-tentative + deadlines
+    without per-role template tags.
+    """
+    from decimal import Decimal
+    from datetime import datetime
+    from django.utils import timezone
+
+    phases = [phase] if phase is not None else list(job.phases.all())
+    hours_in_day = phase.get_hours_in_day() if phase is not None else job.get_hours_in_day()
+    today = timezone.now().date()
+    required = getattr(
+        TimeSlotDeliveryRole, "REQUIRED_ALLOCATIONS",
+        (TimeSlotDeliveryRole.DELIVERY, TimeSlotDeliveryRole.QA),
+    )
+
+    def days(h):
+        return round(h / hours_in_day, 2) if hours_in_day else Decimal(0)
+
+    def money(h):
+        return round(h, 2)
+
+    phase_rows = []
+    gt_scoped = gt_scheduled = gt_confirmed = gt_tentative = Decimal(0)
+
+    for ph in phases:
+        ph_confirmed = ph.status >= PhaseStatuses.SCHEDULED_CONFIRMED
+        roles = []
+        for role_id, label in TimeSlotDeliveryRole.CHOICES:
+            if role_id == TimeSlotDeliveryRole.NA:
+                continue
+            scoped = ph.get_total_scoped_by_type(role_id)
+            scheduled = ph.get_total_scheduled_by_type(role_id)
+            if scoped <= 0 and scheduled <= 0:
+                continue
+            remaining = scoped - scheduled
+            roles.append({
+                "role_id": role_id, "role_name": label,
+                "scoped_h": money(scoped), "scheduled_h": money(scheduled), "remaining_h": money(remaining),
+                "scoped_d": days(scoped), "scheduled_d": days(scheduled), "remaining_d": days(remaining),
+                "perc": ph.get_slot_type_usage_perc(role_id),
+            })
+
+        ph_scoped = ph.get_total_scoped_hours()
+        ph_scheduled = ph.get_total_scheduled_hours()
+        ph_conf_h = ph_scheduled if ph_confirmed else Decimal(0)
+        ph_tent_h = Decimal(0) if ph_confirmed else ph_scheduled
+        total = {
+            "scoped_h": money(ph_scoped), "scheduled_h": money(ph_scheduled),
+            "remaining_h": money(ph_scoped - ph_scheduled),
+            "scoped_d": days(ph_scoped), "scheduled_d": days(ph_scheduled),
+            "remaining_d": days(ph_scoped - ph_scheduled),
+            "perc": ph.get_total_scheduled_perc(),
+            "confirmed_h": money(ph_conf_h), "tentative_h": money(ph_tent_h),
+        }
+
+        d = ph.delivery_date
+        if isinstance(d, datetime):
+            d = d.date()
+        milestone = {
+            "delivery_date": ph.delivery_date,
+            "due_to_techqa": ph.due_to_techqa,
+            "due_to_presqa": ph.due_to_presqa,
+            "days_to_delivery": (d - today).days if d else None,
+            "is_delivery_late": ph.is_delivery_late,
+        }
+
+        needs_attention = bool(ph.is_delivery_late) or any(
+            r["role_id"] in required and r["scoped_h"] > 0 and r["scheduled_h"] <= 0
+            for r in roles
+        )
+
+        phase_rows.append({
+            "phase": ph, "status": ph.status, "confirmed": ph_confirmed,
+            "needs_attention": needs_attention, "roles": roles,
+            "total": total, "milestone": milestone,
+        })
+        gt_scoped += ph_scoped
+        gt_scheduled += ph_scheduled
+        gt_confirmed += ph_conf_h
+        gt_tentative += ph_tent_h
+
+    grand_total = None
+    if phase is None:
+        grand_total = {
+            "scoped_h": money(gt_scoped), "scheduled_h": money(gt_scheduled),
+            "remaining_h": money(gt_scoped - gt_scheduled),
+            "scoped_d": days(gt_scoped), "scheduled_d": days(gt_scheduled),
+            "remaining_d": days(gt_scoped - gt_scheduled),
+            "perc": round(100 * gt_scheduled / gt_scoped, 1) if gt_scoped > 0 else 0,
+            "confirmed_h": money(gt_confirmed), "tentative_h": money(gt_tentative),
+        }
+
+    return {"phases": phase_rows, "grand_total": grand_total, "hours_in_day": hours_in_day}
+
+
 def get_user_schedule_breakdown(job, phase=None):
     """Build a per-user, per-role hour breakdown for a job or phase.
 
@@ -900,49 +1214,73 @@ def get_user_schedule_breakdown(job, phase=None):
     from decimal import Decimal
 
     if phase:
-        slots = TimeSlot.objects.filter(phase=phase).select_related("user")
+        slots = TimeSlot.objects.filter(phase=phase).select_related("user", "phase")
         hours_in_day = phase.get_hours_in_day()
     else:
-        slots = TimeSlot.objects.filter(phase__job=job).select_related("user")
+        slots = TimeSlot.objects.filter(phase__job=job).select_related("user", "phase")
         hours_in_day = job.get_hours_in_day()
 
     role_names = dict(TimeSlotDeliveryRole.CHOICES)
+    role_map = assigned_role_map(job, phase)   # user_pk -> [assigned role labels]
 
-    # Accumulate {user_id: {role_id: hours}}
+    def days(h):
+        return round(h / hours_in_day, 2) if hours_in_day else Decimal(0)
+
+    # Accumulate {user_id: {role_id: {hours, confirmed, tentative}}}
     user_data = {}
     user_objects = {}
     for slot in slots:
         uid = slot.user_id
-        if uid not in user_data:
-            user_data[uid] = {}
-            user_objects[uid] = slot.user
-        role_id = slot.deliveryRole
+        user_data.setdefault(uid, {})
+        user_objects.setdefault(uid, slot.user)
+        cell = user_data[uid].setdefault(
+            slot.deliveryRole, {"hours": Decimal(0), "confirmed": Decimal(0), "tentative": Decimal(0)}
+        )
         hours = slot.get_business_hours()
-        user_data[uid][role_id] = user_data[uid].get(role_id, Decimal(0)) + hours
+        cell["hours"] += hours
+        if slot.is_confirmed():
+            cell["confirmed"] += hours
+        else:
+            cell["tentative"] += hours
 
     result = []
     for uid, roles in user_data.items():
         user_roles = []
-        total_hours = Decimal(0)
-        for role_id, hours in sorted(roles.items()):
+        total_hours = total_conf = total_tent = Decimal(0)
+        for role_id, cell in sorted(roles.items()):
             if role_id == TimeSlotDeliveryRole.NA:
                 continue
-            total_hours += hours
-            days = round(hours / hours_in_day, 2) if hours_in_day else Decimal(0)
+            total_hours += cell["hours"]
+            total_conf += cell["confirmed"]
+            total_tent += cell["tentative"]
             user_roles.append({
                 "role_name": role_names.get(role_id, "Unknown"),
-                "hours": round(hours, 2),
-                "days": days,
+                "hours": round(cell["hours"], 2), "days": days(cell["hours"]),
+                "confirmed": round(cell["confirmed"], 2),
+                "tentative": round(cell["tentative"], 2),
             })
-        total_days = round(total_hours / hours_in_day, 2) if hours_in_day else Decimal(0)
         result.append({
             "user": user_objects[uid],
             "roles": user_roles,
-            "total_hours": round(total_hours, 2),
-            "total_days": total_days,
+            "total_hours": round(total_hours, 2), "total_days": days(total_hours),
+            "total_confirmed": round(total_conf, 2), "total_tentative": round(total_tent, 2),
+            "assigned_roles": role_map.get(uid, []),
+            "unscheduled": False,
         })
 
-    result.sort(key=lambda x: str(x["user"]))
+    # Assigned-but-unscheduled people (0 booked hours) so scheduling gaps show.
+    missing = [pk for pk in role_map if pk not in user_data]
+    for u in User.objects.filter(pk__in=missing):
+        result.append({
+            "user": u, "roles": [],
+            "total_hours": Decimal(0), "total_days": Decimal(0),
+            "total_confirmed": Decimal(0), "total_tentative": Decimal(0),
+            "assigned_roles": role_map.get(u.pk, []),
+            "unscheduled": True,
+        })
+
+    # Scheduled people first (alphabetical), then unscheduled assignees.
+    result.sort(key=lambda x: (x["unscheduled"], str(x["user"])))
     return result
 
 

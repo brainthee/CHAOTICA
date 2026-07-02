@@ -9,7 +9,12 @@
         <button type="button" class="btn-close text-body-emphasis" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        <p>Are you sure you wish to clear the following range of all assignments for {{ resource }}?</p>
+        {% if batch %}
+          <p>Are you sure you wish to clear the following range for <strong>{{ users|length }}</strong> people?</p>
+          <p class="fs-9 text-body-secondary">{% for u in users %}{{ u }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+        {% else %}
+          <p>Are you sure you wish to clear the following range of all assignments for {{ resource }}?</p>
+        {% endif %}
 
         <p>
           <span class="badge badge-phoenix badge-phoenix-primary">{{ start }}</span> to <span class="badge badge-phoenix badge-phoenix-primary">{{ end }}</span>

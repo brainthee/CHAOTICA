@@ -283,7 +283,35 @@ def merge_include_users(request, users):
     return User.objects.filter(pk__in=ids)
 
 
-def get_scheduler_members(request, filtered_users = None, start = None, end = None, use_filter_form=True, phase_roles=None):
+def assigned_role_map(job, phase=None):
+    """Map user_pk -> [role labels] for a job (optionally a single phase).
+    Account Manager / Deputy AM / Scoping come from the job; Lead / Author /
+    Tech QA / Pres QA from the phase(s). Used to tag scheduler resources and to
+    surface assigned-but-unscheduled people in the team allocation widget."""
+    role_map = {}
+
+    def _add(pk, label):
+        if not pk:
+            return
+        lst = role_map.setdefault(pk, [])
+        if label not in lst:
+            lst.append(label)
+
+    if job is not None:
+        _add(job.account_manager_id, "Account Manager")
+        _add(job.dep_account_manager_id, "Deputy AM")
+        for sid in job.scoped_by.values_list("pk", flat=True):
+            _add(sid, "Scoping")
+        phases = [phase] if phase is not None else list(job.phases.all())
+        for ph in phases:
+            _add(ph.project_lead_id, "Lead")
+            _add(ph.report_author_id, "Author")
+            _add(ph.techqa_by_id, "Tech QA")
+            _add(ph.presqa_by_id, "Pres QA")
+    return role_map
+
+
+def get_scheduler_members(request, filtered_users = None, start = None, end = None, use_filter_form=True, role_job=None, role_phase=None):
     data = []
     selected_phases = []
     cleaned_data = None
@@ -304,6 +332,10 @@ def get_scheduler_members(request, filtered_users = None, start = None, end = No
         filtered_users = _filter_users_on_query(request, cleaned_data).prefetch_related(
             "unit_memberships", "unit_memberships__unit", "job_level_history", "job_level_history__job_level"
         )
+
+    # Per-user role map for job/phase-scoped views (Account Manager / Lead /
+    # Author / QA etc.), so each resource can be tagged with their role(s).
+    role_map = assigned_role_map(role_job, role_phase) if role_job is not None else {}
 
     # Change FullCalendar format to DateTime
     if not start:
@@ -354,20 +386,7 @@ def get_scheduler_members(request, filtered_users = None, start = None, end = No
         user = user_stat['user']
         user_title = user_stat['user_name']
         main_org = user_stat['main_org']
-
-        # In phase-scoped mode, annotate the member with their phase role(s).
-        if phase_roles is not None:
-            roles = []
-            if phase_roles.project_lead_id == user.pk:
-                roles.append("Lead")
-            if phase_roles.report_author_id == user.pk:
-                roles.append("Author")
-            if phase_roles.techqa_by_id == user.pk:
-                roles.append("TQA")
-            if phase_roles.presqa_by_id == user.pk:
-                roles.append("PQA")
-            if roles:
-                user_title = user_title + " (" + ", ".join(roles) + ")"
+        user_roles = role_map.get(user.pk, [])
 
         # Get user's current job level
         current_job_level = UserJobLevel.get_current_level(user)
@@ -378,6 +397,7 @@ def get_scheduler_members(request, filtered_users = None, start = None, end = No
             {
                 "id": user.pk,
                 "title": user_title,
+                "roles": user_roles,
                 "first_name": user.first_name,
                 "last_name": user.last_name,
                 "availability": user_stat['available_percentage'] if user_stat['available_percentage'] else 0,
@@ -421,7 +441,7 @@ def get_scheduler_members(request, filtered_users = None, start = None, end = No
     return JsonResponse(data, safe=False)
 
 
-def get_scheduler_slots(request, filtered_users = None, start = None, end = None, use_filter_form=True, scope_phases=None):
+def get_scheduler_slots(request, filtered_users = None, start = None, end = None, use_filter_form=True, scope_phases=None, hard_scope=True):
     data = []
     selected_phases = []
     cleaned_data = None
@@ -443,6 +463,20 @@ def get_scheduler_slots(request, filtered_users = None, start = None, end = None
             "unit_memberships", "unit_memberships__unit", "job_level_history__job_level"
         )
 
+    # "bounds" mode: return the real min/max extent of the relevant slots so the
+    # UI's Fit control can zoom to the DATA AVAILABLE (not just the loaded buffer,
+    # which makes repeated Fit creep outward).
+    if request.GET.get("bounds"):
+        from django.db.models import Min, Max
+        bqs = TimeSlot.objects.filter(user__in=filtered_users)
+        if scope_phases is not None:
+            bqs = bqs.filter(phase_id__in=[p.pk for p in scope_phases])
+        agg = bqs.aggregate(lo=Min("start"), hi=Max("end"))
+        return JsonResponse({
+            "start": agg["lo"].isoformat() if agg["lo"] else None,
+            "end": agg["hi"].isoformat() if agg["hi"] else None,
+        })
+
     # Change FullCalendar format to DateTime
     if not start:
         start = clean_fullcalendar_datetime(request.GET.get("start", None))
@@ -463,14 +497,15 @@ def get_scheduler_slots(request, filtered_users = None, start = None, end = None
 
     compressed_view = cleaned_data.get("compressed_view", False) if cleaned_data else False
 
+    scope_phase_ids = set(p.pk for p in scope_phases) if scope_phases is not None else None
+
     # Load the timeslots
     slot_qs = TimeSlot.objects.filter(
         user__in=filtered_users, end__gte=start, start__lte=end
     )
-    if scope_phases is not None:
-        # Hard job/phase scope — restrict to that job/phase's slots
-        # (vs. the soft grey-out applied by the `jobs`/`phases` filters).
-        slot_qs = slot_qs.filter(phase__in=scope_phases)
+    if scope_phase_ids is not None and hard_scope:
+        # Hard job/phase scope — restrict to that job/phase's slots only.
+        slot_qs = slot_qs.filter(phase_id__in=scope_phase_ids)
     for slot in slot_qs.prefetch_related(
         "phase",
         "phase__job",
@@ -487,6 +522,10 @@ def get_scheduler_slots(request, filtered_users = None, start = None, end = None
                 and slot.phase.job not in selected_phases
             ):
                 slot_json["display"] = "background"
+        # Soft-scope: keep the member's other commitments visible but faded so
+        # it's clear which blocks belong to this job/phase (vs. context).
+        if scope_phase_ids is not None and not hard_scope and slot.phase_id not in scope_phase_ids:
+            slot_json["out_of_scope"] = True
         data.append(slot_json)
 
     # Add the holidays

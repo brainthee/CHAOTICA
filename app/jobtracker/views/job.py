@@ -64,6 +64,7 @@ def view_job_schedule_slots(request, slug):
         filtered_users=merge_include_users(request, job.team_scheduled()),
         use_filter_form=False,
         scope_phases=job.phases.all(),
+        hard_scope=False,   # show other commitments faded for context
     )
 
 
@@ -76,6 +77,7 @@ def view_job_schedule_members(request, slug):
         request,
         filtered_users=merge_include_users(request, job.team_scheduled()),
         use_filter_form=False,
+        role_job=job,
     )
 
 
@@ -550,18 +552,20 @@ class JobScheduleView(UnitPermissionRequiredMixin, JobBaseView, DetailView):
             for role_id, hours in types_in_use.items()
             if hours > 0 and role_id != TimeSlotDeliveryRole.NA
         ]
-        from .scheduler import get_user_schedule_breakdown
+        from .scheduler import get_user_schedule_breakdown, get_schedule_utilisation
         context["user_breakdown"] = get_user_schedule_breakdown(context["job"])
+        context["utilisation"] = get_schedule_utilisation(context["job"])
         context["hours_in_day"] = context["job"].get_hours_in_day()
         return context
 
 
 @job_permission_required_or_403("jobtracker.view_job_schedule", (Job, "slug", "slug"))
 def view_job_schedule_util(request, slug):
+    from .scheduler import get_schedule_utilisation
     job = get_object_or_404(Job, slug=slug)
     context = {
         "job": job,
-        "TimeSlotDeliveryRoles": TimeSlotDeliveryRole.CHOICES,
+        "utilisation": get_schedule_utilisation(job),
     }
     return render(request, "partials/scheduler/schedule_util.html", context)
 
@@ -579,8 +583,9 @@ def view_job_schedule_user_breakdown(request, slug):
 
 @job_permission_required_or_403("jobtracker.view_job_schedule", (Job, "slug", "slug"))
 def view_job_schedule_phase_status(request, slug):
+    from .scheduler import get_schedule_utilisation
     job = get_object_or_404(Job, slug=slug)
-    context = {"job": job}
+    context = {"job": job, "utilisation": get_schedule_utilisation(job)}
     return render(request, "partials/scheduler/schedule_job_status.html", context)
 
 

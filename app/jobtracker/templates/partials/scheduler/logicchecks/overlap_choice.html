@@ -1,0 +1,23 @@
+{% comment %}Shown when a delivery booking overlaps existing slots. Offers three
+ways to proceed; each button re-submits the create form with an overlap_mode.{% endcomment %}
+<div class="text-start">
+  <p class="mb-2">This person already has slots in the selected range:</p>
+  <ul class="mb-3">
+    {% if counts.unavailable %}<li><strong>{{ counts.unavailable }}</strong> leave / unavailable</li>{% endif %}
+    {% if counts.delivery %}<li><strong>{{ counts.delivery }}</strong> other delivery slot{{ counts.delivery|pluralize }}</li>{% endif %}
+    {% if counts.project %}<li><strong>{{ counts.project }}</strong> project slot{{ counts.project|pluralize }}</li>{% endif %}
+    {% if counts.internal %}<li><strong>{{ counts.internal }}</strong> internal slot{{ counts.internal|pluralize }}</li>{% endif %}
+  </ul>
+  <p class="mb-2 fs-9 text-body-secondary">How would you like to book this range?</p>
+  <div class="d-grid gap-2">
+    <button type="button" class="btn btn-phoenix-primary js-overlap-mode" data-mode="around">
+      <span class="fas fa-diagram-next me-1"></span> Book <strong>around</strong> them &mdash; skip busy days
+    </button>
+    <button type="button" class="btn btn-phoenix-warning js-overlap-mode" data-mode="over">
+      <span class="fas fa-layer-group me-1"></span> Schedule <strong>over the top</strong> &mdash; double-book
+    </button>
+    <button type="button" class="btn btn-phoenix-danger js-overlap-mode" data-mode="destructive">
+      <span class="fas fa-eraser me-1"></span> <strong>Clear</strong> other delivery/project &amp; book &mdash; keeps leave/internal
+    </button>
+  </div>
+</div>

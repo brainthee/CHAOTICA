@@ -15,6 +15,7 @@
   var slotsUrl   = CFG.slotsUrl;
   var createUrls = CFG.createUrls || {};
   var createExtraParams = CFG.createExtraParams || '';
+  var readonly = !!CFG.readonly;   // embedded read-only view (detail tabs)
   // Existing filter querystring (without the leading "?") so the global page can
   // re-apply the same SchedulerFilter. Ignored by the scoped endpoints.
   var filterParams = window.location.search.replace(/^\?/, '');
@@ -63,7 +64,7 @@
     groupHeightMode: 'auto',
     tooltip: { followMouse: true, overflowMethod: 'cap' },
     xss: { disabled: true },
-    editable: { updateTime: true, updateGroup: true, add: false, remove: false, overrideItems: false },
+    editable: readonly ? false : { updateTime: true, updateGroup: true, add: false, remove: false, overrideItems: false },
     onMove: onItemMove,
     groupOrder: function (a, b) { return (a.order || 0) - (b.order || 0); },
     orientation: 'top',
@@ -83,8 +84,15 @@
   var footerEl = document.querySelector('footer');
   function fitHeight() {
     var cTop = container.getBoundingClientRect().top;
-    var bottom = (footerEl ? footerEl.getBoundingClientRect().top : window.innerHeight);
+    // The global scheduler has a fixed-bottom footer, so clamp to it. Scoped
+    // pages (job/phase, incl. the read-only detail tab) scroll normally with the
+    // footer below the fold — size to the viewport, or the timeline collapses to
+    // a short strip and "doesn't show as far".
+    var bottom = (CFG.scope === 'global' && footerEl)
+      ? footerEl.getBoundingClientRect().top
+      : window.innerHeight;
     var h = Math.max(240, Math.floor(bottom - cTop - 8));
+    if (readonly) h = Math.min(h, 520);   // bounded preview inside a detail tab
     container.style.height = h + 'px';
     timeline.setOptions({ minHeight: h, maxHeight: h });
   }
@@ -150,10 +158,14 @@
     var name = escapeHtml(r.title || ((r.first_name || '') + ' ' + (r.last_name || '')).trim());
     var lvl = escapeHtml(r.job_level || '');
     var util = Math.round((r.util != null) ? r.util : 0);
+    var roles = (r.roles || []).map(function (role) {
+      return '<span class="sched-role">' + escapeHtml(role) + '</span>';
+    }).join('');
     return '<div class="sched-res">' +
              '<span class="meta">' +
                '<span class="name">' + name + '</span>' +
                (lvl ? '<span class="lvl">' + lvl + '</span>' : '') +
+               (roles ? '<span class="sched-roles">' + roles + '</span>' : '') +
              '</span>' +
              '<span class="badge badge-phoenix ' + utilBadgeClass(util) + '">' + util + '%</span>' +
            '</div>';
@@ -228,6 +240,10 @@
       dispStart = startOfDay(e.start);
       dispEnd = startOfNextDay(e.end);
     }
+    // On a job/phase-scoped view, a member's other commitments are shown FADED
+    // (never hidden) so gaps can be trusted; they aren't editable from here.
+    var faded = !!e.out_of_scope;
+    var canEdit = !!e.can_edit && !faded;
     return {
       id: idPrefix + e.id,
       group: e.resourceId,
@@ -235,14 +251,14 @@
       end: dispEnd,
       content: icon + escapeHtml(e.title || ''),
       title: escapeHtml(buildTooltip(e)),
-      className: e.is_comment ? 'cmt' : '',
+      className: (e.is_comment ? 'cmt' : '') + (faded ? ' sched-faded' : ''),
       style: 'background-color:' + bg + '; color:' + fg + '; border-color:' + bg + ';',
-      editable: e.can_edit ? { updateTime: true, updateGroup: true, remove: false } : false,
+      editable: canEdit ? { updateTime: true, updateGroup: true, remove: false } : false,
       _meta: {
         origId: e.id,
         isComment: !!e.is_comment,
-        canEdit: !!e.can_edit,
-        editUrl: e.edit_url,
+        canEdit: canEdit,
+        editUrl: faded ? null : e.edit_url,
         userId: e.userId
       }
     };
@@ -299,7 +315,7 @@
     var rm = [];
     items.get().forEach(function (it) {
       var id = String(it.id);
-      if (id === SEL_ID || id.indexOf('unloaded-') === 0) return;
+      if (id.indexOf('__sel__') === 0 || id.indexOf('unloaded-') === 0) return;
       var st = new Date(it.start).getTime();
       var en = it.end ? new Date(it.end).getTime() : st;
       if (en < lo || st > hi) rm.push(it.id);
@@ -322,7 +338,7 @@
         mapped.forEach(function (m) { keep[m.id] = true; });
         var stale = items.getIds().filter(function (id) {
           id = String(id);
-          if (id === SEL_ID || id.indexOf('unloaded-') === 0) return false;
+          if (id.indexOf('__sel__') === 0 || id.indexOf('unloaded-') === 0) return false;
           return !keep[id];
         });
         if (stale.length) items.remove(stale);
@@ -392,7 +408,7 @@
 
   // ---- Double-click an item to open the edit modal (reuses #mainModal) ----
   timeline.on('doubleClick', function (props) {
-    if (props.item == null) return;
+    if (readonly || props.item == null) return;
     var it = items.get(props.item);
     var meta = it && it._meta;
     if (!meta || !meta.editUrl) return;
@@ -461,9 +477,12 @@
 
   function openCreate(key) {
     var url = createUrls[key];
-    if (!url || !ctxCtx) return;
+    if (!url || !ctxCtx || !ctxCtx.userIds.length) return;
+    var who = (ctxCtx.userIds.length > 1)
+      ? 'batch_users=' + ctxCtx.userIds.join(',')
+      : 'resource_id=' + parseInt(ctxCtx.userIds[0], 10);
     loading(true);
-    $.get(url + '?resource_id=' + parseInt(ctxCtx.group, 10) +
+    $.get(url + '?' + who +
           '&start=' + encodeURIComponent(ctxCtx.startISO) +
           '&end=' + encodeURIComponent(ctxCtx.endISO) +
           createExtraParams,
@@ -496,28 +515,54 @@
     events: { hide: function () { clearSelectionHighlight(); } }
   });
 
-  function openMenuAt(group, startDate, endDate, pageX, pageY) {
-    var r = snapRange(group, startDate, endDate);
-    ctxCtx = { group: group, startISO: r.start, endISO: r.end, pageX: pageX, pageY: pageY };
+  // ctxCtx.userIds is the ordered list of selected resources (1 for a single row).
+  function openMenuAt(userIds, startDate, endDate, pageX, pageY) {
+    var r = snapRange(userIds[0], startDate, endDate);
+    ctxCtx = { userIds: userIds, startISO: r.start, endISO: r.end, pageX: pageX, pageY: pageY };
     $('#vis-timeline').contextMenu({ x: pageX, y: pageY });
   }
 
   timeline.on('contextmenu', function (props) {
-    if (props.group == null) return;
+    if (readonly || props.group == null) return;
     props.event.preventDefault();
-    openMenuAt(props.group, props.time, props.time, props.event.pageX, props.event.pageY);
+    openMenuAt([props.group], props.time, props.time, props.event.pageX, props.event.pageY);
   });
 
-  // ---- Select mode: drag across a row to choose a date range ----
+  // ---- Select mode: drag across rows + dates to choose a multi-resource range ----
   var selectMode = false;
-  var sel = null;
-  var SEL_ID = '__selection__';
+  var sel = null;                 // { startGroup, startTime } while dragging
+  var SEL_PREFIX = '__sel__';
+  var selIds = [];
   var btnModePan = document.getElementById('btnModePan');
   var btnModeSelect = document.getElementById('btnModeSelect');
 
   function clearSelectionHighlight() {
     sel = null;
-    if (items.get(SEL_ID)) items.remove(SEL_ID);
+    if (selIds.length) { items.remove(selIds); selIds = []; }
+  }
+
+  function orderedGroupIds() {
+    return groups.get()
+      .sort(function (a, b) { return (a.order || 0) - (b.order || 0); })
+      .map(function (g) { return g.id; });
+  }
+
+  function groupsBetween(g1, g2) {
+    var ids = orderedGroupIds();
+    var i1 = ids.indexOf(g1), i2 = ids.indexOf(g2);
+    if (i1 < 0 || i2 < 0) return [g1];
+    if (i1 > i2) { var t = i1; i1 = i2; i2 = t; }
+    return ids.slice(i1, i2 + 1);
+  }
+
+  function paintSelection(groupIds, start, end) {
+    if (selIds.length) { items.remove(selIds); selIds = []; }
+    groupIds.forEach(function (gid) {
+      var id = SEL_PREFIX + gid;
+      selIds.push(id);
+      items.add({ id: id, group: gid, start: start, end: end,
+                  type: 'background', className: 'sched-selection' });
+    });
   }
 
   function setSelectMode(on) {
@@ -532,30 +577,29 @@
   if (btnModeSelect) btnModeSelect.addEventListener('click', function () { setSelectMode(true); });
 
   timeline.on('mouseDown', function (props) {
-    if (!selectMode) return;
+    if (readonly || !selectMode) return;
     if (props.event.button !== 0) return;
     if (props.group == null || props.item != null) return;
     clearSelectionHighlight();
-    sel = { group: props.group, startTime: props.time };
-    items.add({ id: SEL_ID, group: props.group, start: props.time, end: props.time,
-                type: 'background', className: 'sched-selection' });
+    sel = { startGroup: props.group, startTime: props.time };
+    paintSelection([props.group], props.time, props.time);
   });
 
   timeline.on('mouseMove', function (props) {
     if (!selectMode || !sel || props.time == null) return;
     var a = sel.startTime, b = props.time;
-    items.update({ id: SEL_ID, group: sel.group,
-                   start: (a < b ? a : b), end: (a < b ? b : a),
-                   type: 'background', className: 'sched-selection' });
+    var gids = (props.group != null) ? groupsBetween(sel.startGroup, props.group) : [sel.startGroup];
+    paintSelection(gids, (a < b ? a : b), (a < b ? b : a));
   });
 
   timeline.on('mouseUp', function (props) {
     if (!selectMode || !sel) return;
-    var group = sel.group, a = sel.startTime, b = (props.time || sel.startTime);
+    var a = sel.startTime, b = (props.time || sel.startTime);
     var s = (a < b ? a : b), e = (a < b ? b : a);
+    var gids = (props.group != null) ? groupsBetween(sel.startGroup, props.group) : [sel.startGroup];
     sel = null;
     if (Math.abs(e - s) < 1000 * 60 * 30) e = s;
-    openMenuAt(group, s, e, props.event.pageX, props.event.pageY);
+    openMenuAt(gids, s, e, props.event.pageX, props.event.pageY);
   });
 
   // ---- Refetch on pan/zoom (infinite scroll on time) ----
@@ -581,7 +625,25 @@
   function on(id, fn) { var el = document.getElementById(id); if (el) el.addEventListener('click', fn); }
   on('btnZoomIn',  function () { timeline.zoomIn(0.5); });
   on('btnZoomOut', function () { timeline.zoomOut(0.5); });
-  on('btnFit',     function () { timeline.fit(); });
+  on('btnFit',     function () {
+    // Fit to the DATA AVAILABLE (backend bounds), not the loaded buffer — fitting
+    // to the buffer makes repeated Fit creep outward as more data streams in.
+    loading(true);
+    var url = slotsUrl + (slotsUrl.indexOf('?') >= 0 ? '&' : '?') + 'bounds=1' + (filterParams ? '&' + filterParams : '');
+    $.ajax({
+      url: url, method: 'GET',
+      success: function (b) {
+        if (b && b.start && b.end) {
+          var s = new Date(b.start), e = new Date(b.end);
+          var pad = 3 * 24 * 60 * 60 * 1000;   // 3 days each side
+          timeline.setWindow(new Date(s.getTime() - pad), new Date(e.getTime() + pad));
+        } else {
+          timeline.fit();   // no data — fall back
+        }
+      },
+      complete: function () { loading(false); }
+    });
+  });
   on('btnToday',   function () {
     var n = new Date();
     timeline.setWindow(new Date(n.getTime() - 7 * 24 * 60 * 60 * 1000),
@@ -685,6 +747,10 @@
     loadSlots();
     $('#addUserModal').modal('hide');
   });
+
+  // Redraw hook for embedding in an initially-hidden container (e.g. a Bootstrap
+  // tab), where vis first renders at zero width. Call after the tab is shown.
+  window.__schedRedraw = function () { fitHeight(); timeline.redraw(); };
 
   // ---- Initial load ----
   loadMembers();

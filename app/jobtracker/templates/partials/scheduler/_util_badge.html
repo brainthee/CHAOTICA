@@ -1,0 +1,3 @@
+{% comment %}Shared scheduled-% badge with consistent (config-driven) thresholds.
+Param: perc (0-100+). Uses config.SCHEDULE_THRESHOLD_SUCCESS / _INFO (constance).{% endcomment %}
+<span class="badge badge-phoenix badge-phoenix-{% if perc > 100 %}danger{% elif perc >= config.SCHEDULE_THRESHOLD_SUCCESS %}success{% elif perc >= config.SCHEDULE_THRESHOLD_INFO %}info{% elif perc > 0 %}warning{% else %}secondary{% endif %} fs-10">{{ perc }}%</span>

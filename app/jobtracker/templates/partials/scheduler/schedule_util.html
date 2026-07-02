@@ -1,4 +1,4 @@
-{% load menu %}{% load static %}{% load crispy_forms_tags %}{% load index %}
+{% load menu %}{% load static %}{% load index %}
 <div class="card mb-3">
   <div class="card-header">
     <div class="d-flex justify-content-between align-items-center mb-2">
@@ -8,139 +8,95 @@
         <label class="form-check-label" for="utilDaysChecked">Show as Days</label>
       </div>
     </div>
-    <div id="util-hours-per-day-setting" data-bs-toggle="tooltip" data-bs-placement="bottom"
-    title="Value set at the client level">
+    <div id="util-hours-per-day-setting" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Value set at the client level">
       <div class="alert alert-phoenix-info mb-0 px-3 py-1" role="alert">
-        Hours per day:
-        <strong>{% if phase %}{{ phase.job.get_hours_in_day }}{% else %}{{ job.get_hours_in_day }}{% endif %}</strong>
+        Hours per day: <strong>{{ utilisation.hours_in_day }}</strong>
         <span class="far fs-10 fa-circle-question text-primary position-absolute ms-1 mt-1 top-0"></span>
       </div>
     </div>
   </div>
   <div class="card-body p-0">
+    {% if utilisation.phases %}
     <div class="table-responsive">
       <table class="table table-sm fs-9 mb-0">
         <thead>
           <tr>
-            {% if not phase %}
-            <th class="sort border-top ps-1" data-sort="name">Phase</th>
-            {% endif %}
-            <th class="sort border-top" data-sort="email">Type</th>
-            <th class="sort border-top" data-sort="age">Scoped</th>
-            <th class="sort border-top" data-sort="age">Scheduled</th>
-            <th class="sort text-end align-middle pe-1 border-top" scope="col">Util</th>
+            <th class="border-top ps-1">Type</th>
+            <th class="border-top text-end">Scoped</th>
+            <th class="border-top text-end">Scheduled</th>
+            <th class="border-top text-end">Remaining</th>
+            <th class="border-top text-end pe-1">Util</th>
           </tr>
         </thead>
-        <tbody class="list ">
-          {% if phase %}
-            <!-- Only show a single phase -->
-
-              {% for v,t in TimeSlotDeliveryRoles %}
-              {% if v > 0 %}
-                {% get_total_scoped_by_type phase v as totalScoped %}
-                {% get_total_scheduled_by_type phase v as totalScheduled %}
-                {% get_total_scoped_days_by_type phase v as totalScopedDays %}
-                {% get_total_scheduled_days_by_type phase v as totalScheduledDays %}
-                {% get_slot_type_usage_perc phase v as typePerc %}
-                {% if totalScheduled > 0 or totalScoped > 0 %}
-                  <tr>
-                    <td class="align-middle ps-1">{{ t }}</td>
-                    <td class="align-middle">
-                      <span class="util-days">{{ totalScopedDays }}d</span>
-                      <span class="util-hours d-none">{{ totalScoped }}hrs</span>
-                    </td>
-                    <td class="align-middle">
-                      <span class="util-days">{{ totalScheduledDays }}d</span>
-                      <span class="util-hours d-none">{{ totalScheduled }}hrs</span>
-                    </td>
-                    <td class="align-end text-end pe-1">
-                      <span class="badge badge-phoenix badge-phoenix-{% if typePerc > 100 %}danger{% elif typePerc == 100 and totalScoped > 0 %}success{% elif typePerc == 100 %}danger{% elif typePerc > 75 %}warning{% elif typePerc > 0.0 %}info{% else %}secondary{% endif %} fs-10">{{ typePerc }}%</span>
-                    </td>
-                  </tr>
+        <tbody class="list">
+          {% for prow in utilisation.phases %}
+            {% if not phase %}
+            <tr class="bg-body-secondary">
+              <td colspan="5" class="ps-1 py-1">
+                <a href="{{ prow.phase.get_absolute_url }}" class="fw-semibold text-body-emphasis">{{ prow.phase.get_id }}: {{ prow.phase.title }}</a>
+                {% if prow.milestone.delivery_date %}
+                  <span class="ms-2 text-body-secondary text-nowrap"><span class="fas fa-flag-checkered me-1"></span>{{ prow.milestone.delivery_date|date:"j M y" }}{% if prow.milestone.days_to_delivery != None %} <span class="{% if prow.milestone.is_delivery_late %}text-danger fw-semibold{% endif %}">({{ prow.milestone.days_to_delivery }}d)</span>{% endif %}</span>
                 {% endif %}
-              {% endif %}
-            {% endfor %}
-            {% with phaseScopedHrs=phase.get_total_scoped_hours phaseSchedHrs=phase.get_total_scheduled_hours phaseScopedDays=phase.get_total_scoped_days phaseSchedDays=phase.get_total_scheduled_days phasePerc=phase.get_total_scheduled_perc %}
-            {% if phaseScopedHrs > 0 or phaseSchedHrs > 0 %}
-              <tr class="fw-bold border-top border-translucent">
-                <td class="align-middle ps-1">Total</td>
-                <td class="align-middle">
-                  <span class="util-days">{{ phaseScopedDays }}d</span>
-                  <span class="util-hours d-none">{{ phaseScopedHrs }}hrs</span>
-                </td>
-                <td class="align-middle">
-                  <span class="util-days">{{ phaseSchedDays }}d</span>
-                  <span class="util-hours d-none">{{ phaseSchedHrs }}hrs</span>
-                </td>
-                <td class="align-end text-end pe-1">
-                  <span class="badge badge-phoenix badge-phoenix-{% if phasePerc > 100 %}danger{% elif phasePerc == 100 and phaseScopedHrs > 0 %}success{% elif phasePerc == 100 %}danger{% elif phasePerc > 75 %}warning{% elif phasePerc > 0.0 %}info{% else %}secondary{% endif %} fs-10">{{ phasePerc }}%</span>
-                </td>
-              </tr>
+                {% if prow.needs_attention %}<span class="badge badge-phoenix badge-phoenix-danger ms-2 fs-10"><span class="fas fa-triangle-exclamation me-1"></span>Attention</span>{% endif %}
+              </td>
+            </tr>
             {% endif %}
-            {% endwith %}
-          {% else %}
-            <!-- Do this for every phase -->
-            {% for j_phase in job.phases.all %}
-
-              {% for v,t in TimeSlotDeliveryRoles %}
-                {% if v > 0 %}
-                  {% get_total_scoped_by_type j_phase v as totalScoped %}
-                  {% get_total_scheduled_by_type j_phase v as totalScheduled %}
-                  {% get_total_scoped_days_by_type j_phase v as totalScopedDays %}
-                  {% get_total_scheduled_days_by_type j_phase v as totalScheduledDays %}
-                  {% get_slot_type_usage_perc j_phase v as typePerc %}
-                  {% if totalScheduled > 0 or totalScoped > 0 %}
-                    <tr>
-                      <td class="align-start ps-1">{{ j_phase.get_id }}</td>
-                      <td class="align-middle">{{ t }}</td>
-                      <td class="align-middle">
-                        <span class="util-days">{{ totalScopedDays }}d</span>
-                        <span class="util-hours d-none">{{ totalScoped }}hrs</span>
-                      </td>
-                      <td class="align-middle">
-                        <span class="util-days">{{ totalScheduledDays }}d</span>
-                        <span class="util-hours d-none">{{ totalScheduled }}hrs</span>
-                      </td>
-                      <td class="align-end text-end pe-1">
-                        <span class="badge badge-phoenix badge-phoenix-{% if typePerc > 100 %}danger{% elif typePerc == 100 and totalScoped > 0 %}success{% elif typePerc == 100 %}danger{% elif typePerc > 75 %}warning{% elif typePerc > 0.0 %}info{% else %}secondary{% endif %} fs-10">{{ typePerc }}%</span>
-                      </td>
-                    </tr>
-                  {% endif %}
-                {% endif %}
-              {% endfor %}
-              {% with phaseScopedHrs=j_phase.get_total_scoped_hours phaseSchedHrs=j_phase.get_total_scheduled_hours phaseScopedDays=j_phase.get_total_scoped_days phaseSchedDays=j_phase.get_total_scheduled_days phasePerc=j_phase.get_total_scheduled_perc %}
-              {% if phaseScopedHrs > 0 or phaseSchedHrs > 0 %}
-                <tr class="fw-bold border-bottom border-translucent">
-                  <td class="align-start ps-1"></td>
-                  <td class="align-middle">Total</td>
-                  <td class="align-middle">
-                    <span class="util-days">{{ phaseScopedDays }}d</span>
-                    <span class="util-hours d-none">{{ phaseScopedHrs }}hrs</span>
-                  </td>
-                  <td class="align-middle">
-                    <span class="util-days">{{ phaseSchedDays }}d</span>
-                    <span class="util-hours d-none">{{ phaseSchedHrs }}hrs</span>
-                  </td>
-                  <td class="align-end text-end pe-1">
-                    <span class="badge badge-phoenix badge-phoenix-{% if phasePerc > 100 %}danger{% elif phasePerc == 100 and phaseScopedHrs > 0 %}success{% elif phasePerc == 100 %}danger{% elif phasePerc > 75 %}warning{% elif phasePerc > 0.0 %}info{% else %}secondary{% endif %} fs-10">{{ phasePerc }}%</span>
-                  </td>
-                </tr>
-              {% endif %}
-              {% endwith %}
-
+            {% for role in prow.roles %}
+            <tr>
+              <td class="align-middle ps-1">{{ role.role_name }}</td>
+              <td class="align-middle text-end"><span class="util-days">{{ role.scoped_d }}d</span><span class="util-hours d-none">{{ role.scoped_h }}h</span></td>
+              <td class="align-middle text-end"><span class="util-days">{{ role.scheduled_d }}d</span><span class="util-hours d-none">{{ role.scheduled_h }}h</span></td>
+              <td class="align-middle text-end {% if role.remaining_h < 0 %}text-danger fw-semibold{% elif role.remaining_h == 0 %}text-success{% else %}text-body-secondary{% endif %}"><span class="util-days">{{ role.remaining_d }}d</span><span class="util-hours d-none">{{ role.remaining_h }}h</span></td>
+              <td class="align-middle text-end pe-1">{% include 'partials/scheduler/_util_badge.html' with perc=role.perc %}</td>
+            </tr>
             {% endfor %}
+            <tr class="fw-bold border-top border-translucent">
+              <td class="ps-1">Total</td>
+              <td class="text-end"><span class="util-days">{{ prow.total.scoped_d }}d</span><span class="util-hours d-none">{{ prow.total.scoped_h }}h</span></td>
+              <td class="text-end"><span class="util-days">{{ prow.total.scheduled_d }}d</span><span class="util-hours d-none">{{ prow.total.scheduled_h }}h</span></td>
+              <td class="text-end {% if prow.total.remaining_h < 0 %}text-danger{% elif prow.total.remaining_h == 0 %}text-success{% else %}text-body-secondary{% endif %}"><span class="util-days">{{ prow.total.remaining_d }}d</span><span class="util-hours d-none">{{ prow.total.remaining_h }}h</span></td>
+              <td class="text-end pe-1">{% include 'partials/scheduler/_util_badge.html' with perc=prow.total.perc %}</td>
+            </tr>
+            {% if prow.total.tentative_h > 0 %}
+            <tr class="fs-10 text-body-secondary"><td colspan="5" class="ps-1 pt-0 pb-1"><span class="fas fa-circle-info me-1"></span>{{ prow.total.confirmed_h }}h confirmed · {{ prow.total.tentative_h }}h tentative</td></tr>
+            {% endif %}
+          {% endfor %}
+          {% if utilisation.grand_total %}
+          <tr class="fw-bold border-top border-2 border-translucent">
+            <td class="ps-1">Job total</td>
+            <td class="text-end"><span class="util-days">{{ utilisation.grand_total.scoped_d }}d</span><span class="util-hours d-none">{{ utilisation.grand_total.scoped_h }}h</span></td>
+            <td class="text-end"><span class="util-days">{{ utilisation.grand_total.scheduled_d }}d</span><span class="util-hours d-none">{{ utilisation.grand_total.scheduled_h }}h</span></td>
+            <td class="text-end {% if utilisation.grand_total.remaining_h < 0 %}text-danger{% elif utilisation.grand_total.remaining_h == 0 %}text-success{% else %}text-body-secondary{% endif %}"><span class="util-days">{{ utilisation.grand_total.remaining_d }}d</span><span class="util-hours d-none">{{ utilisation.grand_total.remaining_h }}h</span></td>
+            <td class="text-end pe-1">{% include 'partials/scheduler/_util_badge.html' with perc=utilisation.grand_total.perc %}</td>
+          </tr>
           {% endif %}
         </tbody>
       </table>
     </div>
+    {% else %}
+    <div class="p-3 text-body-secondary fs-9">No scope defined yet — set the {% if phase %}phase{% else %}job{% endif %} scope to start scheduling.</div>
+    {% endif %}
   </div>
 </div>
 
 <script>
-function toggleUtilUnit() {
-    const useDays = document.getElementById('utilDaysChecked').checked;
+function applyUtilUnit(useDays) {
     document.querySelectorAll('.util-days').forEach(el => el.classList.toggle('d-none', !useDays));
     document.querySelectorAll('.util-hours').forEach(el => el.classList.toggle('d-none', useDays));
-    document.getElementById('util-hours-per-day-setting').classList.toggle('d-none', !useDays);
+    const s = document.getElementById('util-hours-per-day-setting');
+    if (s) s.classList.toggle('d-none', !useDays);
 }
+function toggleUtilUnit() {
+    const useDays = document.getElementById('utilDaysChecked').checked;
+    try { localStorage.setItem('chaotica_sched_days', useDays ? '1' : '0'); } catch (e) {}
+    applyUtilUnit(useDays);
+}
+(function () {
+    var pref = null; try { pref = localStorage.getItem('chaotica_sched_days'); } catch (e) {}
+    if (pref === '0') {
+        var cb = document.getElementById('utilDaysChecked');
+        if (cb) cb.checked = false;
+        applyUtilUnit(false);
+    }
+})();
 </script>

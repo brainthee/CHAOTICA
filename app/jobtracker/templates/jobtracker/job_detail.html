@@ -14,6 +14,10 @@
 {% block content_classes %}pt-15 px-0 {% endblock content_classes %}
 {% block breadcrumb_classes %}px-5{% endblock breadcrumb_classes %}
 
+{% block extra_css %}
+  {% include 'partials/scheduler/vis_scheduler_css.html' %}
+{% endblock extra_css %}
+
 {% block content %}
 
 {% include 'partials/job/page_header.html' %}
@@ -69,12 +73,14 @@
           {% include 'partials/job/widgets/phases.html' %}
         </div>
         <div class="tab-pane fade" id="schedule" role="tabpanel" aria-labelledby="schedule-tab">
-          <div class="text-center py-6">
-            <p class="text-body-secondary mb-3">Open the interactive scheduler to view and edit this job's schedule.</p>
-            <a href="{% url 'job_schedule' job.slug %}" class="btn btn-phoenix-primary">
-              <span class="fas fa-calendar-days me-1"></span> Open Scheduler
+          <div class="d-flex justify-content-end mb-2">
+            <a href="{% url 'job_schedule' job.slug %}" class="btn btn-sm btn-phoenix-primary">
+              <span class="fas fa-pen me-1"></span> Edit Schedule
             </a>
           </div>
+          {% include 'partials/scheduler/vis_scheduler_toolbar.html' with readonly=True %}
+          <div id="sched-progress" class="sched-progress" role="progressbar" aria-hidden="true"></div>
+          <div id="vis-timeline"></div>
         </div>
         <div class="tab-pane fade" id="sales" role="tabpanel" aria-labelledby="sales-tab">
           <div class="alert alert-phoenix-primary" role="alert">
@@ -168,5 +174,23 @@
 
 $("#scopeForm").dirty({preventLeaving: true});
 
+</script>
+
+<script src="{% static 'vendors/vis-timeline/vis-timeline-graph2d.min.js' %}"></script>
+<script>
+  window.SCHEDULER_CONFIG = {
+    scope: 'job',
+    readonly: true,
+    membersUrl: "{% url 'view_job_schedule_members' job.slug %}",
+    slotsUrl: "{% url 'view_job_schedule_slots' job.slug %}",
+    createUrls: {},
+    cards: null
+  };
+</script>
+<script>{% include 'js/scheduler_vis_init.js' %}</script>
+<script>
+  document.getElementById('schedule-tab')?.addEventListener('shown.bs.tab', function () {
+    if (window.__schedRedraw) window.__schedRedraw();
+  });
 </script>
 {% endblock extra_js %}

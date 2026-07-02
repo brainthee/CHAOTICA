@@ -4,7 +4,15 @@
     <div class="modal-content">
         <form method="post" action="{{ request.get_full_path }}" class="js-submit-modal-timeslot-form">
           {{ form.media }}
-            {% csrf_token %}            
+            {% csrf_token %}
+            {% if batch_users %}
+              <input type="hidden" name="batch_users" value="{% for u in batch_users %}{{ u.pk }}{% if not forloop.last %},{% endif %}{% endfor %}">
+              <div class="alert alert-phoenix-info m-3 mb-0 py-2">
+                <span class="fas fa-users me-1"></span>
+                Scheduling for <strong>{{ batch_users|length }}</strong> people:
+                <span class="fs-9">{% for u in batch_users %}{{ u }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
+              </div>
+            {% endif %}
             <div class="modal-header">
                 <h6 class="modal-title font-weight-normal" 
                     id="modal-title-default">
@@ -56,7 +64,16 @@
                       refreshUserBreakdown();
                       refreshPhaseStatus();
                       $("#mainModal").modal("hide");
+                      if (data.summary) { Swal.fire("Scheduled", data.summary, "success"); }
                     }
+                } else if (data.needs_overlap_choice) {
+                  Swal.fire({
+                    title: "Existing slots in this range",
+                    html: data.logic_checks_feedback,
+                    showConfirmButton: false,
+                    showCloseButton: true,
+                    width: '38em'
+                  });
                 } else {
                   // Check if it's due to validation
                   if (data.logic_checks_failed) {
@@ -101,6 +118,16 @@
     };
 
   $(".js-submit-modal-timeslot-form").submit(saveTimeslotForm);
+
+  // Overlap chooser: each button re-submits the create form with an overlap_mode.
+  $(document).off('click.overlapmode').on('click.overlapmode', '.js-overlap-mode', function() {
+    var mode = $(this).data('mode');
+    var form = $('.js-submit-modal-timeslot-form');
+    form.find('input[name="overlap_mode"]').remove();
+    $('<input>').attr({ type: 'hidden', name: 'overlap_mode', value: mode }).appendTo(form);
+    Swal.close();
+    form.submit();
+  });
 
   });
  </script>

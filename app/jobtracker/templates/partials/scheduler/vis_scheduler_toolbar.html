@@ -3,10 +3,12 @@
   <span id="sched-loading" class="sched-loading me-2" aria-live="polite" hidden>
     <span class="spinner-border spinner-border-sm text-primary" role="status"></span>
   </span>
+  {% if not readonly %}
   <div class="btn-group btn-group-sm" role="group" aria-label="Mouse mode">
     <button class="btn btn-phoenix-secondary active" id="btnModePan" title="Drag to pan the timeline"><span class="fas fa-hand me-1"></span>Pan</button>
-    <button class="btn btn-phoenix-secondary" id="btnModeSelect" title="Drag across a row to select a date range"><span class="fas fa-object-group me-1"></span>Select</button>
+    <button class="btn btn-phoenix-secondary" id="btnModeSelect" title="Drag across rows &amp; dates to select several resources"><span class="fas fa-object-group me-1"></span>Select</button>
   </div>
+  {% endif %}
   <div class="btn-group btn-group-sm" role="group" aria-label="Zoom">
     <button class="btn btn-phoenix-secondary" id="btnZoomOut" title="Zoom out (or Ctrl/⌘ + scroll)"><span class="fas fa-magnifying-glass-minus"></span></button>
     <button class="btn btn-phoenix-secondary" id="btnZoomIn" title="Zoom in (or Ctrl/⌘ + scroll)"><span class="fas fa-magnifying-glass-plus"></span></button>
@@ -29,5 +31,5 @@
     <span class="me-2"><span class="dot weekend"></span>Weekend</span>
     <span class="me-2"><span class="dot holiday"></span>Holiday</span>
   </div>
-  <span class="ms-2 small text-body-secondary"><span class="fas fa-circle-info me-1"></span>Scroll = up/down &nbsp;·&nbsp; Ctrl/⌘ + scroll (or pinch) = zoom &nbsp;·&nbsp; Right-click a row to book &nbsp;·&nbsp; Double-click to edit</span>
+  <span class="ms-2 small text-body-secondary"><span class="fas fa-circle-info me-1"></span>Scroll = up/down &nbsp;·&nbsp; Ctrl/⌘ + scroll (or pinch) = zoom{% if not readonly %} &nbsp;·&nbsp; Right-click a row to book &nbsp;·&nbsp; Double-click to edit{% endif %}</span>
 </div>

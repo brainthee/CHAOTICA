@@ -731,7 +731,7 @@ class User(AbstractUser):
         return queryset
 
     def clear_timeslots_in_range(
-        self, start_date, end_date, respect_working_hours=True
+        self, start_date, end_date, respect_working_hours=True, slot_type_pks=None
     ):
         """
         Clear timeslots in a date range for the user.
@@ -740,6 +740,9 @@ class User(AbstractUser):
         Args:
             start_date (datetime): Start of the date range to clear
             end_date (datetime): End of the date range to clear
+            slot_type_pks (list|None): if given, only clear slots whose
+                slot_type is in this list (e.g. delivery/project only) — used
+                for the "destructive" schedule mode so leave/internal are kept.
 
         Returns:
             tuple: (affected_timeslots, created_timeslots) - Lists of affected and newly created timeslots
@@ -780,6 +783,8 @@ class User(AbstractUser):
 
         # Find timeslots that overlap with the range
         queryset = self.timeslots.filter(start__lt=end_date, end__gt=start_date)
+        if slot_type_pks is not None:
+            queryset = queryset.filter(slot_type_id__in=slot_type_pks)
 
         # Process each overlapping timeslot
         with transaction.atomic():

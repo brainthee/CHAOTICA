@@ -5,6 +5,14 @@
         <form method="post" action="{{ request.get_full_path }}" class="js-submit-modal-form">
           {{ form.media }}
             {% csrf_token %}
+            {% if batch_users %}
+              <input type="hidden" name="batch_users" value="{% for u in batch_users %}{{ u.pk }}{% if not forloop.last %},{% endif %}{% endfor %}">
+              <div class="alert alert-phoenix-info m-3 mb-0 py-2">
+                <span class="fas fa-users me-1"></span>
+                Adding a comment for <strong>{{ batch_users|length }}</strong> people:
+                <span class="fs-9">{% for u in batch_users %}{{ u }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
+              </div>
+            {% endif %}
             <div class="modal-header">
                 <h6 class="modal-title font-weight-normal" 
                     id="modal-title-default">

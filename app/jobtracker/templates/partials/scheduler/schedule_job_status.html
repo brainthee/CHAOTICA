@@ -1,36 +1,44 @@
-{% load menu %}
-{% load static %}
-{% load crispy_forms_tags %}
-{% load index %}
+{% load menu %}{% load static %}{% load index %}
 <div class="card mb-3">
   <div class="card-header">
-    <h4>Phase Status</h4>
+    <h4 class="mb-0">Phase Status</h4>
   </div>
   <div class="card-body p-0">
     <div class="table-responsive">
       <table class="table table-sm fs-9 mb-0">
         <thead>
           <tr>
-            <th class="sort border-top ps-1" data-sort="name">Phase</th>
-            <th class="sort border-top" data-sort="scheduled">Scheduled</th>
-            <th class="sort border-top" data-sort="status">Status</th>
+            <th class="border-top ps-1">Phase</th>
+            <th class="border-top">Status</th>
+            <th class="border-top text-end">Sched</th>
+            <th class="border-top text-nowrap">Delivery</th>
+            <th class="border-top text-end pe-1"></th>
           </tr>
         </thead>
         <tbody class="list">
-          {% for j_phase in job.phases.all %}
-            {% with perc=j_phase.get_total_scheduled_perc sched_days=j_phase.get_total_scheduled_days scoped_days=j_phase.get_total_scoped_days sched_hrs=j_phase.get_total_scheduled_hours scoped_hrs=j_phase.get_total_scoped_hours t_success=config.SCHEDULE_THRESHOLD_SUCCESS t_info=config.SCHEDULE_THRESHOLD_INFO %}
-            <tr>
-              <td class="phase">
-                <a href="{{ j_phase.get_absolute_url }}">{{ j_phase.phase_id }}: {{ j_phase.title }}</a>
-              </td>
-              <td class="text-nowrap">
-                <span class="badge badge-phoenix badge-phoenix-{% if perc > 100 %}danger{% elif perc >= t_success %}success{% elif perc >= t_info %}info{% elif perc > 0 %}warning{% else %}secondary{% endif %} fs-10" data-bs-toggle="tooltip" data-bs-placement="left" title="Scheduled: {{ sched_days }}d ({{ sched_hrs }}h) / Scoped: {{ scoped_days }}d ({{ scoped_hrs }}h)">{{ perc }}%</span>
-              </td>
-              <td>
-                {% include 'partials/phase/status_badge.html' with phase=j_phase %}
-              </td>
-            </tr>
-            {% endwith %}
+          {% for prow in utilisation.phases %}
+          <tr{% if prow.needs_attention %} class="table-danger"{% endif %}>
+            <td class="align-middle ps-1">
+              <a href="{{ prow.phase.get_absolute_url }}">{{ prow.phase.phase_id }}: {{ prow.phase.title }}</a>
+            </td>
+            <td class="align-middle">{% include 'partials/phase/status_badge.html' with phase=prow.phase %}</td>
+            <td class="align-middle text-end" data-bs-toggle="tooltip" data-bs-placement="left"
+                title="Scheduled {{ prow.total.scheduled_d }}d ({{ prow.total.scheduled_h }}h) of {{ prow.total.scoped_d }}d ({{ prow.total.scoped_h }}h) scoped{% if prow.total.tentative_h > 0 %} — {{ prow.total.tentative_h }}h tentative{% endif %}">
+              {% include 'partials/scheduler/_util_badge.html' with perc=prow.total.perc %}
+              {% if prow.total.tentative_h > 0 %}<span class="fas fa-clock text-warning ms-1" title="Has tentative hours"></span>{% endif %}
+            </td>
+            <td class="align-middle text-nowrap">
+              {% if prow.milestone.delivery_date %}
+                {{ prow.milestone.delivery_date|date:"j M y" }}
+                {% if prow.milestone.days_to_delivery != None %}<span class="text-body-secondary {% if prow.milestone.is_delivery_late %}text-danger fw-semibold{% endif %}">({{ prow.milestone.days_to_delivery }}d)</span>{% endif %}
+              {% else %}
+                <span class="text-body-secondary">—</span>
+              {% endif %}
+            </td>
+            <td class="align-middle text-end pe-1">
+              {% if prow.needs_attention %}<span class="fas fa-triangle-exclamation text-danger" data-bs-toggle="tooltip" title="Needs attention: a required role is unscheduled or a milestone is late"></span>{% endif %}
+            </td>
+          </tr>
           {% endfor %}
         </tbody>
       </table>

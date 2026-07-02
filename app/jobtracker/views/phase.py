@@ -52,6 +52,7 @@ def view_phase_schedule_slots(request, job_slug, slug):
         filtered_users=merge_include_users(request, phase.team()),
         use_filter_form=False,
         scope_phases=[phase],
+        hard_scope=False,   # show other commitments faded for context
     )
 
 
@@ -65,7 +66,8 @@ def view_phase_schedule_members(request, job_slug, slug):
         request,
         filtered_users=merge_include_users(request, phase.team()),
         use_filter_form=False,
-        phase_roles=phase,
+        role_job=job,
+        role_phase=phase,
     )
 
 
@@ -260,10 +262,11 @@ class PhaseScheduleView(UnitPermissionRequiredMixin, PhaseBaseView, DetailView):
             for role_id, hours in types_in_use.items()
             if hours > 0 and role_id != TimeSlotDeliveryRole.NA
         ]
-        from .scheduler import get_user_schedule_breakdown
+        from .scheduler import get_user_schedule_breakdown, get_schedule_utilisation
         context["user_breakdown"] = get_user_schedule_breakdown(
             context["job"], context["phase"]
         )
+        context["utilisation"] = get_schedule_utilisation(context["job"], context["phase"])
         context["hours_in_day"] = context["phase"].get_hours_in_day()
         return context
 
@@ -282,12 +285,13 @@ def view_phase_schedule_user_breakdown(request, job_slug, slug):
 
 @job_permission_required_or_403("jobtracker.view_job_schedule", (Phase, "slug", "slug"))
 def view_phase_schedule_util(request, job_slug, slug):
+    from .scheduler import get_schedule_utilisation
     job = get_object_or_404(Job, slug=job_slug)
     phase = get_object_or_404(Phase, job=job, slug=slug)
     context = {
         "phase": phase,
         "job": job,
-        "TimeSlotDeliveryRoles": TimeSlotDeliveryRole.CHOICES,
+        "utilisation": get_schedule_utilisation(job, phase),
     }
     return render(request, "partials/scheduler/schedule_util.html", context)
 
