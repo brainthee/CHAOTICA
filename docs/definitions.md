@@ -70,3 +70,27 @@ This can be considered a team. It could be a region, capability group or somethi
 
 !!! Example
     A company has a team of consultants across different countries. Each team largely manage their own workload or "schedule" and has their own back-office staff. Therefore it would make sense for each country to have it's own unit.
+
+## Scheduling
+
+See the [Scheduling Concepts](user_guide/scheduling/concepts.md) guide for the full picture.
+
+### Time Slot
+
+A single booking of a person's time between a start and end — delivery (client) work, project work, internal time (training, leave, etc.), or a comment note.
+
+### Delivery Role
+
+The kind of work a delivery slot represents — Delivery, Reporting, Management, QA, Oversight, Debrief, Contingency, Shadow or Other. Each role has its own scoped/scheduled budget on a phase.
+
+### Scoped vs Scheduled
+
+**Scoped** hours are what's *planned* for a phase (per role); **scheduled** hours are what's actually *booked*. The difference is **remaining** — what's still to book (or, if negative, over‑scheduled).
+
+### Confirmed vs Tentative
+
+A phase's bookings are *tentative* until the phase reaches *Scheduled – Confirmed*, then *confirmed*. The scheduler colours and totals them separately.
+
+### Utilisation
+
+How much of a person's available time is booked, shown as a percentage on each scheduler row.

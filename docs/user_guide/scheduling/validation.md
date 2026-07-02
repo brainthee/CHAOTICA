@@ -1,98 +1,92 @@
-# Scheduling Validation
+# Booking & Validation
 
-When creating or editing delivery slots, CHAOTICA runs a series of validation checks to prevent common scheduling issues. These checks protect against framework budget overruns, scheduling conflicts, and client onboarding gaps.
+When you create or edit a **delivery** slot, CHAOTICA runs a series of checks to prevent framework budget overruns, scheduling conflicts, and client‑onboarding gaps. This page covers those checks and the **overlap chooser** you get when a booking clashes with existing slots.
 
-## How Checks Work
+## How checks work
 
-Each check evaluates the proposed time slot and returns one of three outcomes:
+Each check returns one of:
 
-- **Pass** — No issue, proceed to the next check
-- **Hard block** — The slot cannot be saved; the user sees an error message
-- **Bypassable warning** — The user sees a warning dialog with "Save" and "Cancel" options; choosing "Save" re-submits the form with `force=1` to skip bypassable checks
+- **Pass** — no issue, continue.
+- **Hard block** — the slot can't be saved; you see an error you can only dismiss.
+- **Bypassable warning** — you see a warning with a **Save** option; choosing it re‑submits with `force` set to skip bypassable checks.
 
-Checks run in a defined order. If a hard block fires, later checks are skipped.
-
-## Check Order
+The non‑overlap checks run first (framework → onboarding → phase scope). If they pass, overlaps are handled by the **chooser** described below.
 
 ```mermaid
 flowchart TD
-    A[Start] --> B{Framework closed?}
+    A[Create / edit delivery slot] --> B{Framework closed?}
     B -->|Yes| B1[Hard block]
     B -->|No| C{Over-allocation blocked?}
     C -->|Yes| C1[Hard block]
-    C -->|No| D{Client onboarding required & user not onboarded?}
+    C -->|No| D{Onboarding required & user not onboarded?}
     D -->|Yes| D1[Hard block]
-    D -->|No| E{Force flag set?}
-    E -->|Yes| SAVE[Save slot]
-    E -->|No| F{Over-budget warning?}
-    F -->|Yes| F1[Bypassable warning]
-    F -->|No| G{Unavailable overlap?}
-    G -->|Yes| G1[Hard block]
-    G -->|No| H{Working-time overlap?}
-    H -->|Yes| H1[Bypassable warning]
-    H -->|No| I{Stale onboarding?}
-    I -->|Yes| I1[Bypassable warning]
-    I -->|No| SAVE
-    F1 --> CONFIRM{User confirms?}
-    H1 --> CONFIRM
-    I1 --> CONFIRM
-    CONFIRM -->|Save| SAVE
-    CONFIRM -->|Cancel| CANCEL[Cancel]
+    D -->|No| E{Over budget / stale onboarding / over phase-scope?}
+    E -->|Yes, and not forced| E1[Bypassable warning → force to proceed]
+    E -->|No / forced| F{Overlaps existing slots?}
+    F -->|No| SAVE[Save slot]
+    F -->|Yes| G[Overlap chooser:\nAround / Over / Destructive]
+    G --> SAVE
 ```
 
-## Non-Bypassable Checks
+## Non‑bypassable checks (hard blocks)
 
-These checks produce a hard block that cannot be overridden.
-
-| Check | Trigger | What Happens |
+| Check | Trigger | Result |
 |---|---|---|
-| **Framework Closed** | `framework.closed == True` | The slot cannot be created. Message: the framework is closed and no further time can be scheduled against it. |
-| **Framework Over-Allocated** | Slot would push `days_allocated` above `total_days` **and** `allow_over_allocation == False` | Hard block with budget breakdown showing: budget, already allocated, this slot's days, and the would-be total. |
-| **Client Onboarding Required** | Client has `onboarding_required == True` and the user has no onboarding record for this client | Hard block — the user must be onboarded before being scheduled. |
-| **Unavailable Overlap** | Slot overlaps with non-working time (leave, sick, etc.) | Hard block — cannot schedule delivery work over unavailable time. |
+| **Framework closed** | `framework.closed` | Can't schedule against a closed framework. |
+| **Framework over‑allocated** | Booking pushes days above `total_days` **and** `allow_over_allocation` is off | Hard block with a budget breakdown (budget / allocated / this slot / would‑be total). |
+| **Client onboarding required** | Client has `onboarding_required` and the user has **no** onboarding record for that client | The user must be onboarded first. |
 
-## Bypassable Checks
+## Bypassable warnings (force to proceed)
 
-These checks produce a warning that the user can choose to override.
-
-| Check | Trigger | What Happens |
+| Check | Trigger | Result |
 |---|---|---|
-| **Framework Over-Budget Warning** | Slot would push `days_allocated` above `total_days` **and** `allow_over_allocation == True` | Warning showing budget breakdown. User can confirm to proceed or cancel. |
-| **Overlapping Working Slots** | Slot overlaps with other working-time slots (delivery, project) | Warning listing the overlapping slots. User can force-save. |
-| **Stale Onboarding** | User has an onboarding record but `is_stale == True` (expired) | Warning that onboarding is out of date. User can force-save. |
+| **Framework over‑budget** | Would exceed `total_days` but `allow_over_allocation` is on | Warning with budget breakdown; can force. |
+| **Phase over‑scoped** | Booking this role's hours would exceed the phase's **scoped** hours for that delivery role | Warning; can force. |
+| **Stale onboarding** | User is onboarded but the record is **stale** (past renewal) | Warning; can force. |
 
-!!!note
-    Multiple bypassable warnings can fire at the same time. For example, a slot could trigger both an over-budget warning and an overlap warning — the feedback messages are concatenated.
+!!! note
+    Multiple bypassable warnings can fire together (e.g. over‑budget *and* over‑scope); their messages are combined into one dialog.
 
-## Budget Calculations
+## Overlap handling — the chooser
 
-Framework budget checks convert time slot hours to days using the client's `hours_in_day` setting:
+When a delivery booking (for a single person) overlaps existing slots in the range, CHAOTICA doesn't just block or double‑book — it asks how you want to proceed, showing a breakdown of what's in the way (leave/unavailable, other delivery, project, internal):
+
+- **Book around** — skip the occupied days and book only the free working days, splitting the booking into multiple slots as needed. Weekends/holidays inside a run don't split it; a busy working day does.
+- **Schedule over** — book one slot across the whole range on top of what's there (deliberate double‑booking).
+- **Clear & book (destructive)** — delete the overlapping **delivery and project** work in the range, then book the whole range. **Leave, sick, bank holidays and other internal time are always kept** — the new booking sits on top of those.
+
+!!! warning "Leave / time off is read‑only"
+    Annual‑leave, sick and bank‑holiday slots can't be moved or edited from the scheduler — the block isn't draggable and the backend refuses the change. Manage them via the leave request. (Destructive booking never deletes them either.)
+
+## Booking for multiple people (batch)
+
+When you book across several people at once (Select‑mode multi‑row), each person is evaluated individually:
+
+- People with **no issues** are booked.
+- People with a **hard block** (e.g. not onboarded, framework closed) are **skipped** and reported in the summary.
+- If any have **bypassable** warnings, you're asked once to **confirm/force**; on confirm, all eligible people are booked and the summary reports how many were booked and how many skipped.
+
+## Budget calculations
+
+Framework budget checks convert slot hours to days using the client's `hours_in_day`:
 
 ```
 slot_days = round(slot_business_hours / client.hours_in_day, 1)
 ```
 
-For new slots: `new_total = days_allocated + slot_days`
+- New slot: `new_total = days_allocated + slot_days`
+- Edited slot: `new_total = days_allocated - old_slot_days + new_slot_days`
 
-For edited slots: `new_total = days_allocated - old_slot_days + new_slot_days`
+See [Framework Agreements](../clients/framework_agreements.md) for the full budget model.
 
-See [Framework Agreements](../clients/framework_agreements.md) for full details on budget tracking.
+## Project & internal slots
 
-## Edit and Resize Checks
-
-The same framework checks apply when **editing** or **resizing** delivery slots via drag-and-drop. The `_check_framework_slot()` helper handles both cases by comparing the old slot's days against the updated slot's days, ensuring budget recalculations are accurate on modification — not just creation.
-
-## Project Slot Checks
-
-Project slots run a simpler set of checks:
-
-- **Unavailable overlap** — Hard block if the slot overlaps non-working time
-- **Working-time overlap** — Bypassable warning if it overlaps other working slots
-
-Project slots do **not** run framework or onboarding checks.
+- **Project** slots run overlap checks only (no framework/onboarding). An unavailable overlap is a hard block; a working overlap is a bypassable warning.
+- **Internal** slots (training, leave, etc.) and **comments** run no logic checks.
 
 ## Related Topics
 
-- [Scheduling Overview](overview.md) — General scheduling interface and slot types
-- [Framework Agreements](../clients/framework_agreements.md) — Budget tracking and allocation controls
-- [Managing Phases](../Jobs/phases/managing_phases.md) — Phase setup and lifecycle
+- [Scheduling Overview](overview.md) — the interface and how to book/edit
+- [Scheduling Concepts](concepts.md) — scoped vs scheduled, delivery roles, confirmed/tentative
+- [Framework Agreements](../clients/framework_agreements.md) — budget tracking and allocation controls
+- [Managing Phases](../Jobs/phases/managing_phases.md) — phase scoping before scheduling

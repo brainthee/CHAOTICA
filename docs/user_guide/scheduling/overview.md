@@ -1,96 +1,97 @@
 # Scheduling Overview
 
-The scheduler is the central tool for allocating team members to jobs, phases, projects, and internal activities. It provides a calendar-based interface where schedulers can create, edit, and manage time slots across the organisation.
+The scheduler is the central tool for allocating team members to jobs, phases, projects, and internal activities. It presents a **timeline** where each row is a team member and their bookings appear as blocks across the dates they're working.
 
-## Scheduler Interface
+CHAOTICA's scheduler is built on [vis-timeline](https://visjs.github.io/vis-timeline/) — a single, continuously-scrolling, zoomable timeline (there is no longer a paged month/week calendar). Work is booked **by the day**, so bookings render as whole‑day blocks even though the underlying times follow each person's working hours.
 
-The scheduler uses a [FullCalendar](https://fullcalendar.io/)-based resource timeline view. Each row represents a team member, and time slots appear as coloured bars spanning their assigned dates.
+## Where the scheduler appears
 
-- **Resource rows** show team members from the selected organisational unit(s)
-- **Filtering** controls which units, members, and slot types are visible — see [Filtering](filtering.md) for details
-- **Navigation** lets you scroll through weeks and months with standard calendar controls
+| Surface | URL | What it shows | Who can open it |
+|---|---|---|---|
+| **Global scheduler** | `/scheduler/` | Everyone (filterable) across the org | Any signed‑in user |
+| **Job schedule** | `Job → Schedule` | The job's team, all its phases | Users with `view_job_schedule` on the job |
+| **Phase schedule** | `Phase → Schedule` | The phase's team only | Users with `view_job_schedule` on the job |
+| **Read‑only tab** | `Job`/`Phase` detail → *Schedule* tab | An embedded, read‑only timeline | Users with `view_job_schedule` |
 
-## Time Slot Types
+Viewing a schedule and **editing** it are separate rights:
 
-Every time slot in CHAOTICA has a type that determines its behaviour and which validation checks apply.
-
-### Delivery (Phase) Slots
-
-Delivery slots are the primary scheduling mechanism. They tie a team member to a specific **phase** within a **job** and assign a **delivery role** (testing, reporting, review, or management).
-
-- Subject to all [validation and logic checks](validation.md)
-- Hours are counted toward framework agreement budgets
-- Trigger notifications to relevant stakeholders
-
-### Project Slots
-
-Project slots assign a team member to an **internal project** rather than a client job.
-
-- Checked for overlaps with other working-time slots
-- Unavailable-time overlaps (leave, etc.) are a hard block
-- Working-time overlaps produce a bypassable warning
-
-### Internal Slots
-
-Internal slots cover non-delivery time such as leave, training, sick days, and unassigned time.
-
-- No framework or onboarding checks
-- Marked as non-working time, so they block delivery and project slots from overlapping
-
-### Comment Slots
-
-Comment slots are text annotations placed on the schedule. They have no validation and do not count toward any budgets or utilisation calculations.
-
-## Creating Time Slots
-
-To create a time slot:
-
-1. Click on the calendar at the desired date range for a team member
-2. Select the slot type from the creation menu (Phase, Project, Internal, or Comment)
-3. Fill in the modal form — fields vary by type:
-   - **Phase slots**: select job, phase, delivery role, start/end dates
-   - **Project slots**: select project, start/end dates
-   - **Internal slots**: select slot type (leave, training, etc.), start/end dates
-   - **Comment slots**: enter comment text, start/end dates
-4. On submit, validation checks run (for delivery and project slots)
-5. If checks pass, the slot is saved and appears on the calendar
-
-The creation endpoint receives `start`, `end`, and `resource_id` parameters from the calendar click event.
-
-## Editing Time Slots
-
-Existing slots can be modified in two ways:
-
-- **Drag and resize** on the calendar — triggers a date-change endpoint that runs the same validation checks
-- **Edit modal** — click a slot to open its edit form, modify fields, and save
-
-For delivery slots, framework checks (closed, over-allocation, over-budget) apply on both create and edit operations via the `_check_framework_slot()` helper. See [Validation](validation.md) for full details.
-
-## Clearing a Range
-
-Schedulers can clear all slots and comments for a specific team member within a date range. This opens a confirmation modal showing all affected slots before deletion.
-
-## Validation and Logic Checks
-
-When creating or editing delivery slots, CHAOTICA runs a series of validation checks to prevent scheduling conflicts and framework budget issues. Checks range from hard blocks (framework closed) to bypassable warnings (overlapping working time).
-
-For the complete list of checks and how they work, see [Scheduling Validation](validation.md).
-
-## Permissions
-
-Scheduling operations require the `can_schedule_job` permission, which is granted at the **organisational unit** level. The `unit_permission_required_or_403` decorator enforces this on all create, edit, delete, and date-change endpoints.
-
-Users without this permission can still view the scheduler but cannot modify any slots.
-
-| Action | Required Permission |
+| Action | Required permission |
 |---|---|
-| View scheduler | `login_required` (any authenticated user) |
-| Create / edit / delete slots | `can_schedule_job` (on the relevant org unit) |
-| Clear slot range | `can_schedule_job` (on the relevant org unit) |
+| View the global scheduler | Any authenticated user |
+| View a job/phase schedule | `jobtracker.view_job_schedule` (on the job) |
+| Create / edit / delete / move slots | `jobtracker.can_schedule_job` (on the relevant **organisational unit**) |
+
+Users without `can_schedule_job` can look but not change anything — the create/edit actions simply aren't offered, and the backend refuses them.
+
+!!! note "Job/phase views show the *full* schedule"
+    On a job or phase schedule, each person's **other** commitments (other jobs, leave, internal time) are still shown — just **faded** — so an empty gap can be trusted as genuinely free. Only the current job/phase's work is shown in full colour.
+
+## Reading the timeline
+
+**Resource rows** — each row header shows the person's name, job level, a **utilisation %** badge (red ≥ 90%, green ≥ 70%, amber ≥ 40%), and, on job/phase schedules, small **role tags** (Account Manager, Lead, Author, Tech QA, Pres QA, …) so you can see who's doing what.
+
+**Blocks** are colour‑coded (a legend sits in the toolbar):
+
+- **Confirmed** vs **Tentative** delivery work (a phase is *confirmed* once its status reaches *Scheduled – Confirmed*; before that its bookings show tentative).
+- **Project** and **Internal** time have their own colours; **onsite** delivery is shaded differently to remote.
+- **Weekends and holidays** are lightly shaded; the current day is highlighted.
+- **Faded** blocks are out‑of‑scope context on a job/phase view (see the note above) and can't be edited from there.
+
+## Getting around
+
+- **Scroll** moves the resource list up/down; **Ctrl/⌘ + scroll** (or pinch) zooms in/out smoothly. The time axis re‑scales itself day → week → month → year.
+- **Zoom** buttons and quick‑zoom presets (2w / 2m / 6m / 1y) are in the toolbar.
+- **Today** re‑centres on the current week; **Fit** zooms to the *actual data* (the earliest→latest booking in scope), so repeatedly pressing Fit is stable rather than creeping outward.
+- **Pan / Select** mode toggle: *Pan* (default) drags the timeline; *Select* lets you drag a box across rows and dates to act on several people at once (see below).
+
+## Booking work
+
+**Right‑click** a resource row (on empty space) to open the booking menu:
+
+- **Assign phase** — book delivery work against a job's phase (the main booking action).
+- **Assign project** — book time on an internal project.
+- **Assign internal** — book internal/non‑delivery time (training, self‑learning, etc.).
+- **Add comment** — drop a text note on someone's row.
+- **Clear range** — remove that person's slots across the dragged range.
+
+Pick the dates by right‑clicking a single day, or in **Select** mode drag across the days you want first.
+
+### Booking for several people at once
+
+Switch to **Select** mode and drag a box across **multiple rows and a date range**. The booking menu then applies to everyone selected:
+
+- **Assign phase/project/internal / Add comment** create a slot for each person (one modal, one confirmation). Anyone who's blocked (e.g. not onboarded) is skipped and reported; bypassable warnings can be forced for all at once.
+- **Clear range** clears the range for every selected person.
+
+### Slot types
+
+| Type | Purpose | Notes |
+|---|---|---|
+| **Delivery (phase)** | Client work against a phase + a **delivery role** (Delivery, Reporting, Management, QA, Oversight, Debrief, Contingency, Shadow, Other) | Full validation (framework, onboarding, scope, overlaps). Counts toward the framework budget. |
+| **Project** | Internal‑project time | Overlap checks only. |
+| **Internal** | Training, self‑learning, conferences, leave, sick, etc. | No framework/onboarding checks. |
+| **Comment** | A text annotation | No validation; doesn't count toward utilisation. |
+
+See [Booking & Validation](validation.md) for exactly which checks run and how the overlap chooser works.
+
+## Editing and moving
+
+- **Double‑click** a block to open its edit modal.
+- **Drag** a block to move its dates and/or drop it on a different person's row — both happen in one action; the destination person's working hours are applied automatically.
+- **Resize** a block to lengthen/shorten it.
+
+!!! warning "Leave and time off are read‑only here"
+    Annual leave, sick and bank‑holiday slots **cannot be moved or edited from the scheduler** — the block isn't draggable and the backend refuses the change. Manage those through the leave request (see [Managing Leave](../operations/managing_leave.md)).
+
+## Clearing a range
+
+The right‑click **Clear range** (and the sidebar **Clear** tool on job/phase pages) shows a confirmation listing exactly what will be removed before anything is deleted. On job/phase pages you can also clear by **all / a specific user / a specific role**.
 
 ## Related Topics
 
-- [Scheduling Validation](validation.md) — Full list of logic checks and bypass rules
-- [Filtering](filtering.md) — Controlling which resources and slots are visible
-- [Managing Phases](../Jobs/phases/managing_phases.md) — Phase setup before scheduling
-- [Framework Agreements](../clients/framework_agreements.md) — Budget tracking that drives scheduling checks
+- [Scheduling Concepts](concepts.md) — slots, delivery roles, scoped vs scheduled, confirmed/tentative, hours‑per‑day
+- [Booking & Validation](validation.md) — logic checks and the around/over/destructive overlap chooser
+- [Filtering](filtering.md) — controlling which resources and slots are shown
+- [Sidebar Widgets](widgets.md) — utilisation, team allocation and phase‑status panels on job/phase pages
+- [Calendar Feeds](calendar_feeds.md) — subscribing to your schedule in Outlook/Google/etc.
+- [Framework Agreements](../clients/framework_agreements.md) — the budget that drives scheduling checks

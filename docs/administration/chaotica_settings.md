@@ -84,6 +84,17 @@ Controls the colour coding of the scheduled-vs-scoped progress indicators shown 
 
 ---
 
+## Calendar Feeds
+
+Site-wide toggles for the iCal schedule feeds users can subscribe to. See [Calendar Feeds](../user_guide/scheduling/calendar_feeds.md).
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| **CALENDAR_FEED_ENABLED** | `True` | Enables the personal schedule (iCal) feed users can subscribe to from their profile. When off, feed URLs return nothing. |
+| **CALENDAR_FAMILY_FEED_ENABLED** | `True` | Enables the family-friendly feed showing only onsite/remote + confirmed/tentative status (no job detail). |
+
+---
+
 ## Reminders
 
 | Setting | Default | Description |
