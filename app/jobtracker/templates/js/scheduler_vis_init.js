@@ -38,14 +38,43 @@
     hour: 'ddd D MMMM', weekday: 'MMMM YYYY', day: 'MMMM YYYY',
     week: 'MMMM YYYY', month: 'YYYY', year: ''
   };
+  var MINOR_STR = {
+    hour: 'HH:mm', weekday: 'ddd D', day: 'D',
+    week: 'D MMM', month: 'MMM', year: 'YYYY'
+  };
+  // Weekday initials for the tight day tiers. moment has no single-letter token,
+  // so these render via a whole-minorLabels function (vis rejects a function on an
+  // individual key — it only accepts a format string there, or a function for the
+  // entire minorLabels object).
+  var DOW_ONE = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  var DOW_TWO = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+  var DOW_THREE = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  // Two-line label: weekday stacked over the date number ("Mon" / "1"). vis renders
+  // axis labels as HTML (xss protection is disabled), so <br> gives the break. The
+  // weekday width adapts to zoom (3 → 2 → 1 char); the second line is always the date.
+  function dayLabel(dow, date) { return '<span class="sched-day2">' + dow + '<br>' + new Date(date).getDate() + '</span>'; }
+  function fmtDayThree(date) { return dayLabel(DOW_THREE[new Date(date).getDay()], date); }
+  function fmtDayTwo(date) { return dayLabel(DOW_TWO[new Date(date).getDay()], date); }
+  function fmtDayOne(date) { return dayLabel(DOW_ONE[new Date(date).getDay()], date); }
+  // dayFmt is either a moment format string (object form) OR a function(date) for the
+  // 'day' scale (whole-minorLabels function form; other scales fall back to moment).
   function buildFormat(dayFmt) {
-    return {
-      minorLabels: {
-        hour: 'HH:mm', weekday: 'ddd D', day: dayFmt || 'D',
-        week: 'D MMM', month: 'MMM', year: 'YYYY'
-      },
-      majorLabels: MAJOR
+    if (typeof dayFmt === 'function') {
+      return {
+        minorLabels: function (date, scale, step) {
+          if (scale === 'day') return dayFmt(date);
+          return (typeof moment !== 'undefined')
+            ? moment(date).format(MINOR_STR[scale] || 'D')
+            : String(new Date(date).getDate());
+        },
+        majorLabels: MAJOR
+      };
+    }
+    var minor = {
+      hour: MINOR_STR.hour, weekday: MINOR_STR.weekday, day: dayFmt || 'D',
+      week: MINOR_STR.week, month: MINOR_STR.month, year: MINOR_STR.year
     };
+    return { minorLabels: minor, majorLabels: MAJOR };
   }
 
   var options = {
@@ -111,13 +140,14 @@
     if (!widthPx) return;
     var w = timeline.getWindow();
     var ppd = 86400000 / ((w.end - w.start) / widthPx);   // pixels per day
-    var scale, dayFmt = null;
-    if (ppd >= 55) { scale = 'day'; dayFmt = 'ddd D'; }    // roomy: weekday + number
-    else if (ppd >= 16) { scale = 'day'; dayFmt = 'D'; }   // tight: number only
+    var scale, dayFmt = null, dayKey = '';
+    if (ppd >= 55) { scale = 'day'; dayFmt = fmtDayThree; dayKey = 'd3'; }        // roomy: "Mon" / "1"
+    else if (ppd >= 28) { scale = 'day'; dayFmt = fmtDayTwo; dayKey = 'd2'; }     // "Mo" / "1"
+    else if (ppd >= 16) { scale = 'day'; dayFmt = fmtDayOne; dayKey = 'd1'; }     // "M" / "1"
     else if (ppd >= 3.5) { scale = 'week'; }
     else if (ppd >= 0.6) { scale = 'month'; }
     else { scale = 'year'; }
-    var key = scale + '|' + (dayFmt || '');
+    var key = scale + '|' + dayKey;
     if (key === currentAxisKey) return;
     currentAxisKey = key;
     timeline.setOptions({ timeAxis: { scale: scale, step: 1 }, format: buildFormat(dayFmt) });
@@ -625,9 +655,9 @@
   function on(id, fn) { var el = document.getElementById(id); if (el) el.addEventListener('click', fn); }
   on('btnZoomIn',  function () { timeline.zoomIn(0.5); });
   on('btnZoomOut', function () { timeline.zoomOut(0.5); });
-  on('btnFit',     function () {
-    // Fit to the DATA AVAILABLE (backend bounds), not the loaded buffer — fitting
-    // to the buffer makes repeated Fit creep outward as more data streams in.
+  // Fit to the DATA AVAILABLE (backend bounds), not the loaded buffer — fitting
+  // to the buffer makes repeated Fit creep outward as more data streams in.
+  function fitToData() {
     loading(true);
     var url = slotsUrl + (slotsUrl.indexOf('?') >= 0 ? '&' : '?') + 'bounds=1' + (filterParams ? '&' + filterParams : '');
     $.ajax({
@@ -643,7 +673,8 @@
       },
       complete: function () { loading(false); }
     });
-  });
+  }
+  on('btnFit', fitToData);
   on('btnToday',   function () {
     var n = new Date();
     timeline.setWindow(new Date(n.getTime() - 7 * 24 * 60 * 60 * 1000),
@@ -748,11 +779,24 @@
     $('#addUserModal').modal('hide');
   });
 
+  // Job/phase-scoped views open fitted to their data range rather than the
+  // fixed today-centred window; the global scheduler keeps the today default.
+  var scopedFit = (CFG.scope && CFG.scope !== 'global');
+  var didScopedFit = false;
+
   // Redraw hook for embedding in an initially-hidden container (e.g. a Bootstrap
   // tab), where vis first renders at zero width. Call after the tab is shown.
-  window.__schedRedraw = function () { fitHeight(); timeline.redraw(); };
+  // Read-only embeds can't fit-to-data until they're visible, so do it on first reveal.
+  window.__schedRedraw = function () {
+    fitHeight();
+    timeline.redraw();
+    if (scopedFit && !didScopedFit) { didScopedFit = true; fitToData(); }
+  };
 
   // ---- Initial load ----
   loadMembers();
   loadSlots();
+  // Editable scoped pages (not hidden in a tab) can fit immediately; read-only
+  // embeds defer to __schedRedraw above once their tab is shown.
+  if (scopedFit && !readonly) { didScopedFit = true; fitToData(); }
 })();

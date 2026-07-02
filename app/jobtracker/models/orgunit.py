@@ -195,7 +195,7 @@ class OrganisationalUnit(models.Model):
     def get_managers(self):
         ids = []
         for mgr in OrganisationalUnitMember.objects.filter(
-            unit=self, role=UnitRoles.MANAGER
+            unit=self, role=UnitRoles.MANAGER, member__is_active=True
         ):
             if mgr.member.pk not in ids:
                 ids.append(mgr.member.pk)
@@ -210,6 +210,7 @@ class OrganisationalUnit(models.Model):
             unit=self,
             roles__in=UnitRoles.CONSULTANT,
             left_date__isnull=True,  # active only
+            member__is_active=True,
         ):
             if cons.member.pk not in ids:
                 ids.append(cons.member.pk)
@@ -272,7 +273,15 @@ class OrganisationalUnit(models.Model):
         if not users_with_perms:
             return User.objects.none()
 
-        return User.objects.filter(pk__in=users_with_perms).distinct().get_default_order()
+        # Intersect the permission holders with the unit's active members so
+        # deactivated users (or ex-members who still hold the guardian perm)
+        # never surface in assignment dropdowns.
+        return (
+            User.objects.filter(pk__in=users_with_perms, is_active=True)
+            .filter(pk__in=self.get_activeMembersPKs())
+            .distinct()
+            .get_default_order()
+        )
 
     def get_allMembers(self):
         ids = []

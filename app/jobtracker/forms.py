@@ -225,7 +225,7 @@ class SchedulerFilter(forms.Form):
 
     users = forms.ModelMultipleChoiceField(
         required=False,
-        queryset=User.objects.filter(),
+        queryset=User.objects.filter(is_active=True),
         widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
                 'class': 'select2-widget',
@@ -240,7 +240,7 @@ class SchedulerFilter(forms.Form):
 
     include_user = forms.ModelMultipleChoiceField(
         required=False,
-        queryset=User.objects.filter(),
+        queryset=User.objects.filter(is_active=True),
         widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
                 'class': 'select2-widget',
@@ -931,7 +931,7 @@ class CommentTimeSlotModalForm(forms.ModelForm):
 
 class NonDeliveryTimeSlotModalForm(forms.ModelForm):
     users = forms.ModelMultipleChoiceField(
-        queryset=User.objects.filter(),
+        queryset=User.objects.filter(is_active=True),
         required=False,
         widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
@@ -1067,7 +1067,7 @@ class DeliveryTimeSlotModalForm(forms.ModelForm):
         ),
     )
     users = forms.ModelMultipleChoiceField(
-        queryset=User.objects.filter(),
+        queryset=User.objects.filter(is_active=True),
         required=False,
         widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
@@ -1080,8 +1080,13 @@ class DeliveryTimeSlotModalForm(forms.ModelForm):
             # search_fields=['first_name__icontains', 'last_name__icontains', 'email__icontains'],
         ),
     )
+    # Non-model convenience fields: optionally set the scheduled user as the
+    # phase lead / report author from the booking modal (single-user bookings only).
+    set_as_lead = forms.BooleanField(required=False, label="Set as Project Lead")
+    set_as_author = forms.BooleanField(required=False, label="Set as Report Author")
 
     def __init__(self, *args, **kwargs):
+        single = kwargs.pop("single", True)
         if "phase" in kwargs:
             phase = kwargs.pop("phase")
         else:
@@ -1179,42 +1184,71 @@ class DeliveryTimeSlotModalForm(forms.ModelForm):
         if end:
             self.fields["end"].initial = timezone.localtime(end).replace(tzinfo=None)
 
+        # Offer lead/author quick-assign only when creating a single-user slot for a
+        # known phase; default each box on only when that role is currently unassigned.
+        resolved_phase = phase
+        if resolved_phase is None and getattr(self.instance, "phase_id", None):
+            resolved_phase = self.instance.phase
+        creating = not (self.instance and self.instance.pk)
+        show_role_assign = bool(single and creating and resolved_phase is not None)
+        if show_role_assign:
+            self.fields["set_as_lead"].initial = resolved_phase.project_lead_id is None
+            self.fields["set_as_author"].initial = resolved_phase.report_author_id is None
+
+        body_rows = [
+            Row(
+                Column(
+                    Div(
+                        FloatingField("phase"),
+                        css_class="input-group input-group-dynamic",
+                    )
+                ),
+                Field("user", style="width: 100%;"),
+            ),
+            Row(
+                Column(
+                    Div(
+                        FloatingField("deliveryRole"),
+                        css_class="input-group input-group-dynamic",
+                    )
+                ),
+                Column(
+                    Div(
+                        Field("is_onsite"),
+                        css_class="input-group input-group-dynamic",
+                    )
+                ),
+            ),
+            Row(
+                Column(
+                    Div(Field("start"), css_class="input-group input-group-dynamic")
+                ),
+                Column(
+                    Div(Field("end"), css_class="input-group input-group-dynamic")
+                ),
+            ),
+        ]
+        if show_role_assign:
+            body_rows.append(
+                Row(
+                    Column(
+                        Div(
+                            Field("set_as_lead"),
+                            css_class="input-group input-group-dynamic",
+                        )
+                    ),
+                    Column(
+                        Div(
+                            Field("set_as_author"),
+                            css_class="input-group input-group-dynamic",
+                        )
+                    ),
+                )
+            )
+
         self.helper.layout = Layout(
             Div(
-                # Row(
-                #     Field("users", css_class="extra", style="width: 100%;"),
-                # ),
-                Row(
-                    Column(
-                        Div(
-                            FloatingField("phase"),
-                            css_class="input-group input-group-dynamic",
-                        )
-                    ),
-                    Field("user", style="width: 100%;"),
-                ),
-                Row(
-                    Column(
-                        Div(
-                            FloatingField("deliveryRole"),
-                            css_class="input-group input-group-dynamic",
-                        )
-                    ),
-                    Column(
-                        Div(
-                            Field("is_onsite"),
-                            css_class="input-group input-group-dynamic",
-                        )
-                    ),
-                ),
-                Row(
-                    Column(
-                        Div(Field("start"), css_class="input-group input-group-dynamic")
-                    ),
-                    Column(
-                        Div(Field("end"), css_class="input-group input-group-dynamic")
-                    ),
-                ),
+                *body_rows,
                 css_class="card-body p-3",
             ),
             Div(
@@ -2092,7 +2126,7 @@ class ClientOnboardingUserForm(forms.ModelForm):
 
     user = forms.ModelChoiceField(
         required=False,
-        queryset=User.objects.filter(),
+        queryset=User.objects.filter(is_active=True),
         widget=s2forms.ModelSelect2Widget(
             attrs={
                 'class': 'select2-widget',

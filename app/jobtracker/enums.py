@@ -185,8 +185,8 @@ class TimeSlotDeliveryRole:
     OVERSIGHT = 5
     DEBRIEF = 6
     CONTINGENCY = 7
-    SHADOW = 8
     OTHER = 8
+    SHADOW = 9
     CHOICES = (
         (NA, "None"),
         (DELIVERY, "Delivery"),
@@ -196,8 +196,8 @@ class TimeSlotDeliveryRole:
         (OVERSIGHT, "Oversight"),
         (DEBRIEF, "Debrief"),
         (CONTINGENCY, "Contingency"),
-        (SHADOW, "Shadowing"),
         (OTHER, "Other"),
+        (SHADOW, "Shadowing"),
     )
     REQUIRED_ALLOCATIONS = (DELIVERY, QA)
 

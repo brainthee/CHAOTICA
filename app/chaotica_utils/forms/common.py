@@ -743,7 +743,7 @@ class EditProfileForm(forms.ModelForm):
     )
 
     manager = forms.ModelChoiceField(
-        queryset=User.objects.filter(),
+        queryset=User.objects.filter(is_active=True),
         required=False,
         widget=s2forms.ModelSelect2Widget(
             attrs={

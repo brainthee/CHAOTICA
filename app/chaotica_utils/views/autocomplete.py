@@ -57,7 +57,7 @@ class UserAutocomplete(AutoResponseView):
         self.page_size = int(request.GET.get('page_size', 20))
         self.page = int(request.GET.get('page', 1))
 
-        qs = User.objects.all().annotate(
+        qs = User.objects.filter(is_active=True).annotate(
             full_name=Concat("first_name", Value(" "), "last_name")
         ).order_by("full_name")
 
@@ -68,7 +68,6 @@ class UserAutocomplete(AutoResponseView):
                 | Q(first_name__iregex=SEARCH_REGEX.format(self.term))
                 | Q(last_name__iregex=SEARCH_REGEX.format(self.term))
                 | (Q(alias__iregex=SEARCH_REGEX.format(self.term)) & Q(alias__isnull=False)),
-                is_active=True,
             )
 
         # Pagination
@@ -240,7 +239,8 @@ def site_search(request):
             Q(full_name__contains=q)
             | Q(lower_email__contains=q)
             | Q(lower_notification_email__contains=q)
-            | (Q(lower_alias__contains=q) & Q(alias__isnull=False))
+            | (Q(lower_alias__contains=q) & Q(alias__isnull=False)),
+            is_active=True,
         )[
             :result_limit
         ]

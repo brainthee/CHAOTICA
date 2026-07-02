@@ -7,6 +7,7 @@ from django.views.generic.edit import DeleteView
 from django.urls import reverse_lazy
 from chaotica_utils.views import page_defaults
 from chaotica_utils.views import ChaoticaBaseView
+from chaotica_utils.views import log_system_activity
 from chaotica_utils.models import User
 from guardian.shortcuts import get_objects_for_user
 from ..models import (
@@ -700,6 +701,25 @@ def _slot_dt(user, day, which):
     return datetime.combine(day, t).replace(tzinfo=timezone.get_current_timezone())
 
 
+def _apply_phase_role_assignment(request, phase, user, form):
+    """Set the scheduled user as the phase's project lead / report author when the
+    booking modal's opt-in checkboxes are ticked. No-op if already assigned to them."""
+    changed = []
+    if form.cleaned_data.get("set_as_lead") and phase.project_lead_id != user.pk:
+        phase.project_lead = user
+        changed.append("Project Lead")
+    if form.cleaned_data.get("set_as_author") and phase.report_author_id != user.pk:
+        phase.report_author = user
+        changed.append("Report Author")
+    if changed:
+        phase.save()
+        log_system_activity(
+            phase,
+            "{} assigned as {} while scheduling".format(user, ", ".join(changed)),
+            author=request.user,
+        )
+
+
 def _create_delivery_single(request, base, force):
     """Single-user delivery create with the overlap chooser (around/over/
     destructive). `base` is the unsaved slot for the whole requested range."""
@@ -910,10 +930,11 @@ def create_scheduler_phase_slot(request):
         job = None
         phase = None
 
+    single = len(users) == 1
     if request.method == "POST":
         force = request.POST.get("force", None)
         form = DeliveryTimeSlotModalForm(
-            request.POST, start=start, end=end, user=user, phase=phase, job=job
+            request.POST, start=start, end=end, user=user, phase=phase, job=job, single=single
         )
         if form.is_valid():
             base = form.save(commit=False)
@@ -934,11 +955,14 @@ def create_scheduler_phase_slot(request):
             else:
                 # Single resource → offer around / over / destructive on overlaps.
                 data = _create_delivery_single(request, base, force)
+                # Optionally assign the scheduled user as phase lead / report author.
+                if data.get("form_is_valid") and base.phase_id and base.user_id:
+                    _apply_phase_role_assignment(request, base.phase, base.user, form)
         else:
             data = {"form_is_valid": False}
     else:
         form = DeliveryTimeSlotModalForm(
-            start=start, end=end, user=user, phase=phase, job=job
+            start=start, end=end, user=user, phase=phase, job=job, single=single
         )
 
     context = {"form": form, "batch_users": users if len(users) > 1 else None}

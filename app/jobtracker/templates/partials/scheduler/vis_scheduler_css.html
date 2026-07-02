@@ -77,6 +77,14 @@
   .vis-grid.vis-today { background-color: rgba(255, 193, 7, 0.10); }
   .vis-time-axis .vis-text.vis-today { font-weight: 700; color: var(--phoenix-warning); }
   .vis-time-axis .vis-text.vis-major { font-weight: 600; }
+  /* Two-line day minor label: weekday initial stacked over the date number.
+     vis sizes the axis band from a single-line measure element, so reserve enough
+     height on the minor text (incl. the hidden .vis-measure) for two lines + the
+     inline-block baseline gap, and pin the line metrics so measured == rendered. */
+  .vis-time-axis .vis-text.vis-minor { min-height: 2.8em; line-height: 1.1; }
+  .vis-time-axis .vis-text .sched-day2 {
+    display: inline-block; text-align: center; line-height: 1.15; vertical-align: top;
+  }
   .sched-legend .dot.weekend { background: rgba(100, 110, 130, 0.35); }
   .sched-legend .dot.holiday { background: rgba(220, 53, 69, 0.30); }
   /* Range-select mode */
