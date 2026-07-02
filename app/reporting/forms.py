@@ -2,7 +2,7 @@ from django import forms
 from django.utils.translation import gettext_lazy as _
 from .models import (
     Report, ReportCategory, ReportField, ReportFilter, ReportSort,
-    DataArea, DataField, FilterType
+    DataArea, DataField, FilterType, ScheduledReport
 )
 
 class SelectDataAreaForm(forms.Form):
@@ -311,3 +311,61 @@ class SaveReportForm(forms.ModelForm):
             'category': forms.Select(attrs={'class': 'form-select'}),
             'is_private': forms.CheckboxInput(attrs={'class': 'form-check-input'})
         }
+
+
+class ScheduledReportForm(forms.ModelForm):
+    """Create/edit a scheduled, emailed delivery of a report."""
+
+    class Meta:
+        model = ScheduledReport
+        fields = [
+            'name', 'enabled', 'run_as_user',
+            'frequency', 'day_of_week', 'run_time',
+            'send_aggregate_to_group', 'recipient_emails', 'recipient_group',
+            'split_by_field', 'email_subject', 'intro_html', 'outro_html',
+            'attachment_format',
+        ]
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'enabled': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'run_as_user': forms.Select(attrs={'class': 'form-select'}),
+            'frequency': forms.Select(attrs={'class': 'form-select'}),
+            'day_of_week': forms.Select(attrs={'class': 'form-select'}),
+            'run_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}, format='%H:%M'),
+            'send_aggregate_to_group': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'recipient_emails': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'recipient_group': forms.Select(attrs={'class': 'form-select'}),
+            'split_by_field': forms.Select(attrs={'class': 'form-select'}),
+            'email_subject': forms.TextInput(attrs={'class': 'form-control'}),
+            'intro_html': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'outro_html': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'attachment_format': forms.Select(attrs={'class': 'form-select'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        self.report = kwargs.pop('report', None)
+        super().__init__(*args, **kwargs)
+        # run_time renders/parses as HH:MM
+        self.fields['run_time'].input_formats = ['%H:%M', '%H:%M:%S']
+        # Limit the split field to columns of this report's data area.
+        if self.report is not None:
+            self.fields['split_by_field'].queryset = DataField.objects.filter(
+                data_area=self.report.data_area, is_available=True
+            ).order_by('group', 'display_name')
+        self.fields['split_by_field'].required = False
+        self.fields['recipient_group'].required = False
+
+    def clean(self):
+        cleaned = super().clean()
+        frequency = cleaned.get('frequency')
+        if frequency == ScheduledReport.FREQ_WEEKLY and cleaned.get('day_of_week') is None:
+            self.add_error('day_of_week', _("Choose a day of week for a weekly schedule."))
+
+        aggregate = cleaned.get('send_aggregate_to_group')
+        has_recipients = bool(cleaned.get('recipient_emails', '').strip()) or cleaned.get('recipient_group')
+        if aggregate and not has_recipients and not cleaned.get('split_by_field'):
+            self.add_error(
+                'recipient_emails',
+                _("Add recipients/a group, or set a split field, so the report has somewhere to go."),
+            )
+        return cleaned

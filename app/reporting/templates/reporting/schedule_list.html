@@ -1,0 +1,70 @@
+{% extends "reporting/base.html" %}
+{% load static %}
+
+{% block report_content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h3 class="mb-1">Scheduled Emails</h3>
+      <div class="text-body-secondary">{{ report.name }}</div>
+    </div>
+    <div class="btn-group">
+      <a href="{% url 'reporting:report_detail' uuid=report.uuid %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-1"></i> Back to report
+      </a>
+      <a href="{% url 'reporting:schedule_create' uuid=report.uuid %}" class="btn btn-primary">
+        <i class="fas fa-plus me-1"></i> New schedule
+      </a>
+    </div>
+  </div>
+
+  {% if schedules %}
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Cadence</th>
+          <th>Recipients</th>
+          <th>Split</th>
+          <th>Enabled</th>
+          <th>Last sent</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in schedules %}
+        <tr>
+          <td>{{ s.name }}</td>
+          <td>
+            {{ s.get_frequency_display }}
+            {% if s.frequency == 'weekly' and s.day_of_week is not None %}on {{ s.get_day_of_week_display }}{% endif %}
+            at {{ s.run_time|time:"H:i" }}
+          </td>
+          <td>
+            {% if s.send_aggregate_to_group %}{{ s.recipient_list|length }} recipient(s){% else %}<span class="text-body-secondary">—</span>{% endif %}
+          </td>
+          <td>{% if s.split_by_field %}{{ s.split_by_field.display_name }}{% else %}<span class="text-body-secondary">—</span>{% endif %}</td>
+          <td>
+            {% if s.enabled %}<span class="badge bg-success">Enabled</span>{% else %}<span class="badge bg-secondary">Disabled</span>{% endif %}
+          </td>
+          <td>{% if s.last_sent_at %}{{ s.last_sent_at|date:"Y-m-d H:i" }}{% else %}<span class="text-body-secondary">never</span>{% endif %}</td>
+          <td class="text-end">
+            <a href="{% url 'reporting:schedule_edit' uuid=report.uuid pk=s.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
+            <form method="post" action="{% url 'reporting:schedule_delete' uuid=report.uuid pk=s.pk %}" class="d-inline" onsubmit="return confirm('Delete this schedule?');">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="alert alert-phoenix-info">
+    No schedules yet. Create one to have this report emailed automatically.
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

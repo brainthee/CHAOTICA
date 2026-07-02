@@ -1,8 +1,30 @@
 from django.db.models import Q
 import json
 import operator
+import re
 from functools import reduce
 import datetime
+
+# Matches relative date tokens like "today", "today+30d", "today-7d".
+_RELATIVE_DATE_RE = re.compile(r'^today\s*([+-])\s*(\d+)\s*d$', re.IGNORECASE)
+
+
+def resolve_relative_date_token(value):
+    """Resolve a rolling relative-date token to a ``date``.
+
+    Supports ``today+Nd`` / ``today-Nd`` (N days from today). Returns ``None`` if
+    the value isn't a relative token, so callers can fall through to other
+    parsing.
+    """
+    if not isinstance(value, str):
+        return None
+    match = _RELATIVE_DATE_RE.match(value.strip())
+    if not match:
+        return None
+    sign, days = match.group(1), int(match.group(2))
+    delta = datetime.timedelta(days=days)
+    return datetime.date.today() + delta if sign == '+' else datetime.date.today() - delta
+
 
 def build_query_from_report(queryset, report, filter_values=None):
     """
@@ -229,7 +251,13 @@ def convert_value_to_proper_type(value, field_type):
             else:
                 next_month = datetime.date(today.year, today.month + 1, 1)
             return next_month - datetime.timedelta(days=1)
-        
+
+        # Relative rolling offsets from today, e.g. "today+30d" / "today-7d".
+        # Lets a report define a configurable rolling window as pure data.
+        rel = resolve_relative_date_token(value)
+        if rel is not None:
+            return rel
+
         # Try to parse the date string
         try:
             # Try common formats

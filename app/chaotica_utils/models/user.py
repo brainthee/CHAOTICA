@@ -111,14 +111,9 @@ class UserInvitation(models.Model):
                 "You've been invited to join Chaotica - (Centralised Hub for Assigning Operational Tasks, Interactive Calendaring and Alerts). Follow the link below to accept the invitation and setup your account."
             )
             context["action_link"] = ext_reverse(self.get_absolute_url())
-            msg_html = render_to_string("emails/user_invite.html", context)
-            django.core.mail.send_mail(
-                subject=context["title"],
-                message=context["message"],
-                from_email=None,
-                recipient_list=[self.invited_email],
-                html_message=msg_html,
-            )
+
+            from notifications.email import send_templated_email
+            send_templated_email("emails/user_invite.html", context, [self.invited_email])
 
             self.sent = timezone.now()
             self.save()

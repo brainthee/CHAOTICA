@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import wizard, reports, ajax
+from .views import wizard, reports, ajax, schedules
 from .views import admin as reporting_admin
 
 app_name = 'reporting'
@@ -13,6 +13,12 @@ urlpatterns = [
     path('reports/<uuid:uuid>/delete/', reports.ReportDeleteView.as_view(), name='report_delete'),
     path('reports/<uuid:uuid>/favorite/', reports.toggle_favorite, name='toggle_favorite'),
     path('categories/create/', reports.create_category, name='create_category'),
+
+    # Scheduled email delivery
+    path('reports/<uuid:uuid>/schedules/', schedules.schedule_list, name='schedule_list'),
+    path('reports/<uuid:uuid>/schedules/create/', schedules.schedule_create, name='schedule_create'),
+    path('reports/<uuid:uuid>/schedules/<int:pk>/edit/', schedules.schedule_edit, name='schedule_edit'),
+    path('reports/<uuid:uuid>/schedules/<int:pk>/delete/', schedules.schedule_delete, name='schedule_delete'),
     
     # Wizard
     path('wizard/', wizard.wizard_start, name='wizard_start'),

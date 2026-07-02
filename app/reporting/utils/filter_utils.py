@@ -85,6 +85,10 @@ def get_dynamic_filter_values(field_type):
             ('last_quarter', 'Last quarter'),
             ('this_year', 'This year'),
             ('last_year', 'Last year'),
+            ('today+7d', 'In 7 days'),
+            ('today+30d', 'In 30 days'),
+            ('today-7d', '7 days ago'),
+            ('today-30d', '30 days ago'),
         ]
     else:
         return []
@@ -227,4 +231,9 @@ def evaluate_dynamic_filter_value(value, field_type):
     elif value == 'last_year':
         return (datetime.date(today.year - 1, 1, 1), datetime.date(today.year - 1, 12, 31))
     else:
+        # Relative rolling offsets like "today+30d" / "today-7d".
+        from .query_builder import resolve_relative_date_token
+        relative = resolve_relative_date_token(value)
+        if relative is not None:
+            return relative
         return value

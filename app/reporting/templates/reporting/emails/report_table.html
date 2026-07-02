@@ -1,0 +1,27 @@
+{% comment %}
+Renders a report result set as an inline-styled HTML table for email.
+Context:
+  field_names - ordered list of column headers
+  rows        - list of dicts (as produced by DataService); values are iterated
+                positionally to match field_names order
+{% endcomment %}
+<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;width:100%;font-family:Helvetica,Arial,sans-serif;font-size:13px;color:#1a202c;">
+  <thead>
+    <tr>
+      {% for header in field_names %}
+      <th align="left" style="background-color:#0d6efd;color:#ffffff;padding:8px 10px;border:1px solid #0b5ed7;font-weight:700;text-align:left;">{{ header }}</th>
+      {% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in rows %}
+    <tr style="background-color:{% cycle '#ffffff' '#f2f6ff' %};">
+      {% for value in row.values %}
+      <td style="padding:7px 10px;border:1px solid #e2e8f0;vertical-align:top;">{{ value|default_if_none:"" }}</td>
+      {% endfor %}
+    </tr>
+    {% empty %}
+    <tr><td colspan="{{ field_names|length }}" style="padding:12px;border:1px solid #e2e8f0;color:#718096;">No matching records.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>

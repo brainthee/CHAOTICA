@@ -1,18 +1,21 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from django.urls import reverse
+from django.urls import reverse, path
 from django.db.models import Count
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
 
 from .models import (
-    Notification, 
-    NotificationSubscription, 
+    Notification,
+    NotificationSubscription,
     NotificationCategory,
     SubscriptionRule,
     GlobalRoleCriteria,
     OrgUnitRoleCriteria,
     JobRoleCriteria,
     PhaseRoleCriteria,
-    DynamicRuleCriteria
+    DynamicRuleCriteria,
+    EmailTemplate,
 )
 
 class GlobalRoleCriteriaInline(admin.TabularInline):
@@ -193,3 +196,69 @@ class NotificationAdmin(admin.ModelAdmin):
 @admin.register(NotificationCategory)
 class NotificationCategoryAdmin(admin.ModelAdmin):
     list_display = ['name', 'description']
+
+
+# A fixed, safe dummy context for previews - never uses real data.
+_PREVIEW_CONTEXT = {
+    'title': 'Example subject line',
+    'message': 'This is a preview of the email content with sample data.',
+    'action_link': 'https://example.com/action',
+    'user': 'Sample User',
+    'icon': '',
+    'SITE_DOMAIN': 'chaotica.example.com',
+    'SITE_PROTO': 'https',
+}
+
+
+@admin.register(EmailTemplate)
+class EmailTemplateAdmin(admin.ModelAdmin):
+    list_display = ['name', 'slug', 'is_active', 'is_customized', 'extends_base', 'updated_at', 'preview_link']
+    list_filter = ['is_active', 'extends_base', 'is_customized']
+    search_fields = ['name', 'slug', 'description']
+    readonly_fields = ['slug', 'is_seeded', 'created_at', 'updated_at']
+    fieldsets = [
+        (None, {'fields': ['slug', 'name', 'description', 'is_active']}),
+        ('Content', {'fields': ['subject', 'body_html', 'body_text', 'extends_base', 'action_label']}),
+        ('Help', {'fields': ['available_context'], 'classes': ['collapse']}),
+        ('Meta', {'fields': ['is_seeded', 'is_customized', 'created_at', 'updated_at'], 'classes': ['collapse']}),
+    ]
+
+    # Editing raw template source is a template-injection surface; restrict to
+    # superusers. Everyone with staff access can still view.
+    def has_add_permission(self, request):
+        return request.user.is_superuser
+
+    def has_change_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_delete_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def save_model(self, request, obj, form, change):
+        # A human edit marks the row customised so re-seeding won't clobber it.
+        if change:
+            obj.is_customized = True
+        super().save_model(request, obj, form, change)
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom = [
+            path(
+                '<int:pk>/preview/',
+                self.admin_site.admin_view(self.preview_view),
+                name='notifications_emailtemplate_preview',
+            ),
+        ]
+        return custom + urls
+
+    def preview_link(self, obj):
+        if not obj.pk:
+            return ''
+        url = reverse('admin:notifications_emailtemplate_preview', args=[obj.pk])
+        return format_html('<a href="{}" target="_blank">Preview</a>', url)
+    preview_link.short_description = 'Preview'
+
+    def preview_view(self, request, pk):
+        template = get_object_or_404(EmailTemplate, pk=pk)
+        _, html, _ = template.render(_PREVIEW_CONTEXT)
+        return HttpResponse(html)

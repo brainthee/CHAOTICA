@@ -144,21 +144,13 @@ class Notification(models.Model):
                 context["icon"] = self.icon
                 context["action_link"] = self.link
                 context["user"] = self.user
-                msg_html = render_to_string(self.email_template, context)
 
-                # Finally; check if they have an email!
-                # If they don't; just pretend to send and continue to the "is_emailed" flag. 
-                # Prevents a spam event if/when they add an email
-                email = self.user.email_address()
-                if email and "@" in email:
-                    django.core.mail.send_mail(
-                        subject=context["title"],
-                        message=context["message"],
-                        from_email=None,
-                        recipient_list=[email],
-                        html_message=msg_html,
-                        fail_silently=False,
-                    )
+                # Render (DB template if present, else the filesystem template)
+                # and send. If they have no valid email, this is a no-op and we
+                # still fall through to the is_emailed flag - preventing a spam
+                # event if/when they later add an email.
+                from ..email import send_templated_email
+                send_templated_email(self.email_template, context, [self.user.email_address()])
 
             # Mark it as sent regardless - don't want to create a backlog
             self.is_emailed = True

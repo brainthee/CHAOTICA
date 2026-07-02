@@ -1,0 +1,65 @@
+{% extends "reporting/base.html" %}
+{% load static %}
+
+{% block report_content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h3 class="mb-1">{% if is_create %}New schedule{% else %}Edit schedule{% endif %}</h3>
+      <div class="text-body-secondary">{{ report.name }}</div>
+    </div>
+    <a href="{% url 'reporting:schedule_list' uuid=report.uuid %}" class="btn btn-outline-secondary">
+      <i class="fas fa-arrow-left me-1"></i> Back
+    </a>
+  </div>
+
+  <form method="post" class="row g-4">
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <div class="alert alert-phoenix-danger">{{ form.non_field_errors }}</div>
+    {% endif %}
+
+    <div class="col-lg-6">
+      <div class="card h-100">
+        <div class="card-header fw-bold">Schedule</div>
+        <div class="card-body">
+          {% for field in form %}
+            {% if field.name in "name,enabled,run_as_user,frequency,day_of_week,run_time" %}
+            <div class="mb-3">
+              <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {{ field }}
+              {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+              {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+            </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="card h-100">
+        <div class="card-header fw-bold">Recipients &amp; content</div>
+        <div class="card-body">
+          {% for field in form %}
+            {% if field.name in "send_aggregate_to_group,recipient_emails,recipient_group,split_by_field,email_subject,intro_html,outro_html,attachment_format" %}
+            <div class="mb-3">
+              <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {{ field }}
+              {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+              {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+            </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12">
+      <button type="submit" class="btn btn-primary">
+        <i class="fas fa-save me-1"></i> {% if is_create %}Create schedule{% else %}Save changes{% endif %}
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}
