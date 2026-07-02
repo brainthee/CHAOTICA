@@ -258,7 +258,7 @@
         origId: e.id,
         isComment: !!e.is_comment,
         canEdit: canEdit,
-        editUrl: faded ? null : e.edit_url,
+        editUrl: canEdit ? e.edit_url : null,
         userId: e.userId
       }
     };
@@ -393,7 +393,7 @@
             loadMembers();
             refreshCards();
           } else {
-            Swal.fire('Could not save', 'The change was rejected. Check overlaps / constraints.', 'warning');
+            Swal.fire('Could not save', resp.error || 'The change was rejected. Check overlaps / constraints.', 'warning');
             callback(null);
           }
         },

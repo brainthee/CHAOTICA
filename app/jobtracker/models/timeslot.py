@@ -293,7 +293,8 @@ class TimeSlot(models.Model):
             "userId": self.user.pk,
             "backgroundColor": self.get_schedule_slot_colour(schedule_colours=schedule_colours),
             "classNames": "p-1 rounded-3",
-            "can_edit": True,  # Fix this
+            # Leave / time off (non-working) is read-only in the scheduler.
+            "can_edit": self.slot_type.is_working,
             "is_comment": False,
         }
 
