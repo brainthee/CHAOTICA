@@ -1,0 +1,45 @@
+{% load static %}
+{% comment %}
+Standalone HTML email for a scheduled report. Unlike the notification emails it
+does not extend email_base.html, because wide tabular data needs more width than
+the 600px notification card. Context:
+  title, intro_html, outro_html, field_names, rows, action_link,
+  SITE_PROTO, SITE_DOMAIN, generated_at
+{% endcomment %}<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head>
+  <body style="margin:0;padding:0;background-color:#f7fafc;font-family:Helvetica,Arial,sans-serif;color:#1a202c;">
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#f7fafc;">
+      <tr>
+        <td align="center" style="padding:24px 12px;">
+          <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="width:100%;max-width:1000px;background-color:#ffffff;border:1px solid #e2e8f0;border-radius:6px;">
+            <tr>
+              <td style="padding:24px 28px;">
+                <img src="https://raw.githubusercontent.com/brainthee/CHAOTICA/main/app/static/assets/img/logos/chaotica_icon.png" width="64" style="display:block;border:0;width:64px;height:auto;margin-bottom:16px;">
+                <h1 style="font-size:24px;line-height:1.3;margin:0 0 16px;font-weight:700;">{{ title }}</h1>
+
+                {% if intro_html %}<div style="font-size:15px;line-height:1.5;margin:0 0 20px;">{{ intro_html|safe }}</div>{% endif %}
+
+                {% include "reporting/emails/report_table.html" %}
+
+                {% if outro_html %}<div style="font-size:15px;line-height:1.5;margin:20px 0 0;">{{ outro_html|safe }}</div>{% endif %}
+
+                {% if action_link %}
+                <p style="margin:24px 0 0;">
+                  <a href="{{ action_link }}" style="display:inline-block;background-color:#0d6efd;color:#ffffff;text-decoration:none;font-weight:700;padding:12px 20px;border-radius:6px;">Open in CHAOTICA</a>
+                </p>
+                {% endif %}
+              </td>
+            </tr>
+          </table>
+          <div style="max-width:1000px;margin:16px auto 0;color:#718096;font-size:12px;text-align:center;">
+            Automated report{% if generated_at %} generated {{ generated_at }}{% endif %}. If you believe this is a phish, verify with your team leads before actioning.
+          </div>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

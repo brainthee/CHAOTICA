@@ -109,3 +109,68 @@ class DataServiceHelperTests(SimpleTestCase):
         superuser = SimpleNamespace(is_superuser=True, has_perm=lambda p: False)
         sensitive = SimpleNamespace(is_sensitive=True, requires_permission='jobtracker.view_secret')
         self.assertTrue(DataService._field_visible(sensitive, superuser))
+
+
+class ScheduledReportLogicTests(SimpleTestCase):
+    """Exercise the pure scheduling/grouping logic without touching the DB."""
+
+    def _sched(self, **kwargs):
+        from reporting.models import ScheduledReport
+        defaults = dict(
+            enabled=True,
+            frequency=ScheduledReport.FREQ_WEEKLY,
+            day_of_week=2,  # Wednesday
+            run_time=datetime.time(9, 0),
+            last_sent_at=None,
+        )
+        defaults.update(kwargs)
+        return ScheduledReport(**defaults)
+
+    def _now(self, weekday_date, hour, minute=0):
+        from django.utils import timezone
+        return timezone.make_aware(datetime.datetime.combine(
+            weekday_date, datetime.time(hour, minute)
+        ))
+
+    WED = datetime.date(2026, 7, 1)   # a Wednesday
+    THU = datetime.date(2026, 7, 2)   # a Thursday
+
+    def test_due_on_correct_weekday_after_time(self):
+        self.assertTrue(self._sched().is_due(self._now(self.WED, 10)))
+
+    def test_not_due_before_run_time(self):
+        self.assertFalse(self._sched().is_due(self._now(self.WED, 8)))
+
+    def test_not_due_on_wrong_weekday(self):
+        self.assertFalse(self._sched(day_of_week=0).is_due(self._now(self.WED, 10)))
+
+    def test_not_due_when_disabled(self):
+        self.assertFalse(self._sched(enabled=False).is_due(self._now(self.WED, 10)))
+
+    def test_not_due_if_already_sent_today(self):
+        sent = self._now(self.WED, 8)
+        self.assertFalse(self._sched(last_sent_at=sent).is_due(self._now(self.WED, 10)))
+
+    def test_daily_ignores_weekday(self):
+        from reporting.models import ScheduledReport
+        daily = self._sched(frequency=ScheduledReport.FREQ_DAILY, day_of_week=None)
+        self.assertTrue(daily.is_due(self._now(self.THU, 10)))
+
+    def test_recipient_list_parses_and_dedupes(self):
+        sched = self._sched(recipient_emails='a@x.com, b@x.com\nA@x.com')
+        self.assertEqual(sched.recipient_list(), ['a@x.com', 'b@x.com'])
+
+    def test_group_rows_groups_and_drops_empty(self):
+        from reporting.models import DataField
+        sched = self._sched()
+        # Unsaved DataField with an id is a valid FK value and sets split_by_field_id.
+        sched.split_by_field = DataField(id=1, field_path='mgr')
+        data = [
+            {'mgr': 'x@x.com', 'v': 1},
+            {'mgr': 'x@x.com', 'v': 2},
+            {'mgr': 'y@x.com', 'v': 3},
+            {'mgr': None, 'v': 4},
+        ]
+        groups = sched.group_rows(data)
+        self.assertEqual(set(groups.keys()), {'x@x.com', 'y@x.com'})
+        self.assertEqual(len(groups['x@x.com']), 2)

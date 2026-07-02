@@ -52,10 +52,16 @@ class DataService:
         return fields.order_by('group', 'name')
     
     @staticmethod
-    def get_report_data(report, user, filter_values=None):
+    def get_report_data(report, user, filter_values=None, extra_field_paths=None):
         """
-        Execute a report and return the data
+        Execute a report and return the data.
+
+        ``extra_field_paths`` are additional ORM paths to include in each result
+        row (keyed by path) without adding them as display columns - used e.g. to
+        fetch a grouping key (like an account manager email) for splitting a
+        scheduled report into per-recipient slices.
         """
+        extra_field_paths = extra_field_paths or []
         # Check if user has permission to run this report
         if not report.can_view(user):
             raise PermissionDenied("You don't have permission to run this report")
@@ -98,10 +104,10 @@ class DataService:
             for f in fields
         )
         if has_resolver:
-            return DataService._execute_instance_query(queryset, fields, user)
+            return DataService._execute_instance_query(queryset, fields, user, extra_field_paths)
 
         # Execute the query and return the results
-        return DataService._execute_query(queryset, fields)
+        return DataService._execute_query(queryset, fields, extra_field_paths)
     
     @staticmethod
     def _apply_permission_filter(queryset, data_area, user):
@@ -137,13 +143,14 @@ class DataService:
         return queryset
     
     @staticmethod
-    def _execute_query(queryset, fields):
+    def _execute_query(queryset, fields, extra_field_paths=None):
         """
         Execute the query and format the results.
         Supports aggregation: if any field has an aggregation_function set,
         non-aggregated fields become GROUP BY columns via .values(),
         and aggregated fields use .annotate().
         """
+        extra_field_paths = extra_field_paths or []
         AGGREGATION_MAP = {
             'count': Count,
             'sum': Sum,
@@ -188,8 +195,11 @@ class DataService:
                 ordered_results.append(ordered_row)
             return ordered_results
         else:
-            # No aggregation — original behaviour
+            # No aggregation — original behaviour (plus any hidden extra paths)
             field_paths = [field.data_field.field_path for field in fields]
+            for path in extra_field_paths:
+                if path not in field_paths:
+                    field_paths.append(path)
             results = queryset.values(*field_paths)
             return list(results)
 
@@ -223,7 +233,7 @@ class DataService:
         return value
 
     @staticmethod
-    def _execute_instance_query(queryset, fields, user):
+    def _execute_instance_query(queryset, fields, user, extra_field_paths=None):
         """Instance-resolution path for reports containing computed fields.
 
         Applies the union of every used resolver's select_related/prefetch_related
@@ -239,6 +249,9 @@ class DataService:
                 "Aggregation functions cannot be combined with computed (resolver) fields in the same report."
             )
 
+        extra_field_paths = extra_field_paths or []
+        display_paths = {f.data_field.field_path for f in fields}
+
         select_related = set()
         prefetch_related = set()
         for f in fields:
@@ -247,6 +260,10 @@ class DataService:
                 if resolver:
                     select_related.update(resolver.select_related)
                     prefetch_related.update(resolver.prefetch_related)
+        # select_related for the relation behind each hidden extra ORM path.
+        for path in extra_field_paths:
+            if '__' in path:
+                select_related.add(path.rsplit('__', 1)[0])
 
         if select_related:
             queryset = queryset.select_related(*select_related)
@@ -268,5 +285,9 @@ class DataService:
                     row[key] = resolver.fn(instance, ctx) if resolver else None
                 else:
                     row[key] = DataService._walk_path(instance, data_field.field_path)
+            # Hidden extra paths (e.g. a split key) not already displayed.
+            for path in extra_field_paths:
+                if path not in display_paths:
+                    row[path] = DataService._walk_path(instance, path)
             results.append(row)
         return results

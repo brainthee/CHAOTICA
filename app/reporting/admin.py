@@ -2,7 +2,8 @@ from django.contrib import admin
 from .models import (
     Report, ReportCategory, ReportField, ReportFilter, ReportSort,
     DataArea, DataField, DataSource, RelationshipType,
-    FieldType, FieldPresentation, FilterType, FilterCondition
+    FieldType, FieldPresentation, FilterType, FilterCondition,
+    ScheduledReport
 )
 
 # Register basic models with simple admin interfaces
@@ -127,3 +128,13 @@ class FilterConditionAdmin(admin.ModelAdmin):
     list_display = ['name', 'field_type', 'filter_type', 'is_dynamic', 'display_order']
     list_filter = ['field_type', 'filter_type', 'is_dynamic']
     search_fields = ['name', 'description', 'value', 'display_label']
+
+
+# ScheduledReport admin
+@admin.register(ScheduledReport)
+class ScheduledReportAdmin(admin.ModelAdmin):
+    list_display = ['name', 'report', 'frequency', 'day_of_week', 'run_time', 'enabled', 'last_sent_at']
+    list_filter = ['enabled', 'frequency']
+    search_fields = ['name', 'report__name']
+    raw_id_fields = ['report', 'run_as_user', 'split_by_field', 'recipient_group']
+    readonly_fields = ['last_sent_at', 'created_at', 'updated_at']

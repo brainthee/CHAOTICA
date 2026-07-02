@@ -55,6 +55,12 @@
         <i class="{% if is_favorite %}fas{% else %}far{% endif %} fa-star"></i>
       </a>
       
+      {% if can_edit %}
+        <a href="{% url 'reporting:schedule_list' uuid=report.uuid %}" class="btn btn-outline-primary">
+          <i class="fas fa-clock me-1"></i> Schedule
+        </a>
+      {% endif %}
+
       {% if can_delete %}
         <a href="{% url 'reporting:report_delete' uuid=report.uuid %}" class="btn btn-outline-danger">
           <i class="fas fa-trash me-1"></i> Delete
