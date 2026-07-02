@@ -102,6 +102,17 @@ $(function() {
         });
     };
 
+    function reloadWithTabContext() {
+        const activeLink = document.querySelector('#sectionNav .nav-link.active');
+        const tabTarget = activeLink
+            ? (activeLink.getAttribute('href') || activeLink.getAttribute('data-bs-target') || '')
+            : '';
+        if (tabTarget && tabTarget !== '#') {
+            sessionStorage.setItem('chaotica.restoreTab', tabTarget);
+        }
+        location.reload();
+    }
+
     var saveForm = function() {
         var form = $(this);
         var submit = function() {
@@ -115,7 +126,7 @@ $(function() {
                         if (data.next) {
                             location.href = data.next
                         } else {
-                            location.reload();
+                            reloadWithTabContext();
                         }
                     } else {
                         $("#mainModalContent").html(data.html_form);
@@ -163,7 +174,7 @@ $(function() {
                     if (data.next) {
                         location.href = data.next
                     } else {
-                        location.reload();
+                        reloadWithTabContext();
                     }
                 } else {
                     $("#mainModalContent").html(data.html_form);
@@ -192,7 +203,7 @@ $(function() {
                     if (data.next) {
                         location.href = data.next
                     } else {
-                        location.reload();
+                        reloadWithTabContext();
                     }
                 } else {
                     if (data.error) {
@@ -220,7 +231,7 @@ $(function() {
                     if (data.next) {
                         location.href = data.next
                     } else {
-                        location.reload();
+                        reloadWithTabContext();
                     }
                 } else {
                     $("#mainModalContent").html(data.html_form);
@@ -269,17 +280,18 @@ $(function() {
     );
 
     $("#sectionNav li .nav-link").click(function(e) {
-        // e.preventDefault();
-        window.location.hash = $(this).attr("href");
+        const target = $(this).attr("href") || $(this).attr("data-bs-target");
+        if (target && target !== '#') window.location.hash = target;
     });
 
-
-    let url = location.href.replace(/\/$/, "");    
-    if (location.hash) {
-        const hash = url.split("#");
-        $('#sectionNav li a[href="#' + hash[1] + '"]').tab("show");
-        // url = location.href.replace(/\/#/, "#");
-        history.replaceState(null, null, url);
+    let url = location.href.replace(/\/$/, "");
+    const _savedTab = sessionStorage.getItem('chaotica.restoreTab');
+    if (_savedTab) sessionStorage.removeItem('chaotica.restoreTab');
+    const _activeHash = (_savedTab || location.hash || '').replace('#', '');
+    if (_activeHash) {
+        const _sel = '#sectionNav li a[href="#' + _activeHash + '"], #sectionNav li a[data-bs-target="#' + _activeHash + '"]';
+        $(_sel).tab("show");
+        history.replaceState(null, null, url.split('#')[0] + '#' + _activeHash);
         setTimeout(() => {
             $(window).scrollTop(0);
         }, 400);

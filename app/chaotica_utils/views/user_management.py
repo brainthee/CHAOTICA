@@ -425,6 +425,10 @@ def user_manage_status(request, email, state):
         if u.is_active and state == "deactivate":
             u.is_active = False
             u.save()
+            from django.utils import timezone
+            now = timezone.now()
+            u.teams.filter(left_at__isnull=True).update(left_at=now.date())
+            u.unit_memberships.filter(left_date__isnull=True).update(left_date=now)
             data["form_is_valid"] = True
         elif not u.is_active and state == "activate":
             u.is_active = True
