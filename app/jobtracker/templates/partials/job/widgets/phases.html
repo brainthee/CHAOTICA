@@ -12,6 +12,9 @@
         <div class="col-lg-4 text-end">
            {% if job.status < 8 and job.status > 1 %}
            <div class="btn-group" role="group">
+              <button data-url="{% url 'phases_bulk_qa_modal' job.slug %}" class="btn btn-phoenix-secondary btn-sm js-load-modal-form">
+                 <span class="fas fa-user-check me-1"></span>Bulk Assign QA
+              </button>
               <button type="button" class="btn btn-phoenix-info btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
                  <span class="fas fa-tasks me-1"></span>Bulk Actions
               </button>

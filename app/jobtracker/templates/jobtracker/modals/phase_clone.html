@@ -1,0 +1,57 @@
+{% load widget_tweaks %}
+<div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+        <form method="post" action="{{ request.get_full_path }}" class="js-submit-modal-form">
+            {% csrf_token %}
+            <div class="modal-header">
+                <h6 class="modal-title font-weight-normal" id="modal-title-default">
+                    Clone Phase: {{ phase.title }}
+                </h6>
+                <button type="button" class="btn-close text-body-emphasis" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-body-secondary small mb-3">
+                    Creates a new <strong>Draft</strong> phase on <em>{{ job }}</em>.
+                    Schedule, QA assignments, and ratings are never copied.
+                    Select what to include:
+                </p>
+                <div class="list-group list-group-flush">
+                    <label class="list-group-item">
+                        <input class="form-check-input me-2" type="checkbox" name="clone_identity" checked>
+                        <strong>Identity</strong>
+                        <small class="d-block text-body-secondary">Title, service</small>
+                    </label>
+                    <label class="list-group-item">
+                        <input class="form-check-input me-2" type="checkbox" name="clone_scope_text" checked>
+                        <strong>Scope text</strong>
+                        <small class="d-block text-body-secondary">Description, test target, comms requirements, restrictions, scheduling requirements, prerequisites</small>
+                    </label>
+                    <label class="list-group-item">
+                        <input class="form-check-input me-2" type="checkbox" name="clone_hours" checked>
+                        <strong>Hours breakdown</strong>
+                        <small class="d-block text-body-secondary">Delivery, reporting, management, QA, oversight, debrief, contingency, other</small>
+                    </label>
+                    <label class="list-group-item">
+                        <input class="form-check-input me-2" type="checkbox" name="clone_dates">
+                        <strong>Desired dates</strong>
+                        <small class="d-block text-body-secondary">Desired start, delivery, TQA, and PQA dates</small>
+                    </label>
+                    <label class="list-group-item">
+                        <input class="form-check-input me-2" type="checkbox" name="clone_config" checked>
+                        <strong>Configuration</strong>
+                        <small class="d-block text-body-secondary">Number of reports, onsite flags, location</small>
+                    </label>
+                    <label class="list-group-item">
+                        <input class="form-check-input me-2" type="checkbox" name="clone_links" checked>
+                        <strong>Deliverable links</strong>
+                        <small class="d-block text-body-secondary">Deliverable, technical data, and report data links</small>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-primary mb-0">Clone Phase</button>
+                <button type="button" class="btn btn-light shadow-none mb-0" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>

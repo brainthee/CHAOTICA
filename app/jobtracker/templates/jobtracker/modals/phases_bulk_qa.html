@@ -1,0 +1,86 @@
+<div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+    <div class="modal-content">
+        <form method="post" action="{% url 'phases_bulk_qa_execute' job.slug %}" class="js-bulk-workflow-phases-form">
+            {% csrf_token %}
+            <div class="modal-header">
+                <h6 class="modal-title font-weight-normal" id="modal-title-default">Bulk Assign QA</h6>
+                <button type="button" class="btn-close text-body-emphasis" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+                {% if not phases %}
+                    <div class="alert alert-warning">
+                        No phases in this job are currently eligible for QA assignment.
+                    </div>
+                {% else %}
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Assign Tech QA</label>
+                            <select name="techqa_by" class="form-select form-select-sm">
+                                <option value="">— no change —</option>
+                                {% for user in techqa_users %}
+                                <option value="{{ user.pk }}">{{ user.get_full_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Assign Pres QA</label>
+                            <select name="presqa_by" class="form-select form-select-sm">
+                                <option value="">— no change —</option>
+                                {% for user in presqa_users %}
+                                <option value="{{ user.pk }}">{{ user.get_full_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <p class="mb-2">Select phases to update:</p>
+                    <div class="mb-2">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="select-all-qa-phases">
+                            <label class="form-check-label fw-bold" for="select-all-qa-phases">Select All</label>
+                        </div>
+                        <div class="list-group">
+                            {% for phase in phases %}
+                            <label class="list-group-item d-flex align-items-center">
+                                <input class="form-check-input me-2 phase-checkbox" type="checkbox"
+                                       name="phase_ids[]" value="{{ phase.id }}" id="qa-phase-{{ phase.id }}">
+                                <div class="flex-grow-1">
+                                    <span class="fw-semibold">{{ phase.phase_number }}:{{ phase.title }}</span>
+                                    <span class="badge badge-phoenix badge-phoenix-{% include 'partials/phase/status_colour.html' %} ms-2">
+                                        {{ phase.get_status_display }}
+                                    </span>
+                                </div>
+                                <small class="text-body-secondary ms-2">
+                                    TQA: {{ phase.techqa_by|default:"—" }} / PQA: {{ phase.presqa_by|default:"—" }}
+                                </small>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light shadow-none mb-0" data-bs-dismiss="modal">Close</button>
+                {% if phases %}
+                <button type="submit" class="btn btn-phoenix-primary mb-0">Assign QA to Selected</button>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.getElementById('select-all-qa-phases')?.addEventListener('change', function(e) {
+    document.querySelectorAll('.phase-checkbox').forEach(cb => cb.checked = e.target.checked);
+});
+document.querySelectorAll('.phase-checkbox').forEach(cb => {
+    cb.addEventListener('change', function() {
+        const all = document.querySelectorAll('.phase-checkbox');
+        const checked = document.querySelectorAll('.phase-checkbox:checked');
+        const selectAll = document.getElementById('select-all-qa-phases');
+        if (selectAll) selectAll.checked = all.length === checked.length;
+    });
+});
+</script>

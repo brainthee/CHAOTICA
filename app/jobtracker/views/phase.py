@@ -9,7 +9,7 @@ from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from chaotica_utils.views import log_system_activity, ChaoticaBaseView
-from ..models import Job, Phase, WorkflowTask, Feedback
+from ..models import Job, Phase, WorkflowTask, Feedback, Link
 from ..forms import (
     AddNote,
     AssignUserField,
@@ -19,6 +19,7 @@ from ..forms import (
     PhaseScopeFeedbackInlineForm,
     PhaseTechQAInlineForm,
     PhaseForm,
+    LinkForm,
 )
 from ..enums import FeedbackType, PhaseStatuses, TimeSlotDeliveryRole, JobStatuses
 from .helpers import _process_assign_user
@@ -139,6 +140,20 @@ class PhaseDetailView(JobPermissionRequiredMixin, PhaseBaseView, DetailView):
 
         context["feedback_form"] = feedback_form
 
+        phase = context["phase"]
+        if phase._start_date and phase._delivery_date:
+            context["concurrent_phases"] = Phase.objects.filter(
+                job=phase.job,
+                _start_date__lte=phase._delivery_date,
+                _delivery_date__gte=phase._start_date,
+            ).exclude(pk=phase.pk).exclude(
+                status__in=[
+                    PhaseStatuses.CANCELLED,
+                    PhaseStatuses.POSTPONED,
+                    PhaseStatuses.DELETED,
+                ]
+            )
+
         return context
 
 
@@ -239,6 +254,118 @@ def phase_create_note(request, job_slug, slug):
                 + "#notes"
             )
     return HttpResponseBadRequest()
+
+
+@job_permission_required_or_403("jobtracker.can_update_job", (Phase, "slug", "slug"))
+def phase_link_add(request, job_slug, slug):
+    job = get_object_or_404(Job, slug=job_slug)
+    phase = get_object_or_404(Phase, job=job, slug=slug)
+    data = dict()
+    if request.method == "POST":
+        form = LinkForm(request.POST)
+        if form.is_valid():
+            link = form.save()
+            phase.links.add(link)
+            log_system_activity(phase, "Link added: {}".format(link.title), author=request.user)
+            data["form_is_valid"] = True
+        else:
+            data["form_is_valid"] = False
+    else:
+        form = LinkForm()
+    context = {"job": job, "phase": phase, "form": form}
+    data["html_form"] = loader.render_to_string(
+        "jobtracker/modals/phase_link_form.html", context, request=request
+    )
+    return JsonResponse(data)
+
+
+@job_permission_required_or_403("jobtracker.can_update_job", (Phase, "slug", "slug"))
+def phase_link_delete(request, job_slug, slug, pk):
+    job = get_object_or_404(Job, slug=job_slug)
+    phase = get_object_or_404(Phase, job=job, slug=slug)
+    link = get_object_or_404(Link, pk=pk)
+    data = dict()
+    if request.method == "POST":
+        phase.links.remove(link)
+        link.delete()
+        log_system_activity(phase, "Link removed: {}".format(link.title), author=request.user)
+        data["form_is_valid"] = True
+    context = {"job": job, "phase": phase, "link": link}
+    data["html_form"] = loader.render_to_string(
+        "jobtracker/modals/phase_link_delete.html", context, request=request
+    )
+    return JsonResponse(data)
+
+
+@job_permission_required_or_403("jobtracker.can_update_job", (Phase, "slug", "slug"))
+def phase_clone(request, job_slug, slug):
+    job = get_object_or_404(Job, slug=job_slug)
+    phase = get_object_or_404(Phase, job=job, slug=slug)
+    data = dict()
+    if request.method == "POST":
+        new_phase = Phase(job=job, status=PhaseStatuses.DRAFT)
+
+        if request.POST.get("clone_identity"):
+            new_phase.title = phase.title
+            new_phase.service = phase.service
+
+        if request.POST.get("clone_scope_text"):
+            new_phase.description = phase.description
+            new_phase.test_target = phase.test_target
+            new_phase.comm_reqs = phase.comm_reqs
+            new_phase.restrictions = phase.restrictions
+            new_phase.scheduling_requirements = phase.scheduling_requirements
+            new_phase.prerequisites = phase.prerequisites
+
+        if request.POST.get("clone_hours"):
+            new_phase.delivery_hours = phase.delivery_hours
+            new_phase.reporting_hours = phase.reporting_hours
+            new_phase.mgmt_hours = phase.mgmt_hours
+            new_phase.qa_hours = phase.qa_hours
+            new_phase.oversight_hours = phase.oversight_hours
+            new_phase.debrief_hours = phase.debrief_hours
+            new_phase.contingency_hours = phase.contingency_hours
+            new_phase.other_hours = phase.other_hours
+
+        if request.POST.get("clone_dates"):
+            new_phase.desired_start_date = phase.desired_start_date
+            new_phase.desired_delivery_date = phase.desired_delivery_date
+            new_phase.due_to_techqa_set = phase.due_to_techqa_set
+            new_phase.due_to_presqa_set = phase.due_to_presqa_set
+
+        if request.POST.get("clone_config"):
+            new_phase.number_of_reports = phase.number_of_reports
+            new_phase.report_to_be_left_on_client_site = phase.report_to_be_left_on_client_site
+            new_phase.is_testing_onsite = phase.is_testing_onsite
+            new_phase.is_reporting_onsite = phase.is_reporting_onsite
+            new_phase.location = phase.location
+
+        if request.POST.get("clone_links"):
+            new_phase.linkDeliverable = phase.linkDeliverable
+            new_phase.linkReportData = phase.linkReportData
+            new_phase.linkTechData = phase.linkTechData
+
+        new_phase.save()
+        log_system_activity(new_phase, "Phase cloned from {}".format(phase), author=request.user)
+        data["form_is_valid"] = True
+        data["next"] = new_phase.get_absolute_url()
+    else:
+        context = {"job": job, "phase": phase}
+        data["html_form"] = loader.render_to_string(
+            "jobtracker/modals/phase_clone.html", context, request=request
+        )
+    return JsonResponse(data)
+
+
+@job_permission_required_or_403("jobtracker.view_job_schedule", (Phase, "slug", "slug"))
+def phase_schedule_export(request, job_slug, slug):
+    from ..schedule_export import build_schedule_xlsx
+    from ..models import TimeSlot
+    job = get_object_or_404(Job, slug=job_slug)
+    phase = get_object_or_404(Phase, job=job, slug=slug)
+    timeslots = TimeSlot.objects.filter(phase=phase)
+    filename = "schedule-{}-{}".format(job.slug, phase.slug)
+    return build_schedule_xlsx(timeslots, filename)
 
 
 class PhaseScheduleView(UnitPermissionRequiredMixin, PhaseBaseView, DetailView):
@@ -464,6 +591,25 @@ def phase_rating_techqa(request, job_slug, slug):
             form.save()
             data["form_is_valid"] = True
             data["changed_data"] = form.changed_data
+            rating = phase.techqa_report_rating
+            if rating is not None and rating <= 1:
+                recipient = None
+                if phase.report_author:
+                    recipient = phase.report_author.manager or phase.report_author.acting_manager
+                if not recipient:
+                    recipient = job.account_manager
+                if recipient:
+                    notification = AppNotification(
+                        notification_type=NotificationTypes.PHASE_FEEDBACK,
+                        title="Low Tech QA rating on {}: {}".format(
+                            phase.title, phase.get_techqa_report_rating_display()
+                        ),
+                        message="Phase '{}' received a Tech QA rating of '{}'. Please follow up with the author.".format(
+                            phase.title, phase.get_techqa_report_rating_display()
+                        ),
+                        link=phase.get_absolute_url(),
+                    )
+                    send_notifications(notification, specific_users=recipient)
         else:
             data["form_is_valid"] = False
     else:
@@ -488,6 +634,25 @@ def phase_rating_presqa(request, job_slug, slug):
             form.save()
             data["form_is_valid"] = True
             data["changed_data"] = form.changed_data
+            rating = phase.presqa_report_rating
+            if rating is not None and rating <= 1:
+                recipient = None
+                if phase.report_author:
+                    recipient = phase.report_author.manager or phase.report_author.acting_manager
+                if not recipient:
+                    recipient = job.account_manager
+                if recipient:
+                    notification = AppNotification(
+                        notification_type=NotificationTypes.PHASE_FEEDBACK,
+                        title="Low Pres QA rating on {}: {}".format(
+                            phase.title, phase.get_presqa_report_rating_display()
+                        ),
+                        message="Phase '{}' received a Presentation QA rating of '{}'. Please follow up with the author.".format(
+                            phase.title, phase.get_presqa_report_rating_display()
+                        ),
+                        link=phase.get_absolute_url(),
+                    )
+                    send_notifications(notification, specific_users=recipient)
         else:
             data["form_is_valid"] = False
     else:
@@ -1025,5 +1190,81 @@ def phases_bulk_workflow_execute(request, job_slug, new_state):
             f"Failed to update {error_count} phase(s)."
         )
     
+    data["form_is_valid"] = True
+    return JsonResponse(data)
+
+
+QA_ELIGIBLE_STATUSES = [
+    PhaseStatuses.PENDING_TQA,
+    PhaseStatuses.QA_TECH,
+    PhaseStatuses.QA_TECH_AUTHOR_UPDATES,
+    PhaseStatuses.PENDING_PQA,
+    PhaseStatuses.QA_PRES,
+    PhaseStatuses.QA_PRES_AUTHOR_UPDATES,
+    PhaseStatuses.COMPLETED,
+    PhaseStatuses.DELIVERED,
+]
+
+
+@job_permission_required_or_403("jobtracker.can_update_job", (Job, "slug", "job_slug"))
+def phases_bulk_qa_modal(request, job_slug):
+    job = get_object_or_404(Job, slug=job_slug)
+    data = dict()
+
+    phases = job.phases.filter(status__in=QA_ELIGIBLE_STATUSES)
+    techqa_users = job.unit.get_active_members_with_perm("can_tqa_jobs")
+    presqa_users = job.unit.get_active_members_with_perm("can_pqa_jobs")
+
+    context = {
+        "job": job,
+        "phases": phases,
+        "techqa_users": techqa_users,
+        "presqa_users": presqa_users,
+    }
+    data["html_form"] = loader.render_to_string(
+        "jobtracker/modals/phases_bulk_qa.html", context, request=request
+    )
+    return JsonResponse(data)
+
+
+@job_permission_required_or_403("jobtracker.can_update_job", (Job, "slug", "job_slug"))
+def phases_bulk_qa_execute(request, job_slug):
+    if request.method != "POST":
+        return HttpResponseBadRequest()
+
+    job = get_object_or_404(Job, slug=job_slug)
+    data = dict()
+
+    phase_ids = request.POST.getlist("phase_ids[]")
+    if not phase_ids:
+        data["form_is_valid"] = False
+        data["error"] = "No phases selected"
+        return JsonResponse(data)
+
+    techqa_id = request.POST.get("techqa_by") or None
+    presqa_id = request.POST.get("presqa_by") or None
+
+    if not techqa_id and not presqa_id:
+        data["form_is_valid"] = False
+        data["error"] = "Select at least one QA user to assign"
+        return JsonResponse(data)
+
+    from chaotica_utils.models import User as UserModel
+    techqa_user = UserModel.objects.get(pk=techqa_id) if techqa_id else None
+    presqa_user = UserModel.objects.get(pk=presqa_id) if presqa_id else None
+
+    updated = 0
+    for phase_id in phase_ids:
+        try:
+            phase = Phase.objects.get(id=phase_id, job=job, status__in=QA_ELIGIBLE_STATUSES)
+            if techqa_user:
+                phase.techqa_by = techqa_user
+            if presqa_user:
+                phase.presqa_by = presqa_user
+            phase.save()
+            updated += 1
+        except Phase.DoesNotExist:
+            continue
+
     data["form_is_valid"] = True
     return JsonResponse(data)

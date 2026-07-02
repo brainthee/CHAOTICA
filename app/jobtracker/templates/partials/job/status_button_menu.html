@@ -3,6 +3,9 @@
     <a href="{% url 'job_update' job.slug %}" class="dropdown-item">Edit Job</a>
   </li>
   <li>
+    <button data-url="{% url 'job_clone' job.slug %}" class="dropdown-item js-load-modal-form">Clone Job</button>
+  </li>
+  <li>
     <button type="button" class="dropdown-item text-primary" id="follow-button" data-bs-toggle="modal" data-bs-target="#followEntityModal"><i class="fas fa-bell"></i> <span id="follow-button-text">Notification Preferences</span></button>
   </li>
   <li>

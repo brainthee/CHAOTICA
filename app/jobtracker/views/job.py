@@ -28,6 +28,7 @@ from ..models import (
     OrganisationalUnit,
     WorkflowTask,
     Contact,
+    Link,
 )
 from ..forms import (
     ScopeInlineForm,
@@ -39,6 +40,7 @@ from ..forms import (
     AssignJobFramework,
     AssignJobBillingCode,
     JobSupportTeamRoleForm,
+    LinkForm,
 )
 from ..enums import JobStatuses, PhaseStatuses, TimeSlotDeliveryRole, DefaultTimeSlotTypes
 from .helpers import _process_assign_user, _process_assign_contact
@@ -363,6 +365,45 @@ def job_create_note(request, slug):
     return HttpResponseBadRequest()
 
 
+@job_permission_required_or_403("jobtracker.can_update_job", (Job, "slug", "slug"))
+def job_link_add(request, slug):
+    job = get_object_or_404(Job, slug=slug)
+    data = dict()
+    if request.method == "POST":
+        form = LinkForm(request.POST)
+        if form.is_valid():
+            link = form.save()
+            job.links.add(link)
+            log_system_activity(job, "Link added: {}".format(link.title), author=request.user)
+            data["form_is_valid"] = True
+        else:
+            data["form_is_valid"] = False
+    else:
+        form = LinkForm()
+    context = {"job": job, "form": form}
+    data["html_form"] = loader.render_to_string(
+        "jobtracker/modals/job_link_form.html", context, request=request
+    )
+    return JsonResponse(data)
+
+
+@job_permission_required_or_403("jobtracker.can_update_job", (Job, "slug", "slug"))
+def job_link_delete(request, slug, pk):
+    job = get_object_or_404(Job, slug=slug)
+    link = get_object_or_404(Link, pk=pk)
+    data = dict()
+    if request.method == "POST":
+        job.links.remove(link)
+        link.delete()
+        log_system_activity(job, "Link removed: {}".format(link.title), author=request.user)
+        data["form_is_valid"] = True
+    context = {"job": job, "link": link}
+    data["html_form"] = loader.render_to_string(
+        "jobtracker/modals/job_link_delete.html", context, request=request
+    )
+    return JsonResponse(data)
+
+
 class JobBaseView(PrefetchRelatedMixin, ChaoticaBaseView, View):
     prefetch_related = ['notes', 'notes__author', 'phases', 'phases__timeslots']
     model = Job
@@ -496,6 +537,96 @@ class JobCreateView(UnitPermissionRequiredMixin, JobBaseView, CreateView):
         return super().form_valid(form)
 
 
+@job_permission_required_or_403("jobtracker.can_update_job", (Job, "slug", "slug"))
+def job_clone(request, slug):
+    job = get_object_or_404(Job, slug=slug)
+    data = dict()
+    if request.method == "POST":
+        new_job = Job(
+            unit=job.unit,
+            client=job.client,
+            account_manager=job.account_manager,
+            created_by=request.user,
+        )
+
+        if request.POST.get("clone_core"):
+            new_job.title = job.title
+            new_job.overview = job.overview
+            new_job.dep_account_manager = job.dep_account_manager
+            new_job.primary_client_poc = job.primary_client_poc
+
+        if request.POST.get("clone_financials"):
+            new_job.associated_framework = job.associated_framework
+            new_job.revenue = job.revenue
+
+        if request.POST.get("clone_risk"):
+            new_job.additional_kit_required = job.additional_kit_required
+            new_job.kit_sourced_by_client = job.kit_sourced_by_client
+            new_job.additional_kit_info = job.additional_kit_info
+            new_job.is_restricted = job.is_restricted
+            new_job.restricted_detail = job.restricted_detail
+            new_job.bespoke_project = job.bespoke_project
+            new_job.report_to_third_party = job.report_to_third_party
+            new_job.is_time_limited = job.is_time_limited
+            new_job.retest_included = job.retest_included
+            new_job.technically_complex_test = job.technically_complex_test
+            new_job.high_risk = job.high_risk
+            new_job.reasons_for_high_risk = job.reasons_for_high_risk
+
+        new_job.save()
+
+        if request.POST.get("clone_financials"):
+            new_job.charge_codes.set(job.charge_codes.all())
+
+        if request.POST.get("clone_services"):
+            new_job.indicative_services.set(job.indicative_services.all())
+            new_job.additional_contacts.set(job.additional_contacts.all())
+
+        if request.POST.get("clone_phases"):
+            from ..models import Phase as PhaseModel
+            from ..enums import PhaseStatuses
+            for orig_phase in job.phases.all():
+                new_phase = PhaseModel(
+                    job=new_job,
+                    status=PhaseStatuses.DRAFT,
+                    title=orig_phase.title,
+                    service=orig_phase.service,
+                    description=orig_phase.description,
+                    test_target=orig_phase.test_target,
+                    comm_reqs=orig_phase.comm_reqs,
+                    restrictions=orig_phase.restrictions,
+                    scheduling_requirements=orig_phase.scheduling_requirements,
+                    prerequisites=orig_phase.prerequisites,
+                    delivery_hours=orig_phase.delivery_hours,
+                    reporting_hours=orig_phase.reporting_hours,
+                    mgmt_hours=orig_phase.mgmt_hours,
+                    qa_hours=orig_phase.qa_hours,
+                    oversight_hours=orig_phase.oversight_hours,
+                    debrief_hours=orig_phase.debrief_hours,
+                    contingency_hours=orig_phase.contingency_hours,
+                    other_hours=orig_phase.other_hours,
+                    number_of_reports=orig_phase.number_of_reports,
+                    report_to_be_left_on_client_site=orig_phase.report_to_be_left_on_client_site,
+                    is_testing_onsite=orig_phase.is_testing_onsite,
+                    is_reporting_onsite=orig_phase.is_reporting_onsite,
+                    location=orig_phase.location,
+                    linkDeliverable=orig_phase.linkDeliverable,
+                    linkReportData=orig_phase.linkReportData,
+                    linkTechData=orig_phase.linkTechData,
+                )
+                new_phase.save()
+
+        log_system_activity(new_job, "Job cloned from {}".format(job), author=request.user)
+        data["form_is_valid"] = True
+        data["next"] = new_job.get_absolute_url()
+    else:
+        context = {"job": job}
+        data["html_form"] = loader.render_to_string(
+            "jobtracker/modals/job_clone.html", context, request=request
+        )
+    return JsonResponse(data)
+
+
 class JobUpdateView(UnitPermissionRequiredMixin, JobBaseView, UpdateView):
     permission_required = "jobtracker.can_update_job"
     return_403 = True
@@ -587,6 +718,15 @@ def view_job_schedule_phase_status(request, slug):
     job = get_object_or_404(Job, slug=slug)
     context = {"job": job, "utilisation": get_schedule_utilisation(job)}
     return render(request, "partials/scheduler/schedule_job_status.html", context)
+
+
+@job_permission_required_or_403("jobtracker.view_job_schedule", (Job, "slug", "slug"))
+def job_schedule_export(request, slug):
+    from ..schedule_export import build_schedule_xlsx
+    job = get_object_or_404(Job, slug=slug)
+    timeslots = TimeSlot.objects.filter(phase__job=job)
+    filename = "schedule-{}".format(job.slug)
+    return build_schedule_xlsx(timeslots, filename)
 
 
 class JobDeleteView(UnitPermissionRequiredMixin, JobBaseView, DeleteView):

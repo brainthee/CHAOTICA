@@ -5,6 +5,7 @@ from .models import (
     Contact,
     FrameworkAgreement,
     Job,
+    Link,
     JobSupportTeamRole,
     Qualification,
     QualificationRecord,
@@ -758,6 +759,17 @@ class AddNote(forms.ModelForm):
     class Meta:
         model = Note
         fields = ("content",)
+
+
+class LinkForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.helper.form_tag = False
+
+    class Meta:
+        model = Link
+        fields = ("title", "url", "linkType")
 
 
 ##########################

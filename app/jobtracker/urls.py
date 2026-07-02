@@ -206,6 +206,10 @@ urlpatterns = [
         name="job_update_workflow",
     ),
     path("job/<str:slug>/update/note", views.job_create_note, name="job_create_note"),
+    path("job/<str:slug>/link/add/", views.job_link_add, name="job_link_add"),
+    path("job/<str:slug>/link/<int:pk>/delete/", views.job_link_delete, name="job_link_delete"),
+    path("job/<str:slug>/clone/", views.job_clone, name="job_clone"),
+    path("job/<str:slug>/schedule/export/", views.job_schedule_export, name="job_schedule_export"),
     path("job/<str:slug>/edit/scope", views.job_edit_scope, name="job_edit_scope"),
     path(
         "job/<str:slug>/update/scope",
@@ -332,6 +336,26 @@ urlpatterns = [
         name="phase_create_note",
     ),
     path(
+        "job/<str:job_slug>/phase/<str:slug>/clone/",
+        views.phase_clone,
+        name="phase_clone",
+    ),
+    path(
+        "job/<str:job_slug>/phase/<str:slug>/schedule/export/",
+        views.phase_schedule_export,
+        name="phase_schedule_export",
+    ),
+    path(
+        "job/<str:job_slug>/phase/<str:slug>/link/add/",
+        views.phase_link_add,
+        name="phase_link_add",
+    ),
+    path(
+        "job/<str:job_slug>/phase/<str:slug>/link/<int:pk>/delete/",
+        views.phase_link_delete,
+        name="phase_link_delete",
+    ),
+    path(
         "job/<str:job_slug>/phase/<str:slug>/update/workflow/<int:new_state>",
         views.phase_update_workflow,
         name="phase_update_workflow",
@@ -345,6 +369,16 @@ urlpatterns = [
         "job/<str:job_slug>/phases/bulk-workflow/<int:new_state>/execute",
         views.phases_bulk_workflow_execute,
         name="phases_bulk_workflow_execute",
+    ),
+    path(
+        "job/<str:job_slug>/phases/bulk-qa/",
+        views.phases_bulk_qa_modal,
+        name="phases_bulk_qa_modal",
+    ),
+    path(
+        "job/<str:job_slug>/phases/bulk-qa/execute",
+        views.phases_bulk_qa_execute,
+        name="phases_bulk_qa_execute",
     ),
     path(
         "job/<str:job_slug>/phase/<str:slug>/update/",
@@ -480,6 +514,16 @@ urlpatterns = [
         "client/<str:slug>/onboarding/remove/<int:pk>",
         views.client_onboarding_remove_user,
         name="client_onboarding_remove_user",
+    ),
+    path(
+        "client/<str:slug>/onboarding/export",
+        views.client_onboarding_export,
+        name="client_onboarding_export",
+    ),
+    path(
+        "client/<str:slug>/schedule/export/",
+        views.client_schedule_export,
+        name="client_schedule_export",
     ),
     # Client Contact CRUD
     path(

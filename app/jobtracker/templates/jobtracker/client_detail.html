@@ -251,7 +251,10 @@
                 <h4 class="mt-2">Onboarded Users</h4>
               </div>
               <div class="col-4 text-end ms-sm-auto me-sm-0 mx-auto mt-3">
-                <button class="btn btn-phoenix-success ms-auto js-load-modal-form" data-url="{% url 'client_onboarding_add_user' client.slug %}">Add User</button>
+                <a href="{% url 'client_onboarding_export' client.slug %}" class="btn btn-phoenix-secondary ms-1">
+                  <span class="fas fa-download me-1"></span>Export CSV
+                </a>
+                <button class="btn btn-phoenix-success ms-1 js-load-modal-form" data-url="{% url 'client_onboarding_add_user' client.slug %}">Add User</button>
               </div>
             </div>
 
@@ -267,6 +270,16 @@
           </div>
 
           <div class="tab-pane fade" id="jobs" role="tabpanel" aria-labelledby="jobs-tab">
+            <div class="row mb-3">
+              <div class="col-auto my-auto">
+                <h4 class="mt-2">Jobs</h4>
+              </div>
+              <div class="col text-end ms-sm-auto me-sm-0 mx-auto mt-3">
+                <a href="{% url 'client_schedule_export' client.slug %}" class="btn btn-phoenix-secondary btn-sm">
+                  <span class="fas fa-file-excel me-1"></span>Schedule Export
+                </a>
+              </div>
+            </div>
             <div class="row">
               <div class="px-3 py-3 px-lg-6 bg-body-emphasis border-top border-bottom border-200 position-relative top-1">
                 {% include 'partials/job/job_list_table.html' with disableAjax=1 job_list=client.jobs.all %}

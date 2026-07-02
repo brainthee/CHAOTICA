@@ -1,6 +1,8 @@
 from guardian.mixins import PermissionRequiredMixin
+import csv
 from django.http import (
     JsonResponse,
+    HttpResponse,
 )
 from django.shortcuts import get_object_or_404
 from guardian.shortcuts import get_objects_for_user
@@ -206,6 +208,80 @@ def client_onboarding_remove_user(request, slug, pk):
         "modals/client_onboarding_user_remove.html", context, request=request
     )
     return JsonResponse(data)
+
+
+@permission_required_or_403("jobtracker.view_client")
+@require_http_methods(["GET"])
+def client_onboarding_export(request, slug):
+    client = get_object_or_404(Client, slug=slug)
+    onboardings = (
+        ClientOnboarding.objects.filter(client=client)
+        .select_related("user")
+        .order_by("user__last_name", "user__first_name")
+    )
+
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = (
+        'attachment; filename="{}-onboarding.csv"'.format(client.slug)
+    )
+
+    writer = csv.writer(response)
+    writer.writerow([
+        "Full Name", "Email", "Onboarded Date", "Requirements Completed",
+        "Status", "Days Until Renewal"
+    ])
+    for ob in onboardings:
+        renewal_days = ob.days_till_renewal() if hasattr(ob, "days_till_renewal") else ""
+        writer.writerow([
+            ob.user.get_full_name(),
+            ob.user.email,
+            ob.onboarded.strftime("%Y-%m-%d") if ob.onboarded else "",
+            ob.reqs_completed.strftime("%Y-%m-%d") if ob.reqs_completed else "",
+            ob.status(),
+            renewal_days,
+        ])
+    return response
+
+
+@permission_required_or_403("jobtracker.view_client")
+@require_http_methods(["GET", "POST"])
+def client_schedule_export(request, slug):
+    from ..schedule_export import build_schedule_xlsx
+    from datetime import date, timedelta
+    client = get_object_or_404(Client, slug=slug)
+
+    if request.method == "POST":
+        start_str = request.POST.get("start_date", "")
+        end_str = request.POST.get("end_date", "")
+        framework_id = request.POST.get("framework", "")
+
+        try:
+            start_date = date.fromisoformat(start_str)
+            end_date = date.fromisoformat(end_str)
+        except ValueError:
+            messages.error(request, "Invalid date range.")
+            return redirect(request.path)
+
+        qs = TimeSlot.objects.filter(
+            phase__job__client=client,
+            start__date__gte=start_date,
+            end__date__lte=end_date,
+        )
+        if framework_id:
+            qs = qs.filter(phase__job__associated_framework_id=framework_id)
+
+        filename = "schedule-{}".format(client.slug)
+        return build_schedule_xlsx(qs, filename)
+
+    frameworks = client.framework_agreements.all()
+    default_start = (timezone.now() - timedelta(days=30)).strftime("%Y-%m-%d")
+    default_end = (timezone.now() + timedelta(days=90)).strftime("%Y-%m-%d")
+    return render(
+        request,
+        "jobtracker/client_schedule_export.html",
+        {"client": client, "frameworks": frameworks,
+         "default_start": default_start, "default_end": default_end},
+    )
 
 
 @permission_required_or_403("jobtracker.change_client")

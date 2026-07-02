@@ -114,6 +114,7 @@ class Phase(models.Model):
         "Imported", default=False, help_text="If this phase was imported"
     )
     notes = GenericRelation(Note)
+    links = models.ManyToManyField("Link", related_name="phases", blank=True)
 
     ################
     ## Phase Detail

@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block pageTitle %}Schedule Export — {{ client }}{% endblock %}
+{% block head_title %}Schedule Export — {{ client }}{% endblock %}
+
+{% block breadcrumbItem %}
+  <li class="breadcrumb-item text-sm">
+    <a class="opacity-50 text-body-emphasis" href="{% url 'client_list' %}">Clients</a>
+  </li>
+  <li class="breadcrumb-item text-sm">
+    <a class="opacity-50 text-body-emphasis" href="{% url 'client_detail' client.slug %}">{{ client.name }}</a>
+  </li>
+  <li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">Schedule Export</li>
+{% endblock %}
+
+{% block content %}
+<div class="row px-5 pt-5">
+  <div class="col-12 col-lg-6">
+    <h2 class="mb-4">Export Schedule — {{ client.name }}</h2>
+    <div class="card">
+      <div class="card-body">
+        <form method="post">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label for="start_date" class="form-label fw-semibold">Start Date</label>
+            <input type="date" class="form-control" id="start_date" name="start_date" value="{{ default_start }}" required>
+          </div>
+          <div class="mb-3">
+            <label for="end_date" class="form-label fw-semibold">End Date</label>
+            <input type="date" class="form-control" id="end_date" name="end_date" value="{{ default_end }}" required>
+          </div>
+          {% if frameworks %}
+          <div class="mb-3">
+            <label for="framework" class="form-label fw-semibold">Framework Agreement <span class="text-body-tertiary">(optional)</span></label>
+            <select class="form-select" id="framework" name="framework">
+              <option value="">— All frameworks —</option>
+              {% for fw in frameworks %}
+                <option value="{{ fw.pk }}">{{ fw }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          {% endif %}
+          <div class="d-flex gap-2 mt-4">
+            <button type="submit" class="btn btn-phoenix-primary">
+              <span class="fas fa-file-excel me-1"></span> Download XLSX
+            </button>
+            <a href="{% url 'client_detail' client.slug %}" class="btn btn-phoenix-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -2,6 +2,9 @@
   <li>
     <a href="{% url 'phase_update' phase.job.slug phase.slug %}" class="dropdown-item">Edit Phase</a>
   </li>
+  <li>
+    <button data-url="{% url 'phase_clone' phase.job.slug phase.slug %}" class="dropdown-item js-load-modal-form">Clone Phase</button>
+  </li>
   {% if phase.status >= 1 %}
     <li>
       <a href="{% url 'phase_schedule' phase.job.slug phase.slug %}" class="dropdown-item text-success">Manage Schedule</a>

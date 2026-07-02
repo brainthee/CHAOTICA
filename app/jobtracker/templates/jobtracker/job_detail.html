@@ -74,6 +74,9 @@
         </div>
         <div class="tab-pane fade" id="schedule" role="tabpanel" aria-labelledby="schedule-tab">
           <div class="d-flex justify-content-end mb-2">
+            <a href="{% url 'job_schedule_export' job.slug %}" class="btn btn-sm btn-phoenix-secondary me-2">
+              <span class="fas fa-file-excel me-1"></span> Export XLSX
+            </a>
             <a href="{% url 'job_schedule' job.slug %}" class="btn btn-sm btn-phoenix-primary">
               <span class="fas fa-pen me-1"></span> Edit Schedule
             </a>
@@ -142,7 +145,7 @@
                 <h4 class="mb-3">Links</h4>
               </div>
               <div class="col-md-2 text-end">
-                  <a href="#" data-url="{% url 'assign_job_poc' job.slug %}" 
+                  <a href="#" data-url="{% url 'job_link_add' job.slug %}"
                     class="text-body-emphasis js-load-modal-form">
                     <span class="fa fa-plus"></span>
                   </a>
