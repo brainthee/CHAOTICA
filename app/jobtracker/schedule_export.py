@@ -338,7 +338,7 @@ def build_schedule_xlsx(timeslots, filename, title=None, header_rows=None):
         "Start Date", "Delivery Date",
         "Delivery Days", "Reporting Days", "Mgmt Days", "QA Days",
         "Oversight Days", "Debrief Days", "Contingency Days", "Other Days",
-        "Lead", "Author", "Tech QA", "Pres QA",
+        "Lead", "Author",
     ]
     for col, name in enumerate(summary_cols):
         ws2.write(0, col, name, summary_header_fmt)
@@ -372,8 +372,6 @@ def build_schedule_xlsx(timeslots, filename, title=None, header_rows=None):
             _days(phase, TimeSlotDeliveryRole.OTHER),
             phase.project_lead.get_full_name() if phase.project_lead else "",
             phase.report_author.get_full_name() if phase.report_author else "",
-            phase.techqa_by.get_full_name() if phase.techqa_by else "",
-            phase.presqa_by.get_full_name() if phase.presqa_by else "",
         ]
         for col, value in enumerate(values):
             ws2.write(row, col, value, summary_cell_fmt)
