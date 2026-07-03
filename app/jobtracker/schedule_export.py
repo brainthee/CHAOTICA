@@ -1,7 +1,9 @@
 import io
+import json
 import math
 from collections import defaultdict
 from datetime import timedelta
+from django.db.models import Q
 from django.http import HttpResponse
 from constance import config
 
@@ -116,7 +118,8 @@ def build_schedule_xlsx(timeslots, filename, title=None, header_rows=None):
     ``header_rows`` optional list of (label, value) tuples shown as key stats.
     """
     import xlsxwriter
-    from .models import TimeSlot
+    from .models import TimeSlot, OrganisationalUnitMember
+    from chaotica_utils.models import Holiday
 
     output = io.BytesIO()
     workbook = xlsxwriter.Workbook(output, {"remove_timezone": True})
@@ -233,14 +236,61 @@ def build_schedule_xlsx(timeslots, filename, title=None, header_rows=None):
                 cell_colour[key] = (bg, fg)
             d = _next_day(d)
 
-    # Unavailable days: resources' *other* commitments across the range.
-    # Always generic ("Unavailable") — never names other work/leave, so the export
-    # is safe to share with a client and behaves identically for job/phase/client.
+    # Unavailable days: any day a resource can't take new client work — their
+    # non-working days (weekends/bank holidays per the org calendar) plus days
+    # they're already committed elsewhere. Always generic ("Unavailable") so the
+    # export never names other work/leave and behaves the same everywhere.
     busy_days = set()
+    user_pks = list(users.keys())
     if sorted_users and sorted_dates:
+        # Per-user working weekdays (org unit calendar, else the org default).
+        default_working = set(json.loads(config.DEFAULT_WORKING_DAYS))
+        user_working = {}
+        memberships = (
+            OrganisationalUnitMember.objects.filter(member_id__in=user_pks)
+            .select_related("unit")
+            .order_by("member_id", "id")
+        )
+        for m in memberships:
+            if m.member_id not in user_working and m.unit and m.unit.businessHours_days:
+                user_working[m.member_id] = set(m.unit.businessHours_days)
+        for pk in user_pks:
+            user_working.setdefault(pk, set(default_working))
+
+        # Per-user bank holidays (their country + global) across the range.
+        countries = {str(u.country) for u in sorted_users if u.country}
+        holidays = Holiday.objects.filter(
+            Q(country__in=countries) | Q(country__isnull=True),
+            date__range=(min_date, max_date),
+        ).values("country", "date")
+        holidays_by_country = defaultdict(set)
+        global_holidays = set()
+        for h in holidays:
+            if not h["country"]:
+                global_holidays.add(h["date"])
+            else:
+                holidays_by_country[str(h["country"])].add(h["date"])
+        user_holidays = {}
+        for u in sorted_users:
+            hs = set(holidays_by_country.get(str(u.country), set())) if u.country else set()
+            hs |= global_holidays
+            user_holidays[u.pk] = hs
+
+        # Non-working days (consistent for everyone).
+        for u in sorted_users:
+            working = user_working.get(u.pk, default_working)
+            hols = user_holidays.get(u.pk, set())
+            for d in sorted_dates:
+                key = (u.pk, d)
+                if key in cell_map:
+                    continue
+                if (d.weekday() + 1) not in working or d in hols:
+                    busy_days.add(key)
+
+        # Days committed to other work.
         other_slots = (
             TimeSlot.objects.filter(
-                user_id__in=list(users.keys()),
+                user_id__in=user_pks,
                 start__date__lte=max_date,
                 end__date__gte=min_date,
             )
@@ -284,7 +334,7 @@ def build_schedule_xlsx(timeslots, filename, title=None, header_rows=None):
         (colours["SCHEDULE_COLOR_PHASE"], "Tentative delivery"),
         (colours["SCHEDULE_COLOR_PHASE_CONFIRMED_AWAY"], "Confirmed — onsite"),
         (colours["SCHEDULE_COLOR_PHASE_AWAY"], "Tentative — onsite"),
-        (PHX_GRAY_200, "Unavailable (committed elsewhere)"),
+        (PHX_GRAY_200, "Unavailable (non-working or committed)"),
         (None, "Blank — available"),
     ]
     label_fmt = workbook.add_format({"valign": "vcenter", "font_color": PHX_INK})
