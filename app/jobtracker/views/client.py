@@ -4,7 +4,7 @@ from django.http import (
     JsonResponse,
     HttpResponse,
 )
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
 from guardian.shortcuts import get_objects_for_user
 from guardian.decorators import permission_required_or_403
 from django.views.decorators.http import (
