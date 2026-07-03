@@ -1,17 +1,17 @@
 class LinkType:
     LN_OTHER = 0
-    LN_GITLABISSUE = 1
     LN_SHAREPOINT = 2
     LN_TEAMS = 3
-    LN_SCHED = 4
-    LN_HOSTING = 5
+    LN_PREVIOUS = 6
+    LN_RELATED = 7
+    LN_SCOPING = 8
     CHOICES = (
         (LN_OTHER, "Other"),
-        (LN_GITLABISSUE, "GitLab Issue"),
         (LN_SHAREPOINT, "SharePoint"),
         (LN_TEAMS, "Teams"),
-        (LN_SCHED, "Scheduling"),
-        (LN_HOSTING, "Hosting"),
+        (LN_PREVIOUS, "Previous Job/Phase"),
+        (LN_RELATED, "Related"),
+        (LN_SCOPING, "Scoping"),
     )
 
 
