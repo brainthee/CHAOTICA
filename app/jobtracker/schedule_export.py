@@ -1,4 +1,5 @@
 import io
+import math
 from collections import defaultdict
 from datetime import timedelta
 from django.http import HttpResponse
@@ -24,6 +25,35 @@ _LEAVE_TYPES = {
 
 def _next_day(d):
     return d + timedelta(days=1)
+
+
+def _est_lines(text, width_chars):
+    """Estimate how many wrapped lines a string needs at a given column width.
+
+    Excel Online doesn't auto-fit wrapped rows (LibreOffice does), so we size
+    rows ourselves from this estimate.
+    """
+    if not text:
+        return 1
+    total = 0
+    for segment in str(text).split("\n"):
+        total += max(1, math.ceil(len(segment) / max(1, width_chars)))
+    return max(1, total)
+
+
+# Row-height sizing (points). ~15pt per wrapped line, capped so a busy cell
+# doesn't produce an enormous row.
+_LINE_PT = 15
+_MAX_ROW_PT = 75
+
+
+def _row_height(max_lines):
+    return min(_MAX_ROW_PT, max(_LINE_PT, max_lines * _LINE_PT))
+
+
+# Grid date-column width (in characters) — kept in sync with the line estimate.
+GRID_COL_WIDTH = 18
+SUMMARY_COL_WIDTH = 16
 
 
 def _fmt_date(d):
@@ -294,17 +324,19 @@ def build_schedule_xlsx(timeslots, filename, title=None, header_rows=None):
     for col, d in enumerate(sorted_dates, start=1):
         fmt = weekend_date_fmt if d.weekday() >= 5 else date_fmt
         ws.write_datetime(0, col, d, fmt)
-        ws.set_column(col, col, 16)
+        ws.set_column(col, col, GRID_COL_WIDTH)
     ws.freeze_panes(1, 1)
 
     for i, user in enumerate(sorted_users):
         row = 1 + i
         ws.write(row, 0, user.get_full_name(), resource_fmt)
+        max_lines = 1
         for col, d in enumerate(sorted_dates, start=1):
             key = (user.pk, d)
             if key in cell_map:
                 bg, fg = cell_colour.get(key, (PHX_PRIMARY, "white"))
                 ws.write(row, col, cell_map[key], booked_fmt(bg, fg))
+                max_lines = max(max_lines, _est_lines(cell_map[key], GRID_COL_WIDTH))
             elif key in busy_map:
                 if busy_map[key] == "leave":
                     ws.write(row, col, "Leave", leave_fmt)
@@ -313,6 +345,7 @@ def build_schedule_xlsx(timeslots, filename, title=None, header_rows=None):
             else:
                 fmt = weekend_empty_fmt if d.weekday() >= 5 else empty_fmt
                 ws.write_blank(row, col, None, fmt)
+        ws.set_row(row, _row_height(max_lines))
 
     # =========================================================
     # Sheet 3: Summary
@@ -328,7 +361,7 @@ def build_schedule_xlsx(timeslots, filename, title=None, header_rows=None):
     ]
     for col, name in enumerate(summary_cols):
         ws2.write(0, col, name, summary_header_fmt)
-        ws2.set_column(col, col, 16)
+        ws2.set_column(col, col, SUMMARY_COL_WIDTH)
 
     phases_seen = {}
     for slot in slots_list:
@@ -354,6 +387,12 @@ def build_schedule_xlsx(timeslots, filename, title=None, header_rows=None):
         ws2.write(row, 15, phase.report_author.get_full_name() if phase.report_author else "", summary_cell_fmt)
         ws2.write(row, 16, phase.techqa_by.get_full_name() if phase.techqa_by else "", summary_cell_fmt)
         ws2.write(row, 17, phase.presqa_by.get_full_name() if phase.presqa_by else "", summary_cell_fmt)
+        # Size the row for the widest wrapping text column (title / service).
+        max_lines = max(
+            _est_lines(phase.title, SUMMARY_COL_WIDTH),
+            _est_lines(str(phase.service) if phase.service else "", SUMMARY_COL_WIDTH),
+        )
+        ws2.set_row(row, _row_height(max_lines))
 
     workbook.close()
     output.seek(0)
