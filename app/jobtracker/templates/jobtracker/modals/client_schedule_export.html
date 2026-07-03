@@ -1,8 +1,7 @@
 {% load static %}
 <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
-        {# Plain POST (not js-submit-modal-form): a normal submit streams the XLSX
-           download and leaves the modal open. #}
+        {# Plain POST (not js-submit-modal-form) so the submit streams the XLSX download and leaves the modal open. #}
         <form method="post" action="{% url 'client_schedule_export' client.slug %}">
             {% csrf_token %}
             <div class="modal-header">
