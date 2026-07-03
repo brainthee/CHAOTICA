@@ -722,11 +722,14 @@ def view_job_schedule_phase_status(request, slug):
 
 @job_permission_required_or_403("jobtracker.view_job_schedule", (Job, "slug", "slug"))
 def job_schedule_export(request, slug):
-    from ..schedule_export import build_schedule_xlsx
+    from ..schedule_export import build_schedule_xlsx, job_header_rows
     job = get_object_or_404(Job, slug=slug)
     timeslots = TimeSlot.objects.filter(phase__job=job)
     filename = "schedule-{}".format(job.slug)
-    return build_schedule_xlsx(timeslots, filename)
+    title = "Schedule — {}: {}".format(job.id, job.title)
+    return build_schedule_xlsx(
+        timeslots, filename, title=title, header_rows=job_header_rows(job)
+    )
 
 
 class JobDeleteView(UnitPermissionRequiredMixin, JobBaseView, DeleteView):

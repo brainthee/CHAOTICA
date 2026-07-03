@@ -360,13 +360,16 @@ def phase_clone(request, job_slug, slug):
 
 @job_permission_required_or_403("jobtracker.view_job_schedule", (Phase, "slug", "slug"))
 def phase_schedule_export(request, job_slug, slug):
-    from ..schedule_export import build_schedule_xlsx
+    from ..schedule_export import build_schedule_xlsx, phase_header_rows
     from ..models import TimeSlot
     job = get_object_or_404(Job, slug=job_slug)
     phase = get_object_or_404(Phase, job=job, slug=slug)
     timeslots = TimeSlot.objects.filter(phase=phase)
     filename = "schedule-{}-{}".format(job.slug, phase.slug)
-    return build_schedule_xlsx(timeslots, filename)
+    title = "Schedule — {}: {}".format(phase.get_id(), phase.title)
+    return build_schedule_xlsx(
+        timeslots, filename, title=title, header_rows=phase_header_rows(phase)
+    )
 
 
 class PhaseScheduleView(UnitPermissionRequiredMixin, PhaseBaseView, DetailView):

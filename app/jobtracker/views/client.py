@@ -267,11 +267,23 @@ def client_schedule_export(request, slug):
             start__date__gte=start_date,
             end__date__lte=end_date,
         )
+        framework_label = "All"
         if framework_id:
             qs = qs.filter(phase__job__associated_framework_id=framework_id)
+            fw = client.framework_agreements.filter(pk=framework_id).first()
+            if fw:
+                framework_label = str(fw)
 
         filename = "schedule-{}".format(client.slug)
-        return build_schedule_xlsx(qs, filename)
+        title = "Schedule — {}".format(client)
+        header_rows = [
+            ("Client", str(client)),
+            ("Date Range", "{} to {}".format(
+                start_date.strftime("%d %b %Y"), end_date.strftime("%d %b %Y")
+            )),
+            ("Framework", framework_label),
+        ]
+        return build_schedule_xlsx(qs, filename, title=title, header_rows=header_rows)
 
     frameworks = client.framework_agreements.all()
     default_start = (timezone.now() - timedelta(days=30)).strftime("%Y-%m-%d")

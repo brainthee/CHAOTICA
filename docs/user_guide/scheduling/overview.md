@@ -87,6 +87,15 @@ See [Booking & Validation](validation.md) for exactly which checks run and how t
 
 The right‑click **Clear range** (and the sidebar **Clear** tool on job/phase pages) shows a confirmation listing exactly what will be removed before anything is deleted. On job/phase pages you can also clear by **all / a specific user / a specific role**.
 
+## Exporting the schedule
+
+The **Schedule** tab on a job or phase has an **Export XLSX** button that downloads a two‑sheet Excel workbook — handy for sharing a plan with a client or working offline.
+
+- **Schedule** sheet — a client‑ready header block (client, job/phase, service, status, dates, lead, author, scoped days, reports, onsite) followed by a grid of **Resources** (rows) against **dates** (columns). Each cell names the phase and the **delivery type** being worked (e.g. *Web App (Delivery)*); weekends are shaded.
+- **Summary** sheet — one row per phase with the full hours breakdown (Delivery, Reporting, Mgmt, QA, Oversight, Debrief, Contingency, Other) and the assigned Lead, Author, Tech QA and Pres QA.
+
+A **client‑level** export is also available (`Client → Schedule → Export`): pick a **date range** and, optionally, a single **framework agreement** to scope which jobs are included. The workbook header records the client, chosen range and framework.
+
 ## Related Topics
 
 - [Scheduling Concepts](concepts.md) — slots, delivery roles, scoped vs scheduled, confirmed/tentative, hours‑per‑day
