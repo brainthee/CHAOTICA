@@ -152,6 +152,14 @@ Only certain status transitions are allowed:
    - **In Progress**: Limited to non-structural changes
    - **Completed**: Read-only except for notes
 
+### Cloning Jobs and Phases
+
+Use **Clone** (from the job or phase action menu) to spin up a copy without re-entering everything:
+
+- A tick-box dialog lets you choose which groups of fields to copy (core details, financials, services/contacts, risk flags; and for jobs, optionally all phases).
+- The copy is always created as **Draft**, and **schedules are never copied** — the new job/phase starts with an empty timeline.
+- The original and the clone are automatically **cross-linked** with a *Related* link (in both directions), so you can jump between them from the Links panel.
+
 ### Job Information Sections
 
 **Overview Tab**:

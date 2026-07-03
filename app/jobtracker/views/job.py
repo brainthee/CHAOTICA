@@ -42,8 +42,9 @@ from ..forms import (
     JobSupportTeamRoleForm,
     LinkForm,
 )
-from ..enums import JobStatuses, PhaseStatuses, TimeSlotDeliveryRole, DefaultTimeSlotTypes
+from ..enums import JobStatuses, PhaseStatuses, TimeSlotDeliveryRole, DefaultTimeSlotTypes, LinkType
 from .helpers import _process_assign_user, _process_assign_contact
+from chaotica_utils.utils import ext_reverse
 import logging
 
 
@@ -615,6 +616,20 @@ def job_clone(request, slug):
                     linkTechData=orig_phase.linkTechData,
                 )
                 new_phase.save()
+
+        # Cross-link the original and the clone as Related links (both directions).
+        link_to_clone = Link.objects.create(
+            url=ext_reverse(new_job.get_absolute_url()),
+            title="{}: {}".format(new_job.id, new_job.title or "Cloned job"),
+            linkType=LinkType.LN_RELATED,
+        )
+        job.links.add(link_to_clone)
+        link_to_original = Link.objects.create(
+            url=ext_reverse(job.get_absolute_url()),
+            title="{}: {}".format(job.id, job.title or "Original job"),
+            linkType=LinkType.LN_RELATED,
+        )
+        new_job.links.add(link_to_original)
 
         log_system_activity(new_job, "Job cloned from {}".format(job), author=request.user)
         data["form_is_valid"] = True

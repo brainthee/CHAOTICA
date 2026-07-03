@@ -275,8 +275,10 @@ def _filter_users_on_query(request, cleaned_data=None):
 def merge_include_users(request, users):
     """Union any ?include_user=<pk> users into a scoped member list, so the
     schedule 'Add User' tool can surface someone not yet scheduled on the
-    job/phase. Returns a User QuerySet (get_bulk_stats needs a queryset)."""
-    ids = {u.pk for u in users}
+    job/phase. Returns a User QuerySet (get_bulk_stats needs a queryset).
+
+    ``users`` may be None/empty (e.g. a freshly cloned job with no schedule yet)."""
+    ids = {u.pk for u in users} if users else set()
     for i in request.GET.getlist("include_user"):
         if str(i).isdigit():
             ids.add(int(i))

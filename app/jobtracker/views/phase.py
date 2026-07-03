@@ -21,7 +21,7 @@ from ..forms import (
     PhaseForm,
     LinkForm,
 )
-from ..enums import FeedbackType, PhaseStatuses, TimeSlotDeliveryRole, JobStatuses
+from ..enums import FeedbackType, PhaseStatuses, TimeSlotDeliveryRole, JobStatuses, LinkType
 from .helpers import _process_assign_user
 from notifications.utils import AppNotification, send_notifications
 from notifications.enums import NotificationTypes
@@ -35,6 +35,7 @@ from ..mixins import (
 )
 from chaotica_utils.utils import (
     clean_date,
+    ext_reverse,
 )
 
 
@@ -347,6 +348,21 @@ def phase_clone(request, job_slug, slug):
             new_phase.linkTechData = phase.linkTechData
 
         new_phase.save()
+
+        # Cross-link the original and the clone as Related links (both directions).
+        link_to_clone = Link.objects.create(
+            url=ext_reverse(new_phase.get_absolute_url()),
+            title="{}: {}".format(new_phase.get_id(), new_phase.title or "Cloned phase"),
+            linkType=LinkType.LN_RELATED,
+        )
+        phase.links.add(link_to_clone)
+        link_to_original = Link.objects.create(
+            url=ext_reverse(phase.get_absolute_url()),
+            title="{}: {}".format(phase.get_id(), phase.title or "Original phase"),
+            linkType=LinkType.LN_RELATED,
+        )
+        new_phase.links.add(link_to_original)
+
         log_system_activity(new_phase, "Phase cloned from {}".format(phase), author=request.user)
         data["form_is_valid"] = True
         data["next"] = new_phase.get_absolute_url()
