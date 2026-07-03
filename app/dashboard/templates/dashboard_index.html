@@ -21,8 +21,8 @@
     <div class="row">
       <div class="nav px-0 flex-sm-column border-end-sm border-300 fs-9 vertical-tab justify-content-between" role="tablist" aria-orientation="vertical">
 
-        <a class="nav-link border-top border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center active" 
-          id="scheduleTab" data-bs-toggle="tab" data-bs-target="#scheduleTabContent" role="tab" aria-controls="scheduleTabContent" aria-selected="true">
+        <a class="nav-link border-top border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center{% if not show_alarms_first %} active{% endif %}"
+          id="scheduleTab" data-bs-toggle="tab" data-bs-target="#scheduleTabContent" role="tab" aria-controls="scheduleTabContent" aria-selected="{% if not show_alarms_first %}true{% else %}false{% endif %}">
           <span class="fa fa-calendar me-sm-2 fs-7"></span>
           <span class="d-none d-sm-inline">Schedule</span>
         </a>
@@ -145,8 +145,8 @@
           <span class="d-none d-sm-inline">Team Leave Requests</span>
         </a>
         {% endif %}
-        <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center"
-          id="alarmsTab" data-bs-toggle="tab" data-bs-target="#alarmsTabContent" role="tab" aria-controls="alarmsTabContent" aria-selected="false">
+        <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center{% if show_alarms_first %} active{% endif %}"
+          id="alarmsTab" data-bs-toggle="tab" data-bs-target="#alarmsTabContent" role="tab" aria-controls="alarmsTabContent" aria-selected="{% if show_alarms_first %}true{% else %}false{% endif %}">
           <span class="fa fa-bell me-sm-2 fs-7"></span>
           <span class="d-none d-sm-inline">Alarms
             {% if alarm_count %}<span class="badge bg-danger ms-1">{{ alarm_count }}</span>{% endif %}
@@ -162,8 +162,8 @@
   <div class="col mt-0 bg-body">
     <div class="tab-content h-100"> 
 
-      <div class="tab-pane fade active show" id="scheduleTabContent" role="tabpanel" aria-labelledby="#scheduleTab">    
-        <div class="calendar" data-bs-toggle="calendar" id="calendar"></div>   
+      <div class="tab-pane fade{% if not show_alarms_first %} active show{% endif %}" id="scheduleTabContent" role="tabpanel" aria-labelledby="#scheduleTab">
+        <div class="calendar" data-bs-toggle="calendar" id="calendar"></div>
       </div>
 
       <div class="tab-pane fade h-100 p-3" id="jobTabContent" role="tabpanel" aria-labelledby="jobTab">
@@ -324,7 +324,7 @@
       </div>
       {% endif %}
 
-      <div class="tab-pane fade h-100 p-3" id="alarmsTabContent" role="tabpanel" aria-labelledby="alarmsTab">
+      <div class="tab-pane fade h-100 p-3{% if show_alarms_first %} active show{% endif %}" id="alarmsTabContent" role="tabpanel" aria-labelledby="alarmsTab">
         {% include 'partials/alarms_table.html' %}
       </div>
 

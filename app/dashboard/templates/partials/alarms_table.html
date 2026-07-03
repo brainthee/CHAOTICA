@@ -10,24 +10,39 @@
 {% endif %}
 
 {% if alarms.delivery_overdue %}
-<div class="card mb-3 border-danger">
-  <div class="card-header bg-danger-subtle">
+<div class="card mb-3">
+  <div class="card-header">
     <h5 class="mb-0 text-danger">
       <span class="fas fa-exclamation-triangle me-2"></span>Delivery Overdue
       <span class="badge bg-danger ms-2">{{ alarms.delivery_overdue|length }}</span>
     </h5>
   </div>
   <div class="card-body p-0">
-    <table class="table table-sm mb-0">
-      <thead><tr><th>Phase</th><th>Client</th><th>Status</th><th>Delivery Date</th><th>Lead</th></tr></thead>
+    <table class="table table-responsive table-sm datatable align-items-center mb-0">
+      <caption>Delivery Overdue Phases</caption>
+      <thead>
+        <tr>
+          <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Phase</th>
+          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Client</th>
+          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Status</th>
+          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Delivery Date</th>
+          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Lead</th>
+        </tr>
+      </thead>
       <tbody>
         {% for phase in alarms.delivery_overdue %}
         <tr>
           <td><a href="{{ phase.get_absolute_url }}">{{ phase.title }}</a></td>
-          <td>{{ phase.job.client }}</td>
-          <td><span class="badge badge-phoenix badge-phoenix-{{ phase.get_status_bs_colour }}">{{ phase.get_status_display }}</span></td>
-          <td class="text-danger">{% if phase.delivery_date %}{{ phase.delivery_date }}{% else %}&mdash;{% endif %}</td>
-          <td>{% if phase.project_lead %}{{ phase.project_lead.get_full_name }}{% else %}&mdash;{% endif %}</td>
+          <td><a href="{{ phase.job.client.get_absolute_url }}">{{ phase.job.client }}</a></td>
+          <td>{% include 'partials/phase/status_badge.html' with badge_size='sm' %}</td>
+          <td data-sort="{{ phase.delivery_date|date:'Y-m-d' }}">
+            <span class="text-danger">{% if phase.delivery_date %}{{ phase.delivery_date }}{% else %}&mdash;{% endif %}</span>
+          </td>
+          <td>
+            {% if phase.project_lead %}
+              {% include 'partials/users/user_link.html' with user_profile=phase.project_lead %}
+            {% else %}&mdash;{% endif %}
+          </td>
         </tr>
         {% endfor %}
       </tbody>
@@ -37,24 +52,39 @@
 {% endif %}
 
 {% if alarms.tqa_overdue %}
-<div class="card mb-3 border-warning">
-  <div class="card-header bg-warning-subtle">
+<div class="card mb-3">
+  <div class="card-header">
     <h5 class="mb-0 text-warning-emphasis">
       <span class="fas fa-clock me-2"></span>Tech QA Overdue
       <span class="badge bg-warning text-dark ms-2">{{ alarms.tqa_overdue|length }}</span>
     </h5>
   </div>
   <div class="card-body p-0">
-    <table class="table table-sm mb-0">
-      <thead><tr><th>Phase</th><th>Client</th><th>Status</th><th>TQA Due</th><th>Tech QA</th></tr></thead>
+    <table class="table table-responsive table-sm datatable align-items-center mb-0">
+      <caption>Tech QA Overdue Phases</caption>
+      <thead>
+        <tr>
+          <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Phase</th>
+          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Client</th>
+          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Status</th>
+          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">TQA Due</th>
+          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Tech QA</th>
+        </tr>
+      </thead>
       <tbody>
         {% for phase in alarms.tqa_overdue %}
         <tr>
           <td><a href="{{ phase.get_absolute_url }}">{{ phase.title }}</a></td>
-          <td>{{ phase.job.client }}</td>
-          <td><span class="badge badge-phoenix badge-phoenix-{{ phase.get_status_bs_colour }}">{{ phase.get_status_display }}</span></td>
-          <td class="text-warning">{% if phase.due_to_techqa %}{{ phase.due_to_techqa }}{% else %}&mdash;{% endif %}</td>
-          <td>{% if phase.techqa_by %}{{ phase.techqa_by.get_full_name }}{% else %}&mdash;{% endif %}</td>
+          <td><a href="{{ phase.job.client.get_absolute_url }}">{{ phase.job.client }}</a></td>
+          <td>{% include 'partials/phase/status_badge.html' with badge_size='sm' %}</td>
+          <td data-sort="{{ phase.due_to_techqa|date:'Y-m-d' }}">
+            <span class="text-warning">{% if phase.due_to_techqa %}{{ phase.due_to_techqa }}{% else %}&mdash;{% endif %}</span>
+          </td>
+          <td>
+            {% if phase.techqa_by %}
+              {% include 'partials/users/user_link.html' with user_profile=phase.techqa_by %}
+            {% else %}&mdash;{% endif %}
+          </td>
         </tr>
         {% endfor %}
       </tbody>
@@ -64,24 +94,39 @@
 {% endif %}
 
 {% if alarms.pqa_overdue %}
-<div class="card mb-3 border-warning">
-  <div class="card-header bg-warning-subtle">
+<div class="card mb-3">
+  <div class="card-header">
     <h5 class="mb-0 text-warning-emphasis">
       <span class="fas fa-clock me-2"></span>Presentation QA Overdue
       <span class="badge bg-warning text-dark ms-2">{{ alarms.pqa_overdue|length }}</span>
     </h5>
   </div>
   <div class="card-body p-0">
-    <table class="table table-sm mb-0">
-      <thead><tr><th>Phase</th><th>Client</th><th>Status</th><th>PQA Due</th><th>Pres QA</th></tr></thead>
+    <table class="table table-responsive table-sm datatable align-items-center mb-0">
+      <caption>Presentation QA Overdue Phases</caption>
+      <thead>
+        <tr>
+          <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Phase</th>
+          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Client</th>
+          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Status</th>
+          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">PQA Due</th>
+          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Pres QA</th>
+        </tr>
+      </thead>
       <tbody>
         {% for phase in alarms.pqa_overdue %}
         <tr>
           <td><a href="{{ phase.get_absolute_url }}">{{ phase.title }}</a></td>
-          <td>{{ phase.job.client }}</td>
-          <td><span class="badge badge-phoenix badge-phoenix-{{ phase.get_status_bs_colour }}">{{ phase.get_status_display }}</span></td>
-          <td class="text-warning">{% if phase.due_to_presqa %}{{ phase.due_to_presqa }}{% else %}&mdash;{% endif %}</td>
-          <td>{% if phase.presqa_by %}{{ phase.presqa_by.get_full_name }}{% else %}&mdash;{% endif %}</td>
+          <td><a href="{{ phase.job.client.get_absolute_url }}">{{ phase.job.client }}</a></td>
+          <td>{% include 'partials/phase/status_badge.html' with badge_size='sm' %}</td>
+          <td data-sort="{{ phase.due_to_presqa|date:'Y-m-d' }}">
+            <span class="text-warning">{% if phase.due_to_presqa %}{{ phase.due_to_presqa }}{% else %}&mdash;{% endif %}</span>
+          </td>
+          <td>
+            {% if phase.presqa_by %}
+              {% include 'partials/users/user_link.html' with user_profile=phase.presqa_by %}
+            {% else %}&mdash;{% endif %}
+          </td>
         </tr>
         {% endfor %}
       </tbody>
@@ -91,24 +136,41 @@
 {% endif %}
 
 {% if alarms.no_techqa %}
-<div class="card mb-3 border-info">
-  <div class="card-header bg-info-subtle">
+<div class="card mb-3">
+  <div class="card-header">
     <h5 class="mb-0 text-info-emphasis">
       <span class="fas fa-user-times me-2"></span>No Tech QA Assigned
       <span class="badge bg-info ms-2">{{ alarms.no_techqa|length }}</span>
     </h5>
   </div>
   <div class="card-body p-0">
-    <table class="table table-sm mb-0">
-      <thead><tr><th>Phase</th><th>Client</th><th>Status</th><th>Lead</th><th>Author</th></tr></thead>
+    <table class="table table-responsive table-sm datatable align-items-center mb-0">
+      <caption>Phases with No Tech QA Assigned</caption>
+      <thead>
+        <tr>
+          <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Phase</th>
+          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Client</th>
+          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Status</th>
+          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Lead</th>
+          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Author</th>
+        </tr>
+      </thead>
       <tbody>
         {% for phase in alarms.no_techqa %}
         <tr>
           <td><a href="{{ phase.get_absolute_url }}">{{ phase.title }}</a></td>
-          <td>{{ phase.job.client }}</td>
-          <td><span class="badge badge-phoenix badge-phoenix-{{ phase.get_status_bs_colour }}">{{ phase.get_status_display }}</span></td>
-          <td>{% if phase.project_lead %}{{ phase.project_lead.get_full_name }}{% else %}&mdash;{% endif %}</td>
-          <td>{% if phase.report_author %}{{ phase.report_author.get_full_name }}{% else %}&mdash;{% endif %}</td>
+          <td><a href="{{ phase.job.client.get_absolute_url }}">{{ phase.job.client }}</a></td>
+          <td>{% include 'partials/phase/status_badge.html' with badge_size='sm' %}</td>
+          <td>
+            {% if phase.project_lead %}
+              {% include 'partials/users/user_link.html' with user_profile=phase.project_lead %}
+            {% else %}&mdash;{% endif %}
+          </td>
+          <td>
+            {% if phase.report_author %}
+              {% include 'partials/users/user_link.html' with user_profile=phase.report_author %}
+            {% else %}&mdash;{% endif %}
+          </td>
         </tr>
         {% endfor %}
       </tbody>
@@ -118,24 +180,41 @@
 {% endif %}
 
 {% if alarms.no_presqa %}
-<div class="card mb-3 border-info">
-  <div class="card-header bg-info-subtle">
+<div class="card mb-3">
+  <div class="card-header">
     <h5 class="mb-0 text-info-emphasis">
       <span class="fas fa-user-times me-2"></span>No Presentation QA Assigned
       <span class="badge bg-info ms-2">{{ alarms.no_presqa|length }}</span>
     </h5>
   </div>
   <div class="card-body p-0">
-    <table class="table table-sm mb-0">
-      <thead><tr><th>Phase</th><th>Client</th><th>Status</th><th>Lead</th><th>Author</th></tr></thead>
+    <table class="table table-responsive table-sm datatable align-items-center mb-0">
+      <caption>Phases with No Pres QA Assigned</caption>
+      <thead>
+        <tr>
+          <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Phase</th>
+          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Client</th>
+          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Status</th>
+          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Lead</th>
+          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Author</th>
+        </tr>
+      </thead>
       <tbody>
         {% for phase in alarms.no_presqa %}
         <tr>
           <td><a href="{{ phase.get_absolute_url }}">{{ phase.title }}</a></td>
-          <td>{{ phase.job.client }}</td>
-          <td><span class="badge badge-phoenix badge-phoenix-{{ phase.get_status_bs_colour }}">{{ phase.get_status_display }}</span></td>
-          <td>{% if phase.project_lead %}{{ phase.project_lead.get_full_name }}{% else %}&mdash;{% endif %}</td>
-          <td>{% if phase.report_author %}{{ phase.report_author.get_full_name }}{% else %}&mdash;{% endif %}</td>
+          <td><a href="{{ phase.job.client.get_absolute_url }}">{{ phase.job.client }}</a></td>
+          <td>{% include 'partials/phase/status_badge.html' with badge_size='sm' %}</td>
+          <td>
+            {% if phase.project_lead %}
+              {% include 'partials/users/user_link.html' with user_profile=phase.project_lead %}
+            {% else %}&mdash;{% endif %}
+          </td>
+          <td>
+            {% if phase.report_author %}
+              {% include 'partials/users/user_link.html' with user_profile=phase.report_author %}
+            {% else %}&mdash;{% endif %}
+          </td>
         </tr>
         {% endfor %}
       </tbody>
@@ -145,23 +224,35 @@
 {% endif %}
 
 {% if alarms.unscheduled %}
-<div class="card mb-3 border-secondary">
-  <div class="card-header bg-secondary-subtle">
+<div class="card mb-3">
+  <div class="card-header">
     <h5 class="mb-0 text-secondary-emphasis">
       <span class="fas fa-calendar-times me-2"></span>Active Phases with No Schedule
       <span class="badge bg-secondary ms-2">{{ alarms.unscheduled|length }}</span>
     </h5>
   </div>
   <div class="card-body p-0">
-    <table class="table table-sm mb-0">
-      <thead><tr><th>Phase</th><th>Client</th><th>Status</th><th>Lead</th></tr></thead>
+    <table class="table table-responsive table-sm datatable align-items-center mb-0">
+      <caption>Active Phases with No Scheduled Slots</caption>
+      <thead>
+        <tr>
+          <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Phase</th>
+          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Client</th>
+          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Status</th>
+          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Lead</th>
+        </tr>
+      </thead>
       <tbody>
         {% for phase in alarms.unscheduled %}
         <tr>
           <td><a href="{{ phase.get_absolute_url }}">{{ phase.title }}</a></td>
-          <td>{{ phase.job.client }}</td>
-          <td><span class="badge badge-phoenix badge-phoenix-{{ phase.get_status_bs_colour }}">{{ phase.get_status_display }}</span></td>
-          <td>{% if phase.project_lead %}{{ phase.project_lead.get_full_name }}{% else %}&mdash;{% endif %}</td>
+          <td><a href="{{ phase.job.client.get_absolute_url }}">{{ phase.job.client }}</a></td>
+          <td>{% include 'partials/phase/status_badge.html' with badge_size='sm' %}</td>
+          <td>
+            {% if phase.project_lead %}
+              {% include 'partials/users/user_link.html' with user_profile=phase.project_lead %}
+            {% else %}&mdash;{% endif %}
+          </td>
         </tr>
         {% endfor %}
       </tbody>
@@ -171,24 +262,39 @@
 {% endif %}
 
 {% if alarms.job_overdue %}
-<div class="card mb-3 border-danger">
-  <div class="card-header bg-danger-subtle">
+<div class="card mb-3">
+  <div class="card-header">
     <h5 class="mb-0 text-danger">
       <span class="fas fa-briefcase me-2"></span>Jobs Overdue
       <span class="badge bg-danger ms-2">{{ alarms.job_overdue|length }}</span>
     </h5>
   </div>
   <div class="card-body p-0">
-    <table class="table table-sm mb-0">
-      <thead><tr><th>Job</th><th>Client</th><th>Unit</th><th>Status</th><th>Delivery Date</th></tr></thead>
+    <table class="table table-responsive table-sm datatable align-items-center mb-0">
+      <caption>Overdue Jobs</caption>
+      <thead>
+        <tr>
+          <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Job</th>
+          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Client</th>
+          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Unit</th>
+          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Status</th>
+          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Delivery Date</th>
+        </tr>
+      </thead>
       <tbody>
         {% for job in alarms.job_overdue %}
         <tr>
           <td><a href="{{ job.get_absolute_url }}">{{ job.title }}</a></td>
-          <td>{{ job.client }}</td>
+          <td><a href="{{ job.client.get_absolute_url }}">{{ job.client }}</a></td>
           <td>{{ job.unit }}</td>
-          <td><span class="badge badge-phoenix badge-phoenix-{{ job.get_status_bs_colour }}">{{ job.get_status_display }}</span></td>
-          <td class="text-danger">{% if job.delivery_date %}{{ job.delivery_date }}{% else %}&mdash;{% endif %}</td>
+          <td>
+            <span class="badge text-wrap badge-phoenix badge-phoenix-{{ job.status_bs_colour }}">
+              {{ job.get_status_display }}
+            </span>
+          </td>
+          <td data-sort="{{ job.delivery_date|date:'Y-m-d' }}">
+            <span class="text-danger">{% if job.delivery_date %}{{ job.delivery_date }}{% else %}&mdash;{% endif %}</span>
+          </td>
         </tr>
         {% endfor %}
       </tbody>

@@ -357,6 +357,10 @@ def index(request):
 
     context["alarms"] = alarms
     context["alarm_count"] = sum(len(v) for v in alarms.values())
+    # Non-consultants (anyone with elevated permissions) get alarms as the default tab
+    context["show_alarms_first"] = (
+        can_tqa or can_pqa or can_scope or can_signoff_scope or can_deliver or is_people_mgr
+    )
 
     context = {**context, **page_defaults(request)}
     template = loader.get_template("dashboard_index.html")
