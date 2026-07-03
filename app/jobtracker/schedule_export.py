@@ -101,18 +101,26 @@ def build_schedule_xlsx(timeslots, filename, title=None, header_rows=None):
     slots_list = list(timeslots.select_related("user", "phase", "phase__service", "phase__job"))
 
     users = {}
-    dates = set()
+    min_date = None
+    max_date = None
 
     for slot in slots_list:
         if slot.user:
             users[slot.user.pk] = slot.user
-        d = slot.start.date()
+        start_d = slot.start.date()
         end_d = slot.end.date()
-        while d <= end_d:
-            dates.add(d)
-            d = _next_day(d)
+        if min_date is None or start_d < min_date:
+            min_date = start_d
+        if max_date is None or end_d > max_date:
+            max_date = end_d
 
-    sorted_dates = sorted(dates)
+    # Build a *continuous* range so days with no bookings still appear as columns.
+    sorted_dates = []
+    if min_date and max_date:
+        d = min_date
+        while d <= max_date:
+            sorted_dates.append(d)
+            d = _next_day(d)
     sorted_users = sorted(users.values(), key=lambda u: (u.last_name, u.first_name))
 
     # --- Sheet 1: Schedule ---
@@ -152,11 +160,11 @@ def build_schedule_xlsx(timeslots, filename, title=None, header_rows=None):
         if not slot.user or not slot.phase:
             continue
         role = slot.get_deliveryRole_display()
-        phase_title = slot.phase.title[:24]
+        phase_label = "{}: {}".format(slot.phase.get_id(), slot.phase.title[:24])
         if role and role != "None":
-            label = "{} ({})".format(phase_title, role)
+            label = "{} ({})".format(phase_label, role)
         else:
-            label = phase_title
+            label = phase_label
         d = slot.start.date()
         end_d = slot.end.date()
         while d <= end_d:
@@ -180,7 +188,7 @@ def build_schedule_xlsx(timeslots, filename, title=None, header_rows=None):
     ws2.freeze_panes(1, 0)
 
     summary_cols = [
-        "Phase", "Status", "Service",
+        "Phase ID", "Phase", "Status", "Service",
         "Start Date", "Delivery Date",
         "Delivery Hrs", "Reporting Hrs", "Mgmt Hrs", "QA Hrs",
         "Oversight Hrs", "Debrief Hrs", "Contingency Hrs", "Other Hrs",
@@ -196,23 +204,24 @@ def build_schedule_xlsx(timeslots, filename, title=None, header_rows=None):
             phases_seen[slot.phase.pk] = slot.phase
 
     for row, phase in enumerate(phases_seen.values(), start=1):
-        ws2.write(row, 0, str(phase.title), cell_fmt)
-        ws2.write(row, 1, phase.get_status_display(), cell_fmt)
-        ws2.write(row, 2, str(phase.service) if phase.service else "", cell_fmt)
-        ws2.write(row, 3, _fmt_date(phase.start_date), cell_fmt)
-        ws2.write(row, 4, _fmt_date(phase.delivery_date), cell_fmt)
-        ws2.write(row, 5, float(phase.delivery_hours or 0), cell_fmt)
-        ws2.write(row, 6, float(phase.reporting_hours or 0), cell_fmt)
-        ws2.write(row, 7, float(phase.mgmt_hours or 0), cell_fmt)
-        ws2.write(row, 8, float(phase.qa_hours or 0), cell_fmt)
-        ws2.write(row, 9, float(phase.oversight_hours or 0), cell_fmt)
-        ws2.write(row, 10, float(phase.debrief_hours or 0), cell_fmt)
-        ws2.write(row, 11, float(phase.contingency_hours or 0), cell_fmt)
-        ws2.write(row, 12, float(phase.other_hours or 0), cell_fmt)
-        ws2.write(row, 13, phase.project_lead.get_full_name() if phase.project_lead else "", cell_fmt)
-        ws2.write(row, 14, phase.report_author.get_full_name() if phase.report_author else "", cell_fmt)
-        ws2.write(row, 15, phase.techqa_by.get_full_name() if phase.techqa_by else "", cell_fmt)
-        ws2.write(row, 16, phase.presqa_by.get_full_name() if phase.presqa_by else "", cell_fmt)
+        ws2.write(row, 0, phase.get_id(), cell_fmt)
+        ws2.write(row, 1, str(phase.title), cell_fmt)
+        ws2.write(row, 2, phase.get_status_display(), cell_fmt)
+        ws2.write(row, 3, str(phase.service) if phase.service else "", cell_fmt)
+        ws2.write(row, 4, _fmt_date(phase.start_date), cell_fmt)
+        ws2.write(row, 5, _fmt_date(phase.delivery_date), cell_fmt)
+        ws2.write(row, 6, float(phase.delivery_hours or 0), cell_fmt)
+        ws2.write(row, 7, float(phase.reporting_hours or 0), cell_fmt)
+        ws2.write(row, 8, float(phase.mgmt_hours or 0), cell_fmt)
+        ws2.write(row, 9, float(phase.qa_hours or 0), cell_fmt)
+        ws2.write(row, 10, float(phase.oversight_hours or 0), cell_fmt)
+        ws2.write(row, 11, float(phase.debrief_hours or 0), cell_fmt)
+        ws2.write(row, 12, float(phase.contingency_hours or 0), cell_fmt)
+        ws2.write(row, 13, float(phase.other_hours or 0), cell_fmt)
+        ws2.write(row, 14, phase.project_lead.get_full_name() if phase.project_lead else "", cell_fmt)
+        ws2.write(row, 15, phase.report_author.get_full_name() if phase.report_author else "", cell_fmt)
+        ws2.write(row, 16, phase.techqa_by.get_full_name() if phase.techqa_by else "", cell_fmt)
+        ws2.write(row, 17, phase.presqa_by.get_full_name() if phase.presqa_by else "", cell_fmt)
 
     workbook.close()
     output.seek(0)
