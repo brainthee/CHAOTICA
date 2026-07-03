@@ -5,7 +5,7 @@ from datetime import timedelta
 from django.http import HttpResponse
 from constance import config
 
-from .enums import DefaultTimeSlotTypes, TimeSlotDeliveryRole
+from .enums import TimeSlotDeliveryRole
 
 # CHAOTICA / Phoenix theme
 PHX_PRIMARY = "#3874ff"
@@ -14,13 +14,6 @@ PHX_GRAY_200 = "#e3e6ed"
 PHX_BORDER = "#cbd0dd"
 PHX_INK = "#141824"
 PHX_SECONDARY = "#525b75"
-
-# Days off that are safe to surface to a client (non-sensitive)
-_LEAVE_TYPES = {
-    DefaultTimeSlotTypes.LEAVE,
-    DefaultTimeSlotTypes.SICK,
-    DefaultTimeSlotTypes.BANK_HOL,
-}
 
 
 def _next_day(d):
@@ -170,11 +163,6 @@ def build_schedule_xlsx(timeslots, filename, title=None, header_rows=None):
         "font_color": PHX_SECONDARY, "italic": True,
         "align": "center", "valign": "vcenter", "text_wrap": True,
     })
-    leave_fmt = workbook.add_format({
-        "border": 1, "border_color": PHX_BORDER, "bg_color": "#ffe9a8",
-        "font_color": PHX_INK, "italic": True,
-        "align": "center", "valign": "vcenter", "text_wrap": True,
-    })
     summary_header_fmt = workbook.add_format({
         "bold": True, "bg_color": PHX_PRIMARY, "font_color": "#FFFFFF",
         "border": 1, "border_color": PHX_BORDER, "align": "center", "text_wrap": True,
@@ -246,8 +234,9 @@ def build_schedule_xlsx(timeslots, filename, title=None, header_rows=None):
             d = _next_day(d)
 
     # Unavailable days: resources' *other* commitments across the range.
-    # category: "leave" (safe to name) or "busy" (generic, keeps other clients private)
-    busy_map = {}
+    # Always generic ("Unavailable") — never names other work/leave, so the export
+    # is safe to share with a client and behaves identically for job/phase/client.
+    busy_days = set()
     if sorted_users and sorted_dates:
         other_slots = (
             TimeSlot.objects.filter(
@@ -256,18 +245,14 @@ def build_schedule_xlsx(timeslots, filename, title=None, header_rows=None):
                 end__date__gte=min_date,
             )
             .exclude(pk__in=exported_pks)
-            .select_related("slot_type")
         )
         for slot in other_slots:
-            is_leave = slot.slot_type_id in _LEAVE_TYPES
             d = max(slot.start.date(), min_date)
             end_d = min(slot.end.date(), max_date)
             while d <= end_d:
                 key = (slot.user_id, d)
                 if key not in cell_map:
-                    # leave wins over generic busy for a friendlier label
-                    if is_leave or key not in busy_map:
-                        busy_map[key] = "leave" if is_leave else "busy"
+                    busy_days.add(key)
                 d = _next_day(d)
 
     # =========================================================
@@ -299,7 +284,6 @@ def build_schedule_xlsx(timeslots, filename, title=None, header_rows=None):
         (colours["SCHEDULE_COLOR_PHASE"], "Tentative delivery"),
         (colours["SCHEDULE_COLOR_PHASE_CONFIRMED_AWAY"], "Confirmed — onsite"),
         (colours["SCHEDULE_COLOR_PHASE_AWAY"], "Tentative — onsite"),
-        ("#ffe9a8", "Leave / time off"),
         (PHX_GRAY_200, "Unavailable (committed elsewhere)"),
         (None, "Blank — available"),
     ]
@@ -337,11 +321,8 @@ def build_schedule_xlsx(timeslots, filename, title=None, header_rows=None):
                 bg, fg = cell_colour.get(key, (PHX_PRIMARY, "white"))
                 ws.write(row, col, cell_map[key], booked_fmt(bg, fg))
                 max_lines = max(max_lines, _est_lines(cell_map[key], GRID_COL_WIDTH))
-            elif key in busy_map:
-                if busy_map[key] == "leave":
-                    ws.write(row, col, "Leave", leave_fmt)
-                else:
-                    ws.write(row, col, "Unavailable", unavail_fmt)
+            elif key in busy_days:
+                ws.write(row, col, "Unavailable", unavail_fmt)
             else:
                 fmt = weekend_empty_fmt if d.weekday() >= 5 else empty_fmt
                 ws.write_blank(row, col, None, fmt)
@@ -353,7 +334,7 @@ def build_schedule_xlsx(timeslots, filename, title=None, header_rows=None):
     ws2 = workbook.add_worksheet("Phase Summary")
     ws2.freeze_panes(1, 0)
     summary_cols = [
-        "Phase ID", "Phase", "Status", "Service",
+        "Phase ID", "Job", "Phase", "Status", "Service",
         "Start Date", "Delivery Date",
         "Delivery Days", "Reporting Days", "Mgmt Days", "QA Days",
         "Oversight Days", "Debrief Days", "Contingency Days", "Other Days",
@@ -368,27 +349,37 @@ def build_schedule_xlsx(timeslots, filename, title=None, header_rows=None):
         if slot.phase and slot.phase.pk not in phases_seen:
             phases_seen[slot.phase.pk] = slot.phase
 
+    def _days(phase, role):
+        return float(phase.get_total_scoped_days_by_type(role))
+
     for row, phase in enumerate(phases_seen.values(), start=1):
-        ws2.write(row, 0, phase.get_id(), summary_cell_fmt)
-        ws2.write(row, 1, str(phase.title), summary_cell_fmt)
-        ws2.write(row, 2, phase.get_status_display(), summary_cell_fmt)
-        ws2.write(row, 3, str(phase.service) if phase.service else "", summary_cell_fmt)
-        ws2.write(row, 4, _fmt_date(phase.start_date), summary_cell_fmt)
-        ws2.write(row, 5, _fmt_date(phase.delivery_date), summary_cell_fmt)
-        ws2.write(row, 6, float(phase.get_total_scoped_days_by_type(TimeSlotDeliveryRole.DELIVERY)), summary_cell_fmt)
-        ws2.write(row, 7, float(phase.get_total_scoped_days_by_type(TimeSlotDeliveryRole.REPORTING)), summary_cell_fmt)
-        ws2.write(row, 8, float(phase.get_total_scoped_days_by_type(TimeSlotDeliveryRole.MANAGEMENT)), summary_cell_fmt)
-        ws2.write(row, 9, float(phase.get_total_scoped_days_by_type(TimeSlotDeliveryRole.QA)), summary_cell_fmt)
-        ws2.write(row, 10, float(phase.get_total_scoped_days_by_type(TimeSlotDeliveryRole.OVERSIGHT)), summary_cell_fmt)
-        ws2.write(row, 11, float(phase.get_total_scoped_days_by_type(TimeSlotDeliveryRole.DEBRIEF)), summary_cell_fmt)
-        ws2.write(row, 12, float(phase.get_total_scoped_days_by_type(TimeSlotDeliveryRole.CONTINGENCY)), summary_cell_fmt)
-        ws2.write(row, 13, float(phase.get_total_scoped_days_by_type(TimeSlotDeliveryRole.OTHER)), summary_cell_fmt)
-        ws2.write(row, 14, phase.project_lead.get_full_name() if phase.project_lead else "", summary_cell_fmt)
-        ws2.write(row, 15, phase.report_author.get_full_name() if phase.report_author else "", summary_cell_fmt)
-        ws2.write(row, 16, phase.techqa_by.get_full_name() if phase.techqa_by else "", summary_cell_fmt)
-        ws2.write(row, 17, phase.presqa_by.get_full_name() if phase.presqa_by else "", summary_cell_fmt)
-        # Size the row for the widest wrapping text column (title / service).
+        job = phase.job
+        values = [
+            phase.get_id(),
+            "{}: {}".format(job.id, job.title) if job else "",
+            str(phase.title),
+            phase.get_status_display(),
+            str(phase.service) if phase.service else "",
+            _fmt_date(phase.start_date),
+            _fmt_date(phase.delivery_date),
+            _days(phase, TimeSlotDeliveryRole.DELIVERY),
+            _days(phase, TimeSlotDeliveryRole.REPORTING),
+            _days(phase, TimeSlotDeliveryRole.MANAGEMENT),
+            _days(phase, TimeSlotDeliveryRole.QA),
+            _days(phase, TimeSlotDeliveryRole.OVERSIGHT),
+            _days(phase, TimeSlotDeliveryRole.DEBRIEF),
+            _days(phase, TimeSlotDeliveryRole.CONTINGENCY),
+            _days(phase, TimeSlotDeliveryRole.OTHER),
+            phase.project_lead.get_full_name() if phase.project_lead else "",
+            phase.report_author.get_full_name() if phase.report_author else "",
+            phase.techqa_by.get_full_name() if phase.techqa_by else "",
+            phase.presqa_by.get_full_name() if phase.presqa_by else "",
+        ]
+        for col, value in enumerate(values):
+            ws2.write(row, col, value, summary_cell_fmt)
+        # Size the row for the widest wrapping text column (job / phase / service).
         max_lines = max(
+            _est_lines(values[1], SUMMARY_COL_WIDTH),
             _est_lines(phase.title, SUMMARY_COL_WIDTH),
             _est_lines(str(phase.service) if phase.service else "", SUMMARY_COL_WIDTH),
         )

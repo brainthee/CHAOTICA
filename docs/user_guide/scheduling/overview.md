@@ -92,10 +92,12 @@ The right‑click **Clear range** (and the sidebar **Clear** tool on job/phase p
 The **Schedule** tab on a job or phase has an **Export XLSX** button that downloads a themed, client‑ready Excel workbook — handy for sharing a plan with a client or working offline.
 
 - **Overview** sheet — a cover page with the title, key stats (client, job/phase, service, status, dates, lead, author, scoped days, reports, onsite) and a **colour key**.
-- **Schedule** sheet — a grid of **Resources** (rows) against a **continuous run of dates** (columns, no missing days). Each booked cell names the phase (with its ID, e.g. *5557‑4: Azure Cloud Config (Delivery)*) and the **delivery type**, shaded in the **same colours as the on‑screen scheduler** (confirmed vs tentative, onsite vs remote). Days a resource is committed elsewhere are marked **Unavailable** (or **Leave** for time off) so a blank cell can be trusted as genuinely free — clients won't mistake other commitments for spare capacity. Other clients' work is never named.
-- **Phase Summary** sheet — one row per phase with its ID, the full effort breakdown **in days** (Delivery, Reporting, Mgmt, QA, Oversight, Debrief, Contingency, Other — converted using the job's hours‑per‑day) and the assigned Lead, Author, Tech QA and Pres QA.
+- **Schedule** sheet — a grid of **Resources** (rows) against a **continuous run of dates** (columns, no missing days). Each booked cell names the phase (with its ID, e.g. *5557‑4: Azure Cloud Config (Delivery)*) and the **delivery type**, shaded in the **same colours as the on‑screen scheduler** (confirmed vs tentative, onsite vs remote). Days a resource is committed elsewhere are marked **Unavailable** so a blank cell can be trusted as genuinely free — clients won't mistake other commitments for spare capacity. What that other work is (other clients, projects, leave) is never named.
+- **Phase Summary** sheet — one row per phase with its ID, its **Job**, the full effort breakdown **in days** (Delivery, Reporting, Mgmt, QA, Oversight, Debrief, Contingency, Other — converted using the job's hours‑per‑day) and the assigned Lead, Author, Tech QA and Pres QA.
 
-A **client‑level** export is also available (`Client → Schedule → Export`): pick a **date range** and, optionally, a single **framework agreement** to scope which jobs are included. The Overview records the client, chosen range and framework.
+The three export flavours (phase, job and client) all produce the **same layout** — only the scope of what's included differs.
+
+A **client‑level** export is also available (`Client → Schedule Export`): a small dialog lets you pick a **date range** and, optionally, a single **framework agreement** to scope which jobs are included. The Overview records the client, chosen range and framework.
 
 ## Related Topics
 

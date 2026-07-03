@@ -275,7 +275,8 @@
                 <h4 class="mt-2">Jobs</h4>
               </div>
               <div class="col text-end ms-sm-auto me-sm-0 mx-auto mt-3">
-                <a href="{% url 'client_schedule_export' client.slug %}" class="btn btn-phoenix-secondary btn-sm">
+                <a href="#" data-url="{% url 'client_schedule_export' client.slug %}"
+                   class="btn btn-phoenix-secondary btn-sm js-load-modal-form">
                   <span class="fas fa-file-excel me-1"></span>Schedule Export
                 </a>
               </div>

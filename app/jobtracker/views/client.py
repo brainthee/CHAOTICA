@@ -4,7 +4,7 @@ from django.http import (
     JsonResponse,
     HttpResponse,
 )
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect
 from guardian.shortcuts import get_objects_for_user
 from guardian.decorators import permission_required_or_403
 from django.views.decorators.http import (
@@ -260,7 +260,7 @@ def client_schedule_export(request, slug):
             end_date = date.fromisoformat(end_str)
         except ValueError:
             messages.error(request, "Invalid date range.")
-            return redirect(request.path)
+            return redirect("client_detail", slug=client.slug)
 
         qs = TimeSlot.objects.filter(
             phase__job__client=client,
@@ -288,12 +288,15 @@ def client_schedule_export(request, slug):
     frameworks = client.framework_agreements.all()
     default_start = (timezone.now() - timedelta(days=30)).strftime("%Y-%m-%d")
     default_end = (timezone.now() + timedelta(days=90)).strftime("%Y-%m-%d")
-    return render(
-        request,
-        "jobtracker/client_schedule_export.html",
-        {"client": client, "frameworks": frameworks,
-         "default_start": default_start, "default_end": default_end},
-    )
+    data = {
+        "html_form": loader.render_to_string(
+            "jobtracker/modals/client_schedule_export.html",
+            {"client": client, "frameworks": frameworks,
+             "default_start": default_start, "default_end": default_end},
+            request=request,
+        )
+    }
+    return JsonResponse(data)
 
 
 @permission_required_or_403("jobtracker.change_client")
