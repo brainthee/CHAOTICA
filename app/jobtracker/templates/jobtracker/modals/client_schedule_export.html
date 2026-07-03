@@ -19,17 +19,18 @@
                     <label for="end_date" class="form-label fw-semibold">End Date</label>
                     <input type="date" class="form-control" id="end_date" name="end_date" value="{{ default_end }}" required>
                 </div>
-                {% if frameworks %}
                 <div class="mb-3">
                     <label for="framework" class="form-label fw-semibold">Framework Agreement <span class="text-body-tertiary">(optional)</span></label>
-                    <select class="form-select" id="framework" name="framework">
+                    <select class="form-select" id="framework" name="framework" {% if not frameworks %}disabled{% endif %}>
                         <option value="">— All frameworks —</option>
                         {% for fw in frameworks %}
                             <option value="{{ fw.pk }}">{{ fw }}</option>
                         {% endfor %}
                     </select>
+                    {% if not frameworks %}
+                    <div class="form-text text-body-tertiary">This client has no framework agreements.</div>
+                    {% endif %}
                 </div>
-                {% endif %}
             </div>
             <div class="modal-footer">
                 <button type="submit" class="btn btn-phoenix-primary mb-0">
