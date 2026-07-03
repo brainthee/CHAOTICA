@@ -606,30 +606,37 @@
   if (btnModePan) btnModePan.addEventListener('click', function () { setSelectMode(false); });
   if (btnModeSelect) btnModeSelect.addEventListener('click', function () { setSelectMode(true); });
 
+  // Snap a raw drag (two arbitrary instants) to whole days. `start`/`endExclusive`
+  // drive the highlight (full days); `lastDay` is the last selected day's midnight,
+  // which snapRange turns into that day's working-hours end.
+  function snapDays(a, b) {
+    var lo = (a < b ? a : b), hi = (a < b ? b : a);
+    return { start: startOfDay(lo), endExclusive: startOfNextDay(hi), lastDay: startOfDay(hi) };
+  }
+
   timeline.on('mouseDown', function (props) {
     if (readonly || !selectMode) return;
     if (props.event.button !== 0) return;
     if (props.group == null || props.item != null) return;
     clearSelectionHighlight();
     sel = { startGroup: props.group, startTime: props.time };
-    paintSelection([props.group], props.time, props.time);
+    var d = snapDays(props.time, props.time);
+    paintSelection([props.group], d.start, d.endExclusive);
   });
 
   timeline.on('mouseMove', function (props) {
     if (!selectMode || !sel || props.time == null) return;
-    var a = sel.startTime, b = props.time;
+    var d = snapDays(sel.startTime, props.time);
     var gids = (props.group != null) ? groupsBetween(sel.startGroup, props.group) : [sel.startGroup];
-    paintSelection(gids, (a < b ? a : b), (a < b ? b : a));
+    paintSelection(gids, d.start, d.endExclusive);
   });
 
   timeline.on('mouseUp', function (props) {
     if (!selectMode || !sel) return;
-    var a = sel.startTime, b = (props.time || sel.startTime);
-    var s = (a < b ? a : b), e = (a < b ? b : a);
+    var d = snapDays(sel.startTime, (props.time || sel.startTime));
     var gids = (props.group != null) ? groupsBetween(sel.startGroup, props.group) : [sel.startGroup];
     sel = null;
-    if (Math.abs(e - s) < 1000 * 60 * 30) e = s;
-    openMenuAt(gids, s, e, props.event.pageX, props.event.pageY);
+    openMenuAt(gids, d.start, d.lastDay, props.event.pageX, props.event.pageY);
   });
 
   // ---- Refetch on pan/zoom (infinite scroll on time) ----

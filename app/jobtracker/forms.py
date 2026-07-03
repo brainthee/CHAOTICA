@@ -1196,16 +1196,23 @@ class DeliveryTimeSlotModalForm(forms.ModelForm):
         if end:
             self.fields["end"].initial = timezone.localtime(end).replace(tzinfo=None)
 
-        # Offer lead/author quick-assign only when creating a single-user slot for a
-        # known phase; default each box on only when that role is currently unassigned.
+        # Offer lead/author quick-assign whenever creating a single-user slot. When
+        # the phase is already known (phase-scoped booking) default each box on only
+        # if that role is currently unassigned; when the phase is picked from the
+        # dropdown (job-scoped booking) default off — it applies to the chosen phase
+        # on save, respecting any existing assignment.
         resolved_phase = phase
         if resolved_phase is None and getattr(self.instance, "phase_id", None):
             resolved_phase = self.instance.phase
         creating = not (self.instance and self.instance.pk)
-        show_role_assign = bool(single and creating and resolved_phase is not None)
+        show_role_assign = bool(single and creating)
         if show_role_assign:
-            self.fields["set_as_lead"].initial = resolved_phase.project_lead_id is None
-            self.fields["set_as_author"].initial = resolved_phase.report_author_id is None
+            self.fields["set_as_lead"].initial = (
+                resolved_phase.project_lead_id is None if resolved_phase else False
+            )
+            self.fields["set_as_author"].initial = (
+                resolved_phase.report_author_id is None if resolved_phase else False
+            )
 
         body_rows = [
             Row(
