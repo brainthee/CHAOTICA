@@ -27,4 +27,30 @@
     {% empty %}
         <p class="text-body-secondary small mb-0">No associated links.</p>
     {% endfor %}
+
+    {% for link in phase.job.links.all %}
+        {% if forloop.first %}
+            <p class="text-body-tertiary text-xxs text-uppercase fw-semibold mt-2 mb-1 ps-1">
+                <span class="fas fa-briefcase me-1"></span>From job
+            </p>
+        {% endif %}
+        <div class="d-flex align-items-center mb-1">
+            <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer"
+               class="btn btn-phoenix-secondary flex-grow-1 text-start opacity-75">
+                {% if link.linkType == 1 %}
+                    <span class="fab fa-microsoft me-2"></span>SharePoint: {{ link.title }}
+                {% elif link.linkType == 2 %}
+                    <span class="far fa-comment-dots me-2"></span>Teams: {{ link.title }}
+                {% elif link.linkType == 3 %}
+                    <span class="fas fa-history me-2"></span>Previous: {{ link.title }}
+                {% elif link.linkType == 4 %}
+                    <span class="fas fa-project-diagram me-2"></span>Related: {{ link.title }}
+                {% elif link.linkType == 5 %}
+                    <span class="fas fa-file-alt me-2"></span>Scoping: {{ link.title }}
+                {% else %}
+                    <span class="fas fa-link me-2"></span>{{ link.title }}
+                {% endif %}
+            </a>
+        </div>
+    {% endfor %}
 </div>
