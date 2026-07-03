@@ -30,13 +30,11 @@
 
     {% for link in phase.job.links.all %}
         {% if forloop.first %}
-            <p class="text-body-tertiary text-xxs text-uppercase fw-semibold mt-2 mb-1 ps-1">
-                <span class="fas fa-briefcase me-1"></span>From job
-            </p>
+            <p class="text-body-tertiary fs-10 mt-2 mb-1 ps-1">From job</p>
         {% endif %}
         <div class="d-flex align-items-center mb-1">
             <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer"
-               class="btn btn-phoenix-secondary flex-grow-1 text-start opacity-75">
+               class="btn btn-phoenix-secondary flex-grow-1 text-start">
                 {% if link.linkType == 1 %}
                     <span class="fab fa-microsoft me-2"></span>SharePoint: {{ link.title }}
                 {% elif link.linkType == 2 %}
