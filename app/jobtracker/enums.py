@@ -1,10 +1,10 @@
 class LinkType:
     LN_OTHER = 0
-    LN_SHAREPOINT = 2
-    LN_TEAMS = 3
-    LN_PREVIOUS = 6
-    LN_RELATED = 7
-    LN_SCOPING = 8
+    LN_SHAREPOINT = 1
+    LN_TEAMS = 2
+    LN_PREVIOUS = 3
+    LN_RELATED = 4
+    LN_SCOPING = 5
     CHOICES = (
         (LN_OTHER, "Other"),
         (LN_SHAREPOINT, "SharePoint"),
