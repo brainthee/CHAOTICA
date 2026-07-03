@@ -147,11 +147,11 @@ def build_schedule_xlsx(timeslots, filename, title=None, header_rows=None):
     })
     date_fmt = workbook.add_format({
         "bold": True, "bg_color": PHX_PRIMARY, "font_color": "#FFFFFF",
-        "border": 1, "border_color": PHX_BORDER, "align": "center", "num_format": "ddd dd/mm",
+        "border": 1, "border_color": PHX_BORDER, "align": "center", "num_format": "ddd dd/mm/yy",
     })
     weekend_date_fmt = workbook.add_format({
         "bold": True, "bg_color": "#7ba0ff", "font_color": "#FFFFFF",
-        "border": 1, "border_color": PHX_BORDER, "align": "center", "num_format": "ddd dd/mm",
+        "border": 1, "border_color": PHX_BORDER, "align": "center", "num_format": "ddd dd/mm/yy",
     })
     resource_fmt = workbook.add_format({
         "bold": True, "bg_color": PHX_GRAY_100, "font_color": PHX_INK,
