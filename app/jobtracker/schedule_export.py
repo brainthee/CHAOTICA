@@ -2,6 +2,24 @@ import io
 from collections import defaultdict
 from datetime import timedelta
 from django.http import HttpResponse
+from constance import config
+
+from .enums import DefaultTimeSlotTypes
+
+# CHAOTICA / Phoenix theme
+PHX_PRIMARY = "#3874ff"
+PHX_GRAY_100 = "#eff2f6"
+PHX_GRAY_200 = "#e3e6ed"
+PHX_BORDER = "#cbd0dd"
+PHX_INK = "#141824"
+PHX_SECONDARY = "#525b75"
+
+# Days off that are safe to surface to a client (non-sensitive)
+_LEAVE_TYPES = {
+    DefaultTimeSlotTypes.LEAVE,
+    DefaultTimeSlotTypes.SICK,
+    DefaultTimeSlotTypes.BANK_HOL,
+}
 
 
 def _next_day(d):
@@ -10,6 +28,18 @@ def _next_day(d):
 
 def _fmt_date(d):
     return d.strftime("%d %b %Y") if d else ""
+
+
+def _schedule_colours():
+    """Live scheduler colours from Constance config (matches the on-screen scheduler)."""
+    return {
+        "SCHEDULE_COLOR_PHASE_CONFIRMED_AWAY": config.SCHEDULE_COLOR_PHASE_CONFIRMED_AWAY,
+        "SCHEDULE_COLOR_PHASE_CONFIRMED": config.SCHEDULE_COLOR_PHASE_CONFIRMED,
+        "SCHEDULE_COLOR_PHASE_AWAY": config.SCHEDULE_COLOR_PHASE_AWAY,
+        "SCHEDULE_COLOR_PHASE": config.SCHEDULE_COLOR_PHASE,
+        "SCHEDULE_COLOR_PROJECT": config.SCHEDULE_COLOR_PROJECT,
+        "SCHEDULE_COLOR_INTERNAL": config.SCHEDULE_COLOR_INTERNAL,
+    }
 
 
 def phase_header_rows(phase):
@@ -50,60 +80,100 @@ def job_header_rows(job):
 
 def build_schedule_xlsx(timeslots, filename, title=None, header_rows=None):
     """
-    Build a two-sheet XLSX schedule export.
+    Build a themed three-sheet XLSX schedule export.
 
-    Sheet 1 "Schedule": an optional client-ready header block, then a grid of
-    resources (rows) x dates (columns) with the phase and delivery type in each cell.
-    Sheet 2 "Summary": one row per phase with hours breakdown and team.
+    "Overview"  a client-ready cover sheet: title, key stats and a colour key.
+    "Schedule"  a grid of resources (rows) x dates (columns). Booked cells carry
+                the phase + delivery type in the same colours as the on-screen
+                scheduler; days a resource is committed elsewhere (other work,
+                leave, internal) are marked Unavailable so gaps read as free.
+    "Summary"   one row per phase with the full hours breakdown and team.
 
-    ``title``       optional heading rendered at the top of the Schedule sheet.
-    ``header_rows`` optional list of (label, value) tuples rendered as a stats block.
+    ``title``       optional heading shown on the Overview sheet.
+    ``header_rows`` optional list of (label, value) tuples shown as key stats.
     """
     import xlsxwriter
+    from .models import TimeSlot
 
     output = io.BytesIO()
     workbook = xlsxwriter.Workbook(output, {"remove_timezone": True})
+    colours = _schedule_colours()
 
-    # Formats
+    # --- Shared formats ---
     title_fmt = workbook.add_format({
-        "bold": True, "font_size": 15, "valign": "vcenter",
+        "bold": True, "font_size": 16, "font_color": "#FFFFFF",
+        "bg_color": PHX_PRIMARY, "valign": "vcenter", "indent": 1,
+    })
+    section_fmt = workbook.add_format({
+        "bold": True, "font_size": 11, "font_color": PHX_PRIMARY, "valign": "vcenter",
     })
     hdr_label_fmt = workbook.add_format({
-        "bold": True, "bg_color": "#E8E8E8", "border": 1, "valign": "vcenter",
+        "bold": True, "bg_color": PHX_GRAY_100, "font_color": PHX_INK,
+        "border": 1, "border_color": PHX_BORDER, "valign": "vcenter",
     })
     hdr_value_fmt = workbook.add_format({
-        "border": 1, "valign": "vcenter", "text_wrap": True,
+        "border": 1, "border_color": PHX_BORDER, "valign": "vcenter", "text_wrap": True,
     })
-    header_fmt = workbook.add_format({
-        "bold": True, "bg_color": "#D3D3D3", "border": 1,
+    grid_hdr_fmt = workbook.add_format({
+        "bold": True, "bg_color": PHX_PRIMARY, "font_color": "#FFFFFF",
+        "border": 1, "border_color": PHX_BORDER,
         "align": "center", "valign": "vcenter", "text_wrap": True,
     })
     date_fmt = workbook.add_format({
-        "bold": True, "bg_color": "#E8E8E8", "border": 1,
-        "align": "center", "num_format": "ddd dd/mm",
+        "bold": True, "bg_color": PHX_PRIMARY, "font_color": "#FFFFFF",
+        "border": 1, "border_color": PHX_BORDER, "align": "center", "num_format": "ddd dd/mm",
     })
-    weekend_fmt = workbook.add_format({
-        "bg_color": "#F5F5F5", "border": 1, "font_color": "#AAAAAA",
-        "align": "center", "num_format": "ddd dd/mm",
+    weekend_date_fmt = workbook.add_format({
+        "bold": True, "bg_color": "#7ba0ff", "font_color": "#FFFFFF",
+        "border": 1, "border_color": PHX_BORDER, "align": "center", "num_format": "ddd dd/mm",
     })
-    cell_fmt = workbook.add_format({"border": 1, "text_wrap": True, "align": "center", "valign": "vcenter"})
-    weekend_cell_fmt = workbook.add_format({
-        "border": 1, "text_wrap": True, "align": "center", "valign": "vcenter",
-        "bg_color": "#FAFAFA",
+    resource_fmt = workbook.add_format({
+        "bold": True, "bg_color": PHX_GRAY_100, "font_color": PHX_INK,
+        "border": 1, "border_color": PHX_BORDER, "valign": "vcenter",
     })
-    user_fmt = workbook.add_format({"bold": True, "border": 1, "bg_color": "#E8F4F8"})
+    empty_fmt = workbook.add_format({"border": 1, "border_color": PHX_BORDER})
+    weekend_empty_fmt = workbook.add_format({
+        "border": 1, "border_color": PHX_BORDER, "bg_color": "#eef2fb",
+    })
+    unavail_fmt = workbook.add_format({
+        "border": 1, "border_color": PHX_BORDER, "bg_color": PHX_GRAY_200,
+        "font_color": PHX_SECONDARY, "italic": True,
+        "align": "center", "valign": "vcenter", "text_wrap": True,
+    })
+    leave_fmt = workbook.add_format({
+        "border": 1, "border_color": PHX_BORDER, "bg_color": "#ffe9a8",
+        "font_color": PHX_INK, "italic": True,
+        "align": "center", "valign": "vcenter", "text_wrap": True,
+    })
     summary_header_fmt = workbook.add_format({
-        "bold": True, "bg_color": "#D3D3D3", "border": 1,
-        "align": "center", "text_wrap": True,
+        "bold": True, "bg_color": PHX_PRIMARY, "font_color": "#FFFFFF",
+        "border": 1, "border_color": PHX_BORDER, "align": "center", "text_wrap": True,
     })
+    summary_cell_fmt = workbook.add_format({
+        "border": 1, "border_color": PHX_BORDER, "text_wrap": True,
+        "align": "center", "valign": "vcenter",
+    })
+
+    # Cache of coloured booked-cell formats keyed by (bg, fg)
+    booked_formats = {}
+
+    def booked_fmt(bg, fg):
+        key = (bg, fg)
+        if key not in booked_formats:
+            booked_formats[key] = workbook.add_format({
+                "border": 1, "border_color": PHX_BORDER, "text_wrap": True,
+                "align": "center", "valign": "vcenter",
+                "bg_color": bg, "font_color": "#FFFFFF" if fg == "white" else "#000000",
+            })
+        return booked_formats[key]
 
     # --- Build data structures ---
     slots_list = list(timeslots.select_related("user", "phase", "phase__service", "phase__job"))
+    exported_pks = {s.pk for s in slots_list}
 
     users = {}
     min_date = None
     max_date = None
-
     for slot in slots_list:
         if slot.user:
             users[slot.user.pk] = slot.user
@@ -114,7 +184,7 @@ def build_schedule_xlsx(timeslots, filename, title=None, header_rows=None):
         if max_date is None or end_d > max_date:
             max_date = end_d
 
-    # Build a *continuous* range so days with no bookings still appear as columns.
+    # Continuous range so days with no bookings still appear as columns.
     sorted_dates = []
     if min_date and max_date:
         d = min_date
@@ -123,48 +193,17 @@ def build_schedule_xlsx(timeslots, filename, title=None, header_rows=None):
             d = _next_day(d)
     sorted_users = sorted(users.values(), key=lambda u: (u.last_name, u.first_name))
 
-    # --- Sheet 1: Schedule ---
-    ws = workbook.add_worksheet("Schedule")
-    ws.set_column(0, 0, 24)
-
-    row_cursor = 0
-    # Title
-    if title:
-        span = max(3, min(len(sorted_dates), 8))
-        ws.merge_range(row_cursor, 0, row_cursor, span, title, title_fmt)
-        ws.set_row(row_cursor, 22)
-        row_cursor += 2
-
-    # Header stat block (label | value spanning a few columns)
-    if header_rows:
-        for label, value in header_rows:
-            ws.write(row_cursor, 0, label, hdr_label_fmt)
-            ws.merge_range(row_cursor, 1, row_cursor, 3, value, hdr_value_fmt)
-            row_cursor += 1
-        row_cursor += 1  # blank spacer row
-
-    grid_header_row = row_cursor
-
-    # Grid header: Resource + dates
-    ws.write(grid_header_row, 0, "Resource", header_fmt)
-    for col, d in enumerate(sorted_dates, start=1):
-        fmt = weekend_fmt if d.weekday() >= 5 else date_fmt
-        ws.write_datetime(grid_header_row, col, d, fmt)
-        ws.set_column(col, col, 14)
-
-    ws.freeze_panes(grid_header_row + 1, 1)
-
-    # Build cell map: (user_pk, date) -> "Phase (Role)"
+    # Booked cells: (user_pk, date) -> label, and -> (bg, fg)
     cell_map = defaultdict(str)
+    cell_colour = {}
     for slot in slots_list:
         if not slot.user or not slot.phase:
             continue
         role = slot.get_deliveryRole_display()
         phase_label = "{}: {}".format(slot.phase.get_id(), slot.phase.title[:24])
-        if role and role != "None":
-            label = "{} ({})".format(phase_label, role)
-        else:
-            label = phase_label
+        label = "{} ({})".format(phase_label, role) if role and role != "None" else phase_label
+        bg = slot.get_schedule_slot_colour(schedule_colours=colours)
+        fg = slot.get_schedule_slot_text_colour(bg)
         d = slot.start.date()
         end_d = slot.end.date()
         while d <= end_d:
@@ -173,20 +212,113 @@ def build_schedule_xlsx(timeslots, filename, title=None, header_rows=None):
                 cell_map[key] += " / " + label
             elif not cell_map[key]:
                 cell_map[key] = label
+                cell_colour[key] = (bg, fg)
             d = _next_day(d)
 
-    for i, user in enumerate(sorted_users):
-        row = grid_header_row + 1 + i
-        ws.write(row, 0, user.get_full_name(), user_fmt)
-        for col, d in enumerate(sorted_dates, start=1):
-            value = cell_map.get((user.pk, d), "")
-            fmt = weekend_cell_fmt if d.weekday() >= 5 else cell_fmt
-            ws.write(row, col, value, fmt)
+    # Unavailable days: resources' *other* commitments across the range.
+    # category: "leave" (safe to name) or "busy" (generic, keeps other clients private)
+    busy_map = {}
+    if sorted_users and sorted_dates:
+        other_slots = (
+            TimeSlot.objects.filter(
+                user_id__in=list(users.keys()),
+                start__date__lte=max_date,
+                end__date__gte=min_date,
+            )
+            .exclude(pk__in=exported_pks)
+            .select_related("slot_type")
+        )
+        for slot in other_slots:
+            is_leave = slot.slot_type_id in _LEAVE_TYPES
+            d = max(slot.start.date(), min_date)
+            end_d = min(slot.end.date(), max_date)
+            while d <= end_d:
+                key = (slot.user_id, d)
+                if key not in cell_map:
+                    # leave wins over generic busy for a friendlier label
+                    if is_leave or key not in busy_map:
+                        busy_map[key] = "leave" if is_leave else "busy"
+                d = _next_day(d)
 
-    # --- Sheet 2: Summary ---
+    # =========================================================
+    # Sheet 1: Overview (cover)
+    # =========================================================
+    ov = workbook.add_worksheet("Overview")
+    ov.hide_gridlines(2)
+    ov.set_column(0, 0, 20)
+    ov.set_column(1, 1, 36)
+    ov.set_column(2, 2, 3)
+
+    r = 0
+    ov.merge_range(r, 0, r, 3, title or "Schedule", title_fmt)
+    ov.set_row(r, 26)
+    r += 2
+
+    if header_rows:
+        for label, value in header_rows:
+            ov.write(r, 0, label, hdr_label_fmt)
+            ov.merge_range(r, 1, r, 3, value, hdr_value_fmt)
+            r += 1
+        r += 1
+
+    # Colour key (mirrors the on-screen scheduler legend)
+    ov.write(r, 0, "Key", section_fmt)
+    r += 1
+    legend = [
+        (colours["SCHEDULE_COLOR_PHASE_CONFIRMED"], "Confirmed delivery"),
+        (colours["SCHEDULE_COLOR_PHASE"], "Tentative delivery"),
+        (colours["SCHEDULE_COLOR_PHASE_CONFIRMED_AWAY"], "Confirmed — onsite"),
+        (colours["SCHEDULE_COLOR_PHASE_AWAY"], "Tentative — onsite"),
+        ("#ffe9a8", "Leave / time off"),
+        (PHX_GRAY_200, "Unavailable (committed elsewhere)"),
+        (None, "Blank — available"),
+    ]
+    label_fmt = workbook.add_format({"valign": "vcenter", "font_color": PHX_INK})
+    for swatch, desc in legend:
+        if swatch:
+            sw_fmt = workbook.add_format({
+                "bg_color": swatch, "border": 1, "border_color": PHX_BORDER,
+            })
+        else:
+            sw_fmt = workbook.add_format({"border": 1, "border_color": PHX_BORDER})
+        ov.write_blank(r, 0, None, sw_fmt)
+        ov.write(r, 1, desc, label_fmt)
+        r += 1
+
+    # =========================================================
+    # Sheet 2: Schedule (grid)
+    # =========================================================
+    ws = workbook.add_worksheet("Schedule")
+    ws.set_column(0, 0, 24)
+    ws.write(0, 0, "Resource", grid_hdr_fmt)
+    for col, d in enumerate(sorted_dates, start=1):
+        fmt = weekend_date_fmt if d.weekday() >= 5 else date_fmt
+        ws.write_datetime(0, col, d, fmt)
+        ws.set_column(col, col, 16)
+    ws.freeze_panes(1, 1)
+
+    for i, user in enumerate(sorted_users):
+        row = 1 + i
+        ws.write(row, 0, user.get_full_name(), resource_fmt)
+        for col, d in enumerate(sorted_dates, start=1):
+            key = (user.pk, d)
+            if key in cell_map:
+                bg, fg = cell_colour.get(key, (PHX_PRIMARY, "white"))
+                ws.write(row, col, cell_map[key], booked_fmt(bg, fg))
+            elif key in busy_map:
+                if busy_map[key] == "leave":
+                    ws.write(row, col, "Leave", leave_fmt)
+                else:
+                    ws.write(row, col, "Unavailable", unavail_fmt)
+            else:
+                fmt = weekend_empty_fmt if d.weekday() >= 5 else empty_fmt
+                ws.write_blank(row, col, None, fmt)
+
+    # =========================================================
+    # Sheet 3: Summary
+    # =========================================================
     ws2 = workbook.add_worksheet("Summary")
     ws2.freeze_panes(1, 0)
-
     summary_cols = [
         "Phase ID", "Phase", "Status", "Service",
         "Start Date", "Delivery Date",
@@ -204,24 +336,24 @@ def build_schedule_xlsx(timeslots, filename, title=None, header_rows=None):
             phases_seen[slot.phase.pk] = slot.phase
 
     for row, phase in enumerate(phases_seen.values(), start=1):
-        ws2.write(row, 0, phase.get_id(), cell_fmt)
-        ws2.write(row, 1, str(phase.title), cell_fmt)
-        ws2.write(row, 2, phase.get_status_display(), cell_fmt)
-        ws2.write(row, 3, str(phase.service) if phase.service else "", cell_fmt)
-        ws2.write(row, 4, _fmt_date(phase.start_date), cell_fmt)
-        ws2.write(row, 5, _fmt_date(phase.delivery_date), cell_fmt)
-        ws2.write(row, 6, float(phase.delivery_hours or 0), cell_fmt)
-        ws2.write(row, 7, float(phase.reporting_hours or 0), cell_fmt)
-        ws2.write(row, 8, float(phase.mgmt_hours or 0), cell_fmt)
-        ws2.write(row, 9, float(phase.qa_hours or 0), cell_fmt)
-        ws2.write(row, 10, float(phase.oversight_hours or 0), cell_fmt)
-        ws2.write(row, 11, float(phase.debrief_hours or 0), cell_fmt)
-        ws2.write(row, 12, float(phase.contingency_hours or 0), cell_fmt)
-        ws2.write(row, 13, float(phase.other_hours or 0), cell_fmt)
-        ws2.write(row, 14, phase.project_lead.get_full_name() if phase.project_lead else "", cell_fmt)
-        ws2.write(row, 15, phase.report_author.get_full_name() if phase.report_author else "", cell_fmt)
-        ws2.write(row, 16, phase.techqa_by.get_full_name() if phase.techqa_by else "", cell_fmt)
-        ws2.write(row, 17, phase.presqa_by.get_full_name() if phase.presqa_by else "", cell_fmt)
+        ws2.write(row, 0, phase.get_id(), summary_cell_fmt)
+        ws2.write(row, 1, str(phase.title), summary_cell_fmt)
+        ws2.write(row, 2, phase.get_status_display(), summary_cell_fmt)
+        ws2.write(row, 3, str(phase.service) if phase.service else "", summary_cell_fmt)
+        ws2.write(row, 4, _fmt_date(phase.start_date), summary_cell_fmt)
+        ws2.write(row, 5, _fmt_date(phase.delivery_date), summary_cell_fmt)
+        ws2.write(row, 6, float(phase.delivery_hours or 0), summary_cell_fmt)
+        ws2.write(row, 7, float(phase.reporting_hours or 0), summary_cell_fmt)
+        ws2.write(row, 8, float(phase.mgmt_hours or 0), summary_cell_fmt)
+        ws2.write(row, 9, float(phase.qa_hours or 0), summary_cell_fmt)
+        ws2.write(row, 10, float(phase.oversight_hours or 0), summary_cell_fmt)
+        ws2.write(row, 11, float(phase.debrief_hours or 0), summary_cell_fmt)
+        ws2.write(row, 12, float(phase.contingency_hours or 0), summary_cell_fmt)
+        ws2.write(row, 13, float(phase.other_hours or 0), summary_cell_fmt)
+        ws2.write(row, 14, phase.project_lead.get_full_name() if phase.project_lead else "", summary_cell_fmt)
+        ws2.write(row, 15, phase.report_author.get_full_name() if phase.report_author else "", summary_cell_fmt)
+        ws2.write(row, 16, phase.techqa_by.get_full_name() if phase.techqa_by else "", summary_cell_fmt)
+        ws2.write(row, 17, phase.presqa_by.get_full_name() if phase.presqa_by else "", summary_cell_fmt)
 
     workbook.close()
     output.seek(0)
