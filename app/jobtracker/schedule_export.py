@@ -4,7 +4,7 @@ from datetime import timedelta
 from django.http import HttpResponse
 from constance import config
 
-from .enums import DefaultTimeSlotTypes
+from .enums import DefaultTimeSlotTypes, TimeSlotDeliveryRole
 
 # CHAOTICA / Phoenix theme
 PHX_PRIMARY = "#3874ff"
@@ -317,13 +317,13 @@ def build_schedule_xlsx(timeslots, filename, title=None, header_rows=None):
     # =========================================================
     # Sheet 3: Summary
     # =========================================================
-    ws2 = workbook.add_worksheet("Summary")
+    ws2 = workbook.add_worksheet("Phase Summary")
     ws2.freeze_panes(1, 0)
     summary_cols = [
         "Phase ID", "Phase", "Status", "Service",
         "Start Date", "Delivery Date",
-        "Delivery Hrs", "Reporting Hrs", "Mgmt Hrs", "QA Hrs",
-        "Oversight Hrs", "Debrief Hrs", "Contingency Hrs", "Other Hrs",
+        "Delivery Days", "Reporting Days", "Mgmt Days", "QA Days",
+        "Oversight Days", "Debrief Days", "Contingency Days", "Other Days",
         "Lead", "Author", "Tech QA", "Pres QA",
     ]
     for col, name in enumerate(summary_cols):
@@ -342,14 +342,14 @@ def build_schedule_xlsx(timeslots, filename, title=None, header_rows=None):
         ws2.write(row, 3, str(phase.service) if phase.service else "", summary_cell_fmt)
         ws2.write(row, 4, _fmt_date(phase.start_date), summary_cell_fmt)
         ws2.write(row, 5, _fmt_date(phase.delivery_date), summary_cell_fmt)
-        ws2.write(row, 6, float(phase.delivery_hours or 0), summary_cell_fmt)
-        ws2.write(row, 7, float(phase.reporting_hours or 0), summary_cell_fmt)
-        ws2.write(row, 8, float(phase.mgmt_hours or 0), summary_cell_fmt)
-        ws2.write(row, 9, float(phase.qa_hours or 0), summary_cell_fmt)
-        ws2.write(row, 10, float(phase.oversight_hours or 0), summary_cell_fmt)
-        ws2.write(row, 11, float(phase.debrief_hours or 0), summary_cell_fmt)
-        ws2.write(row, 12, float(phase.contingency_hours or 0), summary_cell_fmt)
-        ws2.write(row, 13, float(phase.other_hours or 0), summary_cell_fmt)
+        ws2.write(row, 6, float(phase.get_total_scoped_days_by_type(TimeSlotDeliveryRole.DELIVERY)), summary_cell_fmt)
+        ws2.write(row, 7, float(phase.get_total_scoped_days_by_type(TimeSlotDeliveryRole.REPORTING)), summary_cell_fmt)
+        ws2.write(row, 8, float(phase.get_total_scoped_days_by_type(TimeSlotDeliveryRole.MANAGEMENT)), summary_cell_fmt)
+        ws2.write(row, 9, float(phase.get_total_scoped_days_by_type(TimeSlotDeliveryRole.QA)), summary_cell_fmt)
+        ws2.write(row, 10, float(phase.get_total_scoped_days_by_type(TimeSlotDeliveryRole.OVERSIGHT)), summary_cell_fmt)
+        ws2.write(row, 11, float(phase.get_total_scoped_days_by_type(TimeSlotDeliveryRole.DEBRIEF)), summary_cell_fmt)
+        ws2.write(row, 12, float(phase.get_total_scoped_days_by_type(TimeSlotDeliveryRole.CONTINGENCY)), summary_cell_fmt)
+        ws2.write(row, 13, float(phase.get_total_scoped_days_by_type(TimeSlotDeliveryRole.OTHER)), summary_cell_fmt)
         ws2.write(row, 14, phase.project_lead.get_full_name() if phase.project_lead else "", summary_cell_fmt)
         ws2.write(row, 15, phase.report_author.get_full_name() if phase.report_author else "", summary_cell_fmt)
         ws2.write(row, 16, phase.techqa_by.get_full_name() if phase.techqa_by else "", summary_cell_fmt)
