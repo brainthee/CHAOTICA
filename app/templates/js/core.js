@@ -113,9 +113,37 @@ $(function() {
         location.reload();
     }
 
+    // Guard modal forms against double-submission (e.g. slow clone operations).
+    // Returns false if the form is already in flight so callers can bail out.
+    var lockSubmit = function(form) {
+        if (form.data("submitting")) {
+            return false;
+        }
+        form.data("submitting", true);
+        var btn = form.find('button[type="submit"]');
+        if (btn.length) {
+            btn.data("orig-html", btn.html());
+            btn.prop("disabled", true).html(
+                '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Working&hellip;'
+            );
+        }
+        return true;
+    };
+
+    var unlockSubmit = function(form) {
+        form.data("submitting", false);
+        var btn = form.find('button[type="submit"]');
+        if (btn.length && btn.data("orig-html") !== undefined) {
+            btn.prop("disabled", false).html(btn.data("orig-html"));
+        }
+    };
+
     var saveForm = function() {
         var form = $(this);
         var submit = function() {
+            if (!lockSubmit(form)) {
+                return;
+            }
             $.ajax({
                 url: form.attr("action"),
                 data: form.serialize(),
@@ -131,6 +159,14 @@ $(function() {
                     } else {
                         $("#mainModalContent").html(data.html_form);
                     }
+                },
+                error: function() {
+                    unlockSubmit(form);
+                    Swal.fire({
+                        title: "Something went wrong",
+                        text: "The action could not be completed. Please try again.",
+                        icon: "error"
+                    });
                 }
             });
         };
@@ -161,6 +197,9 @@ $(function() {
 
     var saveFileForm = function() {
         var form = $(this);
+        if (!lockSubmit(form)) {
+            return false;
+        }
         var formData = new FormData(this);
         $.ajax({
             url: form.attr("action"),
@@ -179,6 +218,14 @@ $(function() {
                 } else {
                     $("#mainModalContent").html(data.html_form);
                 }
+            },
+            error: function() {
+                unlockSubmit(form);
+                Swal.fire({
+                    title: "Something went wrong",
+                    text: "The upload could not be completed. Please try again.",
+                    icon: "error"
+                });
             }
         });
         return false;
@@ -187,12 +234,14 @@ $(function() {
     var saveBulkWorkflowForm = function() {
         var form = $(this);
         var selectedPhases = form.find('input[name="phase_ids[]"]:checked');
-        
+
         if (selectedPhases.length === 0) {
             alert('Please select at least one phase to update.');
             return false;
         }
-        
+        if (!lockSubmit(form)) {
+            return false;
+        }
         $.ajax({
             url: form.attr("action"),
             data: form.serialize(),
@@ -213,6 +262,7 @@ $(function() {
                 }
             },
             error: function(xhr, status, error) {
+                unlockSubmit(form);
                 alert('An error occurred while processing the bulk action.');
             }
         });
@@ -221,6 +271,9 @@ $(function() {
 
     var profileUpdateSkills = function() {
         var form = $(this);
+        if (!lockSubmit(form)) {
+            return false;
+        }
         $.ajax({
             url: form.attr("action"),
             data: form.serialize(),
@@ -236,6 +289,14 @@ $(function() {
                 } else {
                     $("#mainModalContent").html(data.html_form);
                 }
+            },
+            error: function() {
+                unlockSubmit(form);
+                Swal.fire({
+                    title: "Something went wrong",
+                    text: "The action could not be completed. Please try again.",
+                    icon: "error"
+                });
             }
         });
         return false;
