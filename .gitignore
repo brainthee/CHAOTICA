@@ -134,3 +134,6 @@ app/mediafiles/*
 backup/
 
 venv/
+
+# Local-only bug/feedback backlog (never commit)
+bugs.md
