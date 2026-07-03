@@ -141,7 +141,7 @@ class PhaseDetailView(JobPermissionRequiredMixin, PhaseBaseView, DetailView):
         context["feedback_form"] = feedback_form
 
         phase = context["phase"]
-        if phase._start_date and phase._delivery_date:
+        if phase._start_date and phase._delivery_date and phase.status in PhaseStatuses.ACTIVE_STATUSES:
             context["concurrent_phases"] = Phase.objects.filter(
                 job=phase.job,
                 _start_date__lte=phase._delivery_date,
@@ -151,6 +151,7 @@ class PhaseDetailView(JobPermissionRequiredMixin, PhaseBaseView, DetailView):
                     PhaseStatuses.CANCELLED,
                     PhaseStatuses.POSTPONED,
                     PhaseStatuses.DELETED,
+                    PhaseStatuses.ARCHIVED,
                 ]
             )
 

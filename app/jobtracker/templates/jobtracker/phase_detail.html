@@ -25,14 +25,12 @@
 
 <div class="px-5 pt-2">
   {% if concurrent_phases %}
-  <div class="alert alert-info py-2 px-3 mt-2 mb-0 d-flex align-items-center" role="alert">
+  <div class="alert alert-phoenix-warning py-2 px-3 mt-2 mb-0" role="alert">
     <span class="fas fa-layer-group me-2"></span>
-    <span>
-      <strong>Concurrent phases:</strong>
-      {% for cp in concurrent_phases %}
-        <a href="{{ cp.get_absolute_url }}" class="alert-link">{{ cp.title }}</a>{% if not forloop.last %}, {% endif %}
-      {% endfor %}
-    </span>
+    <strong>The following phases are running concurrently with this phase:</strong>
+    {% for cp in concurrent_phases %}
+      <a href="{{ cp.get_absolute_url }}" class="alert-link">{{ cp.title }}</a>{% if not forloop.last %}, {% endif %}
+    {% endfor %}
   </div>
   {% endif %}
 </div>
