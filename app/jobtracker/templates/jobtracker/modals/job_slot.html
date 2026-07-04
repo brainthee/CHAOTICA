@@ -106,6 +106,12 @@
             cancelButtonText: "Cancel"
         }).then(function(result) {
             if (!result.isConfirmed) return;
+            // Busy state while the delete is in flight.
+            Swal.fire({
+                title: "Deleting…",
+                allowOutsideClick: false,
+                didOpen: function() { Swal.showLoading(); }
+            });
             $.ajax({
                 url: url,
                 type: 'POST',
@@ -113,11 +119,14 @@
                 dataType: 'json',
                 success: function(data) {
                     if (data && data.form_is_valid) {
+                        // Close straight away; the schedule/card refreshes run in
+                        // the background so the modal doesn't hang on them.
+                        Swal.close();
+                        $("#mainModal").modal("hide");
                         calendar.refetchEvents();
                         refreshUtilisation();
                         refreshUserBreakdown();
                         refreshPhaseStatus();
-                        $("#mainModal").modal("hide");
                     } else {
                         Swal.fire("Error", "The slot could not be deleted.", "error");
                     }
