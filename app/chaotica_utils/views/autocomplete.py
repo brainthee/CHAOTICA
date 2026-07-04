@@ -20,31 +20,25 @@ SEARCH_REGEX = r'.*{}.*'
 
 @login_required
 def city_autocomplete(request):
-    """AJAX view for city autocomplete that returns JSON compatible with select2"""
     term = request.GET.get('term', '').strip()
-    
-    cities = City.objects.all()
-    
-    if term:
-        cities = cities.filter(
-            Q(name__icontains=term) |
-            Q(search_names__icontains=term)
+    if not term:
+        return JsonResponse({'results': [], 'pagination': {'more': False}})
+
+    from django.db.models import Case, When, Value, IntegerField
+    cities = City.objects.filter(
+        Q(name__icontains=term) | Q(search_names__icontains=term)
+    ).annotate(
+        rank=Case(
+            When(name__iexact=term, then=Value(0)),
+            When(name__istartswith=term, then=Value(1)),
+            When(name__icontains=term, then=Value(2)),
+            default=Value(3),
+            output_field=IntegerField(),
         )
-    
-    # Limit results for performance
-    cities = cities[:50]
-    
-    results = []
-    for city in cities:
-        results.append({
-            'id': city.pk,
-            'text': f"{city.name}, {city.country.name}"
-        })
-    
-    return JsonResponse({
-        'results': results,
-        'pagination': {'more': False}
-    })
+    ).select_related('country').order_by('rank', 'name')[:30]
+
+    results = [{'id': city.pk, 'text': f"{city.name}, {city.country.name}"} for city in cities]
+    return JsonResponse({'results': results, 'pagination': {'more': False}})
 
 class UserAutocomplete(AutoResponseView):
     def get(self, request, *args, **kwargs):

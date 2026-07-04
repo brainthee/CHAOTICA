@@ -385,18 +385,6 @@ class User(AbstractUser):
         # This method is kept for backward compatibility but no longer geocodes
         pass
 
-    def __str__(self):
-        if self.first_name and self.last_name:
-            base_name = "{} {}".format(self.first_name, self.last_name)
-            if self.alias:
-                base_name = "{} ({})".format(base_name, self.alias)
-            if self.city:
-                return "{} - {}".format(base_name, self.city.name)
-            else:
-                return base_name
-        else:
-            return "{}".format(self.email)
-
     def skills_last_updated(self):
         if self.skills.all().count():
             return self.skills.order_by("-last_updated_on").first().last_updated_on

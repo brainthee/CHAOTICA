@@ -43,7 +43,7 @@ Map View
 //Should be this data set: http://data.linz.govt.nz/#/layer/779-nz-street-address-electoral/
 var addressPoints = [
 {% for u in active_users %}
-{% if u.latitude and u.longitude and u.location %}[{{ u.latitude }}, {{ u.longitude }}, "{{ u }} ({{ u.location }})"],{% endif %}
+{% if u.city and u.city.latitude and u.city.longitude %}[{{ u.city.latitude }}, {{ u.city.longitude }}, "{{ u }} ({{ u.city.name }})"],{% endif %}
 {% endfor %}
 ];
 

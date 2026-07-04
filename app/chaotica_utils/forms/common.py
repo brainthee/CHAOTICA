@@ -758,20 +758,26 @@ class EditProfileForm(forms.ModelForm):
     )
 
     city = forms.ModelChoiceField(
-        queryset=City.objects.filter(),
+        queryset=City.objects.all(),
         required=False,
         widget=s2forms.ModelSelect2Widget(
             attrs={
                 'class': 'select2-widget',
-                'data-placeholder': 'Select your city...',
+                'data-placeholder': 'Type to search for your city...',
+                'data-minimum-input-length': '2',
             },
             search_fields=['name__icontains', 'search_names__icontains'],
+            data_url='/autocomplete/cities',
+            data_ajax__cache='true',
+            data_ajax__type='GET',
         ),
     )
 
     def __init__(self, *args, **kwargs):
         self.current_request = kwargs.pop("current_request", None)
         super(EditProfileForm, self).__init__(*args, **kwargs)
+
+        self.fields['city'].widget.label_from_instance = lambda obj: f"{obj.name}, {obj.country.name}"
 
         if getattr(settings, 'CLAMAV_ENABLED', True):
             self.fields['profile_image'].validators.append(validate_file_infection)

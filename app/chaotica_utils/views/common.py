@@ -131,7 +131,7 @@ def maintenance(request):
 @require_http_methods(["POST", "GET"])
 def map_view(request):
     context = {}
-    active_users = User.objects.filter(is_active=True)
+    active_users = User.objects.filter(is_active=True).select_related("city")
     context = {
         "active_users": active_users,
     }

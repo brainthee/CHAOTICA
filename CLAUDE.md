@@ -16,6 +16,7 @@ CHAOTICA is a Django-based engagement lifecycle management tool primarily design
 - `cd app && python manage.py test` - Run test suite
 - `cd app && python manage.py createsuperuser` - Create admin user
 - `cd app && python manage.py download_geoip_db` - Download GeoIP database
+- `cd app && python manage.py cities_light` - Import GeoNames city/country data (required for city autocomplete and map view; run once after initial setup)
 
 ### Database Management
 - `cd app && ./scripts/cleanMigrations.sh` - Clean migrations and SQLite database (development only)
