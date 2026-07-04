@@ -1270,6 +1270,8 @@ class SlotCommentDeleteView(ChaoticaBaseView, DeleteView):
         before = schedule_history.snapshot_comment(self.get_object())
         response = super().form_valid(form)
         schedule_history.record_deletes(self.request.user, [before])
+        if self.request.headers.get("x-requested-with") == "XMLHttpRequest":
+            return JsonResponse({"form_is_valid": True})
         return response
 
     def get_success_url(self):
@@ -1286,6 +1288,11 @@ class ProjectSlotDeleteView(ChaoticaBaseView, DeleteView):
         before = schedule_history.snapshot(self.get_object())
         response = super().form_valid(form)
         schedule_history.record_deletes(self.request.user, [before])
+        # AJAX delete from the scheduler modal — return JSON so the client closes
+        # the modal in place instead of following a redirect to the project page
+        # (that background GET was hanging when the origin is https on an http port).
+        if self.request.headers.get("x-requested-with") == "XMLHttpRequest":
+            return JsonResponse({"form_is_valid": True})
         return response
 
     def get_success_url(self):
