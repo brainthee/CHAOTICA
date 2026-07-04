@@ -91,25 +91,45 @@
         return false;
     };
 
-    var loadForm2 = function() {
+    var deleteSlot = function(e) {
+        e.preventDefault();
         var btn = $(this);
-        var form = $('.js-submit-modal-form')
-        $.ajax({
-            url: btn.attr("data-url"),
-            type: 'POST',
-            data: form.serialize(),
-            dataType: 'json',
-            complete: function(data) {
-                calendar.refetchEvents();
-                refreshUtilisation();
-                refreshUserBreakdown();
-                refreshPhaseStatus();
-                $("#mainModal").modal("hide");
-            }
+        var url = btn.attr("data-url");
+        var form = $('.js-submit-modal-form');
+        Swal.fire({
+            title: "Delete time slot?",
+            text: "This removes the booking from the schedule. You can undo it from the schedule history.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Delete",
+            confirmButtonColor: "#e63757",
+            cancelButtonText: "Cancel"
+        }).then(function(result) {
+            if (!result.isConfirmed) return;
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: form.serialize(),
+                dataType: 'json',
+                success: function(data) {
+                    if (data && data.form_is_valid) {
+                        calendar.refetchEvents();
+                        refreshUtilisation();
+                        refreshUserBreakdown();
+                        refreshPhaseStatus();
+                        $("#mainModal").modal("hide");
+                    } else {
+                        Swal.fire("Error", "The slot could not be deleted.", "error");
+                    }
+                },
+                error: function() {
+                    Swal.fire("Error", "The slot could not be deleted.", "error");
+                }
+            });
         });
     };
 
-    $(".js-load-modal-form").click(loadForm2);
+    $(".js-load-modal-form").click(deleteSlot);
 
     $(".js-submit-modal-form").submit(saveSlotForm);
 

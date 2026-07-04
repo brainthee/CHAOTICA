@@ -35,7 +35,9 @@ from ..forms import (
     ScheduleOnsiteForm,
 )
 from ..enums import UserSkillRatings, TimeSlotDeliveryRole, PhaseStatuses, DefaultTimeSlotTypes
+from ..models import ScheduleAction, ScheduleActionType
 from ..utils import get_scheduler_slots, get_scheduler_members, assigned_role_map
+from .. import schedule_history
 import logging
 from django.contrib.auth.decorators import login_required
 from chaotica_utils.utils import (
@@ -236,6 +238,94 @@ def view_scheduler_members(request):
     return get_scheduler_members(request)
 
 
+def _scope_history_qs(request, source):
+    """Filter the ScheduleAction log to the requested scope. phase param → that
+    phase; job param → that job; neither → recent global activity across all."""
+    job_id = clean_int(source.get("job"))
+    phase_id = clean_int(source.get("phase"))
+    qs = ScheduleAction.objects.select_related("actor").order_by("-created")
+    if phase_id:
+        qs = qs.filter(phase_id=phase_id)
+    elif job_id:
+        qs = qs.filter(job_id=job_id)
+    return qs
+
+
+@login_required
+def schedule_action_history(request):
+    """History panel data: the ScheduleAction log for the current scope, newest
+    first, with a per-action ``can_revert`` computed for the requesting user."""
+    qs = _scope_history_qs(request, request.GET)[:100]
+    actions = []
+    for a in qs:
+        actions.append(
+            {
+                "id": a.pk,
+                "actor": a.actor.get_full_name() if a.actor else "System",
+                "actor_id": a.actor_id,
+                "created": a.created.isoformat(),
+                "action_type": a.action_type,
+                "summary": a.summary,
+                "reverted": a.reverted,
+                "is_revert": a.action_type == ScheduleActionType.REVERT,
+                "can_revert": a.can_revert(request.user),
+            }
+        )
+    return JsonResponse({"actions": actions})
+
+
+@login_required
+def schedule_action_revert(request):
+    """Revert a single ScheduleAction (pk in POST body)."""
+    if request.method != "POST":
+        return HttpResponseBadRequest()
+    pk = clean_int(request.POST.get("pk"))
+    action = get_object_or_404(ScheduleAction, pk=pk)
+    try:
+        inverse = schedule_history.revert(action, request.user)
+    except PermissionDenied:
+        return JsonResponse(
+            {"ok": False, "error": "You don't have permission to revert this change."},
+            status=403,
+        )
+    return JsonResponse({"ok": True, "action_id": inverse.pk if inverse else None})
+
+
+@login_required
+def schedule_action_undo(request):
+    """Ctrl+Z: revert the requesting user's most-recent non-reverted own change in
+    this scope. REVERT actions are excluded so undo walks back through real edits
+    (redo is available from the history panel)."""
+    if request.method != "POST":
+        return HttpResponseBadRequest()
+    qs = _scope_history_qs(request, request.POST).filter(
+        actor=request.user, reverted=False
+    ).exclude(action_type=ScheduleActionType.REVERT)
+    action = qs.first()
+    if not action:
+        return JsonResponse({"ok": False, "error": "Nothing to undo."})
+    inverse = schedule_history.revert(action, request.user)
+    return JsonResponse(
+        {"ok": True, "reverted": action.pk, "action_id": inverse.pk if inverse else None}
+    )
+
+
+@login_required
+def view_scheduler_slots_since(request):
+    """Polling fallback for the live layer: return ScheduleAction deltas committed
+    to this scope since ``since`` (ISO), chronological, so a client without a live
+    WebSocket can still apply add/update/remove deltas instead of full reloads."""
+    from django.utils import timezone as _tz
+
+    since = clean_datetime(request.GET.get("since"))
+    qs = _scope_history_qs(request, request.GET)
+    if since:
+        qs = qs.filter(created__gt=since)
+    actions = list(qs[:200])
+    deltas = [schedule_history.build_delta(a) for a in reversed(actions)]
+    return JsonResponse({"deltas": deltas, "now": _tz.now().isoformat()})
+
+
 @login_required
 def view_own_schedule_timeslots(request):
     # Change FullCalendar format to DateTime
@@ -278,9 +368,14 @@ def change_scheduler_slot_comment_date(request, pk=None):
     _verify_slot_unit_access(request, slot)
     data = dict()
     if request.method == "POST":
+        before = schedule_history.snapshot_comment(slot)
         form = ChangeTimeSlotCommentDateModalForm(request.POST, instance=slot)
         if form.is_valid():
-            form.save()
+            comment = form.save()
+            schedule_history.record(
+                request.user, ScheduleActionType.UPDATE,
+                [before], [schedule_history.snapshot_comment(comment)],
+            )
             data["form_is_valid"] = True
         else:
             data["form_is_valid"] = False
@@ -314,10 +409,15 @@ def change_scheduler_slot_comment(request, pk=None):
     _verify_slot_unit_access(request, slot)
     data = dict()
     if request.method == "POST":
+        before = schedule_history.snapshot_comment(slot)
         form = CommentTimeSlotModalForm(request.POST, instance=slot)
 
         if form.is_valid():
-            form.save()
+            comment = form.save()
+            schedule_history.record(
+                request.user, ScheduleActionType.UPDATE,
+                [before], [schedule_history.snapshot_comment(comment)],
+            )
             data["form_is_valid"] = True
         else:
             data["form_is_valid"] = False
@@ -358,6 +458,7 @@ def change_scheduler_slot_date(request, pk=None):
         })
     data = dict()
     if request.method == "POST":
+        before = schedule_history.snapshot(slot)
         force = request.POST.get("force", None)
         form = ChangeTimeSlotDateModalForm(request.POST, instance=slot)
         if form.is_valid():
@@ -386,6 +487,10 @@ def change_scheduler_slot_date(request, pk=None):
                     )
                     return JsonResponse(_data)
             updated_slot.save()
+            schedule_history.record(
+                request.user, ScheduleActionType.UPDATE,
+                [before], [schedule_history.snapshot(updated_slot)],
+            )
             data["form_is_valid"] = True
         else:
             data["form_is_valid"] = False
@@ -427,6 +532,7 @@ def change_scheduler_slot(request, pk=None):
     data = dict()
 
     if request.method == "POST":
+        before = schedule_history.snapshot(slot)
         force = request.POST.get("force", None)
         if slot.is_delivery():
             form = DeliveryTimeSlotModalForm(request.POST, instance=slot)
@@ -461,6 +567,10 @@ def change_scheduler_slot(request, pk=None):
                     )
                     return JsonResponse(_data)
             updated_slot.save()
+            schedule_history.record(
+                request.user, ScheduleActionType.UPDATE,
+                [before], [schedule_history.snapshot(updated_slot)],
+            )
             data["form_is_valid"] = True
         else:
             data["form_is_valid"] = False
@@ -635,6 +745,7 @@ def _run_batch_create(request, users, build_slot, evaluate, force):
     to_save = clean + (needs_confirm if force else [])
     for _u, s, _e in to_save:
         s.save()
+    data["_saved_slots"] = [s for _u, s, _e in to_save]
     data["form_is_valid"] = True
     if batch:
         summary = "Booked {} {}.".format(len(to_save), "person" if len(to_save) == 1 else "people")
@@ -643,6 +754,14 @@ def _run_batch_create(request, users, build_slot, evaluate, force):
                 len(blocked), ", ".join(str(u) for u, _, _ in blocked))
         data["summary"] = summary
     return data
+
+
+def _record_created(request, data):
+    """Log a CREATE ScheduleAction for slots saved by a create helper, popping the
+    non-serialisable instance list out of the JSON response payload."""
+    slots = data.pop("_saved_slots", None)
+    if data.get("form_is_valid") and slots:
+        schedule_history.record_creates(request.user, slots)
 
 
 def _occupied_dates(user, start, end, slot_type_pks=None):
@@ -768,12 +887,16 @@ def _create_delivery_single(request, base, force):
     if overlap_mode == "around":
         occupied = _occupied_dates(base.user, base.start, base.end)
         runs = working_day_runs(base.user, base.start, base.end, occupied)
+        saved = []
         for run_start, run_end in runs:
-            _clone(_slot_dt(base.user, run_start, "start"),
-                   _slot_dt(base.user, run_end, "end")).save()
+            clone = _clone(_slot_dt(base.user, run_start, "start"),
+                           _slot_dt(base.user, run_end, "end"))
+            clone.save()
+            saved.append(clone)
         created = len(runs)
         return {
             "form_is_valid": True,
+            "_saved_slots": saved,
             "summary": (
                 "Booked {} slot{} around existing commitments.".format(created, "" if created == 1 else "s")
                 if created else "No free working days in that range — nothing booked."
@@ -788,12 +911,13 @@ def _create_delivery_single(request, base, force):
         base.save()
         return {
             "form_is_valid": True,
+            "_saved_slots": [base],
             "summary": "Cleared overlapping delivery/project work and booked the range.",
         }
 
     # over (default) — book the whole range on top of existing slots
     base.save()
-    return {"form_is_valid": True}
+    return {"form_is_valid": True, "_saved_slots": [base]}
 
 
 @unit_permission_required_or_403("jobtracker.can_schedule_job")
@@ -834,6 +958,7 @@ def create_scheduler_internal_slot(request):
 
             # Internal/leave slots have no logic checks — straight batch create.
             data = _run_batch_create(request, users, build_slot, None, None)
+            _record_created(request, data)
         else:
             data = {"form_is_valid": False}
     else:
@@ -890,6 +1015,7 @@ def create_scheduler_project_slot(request):
                 )
 
             data = _run_batch_create(request, users, build_slot, _evaluate_project_slot, force)
+            _record_created(request, data)
         else:
             data = {"form_is_valid": False}
     else:
@@ -961,6 +1087,7 @@ def create_scheduler_phase_slot(request):
                 # Optionally assign the scheduled user as phase lead / report author.
                 if data.get("form_is_valid") and base.phase_id and base.user_id:
                     _apply_phase_role_assignment(request, base.phase, base.user, form)
+            _record_created(request, data)
         else:
             data = {"form_is_valid": False}
     else:
@@ -1008,6 +1135,7 @@ def create_scheduler_comment(request):
                 )
 
             data = _run_batch_create(request, users, build_slot, None, None)
+            _record_created(request, data)
         else:
             data = {"form_is_valid": False}
     else:
@@ -1069,13 +1197,20 @@ def clear_scheduler_range(request):
 
     if request.method == "POST":
         if request.POST.get("user_action") == "approve_action":
+            # Snapshot everything about to be cleared so the CLEAR action is
+            # reversible and can be broadcast.
+            before = [schedule_history.snapshot(s) for s in timeslots]
             if scope_phases is None:
+                before += [schedule_history.snapshot_comment(c) for c in comments]
                 # Per-user split-aware clear (also clears comments)
                 for resource in users:
                     resource.clear_timeslots_in_range(start, end)
                     resource.clear_timeslot_comments_in_range(start, end)
             else:
                 timeslots.delete()
+            schedule_history.record_deletes(
+                request.user, before, action_type=ScheduleActionType.CLEAR
+            )
             data["form_is_valid"] = True
         else:
             data["form_is_valid"] = False
@@ -1101,6 +1236,16 @@ class JobSlotDeleteView(ChaoticaBaseView, DeleteView):
     model = TimeSlot
     template_name = "jobtracker/modals/job_slot_delete.html"
 
+    def form_valid(self, form):
+        before = schedule_history.snapshot(self.get_object())
+        response = super().form_valid(form)
+        schedule_history.record_deletes(self.request.user, [before])
+        # Deletes are triggered over AJAX from the schedule modal — hand back JSON
+        # so the client can close the modal and refresh in place (not a redirect).
+        if self.request.headers.get("x-requested-with") == "XMLHttpRequest":
+            return JsonResponse({"form_is_valid": True})
+        return response
+
     def get_success_url(self):
         if "slug" in self.kwargs:
             slug = self.kwargs["slug"]
@@ -1121,6 +1266,12 @@ class SlotCommentDeleteView(ChaoticaBaseView, DeleteView):
     model = TimeSlotComment
     template_name = "jobtracker/modals/job_slot_comment_delete.html"
 
+    def form_valid(self, form):
+        before = schedule_history.snapshot_comment(self.get_object())
+        response = super().form_valid(form)
+        schedule_history.record_deletes(self.request.user, [before])
+        return response
+
     def get_success_url(self):
         return reverse_lazy("view_scheduler")
 
@@ -1130,6 +1281,12 @@ class ProjectSlotDeleteView(ChaoticaBaseView, DeleteView):
 
     model = TimeSlot
     template_name = "jobtracker/modals/project_slot_delete.html"
+
+    def form_valid(self, form):
+        before = schedule_history.snapshot(self.get_object())
+        response = super().form_valid(form)
+        schedule_history.record_deletes(self.request.user, [before])
+        return response
 
     def get_success_url(self):
         if "slug" in self.kwargs:
@@ -1367,9 +1524,17 @@ def clear_job_schedule(request, slug):
     qs = _get_clear_queryset(job, None, clear_type, clear_id)
 
     if request.method == "POST":
-        count = qs.count()
         description = _get_clear_description(clear_type, clear_id, job, None)
-        qs.delete()
+        # Iterate + delete() per row so history/logging/phase-status recalc fire
+        # (bulk .delete() bypasses them); emit one CLEAR ScheduleAction.
+        slots = list(qs)
+        before = [schedule_history.snapshot(s) for s in slots]
+        for s in slots:
+            s.delete()
+        schedule_history.record_deletes(
+            request.user, before, action_type=ScheduleActionType.CLEAR
+        )
+        count = len(before)
         logger.info("Schedule cleared by %s: %d slots — %s", request.user, count, description)
         return JsonResponse({"form_is_valid": True, "deleted": count})
 
@@ -1393,9 +1558,15 @@ def clear_phase_schedule(request, job_slug, slug):
     qs = _get_clear_queryset(job, phase, clear_type, clear_id)
 
     if request.method == "POST":
-        count = qs.count()
         description = _get_clear_description(clear_type, clear_id, job, phase)
-        qs.delete()
+        slots = list(qs)
+        before = [schedule_history.snapshot(s) for s in slots]
+        for s in slots:
+            s.delete()
+        schedule_history.record_deletes(
+            request.user, before, action_type=ScheduleActionType.CLEAR
+        )
+        count = len(before)
         logger.info("Schedule cleared by %s: %d slots — %s", request.user, count, description)
         return JsonResponse({"form_is_valid": True, "deleted": count})
 
@@ -1419,7 +1590,18 @@ def move_job_schedule_slots(request, slug):
         if form.is_valid():
             from_user = form.cleaned_data["from_user"]
             to_user = form.cleaned_data["to_user"]
-            count = TimeSlot.objects.filter(phase__job=job, user=from_user).update(user=to_user)
+            # Iterate + save() per row so history + logging fire (bulk .update()
+            # bypasses them), and emit one MOVE ScheduleAction covering all rows.
+            slots = list(TimeSlot.objects.filter(phase__job=job, user=from_user))
+            before = [schedule_history.snapshot(s) for s in slots]
+            for s in slots:
+                s.user = to_user
+                s.save()
+            schedule_history.record(
+                request.user, ScheduleActionType.MOVE,
+                before, [schedule_history.snapshot(s) for s in slots],
+            )
+            count = len(slots)
             logger.info("Slots moved by %s: %d slots from %s to %s on job %s", request.user, count, from_user, to_user, job)
             data["form_is_valid"] = True
             data["moved"] = count
@@ -1450,7 +1632,16 @@ def move_phase_schedule_slots(request, job_slug, slug):
         if form.is_valid():
             from_user = form.cleaned_data["from_user"]
             to_user = form.cleaned_data["to_user"]
-            count = phase.timeslots.filter(user=from_user).update(user=to_user)
+            slots = list(phase.timeslots.filter(user=from_user))
+            before = [schedule_history.snapshot(s) for s in slots]
+            for s in slots:
+                s.user = to_user
+                s.save()
+            schedule_history.record(
+                request.user, ScheduleActionType.MOVE,
+                before, [schedule_history.snapshot(s) for s in slots],
+            )
+            count = len(slots)
             logger.info("Slots moved by %s: %d slots from %s to %s on phase %s", request.user, count, from_user, to_user, phase)
             data["form_is_valid"] = True
             data["moved"] = count
@@ -1498,8 +1689,14 @@ def _handle_shift(request, job, phase, template):
                 qs = qs.filter(start__date__gte=timezone.now().date())
             delta = timedelta(days=form.signed_days())
             affected = list(qs.values_list("phase_id", flat=True).distinct())
+            affected_pks = list(qs.values_list("pk", flat=True))
+            before = [schedule_history.snapshot(s) for s in TimeSlot.objects.filter(pk__in=affected_pks)]
             count = qs.update(start=F("start") + delta, end=F("end") + delta)
             _refresh_phase_dates(affected)
+            schedule_history.record(
+                request.user, ScheduleActionType.MOVE,
+                before, [schedule_history.snapshot(s) for s in TimeSlot.objects.filter(pk__in=affected_pks)],
+            )
             n = form.signed_days()
             logger.info(
                 "Schedule shifted by %s: %d slots %+d days on %s",
@@ -1531,8 +1728,14 @@ def _handle_swap(request, job, phase, scheduled_users, template):
             b = form.cleaned_data["user_b"]
             a_ids = list(base.filter(user=a).values_list("pk", flat=True))
             b_ids = list(base.filter(user=b).values_list("pk", flat=True))
+            all_ids = a_ids + b_ids
+            before = [schedule_history.snapshot(s) for s in TimeSlot.objects.filter(pk__in=all_ids)]
             TimeSlot.objects.filter(pk__in=a_ids).update(user=b)
             TimeSlot.objects.filter(pk__in=b_ids).update(user=a)
+            schedule_history.record(
+                request.user, ScheduleActionType.MOVE,
+                before, [schedule_history.snapshot(s) for s in TimeSlot.objects.filter(pk__in=all_ids)],
+            )
             logger.info(
                 "Schedule swap by %s: %s (%d) <-> %s (%d) on %s",
                 request.user, a, len(a_ids), b, len(b_ids), phase or job,
@@ -1564,7 +1767,13 @@ def _handle_onsite(request, job, phase, scheduled_users, template):
             target_user = form.cleaned_data.get("user")
             if target_user:
                 qs = qs.filter(user=target_user)
+            affected_pks = list(qs.values_list("pk", flat=True))
+            before = [schedule_history.snapshot(s) for s in TimeSlot.objects.filter(pk__in=affected_pks)]
             count = qs.update(is_onsite=onsite)
+            schedule_history.record(
+                request.user, ScheduleActionType.UPDATE,
+                before, [schedule_history.snapshot(s) for s in TimeSlot.objects.filter(pk__in=affected_pks)],
+            )
             logger.info(
                 "Schedule onsite=%s by %s: %d slots on %s",
                 onsite, request.user, count, phase or job,
