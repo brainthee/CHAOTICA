@@ -29,7 +29,7 @@
     <span class="fas fa-layer-group me-2"></span>
     <strong>Running alongside:</strong>
     {% for cp in concurrent_phases %}
-      <a href="{{ cp.get_absolute_url }}" class="alert-link">{{ cp.title }}</a>{% if not forloop.last %}, {% endif %}
+      <a href="{{ cp.get_absolute_url }}" class="alert-link">{{ cp.get_id }}: {{ cp.title }}</a>{% if not forloop.last %}, {% endif %}
     {% endfor %}
   </div>
   {% endif %}
@@ -179,6 +179,11 @@ $("#scopePhaseForm").dirty({preventLeaving: true});
     membersUrl: "{% url 'view_phase_schedule_members' phase.job.slug phase.slug %}",
     slotsUrl: "{% url 'view_phase_schedule_slots' phase.job.slug phase.slug %}",
     createUrls: {},
+    scopeId: {{ phase.pk }},
+    historyUrl: "{% url 'schedule_action_history' %}",
+    revertUrl: "{% url 'schedule_action_revert' %}",
+    sinceUrl: "{% url 'view_scheduler_slots_since' %}",
+    wsUrl: "/ws/schedule/phase/{{ phase.pk }}/",
     cards: null
   };
 </script>
