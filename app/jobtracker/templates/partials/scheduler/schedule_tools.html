@@ -46,11 +46,34 @@
         </ul>
       </div>
 
-      {# Move Slots #}
-      <button type="button" class="btn btn-sm btn-phoenix-warning js-load-move-slots-form"
-              data-url="{% if phase %}{% url 'phase_schedule_move_slots' job.slug phase.slug %}{% else %}{% url 'job_schedule_move_slots' job.slug %}{% endif %}">
-        <i class="fas fa-exchange-alt me-1"></i> Move Slots
-      </button>
+      {# Management tools dropdown #}
+      <div class="btn-group">
+        <button type="button" class="btn btn-sm btn-phoenix-warning dropdown-toggle"
+                data-bs-toggle="dropdown" aria-expanded="false">
+          <i class="fas fa-screwdriver-wrench me-1"></i> Tools
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+          <li><h6 class="dropdown-header">Dates</h6></li>
+          <li><a class="dropdown-item js-load-schedule-tool" href="#"
+                 data-url="{% if phase %}{% url 'phase_schedule_shift' job.slug phase.slug %}{% else %}{% url 'job_schedule_shift' job.slug %}{% endif %}">
+            <i class="fas fa-arrows-left-right me-2"></i> Shift schedule&hellip;</a></li>
+
+          <li><hr class="dropdown-divider"></li>
+          <li><h6 class="dropdown-header">People</h6></li>
+          <li><a class="dropdown-item js-load-schedule-tool" href="#"
+                 data-url="{% if phase %}{% url 'phase_schedule_move_slots' job.slug phase.slug %}{% else %}{% url 'job_schedule_move_slots' job.slug %}{% endif %}">
+            <i class="fas fa-exchange-alt me-2"></i> Reassign person&hellip;</a></li>
+          <li><a class="dropdown-item js-load-schedule-tool" href="#"
+                 data-url="{% if phase %}{% url 'phase_schedule_swap' job.slug phase.slug %}{% else %}{% url 'job_schedule_swap' job.slug %}{% endif %}">
+            <i class="fas fa-right-left me-2"></i> Swap two people&hellip;</a></li>
+
+          <li><hr class="dropdown-divider"></li>
+          <li><h6 class="dropdown-header">Location</h6></li>
+          <li><a class="dropdown-item js-load-schedule-tool" href="#"
+                 data-url="{% if phase %}{% url 'phase_schedule_onsite' job.slug phase.slug %}{% else %}{% url 'job_schedule_onsite' job.slug %}{% endif %}">
+            <i class="fas fa-location-dot me-2"></i> Set onsite / remote&hellip;</a></li>
+        </ul>
+      </div>
 
     </div>
   </div>

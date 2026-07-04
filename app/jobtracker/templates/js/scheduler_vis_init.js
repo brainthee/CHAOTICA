@@ -751,25 +751,38 @@
     });
   });
 
-  // Move slots — load modal
-  $(document).on('click', '.js-load-move-slots-form', function () {
+  // Schedule tools (reassign / shift / swap / onsite) — load modal
+  $(document).on('click', '.js-load-schedule-tool, .js-load-move-slots-form', function (e) {
+    e.preventDefault();
     var btn = $(this);
     $.ajax({
       url: btn.attr('data-url'), type: 'get', dataType: 'json',
       success: function (data) { $('#mainModalContent').html(data.html_form); $('#mainModal').modal('show'); }
     });
   });
-  // Move slots — submit
+  // Schedule tools — submit
   $('#mainModal').on('submit', '.js-schedule-tool-form', function () {
     var form = $(this);
+    var btn = form.find('button[type="submit"]');
+    if (form.data('submitting')) return false;
+    form.data('submitting', true);
+    btn.prop('disabled', true);
     $.ajax({
       url: form.attr('action'), data: form.serialize(), type: form.attr('method'), dataType: 'json',
       success: function (data) {
         if (data.form_is_valid) {
           $('#mainModal').modal('hide');
           loadSlots(); loadMembers(); refreshCards();
-          Swal.fire('Moved', data.moved + ' timeslot' + (data.moved !== 1 ? 's' : '') + ' moved.', 'success');
-        } else { $('#mainModalContent').html(data.html_form); }
+          var msg = data.message || ((data.moved || 0) + ' timeslot' + (data.moved !== 1 ? 's' : '') + ' moved.');
+          Swal.fire('Done', msg, 'success');
+        } else {
+          form.data('submitting', false);
+          $('#mainModalContent').html(data.html_form);
+        }
+      },
+      error: function () {
+        form.data('submitting', false); btn.prop('disabled', false);
+        Swal.fire('Error', 'Something went wrong. Please try again.', 'error');
       }
     });
     return false;

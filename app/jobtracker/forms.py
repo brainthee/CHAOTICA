@@ -852,6 +852,104 @@ class MoveScheduleSlotsForm(forms.Form):
         return cleaned_data
 
 
+class ScheduleShiftForm(forms.Form):
+    """Shift every scheduled slot in a job/phase by a whole number of days,
+    preserving each slot's duration and the spacing between them (FEATURE-002)."""
+
+    direction = forms.ChoiceField(
+        label="Direction",
+        choices=(("forward", "Later (push back)"), ("back", "Earlier (bring forward)")),
+        initial="forward",
+    )
+    days = forms.IntegerField(
+        label="Number of days",
+        min_value=1,
+        initial=7,
+        help_text="Weekends and holidays count as days too.",
+    )
+    only_future = forms.BooleanField(
+        label="Only shift slots starting today or later",
+        required=False,
+        initial=False,
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.helper.form_tag = False
+        self.helper.layout = Layout(
+            Row(
+                Column(Field("direction")),
+                Column(Field("days")),
+            ),
+            Field("only_future"),
+        )
+
+    def signed_days(self):
+        n = self.cleaned_data["days"]
+        return n if self.cleaned_data["direction"] == "forward" else -n
+
+
+class ScheduleSwapForm(forms.Form):
+    """Swap all scheduled slots between two people on a job/phase."""
+
+    user_a = forms.ModelChoiceField(
+        queryset=User.objects.none(),
+        label="Person A",
+        widget=s2forms.Select2Widget(attrs={"class": "select2-widget"}),
+    )
+    user_b = forms.ModelChoiceField(
+        queryset=User.objects.none(),
+        label="Person B",
+        widget=s2forms.Select2Widget(attrs={"class": "select2-widget"}),
+    )
+
+    def __init__(self, *args, scheduled_users=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if scheduled_users is not None:
+            self.fields["user_a"].queryset = scheduled_users
+            self.fields["user_b"].queryset = scheduled_users
+        self.helper = FormHelper(self)
+        self.helper.form_tag = False
+        self.helper.layout = Layout(
+            Field("user_a", style="width: 100%;"),
+            Field("user_b", style="width: 100%;"),
+        )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if cleaned_data.get("user_a") and cleaned_data.get("user_a") == cleaned_data.get("user_b"):
+            self.add_error("user_b", "Pick two different people to swap.")
+        return cleaned_data
+
+
+class ScheduleOnsiteForm(forms.Form):
+    """Bulk-set the onsite/remote flag on a job/phase's delivery slots."""
+
+    location = forms.ChoiceField(
+        label="Set all delivery work as",
+        choices=(("onsite", "Onsite"), ("remote", "Remote")),
+        initial="onsite",
+    )
+    user = forms.ModelChoiceField(
+        queryset=User.objects.none(),
+        required=False,
+        label="Limit to person (optional)",
+        widget=s2forms.Select2Widget(attrs={"class": "select2-widget"}),
+    )
+
+    def __init__(self, *args, scheduled_users=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if scheduled_users is not None:
+            self.fields["user"].queryset = scheduled_users
+        self.helper = FormHelper(self)
+        self.helper.form_tag = False
+        self.helper.layout = Layout(
+            Field("location"),
+            Field("user", style="width: 100%;"),
+        )
+
+
 class CommentTimeSlotModalForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         start = None

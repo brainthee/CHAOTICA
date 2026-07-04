@@ -277,6 +277,21 @@ urlpatterns = [
         name="job_schedule_move_slots",
     ),
     path(
+        "job/<str:slug>/schedule/shift",
+        views.shift_job_schedule,
+        name="job_schedule_shift",
+    ),
+    path(
+        "job/<str:slug>/schedule/swap",
+        views.swap_job_schedule,
+        name="job_schedule_swap",
+    ),
+    path(
+        "job/<str:slug>/schedule/set-onsite",
+        views.onsite_job_schedule,
+        name="job_schedule_onsite",
+    ),
+    path(
         "job/<str:slug>/schedule/slot",
         views.change_job_schedule_slot,
         name="change_job_schedule_slot",
@@ -470,6 +485,21 @@ urlpatterns = [
         "job/<str:job_slug>/phase/<str:slug>/schedule/move-slots",
         views.move_phase_schedule_slots,
         name="phase_schedule_move_slots",
+    ),
+    path(
+        "job/<str:job_slug>/phase/<str:slug>/schedule/shift",
+        views.shift_phase_schedule,
+        name="phase_schedule_shift",
+    ),
+    path(
+        "job/<str:job_slug>/phase/<str:slug>/schedule/swap",
+        views.swap_phase_schedule,
+        name="phase_schedule_swap",
+    ),
+    path(
+        "job/<str:job_slug>/phase/<str:slug>/schedule/set-onsite",
+        views.onsite_phase_schedule,
+        name="phase_schedule_onsite",
     ),
     path(
         "job/<str:job_slug>/phase/<str:slug>/assign/<str:field>",

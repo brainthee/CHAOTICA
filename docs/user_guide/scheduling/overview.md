@@ -87,6 +87,17 @@ See [Booking & Validation](validation.md) for exactly which checks run and how t
 
 The right‑click **Clear range** (and the sidebar **Clear** tool on job/phase pages) shows a confirmation listing exactly what will be removed before anything is deleted. On job/phase pages you can also clear by **all / a specific user / a specific role**.
 
+## Management tools (job & phase schedules)
+
+The **Edit Schedule** page for a job or phase has a **Tools** dropdown in the sidebar for bulk operations across the whole schedule (they act on the whole job, or just the phase when opened from a phase schedule):
+
+- **Shift schedule** — move *every* slot earlier or later by a number of days while **preserving each slot's length and the spacing between them**. Handy when a whole engagement slips. Tick *"Only shift slots starting today or later"* to leave already‑completed work where it is.
+- **Reassign person** — move all of one person's slots to another person (onboarding is re‑checked for the destination).
+- **Swap two people** — the two selected people trade all their slots.
+- **Set onsite / remote** — bulk‑set the onsite/remote flag on delivery slots, optionally limited to one person.
+
+Each tool shows a confirmation of what changed. Bulk changes don't run the per‑slot overlap checks, so glance over the timeline afterwards.
+
 ## Exporting the schedule
 
 The **Schedule** tab on a job or phase has an **Export XLSX** button that downloads a themed, client‑ready Excel workbook — handy for sharing a plan with a client or working offline.

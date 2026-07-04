@@ -30,6 +30,9 @@ from ..forms import (
     CommentTimeSlotModalForm,
     ChangeTimeSlotCommentDateModalForm,
     MoveScheduleSlotsForm,
+    ScheduleShiftForm,
+    ScheduleSwapForm,
+    ScheduleOnsiteForm,
 )
 from ..enums import UserSkillRatings, TimeSlotDeliveryRole, PhaseStatuses, DefaultTimeSlotTypes
 from ..utils import get_scheduler_slots, get_scheduler_members, assigned_role_map
@@ -1461,3 +1464,164 @@ def move_phase_schedule_slots(request, job_slug, slug):
         "jobtracker/modals/move_schedule_slots.html", context, request=request
     )
     return JsonResponse(data)
+
+
+# ---------------------------------------------------------------------------
+# Schedule management tools (shift / swap / onsite) — shared job & phase logic
+# ---------------------------------------------------------------------------
+
+def _base_slot_qs(job, phase):
+    """Delivery-schedule timeslots for a job or a single phase."""
+    if phase is not None:
+        return phase.timeslots.all()
+    return TimeSlot.objects.filter(phase__job=job)
+
+
+def _refresh_phase_dates(phase_ids):
+    """Re-derive stored phase dates after a bulk slot change."""
+    for ph in Phase.objects.filter(pk__in=[p for p in phase_ids if p]):
+        ph.save()
+
+
+def _handle_shift(request, job, phase, template):
+    from django.db.models import F
+    from datetime import timedelta
+    from django.utils import timezone
+
+    data = {}
+    base = _base_slot_qs(job, phase)
+    if request.method == "POST":
+        form = ScheduleShiftForm(request.POST)
+        if form.is_valid():
+            qs = base
+            if form.cleaned_data["only_future"]:
+                qs = qs.filter(start__date__gte=timezone.now().date())
+            delta = timedelta(days=form.signed_days())
+            affected = list(qs.values_list("phase_id", flat=True).distinct())
+            count = qs.update(start=F("start") + delta, end=F("end") + delta)
+            _refresh_phase_dates(affected)
+            n = form.signed_days()
+            logger.info(
+                "Schedule shifted by %s: %d slots %+d days on %s",
+                request.user, count, n, phase or job,
+            )
+            when = "later" if n > 0 else "earlier"
+            data["form_is_valid"] = True
+            data["message"] = "{} timeslot{} shifted {} day{} {}.".format(
+                count, "" if count == 1 else "s", abs(n),
+                "" if abs(n) == 1 else "s", when,
+            )
+        else:
+            data["form_is_valid"] = False
+    else:
+        form = ScheduleShiftForm()
+
+    context = {"form": form, "job": job, "phase": phase}
+    data["html_form"] = loader.render_to_string(template, context, request=request)
+    return JsonResponse(data)
+
+
+def _handle_swap(request, job, phase, scheduled_users, template):
+    data = {}
+    base = _base_slot_qs(job, phase)
+    if request.method == "POST":
+        form = ScheduleSwapForm(request.POST, scheduled_users=scheduled_users)
+        if form.is_valid():
+            a = form.cleaned_data["user_a"]
+            b = form.cleaned_data["user_b"]
+            a_ids = list(base.filter(user=a).values_list("pk", flat=True))
+            b_ids = list(base.filter(user=b).values_list("pk", flat=True))
+            TimeSlot.objects.filter(pk__in=a_ids).update(user=b)
+            TimeSlot.objects.filter(pk__in=b_ids).update(user=a)
+            logger.info(
+                "Schedule swap by %s: %s (%d) <-> %s (%d) on %s",
+                request.user, a, len(a_ids), b, len(b_ids), phase or job,
+            )
+            data["form_is_valid"] = True
+            data["message"] = "Swapped {} and {} timeslots between {} and {}.".format(
+                len(a_ids), len(b_ids), a.get_full_name(), b.get_full_name()
+            )
+        else:
+            data["form_is_valid"] = False
+    else:
+        form = ScheduleSwapForm(scheduled_users=scheduled_users)
+
+    context = {"form": form, "job": job, "phase": phase}
+    data["html_form"] = loader.render_to_string(template, context, request=request)
+    return JsonResponse(data)
+
+
+def _handle_onsite(request, job, phase, scheduled_users, template):
+    data = {}
+    base = _base_slot_qs(job, phase).filter(
+        deliveryRole=TimeSlotDeliveryRole.DELIVERY
+    )
+    if request.method == "POST":
+        form = ScheduleOnsiteForm(request.POST, scheduled_users=scheduled_users)
+        if form.is_valid():
+            onsite = form.cleaned_data["location"] == "onsite"
+            qs = base
+            target_user = form.cleaned_data.get("user")
+            if target_user:
+                qs = qs.filter(user=target_user)
+            count = qs.update(is_onsite=onsite)
+            logger.info(
+                "Schedule onsite=%s by %s: %d slots on %s",
+                onsite, request.user, count, phase or job,
+            )
+            data["form_is_valid"] = True
+            data["message"] = "{} delivery timeslot{} set as {}.".format(
+                count, "" if count == 1 else "s", "onsite" if onsite else "remote"
+            )
+        else:
+            data["form_is_valid"] = False
+    else:
+        form = ScheduleOnsiteForm(scheduled_users=scheduled_users)
+
+    context = {"form": form, "job": job, "phase": phase}
+    data["html_form"] = loader.render_to_string(template, context, request=request)
+    return JsonResponse(data)
+
+
+_SHIFT_TMPL = "jobtracker/modals/schedule_shift.html"
+_SWAP_TMPL = "jobtracker/modals/schedule_swap.html"
+_ONSITE_TMPL = "jobtracker/modals/schedule_onsite.html"
+
+
+@job_permission_required_or_403("jobtracker.can_schedule_job", (Job, "slug", "slug"))
+def shift_job_schedule(request, slug):
+    job = get_object_or_404(Job, slug=slug)
+    return _handle_shift(request, job, None, _SHIFT_TMPL)
+
+
+@job_permission_required_or_403("jobtracker.can_schedule_job", (Phase, "slug", "slug"))
+def shift_phase_schedule(request, job_slug, slug):
+    job = get_object_or_404(Job, slug=job_slug)
+    phase = get_object_or_404(Phase, job=job, slug=slug)
+    return _handle_shift(request, job, phase, _SHIFT_TMPL)
+
+
+@job_permission_required_or_403("jobtracker.can_schedule_job", (Job, "slug", "slug"))
+def swap_job_schedule(request, slug):
+    job = get_object_or_404(Job, slug=slug)
+    return _handle_swap(request, job, None, job.team_scheduled(), _SWAP_TMPL)
+
+
+@job_permission_required_or_403("jobtracker.can_schedule_job", (Phase, "slug", "slug"))
+def swap_phase_schedule(request, job_slug, slug):
+    job = get_object_or_404(Job, slug=job_slug)
+    phase = get_object_or_404(Phase, job=job, slug=slug)
+    return _handle_swap(request, job, phase, phase.team_scheduled(), _SWAP_TMPL)
+
+
+@job_permission_required_or_403("jobtracker.can_schedule_job", (Job, "slug", "slug"))
+def onsite_job_schedule(request, slug):
+    job = get_object_or_404(Job, slug=slug)
+    return _handle_onsite(request, job, None, job.team_scheduled(), _ONSITE_TMPL)
+
+
+@job_permission_required_or_403("jobtracker.can_schedule_job", (Phase, "slug", "slug"))
+def onsite_phase_schedule(request, job_slug, slug):
+    job = get_object_or_404(Job, slug=job_slug)
+    phase = get_object_or_404(Phase, job=job, slug=slug)
+    return _handle_onsite(request, job, phase, phase.team_scheduled(), _ONSITE_TMPL)
