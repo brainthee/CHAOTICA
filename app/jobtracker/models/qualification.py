@@ -59,6 +59,13 @@ class Qualification(models.Model):
     short_name = models.CharField(max_length=200, default="")
     slug = models.SlugField(null=False, default="", unique=True)
     tags = models.ManyToManyField(QualificationTag, verbose_name="Tags", blank=True)
+    demonstrated_skills = models.ManyToManyField(
+        "Skill",
+        blank=True,
+        related_name="qualifications",
+        verbose_name="Skills Demonstrated",
+        help_text="Skills this qualification evidences proficiency in",
+    )
     description = models.TextField(blank=True, default="")
     validity_period = models.IntegerField(
         "Validity Period",

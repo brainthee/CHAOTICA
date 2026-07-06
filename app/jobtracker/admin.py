@@ -21,7 +21,6 @@ from .models import (
     Qualification,
     QualificationRecord,
     AwardingBody,
-    Accreditation,
     OrganisationalUnitRole,
     UserSkill,
     TimeSlotType,
@@ -257,13 +256,6 @@ class QualificationRecordResource(resources.ModelResource):
 class QualificationRecordAdmin(ImportExportModelAdmin):
     resource_classes = [QualificationRecordResource]
 admin.site.register(QualificationRecord)
-
-class AccreditationResource(resources.ModelResource):
-    class Meta:
-        model = Accreditation
-class AccreditationAdmin(ImportExportModelAdmin):
-    resource_classes = [AccreditationResource]
-admin.site.register(Accreditation)
 
 
 #### Skill

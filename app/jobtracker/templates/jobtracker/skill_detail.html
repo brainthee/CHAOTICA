@@ -146,6 +146,24 @@
                       </div>
                     </td>
                   </tr>
+                  <tr>
+                    <td class="py-2">
+                      <div class="d-flex align-items-center">
+                        <div class="d-flex bg-info rounded-circle flex-center me-3" style="width:24px; height:24px"></div>
+                        <p class="fw-bold mb-0">Evidenced By</p>
+                      </div>
+                    </td>
+                    <td class="py-2 d-none d-sm-block pe-sm-2">:</td>
+                    <td class="py-2">
+                      <div class="ps-6 ps-sm-0 fw-semi-bold mb-0">
+                        {% for qualification in skill.qualifications.all %}
+                          {% include 'partials/qualification/qualification_badge.html' with qualification=qualification %}
+                        {% empty %}
+                          <span class="text-muted">None</span>
+                        {% endfor %}
+                      </div>
+                    </td>
+                  </tr>
                 </tbody>
               </table>
             </div>
