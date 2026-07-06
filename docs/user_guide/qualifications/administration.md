@@ -40,6 +40,7 @@ Qualifications are the specific certifications or credentials issued by awarding
 | **Awarding Body** | The issuing organisation | Yes |
 | **Description** | Detailed description of the qualification | No |
 | **Tags** | Categories for filtering and organisation | No |
+| **Skills Demonstrated** | The skills this qualification evidences proficiency in | No |
 | **Validity Period** | Number of days the qualification is valid (leave empty for no expiry) | No |
 | **Verification Required** | Whether manager verification is needed for awarded records | No (default: off) |
 | **URL** | Link to the qualification's official page | No |
@@ -85,6 +86,23 @@ When **Verification Required** is enabled on a qualification:
 
 !!! note "Default: Off"
     Verification is off by default. Enable it selectively for qualifications where manager oversight adds value.
+
+## Linking Qualifications to Skills and Services
+
+Qualifications connect to the wider capability model in two ways:
+
+**Skills demonstrated** — On each qualification you can select the skills it evidences (the **Skills Demonstrated** field). These appear:
+
+- as a *Skills Demonstrated* panel on the qualification detail page, and
+- in reverse, under *Evidenced By* on each skill's detail page — so you can see which certifications back a given skill.
+
+**Required / desired qualifications on services** — When editing a **Service** (Operations > Services), you can flag qualifications as *Required* or *Desired* for delivery. The service detail page then shows:
+
+- the required and desired qualification badges, and
+- a *Qualified Personnel* count listing the active users who hold **all** required qualifications (Awarded status only).
+
+!!! tip
+    Mapping skills and qualifications is optional and can be built up over time. Nothing is populated by default — existing qualifications, skills and services are unaffected until you add these links.
 
 ## Qualification Tags
 

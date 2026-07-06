@@ -148,6 +148,30 @@
                       </p>
                     </td>
                   </tr>
+                  {% if service.qualificationsRequired.exists %}
+                  <tr>
+                    <td class="py-2">
+                      <div class="d-flex align-items-center">
+                        <p class="fw-bold mb-0">Qualified <br />Personnel</p>
+                      </div>
+                    </td>
+                    <td class="py-2 d-none d-sm-block pe-sm-2">:</td>
+                    <td class="py-2">
+                      <p class="ps-6 ps-sm-0 fw-semi-bold mb-0">
+                        <span class="badge badge-phoenix {% if users_with_required_quals %}badge-phoenix-success{% else %}badge-phoenix-danger{% endif %} me-2 mb-1">
+                          {{ users_with_required_quals|length }}
+                        </span>
+                        {% for qualuser in users_with_required_quals %}
+                          <a class="text-decoration-none" href="{{ qualuser.get_absolute_url }}">
+                            <span class="badge badge-tag me-2 mb-1">{{ qualuser.get_full_name }}</span>
+                          </a>
+                        {% empty %}
+                          <span class="text-body-tertiary">No one currently holds all required qualifications.</span>
+                        {% endfor %}
+                      </p>
+                    </td>
+                  </tr>
+                  {% endif %}
                   {% endif %}
                 </tbody>
               </table>

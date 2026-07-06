@@ -2559,6 +2559,19 @@ class OrganisationalUnitForm(forms.ModelForm):
 
 
 class QualificationForm(forms.ModelForm):
+    demonstrated_skills = forms.ModelMultipleChoiceField(
+        required=False,
+        queryset=Skill.objects.all().prefetch_related("category"),
+        widget=s2forms.ModelSelect2MultipleWidget(
+            attrs={
+                'class': 'select2-widget',
+                'data-minimum-input-length': 2,
+                'data-ajax--url': '/autocomplete/skills',
+                'data-ajax--cache': 'true',
+                'data-ajax--type': 'GET',
+            },
+        ),
+    )
 
     def __init__(self, *args, **kwargs):
         super(QualificationForm, self).__init__(*args, **kwargs)
@@ -2570,6 +2583,7 @@ class QualificationForm(forms.ModelForm):
         self.fields["validity_period"].label = False
         self.fields["tags"].label = False
         self.fields["description"].label = False
+        self.fields["demonstrated_skills"].label = False
 
     class Meta:
         model = Qualification
@@ -2577,6 +2591,7 @@ class QualificationForm(forms.ModelForm):
             "name",
             "short_name",
             "tags",
+            "demonstrated_skills",
             "description",
             "validity_period",
             "verification_required",

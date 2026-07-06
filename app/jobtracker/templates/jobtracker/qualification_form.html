@@ -86,11 +86,26 @@
                   </div>
 
                   <div class="col-12 col-sm-6 col-xl-12">
-                    <div class="mb-0">
+                    <div class="mb-4">
                       <div class="d-flex flex-wrap mb-2">
                         <h5 class="mb-0 text-1000 me-2">Tags</h5>
                       </div>
                       {{ form.tags|as_crispy_field }}
+                    </div>
+                  </div>
+
+                  <div class="col-12 col-sm-6 col-xl-12">
+                    <div class="mb-4">
+                      <div class="d-flex flex-wrap mb-2">
+                        <h5 class="mb-0 text-1000 me-2">Skills Demonstrated</h5>
+                      </div>
+                      {{ form.demonstrated_skills|as_crispy_field }}
+                    </div>
+                  </div>
+
+                  <div class="col-12 col-sm-6 col-xl-12">
+                    <div class="mb-0">
+                      {{ form.verification_required|as_crispy_field }}
                     </div>
                   </div>
 

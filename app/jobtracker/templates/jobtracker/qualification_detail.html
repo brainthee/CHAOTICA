@@ -150,6 +150,24 @@
 
 </div>
 
+{# Skills demonstrated #}
+<div class="row px-5 g-3 mb-3">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="fa-solid fa-screwdriver-wrench me-2 text-body-tertiary"></i>Skills Demonstrated</h5>
+      </div>
+      <div class="card-body">
+        {% for skill in qualification.demonstrated_skills.all %}
+          {% include 'partials/skill/skill_badge.html' with skill=skill %}
+        {% empty %}
+          <span class="text-body-tertiary">No skills have been mapped to this qualification yet.</span>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
 
 {# Tabs section #}
 <div class="row g-0 mt-3 border-1 border-top bg-body-secondary h-100">

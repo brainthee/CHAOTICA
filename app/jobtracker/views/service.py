@@ -92,6 +92,8 @@ class ServiceDetailView(
         "owners",
         "skillsRequired",
         "skillsDesired",
+        "qualificationsRequired",
+        "qualificationsDesired",
         "phases",
         "phases__job",
         "phases__timeslots",
@@ -106,6 +108,14 @@ class ServiceDetailView(
     permission_required = "jobtracker.view_service"
     accept_global_perms = True
     return_403 = True
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Users holding ALL qualifications required to deliver this service.
+        context["users_with_required_quals"] = list(
+            self.object.get_users_with_required_quals()
+        )
+        return context
 
 
 class ServiceCreateView(ServiceBaseView, PermissionRequiredMixin, CreateView):
