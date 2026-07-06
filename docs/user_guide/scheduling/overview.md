@@ -98,6 +98,15 @@ The **Edit Schedule** page for a job or phase has a **Tools** dropdown in the si
 
 Each tool shows a confirmation of what changed. Bulk changes don't run the per‑slot overlap checks, so glance over the timeline afterwards.
 
+## Change history, undo & live updates
+
+Every change is recorded and reversible. The toolbar's **History** button lists recent
+changes for the current scope and lets you **revert** them (your own always; anyone's
+with the *Can revert any schedule change* permission). **Ctrl/⌘ + Z** undoes your own
+last change. And when you change the schedule, other people viewing the same job, phase
+or the global board see it update **live** — no reload needed. See
+[History, Undo & Live Updates](history.md).
+
 ## Exporting the schedule
 
 The **Schedule** tab on a job or phase has an **Export XLSX** button that downloads a themed, client‑ready Excel workbook — handy for sharing a plan with a client or working offline.
@@ -116,5 +125,6 @@ A **client‑level** export is also available (`Client → Schedule Export`): a 
 - [Booking & Validation](validation.md) — logic checks and the around/over/destructive overlap chooser
 - [Filtering](filtering.md) — controlling which resources and slots are shown
 - [Sidebar Widgets](widgets.md) — utilisation, team allocation and phase‑status panels on job/phase pages
+- [History, Undo & Live Updates](history.md) — the change log, reverting, Ctrl/⌘+Z, and live delta updates
 - [Calendar Feeds](calendar_feeds.md) — subscribing to your schedule in Outlook/Google/etc.
 - [Framework Agreements](../clients/framework_agreements.md) — the budget that drives scheduling checks

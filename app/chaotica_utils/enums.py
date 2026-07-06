@@ -77,6 +77,7 @@ class GlobalRoles:
                 "jobtracker.delete_organisationalunit",
                 "jobtracker.manage_members",
                 "jobtracker.view_users_schedule",
+                "jobtracker.revert_any_scheduleaction",
                 # qualification
                 "jobtracker.view_qualification",
                 "jobtracker.add_qualification",

@@ -47,6 +47,7 @@ Full system access including user management, impersonation, site settings, and 
 | Skill Categories | View, Add, Change, Delete |
 | Skills | View, Add, Change, Delete, View Users |
 | Organisational Units | View, Add, Change, Delete, Manage Members, View User Schedules |
+| Scheduling | Revert Any Schedule Change (`revert_any_scheduleaction`) |
 | Qualifications | View, Add, Change, Delete, View Users |
 | Workflow Tasks | View, Add, Change, Delete |
 | Leave | Manage Leave |

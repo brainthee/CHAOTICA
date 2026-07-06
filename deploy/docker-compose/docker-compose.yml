@@ -3,7 +3,8 @@ version: "3.8"
 services:
   web:
     image: brainthee/chaotica:latest
-    command: gunicorn chaotica.wsgi:application --bind 0.0.0.0:8000
+    # ASGI (uvicorn worker) so the scheduler's live-update WebSockets are served.
+    command: gunicorn chaotica.asgi:application --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
     volumes:
       - static_volume:/app/staticfiles
       - media_volume:/app/mediafiles
@@ -29,8 +30,17 @@ services:
       - DEMO_ENV=true
       - DEMO_USER=admin@demo.chaotica.app
       - DEMO_PASS=DemoAdmin123!
+
+      # Channels layer for the live scheduler WebSockets.
+      - CHANNELS_REDIS_URL=redis://redis:6379/2
     depends_on:
       - db
+      - redis
+
+  redis:
+    image: redis:7-alpine
+    expose:
+      - 6379
 
   db:
     image: mariadb:latest

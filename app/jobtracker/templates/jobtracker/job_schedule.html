@@ -83,6 +83,12 @@
       },
       createExtraParams: "&job={{ job.pk }}",
       clearUrl: "{% url 'job_schedule_clear' job.slug %}",
+      scopeId: {{ job.pk }},
+      historyUrl: "{% url 'schedule_action_history' %}",
+      revertUrl: "{% url 'schedule_action_revert' %}",
+      undoUrl: "{% url 'schedule_action_undo' %}",
+      sinceUrl: "{% url 'view_scheduler_slots_since' %}",
+      wsUrl: "/ws/schedule/job/{{ job.pk }}/",
       cards: {
         util: "{% url 'view_job_schedule_util' job.slug %}",
         userBreakdown: "{% url 'view_job_schedule_user_breakdown' job.slug %}",

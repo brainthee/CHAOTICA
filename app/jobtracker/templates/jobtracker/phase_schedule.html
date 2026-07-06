@@ -86,6 +86,12 @@
       },
       createExtraParams: "&job={{ phase.job.pk }}&phase={{ phase.pk }}",
       clearUrl: "{% url 'phase_schedule_clear' phase.job.slug phase.slug %}",
+      scopeId: {{ phase.pk }},
+      historyUrl: "{% url 'schedule_action_history' %}",
+      revertUrl: "{% url 'schedule_action_revert' %}",
+      undoUrl: "{% url 'schedule_action_undo' %}",
+      sinceUrl: "{% url 'view_scheduler_slots_since' %}",
+      wsUrl: "/ws/schedule/phase/{{ phase.pk }}/",
       cards: {
         util: "{% url 'view_phase_schedule_util' phase.job.slug phase.slug %}",
         userBreakdown: "{% url 'view_phase_schedule_user_breakdown' phase.job.slug phase.slug %}",

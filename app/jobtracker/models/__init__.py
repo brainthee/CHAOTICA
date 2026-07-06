@@ -19,6 +19,7 @@ from .qualification import (
 from .accreditation import Accreditation
 
 from .timeslot import TimeSlot, TimeSlotType,TimeSlotComment
+from .schedule_action import ScheduleAction, ScheduleActionType
 from .orgunit import (
     OrganisationalUnit,
     OrganisationalUnitMember,

@@ -1,0 +1,80 @@
+"""WebSocket consumer for live scheduler delta updates.
+
+A client opens a socket for the scope it is viewing (global / job / phase). On
+connect we authorise against the same ``view_job_schedule`` permission the
+members/slots read views enforce, then join the scope's broadcast group. When a
+mutation commits a ScheduleAction, :mod:`jobtracker.broadcast` fans the delta out
+to the relevant group(s) and each connected client applies it to its vis DataSet.
+"""
+from channels.generic.websocket import AsyncJsonWebsocketConsumer
+from channels.db import database_sync_to_async
+
+
+VIEW_PERM = "jobtracker.view_job_schedule"
+
+
+def _can_view_job(user, job):
+    if not user or not user.is_authenticated:
+        return False
+    if user.has_perm(VIEW_PERM):
+        return True
+    if user.has_perm(VIEW_PERM, job):
+        return True
+    if job.unit and user.has_perm(VIEW_PERM, job.unit):
+        return True
+    try:
+        return user in job.team()
+    except Exception:
+        return False
+
+
+class ScheduleConsumer(AsyncJsonWebsocketConsumer):
+    group_name = None
+
+    async def connect(self):
+        user = self.scope.get("user")
+        if user is None or not user.is_authenticated:
+            await self.close()
+            return
+
+        group = await self._resolve_group(user)
+        if group is None:
+            await self.close()
+            return
+
+        self.group_name = group
+        await self.channel_layer.group_add(self.group_name, self.channel_name)
+        await self.accept()
+
+    async def disconnect(self, code):
+        if self.group_name:
+            await self.channel_layer.group_discard(self.group_name, self.channel_name)
+
+    @database_sync_to_async
+    def _resolve_group(self, user):
+        """Authorise the requested scope and return its broadcast group name, or
+        None if the user may not view it."""
+        from .models import Job, Phase
+
+        kwargs = self.scope["url_route"]["kwargs"]
+        job_id = kwargs.get("job_id")
+        phase_id = kwargs.get("phase_id")
+
+        if phase_id:
+            phase = Phase.objects.select_related("job__unit").filter(pk=phase_id).first()
+            if not phase or not _can_view_job(user, phase.job):
+                return None
+            return "schedule_phase_{}".format(phase_id)
+
+        if job_id:
+            job = Job.objects.select_related("unit").filter(pk=job_id).first()
+            if not job or not _can_view_job(user, job):
+                return None
+            return "schedule_job_{}".format(job_id)
+
+        # Global scope — any authenticated user (mirrors the login-only global views).
+        return "schedule_global"
+
+    # Group message handler: broadcast.py sends {"type": "schedule.delta", ...}.
+    async def schedule_delta(self, event):
+        await self.send_json({"type": "delta", "delta": event["delta"]})

@@ -90,6 +90,27 @@ urlpatterns = [
     path(
         "scheduler/timeslots", views.view_scheduler_slots, name="view_scheduler_slots"
     ),
+    # Schedule version-control / history
+    path(
+        "scheduler/history",
+        views.schedule_action_history,
+        name="schedule_action_history",
+    ),
+    path(
+        "scheduler/action/revert",
+        views.schedule_action_revert,
+        name="schedule_action_revert",
+    ),
+    path(
+        "scheduler/action/undo",
+        views.schedule_action_undo,
+        name="schedule_action_undo",
+    ),
+    path(
+        "scheduler/timeslots/since",
+        views.view_scheduler_slots_since,
+        name="view_scheduler_slots_since",
+    ),
     # Create paths
     path(
         "scheduler/timeslots/phase/create",

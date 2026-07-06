@@ -43,6 +43,8 @@ from ..forms import (
     LinkForm,
 )
 from ..enums import JobStatuses, PhaseStatuses, TimeSlotDeliveryRole, DefaultTimeSlotTypes, LinkType
+from ..models import ScheduleActionType
+from .. import schedule_history
 from .helpers import _process_assign_user, _process_assign_contact
 from chaotica_utils.utils import ext_reverse
 import logging
@@ -209,6 +211,8 @@ def change_job_schedule_slot(request, slug, pk=None):
         slot = get_object_or_404(TimeSlot, pk=pk, phase__job=job)
     data = dict()
     if request.method == "POST":
+        is_new = slot is None
+        before = None if is_new else schedule_history.snapshot(slot)
         form = DeliveryTimeSlotModalForm(request.POST, instance=slot, slug=slug)
         if form.is_valid():
             slot = form.save(commit=False)
@@ -216,6 +220,13 @@ def change_job_schedule_slot(request, slug, pk=None):
                 DefaultTimeSlotTypes.DELIVERY
             )
             slot.save()
+            if is_new:
+                schedule_history.record_creates(request.user, [slot])
+            else:
+                schedule_history.record(
+                    request.user, ScheduleActionType.UPDATE,
+                    [before], [schedule_history.snapshot(slot)],
+                )
             data["form_is_valid"] = True
         else:
             data["form_is_valid"] = False

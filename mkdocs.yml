@@ -44,6 +44,7 @@ nav:
       - Booking & Validation: user_guide/scheduling/validation.md
       - Filtering: user_guide/scheduling/filtering.md
       - Sidebar Widgets: user_guide/scheduling/widgets.md
+      - History, Undo & Live Updates: user_guide/scheduling/history.md
       - Calendar Feeds: user_guide/scheduling/calendar_feeds.md
     - Operations:
       - Managing Leave: user_guide/operations/managing_leave.md

@@ -813,6 +813,205 @@
     if (scopedFit && !didScopedFit) { didScopedFit = true; fitToData(); }
   };
 
+  // =====================================================================
+  // Version control (history + revert + Ctrl+Z) & live delta updates
+  //   Every scheduler mutation commits one ScheduleAction on the server. The
+  //   history panel lists them; revert/undo POST back; and open viewers of the
+  //   same scope receive the action as a delta (WebSocket, else a ?since= poll)
+  //   and apply it to the vis DataSet by pk — no full reload for observers.
+  // =====================================================================
+  var HIST = {
+    listUrl: CFG.historyUrl,
+    revertUrl: CFG.revertUrl,
+    undoUrl: CFG.undoUrl,
+    sinceUrl: CFG.sinceUrl
+  };
+
+  // Scope identifiers passed to the history/since endpoints & revert/undo bodies.
+  function scopeData() {
+    if (CFG.scope === 'job' && CFG.scopeId) return { job: CFG.scopeId };
+    if (CFG.scope === 'phase' && CFG.scopeId) return { phase: CFG.scopeId };
+    return {};
+  }
+  function scopeQuery() {
+    var d = scopeData(), parts = [];
+    for (var k in d) { if (d[k]) parts.push(k + '=' + encodeURIComponent(d[k])); }
+    return parts.join('&');
+  }
+
+  function relTime(iso) {
+    var then = new Date(iso).getTime();
+    if (isNaN(then)) return '';
+    var s = Math.round((Date.now() - then) / 1000);
+    if (s < 60) return 'just now';
+    var m = Math.round(s / 60); if (m < 60) return m + 'm ago';
+    var h = Math.round(m / 60); if (h < 24) return h + 'h ago';
+    var d = Math.round(h / 24); return d + 'd ago';
+  }
+
+  var ACTION_ICONS = {
+    CREATE: 'fa-plus', UPDATE: 'fa-pen', DELETE: 'fa-trash',
+    MOVE: 'fa-arrows-left-right', CLEAR: 'fa-eraser', BATCH: 'fa-layer-group',
+    REVERT: 'fa-rotate-left'
+  };
+
+  function renderHistory(actions) {
+    var $list = $('#sched-history-list');
+    if (!$list.length) return;
+    if (!actions.length) {
+      $list.html('<p class="text-body-secondary small p-3 mb-0">No schedule changes recorded yet.</p>');
+      return;
+    }
+    var html = actions.map(function (a) {
+      var icon = ACTION_ICONS[a.action_type] || 'fa-clock-rotate-left';
+      var revertBtn = a.can_revert
+        ? '<button class="btn btn-sm btn-phoenix-secondary js-revert-action" data-action-id="' + a.id + '" title="Revert this change"><span class="fas fa-rotate-left me-1"></span>Revert</button>'
+        : (a.reverted ? '<span class="badge badge-phoenix badge-phoenix-secondary">reverted</span>' : '');
+      return '' +
+        '<div class="d-flex align-items-start gap-2 px-3 py-2 border-bottom border-translucent' + (a.reverted ? ' opacity-50' : '') + '">' +
+          '<span class="fas ' + icon + ' fs-9 text-body-secondary mt-1"></span>' +
+          '<div class="flex-1 min-w-0">' +
+            '<div class="fw-semibold fs-9 text-truncate">' + escapeHtml(a.summary) + '</div>' +
+            '<div class="text-body-secondary fs-10">' + escapeHtml(a.actor) + ' · ' + relTime(a.created) + '</div>' +
+          '</div>' +
+          '<div class="ms-auto">' + revertBtn + '</div>' +
+        '</div>';
+    }).join('');
+    $list.html(html);
+  }
+
+  function loadHistory() {
+    if (!HIST.listUrl) return;
+    var q = scopeQuery();
+    $.get(HIST.listUrl + (q ? '?' + q : ''), function (data) {
+      renderHistory((data && data.actions) || []);
+    });
+  }
+
+  function afterCommit() {
+    // The actor reconciles authoritatively; observers get the delta broadcast.
+    loadHistory();
+    if (!liveConnected) { loadSlots(); loadMembers(); }
+    refreshCards();
+  }
+
+  function revertAction(id) {
+    if (!HIST.revertUrl) return;
+    loading(true);
+    $.ajax({
+      url: HIST.revertUrl, type: 'POST', dataType: 'json',
+      data: $.extend({ pk: id, csrfmiddlewaretoken: csrf }, scopeData()),
+      success: function (resp) {
+        if (resp && resp.ok) { afterCommit(); }
+        else { Swal.fire('Cannot revert', (resp && resp.error) || 'The change could not be reverted.', 'warning'); }
+      },
+      error: function () { Swal.fire('Error', 'Something went wrong reverting the change.', 'error'); },
+      complete: function () { loading(false); }
+    });
+  }
+
+  function undoLast() {
+    if (!HIST.undoUrl) return;
+    $.ajax({
+      url: HIST.undoUrl, type: 'POST', dataType: 'json',
+      data: $.extend({ csrfmiddlewaretoken: csrf }, scopeData()),
+      success: function (resp) {
+        if (resp && resp.ok) { afterCommit(); }
+      }
+    });
+  }
+
+  $(document).on('click', '#btnHistory', function () { loadHistory(); });
+  $(document).on('click', '.js-revert-action', function () {
+    revertAction($(this).data('action-id'));
+  });
+  $(document).on('shown.bs.offcanvas', '#history-offcanvas', loadHistory);
+
+  // Ctrl/⌘+Z reverts the current user's most-recent own change in this scope.
+  if (!readonly) {
+    document.addEventListener('keydown', function (e) {
+      if (!(e.ctrlKey || e.metaKey) || e.shiftKey || e.altKey) return;
+      if (e.key !== 'z' && e.key !== 'Z') return;
+      var t = e.target || {};
+      var tag = (t.tagName || '').toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || tag === 'select' || t.isContentEditable) return;
+      if ($('.modal.show').length) return;
+      e.preventDefault();
+      undoLast();
+    });
+  }
+
+  // ---- Live delta application (observer side) ----
+  var appliedActions = {};      // action_ids applied here (echo suppression)
+  var refreshTimer = null;
+  function refreshDebounced() {
+    clearTimeout(refreshTimer);
+    refreshTimer = setTimeout(function () { refreshCards(); loadMembers(); loadHistory(); }, 400);
+  }
+
+  function applyDelta(delta) {
+    if (!delta) return;
+    if (delta.action_id) {
+      if (appliedActions[delta.action_id]) return;   // already applied (own echo)
+      appliedActions[delta.action_id] = true;
+    }
+    var touched = false;
+    (delta.upserts || []).forEach(function (e) {
+      // Skip background/holiday rows we didn't originate here.
+      var mapped = mapEvent(e);
+      items.update(mapped);
+      touched = true;
+    });
+    (delta.removals || []).forEach(function (r) {
+      var vid = (r.is_comment ? 'cmt-' : 'slot-') + r.id;
+      if (items.get(vid)) { items.remove(vid); touched = true; }
+    });
+    if (touched) refreshDebounced();
+  }
+
+  // ---- WebSocket transport (with ?since= polling fallback) ----
+  var liveConnected = false;
+  var ws = null;
+  var pollTimer = null;
+  var lastPoll = new Date().toISOString();
+  var wsRetry = null;
+
+  function startPolling() {
+    if (pollTimer || !HIST.sinceUrl) return;
+    pollTimer = setInterval(function () {
+      var q = scopeQuery();
+      $.get(HIST.sinceUrl + '?since=' + encodeURIComponent(lastPoll) + (q ? '&' + q : ''),
+        function (data) {
+          if (!data) return;
+          (data.deltas || []).forEach(applyDelta);
+          if (data.now) lastPoll = data.now;
+        });
+    }, 5000);
+  }
+  function stopPolling() { if (pollTimer) { clearInterval(pollTimer); pollTimer = null; } }
+
+  function connectWs() {
+    if (!CFG.wsUrl || !('WebSocket' in window)) { startPolling(); return; }
+    var proto = location.protocol === 'https:' ? 'wss://' : 'ws://';
+    try { ws = new WebSocket(proto + location.host + CFG.wsUrl); }
+    catch (err) { startPolling(); return; }
+    ws.onopen = function () { liveConnected = true; stopPolling(); };
+    ws.onmessage = function (ev) {
+      try {
+        var msg = JSON.parse(ev.data);
+        if (msg && msg.type === 'delta') applyDelta(msg.delta);
+      } catch (e) { /* ignore malformed frames */ }
+    };
+    ws.onclose = function () {
+      liveConnected = false;
+      startPolling();                       // degrade to polling while disconnected
+      clearTimeout(wsRetry);
+      wsRetry = setTimeout(connectWs, 8000); // and keep trying to restore the socket
+    };
+    ws.onerror = function () { try { ws.close(); } catch (e) {} };
+  }
+  connectWs();
+
   // ---- Initial load ----
   loadMembers();
   loadSlots();

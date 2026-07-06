@@ -335,6 +335,9 @@ TWILIO_SERVICESID = os.environ.get("TWILIO_SERVICESID", default="Hunter2")
 
 # Application definition
 DEFAULT_APPS = [
+    # daphne must be first so it overrides the runserver command with the ASGI
+    # server (needed for the scheduler's live WebSocket delta updates).
+    "daphne",
     # Have to add these here as they must be loaded in before everything else
     "django.contrib.admin",
     "django.contrib.admindocs",
@@ -375,6 +378,7 @@ THIRD_PARTY_APPS = [
     "corsheaders",
     "csp",
     "cities_light",  # City database for location validation
+    "channels",  # ASGI / WebSockets for live scheduler updates
 ]
 LOCAL_APPS = [
     "chaotica_utils",
@@ -563,6 +567,21 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "chaotica.wsgi.application"
+ASGI_APPLICATION = "chaotica.asgi.application"
+
+# Channels layer — backs the per-scope groups the scheduler broadcasts deltas to.
+# Uses a separate Redis db from the cache (db 1) to keep pub/sub isolated.
+CHANNELS_REDIS_URL = os.environ.get(
+    "CHANNELS_REDIS_URL", default="redis://127.0.0.1:6379/2"
+)
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [CHANNELS_REDIS_URL],
+        },
+    },
+}
 
 
 # Database
