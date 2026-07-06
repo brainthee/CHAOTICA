@@ -112,6 +112,26 @@
                       </div>
                     </div>
                   </div>
+
+                  <div class="row gx-3">
+                    <h4 class="text-center">Qualifications</h4>
+                    <div class="col-12 col-sm-6 col-xl-12">
+                      <div class="mb-4">
+                        <div class="d-flex flex-wrap mb-2">
+                          <h6 class="mb-0 text-1000 me-2">Required</h6>
+                        </div>
+                        {{ form.qualificationsRequired|as_crispy_field }}
+                      </div>
+                    </div>
+                    <div class="col-12 col-sm-6 col-xl-12">
+                      <div class="mb-4">
+                        <div class="d-flex flex-wrap mb-2">
+                          <h6 class="mb-0 text-1000 me-2">Desired</h6>
+                        </div>
+                        {{ form.qualificationsDesired|as_crispy_field }}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

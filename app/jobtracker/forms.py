@@ -2600,6 +2600,21 @@ class QualificationSelect2Widget(s2forms.ModelSelect2Widget):
         )
 
 
+class QualificationSelect2MultipleWidget(s2forms.ModelSelect2MultipleWidget):
+    search_fields = ['name__icontains']  # fallback, not actually used
+
+    def filter_queryset(self, request, term, queryset=None, **kwargs):
+        if queryset is None:
+            queryset = self.get_queryset()
+        q = term.lower()
+        return queryset.annotate(
+            lower_name=Lower("name"),
+            lower_short_name=Lower("short_name"),
+        ).filter(
+            Q(lower_name__contains=q) | Q(lower_short_name__contains=q)
+        )
+
+
 class OwnQualificationRecordForm(forms.ModelForm):
 
     qualification = forms.ModelChoiceField(
@@ -3074,6 +3089,28 @@ class ServiceForm(forms.ModelForm):
         ),
     )
 
+    qualificationsRequired = forms.ModelMultipleChoiceField(
+        required=False,
+        queryset=Qualification.objects.all().select_related("awarding_body"),
+        widget=QualificationSelect2MultipleWidget(
+            attrs={
+                'class': 'select2-widget',
+                'data-minimum-input-length': 0,
+            },
+        ),
+    )
+
+    qualificationsDesired = forms.ModelMultipleChoiceField(
+        required=False,
+        queryset=Qualification.objects.all().select_related("awarding_body"),
+        widget=QualificationSelect2MultipleWidget(
+            attrs={
+                'class': 'select2-widget',
+                'data-minimum-input-length': 0,
+            },
+        ),
+    )
+
     description = forms.CharField(
         required=False,
         widget=TinyMCE(
@@ -3095,6 +3132,8 @@ class ServiceForm(forms.ModelForm):
         self.fields["link"].label = False
         self.fields["skillsRequired"].label = False
         self.fields["skillsDesired"].label = False
+        self.fields["qualificationsRequired"].label = False
+        self.fields["qualificationsDesired"].label = False
     
     def save(self, commit=True):
         instance = super().save(commit=commit)
@@ -3126,6 +3165,8 @@ class ServiceForm(forms.ModelForm):
             "is_core",
             "skillsRequired",
             "skillsDesired",
+            "qualificationsRequired",
+            "qualificationsDesired",
         ]
 
 

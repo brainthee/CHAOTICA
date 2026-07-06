@@ -1,0 +1,214 @@
+{% load static %}
+{% comment %}
+  Scheduling Assistant modal. Injected into #mainModalContent.
+  Context (phase scope): job, phase, service, candidates, required_days,
+    signal_states, scope='phase', filter_form.
+  Context (job scope):   job, results {service: [candidates]}, required_days,
+    signal_states, scope='job'.
+{% endcomment %}
+<div class="modal-dialog modal-xl modal-dialog-scrollable" role="document"
+     id="assistantModalRoot"
+     data-scope="{{ scope }}"
+     data-assistant-url="{% if scope == 'phase' %}{% url 'phase_scheduling_assistant' phase.job.slug phase.slug %}{% else %}{% url 'job_scheduling_assistant' job.slug %}{% endif %}"
+     {% if scope == 'phase' %}data-plan-url="{% url 'phase_scheduling_assistant_plan' phase.job.slug phase.slug %}"{% endif %}
+     data-total-days="{{ total_days|default:required_days }}"
+     {% if scope == 'phase' %}data-org-unit="{{ phase.job.unit.pk }}"{% else %}data-org-unit="{{ job.unit.pk }}"{% endif %}>
+  <div class="modal-content">
+    <div class="modal-header">
+      <div>
+        <h5 class="modal-title mb-0"><i class="fas fa-wand-magic-sparkles me-2"></i>Suggested people</h5>
+        <p class="mb-0 fs-9 text-body-tertiary">
+          {% if scope == 'phase' %}
+            {{ service }} &middot;
+            {% if people > 1 %}
+              {{ total_days }} day{{ total_days|pluralize }} over {{ people }} people (~{{ required_days }} each)
+            {% else %}
+              {{ required_days }} working day{{ required_days|pluralize }}
+            {% endif %}
+            {% if phase.start_date %}&middot; from {{ phase.start_date|date:'d M Y' }}{% endif %}
+            &middot; {{ phase.job.client }}
+          {% else %}
+            {{ job }} &middot; indicative services &middot; {{ required_days }} working day{{ required_days|pluralize }}
+          {% endif %}
+        </p>
+      </div>
+      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+
+    <div class="modal-body">
+      {% if scope == 'phase' %}
+      {# ---- Utilisation strip + primary "plan split" action (top) ---- #}
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3 p-2 rounded bg-body-secondary">
+        <div class="fs-9">
+          <span class="text-body-secondary">Delivery:</span>
+          Scoped <strong>{{ stats.scoped }}d</strong>
+          &middot; Scheduled <strong>{{ stats.scheduled }}d</strong>
+          &middot;
+          {% if stats.over %}
+            <span class="text-danger fw-bold">Over-scoped by {{ stats.over_by }}d</span>
+          {% else %}
+            Remaining <strong class="text-success">{{ stats.remaining }}d</strong>
+          {% endif %}
+        </div>
+        <button type="button" class="btn btn-sm btn-primary" id="assistant-plan-open" disabled>
+          <i class="fas fa-diagram-project me-1"></i> Plan split (<span id="assistant-plan-count">0</span>)
+        </button>
+      </div>
+      {% endif %}
+
+      {# ---- Controls ---- #}
+      <div class="d-flex flex-wrap align-items-center gap-3 mb-3 pb-3 border-bottom border-translucent">
+        {% if scope == 'phase' %}
+        <div class="d-flex align-items-center gap-1">
+          <label class="fs-9 text-body-secondary mb-0">Days to plan</label>
+          <input type="number" min="1" class="form-control form-control-sm" style="width:4.5rem"
+                 id="assistant-total-days" value="{{ total_days }}">
+        </div>
+        <div class="d-flex align-items-center gap-1">
+          <label class="fs-9 text-body-secondary mb-0">Split across</label>
+          <input type="number" min="1" max="20" class="form-control form-control-sm" style="width:4rem"
+                 id="assistant-people" value="{{ people }}">
+          <span class="fs-9 text-body-secondary">people (~{{ required_days }}d each)</span>
+        </div>
+        {% else %}
+        <div class="d-flex align-items-center gap-1">
+          <label class="fs-9 text-body-secondary mb-0">Days</label>
+          <input type="number" min="1" class="form-control form-control-sm" style="width:5rem"
+                 id="assistant-days" value="{{ required_days }}">
+        </div>
+        {% endif %}
+        <div class="vr d-none d-md-block"></div>
+        <div class="d-flex flex-wrap align-items-center gap-3">
+          <span class="fs-9 text-body-secondary">Signals:</span>
+          <div class="form-check form-check-inline mb-0">
+            <input class="form-check-input assistant-signal" type="checkbox" id="sig_onboarding" data-param="sig_onboarding" {% if signal_states.onboarding %}checked{% endif %}>
+            <label class="form-check-label fs-9" for="sig_onboarding">Onboarding</label>
+          </div>
+          <div class="form-check form-check-inline mb-0">
+            <input class="form-check-input assistant-signal" type="checkbox" id="sig_history" data-param="sig_history" {% if signal_states.history %}checked{% endif %}>
+            <label class="form-check-label fs-9" for="sig_history">History</label>
+          </div>
+          <div class="form-check form-check-inline mb-0">
+            <input class="form-check-input assistant-signal" type="checkbox" id="sig_quals" data-param="sig_quals" {% if signal_states.qualifications %}checked{% endif %}>
+            <label class="form-check-label fs-9" for="sig_quals">Qualifications</label>
+          </div>
+          <div class="form-check form-check-inline mb-0">
+            <input class="form-check-input assistant-signal" type="checkbox" id="sig_seniority" data-param="sig_seniority" {% if signal_states.seniority %}checked{% endif %}>
+            <label class="form-check-label fs-9" for="sig_seniority">Seniority</label>
+          </div>
+        </div>
+        <div class="ms-auto">
+          <button type="button" class="btn btn-sm btn-phoenix-secondary" id="assistant-refresh">
+            <i class="fas fa-rotate me-1"></i> Update
+          </button>
+        </div>
+      </div>
+
+      <div id="assistant-results">
+        {% if scope == 'phase' %}
+          {% include 'partials/scheduler/scheduling_assistant_results.html' with candidates=candidates scope='phase' phase=phase %}
+        {% else %}
+          {% for svc, svc_candidates in results.items %}
+            <div class="mb-3">
+              <button class="btn btn-link p-0 fw-bold text-decoration-none" type="button"
+                      data-bs-toggle="collapse" data-bs-target="#svc-{{ svc.pk }}" aria-expanded="true">
+                <i class="fas fa-caret-down me-1"></i>{{ svc }} <span class="text-body-tertiary fw-normal">({{ svc_candidates|length }})</span>
+              </button>
+              <div class="collapse show" id="svc-{{ svc.pk }}">
+                {% include 'partials/scheduler/scheduling_assistant_results.html' with candidates=svc_candidates scope='job' %}
+              </div>
+            </div>
+          {% empty %}
+            <p class="text-body-tertiary">This job has no indicative services set.</p>
+          {% endfor %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var root = document.getElementById('assistantModalRoot');
+  if (!root) return;
+  var baseUrl = root.getAttribute('data-assistant-url');
+  var planUrl = root.getAttribute('data-plan-url');
+  var orgUnit = root.getAttribute('data-org-unit');
+  var totalDays = root.getAttribute('data-total-days');
+  var csrf = $('input[name="csrfmiddlewaretoken"]').val();
+
+  function buildUrl() {
+    var params = ['org_units=' + encodeURIComponent(orgUnit)];
+    // Phase scope: total scoped days + how many people to split across.
+    var totalDays = $('#assistant-total-days').val();
+    if (totalDays) params.push('total_days=' + encodeURIComponent(totalDays));
+    var people = $('#assistant-people').val();
+    if (people) params.push('people=' + encodeURIComponent(people));
+    // Job scope: a single per-person day count.
+    var days = $('#assistant-days').val();
+    if (days) params.push('days=' + encodeURIComponent(days));
+    // Presence of any sig_* param signals "toggles submitted" to the server.
+    $('.assistant-signal').each(function () {
+      if (this.checked) params.push(this.getAttribute('data-param') + '=1');
+    });
+    // Always include a sentinel so the server knows toggles were submitted even
+    // when every optional signal is unchecked.
+    params.push('toggled=1');
+    return baseUrl + '?' + params.join('&');
+  }
+
+  function reload() {
+    $('.js-load-modal-form').prop('disabled', true);
+    $.get(buildUrl(), function (d) {
+      $('#mainModalContent').html(d.html_form);
+      $('#mainModal').modal('show');
+    });
+  }
+
+  $('#assistant-refresh').on('click', reload);
+  $('#assistant-days, #assistant-total-days, #assistant-people').on('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); reload(); }
+  });
+  // Re-rank immediately when the split count changes (the common lever).
+  $('#assistant-people').on('change', reload);
+
+  // Split-team planner: track selected people and open the planner.
+  function refreshPlanCount() {
+    var n = $('.js-plan-select:checked').length;
+    $('#assistant-plan-count').text(n);
+    $('#assistant-plan-open').prop('disabled', n < 1);
+  }
+  $('#assistant-results').on('change', '.js-plan-select', refreshPlanCount);
+  $('#assistant-plan-open').on('click', function () {
+    if (!planUrl) return;
+    var users = $('.js-plan-select:checked').map(function () { return $(this).data('user'); }).get();
+    if (!users.length) return;
+    var url = planUrl + '?users=' + encodeURIComponent(users.join(',')) +
+              '&total_days=' + encodeURIComponent(totalDays) + '&coverage=sequential';
+    $.get(url, function (d) { $('#mainModalContent').html(d.html_form); $('#mainModal').modal('show'); });
+  });
+
+  // Book -> open the phase booking modal prefilled (creates a tentative slot).
+  $('#assistant-results').on('click', '.js-assistant-book', function () {
+    var b = $(this);
+    if (typeof window.schedulerAssistantBook === 'function') {
+      window.schedulerAssistantBook(b.data('user'), b.data('start'), b.data('end'));
+    }
+  });
+
+  // Assign as lead / author (one-click POST to the existing endpoint).
+  $('#assistant-results').on('click', '.js-assistant-assign', function () {
+    var b = $(this);
+    b.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+    $.post(b.data('url'), { user: b.data('user'), csrfmiddlewaretoken: csrf }, function (d) {
+      if (d && d.form_is_valid) {
+        b.removeClass('btn-phoenix-secondary').addClass('btn-phoenix-success')
+         .html('<i class="fas fa-check me-1"></i>' + b.data('label') + 'ed');
+        if (typeof window.schedulerAssistantRefresh === 'function') window.schedulerAssistantRefresh();
+      } else {
+        b.prop('disabled', false).html(b.data('label'));
+      }
+    }).fail(function () { b.prop('disabled', false).html(b.data('label')); });
+  });
+})();
+</script>

@@ -113,6 +113,42 @@
                       </p>
                     </td>
                   </tr>
+                  {% if service.qualificationsRequired.exists or service.qualificationsDesired.exists %}
+                  <tr>
+                    <td class="py-2">
+                      <div class="d-flex align-items-center">
+                        <p class="fw-bold mb-0">Required <br />Qualifications</p>
+                      </div>
+                    </td>
+                    <td class="py-2 d-none d-sm-block pe-sm-2">:</td>
+                    <td class="py-2">
+                      <p class="ps-6 ps-sm-0 fw-semi-bold mb-0">
+                        {% for qualification in service.qualificationsRequired.all %}
+                          {% include 'partials/qualification/qualification_badge.html' with qualification=qualification %}
+                        {% empty %}
+                          <span class="text-body-tertiary">None</span>
+                        {% endfor %}
+                      </p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="py-2">
+                      <div class="d-flex align-items-center">
+                        <p class="fw-bold mb-0">Desired <br />Qualifications</p>
+                      </div>
+                    </td>
+                    <td class="py-2 d-none d-sm-block pe-sm-2">:</td>
+                    <td class="py-2">
+                      <p class="ps-6 ps-sm-0 fw-semi-bold mb-0">
+                        {% for qualification in service.qualificationsDesired.all %}
+                          {% include 'partials/qualification/qualification_badge.html' with qualification=qualification %}
+                        {% empty %}
+                          <span class="text-body-tertiary">None</span>
+                        {% endfor %}
+                      </p>
+                    </td>
+                  </tr>
+                  {% endif %}
                 </tbody>
               </table>
             </div>
