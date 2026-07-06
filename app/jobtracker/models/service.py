@@ -1,6 +1,7 @@
 from django.db import models
-from ..enums import JobStatuses, PhaseStatuses, FeedbackType, LinkType, UserSkillRatings
+from ..enums import JobStatuses, PhaseStatuses, FeedbackType, LinkType, UserSkillRatings, QualificationStatus
 from ..models.skill import Skill, UserSkill
+from ..models.qualification import Qualification
 from ..models.phase import Phase
 from django.conf import settings
 from django.db.models import Q
@@ -44,6 +45,14 @@ class Service(models.Model):
         Skill, blank=True, related_name="services_skill_desired",
         help_text="Skills desired but not essential",
     )
+    qualificationsRequired = models.ManyToManyField(
+        Qualification, blank=True, related_name="services_qual_required",
+        help_text="Qualifications required to perform this service",
+    )
+    qualificationsDesired = models.ManyToManyField(
+        Qualification, blank=True, related_name="services_qual_desired",
+        help_text="Qualifications desired but not essential",
+    )
     is_core = models.BooleanField(
         "Is Core Service", help_text="If checked, this service is considered critical",
         default=False
@@ -58,25 +67,16 @@ class Service(models.Model):
         return self.name
 
     def can_conduct(self):
-        # Return users who have a userskill
-        return User.objects.filter(
-            skills__in=UserSkill.objects.filter(
-                Q(rating=UserSkillRatings.CAN_DO_WITH_SUPPORT),
-                skill__in=self.skillsRequired.all(),
-            ),
-            is_active=True,
+        """Active users who can deliver this service with support or better —
+        i.e. who hold EVERY required skill at 'Can Do With Support' or above."""
+        return self._users_with_required_skills_at_least(
+            UserSkillRatings.CAN_DO_WITH_SUPPORT
         )
 
     def can_lead(self):
-        # Return users who have a userskill
-        return User.objects.filter(
-            skills__in=UserSkill.objects.filter(
-                Q(rating=UserSkillRatings.SPECIALIST)
-                | Q(rating=UserSkillRatings.CAN_DO_ALONE), 
-                skill__in=self.skillsRequired.all(),
-            ),
-            is_active=True,
-        )
+        """Active users who can lead this service — hold EVERY required skill at
+        'Can Do Alone' or above (includes specialists)."""
+        return self._users_with_required_skills_at_least(UserSkillRatings.CAN_DO_ALONE)
 
     def get_absolute_url(self):
         if not self.slug:
@@ -84,76 +84,90 @@ class Service(models.Model):
             self.save()
         return reverse("service_detail", kwargs={"slug": self.slug})
 
-    def get_users_specialist(self):
-        """Get users who are specialists in ALL required skills - optimized"""
+    def _users_with_required_skills_at_least(self, min_rating):
+        """Active users who hold EVERY required skill at ``min_rating`` or better.
+
+        Counts DISTINCT required skills meeting the rating on a single relation
+        join. The previous implementation used ``Count('skills', filter=…)`` while
+        also filtering ``skills__rating`` in the base query — that produced wrong
+        counts (join multiplication over the M2M) and silently returned nobody for
+        the support tier. Counting the distinct skill and keeping the rating
+        condition only inside the aggregate avoids that.
+        """
         from django.db.models import Count, Q
-        required_skills_count = self.skillsRequired.count()
+        required = self.skillsRequired.all()
+        required_skills_count = required.count()
         if not required_skills_count:
             return User.objects.none()
 
         return User.objects.filter(
-            skills__skill__in=self.skillsRequired.all(),
-            skills__rating=UserSkillRatings.SPECIALIST,
+            skills__skill__in=required,
             is_active=True,
         ).annotate(
-            specialist_count=Count('skills', filter=Q(
-                skills__skill__in=self.skillsRequired.all(),
-                skills__rating=UserSkillRatings.SPECIALIST
-            ))
-        ).filter(specialist_count=required_skills_count).distinct()
+            _met=Count(
+                "skills__skill",
+                distinct=True,
+                filter=Q(skills__skill__in=required, skills__rating__gte=min_rating),
+            )
+        ).filter(_met=required_skills_count).distinct()
+
+    def get_users_specialist(self):
+        """Users who are specialists in ALL required skills."""
+        return self._users_with_required_skills_at_least(UserSkillRatings.SPECIALIST)
 
     def get_users_can_do_alone(self):
-        """Get users who can do the service independently - optimized"""
-        from django.db.models import Count, Q
-        required_skills_count = self.skillsRequired.count()
-        if not required_skills_count:
-            return User.objects.none()
-
-        return User.objects.filter(
-            skills__skill__in=self.skillsRequired.all(),
-            skills__rating__in=[UserSkillRatings.SPECIALIST, UserSkillRatings.CAN_DO_ALONE],
-            is_active=True,
-        ).annotate(
-            independent_count=Count('skills', filter=Q(
-                skills__skill__in=self.skillsRequired.all(),
-                skills__rating__in=[UserSkillRatings.SPECIALIST, UserSkillRatings.CAN_DO_ALONE]
-            ))
-        ).filter(independent_count=required_skills_count).distinct()
+        """Users who can deliver the service independently (every required skill at
+        Can Do Alone or better — includes specialists)."""
+        return self._users_with_required_skills_at_least(UserSkillRatings.CAN_DO_ALONE)
 
     def get_users_can_do_with_support(self):
-        """Get users who have ALL required skills but need support - optimized"""
-        from django.db.models import Count, Q
-        required_skills_count = self.skillsRequired.count()
-        if not required_skills_count:
-            return User.objects.none()
-
-        # Users who have all required skills
-        users_with_all_skills = User.objects.filter(
-            skills__skill__in=self.skillsRequired.all(),
-            is_active=True,
-        ).annotate(
-            total_skills_count=Count('skills', filter=Q(skills__skill__in=self.skillsRequired.all()))
-        ).filter(total_skills_count=required_skills_count)
-
-        # Of those, find users who have at least one skill requiring support
-        return users_with_all_skills.filter(
-            skills__skill__in=self.skillsRequired.all(),
-            skills__rating=UserSkillRatings.CAN_DO_WITH_SUPPORT
-        ).distinct()
+        """Users who hold ALL required skills but need support in at least one
+        (i.e. can conduct with support, but can't do the whole service alone)."""
+        can_conduct = self._users_with_required_skills_at_least(
+            UserSkillRatings.CAN_DO_WITH_SUPPORT
+        )
+        can_alone_ids = self.get_users_can_do_alone().values_list("id", flat=True)
+        return can_conduct.exclude(id__in=list(can_alone_ids))
 
     def get_users_missing_skills(self):
-        """Get users who have some but not all required skills - optimized"""
+        """Active users who hold SOME but not all required skills."""
         from django.db.models import Count, Q
-        required_skills_count = self.skillsRequired.count()
+        required = self.skillsRequired.all()
+        required_skills_count = required.count()
         if not required_skills_count:
             return User.objects.none()
 
         return User.objects.filter(
-            skills__skill__in=self.skillsRequired.all(),
+            skills__skill__in=required,
             is_active=True,
         ).annotate(
-            partial_skills_count=Count('skills', filter=Q(skills__skill__in=self.skillsRequired.all()))
-        ).filter(partial_skills_count__lt=required_skills_count).distinct()
+            _held=Count("skills__skill", distinct=True, filter=Q(skills__skill__in=required))
+        ).filter(_held__lt=required_skills_count).distinct()
+
+    def get_users_with_required_quals(self):
+        """Users holding ALL required qualifications (AWARDED). Empty qs when the
+        service defines no required qualifications (callers treat that as 'no
+        constraint')."""
+        from django.db.models import Count, Q
+        required = self.qualificationsRequired.all()
+        required_count = required.count()
+        if not required_count:
+            return User.objects.none()
+
+        return User.objects.filter(
+            qualifications__qualification__in=required,
+            qualifications__status=QualificationStatus.AWARDED,
+            is_active=True,
+        ).annotate(
+            _held=Count(
+                "qualifications__qualification",
+                distinct=True,
+                filter=Q(
+                    qualifications__qualification__in=required,
+                    qualifications__status=QualificationStatus.AWARDED,
+                ),
+            )
+        ).filter(_held=required_count).distinct()
 
     def get_service_readiness_breakdown(self):
         """Get comprehensive breakdown of service readiness including desired skills - cached and optimized"""

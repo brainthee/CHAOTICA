@@ -43,6 +43,7 @@ Users without `can_schedule_job` can look but not change anything — the create
 - **Zoom** buttons and quick‑zoom presets (2w / 2m / 6m / 1y) are in the toolbar.
 - **Today** re‑centres on the current week; **Fit** zooms to the *actual data* (the earliest→latest booking in scope), so repeatedly pressing Fit is stable rather than creeping outward.
 - **Pan / Select** mode toggle: *Pan* (default) drags the timeline; *Select* lets you drag a box across rows and dates to act on several people at once (see below).
+- **Other slots** toggle (job/phase views): show or hide the faded commitments that aren't part of this job/phase. Hide them when the view gets noisy and you only care about this job/phase's bookings; your choice is remembered per browser.
 
 ## Booking work
 
@@ -122,6 +123,7 @@ A **client‑level** export is also available (`Client → Schedule Export`): a 
 ## Related Topics
 
 - [Scheduling Concepts](concepts.md) — slots, delivery roles, scoped vs scheduled, confirmed/tentative, hours‑per‑day
+- [Scheduling Assistant](assistant.md) — suggested people ranked by skill, availability, onboarding, qualifications & history
 - [Booking & Validation](validation.md) — logic checks and the around/over/destructive overlap chooser
 - [Filtering](filtering.md) — controlling which resources and slots are shown
 - [Sidebar Widgets](widgets.md) — utilisation, team allocation and phase‑status panels on job/phase pages

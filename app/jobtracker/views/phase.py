@@ -415,6 +415,10 @@ class PhaseScheduleView(UnitPermissionRequiredMixin, PhaseBaseView, DetailView):
         )
         context["utilisation"] = get_schedule_utilisation(context["job"], context["phase"])
         context["hours_in_day"] = context["phase"].get_hours_in_day()
+        # Scheduling Assistant: is the phase's schedule still a draft (tentative)?
+        context["schedule_is_confirmed"] = (
+            context["phase"].status >= PhaseStatuses.SCHEDULED_CONFIRMED
+        )
         return context
 
 
@@ -1287,4 +1291,368 @@ def phases_bulk_qa_execute(request, job_slug):
             continue
 
     data["form_is_valid"] = True
+    return JsonResponse(data)
+
+
+# --------------------------------------------------------------------------- #
+# Scheduling Assistant                                                          #
+# --------------------------------------------------------------------------- #
+
+# GET params that toggle optional ranking signals on/off (skill + availability
+# window are always on). Absent entirely => first load => all signals on.
+_ASSISTANT_SIGNAL_TOGGLES = {
+    "onboarding": "sig_onboarding",
+    "history": "sig_history",
+    "seniority": "sig_seniority",
+    "qualifications": "sig_quals",
+    "availability_pct": "sig_avail_pct",
+}
+
+
+def _assistant_weights(request):
+    """Build a weights dict from the modal's signal toggles. On first load (no
+    toggle params present) every signal keeps its default weight."""
+    from ..scheduling_assistant import DEFAULT_WEIGHTS
+
+    weights = dict(DEFAULT_WEIGHTS)
+    toggles_present = "toggled" in request.GET or any(
+        p in request.GET for p in _ASSISTANT_SIGNAL_TOGGLES.values()
+    )
+    if toggles_present:
+        for key, param in _ASSISTANT_SIGNAL_TOGGLES.items():
+            if request.GET.get(param) not in ("1", "on", "true", "True"):
+                weights[key] = 0
+    return weights, toggles_present
+
+
+def _assistant_scoped_pool(request):
+    """Permission-scoped, optionally filter-narrowed candidate pool (reuses the
+    scheduler's SchedulerFilter + _filter_users_on_query)."""
+    from ..utils import _filter_users_on_query
+    from ..forms import SchedulerFilter
+
+    filter_form = SchedulerFilter(request.GET)
+    filter_form.is_valid()  # populates cleaned_data; all fields are optional
+    cleaned = filter_form.cleaned_data or {}
+    return _filter_users_on_query(request, cleaned), filter_form
+
+
+def _assistant_signal_states(request, toggles_present):
+    """Per-signal on/off state for rendering the modal checkboxes. Before any
+    toggle submission every optional signal defaults to on."""
+    return {
+        key: (not toggles_present) or (request.GET.get(param) in ("1", "on", "true", "True"))
+        for key, param in _ASSISTANT_SIGNAL_TOGGLES.items()
+    }
+
+
+def _assistant_int(request, name, default=None):
+    try:
+        v = request.GET.get(name)
+        return int(v) if v not in (None, "") else default
+    except (TypeError, ValueError):
+        return default
+
+
+@job_permission_required_or_403("jobtracker.view_job_schedule", (Phase, "slug", "slug"))
+def phase_scheduling_assistant(request, job_slug, slug):
+    """Suggest ranked people to deliver a phase. Returns an AJAX modal (html_form)
+    or, with ?format=json, the raw ranked candidates."""
+    from ..scheduling_assistant import (
+        rank_candidates_for_phase,
+        phase_required_working_days,
+        phase_delivery_day_stats,
+    )
+    import math as _math
+
+    job = get_object_or_404(Job, slug=job_slug)
+    phase = get_object_or_404(Phase, job=job, slug=slug)
+
+    pool, filter_form = _assistant_scoped_pool(request)
+    weights, toggles_present = _assistant_weights(request)
+
+    # Work with what's left to schedule, not the whole scope: default the planning
+    # length to the REMAINING delivery days (scoped − already-scheduled) so the
+    # scheduler can "continue" an existing plan.
+    stats = phase_delivery_day_stats(phase)
+    default_total = max(0, _math.ceil(stats["remaining"])) if stats["remaining"] > 0 else 0
+
+    # A phase is often split across several testers rather than one person for the
+    # whole duration. "total_days" is what we're planning now (defaults to the
+    # remaining); "people" is how many to split across; each candidate is then
+    # ranked on availability for a per-person segment.
+    total_days = _assistant_int(request, "total_days")
+    if total_days is None:
+        total_days = default_total
+    people = max(1, _assistant_int(request, "people", 1))
+    per_person_days = max(1, -(-max(total_days, 1) // people))  # ceil(total / people)
+
+    candidates = rank_candidates_for_phase(
+        phase,
+        required_working_days=per_person_days,
+        candidate_pool=pool,
+        weights=weights,
+    )
+    required_days = per_person_days
+
+    if request.GET.get("format") == "json":
+        return JsonResponse(
+            {
+                "candidates": [
+                    {
+                        "id": c.user.pk,
+                        "name": str(c.user),
+                        "score": c.score,
+                        "tier": c.tier,
+                        "tier_label": c.tier_label,
+                        "earliest_start": c.earliest_start.isoformat() if c.earliest_start else None,
+                        "earliest_end": c.earliest_end.isoformat() if c.earliest_end else None,
+                        "availability_pct": c.availability_pct,
+                        "onboarding_status": c.onboarding_status,
+                        "history_count": c.history_count,
+                        "on_phase": c.on_phase,
+                        "phase_roles": c.phase_roles,
+                        "missing_required_quals": c.missing_required_quals,
+                        "signals": {
+                            n: {
+                                "label": s.label if isinstance(s.label, str) else "",
+                                "contribution": s.contribution,
+                            }
+                            for n, s in c.signals.items()
+                        },
+                    }
+                    for c in candidates
+                ]
+            },
+            safe=False,
+        )
+
+    data = {
+        "html_form": loader.render_to_string(
+            "partials/scheduler/scheduling_assistant_modal.html",
+            {
+                "job": job,
+                "phase": phase,
+                "service": phase.service,
+                "candidates": candidates,
+                "required_days": required_days,
+                "total_days": total_days,
+                "people": people,
+                "stats": stats,
+                "signal_states": _assistant_signal_states(request, toggles_present),
+                "scope": "phase",
+                "filter_form": filter_form,
+            },
+            request=request,
+        )
+    }
+    return JsonResponse(data)
+
+
+@job_permission_required_or_403("jobtracker.view_job_schedule", (Job, "slug", "slug"))
+def job_scheduling_assistant(request, slug):
+    """Discovery view: rank people per indicative service on a job."""
+    from ..scheduling_assistant import rank_candidates_for_job, DEFAULT_JOB_DEFAULT_DAYS
+
+    job = get_object_or_404(Job, slug=slug)
+    pool, filter_form = _assistant_scoped_pool(request)
+    weights, toggles_present = _assistant_weights(request)
+
+    try:
+        required_days = (
+            int(request.GET.get("days")) if request.GET.get("days") else DEFAULT_JOB_DEFAULT_DAYS
+        )
+    except (TypeError, ValueError):
+        required_days = DEFAULT_JOB_DEFAULT_DAYS
+
+    results = rank_candidates_for_job(
+        job,
+        required_working_days=required_days,
+        candidate_pool=pool,
+        weights=weights,
+    )
+
+    data = {
+        "html_form": loader.render_to_string(
+            "partials/scheduler/scheduling_assistant_modal.html",
+            {
+                "job": job,
+                "results": results,
+                "required_days": required_days,
+                "signal_states": _assistant_signal_states(request, toggles_present),
+                "scope": "job",
+                "filter_form": filter_form,
+            },
+            request=request,
+        )
+    }
+    return JsonResponse(data)
+
+
+@job_permission_required_or_403("jobtracker.can_schedule_job", (Phase, "slug", "slug"))
+def phase_scheduling_assistant_plan(request, job_slug, slug):
+    """Draft a split team for a phase from a set of selected people.
+
+    GET  -> renders the editable planner (coverage model + per-person role/dates).
+    POST -> creates the proposed bookings as tentative ("draft") delivery slots.
+    """
+    from datetime import datetime as _datetime, date as _date
+    from django.utils import timezone
+    from django.utils.html import strip_tags
+    from chaotica_utils.models import User
+    from ..scheduling_assistant import (
+        build_split_plan,
+        working_day_end,
+        DEFAULT_BUSINESS_DAYS,
+        phase_delivery_day_stats,
+    )
+    from ..enums import DefaultTimeSlotTypes, TimeSlotDeliveryRole
+    from ..models import TimeSlot, TimeSlotType
+    from .scheduler import _evaluate_delivery_slot
+
+    job = get_object_or_404(Job, slug=job_slug)
+    phase = get_object_or_404(Phase, job=job, slug=slug)
+    business_days = job.unit.businessHours_days or list(DEFAULT_BUSINESS_DAYS)
+
+    coverage = request.GET.get("coverage") or request.POST.get("coverage") or "sequential"
+    if coverage not in ("sequential", "parallel"):
+        coverage = "sequential"
+
+    if request.method == "POST":
+        slot_type = TimeSlotType.objects.get(pk=DefaultTimeSlotTypes.DELIVERY)
+
+        def _rows(name):
+            # Accept both "row_user" and jQuery's default "row_user[]" encoding.
+            return request.POST.getlist(name) or request.POST.getlist(name + "[]")
+
+        users = _rows("row_user")
+        roles = _rows("row_role")
+        starts = _rows("row_start")
+        days_list = _rows("row_days")
+
+        created, blocked = [], []
+        lead_user = author_user = None
+        # Create sequentially so each slot's scope check sees the ones already
+        # drafted in this batch — this is what surfaces over-scheduling.
+        for uid, role, start_s, days_s in zip(users, roles, starts, days_list):
+            try:
+                user = User.objects.get(pk=int(uid))
+                start_date = _date.fromisoformat(start_s)
+                days = max(1, int(days_s))
+            except (ValueError, User.DoesNotExist):
+                continue
+            if role in ("lead", "lead_author"):
+                lead_user = user
+            if role in ("author", "lead_author"):
+                author_user = user
+            end_date = working_day_end(start_date, days, business_days)
+            wh = user.get_working_hours()
+            start_dt = timezone.make_aware(_datetime.combine(start_date, wh["start"]))
+            end_dt = timezone.make_aware(_datetime.combine(end_date, wh["end"]))
+            slot = TimeSlot(
+                user=user,
+                phase=phase,
+                slot_type=slot_type,
+                deliveryRole=TimeSlotDeliveryRole.DELIVERY,
+                start=start_dt,
+                end=end_dt,
+            )
+            # Run the FULL logic checks with no bypass: any failure (over-scope,
+            # overlap, onboarding, framework) blocks that booking. The scheduler
+            # must resolve it, not force past it.
+            ev = _evaluate_delivery_slot(slot, request, force=False, check_overlaps=True)
+            if ev["failed"]:
+                reason = strip_tags(ev["feedback"] or "").strip()
+                reason = " ".join(reason.split())  # collapse whitespace
+                blocked.append({"name": user.get_full_name(), "reason": reason[:300]})
+                continue
+            slot.save()
+            created.append(user.get_full_name())
+
+        # Mirror the one-click role assignment: set Lead / Author on the phase.
+        role_changes = []
+        if lead_user and phase.project_lead_id != lead_user.pk:
+            phase.project_lead = lead_user
+            role_changes.append("Project Lead")
+        if author_user and phase.report_author_id != author_user.pk:
+            phase.report_author = author_user
+            role_changes.append("Report Author")
+        if role_changes:
+            phase.save()
+            log_system_activity(
+                phase,
+                "Set {} while drafting a split team".format(", ".join(role_changes)),
+                author=request.user,
+            )
+
+        summary = "Drafted {} booking{} as tentative.".format(
+            len(created), "" if len(created) == 1 else "s"
+        )
+        if blocked:
+            summary += " {} blocked by scheduling checks — resolve and retry.".format(len(blocked))
+        return JsonResponse(
+            {
+                "form_is_valid": bool(created) and not blocked,
+                "created": created,
+                "blocked": blocked,
+                "summary": summary,
+            }
+        )
+
+    # GET: build the default plan and render the editable planner.
+    import math as _math
+    user_ids = [int(x) for x in request.GET.get("users", "").split(",") if x.strip().isdigit()]
+    stats = phase_delivery_day_stats(phase)
+    default_total = max(1, _math.ceil(stats["remaining"])) if stats["remaining"] > 0 else 1
+    total_days = _assistant_int(request, "total_days") or default_total
+    lead_id = _assistant_int(request, "lead")
+    author_id = _assistant_int(request, "author")
+    start_str = request.GET.get("start")
+    try:
+        start_date = _date.fromisoformat(start_str) if start_str else None
+    except ValueError:
+        start_date = None
+    if not start_date:
+        start_date = phase.start_date or timezone.now().date()
+    if start_date < timezone.now().date():
+        start_date = timezone.now().date()
+
+    plan = build_split_plan(
+        user_ids=user_ids,
+        coverage=coverage,
+        total_days=total_days,
+        start_date=start_date,
+        lead_id=lead_id,
+        author_id=author_id,
+        business_days=business_days,
+    )
+    users_by_id = {u.pk: u for u in User.objects.filter(pk__in=user_ids)}
+    rows = [
+        {
+            "user": users_by_id.get(r["user_id"]),
+            "user_id": r["user_id"],
+            "role": r["role"],
+            "start": r["start"],
+            "days": r["days"],
+            "end": r["end"],
+        }
+        for r in plan
+        if r["user_id"] in users_by_id
+    ]
+
+    data = {
+        "html_form": loader.render_to_string(
+            "partials/scheduler/scheduling_assistant_plan.html",
+            {
+                "job": job,
+                "phase": phase,
+                "rows": rows,
+                "coverage": coverage,
+                "total_days": total_days,
+                "lead_id": lead_id or (rows[0]["user_id"] if rows else None),
+                "author_id": author_id,
+            },
+            request=request,
+        )
+    }
     return JsonResponse(data)

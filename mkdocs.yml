@@ -41,6 +41,7 @@ nav:
     - Scheduling:
       - Overview: user_guide/scheduling/overview.md
       - Concepts: user_guide/scheduling/concepts.md
+      - Scheduling Assistant: user_guide/scheduling/assistant.md
       - Booking & Validation: user_guide/scheduling/validation.md
       - Filtering: user_guide/scheduling/filtering.md
       - Sidebar Widgets: user_guide/scheduling/widgets.md

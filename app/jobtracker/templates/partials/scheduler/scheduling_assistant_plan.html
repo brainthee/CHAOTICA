@@ -1,0 +1,168 @@
+{% load static %}
+{% comment %}
+  Split-team planner. Injected into #mainModalContent from the suggestions modal.
+  Context: job, phase, rows [{user,user_id,role,start,end,days}], coverage,
+  total_days, lead_full_span, lead_id, author_id.
+{% endcomment %}
+<div class="modal-dialog modal-xl modal-dialog-scrollable" role="document"
+     id="assistantPlanRoot"
+     data-plan-url="{% url 'phase_scheduling_assistant_plan' phase.job.slug phase.slug %}"
+     data-assistant-url="{% url 'phase_scheduling_assistant' phase.job.slug phase.slug %}?org_units={{ phase.job.unit.pk }}"
+     data-total-days="{{ total_days }}">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div>
+        <h5 class="modal-title mb-0"><i class="fas fa-diagram-project me-2"></i>Draft split team</h5>
+        <p class="mb-0 fs-9 text-body-tertiary">
+          {{ phase.service }} &middot; {{ total_days }} scoped day{{ total_days|pluralize }} across {{ rows|length }} people
+        </p>
+      </div>
+      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+
+    <div class="modal-body">
+      {# Coverage + options #}
+      <div class="d-flex flex-wrap align-items-center gap-3 mb-3 pb-3 border-bottom border-translucent">
+        <div class="btn-group btn-group-sm" role="group" aria-label="Coverage model">
+          <input type="radio" class="btn-check" name="coverage" id="cov-seq" value="sequential" {% if coverage == 'sequential' %}checked{% endif %}>
+          <label class="btn btn-phoenix-secondary" for="cov-seq" title="Testers cover the span back-to-back">Sequential</label>
+          <input type="radio" class="btn-check" name="coverage" id="cov-par" value="parallel" {% if coverage == 'parallel' %}checked{% endif %}>
+          <label class="btn btn-phoenix-secondary" for="cov-par" title="Testers work concurrently to compress elapsed time">Parallel</label>
+        </div>
+        <button type="button" class="btn btn-sm btn-phoenix-secondary" id="plan-recalc">
+          <i class="fas fa-rotate me-1"></i> Recalculate dates
+        </button>
+        <span class="fs-10 text-body-tertiary">
+          The {{ total_days }} scoped man-day{{ total_days|pluralize }} are split evenly.
+          Change roles/coverage then recalculate, or edit days directly.
+        </span>
+      </div>
+
+      <div id="plan-alert"></div>
+
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0" id="plan-table">
+          <thead>
+            <tr class="fs-9 text-body-secondary">
+              <th>Person</th><th style="width:9rem">Role</th><th style="width:10rem">Start</th>
+              <th style="width:6rem">Days</th><th style="width:8rem">Ends ≈</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in rows %}
+              <tr data-user="{{ row.user_id }}">
+                <td class="fs-9">{{ row.user.get_full_name }}</td>
+                <td>
+                  <select class="form-select form-select-sm plan-role">
+                    <option value="lead" {% if row.role == 'lead' %}selected{% endif %}>Lead</option>
+                    <option value="tester" {% if row.role == 'tester' %}selected{% endif %}>Tester</option>
+                    <option value="author" {% if row.role == 'author' %}selected{% endif %}>Author</option>
+                    <option value="lead_author" {% if row.role == 'lead_author' %}selected{% endif %}>Lead &amp; Author</option>
+                  </select>
+                </td>
+                <td><input type="date" class="form-control form-control-sm plan-start" value="{{ row.start|date:'Y-m-d' }}"></td>
+                <td><input type="number" min="1" class="form-control form-control-sm plan-days" value="{{ row.days }}"></td>
+                <td class="fs-9 text-body-tertiary plan-end">{{ row.end|date:'D d M' }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="5" class="text-body-tertiary">No people selected.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="btn btn-sm btn-link text-decoration-none" id="plan-back">
+        <i class="fas fa-arrow-left me-1"></i> Back to suggestions
+      </button>
+      <button type="button" class="btn btn-sm btn-primary" id="plan-draft" {% if not rows %}disabled{% endif %}>
+        <i class="fas fa-calendar-plus me-1"></i> Draft team (tentative)
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var root = document.getElementById('assistantPlanRoot');
+  if (!root) return;
+  var planUrl = root.getAttribute('data-plan-url');
+  var assistantUrl = root.getAttribute('data-assistant-url');
+  var totalDays = root.getAttribute('data-total-days');
+  var csrf = $('input[name="csrfmiddlewaretoken"]').val();
+
+  function rowData() {
+    return $('#plan-table tbody tr[data-user]').map(function () {
+      var tr = $(this);
+      return {
+        user: tr.data('user'),
+        role: tr.find('.plan-role').val(),
+        start: tr.find('.plan-start').val(),
+        days: tr.find('.plan-days').val()
+      };
+    }).get();
+  }
+
+  // Recalculate default dates from the server for the current roles/coverage.
+  $('#plan-recalc').on('click', function () {
+    var rows = rowData();
+    var users = rows.map(function (r) { return r.user; }).join(',');
+    var lead = (rows.find(function (r) { return r.role === 'lead' || r.role === 'lead_author'; }) || {}).user;
+    var author = (rows.find(function (r) { return r.role === 'author' || r.role === 'lead_author'; }) || {}).user;
+    var coverage = $('input[name="coverage"]:checked').val();
+    var url = planUrl + '?users=' + encodeURIComponent(users) +
+              '&coverage=' + coverage + '&total_days=' + encodeURIComponent(totalDays) +
+              (lead ? '&lead=' + lead : '') + (author ? '&author=' + author : '');
+    $.get(url, function (d) { $('#mainModalContent').html(d.html_form); $('#mainModal').modal('show'); });
+  });
+
+  $('#plan-back').on('click', function () {
+    $.get(assistantUrl, function (d) { $('#mainModalContent').html(d.html_form); $('#mainModal').modal('show'); });
+  });
+
+  $('#plan-draft').on('click', function () {
+    var btn = $(this);
+    var rows = rowData();
+    var payload = {
+      csrfmiddlewaretoken: csrf,
+      coverage: $('input[name="coverage"]:checked').val(),
+      row_user: rows.map(function (r) { return r.user; }),
+      row_role: rows.map(function (r) { return r.role; }),
+      row_start: rows.map(function (r) { return r.start; }),
+      row_days: rows.map(function (r) { return r.days; })
+    };
+    btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>Drafting…');
+    // traditional:true so array values post as row_user=1&row_user=2 (what
+    // request.POST.getlist expects) rather than jQuery's default row_user[]=…
+    $.ajax({ url: planUrl, method: 'POST', data: payload, traditional: true }).done(function (d) {
+      // Refresh the timeline for anything that WAS drafted.
+      if ((d.created || []).length && typeof window.schedulerAssistantRefresh === 'function') {
+        window.schedulerAssistantRefresh();
+      }
+      var blocked = d.blocked || [];
+      if (blocked.length) {
+        // Keep the planner open so the user can fix the conflicts (checks are NOT
+        // bypassable). Show why each was blocked.
+        var items = blocked.map(function (b) {
+          return '<li><strong>' + $('<div>').text(b.name).html() + '</strong>: ' +
+                 $('<div>').text(b.reason || 'Blocked by a scheduling check').html() + '</li>';
+        }).join('');
+        $('#plan-alert').html(
+          '<div class="alert alert-warning py-2 px-3 fs-9">' +
+          '<div class="mb-1">' + $('<div>').text(d.summary).html() + '</div>' +
+          '<ul class="mb-0 ps-3">' + items + '</ul></div>'
+        );
+        btn.prop('disabled', false).html('<i class="fas fa-calendar-plus me-1"></i> Draft remaining');
+      } else {
+        $('#mainModal').modal('hide');
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({ icon: 'success', title: 'Draft team', text: d.summary, timer: 3000, showConfirmButton: false });
+        }
+      }
+    }).fail(function () {
+      btn.prop('disabled', false).html('<i class="fas fa-calendar-plus me-1"></i> Draft team (tentative)');
+    });
+  });
+})();
+</script>

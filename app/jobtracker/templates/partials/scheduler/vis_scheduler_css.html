@@ -55,6 +55,18 @@
   @media (prefers-reduced-motion: reduce) {
     .sched-progress::before { animation: none; left: 0; width: 100%; opacity: 0.4; }
   }
+  /* Draft (tentative / proposed) delivery slots — dashed "ghost" so they read as
+     uncommitted next to confirmed work. Confirmed slots stay solid. */
+  .vis-item.sched-slot-tentative {
+    border-style: dashed !important;
+    border-width: 2px !important;
+    opacity: 0.72;
+    background-image: repeating-linear-gradient(
+      45deg, transparent, transparent 5px,
+      rgba(255, 255, 255, 0.18) 5px, rgba(255, 255, 255, 0.18) 10px
+    );
+  }
+  .vis-item.sched-slot-tentative.vis-selected { opacity: 0.9; }
   /* select2 inside a Bootstrap modal — force full width + vertically centre */
   #mainModal .select2-container { width: 100% !important; }
   #mainModal .select2-selection--single { height: calc(3.5rem + 2px); display: flex; align-items: center; }

@@ -16,6 +16,9 @@
   var createUrls = CFG.createUrls || {};
   var createExtraParams = CFG.createExtraParams || '';
   var readonly = !!CFG.readonly;   // embedded read-only view (detail tabs)
+  // Job/phase views fade in "other" slots (commitments outside this job/phase) so
+  // gaps can be trusted. This lets the user hide that noise; remembered per browser.
+  var showOthers = (localStorage.getItem('sched-show-others') !== '0');
   // Existing filter querystring (without the leading "?") so the global page can
   // re-apply the same SchedulerFilter. Ignored by the scoped endpoints.
   var filterParams = window.location.search.replace(/^\?/, '');
@@ -281,7 +284,7 @@
       end: dispEnd,
       content: icon + escapeHtml(e.title || ''),
       title: escapeHtml(buildTooltip(e)),
-      className: (e.is_comment ? 'cmt' : '') + (faded ? ' sched-faded' : ''),
+      className: (e.is_comment ? 'cmt' : '') + (faded ? ' sched-faded' : '') + (e.is_tentative ? ' sched-slot-tentative' : ''),
       style: 'background-color:' + bg + '; color:' + fg + '; border-color:' + bg + ';',
       editable: canEdit ? { updateTime: true, updateGroup: true, remove: false } : false,
       _meta: {
@@ -363,7 +366,9 @@
       url: buildUrl(slotsUrl, s.toISOString(), en.toISOString()),
       method: 'GET',
       success: function (data) {
-        var mapped = data.map(mapEvent);
+        // Optionally drop out-of-scope ("other") slots so the view isn't noisy.
+        var rows = showOthers ? data : data.filter(function (e) { return !e.out_of_scope; });
+        var mapped = rows.map(mapEvent);
         var keep = {};
         mapped.forEach(function (m) { keep[m.id] = true; });
         var stale = items.getIds().filter(function (id) {
@@ -521,6 +526,29 @@
         $('#mainModal').modal('show');
       }).always(function () { loading(false); });
   }
+
+  // Exposed for the Scheduling Assistant: open the phase booking modal prefilled
+  // for a specific user + window (creates a tentative/"draft" slot via the same
+  // create flow + logic checks). Replaces the assistant modal content.
+  window.schedulerAssistantBook = function (userId, startISO, endISO) {
+    var url = createUrls.assign_phase;
+    if (!url || !userId) return;
+    loading(true);
+    $.get(url + '?resource_id=' + parseInt(userId, 10) +
+          '&start=' + encodeURIComponent(startISO) +
+          '&end=' + encodeURIComponent(endISO) +
+          createExtraParams,
+      function (d) {
+        $('#mainModalContent').html(d.html_form);
+        $('#mainModal').modal('show');
+      }).always(function () { loading(false); });
+  };
+
+  // Exposed for the Scheduling Assistant: refresh timeline + sidebar cards after
+  // an assign/book action.
+  window.schedulerAssistantRefresh = function () {
+    loadSlots(); loadMembers(); refreshCards();
+  };
 
   var ctxCtx = null;
   $.contextMenu({
@@ -695,6 +723,30 @@
       timeline.setWindow(new Date(center.getTime() - half), new Date(center.getTime() + half));
     });
   });
+
+  // ---- Show/hide "other" (out-of-scope) slots — job/phase views only ----
+  (function () {
+    var grp = document.getElementById('grpToggleOthers');
+    if (!grp) return;
+    if (CFG.scope === 'global') { grp.hidden = true; return; }  // nothing out of scope globally
+    grp.hidden = false;
+    var btn = document.getElementById('btnToggleOthers');
+    var icon = document.getElementById('btnToggleOthersIcon');
+    function paint() {
+      btn.classList.toggle('active', showOthers);
+      if (icon) icon.className = (showOthers ? 'fas fa-eye' : 'fas fa-eye-slash') + ' me-1';
+      btn.title = showOthers
+        ? "Hide slots that aren't part of this job/phase"
+        : "Show slots that aren't part of this job/phase";
+    }
+    paint();
+    btn.addEventListener('click', function () {
+      showOthers = !showOthers;
+      localStorage.setItem('sched-show-others', showOthers ? '1' : '0');
+      paint();
+      loadSlots();
+    });
+  })();
 
   // ---- Live filtering: apply the offcanvas form without a full page reload (global) ----
   $('#settings-offcanvas').on('submit', 'form', function (e) {

@@ -30,6 +30,13 @@
       <span class="fas fa-clock-rotate-left me-1"></span>History
     </button>
   </div>
+  {# Only meaningful on job/phase-scoped views (hidden by JS on the global view). #}
+  <div class="btn-group btn-group-sm" role="group" aria-label="Other slots" id="grpToggleOthers" hidden>
+    <button class="btn btn-phoenix-secondary active" id="btnToggleOthers" type="button"
+            title="Show or hide slots that aren't part of this job/phase">
+      <span class="fas fa-eye me-1" id="btnToggleOthersIcon"></span>Other slots
+    </button>
+  </div>
   <div class="sched-legend ms-auto small text-body-secondary d-none d-lg-block">
     <span class="me-2"><span class="dot" style="background:{{ config.SCHEDULE_COLOR_PHASE_CONFIRMED }}"></span>Confirmed</span>
     <span class="me-2"><span class="dot" style="background:{{ config.SCHEDULE_COLOR_PHASE }}"></span>Tentative</span>

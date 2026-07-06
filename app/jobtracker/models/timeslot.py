@@ -301,6 +301,13 @@ class TimeSlot(models.Model):
         if compressed_view:
             data['classNames'] += " fc-title-nowrap"
 
+        # Draft styling: a delivery slot on a not-yet-confirmed phase is a
+        # "proposed" booking — render it as a dashed ghost so it's clearly
+        # distinct from committed (confirmed) work on the timeline.
+        if self.is_delivery() and not self.is_confirmed():
+            data["classNames"] += " sched-slot-tentative"
+            data["is_tentative"] = True
+
         data["textColor"] = self.get_schedule_slot_text_colour(data["backgroundColor"])
 
         if self.is_delivery():

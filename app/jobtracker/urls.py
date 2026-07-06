@@ -263,6 +263,11 @@ urlpatterns = [
         "job/<str:slug>/schedule/", views.JobScheduleView.as_view(), name="job_schedule"
     ),
     path(
+        "job/<str:slug>/scheduling-assistant",
+        views.job_scheduling_assistant,
+        name="job_scheduling_assistant",
+    ),
+    path(
         "job/<str:slug>/schedule/members",
         views.view_job_schedule_members,
         name="view_job_schedule_members",
@@ -476,6 +481,16 @@ urlpatterns = [
         "job/<str:job_slug>/phase/<str:slug>/schedule/",
         views.PhaseScheduleView.as_view(),
         name="phase_schedule",
+    ),
+    path(
+        "job/<str:job_slug>/phase/<str:slug>/schedule/assistant",
+        views.phase_scheduling_assistant,
+        name="phase_scheduling_assistant",
+    ),
+    path(
+        "job/<str:job_slug>/phase/<str:slug>/schedule/assistant/plan",
+        views.phase_scheduling_assistant_plan,
+        name="phase_scheduling_assistant_plan",
     ),
     path(
         "job/<str:job_slug>/phase/<str:slug>/schedule/slots",
