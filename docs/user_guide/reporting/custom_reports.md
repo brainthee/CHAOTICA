@@ -62,6 +62,28 @@ python manage.py setup_tentative_report       # create/refresh the report
 
 It's an ordinary report — you can duplicate or tweak it in the wizard.
 
+## What data a report shows
+
+Reports are scoped to what the **running user** is allowed to see, using the same
+organisational-unit permissions as the rest of the app:
+
+- A normal user only sees jobs/phases (and job-owned data) in the units they hold
+  **Can view jobs** on. Data from other units is excluded — running a report is
+  not a way to see across units you otherwise can't.
+- Protectively Marked / **restricted** jobs are always excluded for everyone
+  except superusers.
+- Sensitive columns that require a permission are blanked out for users who lack
+  it (on every execution path, including aggregated/grouped reports).
+- To intentionally run **cross-org** reports (e.g. a company-wide chaser), grant
+  the account the **Can run all reports** (`reporting.can_run_all_reports`)
+  permission. That still excludes restricted jobs.
+
+!!! note "Data areas without a unit link"
+    Data areas that aren't tied to an org unit (e.g. some reference lists) return
+    no rows for ordinary users — they require **Can run all reports** or a
+    superuser. Grant the dedicated reporting account that permission if it needs
+    them.
+
 ## Scheduling & emailing a report
 
 Open a report and click **Schedule** to add one or more scheduled emails.
@@ -69,9 +91,11 @@ Open a report and click **Schedule** to add one or more scheduled emails.
 **Cadence** — daily, or weekly on a chosen day, at a chosen time. A background
 job checks every 15 minutes; each schedule sends at most once per day.
 
-**Run as** — the report runs with this user's permissions. Use a dedicated
-reporting account, **not** a superuser: non-superusers never see Protectively
-Marked / restricted jobs, so restricted work won't leak into a broad email.
+**Run as** — the report runs with this user's permissions. Choose a dedicated
+reporting account with the right unit visibility (add **Can run all reports** for
+a company-wide report). **Superusers can't be selected** — that would side-step
+the unit scoping and restricted-job exclusion described above. The report's data
+is scoped to this user, so restricted work never leaks into a broad email.
 
 **Recipients** — you can send:
 
@@ -82,6 +106,12 @@ Marked / restricted jobs, so restricted work won't leak into a broad email.
 
 Both can be enabled at once — a group summary plus per-manager slices. The split
 field does not need to be a visible column; it's fetched behind the scenes.
+
+!!! warning "Split-slice recipients must be known users"
+    Because the split value comes from the data, personalised slices are only
+    delivered to addresses that belong to an **active user in the system**. An
+    address that isn't a known user is skipped (and logged), so report rows can't
+    be emailed to an arbitrary address that happens to appear in the data.
 
 **Content** — set the subject and optional intro/outro HTML shown above and
 below the table. You can also attach the results as CSV or Excel.

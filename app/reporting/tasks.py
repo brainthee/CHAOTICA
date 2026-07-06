@@ -3,17 +3,39 @@ import logging
 from django_cron import CronJobBase, Schedule
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
+from django.core.validators import validate_email
+from django.core.exceptions import ValidationError
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.html import strip_tags
 
 from constance import config
 
+from chaotica_utils.models import User
 from .models import ScheduledReport
 from .services.data_service import DataService
 from .services.export_service import ExportService
 
 logger = logging.getLogger(__name__)
+
+
+def _is_valid_email(address):
+    try:
+        validate_email(address)
+        return True
+    except ValidationError:
+        return False
+
+
+def _known_user_emails():
+    """Lower-cased set of active users' email addresses — the only addresses a
+    data-derived split target is allowed to be sent to."""
+    emails = set()
+    for user in User.objects.filter(is_active=True):
+        addr = user.email_address() if hasattr(user, 'email_address') else user.email
+        if addr:
+            emails.add(addr.strip().lower())
+    return emails
 
 _ATTACHMENT_META = {
     'csv': ('text/csv', 'csv'),
@@ -65,18 +87,29 @@ class task_send_scheduled_reports(CronJobBase):
             # leak into the rendered table.
             return [{path: row.get(path) for path in display_paths} for row in rows]
 
-        # Aggregated email to the fixed recipient list / group.
+        # Aggregated email to the fixed (admin-curated) recipient list / group.
+        # Drop anything that isn't a well-formed address so a malformed entry
+        # can't derail the send.
         if sched.send_aggregate_to_group:
-            recipients = sched.recipient_list()
+            recipients = [r for r in sched.recipient_list() if _is_valid_email(r)]
             if recipients:
                 self._send(sched, recipients, field_names, display_rows(data))
 
-        # Personalised slices - one email per split value that is a valid address.
+        # Personalised slices - one email per split value. The split key is
+        # data-derived, so only deliver to addresses that belong to a known,
+        # active internal user (never to an arbitrary value that merely contains
+        # '@'), so report data can't be exfiltrated to attacker-controlled rows.
         if split_path:
+            allowed = _known_user_emails()
             for value, rows in sched.group_rows(data).items():
                 address = str(value).strip()
-                if '@' in address:
+                if _is_valid_email(address) and address.lower() in allowed:
                     self._send(sched, [address], field_names, display_rows(rows))
+                elif address:
+                    logger.warning(
+                        "Scheduled report '%s': skipping split delivery to "
+                        "unrecognised address '%s'.", sched, address,
+                    )
 
     def _send(self, sched, recipients, field_names, rows):
         if not config.EMAIL_ENABLED:

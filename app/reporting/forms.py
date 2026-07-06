@@ -347,6 +347,13 @@ class ScheduledReportForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         # run_time renders/parses as HH:MM
         self.fields['run_time'].input_formats = ['%H:%M', '%H:%M:%S']
+        # The report runs with run_as_user's permissions. Never allow a superuser
+        # (or inactive account) to be chosen — that would side-step reporting's
+        # unit scoping / restricted-job exclusion and leak protected data.
+        from chaotica_utils.models import User
+        self.fields['run_as_user'].queryset = User.objects.filter(
+            is_active=True, is_superuser=False
+        ).order_by('first_name', 'last_name')
         # Limit the split field to columns of this report's data area.
         if self.report is not None:
             self.fields['split_by_field'].queryset = DataField.objects.filter(
@@ -354,6 +361,14 @@ class ScheduledReportForm(forms.ModelForm):
             ).order_by('group', 'display_name')
         self.fields['split_by_field'].required = False
         self.fields['recipient_group'].required = False
+
+    def clean_run_as_user(self):
+        user = self.cleaned_data.get('run_as_user')
+        if user and (user.is_superuser or not user.is_active):
+            raise forms.ValidationError(
+                _("Scheduled reports may not run as a superuser or inactive account.")
+            )
+        return user
 
     def clean(self):
         cleaned = super().clean()
