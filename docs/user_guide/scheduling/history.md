@@ -32,11 +32,21 @@ and the activity log updates just as they would for a manual change.
 
 ### Who can revert what
 
-- You can always revert **your own** changes (until they've already been reverted).
+- You can revert **your own** changes, provided you **still** hold scheduling
+  permission (`can_schedule_job`) on the affected job/phase — reverting recreates
+  or removes the same slots, so it needs the same permission as a live edit. If
+  you've since been removed from that unit or job, your old changes become
+  read-only.
 - Reverting **someone else's** change requires the site‑level permission
   **_Can revert any schedule change_** (`jobtracker.revert_any_scheduleaction`), which
   administrators hold by default. Without it, other people's changes show as read‑only
   history with no Revert button.
+
+!!! note "History is scoped to what you can see"
+    The History panel and the live/polled updates only ever show changes for
+    schedules you're allowed to view (`view_job_schedule`). Opening a job or phase
+    scope you don't have access to returns nothing, and global live updates are
+    filtered to the people whose schedules you can see.
 
 ### Undo with Ctrl/⌘ + Z
 

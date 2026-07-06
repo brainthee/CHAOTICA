@@ -1,5 +1,6 @@
 import json
 from django.test import RequestFactory, override_settings
+from guardian.shortcuts import assign_perm
 
 from jobtracker import schedule_history
 from jobtracker.models import TimeSlot
@@ -37,6 +38,10 @@ class HistoryViewTests(ScheduleHistoryBase):
         self.assertTrue(data["actions"][0]["can_revert"])
 
     def test_history_hides_revert_for_other_user(self):
+        # A user who may VIEW the job's schedule (but isn't the actor and lacks
+        # revert-any) sees the history but can't revert it.
+        assign_perm("jobtracker.view_job_schedule", self.other, self.unit)
+        self.other = type(self.other).objects.get(pk=self.other.pk)  # reset perm cache
         slot = self._delivery_slot()
         schedule_history.record_creates(self.actor, [slot])
         resp = self._get(

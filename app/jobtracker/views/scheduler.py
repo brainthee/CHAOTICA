@@ -36,7 +36,13 @@ from ..forms import (
 )
 from ..enums import UserSkillRatings, TimeSlotDeliveryRole, PhaseStatuses, DefaultTimeSlotTypes
 from ..models import ScheduleAction, ScheduleActionType
-from ..utils import get_scheduler_slots, get_scheduler_members, assigned_role_map
+from ..utils import (
+    get_scheduler_slots,
+    get_scheduler_members,
+    assigned_role_map,
+    can_view_job_schedule,
+    viewable_schedule_user_pks,
+)
 from .. import schedule_history
 import logging
 from django.contrib.auth.decorators import login_required
@@ -57,16 +63,57 @@ from constance import config
 logger = logging.getLogger(__name__)
 
 
+def _slot_units(slot):
+    """Resolve the org unit(s) that govern scheduling permission for a slot.
+
+    Delivery slots → the job's unit; project slots → the project's unit; comment
+    and internal / leave slots (which have neither phase nor project) → the units
+    the slot's *user* belongs to. Returns a list (possibly empty)."""
+    if getattr(slot, "phase", None):
+        return [slot.phase.job.unit] if slot.phase.job.unit else []
+    if getattr(slot, "project", None):
+        unit = getattr(slot.project, "unit", None)
+        return [unit] if unit else []
+    # Comment / internal slot — governed by the slot user's unit memberships.
+    user = getattr(slot, "user", None)
+    if user is not None:
+        return [m.unit for m in user.unit_memberships.select_related("unit").all()]
+    return []
+
+
 def _verify_slot_unit_access(request, slot):
-    """Verify the requesting user has scheduling permission on the slot's unit.
-    Works for both TimeSlot (has phase/project) and TimeSlotComment (user-only)."""
-    unit = None
-    if hasattr(slot, 'phase') and slot.phase:
-        unit = slot.phase.job.unit
-    elif hasattr(slot, 'project') and slot.project:
-        unit = slot.project.unit if hasattr(slot.project, 'unit') else None
+    """Verify the requesting user may schedule the slot's governing unit(s).
+
+    Covers TimeSlot (phase / project / internal) and TimeSlotComment (user-only).
+    Raises PermissionDenied when the slot is governed by unit(s) the user cannot
+    schedule. Mirrors the per-resource check in ``clear_scheduler_range``."""
+    units = _slot_units(slot)
+    if units and not any(
+        request.user.has_perm("jobtracker.can_schedule_job", u) for u in units
+    ):
+        raise PermissionDenied
+
+
+def _verify_unit_schedulable(request, unit):
+    """Raise PermissionDenied unless the user can schedule the given unit.
+
+    Used by the job/project create paths: the ``@unit_permission_required_or_403``
+    decorator only proves the caller can schedule *some* unit, so the target
+    job/project unit taken from request params must be re-verified here."""
     if unit and not request.user.has_perm("jobtracker.can_schedule_job", unit):
         raise PermissionDenied
+
+
+def _verify_users_schedulable(request, users):
+    """Raise PermissionDenied unless the user can schedule every target user's
+    unit(s). For user-owned slots (internal / leave / comment) that aren't tied
+    to a job or project. Mirrors ``clear_scheduler_range``'s per-resource check."""
+    for resource in users:
+        units = [m.unit for m in resource.unit_memberships.select_related("unit").all()]
+        if units and not any(
+            request.user.has_perm("jobtracker.can_schedule_job", u) for u in units
+        ):
+            raise PermissionDenied
 
 
 def _check_framework_slot(framework, updated_slot, old_slot, request, force=False):
@@ -239,23 +286,37 @@ def view_scheduler_members(request):
 
 
 def _scope_history_qs(request, source):
-    """Filter the ScheduleAction log to the requested scope. phase param → that
-    phase; job param → that job; neither → recent global activity across all."""
+    """Filter the ScheduleAction log to the requested scope and authorise it.
+
+    Returns ``(queryset, viewable_user_pks)``:
+    - phase/job param → that scope, but only after ``view_job_schedule`` is
+      confirmed on the job (returns an empty queryset otherwise, so a caller can
+      never read a job/phase they may not see). ``viewable_user_pks`` is ``None``
+      (whole scope already authorised).
+    - neither → recent global activity; ``viewable_user_pks`` is the set of users
+      whose slots the requester may see, so the delta layer can filter payloads."""
     job_id = clean_int(source.get("job"))
     phase_id = clean_int(source.get("phase"))
     qs = ScheduleAction.objects.select_related("actor").order_by("-created")
     if phase_id:
-        qs = qs.filter(phase_id=phase_id)
-    elif job_id:
-        qs = qs.filter(job_id=job_id)
-    return qs
+        phase = Phase.objects.select_related("job__unit").filter(pk=phase_id).first()
+        if not phase or not can_view_job_schedule(request.user, phase.job):
+            return qs.none(), None
+        return qs.filter(phase_id=phase_id), None
+    if job_id:
+        job = Job.objects.select_related("unit").filter(pk=job_id).first()
+        if not job or not can_view_job_schedule(request.user, job):
+            return qs.none(), None
+        return qs.filter(job_id=job_id), None
+    return qs, viewable_schedule_user_pks(request.user)
 
 
 @login_required
 def schedule_action_history(request):
     """History panel data: the ScheduleAction log for the current scope, newest
     first, with a per-action ``can_revert`` computed for the requesting user."""
-    qs = _scope_history_qs(request, request.GET)[:100]
+    qs, _viewable = _scope_history_qs(request, request.GET)
+    qs = qs[:100]
     actions = []
     for a in qs:
         actions.append(
@@ -298,13 +359,20 @@ def schedule_action_undo(request):
     (redo is available from the history panel)."""
     if request.method != "POST":
         return HttpResponseBadRequest()
-    qs = _scope_history_qs(request, request.POST).filter(
-        actor=request.user, reverted=False
-    ).exclude(action_type=ScheduleActionType.REVERT)
+    qs, _viewable = _scope_history_qs(request, request.POST)
+    qs = qs.filter(actor=request.user, reverted=False).exclude(
+        action_type=ScheduleActionType.REVERT
+    )
     action = qs.first()
     if not action:
         return JsonResponse({"ok": False, "error": "Nothing to undo."})
-    inverse = schedule_history.revert(action, request.user)
+    try:
+        inverse = schedule_history.revert(action, request.user)
+    except PermissionDenied:
+        return JsonResponse(
+            {"ok": False, "error": "You can no longer schedule this work, so it can't be undone."},
+            status=403,
+        )
     return JsonResponse(
         {"ok": True, "reverted": action.pk, "action_id": inverse.pk if inverse else None}
     )
@@ -318,11 +386,16 @@ def view_scheduler_slots_since(request):
     from django.utils import timezone as _tz
 
     since = clean_datetime(request.GET.get("since"))
-    qs = _scope_history_qs(request, request.GET)
+    qs, viewable = _scope_history_qs(request, request.GET)
     if since:
         qs = qs.filter(created__gt=since)
     actions = list(qs[:200])
-    deltas = [schedule_history.build_delta(a) for a in reversed(actions)]
+    deltas = [
+        schedule_history.filter_delta_for_users(
+            schedule_history.build_delta(a), viewable
+        )
+        for a in reversed(actions)
+    ]
     return JsonResponse({"deltas": deltas, "now": _tz.now().isoformat()})
 
 
@@ -937,6 +1010,10 @@ def create_scheduler_internal_slot(request):
     users = _selected_users(request)
     resource = users[0] if users else None
 
+    # The decorator only proves the caller can schedule *some* unit; verify they
+    # may schedule every target user's unit before creating slots for them.
+    _verify_users_schedulable(request, users)
+
     if request.method == "POST":
         form = NonDeliveryTimeSlotModalForm(
             request.POST, start=start, end=end, resource=resource
@@ -989,6 +1066,10 @@ def create_scheduler_project_slot(request):
     users = _selected_users(request)
     user = users[0] if users else None
     project = get_object_or_404(Project, pk=project_id) if project_id else None
+
+    # Re-verify the target project's unit (the decorator only proves the caller
+    # can schedule some unit).
+    _verify_unit_schedulable(request, getattr(project, "unit", None))
 
     if request.method == "POST":
         force = request.POST.get("force", None)
@@ -1059,6 +1140,11 @@ def create_scheduler_phase_slot(request):
         job = None
         phase = None
 
+    # Re-verify the target job's unit — the decorator only proves the caller can
+    # schedule some unit, and job/phase come from request params. Also guards the
+    # phase-lead / report-author assignment side effect below.
+    _verify_unit_schedulable(request, getattr(job, "unit", None))
+
     single = len(users) == 1
     if request.method == "POST":
         force = request.POST.get("force", None)
@@ -1118,6 +1204,9 @@ def create_scheduler_comment(request):
 
     users = _selected_users(request)
     resource = users[0] if users else None
+
+    # Comments are user-owned; verify the caller may schedule each target user.
+    _verify_users_schedulable(request, users)
 
     if request.method == "POST":
         form = CommentTimeSlotModalForm(
@@ -1230,7 +1319,22 @@ def clear_scheduler_range(request):
     return JsonResponse(data)
 
 
-class JobSlotDeleteView(ChaoticaBaseView, DeleteView):
+class _SlotDeletePermissionMixin:
+    """Enforce ``can_schedule_job`` on the slot's governing unit before delete.
+
+    The scheduler delete modals are otherwise login-only CBVs (``ChaoticaBaseView``
+    is ``LoginRequiredMixin`` only), which would let any authenticated user delete
+    any TimeSlot / TimeSlotComment by PK. The auth check stays with
+    ``LoginRequiredMixin`` (via ``super().dispatch``); this only adds the missing
+    object-level scheduling check for authenticated users."""
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            _verify_slot_unit_access(request, self.get_object())
+        return super().dispatch(request, *args, **kwargs)
+
+
+class JobSlotDeleteView(_SlotDeletePermissionMixin, ChaoticaBaseView, DeleteView):
     """View to delete a slot"""
 
     model = TimeSlot
@@ -1260,7 +1364,7 @@ class JobSlotDeleteView(ChaoticaBaseView, DeleteView):
         return context
 
 
-class SlotCommentDeleteView(ChaoticaBaseView, DeleteView):
+class SlotCommentDeleteView(_SlotDeletePermissionMixin, ChaoticaBaseView, DeleteView):
     """View to delete a slot"""
 
     model = TimeSlotComment
@@ -1278,7 +1382,7 @@ class SlotCommentDeleteView(ChaoticaBaseView, DeleteView):
         return reverse_lazy("view_scheduler")
 
 
-class ProjectSlotDeleteView(ChaoticaBaseView, DeleteView):
+class ProjectSlotDeleteView(_SlotDeletePermissionMixin, ChaoticaBaseView, DeleteView):
     """View to delete a slot"""
 
     model = TimeSlot

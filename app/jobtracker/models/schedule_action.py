@@ -79,13 +79,57 @@ class ScheduleAction(models.Model):
         )
 
     def can_revert(self, user):
-        """Whether ``user`` may revert this action: their own & not yet reverted,
-        or they hold the site-level revert-any permission."""
+        """Whether ``user`` may revert this action.
+
+        Site-level ``revert_any_scheduleaction`` holders may always revert.
+        Otherwise the user must be the original actor **and** still hold
+        ``can_schedule_job`` on the action's scope — reverting recreates / deletes
+        / updates the same slots, so it must respect the same object-level
+        scheduling permission as a live edit (a user who has since lost
+        scheduling rights on a job must not be able to mutate it via undo)."""
         if self.reverted:
             return False
-        if self.action_type == ScheduleActionType.REVERT:
-            # A revert is itself revertable (redo) under the same rules.
-            pass
-        if self.actor_id and self.actor_id == user.pk:
+        if not user or not getattr(user, "is_authenticated", False):
+            return False
+        if user.has_perm("jobtracker.revert_any_scheduleaction"):
             return True
-        return user.has_perm("jobtracker.revert_any_scheduleaction")
+        if not (self.actor_id and self.actor_id == user.pk):
+            return False
+        return self._user_can_schedule_scope(user)
+
+    def _affected_user_ids(self):
+        """User PKs referenced by this action's payload (either before or after)."""
+        ids = set()
+        for item in self.payload or []:
+            for side in ("before", "after"):
+                fields = item.get(side) or {}
+                uid = fields.get("user_id")
+                if uid:
+                    ids.add(uid)
+        return ids
+
+    def _user_can_schedule_scope(self, user):
+        """Whether ``user`` currently holds ``can_schedule_job`` on the unit(s)
+        this action touches: the job's unit for job/phase-scoped actions, or each
+        affected user's unit(s) for user-owned (project/internal/comment) actions.
+        Permits when no unit can be resolved, matching ``_verify_slot_unit_access``."""
+        perm = "jobtracker.can_schedule_job"
+        job = None
+        if self.job_id:
+            job = self.job
+        elif self.phase_id:
+            job = self.phase.job
+        if job is not None:
+            if not job.unit:
+                return True
+            return user.has_perm(perm, job.unit)
+        # User-owned action — check each affected user's units.
+        from chaotica_utils.models import User
+
+        for resource in User.objects.filter(pk__in=self._affected_user_ids()):
+            units = [
+                m.unit for m in resource.unit_memberships.select_related("unit").all()
+            ]
+            if units and not any(user.has_perm(perm, u) for u in units):
+                return False
+        return True
