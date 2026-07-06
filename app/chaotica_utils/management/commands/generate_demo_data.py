@@ -67,9 +67,44 @@ class Command(BaseCommand):
             action='store_true',
             help='Create minimal dataset for quick testing',
         )
+        parser.add_argument(
+            '--force',
+            action='store_true',
+            help='Required to run when DEBUG is off (protects production data).',
+        )
+        parser.add_argument(
+            '--password',
+            default=None,
+            help='Password for the generated demo users. Defaults to a random '
+                 'password printed once, so demo accounts are not created with a '
+                 'well-known credential.',
+        )
 
     @transaction.atomic
     def handle(self, *args, **options):
+        from django.conf import settings
+        from django.core.management.base import CommandError
+
+        # This command seeds fake data and (with --clear) wipes core tables and
+        # non-demo users. Refuse to run against a non-DEBUG (production) instance
+        # unless explicitly forced, so it can't be triggered accidentally there.
+        if not settings.DEBUG and not options['force']:
+            raise CommandError(
+                "Refusing to generate demo data with DEBUG=False. This command "
+                "creates fake data and --clear deletes existing data. Re-run with "
+                "--force only if you are certain this is not a production system."
+            )
+
+        # Never bake a well-known password into demo accounts. Use the provided
+        # one, or mint a random password and print it once.
+        self.demo_password = options['password'] or ''.join(
+            random.choices(string.ascii_letters + string.digits, k=16)
+        )
+        if not options['password']:
+            self.stdout.write(self.style.WARNING(
+                f"Generated demo-user password (shown once): {self.demo_password}"
+            ))
+
         self.stdout.write(self.style.SUCCESS('Starting demo data generation...'))
 
         if options['minimal']:
@@ -351,7 +386,7 @@ class Command(BaseCommand):
 
             user = User.objects.create_user(
                 email=email,
-                password='DemoPass123!',
+                password=self.demo_password,
                 first_name=first_name,
                 last_name=last_name,
                 job_title=random.choice([jl.long_label for jl in self.job_levels]),

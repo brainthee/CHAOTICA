@@ -82,8 +82,10 @@ class EmailTemplate(models.Model):
         return self.name or self.slug
 
     def clean(self):
-        # Reject dangerous tags in the content body.
-        if self.extends_base and _FORBIDDEN_TAG_RE.search(self.body_html or ''):
+        # Reject dangerous tags in the content body — unconditionally, so a
+        # standalone (extends_base=False) template can't smuggle in {% load %} /
+        # {% include %} / {% ssi %} etc. either.
+        if _FORBIDDEN_TAG_RE.search(self.body_html or ''):
             raise ValidationError({
                 'body_html': "Content may not use {% load %}, {% include %}, {% extends %}, "
                              "{% block %}, {% ssi %} or {% debug %} tags.",

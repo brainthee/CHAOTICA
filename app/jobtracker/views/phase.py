@@ -1277,6 +1277,22 @@ def phases_bulk_qa_execute(request, job_slug):
     techqa_user = UserModel.objects.get(pk=techqa_id) if techqa_id else None
     presqa_user = UserModel.objects.get(pk=presqa_id) if presqa_id else None
 
+    # Validate the posted assignees against the same QA-capable member sets the
+    # modal offers, so a crafted POST can't assign QA to a user who lacks the
+    # Tech/Pres QA permission on this job's unit.
+    if techqa_user and techqa_user not in set(
+        job.unit.get_active_members_with_perm("can_tqa_jobs")
+    ):
+        data["form_is_valid"] = False
+        data["error"] = "Selected Tech QA user can't perform Tech QA for this job."
+        return JsonResponse(data)
+    if presqa_user and presqa_user not in set(
+        job.unit.get_active_members_with_perm("can_pqa_jobs")
+    ):
+        data["form_is_valid"] = False
+        data["error"] = "Selected Pres QA user can't perform Pres QA for this job."
+        return JsonResponse(data)
+
     updated = 0
     for phase_id in phase_ids:
         try:
