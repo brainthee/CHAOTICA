@@ -16,7 +16,6 @@ from .qualification import (
     QualificationRecord,
     AwardingBody,
 )
-from .accreditation import Accreditation
 
 from .timeslot import TimeSlot, TimeSlotType,TimeSlotComment
 from .schedule_action import ScheduleAction, ScheduleActionType

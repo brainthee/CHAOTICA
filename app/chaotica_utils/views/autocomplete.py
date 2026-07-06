@@ -99,7 +99,6 @@ def site_search(request):
         Skill,
         BillingCode,
         Qualification,
-        Accreditation,
         Project,
         OrganisationalUnit,
     )
@@ -197,17 +196,6 @@ def site_search(request):
         )[:result_limit]
         context["search_quals"] = qual_search
         results_count = results_count + qual_search.count()
-
-        ## Accreditation
-        accred_search = (
-            get_objects_for_user(
-                request.user, "jobtracker.view_accreditation", Accreditation
-            )
-            .annotate(lower_name=Lower("name"))
-            .filter(Q(lower_name__contains=q))
-        )[:result_limit]
-        context["search_accred"] = accred_search
-        results_count = results_count + accred_search.count()
 
         ## Projects
         project_search = (

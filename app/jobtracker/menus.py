@@ -124,17 +124,6 @@ Menu.add_item(
 Menu.add_item(
     "ops",
     PermMenuItem(
-        "Accreditation",
-        reverse("qualification_list"),
-        check=lambda request: request.user.is_authenticated,
-        perm="jobtracker.view_qualification",
-        icon="certificate",
-        weight=1,
-    ),
-)
-Menu.add_item(
-    "ops",
-    PermMenuItem(
         "Workflow Checklists",
         reverse("wf_tasks_list"),
         check=lambda request: request.user.is_authenticated,
