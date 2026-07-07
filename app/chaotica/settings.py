@@ -49,8 +49,8 @@ if SENTRY_BACKEND_DSN is not None:
         integrations=[DjangoIntegration()],
         send_default_pii=True,
         environment=DJANGO_ENV,
-        traces_sample_rate=1.0,
-        profiles_sample_rate=1.0,
+        traces_sample_rate=float(os.environ.get("SENTRY_TRACES_SAMPLE_RATE", 0.1)),
+        profiles_sample_rate=float(os.environ.get("SENTRY_PROFILES_SAMPLE_RATE", 0.1)),
         before_send=_sentry_before_send,
     )
 

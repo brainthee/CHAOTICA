@@ -311,18 +311,26 @@
         <h2 class="mb-3 lh-sm">My Team</h2>    
         <h5 class="mb-3 text-body-tertiary fw-semibold">
           Team members that report to you.
-        </h5>      
-            {% include 'partials/team_dashboard.html' with team=team %}
+        </h5>
+            <div class="dashboard-lazy-tab" data-tab-url="{% url 'dashboard_team_tab' %}">
+              <div class="text-center py-5 text-body-tertiary">
+                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Loading team&hellip;
+              </div>
+            </div>
       </div>
 
       <div class="tab-pane fade h-100 p-3" id="leaveTabContent" role="tabpanel" aria-labelledby="leaveTab">
-        <h2 class="mb-3 lh-sm">Team Leave Requests</h2>        
+        <h2 class="mb-3 lh-sm">Team Leave Requests</h2>
         <h5 class="mb-3 text-body-tertiary fw-semibold">
           Leave requests submitted by your team.
-        </h5>      
+        </h5>
         <div class="card">
           <div class="p-3 bg-body-emphasis border-top border-bottom border-200">
-            {% include 'partials/team_leave_table.html' with team_leave=team_leave %}
+            <div class="dashboard-lazy-tab" data-tab-url="{% url 'dashboard_team_leave_tab' %}">
+              <div class="text-center py-5 text-body-tertiary">
+                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Loading leave requests&hellip;
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -424,5 +432,49 @@ triggerTabList.forEach(function (triggerEl) {
 
   })
 })
+
+// Lazy-load heavy tab panels (My Team / Team Leave) on first tab-show so they
+// aren't built during the initial dashboard render.
+function loadLazyTab(container) {
+  if (!container || container.dataset.loaded === 'true' || container.dataset.loading === 'true') {
+    return;
+  }
+  container.dataset.loading = 'true';
+  fetch(container.dataset.tabUrl, {
+    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+    credentials: 'same-origin',
+  })
+    .then(function (resp) {
+      if (!resp.ok) { throw new Error('HTTP ' + resp.status); }
+      return resp.text();
+    })
+    .then(function (html) {
+      container.innerHTML = html;
+      container.dataset.loaded = 'true';
+      // Initialise any DataTables in the freshly injected content.
+      container.querySelectorAll('table.datatable').forEach(function (el) {
+        if (!el.classList.contains('dataTable')) {
+          new DataTable(el, {
+            {% include 'js/dtDefaultConfig.js' %}
+          });
+        }
+      });
+    })
+    .catch(function () {
+      container.innerHTML = '<div class="text-center py-5 text-danger">Failed to load. <a href="#" onclick="location.reload();return false;">Reload</a></div>';
+    })
+    .finally(function () {
+      container.dataset.loading = 'false';
+    });
+}
+
+document.querySelectorAll('#teamTab, #leaveTab').forEach(function (tabEl) {
+  tabEl.addEventListener('shown.bs.tab', function () {
+    var target = document.querySelector(tabEl.getAttribute('data-bs-target'));
+    if (target) {
+      loadLazyTab(target.querySelector('.dashboard-lazy-tab'));
+    }
+  });
+});
 </script>
 {% endblock extra_js %}
