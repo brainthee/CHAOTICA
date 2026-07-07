@@ -764,7 +764,7 @@
             <td class="py-2 align-middle text-center fs-8 white-space-nowrap">
               <span class="badge fs-10 badge-phoenix badge-phoenix-${badge.type}">
                 ${status}
-                <span class="ms-1 ${badge.icon}" data-fa-transform="shrink-2"></span>
+                <span class="ms-1 ${badge.icon}"></span>
               </span>
             </td>
             <td class="py-2 align-middle text-end fs-8 fw-medium">
