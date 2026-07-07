@@ -1,0 +1,4 @@
+# Dependencies for the CHAOTICA /api/v1/ example scripts.
+# Deliberately minimal: only the HTTP client. The .env loader and table output
+# are implemented in chaotica_client.py with no third-party packages.
+requests>=2.25
