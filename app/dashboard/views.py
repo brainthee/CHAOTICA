@@ -9,7 +9,7 @@ from jobtracker.models import Job, Phase, TimeSlot, OrganisationalUnit
 from chaotica_utils.models import LeaveRequest, User, UserJobLevel
 from jobtracker.enums import JobStatuses, PhaseStatuses
 from chaotica_utils.views import page_defaults
-from django.db.models import Q, Prefetch, Count
+from django.db.models import Q, Prefetch
 from django.db.models.functions import Coalesce
 from django.views.decorators.http import require_safe
 from guardian.shortcuts import get_objects_for_user
@@ -58,6 +58,15 @@ def index(request):
     units_can_deliver = get_objects_for_user(
         request.user, "can_deliver_jobs", klass=OrganisationalUnit
     )
+    # Unit managers (change_organisationalunit) get the full unit-wide alarm view;
+    # schedulers (can_schedule_job, held by Manager + Service Delivery) get the
+    # "phases with no schedule" alarm unit-wide.
+    units_can_manage = get_objects_for_user(
+        request.user, "change_organisationalunit", klass=OrganisationalUnit
+    )
+    units_can_schedule = get_objects_for_user(
+        request.user, "can_schedule_job", klass=OrganisationalUnit
+    )
 
     # Boolean flags for template tab visibility
     can_scope = units_can_scope.exists()
@@ -80,6 +89,18 @@ def index(request):
         job__status__in=JobStatuses.ACTIVE_STATUSES,  # Include active job statuses only
     )
 
+    has_oversight_role = (
+        can_tqa or can_pqa or can_scope or can_signoff_scope or can_deliver
+    )
+
+    # In Flight / Scheduled This Week / Upcoming Reports show a unit-wide view for
+    # people-managers and oversight roles; everyone else sees only phases they are
+    # personally involved in (scheduled / lead / report author).
+    if is_people_mgr or has_oversight_role:
+        operational_base = all_phases
+    else:
+        operational_base = Phase.objects.phases_for_user(request.user)
+
     # Eagerly evaluate querysets with list() so the template can use
     # |length instead of .count (avoids duplicate COUNT queries)
     context["myJobs"] = list(
@@ -94,7 +115,7 @@ def index(request):
     )
 
     context["in_flight"] = list(
-        all_phases.filter(
+        operational_base.filter(
             Q(status=PhaseStatuses.IN_PROGRESS)
         ).select_related(
             "service",
@@ -157,7 +178,7 @@ def index(request):
     twoweeks = get_start_of_week() + timedelta(weeks=2)
     context["upcoming_reports_date"] = twoweeks
     context["upcoming_reports"] = list(
-        all_phases.annotate(
+        operational_base.annotate(
             db_delivery_date=Coalesce("desired_delivery_date", "_delivery_date")
         )
         .filter(Q(status__lt=PhaseStatuses.DELIVERED) & Q(db_delivery_date__lte=twoweeks))
@@ -175,7 +196,7 @@ def index(request):
     )
 
     context["scheduled_phases_this_week"] = list(
-        all_phases.filter(
+        operational_base.filter(
             timeslots__end__date__gte=week_start_date,
             timeslots__start__date__lte=week_end_date,
         )
@@ -274,29 +295,56 @@ def index(request):
 
     # --- Alarms ---
     today = timezone.now().date()
-    has_elevated_permissions = (
-        can_tqa or can_pqa or can_scope or can_signoff_scope or can_deliver or is_people_mgr
+
+    # Alarm visibility is scoped per-role and per-category:
+    #   * "On the team" (scheduled on / lead / report author of a phase) -> every
+    #     alarm for that phase/job, regardless of the warning type.
+    #   * Unit managers (change_organisationalunit) -> all alarms unit-wide.
+    #   * TQA role -> TQA alarms unit-wide; PQA role -> PQA alarms unit-wide.
+    #   * Schedulers / Service Delivery (can_schedule_job) -> unscheduled unit-wide.
+    # A plain scoper/consultant with none of these only sees their own team's alarms.
+    manager_units = (
+        units_can_view
+        if units_can_manage.exists()
+        else OrganisationalUnit.objects.none()
     )
-    # Elevated users see all alarms across their units; regular users only see
-    # alarms for phases/jobs they are personally involved in.
-    if has_elevated_permissions:
-        alarm_base = Phase.objects.filter(
-            job__unit__in=units_can_view,
-            job__status__in=JobStatuses.ACTIVE_STATUSES,
+
+    phase_involved = (
+        Q(timeslots__user=request.user)
+        | Q(report_author=request.user)
+        | Q(project_lead=request.user)
+    )
+    job_involved = (
+        Q(phases__timeslots__user=request.user)
+        | Q(phases__report_author=request.user)
+        | Q(phases__project_lead=request.user)
+        | Q(scoped_by=request.user)
+        | Q(account_manager=request.user)
+        | Q(dep_account_manager=request.user)
+    )
+
+    def _alarm_phases(unit_scope):
+        # Active phases the user is on the team of, plus active phases in the
+        # given role-scoped units.
+        return Phase.objects.filter(
+            Q(job__unit__in=unit_scope) | phase_involved,
             status__in=PhaseStatuses.ACTIVE_STATUSES,
-        )
-        alarm_job_qs = Job.objects.filter(
-            unit__in=units_can_view,
-            status__in=JobStatuses.ACTIVE_STATUSES,
-        )
-    else:
-        alarm_base = Phase.objects.phases_for_user(request.user)
-        alarm_job_qs = Job.objects.jobs_for_user(request.user)
+            job__status__in=JobStatuses.ACTIVE_STATUSES,
+        ).distinct()
+
+    base_mgr = _alarm_phases(manager_units)
+    base_tqa = _alarm_phases(manager_units | units_can_tqa)
+    base_pqa = _alarm_phases(manager_units | units_can_pqa)
+    base_sched = _alarm_phases(manager_units | units_can_schedule)
+    alarm_job_qs = Job.objects.filter(
+        Q(unit__in=manager_units) | job_involved,
+        status__in=JobStatuses.ACTIVE_STATUSES,
+    ).distinct()
 
     alarms = {}
 
     alarms["delivery_overdue"] = list(
-        alarm_base.annotate(
+        base_mgr.annotate(
             db_delivery_date=Coalesce("desired_delivery_date", "_delivery_date")
         ).filter(db_delivery_date__lt=today).select_related(
             "service", "job__client", "project_lead", "report_author"
@@ -304,7 +352,7 @@ def index(request):
     )
 
     alarms["tqa_overdue"] = list(
-        alarm_base.annotate(
+        base_tqa.annotate(
             db_tqa_date=Coalesce("due_to_techqa_set", "_due_to_techqa")
         ).filter(
             db_tqa_date__lt=today,
@@ -316,7 +364,7 @@ def index(request):
     )
 
     alarms["pqa_overdue"] = list(
-        alarm_base.annotate(
+        base_pqa.annotate(
             db_pqa_date=Coalesce("due_to_presqa_set", "_due_to_presqa")
         ).filter(
             db_pqa_date__lt=today,
@@ -328,7 +376,7 @@ def index(request):
     )
 
     alarms["no_techqa"] = list(
-        alarm_base.filter(
+        base_tqa.filter(
             techqa_by__isnull=True,
             status__in=[
                 PhaseStatuses.PENDING_TQA, PhaseStatuses.QA_TECH,
@@ -338,7 +386,7 @@ def index(request):
     )
 
     alarms["no_presqa"] = list(
-        alarm_base.filter(
+        base_pqa.filter(
             presqa_by__isnull=True,
             status__in=[
                 PhaseStatuses.PENDING_PQA, PhaseStatuses.QA_PRES,
@@ -348,15 +396,13 @@ def index(request):
     )
 
     alarms["unscheduled"] = list(
-        alarm_base.filter(
+        base_sched.filter(
             status__in=[
                 PhaseStatuses.SCHEDULED_TENTATIVE, PhaseStatuses.SCHEDULED_CONFIRMED,
                 PhaseStatuses.PRE_CHECKS, PhaseStatuses.CLIENT_NOT_READY,
                 PhaseStatuses.READY_TO_BEGIN, PhaseStatuses.IN_PROGRESS,
-            ]
-        ).annotate(
-            timeslot_count=Count("timeslots")
-        ).filter(timeslot_count=0).select_related("service", "job__client", "project_lead")
+            ],
+        ).filter(timeslots__isnull=True).select_related("service", "job__client", "project_lead")
     )
 
     alarms["job_overdue"] = list(
