@@ -187,6 +187,13 @@ Use **Clone** (from the job or phase action menu) to spin up a copy without re-e
 - Reports and deliverables
 - Client communications
 
+**Team Tab**:
+- A full‑width, client‑shareable view of *who* is on the engagement, *for how long*, doing *what*, and in *what role*.
+- One row per team member showing their **job‑wide roles** (Account Manager, Deputy AM, Scoping), their **date range** on the job, and booked days split by **capacity** (Delivery, Reporting, Management, QA, Oversight, Debrief, Contingency, Other), plus a **total**.
+- Under each member are **per‑phase rows** (always shown) that carry the **role they hold on that phase** (Lead, Author, Tech QA, Pres QA) and that phase's capacity split — so it's clear *which* phase someone leads or authors.
+- People **assigned** but not yet booked are listed and flagged **"Not scheduled"** — both at the member level and against the specific phase they're assigned to; tentative (not‑yet‑confirmed) allocations are flagged but still counted.
+- A **days / hours** toggle switches units (remembered across pages), and **Export XLSX** produces a themed spreadsheet of the same table for handing to clients.
+
 **Notes Tab**:
 - Internal notes and comments
 - Status change history

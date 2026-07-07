@@ -365,6 +365,46 @@ def assigned_role_map(job, phase=None):
     return role_map
 
 
+def job_assigned_role_map(job):
+    """Map user_pk -> [job-wide role labels] (Account Manager / Deputy AM /
+    Scoping). Unlike ``assigned_role_map`` this excludes the *per-phase* roles
+    (Lead / Author / Tech QA / Pres QA), which belong against individual phases."""
+    role_map = {}
+
+    def _add(pk, label):
+        if not pk:
+            return
+        lst = role_map.setdefault(pk, [])
+        if label not in lst:
+            lst.append(label)
+
+    if job is not None:
+        _add(job.account_manager_id, "Account Manager")
+        _add(job.dep_account_manager_id, "Deputy AM")
+        for sid in job.scoped_by.values_list("pk", flat=True):
+            _add(sid, "Scoping")
+    return role_map
+
+
+def phase_assigned_role_map(phase):
+    """Map user_pk -> [per-phase role labels] for a single phase
+    (Lead / Author / Tech QA / Pres QA)."""
+    role_map = {}
+
+    def _add(pk, label):
+        if not pk:
+            return
+        lst = role_map.setdefault(pk, [])
+        if label not in lst:
+            lst.append(label)
+
+    _add(phase.project_lead_id, "Lead")
+    _add(phase.report_author_id, "Author")
+    _add(phase.techqa_by_id, "Tech QA")
+    _add(phase.presqa_by_id, "Pres QA")
+    return role_map
+
+
 def get_scheduler_members(request, filtered_users = None, start = None, end = None, use_filter_form=True, role_job=None, role_phase=None):
     data = []
     selected_phases = []

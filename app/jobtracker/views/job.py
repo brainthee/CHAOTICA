@@ -747,6 +747,40 @@ def view_job_schedule_user_breakdown(request, slug):
 
 
 @job_permission_required_or_403("jobtracker.view_job_schedule", (Job, "slug", "slug"))
+def view_job_team(request, slug):
+    from .scheduler import (
+        get_user_schedule_breakdown,
+        get_user_phase_breakdown,
+        build_team_rows,
+    )
+    from ..utils import job_assigned_role_map
+    job = get_object_or_404(Job, slug=slug)
+    breakdown = get_user_schedule_breakdown(job)
+    # Job-wide roles (AM / Deputy AM / Scoping) stay against the member; the
+    # per-phase roles (Lead / Author / Tech QA / Pres QA) move to the phase rows.
+    job_roles = job_assigned_role_map(job)
+    for entry in breakdown:
+        entry["assigned_roles"] = job_roles.get(entry["user"].pk, [])
+    capacity_labels, user_breakdown = build_team_rows(
+        breakdown, get_user_phase_breakdown(job)
+    )
+    context = {
+        "user_breakdown": user_breakdown,
+        "capacity_labels": capacity_labels,
+        "hours_in_day": job.get_hours_in_day(),
+        "show_phases": True,
+    }
+    return render(request, "partials/scheduler/team_summary.html", context)
+
+
+@job_permission_required_or_403("jobtracker.view_job_schedule", (Job, "slug", "slug"))
+def job_team_export(request, slug):
+    from ..schedule_export import build_team_xlsx
+    job = get_object_or_404(Job, slug=slug)
+    return build_team_xlsx(job)
+
+
+@job_permission_required_or_403("jobtracker.view_job_schedule", (Job, "slug", "slug"))
 def view_job_schedule_phase_status(request, slug):
     from .scheduler import get_schedule_utilisation
     job = get_object_or_404(Job, slug=slug)

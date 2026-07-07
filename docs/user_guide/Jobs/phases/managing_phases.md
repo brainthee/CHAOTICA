@@ -156,6 +156,10 @@ graph TD
 - **Review Slots**: Quality assurance and review activities
 - **Management Slots**: Coordination and oversight
 
+### Team Tab
+
+The phase detail page has a **Team** tab — a full‑width, client‑shareable view of the phase's people. Each row shows a team member's **assigned roles**, their **date range** on the phase, and booked days split by **capacity** (Delivery, Reporting, Management, QA, Oversight, Debrief, Contingency, Other) with a **total**. Assigned‑but‑unbooked people are flagged **"Not scheduled"**, tentative allocations are flagged but counted, a **days / hours** toggle switches units, and **Export XLSX** produces a themed spreadsheet of the same table.
+
 ### Scheduling Process
 
 1. **Estimate Effort**

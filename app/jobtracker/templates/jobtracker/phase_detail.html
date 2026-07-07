@@ -48,6 +48,11 @@
       </a>
     </li>
     <li class="nav-item text-nowrap me-2" role="presentation">
+      <a class="nav-link" id="team-tab" data-bs-toggle="tab" data-bs-target="#team" role="tab" aria-controls="tab-team" aria-selected="false" tabindex="-1">
+        <span class="fa-solid fa-users me-2 tab-icon-color"></span>Team
+      </a>
+    </li>
+    <li class="nav-item text-nowrap me-2" role="presentation">
       <a class="nav-link" id="dates-tab" data-bs-toggle="tab" data-bs-target="#dates" role="tab" aria-controls="tab-dates" aria-selected="false" tabindex="-1">
         <span class="fa-solid fa-clipboard me-2 tab-icon-color"></span>Dates
       </a>
@@ -139,6 +144,16 @@
       <div id="sched-progress" class="sched-progress" role="progressbar" aria-hidden="true"></div>
       <div id="vis-timeline"></div>
     </div>
+    <div class="tab-pane p-2 fade" id="team" role="tabpanel" aria-labelledby="team-tab">
+      <div class="d-flex justify-content-end mb-2">
+        <a href="{% url 'phase_team_export' phase.job.slug phase.slug %}" class="btn btn-sm btn-phoenix-secondary">
+          <span class="fas fa-file-excel me-1"></span> Export XLSX
+        </a>
+      </div>
+      <div id="team-content">
+        <div class="text-center py-5 text-body-secondary"><span class="spinner-border spinner-border-sm me-2"></span>Loading team&hellip;</div>
+      </div>
+    </div>
     <div class="tab-pane p-2 fade" id="dates" role="tabpanel" aria-labelledby="dates-tab">
       {% include 'partials/phase/dates_view.html' %}          
     </div>
@@ -192,5 +207,19 @@ $("#scopePhaseForm").dirty({preventLeaving: true});
   document.getElementById('schedule-tab')?.addEventListener('shown.bs.tab', function () {
     if (window.__schedRedraw) window.__schedRedraw();
   });
+
+  (function () {
+    var teamLoaded = false;
+    document.getElementById('team-tab')?.addEventListener('shown.bs.tab', function () {
+      if (teamLoaded) return;
+      teamLoaded = true;
+      // jQuery .html() executes the partial's inline scripts (days/hours toggle etc.).
+      $.get("{% url 'view_phase_team' phase.job.slug phase.slug %}", function (html) {
+        $('#team-content').html(html);
+      }).fail(function () {
+        $('#team-content').html('<div class="text-center py-5 text-danger">Failed to load. Please refresh the page.</div>');
+      });
+    });
+  })();
 </script>
 {% endblock extra_js %}

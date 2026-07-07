@@ -26,6 +26,9 @@ A per‑person breakdown of booked time by role, with totals.
 - People **assigned** to the job/phase (Lead, Author, Tech QA, Pres QA, account managers) but with **no hours booked yet** are listed too, flagged **"Not scheduled"** — so nobody who should be on the plan is invisible.
 - Role tags and a per‑role **tentative** hint are shown; the same days/hours toggle applies.
 
+!!! tip "Team tab & XLSX export"
+    For a fuller, client‑shareable view — dates, per‑capacity days (Delivery / Reporting / QA / …), roles and totals, with an **Export XLSX** button — use the **Team** tab on the job or phase detail page. On a job each member is broken down into per‑phase rows that show the role they hold on each phase.
+
 ## Phase Status (job schedule)
 
 An at‑a‑glance strip of the job's phases: each phase's workflow **status**, its **scheduled %**, the **delivery date + countdown**, and a **needs‑attention** flag (the whole row highlights) when a required role is unscheduled or a milestone is late. Phase names link straight to the phase.
