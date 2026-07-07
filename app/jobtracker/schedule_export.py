@@ -103,6 +103,168 @@ def job_header_rows(job):
     ]
 
 
+def build_team_xlsx(job, phase=None):
+    """Build a themed single-sheet Team allocation export for a job or phase.
+
+    One row per team member: assigned roles, date range, a day column per
+    delivery-role capacity, plus total/confirmed/tentative days. Consumes
+    ``get_user_schedule_breakdown`` so it always matches the on-screen Team tab.
+    """
+    import xlsxwriter
+    from .views.scheduler import (
+        get_user_schedule_breakdown,
+        get_user_phase_breakdown,
+        TEAM_CAPACITY_ROLES,
+    )
+
+    user_breakdown = get_user_schedule_breakdown(job, phase)
+    # Job-level export expands each member into per-phase sub-rows; the per-phase
+    # roles (Lead / Author / …) sit against those rows, so the member row keeps
+    # only the job-wide roles (AM / Deputy AM / Scoping).
+    if phase is None:
+        from .utils import job_assigned_role_map
+        phase_breakdown = get_user_phase_breakdown(job)
+        job_roles = job_assigned_role_map(job)
+        for entry in user_breakdown:
+            entry["assigned_roles"] = job_roles.get(entry["user"].pk, [])
+    else:
+        phase_breakdown = {}
+    hours_in_day = phase.get_hours_in_day() if phase else job.get_hours_in_day()
+
+    if phase:
+        header_rows = phase_header_rows(phase)
+        title = "Team — {}: {}".format(phase.get_id(), phase.title)
+        filename = "team-{}".format(phase.slug)
+    else:
+        header_rows = job_header_rows(job)
+        title = "Team — {}: {}".format(job.id, job.title)
+        filename = "team-{}".format(job.slug)
+
+    def _days(hours):
+        return round(float(hours) / float(hours_in_day), 2) if hours_in_day else 0.0
+
+    output = io.BytesIO()
+    workbook = xlsxwriter.Workbook(output, {"remove_timezone": True})
+
+    title_fmt = workbook.add_format({
+        "bold": True, "font_size": 16, "font_color": "#FFFFFF",
+        "bg_color": PHX_PRIMARY, "valign": "vcenter", "indent": 1,
+    })
+    hdr_label_fmt = workbook.add_format({
+        "bold": True, "bg_color": PHX_GRAY_100, "font_color": PHX_INK,
+        "border": 1, "border_color": PHX_BORDER, "valign": "vcenter",
+    })
+    hdr_value_fmt = workbook.add_format({
+        "border": 1, "border_color": PHX_BORDER, "valign": "vcenter", "text_wrap": True,
+    })
+    col_hdr_fmt = workbook.add_format({
+        "bold": True, "bg_color": PHX_PRIMARY, "font_color": "#FFFFFF",
+        "border": 1, "border_color": PHX_BORDER,
+        "align": "center", "valign": "vcenter", "text_wrap": True,
+    })
+    member_fmt = workbook.add_format({
+        "bold": True, "bg_color": PHX_GRAY_100, "font_color": PHX_INK,
+        "border": 1, "border_color": PHX_BORDER, "valign": "vcenter",
+    })
+    cell_fmt = workbook.add_format({
+        "border": 1, "border_color": PHX_BORDER, "valign": "vcenter", "text_wrap": True,
+    })
+    num_fmt = workbook.add_format({
+        "border": 1, "border_color": PHX_BORDER, "valign": "vcenter", "align": "center",
+    })
+    total_fmt = workbook.add_format({
+        "bold": True, "border": 1, "border_color": PHX_BORDER,
+        "valign": "vcenter", "align": "center", "bg_color": PHX_GRAY_100,
+    })
+    phase_label_fmt = workbook.add_format({
+        "italic": True, "font_color": PHX_SECONDARY, "indent": 2,
+        "border": 1, "border_color": PHX_BORDER, "valign": "vcenter", "text_wrap": True,
+    })
+    phase_num_fmt = workbook.add_format({
+        "font_color": PHX_SECONDARY, "border": 1, "border_color": PHX_BORDER,
+        "valign": "vcenter", "align": "center",
+    })
+
+    ws = workbook.add_worksheet("Team")
+    ws.hide_gridlines(2)
+
+    r = 0
+    last_col = 4 + len(TEAM_CAPACITY_ROLES) + 2  # member..end + capacities + total/conf/tent
+    ws.merge_range(r, 0, r, last_col, title, title_fmt)
+    ws.set_row(r, 26)
+    r += 2
+
+    for label, value in header_rows:
+        ws.write(r, 0, label, hdr_label_fmt)
+        ws.merge_range(r, 1, r, last_col, value, hdr_value_fmt)
+        r += 1
+    r += 1
+
+    # Table header
+    columns = ["Team Member", "Assigned Roles", "Start", "End"]
+    columns += [label for _id, label in TEAM_CAPACITY_ROLES]
+    columns += ["Total Days", "Confirmed Days", "Tentative Days"]
+    header_row = r
+    for col, name in enumerate(columns):
+        ws.write(header_row, col, name, col_hdr_fmt)
+    ws.set_column(0, 0, 24)
+    ws.set_column(1, 1, 26)
+    ws.set_column(2, 3, 13)
+    ws.set_column(4, last_col, SUMMARY_COL_WIDTH)
+    ws.freeze_panes(header_row + 1, 0)
+    r = header_row + 1
+
+    capacity_ids = [role_id for role_id, _label in TEAM_CAPACITY_ROLES]
+    role_names = dict(TimeSlotDeliveryRole.CHOICES)
+
+    for entry in user_breakdown:
+        by_name = {role["role_name"]: role for role in entry.get("roles", [])}
+        ws.write(r, 0, entry["user"].get_full_name(), member_fmt)
+        ws.write(r, 1, ", ".join(entry.get("assigned_roles", [])), cell_fmt)
+        ws.write(r, 2, _fmt_date(entry["start"].date()) if entry.get("start") else "", num_fmt)
+        ws.write(r, 3, _fmt_date(entry["end"].date()) if entry.get("end") else "", num_fmt)
+        col = 4
+        for role_id in capacity_ids:
+            cell = by_name.get(role_names.get(role_id))
+            ws.write(r, col, float(cell["days"]) if cell else 0.0, num_fmt)
+            col += 1
+        ws.write(r, col, float(entry["total_days"]), total_fmt)
+        ws.write(r, col + 1, _days(entry.get("total_confirmed", 0)), num_fmt)
+        ws.write(r, col + 2, _days(entry.get("total_tentative", 0)), num_fmt)
+        max_lines = _est_lines(", ".join(entry.get("assigned_roles", [])), 26)
+        ws.set_row(r, _row_height(max_lines))
+        r += 1
+
+        # Per-phase sub-rows (job-level export only).
+        for prow in phase_breakdown.get(entry["user"].pk, []):
+            prow_by_name = {role["role_name"]: role for role in prow.get("roles", [])}
+            phase = prow["phase"]
+            ws.write(r, 0, "{}: {}".format(phase.get_id(), phase.title), phase_label_fmt)
+            ws.write(r, 1, ", ".join(prow.get("assigned_roles", [])), phase_num_fmt)
+            ws.write(r, 2, "", phase_num_fmt)
+            ws.write(r, 3, "", phase_num_fmt)
+            col = 4
+            for role_id in capacity_ids:
+                cell = prow_by_name.get(role_names.get(role_id))
+                ws.write(r, col, float(cell["days"]) if cell else 0.0, phase_num_fmt)
+                col += 1
+            ws.write(r, col, float(prow["total_days"]), phase_num_fmt)
+            ws.write(r, col + 1, _days(prow.get("total_confirmed", 0)), phase_num_fmt)
+            ws.write(r, col + 2, _days(prow.get("total_tentative", 0)), phase_num_fmt)
+            ws.set_row(r, _row_height(_est_lines(phase.title, 24)))
+            r += 1
+
+    workbook.close()
+    output.seek(0)
+
+    response = HttpResponse(
+        output.getvalue(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+    response["Content-Disposition"] = 'attachment; filename="{}.xlsx"'.format(filename)
+    return response
+
+
 def build_schedule_xlsx(timeslots, filename, title=None, header_rows=None):
     """
     Build a themed three-sheet XLSX schedule export.

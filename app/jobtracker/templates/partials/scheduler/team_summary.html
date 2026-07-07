@@ -1,0 +1,118 @@
+{% load menu %}{% load static %}
+<div class="card">
+  <div class="card-header">
+    <div class="d-flex justify-content-between align-items-center">
+      <h4 class="mb-0">Team &amp; Allocation</h4>
+      <div class="form-check form-switch mb-0">
+        <input class="form-check-input" id="teamDaysChecked" type="checkbox" checked onchange="toggleTeamUnit()" />
+        <label class="form-check-label" for="teamDaysChecked">Days</label>
+      </div>
+    </div>
+  </div>
+  <div class="card-body p-0">
+    {% if user_breakdown %}
+    <div class="table-responsive">
+      <table class="table table-sm fs-9 mb-0 align-middle">
+        <thead>
+          <tr>
+            <th class="border-top ps-3">Team member</th>
+            <th class="border-top">Assigned roles</th>
+            <th class="border-top text-nowrap">Dates</th>
+            {% for label in capacity_labels %}
+            <th class="border-top text-end text-nowrap">{{ label }}</th>
+            {% endfor %}
+            <th class="border-top text-end pe-3">Total</th>
+          </tr>
+        </thead>
+        <tbody class="list">
+          {% for entry in user_breakdown %}
+          <tr class="border-top border-translucent{% if entry.unscheduled %} opacity-75{% endif %}">
+            <td class="ps-3 fw-semibold text-nowrap">{{ entry.user.get_full_name }}</td>
+            <td>
+              {% for r in entry.assigned_roles %}<span class="badge badge-phoenix badge-phoenix-secondary fs-10 fw-normal me-1">{{ r }}</span>{% endfor %}
+              {% if entry.unscheduled %}<span class="badge badge-phoenix badge-phoenix-warning fs-10 me-1"><span class="fas fa-triangle-exclamation me-1"></span>Not scheduled</span>{% endif %}
+            </td>
+            <td class="text-body-secondary text-nowrap">
+              {% if entry.start %}{{ entry.start|date:"d M Y" }} &ndash; {{ entry.end|date:"d M Y" }}{% else %}&mdash;{% endif %}
+            </td>
+            {% for cell in entry.capacities %}
+            <td class="text-end">
+              {% if cell %}
+                <span class="team-days">{{ cell.days }}d</span>
+                <span class="team-hours d-none">{{ cell.hours }}h</span>
+                {% if cell.tentative > 0 %}<span class="fs-10 text-warning ms-1" data-bs-toggle="tooltip" title="{{ cell.tentative }}h tentative (phase not yet confirmed)">&bull;</span>{% endif %}
+              {% else %}
+                <span class="text-body-tertiary">&mdash;</span>
+              {% endif %}
+            </td>
+            {% endfor %}
+            <td class="text-end pe-3 fw-bold">
+              {% if entry.unscheduled %}
+                <span class="text-body-secondary">0</span>
+              {% else %}
+                <span class="team-days">{{ entry.total_days }}d</span>
+                <span class="team-hours d-none">{{ entry.total_hours }}h</span>
+                {% if entry.total_tentative > 0 %}<span class="fs-10 text-warning ms-1" data-bs-toggle="tooltip" title="{{ entry.total_tentative }}h tentative (not yet confirmed)"><span class="fas fa-triangle-exclamation"></span></span>{% endif %}
+              {% endif %}
+            </td>
+          </tr>
+          {% if show_phases %}{% for prow in entry.phase_rows %}
+          <tr class="bg-body-secondary fs-10{% if prow.unscheduled %} opacity-75{% endif %}">
+            <td class="ps-5 text-body-secondary text-nowrap">
+              <a href="{{ prow.phase.get_absolute_url }}" class="text-body-secondary">{{ prow.phase.get_id }}: {{ prow.phase.title }}</a>
+            </td>
+            <td>
+              {% for r in prow.assigned_roles %}<span class="badge badge-phoenix badge-phoenix-info fs-10 fw-normal me-1">{{ r }}</span>{% endfor %}
+              {% if prow.unscheduled %}<span class="badge badge-phoenix badge-phoenix-warning fs-10"><span class="fas fa-triangle-exclamation me-1"></span>Not scheduled</span>{% endif %}
+            </td>
+            <td></td>
+            {% for cell in prow.capacities %}
+            <td class="text-end text-body-secondary">
+              {% if cell %}
+                <span class="team-days">{{ cell.days }}d</span>
+                <span class="team-hours d-none">{{ cell.hours }}h</span>
+                {% if cell.tentative > 0 %}<span class="text-warning ms-1" data-bs-toggle="tooltip" title="{{ cell.tentative }}h tentative">&bull;</span>{% endif %}
+              {% else %}
+                <span class="text-body-tertiary">&mdash;</span>
+              {% endif %}
+            </td>
+            {% endfor %}
+            <td class="text-end pe-3 fw-semibold text-body-secondary">
+              {% if prow.unscheduled %}
+                <span class="text-body-tertiary">0</span>
+              {% else %}
+                <span class="team-days">{{ prow.total_days }}d</span>
+                <span class="team-hours d-none">{{ prow.total_hours }}h</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}{% endif %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="p-3 text-body-secondary fs-9">No one scheduled or assigned to this engagement yet.</div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+function applyTeamUnit(useDays) {
+    document.querySelectorAll('.team-days').forEach(el => el.classList.toggle('d-none', !useDays));
+    document.querySelectorAll('.team-hours').forEach(el => el.classList.toggle('d-none', useDays));
+}
+function toggleTeamUnit() {
+    const useDays = document.getElementById('teamDaysChecked').checked;
+    try { localStorage.setItem('chaotica_sched_days', useDays ? '1' : '0'); } catch (e) {}
+    applyTeamUnit(useDays);
+}
+(function () {
+    var pref = null; try { pref = localStorage.getItem('chaotica_sched_days'); } catch (e) {}
+    if (pref === '0') {
+        var cb = document.getElementById('teamDaysChecked');
+        if (cb) cb.checked = false;
+        applyTeamUnit(false);
+    }
+})();
+</script>

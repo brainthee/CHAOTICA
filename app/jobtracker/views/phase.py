@@ -435,6 +435,30 @@ def view_phase_schedule_user_breakdown(request, job_slug, slug):
 
 
 @job_permission_required_or_403("jobtracker.view_job_schedule", (Phase, "slug", "slug"))
+def view_phase_team(request, job_slug, slug):
+    from .scheduler import get_user_schedule_breakdown, build_team_rows
+    job = get_object_or_404(Job, slug=job_slug)
+    phase = get_object_or_404(Phase, job=job, slug=slug)
+    capacity_labels, user_breakdown = build_team_rows(
+        get_user_schedule_breakdown(job, phase)
+    )
+    context = {
+        "user_breakdown": user_breakdown,
+        "capacity_labels": capacity_labels,
+        "hours_in_day": phase.get_hours_in_day(),
+    }
+    return render(request, "partials/scheduler/team_summary.html", context)
+
+
+@job_permission_required_or_403("jobtracker.view_job_schedule", (Phase, "slug", "slug"))
+def phase_team_export(request, job_slug, slug):
+    from ..schedule_export import build_team_xlsx
+    job = get_object_or_404(Job, slug=job_slug)
+    phase = get_object_or_404(Phase, job=job, slug=slug)
+    return build_team_xlsx(job, phase)
+
+
+@job_permission_required_or_403("jobtracker.view_job_schedule", (Phase, "slug", "slug"))
 def view_phase_schedule_util(request, job_slug, slug):
     from .scheduler import get_schedule_utilisation
     job = get_object_or_404(Job, slug=job_slug)
