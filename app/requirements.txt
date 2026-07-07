@@ -81,6 +81,7 @@ django-widget-tweaks==1.5.0
 django_celery_results==2.6.0
 djangorestframework==3.16.0
 djangorestframework-datatables==0.7.2
+drf-spectacular==0.28.0
 docutils==0.21.2
 et_xmlfile==2.0.0
 Faker==37.4.0

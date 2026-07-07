@@ -389,6 +389,8 @@ THIRD_PARTY_APPS = [
     "phonenumber_field",
     "simple_history",
     "rest_framework",
+    "rest_framework.authtoken",
+    "drf_spectacular",
     "django_filters",
     "rest_framework_datatables",
     "impersonate",
@@ -513,6 +515,26 @@ REST_FRAMEWORK = {
     ),
     "DEFAULT_PAGINATION_CLASS": "rest_framework_datatables.pagination.DatatablesPageNumberPagination",
     # 'PAGE_SIZE': 50
+    # NOTE: the datatables renderer/filter/pagination above are globals the legacy
+    # `/api/` DataTables feeds depend on. The versioned `/api/v1/` API deliberately
+    # overrides them per-view (see jobtracker/api/v1/base.py) so it emits clean JSON
+    # without disturbing the UI feeds. Only DEFAULT_SCHEMA_CLASS is added here.
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+# OpenAPI schema / docs (drf-spectacular) for the versioned `/api/v1/` API.
+SPECTACULAR_SETTINGS = {
+    "TITLE": "CHAOTICA API",
+    "DESCRIPTION": "Read-only REST API for CHAOTICA engagement lifecycle data.",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "SERVE_PERMISSIONS": ["rest_framework.permissions.IsAuthenticated"],
+    # The legacy datatables viewsets aren't part of the documented API surface;
+    # restrict schema generation to the versioned namespace.
+    "SERVERS": [{"url": "/api/v1"}],
+    "PREPROCESSING_HOOKS": [
+        "jobtracker.api.v1.schema.exclude_non_v1_endpoints",
+    ],
 }
 
 SESSION_ENGINE = "qsessions.backends.db"

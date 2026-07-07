@@ -33,6 +33,9 @@ urlpatterns = [
     path('reporting/', include('reporting.urls')),
     path('notifications/', include('notifications.urls')),
     path('qa-reviews/', include('qa_reviews.urls')),
+    # Versioned, clean REST API. Kept separate from the legacy `/api/` DataTables
+    # feeds in jobtracker.urls (which are unversioned and UI-coupled).
+    path("api/v1/", include("jobtracker.api.v1.urls")),
     re_path(r"", include("chaotica_utils.urls")),
     re_path(r"", include("jobtracker.urls")),
     path("rm_sync/", include("rm_sync.urls")),

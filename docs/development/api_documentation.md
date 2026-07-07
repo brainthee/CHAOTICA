@@ -1,5 +1,13 @@
 # API Documentation
 
+!!! danger "This page is aspirational — see the accurate reference instead"
+    Much of the content below (webhooks, bulk operations, cursor pagination, field
+    selection, SDKs, rate limiting, data export) describes features that **do not
+    exist** in CHAOTICA today. For the real, supported API use the
+    **[REST API (v1)](api_v1.md)** reference and the interactive OpenAPI docs at
+    `/api/v1/schema/swagger-ui/`. This page is retained only as a historical/roadmap
+    document and should not be relied on for integration.
+
 CHAOTICA provides a comprehensive REST API built on Django REST Framework, enabling integration with external systems and custom application development. This guide covers available endpoints, authentication methods, and usage examples.
 
 ## API Overview
