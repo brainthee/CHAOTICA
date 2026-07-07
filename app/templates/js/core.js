@@ -37,13 +37,19 @@ function setRequestHeader(){
 
 $(document).ready(function() {        
     $('#mainModal').on('shown.bs.modal', function (e) {
-        $('.modelselect2').select2({
-            dropdownParent: $('#mainModal .modal-content')
-        });
+        // select2 is only present on pages that load a select2 form's media.
+        if ($.fn.select2) {
+            $('.modelselect2').select2({
+                dropdownParent: $('#mainModal .modal-content')
+            });
+        }
     });
-    
+
     // Fix for select2 dropdowns in offcanvas panels
     $('#settings-offcanvas').on('shown.bs.offcanvas', function (e) {
+        if (!$.fn.select2) {
+            return;
+        }
         $('.select2-widget').select2({
             dropdownParent: $('#settings-offcanvas .offcanvas-body')
         });
