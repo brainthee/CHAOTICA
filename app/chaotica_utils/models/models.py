@@ -50,6 +50,9 @@ class Note(models.Model):
         verbose_name = "Note"
         verbose_name_plural = "Notes"
         ordering = ["-create_date"]
+        indexes = [
+            models.Index(fields=["content_type", "object_id"], name="note_ct_obj_idx"),
+        ]
 
 
 def get_media_profile_file_path(_, filename):
