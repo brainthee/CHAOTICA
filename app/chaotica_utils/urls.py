@@ -19,6 +19,7 @@ urlpatterns = [
         "autocomplete/cities", views.city_autocomplete, name="city-autocomplete"
     ),
     path("search", views.site_search, name="search"),
+    path("search/goto", views.search_goto, name="search_goto"),
     
     # User CRUD
     path("users/", views.UserListView.as_view(), name="user_list"),
