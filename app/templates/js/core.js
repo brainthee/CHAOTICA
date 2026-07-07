@@ -486,3 +486,192 @@ jQuery(document).ready(function($){
 
 
 {% endif %}
+
+{% if config.ENTROPY_METER_ENABLED %}
+jQuery(document).ready(function ($) {
+    var artifact = document.getElementById('entropyArtifact');
+    if (!artifact) return;
+
+    var entropyData = null;
+
+    // Level -> accent colour for the gauge/level label.
+    var LEVEL_COLOUR = { calm: '#4caf72', elevated: '#e0b000', high: '#e8833a', critical: '#d9534f' };
+    var FLAVOUR = {
+        calm: 'Systems nominal.',
+        elevated: 'A manageable amount of chaos.',
+        high: 'Entropy is winning.',
+        critical: 'Contain the breach.'
+    };
+    // Per-category dot colour.
+    var FACTOR_COLOUR = {
+        delivery_overdue: '#d9534f', job_overdue: '#d9534f',
+        tqa_overdue: '#e0a800', pqa_overdue: '#e0a800',
+        no_techqa: '#d98a2b', no_presqa: '#d98a2b',
+        unscheduled: '#5b8def'
+    };
+
+    // Self-contained styles injected once, so the egg renders correctly
+    // regardless of whether the compiled stylesheet has been recollected.
+    function injectStyles() {
+        if (document.getElementById('entropyStyles')) return;
+        var css = ''
+            + '#entropyArtifact{cursor:pointer;opacity:.28;font-size:.85em;vertical-align:-.05em;margin-left:.35rem;color:inherit;transition:opacity .4s,color .4s,text-shadow .4s;outline:none;user-select:none}'
+            + '#entropyArtifact:hover,#entropyArtifact:focus-visible{opacity:.85}'
+            + '#entropyArtifact.lvl-elevated{opacity:.4}'
+            + '#entropyArtifact.lvl-high{color:#d98a2b;opacity:.5;animation:entPulseHi 3.2s ease-in-out infinite}'
+            + '#entropyArtifact.lvl-critical{color:#d9534f;opacity:.55;animation:entPulseCrit 2.2s ease-in-out infinite}'
+            + '@keyframes entPulseHi{0%,100%{opacity:.32;text-shadow:none}50%{opacity:.72;text-shadow:0 0 6px rgba(217,138,43,.55)}}'
+            + '@keyframes entPulseCrit{0%,100%{opacity:.4;text-shadow:none}50%{opacity:.9;text-shadow:0 0 8px rgba(217,83,79,.65)}}'
+            + '@media(prefers-reduced-motion:reduce){#entropyArtifact.lvl-high,#entropyArtifact.lvl-critical{animation:none}}'
+            + '.ent-panel{text-align:left;font-size:.9rem;padding-top:.25rem}'
+            + '.ent-head{text-align:center;text-transform:uppercase;letter-spacing:.14em;font-size:.66rem;opacity:.6;margin-bottom:.35rem}'
+            + '.ent-gaugewrap{text-align:center;margin-bottom:.15rem}'
+            + '.ent-lvl{text-align:center;text-transform:uppercase;letter-spacing:.14em;font-size:.72rem;font-weight:700}'
+            + '.ent-flavour{text-align:center;font-style:italic;opacity:.7;margin-bottom:.9rem}'
+            + '.ent-sub{text-align:center;font-size:.78rem;opacity:.65;margin:-.55rem 0 .9rem}'
+            + '.ent-factors{display:flex;flex-direction:column;gap:.1rem;margin-bottom:.5rem}'
+            + '.ent-factor{display:flex;align-items:center;gap:.55rem;padding:.28rem .1rem;border-bottom:1px solid rgba(128,138,158,.14)}'
+            + '.ent-factor:last-child{border-bottom:0}'
+            + '.ent-dot{width:.62rem;height:.62rem;border-radius:50%;flex:0 0 auto}'
+            + '.ent-flabel{flex:1}'
+            + '.ent-badge{font-variant-numeric:tabular-nums;font-weight:700;background:rgba(128,138,158,.18);border-radius:.6rem;padding:.05rem .55rem;min-width:1.9rem;text-align:center}'
+            + '.ent-clear{text-align:center;opacity:.7;margin:.4rem 0 .9rem}'
+            + '.ent-trend-head{display:flex;justify-content:space-between;font-size:.72rem;opacity:.6;margin-bottom:.3rem}'
+            + '.ent-trend{display:flex;align-items:flex-end;gap:4px;height:46px}'
+            + '.ent-bar{flex:1;background:rgba(128,138,158,.3);border-radius:3px 3px 0 0;min-height:3px;transition:height .3s}'
+            + '.ent-bar.hot{background:#d9534f}'
+            + '.ent-arc{transition:stroke-dasharray 1.1s cubic-bezier(.2,.7,.2,1)}'
+            + '@keyframes entShake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(3px)}30%,50%,70%{transform:translateX(-5px)}40%,60%{transform:translateX(5px)}}'
+            + '.ent-shake{animation:entShake .5s cubic-bezier(.36,.07,.19,.97)}'
+            + '@keyframes entGlitch{0%,100%{text-shadow:none;transform:none}20%{text-shadow:-2px 0 #d9534f,2px 0 #4fd2d9;transform:translateX(-1px)}40%{text-shadow:2px 0 #d9534f,-2px 0 #4fd2d9;transform:translateX(1px)}60%{text-shadow:-1px 0 #d9534f,1px 0 #4fd2d9}}'
+            + '.ent-glitch{animation:entGlitch .45s steps(2) 2}'
+            + '.ent-flash{position:fixed;inset:0;pointer-events:none;z-index:20000;background:radial-gradient(circle at 50% 45%,rgba(217,83,79,.3),transparent 62%);animation:entFlash .82s ease-out forwards}'
+            + '@keyframes entFlash{0%{opacity:0}14%{opacity:1}100%{opacity:0}}'
+            + '@media(prefers-reduced-motion:reduce){.ent-arc{transition:none}.ent-shake,.ent-glitch,.ent-flash{animation:none}}';
+        var style = document.createElement('style');
+        style.id = 'entropyStyles';
+        style.textContent = css;
+        document.head.appendChild(style);
+    }
+    injectStyles();
+
+    fetch("{% url 'entropy_status' %}", { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (d) {
+            if (!d) return;
+            entropyData = d;
+            artifact.classList.add('lvl-' + d.level);
+            artifact.title = 'System entropy: ' + d.score + '% (' + d.level + ')';
+        })
+        .catch(function () {});
+
+    function gaugeSvg(score, colour) {
+        // r chosen so the circumference is ~100 -> dasharray "score 100" == score%.
+        // Arc + number start at 0 and are animated up in openPanel's didOpen.
+        return '<svg width="128" height="128" viewBox="0 0 36 36" role="img">'
+            + '<circle cx="18" cy="18" r="15.9155" fill="none" stroke="rgba(128,138,158,.18)" stroke-width="3.2"/>'
+            + '<circle class="ent-arc" cx="18" cy="18" r="15.9155" fill="none" stroke="' + colour + '" stroke-width="3.2"'
+            +   ' stroke-linecap="round" style="stroke-dasharray:0 100" transform="rotate(-90 18 18)"/>'
+            + '<text id="entGaugeNum" x="18" y="19.4" text-anchor="middle" font-size="10" font-weight="700" fill="' + colour + '">0</text>'
+            + '</svg>';
+    }
+
+    function buildPanel(d) {
+        var colour = LEVEL_COLOUR[d.level] || '#4caf72';
+
+        var body = d.factors.length
+            ? '<div class="ent-factors">' + d.factors.map(function (f) {
+                  var c = FACTOR_COLOUR[f.key] || '#888';
+                  return '<div class="ent-factor">'
+                      + '<span class="ent-dot" style="background:' + c + '"></span>'
+                      + '<span class="ent-flabel">' + f.label + '</span>'
+                      + '<span class="ent-badge">' + f.count + '</span></div>';
+              }).join('') + '</div>'
+            : '<div class="ent-clear">All clear. Nothing overdue &mdash; suspiciously calm.</div>';
+
+        var total = d.trend.reduce(function (a, b) { return a + b; }, 0);
+        var max = Math.max.apply(null, d.trend.concat([1]));
+        var bars = d.trend.map(function (c) {
+            var h = c > 0 ? Math.max(Math.round((c / max) * 100), 12) : 3;
+            return '<div class="ent-bar' + (c > 0 ? ' hot' : '') + '" style="height:' + h + '%" title="' + c + ' late"></div>';
+        }).join('');
+
+        var sub = d.alarm_count
+            ? '<div class="ent-sub">' + d.alarm_count + ' item' + (d.alarm_count === 1 ? '' : 's') + ' need attention</div>'
+            : '';
+
+        return '<div class="ent-panel">'
+            + '<div class="ent-head">operational chaos level</div>'
+            + '<div class="ent-gaugewrap">' + gaugeSvg(d.score, colour) + '</div>'
+            + '<div class="ent-lvl" style="color:' + colour + '">' + d.level + '</div>'
+            + '<div class="ent-flavour">' + (FLAVOUR[d.level] || '') + '</div>'
+            + sub
+            + body
+            + '<div class="ent-trend-head"><span>Late deliveries &middot; last ' + d.trend_weeks + ' weeks</span><span>' + total + ' total</span></div>'
+            + '<div class="ent-trend">' + bars + '</div>'
+            + '</div>';
+    }
+
+    function animateReveal(popup) {
+        var d = entropyData;
+        var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        var arc = popup.querySelector('.ent-arc');
+        var num = popup.querySelector('#entGaugeNum');
+
+        if (reduce) {
+            if (arc) arc.style.strokeDasharray = d.score + ' 100';
+            if (num) num.textContent = d.score;
+            return;
+        }
+
+        if (arc) requestAnimationFrame(function () { arc.style.strokeDasharray = d.score + ' 100'; });
+        if (num && d.score > 0) {
+            var start = performance.now(), dur = 1000;
+            (function tick(t) {
+                var p = Math.min(1, (t - start) / dur);
+                num.textContent = Math.round(p * d.score);
+                if (p < 1) requestAnimationFrame(tick);
+            })(start);
+        }
+
+        // A bit of drama once things are genuinely on fire. NB: shake the inner
+        // panel, never the Swal popup itself — animating the popup's transform
+        // leaves a residual that breaks Swal's close animation (modal won't clear).
+        if (d.level === 'high' || d.level === 'critical') {
+            var panel = popup.querySelector('.ent-panel');
+            if (panel) panel.classList.add('ent-shake');
+            var lvl = popup.querySelector('.ent-lvl');
+            if (lvl) lvl.classList.add('ent-glitch');
+            if (d.level === 'critical') {
+                var flash = document.createElement('div');
+                flash.className = 'ent-flash';
+                document.body.appendChild(flash);
+                setTimeout(function () { if (flash.parentNode) flash.parentNode.removeChild(flash); }, 840);
+            }
+        }
+    }
+
+    function removeFlash() {
+        var f = document.querySelector('.ent-flash');
+        if (f && f.parentNode) f.parentNode.removeChild(f);
+    }
+
+    function openPanel() {
+        if (!entropyData || typeof Swal === 'undefined') return;
+        Swal.fire({
+            html: buildPanel(entropyData),
+            width: 400,
+            showConfirmButton: true,
+            confirmButtonText: 'Dismiss',
+            showCloseButton: true,
+            didOpen: animateReveal,
+            willClose: removeFlash
+        });
+    }
+
+    artifact.addEventListener('click', openPanel);
+    artifact.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openPanel(); }
+    });
+});
+{% endif %}

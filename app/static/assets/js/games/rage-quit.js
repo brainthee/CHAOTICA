@@ -13,7 +13,13 @@ window.RageQuit = (function() {
 
         ChaosEngine.canvas.init();
 
-        var events = document.querySelectorAll('.fc-event');
+        // The scheduler is a vis-timeline: each schedule slot is rendered as a
+        // foreground `.vis-item`. Background ranges (selection / unloaded / faded
+        // markers) live under `.vis-background` and are intentionally excluded so
+        // we only detonate the actual bookings.
+        var container = document.getElementById('vis-timeline');
+        var scope = container || document;
+        var events = scope.querySelectorAll('.vis-foreground .vis-item');
         if (!events.length) {
             triggered = false;
             return;

@@ -146,6 +146,9 @@ Seasonal and fun settings. None of these affect functionality.
 | **CHRISTMAS_LIGHTS_ENABLED** | `False` | Displays decorative Christmas lights across the top of the page. |
 | **CHRISTMAS_TREE_ENABLED** | `False` | Replaces the standard page loading spinner with an animated Christmas tree. |
 | **KONAMI_ENABLED** | `True` | Enables the Konami code easter egg (↑ ↑ ↓ ↓ ← → ← → B A). |
+| **EASTEREGG_GAMES_ENABLED** | `False` | Enables the hidden stress-relief games (DOM Destroyer, Schedule Blaster, Rage Quit) reachable from the Konami menu. |
+| **FAKE_HONEYPOT_ENABLED** | `True` | Serves a fake "web shell" at commonly-scanned URLs (e.g. `/shell.php`, `/c99.php`). It looks like a leftover compromised shell but is completely inert — it never runs anything, returns canned output for common commands, and rickrolls on the second command. Purely for fun (and to gently troll scanners). |
+| **ENTROPY_METER_ENABLED** | `False` | Shows a deliberately subtle "entropy meter" glyph in the footer. It reflects your own overdue/at-risk work as an operational "chaos level" (scoped exactly like your dashboard alarms), pulses when high, and opens a full breakdown — factors plus a recent late-delivery trend — when clicked. |
 
 ---
 

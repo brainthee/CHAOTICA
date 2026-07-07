@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>r00t@web-prod-01:~#</title>
+  <style>
+    html, body {
+      margin: 0; padding: 0;
+      background: #0a0a0a; color: #33ff66;
+      font-family: "Courier New", "Lucida Console", Consolas, monospace;
+      font-size: 14px; line-height: 1.5;
+    }
+    body { padding: 14px 16px 60px; }
+    a { color: #33ff66; }
+    .banner {
+      color: #55ff88; white-space: pre; margin-bottom: 12px;
+      text-shadow: 0 0 6px rgba(51,255,102,0.5);
+    }
+    .banner .sub { color: #2a9d54; }
+    #term { white-space: pre-wrap; word-break: break-word; }
+    #term .in { color: #9fffbf; }
+    .promptline { display: flex; align-items: center; margin-top: 2px; }
+    .promptline .ps1 { color: #33ff66; white-space: pre; }
+    #cmd {
+      flex: 1; background: transparent; border: 0; outline: 0;
+      color: #9fffbf; font-family: inherit; font-size: inherit;
+      caret-color: #33ff66; margin-left: 6px;
+    }
+    .cursor { animation: blink 1s steps(1) infinite; }
+    @keyframes blink { 50% { opacity: 0; } }
+  </style>
+</head>
+<body>
+  <div class="banner">  ____  _          _ _
+ / ___|| |__   ___| | |
+ \___ \| '_ \ / _ \ | |
+  ___) | | | |  __/ | |
+ |____/|_| |_|\___|_|_|   <span class="sub">v3.1  ::  uploaded by ???</span>
+
+ <span class="sub">System..: Linux web-prod-01 5.15.0-91-generic x86_64
+ User....: root (uid=0)  |  Safe mode: OFF  |  PHP: 5.3.3
+ Type a command to continue.</span>
+</div>
+
+  <div id="term"></div>
+
+  <div class="promptline">
+    <span class="ps1">root@web-prod-01:/var/www/html#</span>
+    <input id="cmd" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" autofocus>
+  </div>
+
+  <!--
+    Nothing to see here. This is a decoy — a honeypot.
+    There is no shell behind it: no exec(), no eval(), no shell_exec(), no
+    filesystem access, no OS calls of any kind. Every response is hard-coded.
+    If you're reading the page source looking for the real vuln... there isn't
+    one. Nice try though. (toggle: FAKE_HONEYPOT_ENABLED)
+  -->
+
+  <script>
+    (function () {
+      var term = document.getElementById('term');
+      var input = document.getElementById('cmd');
+      var PS1 = 'root@web-prod-01:/var/www/html# ';
+      var busy = false;
+
+      function println(text, cls) {
+        var div = document.createElement('div');
+        if (cls) div.className = cls;
+        div.textContent = text;   // textContent => output can never inject HTML
+        term.appendChild(div);
+        window.scrollTo(0, document.body.scrollHeight);
+      }
+
+      input.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter' || busy) return;
+        var cmd = input.value;
+        println(PS1 + cmd, 'in');
+        input.value = '';
+        busy = true;
+
+        var body = new URLSearchParams();
+        body.append('cmd', cmd);
+
+        fetch(window.location.href, {
+          method: 'POST',
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+          body: body
+        })
+          .then(function (r) { return r.json(); })
+          .then(function (d) {
+            if (d.output) println(d.output);
+            if (d.rickroll && d.rickroll_url) {
+              setTimeout(function () { window.location.href = d.rickroll_url; }, 1200);
+            } else {
+              busy = false;
+              input.focus();
+            }
+          })
+          .catch(function () {
+            println('bash: connection reset by peer');
+            busy = false;
+            input.focus();
+          });
+      });
+
+      document.addEventListener('click', function () { if (!busy) input.focus(); });
+    })();
+  </script>
+</body>
+</html>
