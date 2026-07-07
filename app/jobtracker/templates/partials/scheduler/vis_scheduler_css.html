@@ -119,4 +119,26 @@
     display: inline-block; width: 0.7rem; height: 0.7rem; border-radius: 0.2rem;
     margin-right: 0.25rem; vertical-align: middle;
   }
+  /* ---- Filter panel ---- */
+  /* Keep the Clear/Apply action bar in view while the (long) panel scrolls.
+     Backdrop matches the panel so scrolled content doesn't show through. */
+  .sched-filter-actions {
+    position: sticky; top: 0; z-index: 3;
+    background-color: var(--phoenix-offcanvas-bg);
+    padding-block: 0.5rem;
+  }
+  /* Collapsible sections: tighter, but leave backgrounds to Phoenix so light/dark
+     stay consistent (only spacing + rounding are customised here). */
+  .sched-filter-accordion .accordion-item {
+    border: 1px solid var(--phoenix-border-color-translucent);
+    border-radius: 0.5rem; margin-bottom: 0.5rem; overflow: hidden;
+  }
+  .sched-filter-accordion .accordion-button { padding: 0.6rem 0.85rem; font-weight: 600; }
+  .sched-filter-accordion .accordion-button:focus { box-shadow: none; }
+  .sched-filter-accordion .accordion-body { padding: 0.85rem; }
+  /* Default-view card at the top of the panel */
+  .sched-default-view .btn-group .btn { flex: 1 1 auto; }
+
+  /* ---- Timeline resource (name) labels — ensure strong contrast in dark mode ---- */
+  .sched-res .name { color: var(--phoenix-emphasis-color); }
 </style>

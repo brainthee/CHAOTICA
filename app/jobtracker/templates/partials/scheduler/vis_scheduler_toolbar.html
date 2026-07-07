@@ -37,6 +37,12 @@
       <span class="fas fa-eye me-1" id="btnToggleOthersIcon"></span>Other slots
     </button>
   </div>
+  {# Global scheduler only: subtle indicator that the current view came from the user's saved default. #}
+  {% if is_default_view %}
+  <span id="defaultViewPill" class="badge badge-phoenix badge-phoenix-info ms-2" title="This schedule is showing your saved default filters">
+    <span class="fas fa-star me-1"></span>Default view
+  </span>
+  {% endif %}
   <div class="sched-legend ms-auto small text-body-secondary d-none d-lg-block">
     <span class="me-2"><span class="dot" style="background:{{ config.SCHEDULE_COLOR_PHASE_CONFIRMED }}"></span>Confirmed</span>
     <span class="me-2"><span class="dot" style="background:{{ config.SCHEDULE_COLOR_PHASE }}"></span>Tentative</span>

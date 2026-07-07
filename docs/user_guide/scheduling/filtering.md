@@ -7,7 +7,22 @@ The **global scheduler** (`/scheduler/`) can show a lot of people, so it has a f
 
 ## Applying filters
 
-Set the fields you want and **apply** — the timeline re‑fetches in place (no full page reload) and the URL updates so the view is shareable/bookmarkable. **Reset to default** clears everything.
+Set the fields you want and **apply** — the timeline re‑fetches in place (no full page reload) and the URL updates so the view is shareable/bookmarkable. **Clear filters** removes everything and shows the full resource list.
+
+## Saving a default view
+
+If you always open the scheduler to the same view (for example your own team or organisational unit), you can save it so it loads automatically.
+
+1. Set the filters you want.
+2. In the filter panel, under **Default view**, click **Set as my default**.
+
+Next time you open `/scheduler/` with no filters in the URL, it loads your saved default automatically. When a default is applied you'll see a subtle **Default view** badge next to the filter toggle and a note in the panel. Changing the filters and applying drops the badge (you're now on a custom view) without touching the saved default.
+
+- **Clear filters** shows everything *this visit* but keeps your saved default for next time.
+- **Clear my default** (in the panel) removes the saved default entirely, so future visits open unfiltered.
+
+!!! note "Personal and non‑privileged"
+    Your default is stored against your own account only — it doesn't affect anyone else. It's purely a display shortcut: it can only narrow what you're already allowed to see and never grants access to extra people, jobs, or phases.
 
 ## Available filters
 

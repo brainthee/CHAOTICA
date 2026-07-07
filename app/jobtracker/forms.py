@@ -38,13 +38,14 @@ from .enums import (
     TimeSlotDeliveryRole,
 )
 from crispy_forms.helper import FormHelper
-from crispy_forms.bootstrap import StrictButton, FieldWithButtons
+from crispy_forms.bootstrap import StrictButton, FieldWithButtons, Accordion, AccordionGroup
 from crispy_forms.layout import Layout, Row, Column, Field, Div, HTML, Submit
 from crispy_bootstrap5.bootstrap5 import FloatingField
 from django_select2 import forms as s2forms
 from django.db.models import Q
 from django.db.models.functions import Lower
 from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 from chaotica_utils.enums import UnitRoles
 from bootstrap_datepicker_plus.widgets import (
     TimePickerInput,
@@ -310,119 +311,84 @@ class SchedulerFilter(forms.Form):
         self.helper.form_class = "form-inline form-control-sm"
         for field in self.fields:
             self.fields[field].css_class = "form-control-sm"
-        self.helper.layout = Layout(
-            Row(
-                Column(
-                    HTML(
-                        '<a class="btn btn-phoenix-info d-block w-100" href="'
-                        + reverse("view_scheduler")
-                        + '"><span class="fas fa-arrows-rotate me-2 fs-10"></span>Reset to default</a>'
-                    ),
-                ),
-                Column(
-                    Submit(
-                        "apply",
-                        "Apply",
-                        css_class="btn btn-phoenix-success d-block w-100",
-                    ),
-                ),
+        # Combined, compact action bar: Clear filters + Apply in a single segmented
+        # button group that sticks to the top of the panel body while it scrolls.
+        action_bar = Div(
+            HTML(
+                '<a class="btn btn-phoenix-secondary" href="'
+                + reverse("view_scheduler")
+                + '?nofilter=1"><span class="fas fa-filter-circle-xmark me-2 fs-10"></span>Clear filters</a>'
             ),
-            Div(
-                HTML('<h5 class="setting-panel-item-title">General</h5>'),
+            Submit("apply", "Apply", css_class="btn btn-phoenix-primary"),
+            css_class="btn-group btn-group-sm w-100 sched-filter-actions",
+        )
+        # Collapsible sections keep the (long) panel scannable. Independent open/close
+        # (always_open) so several sections can be expanded at once.
+        accordion = Accordion(
+            AccordionGroup(
+                mark_safe('<span class="fas fa-sliders me-2 text-body-tertiary"></span>General'),
                 Row(
-                    Column(
-                        Field(
-                            "from_date",
-                        ),
-                        css_class="me-3",
-                    ),
-                    Column(
-                        Field(
-                            "to_date",
-                        ),
-                    ),
+                    Column(Field("from_date"), css_class="me-3"),
+                    Column(Field("to_date")),
                 ),
                 Row(
+                    Column(Field("ordering")),
                     Column(
-                        Field("ordering"),
-                    ),
-                    Column(
-                        Row(
-                            Field("ordering_direction"),
-                        ),
-                        Row(
-                            Field("compressed_view"),
-                        ),
+                        Row(Field("ordering_direction")),
+                        Row(Field("compressed_view")),
                     ),
                 ),
-                Row(
-                    Column(
-                        Field("filter_by_city", style="width: 100%;"),
-                    ),
-                ),
-                css_class="setting-panel-item",
+                Row(Column(Field("filter_by_city", style="width: 100%;"))),
+                active=True,
+                css_id="filterGeneral",
             ),
-            Div(
-                HTML('<h5 class="setting-panel-item-title">Users</h5>'),
+            AccordionGroup(
+                mark_safe('<span class="fas fa-users me-2 text-body-tertiary"></span>Users'),
                 Row(
-                    Field(
-                        "show_inactive_users",
-                    ),
+                    Field("show_inactive_users"),
                     Field("users", style="width: 100%;"),
                 ),
                 Row(
-                    Column(
-                        Field("org_units", style="width: 100%;"),
-                    ),
-                    Column(
-                        Field("org_unit_roles", style="width: 100%;"),
-                    ),
+                    Column(Field("org_units", style="width: 100%;")),
+                    Column(Field("org_unit_roles", style="width: 100%;")),
                 ),
                 Row(
-                    Column(
-                        Field("job_levels", style="width: 100%;"),
-                    ),
-                    Column(),
+                    Column(Field("job_levels", style="width: 100%;")),
+                    Column(Field("onboarded_to", style="width: 100%;")),
                 ),
-                Row(
-                    Column(
-                        Field("onboarded_to", style="width: 100%;"),
-                    ),
-                    Column(
-                        Field("teams", style="width: 100%;"),
-                    ),
-                ),
-                css_class="setting-panel-item",
+                Row(Column(Field("teams", style="width: 100%;"))),
+                css_id="filterUsers",
             ),
-            Div(
-                HTML('<h5 class="setting-panel-item-title">Job</h5>'),
+            AccordionGroup(
+                mark_safe('<span class="fas fa-briefcase me-2 text-body-tertiary"></span>Job'),
                 Row(
                     Field("jobs", style="width: 100%;"),
                     Field("phases", style="width: 100%;"),
                 ),
-                css_class="setting-panel-item",
+                css_id="filterJob",
             ),
-            Div(
-                HTML('<h5 class="setting-panel-item-title">Skills</h5>'),
+            AccordionGroup(
+                mark_safe('<span class="fas fa-screwdriver-wrench me-2 text-body-tertiary"></span>Skills'),
                 Row(
                     Field("skills_specialist", css_class="extra", style="width: 100%;"),
-                    Field(
-                        "skills_can_do_alone", css_class="extra", style="width: 100%;"
-                    ),
-                    Field(
-                        "skills_can_do_support", css_class="extra", style="width: 100%;"
-                    ),
+                    Field("skills_can_do_alone", css_class="extra", style="width: 100%;"),
+                    Field("skills_can_do_support", css_class="extra", style="width: 100%;"),
                 ),
-                css_class="setting-panel-item",
+                css_id="filterSkills",
             ),
-            Div(
-                HTML('<h5 class="setting-panel-item-title">Service</h5>'),
-                Row(
-                    Field("services", style="width: 100%;"),
-                ),
-                css_class="setting-panel-item",
+            AccordionGroup(
+                mark_safe('<span class="fas fa-list-check me-2 text-body-tertiary"></span>Service'),
+                Row(Field("services", style="width: 100%;")),
+                css_id="filterService",
             ),
+            css_id="filterAccordion",
+            css_class="sched-filter-accordion",
         )
+        # always_open isn't a constructor kwarg — set it so each section toggles
+        # independently (no single-open accordion behaviour).
+        for grp in accordion.fields:
+            grp.always_open = True
+        self.helper.layout = Layout(action_bar, accordion)
 
     class Meta:
         fields = (

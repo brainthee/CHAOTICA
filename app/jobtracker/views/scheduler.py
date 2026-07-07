@@ -1,10 +1,11 @@
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.core.exceptions import PermissionDenied
-from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest
+from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest, QueryDict
 from django.template import loader
 from django.db.models import Q, Prefetch
 from django.views.generic.edit import DeleteView
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
+from django.views.decorators.http import require_POST
 from chaotica_utils.views import page_defaults
 from chaotica_utils.views import ChaoticaBaseView
 from chaotica_utils.views import log_system_activity
@@ -268,10 +269,18 @@ def _check_onboarding(slot, request, force=False):
 
 @login_required
 def view_scheduler(request):
+    saved = request.user.scheduler_default_filter
+    # No explicit query + a saved default + not explicitly opting out -> apply default.
+    # Any query string (bookmark, ?nofilter=1, or the ?_dv=1 we redirect to) skips this,
+    # so there is no redirect loop.
+    if not request.GET and saved:
+        return redirect(f"{reverse('view_scheduler')}?{saved}&_dv=1")
     context = {"scheduler_scope": "global"}
     template = loader.get_template("scheduler.html")
     context = {**context, **page_defaults(request)}
     context["filter_form"] = SchedulerFilter(request.GET)
+    context["has_default_filter"] = bool(saved)
+    context["is_default_view"] = request.GET.get("_dv") == "1"
     return HttpResponse(template.render(context, request))
 
 
@@ -283,6 +292,44 @@ def view_scheduler_slots(request):
 @login_required
 def view_scheduler_members(request):
     return get_scheduler_members(request)
+
+
+# Cap the stored filter to bound the redirect Location header / row size.
+_MAX_DEFAULT_FILTER_LEN = 4000
+
+
+@login_required
+@require_POST
+def set_scheduler_filter_default(request):
+    """Persist the current scheduler filter as the user's default view.
+
+    The raw POST is never stored: it is parsed through ``SchedulerFilter`` and
+    re-serialised from only the form's declared fields with ``QueryDict.urlencode()``.
+    This whitelists known fields and percent-encodes the result, so unknown/injected
+    keys (``_dv``, ``nofilter``, CRLF/``#`` tricks) can never enter the stored value or
+    the later auto-load redirect.
+    """
+    raw = request.POST.get("filter", "")[:_MAX_DEFAULT_FILTER_LEN]
+    submitted = QueryDict(raw)
+    form = SchedulerFilter(submitted)
+    form.is_valid()
+    clean = QueryDict(mutable=True)
+    for name in form.fields:
+        vals = submitted.getlist(name)
+        if any(v for v in vals):
+            clean.setlist(name, vals)
+    request.user.scheduler_default_filter = clean.urlencode()
+    request.user.save(update_fields=["scheduler_default_filter"])
+    return JsonResponse({"ok": True})
+
+
+@login_required
+@require_POST
+def clear_scheduler_filter_default(request):
+    """Remove the user's saved default scheduler view."""
+    request.user.scheduler_default_filter = ""
+    request.user.save(update_fields=["scheduler_default_filter"])
+    return JsonResponse({"ok": True})
 
 
 def _scope_history_qs(request, source):

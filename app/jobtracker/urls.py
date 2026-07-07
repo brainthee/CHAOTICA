@@ -90,6 +90,16 @@ urlpatterns = [
     path(
         "scheduler/timeslots", views.view_scheduler_slots, name="view_scheduler_slots"
     ),
+    path(
+        "scheduler/filter/default/set",
+        views.set_scheduler_filter_default,
+        name="set_scheduler_filter_default",
+    ),
+    path(
+        "scheduler/filter/default/clear",
+        views.clear_scheduler_filter_default,
+        name="clear_scheduler_filter_default",
+    ),
     # Schedule version-control / history
     path(
         "scheduler/history",

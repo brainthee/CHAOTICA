@@ -748,11 +748,19 @@
     });
   })();
 
+  // Hide the "default view" pill/note — the user is now on a custom (non-default) view.
+  function hideDefaultViewIndicator() {
+    $('#defaultViewPill, #defaultFilterNote').addClass('d-none');
+  }
+
   // ---- Live filtering: apply the offcanvas form without a full page reload (global) ----
   $('#settings-offcanvas').on('submit', 'form', function (e) {
     e.preventDefault();
+    // serialize() never includes the _dv marker (it's a URL param, not a form field),
+    // so the applied view is now a custom one — drop the default-view indicator.
     filterParams = $(this).serialize();
     history.replaceState(null, '', filterParams ? '?' + filterParams : location.pathname);
+    hideDefaultViewIndicator();
     groups.clear();
     items.clear();
     resetLoadedRanges();
@@ -762,13 +770,30 @@
     if (oc) oc.hide();
     return false;
   });
-  // The crispy "Reset to default" link points at /scheduler/ — send it there cleared.
-  if (CFG.resetUrl) {
-    $('#settings-offcanvas').on('click', 'a[href$="/scheduler/"]', function (e) {
-      e.preventDefault();
-      window.location = CFG.resetUrl;
+
+  // ---- Personal default view: save / clear (global) ----
+  $(document).on('click', '#saveDefaultFilter', function () {
+    if (!CFG.setDefaultUrl) return;
+    $.post(CFG.setDefaultUrl, {
+      filter: $('#settings-offcanvas form').serialize(),
+      csrfmiddlewaretoken: csrf
+    }).done(function () {
+      $('#clearDefaultFilter').removeClass('d-none');
+      Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Saved as your default view', showConfirmButton: false, timer: 2500 });
+    }).fail(function () {
+      Swal.fire('Error', 'Could not save your default view.', 'error');
     });
-  }
+  });
+  $(document).on('click', '#clearDefaultFilter', function () {
+    if (!CFG.clearDefaultUrl) return;
+    $.post(CFG.clearDefaultUrl, { csrfmiddlewaretoken: csrf }).done(function () {
+      $('#clearDefaultFilter').addClass('d-none');
+      hideDefaultViewIndicator();
+      Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Default view cleared', showConfirmButton: false, timer: 2500 });
+    }).fail(function () {
+      Swal.fire('Error', 'Could not clear your default view.', 'error');
+    });
+  });
 
   // ---- Sidebar schedule tools (job/phase-scoped pages only) ----
   // Clear schedule (all / by user / by role)

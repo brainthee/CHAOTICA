@@ -218,6 +218,12 @@ class User(AbstractUser):
         help_text="Allow your family-friendly schedule to be accessed via the calendar feed URL",
         default=False,
     )
+    scheduler_default_filter = models.TextField(
+        verbose_name="Default Scheduler Filter",
+        help_text="Saved query string for the user's default scheduler view",
+        blank=True,
+        default="",
+    )
     groups = models.ManyToManyField(
         Group,
         verbose_name="groups",
