@@ -101,11 +101,19 @@ class JobViewSet(BaseReadOnlyAPIViewSet):
     def scope_queryset(self, queryset, user):
         # Faithful to JobPermissionRequiredMixin: unit `can_view_jobs` OR the
         # team-membership guest bypass (jobs_for_user).
-        allowed = (
-            Job.objects.jobs_with_unit_permission(user, "jobtracker.can_view_jobs")
-            | Job.objects.jobs_for_user(user)
+        # ``jobs_for_user`` is a ``.distinct()`` queryset while
+        # ``jobs_with_unit_permission`` is not; combining a distinct and a
+        # non-distinct query with ``|`` raises "Cannot combine a unique query
+        # with a non-unique query". Union the pks instead.
+        allowed_ids = set(
+            Job.objects.jobs_with_unit_permission(
+                user, "jobtracker.can_view_jobs"
+            ).values_list("pk", flat=True)
         )
-        return queryset.filter(pk__in=allowed.values_list("pk", flat=True))
+        allowed_ids.update(
+            Job.objects.jobs_for_user(user).values_list("pk", flat=True)
+        )
+        return queryset.filter(pk__in=allowed_ids)
 
 
 # ---------------------------------------------------------------------------
@@ -127,13 +135,17 @@ class PhaseViewSet(BaseReadOnlyAPIViewSet):
         )
 
     def scope_queryset(self, queryset, user):
-        allowed = (
+        # See JobViewSet: one side is distinct and the other isn't, so union
+        # the pks rather than combining the querysets with ``|``.
+        allowed_ids = set(
             Phase.objects.phases_with_unit_permission(
                 user, "jobtracker.can_view_jobs"
-            )
-            | Phase.objects.phases_for_user(user)
+            ).values_list("pk", flat=True)
         )
-        return queryset.filter(pk__in=allowed.values_list("pk", flat=True))
+        allowed_ids.update(
+            Phase.objects.phases_for_user(user).values_list("pk", flat=True)
+        )
+        return queryset.filter(pk__in=allowed_ids)
 
 
 class ProjectViewSet(BaseReadOnlyAPIViewSet):
@@ -143,13 +155,19 @@ class ProjectViewSet(BaseReadOnlyAPIViewSet):
         return Project.objects.select_related("unit", "primary_poc", "created_by")
 
     def scope_queryset(self, queryset, user):
-        allowed = (
-            Project.objects.projects_with_unit_permission(
-                user, "jobtracker.view_project"
-            )
-            | Project.objects.projects_for_user(user)
+        # Projects are gated by the ``view_project`` model permission (there is
+        # no unit-level project permission), plus the team-membership bypass.
+        # get_objects_for_user honours a global grant (returns all) or the
+        # per-object grants otherwise, matching ProjectListView.
+        allowed_ids = set(
+            get_objects_for_user(
+                user, "jobtracker.view_project", klass=Project
+            ).values_list("pk", flat=True)
         )
-        return queryset.filter(pk__in=allowed.values_list("pk", flat=True))
+        allowed_ids.update(
+            Project.objects.projects_for_user(user).values_list("pk", flat=True)
+        )
+        return queryset.filter(pk__in=allowed_ids)
 
 
 # ---------------------------------------------------------------------------

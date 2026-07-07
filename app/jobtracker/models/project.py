@@ -35,8 +35,10 @@ class ProjectManager(models.Manager):
         # - Lead/Author of
         # - Scoped while before scoping approved
 
+        # Projects link to timeslots directly (there is no Project->phases
+        # relation), so scope by the project's own scheduled slots.
         matches = self.filter(
-            Q(phases__timeslots__user=user)  # Filter by scheduled
+            Q(timeslots__user=user)  # Filter by scheduled
         ).distinct()
         return matches
 
@@ -140,18 +142,14 @@ class Project(models.Model):
         if self.desired_start_date:
             return self.desired_start_date
         else:
-            # Calculate start from first delivery slot
-            if TimeSlot.objects.filter(
-                phase__job=self, deliveryRole=TimeSlotDeliveryRole.DELIVERY
-            ).exists():
-                return (
-                    TimeSlot.objects.filter(
-                        phase__job=self, deliveryRole=TimeSlotDeliveryRole.DELIVERY
-                    )
-                    .order_by("-start")
-                    .first()
-                    .start.date()
-                )
+            # Calculate start from first delivery slot. Timeslots link to a
+            # project directly (phase__job resolves to a Job, not a Project).
+            slots = TimeSlot.objects.filter(
+                project=self, deliveryRole=TimeSlotDeliveryRole.DELIVERY
+            ).order_by("-start")
+            first = slots.first()
+            if first:
+                return first.start.date()
             else:
                 # No slots - return None
                 return None
@@ -162,13 +160,17 @@ class Project(models.Model):
         if self.desired_delivery_date:
             return self.desired_delivery_date
         else:
-            # Calculate start from first delivery slot
-            if TimeSlot.objects.filter(
-                phase__job=self, deliveryRole=TimeSlotDeliveryRole.REPORTING
-            ).exists():
-                return TimeSlot.objects.filter(
-                    phase__job=self, deliveryRole=TimeSlotDeliveryRole.REPORTING
-                ).order_by("end").first().end.date() + timedelta(weeks=1)
+            # Calculate delivery from last reporting slot. Timeslots link to a
+            # project directly (phase__job resolves to a Job, not a Project).
+            slot = (
+                TimeSlot.objects.filter(
+                    project=self, deliveryRole=TimeSlotDeliveryRole.REPORTING
+                )
+                .order_by("end")
+                .first()
+            )
+            if slot:
+                return slot.end.date() + timedelta(weeks=1)
             else:
                 # No slots - return None
                 return None
