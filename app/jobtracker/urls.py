@@ -193,22 +193,22 @@ urlpatterns = [
     path("projects/", views.ProjectListView.as_view(), name="project_list"),
     path("project/create/", views.ProjectCreateView.as_view(), name="project_create"),
     path(
-        "project/<str:slug>/",
+        "project/<uuid:slug>/",
         views.ProjectDetailView.as_view(),
         name="project_detail",
     ),
     path(
-        "project/<str:slug>/update/",
+        "project/<uuid:slug>/update/",
         views.ProjectUpdateView.as_view(),
         name="project_update",
     ),
     path(
-        "project/<str:slug>/schedule/slot/<int:pk>/delete",
+        "project/<uuid:slug>/schedule/slot/<int:pk>/delete",
         views.ProjectSlotDeleteView.as_view(),
         name="project_slot_delete",
     ),
     path(
-        "project/<str:slug>/delete/",
+        "project/<uuid:slug>/delete/",
         views.ProjectDeleteView.as_view(),
         name="project_delete",
     ),

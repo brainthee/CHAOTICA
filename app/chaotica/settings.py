@@ -26,6 +26,23 @@ DEMO_USER = os.environ.get("DEMO_USER", default=None)
 DEMO_PASS = os.environ.get("DEMO_PASS", default=None)
 DEMO_RESET_TIME = os.environ.get("DEMO_RESET_TIME", default="00:00")
 
+def _sentry_before_send(event, hint):
+    """Drop benign scanner/bot noise before it becomes a Sentry issue.
+
+    Malformed requests (e.g. a junk Host header from a vulnerability scanner)
+    raise SuspiciousOperation, which Django already answers with a 400. These
+    aren't actionable and would otherwise dominate the issue list.
+    """
+    from django.core.exceptions import SuspiciousOperation
+
+    exc_info = hint.get("exc_info")
+    if exc_info:
+        exc = exc_info[1]
+        if isinstance(exc, SuspiciousOperation):
+            return None
+    return event
+
+
 if SENTRY_BACKEND_DSN is not None:
     sentry_sdk.init(
         dsn=SENTRY_BACKEND_DSN,
@@ -34,6 +51,7 @@ if SENTRY_BACKEND_DSN is not None:
         environment=DJANGO_ENV,
         traces_sample_rate=1.0,
         profiles_sample_rate=1.0,
+        before_send=_sentry_before_send,
     )
 
 
@@ -495,6 +513,9 @@ SESSION_ENGINE = "qsessions.backends.db"
 MIDDLEWARE = [
     "chaotica_utils.middleware.HealthCheckMiddleware",
     "chaotica_utils.middleware.SessionMiddleware",
+    # Must run before Security/CommonMiddleware so request.user exists even when
+    # a request is rejected early (e.g. bad Host header) and an error page renders.
+    "chaotica_utils.middleware.EnsureUserMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "csp.middleware.CSPMiddleware",
     "django.middleware.security.SecurityMiddleware",

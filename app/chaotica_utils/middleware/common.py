@@ -6,6 +6,7 @@ from django.http import (
 from django.utils.deprecation import MiddlewareMixin
 from django.utils import timezone as dj_timezone
 from django.shortcuts import reverse, redirect
+from django.contrib.auth.models import AnonymousUser
 from ..models import User
 from django.urls import reverse
 from django.conf import settings
@@ -33,6 +34,30 @@ def set_current_user(user):
     Set the current user in thread-local storage.
     """
     _thread_locals.user = user
+
+
+class EnsureUserMiddleware:
+    """Guarantees ``request.user`` exists.
+
+    Requests that fail before AuthenticationMiddleware runs (e.g. a malformed
+    Host header rejected by Django's CommonMiddleware) still trigger error-page
+    rendering. Our base template runs ``{% generate_menu %}`` whose checks
+    dereference ``request.user``, so without a user attribute the error page
+    raises a secondary AttributeError (turning a benign 400 into noisy 500s —
+    the bulk of which come from vulnerability scanners sending junk hosts).
+
+    Seed an AnonymousUser early so error pages render cleanly. For normal
+    requests AuthenticationMiddleware overwrites this with the real lazy user.
+    Must be ordered before SecurityMiddleware/CommonMiddleware.
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        if not hasattr(request, "user"):
+            request.user = AnonymousUser()
+        return self.get_response(request)
 
 
 class HealthCheckMiddleware(MiddlewareMixin):
