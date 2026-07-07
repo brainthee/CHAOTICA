@@ -51,7 +51,7 @@ class CustomUserManager(BaseUserManager):
         user.save(using=self._db)
         return user
         
-    def calculate_bulk_utilization(self, user_queryset, start_date, end_date, org=None):
+    def calculate_bulk_utilization(self, user_queryset, start_date, end_date, org=None, _user_dict=None):
         """
         Calculate utilization statistics for multiple users efficiently.
         
@@ -82,19 +82,17 @@ class CustomUserManager(BaseUserManager):
                 datetime.combine(end_date, datetime.max.time())
             )
         
-        # Get user IDs upfront to avoid repeated queries
         user_ids = list(user_queryset.values_list('id', flat=True))
-        
-        # Clear any existing prefetch_related to avoid conflicts
-        # Then prefetch all users with their relationships in a single query
-        users = User.objects.filter(id__in=user_ids).select_related(
-            'manager', 'acting_manager'
-        ).prefetch_related(
-            'unit_memberships__unit'
-        )
-        
-        # Build user lookup dictionary
-        user_dict = {user.id: user for user in users}
+
+        if _user_dict is None:
+            _user_dict = {
+                u.id: u
+                for u in User.objects.filter(id__in=user_ids).select_related(
+                    'manager', 'acting_manager', 'city', 'city__country'
+                ).prefetch_related('unit_memberships__unit')
+            }
+
+        user_dict = _user_dict
         
         # Get working days configuration
         if org:
@@ -103,7 +101,7 @@ class CustomUserManager(BaseUserManager):
             working_days = json.loads(config.DEFAULT_WORKING_DAYS)
         
         # Get unique countries for all users
-        user_countries = users.values_list('country', flat=True).distinct()
+        user_countries = {u.country for u in user_dict.values()}
         
         # Fetch ALL holidays in a single query
         holidays = Holiday.objects.filter(
@@ -344,31 +342,34 @@ class CustomUserManager(BaseUserManager):
                 datetime.combine(end_date, datetime.max.time())
             )
         
-        # Get current utilization
+        # Build the user dict once and reuse across all calculate_bulk_utilization calls
+        from .user import User
+        user_ids = list(user_queryset.values_list('id', flat=True))
+        shared_user_dict = {
+            u.id: u
+            for u in User.objects.filter(id__in=user_ids).select_related(
+                'manager', 'acting_manager', 'city', 'city__country'
+            ).prefetch_related('unit_memberships__unit')
+        }
+
         current_utilization = self.calculate_bulk_utilization(
-            user_queryset, start_date, end_date, org
+            user_queryset, start_date, end_date, org, _user_dict=shared_user_dict
         )
-        
-        # Calculate upcoming availability for different ranges
+
         upcoming_availability = {}
         avail_start = timezone.now() - timedelta(days=timezone.now().weekday())
-        
-        # Calculate the maximum date range needed
+
         max_days_ahead = max(UpcomingAvailabilityRanges.DEFAULT.values())
         max_end_date = avail_start + timedelta(days=max_days_ahead)
-        
-        # Get ALL data for the maximum range in one go
+
         all_range_data = self.calculate_bulk_utilization(
-            user_queryset, avail_start, max_end_date, org
+            user_queryset, avail_start, max_end_date, org, _user_dict=shared_user_dict
         )
-        
-        # Now calculate stats for each sub-range using the already fetched data
+
         for range_name, days_ahead in UpcomingAvailabilityRanges.DEFAULT.items():
             avail_end = avail_start + timedelta(days=days_ahead)
-            # For efficiency, you could recalculate just the date range portion
-            # but for now, let's call the method (it will reuse cached data if implemented)
             upcoming_availability[range_name] = self.calculate_bulk_utilization(
-                user_queryset, avail_start, avail_end, org
+                user_queryset, avail_start, avail_end, org, _user_dict=shared_user_dict
             )
         
         return {

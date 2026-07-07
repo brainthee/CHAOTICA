@@ -430,11 +430,19 @@ class Job(models.Model):
 
     # Gets scheduled users and assigned users (e.g. lead/author/qa etc)
     def team(self):
-        ids = []
-        for phase in self.phases.all():
-            for phase_user_id in phase.team_pks():
-                if phase_user_id not in ids:
-                    ids.append(phase_user_id)
+        from jobtracker.models import TimeSlot
+
+        ids = set(
+            TimeSlot.objects.filter(phase__job=self)
+            .values_list('user_id', flat=True)
+            .distinct()
+        )
+
+        # Phase-level roles — one query for all four fields
+        for row in self.phases.values_list('project_lead', 'report_author', 'techqa_by', 'presqa_by'):
+            ids.update(pk for pk in row if pk is not None)
+
+        ids = list(ids)
 
         if self.created_by and self.created_by.pk not in ids:
             ids.append(self.created_by.pk)

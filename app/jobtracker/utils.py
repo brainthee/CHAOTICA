@@ -436,14 +436,25 @@ def get_scheduler_members(request, filtered_users = None, start = None, end = No
             # This would need to be implemented based on job levels
             pass
 
+    # Single query for all current job levels — avoids one query per user in the loop
+    _stat_user_ids = [s['user_id'] for s in stats['current']['by_user'].values()]
+    _job_level_map = {
+        ujl.user_id: ujl
+        for ujl in UserJobLevel.objects.filter(
+            user_id__in=_stat_user_ids, is_current=True
+        ).select_related('job_level')
+    }
+
     for user_stat, distance in user_distance_pairs:
         user = user_stat['user']
         user_title = user_stat['user_name']
         main_org = user_stat['main_org']
         user_roles = role_map.get(user.pk, [])
 
-        # Get user's current job level
-        current_job_level = UserJobLevel.get_current_level(user)
+        current_job_level = _job_level_map.get(user.pk)
+        # Stamp the fast-path attribute so get_table_display_html's template
+        # call to u.get_current_level() uses the already-fetched value.
+        user._current_levels = [current_job_level] if current_job_level else []
         job_level_order = current_job_level.job_level.order if current_job_level else 999
         job_level_label = str(current_job_level.job_level) if current_job_level else "No Level"
 
@@ -602,6 +613,6 @@ def get_scheduler_slots(request, filtered_users = None, start = None, end = None
     # Add the comments
     for comment in TimeSlotComment.objects.filter(
         user__in=filtered_users, end__gte=start, start__lte=end
-    ):
+    ).select_related("user"):
         data.append(comment.get_schedule_json(schedule_colours=schedule_colours))
     return JsonResponse(data, safe=False)

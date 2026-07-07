@@ -1280,8 +1280,8 @@ class Phase(models.Model):
         """
         ids = []
         for slot in self.timeslots.all():
-            if slot.user.pk not in ids:
-                ids.append(slot.user.pk)
+            if slot.user_id not in ids:
+                ids.append(slot.user_id)
         if self.job.account_manager and self.job.account_manager.pk not in ids:
             ids.append(self.job.account_manager.pk)
         if self.job.dep_account_manager and self.job.dep_account_manager.pk not in ids:

@@ -133,7 +133,7 @@
                   </thead>
                   <tbody>
                      {% for skill in category.list %}
-                     {% get_user_skill usr skill as userSkill %}
+                     {% with userSkill=user_skills|lookup:skill.pk %}
                      <tr class="skill-row {% if userSkill.interested_in_improving_skill %}wants-improvement{% endif %}" data-skill-slug="{{ skill.slug }}">
                         <td class="ps-1">
                            <div class="my-auto">
@@ -190,6 +190,7 @@
                            </div>
                         </td>
                      </tr>
+                     {% endwith %}
                      {% endfor %}
                   </tbody>
                </table>

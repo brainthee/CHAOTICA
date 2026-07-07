@@ -225,6 +225,7 @@ def update_profile(request, email):
     context = {
         "usr": usr,
         "skills": Skill.objects.all().prefetch_related("category").order_by("category", "name"),
+        "user_skills": {us.skill_id: us for us in usr.skills.all()},
         "languages": Language.objects.all(),
         "current_job_level": current_job_level,
         "can_manage_job_level": can_manage_levels,
