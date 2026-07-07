@@ -33,8 +33,8 @@ import logging
 from django.contrib import messages
 from django.utils import timezone
 import datetime, json
-from guardian.decorators import permission_required_or_403
-from guardian.mixins import PermissionRequiredMixin
+from chaotica_utils.decorators import permission_required_or_403
+from chaotica_utils.mixins import SecurePermissionRequiredMixin as PermissionRequiredMixin
 from qa_reviews.models import QAReview
 
 

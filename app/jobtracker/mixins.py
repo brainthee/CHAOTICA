@@ -11,6 +11,10 @@ class UnitPermissionRequiredMixin(PermissionRequiredMixin):
 
     redirect_field_name = REDIRECT_FIELD_NAME
     login_url = settings.LOGIN_URL
+    # Authenticated-but-unauthorised users get a 403 (not a login redirect); the
+    # login_required wrapper in dispatch already redirects anonymous users. This
+    # is the default for every subclass so views don't each have to set it.
+    return_403 = True
 
     def dispatch(self, request, *args, **kwargs):
         return login_required(

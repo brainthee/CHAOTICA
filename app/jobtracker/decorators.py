@@ -107,7 +107,10 @@ def unit_permission_required_or_403(perm, lookup_variables=None, **kwargs):
 def job_permission_required_or_403(perm, lookup_variables=None, **kwargs):
     login_url = kwargs.pop("login_url", settings.LOGIN_URL)
     redirect_field_name = kwargs.pop("redirect_field_name", REDIRECT_FIELD_NAME)
-    return_403 = kwargs.pop("return_403", False)
+    # Defaults to True to match the ``_or_403`` name (and its ``unit_`` sibling):
+    # an authenticated-but-unauthorised user gets a 403. Anonymous users are still
+    # redirected to login inside get_unit_40x_or_None.
+    return_403 = kwargs.pop("return_403", True)
     return_404 = kwargs.pop("return_404", False)
     accept_global_perms = kwargs.pop("accept_global_perms", False)
 

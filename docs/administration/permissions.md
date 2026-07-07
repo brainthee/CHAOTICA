@@ -15,6 +15,23 @@ Permissions in CHAOTICA are managed through a layered approach combining role-ba
 - **Unit permissions** are assigned per-object via [Django Guardian](https://django-guardian.readthedocs.io/). When a user's unit membership or roles change, `OrganisationalUnit.sync_permissions()` reconciles their guardian permissions against what their roles grant.
 - **Views** use decorators such as `@permission_required`, `@unit_permission_required_or_403`, and `@job_permission_required_or_403` to check access.
 
+### What a denied request returns
+
+Access denials behave consistently regardless of which decorator or mixin guards
+the view:
+
+- **Not logged in →** redirected to the login page (`/auth/login/?next=…`) so the
+  user can authenticate and continue.
+- **Logged in but lacking the permission →** an **HTTP 403** (the `403.html`
+  page), *not* a login redirect.
+
+This is enforced centrally: `get_unit_40x_or_None` (used by the unit/job
+decorators and the `Unit`/`Job` CBV mixins) redirects anonymous users before any
+403; guardian-based CBVs use `SecurePermissionRequiredMixin`
+(`chaotica_utils/mixins.py`) and guardian-decorated function views use the
+`permission_required_or_403` wrapper in `chaotica_utils/decorators.py`, both of
+which apply the same rule. `@superuser_required` follows it too.
+
 ---
 
 ## Global Roles

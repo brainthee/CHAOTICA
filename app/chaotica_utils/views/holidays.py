@@ -1,5 +1,5 @@
-from guardian.mixins import PermissionRequiredMixin
-from guardian.decorators import permission_required_or_403
+from chaotica_utils.mixins import SecurePermissionRequiredMixin as PermissionRequiredMixin
+from chaotica_utils.decorators import permission_required_or_403
 from django.views.generic.list import ListView
 from django.template import loader
 from django.views.generic.detail import DetailView

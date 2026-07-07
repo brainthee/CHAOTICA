@@ -91,6 +91,18 @@ def get_unit_40x_or_None(
 ):
     login_url = login_url or settings.LOGIN_URL
     redirect_field_name = redirect_field_name or REDIRECT_FIELD_NAME
+
+    # Unauthenticated users are always sent to the login page (regardless of
+    # return_403/return_404), so anonymous visitors get a login prompt rather than
+    # a bare 403. Only authenticated-but-unauthorised users fall through to the
+    # 403/404 handling below.
+    if not request.user.is_authenticated:
+        from django.contrib.auth.views import redirect_to_login
+
+        return redirect_to_login(
+            request.get_full_path(), login_url, redirect_field_name
+        )
+
     has_permissions = False
 
     if request.user.is_authenticated:

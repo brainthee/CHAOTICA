@@ -1,4 +1,4 @@
-from guardian.mixins import PermissionRequiredMixin
+from chaotica_utils.mixins import SecurePermissionRequiredMixin as PermissionRequiredMixin
 import csv
 from django.http import (
     JsonResponse,
@@ -6,7 +6,7 @@ from django.http import (
 )
 from django.shortcuts import get_object_or_404, redirect
 from guardian.shortcuts import get_objects_for_user
-from guardian.decorators import permission_required_or_403
+from chaotica_utils.decorators import permission_required_or_403
 from django.views.decorators.http import (
     require_http_methods,
 )

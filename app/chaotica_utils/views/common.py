@@ -25,7 +25,7 @@ from ..models import User, Note, Quote
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.views import View
-from guardian.decorators import permission_required_or_403
+from chaotica_utils.decorators import permission_required_or_403
 from django.views.generic.list import ListView
 from django.contrib import messages
 from django.views.decorators.http import require_http_methods

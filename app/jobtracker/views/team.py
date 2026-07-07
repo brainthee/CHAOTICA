@@ -1,4 +1,4 @@
-from guardian.mixins import PermissionRequiredMixin
+from chaotica_utils.mixins import SecurePermissionRequiredMixin as PermissionRequiredMixin
 from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
 from django.shortcuts import get_object_or_404
@@ -10,7 +10,7 @@ from chaotica_utils.utils import get_week
 from chaotica_utils.models import User
 from ..models import Team, TeamMember, TimeSlot
 from ..enums import PhaseStatuses
-from guardian.decorators import permission_required_or_403
+from chaotica_utils.decorators import permission_required_or_403
 from ..forms import TeamForm, TeamMemberForm, AddTeamMemberForm, BulkAddTeamMemberForm
 from django.http import HttpResponseBadRequest, HttpResponseForbidden, JsonResponse
 from django.template import loader

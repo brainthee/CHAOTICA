@@ -9,7 +9,7 @@ from django.http import (
 )
 from django.urls import reverse
 from .forms import RMSyncRecordForm
-from guardian.decorators import permission_required_or_403
+from chaotica_utils.decorators import permission_required_or_403
 from .models import *
 from .tasks import task_sync_rm_schedule
 from chaotica_utils.models import User

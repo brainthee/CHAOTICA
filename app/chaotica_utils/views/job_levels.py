@@ -7,7 +7,7 @@ from django.http import JsonResponse, HttpResponse
 from django.template import loader
 from django.urls import reverse
 from django.core.paginator import Paginator
-from guardian.decorators import permission_required_or_403
+from chaotica_utils.decorators import permission_required_or_403
 from ..models import JobLevel, UserJobLevel, User
 from ..views import page_defaults
 from ..forms.job_levels import JobLevelForm, AssignJobLevelForm, ImportJobLevelAssignmentsForm

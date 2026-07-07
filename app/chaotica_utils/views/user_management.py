@@ -26,7 +26,7 @@ from ..utils import (
 )
 from .common import ChaoticaBaseGlobalRoleView, page_defaults
 from django.contrib.auth.decorators import login_required
-from guardian.decorators import permission_required_or_403
+from chaotica_utils.decorators import permission_required_or_403
 from django.views.generic.list import ListView
 from django.contrib import messages
 from django.views.generic.detail import DetailView

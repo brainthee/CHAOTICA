@@ -274,11 +274,24 @@ def index(request):
 
     # --- Alarms ---
     today = timezone.now().date()
-    alarm_base = Phase.objects.filter(
-        job__unit__in=units_can_view,
-        job__status__in=JobStatuses.ACTIVE_STATUSES,
-        status__in=PhaseStatuses.ACTIVE_STATUSES,
+    has_elevated_permissions = (
+        can_tqa or can_pqa or can_scope or can_signoff_scope or can_deliver or is_people_mgr
     )
+    # Elevated users see all alarms across their units; regular users only see
+    # alarms for phases/jobs they are personally involved in.
+    if has_elevated_permissions:
+        alarm_base = Phase.objects.filter(
+            job__unit__in=units_can_view,
+            job__status__in=JobStatuses.ACTIVE_STATUSES,
+            status__in=PhaseStatuses.ACTIVE_STATUSES,
+        )
+        alarm_job_qs = Job.objects.filter(
+            unit__in=units_can_view,
+            status__in=JobStatuses.ACTIVE_STATUSES,
+        )
+    else:
+        alarm_base = Phase.objects.phases_for_user(request.user)
+        alarm_job_qs = Job.objects.jobs_for_user(request.user)
 
     alarms = {}
 
@@ -347,20 +360,15 @@ def index(request):
     )
 
     alarms["job_overdue"] = list(
-        Job.objects.filter(
-            unit__in=units_can_view,
-            status__in=JobStatuses.ACTIVE_STATUSES,
-        ).annotate(
+        alarm_job_qs.annotate(
             db_delivery_date=Coalesce("desired_delivery_date", "_delivery_date")
         ).filter(db_delivery_date__lt=today).select_related("client", "unit")
     )
 
     context["alarms"] = alarms
     context["alarm_count"] = sum(len(v) for v in alarms.values())
-    # Non-consultants (anyone with elevated permissions) get alarms as the default tab
-    context["show_alarms_first"] = (
-        can_tqa or can_pqa or can_scope or can_signoff_scope or can_deliver or is_people_mgr
-    )
+    # Show alarms tab by default only when there are alarms to display.
+    context["show_alarms_first"] = context["alarm_count"] > 0
 
     context = {**context, **page_defaults(request)}
     template = loader.get_template("dashboard_index.html")
