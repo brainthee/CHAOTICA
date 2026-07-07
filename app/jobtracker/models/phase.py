@@ -722,10 +722,10 @@ class Phase(models.Model):
             return ""
 
     def get_user_notes(self):
-        return self.notes.filter(is_system_note=False)
+        return [n for n in self.notes.all() if not n.is_system_note]
 
     def get_system_notes(self):
-        return self.notes.filter(is_system_note=True)
+        return [n for n in self.notes.all() if n.is_system_note]
 
     def is_confirmed(self):
         return self.status >= PhaseStatuses.SCHEDULED_CONFIRMED
@@ -741,19 +741,23 @@ class Phase(models.Model):
     ## Schedule Methods
     ###########################################
 
+    def _get_scheduled_totals(self):
+        # Iterate timeslots.all() which uses the prefetch cache when available,
+        # avoiding per-role filter() calls that bypass the cache.
+        if not hasattr(self, '_scheduled_totals_cache'):
+            totals = {}
+            for slot in self.timeslots.all():
+                role = slot.deliveryRole
+                totals[role] = totals.get(role, Decimal(0)) + slot.get_business_hours()
+            self._scheduled_totals_cache = totals
+        return self._scheduled_totals_cache
+
     def get_all_total_scheduled_by_type(self):
-        data = dict()
-        for state in TimeSlotDeliveryRole.CHOICES:
-            data[state[0]] = self.get_total_scheduled_by_type(state[0])
-        return data
+        cache = self._get_scheduled_totals()
+        return {role: cache.get(role, Decimal(0)) for role, _ in TimeSlotDeliveryRole.CHOICES}
 
     def get_total_scheduled_by_type(self, slot_type):
-        slots = self.timeslots.filter(deliveryRole=slot_type)
-        total = Decimal()
-        for slot in slots:
-            diff = slot.get_business_hours()
-            total = total + diff
-        return total
+        return self._get_scheduled_totals().get(slot_type, Decimal(0))
 
     def get_total_scheduled_hours(self):
         total_scheduled = Decimal(0.0)

@@ -464,12 +464,19 @@ class JobDetailView(JobPermissionRequiredMixin, JobBaseView, DetailView):
     # Override parent's prefetch_related to avoid conflicts
     prefetch_related = []
     
+    def get_object(self, queryset=None):
+        # Cache to avoid re-fetching (+ re-running all prefetches) when guardian's
+        # check_permissions() calls get_object() before DetailView.get() does.
+        if not hasattr(self, '_cached_object'):
+            self._cached_object = super().get_object(queryset)
+        return self._cached_object
+
     def get_queryset(self):
         from django.db.models import Prefetch
         from ..models import OrganisationalUnitMember, Phase, TimeSlot
-        
+
         # Get base queryset without parent's prefetch
-        qs = Job.objects.filter(slug=self.kwargs.get('slug'))
+        qs = Job.objects.filter(slug=self.kwargs.get('slug')).select_related('client', 'unit')
         
         # Prefetch unit memberships ordered so .first() doesn't cause extra queries
         unit_membership_qs = OrganisationalUnitMember.objects.select_related('unit').order_by(
@@ -483,7 +490,8 @@ class JobDetailView(JobPermissionRequiredMixin, JobBaseView, DetailView):
         
         # Prefetch phases with all related data
         phase_qs = Phase.objects.select_related(
-            'service', 'report_author', 'project_lead', 'techqa_by', 'presqa_by'
+            'service', 'report_author', 'project_lead', 'techqa_by', 'presqa_by',
+            'job', 'job__client',
         ).prefetch_related(
             Prefetch('timeslots', queryset=timeslot_qs),
             Prefetch('report_author__unit_memberships', queryset=unit_membership_qs),

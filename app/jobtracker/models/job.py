@@ -414,7 +414,7 @@ class Job(models.Model):
             return False
 
     def get_user_notes(self):
-        return self.notes.filter(is_system_note=False)
+        return [n for n in self.notes.all() if not n.is_system_note]
 
     def get_total_scoped_hours(self):
         phases = self.phases.all()
@@ -575,7 +575,7 @@ class Job(models.Model):
         return round(100 * float(scheduled) / float(total_scoped), 2)
 
     def get_system_notes(self):
-        return self.notes.filter(is_system_note=True)
+        return [n for n in self.notes.all() if n.is_system_note]
 
     def get_absolute_url(self):
         return reverse("job_detail", kwargs={"slug": self.slug})
