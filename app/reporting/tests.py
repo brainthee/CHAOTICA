@@ -174,3 +174,92 @@ class ScheduledReportLogicTests(SimpleTestCase):
         groups = sched.group_rows(data)
         self.assertEqual(set(groups.keys()), {'x@x.com', 'y@x.com'})
         self.assertEqual(len(groups['x@x.com']), 2)
+
+
+from django.test import TestCase
+from guardian.shortcuts import assign_perm
+
+
+class ReportingScopingTests(TestCase):
+    """F5: the reporting data queryset must be scoped to the running user's units
+    (guardian ``can_view_jobs``), not org-wide, with restricted jobs excluded for
+    everyone but superusers."""
+
+    def setUp(self):
+        from chaotica_utils.models import User
+        from jobtracker.models import Client, Job, OrganisationalUnit
+
+        # create_user makes the first user a superuser; make/keep an explicit one.
+        self.superuser = User.objects.create_user(email="su@test.com", password="pw12345")
+        self.superuser.is_superuser = True
+        self.superuser.save()
+
+        self.unit_a = OrganisationalUnit.objects.create(name="Unit A")
+        self.unit_b = OrganisationalUnit.objects.create(name="Unit B")
+        self.client_obj = Client.objects.create(name="C")
+        common = dict(
+            client=self.client_obj, created_by=self.superuser,
+            account_manager=self.superuser,
+        )
+        self.job_a = Job.objects.create(unit=self.unit_a, title="A", **common)
+        self.job_b = Job.objects.create(unit=self.unit_b, title="B", **common)
+        self.job_a_restricted = Job.objects.create(
+            unit=self.unit_a, title="A-restricted", is_restricted=True, **common,
+        )
+
+        self.scoped_user = User.objects.create_user(email="scoped@test.com", password="pw12345")
+        assign_perm("jobtracker.can_view_jobs", self.scoped_user, self.unit_a)
+        self.scoped_user = User.objects.get(pk=self.scoped_user.pk)
+
+        self.nobody = User.objects.create_user(email="nobody@test.com", password="pw12345")
+
+    def _filter(self, user):
+        from jobtracker.models import Job
+        return set(
+            DataService._apply_permission_filter(Job.objects.all(), None, user)
+            .values_list("pk", flat=True)
+        )
+
+    def test_superuser_sees_all_including_restricted(self):
+        pks = self._filter(self.superuser)
+        self.assertIn(self.job_b.pk, pks)
+        self.assertIn(self.job_a_restricted.pk, pks)
+
+    def test_scoped_user_sees_only_own_unit_non_restricted(self):
+        pks = self._filter(self.scoped_user)
+        self.assertIn(self.job_a.pk, pks)
+        self.assertNotIn(self.job_b.pk, pks)            # other unit excluded
+        self.assertNotIn(self.job_a_restricted.pk, pks)  # restricted excluded
+
+    def test_user_without_perms_sees_nothing(self):
+        self.assertEqual(self._filter(self.nobody), set())
+
+    def test_can_run_all_reports_is_cross_org_but_excludes_restricted(self):
+        assign_perm("reporting.can_run_all_reports", self.nobody)
+        user = type(self.nobody).objects.get(pk=self.nobody.pk)
+        pks = self._filter(user)
+        self.assertIn(self.job_a.pk, pks)
+        self.assertIn(self.job_b.pk, pks)
+        self.assertNotIn(self.job_a_restricted.pk, pks)
+
+
+class RunAsUserFormTests(TestCase):
+    """F3: a scheduled report may not run as a superuser (privilege escalation)."""
+
+    def setUp(self):
+        from chaotica_utils.models import User
+        self.superuser = User.objects.create_user(email="su2@test.com", password="pw12345")
+        self.normal = User.objects.create_user(email="normal@test.com", password="pw12345")
+
+    def test_run_as_user_queryset_excludes_superusers(self):
+        from reporting.forms import ScheduledReportForm
+        form = ScheduledReportForm()
+        qs = form.fields['run_as_user'].queryset
+        self.assertIn(self.normal, qs)
+        self.assertNotIn(self.superuser, qs)
+
+    def test_run_as_user_rejects_superuser_on_clean(self):
+        from reporting.forms import ScheduledReportForm
+        form = ScheduledReportForm(data={'run_as_user': self.superuser.pk})
+        self.assertFalse(form.is_valid())
+        self.assertIn('run_as_user', form.errors)

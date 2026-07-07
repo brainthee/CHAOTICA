@@ -9,27 +9,19 @@ to the relevant group(s) and each connected client applies it to its vis DataSet
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from channels.db import database_sync_to_async
 
-
-VIEW_PERM = "jobtracker.view_job_schedule"
-
-
-def _can_view_job(user, job):
-    if not user or not user.is_authenticated:
-        return False
-    if user.has_perm(VIEW_PERM):
-        return True
-    if user.has_perm(VIEW_PERM, job):
-        return True
-    if job.unit and user.has_perm(VIEW_PERM, job.unit):
-        return True
-    try:
-        return user in job.team()
-    except Exception:
-        return False
+from .utils import (
+    can_view_job_schedule as _can_view_job,
+    viewable_schedule_user_pks,
+)
+from .schedule_history import filter_delta_for_users
 
 
 class ScheduleConsumer(AsyncJsonWebsocketConsumer):
     group_name = None
+    # Set for the global scope: user PKs whose slots this connection may see, so
+    # the shared global broadcast is filtered per-connection. None for job/phase
+    # scopes (the whole scope is already authorised in _resolve_group).
+    viewable_user_pks = None
 
     async def connect(self):
         user = self.scope.get("user")
@@ -72,9 +64,13 @@ class ScheduleConsumer(AsyncJsonWebsocketConsumer):
                 return None
             return "schedule_job_{}".format(job_id)
 
-        # Global scope — any authenticated user (mirrors the login-only global views).
+        # Global scope — any authenticated user may join, but the shared global
+        # broadcast must be filtered to the slots this user could see in the
+        # calendar (mirrors the global slots view's view_users_schedule filter).
+        self.viewable_user_pks = viewable_schedule_user_pks(user)
         return "schedule_global"
 
     # Group message handler: broadcast.py sends {"type": "schedule.delta", ...}.
     async def schedule_delta(self, event):
-        await self.send_json({"type": "delta", "delta": event["delta"]})
+        delta = filter_delta_for_users(event["delta"], self.viewable_user_pks)
+        await self.send_json({"type": "delta", "delta": delta})

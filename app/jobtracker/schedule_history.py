@@ -239,6 +239,22 @@ def build_delta(action):
     }
 
 
+def filter_delta_for_users(delta, viewable_user_pks):
+    """Restrict a delta's ``upserts`` to slots for users the viewer may see.
+
+    ``viewable_user_pks`` is the set of user PKs whose schedule the viewer may
+    view (global scope). Pass ``None`` to skip filtering — used for job/phase
+    scope, where the viewer is already authorised for the whole scope. Removals
+    are left intact (they carry only a pk; applying an unknown removal is a
+    client-side no-op)."""
+    if viewable_user_pks is None:
+        return delta
+    upserts = [
+        u for u in delta.get("upserts", []) if u.get("userId") in viewable_user_pks
+    ]
+    return {**delta, "upserts": upserts}
+
+
 def can_revert(action, user):
     return action.can_revert(user)
 

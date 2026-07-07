@@ -8,6 +8,7 @@ from ..models import (
     DataArea, DataField, FilterType, Report, ReportField, ReportCategory
 )
 from ..services.data_service import DataService
+from ..permissions import can_view_report
 from ..utils.filter_utils import (
     get_filter_type_choices, get_dynamic_filter_values, get_filter_value_widget_type
 )
@@ -290,7 +291,7 @@ def preview_report_data(request, uuid):
     """
     try:
         report = get_object_or_404(Report, uuid=uuid)
-        if not report.can_view(request.user):
+        if not can_view_report(request.user, report):
             return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
 
         # Set a limit for the preview

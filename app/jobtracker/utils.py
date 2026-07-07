@@ -38,6 +38,46 @@ logger = logging.getLogger(__name__)
 abspath = lambda *p: os.path.abspath(os.path.join(*p))
 
 
+VIEW_JOB_SCHEDULE_PERM = "jobtracker.view_job_schedule"
+
+
+def can_view_job_schedule(user, job):
+    """Whether ``user`` may view ``job``'s schedule.
+
+    Single source of truth for the ``view_job_schedule`` object gate, shared by
+    the HTTP schedule views/history/delta endpoints and the WebSocket consumer so
+    the live and polled paths can't drift apart. Mirrors the global → object →
+    unit → job-team cascade used elsewhere."""
+    if not user or not user.is_authenticated:
+        return False
+    if user.has_perm(VIEW_JOB_SCHEDULE_PERM):
+        return True
+    if user.has_perm(VIEW_JOB_SCHEDULE_PERM, job):
+        return True
+    if job.unit and user.has_perm(VIEW_JOB_SCHEDULE_PERM, job.unit):
+        return True
+    try:
+        return user in job.team()
+    except Exception:
+        return False
+
+
+def viewable_schedule_user_pks(user):
+    """Set of user PKs whose schedule ``user`` may view in the *global* scope.
+
+    Mirrors the ``view_users_schedule`` filter the global slots view applies
+    (:func:`_filter_users_on_query`) so the live/polled delta layers only ever
+    hand a user slot data they could already see in the calendar. Always includes
+    the user themselves."""
+    pks = set()
+    for org_unit in get_objects_for_user(user, "jobtracker.view_users_schedule"):
+        for member in org_unit.get_allMembers():
+            pks.add(member.pk)
+    if getattr(user, "pk", None):
+        pks.add(user.pk)
+    return pks
+
+
 def get_unit_40x_or_None(
     request,
     perms,

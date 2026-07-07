@@ -210,7 +210,9 @@ def client_onboarding_remove_user(request, slug, pk):
     return JsonResponse(data)
 
 
-@permission_required_or_403("jobtracker.view_client")
+@permission_required_or_403(
+    "jobtracker.view_client", (Client, "slug", "slug"), accept_global_perms=True
+)
 @require_http_methods(["GET"])
 def client_onboarding_export(request, slug):
     client = get_object_or_404(Client, slug=slug)
@@ -243,7 +245,9 @@ def client_onboarding_export(request, slug):
     return response
 
 
-@permission_required_or_403("jobtracker.view_client")
+@permission_required_or_403(
+    "jobtracker.view_client", (Client, "slug", "slug"), accept_global_perms=True
+)
 @require_http_methods(["GET", "POST"])
 def client_schedule_export(request, slug):
     from ..schedule_export import build_schedule_xlsx
