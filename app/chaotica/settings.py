@@ -211,6 +211,8 @@ CONSTANCE_CONFIG = {
     "CHRISTMAS_TREE_ENABLED": (False, "Show Christmas Tree as animation rather than normal one for scheduler?"),
     "KONAMI_ENABLED": (True, "Should the Konami easter-egg be enabled?"),
     "EASTEREGG_GAMES_ENABLED": (False, "Enable stress-relief game easter eggs (DOM Destroyer, Schedule Blaster, Rage Quit)?"),
+    "FAKE_HONEYPOT_ENABLED": (True, "Serve a fake 'web shell' honeypot at commonly-scanned URLs (e.g. /shell.php). Looks vulnerable, is completely inert, and rickrolls on the second command."),
+    "ENTROPY_METER_ENABLED": (False, "Show the hidden 'entropy meter' — a subtle chaos-level artifact in the footer that reveals a breakdown of your overdue/at-risk work when clicked."),
     # Site Notice
     "SITE_NOTICE_ENABLED": (False, "Show a site wide notice"),
     "SITE_NOTICE_MSG": ("", "Message to display across the site"),

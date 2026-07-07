@@ -15,6 +15,10 @@
       Environment: {{ DJANGO_ENV }}
       <span class="fa-solid fa-circle text-body-quaternary text-opacity-50" style="font-size:0.4em;vertical-align:-0.1em"></span>
       Version: {{ DJANGO_VERSION }}
+      {% if config.ENTROPY_METER_ENABLED and request.user.is_authenticated %}
+      {# Entropy meter easter egg — deliberately subtle; reveals a full breakdown on click. #}
+      <span id="entropyArtifact" class="entropy-artifact" role="button" tabindex="0" aria-label="System entropy" title="">&#9671;</span>
+      {% endif %}
     </p>
   </div>
 </div>

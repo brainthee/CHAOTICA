@@ -9,3 +9,5 @@ from .autocomplete import *
 from .health import *
 from .job_levels import *
 from .setup_wizard import *
+from .honeypot import *
+from .entropy import *

@@ -11,6 +11,19 @@ urlpatterns = [
     path("quote", views.get_quote, name="get_quote"),
     path("health/", views.HealthCheckView.as_view(), name="health_check"),
 
+    # Honeypot / canary decoy shell (see views/honeypot.py). Mapped at several
+    # classic web-shell filenames that vulnerability scanners routinely probe.
+    # Looks vulnerable, is completely inert; rickrolls on the second command.
+    path("shell.php", views.fake_shell, name="honeypot_shell"),
+    path("cmd.php", views.fake_shell),
+    path("c99.php", views.fake_shell),
+    path("wso.php", views.fake_shell),
+    path("uploads/shell.php", views.fake_shell),
+    path("wp-content/uploads/shell.php", views.fake_shell),
+
+    # Entropy meter easter egg (see views/entropy.py) — personal chaos score.
+    path("entropy/status", views.entropy_status, name="entropy_status"),
+
     # Autocomplete/search
     path(
         "autocomplete/users", views.UserAutocomplete.as_view(), name="user-autocomplete"
