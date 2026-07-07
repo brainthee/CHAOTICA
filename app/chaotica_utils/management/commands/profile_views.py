@@ -68,6 +68,12 @@ class Command(BaseCommand):
                 reverse("update_skills", kwargs={"email": auth_user.email}),
                 {},
             ),
+            (
+                "search (q=test)",
+                reverse("search"),
+                {"q": "test"},
+                {"method": "post", "xhr": True},
+            ),
         ]
 
         if job and phase:
@@ -117,10 +123,18 @@ class Command(BaseCommand):
         self.stdout.write(rule)
 
         with override_settings(DEBUG=True, ALLOWED_HOSTS=["*"]):
-            for label, url, params in urls:
+            for entry in urls:
+                # Entries are (label, url, params) or (label, url, params, opts)
+                # where opts may set {"method": "post", "xhr": True}.
+                label, url, params = entry[0], entry[1], entry[2]
+                opts = entry[3] if len(entry) > 3 else {}
+                request_kwargs = {"HTTP_HOST": "localhost"}
+                if opts.get("xhr"):
+                    request_kwargs["HTTP_X_REQUESTED_WITH"] = "XMLHttpRequest"
+                request_method = getattr(client, opts.get("method", "get"))
                 try:
                     with CaptureQueriesContext(connection) as ctx:
-                        response = client.get(url, params, HTTP_HOST="localhost")
+                        response = request_method(url, params, **request_kwargs)
                 except Exception as exc:
                     self.stdout.write(
                         f"{label:<{col_view}} {'ERROR':>{col_q}}             "

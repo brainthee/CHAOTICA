@@ -383,12 +383,46 @@ $(function() {
         });
     };
         
+    // Resolve a typed Job ID / Phase ID straight to its page. On a hit we
+    // navigate there; on a miss we do nothing and leave the normal search
+    // results dropdown in place.
+    var searchGoto = function(str) {
+        setRequestHeader();
+        $.ajax({
+            url: "{% url 'search_goto' %}",
+            type: 'GET',
+            dataType: 'json',
+            data: {
+                "q": str,
+            },
+            success: function(data) {
+                if (data.url) {
+                    window.location = data.url;
+                }
+            }
+        });
+    };
+
+    // Job IDs are plain digits ("1234"); Phase IDs are "1234-1".
+    const idLikePattern = /^\d+(-\d+)?$/;
+
     let timeoutID = null;
 
     $('#searchField').keyup(function(e) {
         clearTimeout(timeoutID);
         const value = e.target.value
         timeoutID = setTimeout(() => search(value), 500)
+    });
+
+    $('#searchField').keydown(function(e) {
+        if (e.key === 'Enter' || e.keyCode === 13) {
+            // The search box has no submit target — stop Enter reloading the page.
+            e.preventDefault();
+            const value = e.target.value.trim();
+            if (idLikePattern.test(value)) {
+                searchGoto(value);
+            }
+        }
     });
 
 });
