@@ -324,6 +324,12 @@ CONSTANCE_ADDITIONAL_FIELDS = {
 }
 
 # Cities Light Configuration
+# The default download/cache dir lives inside site-packages, which the
+# unprivileged app user can't write to. Point it at a writable location
+# (override with CITIES_LIGHT_DATA_DIR for a mounted volume).
+CITIES_LIGHT_DATA_DIR = os.environ.get(
+    "CITIES_LIGHT_DATA_DIR", os.path.join(BASE_DIR, "cities_light_data")
+)
 CITIES_LIGHT_TRANSLATION_LANGUAGES = ['en']
 CITIES_LIGHT_INCLUDE_COUNTRIES = ['GB', 'US', 'CA', 'AU', 'DE', 'FR', 'NL', 'BE', 'IE', 'IT', 'ES']
 CITIES_LIGHT_INCLUDE_CITY_TYPES = ['PPL', 'PPLA', 'PPLA2', 'PPLA3', 'PPLA4', 'PPLC', 'PPLF', 'PPLG', 'PPLL', 'PPLR', 'PPLS', 'STLMT']
