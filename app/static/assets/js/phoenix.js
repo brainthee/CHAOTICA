@@ -3737,6 +3737,13 @@
   const sortableInit = () => {
     const { getData } = window.phoenix.utils;
 
+    // SortableJS is only loaded on pages that need it. Bail out otherwise so a
+    // stray [data-sortable] attribute (e.g. DataTables' data-sortable=false)
+    // doesn't call into an undefined window.Sortable.
+    if (!window.Sortable) {
+      return;
+    }
+
     const sortableEl = document.querySelectorAll('[data-sortable]');
 
     const defaultOptions = {
@@ -4472,7 +4479,7 @@
   const kanbanInit = () => {
     // kanbanContainer to controll collapse behavior in kanban board
     const kanbanContainer = document.querySelector('[data-kanban-container]');
-    if (kanbanContainer) {
+    if (kanbanContainer && window.Sortable) {
       kanbanContainer.addEventListener('click', e => {
         if (e.target.hasAttribute('data-kanban-collapse')) {
           e.target.closest('.kanban-column').classList.toggle('collapsed');
