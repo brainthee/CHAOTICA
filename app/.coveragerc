@@ -1,0 +1,22 @@
+# Coverage configuration for the CHAOTICA Django app.
+# Used by CI (SonarQube + Codecov) and local `coverage run manage.py test`.
+[run]
+source = .
+branch = True
+omit =
+    */migrations/*
+    */tests/*
+    */tests.py
+    */test_*.py
+    manage.py
+    chaotica/settings.py
+    chaotica/wsgi.py
+    chaotica/asgi.py
+    */apps.py
+    */admin.py
+    */node_modules/*
+    */venv/*
+
+[report]
+show_missing = True
+skip_empty = True

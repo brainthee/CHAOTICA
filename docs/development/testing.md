@@ -23,6 +23,51 @@ cd app && python manage.py test jobtracker.tests.test_qualification_models.Quali
 
 The `--keepdb` flag reuses the test database between runs, significantly speeding up test execution.
 
+## Coverage & Continuous Integration
+
+### Measuring coverage locally
+
+Coverage is measured with [`coverage.py`](https://coverage.readthedocs.io/) using the
+config in `app/.coveragerc` (which sets the source root and omits migrations,
+tests, settings, and generated files):
+
+```bash
+cd app
+pip install coverage
+coverage run manage.py test --noinput
+coverage report          # console summary
+coverage html            # browsable report in htmlcov/
+coverage xml             # coverage.xml for SonarQube / Codecov
+```
+
+Always pass `--noinput` so a leftover test database can't block the run waiting
+for interactive confirmation.
+
+### CI pipeline
+
+The `.github/workflows/sast.yml` workflow ("Check") runs on every push and pull
+request to `main` and performs, in a single job:
+
+1. Install system + Python dependencies.
+2. `coverage run manage.py test --noinput` and `coverage xml`.
+3. Upload `coverage.xml` to **Codecov**.
+4. Run the **SonarQube** scan, which ingests the same `coverage.xml`.
+
+### SonarQube configuration
+
+Analysis is scoped by `sonar-project.properties` at the repo root:
+
+- **Sources:** `app/` (Python + hand-written templates and JS).
+- **Excluded** (vendored/generated — do not lint): `app/static/vendors/**`, the
+  Phoenix theme JS/CSS, minified files, source maps, built docs (`site/`),
+  collected static (`app/staticfiles/`), uploaded media, and DB migrations.
+- **Coverage** is read from `app/coverage.xml`; settings/wsgi/asgi/migrations/tests
+  are excluded from the coverage metric.
+
+The Quality Gate is evaluated on **new code**, so every PR should add tests for
+the lines it touches to keep the gate green. To have a red gate fail the build,
+uncomment the `SonarQube Quality Gate` step in `sast.yml`.
+
 ## Project Conventions
 
 ### Framework
