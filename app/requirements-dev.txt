@@ -1,0 +1,33 @@
+# Development / test / build tooling.
+# NOT installed into the production Docker image (the Dockerfile installs only
+# requirements.txt). Install locally with:  pip install -r requirements-dev.txt
+-r requirements.txt
+
+# Formatters / linters / static analysis
+autoflake==2.3.1
+black==25.1.0
+mypy_extensions==1.1.0
+pyflakes==3.3.2
+pysonar==1.1.0.2035
+
+# Packaging / dependency management
+build==1.2.2.post1
+pip-tools==7.4.1
+pyproject_hooks==1.2.0
+vcversioner==2.16.0.0
+
+# Testing helpers
+pyfakefs==5.8.0
+responses==0.25.6
+
+# Demo/seed data generation (management command: generate_demo_data)
+Faker==37.4.0
+faker-microservice==2.0.0
+
+# Model/graph tooling
+graphviz==0.21
+
+# In-browser SQL/query debugging.
+# NOTE: keep the debug_toolbar import in chaotica/urls.py guarded behind settings.DEBUG,
+# otherwise a prod image (which lacks this package) will fail to boot.
+django-debug-toolbar==5.2.0

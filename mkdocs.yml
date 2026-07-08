@@ -20,6 +20,7 @@ nav:
       - Docker: installation/deployment/docker.md
       - Kubernetes: installation/deployment/k8.md
       - AWS Elastic Beanstalk: installation/deployment/aws_beanstalk.md
+      - Daemon Split (planned): installation/deployment/daemon-split.md
   - User Guide:
     - Global Search: user_guide/global_search.md
     - Jobs:

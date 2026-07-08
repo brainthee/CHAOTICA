@@ -58,11 +58,13 @@ if [ "$USE_REDIS" = "true" ]; then
     echo "Redis is ready"
 fi
 
-sudo -Eu chaotica -- python3 manage.py download_geoip_db
-sudo -Eu chaotica -- python3 manage.py migrate --noinput
+# Use the venv interpreter explicitly: `sudo` scrubs PATH (secure_path), so a bare
+# `python3` would resolve to the system interpreter, not /opt/venv.
+sudo -Eu chaotica -- /opt/venv/bin/python3 manage.py download_geoip_db
+sudo -Eu chaotica -- /opt/venv/bin/python3 manage.py migrate --noinput
 if [ "$RUN_COLLECTSTATIC" = "true" ]; then
     echo "Running collectstatic..."
-    sudo -Eu chaotica -- python3 manage.py collectstatic --noinput
+    sudo -Eu chaotica -- /opt/venv/bin/python3 manage.py collectstatic --noinput
 fi
 sudo -Eu chaotica -- /usr/bin/crontab /crontab.txt
 
