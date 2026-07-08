@@ -1147,48 +1147,47 @@ class User(AbstractUser):
     def get_active_qualifications(self):
         from jobtracker.enums import QualificationStatus
 
+        # Fast path: honour a prefetched `qualifications` cache (e.g. the
+        # dashboard team tab) to avoid a per-user query. Falls back to a query
+        # when not prefetched.
+        if "qualifications" in getattr(self, "_prefetched_objects_cache", {}):
+            return [
+                q
+                for q in self.qualifications.all()
+                if q.status == QualificationStatus.AWARDED
+            ]
+
         return self.qualifications.filter(
             status=QualificationStatus.AWARDED
         ).prefetch_related("qualification", "qualification__awarding_body")
 
-    def get_skills_specialist(self):
+    def _skills_by_rating(self, rating):
+        # Fast path: honour a prefetched `skills` cache (e.g. the dashboard team
+        # tab prefetches skills__skill__category) so rendering a card per report
+        # doesn't fire a fresh Skill query per user. Falls back to a query when
+        # not prefetched. Returns Skill instances either way, which remains valid
+        # for the `Q(skillsRequired__in=...)` matching callers.
         from jobtracker.models import Skill
+
+        if "skills" in getattr(self, "_prefetched_objects_cache", {}):
+            return [us.skill for us in self.skills.all() if us.rating == rating]
 
         return (
             Skill.objects.filter(
-                pk__in=self.skills.filter(rating=UserSkillRatings.SPECIALIST).values(
-                    "skill"
-                )
+                pk__in=self.skills.filter(rating=rating).values("skill")
             )
             .prefetch_related("category")
             .distinct()
         )
+
+    def get_skills_specialist(self):
+        return self._skills_by_rating(UserSkillRatings.SPECIALIST)
 
     def get_skills_alone(self):
-        from jobtracker.models import Skill
-
-        return (
-            Skill.objects.filter(
-                pk__in=self.skills.filter(rating=UserSkillRatings.CAN_DO_ALONE).values(
-                    "skill"
-                )
-            )
-            .prefetch_related("category")
-            .distinct()
-        )
+        return self._skills_by_rating(UserSkillRatings.CAN_DO_ALONE)
 
     def get_skills_support(self):
-        from jobtracker.models import Skill
-
-        return (
-            Skill.objects.filter(
-                pk__in=self.skills.filter(
-                    rating=UserSkillRatings.CAN_DO_WITH_SUPPORT
-                ).values("skill")
-            )
-            .prefetch_related("category")
-            .distinct()
-        )
+        return self._skills_by_rating(UserSkillRatings.CAN_DO_WITH_SUPPORT)
 
     def __str__(self):
         if self.first_name and self.last_name:

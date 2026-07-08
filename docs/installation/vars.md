@@ -80,6 +80,8 @@ These variables must be set for production deployments:
 |----------|---------|-------------|
 | `SENTRY_BACKEND_DSN` | - | Sentry DSN for backend error tracking |
 | `SENTRY_FRONTEND_DSN` | - | Sentry DSN for frontend error tracking |
+| `SENTRY_TRACES_SAMPLE_RATE` | `0.1` | Fraction of requests Sentry performance-traces (a span per SQL query/template block). `1.0` traces every request and adds noticeable per-request latency; lower it in production. |
+| `SENTRY_PROFILES_SAMPLE_RATE` | `0.1` | Fraction of traced requests Sentry also profiles. Keep low in production. |
 
 ## Application Settings
 

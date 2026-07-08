@@ -1,4 +1,4 @@
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseForbidden
 from django.template import loader
 from django.contrib.auth.decorators import login_required
 import logging
@@ -7,9 +7,9 @@ from django.utils import timezone
 from datetime import datetime, timedelta
 from jobtracker.models import Job, Phase, TimeSlot, OrganisationalUnit
 from chaotica_utils.models import LeaveRequest, User, UserJobLevel
-from jobtracker.enums import JobStatuses, PhaseStatuses
+from jobtracker.enums import JobStatuses, PhaseStatuses, DefaultTimeSlotTypes
 from chaotica_utils.views import page_defaults
-from django.db.models import Q, Prefetch
+from django.db.models import Q, Prefetch, Exists, OuterRef
 from django.db.models.functions import Coalesce
 from django.views.decorators.http import require_safe
 from guardian.shortcuts import get_objects_for_user
@@ -236,35 +236,11 @@ def index(request):
     else:
         context["scopesToSignoff"] = []
 
-    if is_people_mgr:
-        current_levels_prefetch = Prefetch(
-            'job_level_history',
-            queryset=UserJobLevel.objects.filter(is_current=True),
-            to_attr='_current_levels',
-        )
-        context["team"] = User.objects.filter(
-            Q(manager=request.user) | Q(acting_manager=request.user),
-            is_active=True,
-        ).select_related(
-            'city__country',
-        ).prefetch_related(
-            'unit_memberships__unit',
-            current_levels_prefetch,
-            'qualifications__qualification__awarding_body',
-            'skills__skill__category',
-        )
-        context["team_leave"] = LeaveRequest.objects.filter(
-            Q(user__manager=request.user) | Q(user__acting_manager=request.user)
-        ).select_related(
-            'user__city__country',
-        ).prefetch_related(
-            'user__unit_memberships__unit',
-            Prefetch(
-                'user__job_level_history',
-                queryset=UserJobLevel.objects.filter(is_current=True),
-                to_attr='_current_levels',
-            ),
-        )
+    # NB: the "My Team" and "Team Leave Requests" tabs are the two heaviest
+    # panels (a large card per report + a per-row scheduled-work check) and are
+    # never the default view. They are lazy-loaded on first tab-show via
+    # team_tab() / team_leave_tab() so the initial dashboard render doesn't pay
+    # for them. See dashboard_index.html.
 
     if can_deliver:
         context["pendingDelivery"] = list(
@@ -272,8 +248,8 @@ def index(request):
                 Q(job__unit__in=units_can_deliver),
                 Q(status=PhaseStatuses.COMPLETED)
             ).select_related(
-                "project_lead", "job__client", "job__account_manager",
-            ).prefetch_related("job__unit")
+                "project_lead", "job__client", "job__account_manager", "job__unit",
+            )
         )
     else:
         context["pendingDelivery"] = []
@@ -419,3 +395,72 @@ def index(request):
     context = {**context, **page_defaults(request)}
     template = loader.get_template("dashboard_index.html")
     return HttpResponse(template.render(context, request))
+
+
+@login_required
+@require_safe
+def team_tab(request):
+    """Lazy-loaded content for the dashboard "My Team" tab.
+
+    Rendered on demand (first tab-show) rather than as part of index() so the
+    initial dashboard load doesn't build a large card per direct report.
+    """
+    if not request.user.is_people_manager():
+        return HttpResponseForbidden()
+
+    current_levels_prefetch = Prefetch(
+        "job_level_history",
+        queryset=UserJobLevel.objects.filter(is_current=True),
+        to_attr="_current_levels",
+    )
+    team = (
+        User.objects.filter(
+            Q(manager=request.user) | Q(acting_manager=request.user),
+            is_active=True,
+        )
+        .select_related("city__country")
+        .prefetch_related(
+            "unit_memberships__unit",
+            current_levels_prefetch,
+            "qualifications__qualification__awarding_body",
+            "skills__skill__category",
+        )
+    )
+    template = loader.get_template("partials/team_dashboard.html")
+    return HttpResponse(template.render({"team": team}, request))
+
+
+@login_required
+@require_safe
+def team_leave_tab(request):
+    """Lazy-loaded content for the dashboard "Team Leave Requests" tab.
+
+    The overlap-with-scheduled-work badge is resolved with an Exists() subquery
+    annotation (overlaps_work_ann) instead of a per-row .exists() call.
+    """
+    if not request.user.is_people_manager():
+        return HttpResponseForbidden()
+
+    overlap_subq = TimeSlot.objects.filter(
+        user=OuterRef("user"),
+        slot_type=DefaultTimeSlotTypes.DELIVERY,
+        start__lte=OuterRef("end_date"),
+        end__gte=OuterRef("start_date"),
+    )
+    team_leave = (
+        LeaveRequest.objects.filter(
+            Q(user__manager=request.user) | Q(user__acting_manager=request.user)
+        )
+        .select_related("user__city__country")
+        .prefetch_related(
+            "user__unit_memberships__unit",
+            Prefetch(
+                "user__job_level_history",
+                queryset=UserJobLevel.objects.filter(is_current=True),
+                to_attr="_current_levels",
+            ),
+        )
+        .annotate(overlaps_work_ann=Exists(overlap_subq))
+    )
+    template = loader.get_template("partials/team_leave_table.html")
+    return HttpResponse(template.render({"team_leave": team_leave}, request))
