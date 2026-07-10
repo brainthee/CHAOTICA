@@ -1,0 +1,93 @@
+# Self-contained compose for the public demo (demo.chaotica.app).
+#
+# The whole demo runs from the published `brainthee/chaotica:latest` image —
+# there is deliberately NO source checkout on the demo host. This directory
+# (compose file + nginx.conf + refresh_demo_data.sh + patches/) is everything
+# the box needs; a nightly cron runs refresh_demo_data.sh.
+#
+# Resilience: every service is `restart: unless-stopped` and the Docker daemon
+# is enabled on boot, so the stack comes back by itself after a reboot or crash.
+name: chaotica-demo
+
+services:
+  web:
+    image: brainthee/chaotica:latest
+    command: gunicorn chaotica.wsgi:application --bind 0.0.0.0:8000
+    restart: unless-stopped
+    volumes:
+      - static_volume:/app/staticfiles
+      - media_volume:/app/mediafiles
+      # Demo-data tuning override (NOT a bug shim): spreads generated jobs across
+      # the whole lifecycle (draft → scoping → scheduled → in-progress → QA →
+      # delivered/completed → some lost) instead of everything landing on
+      # COMPLETED. Based on the image's own command for compatibility. Fold these
+      # tweaks into the canonical generate_demo_data and drop this line + patches/
+      # once a new image ships them. See patches/README.md.
+      - ./patches/generate_demo_data.py:/app/chaotica_utils/management/commands/generate_demo_data.py:ro
+    expose:
+      - 8000
+    environment:
+      - DEBUG=0
+      - SECRET_KEY=Hunter2
+      - DJANGO_ENV=Demo
+      - DJANGO_VERSION=latest
+      - RUN_COLLECTSTATIC=false
+      - TZ=Europe/London
+      # Optional GeoIP DB download key. Kept out of git — set it in a local
+      # .env file next to this compose (see .env.example). Blank is fine; the
+      # app just skips the GeoIP download.
+      - MAXMIND_LICENSE_KEY=${MAXMIND_LICENSE_KEY:-}
+
+      - SQL_ENGINE=django.db.backends.mysql
+      - RDS_DB_NAME=chaotica
+      - RDS_USERNAME=chaotica
+      - RDS_PASSWORD=Hunter2
+      - RDS_HOSTNAME=db
+      - RDS_PORT=3306
+
+      - HEALTH_CHECK_API_KEY=Hunter2
+      - DEMO_ENV=true
+      - DEMO_USER=admin@demo.chaotica.app
+      - DEMO_PASS=DemoAdmin123!
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: mariadb:latest
+    restart: unless-stopped
+    expose:
+      - 3306
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    environment:
+      - MARIADB_DATABASE=chaotica
+      - MARIADB_USER=chaotica
+      - MARIADB_PASSWORD=Hunter2
+      - MARIADB_ROOT_PASSWORD=Hunter2
+    healthcheck:
+      # Bundled with the mariadb image; gates web startup until the DB accepts
+      # connections and InnoDB is up, so refresh_demo_data.sh's `up -d --wait`
+      # no longer relies on a fixed sleep.
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  nginx:
+    image: nginx
+    restart: unless-stopped
+    volumes:
+      - static_volume:/app/staticfiles
+      - media_volume:/app/mediafiles
+      - ./nginx.conf:/etc/nginx/conf.d/chaotica.conf
+    ports:
+      - 80:80
+    depends_on:
+      - web
+
+volumes:
+  mariadb_data:
+  static_volume:
+  media_volume:
