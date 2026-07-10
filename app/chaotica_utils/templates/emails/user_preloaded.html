@@ -1,0 +1,20 @@
+{% extends 'email_base.html' %}
+
+{% block title %}
+You've been granted access to CHAOTICA
+{% endblock title %}
+
+{% block greeting %}
+Hello,
+{% endblock greeting %}
+
+{% block content %}
+You've been granted access to CHAOTICA - <i>(Centralised Hub for Assigning Operational Tasks, Interactive Calendaring and Alerts)</i>. Use the link below to sign in with your organisation account.
+{% endblock content %}
+
+{% block action_block %}
+<a href="{{ action_link }}"
+  style="color: #ffffff; font-size: 16px; font-family: Helvetica, Arial, sans-serif; text-decoration: none; border-radius: 6px; line-height: 20px; display: block; font-weight: 700 !important; white-space: nowrap; background-color: #0d6efd; padding: 12px; border: 1px solid #0d6efd;">
+  Sign in
+</a>
+{% endblock action_block %}

@@ -735,6 +735,21 @@ urlpatterns = [
         name="organisationalunit_add",
     ),
     path(
+        "ops/unit/<str:slug>/members/preload",
+        views.organisationalunit_preload_member,
+        name="organisationalunit_preload_member",
+    ),
+    path(
+        "ops/unit/<str:slug>/members/import",
+        views.organisationalunit_import_members,
+        name="organisationalunit_import_members",
+    ),
+    path(
+        "ops/unit/<str:slug>/members/import/template",
+        views.download_unit_members_template,
+        name="download_unit_members_template",
+    ),
+    path(
         "ops/unit/<str:slug>/members/join",
         views.organisationalunit_join,
         name="organisationalunit_join",

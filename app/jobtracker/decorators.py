@@ -124,7 +124,6 @@ def job_permission_required_or_403(perm, lookup_variables=None, **kwargs):
 
     def decorator(view_func):
         def _wrapped_view(request, *args, **kwargs):
-            from pprint import pprint
             # if more than one parameter is passed to the decorator we try to
             # fetch object for which check would be made
             obj = None

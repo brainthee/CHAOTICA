@@ -18,8 +18,10 @@ from django.utils.dateparse import (
 from django.utils.timezone import is_aware, make_aware, now
 from django.contrib.auth import get_user_model
 
+
 def get_sentinel_user():
     return get_user_model().objects.get_or_create(email="deleted@chaotica.app")[0]
+
 
 def can_manage_user(requesting_user, target_user):
     """
@@ -63,6 +65,47 @@ def can_manage_user(requesting_user, target_user):
     else:
         # All conditions failed, return None
         return None
+
+
+def get_allowed_signup_email_domains():
+    """Return the configured allowlist of signup email domains as a lowercase list.
+
+    Reads the ``ALLOWED_SIGNUP_EMAIL_DOMAINS`` constance value (comma separated).
+    An empty list means "allow any domain".
+    """
+    from constance import config
+
+    raw = config.ALLOWED_SIGNUP_EMAIL_DOMAINS or ""
+    return [d.strip().lower().lstrip("@") for d in raw.split(",") if d.strip()]
+
+
+def email_domain_allowed(email):
+    """Return True if ``email``'s domain is permitted by the site allowlist.
+
+    A blank allowlist permits any domain (preserving prior behaviour).
+    """
+    if not email or "@" not in email:
+        return False
+
+    allowed = get_allowed_signup_email_domains()
+    if not allowed:
+        return True
+
+    domain = email.rsplit("@", 1)[1].strip().lower()
+    return domain in allowed
+
+
+def validate_email_domain(email):
+    """Raise ``ValidationError`` if ``email``'s domain isn't on the allowlist."""
+    from django.core.exceptions import ValidationError
+
+    if not email_domain_allowed(email):
+        allowed = get_allowed_signup_email_domains()
+        raise ValidationError(
+            "Email addresses must use one of the following domains: %s"
+            % ", ".join(allowed)
+        )
+    return email
 
 
 def get_start_of_week(dt=None):
@@ -190,7 +233,9 @@ def clean_fullcalendar_datetime(date):
         ret = parse_datetime(date)
         if ret is None:
             # parse_datetime failed — log and fall back to the original regex approach
-            logging.getLogger(__name__).warning("parse_datetime failed for: %r, falling back to regex", date)
+            logging.getLogger(__name__).warning(
+                "parse_datetime failed for: %r, falling back to regex", date
+            )
             datetime_pattern = re.compile(r"(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})")
             match = datetime_pattern.search(date)
             if not match:
@@ -338,7 +383,7 @@ def get_week(day=None):
         day = now()
     start = day - timedelta(days=day.weekday())
     end = start + timedelta(days=6)
-    return { 'start': start, 'end': end}
+    return {"start": start, "end": end}
 
 
 def can_manage_job_level(requesting_user, target_user):
@@ -375,14 +420,18 @@ def can_manage_job_level(requesting_user, target_user):
         return True
 
     # Manager or acting manager can manage their reports' job levels
-    if (target_user.manager == requesting_user or
-        target_user.acting_manager == requesting_user):
+    if (
+        target_user.manager == requesting_user
+        or target_user.acting_manager == requesting_user
+    ):
         return True
 
     # Users can manage their own job level only if they have no manager
-    if (requesting_user == target_user and
-        not target_user.manager and
-        not target_user.acting_manager):
+    if (
+        requesting_user == target_user
+        and not target_user.manager
+        and not target_user.acting_manager
+    ):
         return True
 
     return False

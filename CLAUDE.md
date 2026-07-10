@@ -89,10 +89,26 @@ URLs are organized hierarchically:
 
 ## Dependencies
 
-Python dependencies are managed in `app/requirements.txt`. Key packages include:
+Python dependencies are split into two files in `app/`:
+- **`requirements.txt`** — runtime dependencies only. This is the sole file installed into
+  the production Docker image.
+- **`requirements-dev.txt`** — dev/test/build tooling (black, linters, pytest helpers,
+  Faker for `generate_demo_data`, django-debug-toolbar, etc.). It starts with
+  `-r requirements.txt`, so `pip install -r requirements-dev.txt` gives a full local env.
+  These are intentionally kept out of the image to reduce size and vulnerability surface.
+
+Key runtime packages include:
 - Django and Django extensions (auth-adfs, REST framework, etc.)
 - Celery for background tasks
-- Database connectors (psycopg2, mysqlclient)
+- Database connectors (psycopg2-binary, mysqlclient)
 - AWS SDK (boto3) for S3 integration
 - Reporting libraries (pandas, openpyxl)
 - Security tools (django-clamav)
+
+### Docker image
+The `app/Dockerfile` is a **multi-stage** build on `debian:12-slim`: a builder stage
+compiles wheels into `/opt/venv` (with the compiler toolchain), and the runtime stage
+copies that venv into a slim image with only runtime system packages. On AWS Elastic
+Beanstalk the container runs as a single-container monolith (gunicorn + in-container redis
++ cron via supervisord); a future split of these daemons is documented in
+`docs/installation/deployment/daemon-split.md`.

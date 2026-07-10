@@ -26,6 +26,7 @@ DEMO_USER = os.environ.get("DEMO_USER", default=None)
 DEMO_PASS = os.environ.get("DEMO_PASS", default=None)
 DEMO_RESET_TIME = os.environ.get("DEMO_RESET_TIME", default="00:00")
 
+
 def _sentry_before_send(event, hint):
     """Drop benign scanner/bot noise before it becomes a Sentry issue.
 
@@ -150,6 +151,10 @@ CONSTANCE_CONFIG = {
     # Invite
     "INVITE_ENABLED": (True, "Should we allow inviting users?"),
     "USER_INVITE_EXPIRY": (7, "How long until invites expire"),
+    "ALLOWED_SIGNUP_EMAIL_DOMAINS": (
+        "",
+        "Comma-separated email domains allowed to be added/registered (e.g. accenture.com). Blank = allow any domain.",
+    ),
     # Skills refresher
     "SKILLS_REVIEW_DAYS": (
         31,
@@ -196,23 +201,44 @@ CONSTANCE_CONFIG = {
     # Work settings
     "DEFAULT_HOURS_IN_DAY": (7.5, "Default hours in a work day"),
     # Schedule thresholds (% of scoped time scheduled)
-    "SCHEDULE_THRESHOLD_SUCCESS": (90, "Minimum % scheduled to show as green (fully scheduled)"),
-    "SCHEDULE_THRESHOLD_INFO": (50, "Minimum % scheduled to show as blue (partially scheduled)"),
+    "SCHEDULE_THRESHOLD_SUCCESS": (
+        90,
+        "Minimum % scheduled to show as green (fully scheduled)",
+    ),
+    "SCHEDULE_THRESHOLD_INFO": (
+        50,
+        "Minimum % scheduled to show as blue (partially scheduled)",
+    ),
     "DEFAULT_WORKING_DAYS": (
         "[1, 2, 3, 4, 5]",
         "An int array with the numbers equaling the day of the week. Sunday == 0, Monday == 1 etc",
     ),
     "LEAVE_DAYS_NOTICE": (14, "How many days notice for Annual Leave submissions?"),
-    "LEAVE_HISTORY_MONTHS": (3, "How many months of past leave to show on the manage leave page"),
+    "LEAVE_HISTORY_MONTHS": (
+        3,
+        "How many months of past leave to show on the manage leave page",
+    ),
     "LEAVE_ENFORCE_LIMIT": (False, "Should leave be prevented if over balance?"),
     # Theme/Look settings
     "SNOW_ENABLED": (False, "Should it snow?"),
     "CHRISTMAS_LIGHTS_ENABLED": (False, "Show Christmas Lights at the top?"),
-    "CHRISTMAS_TREE_ENABLED": (False, "Show Christmas Tree as animation rather than normal one for scheduler?"),
+    "CHRISTMAS_TREE_ENABLED": (
+        False,
+        "Show Christmas Tree as animation rather than normal one for scheduler?",
+    ),
     "KONAMI_ENABLED": (True, "Should the Konami easter-egg be enabled?"),
-    "EASTEREGG_GAMES_ENABLED": (False, "Enable stress-relief game easter eggs (DOM Destroyer, Schedule Blaster, Rage Quit)?"),
-    "FAKE_HONEYPOT_ENABLED": (True, "Serve a fake 'web shell' honeypot at commonly-scanned URLs (e.g. /shell.php). Looks vulnerable, is completely inert, and rickrolls on the second command."),
-    "ENTROPY_METER_ENABLED": (False, "Show the hidden 'entropy meter' — a subtle chaos-level artifact in the footer that reveals a breakdown of your overdue/at-risk work when clicked."),
+    "EASTEREGG_GAMES_ENABLED": (
+        False,
+        "Enable stress-relief game easter eggs (DOM Destroyer, Schedule Blaster, Rage Quit)?",
+    ),
+    "FAKE_HONEYPOT_ENABLED": (
+        True,
+        "Serve a fake 'web shell' honeypot at commonly-scanned URLs (e.g. /shell.php). Looks vulnerable, is completely inert, and rickrolls on the second command.",
+    ),
+    "ENTROPY_METER_ENABLED": (
+        False,
+        "Show the hidden 'entropy meter' — a subtle chaos-level artifact in the footer that reveals a breakdown of your overdue/at-risk work when clicked.",
+    ),
     # Site Notice
     "SITE_NOTICE_ENABLED": (False, "Show a site wide notice"),
     "SITE_NOTICE_MSG": ("", "Message to display across the site"),
@@ -295,8 +321,14 @@ CONSTANCE_CONFIG = {
     "RM_SYNC_STALE_TIMEOUT": (60, "Amount of minutes before a sync task is stale"),
     "MAINTENANCE_MODE": (False, "Toggle maintenance mode"),
     # Calendar Feed settings
-    "CALENDAR_FEED_ENABLED": (True, "Enable the calendar feed (iCal) for users to subscribe to their schedule"),
-    "CALENDAR_FAMILY_FEED_ENABLED": (True, "Enable the family-friendly calendar feed showing only location/status"),
+    "CALENDAR_FEED_ENABLED": (
+        True,
+        "Enable the calendar feed (iCal) for users to subscribe to their schedule",
+    ),
+    "CALENDAR_FAMILY_FEED_ENABLED": (
+        True,
+        "Enable the family-friendly calendar feed showing only location/status",
+    ),
 }
 
 CONSTANCE_BACKEND = "constance.backends.database.DatabaseBackend"
@@ -332,9 +364,34 @@ CONSTANCE_ADDITIONAL_FIELDS = {
 CITIES_LIGHT_DATA_DIR = os.environ.get(
     "CITIES_LIGHT_DATA_DIR", os.path.join(BASE_DIR, "cities_light_data")
 )
-CITIES_LIGHT_TRANSLATION_LANGUAGES = ['en']
-CITIES_LIGHT_INCLUDE_COUNTRIES = ['GB', 'US', 'CA', 'AU', 'DE', 'FR', 'NL', 'BE', 'IE', 'IT', 'ES']
-CITIES_LIGHT_INCLUDE_CITY_TYPES = ['PPL', 'PPLA', 'PPLA2', 'PPLA3', 'PPLA4', 'PPLC', 'PPLF', 'PPLG', 'PPLL', 'PPLR', 'PPLS', 'STLMT']
+CITIES_LIGHT_TRANSLATION_LANGUAGES = ["en"]
+CITIES_LIGHT_INCLUDE_COUNTRIES = [
+    "GB",
+    "US",
+    "CA",
+    "AU",
+    "DE",
+    "FR",
+    "NL",
+    "BE",
+    "IE",
+    "IT",
+    "ES",
+]
+CITIES_LIGHT_INCLUDE_CITY_TYPES = [
+    "PPL",
+    "PPLA",
+    "PPLA2",
+    "PPLA3",
+    "PPLA4",
+    "PPLC",
+    "PPLF",
+    "PPLG",
+    "PPLL",
+    "PPLR",
+    "PPLS",
+    "STLMT",
+]
 
 
 AUTHENTICATION_BACKENDS = (
@@ -376,7 +433,7 @@ DEFAULT_APPS = [
     "django.contrib.humanize",
 ]
 THIRD_PARTY_APPS = [
-    'django_select2',
+    "django_select2",
     "colorfield",
     "constance",
     "django_auth_adfs",
@@ -491,8 +548,8 @@ CRON_CLASSES = [
     "chaotica_utils.tasks.task_sync_role_permissions_to_default",
     "chaotica_utils.tasks.task_sync_role_permissions",
     "chaotica_utils.tasks.task_backup_site",
-    'chaotica_utils.tasks.ProcessManualBackupJobs',
-    'chaotica_utils.tasks.CleanupOldBackups',
+    "chaotica_utils.tasks.ProcessManualBackupJobs",
+    "chaotica_utils.tasks.CleanupOldBackups",
     "jobtracker.tasks.task_progress_workflows",
     "jobtracker.tasks.task_fire_job_notifications",
     "jobtracker.tasks.task_fire_onboarding_reminders",
@@ -671,23 +728,23 @@ else:
 
 
 CACHES = {
-    'default': {
-        'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': 'redis://127.0.0.1:6379/1',
-        'OPTIONS': {
-            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-            'IGNORE_EXCEPTIONS': True,  # This is crucial for preventing 50x errors
-            'CONNECTION_POOL_KWARGS': {  # This syntax works with django-redis
-                'max_connections': 50,
-                'retry_on_timeout': True,
-                'socket_connect_timeout': 5,
-                'socket_timeout': 5,
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "IGNORE_EXCEPTIONS": True,  # This is crucial for preventing 50x errors
+            "CONNECTION_POOL_KWARGS": {  # This syntax works with django-redis
+                "max_connections": 50,
+                "retry_on_timeout": True,
+                "socket_connect_timeout": 5,
+                "socket_timeout": 5,
             },
-            'PICKLE_VERSION': -1,
-        }
+            "PICKLE_VERSION": -1,
+        },
     }
 }
-CONSTANCE_DATABASE_CACHE_BACKEND = 'default'
+CONSTANCE_DATABASE_CACHE_BACKEND = "default"
 
 
 # Password validation
@@ -823,7 +880,9 @@ STATICFILES_DIRS = (os.path.join(BASE_DIR, "static"),)
 
 # Point the datepicker widget at the same static origin the rest of the app uses
 # (dev: /static/, prod: the S3/CDN domain) so its JS/CSS aren't CORB-blocked.
-BOOTSTRAP_DATEPICKER_PLUS["app_static_url"] = f"{STATIC_URL}vendors/bootstrap_datepicker_plus/"
+BOOTSTRAP_DATEPICKER_PLUS["app_static_url"] = (
+    f"{STATIC_URL}vendors/bootstrap_datepicker_plus/"
+)
 
 
 CORS_ALLOW_ALL_ORIGINS = True
@@ -890,7 +949,9 @@ EXPLORER_DATA_EXPORTERS = [
 ]
 
 CLAMAV_ENABLED = os.environ.get("CLAMAV_ENABLED", default=False)
-CLAMAV_UNIX_SOCKET = os.environ.get("CLAMAV_UNIX_SOCKET", default="/var/run/clamav/clamd.ctl")
+CLAMAV_UNIX_SOCKET = os.environ.get(
+    "CLAMAV_UNIX_SOCKET", default="/var/run/clamav/clamd.ctl"
+)
 CLAMAV_USE_TCP = os.environ.get("CLAMAV_USE_TCP", default=False)
 CLAMAV_TCP_PORT = os.environ.get("CLAMAV_TCP_PORT", default=3310)
 CLAMAV_TCP_ADDR = os.environ.get("CLAMAV_TCP_ADDR", default="127.0.0.1")

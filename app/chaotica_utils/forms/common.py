@@ -35,25 +35,27 @@ import tarfile
 from cities_light.models import City
 
 
+MAX_BACKUP_SIZE = getattr(
+    settings, "MAX_BACKUP_SIZE", 500 * 1024 * 1024
+)  # 500MB default
 
-MAX_BACKUP_SIZE = getattr(settings, 'MAX_BACKUP_SIZE', 500 * 1024 * 1024)  # 500MB default
 
 class DatabaseRestoreForm(forms.Form):
     backup_file = forms.FileField(
-        label='Backup File',
-        help_text='Select a .gz database backup file',
-        required=True
+        label="Backup File",
+        help_text="Select a .gz database backup file",
+        required=True,
     )
     confirm = forms.BooleanField(
-        label='I understand this will overwrite the current database',
-        help_text='This action cannot be undone. All current data will be replaced.',
-        required=False  # We'll handle this separately for the two-step process
+        label="I understand this will overwrite the current database",
+        help_text="This action cannot be undone. All current data will be replaced.",
+        required=False,  # We'll handle this separately for the two-step process
     )
 
     db_confirmed_restore = forms.BooleanField(
         widget=forms.HiddenInput(), required=False, initial=False
     )
-    
+
     def __init__(self, *args, **kwargs):
         super(DatabaseRestoreForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
@@ -72,85 +74,97 @@ class DatabaseRestoreForm(forms.Form):
             Row(
                 Field("db_confirmed_restore"),
                 StrictButton(
-                    "Restore Database", type="submit", id="db-restore-submit-btn", css_class="btn btn-danger w-100 mb-3"
+                    "Restore Database",
+                    type="submit",
+                    id="db-restore-submit-btn",
+                    css_class="btn btn-danger w-100 mb-3",
                 ),
             ),
         )
 
     def clean_backup_file(self):
-        backup_file = self.cleaned_data['backup_file']
-        
+        backup_file = self.cleaned_data["backup_file"]
+
         # Check file size
         if backup_file.size > MAX_BACKUP_SIZE:
             max_size_mb = MAX_BACKUP_SIZE / (1024 * 1024)
             raise ValidationError(
-                f'File too large. Maximum size is {max_size_mb:.1f}MB. '
-                f'Your file is {backup_file.size / (1024 * 1024):.1f}MB.'
+                f"File too large. Maximum size is {max_size_mb:.1f}MB. "
+                f"Your file is {backup_file.size / (1024 * 1024):.1f}MB."
             )
-        
+
         # Check file extension
-        if not backup_file.name.endswith('.gz'):
+        if not backup_file.name.endswith(".gz"):
             raise ValidationError(
-                'Invalid file extension. File must be a .gz (gzip) backup file.'
+                "Invalid file extension. File must be a .gz (gzip) backup file."
             )
-        
+
         # Save to temporary file for gzip validation
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.gz') as tmp_file:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".gz") as tmp_file:
             for chunk in backup_file.chunks():
                 tmp_file.write(chunk)
             temp_path = tmp_file.name
-        
+
         # Validate gzip format
         try:
-            with gzip.open(temp_path, 'rb') as gz_file:
+            with gzip.open(temp_path, "rb") as gz_file:
                 # Try to read first 1KB to verify it's valid
                 test_data = gz_file.read(1024)
                 if not test_data:
-                    raise ValidationError('Backup file appears to be empty.')
+                    raise ValidationError("Backup file appears to be empty.")
         except gzip.BadGzipFile:
             raise ValidationError(
-                'Invalid gzip file. Please upload a valid database backup file.'
+                "Invalid gzip file. Please upload a valid database backup file."
             )
         except Exception as e:
-            raise ValidationError(f'Error validating backup file: {str(e)}')
+            raise ValidationError(f"Error validating backup file: {str(e)}")
         finally:
             # Clean up temp file
             if os.path.exists(temp_path):
                 os.remove(temp_path)
-        
+
         return backup_file
-    
+
     def clean(self):
         cleaned_data = super().clean()
-        
+
         # Only enforce confirmation if we're in the confirmation step
-        if self.data.get('confirmed_restore') == 'true' and not cleaned_data.get('confirm'):
-            raise ValidationError({
-                'confirm': 'You must confirm that you understand this action will overwrite the database.'
-            })
-        
+        if self.data.get("confirmed_restore") == "true" and not cleaned_data.get(
+            "confirm"
+        ):
+            raise ValidationError(
+                {
+                    "confirm": "You must confirm that you understand this action will overwrite the database."
+                }
+            )
+
         return cleaned_data
 
 
-MAX_BACKUP_SIZE = getattr(settings, 'MAX_BACKUP_SIZE', 500 * 1024 * 1024)  # 500MB default
-MAX_MEDIA_BACKUP_SIZE = getattr(settings, 'MAX_MEDIA_BACKUP_SIZE', 2 * 1024 * 1024 * 1024)  # 2GB default for media
+MAX_BACKUP_SIZE = getattr(
+    settings, "MAX_BACKUP_SIZE", 500 * 1024 * 1024
+)  # 500MB default
+MAX_MEDIA_BACKUP_SIZE = getattr(
+    settings, "MAX_MEDIA_BACKUP_SIZE", 2 * 1024 * 1024 * 1024
+)  # 2GB default for media
+
 
 class MediaRestoreForm(forms.Form):
     backup_file = forms.FileField(
-        label='Media Backup File',
-        help_text='Select a .tar.gz media backup file',
-        required=True
+        label="Media Backup File",
+        help_text="Select a .tar.gz media backup file",
+        required=True,
     )
     confirm = forms.BooleanField(
-        label='I understand this will overwrite the current media files',
-        help_text='This action cannot be undone. All current media files will be replaced.',
-        required=False
+        label="I understand this will overwrite the current media files",
+        help_text="This action cannot be undone. All current media files will be replaced.",
+        required=False,
     )
 
     media_confirmed_restore = forms.BooleanField(
         widget=forms.HiddenInput(), required=False, initial=False
     )
-    
+
     def __init__(self, *args, **kwargs):
         super(MediaRestoreForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
@@ -169,78 +183,87 @@ class MediaRestoreForm(forms.Form):
             Row(
                 Field("media_confirmed_restore"),
                 StrictButton(
-                    "Restore Media", type="submit", id="media-restore-submit-btn", css_class="btn btn-danger w-100 mb-3"
+                    "Restore Media",
+                    type="submit",
+                    id="media-restore-submit-btn",
+                    css_class="btn btn-danger w-100 mb-3",
                 ),
             ),
         )
-    
+
     def clean_backup_file(self):
-        backup_file = self.cleaned_data['backup_file']
-        
+        backup_file = self.cleaned_data["backup_file"]
+
         # Check file size (larger limit for media)
         if backup_file.size > MAX_MEDIA_BACKUP_SIZE:
             max_size_gb = MAX_MEDIA_BACKUP_SIZE / (1024 * 1024 * 1024)
             raise ValidationError(
-                f'File too large. Maximum size is {max_size_gb:.1f}GB. '
-                f'Your file is {backup_file.size / (1024 * 1024 * 1024):.2f}GB.'
+                f"File too large. Maximum size is {max_size_gb:.1f}GB. "
+                f"Your file is {backup_file.size / (1024 * 1024 * 1024):.2f}GB."
             )
-        
+
         # Check file extension
-        if not (backup_file.name.endswith('.tar.gz') or backup_file.name.endswith('.tgz')):
+        if not (
+            backup_file.name.endswith(".tar.gz") or backup_file.name.endswith(".tgz")
+        ):
             raise ValidationError(
-                'Invalid file extension. File must be a .tar.gz or .tgz (compressed tar) backup file.'
+                "Invalid file extension. File must be a .tar.gz or .tgz (compressed tar) backup file."
             )
-        
+
         # Save to temporary file for validation
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.tar.gz') as tmp_file:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".tar.gz") as tmp_file:
             for chunk in backup_file.chunks():
                 tmp_file.write(chunk)
             temp_path = tmp_file.name
-        
+
         # Validate tar.gz format
         try:
             # First check if it's a valid gzip
-            with gzip.open(temp_path, 'rb') as gz_file:
+            with gzip.open(temp_path, "rb") as gz_file:
                 # Try to read a small amount
                 test_data = gz_file.read(512)  # tar header is 512 bytes
                 if not test_data:
-                    raise ValidationError('Media backup file appears to be empty.')
-            
+                    raise ValidationError("Media backup file appears to be empty.")
+
             # Then check if it's a valid tar file
-            with tarfile.open(temp_path, 'r:gz') as tar:
+            with tarfile.open(temp_path, "r:gz") as tar:
                 # Just try to read the members list
                 members = tar.getmembers()
                 if not members:
-                    raise ValidationError('Media backup archive is empty.')
-                    
+                    raise ValidationError("Media backup archive is empty.")
+
         except gzip.BadGzipFile:
             raise ValidationError(
-                'Invalid compressed file. Please upload a valid .tar.gz media backup file.'
+                "Invalid compressed file. Please upload a valid .tar.gz media backup file."
             )
         except tarfile.TarError as e:
             raise ValidationError(
-                f'Invalid tar archive: {str(e)}. Please upload a valid media backup file.'
+                f"Invalid tar archive: {str(e)}. Please upload a valid media backup file."
             )
         except Exception as e:
-            raise ValidationError(f'Error validating media backup file: {str(e)}')
+            raise ValidationError(f"Error validating media backup file: {str(e)}")
         finally:
             # Clean up temp file
             if os.path.exists(temp_path):
                 os.remove(temp_path)
-        
+
         return backup_file
-    
+
     def clean(self):
         cleaned_data = super().clean()
-        
+
         # Only enforce confirmation if we're in the confirmation step
-        if self.data.get('confirmed_restore') == 'true' and not cleaned_data.get('confirm'):
-            raise ValidationError({
-                'confirm': 'You must confirm that you understand this action will overwrite the media files.'
-            })
-        
+        if self.data.get("confirmed_restore") == "true" and not cleaned_data.get(
+            "confirm"
+        ):
+            raise ValidationError(
+                {
+                    "confirm": "You must confirm that you understand this action will overwrite the media files."
+                }
+            )
+
         return cleaned_data
-    
+
 
 class HolidayForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
@@ -330,23 +353,27 @@ class CustomConfigForm(ConstanceForm):
             # ── Work & Scheduling ──
             Row(
                 Column(
-                    section("Work Settings",
+                    section(
+                        "Work Settings",
                         fg("DEFAULT_HOURS_IN_DAY"),
                         fg("DEFAULT_WORKING_DAYS"),
                     ),
-                    section("Leave",
+                    section(
+                        "Leave",
                         fg("LEAVE_DAYS_NOTICE"),
                         fg("LEAVE_HISTORY_MONTHS"),
                         fg("LEAVE_ENFORCE_LIMIT", floating=False),
                     ),
                 ),
                 Column(
-                    section("Phase Deadlines",
+                    section(
+                        "Phase Deadlines",
                         fg("DAYS_TO_TQA"),
                         fg("DAYS_TO_PQA"),
                         fg("DAYS_TO_DELIVERY"),
                     ),
-                    section("Late Notification Intervals",
+                    section(
+                        "Late Notification Intervals",
                         fg("PRECHECK_LATE_HOURS"),
                         fg("TQA_LATE_HOURS"),
                         fg("PQA_LATE_HOURS"),
@@ -354,16 +381,21 @@ class CustomConfigForm(ConstanceForm):
                     ),
                 ),
                 Column(
-                    section("Job/Phase IDs",
+                    section(
+                        "Job/Phase IDs",
                         fg("JOB_ID_START"),
                         fg("PROJECT_ID_START"),
                     ),
-                    section("Schedule Thresholds",
-                        HTML('<p class="text-body-tertiary fs-9 mb-3">Controls the colour of scheduled vs scoped indicators. Over 100% (red) and 0% (grey) are hard-coded.</p>'),
+                    section(
+                        "Schedule Thresholds",
+                        HTML(
+                            '<p class="text-body-tertiary fs-9 mb-3">Controls the colour of scheduled vs scoped indicators. Over 100% (red) and 0% (grey) are hard-coded.</p>'
+                        ),
                         fg("SCHEDULE_THRESHOLD_SUCCESS"),
                         fg("SCHEDULE_THRESHOLD_INFO"),
                     ),
-                    section("Reminders",
+                    section(
+                        "Reminders",
                         fg("SKILLS_REVIEW_DAYS", floating=False),
                         fg("PROFILE_REVIEW_DAYS", floating=False),
                     ),
@@ -372,7 +404,8 @@ class CustomConfigForm(ConstanceForm):
             # ── Auth & Access ──
             Row(
                 Column(
-                    section("Authentication",
+                    section(
+                        "Authentication",
                         fg("ADFS_ENABLED", floating=False),
                         fg("ADFS_AUTO_LOGIN", floating=False),
                         fg("LOCAL_LOGIN_ENABLED", floating=False),
@@ -380,14 +413,17 @@ class CustomConfigForm(ConstanceForm):
                     ),
                 ),
                 Column(
-                    section("Registration & Invites",
+                    section(
+                        "Registration & Invites",
                         fg("REGISTRATION_ENABLED", floating=False),
                         fg("INVITE_ENABLED", floating=False),
                         fg("USER_INVITE_EXPIRY"),
+                        fg("ALLOWED_SIGNUP_EMAIL_DOMAINS"),
                     ),
                 ),
                 Column(
-                    section("Site Notice",
+                    section(
+                        "Site Notice",
                         fg("MAINTENANCE_MODE", floating=False),
                         fg("SITE_NOTICE_ENABLED", floating=False),
                         fg("SITE_NOTICE_COLOUR"),
@@ -398,7 +434,8 @@ class CustomConfigForm(ConstanceForm):
             # ── Appearance ──
             Row(
                 Column(
-                    section("Schedule Colours",
+                    section(
+                        "Schedule Colours",
                         fg("SCHEDULE_COLOR_AVAILABLE", floating=False),
                         fg("SCHEDULE_COLOR_UNAVAILABLE", floating=False),
                         fg("SCHEDULE_COLOR_INTERNAL", floating=False),
@@ -407,7 +444,8 @@ class CustomConfigForm(ConstanceForm):
                     ),
                 ),
                 Column(
-                    section("Phase Colours",
+                    section(
+                        "Phase Colours",
                         fg("SCHEDULE_COLOR_PHASE", floating=False),
                         fg("SCHEDULE_COLOR_PHASE_CONFIRMED", floating=False),
                         fg("SCHEDULE_COLOR_PHASE_AWAY", floating=False),
@@ -415,7 +453,8 @@ class CustomConfigForm(ConstanceForm):
                     ),
                 ),
                 Column(
-                    section("Theme",
+                    section(
+                        "Theme",
                         fg("SNOW_ENABLED", floating=False),
                         fg("CHRISTMAS_LIGHTS_ENABLED", floating=False),
                         fg("CHRISTMAS_TREE_ENABLED", floating=False),
@@ -429,7 +468,8 @@ class CustomConfigForm(ConstanceForm):
             # ── Integrations & Notifications ──
             Row(
                 Column(
-                    section("Resource Manager",
+                    section(
+                        "Resource Manager",
                         fg("RM_SYNC_ENABLED", floating=False),
                         fg("RM_SYNC_API_SITE", floating=False),
                         fg("RM_SYNC_API_TOKEN", floating=False),
@@ -438,7 +478,8 @@ class CustomConfigForm(ConstanceForm):
                     ),
                 ),
                 Column(
-                    section("Notification Recipients",
+                    section(
+                        "Notification Recipients",
                         fg("NOTIFICATION_POOL_SCOPING_EMAIL_RCPTS", floating=False),
                         fg("NOTIFICATION_POOL_SCHEDULING_EMAIL_RCPTS", floating=False),
                         fg("NOTIFICATION_POOL_TQA_EMAIL_RCPTS", floating=False),
@@ -446,11 +487,13 @@ class CustomConfigForm(ConstanceForm):
                     ),
                 ),
                 Column(
-                    section("Calendar Feeds",
+                    section(
+                        "Calendar Feeds",
                         fg("CALENDAR_FEED_ENABLED", floating=False),
                         fg("CALENDAR_FAMILY_FEED_ENABLED", floating=False),
                     ),
-                    section("Support Links",
+                    section(
+                        "Support Links",
                         fg("SUPPORT_DOC_URL", floating=False),
                         fg("SUPPORT_MAILBOX", floating=False),
                         fg("SUPPORT_ISSUES", floating=False),
@@ -550,7 +593,7 @@ class LeaveRequestForm(forms.ModelForm):
         widgets = {
             "start_date": DateTimePickerInput(options={"allowInputToggle": True}),
             "end_date": DateTimePickerInput(
-                # range_from="start_date", 
+                # range_from="start_date",
                 options={"allowInputToggle": True}
             ),
         }
@@ -577,6 +620,11 @@ class InviteUserForm(forms.ModelForm):
                 css_class="button-row d-flex mt-4",
             ),
         )
+
+    def clean_invited_email(self):
+        from ..utils import validate_email_domain
+
+        return validate_email_domain(self.cleaned_data.get("invited_email"))
 
     class Meta:
         model = UserInvitation
@@ -637,6 +685,16 @@ class ChaoticaUserForm(UserCreationForm):
             ),
         )
 
+    def clean_email(self):
+        from ..utils import validate_email_domain
+
+        email = self.cleaned_data.get("email")
+        # When accepting an invite the email is locked to the invited address,
+        # which was already domain-checked at invite time, so don't re-block it.
+        if self.invite:
+            return email
+        return validate_email_domain(email)
+
     class Meta:
         model = User
         fields = ("first_name", "last_name", "email", "password1", "password2")
@@ -651,13 +709,17 @@ class MergeUserForm(forms.Form):
         required=True,
         widget=s2forms.ModelSelect2Widget(
             attrs={
-                'class': 'select2-widget',
-                'data-minimum-input-length': 3,
-                'data-ajax--url': '/autocomplete/users',
-                'data-ajax--cache': 'true',
-                'data-ajax--type': 'GET',
+                "class": "select2-widget",
+                "data-minimum-input-length": 3,
+                "data-ajax--url": "/autocomplete/users",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
             },
-            search_fields=['first_name__icontains', 'last_name__icontains', 'email__icontains'],
+            search_fields=[
+                "first_name__icontains",
+                "last_name__icontains",
+                "email__icontains",
+            ],
         ),
     )
 
@@ -680,12 +742,11 @@ class AssignRoleForm(forms.ModelForm):
         required=False,
         widget=s2forms.Select2MultipleWidget(
             attrs={
-                'class': 'select2-widget',
-                'data-minimum-input-length': 0,
+                "class": "select2-widget",
+                "data-minimum-input-length": 0,
             },
         ),
     )
-
 
     def __init__(self, *args, **kwargs):
         super(AssignRoleForm, self).__init__(*args, **kwargs)
@@ -727,7 +788,7 @@ class EditProfileForm(forms.ModelForm):
         label="Profile Image",
         required=False,
     )
-    
+
     pref_timezone = forms.ChoiceField(
         choices=[(x, x) for x in pytz.common_timezones],
         widget=s2forms.Select2Widget(),
@@ -738,9 +799,9 @@ class EditProfileForm(forms.ModelForm):
         required=False,
         widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
-                'class': 'select2-widget',
+                "class": "select2-widget",
             },
-            search_fields=['display_name__icontains', 'lang_code__icontains'],
+            search_fields=["display_name__icontains", "lang_code__icontains"],
         ),
     )
 
@@ -749,13 +810,17 @@ class EditProfileForm(forms.ModelForm):
         required=False,
         widget=s2forms.ModelSelect2Widget(
             attrs={
-                'class': 'select2-widget',
-                'data-minimum-input-length': 3,
-                'data-ajax--url': '/autocomplete/users',
-                'data-ajax--cache': 'true',
-                'data-ajax--type': 'GET',
+                "class": "select2-widget",
+                "data-minimum-input-length": 3,
+                "data-ajax--url": "/autocomplete/users",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
             },
-            search_fields=['first_name__icontains', 'last_name__icontains', 'email__icontains'],
+            search_fields=[
+                "first_name__icontains",
+                "last_name__icontains",
+                "email__icontains",
+            ],
         ),
     )
 
@@ -764,14 +829,14 @@ class EditProfileForm(forms.ModelForm):
         required=False,
         widget=s2forms.ModelSelect2Widget(
             attrs={
-                'class': 'select2-widget',
-                'data-placeholder': 'Type to search for your city...',
-                'data-minimum-input-length': '2',
+                "class": "select2-widget",
+                "data-placeholder": "Type to search for your city...",
+                "data-minimum-input-length": "2",
             },
-            search_fields=['name__icontains', 'search_names__icontains'],
-            data_url='/autocomplete/cities',
-            data_ajax__cache='true',
-            data_ajax__type='GET',
+            search_fields=["name__icontains", "search_names__icontains"],
+            data_url="/autocomplete/cities",
+            data_ajax__cache="true",
+            data_ajax__type="GET",
         ),
     )
 
@@ -779,10 +844,12 @@ class EditProfileForm(forms.ModelForm):
         self.current_request = kwargs.pop("current_request", None)
         super(EditProfileForm, self).__init__(*args, **kwargs)
 
-        self.fields['city'].widget.label_from_instance = lambda obj: f"{obj.name}, {obj.country.name}"
+        self.fields["city"].widget.label_from_instance = (
+            lambda obj: f"{obj.name}, {obj.country.name}"
+        )
 
-        if getattr(settings, 'CLAMAV_ENABLED', True):
-            self.fields['profile_image'].validators.append(validate_file_infection)
+        if getattr(settings, "CLAMAV_ENABLED", True):
+            self.fields["profile_image"].validators.append(validate_file_infection)
 
         self.helper = FormHelper(self)
         self.helper.form_tag = False
@@ -869,7 +936,7 @@ class EditProfileForm(forms.ModelForm):
                     )
 
                 # validate file size
-                if len(profile_image) > (1024 * 1024 *2):
+                if len(profile_image) > (1024 * 1024 * 2):
                     self.add_error(
                         "profile_image", "Avatar file size may not exceed 2M."
                     )

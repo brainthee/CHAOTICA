@@ -29,6 +29,10 @@ jobs:
           file: ./app/Dockerfile
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/chaotica:latest
+          # Supply-chain attestations (satisfies Docker Scout's
+          # "Missing supply chain attestation(s)" policy).
+          sbom: true
+          provenance: mode=max
 
       - name: Update repo description
         uses: peter-evans/dockerhub-description@v3

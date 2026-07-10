@@ -122,6 +122,7 @@ Site-wide toggles for the iCal schedule feeds users can subscribe to. See [Calen
 | **REGISTRATION_ENABLED** | `True` | Allows new users to self-register. When disabled, the "Create an account" link is hidden from the login page. |
 | **INVITE_ENABLED** | `True` | Allows existing users to send invitations. When disabled, invitation requests return a 403 error. |
 | **USER_INVITE_EXPIRY** | `7` | Days until an invitation link expires. After this period, the invite token becomes invalid. |
+| **ALLOWED_SIGNUP_EMAIL_DOMAINS** | `""` | Comma-separated list of email domains permitted to be added or self-register (e.g. `accenture.com, example.org`). Blank allows any domain. Enforced on self-registration, invites, and [pre-loading/CSV import](../user_guide/organisational_units/preloading_members.md). |
 
 ---
 

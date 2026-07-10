@@ -520,12 +520,18 @@ class UnitRoles:
             TQA,
             [
                 "jobtracker.can_tqa_jobs",
+                "jobtracker.can_update_job",
+                "jobtracker.can_view_jobs",
+                "jobtracker.view_job_schedule",
             ],
         ),
         (
             PQA,
             [
                 "jobtracker.can_pqa_jobs",
+                "jobtracker.can_update_job",
+                "jobtracker.can_view_jobs",
+                "jobtracker.view_job_schedule",
             ],
         ),
         (
@@ -535,6 +541,9 @@ class UnitRoles:
                 "jobtracker.can_signoff_scopes",
                 "jobtracker.can_add_phases",
                 "jobtracker.can_delete_phases",
+                "jobtracker.can_update_job",
+                "jobtracker.can_view_jobs",
+                "jobtracker.view_job_schedule",
             ],
         ),
         (
@@ -543,6 +552,9 @@ class UnitRoles:
                 "jobtracker.can_scope_jobs",
                 "jobtracker.can_signoff_scopes",
                 "jobtracker.can_signoff_own_scopes",
+                "jobtracker.can_update_job",
+                "jobtracker.can_view_jobs",
+                "jobtracker.view_job_schedule",
             ],
         ),
         (
