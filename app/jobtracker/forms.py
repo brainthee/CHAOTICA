@@ -29,7 +29,8 @@ from .models import (
     BillingCode,
     OrganisationalUnitRole,
 )
-from chaotica_utils.models import Note, User, JobLevel
+from chaotica_utils.models import Note, User, JobLevel, Group
+from chaotica_utils.enums import GlobalRoles
 from .enums import (
     DefaultTimeSlotTypes,
     JobStatuses,
@@ -38,7 +39,12 @@ from .enums import (
     TimeSlotDeliveryRole,
 )
 from crispy_forms.helper import FormHelper
-from crispy_forms.bootstrap import StrictButton, FieldWithButtons, Accordion, AccordionGroup
+from crispy_forms.bootstrap import (
+    StrictButton,
+    FieldWithButtons,
+    Accordion,
+    AccordionGroup,
+)
 from crispy_forms.layout import Layout, Row, Column, Field, Div, HTML, Submit
 from crispy_bootstrap5.bootstrap5 import FloatingField
 from django_select2 import forms as s2forms
@@ -57,7 +63,6 @@ from django_clamav.validators import validate_file_infection
 from guardian.shortcuts import assign_perm, remove_perm
 from django.conf import settings
 from cities_light.models import City
-
 
 
 class SchedulerFilter(forms.Form):
@@ -90,16 +95,16 @@ class SchedulerFilter(forms.Form):
         queryset=City.objects.all(),
         widget=s2forms.ModelSelect2Widget(
             attrs={
-                'class': 'select2-widget',
-                'data-placeholder': 'Select a city to filter by distance...',
-                'data-minimum-input-length': 2,
+                "class": "select2-widget",
+                "data-placeholder": "Select a city to filter by distance...",
+                "data-minimum-input-length": 2,
             },
-            search_fields=['name__icontains', 'search_names__icontains'],
-            data_url='/autocomplete/cities',
-            data_ajax__cache='true',
-            data_ajax__type='GET',
+            search_fields=["name__icontains", "search_names__icontains"],
+            data_url="/autocomplete/cities",
+            data_ajax__cache="true",
+            data_ajax__type="GET",
         ),
-        help_text="Select a city to order users by straight-line distance from here"
+        help_text="Select a city to order users by straight-line distance from here",
     )
     skills_specialist = forms.ModelMultipleChoiceField(
         required=False,
@@ -107,11 +112,11 @@ class SchedulerFilter(forms.Form):
         queryset=Skill.objects.all().prefetch_related("category"),
         widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
-                'class': 'select2-widget',
-                'data-minimum-input-length': 0,
-                'data-ajax--url': '/autocomplete/skills',
-                'data-ajax--cache': 'true',
-                'data-ajax--type': 'GET',
+                "class": "select2-widget",
+                "data-minimum-input-length": 0,
+                "data-ajax--url": "/autocomplete/skills",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
             },
         ),
     )
@@ -121,11 +126,11 @@ class SchedulerFilter(forms.Form):
         queryset=Skill.objects.all().prefetch_related("category"),
         widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
-                'class': 'select2-widget',
-                'data-minimum-input-length': 0,
-                'data-ajax--url': '/autocomplete/skills',
-                'data-ajax--cache': 'true',
-                'data-ajax--type': 'GET',
+                "class": "select2-widget",
+                "data-minimum-input-length": 0,
+                "data-ajax--url": "/autocomplete/skills",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
             },
         ),
     )
@@ -135,11 +140,11 @@ class SchedulerFilter(forms.Form):
         queryset=Skill.objects.all().prefetch_related("category"),
         widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
-                'class': 'select2-widget',
-                'data-minimum-input-length': 2,
-                'data-ajax--url': '/autocomplete/skills',
-                'data-ajax--cache': 'true',
-                'data-ajax--type': 'GET',
+                "class": "select2-widget",
+                "data-minimum-input-length": 2,
+                "data-ajax--url": "/autocomplete/skills",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
             },
         ),
     )
@@ -149,11 +154,11 @@ class SchedulerFilter(forms.Form):
         queryset=Team.objects.all(),
         widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
-                'class': 'select2-widget',
-                'data-minimum-input-length': 0,
-                'data-ajax--url': '/autocomplete/teams',
-                'data-ajax--cache': 'true',
-                'data-ajax--type': 'GET',
+                "class": "select2-widget",
+                "data-minimum-input-length": 0,
+                "data-ajax--url": "/autocomplete/teams",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
             },
         ),
     )
@@ -163,11 +168,11 @@ class SchedulerFilter(forms.Form):
         queryset=Service.objects.all(),
         widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
-                'class': 'select2-widget',
-                'data-minimum-input-length': 0,
-                'data-ajax--url': '/autocomplete/services',
-                'data-ajax--cache': 'true',
-                'data-ajax--type': 'GET',
+                "class": "select2-widget",
+                "data-minimum-input-length": 0,
+                "data-ajax--url": "/autocomplete/services",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
             },
         ),
     )
@@ -177,11 +182,11 @@ class SchedulerFilter(forms.Form):
         queryset=OrganisationalUnit.objects.all(),
         widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
-                'class': 'select2-widget',
-                'data-minimum-input-length': 0,
-                'data-ajax--url': '/autocomplete/org-units',
-                'data-ajax--cache': 'true',
-                'data-ajax--type': 'GET',
+                "class": "select2-widget",
+                "data-minimum-input-length": 0,
+                "data-ajax--url": "/autocomplete/org-units",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
             },
         ),
     )
@@ -191,11 +196,11 @@ class SchedulerFilter(forms.Form):
         queryset=OrganisationalUnitRole.objects.all(),
         widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
-                'class': 'select2-widget',
-                'data-minimum-input-length': 0,
-                'data-ajax--url': '/autocomplete/org-unit-roles',
-                'data-ajax--cache': 'true',
-                'data-ajax--type': 'GET',
+                "class": "select2-widget",
+                "data-minimum-input-length": 0,
+                "data-ajax--url": "/autocomplete/org-unit-roles",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
             },
         ),
     )
@@ -203,13 +208,13 @@ class SchedulerFilter(forms.Form):
     job_levels = forms.ModelMultipleChoiceField(
         required=False,
         label="Job Levels",
-        queryset=JobLevel.objects.filter(is_active=True).order_by('order'),
+        queryset=JobLevel.objects.filter(is_active=True).order_by("order"),
         widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
-                'class': 'select2-widget',
-                'data-minimum-input-length': 0,
+                "class": "select2-widget",
+                "data-minimum-input-length": 0,
             },
-            search_fields=['short_label__icontains', 'long_label__icontains'],            
+            search_fields=["short_label__icontains", "long_label__icontains"],
         ),
     )
 
@@ -230,13 +235,17 @@ class SchedulerFilter(forms.Form):
         queryset=User.objects.filter(is_active=True),
         widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
-                'class': 'select2-widget',
-                'data-minimum-input-length': 3,
-                'data-ajax--url': '/autocomplete/users',
-                'data-ajax--cache': 'true',
-                'data-ajax--type': 'GET',
+                "class": "select2-widget",
+                "data-minimum-input-length": 3,
+                "data-ajax--url": "/autocomplete/users",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
             },
-            search_fields=['first_name__icontains', 'last_name__icontains', 'email__icontains'],
+            search_fields=[
+                "first_name__icontains",
+                "last_name__icontains",
+                "email__icontains",
+            ],
         ),
     )
 
@@ -245,13 +254,17 @@ class SchedulerFilter(forms.Form):
         queryset=User.objects.filter(is_active=True),
         widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
-                'class': 'select2-widget',
-                'data-minimum-input-length': 3,
-                'data-ajax--url': '/autocomplete/users',
-                'data-ajax--cache': 'true',
-                'data-ajax--type': 'GET',
+                "class": "select2-widget",
+                "data-minimum-input-length": 3,
+                "data-ajax--url": "/autocomplete/users",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
             },
-            search_fields=['first_name__icontains', 'last_name__icontains', 'email__icontains'],
+            search_fields=[
+                "first_name__icontains",
+                "last_name__icontains",
+                "email__icontains",
+            ],
         ),
     )
 
@@ -260,13 +273,13 @@ class SchedulerFilter(forms.Form):
         queryset=Job.objects.filter(),
         widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
-                'class': 'select2-widget',
-                'data-minimum-input-length': 3,
-                'data-ajax--url': '/autocomplete/jobs',
-                'data-ajax--cache': 'true',
-                'data-ajax--type': 'GET',
+                "class": "select2-widget",
+                "data-minimum-input-length": 3,
+                "data-ajax--url": "/autocomplete/jobs",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
             },
-            search_fields=['title__icontains', 'job_id__icontains'],
+            search_fields=["title__icontains", "job_id__icontains"],
         ),
     )
 
@@ -275,13 +288,13 @@ class SchedulerFilter(forms.Form):
         queryset=Phase.objects.filter(),
         widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
-                'class': 'select2-widget',
-                'data-minimum-input-length': 3,
-                'data-ajax--url': '/autocomplete/phases',
-                'data-ajax--cache': 'true',
-                'data-ajax--type': 'GET',
+                "class": "select2-widget",
+                "data-minimum-input-length": 3,
+                "data-ajax--url": "/autocomplete/phases",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
             },
-            search_fields=['title__icontains', 'phase_id__icontains'],
+            search_fields=["title__icontains", "phase_id__icontains"],
         ),
     )
 
@@ -291,11 +304,11 @@ class SchedulerFilter(forms.Form):
         queryset=Client.objects.filter(onboarded_users__isnull=False).distinct(),
         widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
-                'class': 'select2-widget',
-                'data-minimum-input-length': 2,
-                'data-ajax--url': '/autocomplete/clients',
-                'data-ajax--cache': 'true',
-                'data-ajax--type': 'GET',
+                "class": "select2-widget",
+                "data-minimum-input-length": 2,
+                "data-ajax--url": "/autocomplete/clients",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
             },
         ),
     )
@@ -326,7 +339,9 @@ class SchedulerFilter(forms.Form):
         # (always_open) so several sections can be expanded at once.
         accordion = Accordion(
             AccordionGroup(
-                mark_safe('<span class="fas fa-sliders me-2 text-body-tertiary"></span>General'),
+                mark_safe(
+                    '<span class="fas fa-sliders me-2 text-body-tertiary"></span>General'
+                ),
                 Row(
                     Column(Field("from_date"), css_class="me-3"),
                     Column(Field("to_date")),
@@ -343,7 +358,9 @@ class SchedulerFilter(forms.Form):
                 css_id="filterGeneral",
             ),
             AccordionGroup(
-                mark_safe('<span class="fas fa-users me-2 text-body-tertiary"></span>Users'),
+                mark_safe(
+                    '<span class="fas fa-users me-2 text-body-tertiary"></span>Users'
+                ),
                 Row(
                     Field("show_inactive_users"),
                     Field("users", style="width: 100%;"),
@@ -360,7 +377,9 @@ class SchedulerFilter(forms.Form):
                 css_id="filterUsers",
             ),
             AccordionGroup(
-                mark_safe('<span class="fas fa-briefcase me-2 text-body-tertiary"></span>Job'),
+                mark_safe(
+                    '<span class="fas fa-briefcase me-2 text-body-tertiary"></span>Job'
+                ),
                 Row(
                     Field("jobs", style="width: 100%;"),
                     Field("phases", style="width: 100%;"),
@@ -368,16 +387,24 @@ class SchedulerFilter(forms.Form):
                 css_id="filterJob",
             ),
             AccordionGroup(
-                mark_safe('<span class="fas fa-screwdriver-wrench me-2 text-body-tertiary"></span>Skills'),
+                mark_safe(
+                    '<span class="fas fa-screwdriver-wrench me-2 text-body-tertiary"></span>Skills'
+                ),
                 Row(
                     Field("skills_specialist", css_class="extra", style="width: 100%;"),
-                    Field("skills_can_do_alone", css_class="extra", style="width: 100%;"),
-                    Field("skills_can_do_support", css_class="extra", style="width: 100%;"),
+                    Field(
+                        "skills_can_do_alone", css_class="extra", style="width: 100%;"
+                    ),
+                    Field(
+                        "skills_can_do_support", css_class="extra", style="width: 100%;"
+                    ),
                 ),
                 css_id="filterSkills",
             ),
             AccordionGroup(
-                mark_safe('<span class="fas fa-list-check me-2 text-body-tertiary"></span>Service'),
+                mark_safe(
+                    '<span class="fas fa-list-check me-2 text-body-tertiary"></span>Service'
+                ),
                 Row(Field("services", style="width: 100%;")),
                 css_id="filterService",
             ),
@@ -460,13 +487,13 @@ class AssignJobBillingCode(forms.ModelForm):
         queryset=BillingCode.objects.filter(),
         widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
-                'class': 'select2-widget',
-                'data-html': True,
-                'data-ajax--url': '/autocomplete/billingcodes/',
-                'data-ajax--cache': 'true',
-                'data-ajax--type': 'GET',
+                "class": "select2-widget",
+                "data-html": True,
+                "data-ajax--url": "/autocomplete/billingcodes/",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
             },
-            search_fields=['code__icontains'],
+            search_fields=["code__icontains"],
         ),
     )
 
@@ -579,7 +606,7 @@ class AssignUserField(forms.Form):
         queryset=User.objects.filter(is_active=True),
         widget=s2forms.Select2MultipleWidget(
             attrs={
-                'class': 'select2-widget',
+                "class": "select2-widget",
                 # 'data-minimum-input-length': 3,
                 # 'data-ajax--url': '/autocomplete/users',
                 # 'data-ajax--cache': 'true',
@@ -609,7 +636,7 @@ class AssignUser(forms.Form):
         queryset=User.objects.filter(is_active=True).get_default_order(),
         widget=s2forms.Select2Widget(
             attrs={
-                'class': 'select2-widget',
+                "class": "select2-widget",
                 # 'data-minimum-input-length': 3,
                 # 'data-ajax--url': '/autocomplete/users',
                 # 'data-ajax--cache': 'true',
@@ -659,7 +686,7 @@ class AssignMultipleUser(forms.Form):
         queryset=User.objects.filter(is_active=True).get_default_order(),
         widget=s2forms.Select2MultipleWidget(
             attrs={
-                'class': 'select2-widget',
+                "class": "select2-widget",
                 # 'data-minimum-input-length': 3,
                 # 'data-ajax--url': '/autocomplete/users',
                 # 'data-ajax--cache': 'true',
@@ -884,7 +911,9 @@ class ScheduleSwapForm(forms.Form):
 
     def clean(self):
         cleaned_data = super().clean()
-        if cleaned_data.get("user_a") and cleaned_data.get("user_a") == cleaned_data.get("user_b"):
+        if cleaned_data.get("user_a") and cleaned_data.get(
+            "user_a"
+        ) == cleaned_data.get("user_b"):
             self.add_error("user_b", "Pick two different people to swap.")
         return cleaned_data
 
@@ -952,7 +981,9 @@ class CommentTimeSlotModalForm(forms.ModelForm):
             range_from="start", options={"allowInputToggle": True}
         )
         if not self.instance.pk:
-            self.fields["start"].initial = timezone.localtime(start).replace(tzinfo=None)
+            self.fields["start"].initial = timezone.localtime(start).replace(
+                tzinfo=None
+            )
             self.fields["end"].initial = timezone.localtime(end).replace(tzinfo=None)
             self.fields["user"].initial = resource
         self.helper.layout = Layout(
@@ -1011,11 +1042,11 @@ class NonDeliveryTimeSlotModalForm(forms.ModelForm):
         required=False,
         widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
-                'class': 'select2-widget',
-                'data-minimum-input-length': 3,
-                'data-ajax--url': '/autocomplete/users',
-                'data-ajax--cache': 'true',
-                'data-ajax--type': 'GET',
+                "class": "select2-widget",
+                "data-minimum-input-length": 3,
+                "data-ajax--url": "/autocomplete/users",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
             },
             # search_fields=['first_name__icontains', 'last_name__icontains', 'email__icontains'],
         ),
@@ -1057,7 +1088,9 @@ class NonDeliveryTimeSlotModalForm(forms.ModelForm):
             range_from="start", options={"allowInputToggle": True}
         )
         if not self.instance.pk:
-            self.fields["start"].initial = timezone.localtime(start).replace(tzinfo=None)
+            self.fields["start"].initial = timezone.localtime(start).replace(
+                tzinfo=None
+            )
             self.fields["end"].initial = timezone.localtime(end).replace(tzinfo=None)
             self.fields["user"].initial = resource
             # Add user to the multi field
@@ -1074,7 +1107,7 @@ class NonDeliveryTimeSlotModalForm(forms.ModelForm):
             ),
             Row(
                 Field("phase", type="hidden"),
-            ),  
+            ),
             Div(
                 Row(
                     Column(
@@ -1133,13 +1166,13 @@ class DeliveryTimeSlotModalForm(forms.ModelForm):
         queryset=Phase.objects.filter(),
         widget=s2forms.ModelSelect2Widget(
             attrs={
-                'class': 'select2-widget',
-                'data-minimum-input-length': 3,
-                'data-ajax--url': '/autocomplete/phases',
-                'data-ajax--cache': 'true',
-                'data-ajax--type': 'GET',
+                "class": "select2-widget",
+                "data-minimum-input-length": 3,
+                "data-ajax--url": "/autocomplete/phases",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
             },
-            search_fields=['title__icontains', 'phase_id__icontains'],
+            search_fields=["title__icontains", "phase_id__icontains"],
         ),
     )
     users = forms.ModelMultipleChoiceField(
@@ -1147,11 +1180,11 @@ class DeliveryTimeSlotModalForm(forms.ModelForm):
         required=False,
         widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
-                'class': 'select2-widget',
-                'data-minimum-input-length': 3,
-                'data-ajax--url': '/autocomplete/users',
-                'data-ajax--cache': 'true',
-                'data-ajax--type': 'GET',
+                "class": "select2-widget",
+                "data-minimum-input-length": 3,
+                "data-ajax--url": "/autocomplete/users",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
             },
             # search_fields=['first_name__icontains', 'last_name__icontains', 'email__icontains'],
         ),
@@ -1215,7 +1248,7 @@ class DeliveryTimeSlotModalForm(forms.ModelForm):
                 phases = Phase.objects.filter(job=job)
                 self.fields["phase"].queryset = phases
                 self.fields["phase"].widget = forms.Select(
-                    attrs={'class': 'form-select'},
+                    attrs={"class": "form-select"},
                     choices=[("", "---------")] + [(p.pk, str(p)) for p in phases],
                 )
 
@@ -1252,7 +1285,9 @@ class DeliveryTimeSlotModalForm(forms.ModelForm):
             options={"allowInputToggle": True}
         )
         if start:
-            self.fields["start"].initial = timezone.localtime(start).replace(tzinfo=None)
+            self.fields["start"].initial = timezone.localtime(start).replace(
+                tzinfo=None
+            )
 
         self.fields["end"].widget = DateTimePickerInput(
             range_from="start", options={"allowInputToggle": True}
@@ -1306,9 +1341,7 @@ class DeliveryTimeSlotModalForm(forms.ModelForm):
                 Column(
                     Div(Field("start"), css_class="input-group input-group-dynamic")
                 ),
-                Column(
-                    Div(Field("end"), css_class="input-group input-group-dynamic")
-                ),
+                Column(Div(Field("end"), css_class="input-group input-group-dynamic")),
             ),
         ]
         if show_role_assign:
@@ -1384,13 +1417,13 @@ class ProjectTimeSlotModalForm(forms.ModelForm):
         queryset=Project.objects.filter(),
         widget=s2forms.ModelSelect2Widget(
             attrs={
-                'class': 'select2-widget',
-                'data-minimum-input-length': 3,
-                'data-ajax--url': '/autocomplete/projects',
-                'data-ajax--cache': 'true',
-                'data-ajax--type': 'GET',
+                "class": "select2-widget",
+                "data-minimum-input-length": 3,
+                "data-ajax--url": "/autocomplete/projects",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
             },
-            search_fields=['title__icontains', "id__icontains"],
+            search_fields=["title__icontains", "id__icontains"],
         ),
     )
 
@@ -1466,7 +1499,9 @@ class ProjectTimeSlotModalForm(forms.ModelForm):
             options={"allowInputToggle": True}
         )
         if start:
-            self.fields["start"].initial = timezone.localtime(start).replace(tzinfo=None)
+            self.fields["start"].initial = timezone.localtime(start).replace(
+                tzinfo=None
+            )
 
         self.fields["end"].widget = DateTimePickerInput(
             range_from="start", options={"allowInputToggle": True}
@@ -1644,13 +1679,17 @@ class JobForm(forms.ModelForm):
         queryset=User.objects.filter(is_active=True),
         widget=s2forms.ModelSelect2Widget(
             attrs={
-                'class': 'select2-widget',
-                'data-minimum-input-length': 3,
-                'data-ajax--url': '/autocomplete/users',
-                'data-ajax--cache': 'true',
-                'data-ajax--type': 'GET',
+                "class": "select2-widget",
+                "data-minimum-input-length": 3,
+                "data-ajax--url": "/autocomplete/users",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
             },
-            search_fields=['first_name__icontains', 'last_name__icontains', 'email__icontains'],
+            search_fields=[
+                "first_name__icontains",
+                "last_name__icontains",
+                "email__icontains",
+            ],
         ),
     )
 
@@ -1659,13 +1698,17 @@ class JobForm(forms.ModelForm):
         queryset=User.objects.filter(is_active=True),
         widget=s2forms.ModelSelect2Widget(
             attrs={
-                'class': 'select2-widget',
-                'data-minimum-input-length': 3,
-                'data-ajax--url': '/autocomplete/users',
-                'data-ajax--cache': 'true',
-                'data-ajax--type': 'GET',
+                "class": "select2-widget",
+                "data-minimum-input-length": 3,
+                "data-ajax--url": "/autocomplete/users",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
             },
-            search_fields=['first_name__icontains', 'last_name__icontains', 'email__icontains'],
+            search_fields=[
+                "first_name__icontains",
+                "last_name__icontains",
+                "email__icontains",
+            ],
         ),
     )
 
@@ -1673,11 +1716,11 @@ class JobForm(forms.ModelForm):
         queryset=Client.objects.all(),
         widget=s2forms.ModelSelect2Widget(
             attrs={
-                'class': 'select2-widget',
-                'data-minimum-input-length': 2,
-                'data-ajax--url': '/autocomplete/clients',
-                'data-ajax--cache': 'true',
-                'data-ajax--type': 'GET',
+                "class": "select2-widget",
+                "data-minimum-input-length": 2,
+                "data-ajax--url": "/autocomplete/clients",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
             },
         ),
     )
@@ -1687,11 +1730,11 @@ class JobForm(forms.ModelForm):
         queryset=Service.objects.all(),
         widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
-                'class': 'select2-widget',
-                'data-minimum-input-length': 2,
-                'data-ajax--url': '/autocomplete/services',
-                'data-ajax--cache': 'true',
-                'data-ajax--type': 'GET',
+                "class": "select2-widget",
+                "data-minimum-input-length": 2,
+                "data-ajax--url": "/autocomplete/services",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
             },
         ),
     )
@@ -1700,7 +1743,7 @@ class JobForm(forms.ModelForm):
         queryset=OrganisationalUnit.objects.all(),
         widget=s2forms.Select2Widget(
             attrs={
-                'class': 'select2-widget',
+                "class": "select2-widget",
             },
         ),
     )
@@ -2073,11 +2116,11 @@ class MergeClientForm(forms.Form):
         queryset=Client.objects.all(),
         widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
-                'class': 'select2-widget',
-                'data-minimum-input-length': 2,
-                'data-ajax--url': '/autocomplete/clients',
-                'data-ajax--cache': 'true',
-                'data-ajax--type': 'GET',
+                "class": "select2-widget",
+                "data-minimum-input-length": 2,
+                "data-ajax--url": "/autocomplete/clients",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
             },
         ),
         required=True,
@@ -2100,13 +2143,17 @@ class ClientForm(forms.ModelForm):
         queryset=User.objects.filter(is_active=True),
         widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
-                'class': 'select2-widget',
-                'data-minimum-input-length': 3,
-                'data-ajax--url': '/autocomplete/users',
-                'data-ajax--cache': 'true',
-                'data-ajax--type': 'GET',
+                "class": "select2-widget",
+                "data-minimum-input-length": 3,
+                "data-ajax--url": "/autocomplete/users",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
             },
-            search_fields=['first_name__icontains', 'last_name__icontains', 'email__icontains'],
+            search_fields=[
+                "first_name__icontains",
+                "last_name__icontains",
+                "email__icontains",
+            ],
         ),
     )
 
@@ -2115,13 +2162,17 @@ class ClientForm(forms.ModelForm):
         queryset=User.objects.filter(is_active=True),
         widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
-                'class': 'select2-widget',
-                'data-minimum-input-length': 3,
-                'data-ajax--url': '/autocomplete/users',
-                'data-ajax--cache': 'true',
-                'data-ajax--type': 'GET',
+                "class": "select2-widget",
+                "data-minimum-input-length": 3,
+                "data-ajax--url": "/autocomplete/users",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
             },
-            search_fields=['first_name__icontains', 'last_name__icontains', 'email__icontains'],
+            search_fields=[
+                "first_name__icontains",
+                "last_name__icontains",
+                "email__icontains",
+            ],
         ),
     )
 
@@ -2212,13 +2263,17 @@ class ClientOnboardingUserForm(forms.ModelForm):
         queryset=User.objects.filter(is_active=True),
         widget=s2forms.ModelSelect2Widget(
             attrs={
-                'class': 'select2-widget',
-                'data-minimum-input-length': 3,
-                'data-ajax--url': '/autocomplete/users',
-                'data-ajax--cache': 'true',
-                'data-ajax--type': 'GET',
+                "class": "select2-widget",
+                "data-minimum-input-length": 3,
+                "data-ajax--url": "/autocomplete/users",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
             },
-            search_fields=['first_name__icontains', 'last_name__icontains', 'email__icontains'],
+            search_fields=[
+                "first_name__icontains",
+                "last_name__icontains",
+                "email__icontains",
+            ],
         ),
     )
 
@@ -2236,6 +2291,7 @@ class ClientOnboardingUserForm(forms.ModelForm):
         user = cleaned_data.get("user")
         if user and self.client:
             from django.db.models import Q
+
             existing = ClientOnboarding.objects.filter(
                 client=self.client,
                 user=user,
@@ -2251,7 +2307,7 @@ class ClientOnboardingUserForm(forms.ModelForm):
                 )
 
     def __init__(self, *args, **kwargs):
-        self.client = kwargs.pop('client', None)
+        self.client = kwargs.pop("client", None)
         super(ClientOnboardingUserForm, self).__init__(*args, **kwargs)
         if self.client:
             self.instance.client = self.client
@@ -2378,13 +2434,17 @@ class OrganisationalUnitMemberForm(forms.ModelForm):
         queryset=User.objects.filter(is_active=True),
         widget=s2forms.ModelSelect2Widget(
             attrs={
-                'class': 'select2-widget',
-                'data-minimum-input-length': 3,
-                'data-ajax--url': '/autocomplete/users',
-                'data-ajax--cache': 'true',
-                'data-ajax--type': 'GET',
+                "class": "select2-widget",
+                "data-minimum-input-length": 3,
+                "data-ajax--url": "/autocomplete/users",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
             },
-            search_fields=['first_name__icontains', 'last_name__icontains', 'email__icontains'],
+            search_fields=[
+                "first_name__icontains",
+                "last_name__icontains",
+                "email__icontains",
+            ],
         ),
     )
 
@@ -2413,11 +2473,11 @@ class OrganisationalUnitMemberRolesForm(forms.ModelForm):
         queryset=OrganisationalUnitRole.objects.all(),
         widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
-                'class': 'select2-widget',
-                'data-minimum-input-length': 0,
-                'data-ajax--url': '/autocomplete/org-unit-roles',
-                'data-ajax--cache': 'true',
-                'data-ajax--type': 'GET',
+                "class": "select2-widget",
+                "data-minimum-input-length": 0,
+                "data-ajax--url": "/autocomplete/org-unit-roles",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
             },
         ),
     )
@@ -2436,6 +2496,128 @@ class OrganisationalUnitMemberRolesForm(forms.ModelForm):
         fields = [
             "roles",
         ]
+
+
+class PreloadUnitMemberForm(forms.Form):
+    """Pre-load (or add an existing) user into a unit with site + unit roles.
+
+    A real ``User`` row is created up-front keyed on email so that first login
+    (SSO or local) adopts the pre-assigned roles. Unit managers without the
+    global ``chaotica_utils.manage_user`` permission may only grant the default
+    site role, so the site-role field is hidden for them.
+    """
+
+    email = forms.EmailField(required=True, label="Email Address")
+    first_name = forms.CharField(max_length=150, required=False)
+    last_name = forms.CharField(max_length=150, required=False)
+    site_role = forms.ModelChoiceField(
+        queryset=Group.objects.filter(name__startswith=settings.GLOBAL_GROUP_PREFIX),
+        required=False,
+        label="Site Role",
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+    unit_roles = forms.ModelMultipleChoiceField(
+        queryset=OrganisationalUnitRole.objects.all(),
+        required=False,
+        label="Unit Roles",
+        widget=s2forms.ModelSelect2MultipleWidget(
+            attrs={
+                "class": "select2-widget",
+                "data-minimum-input-length": 0,
+                "data-ajax--url": "/autocomplete/org-unit-roles",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
+            },
+        ),
+    )
+    send_email = forms.BooleanField(
+        required=False,
+        initial=False,
+        label="Email the user to let them know they have access",
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+    )
+
+    def __init__(self, *args, **kwargs):
+        self.requesting_user = kwargs.pop("requesting_user", None)
+        self.org_unit = kwargs.pop("org_unit", None)
+        super().__init__(*args, **kwargs)
+
+        self.can_assign_site_roles = bool(
+            self.requesting_user
+            and self.requesting_user.has_perm("chaotica_utils.manage_user")
+        )
+
+        # Default unit role = the flagged default_role (Consultant)
+        default_unit_role = OrganisationalUnitRole.objects.filter(
+            default_role=True
+        ).first()
+        if default_unit_role:
+            self.fields["unit_roles"].initial = [default_unit_role.pk]
+
+        if self.can_assign_site_roles:
+            self.fields["site_role"].initial = self.get_default_site_group()
+        else:
+            # Unit managers can only grant the default "User" site role.
+            self.fields.pop("site_role", None)
+
+        self.helper = FormHelper(self)
+        self.helper.form_tag = False
+        layout_fields = [
+            Row(
+                Column(FloatingField("first_name")),
+                Column(FloatingField("last_name")),
+            ),
+            Row(Column(FloatingField("email"))),
+        ]
+        if self.can_assign_site_roles:
+            layout_fields.append(Field("site_role"))
+        layout_fields.append(Field("unit_roles", style="width: 100%;"))
+        layout_fields.append(Field("send_email"))
+        self.helper.layout = Layout(*layout_fields)
+
+    @staticmethod
+    def get_default_site_group():
+        """Return the Group for the default ("User") global role, if it exists."""
+        name = settings.GLOBAL_GROUP_PREFIX + dict(GlobalRoles.CHOICES).get(
+            GlobalRoles.DEFAULT_ROLE, "User"
+        )
+        return Group.objects.filter(name=name).first()
+
+    def clean_email(self):
+        from chaotica_utils.utils import validate_email_domain
+
+        return validate_email_domain(self.cleaned_data.get("email"))
+
+
+class ImportUnitMembersForm(forms.Form):
+    """Bulk pre-load unit members from a CSV file."""
+
+    csv_file = forms.FileField(
+        label="CSV File",
+        help_text="Columns: email (required), first_name, last_name, site_role, unit_roles",
+        widget=forms.FileInput(attrs={"class": "form-control", "accept": ".csv"}),
+    )
+    send_email = forms.BooleanField(
+        required=False,
+        initial=False,
+        label="Email each user to let them know they have access",
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+    )
+
+    def clean_csv_file(self):
+        csv_file = self.cleaned_data.get("csv_file")
+
+        if not csv_file:
+            raise forms.ValidationError("Please select a CSV file")
+
+        if not csv_file.name.endswith(".csv"):
+            raise forms.ValidationError("File must be a CSV file")
+
+        # Limit to 5MB
+        if csv_file.size > 5 * 1024 * 1024:
+            raise forms.ValidationError("File size must be less than 5MB")
+
+        return csv_file
 
 
 class OrganisationalUnitForm(forms.ModelForm):
@@ -2463,13 +2645,17 @@ class OrganisationalUnitForm(forms.ModelForm):
         queryset=User.objects.filter(is_active=True),
         widget=s2forms.ModelSelect2Widget(
             attrs={
-                'class': 'select2-widget',
-                'data-minimum-input-length': 3,
-                'data-ajax--url': '/autocomplete/users',
-                'data-ajax--cache': 'true',
-                'data-ajax--type': 'GET',
+                "class": "select2-widget",
+                "data-minimum-input-length": 3,
+                "data-ajax--url": "/autocomplete/users",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
             },
-            search_fields=['first_name__icontains', 'last_name__icontains', 'email__icontains'],
+            search_fields=[
+                "first_name__icontains",
+                "last_name__icontains",
+                "email__icontains",
+            ],
         ),
     )
     image = forms.FileField(
@@ -2480,8 +2666,8 @@ class OrganisationalUnitForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(OrganisationalUnitForm, self).__init__(*args, **kwargs)
 
-        if getattr(settings, 'CLAMAV_ENABLED', True):
-            self.fields['image'].validators.append(validate_file_infection)
+        if getattr(settings, "CLAMAV_ENABLED", True):
+            self.fields["image"].validators.append(validate_file_infection)
 
         self.helper = FormHelper(self)
         self.fields["name"].label = False
@@ -2530,11 +2716,11 @@ class QualificationForm(forms.ModelForm):
         queryset=Skill.objects.all().prefetch_related("category"),
         widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
-                'class': 'select2-widget',
-                'data-minimum-input-length': 2,
-                'data-ajax--url': '/autocomplete/skills',
-                'data-ajax--cache': 'true',
-                'data-ajax--type': 'GET',
+                "class": "select2-widget",
+                "data-minimum-input-length": 2,
+                "data-ajax--url": "/autocomplete/skills",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
             },
         ),
     )
@@ -2567,7 +2753,7 @@ class QualificationForm(forms.ModelForm):
 
 
 class QualificationSelect2Widget(s2forms.ModelSelect2Widget):
-    search_fields = ['name__icontains']  # fallback, not actually used
+    search_fields = ["name__icontains"]  # fallback, not actually used
 
     def filter_queryset(self, request, term, queryset=None, **kwargs):
         if queryset is None:
@@ -2576,13 +2762,11 @@ class QualificationSelect2Widget(s2forms.ModelSelect2Widget):
         return queryset.annotate(
             lower_name=Lower("name"),
             lower_short_name=Lower("short_name"),
-        ).filter(
-            Q(lower_name__contains=q) | Q(lower_short_name__contains=q)
-        )
+        ).filter(Q(lower_name__contains=q) | Q(lower_short_name__contains=q))
 
 
 class QualificationSelect2MultipleWidget(s2forms.ModelSelect2MultipleWidget):
-    search_fields = ['name__icontains']  # fallback, not actually used
+    search_fields = ["name__icontains"]  # fallback, not actually used
 
     def filter_queryset(self, request, term, queryset=None, **kwargs):
         if queryset is None:
@@ -2591,9 +2775,7 @@ class QualificationSelect2MultipleWidget(s2forms.ModelSelect2MultipleWidget):
         return queryset.annotate(
             lower_name=Lower("name"),
             lower_short_name=Lower("short_name"),
-        ).filter(
-            Q(lower_name__contains=q) | Q(lower_short_name__contains=q)
-        )
+        ).filter(Q(lower_name__contains=q) | Q(lower_short_name__contains=q))
 
 
 class OwnQualificationRecordForm(forms.ModelForm):
@@ -2603,8 +2785,8 @@ class OwnQualificationRecordForm(forms.ModelForm):
         queryset=Qualification.objects.all(),
         widget=QualificationSelect2Widget(
             attrs={
-                'class': 'select2-widget',
-                'data-minimum-input-length': 3,
+                "class": "select2-widget",
+                "data-minimum-input-length": 3,
             },
         ),
     )
@@ -2633,7 +2815,8 @@ class OwnQualificationRecordForm(forms.ModelForm):
         if current_status is not None:
             valid_statuses.add(current_status)
         self.fields["status"].choices = [
-            (val, label) for val, label in QualificationStatus.CHOICES
+            (val, label)
+            for val, label in QualificationStatus.CHOICES
             if val in valid_statuses
         ]
 
@@ -2770,11 +2953,11 @@ class BillingCodeForm(forms.ModelForm):
         queryset=Client.objects.all(),
         widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
-                'class': 'select2-widget',
-                'data-minimum-input-length': 2,
-                'data-ajax--url': '/autocomplete/clients',
-                'data-ajax--cache': 'true',
-                'data-ajax--type': 'GET',
+                "class": "select2-widget",
+                "data-minimum-input-length": 2,
+                "data-ajax--url": "/autocomplete/clients",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
             },
         ),
     )
@@ -2809,13 +2992,17 @@ class ProjectForm(forms.ModelForm):
         queryset=User.objects.filter(is_active=True),
         widget=s2forms.ModelSelect2Widget(
             attrs={
-                'class': 'select2-widget',
-                'data-minimum-input-length': 3,
-                'data-ajax--url': '/autocomplete/users',
-                'data-ajax--cache': 'true',
-                'data-ajax--type': 'GET',
+                "class": "select2-widget",
+                "data-minimum-input-length": 3,
+                "data-ajax--url": "/autocomplete/users",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
             },
-            search_fields=['first_name__icontains', 'last_name__icontains', 'email__icontains'],
+            search_fields=[
+                "first_name__icontains",
+                "last_name__icontains",
+                "email__icontains",
+            ],
         ),
     )
     unit = forms.ModelChoiceField(
@@ -2823,11 +3010,11 @@ class ProjectForm(forms.ModelForm):
         queryset=OrganisationalUnit.objects.all(),
         widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
-                'class': 'select2-widget',
-                'data-minimum-input-length': 2,
-                'data-ajax--url': '/autocomplete/org-units',
-                'data-ajax--cache': 'true',
-                'data-ajax--type': 'GET',
+                "class": "select2-widget",
+                "data-minimum-input-length": 2,
+                "data-ajax--url": "/autocomplete/org-units",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
             },
         ),
     )
@@ -2870,13 +3057,17 @@ class TeamForm(forms.ModelForm):
         queryset=User.objects.filter(is_active=True),
         widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
-                'class': 'select2-widget',
-                'data-minimum-input-length': 3,
-                'data-ajax--url': '/autocomplete/users',
-                'data-ajax--cache': 'true',
-                'data-ajax--type': 'GET',
+                "class": "select2-widget",
+                "data-minimum-input-length": 3,
+                "data-ajax--url": "/autocomplete/users",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
             },
-            search_fields=['first_name__icontains', 'last_name__icontains', 'email__icontains'],
+            search_fields=[
+                "first_name__icontains",
+                "last_name__icontains",
+                "email__icontains",
+            ],
         ),
     )
 
@@ -2903,11 +3094,11 @@ class TeamForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(TeamForm, self).__init__(*args, **kwargs)
 
-        if getattr(settings, 'CLAMAV_ENABLED', True):
-            self.fields['profile_image'].validators.append(validate_file_infection)
+        if getattr(settings, "CLAMAV_ENABLED", True):
+            self.fields["profile_image"].validators.append(validate_file_infection)
 
-        if getattr(settings, 'CLAMAV_ENABLED', True):
-            self.fields['cover_image'].validators.append(validate_file_infection)
+        if getattr(settings, "CLAMAV_ENABLED", True):
+            self.fields["cover_image"].validators.append(validate_file_infection)
 
         self.helper = FormHelper(self)
         self.fields["name"].label = False
@@ -2935,13 +3126,17 @@ class AddTeamMemberForm(forms.ModelForm):
         queryset=User.objects.filter(is_active=True),
         widget=s2forms.ModelSelect2Widget(
             attrs={
-                'class': 'select2-widget',
-                'data-minimum-input-length': 3,
-                'data-ajax--url': '/autocomplete/users',
-                'data-ajax--cache': 'true',
-                'data-ajax--type': 'GET',
+                "class": "select2-widget",
+                "data-minimum-input-length": 3,
+                "data-ajax--url": "/autocomplete/users",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
             },
-            search_fields=['first_name__icontains', 'last_name__icontains', 'email__icontains'],
+            search_fields=[
+                "first_name__icontains",
+                "last_name__icontains",
+                "email__icontains",
+            ],
         ),
     )
 
@@ -2964,12 +3159,14 @@ class AddTeamMemberForm(forms.ModelForm):
 
 class BulkAddTeamMemberForm(forms.Form):
     emails = forms.CharField(
-        widget=forms.Textarea(attrs={
-            'rows': 6,
-            'placeholder': 'Enter email addresses, one per line or separated by commas',
-            'class': 'form-control',
-        }),
-        help_text='Paste email addresses separated by commas, semicolons, or one per line.',
+        widget=forms.Textarea(
+            attrs={
+                "rows": 6,
+                "placeholder": "Enter email addresses, one per line or separated by commas",
+                "class": "form-control",
+            }
+        ),
+        help_text="Paste email addresses separated by commas, semicolons, or one per line.",
     )
 
     def __init__(self, *args, **kwargs):
@@ -2983,10 +3180,11 @@ class BulkAddTeamMemberForm(forms.Form):
         self.fields["emails"].label = False
 
     def clean_emails(self):
-        raw = self.cleaned_data['emails']
+        raw = self.cleaned_data["emails"]
         # Split on commas, semicolons, and newlines
         import re
-        parts = re.split(r'[,;\n\r]+', raw)
+
+        parts = re.split(r"[,;\n\r]+", raw)
         emails = [e.strip().lower() for e in parts if e.strip()]
         if not emails:
             raise forms.ValidationError("Please enter at least one email address.")
@@ -3032,13 +3230,17 @@ class ServiceForm(forms.ModelForm):
         queryset=User.objects.filter(is_active=True),
         widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
-                'class': 'select2-widget',
-                'data-minimum-input-length': 3,
-                'data-ajax--url': '/autocomplete/users',
-                'data-ajax--cache': 'true',
-                'data-ajax--type': 'GET',
+                "class": "select2-widget",
+                "data-minimum-input-length": 3,
+                "data-ajax--url": "/autocomplete/users",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
             },
-            search_fields=['first_name__icontains', 'last_name__icontains', 'email__icontains'],
+            search_fields=[
+                "first_name__icontains",
+                "last_name__icontains",
+                "email__icontains",
+            ],
         ),
     )
 
@@ -3047,11 +3249,11 @@ class ServiceForm(forms.ModelForm):
         queryset=Skill.objects.all().prefetch_related("category"),
         widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
-                'class': 'select2-widget',
-                'data-minimum-input-length': 2,
-                'data-ajax--url': '/autocomplete/skills',
-                'data-ajax--cache': 'true',
-                'data-ajax--type': 'GET',
+                "class": "select2-widget",
+                "data-minimum-input-length": 2,
+                "data-ajax--url": "/autocomplete/skills",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
             },
         ),
     )
@@ -3061,11 +3263,11 @@ class ServiceForm(forms.ModelForm):
         queryset=Skill.objects.all().prefetch_related("category"),
         widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
-                'class': 'select2-widget',
-                'data-minimum-input-length': 2,
-                'data-ajax--url': '/autocomplete/skills',
-                'data-ajax--cache': 'true',
-                'data-ajax--type': 'GET',
+                "class": "select2-widget",
+                "data-minimum-input-length": 2,
+                "data-ajax--url": "/autocomplete/skills",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
             },
         ),
     )
@@ -3075,8 +3277,8 @@ class ServiceForm(forms.ModelForm):
         queryset=Qualification.objects.all().select_related("awarding_body"),
         widget=QualificationSelect2MultipleWidget(
             attrs={
-                'class': 'select2-widget',
-                'data-minimum-input-length': 0,
+                "class": "select2-widget",
+                "data-minimum-input-length": 0,
             },
         ),
     )
@@ -3086,8 +3288,8 @@ class ServiceForm(forms.ModelForm):
         queryset=Qualification.objects.all().select_related("awarding_body"),
         widget=QualificationSelect2MultipleWidget(
             attrs={
-                'class': 'select2-widget',
-                'data-minimum-input-length': 0,
+                "class": "select2-widget",
+                "data-minimum-input-length": 0,
             },
         ),
     )
@@ -3115,26 +3317,26 @@ class ServiceForm(forms.ModelForm):
         self.fields["skillsDesired"].label = False
         self.fields["qualificationsRequired"].label = False
         self.fields["qualificationsDesired"].label = False
-    
+
     def save(self, commit=True):
         instance = super().save(commit=commit)
 
         if commit and instance.pk:
             # Clear existing owner permissions
             from guardian.models import UserObjectPermission
+
             UserObjectPermission.objects.filter(
-                content_type__app_label='jobtracker',
-                content_type__model='service',
-                object_pk=instance.pk
+                content_type__app_label="jobtracker",
+                content_type__model="service",
+                object_pk=instance.pk,
             ).delete()
 
             # Assign permissions to new owners
-            for owner in self.cleaned_data.get('owners', []):
-                assign_perm('change_service', owner, instance)
-                assign_perm('delete_service', owner, instance)
+            for owner in self.cleaned_data.get("owners", []):
+                assign_perm("change_service", owner, instance)
+                assign_perm("delete_service", owner, instance)
 
         return instance
-
 
     class Meta:
         model = Service
@@ -3178,14 +3380,14 @@ class SkillForm(forms.ModelForm):
         required=False,
         widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
-                'class': 'select2-widget',
-                'data-minimum-input-length': 2,
-                'data-ajax--url': '/autocomplete/skills',
-                'data-ajax--cache': 'true',
-                'data-ajax--type': 'GET',
+                "class": "select2-widget",
+                "data-minimum-input-length": 2,
+                "data-ajax--url": "/autocomplete/skills",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
             },
         ),
-        help_text="Skills that should be learned before this one"
+        help_text="Skills that should be learned before this one",
     )
 
     related_skills = forms.ModelMultipleChoiceField(
@@ -3193,14 +3395,14 @@ class SkillForm(forms.ModelForm):
         required=False,
         widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
-                'class': 'select2-widget',
-                'data-minimum-input-length': 2,
-                'data-ajax--url': '/autocomplete/skills',
-                'data-ajax--cache': 'true',
-                'data-ajax--type': 'GET',
+                "class": "select2-widget",
+                "data-minimum-input-length": 2,
+                "data-ajax--url": "/autocomplete/skills",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
             },
         ),
-        help_text="Skills that are commonly used together"
+        help_text="Skills that are commonly used together",
     )
 
     def __init__(self, *args, **kwargs):
@@ -3211,8 +3413,12 @@ class SkillForm(forms.ModelForm):
 
         # Exclude the current skill from prerequisites and related skills to avoid self-reference
         if self.instance and self.instance.pk:
-            self.fields["prerequisites"].queryset = Skill.objects.exclude(pk=self.instance.pk)
-            self.fields["related_skills"].queryset = Skill.objects.exclude(pk=self.instance.pk)
+            self.fields["prerequisites"].queryset = Skill.objects.exclude(
+                pk=self.instance.pk
+            )
+            self.fields["related_skills"].queryset = Skill.objects.exclude(
+                pk=self.instance.pk
+            )
 
     class Meta:
         model = Skill

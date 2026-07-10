@@ -38,6 +38,8 @@
           <div class="d-flex">
             {% if 'manage_members' in unit_perms %}
               <a href="#" data-url="{% url 'organisationalunit_add' organisationalunit.slug %}" class="btn btn-outline-success js-load-modal-form ms-2">Add Member</a>
+              <a href="#" data-url="{% url 'organisationalunit_preload_member' organisationalunit.slug %}" class="btn btn-outline-success js-load-modal-form ms-2">Pre-load Member</a>
+              <a href="{% url 'organisationalunit_import_members' organisationalunit.slug %}" class="btn btn-outline-success ms-2">Import CSV</a>
             {% endif %}
 
             {% if 'change_organisationalunit' in unit_perms %}
