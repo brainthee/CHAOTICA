@@ -174,6 +174,11 @@ class TimeSlot(models.Model):
     def is_project(self):
         return self.slot_type.pk == DefaultTimeSlotTypes.INTERNAL_PROJECT
 
+    def is_leave(self):
+        # Annual leave is created & owned by a LeaveRequest, so it must be
+        # managed there (not edited directly on the scheduler).
+        return self.slot_type.pk == DefaultTimeSlotTypes.LEAVE
+
     def is_internal(self):
         return (
             self.slot_type.pk != DefaultTimeSlotTypes.DELIVERY
@@ -293,8 +298,9 @@ class TimeSlot(models.Model):
             "userId": self.user.pk,
             "backgroundColor": self.get_schedule_slot_colour(schedule_colours=schedule_colours),
             "classNames": "p-1 rounded-3",
-            # Leave / time off (non-working) is read-only in the scheduler.
-            "can_edit": self.slot_type.is_working,
+            # Annual leave is owned by its leave request, so it's read-only in
+            # the scheduler; every other slot type can be edited/moved here.
+            "can_edit": not self.is_leave(),
             "is_comment": False,
         }
 

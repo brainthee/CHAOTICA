@@ -571,12 +571,12 @@ def change_scheduler_slot_date(request, pk=None):
         return HttpResponseBadRequest()
     slot = get_object_or_404(TimeSlot, pk=pk)
     _verify_slot_unit_access(request, slot)
-    # Leave / time off (non-working slots) is managed via leave requests, not the
-    # scheduler — refuse to move or edit it here.
-    if not slot.slot_type.is_working:
+    # Annual leave is owned by its leave request, not the scheduler — refuse to
+    # move or edit it here (other non-working types e.g. Sick are fine to edit).
+    if slot.is_leave():
         return JsonResponse({
             "form_is_valid": False,
-            "error": "Leave / time off can't be moved from the scheduler — manage it via the leave request.",
+            "error": "Annual leave can't be moved from the scheduler — manage it via the leave request.",
         })
     data = dict()
     if request.method == "POST":
@@ -644,12 +644,12 @@ def change_scheduler_slot(request, pk=None):
         return HttpResponseBadRequest()
     slot = get_object_or_404(TimeSlot, pk=pk)
     _verify_slot_unit_access(request, slot)
-    # Leave / time off (non-working slots) is managed via leave requests, not the
-    # scheduler — refuse to move or edit it here.
-    if not slot.slot_type.is_working:
+    # Annual leave is owned by its leave request, not the scheduler — refuse to
+    # move or edit it here (other non-working types e.g. Sick are fine to edit).
+    if slot.is_leave():
         return JsonResponse({
             "form_is_valid": False,
-            "error": "Leave / time off can't be moved from the scheduler — manage it via the leave request.",
+            "error": "Annual leave can't be moved from the scheduler — manage it via the leave request.",
         })
     data = dict()
 
