@@ -127,7 +127,6 @@ class OrganisationalUnit(models.Model):
             ("can_approve_leave_requests", "Can approve leave requests"),
         )
 
-
     def get_working_days_in_range(self, start_date, end_date):
         working_days_list = []
         if not (isinstance(start_date, date) and isinstance(end_date, date)):
@@ -152,7 +151,6 @@ class OrganisationalUnit(models.Model):
             current_date += timedelta(days=1)
 
         return working_days_list
-
 
     def sync_permissions(self):
         for user in self.get_allMembers():
@@ -253,9 +251,9 @@ class OrganisationalUnit(models.Model):
                 "roles",
                 Prefetch(
                     "member__job_level_history",
-                    queryset=UserJobLevel.objects.filter(is_current=True).select_related(
-                        "job_level"
-                    ),
+                    queryset=UserJobLevel.objects.filter(
+                        is_current=True
+                    ).select_related("job_level"),
                     to_attr="_current_levels",
                 ),
             )
@@ -690,20 +688,20 @@ class OrganisationalUnit(models.Model):
         result = {}
 
         for member in members:
-            user = member.member if hasattr(member, 'member') else member
+            user = member.member if hasattr(member, "member") else member
             user_schedule = {}
 
             # Initialize all dates as empty
             for date_str in date_range:
                 user_schedule[date_str] = ""
-                        
+
             # Fill in the timeslots for each day they overlap
             for slot in user.week_timeslots:
                 # Calculate which days this slot spans within our date range
                 # Convert to local time before extracting date to handle UTC offset
                 slot_start_date = max(timezone.localtime(slot.start).date(), start_date)
                 slot_end_date = min(timezone.localtime(slot.end).date(), end_date)
-                
+
                 # Add this slot to every day it spans
                 current_slot_date = slot_start_date
                 while current_slot_date <= slot_end_date:
@@ -740,24 +738,24 @@ class OrganisationalUnitRole(models.Model):
         ]
 
     def sync_default_permissions(self):
-        for role in UnitRoles.DEFAULTS:
-            if self.pk == role["pk"]:
-                self.permissions.clear()
-                # PERMISSIONS is a 0-based tuple (index 0 == pk 1), matching the
-                # seeder in jobtracker/apps.py which indexes with pk-1.
-                for perm in UnitRoles.PERMISSIONS[role["pk"] - 1][1]:
-                    if perm:
-                        codeword = perm
-                        if "." in perm:
-                            codeword = perm.split(".")[1]
-                        if Permission.objects.filter(codename=codeword).exists():
-                            permission = Permission.objects.get(codename=codeword)
-                            self.permissions.add(permission)
-                self.save()
-                return True
+        # Match the role to its code definition by NAME, not pk. Relying on
+        # self.pk == UnitRoles constant is fragile: if a role's database pk drifts
+        # from its constant (as happened in production) the pk-indexed lookup
+        # silently assigns another role's permission set.
+        perms = UnitRoles.get_default_permissions_for_role(self.name)
+        if perms is None:
+            # Not a known default role — leave any custom permissions alone.
+            return False
 
-        # If we reach this; this role isn't matched in code
-        return False
+        self.permissions.clear()
+        for perm in perms:
+            if not perm:
+                continue
+            codeword = perm.split(".")[1] if "." in perm else perm
+            if Permission.objects.filter(codename=codeword).exists():
+                self.permissions.add(Permission.objects.get(codename=codeword))
+        self.save()
+        return True
 
 
 class OrganisationalUnitMember(models.Model):

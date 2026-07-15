@@ -18,13 +18,17 @@ from ..forms import (
 )
 from ..mixins import PrefetchRelatedMixin
 from ..enums import GlobalRoles
-from ..models import User, Language, UserInvitation
+from ..models import User, Language, UserInvitation, Group
 from ..utils import (
     ext_reverse,
     clean_fullcalendar_datetime,
     can_manage_user,
+    group_permissions,
 )
 from .common import ChaoticaBaseGlobalRoleView, page_defaults
+from django.conf import settings as django_settings
+from django.contrib.auth.models import Permission
+from guardian.shortcuts import get_user_perms
 from django.contrib.auth.decorators import login_required
 from chaotica_utils.decorators import permission_required_or_403
 from django.views.generic.list import ListView
@@ -128,7 +132,75 @@ class UserDetailView(UserBaseView, DetailView):
         context["schedule_history"] = TimeSlot.history.filter(
             user=self.get_object()
         ).prefetch_related("history_user")
+
+        # Effective permissions panel - admin-only (sensitive), read-only.
+        prefix = django_settings.GLOBAL_GROUP_PREFIX
+        is_admin = self.request.user.groups.filter(
+            name=prefix + GlobalRoles.CHOICES[GlobalRoles.ADMIN][1]
+        ).exists()
+        context["can_view_permissions"] = is_admin
+        if is_admin:
+            context["user_permissions"] = self._get_effective_permissions(
+                self.get_object(), prefix
+            )
         return context
+
+    def _get_effective_permissions(self, user_obj, prefix):
+        """Resolve a user's effective permissions from live state (read-only).
+
+        Combines their global role groups with the guardian object permissions
+        granted per organisational unit membership.
+        """
+        from django.contrib.contenttypes.models import ContentType
+        from jobtracker.models import OrganisationalUnit, OrganisationalUnitMember
+
+        # Global roles (site-wide Django groups).
+        global_groups = user_obj.groups.filter(name__startswith=prefix)
+        global_roles = []
+        for grp in global_groups:
+            role_int = grp.getGlobalRoleINT()
+            global_roles.append(
+                {
+                    "label": GlobalRoles.CHOICES[role_int][1]
+                    if role_int is not None
+                    else grp.name,
+                    "colour": grp.role_bs_colour() or "secondary",
+                }
+            )
+        global_perms = group_permissions(
+            Permission.objects.filter(group__in=global_groups).distinct()
+        )
+
+        # Per-unit object permissions (guardian), from active memberships.
+        memberships = (
+            OrganisationalUnitMember.objects.filter(
+                member=user_obj, left_date__isnull=True
+            )
+            .select_related("unit")
+            .prefetch_related("roles")
+        )
+        # get_user_perms() returns a values_list of codenames; resolve them back
+        # to Permission rows (unit object perms belong to the unit content type).
+        unit_ct = ContentType.objects.get_for_model(OrganisationalUnit)
+        units = []
+        for ms in memberships:
+            codenames = list(get_user_perms(user_obj, ms.unit))
+            perms = Permission.objects.filter(
+                content_type=unit_ct, codename__in=codenames
+            )
+            units.append(
+                {
+                    "unit": ms.unit,
+                    "roles": ms.roles.all(),
+                    "permissions": group_permissions(perms),
+                }
+            )
+
+        return {
+            "global_roles": global_roles,
+            "global_permissions": global_perms,
+            "units": units,
+        }
 
 
 @login_required

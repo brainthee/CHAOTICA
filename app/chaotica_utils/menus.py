@@ -108,6 +108,17 @@ Menu.add_item(
 )
 Menu.add_item(
     "admin",
+    RoleMenuItem(
+        "Permissions",
+        reverse("permissions_matrix"),
+        check=lambda request: request.user.is_authenticated,
+        icon="user-shield",
+        requiredRole=GlobalRoles.ADMIN,
+        weight=71,
+    ),
+)
+Menu.add_item(
+    "admin",
     PermMenuItem(
         "Settings",
         reverse("app_settings"),

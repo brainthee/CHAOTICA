@@ -25,7 +25,7 @@ from ..models import (
 )
 from ..enums import PhaseStatuses
 from chaotica_utils.enums import UnitRoles
-from chaotica_utils.utils import get_week, ext_reverse
+from chaotica_utils.utils import get_week, ext_reverse, group_permissions
 from chaotica_utils.views import page_defaults
 from ..decorators import unit_permission_required_or_403
 from ..forms import (
@@ -130,6 +130,33 @@ class OrganisationalUnitDetailView(
                 .select_related("phase", "reviewer", "reviewed_user", "phase__job")
                 .order_by("-completed_at")[:10]
             )
+
+        # Roles & permissions grid - visible to those who can manage members
+        # (or hold the global manage_members permission). Read-only.
+        can_view_roles = self.request.user.has_perm(
+            "manage_members", unit
+        ) or self.request.user.has_perm("jobtracker.manage_members")
+        context["can_view_unit_permissions"] = can_view_roles
+        if can_view_roles:
+            roles = list(
+                OrganisationalUnitRole.objects.prefetch_related(
+                    "permissions", "permissions__content_type"
+                )
+            )
+            rows = []
+            for ms in context["active_memberships"]:
+                held_ids = {r.pk for r in ms.roles.all()}
+                rows.append(
+                    {
+                        "member": ms.member,
+                        "cells": [role.pk in held_ids for role in roles],
+                    }
+                )
+            context["role_grid"] = {"roles": roles, "rows": rows}
+            context["role_legend"] = [
+                {"role": role, "permissions": group_permissions(role.permissions.all())}
+                for role in roles
+            ]
 
         return context
 

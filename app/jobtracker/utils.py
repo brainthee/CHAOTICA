@@ -212,7 +212,12 @@ def _filter_users_on_query(request, cleaned_data=None):
         for phase in phases:
             query.add(Q(pk__in=phase.team()), Q.AND)
 
-    if not jobs and not phases:
+    # Projects have no team() method - members are users with a timeslot on them.
+    projects = cleaned_data.get("projects")
+    if projects:
+        query.add(Q(timeslots__project__in=projects), Q.AND)
+
+    if not jobs and not phases and not projects:
         query.add(Q(pk__in=users_pk), Q.AND)
 
     # Now lets apply the filters from the query...

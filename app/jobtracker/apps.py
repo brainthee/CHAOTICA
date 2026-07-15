@@ -37,7 +37,9 @@ def populate_default_unit_roles(sender, **kwargs):
                 for attr, value in role.items():
                     setattr(instance, attr, value)
 
-                for perm in UnitRoles.PERMISSIONS[role["pk"]-1][1]:
+                for perm in (
+                    UnitRoles.get_default_permissions_for_role(role["name"]) or []
+                ):
                     if perm:
                         codeword = perm
                         if "." in perm:
@@ -47,9 +49,7 @@ def populate_default_unit_roles(sender, **kwargs):
                             instance.permissions.add(permission)
                         else:
                             logger.error(
-                                "ERROR: Unknown Permission - {full}".format(
-                                    full=perm
-                                )
+                                "ERROR: Unknown Permission - {full}".format(full=perm)
                             )
                 instance.save()
 
@@ -66,6 +66,7 @@ class JobtrackerConfig(AppConfig):
 
         # Import signal handlers
         from . import signals  # noqa: F401
+
         try:
             from .signals import skill_cache  # noqa: F401
         except ImportError:

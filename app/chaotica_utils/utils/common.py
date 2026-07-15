@@ -223,6 +223,29 @@ class PermMenuItem(MenuItem):
             self.visible = False
 
 
+def group_permissions(perm_qs):
+    """Group a ``Permission`` queryset by ``app_label · model`` for display.
+
+    Returns an ``OrderedDict`` keyed by ``"{app_label} · {model}"`` mapping to a
+    list of ``{"codename", "name"}`` dicts, sorted by group then permission name.
+    Used by the read-only permissions-visibility views to render humanised,
+    grouped permission lists.
+    """
+    from collections import OrderedDict
+
+    grouped = OrderedDict()
+    perms = perm_qs.select_related("content_type").order_by(
+        "content_type__app_label", "content_type__model", "name"
+    )
+    for perm in perms:
+        ct = perm.content_type
+        key = "{app} · {model}".format(app=ct.app_label, model=ct.model)
+        grouped.setdefault(key, []).append(
+            {"codename": perm.codename, "name": perm.name}
+        )
+    return grouped
+
+
 def clean_fullcalendar_datetime(date):
     # FullCalendar sends ISO 8601 strings like:
     #   2023-10-23T00:00:00+01:00

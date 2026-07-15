@@ -1,0 +1,61 @@
+{% comment %}
+Read-only roles & permissions view for an organisational unit.
+Expects `role_grid` = {"roles": [OrganisationalUnitRole], "rows": [{"member", "cells": [bool]}]}
+and `role_legend` = [{"role", "permissions": grouped}].
+{% endcomment %}
+<p class="text-body-secondary fs-9 mb-3">
+  Which members hold which roles in this unit, and the object-level permissions each role
+  grants. Read-only &mdash; assign roles from the member's manage-roles action.
+</p>
+
+<div class="card mb-4">
+  <div class="card-header border-translucent">
+    <h6 class="mb-0"><span class="fas fa-users me-2"></span>Members &amp; Roles</h6>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-sm table-hover fs-9 mb-0 align-middle">
+        <thead>
+          <tr class="border-translucent">
+            <th scope="col" class="ps-3 text-body-secondary" style="min-width: 14rem;">Member</th>
+            {% for role in role_grid.roles %}
+              <th scope="col" class="text-center">
+                {% include 'partials/unit/role_badge.html' with role=role %}
+              </th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in role_grid.rows %}
+            <tr class="border-translucent">
+              <td class="ps-3">{{ row.member.get_full_name|default:row.member.email }}</td>
+              {% for held in row.cells %}
+                <td class="text-center">
+                  {% if held %}
+                    <span class="fas fa-check text-success" aria-label="yes"></span>
+                  {% else %}
+                    <span class="fas fa-minus text-body-tertiary opacity-50" aria-label="no"></span>
+                  {% endif %}
+                </td>
+              {% endfor %}
+            </tr>
+          {% empty %}
+            <tr><td colspan="{{ role_grid.roles|length|add:1 }}" class="text-body-secondary ps-3">No active members.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<h6 class="mb-2"><span class="fas fa-key me-2"></span>Role Permissions</h6>
+{% for entry in role_legend %}
+  <div class="card mb-3">
+    <div class="card-header border-translucent">
+      {% include 'partials/unit/role_badge.html' with role=entry.role %}
+    </div>
+    <div class="card-body">
+      {% include 'partials/permission_group_list.html' with grouped=entry.permissions %}
+    </div>
+  </div>
+{% endfor %}

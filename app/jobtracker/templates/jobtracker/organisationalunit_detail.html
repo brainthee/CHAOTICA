@@ -112,6 +112,11 @@
             <a class="nav-link" id="reviews-tab" data-bs-toggle="tab" href="#reviews" role="tab" aria-controls="tab-reviews" aria-selected="false" tabindex="-1"><span class="fa-solid fa-star me-2 tab-icon-color"></span>Reviews</a>
           </li>
           {% endif %}
+          {% if can_view_unit_permissions %}
+          <li class="nav-item text-nowrap me-2" role="presentation">
+            <a class="nav-link" id="permissions-tab" data-bs-toggle="tab" href="#permissions" role="tab" aria-controls="tab-permissions" aria-selected="false" tabindex="-1"><span class="fa-solid fa-user-shield me-2 tab-icon-color"></span>Roles &amp; Permissions</a>
+          </li>
+          {% endif %}
         </ul>
 
         <div class="tab-content" id="myTabContent">
@@ -153,6 +158,12 @@
           {% if 'can_view_all_reviews' in unit_perms %}
           <div class="tab-pane fade" id="reviews" role="tabpanel" aria-labelledby="reviews-tab">
             {% include 'partials/review_org_display.html' %}
+          </div>
+          {% endif %}
+
+          {% if can_view_unit_permissions %}
+          <div class="tab-pane fade" id="permissions" role="tabpanel" aria-labelledby="permissions-tab">
+            {% include 'partials/unit/unit_permissions.html' %}
           </div>
           {% endif %}
 

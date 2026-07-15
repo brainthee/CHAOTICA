@@ -174,6 +174,62 @@
     if (progressEl) progressEl.classList.toggle('is-active', active);
   }
 
+  // Friendly message for a failed modal/action request, keyed on HTTP status.
+  // The server may still return JSON/HTML with detail; fall back to a sensible
+  // default per status so the user is never left staring at a modal that never
+  // opened (e.g. a 403 permission denial when booking a phase slot).
+  function ajaxErrorMessage(jqXHR) {
+    var status = jqXHR ? jqXHR.status : 0;
+    // Prefer a server-supplied message if the body is JSON with .error/.message.
+    var resp = jqXHR && jqXHR.responseJSON;
+    if (resp && (resp.error || resp.message)) return resp.error || resp.message;
+    if (status === 403) {
+      return "You don't have permission to do that. If you think this is a " +
+             'mistake, contact the job/unit owner.';
+    }
+    if (status === 401) return 'Your session has expired — please refresh and sign in again.';
+    if (status === 404) return 'That item could no longer be found. It may have been removed.';
+    if (status === 0)   return 'Could not reach the server. Check your connection and try again.';
+    if (status >= 500)  return 'Something went wrong on the server. Please try again shortly.';
+    return 'Something went wrong. Please try again.';
+  }
+
+  function ajaxErrorTitle(jqXHR) {
+    var status = jqXHR ? jqXHR.status : 0;
+    if (status === 403 || status === 401) return 'Not allowed';
+    if (status === 404) return 'Not found';
+    return 'Error';
+  }
+
+  function notifyAjaxError(jqXHR) {
+    var icon = (jqXHR && (jqXHR.status === 403 || jqXHR.status === 401 || jqXHR.status === 404))
+      ? 'warning' : 'error';
+    if (typeof Swal !== 'undefined') {
+      Swal.fire(ajaxErrorTitle(jqXHR), ajaxErrorMessage(jqXHR), icon);
+    } else {
+      alert(ajaxErrorMessage(jqXHR));
+    }
+  }
+
+  // Shared loader for the create/edit modal partials. Fetches the form HTML and,
+  // on success, injects it into #mainModal and shows it. On any HTTP error it
+  // surfaces a friendly message instead of silently doing nothing. Returns the
+  // jqXHR so callers can chain if needed.
+  function loadModalForm(url, method) {
+    loading(true);
+    return $.ajax({ url: url, type: method || 'get', dataType: 'json' })
+      .done(function (data) {
+        if (data && data.html_form) {
+          $('#mainModalContent').html(data.html_form);
+          $('#mainModal').modal('show');
+        } else {
+          notifyAjaxError({ status: 0, responseJSON: data });
+        }
+      })
+      .fail(function (jqXHR) { notifyAjaxError(jqXHR); })
+      .always(function () { loading(false); });
+  }
+
   function utilBadgeClass(util) {
     if (util >= 90) return 'badge-phoenix-danger';
     if (util >= 70) return 'badge-phoenix-success';
@@ -194,9 +250,12 @@
     var roles = (r.roles || []).map(function (role) {
       return '<span class="sched-role">' + escapeHtml(role) + '</span>';
     }).join('');
+    var nameHtml = r.url
+      ? '<a class="name" href="' + escapeHtml(r.url) + '">' + name + '</a>'
+      : '<span class="name">' + name + '</span>';
     return '<div class="sched-res">' +
              '<span class="meta">' +
-               '<span class="name">' + name + '</span>' +
+               nameHtml +
                (lvl ? '<span class="lvl">' + lvl + '</span>' : '') +
                (roles ? '<span class="sched-roles">' + roles + '</span>' : '') +
              '</span>' +
@@ -447,17 +506,7 @@
     var it = items.get(props.item);
     var meta = it && it._meta;
     if (!meta || !meta.editUrl) return;
-    loading(true);
-    $.ajax({
-      url: meta.editUrl,
-      type: 'get',
-      dataType: 'json',
-      success: function (data) {
-        $('#mainModalContent').html(data.html_form);
-        $('#mainModal').modal('show');
-      },
-      complete: function () { loading(false); }
-    });
+    loadModalForm(meta.editUrl);
   });
 
   // The reused create/edit modal partials carry their own inline submit handlers
@@ -516,15 +565,10 @@
     var who = (ctxCtx.userIds.length > 1)
       ? 'batch_users=' + ctxCtx.userIds.join(',')
       : 'resource_id=' + parseInt(ctxCtx.userIds[0], 10);
-    loading(true);
-    $.get(url + '?' + who +
+    loadModalForm(url + '?' + who +
           '&start=' + encodeURIComponent(ctxCtx.startISO) +
           '&end=' + encodeURIComponent(ctxCtx.endISO) +
-          createExtraParams,
-      function (d) {
-        $('#mainModalContent').html(d.html_form);
-        $('#mainModal').modal('show');
-      }).always(function () { loading(false); });
+          createExtraParams);
   }
 
   // Exposed for the Scheduling Assistant: open the phase booking modal prefilled
@@ -533,15 +577,10 @@
   window.schedulerAssistantBook = function (userId, startISO, endISO) {
     var url = createUrls.assign_phase;
     if (!url || !userId) return;
-    loading(true);
-    $.get(url + '?resource_id=' + parseInt(userId, 10) +
+    loadModalForm(url + '?resource_id=' + parseInt(userId, 10) +
           '&start=' + encodeURIComponent(startISO) +
           '&end=' + encodeURIComponent(endISO) +
-          createExtraParams,
-      function (d) {
-        $('#mainModalContent').html(d.html_form);
-        $('#mainModal').modal('show');
-      }).always(function () { loading(false); });
+          createExtraParams);
   };
 
   // Exposed for the Scheduling Assistant: refresh timeline + sidebar cards after
@@ -832,10 +871,7 @@
   $(document).on('click', '.js-load-schedule-tool, .js-load-move-slots-form', function (e) {
     e.preventDefault();
     var btn = $(this);
-    $.ajax({
-      url: btn.attr('data-url'), type: 'get', dataType: 'json',
-      success: function (data) { $('#mainModalContent').html(data.html_form); $('#mainModal').modal('show'); }
-    });
+    loadModalForm(btn.attr('data-url'));
   });
   // Schedule tools — submit
   $('#mainModal').on('submit', '.js-schedule-tool-form', function () {

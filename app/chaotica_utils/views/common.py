@@ -21,7 +21,10 @@ from ..forms.common import (
 )
 from ..mixins import PrefetchRelatedMixin
 from ..enums import GlobalRoles
-from ..models import User, Note, Quote
+from ..models import User, Note, Quote, Group
+from ..utils import group_permissions
+from django.contrib.auth.models import Permission
+from django.views.generic import TemplateView
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.views import View
@@ -327,6 +330,95 @@ class ChaoticaBaseAdminView(ChaoticaBaseView, UserPassesTestMixin):
             name=django_settings.GLOBAL_GROUP_PREFIX
             + GlobalRoles.CHOICES[GlobalRoles.ADMIN][1]
         )
+
+
+def build_permission_matrix(columns):
+    """Build a role/permission matrix for the visibility views.
+
+    ``columns`` is a list of ``(label, colour, permissions)`` tuples where
+    ``permissions`` is an iterable of Django ``Permission`` objects. Returns a
+    dict with ``columns`` (metadata) and ``groups`` (an ``OrderedDict`` keyed by
+    ``app · model`` mapping to rows). Each row is
+    ``{"codename", "name", "cells": [bool, ...]}`` where the booleans line up
+    with ``columns``.
+    """
+    # Evaluate each column's perms once.
+    columns = [(label, colour, list(perms)) for (label, colour, perms) in columns]
+    col_meta = [{"label": label, "colour": colour} for (label, colour, _) in columns]
+    col_sets = [set(p.codename for p in perms) for (_, _, perms) in columns]
+
+    pks = set()
+    for (_, _, perms) in columns:
+        pks.update(p.pk for p in perms)
+
+    grouped = group_permissions(Permission.objects.filter(pk__in=pks))
+
+    from collections import OrderedDict
+
+    rows_by_group = OrderedDict()
+    for group_key, perm_list in grouped.items():
+        rows = []
+        for perm in perm_list:
+            cells = [perm["codename"] in col_set for col_set in col_sets]
+            rows.append(
+                {"codename": perm["codename"], "name": perm["name"], "cells": cells}
+            )
+        rows_by_group[group_key] = rows
+
+    return {"columns": col_meta, "groups": rows_by_group}
+
+
+class PermissionsMatrixView(ChaoticaBaseAdminView, TemplateView):
+    """Read-only, admin-only reference of which permissions each role grants.
+
+    Derives from live state (Django ``Group.permissions`` and the DB-backed
+    ``OrganisationalUnitRole.permissions``) so it also surfaces any drift from
+    the ``enums.py`` seeders.
+    """
+
+    template_name = "permissions_matrix.html"
+
+    def get_context_data(self, **kwargs):
+        from jobtracker.models import OrganisationalUnitRole
+
+        context = super().get_context_data(**kwargs)
+
+        # --- Global roles (Django groups prefixed with GLOBAL_GROUP_PREFIX) ---
+        prefix = django_settings.GLOBAL_GROUP_PREFIX
+        global_groups = Group.objects.filter(name__startswith=prefix).prefetch_related(
+            "permissions", "permissions__content_type"
+        )
+        # Order by the underlying GlobalRoles int so columns read Admin..User.
+        global_groups = sorted(
+            global_groups,
+            key=lambda g: g.getGlobalRoleINT()
+            if g.getGlobalRoleINT() is not None
+            else 999,
+        )
+        global_columns = []
+        for grp in global_groups:
+            role_int = grp.getGlobalRoleINT()
+            label = (
+                GlobalRoles.CHOICES[role_int][1]
+                if role_int is not None
+                else grp.name
+            )
+            global_columns.append(
+                (label, grp.role_bs_colour() or "secondary", grp.permissions.all())
+            )
+        context["global_matrix"] = build_permission_matrix(global_columns)
+
+        # --- Unit roles (DB-backed OrganisationalUnitRole) ---
+        unit_roles = OrganisationalUnitRole.objects.prefetch_related(
+            "permissions", "permissions__content_type"
+        ).all()
+        unit_columns = [
+            (role.name, role.bs_colour or "info", role.permissions.all())
+            for role in unit_roles
+        ]
+        context["unit_matrix"] = build_permission_matrix(unit_columns)
+
+        return context
 
 
 def log_system_activity(ref_obj, msg, author=None):

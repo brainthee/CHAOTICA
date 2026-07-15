@@ -34,6 +34,43 @@ which apply the same rule. `@superuser_required` follows it too.
 
 ---
 
+## Viewing Permissions (Visibility UI)
+
+Three **read-only** views make the permission model legible in-app. They derive
+from **live state** (Django `Group.permissions` and guardian object permissions)
+rather than re-printing the `enums.py` definitions, so they also surface any drift
+between what the code seeds and what is actually assigned. None of them edit
+anything — assignment stays in the role-assignment modals and the Django admin.
+
+### Permissions matrix
+
+*Admin menu → Permissions* (`permissions_matrix`, Global Admin only). A
+role × permission matrix with two tabs:
+
+- **Global Roles** — one column per `Global: *` Django group, rows grouped by
+  `app · model`, a check where the role grants the permission.
+- **Unit Roles** — the same layout sourced from the DB-backed
+  `OrganisationalUnitRole.permissions`.
+
+### Per-user effective permissions
+
+A **Permissions** tab on each user's profile, shown **only to Global Admins**. It
+resolves the user's effective permissions from live state: their global role
+group(s) and, for every active organisational-unit membership, the guardian
+object permissions granted by their roles in that unit.
+
+### Per-unit roles & permissions
+
+A **Roles & Permissions** tab on each organisational unit's detail page, visible
+to anyone who can `manage_members` on that unit (or holds the global
+`manage_members` permission). It shows a members × roles grid plus a legend of the
+permissions each unit role grants.
+
+The shared `group_permissions()` helper (`chaotica_utils/utils`) powers the
+grouped, humanised permission lists used across all three views.
+
+---
+
 ## Global Roles
 
 Global roles determine what a user can do across the entire site. They are stored as Django Groups and managed via the `GlobalRoles` class in `chaotica_utils/enums.py`.
@@ -482,6 +519,17 @@ Global permissions are stored as standard Django Group permissions. Each global 
 ### Unit Roles
 
 Unit permissions use Django Guardian for object-level access. The `OrganisationalUnitRole` model stores a `ManyToManyField` to `Permission`, seeded from `UnitRoles.PERMISSIONS` via `sync_default_permissions()`.
+
+!!! note "Roles are matched to their defaults by name, not pk"
+    `sync_default_permissions()` (and the initial seeder in `jobtracker/apps.py`)
+    identify a role's code definition by its **name**, then look up the permission
+    set for the matching `UnitRoles` constant. Earlier versions matched on
+    `role.pk == UnitRoles constant` and indexed `PERMISSIONS[pk-1]`, which silently
+    assigned the *wrong* role's permissions whenever a role's database pk had
+    drifted from its constant (e.g. the Scheduler role losing `can_schedule_job`).
+    Name-based matching removes that coupling, so permission syncing is correct
+    regardless of the roles' database pks. A role whose name isn't a known default
+    (a custom role) is left untouched.
 
 When a user's membership changes (join, leave, role change), `OrganisationalUnit.sync_permissions()`:
 
