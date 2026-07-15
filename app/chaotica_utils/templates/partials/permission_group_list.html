@@ -1,0 +1,22 @@
+{% comment %}
+Renders a grouped permission list. Expects `grouped` = {group_key: [{"name", "codename"}]}.
+{% endcomment %}
+{% if grouped %}
+  <div class="row g-3">
+    {% for group_key, perms in grouped.items %}
+      <div class="col-md-6 col-lg-4">
+        <h6 class="fs-9 text-body-secondary text-uppercase mb-2">{{ group_key }}</h6>
+        <ul class="list-unstyled fs-9 mb-0">
+          {% for perm in perms %}
+            <li class="mb-1">
+              <span class="fas fa-check text-success me-1"></span>{{ perm.name }}
+              <span class="d-block text-body-tertiary fs-10 ms-3"><code>{{ perm.codename }}</code></span>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <p class="text-body-secondary fs-9 mb-0">No permissions granted.</p>
+{% endif %}

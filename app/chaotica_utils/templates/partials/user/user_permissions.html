@@ -1,0 +1,46 @@
+{% comment %}
+Read-only effective-permissions panel for a user profile (admin-only).
+Expects `user_permissions` = {"global_roles", "global_permissions", "units"}.
+{% endcomment %}
+<p class="text-body-secondary fs-9 mb-3">
+  Effective permissions for {{ user.get_full_name|default:user.email }}, resolved from
+  live state. Global roles apply site-wide; unit permissions are object-level and apply
+  only within that organisational unit.
+</p>
+
+<div class="card mb-3">
+  <div class="card-header border-translucent">
+    <h6 class="mb-0"><span class="fas fa-globe me-2"></span>Global Role Permissions</h6>
+    <div class="mt-2">
+      {% for role in user_permissions.global_roles %}
+        <span class="badge badge-phoenix badge-phoenix-{{ role.colour }}">{{ role.label }}</span>
+      {% empty %}
+        <span class="text-body-secondary fs-9">No global role assigned.</span>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="card-body">
+    {% include 'partials/permission_group_list.html' with grouped=user_permissions.global_permissions %}
+  </div>
+</div>
+
+<h6 class="mb-2"><span class="fas fa-sitemap me-2"></span>Unit Permissions</h6>
+{% for unit in user_permissions.units %}
+  <div class="card mb-3">
+    <div class="card-header border-translucent">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <h6 class="mb-0">{{ unit.unit.name }}</h6>
+        <div>
+          {% for role in unit.roles %}
+            {% include 'partials/unit/role_badge.html' with role=role %}
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      {% include 'partials/permission_group_list.html' with grouped=unit.permissions %}
+    </div>
+  </div>
+{% empty %}
+  <p class="text-body-secondary fs-9">Not a member of any organisational unit.</p>
+{% endfor %}

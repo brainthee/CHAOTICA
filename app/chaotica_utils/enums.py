@@ -1,4 +1,3 @@
-
 # Roles that apply across the whole site with no object specific permissions
 class GlobalRoles:
     ANON = 0
@@ -432,6 +431,24 @@ class UnitRoles:
                 allowed_add_roles.append(role[0])
         return allowed_add_roles
 
+    @staticmethod
+    def get_default_permissions_for_role(name):
+        """Return the default permission strings for a role identified by its
+        NAME (not pk).
+
+        Returns ``None`` when the name isn't a known default role, so callers can
+        leave custom/unknown roles untouched. Matching by name avoids the fragile
+        assumption that a role's database pk equals its ``UnitRoles`` constant
+        (which drifted in production and silently mis-assigned permissions)."""
+        for default in UnitRoles.DEFAULTS:
+            if default["name"] == name:
+                const = default["pk"]
+                for role_const, perms in UnitRoles.PERMISSIONS:
+                    if role_const == const:
+                        return perms
+                return []
+        return None
+
     PERMISSIONS = (
         (
             PENDING,
@@ -627,9 +644,7 @@ class LeaveRequestTypes:
         (SABBATICAL, "Sabbatical Leave"),
     )
 
-    FORM_CHOICES = (
-        (ANNUAL_LEAVE, "Annual leave"),
-    )
+    FORM_CHOICES = ((ANNUAL_LEAVE, "Annual leave"),)
 
     # In time we'll refactor this to be better but for now...
     COUNT_TOWARDS_LEAVE = [

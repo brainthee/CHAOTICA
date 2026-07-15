@@ -1,0 +1,56 @@
+{% comment %}
+Renders a role/permission matrix.
+Expects `matrix` = {"columns": [{"label", "colour"}], "groups": {group_key: [{"name", "codename", "cells": [bool]}]}}
+Optional `caption` string.
+{% endcomment %}
+<div class="card">
+  <div class="card-body p-0">
+    {% if caption %}
+      <p class="text-body-secondary fs-9 px-3 pt-3 mb-2">{{ caption }}</p>
+    {% endif %}
+    {% if matrix.columns %}
+      <div class="table-responsive">
+        <table class="table table-sm table-hover fs-9 mb-0 align-middle">
+          <thead>
+            <tr class="border-translucent">
+              <th scope="col" class="text-body-secondary ps-3" style="min-width: 16rem;">Permission</th>
+              {% for col in matrix.columns %}
+                <th scope="col" class="text-center">
+                  <span class="badge badge-phoenix badge-phoenix-{{ col.colour }}">{{ col.label }}</span>
+                </th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for group_key, rows in matrix.groups.items %}
+              <tr class="bg-body-secondary border-translucent">
+                <td class="fw-semibold text-body-emphasis ps-3" colspan="{{ matrix.columns|length|add:1 }}">
+                  {{ group_key }}
+                </td>
+              </tr>
+              {% for row in rows %}
+                <tr class="border-translucent">
+                  <td class="ps-3">
+                    {{ row.name }}
+                    <span class="d-block text-body-tertiary fs-10"><code>{{ row.codename }}</code></span>
+                  </td>
+                  {% for held in row.cells %}
+                    <td class="text-center">
+                      {% if held %}
+                        <span class="fas fa-check text-success" aria-label="granted"></span>
+                      {% else %}
+                        <span class="fas fa-minus text-body-tertiary opacity-50" aria-label="not granted"></span>
+                      {% endif %}
+                    </td>
+                  {% endfor %}
+                </tr>
+              {% endfor %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="text-body-secondary p-3 mb-0">No roles found.</p>
+    {% endif %}
+  </div>
+</div>

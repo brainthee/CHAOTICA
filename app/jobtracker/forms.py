@@ -298,6 +298,21 @@ class SchedulerFilter(forms.Form):
         ),
     )
 
+    projects = forms.ModelMultipleChoiceField(
+        required=False,
+        queryset=Project.objects.filter(),
+        widget=s2forms.ModelSelect2MultipleWidget(
+            attrs={
+                "class": "select2-widget",
+                "data-minimum-input-length": 3,
+                "data-ajax--url": "/autocomplete/projects",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
+            },
+            search_fields=["title__icontains"],
+        ),
+    )
+
     onboarded_to = forms.ModelMultipleChoiceField(
         label="Onboarded to Client",
         required=False,
@@ -383,6 +398,7 @@ class SchedulerFilter(forms.Form):
                 Row(
                     Field("jobs", style="width: 100%;"),
                     Field("phases", style="width: 100%;"),
+                    Field("projects", style="width: 100%;"),
                 ),
                 css_id="filterJob",
             ),
@@ -434,6 +450,7 @@ class SchedulerFilter(forms.Form):
             "services",
             "jobs",
             "phases",
+            "projects",
             "org_units",
             "org_unit_roles",
             "from_date",

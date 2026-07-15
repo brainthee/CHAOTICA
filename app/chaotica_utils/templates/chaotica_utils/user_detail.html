@@ -57,6 +57,11 @@
             <li class="nav-item me-3" role="presentation">
               <a class="nav-link text-nowrap" id="schedule_history-tab" data-bs-toggle="tab" href="#tab-schedule_history" role="tab" aria-controls="tab-schedule_history" aria-selected="false" tabindex="-1"><span class="fas fa-calendar me-2"></span> Schedule History</a>
             </li>
+            {% if can_view_permissions %}
+            <li class="nav-item me-3" role="presentation">
+              <a class="nav-link text-nowrap" id="permissions-tab" data-bs-toggle="tab" href="#tab-permissions" role="tab" aria-controls="tab-permissions" aria-selected="false" tabindex="-1"><span class="fas fa-user-shield me-2"></span> Permissions</a>
+            </li>
+            {% endif %}
           </ul>
         </div>
 
@@ -76,6 +81,11 @@
           <div class="tab-pane fade" id="tab-schedule_history" role="tabpanel" aria-labelledby="schedule_history-tab">
             {% include 'partials/users/user_schedule_history.html' %}
           </div>
+          {% if can_view_permissions %}
+          <div class="tab-pane fade" id="tab-permissions" role="tabpanel" aria-labelledby="permissions-tab">
+            {% include 'partials/user/user_permissions.html' %}
+          </div>
+          {% endif %}
         </div>
       </div>
     </div>
@@ -190,7 +200,7 @@
     })
     
     calendar.render()
-    
+
     var triggerTabList = [].slice.call(document.querySelectorAll('a#schedule-tab'))
     triggerTabList.forEach(function (triggerEl) {
       var tabTrigger = new bootstrap.Tab(triggerEl)
