@@ -706,7 +706,14 @@ if not os.environ.get("SQL_ENGINE", None):
         }
     }
 else:
+    sql_engine = os.environ.get("SQL_ENGINE", "django.db.backends.sqlite3")
     db_options = {}
+
+    # Use the full utf8mb4 charset on MySQL/MariaDB so 4-byte characters
+    # (e.g. emoji) can be stored. Plain "utf8" is an alias for utf8mb3 and
+    # silently rejects them. (Ignored by other backends, which reject the key.)
+    if "mysql" in sql_engine:
+        db_options["charset"] = "utf8mb4"
 
     if os.environ.get("RDS_TLS_USE", False):
         db_options["ssl"] = {
@@ -715,13 +722,12 @@ else:
 
     DATABASES = {
         "default": {
-            "ENGINE": os.environ.get("SQL_ENGINE", "django.db.backends.sqlite3"),
+            "ENGINE": sql_engine,
             "NAME": os.environ.get("RDS_DB_NAME", os.path.join(BASE_DIR, "db.sqlite3")),
             "USER": os.environ.get("RDS_USERNAME", "root"),
             "PASSWORD": os.environ.get("RDS_PASSWORD", "chaoticadb1"),
             "HOST": os.environ.get("RDS_HOSTNAME", "127.0.0.1"),
             "PORT": os.environ.get("RDS_PORT", "13306"),
-            "DEFAULT-CHARACTER-SET": "utf8",
             "OPTIONS": db_options,
         }
     }
