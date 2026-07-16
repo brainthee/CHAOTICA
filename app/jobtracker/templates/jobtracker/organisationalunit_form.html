@@ -26,7 +26,7 @@
 
 {% block content %}
   <div class="mt-3 g-2">
-    <form method="post">
+    <form method="post" enctype="multipart/form-data">
       {% csrf_token %}
       {{ form.media }}
 
@@ -54,8 +54,8 @@
               {{ form.name|as_crispy_field }}
             </div>
             <div class="col-5">
-              <h4 class="mb-3">Unit Lead</h4>
-              {{ form.lead|as_crispy_field }}
+              <h4 class="mb-3">Unit Leads</h4>
+              {{ form.leads|as_crispy_field }}
             </div>
           </div>
           <div class="row g-5">
@@ -92,6 +92,9 @@
                   <div class="row gx-3">
                     <div class="col-12 col-sm-6 col-xl-12">
                       <div class="mb-4">{{ form.businessHours_days|as_crispy_field }}</div>
+                    </div>
+                    <div class="col-12 col-sm-6 col-xl-12">
+                      <div class="mb-4">{{ form.businessHours_timezone|as_crispy_field }}</div>
                     </div>
                   </div>
                   <div class="row gx-3">

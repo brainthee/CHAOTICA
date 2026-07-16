@@ -8,7 +8,7 @@ The unit detail page is accessed from the unit list or by navigating to a specif
 
 - Unit name and description
 - Special requirements (if any)
-- Unit lead profile
+- Unit lead profiles (a unit can have one or more leads)
 - Action buttons: **Add Member**, **Pre-load Member**, **Import CSV** (all require `manage_members`), **Edit** (requires `change_organisationalunit`), **Join** (if not already a member)
 
 > **Add Member** adds an *existing* user; **Pre-load Member** and **Import CSV** let you onboard people who haven't logged in yet. See [Pre-loading & Importing Members](preloading_members.md).

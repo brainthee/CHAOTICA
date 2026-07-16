@@ -80,11 +80,10 @@ class OrganisationalUnit(models.Model):
     )
     special_requirements = BleachField(blank=True, null=True)
     history = HistoricalRecords()
-    lead = models.ForeignKey(
+    leads = models.ManyToManyField(
         settings.AUTH_USER_MODEL,
         related_name="units_lead",
-        null=True,
-        on_delete=models.DO_NOTHING,
+        blank=True,
     )
 
     class Meta:
