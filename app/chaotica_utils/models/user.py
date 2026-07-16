@@ -334,7 +334,9 @@ class User(AbstractUser):
             OrganisationalUnitMember,
         )
 
-        OrganisationalUnit.objects.filter(lead=user_to_merge).update(lead=self)
+        for unit in OrganisationalUnit.objects.filter(leads=user_to_merge):
+            unit.leads.remove(user_to_merge)
+            unit.leads.add(self)
         OrganisationalUnitMember.objects.filter(member=user_to_merge).update(
             member=self
         )

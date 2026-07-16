@@ -441,8 +441,7 @@ class Command(BaseCommand):
 
         if self.units and self.users:
             for unit in self.units:
-                unit.lead = random.choice(self.users)
-                unit.save()
+                unit.leads.set(random.sample(self.users, k=min(len(self.users), random.randint(1, 2))))
 
     def create_clients(self, count):
         self.stdout.write(f'Creating {count} clients...')

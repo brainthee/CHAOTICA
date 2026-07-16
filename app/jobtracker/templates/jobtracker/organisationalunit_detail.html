@@ -80,7 +80,11 @@
     </div>
 
     <div class="col-4">
-      {% include 'partials/users/user_profile_card.html' with userProfile=organisationalunit.lead %}
+      {% for lead in organisationalunit.leads.all %}
+        <div class="mb-3">
+          {% include 'partials/users/user_profile_card.html' with userProfile=lead %}
+        </div>
+      {% endfor %}
     </div>
   </div>
 

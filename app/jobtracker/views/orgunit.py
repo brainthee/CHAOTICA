@@ -86,7 +86,7 @@ class OrganisationalUnitDetailView(
     accept_global_perms = True
 
     def get_queryset(self):
-        return super().get_queryset().select_related("lead")
+        return super().get_queryset().prefetch_related("leads")
 
     def get_object(self, queryset=None):
         # Cache to avoid re-evaluating queryset + prefetches on every call
@@ -339,18 +339,20 @@ class OrganisationalUnitCreateView(
     fields = None
 
     def form_valid(self, form):
-        # ensure the lead has manager access
+        # ensure each lead has manager access
         super_response = super(OrganisationalUnitCreateView, self).form_valid(form)
         org_unit = form.save()
         management_role = OrganisationalUnitRole.objects.filter(
             manage_role=True
         ).first()
-        lead, _ = OrganisationalUnitMember.objects.get_or_create(
-            unit=org_unit, member=org_unit.lead
-        )
-        lead.roles.add(management_role)
-        # Also add self in case we're not the lead
-        if self.request.user is not org_unit.lead:
+        leads = list(org_unit.leads.all())
+        for lead_user in leads:
+            lead, _ = OrganisationalUnitMember.objects.get_or_create(
+                unit=org_unit, member=lead_user
+            )
+            lead.roles.add(management_role)
+        # Also add self in case we're not a lead
+        if self.request.user not in leads:
             r_user, _ = OrganisationalUnitMember.objects.get_or_create(
                 unit=org_unit, member=self.request.user
             )

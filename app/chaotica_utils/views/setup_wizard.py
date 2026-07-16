@@ -232,8 +232,8 @@ class SetupWizardView(View):
             org_unit = OrganisationalUnit.objects.create(
                 name=form.cleaned_data['name'],
                 description=form.cleaned_data.get('description', ''),
-                lead=user
             )
+            org_unit.leads.add(user)
 
             # Add the admin user as a member with manager role
             from chaotica_utils.enums import UnitRoles

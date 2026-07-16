@@ -2658,9 +2658,10 @@ class OrganisationalUnitForm(forms.ModelForm):
             },
         ),
     )
-    lead = forms.ModelChoiceField(
+    leads = forms.ModelMultipleChoiceField(
+        required=False,
         queryset=User.objects.filter(is_active=True),
-        widget=s2forms.ModelSelect2Widget(
+        widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
                 "class": "select2-widget",
                 "data-minimum-input-length": 3,
@@ -2690,14 +2691,14 @@ class OrganisationalUnitForm(forms.ModelForm):
         self.fields["name"].label = False
         self.fields["description"].label = False
         self.fields["special_requirements"].label = False
-        self.fields["lead"].label = False
+        self.fields["leads"].label = False
 
     class Meta:
         model = OrganisationalUnit
         fields = [
             "name",
             "description",
-            "lead",
+            "leads",
             "image",
             "special_requirements",
             "approval_required",
