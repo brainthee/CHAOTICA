@@ -168,6 +168,20 @@ CONSTANCE_CONFIG = {
     "JOB_ID_START": (2500, "Where to start Job IDs"),
     # 'PHASE_ID_START': (1, 'Where Phase IDs start'),
     "PROJECT_ID_START": (9000, "Where to start Project IDs"),
+    # Deliverable field labels — the underlying DB fields (linkDeliverable /
+    # linkReportData / linkTechData) are unchanged; these only relabel them in the UI.
+    "PHASE_LABEL_DELIVERABLE": (
+        "Link to Deliverable",
+        "UI label for the phase 'linkDeliverable' field",
+    ),
+    "PHASE_LABEL_REPORT_DATA": (
+        "Link to Report Data",
+        "UI label for the phase 'linkReportData' field",
+    ),
+    "PHASE_LABEL_TECH_DATA": (
+        "Link to Technical Data",
+        "UI label for the phase 'linkTechData' field",
+    ),
     # Notification Settings
     "PRECHECK_LATE_HOURS": (
         24,

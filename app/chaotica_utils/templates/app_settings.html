@@ -16,154 +16,206 @@
 {% endblock %}
 
 {% block content %}
-  <div class="row mb-5">
-    <div class="col-lg-3 g-2">
-      <div class="card position-sticky">
-        <ul class="nav flex-column bg-body-emphasis border-radius-lg p-3">
-          <li class="nav-item">
-            <a class="nav-link d-flex" data-scroll="" href="#app-settings">
-              <span class="fa fa-cog text-body-emphasis me-sm-2 fs-7"></span>
-              <span class="text-sm">App Settings</span>
-            </a>
-          </li>
-          <li class="nav-item pt-2">
-            <a class="nav-link d-flex" data-scroll="" href="#import">
-              <span class="fa fa-upload text-body-emphasis me-sm-2 fs-7"></span>
-              <span class="text-sm">Data Import</span>
-            </a>
-          </li>
-          <li class="nav-item pt-2">
-            <a class="nav-link d-flex" data-scroll="" href="#dump">
-              <span class="fa fa-download text-body-emphasis me-sm-2 fs-7"></span>
-              <span class="text-sm">Data Dump</span>
-            </a>
-          </li>
-          <li class="nav-item pt-2">
-            <a class="nav-link d-flex" data-scroll="" href="#dbrestore">
-              <span class="fa fa-database text-body-emphasis me-sm-2 fs-7"></span>
-              <span class="text-sm">Restore Database</span>
-            </a>
-          </li>
-          <li class="nav-item pt-2">
-            <a class="nav-link d-flex" data-scroll="" href="#mediarestore">
-              <span class="fa fa-file-zipper text-body-emphasis me-sm-2 fs-7"></span>
-              <span class="text-sm">Restore Media</span>
-            </a>
-          </li>
-          <li class="nav-item pt-2">
-            <a class="nav-link d-flex" data-scroll="" href="#health-api-key">
-              <span class="fa fa-key text-body-emphasis me-sm-2 fs-7"></span>
-              <span class="text-sm">Health Check API Key</span>
-            </a>
-          </li>
-        </ul>
+  <style>
+    /* Phoenix-style underline tabs for the settings form (crispy renders a plain
+       .nav-tabs; restyle into a clean, theme-aware underline strip). */
+    #settings-tabs.nav-tabs {
+      border-bottom: 1px solid var(--phoenix-border-color-translucent);
+      gap: 0.25rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+    #settings-tabs.nav-tabs .nav-link {
+      border: 0;
+      border-bottom: 2px solid transparent;
+      border-radius: 0;
+      margin-bottom: -1px;
+      padding: 0.5rem 0.9rem;
+      font-weight: 600;
+      color: var(--phoenix-body-secondary-color);
+      transition: color 0.15s ease, border-color 0.15s ease;
+    }
+    #settings-tabs.nav-tabs .nav-link:hover {
+      color: var(--phoenix-primary-text-emphasis);
+      border-bottom-color: var(--phoenix-border-color);
+      background-color: transparent;
+    }
+    #settings-tabs.nav-tabs .nav-link.active {
+      color: var(--phoenix-primary);
+      background-color: transparent;
+      border-bottom-color: var(--phoenix-primary);
+    }
+    /* Left section nav: quieten idle pills, brand the active one. */
+    #app-settings-nav .nav-link {
+      color: var(--phoenix-body-color);
+      border-radius: 0.375rem;
+      transition: background-color 0.15s ease, color 0.15s ease;
+    }
+    #app-settings-nav .nav-link:hover {
+      background-color: var(--phoenix-secondary-bg);
+    }
+    #app-settings-nav .nav-link.active {
+      background-color: var(--phoenix-primary);
+      color: #fff;
+    }
+    #app-settings-nav .nav-link.active .text-body-tertiary { color: rgba(255, 255, 255, 0.75) !important; }
+  </style>
+  <div class="row g-4 mb-6">
+
+    {# ─────────────────────────  Section navigation  ───────────────────────── #}
+    <div class="col-12 col-lg-3">
+      <div class="position-sticky" style="top: 5rem;">
+        <div class="card shadow-none border border-translucent">
+          <div class="card-body p-3" id="app-settings-nav">
+            <p class="text-uppercase text-body-tertiary fw-bold fs-10 mb-2 ls-1">Configuration</p>
+            <ul class="nav flex-column nav-pills mb-3">
+              <li class="nav-item">
+                <a class="nav-link d-flex align-items-center py-2 px-3" data-scroll href="#app-settings">
+                  <span class="fa-solid fa-sliders me-2 text-body-tertiary"></span>
+                  <span class="fs-9">Application Settings</span>
+                </a>
+              </li>
+            </ul>
+            <p class="text-uppercase text-body-tertiary fw-bold fs-10 mb-2 ls-1">Administration</p>
+            <ul class="nav flex-column nav-pills">
+              <li class="nav-item">
+                <a class="nav-link d-flex align-items-center py-2 px-3" data-scroll href="#import">
+                  <span class="fa-solid fa-file-import me-2 text-body-tertiary"></span>
+                  <span class="fs-9">Data Import</span>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link d-flex align-items-center py-2 px-3" data-scroll href="#dump">
+                  <span class="fa-solid fa-cloud-arrow-down me-2 text-body-tertiary"></span>
+                  <span class="fs-9">Backup &amp; Export</span>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link d-flex align-items-center py-2 px-3" data-scroll href="#dbrestore">
+                  <span class="fa-solid fa-database me-2 text-body-tertiary"></span>
+                  <span class="fs-9">Restore Database</span>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link d-flex align-items-center py-2 px-3" data-scroll href="#mediarestore">
+                  <span class="fa-solid fa-file-zipper me-2 text-body-tertiary"></span>
+                  <span class="fs-9">Restore Media</span>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link d-flex align-items-center py-2 px-3" data-scroll href="#health-api-key">
+                  <span class="fa-solid fa-key me-2 text-body-tertiary"></span>
+                  <span class="fs-9">Health Check API Key</span>
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
-    <div class="col-lg-9 g-2">
-      <div class="card" id="app-settings">
+
+    {# ─────────────────────────────  Content  ──────────────────────────────── #}
+    <div class="col-12 col-lg-9">
+
+      {# ── Application settings (tabbed constance form) ── #}
+      <div class="card shadow-none border border-translucent mb-4" id="app-settings">
         <form method="post" action="{{ request.get_full_path }}" enctype="multipart/form-data">
           {% csrf_token %}
-          <div class="card-header">
-            <div class="row">
-              <div class="col-auto my-auto">
-                <div class="h-100">
-                  <h5>Application Settings</h5>
-                  <span class="text-700 lh-sm mb-0">Site-wide configuration options</span>
-                </div>
-              </div>
-              <div class="col-lg-4 col-md-6 my-sm-auto text-end ms-sm-auto me-sm-0 mx-auto mt-3">
-                <button type="submit" class="btn btn-outline-success ms-auto">Save</button>
-              </div>
+          <div class="card-header border-bottom border-translucent d-flex align-items-center gap-3">
+            <div class="d-flex align-items-center justify-content-center bg-primary-subtle text-primary rounded-3 flex-shrink-0" style="width:2.5rem;height:2.5rem;">
+              <span class="fa-solid fa-sliders"></span>
+            </div>
+            <div class="flex-1">
+              <h4 class="mb-0">Application Settings</h4>
+              <p class="mb-0 text-body-secondary fs-9">Site-wide configuration. Changes apply immediately for everyone.</p>
             </div>
           </div>
           <div class="card-body">
             {% crispy settings_form %}
           </div>
+          <div class="card-footer border-top border-translucent d-flex justify-content-end position-sticky bottom-0 bg-body-emphasis" style="z-index:2;">
+            <button type="submit" class="btn btn-primary px-5">
+              <span class="fa-solid fa-floppy-disk me-2"></span>Save changes
+            </button>
+          </div>
         </form>
       </div>
 
-      <div class="card mt-4" id="import">
-        <div class="card-header">
-          <h5>Data Import</h5>
-          <span class="text-700 lh-sm mb-0">Import JSON or CSV data</span>
+      {# ── Data import ── #}
+      <div class="card shadow-none border border-translucent mb-4" id="import">
+        <div class="card-header border-bottom border-translucent d-flex align-items-center gap-3">
+          <div class="d-flex align-items-center justify-content-center bg-info-subtle text-info rounded-3 flex-shrink-0" style="width:2.5rem;height:2.5rem;">
+            <span class="fa-solid fa-file-import"></span>
+          </div>
+          <div class="flex-1">
+            <h4 class="mb-0">Data Import</h4>
+            <p class="mb-0 text-body-secondary fs-9">Import JSON or CSV data</p>
+          </div>
         </div>
         <div class="card-body">
-          <div class="alert mt-3 alert-phoenix-warning" role="alert">
-            Please review the code in <code>/app/chaotica_utils/impex/</code> before using this. It's very alpha quality and very specific to early needs
+          <div class="alert alert-subtle-warning d-flex align-items-center" role="alert">
+            <span class="fa-solid fa-triangle-exclamation me-2"></span>
+            <div>Review the code in <code>/app/chaotica_utils/impex/</code> before using this — it's alpha quality and specific to early needs.</div>
           </div>
           <form method="post" action="{% url 'settings_import_data' %}" enctype="multipart/form-data">
             {% csrf_token %}
             {% crispy import_form %}
           </form>
         </div>
-        <div class="card-footer">
-          <p class="card-text">
-            <small class="text-muted">Blank CSV templates can be found here: <a href="{% url 'csv_template_users' %}">Users</a></small>
-          </p>
+        <div class="card-footer border-top border-translucent">
+          <span class="text-body-secondary fs-9">Blank CSV templates: <a href="{% url 'csv_template_users' %}">Users</a></span>
         </div>
       </div>
 
-      <div class="card mt-4" id="dump">
-        <div class="card-header">
-          <h5>Data Export</h5>
-          <span class="text-700 lh-sm mb-0">Export all site data to JSON</span>
+      {# ── Backup & export ── #}
+      <div class="card shadow-none border border-translucent mb-4" id="dump">
+        <div class="card-header border-bottom border-translucent d-flex align-items-center gap-3">
+          <div class="d-flex align-items-center justify-content-center bg-success-subtle text-success rounded-3 flex-shrink-0" style="width:2.5rem;height:2.5rem;">
+            <span class="fa-solid fa-cloud-arrow-down"></span>
+          </div>
+          <div class="flex-1">
+            <h4 class="mb-0">Backup &amp; Export</h4>
+            <p class="mb-0 text-body-secondary fs-9">Create and download backups of the database and media files</p>
+          </div>
         </div>
         <div class="card-body">
-
-          <div class="row gy-5">
-            <div class="col-md-6 ">
-              <div>
-                <div class="mb-3">
-                  <div class="d-flex align-items-center">
-                    <h5 class="ms-2 text-body-emphasis mb-0">Database</h5>
-                  </div>
+          <div class="row g-4">
+            <div class="col-12 col-md-6">
+              <div class="border border-translucent rounded-3 bg-body-emphasis p-3 h-100">
+                <h6 class="text-body-emphasis mb-1"><span class="fa-solid fa-database me-2 text-body-tertiary"></span>Database</h6>
+                <p class="text-body-tertiary fs-9 mb-3">Full dump of all application data.</p>
+                <div id="db-status" class="mb-3"></div>
+                <div class="d-flex gap-2">
+                  <button class="btn btn-phoenix-primary btn-sm" id="db-create" onclick="handleBackup('db', 'new')">Create Backup</button>
+                  <button class="btn btn-phoenix-success btn-sm" id="db-download" style="display:none;" onclick="handleBackup('db', 'download')">
+                    <span class="fa-solid fa-download me-1"></span>Download
+                  </button>
                 </div>
-                <p class="lh-sm mb-0 text-body-tertiary">
-                  
-                  <div id="db-status" class="alert alert-phoenix-info"></div>
-                        
-                  <div class="">
-                      <button class="btn btn-primary" id="db-create" onclick="handleBackup('db', 'new')">
-                          Create Backup
-                      </button>
-                      <button class="btn btn-success" id="db-download" style="display:none;" 
-                              onclick="handleBackup('db', 'download')">
-                          Download
-                      </button>
-                  </div>              
-                </p>
               </div>
             </div>
-            <div class="col-md-6">
-              <div class="mb-3">
-                <div class="d-flex align-items-center">
-                  <h5 class="ms-2 mb-0">Static/Media Files</h5>
+            <div class="col-12 col-md-6">
+              <div class="border border-translucent rounded-3 bg-body-emphasis p-3 h-100">
+                <h6 class="text-body-emphasis mb-1"><span class="fa-solid fa-photo-film me-2 text-body-tertiary"></span>Static / Media Files</h6>
+                <p class="text-body-tertiary fs-9 mb-3">User uploads and generated media.</p>
+                <div id="media-status" class="mb-3"></div>
+                <div class="d-flex gap-2">
+                  <button class="btn btn-phoenix-primary btn-sm" id="media-create" onclick="handleBackup('media', 'new')">Create Backup</button>
+                  <button class="btn btn-phoenix-success btn-sm" id="media-download" style="display:none;" onclick="handleBackup('media', 'download')">
+                    <span class="fa-solid fa-download me-1"></span>Download
+                  </button>
                 </div>
               </div>
-              <p class="lh-sm mb-0 text-body-tertiary">
-
-                <div id="media-status" class="alert alert-phoenix-info"></div>
-                <div class="">
-                    <button class="btn btn-primary" id="media-create" onclick="handleBackup('media', 'new')">
-                        Create Backup
-                    </button>
-                    <button class="btn btn-success" id="media-download" style="display:none;" 
-                            onclick="handleBackup('media', 'download')">
-                        Download
-                    </button>
-                </div>
-              </p>
             </div>
           </div>
 
           <script>
             const intervals = {};
-        
+
             async function handleBackup(type, action) {
-                const url = type === 'db' ? 
-                    '{% url "download_db_backup" %}' : 
+                const url = type === 'db' ?
+                    '{% url "download_db_backup" %}' :
                     '{% url "download_media_backup" %}';
-                
+
                 if (action === 'download') {
                     window.location.href = `${url}?download=true`;
                   // Reset after download
@@ -172,29 +224,29 @@
                   }, 1000);
                   return;
                 }
-                
+
                 if (action === 'new') {
                   // Disable the create button
                   const createBtn = document.getElementById(`${type}-create`);
                   createBtn.disabled = true;
-                  
+
                   const response = await fetch(`${url}?new=true`);
                   const data = await response.json();
                   updateStatus(type, data);
                   startPolling(type);
                 }
             }
-            
+
             async function checkStatus(type) {
-                const url = type === 'db' ? 
-                    '{% url "download_db_backup" %}' : 
+                const url = type === 'db' ?
+                    '{% url "download_db_backup" %}' :
                     '{% url "download_media_backup" %}';
-                
+
                 try {
                     const response = await fetch(url);
                     const data = await response.json();
                     updateStatus(type, data);
-                    
+
                     // Stop polling if not in progress
                     if (!['pending', 'running', 'queued'].includes(data.status)) {
                         stopPolling(type);
@@ -204,50 +256,50 @@
                     stopPolling(type);
                 }
             }
-            
+
             function updateStatus(type, data) {
               const statusDiv = document.getElementById(`${type}-status`);
               const downloadBtn = document.getElementById(`${type}-download`);
               const createBtn = document.getElementById(`${type}-create`);
-                
+
               let statusHTML = '';
-              let statusClass = 'status';
-              
-              switch(data.status) {                      
+              let alertClass = 'alert py-2 px-3 mb-0 fs-9';
+
+              switch(data.status) {
                   case 'queued':
                   case 'pending':
-                      statusClass += ' pending';
-                      statusHTML = `⏳ In queue (position ${data.position || 1})`;
+                      alertClass += ' alert-subtle-secondary';
+                      statusHTML = `<span class="fa-solid fa-hourglass-half me-2"></span>In queue (position ${data.position || 1})`;
                       downloadBtn.style.display = 'none';
                       createBtn.style.display = 'none';
                       break;
-                      
+
                   case 'running':
-                      statusClass += ' running';
-                      statusHTML = `🔄 Creating backup...`;
+                      alertClass += ' alert-subtle-info';
+                      statusHTML = `<span class="fa-solid fa-spinner fa-spin me-2"></span>Creating backup...`;
                       downloadBtn.style.display = 'none';
                       createBtn.style.display = 'none';
                       break;
-                      
+
                   case 'ready':
                   case 'complete':
-                      statusClass += ' ready';
-                      statusHTML = `✅ Ready (${data.file_size_mb} MB)`;
+                      alertClass += ' alert-subtle-success';
+                      statusHTML = `<span class="fa-solid fa-circle-check me-2"></span>Ready (${data.file_size_mb} MB)`;
                       downloadBtn.style.display = 'inline-block';
                       createBtn.style.display = 'inline-block';
                       createBtn.disabled = false;
                       createBtn.textContent = 'Create New Backup';
                       break;
-                      
+
                   case 'failed':
-                      statusClass += ' failed';
-                      statusHTML = `❌ Failed: ${data.error || 'Unknown error'}`;
+                      alertClass += ' alert-subtle-danger';
+                      statusHTML = `<span class="fa-solid fa-circle-xmark me-2"></span>Failed: ${data.error || 'Unknown error'}`;
                       downloadBtn.style.display = 'none';
                       createBtn.style.display = 'inline-block';
                       createBtn.disabled = false;
                       createBtn.textContent = 'Retry Backup';
                       break;
-                      
+
                   case 'not_found':
                   case 'expired':
                       statusHTML = data.message || 'No active backup';
@@ -256,7 +308,7 @@
                       createBtn.disabled = false;
                       createBtn.textContent = 'Create Backup';
                       break;
-                      
+
                   case 'no_job':
                   default:
                       statusHTML = 'No active backup';
@@ -266,53 +318,55 @@
                       createBtn.textContent = 'Create Backup';
                       break;
               }
-              
+
               if (statusHTML) {
-                  statusDiv.innerHTML = `<div class="${statusClass}">${statusHTML}</div>`;
+                  statusDiv.innerHTML = `<div class="${alertClass}">${statusHTML}</div>`;
               } else {
                   statusDiv.innerHTML = '';
               }
             }
-            
+
             function startPolling(type) {
                 if (intervals[type]) return;
                 intervals[type] = setInterval(() => checkStatus(type), 3000);
             }
-            
+
             function stopPolling(type) {
                 if (intervals[type]) {
                     clearInterval(intervals[type]);
                     delete intervals[type];
                 }
             }
-            
+
             // Check status on load (without creating new jobs)
             window.addEventListener('DOMContentLoaded', () => {
                 checkStatus('db');
                 checkStatus('media');
             });
           </script>
-
         </div>
       </div>
 
-      <div class="card mt-4" id="dbrestore">
-        <div class="card-header">
-          <h5>Restore Database</h5>
-          <span class="text-700 lh-sm mb-0">Options to restore the database</span>
+      {# ── Restore database ── #}
+      <div class="card shadow-none border border-translucent mb-4" id="dbrestore">
+        <div class="card-header border-bottom border-translucent d-flex align-items-center gap-3">
+          <div class="d-flex align-items-center justify-content-center bg-warning-subtle text-warning rounded-3 flex-shrink-0" style="width:2.5rem;height:2.5rem;">
+            <span class="fa-solid fa-database"></span>
+          </div>
+          <div class="flex-1">
+            <h4 class="mb-0">Restore Database</h4>
+            <p class="mb-0 text-body-secondary fs-9">Upload a backup to restore the database</p>
+          </div>
         </div>
         <div class="card-body">
-          
           <form method="post" id="db-restore-form" action="{% url 'restore_db_backup' %}" enctype="multipart/form-data">
             {% csrf_token %}
             <div id="db-restore-message"></div>
             {% crispy dbrestore_form %}
-        
-            <div id="db-confirmation-section" class="alert alert-phoenix-warning d-none">
-                    <strong>⚠️ Warning:</strong> This action will permanently overwrite the entire database!
-                <label>
-                    I understand this will overwrite the current database
-                </label>
+
+            <div id="db-confirmation-section" class="alert alert-subtle-warning d-none">
+              <strong><span class="fa-solid fa-triangle-exclamation me-1"></span> Warning:</strong> This action will permanently overwrite the entire database.
+              <label class="d-block mt-1">I understand this will overwrite the current database</label>
             </div>
           </form>
 
@@ -322,18 +376,18 @@
               const confirmSection = document.getElementById('db-confirmation-section');
               const submitBtn = document.getElementById('db-restore-submit-btn');
               const confirmedRestore = document.getElementById('id_db_confirmed_restore');
-              
+
               form.addEventListener('submit', async (e) => {
                   e.preventDefault();
-        
+
                   // Show processing message
-                  messageDiv.innerHTML = '<div class="alert alert-phoenix-info">Processing...</div>';
-                  
+                  messageDiv.innerHTML = '<div class="alert alert-subtle-info">Processing...</div>';
+
                   // Disable submit button to prevent double submission
                   submitBtn.disabled = true;
-                  
+
                   const formData = new FormData(form);
-                  
+
                   try {
                       const response = await fetch('{% url "restore_db_backup" %}', {
                           method: 'POST',
@@ -342,17 +396,17 @@
                               'X-CSRFToken': '{{ csrf_token }}'
                           }
                       });
-                      
+
                       const data = await response.json();
-                      
+
                       if (data.status === 'confirmation_required') {
                           // Show confirmation step
                           confirmSection.classList.remove('d-none');
                           submitBtn.textContent = 'Restore Database';
                           confirmedRestore.value = 'true';
-                          
+
                           messageDiv.innerHTML = `
-                              <div class="alert alert-phoenix-secondary">
+                              <div class="alert alert-subtle-secondary">
                                   <strong>File verified:</strong> ${data.details.filename} (${data.details.size_mb} MB)<br>
                                   ${data.details.warning}
                               </div>
@@ -360,7 +414,7 @@
                           submitBtn.disabled = false;
 
                       } else if (data.status === 'success') {
-                          messageDiv.innerHTML = `<div class="alert alert-phoenix-success">${data.message}</div>`;
+                          messageDiv.innerHTML = `<div class="alert alert-subtle-success">${data.message}</div>`;
                           form.reset();
                           confirmSection.classList.add('d-none');
                           submitBtn.textContent = 'Upload & Verify';
@@ -373,36 +427,38 @@
                                   .map(([field, errors]) => `${field}: ${errors.join(', ')}`)
                                   .join('<br>');
                           }
-                          messageDiv.innerHTML = `<div class="alert alert-phoenix-error">${errorMsg}</div>`;
+                          messageDiv.innerHTML = `<div class="alert alert-subtle-danger">${errorMsg}</div>`;
                           submitBtn.disabled = false;
                       }
                   } catch (error) {
-                      messageDiv.innerHTML = `<div class="alert alert-phoenix-error">Error: ${error.message}</div>`;
+                      messageDiv.innerHTML = `<div class="alert alert-subtle-danger">Error: ${error.message}</div>`;
                       submitBtn.disabled = false;
                   }
               });
           </script>
-
         </div>
       </div>
 
-      <div class="card mt-4" id="mediarestore">
-        <div class="card-header">
-          <h5>Restore Media Files</h5>
-          <span class="text-700 lh-sm mb-0">Options to restore the media files</span>
+      {# ── Restore media ── #}
+      <div class="card shadow-none border border-translucent mb-4" id="mediarestore">
+        <div class="card-header border-bottom border-translucent d-flex align-items-center gap-3">
+          <div class="d-flex align-items-center justify-content-center bg-warning-subtle text-warning rounded-3 flex-shrink-0" style="width:2.5rem;height:2.5rem;">
+            <span class="fa-solid fa-file-zipper"></span>
+          </div>
+          <div class="flex-1">
+            <h4 class="mb-0">Restore Media Files</h4>
+            <p class="mb-0 text-body-secondary fs-9">Upload a backup to restore uploaded media</p>
+          </div>
         </div>
         <div class="card-body">
-          
           <form method="post" id="media-restore-form" action="{% url 'restore_media_backup' %}" enctype="multipart/form-data">
             {% csrf_token %}
             <div id="media-restore-message"></div>
             {% crispy mediarestore_form %}
-        
-            <div id="media-confirmation-section" class="alert alert-phoenix-warning d-none">
-                    <strong>⚠️ Warning:</strong> This action will permanently overwrite the entire media storage!
-                <label>
-                    I understand this will overwrite the current media files
-                </label>
+
+            <div id="media-confirmation-section" class="alert alert-subtle-warning d-none">
+              <strong><span class="fa-solid fa-triangle-exclamation me-1"></span> Warning:</strong> This action will permanently overwrite the entire media storage.
+              <label class="d-block mt-1">I understand this will overwrite the current media files</label>
             </div>
           </form>
 
@@ -412,18 +468,18 @@
               const media_confirmSection = document.getElementById('media-confirmation-section');
               const media_submitBtn = document.getElementById('media-restore-submit-btn');
               const media_confirmedRestore = document.getElementById('id_media_confirmed_restore');
-              
+
               media_form.addEventListener('submit', async (e) => {
                   e.preventDefault();
-        
+
                   // Show processing message
-                  media_messageDiv.innerHTML = '<div class="alert alert-phoenix-info">Processing...</div>';
-                  
+                  media_messageDiv.innerHTML = '<div class="alert alert-subtle-info">Processing...</div>';
+
                   // Disable submit button to prevent double submission
                   media_submitBtn.disabled = true;
-                  
+
                   const media_formData = new FormData(media_form);
-                  
+
                   try {
                       const media_response = await fetch('{% url "restore_media_backup" %}', {
                           method: 'POST',
@@ -432,17 +488,17 @@
                               'X-CSRFToken': '{{ csrf_token }}'
                           }
                       });
-                      
+
                       const media_data = await media_response.json();
-                      
+
                       if (media_data.status === 'confirmation_required') {
                           // Show confirmation step
                           media_confirmSection.classList.remove('d-none');
                           media_submitBtn.textContent = 'Restore Media Files';
                           media_confirmedRestore.value = 'true';
-                          
+
                           media_messageDiv.innerHTML = `
-                              <div class="alert alert-phoenix-secondary">
+                              <div class="alert alert-subtle-secondary">
                                   <strong>File verified:</strong> ${media_data.details.filename} (${media_data.details.size_mb} MB)<br>
                                   ${media_data.details.warning}
                               </div>
@@ -450,7 +506,7 @@
                           media_submitBtn.disabled = false;
 
                       } else if (media_data.status === 'success') {
-                          media_messageDiv.innerHTML = `<div class="alert alert-phoenix-success">${media_data.message}</div>`;
+                          media_messageDiv.innerHTML = `<div class="alert alert-subtle-success">${media_data.message}</div>`;
                           form.reset();
                           media_confirmSection.classList.add('d-none');
                           media_submitBtn.textContent = 'Upload & Verify';
@@ -463,23 +519,28 @@
                                   .map(([field, errors]) => `${field}: ${errors.join(', ')}`)
                                   .join('<br>');
                           }
-                          media_messageDiv.innerHTML = `<div class="alert alert-phoenix-error">${errorMsg}</div>`;
+                          media_messageDiv.innerHTML = `<div class="alert alert-subtle-danger">${errorMsg}</div>`;
                           media_submitBtn.disabled = false;
                       }
                   } catch (error) {
-                      media_messageDiv.innerHTML = `<div class="alert alert-phoenix-error">Error: ${error.message}</div>`;
+                      media_messageDiv.innerHTML = `<div class="alert alert-subtle-danger">Error: ${error.message}</div>`;
                       media_submitBtn.disabled = false;
                   }
               });
           </script>
-
         </div>
       </div>
 
-      <div class="card mt-4" id="health-api-key">
-        <div class="card-header">
-          <h5>Health Check API Key</h5>
-          <span class="text-700 lh-sm mb-0">Manage your API key for accessing the health check endpoint</span>
+      {# ── Health check API key ── #}
+      <div class="card shadow-none border border-translucent mb-4" id="health-api-key">
+        <div class="card-header border-bottom border-translucent d-flex align-items-center gap-3">
+          <div class="d-flex align-items-center justify-content-center bg-secondary-subtle text-body-emphasis rounded-3 flex-shrink-0" style="width:2.5rem;height:2.5rem;">
+            <span class="fa-solid fa-key"></span>
+          </div>
+          <div class="flex-1">
+            <h4 class="mb-0">Health Check API Key</h4>
+            <p class="mb-0 text-body-secondary fs-9">Your key for the <code>/health/</code> endpoint</p>
+          </div>
         </div>
         <div class="card-body">
           {% if user.is_superuser or user.is_staff %}
@@ -487,30 +548,26 @@
               <div class="mb-3">
                 <label class="form-label">Your API Key</label>
                 <div class="input-group">
-                  <input type="text" class="form-control font-monospace" id="api-key-value" readonly value="{{ api_key }}" style="background-color: #f8f9fa;">
-                  <button class="btn btn-outline-secondary" type="button" onclick="copyApiKey()">
-                    <i class="fa fa-copy"></i> Copy
+                  <input type="text" class="form-control font-monospace" id="api-key-value" readonly value="{{ api_key }}">
+                  <button class="btn btn-phoenix-secondary" type="button" onclick="copyApiKey()">
+                    <span class="fa-solid fa-copy me-1"></span> Copy
                   </button>
                 </div>
-                <div class="form-text">Use this key with the parameter <code>?api_key=YOUR_KEY</code> when accessing <code>/health/</code></div>
+                <div class="form-text">Use with <code>?api_key=YOUR_KEY</code> when accessing <code>/health/</code></div>
               </div>
 
               <div class="mb-3">
-                <label class="form-label">Last Used</label>
-                <p class="text-muted">
-                  {% if api_key_last_used %}
-                    {{ api_key_last_used|date:"Y-m-d H:i:s" }}
-                  {% else %}
-                    Never
-                  {% endif %}
-                </p>
+                <label class="form-label d-block">Last Used</label>
+                <span class="badge badge-phoenix badge-phoenix-secondary">
+                  {% if api_key_last_used %}{{ api_key_last_used|date:"Y-m-d H:i:s" }}{% else %}Never{% endif %}
+                </span>
               </div>
 
-              <div class="mb-3">
-                <button type="button" class="btn btn-warning" onclick="regenerateApiKey()">
-                  <i class="fa fa-refresh"></i> Regenerate Key
+              <div>
+                <button type="button" class="btn btn-phoenix-warning btn-sm" onclick="regenerateApiKey()">
+                  <span class="fa-solid fa-rotate me-1"></span> Regenerate Key
                 </button>
-                <div class="form-text text-warning">Warning: Regenerating will invalidate the current key</div>
+                <div class="form-text text-warning">Regenerating will invalidate the current key.</div>
               </div>
             </div>
 
@@ -524,7 +581,7 @@
                 navigator.clipboard.writeText(apiKeyInput.value);
 
                 const messageDiv = document.getElementById('api-key-message');
-                messageDiv.innerHTML = '<div class="alert alert-success">API key copied to clipboard!</div>';
+                messageDiv.innerHTML = '<div class="alert alert-subtle-success py-2 px-3 mb-0">API key copied to clipboard!</div>';
                 setTimeout(() => {
                   messageDiv.innerHTML = '';
                 }, 3000);
@@ -549,7 +606,7 @@
                     document.getElementById('api-key-value').value = data.new_key;
 
                     const messageDiv = document.getElementById('api-key-message');
-                    messageDiv.innerHTML = '<div class="alert alert-success">API key regenerated successfully!</div>';
+                    messageDiv.innerHTML = '<div class="alert alert-subtle-success py-2 px-3 mb-0">API key regenerated successfully!</div>';
                     setTimeout(() => {
                       messageDiv.innerHTML = '';
                     }, 5000);
@@ -558,12 +615,12 @@
                   }
                 } catch (error) {
                   const messageDiv = document.getElementById('api-key-message');
-                  messageDiv.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+                  messageDiv.innerHTML = `<div class="alert alert-subtle-danger py-2 px-3 mb-0">Error: ${error.message}</div>`;
                 }
               }
             </script>
           {% else %}
-            <div class="alert alert-warning">
+            <div class="alert alert-subtle-warning mb-0">
               You need to be a staff member or superuser to manage API keys.
             </div>
           {% endif %}

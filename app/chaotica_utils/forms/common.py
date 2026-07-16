@@ -7,9 +7,11 @@ from ..enums import LeaveRequestTypes
 from crispy_forms.helper import FormHelper
 from crispy_forms.bootstrap import (
     StrictButton,
+    TabHolder,
+    Tab,
 )
 from crispy_forms.layout import Layout, Row, Column, Field, Div, HTML
-from crispy_bootstrap5.bootstrap5 import FloatingField
+from crispy_bootstrap5.bootstrap5 import FloatingField, Switch
 from django_countries.widgets import CountrySelectWidget
 from django_countries.fields import CountryField
 from constance.admin import ConstanceForm
@@ -327,6 +329,14 @@ class HolidayImportLibForm(forms.Form):
 
 
 class CustomConfigForm(ConstanceForm):
+    """Site-wide configuration, grouped into tabs and rendered with widgets that
+    suit each value's data type (booleans as switches, colours/choices with their
+    native widgets, everything else as a floating text/number field).
+
+    Every ``CONSTANCE_CONFIG`` key is explicitly placed in a tab below. Anything
+    not placed (e.g. a newly-added key) is caught by ``_used`` tracking and appended
+    to a fallback "Other" tab, so a setting can never silently disappear from the UI.
+    """
 
     def __init__(self, *args, **kwargs):
         super(CustomConfigForm, self).__init__(*args, **kwargs)
@@ -336,171 +346,250 @@ class CustomConfigForm(ConstanceForm):
             if field in settings.CONSTANCE_CONFIG:
                 self.fields[field].help_text = settings.CONSTANCE_CONFIG[field][1]
 
-        def section(title, *fields):
-            """Wrap fields in a bordered section with a heading."""
+        # Track which keys we've laid out so none are missed (see _other_tab).
+        self._used = set()
+
+        def fld(name):
+            """Render one config key with the widget best matching its data type."""
+            self._used.add(name)
+            cfg = settings.CONSTANCE_CONFIG.get(name)
+            default = cfg[0] if cfg else None
+            custom_type = cfg[2] if cfg and len(cfg) > 2 else None
+            if isinstance(default, bool):
+                # Toggle switch for on/off flags.
+                return Switch(name)
+            if custom_type:
+                # Colour picker / choice select — keep the field's native widget.
+                return Field(name)
+            # Numbers and short strings read best as floating-label inputs.
+            return FloatingField(name)
+
+        def sect(title, *names, help=None):
+            """A bordered, titled card of related settings."""
+            body = [HTML(f'<h6 class="text-body-emphasis mb-1">{title}</h6>')]
+            body.append(
+                HTML(f'<p class="text-body-tertiary fs-9 mb-3">{help}</p>')
+                if help
+                else HTML('<div class="mb-3"></div>')
+            )
+            body.extend(fld(n) for n in names)
             return Div(
-                HTML(f'<h5 class="mb-3 text-body-emphasis">{title}</h5>'),
-                *fields,
-                css_class="border rounded p-3 mb-4",
+                *body,
+                css_class="border border-translucent rounded-3 bg-body-emphasis p-3 mb-3",
             )
 
-        def fg(field_name, floating=True):
-            """Shorthand for a form group div."""
-            inner = FloatingField(field_name) if floating else Field(field_name)
-            return Div(inner, css_class="input-group input-group-dynamic")
+        def col(*sections):
+            return Column(*sections, css_class="col-12 col-md-6 col-xl-4")
 
-        self.helper.layout = Layout(
-            # ── Work & Scheduling ──
-            Row(
-                Column(
-                    section(
-                        "Work Settings",
-                        fg("DEFAULT_HOURS_IN_DAY"),
-                        fg("DEFAULT_WORKING_DAYS"),
-                    ),
-                    section(
-                        "Leave",
-                        fg("LEAVE_DAYS_NOTICE"),
-                        fg("LEAVE_HISTORY_MONTHS"),
-                        fg("LEAVE_ENFORCE_LIMIT", floating=False),
-                    ),
-                ),
-                Column(
-                    section(
-                        "Phase Deadlines",
-                        fg("DAYS_TO_TQA"),
-                        fg("DAYS_TO_PQA"),
-                        fg("DAYS_TO_DELIVERY"),
-                    ),
-                    section(
-                        "Late Notification Intervals",
-                        fg("PRECHECK_LATE_HOURS"),
-                        fg("TQA_LATE_HOURS"),
-                        fg("PQA_LATE_HOURS"),
-                        fg("DELIVERY_LATE_HOURS"),
-                    ),
-                ),
-                Column(
-                    section(
-                        "Job/Phase IDs",
-                        fg("JOB_ID_START"),
-                        fg("PROJECT_ID_START"),
-                    ),
-                    section(
-                        "Schedule Thresholds",
-                        HTML(
-                            '<p class="text-body-tertiary fs-9 mb-3">Controls the colour of scheduled vs scoped indicators. Over 100% (red) and 0% (grey) are hard-coded.</p>'
+        tabs = [
+            Tab(
+                "General",
+                Row(
+                    col(
+                        sect(
+                            "Support Links",
+                            "SUPPORT_DOC_URL",
+                            "SUPPORT_MAILBOX",
+                            "SUPPORT_ISSUES",
                         ),
-                        fg("SCHEDULE_THRESHOLD_SUCCESS"),
-                        fg("SCHEDULE_THRESHOLD_INFO"),
                     ),
-                    section(
-                        "Reminders",
-                        fg("SKILLS_REVIEW_DAYS", floating=False),
-                        fg("PROFILE_REVIEW_DAYS", floating=False),
+                    col(
+                        sect(
+                            "Site Notice",
+                            "SITE_NOTICE_ENABLED",
+                            "SITE_NOTICE_COLOUR",
+                            "SITE_NOTICE_MSG",
+                            help="Show a banner across every page.",
+                        ),
                     ),
-                ),
-            ),
-            # ── Auth & Access ──
-            Row(
-                Column(
-                    section(
-                        "Authentication",
-                        fg("ADFS_ENABLED", floating=False),
-                        fg("ADFS_AUTO_LOGIN", floating=False),
-                        fg("LOCAL_LOGIN_ENABLED", floating=False),
-                        fg("EMAIL_ENABLED", floating=False),
-                    ),
-                ),
-                Column(
-                    section(
-                        "Registration & Invites",
-                        fg("REGISTRATION_ENABLED", floating=False),
-                        fg("INVITE_ENABLED", floating=False),
-                        fg("USER_INVITE_EXPIRY"),
-                        fg("ALLOWED_SIGNUP_EMAIL_DOMAINS"),
-                    ),
-                ),
-                Column(
-                    section(
-                        "Site Notice",
-                        fg("MAINTENANCE_MODE", floating=False),
-                        fg("SITE_NOTICE_ENABLED", floating=False),
-                        fg("SITE_NOTICE_COLOUR"),
-                        fg("SITE_NOTICE_MSG"),
+                    col(
+                        sect(
+                            "Site Status",
+                            "MAINTENANCE_MODE",
+                            "EMAIL_ENABLED",
+                            help="Operational toggles affecting the whole site.",
+                        ),
+                        sect(
+                            "Reminders",
+                            "SKILLS_REVIEW_DAYS",
+                            "PROFILE_REVIEW_DAYS",
+                        ),
                     ),
                 ),
             ),
-            # ── Appearance ──
-            Row(
-                Column(
-                    section(
-                        "Schedule Colours",
-                        fg("SCHEDULE_COLOR_AVAILABLE", floating=False),
-                        fg("SCHEDULE_COLOR_UNAVAILABLE", floating=False),
-                        fg("SCHEDULE_COLOR_INTERNAL", floating=False),
-                        fg("SCHEDULE_COLOR_PROJECT", floating=False),
-                        fg("SCHEDULE_COLOR_COMMENT", floating=False),
+            Tab(
+                "Access",
+                Row(
+                    col(
+                        sect(
+                            "Authentication",
+                            "LOCAL_LOGIN_ENABLED",
+                            "ADFS_ENABLED",
+                            "ADFS_AUTO_LOGIN",
+                        ),
                     ),
-                ),
-                Column(
-                    section(
-                        "Phase Colours",
-                        fg("SCHEDULE_COLOR_PHASE", floating=False),
-                        fg("SCHEDULE_COLOR_PHASE_CONFIRMED", floating=False),
-                        fg("SCHEDULE_COLOR_PHASE_AWAY", floating=False),
-                        fg("SCHEDULE_COLOR_PHASE_CONFIRMED_AWAY", floating=False),
-                    ),
-                ),
-                Column(
-                    section(
-                        "Theme",
-                        fg("SNOW_ENABLED", floating=False),
-                        fg("CHRISTMAS_LIGHTS_ENABLED", floating=False),
-                        fg("CHRISTMAS_TREE_ENABLED", floating=False),
-                        fg("KONAMI_ENABLED", floating=False),
-                        fg("EASTEREGG_GAMES_ENABLED", floating=False),
-                        fg("FAKE_HONEYPOT_ENABLED", floating=False),
-                        fg("ENTROPY_METER_ENABLED", floating=False),
+                    col(
+                        sect(
+                            "Registration & Invites",
+                            "REGISTRATION_ENABLED",
+                            "INVITE_ENABLED",
+                            "USER_INVITE_EXPIRY",
+                            "ALLOWED_SIGNUP_EMAIL_DOMAINS",
+                        ),
                     ),
                 ),
             ),
-            # ── Integrations & Notifications ──
-            Row(
-                Column(
-                    section(
-                        "Resource Manager",
-                        fg("RM_SYNC_ENABLED", floating=False),
-                        fg("RM_SYNC_API_SITE", floating=False),
-                        fg("RM_SYNC_API_TOKEN", floating=False),
-                        fg("RM_SYNC_STALE_TIMEOUT", floating=False),
-                        fg("RM_WARNING_MSG", floating=False),
+            Tab(
+                "Scheduling",
+                Row(
+                    col(
+                        sect(
+                            "Work Settings",
+                            "DEFAULT_HOURS_IN_DAY",
+                            "DEFAULT_WORKING_DAYS",
+                        ),
+                        sect(
+                            "Schedule Thresholds",
+                            "SCHEDULE_THRESHOLD_SUCCESS",
+                            "SCHEDULE_THRESHOLD_INFO",
+                            help="% scheduled vs scoped for the indicator colour. 0% (grey) and over 100% (red) are fixed.",
+                        ),
                     ),
-                ),
-                Column(
-                    section(
-                        "Notification Recipients",
-                        fg("NOTIFICATION_POOL_SCOPING_EMAIL_RCPTS", floating=False),
-                        fg("NOTIFICATION_POOL_SCHEDULING_EMAIL_RCPTS", floating=False),
-                        fg("NOTIFICATION_POOL_TQA_EMAIL_RCPTS", floating=False),
-                        fg("NOTIFICATION_POOL_PQA_EMAIL_RCPTS", floating=False),
+                    col(
+                        sect(
+                            "Phase Deadlines",
+                            "DAYS_TO_TQA",
+                            "DAYS_TO_PQA",
+                            "DAYS_TO_DELIVERY",
+                        ),
+                        sect(
+                            "Late Notification Intervals",
+                            "PRECHECK_LATE_HOURS",
+                            "TQA_LATE_HOURS",
+                            "PQA_LATE_HOURS",
+                            "DELIVERY_LATE_HOURS",
+                        ),
                     ),
-                ),
-                Column(
-                    section(
-                        "Calendar Feeds",
-                        fg("CALENDAR_FEED_ENABLED", floating=False),
-                        fg("CALENDAR_FAMILY_FEED_ENABLED", floating=False),
-                    ),
-                    section(
-                        "Support Links",
-                        fg("SUPPORT_DOC_URL", floating=False),
-                        fg("SUPPORT_MAILBOX", floating=False),
-                        fg("SUPPORT_ISSUES", floating=False),
+                    col(
+                        sect(
+                            "Job / Phase IDs",
+                            "JOB_ID_START",
+                            "PROJECT_ID_START",
+                        ),
+                        sect(
+                            "Deliverable Labels",
+                            "PHASE_LABEL_DELIVERABLE",
+                            "PHASE_LABEL_REPORT_DATA",
+                            "PHASE_LABEL_TECH_DATA",
+                            help="Rename the deliverable link fields on the phase Deliverables tab. Field names are unchanged — this only relabels the UI.",
+                        ),
                     ),
                 ),
             ),
-        )
+            Tab(
+                "Leave",
+                Row(
+                    col(
+                        sect(
+                            "Leave",
+                            "LEAVE_DAYS_NOTICE",
+                            "LEAVE_HISTORY_MONTHS",
+                            "LEAVE_ENFORCE_LIMIT",
+                        ),
+                    ),
+                ),
+            ),
+            Tab(
+                "Appearance",
+                Row(
+                    col(
+                        sect(
+                            "Schedule Colours",
+                            "SCHEDULE_COLOR_AVAILABLE",
+                            "SCHEDULE_COLOR_UNAVAILABLE",
+                            "SCHEDULE_COLOR_INTERNAL",
+                            "SCHEDULE_COLOR_PROJECT",
+                            "SCHEDULE_COLOR_COMMENT",
+                        ),
+                    ),
+                    col(
+                        sect(
+                            "Phase Colours",
+                            "SCHEDULE_COLOR_PHASE",
+                            "SCHEDULE_COLOR_PHASE_CONFIRMED",
+                            "SCHEDULE_COLOR_PHASE_AWAY",
+                            "SCHEDULE_COLOR_PHASE_CONFIRMED_AWAY",
+                        ),
+                    ),
+                    col(
+                        sect(
+                            "Theme & Fun",
+                            "SNOW_ENABLED",
+                            "CHRISTMAS_LIGHTS_ENABLED",
+                            "CHRISTMAS_TREE_ENABLED",
+                            "KONAMI_ENABLED",
+                            "EASTEREGG_GAMES_ENABLED",
+                            "FAKE_HONEYPOT_ENABLED",
+                            "ENTROPY_METER_ENABLED",
+                        ),
+                    ),
+                ),
+            ),
+            Tab(
+                "Notifications",
+                Row(
+                    col(
+                        sect(
+                            "Notification Recipients",
+                            "NOTIFICATION_POOL_SCOPING_EMAIL_RCPTS",
+                            "NOTIFICATION_POOL_SCHEDULING_EMAIL_RCPTS",
+                            "NOTIFICATION_POOL_TQA_EMAIL_RCPTS",
+                            "NOTIFICATION_POOL_PQA_EMAIL_RCPTS",
+                            help="Extra addresses cc'd on each pool's notifications (comma-separated).",
+                        ),
+                    ),
+                    col(
+                        sect(
+                            "Calendar Feeds",
+                            "CALENDAR_FEED_ENABLED",
+                            "CALENDAR_FAMILY_FEED_ENABLED",
+                        ),
+                    ),
+                ),
+            ),
+            Tab(
+                "Integrations",
+                Row(
+                    col(
+                        sect(
+                            "Resource Manager",
+                            "RM_SYNC_ENABLED",
+                            "RM_SYNC_API_SITE",
+                            "RM_SYNC_API_TOKEN",
+                            "RM_SYNC_STALE_TIMEOUT",
+                            "RM_WARNING_MSG",
+                        ),
+                    ),
+                ),
+            ),
+        ]
+
+        # Safety net: surface any config key not explicitly placed above so new
+        # settings are never hidden. 'version' is ConstanceForm's own hidden field.
+        missed = [
+            k
+            for k in settings.CONSTANCE_CONFIG
+            if k not in self._used and k in self.fields
+        ]
+        if missed:
+            tabs.append(
+                Tab(
+                    "Other",
+                    Row(col(sect("Uncategorised", *missed))),
+                )
+            )
+
+        self.helper.layout = Layout(TabHolder(*tabs, css_id="settings-tabs"))
 
 
 class LeaveRequestForm(forms.ModelForm):
