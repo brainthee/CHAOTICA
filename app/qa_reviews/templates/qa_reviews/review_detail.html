@@ -129,7 +129,7 @@
 
                 {% if phase.linkDeliverable %}
                 <div class="mb-2">
-                    <strong>Link to Deliverable:</strong>
+                    <strong>{{ config.PHASE_LABEL_DELIVERABLE }}:</strong>
                     <div class="border border-cake p-2">
                         {{ phase.linkDeliverable }}
                     </div>
@@ -138,7 +138,7 @@
 
                 {% if phase.linkTechData %}
                 <div class="mb-2">
-                    <strong>Link to Technical Data:</strong>
+                    <strong>{{ config.PHASE_LABEL_TECH_DATA }}:</strong>
                     <div class="border border-cake p-2">
                         {{ phase.linkTechData }}
                     </div>
@@ -147,7 +147,7 @@
 
                 {% if phase.linkReportData %}
                 <div class="mb-2">
-                    <strong>Link to Report Data:</strong>
+                    <strong>{{ config.PHASE_LABEL_REPORT_DATA }}:</strong>
                     <div class="border border-cake p-2">
                         {{ phase.linkReportData }}
                     </div>
