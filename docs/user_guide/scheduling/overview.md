@@ -39,7 +39,7 @@ Users without `can_schedule_job` can look but not change anything — the create
 
 ## Getting around
 
-- **Scroll** moves the resource list up/down; **Ctrl/⌘ + scroll** (or pinch) zooms in/out smoothly. The time axis re‑scales itself day → week → month → year.
+- **Scroll** moves the resource list up/down; **Ctrl/⌘ + scroll** (or pinch) zooms in/out smoothly. The time axis re‑scales itself day → week → month → year. At week scale and wider the per‑block labels drop away so bookings keep their true width — the picture stays faithful when you zoom out.
 - **Zoom** buttons and quick‑zoom presets (2w / 2m / 6m / 1y) are in the toolbar.
 - **Today** re‑centres on the current week; **Fit** zooms to the *actual data* (the earliest→latest booking in scope), so repeatedly pressing Fit is stable rather than creeping outward.
 - **Pan / Select** mode toggle: *Pan* (default) drags the timeline; *Select* lets you drag a box across rows and dates to act on several people at once (see below).

@@ -153,6 +153,14 @@
     var key = scale + '|' + dayKey;
     if (key === currentAxisKey) return;
     currentAxisKey = key;
+    // At coarse zoom (week and wider) drop the item labels. vis forces every range
+    // item to be at least as wide as its content, so labelled short (e.g. 1-day)
+    // slots get force-widened to their text width, overlap their neighbours and
+    // (stack: true) pile into tall towers that scroll out of view — the "slots
+    // disappear when zoomed out" glitch. Hiding the label collapses that minimum so
+    // bars keep their true time-width and stacking reflects only real overlaps.
+    // Toggle BEFORE setOptions so the redraw re-measures with labels hidden.
+    container.classList.toggle('sched-coarse', scale !== 'day');
     timeline.setOptions({ timeAxis: { scale: scale, step: 1 }, format: buildFormat(dayFmt) });
   }
   chooseAxisScale();
