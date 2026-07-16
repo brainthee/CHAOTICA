@@ -77,6 +77,11 @@
   .vis-item.vis-selected { box-shadow: 0 0 0 2px var(--phoenix-primary); }
   .vis-item .vis-item-content { padding: 2px 6px; }
   .vis-item.cmt { border-style: dashed; }
+  /* Coarse zoom (week and wider): hide item labels so vis stops forcing each slot
+     to its label width. Otherwise short slots overlap and stack into tall towers
+     that scroll out of view ("slots disappear when zoomed out"). Bars then keep
+     their true time-width, so the zoomed-out picture stays faithful. */
+  #vis-timeline.sched-coarse .vis-item .vis-item-content { display: none; }
   /* Out-of-scope blocks on a job/phase view: shown as faded context (never hidden) */
   .vis-item.sched-faded { opacity: 0.38; filter: grayscale(45%); }
   .vis-item.sched-faded:hover { opacity: 0.6; }
