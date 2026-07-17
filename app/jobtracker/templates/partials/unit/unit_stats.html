@@ -1,14 +1,73 @@
-{% load user_tags %}
-{% load org_tags %}
+{% load index %}
 
-{% comment %} {% get_org_working_days_range organisationalunit start_date end_date as org_working_days %} {% endcomment %}
+<!-- Summary tiles -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-4 col-xl">
+    <div class="card h-100 border border-translucent">
+      <div class="card-body text-center">
+        <i class="fa-solid fa-users fs-6 lh-1 text-primary"></i>
+        <h2 class="fs-6 pt-3 mb-0">{{ stats.summary.active_members }}</h2>
+        <p class="fs-9 mb-0 text-body-secondary">Active Members</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-4 col-xl">
+    <div class="card h-100 border border-translucent">
+      <div class="card-body text-center">
+        <i class="fa-solid fa-briefcase fs-6 lh-1 text-warning"></i>
+        <h2 class="fs-6 pt-3 mb-0">{{ stats.summary.active_jobs }}</h2>
+        <p class="fs-9 mb-0 text-body-secondary">Active Jobs</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-4 col-xl">
+    <div class="card h-100 border border-translucent">
+      <div class="card-body text-center">
+        <i class="fa-solid fa-truck fs-6 lh-1 text-success"></i>
+        <h2 class="fs-6 pt-3 mb-0">{{ stats.summary.phases_delivered }}</h2>
+        <p class="fs-9 mb-0 text-body-secondary">Phases Delivered<br /><span class="fs-10 text-body-tertiary">(in range)</span></p>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-4 col-xl">
+    <div class="card h-100 border border-translucent">
+      <div class="card-body text-center">
+        <i class="fa-solid fa-percent fs-6 lh-1 text-info"></i>
+        <h2 class="fs-6 pt-3 mb-0">{{ stats.summary.utilisation_4wk }}%</h2>
+        <p class="fs-9 mb-0 text-body-secondary">Utilisation<br /><span class="fs-10 text-body-tertiary">(coming 4 weeks)</span></p>
+      </div>
+    </div>
+  </div>
+  {% if can_view_financials %}
+  <div class="col-6 col-md-4 col-xl">
+    <div class="card h-100 border border-translucent">
+      <div class="card-body text-center">
+        <i class="fa-solid fa-sterling-sign fs-6 lh-1 text-success"></i>
+        <h2 class="fs-6 pt-3 mb-0">{{ stats.summary.total_revenue }}</h2>
+        <p class="fs-9 mb-0 text-body-secondary">Active Revenue</p>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
 
-<div class="row gy-3 mb-4 justify-content-between">
+<!-- Date range picker -->
+<div class="row g-3 mb-4 justify-content-end">
+  <div class="col-auto">
+    <form class="profile-stats-form" action="" method="get">
+      <div class="flatpickr-input-container">
+        <label class="form-label fs-9 mb-1" for="dateRangePicker">Date Range</label>
+        <input name="dateRange" class="form-control form-control-sm datetimepicker" id="dateRangePicker" type="text" />
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Upcoming availability -->
+<div class="row gy-3 mb-3 justify-content-between">
     <div class="col">
         <h3 class="mb-0 text-primary position-relative fw-bold">
-            <span class="bg-body pe-2">
-                Upcoming Availability
-            </span>
+            <span class="bg-body pe-2">Upcoming Availability</span>
             <span class="border border-primary position-absolute top-50 translate-middle-y w-100 start-0 z-n1"></span>
         </h3>
     </div>
@@ -18,563 +77,327 @@
     <div class="card px-0 mx-3 shadow-none border">
         <div class="card-header p-4 border-bottom bg-body">
             <div class="row g-3 justify-content-between align-items-center">
-
                 <div class="col-8 col-md">
                     <h4 class="text-body mb-0">Future Utilisation</h4>
-                    <span class="bg-body pe-2">
-                        The scheduled time as percentages from the start of the current week.
-                    </span>
+                    <span class="bg-body pe-2">Consultant scheduled time as percentages from the start of the current week.</span>
                 </div>
                 <div class="col col-md-auto">
                     <div class="d-flex flex-row text-center">
-                            <div class="m0 px-3 border-translucent border-end">
-                                <h4 class="text-body mb-0">{{ stats.upcoming_availability.thisweek.totals.utilisation_percentage }}%</h4>
-                                <p class="text-body-secondary fs-10 mb-0">This<br />Week</p>
-                            </div>
-
-                            <div class="m0 px-3 border-translucent border-end">
-                                <h4 class="text-body mb-0">{{ stats.upcoming_availability.twoweeks.totals.utilisation_percentage }}%</h4>
-                                <p class="text-body-secondary fs-10 mb-0">Two<br />Weeks</p>
-                            </div>
-
-                            <div class="m0 px-3 border-translucent border-end">
-                                <h4 class="text-body mb-0">{{ stats.upcoming_availability.fourweeks.totals.utilisation_percentage }}%</h4>
-                                <p class="text-body-secondary fs-10 mb-0">Four<br />Weeks</p>
-                            </div>
-
-                            <div class="m0 ps-3">
-                                <h4 class="text-body mb-0">{{ stats.upcoming_availability.eightweeks.totals.utilisation_percentage }}%</h4>
-                                <p class="text-body-secondary fs-10 mb-0">Eight<br />Weeks</p>
-                            </div>
-                      </div>
+                        <div class="m0 px-3 border-translucent border-end">
+                            <h4 class="text-body mb-0">{{ stats.upcoming_availability.thisweek.totals.utilisation_percentage }}%</h4>
+                            <p class="text-body-secondary fs-10 mb-0">This<br />Week</p>
+                        </div>
+                        <div class="m0 px-3 border-translucent border-end">
+                            <h4 class="text-body mb-0">{{ stats.upcoming_availability.twoweeks.totals.utilisation_percentage }}%</h4>
+                            <p class="text-body-secondary fs-10 mb-0">Two<br />Weeks</p>
+                        </div>
+                        <div class="m0 px-3 border-translucent border-end">
+                            <h4 class="text-body mb-0">{{ stats.upcoming_availability.fourweeks.totals.utilisation_percentage }}%</h4>
+                            <p class="text-body-secondary fs-10 mb-0">Four<br />Weeks</p>
+                        </div>
+                        <div class="m0 ps-3">
+                            <h4 class="text-body mb-0">{{ stats.upcoming_availability.eightweeks.totals.utilisation_percentage }}%</h4>
+                            <p class="text-body-secondary fs-10 mb-0">Eight<br />Weeks</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-
         <div class="card-body p-0">
             <div class="echart-availability" style="min-height:350px"></div>
         </div>
     </div>
 </div>
 
+<!-- Delivery throughput + Service breakdown -->
+<div class="row g-4 mb-4">
+    <div class="col-12 col-xl-7">
+        <div class="card h-100 shadow-none border">
+            <div class="card-header p-4 border-bottom bg-body">
+                <h4 class="text-body mb-0">Delivery Throughput</h4>
+                <span class="text-body-secondary fs-9">Phases delivered per month (last 6 months)</span>
+            </div>
+            <div class="card-body p-2">
+                <div class="echart-throughput" style="min-height:300px"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-xl-5">
+        <div class="card h-100 shadow-none border">
+            <div class="card-header p-4 border-bottom bg-body">
+                <h4 class="text-body mb-0">Service Breakdown</h4>
+                <span class="text-body-secondary fs-9">Phases by service</span>
+            </div>
+            <div class="card-body p-2">
+                {% if stats.service_breakdown %}
+                <div class="echart-service-breakdown" style="min-height:300px"></div>
+                {% else %}
+                <p class="text-body-tertiary text-center py-5 mb-0">No service data</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Job status breakdown -->
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card shadow-none border">
+            <div class="card-header p-4 border-bottom bg-body">
+                <h4 class="text-body mb-0">Job Pipeline</h4>
+                <span class="text-body-secondary fs-9">Jobs owned by this unit, by status</span>
+            </div>
+            <div class="card-body">
+                {% if stats.job_status_breakdown %}
+                <div class="d-flex flex-wrap gap-3">
+                    {% for row in stats.job_status_breakdown %}
+                    <div class="text-center border border-translucent rounded-2 px-3 py-2">
+                        <h4 class="mb-0">{{ row.count }}</h4>
+                        <span class="badge badge-phoenix badge-phoenix-{{ row.bs_colour }} fs-10">{{ row.label }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-body-tertiary text-center mb-0">No jobs</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Member utilisation table -->
+<div class="row gy-3 mb-3 justify-content-between">
+    <div class="col">
+        <h3 class="mb-0 text-primary position-relative fw-bold">
+            <span class="bg-body pe-2">Consultant Utilisation</span>
+            <span class="border border-primary position-absolute top-50 translate-middle-y w-100 start-0 z-n1"></span>
+        </h3>
+    </div>
+</div>
+
+<div class="table-responsive mb-4">
+<table class="table table-sm datatable align-items-center mb-0">
+    <caption>Member utilisation over the selected date range</caption>
+    <thead>
+        <tr>
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Member</th>
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Utilisation</th>
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2 text-center">Confirmed Days</th>
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2 text-center">Available Days</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for member in active_memberships %}
+            {% with row=member_util_map|index:member.member_id %}
+            <tr>
+                <td>{% include 'partials/users/user_table_display.html' with u=member.member noorg=1 notitle=1 nojl=1 noloc=1 %}</td>
+                <td class="ps-2" style="min-width: 140px;">
+                    <div class="d-flex align-items-center">
+                        <div class="progress flex-1 me-2" style="height: 6px; min-width: 60px;">
+                            <div class="progress-bar bg-info" role="progressbar" style="width: {{ row.confirmed_pct }}%;"></div>
+                        </div>
+                        <span class="fs-9 text-body-secondary">{{ row.confirmed_pct }}%</span>
+                    </div>
+                </td>
+                <td class="ps-2 text-center">{{ row.confirmed_days }}</td>
+                <td class="ps-2 text-center">{{ row.available_days }}</td>
+            </tr>
+            {% endwith %}
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+
 <script>
 $(function() {
-    $("#dateRangePicker").flatpickr(
-        {
-            mode: "range",
-            dateFormat: "Y-m-d",
-            disableMobile: true,
-            defaultDate: [
-                "{{ start_date.isoformat }}", 
-                "{{ end_date.isoformat }}",
-            ],
-            onClose: function(selectedDates, dateStr, instance) {
-                $(".profile-stats-form").submit();  
-            },
+    $("#dateRangePicker").flatpickr({
+        mode: "range",
+        dateFormat: "Y-m-d",
+        disableMobile: true,
+        defaultDate: ["{{ start_date.isoformat }}", "{{ end_date.isoformat }}"],
+        onClose: function(selectedDates, dateStr, instance) {
+            $(".profile-stats-form").submit();
+        },
+    });
 
-        }
-    );
-
-    // import * as echarts from 'echarts';
     const { merge } = window._;
 
-    // form config.js
-    const echartSetOption = (
-        chart,
-        userOptions,
-        getDefaultOptions,
-        responsiveOptions
-    ) => {
+    const echartSetOption = (chart, userOptions, getDefaultOptions, responsiveOptions) => {
         const { breakpoints, resize } = window.phoenix.utils;
         const handleResize = options => {
-        Object.keys(options).forEach(item => {
-            if (window.innerWidth > breakpoints[item]) {
-            chart.setOption(options[item]);
-            }
-        });
+            Object.keys(options).forEach(item => {
+                if (window.innerWidth > breakpoints[item]) {
+                    chart.setOption(options[item]);
+                }
+            });
         };
-
         const themeController = document.body;
-        // Merge user options with lodash
         chart.setOption(merge(getDefaultOptions(), userOptions));
-
-        const navbarVerticalToggle = document.querySelector(
-        '.navbar-vertical-toggle'
-        );
+        const navbarVerticalToggle = document.querySelector('.navbar-vertical-toggle');
         if (navbarVerticalToggle) {
             navbarVerticalToggle.addEventListener('navbar.vertical.toggle', () => {
                 chart.resize();
-                if (responsiveOptions) {
-                handleResize(responsiveOptions);
-                }
+                if (responsiveOptions) { handleResize(responsiveOptions); }
             });
         }
-
         resize(() => {
             chart.resize();
-            if (responsiveOptions) {
-                handleResize(responsiveOptions);
-            }
+            if (responsiveOptions) { handleResize(responsiveOptions); }
         });
-        if (responsiveOptions) {
-            handleResize(responsiveOptions);
-        }
-
-        themeController.addEventListener(
-            'clickControl',
-            ({ detail: { control } }) => {
-                if (control === 'phoenixTheme') {
+        if (responsiveOptions) { handleResize(responsiveOptions); }
+        themeController.addEventListener('clickControl', ({ detail: { control } }) => {
+            if (control === 'phoenixTheme') {
                 chart.setOption(window._.merge(getDefaultOptions(), userOptions));
-                }
-                if (responsiveOptions) {
-                handleResize(responsiveOptions);
-                }
             }
-        );
+            if (responsiveOptions) { handleResize(responsiveOptions); }
+        });
     };
 
     const tooltipFormatter = (params, dateFormatter = 'MMM DD') => {
         let tooltipItem = ``;
         params.forEach(el => {
             tooltipItem += `<div class='ms-1'>
-                <h6 class="text-body-tertiary"><span class="fas fa-circle me-1 fs-10" style="color:${
-                el.borderColor ? el.borderColor : el.color
-                }"></span>
-                ${el.seriesName} : ${
-            typeof el.value === 'object' ? el.value[1] : el.value
-            }
-                </h6>
-            </div>`;
+                <h6 class="text-body-tertiary"><span class="fas fa-circle me-1 fs-10" style="color:${el.borderColor ? el.borderColor : el.color}"></span>
+                ${el.seriesName} : ${typeof el.value === 'object' ? el.value[1] : el.value}
+                </h6></div>`;
         });
-        return `<div>
-                <p class='mb-2 text-body-tertiary'>
-                ${
-                    window.dayjs(params[0].axisValue).isValid()
-                    ? window.dayjs(params[0].axisValue).format(dateFormatter)
-                    : params[0].axisValue
-                }
-                </p>
-                ${tooltipItem}
-            </div>`;
+        return `<div><p class='mb-2 text-body-tertiary'>${
+            window.dayjs(params[0].axisValue).isValid()
+                ? window.dayjs(params[0].axisValue).format(dateFormatter)
+                : params[0].axisValue
+        }</p>${tooltipItem}</div>`;
     };
 
     const handleTooltipPosition = ([pos, , dom, , size]) => {
-        // only for mobile device
         if (window.innerWidth <= 540) {
-        const tooltipHeight = dom.offsetHeight;
-        const obj = { top: pos[1] - tooltipHeight - 20 };
-        obj[pos[0] < size.viewSize[0] / 2 ? 'left' : 'right'] = 5;
-        return obj;
+            const tooltipHeight = dom.offsetHeight;
+            const obj = { top: pos[1] - tooltipHeight - 20 };
+            obj[pos[0] < size.viewSize[0] / 2 ? 'left' : 'right'] = 5;
+            return obj;
         }
-        return null; // else default behaviour
+        return null;
     };
 
     const { getColor, getData, rgbaColor } = window.phoenix.utils;
-    const $chartEl_availability = document.querySelector(
-        '.echart-availability'
-    );
 
-    const days = [
-        'Eight Weeks',
-        'Four Weeks',
-        'Two Weeks',
-        'This Week',
-    ];
-
+    // ---- Availability chart ----
+    const $chartEl_availability = document.querySelector('.echart-availability');
+    const days = ['Eight Weeks', 'Four Weeks', 'Two Weeks', 'This Week'];
     if ($chartEl_availability) {
         const userOptions = getData($chartEl_availability, 'echarts');
         const chart = window.echarts.init($chartEl_availability);
         const getDefaultOptions = () => ({
-            color: [
-                getColor('success'),
-                getColor('warning'),
-                getColor('info'),
-                getColor('secondary-light'),
-            ],
+            color: [getColor('success'), getColor('warning'), getColor('info'), getColor('secondary-light')],
             tooltip: {
-                trigger: 'axis',
-                axisPointer: {
-                    type: 'shadow'
-                },
-                padding: [7, 10],
-                backgroundColor: getColor('body-highlight-bg'),
-                borderColor: getColor('border-color'),
-                textStyle: { color: getColor('light-text-emphasis') },
-                borderWidth: 1,
-                transitionDuration: 0,
-                position: (...params) => handleTooltipPosition(params),
-                formatter: tooltipFormatter
+                trigger: 'axis', axisPointer: { type: 'shadow' }, padding: [7, 10],
+                backgroundColor: getColor('body-highlight-bg'), borderColor: getColor('border-color'),
+                textStyle: { color: getColor('light-text-emphasis') }, borderWidth: 1, transitionDuration: 0,
+                position: (...params) => handleTooltipPosition(params), formatter: tooltipFormatter
             },
-            toolbox: {
-                feature: {
-                    magicType: {
-                    type: ['stack', 'tiled']
-                    }
-                },
-                right: 0
-            },
-            legend: {
-                data: [
-                    'Confirmed',
-                    'Tentative',
-                    'Non-Delivery',
-                    'Available',
-                ],
-                textStyle: {
-                    color: getColor('tertiary-color')
-                },
-                left: 0
-            },
+            toolbox: { feature: { magicType: { type: ['stack', 'tiled'] } }, right: 0 },
+            legend: { data: ['Confirmed', 'Tentative', 'Non-Delivery', 'Available'], textStyle: { color: getColor('tertiary-color') }, left: 0 },
             xAxis: {
                 type: 'value',
-                axisLine: {
-                    show: true,
-                    lineStyle: {
-                    color: getColor('tertiary-bg')
-                    }
-                },
-                axisTick: { show: false },
-                axisLabel: {
-                    color: getColor('quaternary-color')
-                },
-                splitLine: {
-                    lineStyle: {
-                    show: true,
-                    color: getColor('secondary-bg')
-                    }
-                }
+                axisLine: { show: true, lineStyle: { color: getColor('tertiary-bg') } },
+                axisTick: { show: false }, axisLabel: { color: getColor('quaternary-color') },
+                splitLine: { lineStyle: { show: true, color: getColor('secondary-bg') } }
             },
             yAxis: {
-                type: 'category',
-                data: days,
-                axisLine: {
-                    lineStyle: {
-                        show: true,
-                        color: getColor('tertiary-bg')
-                    }
-                },
-                axisTick: { show: false },
-                axisLabel: {
-                    color: getColor('quaternary-color'),
-                    {% comment %} formatter: value => value.substring(0, 3) {% endcomment %}
-                }
+                type: 'category', data: days,
+                axisLine: { lineStyle: { show: true, color: getColor('tertiary-bg') } },
+                axisTick: { show: false }, axisLabel: { color: getColor('quaternary-color') }
             },
             series: [
-                {
-                    name: 'Confirmed',
-                    type: 'bar',
-                    stack: 'total',
-                    label: {
-                        show: false,
-                        textStyle: {
-                            color: '#fff'
-                        }
-                    },
-                    emphasis: {
-                        focus: 'series'
-                    },
-                    data: [
+                { name: 'Confirmed', type: 'bar', stack: 'total', emphasis: { focus: 'series' }, data: [
                     {{ stats.upcoming_availability.eightweeks.totals.confirmed_days_percentage }},
                     {{ stats.upcoming_availability.fourweeks.totals.confirmed_days_percentage }},
                     {{ stats.upcoming_availability.twoweeks.totals.confirmed_days_percentage }},
-                    {{ stats.upcoming_availability.thisweek.totals.confirmed_days_percentage }},
-                    ]
-                },
-                {
-                    name: 'Tentative',
-                    type: 'bar',
-                    stack: 'total',
-                    label: {
-                        show: false,
-                        textStyle: {
-                            color: '#fff'
-                        }
-                    },
-                    emphasis: {
-                        focus: 'series'
-                    },
-                    data: [
+                    {{ stats.upcoming_availability.thisweek.totals.confirmed_days_percentage }} ] },
+                { name: 'Tentative', type: 'bar', stack: 'total', emphasis: { focus: 'series' }, data: [
                     {{ stats.upcoming_availability.eightweeks.totals.tentative_days_percentage }},
                     {{ stats.upcoming_availability.fourweeks.totals.tentative_days_percentage }},
                     {{ stats.upcoming_availability.twoweeks.totals.tentative_days_percentage }},
-                    {{ stats.upcoming_availability.thisweek.totals.tentative_days_percentage }},
-                    ]
-                },
-                {
-                    name: 'Non-Delivery',
-                    type: 'bar',
-                    stack: 'total',
-                    label: {
-                        show: false,
-                        textStyle: {
-                            color: '#fff'
-                        }
-                    },
-                    emphasis: {
-                        focus: 'series'
-                    },
-                    data: [
+                    {{ stats.upcoming_availability.thisweek.totals.tentative_days_percentage }} ] },
+                { name: 'Non-Delivery', type: 'bar', stack: 'total', emphasis: { focus: 'series' }, data: [
                     {{ stats.upcoming_availability.eightweeks.totals.non_delivery_days_percentage }},
                     {{ stats.upcoming_availability.fourweeks.totals.non_delivery_days_percentage }},
                     {{ stats.upcoming_availability.twoweeks.totals.non_delivery_days_percentage }},
-                    {{ stats.upcoming_availability.thisweek.totals.non_delivery_days_percentage }},
-                    ]
-                },
-                {
-                    name: 'Available',
-                    type: 'bar',
-                    stack: 'total',
-                    label: {
-                        show: false,
-                        textStyle: {
-                            color: getColor('light-text-emphasis')
-                        }
-                    },
-                    emphasis: {
-                        focus: 'series'
-                    },
-                    data: [
+                    {{ stats.upcoming_availability.thisweek.totals.non_delivery_days_percentage }} ] },
+                { name: 'Available', type: 'bar', stack: 'total', emphasis: { focus: 'series' }, data: [
                     {{ stats.upcoming_availability.eightweeks.totals.available_days_percentage }},
                     {{ stats.upcoming_availability.fourweeks.totals.available_days_percentage }},
                     {{ stats.upcoming_availability.twoweeks.totals.available_days_percentage }},
-                    {{ stats.upcoming_availability.thisweek.totals.available_days_percentage }},
-                    ]
-                }
+                    {{ stats.upcoming_availability.thisweek.totals.available_days_percentage }} ] }
             ],
-            grid: {
-                right: 15,
-                left: 5,
-                bottom: 5,
-                top: '15%',
-                containLabel: true
-            }
+            grid: { right: 15, left: 5, bottom: 5, top: '15%', containLabel: true }
         });
         echartSetOption(chart, userOptions, getDefaultOptions);
-};
+    }
 
+    // ---- Delivery throughput chart ----
+    const $chartEl_throughput = document.querySelector('.echart-throughput');
+    if ($chartEl_throughput) {
+        const userOptions = getData($chartEl_throughput, 'echarts');
+        const chart = window.echarts.init($chartEl_throughput);
+        const getDefaultOptions = () => ({
+            tooltip: {
+                trigger: 'axis', padding: [7, 10],
+                backgroundColor: getColor('body-highlight-bg'), borderColor: getColor('border-color'),
+                textStyle: { color: getColor('light-text-emphasis') }, borderWidth: 1, transitionDuration: 0,
+                formatter: tooltipFormatter
+            },
+            xAxis: {
+                type: 'category',
+                data: [{% for l in stats.delivery_throughput.labels %}'{{ l }}',{% endfor %}],
+                axisLine: { lineStyle: { color: getColor('tertiary-bg') } },
+                axisTick: { show: false }, axisLabel: { color: getColor('quaternary-color') }
+            },
+            yAxis: {
+                type: 'value', minInterval: 1,
+                axisLabel: { color: getColor('quaternary-color') },
+                splitLine: { lineStyle: { color: getColor('secondary-bg') } }
+            },
+            series: [{
+                name: 'Delivered', type: 'bar',
+                itemStyle: { color: getColor('success'), borderRadius: [3, 3, 0, 0] },
+                data: [{% for c in stats.delivery_throughput.counts %}{{ c }},{% endfor %}]
+            }],
+            grid: { right: 15, left: 5, bottom: 5, top: '10%', containLabel: true }
+        });
+        echartSetOption(chart, userOptions, getDefaultOptions);
+    }
 
-    // Radar Chart for Service Breakdown
-
-    const $chartEl_serviceBreakdown = document.querySelector(
-      '.echart-service-breakdown'
-    );
-
-    const getFormatter = params => {
-        const indicators = [[
-            {% for serv in stats.service_breakdown %}
-            '{{ serv.name }}',
-            {% endfor %}
-        ]];
-        const num = params.seriesIndex;
-        return `<strong > ${params.name} </strong>
-            <div class="fs-9 text-body-tertiary">
-            <strong >${indicators[params.seriesIndex][0]}</strong>: ${
-            params.value[0]
-            }  <br>
-            {% for serv in stats.service_breakdown %}
-            <strong>${indicators[num][{{ forloop.counter }}]}</strong>: ${params.value[{{ forloop.counter }}]}  <br>
-            {% endfor %}
-            </div>`;
-    };
-
+    // ---- Service breakdown chart (horizontal bar) ----
+    const $chartEl_serviceBreakdown = document.querySelector('.echart-service-breakdown');
     if ($chartEl_serviceBreakdown) {
         const userOptions = getData($chartEl_serviceBreakdown, 'echarts');
         const chart = window.echarts.init($chartEl_serviceBreakdown);
         const getDefaultOptions = () => ({
-            legend: {
-                orient: 'vertical',
-                left: 'left',
-                textStyle: {
-                    color: getColor('tertiary-color')
-                }
-            },
             tooltip: {
-                trigger: 'item',
-                padding: [7, 10],
-                backgroundColor: getColor('body-highlight-bg'),
-                borderColor: getColor('border-color'),
-                textStyle: { color: getColor('light-text-emphasis') },
-                borderWidth: 1,
-                transitionDuration: 0,
-                axisPointer: {
-                    type: 'none'
-                },
-                formatter: getFormatter
+                trigger: 'axis', axisPointer: { type: 'shadow' }, padding: [7, 10],
+                backgroundColor: getColor('body-highlight-bg'), borderColor: getColor('border-color'),
+                textStyle: { color: getColor('light-text-emphasis') }, borderWidth: 1, transitionDuration: 0
             },
-            radar: [
-                {
-                    startAngle: 90,
-                    splitNumber: 4,
-                    indicator: [
-                        {% for serv in stats.service_breakdown %}
-                        { name: '{{ serv.name }}', max: {{ stats.service_breakdown.0.participation_count }}},
-                        {% endfor %}
-                    ],
-                    name: {
-                        formatter: '{value}',
-                        textStyle: {
-                            color: getColor('tertiary-color')
-                        }
-                    },
-                    splitLine: {
-                        lineStyle: {
-                            color: rgbaColor(getColor('tertiary-color'))
-                        }
-                    }
-                },
-            ],
-
-            series: [
-                {
-                    type: 'radar',
-                    data: [
-                    {
-                        value: [
-                            {% for serv in stats.service_breakdown %}
-                            {{ serv.participation_count }} ,
-                            {% endfor %}
-                        ],
-                        name: 'Support',
-                        itemStyle: {
-                        color: getColor('warning')
-                        },
-                        areaStyle: {
-                        color: rgbaColor(getColor('warning'), 0.3)
-                        }
-                    },
-                    ]
-                }
-            ]
+            xAxis: {
+                type: 'value', minInterval: 1,
+                axisLabel: { color: getColor('quaternary-color') },
+                splitLine: { lineStyle: { color: getColor('secondary-bg') } }
+            },
+            yAxis: {
+                type: 'category',
+                data: [{% for serv in stats.service_breakdown %}'{{ serv.name|escapejs }}',{% endfor %}],
+                inverse: true,
+                axisLine: { lineStyle: { color: getColor('tertiary-bg') } },
+                axisTick: { show: false }, axisLabel: { color: getColor('quaternary-color') }
+            },
+            series: [{
+                name: 'Phases', type: 'bar',
+                itemStyle: { color: getColor('warning'), borderRadius: [0, 3, 3, 0] },
+                data: [{% for serv in stats.service_breakdown %}{{ serv.participation_count }},{% endfor %}]
+            }],
+            grid: { right: 15, left: 5, bottom: 5, top: '5%', containLabel: true }
         });
-
-        const responsiveOptions = {
-            xs: {
-                radar: [
-                    {
-                    center: ['50%', '30%'],
-                    radius: 90
-                    },
-                ]
-            },
-            sm: {
-                radar: [
-                    {
-                    radius: 120
-                    },
-                ]
-            },
-            xl: {
-                radar: [
-                    {
-                    center: ['25%', '50%']
-                    },
-                ]
-            }
-        };
-
-        echartSetOption(chart, userOptions, getDefaultOptions, responsiveOptions);
-    };
-
+        echartSetOption(chart, userOptions, getDefaultOptions);
+    }
 });
 </script>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-{% comment %} 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div class="col-5 card">
-    <div class="card-body px-1 d-flex flex-row justify-content-center">
-        <form class="orgunit-stats-form" action="" method="get">
-            <div class="pe-3">
-                <label class="form-label" for="floaTingLabelSingleSelect">Organisational Unit</label>
-                <select name="org" class="form-select" id="floaTingLabelSingleSelect">
-                    {% for orgUnit in user.unit_memberships.all %}
-                    <option {% if orgUnit.unit is stats.ranged.org %}selected=""{% endif %} value="{{ orgUnit.unit.id }}">{{ orgUnit.unit }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="flatpickr-input-container">
-                <label class="form-label" for="dateRangePicker">Select Date Range</label>
-                <input name="dateRange" class="form-control datetimepicker" id="dateRangePicker" type="text" />
-            </div>
-        </form>
-    </div>
-</div>
-
-<table class="table datatable align-items-center mb-0">
-    <caption>Team</caption>
-      <thead>
-        <tr>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Member</th>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Utilisation</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for member in organisationalunit.get_activeMemberships %}
-            {% get_utilisation_percentage member.member start_date end_date as member_util %}        
-            <tr>
-                <td>
-                    {% include 'partials/users/user_table_display.html' with u=member.member noorg=1 %}
-                </td>   
-                <td>
-                    {{ member_util }}%
-                </td>       
-            </tr>
-        {% endfor %}        
-      </tbody>
-    </table>
-
-
-<script>
-    $(function() {
-        $("#dateRangePicker").flatpickr(
-            {
-                mode: "range",
-                dateFormat: "Y-m-d",
-                disableMobile: true,
-                defaultDate: [
-                    "{{ start_date.isoformat }}", 
-                    "{{ end_date.isoformat }}",
-                ],
-                onClose: function(selectedDates, dateStr, instance) {
-                    $(".orgunit-stats-form").submit();  
-                },
-    
-            }
-        );
-    });
-</script> {% endcomment %}

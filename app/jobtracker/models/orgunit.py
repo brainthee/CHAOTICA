@@ -1,6 +1,6 @@
 from django.db import models
 from django.db.models import F, Q, Count, Case, When, Value, IntegerField, Prefetch
-from django.db.models.functions import TruncDate, ExtractDay
+from django.db.models.functions import TruncDate, ExtractDay, TruncMonth
 from django.conf import settings
 from chaotica_utils.utils import unique_slug_generator
 from django.urls import reverse
@@ -17,7 +17,7 @@ import uuid, os, random
 from chaotica_utils.models import User, get_sentinel_user, Holiday
 from ..models import TimeSlot
 from chaotica_utils.enums import UnitRoles, UpcomingAvailabilityRanges
-from ..enums import PhaseStatuses
+from ..enums import PhaseStatuses, JobStatuses
 from django.utils import timezone
 from datetime import timedelta, date, datetime
 from decimal import Decimal
@@ -215,6 +215,24 @@ class OrganisationalUnit(models.Model):
             return User.objects.filter(pk__in=ids)
         else:
             return User.objects.none()
+
+    def get_consultant_ids(self):
+        """Active member user IDs holding the Consultant role.
+
+        Utilisation aggregates are scoped to consultants because they are the
+        only members who get booked onto delivery — including managers, sales,
+        etc. would skew the percentage down. Matched by role NAME rather than pk
+        so it survives role pk drift (see ``sync_default_permissions``).
+        """
+        return list(
+            self.members.filter(
+                left_date__isnull=True,
+                member__is_active=True,
+                roles__name__iexact="Consultant",
+            )
+            .values_list("member_id", flat=True)
+            .distinct()
+        )
 
     def get_activeMembers(self):
         return User.objects.filter(pk__in=self.get_activeMembersPKs())
@@ -530,19 +548,164 @@ class OrganisationalUnit(models.Model):
 
         return results
 
-    def get_stats(self, start_date=None, end_date=None, user_ids=None):
-        data = {
-            "upcoming_availability": {},
-        }
+    def get_stats(
+        self, start_date=None, end_date=None, user_ids=None, include_financials=False
+    ):
+        """Assemble the data used to render the unit stats tab.
+
+        Returns a single dict so the offcanvas "Raw Data" view can serialise it
+        directly. All heavy work (pandas utilisation, phase/job aggregates) is
+        performed with bulk queries — no per-member loops that hit the DB.
+        """
+        from ..models import Phase
+
         # clean vars
         if not start_date:
-            start_date = (timezone.now().date() - timedelta(days=30)).date()
+            start_date = (timezone.now() - timedelta(days=30)).date()
         if not end_date:
-            end_date = timezone.now().date().date()
+            end_date = timezone.now().date()
+        # Guard against strings coming from GET params
+        if isinstance(start_date, datetime):
+            start_date = start_date.date()
+        if isinstance(end_date, datetime):
+            end_date = end_date.date()
 
-        data["upcoming_availability"] = self.get_upcoming_availability(
-            user_ids=user_ids
+        # Utilisation is scoped to consultants — the only members who get booked
+        # onto delivery, so including anyone else drags the percentages down.
+        memberships = list(self.get_activeMemberships())
+        consultant_ids = user_ids if user_ids is not None else self.get_consultant_ids()
+        consultant_set = set(consultant_ids)
+
+        data = {
+            "upcoming_availability": self.get_upcoming_availability(
+                user_ids=consultant_ids
+            ),
+            "summary": {},
+            "member_utilisation": [],
+            "delivery_throughput": {},
+            "service_breakdown": [],
+            "job_status_breakdown": [],
+        }
+
+        # --- Member utilisation over the selected range (single bulk call) ---
+        util = (
+            self.calculate_bulk_utilization(
+                start_date, end_date, user_ids=consultant_ids
+            )
+            if consultant_ids
+            else {}
         )
+        total_confirmed = 0
+        total_working = 0
+        for ms in memberships:
+            if ms.member_id not in consultant_set:
+                continue
+            m = util.get(ms.member_id, {})
+            working = m.get("working_days", 0)
+            confirmed = m.get("confirmed_days", 0)
+            scheduled = m.get("scheduled_days", 0)
+            total_confirmed += confirmed
+            total_working += working
+            data["member_utilisation"].append(
+                {
+                    "user_id": ms.member_id,
+                    "name": ms.member.get_full_name() or str(ms.member),
+                    "confirmed_days": confirmed,
+                    "scheduled_days": scheduled,
+                    "available_days": m.get("available_days", 0),
+                    "working_days": working,
+                    "confirmed_pct": (
+                        round(confirmed / working * 100, 1) if working else 0
+                    ),
+                    "scheduled_pct": (
+                        round(scheduled / working * 100, 1) if working else 0
+                    ),
+                }
+            )
+        data["member_utilisation"].sort(
+            key=lambda r: r["confirmed_pct"], reverse=True
+        )
+
+        # --- Service participation breakdown (phases grouped by service) ---
+        service_rows = (
+            Phase.objects.filter(job__unit=self, service__isnull=False)
+            .exclude(status__in=PhaseStatuses.IGNORED_STATUSES)
+            .values("service__name")
+            .annotate(participation_count=Count("id"))
+            .order_by("-participation_count")
+        )
+        data["service_breakdown"] = [
+            {
+                "name": row["service__name"],
+                "participation_count": row["participation_count"],
+            }
+            for row in service_rows
+        ]
+
+        # --- Job pipeline counts by status ---
+        status_labels = dict(JobStatuses.CHOICES)
+        status_colours = dict(JobStatuses.BS_COLOURS)
+        job_rows = self.jobs.values("status").annotate(count=Count("id"))
+        counts_by_status = {row["status"]: row["count"] for row in job_rows}
+        data["job_status_breakdown"] = [
+            {
+                "status": status,
+                "label": status_labels.get(status, str(status)),
+                "count": counts_by_status.get(status, 0),
+                "bs_colour": status_colours.get(status, "secondary"),
+            }
+            for status in JobStatuses.ALL()
+            if counts_by_status.get(status, 0) > 0
+        ]
+
+        # --- Delivery throughput: phases delivered per month (last ~6 months) ---
+        throughput_start = (timezone.now() - timedelta(days=182)).date()
+        throughput_rows = (
+            Phase.objects.filter(
+                job__unit=self,
+                status=PhaseStatuses.DELIVERED,
+                actual_delivery_date__date__gte=throughput_start,
+            )
+            .annotate(month=TruncMonth("actual_delivery_date"))
+            .values("month")
+            .annotate(count=Count("id"))
+            .order_by("month")
+        )
+        data["delivery_throughput"] = {
+            "labels": [
+                row["month"].strftime("%b %Y") for row in throughput_rows if row["month"]
+            ],
+            "counts": [row["count"] for row in throughput_rows if row["month"]],
+        }
+
+        # --- Summary tiles ---
+        phases_delivered = Phase.objects.filter(
+            job__unit=self,
+            status=PhaseStatuses.DELIVERED,
+            actual_delivery_date__date__range=(start_date, end_date),
+        ).count()
+        summary = {
+            "active_members": len(memberships),
+            "consultants": len(consultant_ids),
+            "active_jobs": self.jobs.filter(
+                status__in=JobStatuses.ACTIVE_STATUSES
+            ).count(),
+            "phases_delivered": phases_delivered,
+            "utilisation_4wk": data["upcoming_availability"]
+            .get("fourweeks", {})
+            .get("totals", {})
+            .get("utilisation_percentage", 0),
+        }
+        if include_financials:
+            # Single aggregate — deliberately avoids per-job staff_cost()/day-rate
+            # which would be an N+1 over potentially hundreds of active jobs.
+            from django.db.models import Sum
+
+            total_revenue = self.jobs.filter(
+                status__in=JobStatuses.ACTIVE_STATUSES
+            ).aggregate(total=Sum("revenue"))["total"] or Decimal(0)
+            summary["total_revenue"] = total_revenue
+        data["summary"] = summary
 
         return data
 
@@ -571,46 +734,30 @@ class OrganisationalUnit(models.Model):
                 data[rang]["totals"]["available_days"] += m["available_days"]
                 data[rang]["totals"]["working_days"] += m["working_days"]
 
-            data[rang]["totals"]["non_delivery_days_percentage"] = round(
+            # Guard against a zero denominator (e.g. a unit with no consultants,
+            # or a window where the scoped members have no working days).
+            working = data[rang]["totals"]["working_days"]
+
+            def _pct(value):
+                return round(value / working * 100, 1) if working else 0
+
+            data[rang]["totals"]["non_delivery_days_percentage"] = _pct(
                 data[rang]["totals"]["non_delivery_days"]
-                / data[rang]["totals"]["working_days"]
-                * 100,
-                1,
             )
-
-            data[rang]["totals"]["scheduled_days_percentage"] = round(
+            data[rang]["totals"]["scheduled_days_percentage"] = _pct(
                 data[rang]["totals"]["scheduled_days"]
-                / data[rang]["totals"]["working_days"]
-                * 100,
-                1,
             )
-
-            data[rang]["totals"]["tentative_days_percentage"] = round(
+            data[rang]["totals"]["tentative_days_percentage"] = _pct(
                 data[rang]["totals"]["tentative_days"]
-                / data[rang]["totals"]["working_days"]
-                * 100,
-                1,
             )
-
-            data[rang]["totals"]["confirmed_days_percentage"] = round(
+            data[rang]["totals"]["confirmed_days_percentage"] = _pct(
                 data[rang]["totals"]["confirmed_days"]
-                / data[rang]["totals"]["working_days"]
-                * 100,
-                1,
             )
-
-            data[rang]["totals"]["utilisation_percentage"] = round(
+            data[rang]["totals"]["utilisation_percentage"] = _pct(
                 data[rang]["totals"]["confirmed_days"]
-                / data[rang]["totals"]["working_days"]
-                * 100,
-                1,
             )
-
-            data[rang]["totals"]["available_days_percentage"] = round(
+            data[rang]["totals"]["available_days_percentage"] = _pct(
                 data[rang]["totals"]["available_days"]
-                / data[rang]["totals"]["working_days"]
-                * 100,
-                1,
             )
         return data
 

@@ -3,9 +3,12 @@
   <div class="kanban-column rounded-3" style="height: auto; vertical-align: top;">
     <div class="kanban-column-underline-{{ column.underline }} position-relative" data-kanban-header style="background-color: var(--phoenix-kanban-column-bg); border-radius: inherit; border-bottom-left-radius: 0; border-bottom-right-radius: 0;">
       <div class="kanban-column-header d-flex align-items-center justify-content-between py-3 px-3">
-        <div class="d-flex align-items-center">
+        <div class="d-flex align-items-center flex-wrap">
           <h5 class="kanban-column-title mb-0">{{ column.title }}</h5>
           <span class="kanban-title-badge">{{ column.count }}</span>
+          {% if column.bounded_recent %}
+          <span class="badge badge-phoenix badge-phoenix-secondary fs-10 ms-2" title="Only phases from the last 30 days are shown"><span class="fa-solid fa-clock-rotate-left me-1"></span>Last 30 days</span>
+          {% endif %}
         </div>
       </div>
     </div>

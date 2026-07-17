@@ -27,66 +27,7 @@
 {% block content %}
   {% get_obj_perms request.user for organisationalunit as 'unit_perms' %}
 
-  <div class="row px-5">
-    <div class="col-12">
-      <div class="row align-items-center justify-content-between g-3 mt-0 mb-0">
-        <div class="col-6 col-md-auto">
-          <h2 class="mb-2">Organisational Unit</h2>
-        </div>
-
-        <div class="col-md-auto">
-          <div class="d-flex">
-            {% if 'manage_members' in unit_perms %}
-              <a href="#" data-url="{% url 'organisationalunit_add' organisationalunit.slug %}" class="btn btn-outline-success js-load-modal-form ms-2">Add Member</a>
-              <a href="#" data-url="{% url 'organisationalunit_preload_member' organisationalunit.slug %}" class="btn btn-outline-success js-load-modal-form ms-2">Pre-load Member</a>
-              <a href="{% url 'organisationalunit_import_members' organisationalunit.slug %}" class="btn btn-outline-success ms-2">Import CSV</a>
-            {% endif %}
-
-            {% if 'change_organisationalunit' in unit_perms %}
-              <a href="{% url 'organisationalunit_update' organisationalunit.slug %}" class="btn btn-outline-secondary ms-2">Edit</a>
-            {% endif %}
-            {% if not is_active_member %}
-              <a href="#" data-url="{% url 'organisationalunit_join' organisationalunit.slug %}" class="btn btn-outline-success ms-auto js-load-modal-form">Join</a>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="row justify-content-between ms-3 me-3 g-3 mt-0 mb-0 pb-3">
-    <div class="col-4">
-      <div class="card h-100">
-        <div class="card-body">
-          <div class="row align-items-center g-3">
-            <div class="col-12 col-sm-auto flex-1">
-              <h3 class="fw-bolder mb-2 line-clamp-1">{{ organisationalunit.name }}</h3>
-              <p>{{ organisationalunit.description }}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-4">
-      {% if organisationalunit.special_requirements %}
-        <div class="card border h-100 border-warning mb-3">
-          <div class="card-header pb-2">
-            <h5>Specific Requirements</h5>
-          </div>
-          <div class="card-body py-2">{{ organisationalunit.special_requirements }}</div>
-        </div>
-      {% endif %}
-    </div>
-
-    <div class="col-4">
-      {% for lead in organisationalunit.leads.all %}
-        <div class="mb-3">
-          {% include 'partials/users/user_profile_card.html' with userProfile=lead %}
-        </div>
-      {% endfor %}
-    </div>
-  </div>
+  {% include 'partials/unit/unit_header.html' %}
 
   <div class="row g-0 mt-3 border-1 border-top bg-body-secondary h-100">
     <div class="col-12 px-6 pt-3 border-1 border-end">
@@ -218,6 +159,16 @@
       var statsUrl = "{% url 'orgunit_stats_partial' organisationalunit.slug %}";
       var jobsUrl = "{% url 'orgunit_jobs_partial' organisationalunit.slug %}";
       var boardUrl = "{% url 'orgunit_board_partial' organisationalunit.slug %}";
+      var headerStatsUrl = "{% url 'orgunit_header_stats_partial' organisationalunit.slug %}";
+
+      // Populate the "Team utilisation" header tile asynchronously (pandas-heavy).
+      var utilTile = document.getElementById('unit-util-tile');
+      if (utilTile) {
+        fetch(headerStatsUrl, {headers: {'X-Requested-With': 'XMLHttpRequest'}})
+          .then(function(r) { return r.json(); })
+          .then(function(data) { utilTile.textContent = data.utilisation_4wk + '%'; })
+          .catch(function() { utilTile.innerHTML = '<span class="text-body-tertiary fs-7">&ndash;</span>'; });
+      }
 
       function loadTab(url, containerId, callback) {
         fetch(url, {

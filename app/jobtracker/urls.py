@@ -775,6 +775,11 @@ urlpatterns = [
         name="orgunit_stats_partial",
     ),
     path(
+        "ops/unit/<str:slug>/header-stats/",
+        views.orgunit_header_stats_partial,
+        name="orgunit_header_stats_partial",
+    ),
+    path(
         "ops/unit/<str:slug>/jobs/",
         views.orgunit_jobs_partial,
         name="orgunit_jobs_partial",

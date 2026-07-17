@@ -22,6 +22,7 @@ from ..models import (
     OrganisationalUnitRole,
     Job,
     Phase,
+    TimeSlot,
 )
 from ..enums import PhaseStatuses
 from chaotica_utils.enums import UnitRoles
@@ -106,7 +107,52 @@ class OrganisationalUnitDetailView(
         ).exists()
 
         # Evaluate memberships once with proper prefetches
-        context["active_memberships"] = list(unit.get_activeMemberships())
+        memberships = list(unit.get_activeMemberships())
+        context["active_memberships"] = memberships
+
+        # Phases "in flight" for the header at-a-glance tile (single COUNT)
+        context["phases_in_flight_count"] = Phase.objects.filter(
+            job__unit=unit,
+            status__in=[PhaseStatuses.IN_PROGRESS] + PhaseStatuses.QA_STATUSES,
+        ).count()
+
+        # Per-member utilisation + active-job counts for the Team table.
+        # Both are computed in bulk (one pandas call + one aggregate query) and
+        # attached onto each membership row so the template does no per-member work.
+        # Utilisation is scoped to consultants — only they get booked, so we skip
+        # the pandas work for everyone else and show "—" against them.
+        member_ids = [ms.member_id for ms in memberships]
+        consultant_ids = set(unit.get_consultant_ids())
+        week_start = (
+            timezone.now() - datetime.timedelta(days=timezone.now().weekday())
+        ).date()
+        util = (
+            unit.calculate_bulk_utilization(
+                week_start,
+                week_start + datetime.timedelta(days=28),
+                user_ids=list(consultant_ids),
+            )
+            if consultant_ids
+            else {}
+        )
+        active_job_counts = {
+            row["user"]: row["n"]
+            for row in TimeSlot.objects.filter(
+                user_id__in=member_ids,
+                phase__job__unit=unit,
+                phase__status__in=PhaseStatuses.ACTIVE_STATUSES,
+            )
+            .values("user")
+            .annotate(n=Count("phase__job", distinct=True))
+        }
+        for ms in memberships:
+            ms.is_consultant = ms.member_id in consultant_ids
+            m = util.get(ms.member_id, {})
+            working = m.get("working_days", 0)
+            ms.util_pct = (
+                round(m.get("confirmed_days", 0) / working * 100, 1) if working else 0
+            )
+            ms.active_job_count = active_job_counts.get(ms.member_id, 0)
 
         # Add QA review data for users with permission
         if self.request.user.has_perm("can_view_all_reviews", unit):
@@ -188,14 +234,61 @@ def orgunit_stats_partial(request, slug):
         )
         context["end_date"] = request.GET.get("end_date", timezone.now().date())
 
-    context["stats"] = unit.get_stats(context["start_date"], context["end_date"])
+    include_financials = request.user.has_perm("jobtracker.can_view_jobs", unit)
+    context["can_view_financials"] = include_financials
+    context["stats"] = unit.get_stats(
+        context["start_date"],
+        context["end_date"],
+        include_financials=include_financials,
+    )
     context["stats_json"] = json.dumps(context["stats"], indent=4, default=str)
     context["organisationalunit"] = unit
+
+    # Membership rows + a util lookup so the member table can reuse the shared
+    # user_table_display partial without recomputing anything. Utilisation is
+    # consultants-only, so the table lists just those members.
+    context["member_util_map"] = {
+        row["user_id"]: row for row in context["stats"]["member_utilisation"]
+    }
+    context["active_memberships"] = [
+        ms
+        for ms in unit.get_activeMemberships()
+        if ms.member_id in context["member_util_map"]
+    ]
 
     html = loader.render_to_string(
         "partials/unit/unit_stats.html", context, request=request
     )
     return JsonResponse({"html": html, "stats_json": context["stats_json"]})
+
+
+@login_required
+@permission_required_or_403(
+    "jobtracker.view_organisationalunit",
+    (OrganisationalUnit, "slug", "slug"),
+)
+def orgunit_header_stats_partial(request, slug):
+    """Lightweight JSON endpoint for the header 'Team utilisation' tile.
+
+    Utilisation is pandas-heavy, so the tile is populated asynchronously rather
+    than blocking the detail page. Mirrors the totals math in
+    ``get_upcoming_availability`` for the coming four weeks.
+    """
+    unit = get_object_or_404(OrganisationalUnit, slug=slug)
+    # Consultants only — the only members who get booked onto delivery.
+    consultant_ids = unit.get_consultant_ids()
+    if not consultant_ids:
+        return JsonResponse({"utilisation_4wk": 0})
+    week_start = (
+        timezone.now() - datetime.timedelta(days=timezone.now().weekday())
+    ).date()
+    util = unit.calculate_bulk_utilization(
+        week_start, week_start + datetime.timedelta(days=28), user_ids=consultant_ids
+    )
+    total_confirmed = sum(m.get("confirmed_days", 0) for m in util.values())
+    total_working = sum(m.get("working_days", 0) for m in util.values())
+    pct = round(total_confirmed / total_working * 100, 1) if total_working else 0
+    return JsonResponse({"utilisation_4wk": pct})
 
 
 @login_required
@@ -283,9 +376,19 @@ KANBAN_EXCLUDED_STATUSES = [
 )
 def orgunit_board_partial(request, slug):
     unit = get_object_or_404(OrganisationalUnit, slug=slug)
+    # The two terminal columns (Delivered / Completed) are bounded to the last
+    # 30 days so they don't grow unbounded. We filter in the DB so ancient
+    # delivered/completed phases are never loaded at all.
+    from django.db.models import Q
+
+    cutoff = timezone.now() - datetime.timedelta(days=30)
     phases = list(
         Phase.objects.filter(job__unit=unit)
         .exclude(status__in=KANBAN_EXCLUDED_STATUSES)
+        .exclude(Q(status=PhaseStatuses.DELIVERED) & Q(actual_delivery_date__lt=cutoff))
+        .exclude(
+            Q(status=PhaseStatuses.COMPLETED) & Q(actual_completed_date__lt=cutoff)
+        )
         .select_related("job", "job__client", "service", "project_lead")
         .order_by("status", "_start_date")
     )
@@ -305,6 +408,9 @@ def orgunit_board_partial(request, slug):
                 "underline": col_def["underline"],
                 "phases": col_phases,
                 "count": len(col_phases),
+                # Delivered/Completed are bounded to the last 30 days
+                "bounded_recent": PhaseStatuses.DELIVERED in col_def["statuses"]
+                or PhaseStatuses.COMPLETED in col_def["statuses"],
             }
         )
 

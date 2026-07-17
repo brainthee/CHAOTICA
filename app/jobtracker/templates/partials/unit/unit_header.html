@@ -1,0 +1,102 @@
+{% load static %}
+
+<div class="row px-5 align-items-start justify-content-between g-3 mt-0 mb-0">
+  <div class="col-12 col-md">
+    <h2 class="mb-1">{{ organisationalunit.name }}</h2>
+    {% if organisationalunit.description %}
+      <p class="text-body-secondary mb-0">{{ organisationalunit.description }}</p>
+    {% endif %}
+  </div>
+
+  <div class="col-12 col-md-auto">
+    <div class="d-flex flex-wrap gap-2 justify-content-md-end">
+      {% if 'manage_members' in unit_perms %}
+        <div class="dropdown">
+          <button class="btn btn-phoenix-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <span class="fa-solid fa-user-plus me-2"></span>Members
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li><a class="dropdown-item js-load-modal-form" href="#" data-url="{% url 'organisationalunit_add' organisationalunit.slug %}"><span class="fa-solid fa-user-plus me-2 text-body-tertiary"></span>Add Member</a></li>
+            <li><a class="dropdown-item js-load-modal-form" href="#" data-url="{% url 'organisationalunit_preload_member' organisationalunit.slug %}"><span class="fa-solid fa-user-clock me-2 text-body-tertiary"></span>Pre-load Member</a></li>
+            <li><a class="dropdown-item" href="{% url 'organisationalunit_import_members' organisationalunit.slug %}"><span class="fa-solid fa-file-csv me-2 text-body-tertiary"></span>Import CSV</a></li>
+          </ul>
+        </div>
+      {% endif %}
+
+      {% if 'change_organisationalunit' in unit_perms %}
+        <a href="{% url 'organisationalunit_update' organisationalunit.slug %}" class="btn btn-phoenix-secondary"><span class="fa-solid fa-pen me-2"></span>Edit</a>
+      {% endif %}
+      {% if not is_active_member %}
+        <a href="#" data-url="{% url 'organisationalunit_join' organisationalunit.slug %}" class="btn btn-phoenix-primary js-load-modal-form"><span class="fa-solid fa-right-to-bracket me-2"></span>Join</a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="row px-5 g-3 mt-0 mb-0 pb-3">
+  <!-- Leads -->
+  <div class="col-12 col-lg-4">
+    <div class="card h-100 border border-translucent">
+      <div class="card-body">
+        <h6 class="text-body-tertiary text-uppercase fs-10 mb-3">Leads</h6>
+        {% if organisationalunit.leads.all %}
+          <div class="d-flex flex-wrap gap-2">
+            {% for lead in organisationalunit.leads.all %}
+              <a href="{{ lead.get_absolute_url }}" class="d-inline-flex align-items-center text-decoration-none bg-body-highlight rounded-pill py-1 pe-3 ps-1 border border-translucent" title="{{ lead.get_full_name }}">
+                <div class="avatar avatar-s me-2">
+                  <img class="rounded-circle" src="{{ lead.get_avatar_url }}" alt="{{ lead.get_full_name }}">
+                </div>
+                <span class="fs-9 text-body-emphasis">{{ lead.get_full_name }}</span>
+              </a>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-body-tertiary fs-9 mb-0">No leads assigned</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- At a glance stat tiles -->
+  <div class="col-6 col-lg-4">
+    <div class="card h-100 border border-translucent">
+      <div class="card-body d-flex flex-column justify-content-center">
+        <div class="d-flex align-items-center mb-2">
+          <span class="fa-solid fa-diagram-project fs-6 text-primary me-2"></span>
+          <h6 class="text-body-tertiary text-uppercase fs-10 mb-0">Phases in flight</h6>
+        </div>
+        <h2 class="fw-bolder mb-0">{{ phases_in_flight_count }}</h2>
+        <p class="text-body-secondary fs-10 mb-0">In progress &amp; in QA</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-6 col-lg-4">
+    <div class="card h-100 border border-translucent">
+      <div class="card-body d-flex flex-column justify-content-center">
+        <div class="d-flex align-items-center mb-2">
+          <span class="fa-solid fa-chart-line fs-6 text-info me-2"></span>
+          <h6 class="text-body-tertiary text-uppercase fs-10 mb-0">Team utilisation</h6>
+        </div>
+        <h2 class="fw-bolder mb-0" id="unit-util-tile">
+          <div class="spinner-border spinner-border-sm text-info" role="status"></div>
+        </h2>
+        <p class="text-body-secondary fs-10 mb-0">Consultants, confirmed &middot; coming 4 weeks</p>
+      </div>
+    </div>
+  </div>
+
+  {% if organisationalunit.special_requirements %}
+    <div class="col-12">
+      <div class="card border border-warning">
+        <div class="card-body py-2 d-flex align-items-start">
+          <span class="fa-solid fa-triangle-exclamation text-warning me-2 mt-1"></span>
+          <div>
+            <h6 class="mb-1">Special Requirements</h6>
+            <div class="fs-9 text-body-secondary">{{ organisationalunit.special_requirements }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+</div>

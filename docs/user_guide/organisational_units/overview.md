@@ -7,9 +7,12 @@ Organisational units are the teams and departments that own jobs and manage memb
 The unit detail page is accessed from the unit list or by navigating to a specific unit. The header displays:
 
 - Unit name and description
-- Special requirements (if any)
-- Unit lead profiles (a unit can have one or more leads)
-- Action buttons: **Add Member**, **Pre-load Member**, **Import CSV** (all require `manage_members`), **Edit** (requires `change_organisationalunit`), **Join** (if not already a member)
+- **Leads** — the unit's lead(s) shown as clickable avatar chips linking to each profile (or "No leads assigned")
+- **At-a-glance stats**:
+    - **Phases in flight** — count of the unit's phases currently in progress or in QA
+    - **Team utilisation** — confirmed utilisation across the coming four weeks. Utilisation is calculated over **consultants only** (the members who get booked onto delivery), so managers, sales and other roles don't drag the figure down. This figure is loaded asynchronously (a spinner resolves to a percentage) because it is calculated from the full schedule.
+- Special requirements (if any) shown as a highlighted banner
+- Actions: a **Members** dropdown grouping **Add Member**, **Pre-load Member** and **Import CSV** (all require `manage_members`), an **Edit** button (requires `change_organisationalunit`), and a contextual **Join** button (if not already a member)
 
 > **Add Member** adds an *existing* user; **Pre-load Member** and **Import CSV** let you onboard people who haven't logged in yet. See [Pre-loading & Importing Members](preloading_members.md).
 
@@ -21,7 +24,16 @@ The detail page is organised into tabs. Some tabs are always visible; others req
 
 *Always visible.*
 
-Displays a table of active unit members with their assigned roles. Members with the `manage_members` permission see a dropdown menu on each row to manage roles or review pending join requests.
+Displays a table of active unit members with, per member:
+
+- **Member** — name and avatar (links to the profile)
+- **Job level & title** — current job-level badge and job title
+- **Utilisation** — a bar and percentage of confirmed utilisation across the coming four weeks (consultants only; other roles show "—")
+- **Active jobs** — the number of the unit's active jobs the member is scheduled on
+- **Roles** — assigned unit role badges
+- **Actions** — a per-row menu with View Profile, View Schedule and Email for everyone, plus Manage Roles / Review Join Request for members with `manage_members`
+
+Utilisation and active-job counts are computed in bulk for the whole team, so the table stays fast regardless of member count.
 
 ### Jobs
 
@@ -39,7 +51,16 @@ A kanban-style board showing all active phases for the unit's jobs, organised by
 
 *Always visible.*
 
-AJAX-loaded utilisation statistics with date range filtering. Shows upcoming availability metrics across four time periods (this week, 2 weeks, 4 weeks, 8 weeks) with utilisation percentages for confirmed, tentative, non-delivery, and available time. Includes an ECharts bar chart visualisation.
+AJAX-loaded statistics with date-range filtering, laid out top to bottom:
+
+1. **Summary tiles** — active members, active jobs, phases delivered in the selected range, coming-4-week utilisation, and (only for users with `can_view_jobs`) total active-job revenue.
+2. **Upcoming availability** — consultant utilisation across four time periods (this week, 2 weeks, 4 weeks, 8 weeks) for confirmed, tentative, non-delivery, and available time, with a stacked ECharts bar chart.
+3. **Delivery throughput** — phases delivered per month over the last six months (bar chart).
+4. **Service breakdown** — phases grouped by service (bar chart).
+5. **Job pipeline** — job counts by status.
+6. **Consultant utilisation table** — each consultant's confirmed utilisation over the selected date range (utilisation is tracked for consultants only).
+
+The offcanvas **Raw Data** panel shows the underlying JSON used to build the page.
 
 ### Reviews
 
@@ -72,6 +93,8 @@ flowchart LR
 | Delivered | Delivered |
 
 Phases with statuses **Cancelled**, **Postponed**, **Deleted**, or **Archived** are excluded from the board.
+
+The two terminal columns — **Completed** and **Delivered** — are bounded to the **last 30 days** so they don't grow unbounded; each carries a "Last 30 days" badge in its header. Older completed/delivered phases are not loaded.
 
 Each card displays:
 

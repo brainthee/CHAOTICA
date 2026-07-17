@@ -1,8 +1,12 @@
-<table class="table datatable align-items-center mb-0">
+<div class="table-responsive">
+<table class="table table-sm datatable align-items-center mb-0">
   <caption>Team</caption>
     <thead>
       <tr>
         <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Member</th>
+        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Job Level &amp; Title</th>
+        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Utilisation</th>
+        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2 text-center">Active Jobs</th>
         <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Roles</th>
         <th></th>
       </tr>
@@ -11,35 +15,63 @@
       {% for member in active_memberships %}
           <tr>
               <td>
-                  {% include 'partials/users/user_table_display.html' with u=member.member noorg=1 %}
-              </td>   
-              <td>
+                  {% include 'partials/users/user_table_display.html' with u=member.member noorg=1 notitle=1 nojl=1 noloc=1 %}
+              </td>
+              <td class="ps-2">
+                  {% if member.member.get_current_level %}
+                    {% include 'partials/users/joblevel_badge.html' with level=member.member.get_current_level %}
+                  {% endif %}
+                  <div class="fs-9 text-body-secondary">
+                    {% if member.member.job_title %}{{ member.member.job_title }}{% else %}<span class="text-body-tertiary">&ndash;</span>{% endif %}
+                  </div>
+              </td>
+              <td class="ps-2" style="min-width: 120px;">
+                  {% if member.is_consultant %}
+                  <div class="d-flex align-items-center">
+                    <div class="progress flex-1 me-2" style="height: 6px; min-width: 60px;">
+                      <div class="progress-bar bg-info" role="progressbar" style="width: {{ member.util_pct }}%;" aria-valuenow="{{ member.util_pct }}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    <span class="fs-9 text-body-secondary">{{ member.util_pct }}%</span>
+                  </div>
+                  {% else %}
+                  <span class="fs-9 text-body-tertiary" title="Utilisation is tracked for consultants only">&ndash;</span>
+                  {% endif %}
+              </td>
+              <td class="ps-2 text-center">
+                  <span class="badge badge-phoenix {% if member.active_job_count %}badge-phoenix-primary{% else %}badge-phoenix-secondary{% endif %}">{{ member.active_job_count }}</span>
+              </td>
+              <td class="ps-2">
                   <p class="text-xs font-weight-normal mb-0">
                     {% for role in member.roles.all %}
                     {% include 'partials/unit/role_badge.html' %}
                     {% endfor %}
                   </p>
-              </td>        
+              </td>
               <td class="align-end text-end">
-                  <button class="btn btn-link text-secondary ps-0 pe-2" id="navbarDropdownMenuLink" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  <button class="btn btn-link text-secondary ps-0 pe-2" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                      <i class="fa fa-ellipsis-v text-lg" aria-hidden="true"></i>
                   </button>
-                  <div class="dropdown-menu shadow dropdown-menu-end me-sm-n4 me-n3" aria-labelledby="navbarDropdownMenuLink">
+                  <div class="dropdown-menu shadow dropdown-menu-end me-sm-n4 me-n3">
+                    <a class="dropdown-item" href="{{ member.member.get_absolute_url }}"><span class="fa-solid fa-id-card me-2 text-body-tertiary"></span>View Profile</a>
+                    <a class="dropdown-item" href="{% url 'view_scheduler' %}?users={{ member.member.id }}"><span class="fa-solid fa-calendar-days me-2 text-body-tertiary"></span>View Schedule</a>
+                    <a class="dropdown-item" href="mailto:{{ member.member.email }}"><span class="fa-solid fa-envelope me-2 text-body-tertiary"></span>Email</a>
                     {% if 'manage_members' in unit_perms %}
-                      <a class="dropdown-item text-primary js-load-modal-form" href="#" 
+                      <div class="dropdown-divider"></div>
+                      <a class="dropdown-item text-primary js-load-modal-form" href="#"
                         data-url="{% url 'organisationalunit_manage_roles' organisationalunit.slug member.pk %}">
-                        Manage Roles
+                        <span class="fa-solid fa-user-shield me-2"></span>Manage Roles
                       </a>
-                      {% if not member.roles %}
-                      <a class="dropdown-item text-warning js-load-modal-form" href="#" 
+                      {% if not member.roles.all %}
+                      <a class="dropdown-item text-warning js-load-modal-form" href="#"
                           data-url="{% url 'review_join_request' organisationalunit.slug member.pk %}">
-                          Review Join Request
+                          <span class="fa-solid fa-user-check me-2"></span>Review Join Request
                       </a>
                       {% endif %}
                     {% endif %}
                   </div>
                </td>
           </tr>
-      {% endfor %}        
+      {% endfor %}
     </tbody>
   </table>
+</div>
