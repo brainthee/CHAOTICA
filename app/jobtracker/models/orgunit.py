@@ -156,40 +156,82 @@ class OrganisationalUnit(models.Model):
 
         return working_days_list
 
-    def sync_permissions(self):
-        for user in self.get_allMembers():
-            # Ensure the permissions are set right!
-            existing_perms = list(
-                get_user_perms(user, self).values_list("codename", flat=True)
+    def sync_permissions(self, users=None):
+        """Reconcile guardian object permissions from each member's roles.
+
+        ``users`` optionally limits the work to specific members (``User``
+        instances or pks); by default every member is reconciled. A membership
+        change (``OrganisationalUnitMember.save``) passes just that one member
+        so the common path stays O(1) instead of re-reconciling the whole unit
+        on every save - which previously made bulk imports O(n^2).
+
+        Reads are batched (one query for expected perms, one for existing) so a
+        full sync is a handful of queries regardless of member count.
+        """
+        # Target member pks. ``self.members.all()`` (not filtered on left_date)
+        # matches the old behaviour so members who have left still get their
+        # stale permissions cleared.
+        if users is None:
+            target_ids = set(
+                self.members.all().values_list("member__pk", flat=True)
             )
+        else:
+            target_ids = {getattr(u, "pk", u) for u in users}
+        if not target_ids:
+            return
 
-            expected_perms = []
-            # get a combined list of perms from their roles...
-            for ms in OrganisationalUnitMember.objects.filter(
-                unit=self, member=user, left_date__isnull=True
-            ):
-                perm_objs = Permission.objects.filter(
-                    pk__in=ms.roles.all().values_list("permissions").distinct()
+        # Expected perms per member, in a single query: only active memberships
+        # contribute roles, so a left member ends up with an empty set.
+        expected = defaultdict(set)
+        for member_id, codename in OrganisationalUnitMember.objects.filter(
+            unit=self, member_id__in=target_ids, left_date__isnull=True
+        ).values_list("member_id", "roles__permissions__codename"):
+            if codename:
+                expected[member_id].add(codename)
+
+        users_by_id = User.objects.in_bulk(target_ids)
+
+        # Existing object perms. For a full sync, read everyone in one batched
+        # query; for a targeted sync (a single member's save) read just those
+        # users so the common path doesn't scan the whole unit (which would
+        # reintroduce the O(n^2) behaviour this method is here to avoid).
+        existing = defaultdict(set)
+        if users is None:
+            for user, perms in get_users_with_perms(
+                self,
+                attach_perms=True,
+                with_superusers=False,
+                with_group_users=False,
+            ).items():
+                if user.pk in target_ids:
+                    existing[user.pk] = set(perms)
+        else:
+            for uid, user in users_by_id.items():
+                existing[uid] = set(
+                    get_user_perms(user, self).values_list("codename", flat=True)
                 )
-                for role_perm in perm_objs:
-                    if role_perm.codename not in expected_perms:
-                        expected_perms.append(role_perm.codename)
+        # Group the changes by permission so we can assign/remove in bulk:
+        # guardian's assign_perm/remove_perm accept a queryset of users, which
+        # is one query per permission instead of one per (user, permission).
+        to_assign = defaultdict(list)
+        to_remove = defaultdict(list)
+        for member_id in target_ids:
+            if member_id not in users_by_id:
+                continue
+            want = expected.get(member_id, set())
+            have = existing.get(member_id, set())
+            for codename in want - have:
+                to_assign[codename].append(member_id)
+            for codename in have - want:
+                to_remove[codename].append(member_id)
 
-            if expected_perms:
-                # First lets add missing perms...
-                for new_perm in expected_perms:
-                    if new_perm not in existing_perms:
-                        assign_perm(new_perm, user, self)
-
-                # Now lets remove old perms
-                for old_perm in existing_perms:
-                    if old_perm not in expected_perms:
-                        remove_perm(old_perm, user, self)
-            else:
-                if existing_perms:
-                    # We should not have any permissions! Clear them all
-                    for perm in existing_perms:
-                        remove_perm(perm, user, self)
+        # assign_perm accepts a queryset of users (bulk); remove_perm does not,
+        # but removals only happen on role changes / leavers, not on import.
+        for codename, uids in to_assign.items():
+            assign_perm(codename, User.objects.filter(pk__in=uids), self)
+        for codename, uids in to_remove.items():
+            for user in User.objects.filter(pk__in=uids):
+                remove_perm(codename, user, self)
 
     def ensure_lead_memberships(self):
         """Ensure every lead holds the management role on this unit.
@@ -879,8 +921,9 @@ class OrganisationalUnitMember(models.Model):
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        # Lets resync the permissions!
-        self.unit.sync_permissions()
+        # Resync only this member's permissions - reconciling the whole unit on
+        # every membership save made bulk operations O(n^2).
+        self.unit.sync_permissions(users=[self.member_id])
 
 
 @receiver(
