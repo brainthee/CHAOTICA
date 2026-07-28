@@ -93,4 +93,50 @@ A phase's bookings are *tentative* until the phase reaches *Scheduled – Confir
 
 ### Utilisation
 
-How much of a person's available time is booked, shown as a percentage on each scheduler row.
+How much of a person's effective working time is booked to confirmed client
+delivery, shown as a percentage.
+
+$$
+\text{utilisation} = \frac{\text{confirmed delivery days}}{\text{effective working days}} \times 100
+$$
+
+where
+
+```
+effective working days = working days − public holidays − non-working-slot days
+```
+
+- **Working days** — calendar days on the organisational unit's configured
+  working weekdays (`businessHours_days`). Teams, which have no business-hours
+  config, use the global default working days.
+- **Public holidays** — days with a holiday for the person's country, or a
+  global holiday that applies to everyone.
+- **Non-working-slot days** — working, non-holiday days on which the person has
+  any timeslot whose slot type is *not working* (annual leave, sick, bank
+  holidays booked on the scheduler, or any custom non-working type).
+- **Confirmed delivery days** — the remaining working days with at least one
+  timeslot on a phase that has reached *Scheduled – Confirmed*.
+
+What is **excluded** from utilisation:
+
+- Weekends and any non-configured weekdays.
+- Public holidays.
+- Days blocked by a non-working slot (leave, sick, …) — these are removed from
+  the denominator, so time off does not depress a person's utilisation. Because
+  the scheduler works a day at a time, a day touched by *any* non-working slot
+  is treated as non-working even if delivery was also booked that day.
+- Tentative bookings (phases not yet confirmed).
+- Internal working time (training, catch-ups, internal projects) — this keeps a
+  day in the denominator but does not count as delivery.
+
+A person with no effective working days in the period (for example, on leave for
+the whole window) has an undefined utilisation and is left out of team/unit
+averages rather than counted as 0%.
+
+> **Single source of truth.** This definition is mirrored by the constant
+> `UTILISATION_FORMULA_DESCRIPTION` in
+> `app/chaotica_utils/utils/utilisation.py`, which also powers the info-tooltip
+> shown next to utilisation figures in the UI. The calculation itself lives in
+> `calculate_utilisation()` in that same module — the only place the formula is
+> implemented, so every view (per user, unit and team) stays consistent. Update
+> the constant and this section together when the formula changes.

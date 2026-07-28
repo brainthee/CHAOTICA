@@ -1,0 +1,76 @@
+{% extends "reporting/base.html" %}
+{% load static %}
+
+{% block report_content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h3>{{ report.name }}</h3>
+    <a href="{% url 'reporting:report_detail' uuid=report.uuid %}" class="btn btn-outline-secondary">
+      <i class="fas fa-arrow-left me-1"></i> Back to Report
+    </a>
+  </div>
+
+  <div class="card">
+    <div class="card-body text-center py-6">
+      <div id="run-spinner" class="mb-3">
+        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+          <span class="visually-hidden">Running…</span>
+        </div>
+      </div>
+      <h5 id="run-status-message" class="mb-2">Queued…</h5>
+      <p class="text-body-secondary mb-0">
+        Your report is running in the background. This page will update automatically —
+        you can leave it open.
+      </p>
+
+      <div id="run-error" class="alert alert-phoenix-danger mt-4 text-start d-none" role="alert">
+        <strong>Report failed.</strong>
+        <div id="run-error-message" class="mt-1"></div>
+        <a href="{% url 'reporting:run_report' uuid=report.uuid %}" class="btn btn-sm btn-danger mt-3">
+          <i class="fas fa-redo me-1"></i> Try Again
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const statusUrl = "{{ status_url|escapejs }}";
+  const messageEl = document.getElementById('run-status-message');
+  const spinnerEl = document.getElementById('run-spinner');
+  const errorEl = document.getElementById('run-error');
+  const errorMsgEl = document.getElementById('run-error-message');
+  const POLL_MS = 2000;
+
+  function poll() {
+    fetch(statusUrl, {headers: {'X-Requested-With': 'XMLHttpRequest'}})
+      .then(function (resp) { return resp.json(); })
+      .then(function (data) {
+        if (data.message) { messageEl.textContent = data.message; }
+
+        if (data.status === 'complete') {
+          messageEl.textContent = data.is_export
+            ? 'Ready — starting download…'
+            : 'Done! Loading results…';
+          window.location = data.result_url;
+          return;
+        }
+        if (data.status === 'failed') {
+          spinnerEl.classList.add('d-none');
+          errorMsgEl.textContent = data.message || 'An unexpected error occurred.';
+          errorEl.classList.remove('d-none');
+          return;
+        }
+        setTimeout(poll, POLL_MS);
+      })
+      .catch(function () {
+        // Transient error (e.g. network blip) — keep trying.
+        setTimeout(poll, POLL_MS);
+      });
+  }
+
+  poll();
+})();
+</script>
+{% endblock %}

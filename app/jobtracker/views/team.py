@@ -294,14 +294,17 @@ def team_debrief_partial(request, slug):
         'non_delivery_days': 0,
         'available_days': 0,
         'working_days': 0,
+        'effective_working_days': 0,
     }
     for user_id, stats in util_data.items():
         for key in util_totals:
             util_totals[key] += stats[key]
 
+    # Utilisation divides by effective working days (nominal working days minus
+    # public holidays and leave/sick), matching the central formula.
     utilisation_pct = round(
-        util_totals['confirmed_days'] / util_totals['working_days'] * 100, 1
-    ) if util_totals['working_days'] else 0
+        util_totals['confirmed_days'] / util_totals['effective_working_days'] * 100, 1
+    ) if util_totals['effective_working_days'] else 0
 
     context = {
         'team': team,
@@ -317,7 +320,9 @@ def team_debrief_partial(request, slug):
         'summary_total_members': total_members,
         'summary_utilisation_pct': utilisation_pct,
         'summary_confirmed_days': util_totals['confirmed_days'],
-        'summary_working_days': util_totals['working_days'],
+        # Effective working days = the utilisation denominator, so the "x/y days
+        # confirmed" caption matches the displayed percentage.
+        'summary_working_days': util_totals['effective_working_days'],
         'summary_tentative_days': util_totals['tentative_days'],
         'summary_available_days': util_totals['available_days'],
         'summary_prechecks_pending': len(phases_prechecks_pending),

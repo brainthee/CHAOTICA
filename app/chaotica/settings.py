@@ -570,6 +570,8 @@ CRON_CLASSES = [
     "jobtracker.tasks.task_check_qualification_expiry",
     "rm_sync.tasks.task_sync_rm_schedule",
     "reporting.tasks.task_send_scheduled_reports",
+    "reporting.tasks.ProcessReportRuns",
+    "reporting.tasks.CleanupOldReportRuns",
 ]
 
 REST_FRAMEWORK = {

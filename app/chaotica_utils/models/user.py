@@ -1,6 +1,6 @@
 from django.db import models
-from django.db.models import Q, Count, When, Case, Value, Avg
-from django.db.models.functions import Lower, TruncDate
+from django.db.models import Q, Count, Avg
+from django.db.models.functions import Lower
 from django.contrib.auth.models import AbstractUser, Permission
 from django.templatetags.static import static
 import uuid, os, pytz, json
@@ -27,7 +27,6 @@ from constance import config
 from django.template.loader import render_to_string
 import django.core.mail
 from geopy.geocoders import Nominatim
-import pandas as pd
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from ..utils import get_sentinel_user
@@ -1483,210 +1482,63 @@ class User(AbstractUser):
 
     def calculate_user_utilization(self, start_date, end_date, org=None):
         """
-        Calculate utilization statistics for a user within a date range.
+        Calculate utilisation statistics for a user within a date range.
+
+        Delegates all day-classification and percentage maths to the central
+        engine in :mod:`chaotica_utils.utils.utilisation` so the formula lives
+        in exactly one place. See that module for the definition of utilisation
+        and what is excluded.
 
         Args:
-            user_id: The ID of the user to analyze
             start_date: datetime object for the start of the period
             end_date: datetime object for the end of the period
+            org: optional OrganisationalUnit whose working days to use
 
         Returns:
-            dict: Statistics including available_days, scheduled_days, tentative_days,
-                confirmed_days, and non_delivery_days
+            dict: see :func:`chaotica_utils.utils.utilisation.calculate_utilisation`
         """
-        # Prepare holiday bits
         from .models import Holiday
+        from ..utils import calculate_utilisation
 
+        # Holidays for the user's country plus any global (country=NULL) ones.
         holidays = Holiday.objects.filter(
-            country=self.country, date__range=(start_date, end_date)
+            Q(country=self.country) | Q(country__isnull=True),
+            date__range=(start_date, end_date),
         ).values_list("date", flat=True)
-        # Convert to set for faster lookups
         holiday_dates = set(
             h.date() if isinstance(h, timezone.datetime) else h for h in holidays
         )
 
-        # Prepare org working_days
-        if not org and self.unit_memberships.count() >0:
+        # Prefer the unit's configured working days, else the global default.
+        if not org and self.unit_memberships.count() > 0:
             org = self.unit_memberships.first().unit
+        if org:
             working_days = org.businessHours_days
         else:
             working_days = json.loads(config.DEFAULT_WORKING_DAYS)
 
-        # First, get all timeslots that overlap with our date range
+        # Fetch overlapping timeslots and reduce each to the flags the engine
+        # needs. slot_type__is_working=False marks non-working time (leave/sick).
         timeslots = self.timeslots.filter(
             start__date__lte=end_date, end__date__gte=start_date
-        ).annotate(
-            date=TruncDate("start"),
-            # Calculate if slot is tentative (phase status < 6)
-            is_tentative=Case(
-                When(
-                    phase__status__lt=PhaseStatuses.SCHEDULED_CONFIRMED, then=Value(1)
-                ),
-                When(
-                    phase__status__gte=PhaseStatuses.SCHEDULED_CONFIRMED, then=Value(0)
-                ),
-                When(phase__isnull=True, then=Value(0)),
-                default=Value(0),
-                output_field=models.IntegerField(),
-            ),
-            # Calculate if slot is confirmed (phase status >= 6)
-            is_confirmed=Case(
-                When(
-                    phase__status__gte=PhaseStatuses.SCHEDULED_CONFIRMED, then=Value(1)
-                ),
-                When(
-                    phase__status__lt=PhaseStatuses.SCHEDULED_CONFIRMED, then=Value(0)
-                ),
-                When(phase__isnull=True, then=Value(0)),
-                default=Value(0),
-                output_field=models.IntegerField(),
-            ),
-            # Calculate if slot has no phase (non-delivery)
-            is_non_delivery=Case(
-                When(phase__isnull=True, then=Value(1)),
-                default=Value(0),
-                output_field=models.IntegerField(),
-            ),
+        ).values("start", "end", "phase__status", "slot_type__is_working")
+
+        slots = [
+            {
+                "start": ts["start"],
+                "end": ts["end"],
+                "is_confirmed": ts["phase__status"] is not None
+                and ts["phase__status"] >= PhaseStatuses.SCHEDULED_CONFIRMED,
+                "is_tentative": ts["phase__status"] is not None
+                and ts["phase__status"] < PhaseStatuses.SCHEDULED_CONFIRMED,
+                "is_non_working_slot": ts["slot_type__is_working"] is False,
+            }
+            for ts in timeslots
+        ]
+
+        return calculate_utilisation(
+            slots, start_date, end_date, working_days, holiday_dates
         )
-
-        # Create a DataFrame with all dates in range
-        date_range = pd.date_range(start=start_date, end=end_date, freq="D")
-        dates_df = pd.DataFrame({"date": date_range})
-        # Convert to date (not datetime)
-        dates_df["date"] = dates_df["date"].dt.date
-
-        # Add holiday indicator
-        dates_df["is_holiday"] = dates_df["date"].apply(
-            lambda x: 1 if x in holiday_dates else 0
-        )
-        dates_df["is_working_day"] = dates_df["date"].apply(
-            lambda x: 1 if (x.weekday() + 1) in working_days else 0
-        )
-
-        # Convert timeslots to DataFrame for easier date-wise aggregation
-        slots_data = []
-        for slot in timeslots:
-            # Generate a row for each day the slot spans
-            current_date = max(slot.start.date(), start_date.date())
-            end_date_slot = min(slot.end.date(), end_date.date())
-
-            while current_date <= end_date_slot:
-                # Skip holidays when counting utilization
-                if (
-                    current_date.weekday() + 1
-                ) in working_days and current_date not in holiday_dates:
-                    slots_data.append(
-                        {
-                            "date": current_date,
-                            "is_tentative": slot.is_tentative,
-                            "is_confirmed": slot.is_confirmed,
-                            "is_non_delivery": slot.is_non_delivery,
-                        }
-                    )
-                current_date += timedelta(days=1)
-
-        slots_df = pd.DataFrame(slots_data)
-
-        # If we have any slots, merge and calculate daily statistics
-        if len(slots_df) > 0:
-            # Group by date and aggregate
-            daily_stats = (
-                slots_df.groupby("date")
-                .agg(
-                    {
-                        "is_tentative": "sum",
-                        "is_confirmed": "sum",
-                        "is_non_delivery": "sum",
-                    }
-                )
-                .reset_index()
-            )
-
-            # Merge with full date range
-            final_df = dates_df.merge(daily_stats, on="date", how="left").fillna(0)
-        else:
-            # If no slots, create empty statistics
-            final_df = dates_df.copy()
-            final_df["is_tentative"] = 0
-            final_df["is_confirmed"] = 0
-            final_df["is_non_delivery"] = 0
-
-        # Calculate statistics
-        total_days = len(date_range)
-        holiday_days = len(final_df[final_df["is_holiday"] > 0])
-        non_working_days = len(final_df[final_df["is_working_day"] == 0])
-
-        work_days = len(
-            final_df[(final_df["is_holiday"] == 0) & (final_df["is_working_day"] == 1)]
-        )
-
-        # Only count scheduled days on working days that aren't holidays
-        scheduled_days = len(
-            final_df[
-                (final_df["is_holiday"] == 0)
-                & (final_df["is_working_day"] == 1)
-                & (
-                    (final_df["is_tentative"] > 0)
-                    | (final_df["is_confirmed"] > 0)
-                    | (final_df["is_non_delivery"] > 0)
-                )
-            ]
-        )
-
-        data = {
-            "total_days": total_days,
-            "working_days": work_days,
-            "non_working_days": non_working_days,
-            "holiday_days": holiday_days,
-            "available_days": work_days - scheduled_days,
-            "scheduled_days": scheduled_days,
-            "tentative_days": len(
-                final_df[
-                    (final_df["is_holiday"] == 0)
-                    & (final_df["is_working_day"] == 1)
-                    & (final_df["is_tentative"] > 0)
-                ]
-            ),
-            "confirmed_days": len(
-                final_df[
-                    (final_df["is_holiday"] == 0)
-                    & (final_df["is_working_day"] == 1)
-                    & (final_df["is_confirmed"] > 0)
-                ]
-            ),
-            "non_delivery_days": len(
-                final_df[
-                    (final_df["is_holiday"] == 0)
-                    & (final_df["is_working_day"] == 1)
-                    & (final_df["is_non_delivery"] > 0)
-                ]
-            ),
-        }
-
-        ## Calculate percentages
-        # Working perc (basically available working days minus holidays)
-        data["working_percentage"] = calculate_percentage(
-            data["working_days"], data["total_days"] - data["non_working_days"]
-        )
-
-        # util == working_days / confirmed
-        data["utilisation_percentage"] = calculate_percentage(
-            data["confirmed_days"], data["working_days"]
-        )
-        data["confirmed_percentage"] = calculate_percentage(
-            data["confirmed_days"], data["working_days"]
-        )
-        data["tentative_percentage"] = calculate_percentage(
-            data["tentative_days"], data["working_days"]
-        )
-        data["non_delivery_percentage"] = calculate_percentage(
-            data["non_delivery_days"], data["working_days"]
-        )
-        data["available_percentage"] = calculate_percentage(
-            data["available_days"], data["working_days"]
-        )
-
-        return data
 
     def get_upcoming_availability(self, org=None):
         data = {}

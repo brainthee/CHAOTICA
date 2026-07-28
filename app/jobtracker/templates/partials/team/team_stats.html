@@ -538,12 +538,12 @@ $(function() {
       <thead>
         <tr>
           <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Member</th>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Utilisation</th>
+          <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Utilisation{% include 'partials/_util_info_icon.html' %}</th>
         </tr>
       </thead>
       <tbody>
         {% for member in organisationalunit.get_activeMemberships %}
-            {% get_utilisation_percentage member.member start_date end_date as member_util %}        
+            {% get_utilisation_perc member.member start_date end_date as member_util %}
             <tr>
                 <td>
                     {% include 'partials/users/user_table_display.html' with u=member.member noorg=1 %}

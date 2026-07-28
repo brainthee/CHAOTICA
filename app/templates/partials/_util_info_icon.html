@@ -1,0 +1,10 @@
+{% comment %}
+Small info icon with a tooltip explaining how utilisation is calculated.
+The tooltip text comes from UTILISATION_FORMULA_DESCRIPTION (defined in
+chaotica_utils.utils.utilisation and exposed via the `defaults` context
+processor), so it always matches the code and the site documentation.
+{% endcomment %}
+<i class="fa-solid fa-circle-info fa-xs text-body-tertiary ms-1"
+   role="img" aria-label="How is utilisation calculated?"
+   data-bs-toggle="tooltip" data-bs-placement="top"
+   title="{{ UTILISATION_FORMULA_DESCRIPTION }}"></i>
