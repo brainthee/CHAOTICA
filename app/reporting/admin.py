@@ -3,7 +3,7 @@ from .models import (
     Report, ReportCategory, ReportField, ReportFilter, ReportSort,
     DataArea, DataField, DataSource, RelationshipType,
     FieldType, FieldPresentation, FilterType, FilterCondition,
-    ScheduledReport
+    ScheduledReport, ReportRun
 )
 
 # Register basic models with simple admin interfaces
@@ -138,3 +138,16 @@ class ScheduledReportAdmin(admin.ModelAdmin):
     search_fields = ['name', 'report__name']
     raw_id_fields = ['report', 'run_as_user', 'split_by_field', 'recipient_group']
     readonly_fields = ['last_sent_at', 'created_at', 'updated_at']
+
+
+@admin.register(ReportRun)
+class ReportRunAdmin(admin.ModelAdmin):
+    list_display = ['id', 'report', 'user', 'status', 'export_format', 'row_count', 'created_at', 'completed_at']
+    list_filter = ['status', 'export_format']
+    search_fields = ['id', 'report__name', 'user__email']
+    raw_id_fields = ['report', 'user']
+    readonly_fields = [
+        'id', 'report', 'user', 'filter_values', 'export_format', 'result_path',
+        'row_count', 'export_path', 'export_content_type', 'export_filename',
+        'error_message', 'created_at', 'started_at', 'completed_at',
+    ]

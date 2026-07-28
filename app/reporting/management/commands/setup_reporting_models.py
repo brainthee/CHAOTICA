@@ -130,6 +130,7 @@ class Command(BaseCommand):
 
         text_type = self.field_types['Text']
         boolean_type = self.field_types['Boolean']
+        date_type = self.field_types['Date']
         datetime_type = self.field_types['DateTime']
         email_type = self.field_types['Email']
         foreign_key_type = self.field_types['Foreign Key']
@@ -145,10 +146,19 @@ class Command(BaseCommand):
             {'name': 'date_joined', 'display_name': 'Date Joined', 'field_path': 'date_joined', 'field_type': datetime_type, 'group': 'Dates'},
             {'name': 'last_login', 'display_name': 'Last Login', 'field_path': 'last_login', 'field_type': datetime_type, 'group': 'Dates'},
             {'name': 'manager', 'display_name': 'Manager', 'field_path': 'manager__last_name', 'field_type': foreign_key_type, 'group': 'Work'},
-            {'name': 'location', 'display_name': 'Location', 'field_path': 'location', 'field_type': text_type, 'group': 'Work'},
-            {'name': 'country', 'display_name': 'Country', 'field_path': 'country', 'field_type': text_type, 'group': 'Work'},
+            {'name': 'acting_manager', 'display_name': 'Acting Manager', 'field_path': 'acting_manager__last_name', 'field_type': foreign_key_type, 'group': 'Work'},
+            {'name': 'location', 'display_name': 'Location (legacy)', 'field_path': 'location', 'field_type': text_type, 'group': 'Work'},
+            {'name': 'country', 'display_name': 'Country (legacy)', 'field_path': 'country', 'field_type': text_type, 'group': 'Work'},
+            {'name': 'city', 'display_name': 'City', 'field_path': 'city__name', 'field_type': foreign_key_type, 'group': 'Work'},
+            {'name': 'city_country', 'display_name': 'Country', 'field_path': 'city__country__name', 'field_type': foreign_key_type, 'group': 'Work'},
             {'name': 'job_title', 'display_name': 'Job Title', 'field_path': 'job_title', 'field_type': text_type, 'group': 'Work'},
+            {'name': 'pref_timezone', 'display_name': 'Timezone', 'field_path': 'pref_timezone', 'field_type': text_type, 'group': 'Work'},
+            {'name': 'external_id', 'display_name': 'External ID', 'field_path': 'external_id', 'field_type': text_type, 'group': 'Work'},
+            {'name': 'profile_last_updated', 'display_name': 'Profile Last Updated', 'field_path': 'profile_last_updated', 'field_type': datetime_type, 'group': 'Dates'},
             {'name': 'contracted_leave', 'display_name': 'Contracted Annual Leave', 'field_path': 'contracted_leave', 'field_type': integer_type, 'group': 'Leave'},
+            {'name': 'carry_over_leave', 'display_name': 'Carry-over Leave', 'field_path': 'carry_over_leave', 'field_type': integer_type, 'group': 'Leave'},
+            {'name': 'contracted_leave_renewal', 'display_name': 'Leave Renewal Date', 'field_path': 'contracted_leave_renewal', 'field_type': date_type, 'group': 'Leave'},
+            {'name': 'notification_email', 'display_name': 'Notification Email', 'field_path': 'notification_email', 'field_type': email_type, 'group': 'Contact'},
             {'name': 'phone_number', 'display_name': 'Phone Number', 'field_path': 'phone_number', 'field_type': text_type, 'group': 'Contact', 'is_sensitive': True, 'requires_permission': 'chaotica_utils.manage_user'},
         ]
 
@@ -179,6 +189,7 @@ class Command(BaseCommand):
         boolean_type = self.field_types['Boolean']
         date_type = self.field_types['Date']
         datetime_type = self.field_types['DateTime']
+        email_type = self.field_types['Email']
         foreign_key_type = self.field_types['Foreign Key']
         integer_type = self.field_types['Integer']
         decimal_type = self.field_types['Decimal']
@@ -206,8 +217,11 @@ class Command(BaseCommand):
             {'name': 'created_by', 'display_name': 'Created By', 'field_path': 'created_by__last_name', 'field_type': foreign_key_type, 'group': 'Management'},
             {'name': 'scoped_signed_off_by', 'display_name': 'Scoped Signed Off By', 'field_path': 'scoped_signed_off_by__last_name', 'field_type': foreign_key_type, 'group': 'Management'},
             {'name': 'primary_client_poc', 'display_name': 'Primary Client POC', 'field_path': 'primary_client_poc__full_name', 'field_type': foreign_key_type, 'group': 'Management'},
+            # Management email addresses (e.g. to split a scheduled report per manager)
+            {'name': 'account_manager_email', 'display_name': 'Account Manager Email', 'field_path': 'account_manager__email', 'field_type': email_type, 'group': 'Management'},
+            {'name': 'dep_account_manager_email', 'display_name': 'Deputy Account Manager Email', 'field_path': 'dep_account_manager__email', 'field_type': email_type, 'group': 'Management'},
+            {'name': 'primary_client_poc_email', 'display_name': 'Primary Client POC Email', 'field_path': 'primary_client_poc__email', 'field_type': email_type, 'group': 'Management'},
             # Dates
-            {'name': 'created_at', 'display_name': 'Created At', 'field_path': 'created_at', 'field_type': datetime_type, 'group': 'Dates'},
             {'name': 'start_date', 'display_name': 'Start Date', 'field_path': '_start_date', 'field_type': date_type, 'group': 'Dates'},
             {'name': 'delivery_date', 'display_name': 'Delivery Date', 'field_path': '_delivery_date', 'field_type': date_type, 'group': 'Dates'},
             {'name': 'desired_start_date', 'display_name': 'Desired Start Date', 'field_path': 'desired_start_date', 'field_type': date_type, 'group': 'Dates'},
@@ -225,10 +239,21 @@ class Command(BaseCommand):
             {'name': 'is_imported', 'display_name': 'Is Imported', 'field_path': 'is_imported', 'field_type': boolean_type, 'group': 'Flags'},
             {'name': 'additional_kit_required', 'display_name': 'Additional Kit Required', 'field_path': 'additional_kit_required', 'field_type': boolean_type, 'group': 'Flags'},
             {'name': 'kit_sourced_by_client', 'display_name': 'Kit Sourced by Client', 'field_path': 'kit_sourced_by_client', 'field_type': boolean_type, 'group': 'Flags'},
+            {'name': 'additional_kit_info', 'display_name': 'Additional Kit Info', 'field_path': 'additional_kit_info', 'field_type': long_text_type, 'group': 'Flags'},
+            {'name': 'reasons_for_high_risk', 'display_name': 'Reasons for High Risk', 'field_path': 'reasons_for_high_risk', 'field_type': long_text_type, 'group': 'Flags'},
             # Framework
             {'name': 'associated_framework', 'display_name': 'Framework Agreement', 'field_path': 'associated_framework__name', 'field_type': foreign_key_type, 'group': 'Client'},
             # External
             {'name': 'external_id', 'display_name': 'External ID', 'field_path': 'external_id', 'field_type': text_type, 'group': 'External'},
+            # Computed / M2M columns (resolved in Python)
+            {'name': 'status_label', 'display_name': 'Status (label)', 'field_path': 'resolver:job_status_label', 'field_type': text_type, 'group': 'Status',
+             'source_type': DataField.SOURCE_RESOLVER, 'resolver_key': 'job.status_label'},
+            {'name': 'charge_codes', 'display_name': 'Charge Codes', 'field_path': 'resolver:charge_codes', 'field_type': text_type, 'group': 'Financial',
+             'source_type': DataField.SOURCE_RESOLVER, 'resolver_key': 'job.charge_codes'},
+            {'name': 'indicative_services', 'display_name': 'Indicative Services', 'field_path': 'resolver:indicative_services', 'field_type': text_type, 'group': 'Status',
+             'source_type': DataField.SOURCE_RESOLVER, 'resolver_key': 'job.indicative_services'},
+            {'name': 'scoped_by', 'display_name': 'Scoped By', 'field_path': 'resolver:scoped_by', 'field_type': text_type, 'group': 'Management',
+             'source_type': DataField.SOURCE_RESOLVER, 'resolver_key': 'job.scoped_by'},
         ]
 
         self._sync_fields(data_area, fields)
@@ -281,6 +306,12 @@ class Command(BaseCommand):
             {'name': 'job_revenue', 'display_name': 'Job Revenue', 'field_path': 'job__revenue', 'field_type': decimal_type, 'group': 'Job'},
             {'name': 'job_unit', 'display_name': 'Job Org Unit', 'field_path': 'job__unit__name', 'field_type': foreign_key_type, 'group': 'Job'},
             {'name': 'job_framework', 'display_name': 'Job Framework Agreement', 'field_path': 'job__associated_framework__name', 'field_type': foreign_key_type, 'group': 'Job'},
+            {'name': 'job_dep_account_manager', 'display_name': 'Job Deputy Account Manager', 'field_path': 'job__dep_account_manager__last_name', 'field_type': foreign_key_type, 'group': 'Job'},
+            {'name': 'job_dep_account_manager_email', 'display_name': 'Job Deputy Account Manager Email', 'field_path': 'job__dep_account_manager__email', 'field_type': text_type, 'group': 'Job'},
+            {'name': 'job_desired_start_date', 'display_name': 'Job Desired Start Date', 'field_path': 'job__desired_start_date', 'field_type': date_type, 'group': 'Job'},
+            {'name': 'job_desired_delivery_date', 'display_name': 'Job Desired Delivery Date', 'field_path': 'job__desired_delivery_date', 'field_type': date_type, 'group': 'Job'},
+            {'name': 'job_high_risk', 'display_name': 'Job High Risk', 'field_path': 'job__high_risk', 'field_type': boolean_type, 'group': 'Job'},
+            {'name': 'job_external_id', 'display_name': 'Job External ID', 'field_path': 'job__external_id', 'field_type': text_type, 'group': 'Job'},
             # Service
             {'name': 'service', 'display_name': 'Service', 'field_path': 'service__name', 'field_type': foreign_key_type, 'group': 'Service'},
             # Resources
@@ -335,9 +366,31 @@ class Command(BaseCommand):
             {'name': 'was_submitted_late_tqa', 'display_name': 'Late TQA Submission', 'field_path': 'was_submitted_late_tqa', 'field_type': boolean_type, 'group': 'Quality'},
             {'name': 'was_submitted_late_pqa', 'display_name': 'Late PQA Submission', 'field_path': 'was_submitted_late_pqa', 'field_type': boolean_type, 'group': 'Quality'},
             {'name': 'was_submitted_late_delivery', 'display_name': 'Late Delivery', 'field_path': 'was_submitted_late_delivery', 'field_type': boolean_type, 'group': 'Quality'},
-            {'name': 'techqa_report_rating', 'display_name': 'Tech QA Report Rating', 'field_path': 'techqa_report_rating', 'field_type': integer_type, 'group': 'Quality'},
-            {'name': 'presqa_report_rating', 'display_name': 'Pres QA Report Rating', 'field_path': 'presqa_report_rating', 'field_type': integer_type, 'group': 'Quality'},
+            {'name': 'techqa_report_rating', 'display_name': 'Tech QA Report Rating (raw)', 'field_path': 'techqa_report_rating', 'field_type': integer_type, 'group': 'Quality'},
+            {'name': 'presqa_report_rating', 'display_name': 'Pres QA Report Rating (raw)', 'field_path': 'presqa_report_rating', 'field_type': integer_type, 'group': 'Quality'},
             {'name': 'number_of_reports', 'display_name': 'Number of Reports', 'field_path': 'number_of_reports', 'field_type': integer_type, 'group': 'Quality'},
+            # QA ratings as 1-5 stars (matches the UI) and human labels
+            {'name': 'techqa_report_stars', 'display_name': 'Tech QA Stars (1-5)', 'field_path': 'resolver:techqa_report_stars', 'field_type': integer_type, 'group': 'Quality',
+             'source_type': DataField.SOURCE_RESOLVER, 'resolver_key': 'phase.techqa_report_stars'},
+            {'name': 'presqa_report_stars', 'display_name': 'Pres QA Stars (1-5)', 'field_path': 'resolver:presqa_report_stars', 'field_type': integer_type, 'group': 'Quality',
+             'source_type': DataField.SOURCE_RESOLVER, 'resolver_key': 'phase.presqa_report_stars'},
+            {'name': 'techqa_report_rating_label', 'display_name': 'Tech QA Rating (label)', 'field_path': 'resolver:techqa_report_rating_label', 'field_type': text_type, 'group': 'Quality',
+             'source_type': DataField.SOURCE_RESOLVER, 'resolver_key': 'phase.techqa_report_rating_label'},
+            {'name': 'presqa_report_rating_label', 'display_name': 'Pres QA Rating (label)', 'field_path': 'resolver:presqa_report_rating_label', 'field_type': text_type, 'group': 'Quality',
+             'source_type': DataField.SOURCE_RESOLVER, 'resolver_key': 'phase.presqa_report_rating_label'},
+            # Free-text QA feedback (counts + joined body text) by type
+            {'name': 'feedback_scope_count', 'display_name': 'Scope Feedback Count', 'field_path': 'resolver:feedback_scope_count', 'field_type': integer_type, 'group': 'Quality',
+             'source_type': DataField.SOURCE_RESOLVER, 'resolver_key': 'phase.feedback_scope_count'},
+            {'name': 'feedback_tech_count', 'display_name': 'Tech QA Feedback Count', 'field_path': 'resolver:feedback_tech_count', 'field_type': integer_type, 'group': 'Quality',
+             'source_type': DataField.SOURCE_RESOLVER, 'resolver_key': 'phase.feedback_tech_count'},
+            {'name': 'feedback_pres_count', 'display_name': 'Pres QA Feedback Count', 'field_path': 'resolver:feedback_pres_count', 'field_type': integer_type, 'group': 'Quality',
+             'source_type': DataField.SOURCE_RESOLVER, 'resolver_key': 'phase.feedback_pres_count'},
+            {'name': 'feedback_scope_text', 'display_name': 'Scope Feedback Text', 'field_path': 'resolver:feedback_scope_text', 'field_type': long_text_type, 'group': 'Quality',
+             'source_type': DataField.SOURCE_RESOLVER, 'resolver_key': 'phase.feedback_scope_text'},
+            {'name': 'feedback_tech_text', 'display_name': 'Tech QA Feedback Text', 'field_path': 'resolver:feedback_tech_text', 'field_type': long_text_type, 'group': 'Quality',
+             'source_type': DataField.SOURCE_RESOLVER, 'resolver_key': 'phase.feedback_tech_text'},
+            {'name': 'feedback_pres_text', 'display_name': 'Pres QA Feedback Text', 'field_path': 'resolver:feedback_pres_text', 'field_type': long_text_type, 'group': 'Quality',
+             'source_type': DataField.SOURCE_RESOLVER, 'resolver_key': 'phase.feedback_pres_text'},
             # Logistics
             {'name': 'is_testing_onsite', 'display_name': 'Testing Onsite', 'field_path': 'is_testing_onsite', 'field_type': boolean_type, 'group': 'Logistics'},
             {'name': 'is_reporting_onsite', 'display_name': 'Reporting Onsite', 'field_path': 'is_reporting_onsite', 'field_type': boolean_type, 'group': 'Logistics'},
@@ -353,6 +406,12 @@ class Command(BaseCommand):
              'source_type': DataField.SOURCE_RESOLVER, 'resolver_key': 'phase.days_testing'},
             {'name': 'days_reporting', 'display_name': 'Days Reporting', 'field_path': 'resolver:days_reporting', 'field_type': decimal_type, 'group': 'Scheduled',
              'source_type': DataField.SOURCE_RESOLVER, 'resolver_key': 'phase.days_reporting'},
+            {'name': 'days_management', 'display_name': 'Days Management', 'field_path': 'resolver:days_management', 'field_type': decimal_type, 'group': 'Scheduled',
+             'source_type': DataField.SOURCE_RESOLVER, 'resolver_key': 'phase.days_management'},
+            {'name': 'days_qa', 'display_name': 'Days QA', 'field_path': 'resolver:days_qa', 'field_type': decimal_type, 'group': 'Scheduled',
+             'source_type': DataField.SOURCE_RESOLVER, 'resolver_key': 'phase.days_qa'},
+            {'name': 'days_oversight', 'display_name': 'Days Oversight', 'field_path': 'resolver:days_oversight', 'field_type': decimal_type, 'group': 'Scheduled',
+             'source_type': DataField.SOURCE_RESOLVER, 'resolver_key': 'phase.days_oversight'},
             {'name': 'assigned_engineers', 'display_name': 'Assigned To', 'field_path': 'resolver:assigned_engineers', 'field_type': text_type, 'group': 'Scheduled',
              'source_type': DataField.SOURCE_RESOLVER, 'resolver_key': 'phase.assigned_engineers'},
             {'name': 'project_manager', 'display_name': 'Project Manager', 'field_path': 'resolver:project_manager', 'field_type': text_type, 'group': 'Scheduled',

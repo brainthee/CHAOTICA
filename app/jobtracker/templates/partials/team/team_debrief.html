@@ -33,7 +33,7 @@
     <div class="col text-center border-translucent border-end py-3">
       <i class="fa-solid fa-chart-pie fs-6 lh-1 {% if summary_utilisation_pct >= 75 %}text-success{% elif summary_utilisation_pct >= 40 %}text-warning{% else %}text-danger{% endif %}"></i>
       <h2 class="fs-6 pt-3">{{ summary_utilisation_pct }}%</h2>
-      <p class="fs-9 mb-0">Utilised</p>
+      <p class="fs-9 mb-0">Utilised{% include 'partials/_util_info_icon.html' %}</p>
       <p class="text-body-secondary fs-10 mb-0">{{ summary_confirmed_days }}/{{ summary_working_days }} days confirmed</p>
     </div>
     <div class="col text-center border-translucent border-end py-3">

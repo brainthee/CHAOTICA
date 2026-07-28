@@ -23,7 +23,16 @@ from dataclasses import dataclass, field
 from decimal import Decimal
 from typing import Callable
 
-from jobtracker.enums import PhaseStatuses, TimeSlotDeliveryRole
+from django.utils.html import strip_tags
+
+from jobtracker.enums import (
+    FeedbackType,
+    JobStatuses,
+    PhaseStatuses,
+    PresQARatings,
+    TechQARatings,
+    TimeSlotDeliveryRole,
+)
 
 
 @dataclass(frozen=True)
@@ -79,6 +88,51 @@ def _project_manager(phase, ctx):
 
 
 _PHASE_STATUS_LABELS = dict(PhaseStatuses.CHOICES)
+_JOB_STATUS_LABELS = dict(JobStatuses.CHOICES)
+_TECHQA_RATING_LABELS = dict(TechQARatings.CHOICES)
+_PRESQA_RATING_LABELS = dict(PresQARatings.CHOICES)
+
+
+def _join_names(items, attr):
+    """Comma-join a prefetched M2M relation by one of its attributes."""
+    names = [str(getattr(obj, attr)) for obj in items if getattr(obj, attr, None)]
+    return ", ".join(sorted(names))
+
+
+def _stars(rating):
+    """Convert a stored QA rating (0-4) to the 1-5 star count shown in the UI.
+
+    The UI renders ``rating + 1`` stars (see ``feedback_stars.html``), so a
+    stored ``AVERAGE`` (2) reads as 3 stars. Returning the star count here lets a
+    report filter "= 3" and get the 3-star phases everyone means.
+    """
+    if rating is None:
+        return None
+    return rating + 1
+
+
+def _feedback_by_type(phase, fb_type):
+    """Prefetched feedback rows of a given type (iterated in Python, not filtered)."""
+    return [fb for fb in phase.feedback.all() if fb.feedbackType == fb_type]
+
+
+def _feedback_text(fb_type):
+    def resolve(phase, ctx):
+        bodies = [
+            strip_tags(fb.body).strip()
+            for fb in _feedback_by_type(phase, fb_type)
+            if fb.body
+        ]
+        return "\n---\n".join(b for b in bodies if b)
+
+    return resolve
+
+
+def _feedback_count(fb_type):
+    def resolve(phase, ctx):
+        return len(_feedback_by_type(phase, fb_type))
+
+    return resolve
 
 
 REPORTING_RESOLVERS = {
@@ -103,5 +157,67 @@ REPORTING_RESOLVERS = {
     ),
     "phase.status_label": Resolver(
         lambda phase, ctx: _PHASE_STATUS_LABELS.get(phase.status, ""),
+    ),
+    "phase.days_management": Resolver(
+        _days_by_role(TimeSlotDeliveryRole.MANAGEMENT),
+        prefetch_related=("timeslots", "timeslots__user__unit_memberships__unit"),
+    ),
+    "phase.days_qa": Resolver(
+        _days_by_role(TimeSlotDeliveryRole.QA),
+        prefetch_related=("timeslots", "timeslots__user__unit_memberships__unit"),
+    ),
+    "phase.days_oversight": Resolver(
+        _days_by_role(TimeSlotDeliveryRole.OVERSIGHT),
+        prefetch_related=("timeslots", "timeslots__user__unit_memberships__unit"),
+    ),
+    # QA ratings, exposed as 1-5 star counts (matches the UI) and as labels.
+    "phase.techqa_report_stars": Resolver(
+        lambda phase, ctx: _stars(phase.techqa_report_rating),
+    ),
+    "phase.presqa_report_stars": Resolver(
+        lambda phase, ctx: _stars(phase.presqa_report_rating),
+    ),
+    "phase.techqa_report_rating_label": Resolver(
+        lambda phase, ctx: _TECHQA_RATING_LABELS.get(phase.techqa_report_rating, ""),
+    ),
+    "phase.presqa_report_rating_label": Resolver(
+        lambda phase, ctx: _PRESQA_RATING_LABELS.get(phase.presqa_report_rating, ""),
+    ),
+    # Free-text QA feedback (from the related Feedback model), by type.
+    "phase.feedback_scope_text": Resolver(
+        _feedback_text(FeedbackType.SCOPE), prefetch_related=("feedback",),
+    ),
+    "phase.feedback_tech_text": Resolver(
+        _feedback_text(FeedbackType.TECH), prefetch_related=("feedback",),
+    ),
+    "phase.feedback_pres_text": Resolver(
+        _feedback_text(FeedbackType.PRES), prefetch_related=("feedback",),
+    ),
+    "phase.feedback_scope_count": Resolver(
+        _feedback_count(FeedbackType.SCOPE), prefetch_related=("feedback",),
+    ),
+    "phase.feedback_tech_count": Resolver(
+        _feedback_count(FeedbackType.TECH), prefetch_related=("feedback",),
+    ),
+    "phase.feedback_pres_count": Resolver(
+        _feedback_count(FeedbackType.PRES), prefetch_related=("feedback",),
+    ),
+    # Job M2M / computed fields.
+    "job.charge_codes": Resolver(
+        lambda job, ctx: _join_names(job.charge_codes.all(), "code"),
+        prefetch_related=("charge_codes",),
+    ),
+    "job.indicative_services": Resolver(
+        lambda job, ctx: _join_names(job.indicative_services.all(), "name"),
+        prefetch_related=("indicative_services",),
+    ),
+    "job.scoped_by": Resolver(
+        lambda job, ctx: ", ".join(
+            sorted(n for n in (_user_name(u) for u in job.scoped_by.all()) if n)
+        ),
+        prefetch_related=("scoped_by",),
+    ),
+    "job.status_label": Resolver(
+        lambda job, ctx: _JOB_STATUS_LABELS.get(job.status, ""),
     ),
 }

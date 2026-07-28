@@ -1,10 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import BaseUserManager
-from django.db.models import (
-    Q, Count, Sum, Case, When, Value, IntegerField,
-    DateField, F, Prefetch, Exists, OuterRef, BooleanField
-)
-from django.db.models.functions import TruncDate
+from django.db.models import Q
 from datetime import timedelta, datetime
 import json
 from django.utils import timezone
@@ -71,7 +67,12 @@ class CustomUserManager(BaseUserManager):
         from jobtracker.models import TimeSlot
         from jobtracker.enums import PhaseStatuses
         from .user import User
-        
+        from ..utils import (
+            build_period_masks,
+            calculate_utilisation,
+            aggregate_utilisation,
+        )
+
         # Ensure timezone-aware datetimes
         if not start_date.tzinfo:
             start_date = timezone.make_aware(
@@ -123,172 +124,75 @@ class CustomUserManager(BaseUserManager):
         for country in user_countries:
             holidays_by_country[country].update(global_holidays)
         
-        # Generate date range
-        date_range = []
-        current = start_date.date()
-        while current <= end_date.date():
-            date_range.append(current)
-            current += timedelta(days=1)
-        
-        total_days = len(date_range)
-        
-        # Fetch ALL timeslots in a SINGLE query with proper annotations
+        total_days = (end_date.date() - start_date.date()).days + 1
+
+        # Fetch ALL timeslots in a SINGLE query, reduced to the flags the
+        # central engine needs (slot_type__is_working=False => non-working time).
         timeslots = TimeSlot.objects.filter(
             user_id__in=user_ids,
             start__date__lte=end_date.date(),
             end__date__gte=start_date.date()
-        ).select_related(
-            'phase'
-        ).annotate(
-            is_tentative=Case(
-                When(phase__isnull=False, 
-                     phase__status__lt=PhaseStatuses.SCHEDULED_CONFIRMED, 
-                     then=Value(True)),
-                default=Value(False),
-                output_field=BooleanField()
-            ),
-            is_confirmed=Case(
-                When(phase__isnull=False,
-                     phase__status__gte=PhaseStatuses.SCHEDULED_CONFIRMED,
-                     then=Value(True)),
-                default=Value(False),
-                output_field=BooleanField()
-            ),
-            is_non_delivery=Case(
-                When(phase__isnull=True, then=Value(True)),
-                default=Value(False),
-                output_field=BooleanField()
-            )
         ).values(
             'user_id',
             'start',
             'end',
-            'is_tentative',
-            'is_confirmed',
-            'is_non_delivery'
+            'phase__status',
+            'slot_type__is_working',
         )
-        
-        # Group timeslots by user_id in memory
+
+        # Group timeslots by user_id in memory, as engine-ready dicts.
         slots_by_user = defaultdict(list)
         for slot in timeslots:
-            slots_by_user[slot['user_id']].append(slot)
-        
-        # Process statistics for each user
+            status = slot['phase__status']
+            slots_by_user[slot['user_id']].append({
+                'start': slot['start'],
+                'end': slot['end'],
+                'is_confirmed': status is not None
+                and status >= PhaseStatuses.SCHEDULED_CONFIRMED,
+                'is_tentative': status is not None
+                and status < PhaseStatuses.SCHEDULED_CONFIRMED,
+                'is_non_working_slot': slot['slot_type__is_working'] is False,
+            })
+
+        # Period masks depend only on working_days + holidays, which are shared
+        # per country — build them once per country and reuse across users.
+        masks_by_country = {}
+
+        def _masks_for(country):
+            if country not in masks_by_country:
+                country_holidays = set(holidays_by_country.get(country, set()))
+                country_holidays.update(global_holidays)
+                masks_by_country[country] = build_period_masks(
+                    start_date, end_date, working_days, country_holidays
+                )
+            return masks_by_country[country]
+
+        # Process statistics for each user via the central engine.
         user_stats = {}
-        summary_totals = defaultdict(int)
-        
         for user_id in user_ids:
             user = user_dict[user_id]
-            user_holidays = holidays_by_country.get(user.country, set())
-            user_holidays.update(global_holidays)
-            
-            # Calculate working days for this user
-            working_days_count = 0
-            non_working_days_count = 0
-            holiday_days_count = 0
-            
-            for date in date_range:
-                is_holiday = date in user_holidays
-                is_working_day = (date.weekday() + 1) in working_days
-                
-                if is_holiday:
-                    holiday_days_count += 1
-                elif not is_working_day:
-                    non_working_days_count += 1
-                else:
-                    working_days_count += 1
-            
-            # Process timeslots for this user
-            user_slots = slots_by_user.get(user_id, [])
-            days_with_slots = defaultdict(lambda: {
-                'tentative': False,
-                'confirmed': False,
-                'non_delivery': False
-            })
-            
-            for slot in user_slots:
-                # Calculate which days this slot spans
-                slot_start = max(slot['start'].date(), start_date.date())
-                slot_end = min(slot['end'].date(), end_date.date())
-                
-                current_date = slot_start
-                while current_date <= slot_end:
-                    # Skip non-working days and holidays
-                    if (current_date.weekday() + 1) in working_days and \
-                       current_date not in user_holidays:
-                        if slot['is_tentative']:
-                            days_with_slots[current_date]['tentative'] = True
-                        if slot['is_confirmed']:
-                            days_with_slots[current_date]['confirmed'] = True
-                        if slot['is_non_delivery']:
-                            days_with_slots[current_date]['non_delivery'] = True
-                    current_date += timedelta(days=1)
-            
-            # Count days by type
-            scheduled_days = len(days_with_slots)
-            tentative_days = sum(1 for d in days_with_slots.values() if d['tentative'])
-            confirmed_days = sum(1 for d in days_with_slots.values() if d['confirmed'])
-            non_delivery_days = sum(1 for d in days_with_slots.values() if d['non_delivery'])
-            available_days = working_days_count - scheduled_days
-            
-            # Calculate percentages
-            def safe_percentage(numerator, denominator):
-                return round((numerator / denominator * 100), 2) if denominator > 0 else 0
-            
-            user_data = {
+            masks = _masks_for(user.country)
+
+            user_data = calculate_utilisation(
+                slots_by_user.get(user_id, []),
+                start_date,
+                end_date,
+                working_days,
+                None,  # holidays already baked into the shared masks
+                masks=masks,
+            )
+            user_data.update({
                 'user_id': user.id,
                 'user': user,
                 'user_email': user.email,
                 'user_name': str(user),
                 'main_org': membership.unit if (membership := user.unit_memberships.first()) else None,
-                'total_days': total_days,
-                'working_days': working_days_count,
-                'non_working_days': non_working_days_count,
-                'holiday_days': holiday_days_count,
-                'available_days': available_days,
-                'scheduled_days': scheduled_days,
-                'tentative_days': tentative_days,
-                'confirmed_days': confirmed_days,
-                'non_delivery_days': non_delivery_days,
-                'working_percentage': safe_percentage(
-                    working_days_count, 
-                    total_days - non_working_days_count
-                ),
-                'utilisation_percentage': safe_percentage(confirmed_days, working_days_count),
-                'confirmed_percentage': safe_percentage(confirmed_days, working_days_count),
-                'tentative_percentage': safe_percentage(tentative_days, working_days_count),
-                'non_delivery_percentage': safe_percentage(non_delivery_days, working_days_count),
-                'available_percentage': safe_percentage(available_days, working_days_count),
-            }
-            
+            })
             user_stats[user.id] = user_data
-            
-            # Add to summary totals
-            for key in ['working_days', 'available_days', 'scheduled_days', 
-                       'tentative_days', 'confirmed_days', 'non_delivery_days']:
-                summary_totals[key] += user_data[key]
-        
-        # Calculate summary statistics
-        num_users = len(user_ids)
-        total_working_days = summary_totals['working_days']
-        
-        summary = {
-            'num_users': num_users,
-            'total_days': total_days,
-            'avg_working_days': round(summary_totals['working_days'] / num_users, 2) if num_users > 0 else 0,
-            'total_available_days': summary_totals['available_days'],
-            'total_scheduled_days': summary_totals['scheduled_days'],
-            'total_tentative_days': summary_totals['tentative_days'],
-            'total_confirmed_days': summary_totals['confirmed_days'],
-            'total_non_delivery_days': summary_totals['non_delivery_days'],
-            'avg_utilisation_percentage': round(
-                (summary_totals['confirmed_days'] / total_working_days * 100), 2
-            ) if total_working_days > 0 else 0,
-            'avg_available_percentage': round(
-                (summary_totals['available_days'] / total_working_days * 100), 2
-            ) if total_working_days > 0 else 0,
-        }
-        
+
+        summary = aggregate_utilisation(user_stats.values())
+        summary['total_days'] = total_days
+
         return {
             'summary': summary,
             'by_user': user_stats,

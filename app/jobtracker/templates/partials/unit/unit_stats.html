@@ -34,7 +34,7 @@
       <div class="card-body text-center">
         <i class="fa-solid fa-percent fs-6 lh-1 text-info"></i>
         <h2 class="fs-6 pt-3 mb-0">{{ stats.summary.utilisation_4wk }}%</h2>
-        <p class="fs-9 mb-0 text-body-secondary">Utilisation<br /><span class="fs-10 text-body-tertiary">(coming 4 weeks)</span></p>
+        <p class="fs-9 mb-0 text-body-secondary">Utilisation{% include 'partials/_util_info_icon.html' %}<br /><span class="fs-10 text-body-tertiary">(coming 4 weeks)</span></p>
       </div>
     </div>
   </div>
@@ -169,7 +169,7 @@
 <div class="row gy-3 mb-3 justify-content-between">
     <div class="col">
         <h3 class="mb-0 text-primary position-relative fw-bold">
-            <span class="bg-body pe-2">Consultant Utilisation</span>
+            <span class="bg-body pe-2">Consultant Utilisation{% include 'partials/_util_info_icon.html' %}</span>
             <span class="border border-primary position-absolute top-50 translate-middle-y w-100 start-0 z-n1"></span>
         </h3>
     </div>

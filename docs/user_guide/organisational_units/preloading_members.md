@@ -11,7 +11,11 @@ adopted automatically the first time the person logs in (SSO or local) — they
 land with the roles you assigned already in place.
 
 Both features live on the [unit detail page](overview.md) and require the
-`manage_members` permission on that unit.
+`manage_members` permission on that unit. That permission comes from the
+**Manager** or **Service Delivery** unit roles, and every **unit lead** is
+granted manager rights automatically — so a lead can always add and import
+members, however they were made a lead (at unit creation, via the edit form, or
+through the setup wizard).
 
 ## Pre-load a single member
 
@@ -37,8 +41,14 @@ unit (their existing site role is left untouched).
 2. Click **Download Template CSV** to get a correctly-headed file.
 3. Fill in one row per person and upload it.
 
-The importer processes the whole file in a single transaction and reports how
-many rows succeeded and which failed (and why).
+Valid rows are imported and any rows that fail are listed individually — with
+the row number, email, and the reason — so you can fix just those and re-upload
+them. If the whole file can't be read (for example it isn't saved as UTF-8, has
+no header row, or has no data rows) the importer explains that instead of failing
+silently.
+
+> **Tip:** If you export from Excel, choose **CSV UTF-8** as the format so
+> accented names are read correctly.
 
 ### CSV columns
 

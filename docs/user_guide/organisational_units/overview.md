@@ -7,7 +7,7 @@ Organisational units are the teams and departments that own jobs and manage memb
 The unit detail page is accessed from the unit list or by navigating to a specific unit. The header displays:
 
 - Unit name and description
-- **Leads** — the unit's lead(s) shown as clickable avatar chips linking to each profile (or "No leads assigned")
+- **Leads** — the unit's lead(s) shown as clickable avatar chips linking to each profile (or "No leads assigned"). Being named a lead automatically grants that person **manager rights** on the unit (including the ability to add and [import members](preloading_members.md)).
 - **At-a-glance stats**:
     - **Phases in flight** — count of the unit's phases currently in progress or in QA
     - **Team utilisation** — confirmed utilisation across the coming four weeks. Utilisation is calculated over **consultants only** (the members who get booked onto delivery), so managers, sales and other roles don't drag the figure down. This figure is loaded asynchronously (a spinner resolves to a percentage) because it is calculated from the full schedule.

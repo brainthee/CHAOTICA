@@ -1,8 +1,12 @@
 from django.db import models
-from django.db.models import F, Q, Count, Case, When, Value, IntegerField, Prefetch
-from django.db.models.functions import TruncDate, ExtractDay, TruncMonth
+from django.db.models import F, Q, Count, Prefetch
+from django.db.models.functions import ExtractDay, TruncMonth
 from django.conf import settings
-from chaotica_utils.utils import unique_slug_generator
+from chaotica_utils.utils import (
+    unique_slug_generator,
+    build_period_masks,
+    calculate_utilisation,
+)
 from django.urls import reverse
 from simple_history.models import HistoricalRecords
 from guardian.shortcuts import (
@@ -24,8 +28,9 @@ from decimal import Decimal
 from django.templatetags.static import static
 from django_bleach.models import BleachField
 from django.db.models.functions import Lower
+from django.db.models.signals import m2m_changed
+from django.dispatch import receiver
 from django.contrib.auth.models import Permission
-import pandas as pd
 from collections import defaultdict
 
 
@@ -185,6 +190,28 @@ class OrganisationalUnit(models.Model):
                     # We should not have any permissions! Clear them all
                     for perm in existing_perms:
                         remove_perm(perm, user, self)
+
+    def ensure_lead_memberships(self):
+        """Ensure every lead holds the management role on this unit.
+
+        Being a lead should confer manager rights however the lead was assigned
+        (unit creation, the edit form, the setup wizard, admin, shell, ...).
+        Previously only ``OrganisationalUnitCreateView`` did this, so a lead
+        added after creation had no ``manage_members`` permission and hit a 403
+        when trying to add/import members. Idempotent - safe to call repeatedly.
+        """
+        management_role = OrganisationalUnitRole.objects.filter(
+            manage_role=True
+        ).first()
+        if management_role is None:
+            return
+        for lead_user in self.leads.all():
+            membership, _ = OrganisationalUnitMember.objects.get_or_create(
+                unit=self, member=lead_user
+            )
+            membership.roles.add(management_role)
+        # roles.add() doesn't trigger the member save() resync, so do it once here.
+        self.sync_permissions()
 
     def __str__(self):
         return self.name
@@ -355,10 +382,13 @@ class OrganisationalUnit(models.Model):
         for user in users:
             users_by_country[user["country"]].append(user["id"])
 
-        # Get all holidays for relevant countries in one query
+        # Get all holidays for relevant countries in one query, including any
+        # global (country=NULL) holidays that apply to everyone.
         holidays_by_country = defaultdict(set)
+        global_holidays = set()
         holidays = Holiday.objects.filter(
-            country__in=users_by_country.keys(), date__range=(start_date, end_date)
+            Q(country__in=users_by_country.keys()) | Q(country__isnull=True),
+            date__range=(start_date, end_date),
         ).values("country", "date")
 
         for holiday in holidays:
@@ -368,183 +398,58 @@ class OrganisationalUnit(models.Model):
                 if isinstance(holiday["date"], datetime)
                 else holiday["date"]
             )
-            holidays_by_country[country].add(date)
+            if country is None:
+                global_holidays.add(date)
+            else:
+                holidays_by_country[country].add(date)
 
-        # Get all timeslots for all users in one query
-        timeslots = (
-            TimeSlot.objects.filter(
-                user_id__in=[u["id"] for u in users],
-                start__date__lte=end_date,
-                end__date__gte=start_date,
-            )
-            .annotate(
-                date=TruncDate("start"),
-                is_tentative=Case(
-                    When(
-                        phase__status__lt=PhaseStatuses.SCHEDULED_CONFIRMED,
-                        then=Value(1),
-                    ),
-                    When(
-                        phase__status__gte=PhaseStatuses.SCHEDULED_CONFIRMED,
-                        then=Value(0),
-                    ),
-                    When(phase__isnull=True, then=Value(0)),
-                    default=Value(0),
-                    output_field=IntegerField(),
-                ),
-                is_confirmed=Case(
-                    When(
-                        phase__status__gte=PhaseStatuses.SCHEDULED_CONFIRMED,
-                        then=Value(1),
-                    ),
-                    When(
-                        phase__status__lt=PhaseStatuses.SCHEDULED_CONFIRMED,
-                        then=Value(0),
-                    ),
-                    When(phase__isnull=True, then=Value(0)),
-                    default=Value(0),
-                    output_field=IntegerField(),
-                ),
-                is_non_delivery=Case(
-                    When(phase__isnull=True, then=Value(1)),
-                    default=Value(0),
-                    output_field=IntegerField(),
-                ),
-            )
-            .values(
-                "user_id",
-                "date",
-                "is_tentative",
-                "is_confirmed",
-                "is_non_delivery",
-                "start",
-                "end",
-            )
-        )
+        # Get all timeslots for all users in one query, reduced to the flags the
+        # central engine needs (slot_type__is_working=False => non-working time).
+        timeslots = TimeSlot.objects.filter(
+            user_id__in=[u["id"] for u in users],
+            start__date__lte=end_date,
+            end__date__gte=start_date,
+        ).values("user_id", "start", "end", "phase__status", "slot_type__is_working")
 
-        # Create date range DataFrame once
-        date_range = pd.date_range(start=start_date, end=end_date, freq="D")
-        dates_df = pd.DataFrame({"date": date_range})
-        dates_df["date"] = dates_df["date"].dt.date
-        dates_df["is_working_day"] = dates_df["date"].apply(
-            lambda x: 1 if (x.weekday() + 1) in self.businessHours_days else 0
-        )
-
-        # Process each user's data
-        results = {}
-
-        # Group timeslots by user for efficient processing
+        # Group timeslots by user as engine-ready dicts.
         timeslots_by_user = defaultdict(list)
         for slot in timeslots:
-            timeslots_by_user[slot["user_id"]].append(slot)
+            status = slot["phase__status"]
+            timeslots_by_user[slot["user_id"]].append({
+                "start": slot["start"],
+                "end": slot["end"],
+                "is_confirmed": status is not None
+                and status >= PhaseStatuses.SCHEDULED_CONFIRMED,
+                "is_tentative": status is not None
+                and status < PhaseStatuses.SCHEDULED_CONFIRMED,
+                "is_non_working_slot": slot["slot_type__is_working"] is False,
+            })
 
+        # Period masks depend only on the unit's working days + holidays, which
+        # are shared per country — build them once per country and reuse.
+        working_days = self.businessHours_days
+        masks_by_country = {}
+
+        def _masks_for(country):
+            if country not in masks_by_country:
+                country_holidays = set(holidays_by_country.get(country, set()))
+                country_holidays.update(global_holidays)
+                masks_by_country[country] = build_period_masks(
+                    start_date, end_date, working_days, country_holidays
+                )
+            return masks_by_country[country]
+
+        results = {}
         for user in users:
             user_id = user["id"]
-            user_country = user["country"]
-            holiday_dates = holidays_by_country[user_country]
-
-            # Create user-specific dates DataFrame with holidays
-            user_dates_df = dates_df.copy()
-            user_dates_df["is_holiday"] = user_dates_df["date"].apply(
-                lambda x: 1 if x in holiday_dates else 0
+            results[user_id] = calculate_utilisation(
+                timeslots_by_user.get(user_id, []),
+                start_date,
+                end_date,
+                working_days,
+                None,  # holidays already baked into the shared masks
+                masks=_masks_for(user["country"]),
             )
-
-            # Process user's timeslots
-            slots_data = []
-            for slot in timeslots_by_user[user_id]:
-                current_date = max(slot["start"].date(), start_date)
-                end_date_slot = min(slot["end"].date(), end_date)
-
-                while current_date <= end_date_slot:
-                    if (
-                        (current_date.weekday() + 1) in self.businessHours_days
-                        and current_date not in holiday_dates
-                    ):
-                        slots_data.append(
-                            {
-                                "date": current_date,
-                                "is_tentative": slot["is_tentative"],
-                                "is_confirmed": slot["is_confirmed"],
-                                "is_non_delivery": slot["is_non_delivery"],
-                            }
-                        )
-                    current_date += timedelta(days=1)
-
-            # Create and process user's slots DataFrame
-            if slots_data:
-                slots_df = pd.DataFrame(slots_data)
-                daily_stats = (
-                    slots_df.groupby("date")
-                    .agg(
-                        {
-                            "is_tentative": "sum",
-                            "is_confirmed": "sum",
-                            "is_non_delivery": "sum",
-                        }
-                    )
-                    .reset_index()
-                )
-                final_df = user_dates_df.merge(
-                    daily_stats, on="date", how="left"
-                ).fillna(0)
-            else:
-                final_df = user_dates_df.copy()
-                final_df["is_tentative"] = 0
-                final_df["is_confirmed"] = 0
-                final_df["is_non_delivery"] = 0
-
-            # Calculate user statistics
-            total_days = len(date_range)
-            holiday_days = len(final_df[final_df["is_holiday"] > 0])
-            non_working_days = len(final_df[final_df["is_working_day"] == 0])
-
-            work_days = len(
-                final_df[
-                    (final_df["is_holiday"] == 0) & (final_df["is_working_day"] == 1)
-                ]
-            )
-
-            scheduled_days = len(
-                final_df[
-                    (final_df["is_holiday"] == 0)
-                    & (final_df["is_working_day"] == 1)
-                    & (
-                        (final_df["is_tentative"] > 0)
-                        | (final_df["is_confirmed"] > 0)
-                        | (final_df["is_non_delivery"] > 0)
-                    )
-                ]
-            )
-
-            results[user_id] = {
-                "total_days": total_days,
-                "holiday_days": holiday_days,
-                "non_working_days": non_working_days,
-                "working_days": work_days,
-                "available_days": work_days - scheduled_days,
-                "scheduled_days": scheduled_days,
-                "tentative_days": len(
-                    final_df[
-                        (final_df["is_holiday"] == 0)
-                        & (final_df["is_working_day"] == 1)
-                        & (final_df["is_tentative"] > 0)
-                    ]
-                ),
-                "confirmed_days": len(
-                    final_df[
-                        (final_df["is_holiday"] == 0)
-                        & (final_df["is_working_day"] == 1)
-                        & (final_df["is_confirmed"] > 0)
-                    ]
-                ),
-                "non_delivery_days": len(
-                    final_df[
-                        (final_df["is_holiday"] == 0)
-                        & (final_df["is_working_day"] == 1)
-                        & (final_df["is_non_delivery"] > 0)
-                    ]
-                ),
-            }
 
         return results
 
@@ -602,10 +507,13 @@ class OrganisationalUnit(models.Model):
                 continue
             m = util.get(ms.member_id, {})
             working = m.get("working_days", 0)
+            # Effective working days (nominal working days minus leave/sick) is
+            # the utilisation denominator; fall back to working days if absent.
+            effective = m.get("effective_working_days", working)
             confirmed = m.get("confirmed_days", 0)
             scheduled = m.get("scheduled_days", 0)
             total_confirmed += confirmed
-            total_working += working
+            total_working += effective
             data["member_utilisation"].append(
                 {
                     "user_id": ms.member_id,
@@ -614,11 +522,12 @@ class OrganisationalUnit(models.Model):
                     "scheduled_days": scheduled,
                     "available_days": m.get("available_days", 0),
                     "working_days": working,
+                    "effective_working_days": effective,
                     "confirmed_pct": (
-                        round(confirmed / working * 100, 1) if working else 0
+                        round(confirmed / effective * 100, 1) if effective else 0
                     ),
                     "scheduled_pct": (
-                        round(scheduled / working * 100, 1) if working else 0
+                        round(scheduled / effective * 100, 1) if effective else 0
                     ),
                 }
             )
@@ -718,46 +627,56 @@ class OrganisationalUnit(models.Model):
             data[rang] = self.calculate_bulk_utilization(
                 start_date=avail_start, end_date=avail, user_ids=user_ids
             )
-            data[rang]["totals"] = {
+            totals = {
                 "non_delivery_days": 0,
                 "scheduled_days": 0,
                 "tentative_days": 0,
                 "confirmed_days": 0,
                 "available_days": 0,
                 "working_days": 0,
+                "effective_working_days": 0,
             }
-            for _, m in data[rang].items():
-                data[rang]["totals"]["non_delivery_days"] += m["non_delivery_days"]
-                data[rang]["totals"]["scheduled_days"] += m["scheduled_days"]
-                data[rang]["totals"]["tentative_days"] += m["tentative_days"]
-                data[rang]["totals"]["confirmed_days"] += m["confirmed_days"]
-                data[rang]["totals"]["available_days"] += m["available_days"]
-                data[rang]["totals"]["working_days"] += m["working_days"]
+            for uid, m in data[rang].items():
+                if uid == "totals":
+                    continue
+                totals["non_delivery_days"] += m["non_delivery_days"]
+                totals["scheduled_days"] += m["scheduled_days"]
+                totals["tentative_days"] += m["tentative_days"]
+                totals["confirmed_days"] += m["confirmed_days"]
+                totals["available_days"] += m["available_days"]
+                totals["working_days"] += m["working_days"]
+                totals["effective_working_days"] += m["effective_working_days"]
+            data[rang]["totals"] = totals
 
             # Guard against a zero denominator (e.g. a unit with no consultants,
             # or a window where the scoped members have no working days).
-            working = data[rang]["totals"]["working_days"]
+            working = totals["working_days"]
+            effective = totals["effective_working_days"]
 
-            def _pct(value):
-                return round(value / working * 100, 1) if working else 0
+            def _pct(value, denom):
+                return round(value / denom * 100, 1) if denom else 0
 
-            data[rang]["totals"]["non_delivery_days_percentage"] = _pct(
-                data[rang]["totals"]["non_delivery_days"]
+            # non-delivery includes non-working (leave) days, so it keeps the
+            # nominal working-days denominator.
+            totals["non_delivery_days_percentage"] = _pct(
+                totals["non_delivery_days"], working
             )
-            data[rang]["totals"]["scheduled_days_percentage"] = _pct(
-                data[rang]["totals"]["scheduled_days"]
+            # Everything within the effective working days uses that denominator,
+            # matching the central utilisation formula.
+            totals["scheduled_days_percentage"] = _pct(
+                totals["scheduled_days"], effective
             )
-            data[rang]["totals"]["tentative_days_percentage"] = _pct(
-                data[rang]["totals"]["tentative_days"]
+            totals["tentative_days_percentage"] = _pct(
+                totals["tentative_days"], effective
             )
-            data[rang]["totals"]["confirmed_days_percentage"] = _pct(
-                data[rang]["totals"]["confirmed_days"]
+            totals["confirmed_days_percentage"] = _pct(
+                totals["confirmed_days"], effective
             )
-            data[rang]["totals"]["utilisation_percentage"] = _pct(
-                data[rang]["totals"]["confirmed_days"]
+            totals["utilisation_percentage"] = _pct(
+                totals["confirmed_days"], effective
             )
-            data[rang]["totals"]["available_days_percentage"] = _pct(
-                data[rang]["totals"]["available_days"]
+            totals["available_days_percentage"] = _pct(
+                totals["available_days"], effective
             )
         return data
 
@@ -962,3 +881,26 @@ class OrganisationalUnitMember(models.Model):
         super().save(*args, **kwargs)
         # Lets resync the permissions!
         self.unit.sync_permissions()
+
+
+@receiver(
+    m2m_changed,
+    sender=OrganisationalUnit.leads.through,
+    dispatch_uid="sync_lead_memberships",
+)
+def sync_lead_memberships(sender, instance, action, **kwargs):
+    """Grant manager rights to leads whenever the ``leads`` M2M changes.
+
+    Covers every path that assigns a lead (edit form, setup wizard, admin,
+    demo data, shell) - not just unit creation.
+    """
+    if action != "post_add":
+        return
+    if isinstance(instance, OrganisationalUnit):
+        instance.ensure_lead_memberships()
+    else:
+        # Reverse side: ``instance`` is a User; pk_set holds the unit pks.
+        for unit in OrganisationalUnit.objects.filter(
+            pk__in=kwargs.get("pk_set") or []
+        ):
+            unit.ensure_lead_memberships()

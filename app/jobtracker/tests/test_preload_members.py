@@ -208,8 +208,16 @@ class CsvImportTests(PreloadMemberBase):
             "three@test.com,Bad,Role,,NotARealRole\n"
         )
         resp = self._upload(csv_text)
-        # Redirects to the unit detail on any success
-        self.assertEqual(resp.status_code, 302)
+        # Valid rows import, but because a row failed we stay on the import page
+        # (200) and render the per-row failure detail rather than redirecting.
+        self.assertEqual(resp.status_code, 200)
+        failed_rows = resp.context["failed_rows"]
+        self.assertEqual(len(failed_rows), 1)
+        self.assertEqual(failed_rows[0]["email"], "three@test.com")
+        self.assertIn("NotARealRole".lower(), failed_rows[0]["reason"].lower())
+        self.assertEqual(resp.context["imported_count"], 2)
+        # The failure detail is visible in the rendered page.
+        self.assertContains(resp, "three@test.com")
 
         self.assertTrue(
             OrganisationalUnitMember.objects.filter(
@@ -224,6 +232,41 @@ class CsvImportTests(PreloadMemberBase):
         # Bad role row skipped, user not created
         self.assertFalse(User.objects.filter(email="three@test.com").exists())
 
+    def test_clean_import_redirects_to_unit(self):
+        self.client.force_login(self.manager)
+        csv_text = (
+            "email,first_name,last_name,site_role,unit_roles\n"
+            "one@test.com,One,Uno,,Consultant\n"
+            "two@test.com,Two,Dos,,Scoper\n"
+        )
+        resp = self._upload(csv_text)
+        # No failures -> straight back to the unit detail page.
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(
+            OrganisationalUnitMember.objects.filter(unit=self.unit).count(), 2
+        )
+
+    def test_import_non_utf8_file_reports_friendly_error(self):
+        self.client.force_login(self.manager)
+        # Latin-1 encoded content with a byte that isn't valid UTF-8.
+        bad_bytes = (
+            "email,first_name\njos\xe9@test.com,Jos\xe9\n".encode("latin-1")
+        )
+        f = SimpleUploadedFile("members.csv", bad_bytes, "text/csv")
+        resp = self.client.post(self.import_url(), {"csv_file": f})
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(
+            OrganisationalUnitMember.objects.filter(unit=self.unit).count(), 0
+        )
+
+    def test_import_no_data_rows_reports_error(self):
+        self.client.force_login(self.manager)
+        resp = self._upload("email,first_name,last_name,site_role,unit_roles\n")
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(
+            OrganisationalUnitMember.objects.filter(unit=self.unit).count(), 0
+        )
+
     def test_import_missing_email_column_rejected(self):
         self.client.force_login(self.manager)
         resp = self._upload("first_name,last_name\nA,B\n")
@@ -237,6 +280,39 @@ class CsvImportTests(PreloadMemberBase):
         self.client.force_login(self.outsider)
         resp = self._upload("email\nfoo@test.com\n")
         self.assertEqual(resp.status_code, 403)
+
+
+class LeadPermissionTests(PreloadMemberBase):
+    """Being a unit lead must grant manager rights however the lead is added."""
+
+    def test_lead_added_after_creation_gets_manager_rights(self):
+        lead = User.objects.create_user(email="lead@test.com", password="pw12345")
+        # Adding as a lead (any path - here the M2M directly) should grant the
+        # manage role and, through it, the manage_members object permission.
+        self.unit.leads.add(lead)
+
+        membership = OrganisationalUnitMember.objects.get(unit=self.unit, member=lead)
+        self.assertTrue(membership.roles.filter(manage_role=True).exists())
+        self.assertTrue(lead.has_perm("jobtracker.manage_members", self.unit))
+
+    def test_lead_can_access_import_view(self):
+        lead = User.objects.create_user(email="lead2@test.com", password="pw12345")
+        self.unit.leads.add(lead)
+        self.client.force_login(lead)
+        resp = self.client.get(self.import_url())
+        # Previously a non-manager lead hit a 403 here.
+        self.assertEqual(resp.status_code, 200)
+
+    def test_ensure_lead_memberships_is_idempotent(self):
+        lead = User.objects.create_user(email="lead3@test.com", password="pw12345")
+        self.unit.leads.add(lead)
+        self.unit.ensure_lead_memberships()  # second call must not duplicate
+        self.assertEqual(
+            OrganisationalUnitMember.objects.filter(
+                unit=self.unit, member=lead
+            ).count(),
+            1,
+        )
 
 
 class DomainValidatorUnitTests(TestCase):

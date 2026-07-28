@@ -176,7 +176,15 @@
         })
         .then(function(r) { return r.json(); })
         .then(function(data) {
-          document.getElementById(containerId).innerHTML = data.html;
+          var container = document.getElementById(containerId);
+          container.innerHTML = data.html;
+          // Re-init Bootstrap tooltips for the freshly injected content
+          // (e.g. the utilisation info icon).
+          if (window.bootstrap && bootstrap.Tooltip) {
+            container.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(
+              function(el) { new bootstrap.Tooltip(el); }
+            );
+          }
           if (callback) callback(data);
         })
         .catch(function() {

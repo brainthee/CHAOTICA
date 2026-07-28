@@ -1,8 +1,14 @@
+import json
 import logging
+import os
+import re
+import tempfile
+import traceback
 
 from django_cron import CronJobBase, Schedule
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
+from django.core.serializers.json import DjangoJSONEncoder
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
 from django.template.loader import render_to_string
@@ -12,7 +18,7 @@ from django.utils.html import strip_tags
 from constance import config
 
 from chaotica_utils.models import User
-from .models import ScheduledReport
+from .models import ReportRun, ScheduledReport
 from .services.data_service import DataService
 from .services.export_service import ExportService
 
@@ -151,3 +157,112 @@ class task_send_scheduled_reports(CronJobBase):
             email.attach(filename, response.content, mimetype)
         except Exception as e:
             logger.error(f"Failed to build {sched.attachment_format} attachment for '{sched}': {e}")
+
+
+def _parse_content_disposition_filename(header):
+    """Pull the download filename out of a Content-Disposition header, if present."""
+    if not header:
+        return ''
+    match = re.search(r'filename="?([^"]+)"?', header)
+    return match.group(1) if match else ''
+
+
+class ProcessReportRuns(CronJobBase):
+    """Execute queued report runs out of band.
+
+    Mirrors ``chaotica_utils.tasks.ProcessManualBackupJobs``: pick up one pending
+    run, mark it running, compute the rows (and render an export file if the run
+    asked for a download), then mark it complete/failed. The browser polls the
+    status endpoint meanwhile.
+    """
+
+    RUN_EVERY_MINS = 1
+    MIN_NUM_FAILURES = 3
+    schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
+    code = 'reporting.process_report_runs'
+
+    def do(self):
+        pending = ReportRun.objects.filter(status=ReportRun.STATUS_PENDING).order_by('created_at')
+        for run in pending[:1]:  # one at a time to avoid overloading the container
+            self.process_run(run)
+
+    def process_run(self, run):
+        logger.info(f"Processing report run {run.id} for user {run.user}")
+        run.status = ReportRun.STATUS_RUNNING
+        run.started_at = timezone.now()
+        run.save(update_fields=['status', 'started_at'])
+
+        try:
+            rows = DataService.get_report_data(run.report, run.user, run.filter_values or {})
+            run.row_count = len(rows)
+
+            # Persist the rows for the on-screen results page.
+            with tempfile.NamedTemporaryFile(
+                mode='w', delete=False, suffix='.json', prefix='reportrun_'
+            ) as fh:
+                json.dump(rows, fh, cls=DjangoJSONEncoder)
+                run.result_path = fh.name
+
+            # Render a download file too, if this run asked for an export format.
+            if run.export_format:
+                response = ExportService.export_report(run.report, rows, run.export_format)
+                with tempfile.NamedTemporaryFile(
+                    delete=False, prefix='reportexport_'
+                ) as fh:
+                    fh.write(response.content)
+                    run.export_path = fh.name
+                run.export_content_type = response.get('Content-Type', 'application/octet-stream')
+                run.export_filename = _parse_content_disposition_filename(
+                    response.get('Content-Disposition', '')
+                )
+
+            run.status = ReportRun.STATUS_COMPLETE
+            run.completed_at = timezone.now()
+            run.save()
+
+            # last_run_at bookkeeping now happens here rather than in the request.
+            run.report.last_run_at = timezone.now()
+            run.report.save(update_fields=['last_run_at'])
+
+            logger.info(f"Report run {run.id} completed ({run.row_count} rows)")
+
+        except Exception as e:
+            run.status = ReportRun.STATUS_FAILED
+            run.error_message = str(e)
+            run.completed_at = timezone.now()
+            run.save()
+            logger.error(f"Report run {run.id} failed: {e}")
+            logger.error(traceback.format_exc())
+
+
+class CleanupOldReportRuns(CronJobBase):
+    """Purge finished report runs and their temp files after a grace period."""
+
+    RUN_EVERY_MINS = 60
+    schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
+    code = 'reporting.cleanup_old_report_runs'
+
+    def do(self):
+        cutoff = timezone.now() - timezone.timedelta(hours=2)
+        old = ReportRun.objects.filter(
+            status=ReportRun.STATUS_COMPLETE, completed_at__lt=cutoff
+        )
+        for run in old:
+            self._remove_files(run)
+            run.delete()
+
+        old_failed = ReportRun.objects.filter(
+            status=ReportRun.STATUS_FAILED,
+            completed_at__lt=timezone.now() - timezone.timedelta(hours=24),
+        )
+        for run in old_failed:
+            self._remove_files(run)
+            run.delete()
+
+    def _remove_files(self, run):
+        for path in (run.result_path, run.export_path):
+            if path and os.path.exists(path):
+                try:
+                    os.remove(path)
+                except OSError as e:
+                    logger.error(f"Error deleting report run file {path}: {e}")

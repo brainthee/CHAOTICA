@@ -4,7 +4,11 @@ from chaotica_utils.models import Holiday, User
 from ..enums import PhaseStatuses
 from django.conf import settings
 from django.templatetags.static import static
-from chaotica_utils.utils import unique_slug_generator
+from chaotica_utils.utils import (
+    unique_slug_generator,
+    build_period_masks,
+    calculate_utilisation,
+)
 from django.utils import timezone
 from django.urls import reverse
 from simple_history.models import HistoricalRecords
@@ -20,10 +24,7 @@ from django_bleach.models import BleachField
 from guardian.shortcuts import assign_perm, remove_perm, get_users_with_perms
 from django_bleach.models import BleachField
 from django.db.models.functions import Lower
-import pandas as pd
 from collections import defaultdict
-from django.db.models import Q, Case, When, Value, IntegerField
-from django.db.models.functions import TruncDate
 
 
 def get_media_image_file_path(_, filename):
@@ -128,10 +129,13 @@ class Team(models.Model):
         for user in users:
             users_by_country[user["country"]].append(user["id"])
 
-        # Get all holidays for relevant countries in one query
+        # Get all holidays for relevant countries in one query, including any
+        # global (country=NULL) holidays that apply to everyone.
         holidays_by_country = defaultdict(set)
+        global_holidays = set()
         holidays = Holiday.objects.filter(
-            country__in=users_by_country.keys(), date__range=(start_date, end_date)
+            Q(country__in=users_by_country.keys()) | Q(country__isnull=True),
+            date__range=(start_date, end_date),
         ).values("country", "date")
 
         for holiday in holidays:
@@ -141,187 +145,61 @@ class Team(models.Model):
                 if isinstance(holiday["date"], datetime)
                 else holiday["date"]
             )
-            holidays_by_country[country].add(date)
+            if country is None:
+                global_holidays.add(date)
+            else:
+                holidays_by_country[country].add(date)
 
-        # Get all timeslots for all users in one query
-        timeslots = (
-            TimeSlot.objects.filter(
-                user_id__in=[u["id"] for u in users],
-                start__date__lte=end_date,
-                end__date__gte=start_date,
-            )
-            .annotate(
-                date=TruncDate("start"),
-                is_tentative=Case(
-                    When(
-                        phase__status__lt=PhaseStatuses.SCHEDULED_CONFIRMED,
-                        then=Value(1),
-                    ),
-                    When(
-                        phase__status__gte=PhaseStatuses.SCHEDULED_CONFIRMED,
-                        then=Value(0),
-                    ),
-                    When(phase__isnull=True, then=Value(0)),
-                    default=Value(0),
-                    output_field=IntegerField(),
-                ),
-                is_confirmed=Case(
-                    When(
-                        phase__status__gte=PhaseStatuses.SCHEDULED_CONFIRMED,
-                        then=Value(1),
-                    ),
-                    When(
-                        phase__status__lt=PhaseStatuses.SCHEDULED_CONFIRMED,
-                        then=Value(0),
-                    ),
-                    When(phase__isnull=True, then=Value(0)),
-                    default=Value(0),
-                    output_field=IntegerField(),
-                ),
-                is_non_delivery=Case(
-                    When(phase__isnull=True, then=Value(1)),
-                    default=Value(0),
-                    output_field=IntegerField(),
-                ),
-            )
-            .values(
-                "user_id",
-                "date",
-                "is_tentative",
-                "is_confirmed",
-                "is_non_delivery",
-                "start",
-                "end",
-            )
-        )
-        WORKING_DAYS = json.loads(config.DEFAULT_WORKING_DAYS)
-        # Create date range DataFrame once
-        date_range = pd.date_range(start=start_date, end=end_date, freq="D")
-        dates_df = pd.DataFrame({"date": date_range})
-        dates_df["date"] = dates_df["date"].dt.date
-        # dates_df["is_working_day"] = dates_df["date"].apply(
-        #     lambda x: 1 if (x.weekday() + 1) in self.businessHours_days else 0
-        # )
-        dates_df["is_working_day"] = dates_df["date"].apply(
-            lambda x: 1 if (x.weekday() + 1) in WORKING_DAYS else 0
-        )
+        # Get all timeslots for all users in one query, reduced to the flags the
+        # central engine needs (slot_type__is_working=False => non-working time).
+        timeslots = TimeSlot.objects.filter(
+            user_id__in=[u["id"] for u in users],
+            start__date__lte=end_date,
+            end__date__gte=start_date,
+        ).values("user_id", "start", "end", "phase__status", "slot_type__is_working")
 
-        # Process each user's data
-        results = {}
+        # A Team is not an OrganisationalUnit and has no business-hours config,
+        # so utilisation uses the global default working days.
+        working_days = json.loads(config.DEFAULT_WORKING_DAYS)
 
-        # Group timeslots by user for efficient processing
+        # Group timeslots by user as engine-ready dicts.
         timeslots_by_user = defaultdict(list)
         for slot in timeslots:
-            timeslots_by_user[slot["user_id"]].append(slot)
+            status = slot["phase__status"]
+            timeslots_by_user[slot["user_id"]].append({
+                "start": slot["start"],
+                "end": slot["end"],
+                "is_confirmed": status is not None
+                and status >= PhaseStatuses.SCHEDULED_CONFIRMED,
+                "is_tentative": status is not None
+                and status < PhaseStatuses.SCHEDULED_CONFIRMED,
+                "is_non_working_slot": slot["slot_type__is_working"] is False,
+            })
 
+        # Period masks depend only on working days + holidays, shared per
+        # country — build once per country and reuse across users.
+        masks_by_country = {}
+
+        def _masks_for(country):
+            if country not in masks_by_country:
+                country_holidays = set(holidays_by_country.get(country, set()))
+                country_holidays.update(global_holidays)
+                masks_by_country[country] = build_period_masks(
+                    start_date, end_date, working_days, country_holidays
+                )
+            return masks_by_country[country]
+
+        results = {}
         for user in users:
             user_id = user["id"]
-            user_country = user["country"]
-            holiday_dates = holidays_by_country[user_country]
-
-            # Create user-specific dates DataFrame with holidays
-            user_dates_df = dates_df.copy()
-            user_dates_df["is_holiday"] = user_dates_df["date"].apply(
-                lambda x: 1 if x in holiday_dates else 0
+            results[user_id] = calculate_utilisation(
+                timeslots_by_user.get(user_id, []),
+                start_date,
+                end_date,
+                working_days,
+                None,  # holidays already baked into the shared masks
+                masks=_masks_for(user["country"]),
             )
-
-            # Process user's timeslots
-            slots_data = []
-            for slot in timeslots_by_user[user_id]:
-                current_date = max(slot["start"].date(), start_date)
-                end_date_slot = min(slot["end"].date(), end_date)
-
-                while current_date <= end_date_slot:
-                    if (
-                        # (current_date.weekday() + 1) in self.businessHours_days and
-                        (current_date.weekday() + 1) in WORKING_DAYS and
-                        current_date not in holiday_dates
-                    ):
-                        slots_data.append(
-                            {
-                                "date": current_date,
-                                "is_tentative": slot["is_tentative"],
-                                "is_confirmed": slot["is_confirmed"],
-                                "is_non_delivery": slot["is_non_delivery"],
-                            }
-                        )
-                    current_date += timedelta(days=1)
-
-            # Create and process user's slots DataFrame
-            if slots_data:
-                slots_df = pd.DataFrame(slots_data)
-                daily_stats = (
-                    slots_df.groupby("date")
-                    .agg(
-                        {
-                            "is_tentative": "sum",
-                            "is_confirmed": "sum",
-                            "is_non_delivery": "sum",
-                        }
-                    )
-                    .reset_index()
-                )
-                final_df = user_dates_df.merge(
-                    daily_stats, on="date", how="left"
-                ).fillna(0)
-            else:
-                final_df = user_dates_df.copy()
-                final_df["is_tentative"] = 0
-                final_df["is_confirmed"] = 0
-                final_df["is_non_delivery"] = 0
-
-            # Calculate user statistics
-            total_days = len(date_range)
-            holiday_days = len(final_df[final_df["is_holiday"] > 0])
-            non_working_days = len(final_df[final_df["is_working_day"] == 0])
-
-            work_days = len(
-                final_df[
-                    (final_df["is_holiday"] == 0) & (final_df["is_working_day"] == 1)
-                ]
-            )
-
-            scheduled_days = len(
-                final_df[
-                    (final_df["is_holiday"] == 0)
-                    & (final_df["is_working_day"] == 1)
-                    & (
-                        (final_df["is_tentative"] > 0)
-                        | (final_df["is_confirmed"] > 0)
-                        | (final_df["is_non_delivery"] > 0)
-                    )
-                ]
-            )
-
-            results[user_id] = {
-                "total_days": total_days,
-                "holiday_days": holiday_days,
-                "non_working_days": non_working_days,
-                "working_days": work_days,
-                "available_days": work_days - scheduled_days,
-                "scheduled_days": scheduled_days,
-                "tentative_days": len(
-                    final_df[
-                        (final_df["is_holiday"] == 0)
-                        & (final_df["is_working_day"] == 1)
-                        & (final_df["is_tentative"] > 0)
-                    ]
-                ),
-                "confirmed_days": len(
-                    final_df[
-                        (final_df["is_holiday"] == 0)
-                        & (final_df["is_working_day"] == 1)
-                        & (final_df["is_confirmed"] > 0)
-                    ]
-                ),
-                "non_delivery_days": len(
-                    final_df[
-                        (final_df["is_holiday"] == 0)
-                        & (final_df["is_working_day"] == 1)
-                        & (final_df["is_non_delivery"] > 0)
-                    ]
-                ),
-            }
 
         return results
 
@@ -350,63 +228,55 @@ class Team(models.Model):
             data[rang] = self.calculate_bulk_utilization(
                 start_date=avail_start, end_date=avail, user_ids=user_ids
             )
-            data[rang]["totals"] = {
+            totals = {
                 "non_delivery_days": 0,
                 "scheduled_days": 0,
                 "tentative_days": 0,
                 "confirmed_days": 0,
                 "available_days": 0,
                 "working_days": 0,
+                "effective_working_days": 0,
             }
-            for _, m in data[rang].items():
-                data[rang]["totals"]["non_delivery_days"] += m["non_delivery_days"]
-                data[rang]["totals"]["scheduled_days"] += m["scheduled_days"]
-                data[rang]["totals"]["tentative_days"] += m["tentative_days"]
-                data[rang]["totals"]["confirmed_days"] += m["confirmed_days"]
-                data[rang]["totals"]["available_days"] += m["available_days"]
-                data[rang]["totals"]["working_days"] += m["working_days"]
+            for uid, m in data[rang].items():
+                if uid == "totals":
+                    continue
+                totals["non_delivery_days"] += m["non_delivery_days"]
+                totals["scheduled_days"] += m["scheduled_days"]
+                totals["tentative_days"] += m["tentative_days"]
+                totals["confirmed_days"] += m["confirmed_days"]
+                totals["available_days"] += m["available_days"]
+                totals["working_days"] += m["working_days"]
+                totals["effective_working_days"] += m["effective_working_days"]
+            data[rang]["totals"] = totals
 
-            data[rang]["totals"]["non_delivery_days_percentage"] = round(
-                data[rang]["totals"]["non_delivery_days"]
-                / data[rang]["totals"]["working_days"]
-                * 100,
-                1,
-            ) if data[rang]["totals"]["working_days"] != 0 else 0
+            working = totals["working_days"]
+            effective = totals["effective_working_days"]
 
-            data[rang]["totals"]["scheduled_days_percentage"] = round(
-                data[rang]["totals"]["scheduled_days"]
-                / data[rang]["totals"]["working_days"]
-                * 100,
-                1,
-            ) if data[rang]["totals"]["working_days"] != 0 else 0
+            def _pct(value, denom):
+                return round(value / denom * 100, 1) if denom else 0
 
-            data[rang]["totals"]["tentative_days_percentage"] = round(
-                data[rang]["totals"]["tentative_days"]
-                / data[rang]["totals"]["working_days"]
-                * 100,
-                1,
-            ) if data[rang]["totals"]["working_days"] != 0 else 0
-
-            data[rang]["totals"]["confirmed_days_percentage"] = round(
-                data[rang]["totals"]["confirmed_days"]
-                / data[rang]["totals"]["working_days"]
-                * 100,
-                1,
-            ) if data[rang]["totals"]["working_days"] != 0 else 0
-
-            data[rang]["totals"]["utilisation_percentage"] = round(
-                data[rang]["totals"]["confirmed_days"]
-                / data[rang]["totals"]["working_days"]
-                * 100,
-                1,
-            ) if data[rang]["totals"]["working_days"] != 0 else 0
-
-            data[rang]["totals"]["available_days_percentage"] = round(
-                data[rang]["totals"]["available_days"]
-                / data[rang]["totals"]["working_days"]
-                * 100,
-                1,
-            ) if data[rang]["totals"]["working_days"] != 0 else 0
+            # non-delivery includes non-working (leave) days, so it keeps the
+            # nominal working-days denominator.
+            totals["non_delivery_days_percentage"] = _pct(
+                totals["non_delivery_days"], working
+            )
+            # Everything within the effective working days uses that denominator,
+            # matching the central utilisation formula.
+            totals["scheduled_days_percentage"] = _pct(
+                totals["scheduled_days"], effective
+            )
+            totals["tentative_days_percentage"] = _pct(
+                totals["tentative_days"], effective
+            )
+            totals["confirmed_days_percentage"] = _pct(
+                totals["confirmed_days"], effective
+            )
+            totals["utilisation_percentage"] = _pct(
+                totals["confirmed_days"], effective
+            )
+            totals["available_days_percentage"] = _pct(
+                totals["available_days"], effective
+            )
         return data
 
 

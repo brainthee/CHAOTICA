@@ -90,6 +90,64 @@ class ResolverTests(SimpleTestCase):
             dict(PhaseStatuses.CHOICES)[PhaseStatuses.SCHEDULED_TENTATIVE],
         )
 
+    def test_qa_stars_are_stored_rating_plus_one(self):
+        # A stored 'Average' (2) reads as 3 stars in the UI; None stays blank.
+        for raw, expected in ((0, 1), (2, 3), (4, 5)):
+            phase = SimpleNamespace(techqa_report_rating=raw)
+            self.assertEqual(
+                REPORTING_RESOLVERS['phase.techqa_report_stars'].fn(phase, {}),
+                expected,
+            )
+        blank = SimpleNamespace(techqa_report_rating=None)
+        self.assertIsNone(
+            REPORTING_RESOLVERS['phase.techqa_report_stars'].fn(blank, {})
+        )
+
+    def test_qa_rating_label_resolver(self):
+        from jobtracker.enums import TechQARatings
+        phase = SimpleNamespace(techqa_report_rating=TechQARatings.AVERAGE)
+        self.assertEqual(
+            REPORTING_RESOLVERS['phase.techqa_report_rating_label'].fn(phase, {}),
+            dict(TechQARatings.CHOICES)[TechQARatings.AVERAGE],
+        )
+
+    def test_feedback_text_and_count_by_type(self):
+        from jobtracker.enums import FeedbackType
+        feedback = [
+            SimpleNamespace(feedbackType=FeedbackType.TECH, body='<b>Tidy up</b> the exec summary'),
+            SimpleNamespace(feedbackType=FeedbackType.TECH, body='Fix the risk ratings'),
+            SimpleNamespace(feedbackType=FeedbackType.PRES, body='Header wrong'),
+        ]
+        phase = SimpleNamespace(feedback=_StubRelation(feedback))
+        self.assertEqual(REPORTING_RESOLVERS['phase.feedback_tech_count'].fn(phase, {}), 2)
+        self.assertEqual(REPORTING_RESOLVERS['phase.feedback_pres_count'].fn(phase, {}), 1)
+        self.assertEqual(REPORTING_RESOLVERS['phase.feedback_scope_count'].fn(phase, {}), 0)
+        # HTML is stripped and bodies joined.
+        tech_text = REPORTING_RESOLVERS['phase.feedback_tech_text'].fn(phase, {})
+        self.assertIn('Tidy up the exec summary', tech_text)
+        self.assertIn('Fix the risk ratings', tech_text)
+        self.assertNotIn('<b>', tech_text)
+        self.assertEqual(REPORTING_RESOLVERS['phase.feedback_scope_text'].fn(phase, {}), '')
+
+    def test_job_status_label_and_m2m_resolvers(self):
+        from jobtracker.enums import JobStatuses
+        job = SimpleNamespace(
+            status=JobStatuses.PENDING_START,
+            charge_codes=_StubRelation([SimpleNamespace(code='ABC-1'), SimpleNamespace(code='ABC-2')]),
+            indicative_services=_StubRelation([SimpleNamespace(name='Web App')]),
+            scoped_by=_StubRelation([
+                SimpleNamespace(id=1, get_full_name=lambda: 'Zoe Zheng'),
+                SimpleNamespace(id=2, get_full_name=lambda: 'Amy Adams'),
+            ]),
+        )
+        self.assertEqual(
+            REPORTING_RESOLVERS['job.status_label'].fn(job, {}),
+            dict(JobStatuses.CHOICES)[JobStatuses.PENDING_START],
+        )
+        self.assertEqual(REPORTING_RESOLVERS['job.charge_codes'].fn(job, {}), 'ABC-1, ABC-2')
+        self.assertEqual(REPORTING_RESOLVERS['job.indicative_services'].fn(job, {}), 'Web App')
+        self.assertEqual(REPORTING_RESOLVERS['job.scoped_by'].fn(job, {}), 'Amy Adams, Zoe Zheng')
+
 
 class DataServiceHelperTests(SimpleTestCase):
     def test_walk_path_traverses_and_tolerates_none(self):
@@ -263,3 +321,117 @@ class RunAsUserFormTests(TestCase):
         form = ScheduledReportForm(data={'run_as_user': self.superuser.pk})
         self.assertFalse(form.is_valid())
         self.assertIn('run_as_user', form.errors)
+
+
+from unittest import mock
+import os
+
+
+def _make_report(owner):
+    """Minimal Report (+ its required DataArea) for background-run tests."""
+    from django.contrib.contenttypes.models import ContentType
+    from jobtracker.models import Job
+    from reporting.models import DataArea, Report
+    area = DataArea.objects.create(
+        name="Jobs (test)", content_type=ContentType.objects.get_for_model(Job),
+        model_name="Job",
+    )
+    return Report.objects.create(name="Test report", owner=owner, data_area=area)
+
+
+class ReportRunProcessingTests(TestCase):
+    """The background cron executes a queued run and persists its output."""
+
+    def setUp(self):
+        from chaotica_utils.models import User
+        self.user = User.objects.create_user(email="runproc@test.com", password="pw12345")
+        self.report = _make_report(self.user)
+
+    def _addCleanupFiles(self, run):
+        run.refresh_from_db()
+        for path in (run.result_path, run.export_path):
+            if path:
+                self.addCleanup(lambda p=path: os.path.exists(p) and os.remove(p))
+
+    def test_html_run_marks_complete_and_persists_rows(self):
+        from reporting.models import ReportRun
+        from reporting.tasks import ProcessReportRuns
+        run = ReportRun.objects.create(report=self.report, user=self.user)
+        rows = [{"id": 1, "title": "A"}, {"id": 2, "title": "B"}]
+        with mock.patch("reporting.tasks.DataService.get_report_data", return_value=rows):
+            ProcessReportRuns().process_run(run)
+        self._addCleanupFiles(run)
+        run.refresh_from_db()
+        self.assertEqual(run.status, ReportRun.STATUS_COMPLETE)
+        self.assertEqual(run.row_count, 2)
+        self.assertTrue(run.result_path and os.path.exists(run.result_path))
+        self.report.refresh_from_db()
+        self.assertIsNotNone(self.report.last_run_at)
+
+    def test_export_run_writes_download_file(self):
+        from django.http import HttpResponse
+        from reporting.models import ReportRun
+        from reporting.tasks import ProcessReportRuns
+        run = ReportRun.objects.create(report=self.report, user=self.user, export_format="csv")
+        fake = HttpResponse(b"id,title\n1,A\n", content_type="text/csv")
+        fake["Content-Disposition"] = 'attachment; filename="test.csv"'
+        with mock.patch("reporting.tasks.DataService.get_report_data", return_value=[{"id": 1}]), \
+             mock.patch("reporting.tasks.ExportService.export_report", return_value=fake):
+            ProcessReportRuns().process_run(run)
+        self._addCleanupFiles(run)
+        run.refresh_from_db()
+        self.assertEqual(run.status, ReportRun.STATUS_COMPLETE)
+        self.assertTrue(run.export_path and os.path.exists(run.export_path))
+        self.assertEqual(run.export_content_type, "text/csv")
+        self.assertEqual(run.export_filename, "test.csv")
+
+    def test_failure_is_recorded(self):
+        from reporting.models import ReportRun
+        from reporting.tasks import ProcessReportRuns
+        run = ReportRun.objects.create(report=self.report, user=self.user)
+        with mock.patch("reporting.tasks.DataService.get_report_data", side_effect=ValueError("boom")):
+            ProcessReportRuns().process_run(run)
+        run.refresh_from_db()
+        self.assertEqual(run.status, ReportRun.STATUS_FAILED)
+        self.assertIn("boom", run.error_message)
+
+
+class ReportRunStatusEndpointTests(TestCase):
+    """The polled status endpoint returns the right JSON for each run state."""
+
+    def setUp(self):
+        from chaotica_utils.models import User
+        self.user = User.objects.create_user(email="status@test.com", password="pw12345")
+        self.report = _make_report(self.user)
+        self.client.force_login(self.user)
+
+    def _status(self, run):
+        from django.urls import reverse
+        url = reverse('reporting:report_run_status', args=[self.report.uuid, run.id])
+        return self.client.get(url, HTTP_HOST='localhost').json()
+
+    def test_pending_running_complete_failed(self):
+        from django.utils import timezone
+        from reporting.models import ReportRun
+        pending = ReportRun.objects.create(report=self.report, user=self.user)
+        self.assertEqual(self._status(pending)['status'], 'pending')
+
+        running = ReportRun.objects.create(
+            report=self.report, user=self.user,
+            status=ReportRun.STATUS_RUNNING, started_at=timezone.now(),
+        )
+        self.assertEqual(self._status(running)['status'], 'running')
+
+        complete = ReportRun.objects.create(
+            report=self.report, user=self.user,
+            status=ReportRun.STATUS_COMPLETE, row_count=5,
+        )
+        body = self._status(complete)
+        self.assertEqual(body['status'], 'complete')
+        self.assertIn('result_url', body)
+
+        failed = ReportRun.objects.create(
+            report=self.report, user=self.user,
+            status=ReportRun.STATUS_FAILED, error_message="nope",
+        )
+        self.assertEqual(self._status(failed)['status'], 'failed')
