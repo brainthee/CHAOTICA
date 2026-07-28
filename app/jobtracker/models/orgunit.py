@@ -24,6 +24,8 @@ from decimal import Decimal
 from django.templatetags.static import static
 from django_bleach.models import BleachField
 from django.db.models.functions import Lower
+from django.db.models.signals import m2m_changed
+from django.dispatch import receiver
 from django.contrib.auth.models import Permission
 import pandas as pd
 from collections import defaultdict
@@ -185,6 +187,28 @@ class OrganisationalUnit(models.Model):
                     # We should not have any permissions! Clear them all
                     for perm in existing_perms:
                         remove_perm(perm, user, self)
+
+    def ensure_lead_memberships(self):
+        """Ensure every lead holds the management role on this unit.
+
+        Being a lead should confer manager rights however the lead was assigned
+        (unit creation, the edit form, the setup wizard, admin, shell, ...).
+        Previously only ``OrganisationalUnitCreateView`` did this, so a lead
+        added after creation had no ``manage_members`` permission and hit a 403
+        when trying to add/import members. Idempotent - safe to call repeatedly.
+        """
+        management_role = OrganisationalUnitRole.objects.filter(
+            manage_role=True
+        ).first()
+        if management_role is None:
+            return
+        for lead_user in self.leads.all():
+            membership, _ = OrganisationalUnitMember.objects.get_or_create(
+                unit=self, member=lead_user
+            )
+            membership.roles.add(management_role)
+        # roles.add() doesn't trigger the member save() resync, so do it once here.
+        self.sync_permissions()
 
     def __str__(self):
         return self.name
@@ -962,3 +986,26 @@ class OrganisationalUnitMember(models.Model):
         super().save(*args, **kwargs)
         # Lets resync the permissions!
         self.unit.sync_permissions()
+
+
+@receiver(
+    m2m_changed,
+    sender=OrganisationalUnit.leads.through,
+    dispatch_uid="sync_lead_memberships",
+)
+def sync_lead_memberships(sender, instance, action, **kwargs):
+    """Grant manager rights to leads whenever the ``leads`` M2M changes.
+
+    Covers every path that assigns a lead (edit form, setup wizard, admin,
+    demo data, shell) - not just unit creation.
+    """
+    if action != "post_add":
+        return
+    if isinstance(instance, OrganisationalUnit):
+        instance.ensure_lead_memberships()
+    else:
+        # Reverse side: ``instance`` is a User; pk_set holds the unit pks.
+        for unit in OrganisationalUnit.objects.filter(
+            pk__in=kwargs.get("pk_set") or []
+        ):
+            unit.ensure_lead_memberships()

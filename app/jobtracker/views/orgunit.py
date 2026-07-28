@@ -445,24 +445,23 @@ class OrganisationalUnitCreateView(
     fields = None
 
     def form_valid(self, form):
-        # ensure each lead has manager access
         super_response = super(OrganisationalUnitCreateView, self).form_valid(form)
-        org_unit = form.save()
-        management_role = OrganisationalUnitRole.objects.filter(
-            manage_role=True
-        ).first()
-        leads = list(org_unit.leads.all())
-        for lead_user in leads:
-            lead, _ = OrganisationalUnitMember.objects.get_or_create(
-                unit=org_unit, member=lead_user
-            )
-            lead.roles.add(management_role)
-        # Also add self in case we're not a lead
-        if self.request.user not in leads:
+        org_unit = self.object
+        # Leads are granted manager access centrally (the leads m2m_changed
+        # signal / ensure_lead_memberships); call it explicitly here too so
+        # creation is self-contained regardless of signal ordering.
+        org_unit.ensure_lead_memberships()
+        # Also make the creator a manager in case they aren't a named lead.
+        if self.request.user not in org_unit.leads.all():
+            management_role = OrganisationalUnitRole.objects.filter(
+                manage_role=True
+            ).first()
             r_user, _ = OrganisationalUnitMember.objects.get_or_create(
                 unit=org_unit, member=self.request.user
             )
-            r_user.roles.add(management_role)
+            if management_role:
+                r_user.roles.add(management_role)
+                org_unit.sync_permissions()
         return super_response
 
 
@@ -653,15 +652,59 @@ def organisationalunit_import_members(request, slug):
             csv_file = form.cleaned_data["csv_file"]
             send_email = form.cleaned_data.get("send_email")
 
+            imported_count = 0
+            created_count = 0
+            failed_rows = []
+            created_users = []
+
             try:
                 text_file = io.TextIOWrapper(csv_file.file, encoding="utf-8-sig")
                 reader = csv.DictReader(text_file)
 
+                # Force the whole file to be read now so encoding/parse problems
+                # surface as a clear message rather than blowing up mid-loop.
+                try:
+                    fieldnames = reader.fieldnames
+                    rows = list(reader)
+                except UnicodeDecodeError:
+                    messages.error(
+                        request,
+                        "The file could not be read as text. Re-save it as "
+                        "'CSV UTF-8' (not another encoding) and try again.",
+                    )
+                    return redirect(
+                        "organisationalunit_import_members", slug=org_unit.slug
+                    )
+                except csv.Error as e:
+                    messages.error(request, f"The file isn't a valid CSV: {e}")
+                    return redirect(
+                        "organisationalunit_import_members", slug=org_unit.slug
+                    )
+
                 normalised_headers = [
-                    (f or "").strip().lower() for f in (reader.fieldnames or [])
+                    (f or "").strip().lower() for f in (fieldnames or [])
                 ]
+                if not any(normalised_headers):
+                    messages.error(
+                        request, "The file appears to be empty - it has no header row."
+                    )
+                    return redirect(
+                        "organisationalunit_import_members", slug=org_unit.slug
+                    )
                 if "email" not in normalised_headers:
-                    messages.error(request, "CSV file must include an 'email' column")
+                    messages.error(
+                        request,
+                        "CSV file must include an 'email' column. Columns found: "
+                        + ", ".join(h for h in normalised_headers if h),
+                    )
+                    return redirect(
+                        "organisationalunit_import_members", slug=org_unit.slug
+                    )
+                if not rows:
+                    messages.error(
+                        request,
+                        "The file has a header row but no data rows to import.",
+                    )
                     return redirect(
                         "organisationalunit_import_members", slug=org_unit.slug
                     )
@@ -681,28 +724,27 @@ def organisationalunit_import_members(request, slug):
                     )
                 }
 
-                success_count = 0
-                error_count = 0
-                errors = []
-                created_users = []
-
                 with transaction.atomic():
-                    for row_num, raw in enumerate(reader, start=2):
+                    for row_num, raw in enumerate(rows, start=2):
                         row = {
                             (k or "").strip().lower(): (v or "").strip()
                             for k, v in raw.items()
                         }
                         email = row.get("email", "")
                         if not email:
-                            errors.append(f"Row {row_num}: missing email")
-                            error_count += 1
+                            failed_rows.append(
+                                {"row": row_num, "email": "", "reason": "Missing email"}
+                            )
                             continue
 
                         if not email_domain_allowed(email):
-                            errors.append(
-                                f"Row {row_num}: email domain not allowed ({email})"
+                            failed_rows.append(
+                                {
+                                    "row": row_num,
+                                    "email": email,
+                                    "reason": "Email domain is not on the allowlist",
+                                }
                             )
-                            error_count += 1
                             continue
 
                         # Unit roles (semicolon/comma separated names)
@@ -718,10 +760,13 @@ def organisationalunit_import_members(request, slug):
                                 break
                             unit_roles.append(role)
                         if bad_role:
-                            errors.append(
-                                f"Row {row_num}: unknown unit role '{bad_role}'"
+                            failed_rows.append(
+                                {
+                                    "row": row_num,
+                                    "email": email,
+                                    "reason": f"Unknown unit role '{bad_role}'",
+                                }
                             )
-                            error_count += 1
                             continue
                         if not unit_roles and default_unit_role:
                             unit_roles = [default_unit_role]
@@ -736,10 +781,13 @@ def organisationalunit_import_members(request, slug):
                                 (settings.GLOBAL_GROUP_PREFIX + label).lower()
                             )
                             if site_group is None:
-                                errors.append(
-                                    f"Row {row_num}: unknown site role '{label}'"
+                                failed_rows.append(
+                                    {
+                                        "row": row_num,
+                                        "email": email,
+                                        "reason": f"Unknown site role '{label}'",
+                                    }
                                 )
-                                error_count += 1
                                 continue
 
                         try:
@@ -753,12 +801,19 @@ def organisationalunit_import_members(request, slug):
                                 unit_roles=unit_roles,
                                 can_assign_site_roles=can_assign_site_roles,
                             )
-                            success_count += 1
-                            if created and send_email:
-                                created_users.append(user)
+                            imported_count += 1
+                            if created:
+                                created_count += 1
+                                if send_email:
+                                    created_users.append(user)
                         except Exception as e:
-                            errors.append(f"Row {row_num}: unexpected error - {e}")
-                            error_count += 1
+                            failed_rows.append(
+                                {
+                                    "row": row_num,
+                                    "email": email,
+                                    "reason": f"Unexpected error - {e}",
+                                }
+                            )
 
                     org_unit.sync_permissions()
 
@@ -767,22 +822,33 @@ def organisationalunit_import_members(request, slug):
                     for user in created_users:
                         _send_preload_notification(user)
 
-                if success_count:
-                    messages.success(
-                        request,
-                        f"Imported {success_count} member(s) into {org_unit.name}",
-                    )
-                if error_count:
-                    detail = errors[:5]
-                    if len(errors) > 5:
-                        detail.append(f"... and {len(errors) - 5} more errors")
-                    messages.error(
-                        request,
-                        f"Failed to import {error_count} row(s). " + "; ".join(detail),
-                    )
+                if imported_count:
+                    summary = f"Imported {imported_count} member(s) into {org_unit.name}"
+                    if created_count:
+                        summary += f" ({created_count} newly created)"
+                    messages.success(request, summary)
 
-                if success_count:
+                # Clean import - nothing to review, head back to the unit.
+                if not failed_rows:
                     return redirect("organisationalunit_detail", slug=org_unit.slug)
+
+                # Some rows failed - stay on this page and show exactly what and why.
+                messages.error(
+                    request,
+                    f"{len(failed_rows)} row(s) could not be imported - "
+                    "see the details below.",
+                )
+                context = {
+                    "orgUnit": org_unit,
+                    "form": ImportUnitMembersForm(),
+                    "imported_count": imported_count,
+                    "created_count": created_count,
+                    "failed_rows": failed_rows,
+                    "total_rows": len(rows),
+                }
+                context = {**context, **page_defaults(request)}
+                template = loader.get_template("jobtracker/import_members.html")
+                return HttpResponse(template.render(context, request))
 
             except Exception as e:
                 messages.error(request, f"Error processing CSV file: {e}")

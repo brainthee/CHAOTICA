@@ -27,6 +27,41 @@
           <span class="text-700 lh-sm mb-0">Bulk pre-load users into <strong>{{ orgUnit.name }}</strong> from a CSV file</span>
         </div>
         <div class="card-body">
+          {% if failed_rows %}
+            <div class="alert alert-phoenix-warning mb-4">
+              <h6 class="mb-2">
+                <i class="fa fa-triangle-exclamation"></i>
+                Import finished with issues
+              </h6>
+              <p class="mb-2">
+                <strong>{{ imported_count }}</strong> of <strong>{{ total_rows }}</strong>
+                row(s) imported{% if created_count %} ({{ created_count }} newly created){% endif %}.
+                The following <strong>{{ failed_rows|length }}</strong> row(s) were skipped
+                &ndash; fix them and re-upload just those rows.
+              </p>
+              <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                  <thead>
+                    <tr>
+                      <th scope="col">Row</th>
+                      <th scope="col">Email</th>
+                      <th scope="col">Reason</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for f in failed_rows %}
+                      <tr>
+                        <td>{{ f.row }}</td>
+                        <td>{{ f.email }}</td>
+                        <td>{{ f.reason }}</td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          {% endif %}
+
           <div class="alert alert-phoenix-info mb-4">
             <h6>CSV File Format</h6>
             <p class="mb-2">Your CSV file may contain the following columns:</p>
@@ -73,7 +108,7 @@
                 <li>Users that don't exist yet are created and adopted on first login (SSO by email).</li>
                 <li>Existing users are simply added to this unit; their site role is left unchanged.</li>
                 <li>Email domains are checked against the site allowlist.</li>
-                <li>The import runs in a single transaction - if a fatal error occurs, nothing is saved.</li>
+                <li>Valid rows are imported; any rows that fail are listed with the reason so you can fix and re-upload just those.</li>
               </ul>
             </div>
 
