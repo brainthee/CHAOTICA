@@ -106,8 +106,10 @@ class OrganisationalUnitDetailView(
             left_date__isnull=True,
         ).exists()
 
-        # Evaluate memberships once with proper prefetches
-        memberships = list(unit.get_activeMemberships())
+        # Evaluate memberships once with proper prefetches. Disabled members are
+        # included so the team table can offer a "show disabled" toggle; they're
+        # flagged (below) and hidden by default client-side.
+        memberships = list(unit.get_activeMemberships(include_disabled=True))
         context["active_memberships"] = memberships
 
         # Phases "in flight" for the header at-a-glance tile (single COUNT)
@@ -147,6 +149,7 @@ class OrganisationalUnitDetailView(
         }
         for ms in memberships:
             ms.is_consultant = ms.member_id in consultant_ids
+            ms.is_disabled = not ms.member.is_active
             m = util.get(ms.member_id, {})
             working = m.get("working_days", 0)
             ms.util_pct = (
@@ -541,6 +544,11 @@ def _preload_unit_member(
         user.set_unusable_password()
         user.save()
         user_created = True
+    elif not user.is_active:
+        # Re-importing a previously disabled account re-enables it, so a person
+        # who was off-boarded and later returns regains access to the unit.
+        user.is_active = True
+        user.save()
 
     # Site (global) role. Only an assigner with manage_user may pick an
     # elevated role; everyone else (and every new user) gets the default role.

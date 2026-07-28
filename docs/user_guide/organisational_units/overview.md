@@ -35,6 +35,11 @@ Displays a table of active unit members with, per member:
 
 Utilisation and active-job counts are computed in bulk for the whole team, so the table stays fast regardless of member count.
 
+The table can be filtered above the header by **Role** and **Job level**, and searched
+by the free-text box (name, title, etc.). Members whose account is **disabled** are
+hidden by default; tick **Show disabled users** to include them (they're tagged with a
+"Disabled" badge).
+
 ### Jobs
 
 *Requires `can_view_jobs` permission.*

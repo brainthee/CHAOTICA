@@ -128,6 +128,40 @@ class SinglePreloadTests(PreloadMemberBase):
         user = User.objects.get(email="boss@test.com")
         self.assertIn(admin_group, user.groups.all())
 
+    def test_preload_reenables_disabled_user(self):
+        disabled = User.objects.create_user(
+            email="dormant@test.com", password="pw12345"
+        )
+        disabled.is_active = False
+        disabled.save()
+
+        self.client.force_login(self.manager)
+        resp = self.client.post(
+            self.preload_url(),
+            {"email": "dormant@test.com", "unit_roles": [self.consultant_role.pk]},
+        )
+        self.assertTrue(resp.json()["form_is_valid"])
+        disabled.refresh_from_db()
+        # A previously disabled account is re-enabled when re-imported.
+        self.assertTrue(disabled.is_active)
+
+    def test_csv_import_reenables_disabled_user(self):
+        disabled = User.objects.create_user(
+            email="dormant2@test.com", password="pw12345"
+        )
+        disabled.is_active = False
+        disabled.save()
+
+        self.client.force_login(self.manager)
+        f = SimpleUploadedFile(
+            "members.csv",
+            b"email,unit_roles\ndormant2@test.com,Consultant\n",
+            "text/csv",
+        )
+        self.client.post(self.import_url(), {"csv_file": f})
+        disabled.refresh_from_db()
+        self.assertTrue(disabled.is_active)
+
     def test_existing_user_added_without_touching_site_role(self):
         existing = User.objects.create_user(
             email="existing@test.com", password="pw12345"

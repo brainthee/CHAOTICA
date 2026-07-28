@@ -316,15 +316,14 @@ class OrganisationalUnit(models.Model):
             .distinct()
         )
 
-    def get_activeMemberships(self):
+    def get_activeMemberships(self, include_disabled=False):
         from chaotica_utils.models.job_levels import UserJobLevel
 
+        members = self.members.filter(left_date__isnull=True)
+        if not include_disabled:
+            members = members.filter(member__is_active=True)
         return (
-            self.members.filter(
-                left_date__isnull=True,
-                member__is_active=True,
-            )
-            .select_related(
+            members.select_related(
                 "member__city",
                 "member__city__country",
                 "member__manager",

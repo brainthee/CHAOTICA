@@ -26,7 +26,9 @@ through the setup wizard).
 5. Save.
 
 If the email already belongs to an existing user, they're simply added to the
-unit (their existing site role is left untouched).
+unit (their existing site role is left untouched). If that account had been
+**disabled**, pre-loading (or importing) it again **re-enables** it — so someone
+who was off-boarded and later returns regains access.
 
 ### Site (global) roles
 
