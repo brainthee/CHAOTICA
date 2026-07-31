@@ -40,15 +40,15 @@
 
         <div class="col-md-auto">
           <div class="d-flex">
-            {% if 'change_project' or 'delete_project' in project_perms %}
+            {% if 'change_project' in project_perms or 'delete_project' in project_perms or perms.jobtracker.change_project or perms.jobtracker.delete_project %}
               <div class="btn-reveal-trigger position-static">
                 <button class="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal fs-10" type="button" data-bs-toggle="dropdown" data-boundary="window" aria-haspopup="true" aria-expanded="false" data-bs-reference="parent"><span class="fas fa-ellipsis-h fs-10"></span></button>
 
                 <div class="dropdown-menu shadow dropdown-menu-end me-sm-n4 me-n3" aria-labelledby="navbarDropdownMenuLink">
-                  {% if 'change_project' in project_perms %}
+                  {% if 'change_project' in project_perms or perms.jobtracker.change_project %}
                     <a class="dropdown-item" href="{% url 'project_update' project.slug %}">Edit</a>
                   {% endif %}
-                  {% if 'delete_project' in project_perms %}
+                  {% if 'delete_project' in project_perms or perms.jobtracker.delete_project %}
                     <a href="{% url 'project_delete' project.slug %}" class="dropdown-item text-danger">Delete</a>
                   {% endif %}
                 </div>

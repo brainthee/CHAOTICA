@@ -171,7 +171,13 @@ class CustomUserManager(BaseUserManager):
         # Process statistics for each user via the central engine.
         user_stats = {}
         for user_id in user_ids:
-            user = user_dict[user_id]
+            user = user_dict.get(user_id)
+            if user is None:
+                # The id list and the user_dict snapshot are two separate reads,
+                # so they can drift if a user is deactivated/removed (e.g. by a
+                # concurrent import) in between. Skip anyone missing from the
+                # snapshot rather than 500-ing the whole batch.
+                continue
             masks = _masks_for(user.country)
 
             user_data = calculate_utilisation(
