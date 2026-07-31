@@ -25,13 +25,10 @@ from .models import (
 )
 from .enums import UserSkillRatings
 import logging
-from chaotica_utils.utils import (
-    clean_fullcalendar_datetime, is_ajax
-)
+from chaotica_utils.utils import clean_fullcalendar_datetime, is_ajax
 from chaotica_utils.models import Holiday
 from constance import config
 from random import randrange
-
 
 
 logger = logging.getLogger(__name__)
@@ -112,9 +109,13 @@ def get_unit_40x_or_None(
         # if still no permission granted, try obj perms
         if not has_permissions:
             if any_perm:
-                has_permissions = any(request.user.has_perm(perm, obj) for perm in perms)
+                has_permissions = any(
+                    request.user.has_perm(perm, obj) for perm in perms
+                )
             else:
-                has_permissions = all(request.user.has_perm(perm, obj) for perm in perms)
+                has_permissions = all(
+                    request.user.has_perm(perm, obj) for perm in perms
+                )
         # Ok, now lets check unit permissions...
         if not has_permissions:
             unit = None
@@ -164,11 +165,8 @@ def get_unit_40x_or_None(
             )
 
 
-
-
 def _filter_users_on_query(request, cleaned_data=None):
     query = Q()
-
 
     show_inactive_users = cleaned_data.get("show_inactive_users")
 
@@ -307,9 +305,8 @@ def _filter_users_on_query(request, cleaned_data=None):
         users_with_job_levels = []
         for level in job_levels:
             current_assignments = UserJobLevel.objects.filter(
-                job_level=level,
-                is_current=True
-            ).values_list('user_id', flat=True)
+                job_level=level, is_current=True
+            ).values_list("user_id", flat=True)
             users_with_job_levels.extend(current_assignments)
         if users_with_job_levels:
             query.add(Q(pk__in=users_with_job_levels), Q.AND)
@@ -410,7 +407,15 @@ def phase_assigned_role_map(phase):
     return role_map
 
 
-def get_scheduler_members(request, filtered_users = None, start = None, end = None, use_filter_form=True, role_job=None, role_phase=None):
+def get_scheduler_members(
+    request,
+    filtered_users=None,
+    start=None,
+    end=None,
+    use_filter_form=True,
+    role_job=None,
+    role_phase=None,
+):
     data = []
     selected_phases = []
     cleaned_data = None
@@ -429,7 +434,10 @@ def get_scheduler_members(request, filtered_users = None, start = None, end = No
 
     if filtered_users is None:
         filtered_users = _filter_users_on_query(request, cleaned_data).prefetch_related(
-            "unit_memberships", "unit_memberships__unit", "job_level_history", "job_level_history__job_level"
+            "unit_memberships",
+            "unit_memberships__unit",
+            "job_level_history",
+            "job_level_history__job_level",
         )
 
     # Per-user role map for job/phase-scoped views (Account Manager / Lead /
@@ -451,57 +459,78 @@ def get_scheduler_members(request, filtered_users = None, start = None, end = No
     # Check if we need to order by distance
     filter_by_city = cleaned_data.get("filter_by_city") if cleaned_data else None
     ordering = cleaned_data.get("ordering", "title") if cleaned_data else "title"
-    ordering_direction = cleaned_data.get("ordering_direction", False) if cleaned_data else False
-    
+    ordering_direction = (
+        cleaned_data.get("ordering_direction", False) if cleaned_data else False
+    )
+
     if filter_by_city and ordering == "distance":
         # Sort users by distance to the selected city
         user_distance_pairs = []
-        for user_id, user_stat in stats['current']['by_user'].items():
-            user = user_stat['user']
+        for user_id, user_stat in stats["current"]["by_user"].items():
+            user = user_stat["user"]
             distance = user.get_distance_to_city(filter_by_city)
             user_distance_pairs.append((user_stat, distance))
-        
+
         # Sort by distance (closest first by default, or farthest first if reverse)
         reverse_sort = ordering_direction
-        user_distance_pairs.sort(key=lambda x: (x[1] is None, x[1] or float('inf')), reverse=reverse_sort)
+        user_distance_pairs.sort(
+            key=lambda x: (x[1] is None, x[1] or float("inf")), reverse=reverse_sort
+        )
     else:
         # Convert to list for consistent processing
-        user_distance_pairs = [(user_stat, None) for user_stat in stats['current']['by_user'].values()]
-        
+        user_distance_pairs = [
+            (user_stat, None) for user_stat in stats["current"]["by_user"].values()
+        ]
+
         # Apply other ordering if not distance-based
         if ordering == "title":
-            user_distance_pairs.sort(key=lambda x: x[0]['user_name'], reverse=ordering_direction)
+            user_distance_pairs.sort(
+                key=lambda x: x[0]["user_name"], reverse=ordering_direction
+            )
         elif ordering == "last_name, first_name":
-            user_distance_pairs.sort(key=lambda x: (x[0]['user'].last_name, x[0]['user'].first_name), reverse=ordering_direction)
+            user_distance_pairs.sort(
+                key=lambda x: (x[0]["user"].last_name, x[0]["user"].first_name),
+                reverse=ordering_direction,
+            )
         elif ordering == "availability":
-            user_distance_pairs.sort(key=lambda x: x[0]['available_percentage'] or 0, reverse=ordering_direction)
+            user_distance_pairs.sort(
+                key=lambda x: x[0]["available_percentage"] or 0,
+                reverse=ordering_direction,
+            )
         elif ordering == "util":
-            user_distance_pairs.sort(key=lambda x: x[0]['utilisation_percentage'] or 0, reverse=ordering_direction)
+            user_distance_pairs.sort(
+                key=lambda x: x[0]["utilisation_percentage"] or 0,
+                reverse=ordering_direction,
+            )
         elif ordering == "seniority":
             # This would need to be implemented based on job levels
             pass
 
     # Single query for all current job levels — avoids one query per user in the loop
-    _stat_user_ids = [s['user_id'] for s in stats['current']['by_user'].values()]
+    _stat_user_ids = [s["user_id"] for s in stats["current"]["by_user"].values()]
     _job_level_map = {
         ujl.user_id: ujl
         for ujl in UserJobLevel.objects.filter(
             user_id__in=_stat_user_ids, is_current=True
-        ).select_related('job_level')
+        ).select_related("job_level")
     }
 
     for user_stat, distance in user_distance_pairs:
-        user = user_stat['user']
-        user_title = user_stat['user_name']
-        main_org = user_stat['main_org']
+        user = user_stat["user"]
+        user_title = user_stat["user_name"]
+        main_org = user_stat["main_org"]
         user_roles = role_map.get(user.pk, [])
 
         current_job_level = _job_level_map.get(user.pk)
         # Stamp the fast-path attribute so get_table_display_html's template
         # call to u.get_current_level() uses the already-fetched value.
         user._current_levels = [current_job_level] if current_job_level else []
-        job_level_order = current_job_level.job_level.order if current_job_level else 999
-        job_level_label = str(current_job_level.job_level) if current_job_level else "No Level"
+        job_level_order = (
+            current_job_level.job_level.order if current_job_level else 999
+        )
+        job_level_label = (
+            str(current_job_level.job_level) if current_job_level else "No Level"
+        )
 
         data.append(
             {
@@ -510,14 +539,28 @@ def get_scheduler_members(request, filtered_users = None, start = None, end = No
                 "roles": user_roles,
                 "first_name": user.first_name,
                 "last_name": user.last_name,
-                "availability": user_stat['available_percentage'] if user_stat['available_percentage'] else 0,
-                "util": user_stat['utilisation_percentage'] if user_stat['utilisation_percentage'] else 0,
+                "availability": (
+                    user_stat["available_percentage"]
+                    if user_stat["available_percentage"]
+                    else 0
+                ),
+                "util": (
+                    user_stat["utilisation_percentage"]
+                    if user_stat["utilisation_percentage"]
+                    else 0
+                ),
                 "seniority": job_level_order,
                 "job_level": job_level_label,
                 "url": user.get_absolute_url(),
-                "html_view": user.get_table_display_html(cleaned_data.get("compressed_view", False) if cleaned_data else False),
+                "html_view": user.get_table_display_html(
+                    cleaned_data.get("compressed_view", False)
+                    if cleaned_data
+                    else False
+                ),
                 "distance": round(distance, 1) if distance is not None else None,
-                "distance_display": f"{round(distance, 1)} km" if distance is not None else "N/A",
+                "distance_display": (
+                    f"{round(distance, 1)} km" if distance is not None else "N/A"
+                ),
                 "businessHours": (
                     {
                         "startTime": main_org.businessHours_startTime,
@@ -546,12 +589,20 @@ def get_scheduler_members(request, filtered_users = None, start = None, end = No
                 ),
             }
         )
-    
 
     return JsonResponse(data, safe=False)
 
 
-def get_scheduler_slots(request, filtered_users = None, start = None, end = None, use_filter_form=True, scope_phases=None, hard_scope=True):
+def get_scheduler_slots(
+    request,
+    filtered_users=None,
+    start=None,
+    end=None,
+    use_filter_form=True,
+    scope_phases=None,
+    scope_projects=None,
+    hard_scope=True,
+):
     data = []
     selected_phases = []
     cleaned_data = None
@@ -578,14 +629,19 @@ def get_scheduler_slots(request, filtered_users = None, start = None, end = None
     # which makes repeated Fit creep outward).
     if request.GET.get("bounds"):
         from django.db.models import Min, Max
+
         bqs = TimeSlot.objects.filter(user__in=filtered_users)
-        if scope_phases is not None:
+        if scope_projects is not None:
+            bqs = bqs.filter(project_id__in=[p.pk for p in scope_projects])
+        elif scope_phases is not None:
             bqs = bqs.filter(phase_id__in=[p.pk for p in scope_phases])
         agg = bqs.aggregate(lo=Min("start"), hi=Max("end"))
-        return JsonResponse({
-            "start": agg["lo"].isoformat() if agg["lo"] else None,
-            "end": agg["hi"].isoformat() if agg["hi"] else None,
-        })
+        return JsonResponse(
+            {
+                "start": agg["lo"].isoformat() if agg["lo"] else None,
+                "end": agg["hi"].isoformat() if agg["hi"] else None,
+            }
+        )
 
     # Change FullCalendar format to DateTime
     if not start:
@@ -605,15 +661,25 @@ def get_scheduler_slots(request, filtered_users = None, start = None, end = None
         "SCHEDULE_COLOR_COMMENT": str(config.SCHEDULE_COLOR_COMMENT),
     }
 
-    compressed_view = cleaned_data.get("compressed_view", False) if cleaned_data else False
+    compressed_view = (
+        cleaned_data.get("compressed_view", False) if cleaned_data else False
+    )
 
-    scope_phase_ids = set(p.pk for p in scope_phases) if scope_phases is not None else None
+    scope_phase_ids = (
+        set(p.pk for p in scope_phases) if scope_phases is not None else None
+    )
+    scope_project_ids = (
+        set(p.pk for p in scope_projects) if scope_projects is not None else None
+    )
 
     # Load the timeslots
     slot_qs = TimeSlot.objects.filter(
         user__in=filtered_users, end__gte=start, start__lte=end
     )
-    if scope_phase_ids is not None and hard_scope:
+    if scope_project_ids is not None and hard_scope:
+        # Hard project scope — restrict to that project's slots only.
+        slot_qs = slot_qs.filter(project_id__in=scope_project_ids)
+    elif scope_phase_ids is not None and hard_scope:
         # Hard job/phase scope — restrict to that job/phase's slots only.
         slot_qs = slot_qs.filter(phase_id__in=scope_phase_ids)
     for slot in slot_qs.prefetch_related(
@@ -625,7 +691,9 @@ def get_scheduler_slots(request, filtered_users = None, start = None, end = None
         "user",
         "leaverequest",
     ):
-        slot_json = slot.get_schedule_json(schedule_colours=schedule_colours, compressed_view=compressed_view)
+        slot_json = slot.get_schedule_json(
+            schedule_colours=schedule_colours, compressed_view=compressed_view
+        )
         if selected_phases:
             if slot.phase and (
                 slot.phase not in selected_phases
@@ -634,7 +702,11 @@ def get_scheduler_slots(request, filtered_users = None, start = None, end = None
                 slot_json["display"] = "background"
         # Soft-scope: keep the member's other commitments visible but faded so
         # it's clear which blocks belong to this job/phase (vs. context).
-        if scope_phase_ids is not None and not hard_scope and slot.phase_id not in scope_phase_ids:
+        if (
+            scope_phase_ids is not None
+            and not hard_scope
+            and slot.phase_id not in scope_phase_ids
+        ):
             slot_json["out_of_scope"] = True
         data.append(slot_json)
 

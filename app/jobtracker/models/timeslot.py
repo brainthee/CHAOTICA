@@ -83,7 +83,7 @@ class TimeSlotComment(models.Model):
             schedule_colours = {
                 "SCHEDULE_COLOR_COMMENT": config.SCHEDULE_COLOR_COMMENT,
             }
-    
+
         data = {
             "id": self.pk,
             "title": self.comment,
@@ -98,8 +98,10 @@ class TimeSlotComment(models.Model):
             "end": self.end,
             "userId": self.user.pk,
             "icon": "far fa-comment-dots",
-            "color": schedule_colours['SCHEDULE_COLOR_COMMENT'],
-            "textColor": self.get_schedule_slot_text_colour(schedule_colours['SCHEDULE_COLOR_COMMENT']),
+            "color": schedule_colours["SCHEDULE_COLOR_COMMENT"],
+            "textColor": self.get_schedule_slot_text_colour(
+                schedule_colours["SCHEDULE_COLOR_COMMENT"]
+            ),
             "classNames": "p-1 rounded-3",
             "is_comment": True,
         }
@@ -243,21 +245,21 @@ class TimeSlot(models.Model):
         if self.is_delivery():
             if self.is_confirmed():
                 return (
-                    schedule_colours['SCHEDULE_COLOR_PHASE_CONFIRMED_AWAY']
+                    schedule_colours["SCHEDULE_COLOR_PHASE_CONFIRMED_AWAY"]
                     if self.is_onsite
-                    else schedule_colours['SCHEDULE_COLOR_PHASE_CONFIRMED']
+                    else schedule_colours["SCHEDULE_COLOR_PHASE_CONFIRMED"]
                 )
             else:
                 return (
-                    schedule_colours['SCHEDULE_COLOR_PHASE_AWAY']
+                    schedule_colours["SCHEDULE_COLOR_PHASE_AWAY"]
                     if self.is_onsite
-                    else schedule_colours['SCHEDULE_COLOR_PHASE']
+                    else schedule_colours["SCHEDULE_COLOR_PHASE"]
                 )
         elif self.is_project():
-            return schedule_colours['SCHEDULE_COLOR_PROJECT']
+            return schedule_colours["SCHEDULE_COLOR_PROJECT"]
         else:
             # If no phase attached... always confirmed ;)
-            return schedule_colours['SCHEDULE_COLOR_INTERNAL']
+            return schedule_colours["SCHEDULE_COLOR_INTERNAL"]
 
     def get_schedule_slot_text_colour(self, bg_colour=None):
         if not bg_colour:
@@ -296,7 +298,9 @@ class TimeSlot(models.Model):
             "slot_type_name": self.slot_type.name,
             "url": url,
             "userId": self.user.pk,
-            "backgroundColor": self.get_schedule_slot_colour(schedule_colours=schedule_colours),
+            "backgroundColor": self.get_schedule_slot_colour(
+                schedule_colours=schedule_colours
+            ),
             "classNames": "p-1 rounded-3",
             # Annual leave is owned by its leave request, so it's read-only in
             # the scheduler; every other slot type can be edited/moved here.
@@ -305,12 +309,21 @@ class TimeSlot(models.Model):
         }
 
         if compressed_view:
-            data['classNames'] += " fc-title-nowrap"
+            data["classNames"] += " fc-title-nowrap"
 
-        # Draft styling: a delivery slot on a not-yet-confirmed phase is a
-        # "proposed" booking — render it as a dashed ghost so it's clearly
-        # distinct from committed (confirmed) work on the timeline.
+        # Draft styling: a delivery slot on a not-yet-confirmed phase — or a slot on a
+        # Tentative-state project — is a "proposed" booking; render it as a dashed ghost so
+        # it's clearly distinct from committed work on the timeline.
+        from ..enums import ProjectState
+
         if self.is_delivery() and not self.is_confirmed():
+            data["classNames"] += " sched-slot-tentative"
+            data["is_tentative"] = True
+        elif (
+            self.is_project()
+            and self.project
+            and self.project.state == ProjectState.TENTATIVE
+        ):
             data["classNames"] += " sched-slot-tentative"
             data["is_tentative"] = True
 
@@ -336,15 +349,15 @@ class TimeSlot(models.Model):
                 kwargs={"pk": self.pk},
             )
         return data
-    
+
     def _get_business_tz(self):
         """Resolve timezone for business hours: org unit → user pref → UTC."""
         org = self.user.unit_memberships.first()
-        if org and getattr(org.unit, 'businessHours_timezone', None):
+        if org and getattr(org.unit, "businessHours_timezone", None):
             return zoneinfo.ZoneInfo(org.unit.businessHours_timezone)
         if self.user.pref_timezone:
             return zoneinfo.ZoneInfo(self.user.pref_timezone)
-        return zoneinfo.ZoneInfo('UTC')
+        return zoneinfo.ZoneInfo("UTC")
 
     def get_business_hours(self):
         """
@@ -374,12 +387,14 @@ class TimeSlot(models.Model):
             business_start_time = datetime.time(9, 0)  # 9:00 AM
             business_end_time = datetime.time(17, 30)  # 5:30 PM
             lunch_start_time = datetime.time(12, 0)  # 12:00 PM
-            lunch_end_time = datetime.time(13, 0)    # 1:00 PM
+            lunch_end_time = datetime.time(13, 0)  # 1:00 PM
 
         # Calculate lunch duration from start and end times (pure clock-time arithmetic)
         lunch_duration = (
-            lunch_end_time.hour * 60 + lunch_end_time.minute
-            - lunch_start_time.hour * 60 - lunch_start_time.minute
+            lunch_end_time.hour * 60
+            + lunch_end_time.minute
+            - lunch_start_time.hour * 60
+            - lunch_start_time.minute
         ) / 60.0  # in hours
 
         # Calculate raw business hours using local-time datetimes
@@ -418,17 +433,27 @@ class TimeSlot(models.Model):
             ).replace(tzinfo=local_tz)
 
             # Check if this day's timeslot overlaps with lunch
-            day_slot_start = max(local_start, day_business_start) if current_date == local_start.date() else day_business_start
-            day_slot_end = min(local_end, day_business_end) if current_date == local_end.date() else day_business_end
+            day_slot_start = (
+                max(local_start, day_business_start)
+                if current_date == local_start.date()
+                else day_business_start
+            )
+            day_slot_end = (
+                min(local_end, day_business_end)
+                if current_date == local_end.date()
+                else day_business_end
+            )
 
             # Only count lunch if the day's business hours aren't empty
             if day_slot_start < day_slot_end:
                 # Check if lunch overlaps with today's business hours for this slot
-                if (day_slot_start < day_lunch_end and day_slot_end > day_lunch_start):
+                if day_slot_start < day_lunch_end and day_slot_end > day_lunch_start:
                     # Calculate how much of lunch break is within the slot
                     lunch_overlap_start = max(day_slot_start, day_lunch_start)
                     lunch_overlap_end = min(day_slot_end, day_lunch_end)
-                    lunch_overlap_hours = (lunch_overlap_end - lunch_overlap_start).total_seconds() / 3600
+                    lunch_overlap_hours = (
+                        lunch_overlap_end - lunch_overlap_start
+                    ).total_seconds() / 3600
 
                     # Add the overlapping portion to our count (usually 1.0 for a full day)
                     if lunch_duration:
@@ -442,7 +467,6 @@ class TimeSlot(models.Model):
 
         # Ensure we don't return negative hours
         return Decimal(max(0, adjusted_hours))
-    
 
     def cost(self):
         # Only support a single cost field at the moment... :(
@@ -457,7 +481,6 @@ class TimeSlot(models.Model):
                 hours = Decimal(self.get_business_hours())
                 return round(Decimal(cost.cost_per_hour * hours), 2)
         return 0  # No cost assigned!
-
 
     def is_confirmed(self):
         if not self.is_delivery():
@@ -477,14 +500,14 @@ class TimeSlot(models.Model):
 
     def delete(self):
         phase = self.phase
-        
+
         # Log deletion for delivery timeslots before deleting
         if self.is_delivery() and phase:
             current_user = get_current_user()
             msg = f"Slot deleted: {self.user.get_full_name()} ({self.get_deliveryRole_display()}) from {dj_timezone.localtime(self.start).strftime('%Y-%m-%d')} to {dj_timezone.localtime(self.end).strftime('%Y-%m-%d')}"
             log_system_activity(phase.job, msg, author=current_user)
             log_system_activity(phase, msg, author=current_user)
-        
+
         super(TimeSlot, self).delete()
         if self.is_delivery():
             # Ok we're deleted... lets check if we should move the phase status back to pending
@@ -501,10 +524,10 @@ class TimeSlot(models.Model):
     def save(self, *args, **kwargs):
         if self.start > self.end:
             raise ValidationError("End time must come after the start")
-        
+
         # Track if this is a new object or an update
         is_new = self.pk is None
-        
+
         # For updates, fetch the old values before saving
         old_start = None
         old_end = None
@@ -519,9 +542,9 @@ class TimeSlot(models.Model):
                 old_role = old_instance.get_deliveryRole_display()
             except TimeSlot.DoesNotExist:
                 pass
-        
+
         super(TimeSlot, self).save(*args, **kwargs)
-        
+
         # Log system activity for delivery timeslots
         if self.is_delivery() and self.phase:
             current_user = get_current_user()
@@ -531,27 +554,35 @@ class TimeSlot(models.Model):
                 # Check what changed and build a descriptive message
                 changes = []
                 if old_user and old_user != self.user:
-                    changes.append(f"user: {old_user.get_full_name()} → {self.user.get_full_name()}")
+                    changes.append(
+                        f"user: {old_user.get_full_name()} → {self.user.get_full_name()}"
+                    )
                 if old_role and old_role != self.get_deliveryRole_display():
-                    changes.append(f"role: {old_role} → {self.get_deliveryRole_display()}")
+                    changes.append(
+                        f"role: {old_role} → {self.get_deliveryRole_display()}"
+                    )
                 if old_start and old_start != self.start:
-                    changes.append(f"start: {dj_timezone.localtime(old_start).strftime('%Y-%m-%d')} → {dj_timezone.localtime(self.start).strftime('%Y-%m-%d')}")
+                    changes.append(
+                        f"start: {dj_timezone.localtime(old_start).strftime('%Y-%m-%d')} → {dj_timezone.localtime(self.start).strftime('%Y-%m-%d')}"
+                    )
                 if old_end and old_end != self.end:
-                    changes.append(f"end: {dj_timezone.localtime(old_end).strftime('%Y-%m-%d')} → {dj_timezone.localtime(self.end).strftime('%Y-%m-%d')}")
-                
+                    changes.append(
+                        f"end: {dj_timezone.localtime(old_end).strftime('%Y-%m-%d')} → {dj_timezone.localtime(self.end).strftime('%Y-%m-%d')}"
+                    )
+
                 if changes:
                     msg = f"Slot updated: {', '.join(changes)}"
                 else:
                     msg = f"Slot updated: {self.user.get_full_name()} ({self.get_deliveryRole_display()})"
             log_system_activity(self.phase.job, msg, author=current_user)
             log_system_activity(self.phase, msg, author=current_user)
-        
+
         if self.is_delivery():
             # Lets see if we need to update our parent phase
             if self.phase and self.phase.status == PhaseStatuses.PENDING_SCHED:
                 # lets move to scheduled tentative!
                 if self.phase.can_to_sched_tentative():
                     self.phase.to_sched_tentative()
-                                
+
             # Lets update the dates in case...
             self.phase.save()

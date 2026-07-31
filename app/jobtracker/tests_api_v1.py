@@ -11,6 +11,7 @@ from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
 from chaotica_utils.models import User
+from chaotica_utils.models.job_levels import JobLevel, UserJobLevel
 from jobtracker.models import Skill, SkillCategory, UserSkill
 
 from .api.v1.serializers import QualificationRecordSerializer, UserSerializer
@@ -109,6 +110,100 @@ class ScopingTests(APIV1BaseTest):
         self.assertIn(self.normal.pk, user_pks)
 
 
+class UserJobFieldsTests(APIV1BaseTest):
+    def test_job_title_and_level_serialized(self):
+        level = JobLevel.objects.create(
+            short_label="JL5", long_label="Consultant", order=5
+        )
+        self.normal.job_title = "Senior Consultant"
+        self.normal.save()
+        UserJobLevel.objects.create(
+            user=self.normal, job_level=level, is_current=True
+        )
+
+        self.client.force_authenticate(self.superuser)
+        resp = self.client.get(f"/api/v1/users/{self.normal.pk}/")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data["job_title"], "Senior Consultant")
+        self.assertEqual(resp.data["job_level"], "JL5")
+        self.assertEqual(resp.data["job_level_label"], "Consultant")
+
+    def test_level_null_when_unset(self):
+        self.client.force_authenticate(self.superuser)
+        resp = self.client.get(f"/api/v1/users/{self.normal.pk}/")
+        self.assertIsNone(resp.data["job_level"])
+        self.assertIsNone(resp.data["job_level_label"])
+
+
+class SetStatusActionTests(APIV1BaseTest):
+    def _url(self, user):
+        return f"/api/v1/users/{user.pk}/set-status/"
+
+    def test_requires_manage_user_permission(self):
+        # normal has no manage_user permission -> forbidden.
+        self.client.force_authenticate(self.normal)
+        resp = self.client.post(
+            self._url(self.superuser), {"is_active": False}, format="json"
+        )
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_superuser_can_deactivate_and_reactivate(self):
+        target = User.objects.create_user(
+            email="target@example.com", password="pw", is_active=True
+        )
+        self.client.force_authenticate(self.superuser)
+
+        resp = self.client.post(
+            self._url(target), {"is_active": False}, format="json"
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertTrue(resp.data["changed"])
+        target.refresh_from_db()
+        self.assertFalse(target.is_active)
+
+        resp = self.client.post(
+            self._url(target), {"is_active": True}, format="json"
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        target.refresh_from_db()
+        self.assertTrue(target.is_active)
+
+    def test_idempotent_no_op(self):
+        target = User.objects.create_user(
+            email="already@example.com", password="pw", is_active=True
+        )
+        self.client.force_authenticate(self.superuser)
+        resp = self.client.post(
+            self._url(target), {"is_active": True}, format="json"
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertFalse(resp.data["changed"])
+
+    def test_cannot_deactivate_self(self):
+        self.client.force_authenticate(self.superuser)
+        resp = self.client.post(
+            self._url(self.superuser), {"is_active": False}, format="json"
+        )
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+        self.superuser.refresh_from_db()
+        self.assertTrue(self.superuser.is_active)
+
+    def test_missing_body_is_400(self):
+        self.client.force_authenticate(self.superuser)
+        resp = self.client.post(self._url(self.normal), {}, format="json")
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_user_creation_still_blocked(self):
+        # Enabling POST for the action must not open a user-creation route.
+        self.client.force_authenticate(self.superuser)
+        resp = self.client.post(
+            "/api/v1/users/",
+            {"email": "new@example.com", "first_name": "New"},
+            format="json",
+        )
+        self.assertEqual(resp.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
 class SensitiveFieldTests(APIV1BaseTest):
     def test_certificate_file_not_serialized(self):
         self.assertNotIn(
@@ -119,5 +214,15 @@ class SensitiveFieldTests(APIV1BaseTest):
         fields = set(UserSerializer().fields)
         self.assertNotIn("phone_number", fields)
         self.assertEqual(
-            fields, {"id", "first_name", "last_name", "email", "is_active"}
+            fields,
+            {
+                "id",
+                "first_name",
+                "last_name",
+                "email",
+                "is_active",
+                "job_title",
+                "job_level",
+                "job_level_label",
+            },
         )

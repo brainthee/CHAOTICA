@@ -77,33 +77,48 @@ class Command(BaseCommand):
         ]
 
         if job and phase:
-            urls.append((
-                "phase/detail",
-                reverse(
-                    "phase_detail",
-                    kwargs={"job_slug": str(job.slug), "slug": phase.slug},
-                ),
-                {},
-            ))
-            urls.append((
-                "scheduler/phase/create",
-                reverse("create_scheduler_phase_slot"),
-                {"job": job.pk, "phase": phase.pk, "start": "2026-01-06T09:00:00Z", "end": "2026-01-06T17:00:00Z"},
-            ))
-            # Profile a job detail page — pick the job with the most phases for a realistic load.
-            heavy_job = Job.objects.annotate(
-                phase_count=models.Count('phases')
-            ).order_by('-phase_count').first()
-            if heavy_job:
-                urls.append((
-                    "job/detail (heavy)",
-                    reverse("job_detail", kwargs={"slug": str(heavy_job.slug)}),
+            urls.append(
+                (
+                    "phase/detail",
+                    reverse(
+                        "phase_detail",
+                        kwargs={"job_slug": str(job.slug), "slug": phase.slug},
+                    ),
                     {},
-                ))
+                )
+            )
+            urls.append(
+                (
+                    "scheduler/phase/create",
+                    reverse("create_scheduler_phase_slot"),
+                    {
+                        "job": job.pk,
+                        "phase": phase.pk,
+                        "start": "2026-01-06T09:00:00Z",
+                        "end": "2026-01-06T17:00:00Z",
+                    },
+                )
+            )
+            # Profile a job detail page — pick the job with the most phases for a realistic load.
+            heavy_job = (
+                Job.objects.annotate(phase_count=models.Count("phases"))
+                .order_by("-phase_count")
+                .first()
+            )
+            if heavy_job:
+                urls.append(
+                    (
+                        "job/detail (heavy)",
+                        reverse("job_detail", kwargs={"slug": str(heavy_job.slug)}),
+                        {},
+                    )
+                )
         else:
-            self.stderr.write(self.style.WARNING(
-                "No job with phases found — skipping phase_detail and create_scheduler_phase_slot"
-            ))
+            self.stderr.write(
+                self.style.WARNING(
+                    "No job with phases found — skipping phase_detail and create_scheduler_phase_slot"
+                )
+            )
 
         client = Client()
         client.force_login(auth_user)

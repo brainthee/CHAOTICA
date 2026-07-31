@@ -71,6 +71,8 @@ Run each from this directory once your environment is configured.
 | `schedule.py` | Timeslots in a date window, grouped by user (optional single-user filter). | `python schedule.py --days 14 --user 42` |
 | `skills_matrix.py` | Who holds each skill and at what rating (joins skills + user-skills). | `python skills_matrix.py` |
 | `qual_expiry.py` | Qualification records lapsing within N days. | `python qual_expiry.py --days 90` |
+| `job_titles.py` | Each user's job title and current job level (flat table or grouped by level). | `python job_titles.py --by-level` |
+| `sync_aad_status.py` | Reconcile CHAOTICA `is_active` against Azure AD / Entra ID via the `az` CLI. **Writes** — dry-run by default. | `python sync_aad_status.py --apply` |
 
 `chaotica_client.py` is the shared helper module (env config, `.env` loading, an
 authenticated session, pagination via `iterate()`, and plain-text table output).
@@ -84,11 +86,34 @@ sees little (or nothing) — empty output is not necessarily a bug. Scripts that
 show `user` fields resolve names best-effort from `/users/` and fall back to
 `user #<id>` for anyone your token can't see.
 
+## Writing: account status
+
+The API is read-only apart from one explicit write action:
+`POST /api/v1/users/{id}/set-status/` (body `{"is_active": true|false}`), which
+activates or deactivates a user. It requires the `manage_user` permission, is
+idempotent, and won't let you deactivate your own account. `sync_aad_status.py`
+demonstrates it end-to-end and is **dry-run by default** — you must pass
+`--apply` (and `--reactivate` to re-enable accounts) for it to change anything.
+
+`sync_aad_status.py` shells out to the Azure CLI, querying Microsoft Graph
+directly (`az rest .../users/<email>?$select=accountEnabled` — `az ad user show`
+returns `accountEnabled` as `null`, which would make everyone look disabled). It
+needs `az` installed and `az login` completed with directory-read rights, plus a
+`manage_user` token. It only ever deactivates on a confident *disabled* or *not
+found*; users it exists-but-can't-read, or errors on, are skipped, never
+disabled. System/non-email accounts (e.g. `AnonymousUser`, `deleted@chaotica.app`)
+are skipped too. The per-user lookups run concurrently — tune with `--workers`
+(default 8; use `1` if Graph throttles you).
+
 ## Notes
 
-- All scripts are read-only (`GET` only).
+- Every script is read-only (`GET`) except `sync_aad_status.py`, which can POST
+  to the status endpoint.
 - `schedule.py` expresses "my schedule" as a single-user filter because the API
   has no `/api/v1/users/me/` endpoint yet.
+- Get a token from the UI (**Profile → API Token → Generate Token**), with
+  `get_token.py`, or on the server with `manage.py drf_create_token`. A token
+  acts entirely as its owner and inherits exactly that user's permissions.
 - Full, always-current field lists are in the OpenAPI docs at
   `/api/v1/schema/swagger-ui/` and the project docs:
   [`docs/development/api_v1.md`](../../docs/development/api_v1.md).

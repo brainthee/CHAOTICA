@@ -321,10 +321,10 @@ class ResourceManagerUserImporter(BaseImporter):
                         timeslot=db_timeslot,
                         user=db_user,
                         defaults={
-                            "start_date":self._convert_date_to_datetime_startofday(
+                            "start_date": self._convert_date_to_datetime_startofday(
                                 assignment["starts_at"]
                             ),
-                            "end_date":self._convert_date_to_datetime_endofday(
+                            "end_date": self._convert_date_to_datetime_endofday(
                                 assignment["ends_at"]
                             ),
                             "requested_on": self._convert_date_to_datetime_endofday(

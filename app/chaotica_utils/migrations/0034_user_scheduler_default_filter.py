@@ -6,13 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('chaotica_utils', '0033_note_content_type_object_id_index'),
+        ("chaotica_utils", "0033_note_content_type_object_id_index"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='user',
-            name='scheduler_default_filter',
-            field=models.TextField(blank=True, default='', help_text="Saved query string for the user's default scheduler view", verbose_name='Default Scheduler Filter'),
+            model_name="user",
+            name="scheduler_default_filter",
+            field=models.TextField(
+                blank=True,
+                default="",
+                help_text="Saved query string for the user's default scheduler view",
+                verbose_name="Default Scheduler Filter",
+            ),
         ),
     ]

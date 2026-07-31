@@ -1,12 +1,13 @@
 # REST API (v1)
 
-CHAOTICA exposes a versioned, **read-only** REST API under `/api/v1/` for
+CHAOTICA exposes a versioned, **read-mostly** REST API under `/api/v1/` for
 programmatic access to the main engagement-lifecycle data. It is built on Django
 REST Framework and documented by an auto-generated OpenAPI schema.
 
-!!! note "Read-only for now"
-    Every `/api/v1/` endpoint currently supports `GET`/`HEAD`/`OPTIONS` only.
-    Write support (create/update) is a deliberate future step — the endpoints are
+!!! note "Read-mostly"
+    Endpoints support `GET`/`HEAD`/`OPTIONS`. The only write surface today is the
+    [account-status action](#writes-account-status) on users; broader
+    create/update support is a deliberate future step, and the endpoints are
     designed so it can be added without breaking existing consumers.
 
 !!! warning "Not the legacy `/api/` endpoints"
@@ -29,6 +30,17 @@ REST Framework and documented by an auto-generated OpenAPI schema.
 All endpoints require an authenticated user (`IsAuthenticated`).
 
 ### Token authentication (programmatic clients)
+
+Get a token in any of three ways:
+
+- **In the UI**: **Profile → API Token → Generate Token**, where you can also
+  view, regenerate and revoke it.
+- **By credentials**: POST to `/api/v1/auth/token/` (below).
+- **On the server**: `cd app && python manage.py drf_create_token <email>`.
+
+A token authenticates as its owner and **inherits exactly that user's
+permissions** — every request is scoped to what the owner could see or do in the
+web UI, and a token can never do more.
 
 Obtain a token by POSTing credentials, then send it on every request:
 
@@ -92,7 +104,7 @@ Sensitive fields are deliberately never serialized — notably qualification
 
 | Resource | Endpoint | Notes |
 |---|---|---|
-| Users | `/api/v1/users/` | identity only (no PII) |
+| Users | `/api/v1/users/` | identity, `job_title`, current `job_level`/`job_level_label`; no PII |
 | Organisational units | `/api/v1/org-units/` | |
 | Clients | `/api/v1/clients/` | |
 | Jobs | `/api/v1/jobs/` | active jobs; includes `phase_count`, `is_restricted` flag |
@@ -110,6 +122,32 @@ Sensitive fields are deliberately never serialized — notably qualification
 
 Each resource supports list (`GET /api/v1/<resource>/`) and detail
 (`GET /api/v1/<resource>/{id}/`, integer primary key).
+
+## Writes: account status
+
+The one write action in v1 activates or deactivates a user account — the API
+twin of the *Manage → Activate/Deactivate* control in the UI:
+
+```bash
+curl -X POST https://your-instance/api/v1/users/42/set-status/ \
+     -H "Authorization: Token <your-token>" \
+     -H "Content-Type: application/json" \
+     -d '{"is_active": false}'
+```
+
+```json
+{"changed": true, "user": {"id": 42, "email": "jane@example.com", "is_active": false, ...}}
+```
+
+- Requires the `chaotica_utils.manage_user` permission (403 otherwise).
+- Deactivation also closes the user's open team and org-unit memberships, exactly
+  as the management screen does.
+- **Idempotent**: `changed` is `false` if the account was already in the
+  requested state.
+- You cannot deactivate your own account.
+
+A worked example that reconciles status against Azure AD / Entra ID lives in
+`examples/api/sync_aad_status.py`.
 
 ## Interactive documentation & schema
 

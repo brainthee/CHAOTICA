@@ -6,10 +6,16 @@ delegates to the canonical model managers / helpers so the API cannot drift from
 the UI. See the permission section of the implementation plan for the rationale.
 """
 
-from django.db.models import Count, Q
+from django.db.models import Count, Prefetch, Q
+from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import extend_schema
 from guardian.shortcuts import get_objects_for_user
+from rest_framework.decorators import action
+from rest_framework.exceptions import MethodNotAllowed, PermissionDenied
+from rest_framework.response import Response
 
 from chaotica_utils.models import User
+from chaotica_utils.models.job_levels import UserJobLevel
 from chaotica_utils.models.leave import LeaveRequest
 
 from ...models import (
@@ -45,6 +51,7 @@ from .serializers import (
     TimeSlotTypeSerializer,
     UserSerializer,
     UserSkillSerializer,
+    UserStatusUpdateSerializer,
 )
 
 
@@ -56,12 +63,67 @@ from .serializers import (
 class UserViewSet(BaseReadOnlyAPIViewSet):
     serializer_class = UserSerializer
 
+    # Read verbs + POST — but POST is opened *only* for the set_status action
+    # below; create() is overridden to 405 so this is not a user-creation route.
+    http_method_names = ["get", "head", "options", "post"]
+
     def get_base_queryset(self):
-        return User.objects.all()
+        # Prefetch the current job level into ``_current_levels`` so the
+        # serializer's get_current_level() fast-path avoids a query per user.
+        return User.objects.prefetch_related(
+            Prefetch(
+                "job_level_history",
+                queryset=UserJobLevel.objects.filter(
+                    is_current=True
+                ).select_related("job_level"),
+                to_attr="_current_levels",
+            )
+        )
 
     def scope_queryset(self, queryset, user):
         allowed = get_objects_for_user(user, "chaotica_utils.view_user", klass=User)
         return queryset.filter(pk__in=allowed.values_list("pk", flat=True))
+
+    def create(self, request, *args, **kwargs):
+        # POST is enabled on this viewset only for set_status; the router still
+        # maps POST /users/ to create(), so block it explicitly.
+        raise MethodNotAllowed("POST")
+
+    @extend_schema(
+        request=UserStatusUpdateSerializer,
+        responses=UserSerializer,
+        description=(
+            "Activate or deactivate a user account. Requires the "
+            "``chaotica_utils.manage_user`` permission. Deactivation also closes "
+            "the user's open team and org-unit memberships. Idempotent."
+        ),
+    )
+    @action(detail=True, methods=["post"], url_path="set-status")
+    def set_status(self, request, pk=None):
+        """Set a user's active status — the API twin of the ``user_manage_status``
+        management view, gated on the same ``manage_user`` permission."""
+        if not request.user.has_perm("chaotica_utils.manage_user"):
+            raise PermissionDenied(
+                "You need the 'manage_user' permission to change account status."
+            )
+
+        body = UserStatusUpdateSerializer(data=request.data)
+        body.is_valid(raise_exception=True)
+        target_active = body.validated_data["is_active"]
+
+        # Looked up from the full table (not the view-scoped queryset): the
+        # management action is gated on manage_user, not view_user, and we
+        # reproduce that gate rather than widen or narrow it.
+        target = get_object_or_404(User, pk=pk)
+
+        # Footgun guard: don't let a caller lock themselves out of the app.
+        if not target_active and target == request.user:
+            raise PermissionDenied("You cannot deactivate your own account.")
+
+        changed = target.set_active_status(target_active)
+        return Response(
+            {"changed": changed, "user": UserSerializer(target).data}
+        )
 
 
 class OrganisationalUnitViewSet(BaseReadOnlyAPIViewSet):

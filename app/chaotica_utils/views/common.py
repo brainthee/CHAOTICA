@@ -45,11 +45,11 @@ from datetime import datetime, timedelta
 def page_defaults(request):
     context = {}
     context["config"] = config
-    
+
     context["DJANGO_ENV"] = django_settings.DJANGO_ENV
     context["DJANGO_VERSION"] = django_settings.DJANGO_VERSION
 
-    quote = Quote.objects.filter(enabled=True).order_by('?').first()
+    quote = Quote.objects.filter(enabled=True).order_by("?").first()
     if quote:
         context["quote"] = quote
 
@@ -58,14 +58,12 @@ def page_defaults(request):
     context["DEMO_PASS"] = django_settings.DEMO_PASS
     # Calculate how long till reset
     now = timezone.now()
-    
-    reset_time = datetime.strptime(django_settings.DEMO_RESET_TIME, '%H:%M').time()
+
+    reset_time = datetime.strptime(django_settings.DEMO_RESET_TIME, "%H:%M").time()
 
     # Create next reset datetime in the current timezone
     next_reset = timezone.datetime.combine(
-        now.date(),
-        reset_time,
-        tzinfo=timezone.get_current_timezone()
+        now.date(), reset_time, tzinfo=timezone.get_current_timezone()
     )
 
     # If we've already passed the reset time today, get tomorrow's
@@ -170,6 +168,7 @@ def app_settings(request):
     api_key_last_used = None
     if request.user.is_superuser or request.user.is_staff:
         from ..models import HealthCheckAPIKey
+
         api_key_obj = HealthCheckAPIKey.get_or_create_for_user(request.user)
         api_key = str(api_key_obj.key)
         api_key_last_used = api_key_obj.last_used
@@ -348,7 +347,7 @@ def build_permission_matrix(columns):
     col_sets = [set(p.codename for p in perms) for (_, _, perms) in columns]
 
     pks = set()
-    for (_, _, perms) in columns:
+    for _, _, perms in columns:
         pks.update(p.pk for p in perms)
 
     grouped = group_permissions(Permission.objects.filter(pk__in=pks))
@@ -391,17 +390,15 @@ class PermissionsMatrixView(ChaoticaBaseAdminView, TemplateView):
         # Order by the underlying GlobalRoles int so columns read Admin..User.
         global_groups = sorted(
             global_groups,
-            key=lambda g: g.getGlobalRoleINT()
-            if g.getGlobalRoleINT() is not None
-            else 999,
+            key=lambda g: (
+                g.getGlobalRoleINT() if g.getGlobalRoleINT() is not None else 999
+            ),
         )
         global_columns = []
         for grp in global_groups:
             role_int = grp.getGlobalRoleINT()
             label = (
-                GlobalRoles.CHOICES[role_int][1]
-                if role_int is not None
-                else grp.name
+                GlobalRoles.CHOICES[role_int][1] if role_int is not None else grp.name
             )
             global_columns.append(
                 (label, grp.role_bs_colour() or "secondary", grp.permissions.all())
@@ -470,7 +467,7 @@ class NoteListView(PrefetchRelatedMixin, NoteBaseView, ListView):
 def regenerate_health_api_key(request):
     """Regenerate health check API key for the requesting user"""
     if not (request.user.is_superuser or request.user.is_staff):
-        return JsonResponse({'error': 'Insufficient permissions'}, status=403)
+        return JsonResponse({"error": "Insufficient permissions"}, status=403)
 
     try:
         from ..models import HealthCheckAPIKey
@@ -478,12 +475,6 @@ def regenerate_health_api_key(request):
         api_key = HealthCheckAPIKey.get_or_create_for_user(request.user)
         new_key = api_key.regenerate_key()
 
-        return JsonResponse({
-            'success': True,
-            'new_key': str(new_key)
-        })
+        return JsonResponse({"success": True, "new_key": str(new_key)})
     except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=500)
+        return JsonResponse({"success": False, "error": str(e)}, status=500)

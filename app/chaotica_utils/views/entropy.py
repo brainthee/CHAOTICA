@@ -13,6 +13,7 @@ of truth for alarm scoping). If that logic changes, mirror it here.
 Purely cosmetic and read-only. Gated behind the ``ENTROPY_METER_ENABLED``
 constance flag; when off the endpoint 404s.
 """
+
 from datetime import timedelta
 
 from django.http import JsonResponse, HttpResponseNotFound
@@ -51,8 +52,13 @@ _LABELS = {
 
 # Order factors are presented in the full UI.
 _ORDER = [
-    "delivery_overdue", "job_overdue", "tqa_overdue", "pqa_overdue",
-    "no_techqa", "no_presqa", "unscheduled",
+    "delivery_overdue",
+    "job_overdue",
+    "tqa_overdue",
+    "pqa_overdue",
+    "no_techqa",
+    "no_presqa",
+    "unscheduled",
 ]
 
 TREND_WEEKS = 8
@@ -76,15 +82,25 @@ def compute_entropy(user):
     today = timezone.now().date()
 
     # Guardian-derived unit scopes — same set the dashboard uses to scope alarms.
-    units_can_view = get_objects_for_user(user, "can_view_jobs", klass=OrganisationalUnit)
+    units_can_view = get_objects_for_user(
+        user, "can_view_jobs", klass=OrganisationalUnit
+    )
     units_can_tqa = get_objects_for_user(user, "can_tqa_jobs", klass=OrganisationalUnit)
     units_can_pqa = get_objects_for_user(user, "can_pqa_jobs", klass=OrganisationalUnit)
-    units_can_manage = get_objects_for_user(user, "change_organisationalunit", klass=OrganisationalUnit)
-    units_can_schedule = get_objects_for_user(user, "can_schedule_job", klass=OrganisationalUnit)
+    units_can_manage = get_objects_for_user(
+        user, "change_organisationalunit", klass=OrganisationalUnit
+    )
+    units_can_schedule = get_objects_for_user(
+        user, "can_schedule_job", klass=OrganisationalUnit
+    )
 
     # Unit managers see every alarm unit-wide; everyone else only for phases/jobs
     # they're personally on (plus QA/scheduler roles for those categories).
-    manager_units = units_can_view if units_can_manage.exists() else OrganisationalUnit.objects.none()
+    manager_units = (
+        units_can_view
+        if units_can_manage.exists()
+        else OrganisationalUnit.objects.none()
+    )
 
     phase_involved = (
         Q(timeslots__user=user) | Q(report_author=user) | Q(project_lead=user)
@@ -113,47 +129,58 @@ def compute_entropy(user):
     counts = {}
     counts["delivery_overdue"] = (
         base_mgr.annotate(db=Coalesce("desired_delivery_date", "_delivery_date"))
-        .filter(db__lt=today).count()
+        .filter(db__lt=today)
+        .count()
     )
     counts["tqa_overdue"] = (
         base_tqa.annotate(db=Coalesce("due_to_techqa_set", "_due_to_techqa"))
         .filter(
             db__lt=today,
             status__in=[
-                PhaseStatuses.IN_PROGRESS, PhaseStatuses.PENDING_TQA,
-                PhaseStatuses.QA_TECH, PhaseStatuses.QA_TECH_AUTHOR_UPDATES,
+                PhaseStatuses.IN_PROGRESS,
+                PhaseStatuses.PENDING_TQA,
+                PhaseStatuses.QA_TECH,
+                PhaseStatuses.QA_TECH_AUTHOR_UPDATES,
             ],
-        ).count()
+        )
+        .count()
     )
     counts["pqa_overdue"] = (
         base_pqa.annotate(db=Coalesce("due_to_presqa_set", "_due_to_presqa"))
         .filter(
             db__lt=today,
             status__in=[
-                PhaseStatuses.PENDING_PQA, PhaseStatuses.QA_PRES,
+                PhaseStatuses.PENDING_PQA,
+                PhaseStatuses.QA_PRES,
                 PhaseStatuses.QA_PRES_AUTHOR_UPDATES,
             ],
-        ).count()
+        )
+        .count()
     )
     counts["no_techqa"] = base_tqa.filter(
         techqa_by__isnull=True,
         status__in=[
-            PhaseStatuses.PENDING_TQA, PhaseStatuses.QA_TECH,
+            PhaseStatuses.PENDING_TQA,
+            PhaseStatuses.QA_TECH,
             PhaseStatuses.QA_TECH_AUTHOR_UPDATES,
         ],
     ).count()
     counts["no_presqa"] = base_pqa.filter(
         presqa_by__isnull=True,
         status__in=[
-            PhaseStatuses.PENDING_PQA, PhaseStatuses.QA_PRES,
+            PhaseStatuses.PENDING_PQA,
+            PhaseStatuses.QA_PRES,
             PhaseStatuses.QA_PRES_AUTHOR_UPDATES,
         ],
     ).count()
     counts["unscheduled"] = base_sched.filter(
         status__in=[
-            PhaseStatuses.SCHEDULED_TENTATIVE, PhaseStatuses.SCHEDULED_CONFIRMED,
-            PhaseStatuses.PRE_CHECKS, PhaseStatuses.CLIENT_NOT_READY,
-            PhaseStatuses.READY_TO_BEGIN, PhaseStatuses.IN_PROGRESS,
+            PhaseStatuses.SCHEDULED_TENTATIVE,
+            PhaseStatuses.SCHEDULED_CONFIRMED,
+            PhaseStatuses.PRE_CHECKS,
+            PhaseStatuses.CLIENT_NOT_READY,
+            PhaseStatuses.READY_TO_BEGIN,
+            PhaseStatuses.IN_PROGRESS,
         ],
         timeslots__isnull=True,
     ).count()
@@ -173,7 +200,12 @@ def compute_entropy(user):
     score = min(100, raw)
 
     factors = [
-        {"key": k, "label": _LABELS[k], "count": counts[k], "points": counts[k] * _WEIGHTS[k]}
+        {
+            "key": k,
+            "label": _LABELS[k],
+            "count": counts[k],
+            "points": counts[k] * _WEIGHTS[k],
+        }
         for k in _ORDER
         if counts.get(k)
     ]

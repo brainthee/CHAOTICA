@@ -4,4 +4,5 @@ from .utilisation import (
     build_period_masks,
     calculate_utilisation,
     aggregate_utilisation,
+    classify_delivery_slot,
 )

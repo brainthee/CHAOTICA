@@ -13,6 +13,7 @@ There is deliberately NO os/subprocess/eval/exec anywhere in this module. If a
 future edit is tempted to make it "actually work" — don't. The joke, and the
 safety, is that it is fake.
 """
+
 from django.http import JsonResponse, HttpResponseNotFound
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt

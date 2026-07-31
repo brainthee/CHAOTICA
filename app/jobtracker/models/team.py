@@ -8,6 +8,7 @@ from chaotica_utils.utils import (
     unique_slug_generator,
     build_period_masks,
     calculate_utilisation,
+    classify_delivery_slot,
 )
 from django.utils import timezone
 from django.urls import reverse
@@ -68,21 +69,19 @@ class Team(models.Model):
         if not self.slug:
             self.slug = unique_slug_generator(self, self.name)
         super(Team, self).save(*args, **kwargs)
-    
+
     def get_activeMembers(self):
         return User.objects.filter(pk__in=self.get_activeMembersPKs())
 
     def get_activeMembersPKs(self):
-        return (
-            self.active_memberships()
-            .values("user")
-            .distinct()
-        )
+        return self.active_memberships().values("user").distinct()
 
     def active_memberships(self):
         now = timezone.now()
         return self.users.filter(
-            Q(left_at__isnull=True) | Q(left_at__gte=now), joined_at__lte=now, user__is_active=True,
+            Q(left_at__isnull=True) | Q(left_at__gte=now),
+            joined_at__lte=now,
+            user__is_active=True,
         )
 
     def get_absolute_url(self):
@@ -116,7 +115,7 @@ class Team(models.Model):
             dict: User ID mapped to their utilization statistics
         """
         from ..models import TimeSlot
-        
+
         # Get users and their countries in one query
         users_query = self.get_activeMembers()
         if user_ids:
@@ -156,7 +155,15 @@ class Team(models.Model):
             user_id__in=[u["id"] for u in users],
             start__date__lte=end_date,
             end__date__gte=start_date,
-        ).values("user_id", "start", "end", "phase__status", "slot_type__is_working")
+        ).values(
+            "user_id",
+            "start",
+            "end",
+            "phase__status",
+            "project__state",
+            "project__deliverable",
+            "slot_type__is_working",
+        )
 
         # A Team is not an OrganisationalUnit and has no business-hours config,
         # so utilisation uses the global default working days.
@@ -165,16 +172,14 @@ class Team(models.Model):
         # Group timeslots by user as engine-ready dicts.
         timeslots_by_user = defaultdict(list)
         for slot in timeslots:
-            status = slot["phase__status"]
-            timeslots_by_user[slot["user_id"]].append({
-                "start": slot["start"],
-                "end": slot["end"],
-                "is_confirmed": status is not None
-                and status >= PhaseStatuses.SCHEDULED_CONFIRMED,
-                "is_tentative": status is not None
-                and status < PhaseStatuses.SCHEDULED_CONFIRMED,
-                "is_non_working_slot": slot["slot_type__is_working"] is False,
-            })
+            flags = classify_delivery_slot(slot)
+            timeslots_by_user[slot["user_id"]].append(
+                {
+                    "start": slot["start"],
+                    "end": slot["end"],
+                    **flags,
+                }
+            )
 
         # Period masks depend only on working days + holidays, shared per
         # country — build once per country and reuse across users.
@@ -271,9 +276,7 @@ class Team(models.Model):
             totals["confirmed_days_percentage"] = _pct(
                 totals["confirmed_days"], effective
             )
-            totals["utilisation_percentage"] = _pct(
-                totals["confirmed_days"], effective
-            )
+            totals["utilisation_percentage"] = _pct(totals["confirmed_days"], effective)
             totals["available_days_percentage"] = _pct(
                 totals["available_days"], effective
             )

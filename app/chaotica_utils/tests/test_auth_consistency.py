@@ -3,6 +3,7 @@ unauthenticated users are redirected to the login page; authenticated-but-
 unauthorised users get a 403. Covers the central helper, both custom decorators,
 the guardian drop-in decorator, and a guardian-based CBV end-to-end.
 """
+
 from django.test import TestCase, RequestFactory, override_settings
 from django.contrib.auth.models import AnonymousUser
 from django.http import HttpResponse
@@ -18,7 +19,9 @@ class AuthConsistencyTests(TestCase):
     def setUp(self):
         self.rf = RequestFactory()
         # create_user makes the first user a superuser; the second is a normal user.
-        self.superuser = User.objects.create_user(email="su@test.com", password="pw12345")
+        self.superuser = User.objects.create_user(
+            email="su@test.com", password="pw12345"
+        )
         self.user = User.objects.create_user(email="u@test.com", password="pw12345")
 
     def _req(self, user):
@@ -30,7 +33,9 @@ class AuthConsistencyTests(TestCase):
 
     def test_helper_anonymous_redirects_to_login(self):
         resp = get_unit_40x_or_None(
-            self._req(AnonymousUser()), perms=["jobtracker.can_view_jobs"], return_403=True
+            self._req(AnonymousUser()),
+            perms=["jobtracker.can_view_jobs"],
+            return_403=True,
         )
         self.assertEqual(resp.status_code, 302)
         self.assertIn("/auth/login/", resp.url)
@@ -44,7 +49,9 @@ class AuthConsistencyTests(TestCase):
 
     def test_helper_authorised_passes(self):
         resp = get_unit_40x_or_None(
-            self._req(self.superuser), perms=["jobtracker.can_view_jobs"], return_403=True
+            self._req(self.superuser),
+            perms=["jobtracker.can_view_jobs"],
+            return_403=True,
         )
         self.assertIsNone(resp)
 

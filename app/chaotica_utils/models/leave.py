@@ -91,7 +91,7 @@ class LeaveRequest(models.Model):
 
         # Resolve business hours timezone: org unit → user pref → UTC
         org = self.user.unit_memberships.first()
-        if org and getattr(org.unit, 'businessHours_timezone', None):
+        if org and getattr(org.unit, "businessHours_timezone", None):
             local_tz = pytz.timezone(org.unit.businessHours_timezone)
         elif self.user.pref_timezone:
             local_tz = pytz.timezone(self.user.pref_timezone)
@@ -112,8 +112,10 @@ class LeaveRequest(models.Model):
         )
         # Calculate hours in a working day from clock times (DST-independent)
         hours_in_working_day = (
-            working_hours["end"].hour * 60 + working_hours["end"].minute
-            - working_hours["start"].hour * 60 - working_hours["start"].minute
+            working_hours["end"].hour * 60
+            + working_hours["end"].minute
+            - working_hours["start"].hour * 60
+            - working_hours["start"].minute
         ) / 60.0
         if hours:
             days = hours / hours_in_working_day
@@ -142,7 +144,6 @@ class LeaveRequest(models.Model):
 
         return User.objects.filter(pk__in=user_pks).distinct()
 
-
     def can_user_auth(self, user):
         if self.cancelled:
             return False
@@ -160,7 +161,6 @@ class LeaveRequest(models.Model):
                 return True
         return False
 
-
     def send_request_notification(self):
         from notifications.utils import AppNotification
 
@@ -171,11 +171,9 @@ class LeaveRequest(models.Model):
             link=reverse("manage_leave"),
             entity_type=self.__class__.__name__,
             entity_id=self.pk,
-            metadata={
-            }
+            metadata={},
         )
         send_notifications(notification)
-
 
     def send_approved_notification(self):
         from notifications.utils import AppNotification
@@ -188,11 +186,9 @@ class LeaveRequest(models.Model):
             link=reverse("view_own_leave"),
             entity_type=self.__class__.__name__,
             entity_id=self.pk,
-            metadata={
-            }
+            metadata={},
         )
         send_notifications(notification)
-
 
     def send_declined_notification(self):
         from notifications.utils import AppNotification
@@ -205,11 +201,9 @@ class LeaveRequest(models.Model):
             link=reverse("view_own_leave"),
             entity_type=self.__class__.__name__,
             entity_id=self.pk,
-            metadata={
-            }
+            metadata={},
         )
         send_notifications(notification)
-
 
     def send_cancelled_notification(self):
         from notifications.utils import AppNotification
@@ -222,12 +216,10 @@ class LeaveRequest(models.Model):
             link=reverse("view_own_leave"),
             entity_type=self.__class__.__name__,
             entity_id=self.pk,
-            metadata={
-            }
+            metadata={},
         )
 
         send_notifications(notification)
-
 
     def authorise(self, approved_by):
         from jobtracker.models.timeslot import TimeSlot, TimeSlotType

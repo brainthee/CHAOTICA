@@ -72,9 +72,19 @@
                   <div class="col-12 col-sm-6 col-xl-12">
                     <div class="mb-4">
                       <div class="d-flex flex-wrap mb-2">
+                        <h5 class="mb-0 text-1000 me-2">State</h5>
+                      </div>
+                      {{ form.state|as_crispy_field }}
+                      {{ form.deliverable|as_crispy_field }}
+                    </div>
+                  </div>
+
+                  <div class="col-12 col-sm-6 col-xl-12">
+                    <div class="mb-4">
+                      <div class="d-flex flex-wrap mb-2">
                         <h5 class="mb-0 text-1000 me-2">Point of Contact</h5>
                       </div>
-                      {{ form.primary_poc|as_crispy_field }}                    
+                      {{ form.primary_poc|as_crispy_field }}
                     </div>
                   </div>
 
@@ -83,10 +93,29 @@
                       <div class="d-flex flex-wrap mb-2">
                         <h5 class="mb-0 text-1000 me-2">Organisational Unit</h5>
                       </div>
-                      {{ form.unit|as_crispy_field }}                    
+                      {{ form.unit|as_crispy_field }}
                     </div>
                   </div>
-                  
+
+                  <div class="col-12 col-sm-6 col-xl-12">
+                    <div class="mb-4">
+                      <div class="d-flex flex-wrap mb-2">
+                        <h5 class="mb-0 text-1000 me-2">Client</h5>
+                      </div>
+                      {{ form.client|as_crispy_field }}
+                    </div>
+                  </div>
+
+                  <div class="col-12 col-sm-6 col-xl-12">
+                    <div class="mb-4">
+                      <div class="d-flex flex-wrap mb-2">
+                        <h5 class="mb-0 text-1000 me-2">Dates</h5>
+                      </div>
+                      {{ form.desired_start_date|as_crispy_field }}
+                      {{ form.desired_delivery_date|as_crispy_field }}
+                    </div>
+                  </div>
+
                 </div>
               </div>
             </div>

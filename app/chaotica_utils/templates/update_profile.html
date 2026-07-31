@@ -67,6 +67,12 @@
                   <span class="text-sm">Feeds</span>
                 </a>
              </li>
+             <li class="nav-item pt-2">
+                <a class="nav-link text-body-emphasis d-flex" data-scroll="" href="#api-tokens">
+                  <span class="fa fa-key me-sm-2 fs-7"></span>
+                  <span class="text-sm">API Token</span>
+                </a>
+             </li>
              {% endif %}
           </ul>
        </div>
@@ -272,6 +278,50 @@
                   <button class="btn btn-sm btn-phoenix-danger mb-0 js-load-modal-form" data-url="{% url 'reset_cal_family_feed' %}" type="button">Reset Key</button>
                   {% endif %}
                </div>
+            </div>
+            {% endif %}
+         </div>
+      </div>
+      {% endif %}
+
+      {% if usr == request.user %}
+      <div class="card mt-4" id="api-tokens">
+         <div class="card-header d-flex">
+            <h5>API Token</h5>
+         </div>
+         <div class="card-body">
+            <p class="text-sm text-body-secondary">
+               A personal token for the <code>/api/v1/</code> REST API. It authenticates
+               as you and inherits exactly your permissions &mdash; it can never see or do
+               more than you can in the app. Send it as the header
+               <code>Authorization: Token &lt;key&gt;</code>. Keep it secret; anyone with
+               your token can act as you.
+            </p>
+            {% if api_token %}
+            <div class="row mb-3 align-items-center">
+               <div class="col-12 col-md-2">
+                  <p class="my-auto">Your token</p>
+               </div>
+               <div class="col">
+                  <p class="font-monospace border border-cake text-sm my-auto p-2 text-break">
+                     {{ api_token.key }}
+                  </p>
+                  <span class="fs-10 text-body-tertiary">Created {{ api_token.created }}</span>
+               </div>
+               <div class="col-auto d-flex gap-2 justify-content-end">
+                  <button class="btn btn-sm btn-phoenix-warning mb-0 js-load-modal-form"
+                     data-url="{% url 'reset_own_api_token' %}" type="button">Regenerate</button>
+                  <button class="btn btn-sm btn-phoenix-danger mb-0 js-load-modal-form"
+                     data-url="{% url 'revoke_own_api_token' %}" type="button">Revoke</button>
+               </div>
+            </div>
+            {% else %}
+            <div class="d-flex align-items-center justify-content-between">
+               <p class="text-body-secondary my-auto">You don't have an API token yet.</p>
+               <form method="post" action="{% url 'create_own_api_token' %}">
+                  {% csrf_token %}
+                  <button class="btn btn-sm btn-phoenix-success mb-0" type="submit">Generate Token</button>
+               </form>
             </div>
             {% endif %}
          </div>

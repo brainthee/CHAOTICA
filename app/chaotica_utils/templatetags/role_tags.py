@@ -15,10 +15,10 @@ def has_role(user, required_role):
             for role, role_label in GlobalRoles.CHOICES:
                 if required_role == role_label:
                     selected_role = role
-            
+
             if not selected_role:
                 return False
-            
+
             return user.groups.filter(
                 name=settings.GLOBAL_GROUP_PREFIX
                 + GlobalRoles.CHOICES[selected_role][1]

@@ -26,7 +26,7 @@ def get_current_user():
     Get the current user from thread-local storage.
     Returns None if no user is set (e.g., in management commands, background tasks).
     """
-    return getattr(_thread_locals, 'user', None)
+    return getattr(_thread_locals, "user", None)
 
 
 def set_current_user(user):
@@ -70,7 +70,7 @@ class NewInstallMiddleware(MiddlewareMixin):
     def process_request(self, request):
         # Check if setup is needed - check for all essential components.
         # Cache the result so we don't run 5 COUNT queries on every request.
-        setup_needed = cache.get('chaotica_setup_needed')
+        setup_needed = cache.get("chaotica_setup_needed")
         if setup_needed is None:
             # Setup is "needed" only on a genuinely fresh install (no users).
             # Empty clients/services/skills is a legitimate operating state and
@@ -79,10 +79,10 @@ class NewInstallMiddleware(MiddlewareMixin):
             setup_needed = User.objects.count() == 0
             if not setup_needed:
                 # Setup complete — cache indefinitely (cleared on server restart)
-                cache.set('chaotica_setup_needed', False, None)
+                cache.set("chaotica_setup_needed", False, None)
             else:
                 # Re-check on next request (don't cache True for long)
-                cache.set('chaotica_setup_needed', True, 5)
+                cache.set("chaotica_setup_needed", True, 5)
 
         excluded_paths = ["/media", "/static", "/admin", "/setup"]
         for path in excluded_paths:
@@ -99,7 +99,7 @@ class NewInstallMiddleware(MiddlewareMixin):
         if setup_needed and not config.MAINTENANCE_MODE:
             # Redirect to setup wizard...
             return HttpResponseRedirect(reverse("setup_wizard"))
-        
+
         # Lets not force a profile update
         # # Check if we should force a profile complete (aka first login)
         # excluded_profile_urls = [
@@ -129,27 +129,27 @@ class CurrentUserMiddleware:
     Middleware that stores the current user in thread-local storage.
     This allows models to access request.user without passing it explicitly.
     """
-    
+
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
         # Store the user before processing the request
-        set_current_user(getattr(request, 'user', None))
-        
+        set_current_user(getattr(request, "user", None))
+
         try:
             response = self.get_response(request)
         finally:
             # Clean up after the request to avoid memory leaks
             set_current_user(None)
-        
+
         return response
 
 
 class MaintenanceModeMiddleware(MiddlewareMixin):
     def process_request(self, request):
         path = request.META.get("PATH_INFO", "")
-        
+
         # Allow access to admin login and authentication pages during maintenance
         admin_allowed_paths = [
             "/admin/",
@@ -157,9 +157,11 @@ class MaintenanceModeMiddleware(MiddlewareMixin):
             "/admin/logout/",
             "/oauth2/",  # For ADFS authentication
         ]
-        
-        is_admin_path_allowed = any(path.startswith(allowed_path) for allowed_path in admin_allowed_paths)
-        
+
+        is_admin_path_allowed = any(
+            path.startswith(allowed_path) for allowed_path in admin_allowed_paths
+        )
+
         if (
             config.MAINTENANCE_MODE
             and not request.user.is_superuser
@@ -177,8 +179,8 @@ class TimezoneMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        if hasattr(request, 'user') and request.user.is_authenticated:
-            tz_name = getattr(request.user, 'pref_timezone', None) or 'UTC'
+        if hasattr(request, "user") and request.user.is_authenticated:
+            tz_name = getattr(request.user, "pref_timezone", None) or "UTC"
             dj_timezone.activate(zoneinfo.ZoneInfo(tz_name))
         else:
             dj_timezone.deactivate()

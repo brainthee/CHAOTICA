@@ -10,13 +10,32 @@ from faker import Faker
 
 from chaotica_utils.models import JobLevel, UserJobLevel
 from jobtracker.models import (
-    Job, Phase, Client, Service, Skill, SkillCategory, TimeSlot, TimeSlotType,
-    OrganisationalUnit, OrganisationalUnitMember, OrganisationalUnitRole,
-    Contact, BillingCode, UserSkill, FrameworkAgreement, Feedback
+    Job,
+    Phase,
+    Client,
+    Service,
+    Skill,
+    SkillCategory,
+    TimeSlot,
+    TimeSlotType,
+    OrganisationalUnit,
+    OrganisationalUnitMember,
+    OrganisationalUnitRole,
+    Contact,
+    BillingCode,
+    UserSkill,
+    FrameworkAgreement,
+    Feedback,
 )
 from jobtracker.enums import (
-    PhaseStatuses, FeedbackType, TechQARatings, PresQARatings, UserSkillRatings,
-    JobStatuses, TimeSlotDeliveryRole, DefaultTimeSlotTypes
+    PhaseStatuses,
+    FeedbackType,
+    TechQARatings,
+    PresQARatings,
+    UserSkillRatings,
+    JobStatuses,
+    TimeSlotDeliveryRole,
+    DefaultTimeSlotTypes,
 )
 from chaotica_utils.enums import LeaveRequestTypes
 from chaotica_utils.models import LeaveRequest, UserCost
@@ -24,11 +43,11 @@ from chaotica_utils.models import LeaveRequest, UserCost
 # Map organisational-unit slugs to valid ISO 3166-1 alpha-2 country codes.
 # The unit slugs use 'UK' but the correct ISO code for the United Kingdom is 'GB'.
 UNIT_SLUG_TO_COUNTRY = {
-    'UK': 'GB',
-    'DE': 'DE',
-    'US': 'US',
-    'AU': 'AU',
-    'NL': 'NL',
+    "UK": "GB",
+    "DE": "DE",
+    "US": "US",
+    "AU": "AU",
+    "NL": "NL",
 }
 
 User = get_user_model()
@@ -36,48 +55,48 @@ fake = Faker()
 
 
 class Command(BaseCommand):
-    help = 'Generates demo data for CHAOTICA system'
+    help = "Generates demo data for CHAOTICA system"
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--clear',
-            action='store_true',
-            help='Clear existing data before generating new data',
+            "--clear",
+            action="store_true",
+            help="Clear existing data before generating new data",
         )
         parser.add_argument(
-            '--users',
+            "--users",
             type=int,
             default=20,
-            help='Number of users to create (default: 20)',
+            help="Number of users to create (default: 20)",
         )
         parser.add_argument(
-            '--clients',
+            "--clients",
             type=int,
             default=10,
-            help='Number of clients to create (default: 10)',
+            help="Number of clients to create (default: 10)",
         )
         parser.add_argument(
-            '--jobs',
+            "--jobs",
             type=int,
             default=100,
-            help='Number of jobs to create (default: 100)',
+            help="Number of jobs to create (default: 100)",
         )
         parser.add_argument(
-            '--minimal',
-            action='store_true',
-            help='Create minimal dataset for quick testing',
+            "--minimal",
+            action="store_true",
+            help="Create minimal dataset for quick testing",
         )
         parser.add_argument(
-            '--force',
-            action='store_true',
-            help='Required to run when DEBUG is off (protects production data).',
+            "--force",
+            action="store_true",
+            help="Required to run when DEBUG is off (protects production data).",
         )
         parser.add_argument(
-            '--password',
+            "--password",
             default=None,
-            help='Password for the generated demo users. Defaults to a random '
-                 'password printed once, so demo accounts are not created with a '
-                 'well-known credential.',
+            help="Password for the generated demo users. Defaults to a random "
+            "password printed once, so demo accounts are not created with a "
+            "well-known credential.",
         )
 
     @transaction.atomic
@@ -88,7 +107,7 @@ class Command(BaseCommand):
         # This command seeds fake data and (with --clear) wipes core tables and
         # non-demo users. Refuse to run against a non-DEBUG (production) instance
         # unless explicitly forced, so it can't be triggered accidentally there.
-        if not settings.DEBUG and not options['force']:
+        if not settings.DEBUG and not options["force"]:
             raise CommandError(
                 "Refusing to generate demo data with DEBUG=False. This command "
                 "creates fake data and --clear deletes existing data. Re-run with "
@@ -97,47 +116,53 @@ class Command(BaseCommand):
 
         # Never bake a well-known password into demo accounts. Use the provided
         # one, or mint a random password and print it once.
-        self.demo_password = options['password'] or ''.join(
+        self.demo_password = options["password"] or "".join(
             random.choices(string.ascii_letters + string.digits, k=16)
         )
-        if not options['password']:
-            self.stdout.write(self.style.WARNING(
-                f"Generated demo-user password (shown once): {self.demo_password}"
-            ))
+        if not options["password"]:
+            self.stdout.write(
+                self.style.WARNING(
+                    f"Generated demo-user password (shown once): {self.demo_password}"
+                )
+            )
 
-        self.stdout.write(self.style.SUCCESS('Starting demo data generation...'))
+        self.stdout.write(self.style.SUCCESS("Starting demo data generation..."))
 
-        if options['minimal']:
-            options['users'] = 5
-            options['clients'] = 3
-            options['jobs'] = 10
+        if options["minimal"]:
+            options["users"] = 5
+            options["clients"] = 3
+            options["jobs"] = 10
 
-        if options['clear']:
+        if options["clear"]:
             self.clear_existing_data()
-            self.stdout.write(self.style.SUCCESS('Demo data cleared successfully!'))
+            self.stdout.write(self.style.SUCCESS("Demo data cleared successfully!"))
 
         self.load_builtin_timeslot_types()
         self.create_organisational_units()
         self.create_job_levels()
         self.create_skills()
         self.create_services()
-        self.create_users(options['users'])
-        self.create_clients(options['clients'])
-        self.create_jobs_and_phases(options['jobs'])
+        self.create_users(options["users"])
+        self.create_clients(options["clients"])
+        self.create_jobs_and_phases(options["jobs"])
         self.create_timeslots()
         self.create_leave_requests()
 
-        self.stdout.write(self.style.SUCCESS('Demo data generation completed successfully!'))
+        self.stdout.write(
+            self.style.SUCCESS("Demo data generation completed successfully!")
+        )
 
     def load_builtin_timeslot_types(self):
         """Reference the built-in TimeSlotTypes (seeded by post_migrate) rather
         than minting new ones, so demo slots use the correct pks/flags and are
         recognised by TimeSlot.is_delivery()."""
-        self.delivery_type = TimeSlotType.get_builtin_object(DefaultTimeSlotTypes.DELIVERY)
+        self.delivery_type = TimeSlotType.get_builtin_object(
+            DefaultTimeSlotTypes.DELIVERY
+        )
         self.leave_type = TimeSlotType.get_builtin_object(DefaultTimeSlotTypes.LEAVE)
 
     def clear_existing_data(self):
-        self.stdout.write('Clearing existing data...')
+        self.stdout.write("Clearing existing data...")
         # NOTE: TimeSlotType is deliberately NOT cleared — the built-in types
         # (pk 1-13) are seeded by a post_migrate signal only when the table is
         # empty, and TimeSlot.slot_type is CASCADE, so wiping them would delete
@@ -146,9 +171,21 @@ class Command(BaseCommand):
         # must be deleted before them. Phase has PROTECT FKs to Service and User,
         # so Phase is deleted before Service and before the User deletion below.
         models_to_clear = [
-            Feedback, TimeSlot, Phase, Job, FrameworkAgreement, Contact, Client,
-            UserSkill, UserCost, LeaveRequest, Service, Skill,
-            OrganisationalUnitMember, OrganisationalUnit, JobLevel
+            Feedback,
+            TimeSlot,
+            Phase,
+            Job,
+            FrameworkAgreement,
+            Contact,
+            Client,
+            UserSkill,
+            UserCost,
+            LeaveRequest,
+            Service,
+            Skill,
+            OrganisationalUnitMember,
+            OrganisationalUnit,
+            JobLevel,
         ]
         for model in models_to_clear:
             model.objects.all().delete()
@@ -158,143 +195,215 @@ class Command(BaseCommand):
         from django.db import connection
 
         # Only reset sequences if using SQLite
-        if connection.vendor == 'sqlite':
+        if connection.vendor == "sqlite":
             with connection.cursor() as cursor:
                 # Reset sequences for all models we cleared
                 tables_to_reset = [
-                    'chaotica_utils_user',
-                    'jobtracker_timeslot',
-                    'jobtracker_phase',
-                    'jobtracker_job',
-                    'jobtracker_frameworkagreement',
-                    'jobtracker_contact',
-                    'jobtracker_client',
-                    'jobtracker_userskill',
-                    'chaotica_utils_usercost',
-                    'chaotica_utils_leaverequest',
-                    'jobtracker_service',
-                    'jobtracker_skill',
-                    'jobtracker_organisationalunitmember',
-                    'jobtracker_organisationalunit',
-                    'chaotica_utils_joblevel'
+                    "chaotica_utils_user",
+                    "jobtracker_timeslot",
+                    "jobtracker_phase",
+                    "jobtracker_job",
+                    "jobtracker_frameworkagreement",
+                    "jobtracker_contact",
+                    "jobtracker_client",
+                    "jobtracker_userskill",
+                    "chaotica_utils_usercost",
+                    "chaotica_utils_leaverequest",
+                    "jobtracker_service",
+                    "jobtracker_skill",
+                    "jobtracker_organisationalunitmember",
+                    "jobtracker_organisationalunit",
+                    "chaotica_utils_joblevel",
                 ]
                 for table in tables_to_reset:
                     cursor.execute(f"DELETE FROM sqlite_sequence WHERE name='{table}';")
 
                 # Also reset the main sqlite_sequence table to start fresh
                 cursor.execute("DELETE FROM sqlite_sequence;")
-        elif connection.vendor == 'mysql':
+        elif connection.vendor == "mysql":
             # For MySQL, reset auto_increment values
             with connection.cursor() as cursor:
                 tables_to_reset = [
-                    'chaotica_utils_user',
-                    'jobtracker_timeslot',
-                    'jobtracker_phase',
-                    'jobtracker_job',
-                    'jobtracker_frameworkagreement',
-                    'jobtracker_contact',
-                    'jobtracker_client',
-                    'jobtracker_userskill',
-                    'chaotica_utils_usercost',
-                    'chaotica_utils_leaverequest',
-                    'jobtracker_service',
-                    'jobtracker_skill',
-                    'jobtracker_organisationalunitmember',
-                    'jobtracker_organisationalunit',
-                    'chaotica_utils_joblevel'
+                    "chaotica_utils_user",
+                    "jobtracker_timeslot",
+                    "jobtracker_phase",
+                    "jobtracker_job",
+                    "jobtracker_frameworkagreement",
+                    "jobtracker_contact",
+                    "jobtracker_client",
+                    "jobtracker_userskill",
+                    "chaotica_utils_usercost",
+                    "chaotica_utils_leaverequest",
+                    "jobtracker_service",
+                    "jobtracker_skill",
+                    "jobtracker_organisationalunitmember",
+                    "jobtracker_organisationalunit",
+                    "chaotica_utils_joblevel",
                 ]
                 for table in tables_to_reset:
                     cursor.execute(f"ALTER TABLE {table} AUTO_INCREMENT = 1;")
-        elif connection.vendor == 'postgresql':
+        elif connection.vendor == "postgresql":
             # For PostgreSQL, reset sequences
             from django.db import connection
+
             with connection.cursor() as cursor:
                 models_to_reset = [
-                    User, TimeSlot, Phase, Job, FrameworkAgreement,
-                    Contact, Client, UserSkill, UserCost, LeaveRequest, Service,
-                    Skill, OrganisationalUnitMember, OrganisationalUnit, JobLevel
+                    User,
+                    TimeSlot,
+                    Phase,
+                    Job,
+                    FrameworkAgreement,
+                    Contact,
+                    Client,
+                    UserSkill,
+                    UserCost,
+                    LeaveRequest,
+                    Service,
+                    Skill,
+                    OrganisationalUnitMember,
+                    OrganisationalUnit,
+                    JobLevel,
                 ]
                 for model in models_to_reset:
                     table_name = model._meta.db_table
                     sequence_name = f"{table_name}_id_seq"
                     try:
-                        cursor.execute(f"ALTER SEQUENCE {sequence_name} RESTART WITH 1;")
+                        cursor.execute(
+                            f"ALTER SEQUENCE {sequence_name} RESTART WITH 1;"
+                        )
                     except Exception:
                         # Sequence might not exist or have a different name
                         pass
 
     def create_organisational_units(self):
-        self.stdout.write('Creating organisational units...')
+        self.stdout.write("Creating organisational units...")
 
         self.units = []
         unit_data = [
-            ('United Kingdom', 'UK', 'UK security testing team', '09:00', '17:30', 'Europe/London'),
-            ('Germany', 'DE', 'German security testing team', '09:00', '17:30', 'Europe/Berlin'),
-            ('United States', 'US', 'US security testing team', '09:00', '17:00', 'US/Eastern'),
-            ('Australia', 'AU', 'Australian security testing team', '09:00', '17:30', 'Australia/Sydney'),
-            ('Netherlands', 'NL', 'Netherlands security testing team', '09:00', '17:30', 'Europe/Amsterdam'),
+            (
+                "United Kingdom",
+                "UK",
+                "UK security testing team",
+                "09:00",
+                "17:30",
+                "Europe/London",
+            ),
+            (
+                "Germany",
+                "DE",
+                "German security testing team",
+                "09:00",
+                "17:30",
+                "Europe/Berlin",
+            ),
+            (
+                "United States",
+                "US",
+                "US security testing team",
+                "09:00",
+                "17:00",
+                "US/Eastern",
+            ),
+            (
+                "Australia",
+                "AU",
+                "Australian security testing team",
+                "09:00",
+                "17:30",
+                "Australia/Sydney",
+            ),
+            (
+                "Netherlands",
+                "NL",
+                "Netherlands security testing team",
+                "09:00",
+                "17:30",
+                "Europe/Amsterdam",
+            ),
         ]
 
         for name, short, desc, start_time, end_time, timezone_name in unit_data:
             unit, created = OrganisationalUnit.objects.get_or_create(
                 slug=short,
                 defaults={
-                    'name': name,
-                    'description': desc,
-                    'businessHours_startTime': start_time,
-                    'businessHours_endTime': end_time,
-                    'businessHours_days': [1,2,3,4,5],
+                    "name": name,
+                    "description": desc,
+                    "businessHours_startTime": start_time,
+                    "businessHours_endTime": end_time,
+                    "businessHours_days": [1, 2, 3, 4, 5],
                     # 'lunchHours_startTime': '12:00',
                     # 'lunchHours_endTime': '13:00',
                     # 'lunchHours_days': '1,2,3,4,5'
-                }
+                },
             )
             self.units.append(unit)
 
     def create_job_levels(self):
-        self.stdout.write('Creating job levels...')
+        self.stdout.write("Creating job levels...")
 
         self.job_levels = []
         levels = [
-            ('Junior', 'Junior Consultant', 1),
-            ('Consultant', 'Consultant', 2),
-            ('Senior', 'Senior Consultant', 3),
-            ('Principal', 'Principal Consultant', 4),
-            ('Managing', 'Managing Consultant', 5),
-            ('Director', 'Director', 6),
+            ("Junior", "Junior Consultant", 1),
+            ("Consultant", "Consultant", 2),
+            ("Senior", "Senior Consultant", 3),
+            ("Principal", "Principal Consultant", 4),
+            ("Managing", "Managing Consultant", 5),
+            ("Director", "Director", 6),
         ]
 
         for short_label, name, order in levels:
             level, created = JobLevel.objects.get_or_create(
-                short_label=short_label,
-                defaults={'long_label': name, 'order': order}
+                short_label=short_label, defaults={"long_label": name, "order": order}
             )
             self.job_levels.append(level)
 
     def create_skills(self):
-        self.stdout.write('Creating skills...')
+        self.stdout.write("Creating skills...")
 
         self.skills = []
         skill_categories = {
-            'Technical': [
-                'Web Application Testing', 'Network Penetration Testing',
-                'Mobile Application Testing', 'API Testing', 'Cloud Security',
-                'Active Directory', 'Wireless Testing', 'Social Engineering',
-                'Binary Exploitation', 'Cryptography Analysis'
+            "Technical": [
+                "Web Application Testing",
+                "Network Penetration Testing",
+                "Mobile Application Testing",
+                "API Testing",
+                "Cloud Security",
+                "Active Directory",
+                "Wireless Testing",
+                "Social Engineering",
+                "Binary Exploitation",
+                "Cryptography Analysis",
             ],
-            'Tools': [
-                'Burp Suite', 'Metasploit', 'Nmap', 'Wireshark', 'Kali Linux',
-                'Cobalt Strike', 'BloodHound', 'PowerShell', 'Python Scripting',
-                'AWS Security Tools', 'Azure Security Center'
+            "Tools": [
+                "Burp Suite",
+                "Metasploit",
+                "Nmap",
+                "Wireshark",
+                "Kali Linux",
+                "Cobalt Strike",
+                "BloodHound",
+                "PowerShell",
+                "Python Scripting",
+                "AWS Security Tools",
+                "Azure Security Center",
             ],
-            'Methodologies': [
-                'OWASP Testing Guide', 'PTES', 'MITRE ATT&CK', 'Kill Chain',
-                'NIST Cybersecurity Framework', 'ISO 27001', 'PCI DSS'
+            "Methodologies": [
+                "OWASP Testing Guide",
+                "PTES",
+                "MITRE ATT&CK",
+                "Kill Chain",
+                "NIST Cybersecurity Framework",
+                "ISO 27001",
+                "PCI DSS",
             ],
-            'Soft Skills': [
-                'Report Writing', 'Client Communication', 'Project Management',
-                'Team Leadership', 'Technical Mentoring', 'Presentation Skills'
-            ]
+            "Soft Skills": [
+                "Report Writing",
+                "Client Communication",
+                "Project Management",
+                "Team Leadership",
+                "Technical Mentoring",
+                "Presentation Skills",
+            ],
         }
 
         for category, skill_list in skill_categories.items():
@@ -303,71 +412,93 @@ class Command(BaseCommand):
                 skill, created = Skill.objects.get_or_create(
                     name=skill_name,
                     defaults={
-                        'category': cat,
-                        'description': f'{skill_name} expertise'
-                    }
+                        "category": cat,
+                        "description": f"{skill_name} expertise",
+                    },
                 )
                 self.skills.append(skill)
 
     def create_services(self):
-        self.stdout.write('Creating services...')
+        self.stdout.write("Creating services...")
 
         self.services = []
         service_data = [
-            ('Infrastructure Penetration Test', 'Network and infrastructure security assessment', True),
-            ('Web Application Security Assessment', 'Comprehensive web application testing', True),
-            ('Mobile Application Security Review', 'iOS and Android application testing', True),
-            ('Red Team Exercise', 'Full adversarial simulation', True),
-            ('Purple Team Exercise', 'Collaborative attack and defense', False),
-            ('Cloud Security Assessment', 'AWS/Azure/GCP security review', True),
-            ('Wireless Security Assessment', 'WiFi and wireless protocol testing', False),
-            ('Social Engineering Assessment', 'Physical and digital social engineering', False),
-            ('Security Architecture Review', 'Design and architecture security analysis', True),
-            ('Code Review', 'Static application security testing', True),
-            ('DevSecOps Consulting', 'CI/CD pipeline security integration', False),
-            ('Incident Response Readiness', 'IR capability assessment', False),
+            (
+                "Infrastructure Penetration Test",
+                "Network and infrastructure security assessment",
+                True,
+            ),
+            (
+                "Web Application Security Assessment",
+                "Comprehensive web application testing",
+                True,
+            ),
+            (
+                "Mobile Application Security Review",
+                "iOS and Android application testing",
+                True,
+            ),
+            ("Red Team Exercise", "Full adversarial simulation", True),
+            ("Purple Team Exercise", "Collaborative attack and defense", False),
+            ("Cloud Security Assessment", "AWS/Azure/GCP security review", True),
+            (
+                "Wireless Security Assessment",
+                "WiFi and wireless protocol testing",
+                False,
+            ),
+            (
+                "Social Engineering Assessment",
+                "Physical and digital social engineering",
+                False,
+            ),
+            (
+                "Security Architecture Review",
+                "Design and architecture security analysis",
+                True,
+            ),
+            ("Code Review", "Static application security testing", True),
+            ("DevSecOps Consulting", "CI/CD pipeline security integration", False),
+            ("Incident Response Readiness", "IR capability assessment", False),
         ]
 
         for name, desc, is_core in service_data:
             service, created = Service.objects.get_or_create(
-                name=name,
-                defaults={
-                    'description': desc,
-                    'is_core': is_core
-                }
+                name=name, defaults={"description": desc, "is_core": is_core}
             )
             num_skills = random.randint(3, 8)
-            required_skills = random.sample(self.skills, min(num_skills, len(self.skills)))
-            service.skillsRequired.set(required_skills[:num_skills//2])
-            service.skillsDesired.set(required_skills[num_skills//2:])
+            required_skills = random.sample(
+                self.skills, min(num_skills, len(self.skills))
+            )
+            service.skillsRequired.set(required_skills[: num_skills // 2])
+            service.skillsDesired.set(required_skills[num_skills // 2 :])
             self.services.append(service)
 
     def create_users(self, count):
-        self.stdout.write(f'Creating {count} users...')
+        self.stdout.write(f"Creating {count} users...")
 
         self.users = []
 
         region_data = {
-            'UK': {
-                'locations': ['London', 'Manchester', 'Edinburgh', 'Birmingham'],
-                'timezone': 'Europe/London'
+            "UK": {
+                "locations": ["London", "Manchester", "Edinburgh", "Birmingham"],
+                "timezone": "Europe/London",
             },
-            'DE': {
-                'locations': ['Berlin', 'Munich', 'Hamburg', 'Frankfurt'],
-                'timezone': 'Europe/Berlin'
+            "DE": {
+                "locations": ["Berlin", "Munich", "Hamburg", "Frankfurt"],
+                "timezone": "Europe/Berlin",
             },
-            'US': {
-                'locations': ['New York', 'Chicago', 'Los Angeles', 'Remote'],
-                'timezone': 'US/Eastern'
+            "US": {
+                "locations": ["New York", "Chicago", "Los Angeles", "Remote"],
+                "timezone": "US/Eastern",
             },
-            'AU': {
-                'locations': ['Sydney', 'Melbourne', 'Brisbane', 'Perth'],
-                'timezone': 'Australia/Sydney'
+            "AU": {
+                "locations": ["Sydney", "Melbourne", "Brisbane", "Perth"],
+                "timezone": "Australia/Sydney",
             },
-            'NL': {
-                'locations': ['Amsterdam', 'Rotterdam', 'The Hague', 'Utrecht'],
-                'timezone': 'Europe/Amsterdam'
-            }
+            "NL": {
+                "locations": ["Amsterdam", "Rotterdam", "The Hague", "Utrecht"],
+                "timezone": "Europe/Amsterdam",
+            },
         }
 
         for i in range(count):
@@ -376,13 +507,15 @@ class Command(BaseCommand):
             email = f"{first_name.lower()}.{last_name.lower()}@demo.chaotica.app"
             # Guard against faker name collisions colliding on the unique email
             if User.objects.filter(email=email).exists():
-                email = f"{first_name.lower()}.{last_name.lower()}.{i}@demo.chaotica.app"
+                email = (
+                    f"{first_name.lower()}.{last_name.lower()}.{i}@demo.chaotica.app"
+                )
 
             unit = random.choice(self.units)
             region_short = unit.slug
-            region_info = region_data.get(region_short, region_data['UK'])
-            location_name = random.choice(region_info['locations'])
-            country_code = UNIT_SLUG_TO_COUNTRY.get(region_short, 'GB')
+            region_info = region_data.get(region_short, region_data["UK"])
+            location_name = random.choice(region_info["locations"])
+            country_code = UNIT_SLUG_TO_COUNTRY.get(region_short, "GB")
 
             user = User.objects.create_user(
                 email=email,
@@ -391,9 +524,9 @@ class Command(BaseCommand):
                 last_name=last_name,
                 job_title=random.choice([jl.long_label for jl in self.job_levels]),
                 country=country_code,
-                pref_timezone=region_info['timezone'],
+                pref_timezone=region_info["timezone"],
                 contracted_leave=25,
-                carry_over_leave=random.randint(0, 5)
+                carry_over_leave=random.randint(0, 5),
             )
 
             # Best-effort assign a real cities_light City (the old free-text
@@ -401,17 +534,18 @@ class Command(BaseCommand):
             # null if no matching city is loaded — city is nullable.
             try:
                 from cities_light.models import City
+
                 city = City.objects.filter(
                     name=location_name, country__code2=country_code
                 ).first()
                 if city:
                     user.city = city
-                    user.save(update_fields=['city'])
+                    user.save(update_fields=["city"])
             except Exception:
                 pass
 
             role, _ = OrganisationalUnitRole.objects.get_or_create(
-                name='Member',
+                name="Member",
             )
             member = OrganisationalUnitMember.objects.create(
                 member=user,
@@ -421,7 +555,7 @@ class Command(BaseCommand):
             member.save()
 
             if i > 0 and i % 5 != 0:
-                user.manager = random.choice(self.users[:max(1, i//5)])
+                user.manager = random.choice(self.users[: max(1, i // 5)])
                 user.save()
 
             num_skills = random.randint(5, 15)
@@ -429,7 +563,7 @@ class Command(BaseCommand):
                 UserSkill.objects.create(
                     user=user,
                     skill=skill,
-                    rating=random.choice(UserSkillRatings.CHOICES)[0]
+                    rating=random.choice(UserSkillRatings.CHOICES)[0],
                 )
 
             # Job levels live in the UserJobLevel model (with an is_current
@@ -441,50 +575,67 @@ class Command(BaseCommand):
 
         if self.units and self.users:
             for unit in self.units:
-                unit.leads.set(random.sample(self.users, k=min(len(self.users), random.randint(1, 2))))
+                unit.leads.set(
+                    random.sample(
+                        self.users, k=min(len(self.users), random.randint(1, 2))
+                    )
+                )
 
     def create_clients(self, count):
-        self.stdout.write(f'Creating {count} clients...')
+        self.stdout.write(f"Creating {count} clients...")
 
         self.clients = []
-        industries = ['Financial Services', 'Healthcare', 'Technology', 'Retail', 'Government', 'Energy']
+        industries = [
+            "Financial Services",
+            "Healthcare",
+            "Technology",
+            "Retail",
+            "Government",
+            "Energy",
+        ]
 
         for i in range(count):
             company_name = fake.company()
             client = Client.objects.create(
                 name=company_name,
-                short_name=''.join([w[0].upper() for w in company_name.split()][:3]),
-                hours_in_day=random.choice([7.5, 8.0])
+                short_name="".join([w[0].upper() for w in company_name.split()][:3]),
+                hours_in_day=random.choice([7.5, 8.0]),
             )
 
             num_ams = random.randint(1, 3)
-            client.account_managers.set(random.sample(self.users, min(num_ams, len(self.users))))
+            client.account_managers.set(
+                random.sample(self.users, min(num_ams, len(self.users)))
+            )
 
             for j in range(random.randint(1, 4)):
-                contact_name = fake.name().split(' ')
+                contact_name = fake.name().split(" ")
                 Contact.objects.create(
                     company=client,
-                    first_name=contact_name[0] if len(contact_name) > 0 else '',
-                    last_name=contact_name[1] if len(contact_name) > 1 else '',
+                    first_name=contact_name[0] if len(contact_name) > 0 else "",
+                    last_name=contact_name[1] if len(contact_name) > 1 else "",
                     email=fake.company_email(),
-                    jobtitle=random.choice(['CISO', 'Security Manager', 'IT Director', 'CTO'])
+                    jobtitle=random.choice(
+                        ["CISO", "Security Manager", "IT Director", "CTO"]
+                    ),
                 )
 
             if random.random() > 0.3:
                 FrameworkAgreement.objects.create(
                     client=client,
-                    name=f'{company_name} Master Services Agreement',
+                    name=f"{company_name} Master Services Agreement",
                     total_days=random.randint(50, 500),
-                    start_date=timezone.now().date() - timedelta(days=random.randint(30, 365)),
-                    end_date=timezone.now().date() + timedelta(days=random.randint(90, 730)),
+                    start_date=timezone.now().date()
+                    - timedelta(days=random.randint(30, 365)),
+                    end_date=timezone.now().date()
+                    + timedelta(days=random.randint(90, 730)),
                     allow_over_allocation=True,
-                    closed=False
+                    closed=False,
                 )
 
             self.clients.append(client)
 
     def create_jobs_and_phases(self, count):
-        self.stdout.write(f'Creating {count} jobs with phases...')
+        self.stdout.write(f"Creating {count} jobs with phases...")
 
         self.jobs = []
         self.phases = []
@@ -493,40 +644,49 @@ class Command(BaseCommand):
         today = timezone.now().date()
 
         security_services = [
-            'Infrastructure Penetration Test', 'Web Application Security Assessment',
-            'Mobile Application Security Review', 'Red Team Exercise',
-            'Cloud Security Assessment', 'Security Architecture Review'
+            "Infrastructure Penetration Test",
+            "Web Application Security Assessment",
+            "Mobile Application Security Review",
+            "Red Team Exercise",
+            "Cloud Security Assessment",
+            "Security Architecture Review",
         ]
 
         for i in range(count):
             client = random.choice(self.clients)
 
-            job_start_date = fake.date_between(start_date=three_months_ago, end_date=today - timedelta(days=30))
+            job_start_date = fake.date_between(
+                start_date=three_months_ago, end_date=today - timedelta(days=30)
+            )
             job_duration = random.randint(10, 45)
             job_end_date = job_start_date + timedelta(days=job_duration)
 
             assessment_quarter = self.get_quarter_from_date(job_start_date)
 
             job = Job.objects.create(
-                title=f'{client.name} - {assessment_quarter} {random.choice(security_services)}',
+                title=f"{client.name} - {assessment_quarter} {random.choice(security_services)}",
                 overview=fake.paragraph(nb_sentences=random.randint(2, 4)),
                 client=client,
                 unit=random.choice(self.units),
-                account_manager=random.choice(list(client.account_managers.all()) + self.users[:5]),
+                account_manager=random.choice(
+                    list(client.account_managers.all()) + self.users[:5]
+                ),
                 created_by=random.choice(self.users),
                 desired_start_date=job_start_date,
                 desired_delivery_date=job_end_date,
                 revenue=Decimal(random.randint(15000, 200000)),
-                status=JobStatuses.DRAFT
+                status=JobStatuses.DRAFT,
             )
 
-            job.scoped_by.set(random.sample(self.users, min(random.randint(2, 4), len(self.users))))
+            job.scoped_by.set(
+                random.sample(self.users, min(random.randint(2, 4), len(self.users)))
+            )
 
             billing_code = BillingCode.objects.create(
-                code=f'BC-{job.id:05d}',
+                code=f"BC-{job.id:05d}",
                 client=client,
                 is_chargeable=True,
-                is_recoverable=True
+                is_recoverable=True,
             )
             job.charge_codes.add(billing_code)
 
@@ -540,7 +700,7 @@ class Command(BaseCommand):
                 phase = Phase.objects.create(
                     job=job,
                     phase_number=p + 1,
-                    title=f'Phase {p + 1}: {service.name}',
+                    title=f"Phase {p + 1}: {service.name}",
                     service=service,
                     status=PhaseStatuses.PENDING_SCHED,
                     project_lead=random.choice(self.users),
@@ -551,8 +711,9 @@ class Command(BaseCommand):
                     qa_hours=random.randint(4, 12),
                     contingency_hours=random.randint(0, 8),
                     desired_start_date=current_phase_date,
-                    desired_delivery_date=current_phase_date + timedelta(days=phase_duration),
-                    feedback_scope_correct=None
+                    desired_delivery_date=current_phase_date
+                    + timedelta(days=phase_duration),
+                    feedback_scope_correct=None,
                 )
 
                 # Note: consultants_allocated field doesn't exist on Phase model
@@ -565,7 +726,9 @@ class Command(BaseCommand):
                 phase.save()
                 self.phases.append(phase)
 
-                current_phase_date += timedelta(days=phase_duration + random.randint(1, 5))
+                current_phase_date += timedelta(
+                    days=phase_duration + random.randint(1, 5)
+                )
 
             self.progress_job_workflow(job)
             self.jobs.append(job)
@@ -573,31 +736,40 @@ class Command(BaseCommand):
     def get_quarter_from_date(self, date_obj):
         month = date_obj.month
         if month <= 3:
-            return 'Q1'
+            return "Q1"
         elif month <= 6:
-            return 'Q2'
+            return "Q2"
         elif month <= 9:
-            return 'Q3'
+            return "Q3"
         else:
-            return 'Q4'
+            return "Q4"
 
     def progress_job_workflow(self, job):
-        phases = job.phases.all().order_by('phase_number')
+        phases = job.phases.all().order_by("phase_number")
 
         for phase in phases:
 
             if phase.desired_delivery_date < timezone.now().date() - timedelta(days=7):
                 self.progress_phase_to_completion(phase)
-            elif phase.desired_delivery_date < timezone.now().date() + timedelta(days=7):
+            elif phase.desired_delivery_date < timezone.now().date() + timedelta(
+                days=7
+            ):
                 self.progress_phase_partially(phase)
             else:
-                status_choice = random.choice([
-                    PhaseStatuses.SCHEDULED_CONFIRMED, PhaseStatuses.PRE_CHECKS, PhaseStatuses.IN_PROGRESS,
-                    PhaseStatuses.PENDING_SCHED, PhaseStatuses.SCHEDULED_CONFIRMED
-                ])
+                status_choice = random.choice(
+                    [
+                        PhaseStatuses.SCHEDULED_CONFIRMED,
+                        PhaseStatuses.PRE_CHECKS,
+                        PhaseStatuses.IN_PROGRESS,
+                        PhaseStatuses.PENDING_SCHED,
+                        PhaseStatuses.SCHEDULED_CONFIRMED,
+                    ]
+                )
                 phase.status = status_choice
                 if status_choice >= PhaseStatuses.IN_PROGRESS:
-                    phase.feedback_scope_correct = random.choice([True, True, True, False])
+                    phase.feedback_scope_correct = random.choice(
+                        [True, True, True, False]
+                    )
                 phase.save()
 
         job_phases = list(phases)
@@ -621,16 +793,24 @@ class Command(BaseCommand):
         phase.feedback_scope_correct = True
 
         if phase.techqa_by:
-            phase.techqa_report_rating = random.choice([
-                TechQARatings.MAJOR_CHANGES_NEEDED, TechQARatings.GOOD,
-                TechQARatings.GOOD, TechQARatings.EXCELLENT
-            ])
+            phase.techqa_report_rating = random.choice(
+                [
+                    TechQARatings.MAJOR_CHANGES_NEEDED,
+                    TechQARatings.GOOD,
+                    TechQARatings.GOOD,
+                    TechQARatings.EXCELLENT,
+                ]
+            )
 
         if phase.presqa_by:
-            phase.presqa_report_rating = random.choice([
-                PresQARatings.MAJOR_CHANGES_NEEDED, PresQARatings.GOOD,
-                PresQARatings.GOOD, PresQARatings.EXCELLENT
-            ])
+            phase.presqa_report_rating = random.choice(
+                [
+                    PresQARatings.MAJOR_CHANGES_NEEDED,
+                    PresQARatings.GOOD,
+                    PresQARatings.GOOD,
+                    PresQARatings.EXCELLENT,
+                ]
+            )
 
         phase.save()
 
@@ -639,9 +819,13 @@ class Command(BaseCommand):
     def progress_phase_partially(self, phase):
 
         status_options = [
-            PhaseStatuses.SCHEDULED_TENTATIVE, PhaseStatuses.SCHEDULED_CONFIRMED, PhaseStatuses.IN_PROGRESS,
-            PhaseStatuses.PENDING_TQA, PhaseStatuses.QA_TECH,
-            PhaseStatuses.PENDING_PQA, PhaseStatuses.QA_PRES
+            PhaseStatuses.SCHEDULED_TENTATIVE,
+            PhaseStatuses.SCHEDULED_CONFIRMED,
+            PhaseStatuses.IN_PROGRESS,
+            PhaseStatuses.PENDING_TQA,
+            PhaseStatuses.QA_TECH,
+            PhaseStatuses.PENDING_PQA,
+            PhaseStatuses.QA_PRES,
         ]
 
         phase.status = random.choice(status_options)
@@ -650,14 +834,22 @@ class Command(BaseCommand):
             phase.feedback_scope_correct = random.choice([True, True, True, False])
 
         if phase.status >= PhaseStatuses.QA_TECH and phase.techqa_by:
-            phase.techqa_report_rating = random.choice([
-                TechQARatings.SIGNIFICANT_CHANGES_NEEDED, TechQARatings.GOOD, TechQARatings.EXCELLENT
-            ])
+            phase.techqa_report_rating = random.choice(
+                [
+                    TechQARatings.SIGNIFICANT_CHANGES_NEEDED,
+                    TechQARatings.GOOD,
+                    TechQARatings.EXCELLENT,
+                ]
+            )
 
         if phase.status >= PhaseStatuses.QA_PRES and phase.presqa_by:
-            phase.presqa_report_rating = random.choice([
-                PresQARatings.SIGNIFICANT_CHANGES_NEEDED, PresQARatings.GOOD, PresQARatings.EXCELLENT
-            ])
+            phase.presqa_report_rating = random.choice(
+                [
+                    PresQARatings.SIGNIFICANT_CHANGES_NEEDED,
+                    PresQARatings.GOOD,
+                    PresQARatings.EXCELLENT,
+                ]
+            )
 
         phase.save()
 
@@ -672,14 +864,14 @@ class Command(BaseCommand):
                 "Excellent technical depth. All major vulnerabilities identified and well documented. Clear remediation guidance provided.",
                 "Some gaps in testing methodology. Missing validation of fixes. Executive summary needs improvement.",
                 "Comprehensive assessment with good technical detail. Well structured report with clear risk ratings.",
-                "Testing was thorough but report lacks technical depth in some findings. Risk scoring inconsistent."
+                "Testing was thorough but report lacks technical depth in some findings. Risk scoring inconsistent.",
             ]
 
             Feedback.objects.create(
                 author=phase.techqa_by,
                 phase=phase,
                 feedbackType=FeedbackType.TECH,
-                body=random.choice(tech_feedback_texts)
+                body=random.choice(tech_feedback_texts),
             )
 
         if phase.status >= PhaseStatuses.QA_PRES and phase.presqa_by:
@@ -688,14 +880,14 @@ class Command(BaseCommand):
                 "Excellent presentation quality. Findings are well articulated with appropriate business context. Ready for client delivery.",
                 "Some formatting inconsistencies noted. Risk ratings need better justification. Overall content is solid.",
                 "Professional presentation with good flow. Technical findings translated well for business audience.",
-                "Report quality is good but could benefit from more detailed recommendations section. Client-ready with minor edits."
+                "Report quality is good but could benefit from more detailed recommendations section. Client-ready with minor edits.",
             ]
 
             Feedback.objects.create(
                 author=phase.presqa_by,
                 phase=phase,
                 feedbackType=FeedbackType.PRES,
-                body=random.choice(pres_feedback_texts)
+                body=random.choice(pres_feedback_texts),
             )
 
         if random.random() > 0.7:
@@ -703,26 +895,30 @@ class Command(BaseCommand):
                 "Initial scope was appropriate and well defined. All objectives met.",
                 "Scope expanded during engagement to include additional systems. Client was satisfied with coverage.",
                 "Limited scope due to client constraints. Recommended follow-up assessment for remaining systems.",
-                "Comprehensive scope allowed for thorough assessment. Good collaboration with client technical team."
+                "Comprehensive scope allowed for thorough assessment. Good collaboration with client technical team.",
             ]
 
             Feedback.objects.create(
                 author=random.choice([phase.project_lead, phase.report_author]),
                 phase=phase,
                 feedbackType=FeedbackType.SCOPE,
-                body=random.choice(scope_feedback_texts)
+                body=random.choice(scope_feedback_texts),
             )
 
     def create_timeslots(self):
-        self.stdout.write('Creating timeslots...')
+        self.stdout.write("Creating timeslots...")
 
         delivery_type = self.delivery_type
 
         phases_with_activity = Phase.objects.filter(
             status__in=[
-                PhaseStatuses.SCHEDULED_CONFIRMED, PhaseStatuses.IN_PROGRESS,
-                PhaseStatuses.PENDING_TQA, PhaseStatuses.QA_TECH, PhaseStatuses.PENDING_PQA,
-                PhaseStatuses.QA_PRES, PhaseStatuses.COMPLETED
+                PhaseStatuses.SCHEDULED_CONFIRMED,
+                PhaseStatuses.IN_PROGRESS,
+                PhaseStatuses.PENDING_TQA,
+                PhaseStatuses.QA_TECH,
+                PhaseStatuses.PENDING_PQA,
+                PhaseStatuses.QA_PRES,
+                PhaseStatuses.COMPLETED,
             ]
         )
 
@@ -733,7 +929,9 @@ class Command(BaseCommand):
                 continue
 
             phase_start = phase.desired_start_date
-            phase_end = phase.desired_delivery_date or (phase_start + timedelta(days=10))
+            phase_end = phase.desired_delivery_date or (
+                phase_start + timedelta(days=10)
+            )
 
             if phase.status >= PhaseStatuses.COMPLETED:
                 delivery_end = phase_end
@@ -745,12 +943,18 @@ class Command(BaseCommand):
                 continue
 
             current_date = phase_start
-            total_hours_needed = phase.delivery_hours + phase.reporting_hours + phase.mgmt_hours
+            total_hours_needed = (
+                phase.delivery_hours + phase.reporting_hours + phase.mgmt_hours
+            )
 
             hours_allocated = 0
             day_count = 0
 
-            while current_date <= delivery_end and hours_allocated < total_hours_needed and day_count < 30:
+            while (
+                current_date <= delivery_end
+                and hours_allocated < total_hours_needed
+                and day_count < 30
+            ):
                 if current_date.weekday() >= 5:
                     current_date += timedelta(days=1)
                     continue
@@ -766,21 +970,38 @@ class Command(BaseCommand):
 
                     start_hour = random.choice([8, 9, 10])
                     start_time = timezone.make_aware(
-                        datetime.combine(current_date, datetime.strptime(f'{start_hour:02d}:00', '%H:%M').time())
+                        datetime.combine(
+                            current_date,
+                            datetime.strptime(f"{start_hour:02d}:00", "%H:%M").time(),
+                        )
                     )
                     end_time = start_time + timedelta(hours=hours_today)
 
                     if phase.status >= PhaseStatuses.PENDING_TQA:
-                        role = random.choice([TimeSlotDeliveryRole.REPORTING, TimeSlotDeliveryRole.REPORTING, TimeSlotDeliveryRole.DELIVERY, TimeSlotDeliveryRole.QA])
+                        role = random.choice(
+                            [
+                                TimeSlotDeliveryRole.REPORTING,
+                                TimeSlotDeliveryRole.REPORTING,
+                                TimeSlotDeliveryRole.DELIVERY,
+                                TimeSlotDeliveryRole.QA,
+                            ]
+                        )
                     elif phase.status >= PhaseStatuses.IN_PROGRESS:
-                        role = random.choice([TimeSlotDeliveryRole.DELIVERY, TimeSlotDeliveryRole.DELIVERY, TimeSlotDeliveryRole.DELIVERY, TimeSlotDeliveryRole.MANAGEMENT])
+                        role = random.choice(
+                            [
+                                TimeSlotDeliveryRole.DELIVERY,
+                                TimeSlotDeliveryRole.DELIVERY,
+                                TimeSlotDeliveryRole.DELIVERY,
+                                TimeSlotDeliveryRole.MANAGEMENT,
+                            ]
+                        )
                     else:
                         role = TimeSlotDeliveryRole.DELIVERY
 
                     is_onsite = False
-                    if phase.service and 'Infrastructure' in phase.service.name:
+                    if phase.service and "Infrastructure" in phase.service.name:
                         is_onsite = random.random() > 0.6
-                    elif phase.service and 'Red Team' in phase.service.name:
+                    elif phase.service and "Red Team" in phase.service.name:
                         is_onsite = random.random() > 0.4
 
                     TimeSlot.objects.create(
@@ -790,7 +1011,7 @@ class Command(BaseCommand):
                         start=start_time,
                         end=end_time,
                         deliveryRole=role,
-                        is_onsite=is_onsite
+                        is_onsite=is_onsite,
                     )
 
                     hours_allocated += hours_today
@@ -799,19 +1020,23 @@ class Command(BaseCommand):
                 day_count += 1
 
             if phase.status >= PhaseStatuses.QA_TECH and phase.techqa_by:
-                self.create_qa_timeslots(phase, phase.techqa_by, TimeSlotDeliveryRole.QA, qa_type='Tech')
+                self.create_qa_timeslots(
+                    phase, phase.techqa_by, TimeSlotDeliveryRole.QA, qa_type="Tech"
+                )
 
             if phase.status >= PhaseStatuses.QA_PRES and phase.presqa_by:
-                self.create_qa_timeslots(phase, phase.presqa_by, TimeSlotDeliveryRole.QA, qa_type='Pres')
+                self.create_qa_timeslots(
+                    phase, phase.presqa_by, TimeSlotDeliveryRole.QA, qa_type="Pres"
+                )
 
-    def create_qa_timeslots(self, phase, qa_user, role, qa_type='Tech'):
+    def create_qa_timeslots(self, phase, qa_user, role, qa_type="Tech"):
         delivery_type = self.delivery_type
         if not phase.desired_delivery_date:
             return
 
         qa_start = phase.desired_delivery_date + timedelta(days=1)
 
-        if qa_type == 'Pres':
+        if qa_type == "Pres":
             qa_start += timedelta(days=2)
 
         qa_hours_needed = random.randint(2, 6)
@@ -820,13 +1045,18 @@ class Command(BaseCommand):
         current_date = qa_start
         hours_allocated = 0
 
-        while hours_allocated < qa_hours_needed and current_date <= qa_start + timedelta(days=7):
+        while (
+            hours_allocated < qa_hours_needed
+            and current_date <= qa_start + timedelta(days=7)
+        ):
             if current_date.weekday() >= 5:
                 current_date += timedelta(days=1)
                 continue
 
             start_time = timezone.make_aware(
-                datetime.combine(current_date, datetime.strptime('10:00', '%H:%M').time())
+                datetime.combine(
+                    current_date, datetime.strptime("10:00", "%H:%M").time()
+                )
             )
             end_time = start_time + timedelta(hours=hours_per_day)
 
@@ -837,29 +1067,37 @@ class Command(BaseCommand):
                 start=start_time,
                 end=end_time,
                 deliveryRole=role,
-                is_onsite=False
+                is_onsite=False,
             )
 
             hours_allocated += hours_per_day
             current_date += timedelta(days=1)
 
     def create_leave_requests(self):
-        self.stdout.write('Creating leave requests...')
+        self.stdout.write("Creating leave requests...")
 
-        for user in random.sample(self.users, min(len(self.users) // 2, len(self.users))):
+        for user in random.sample(
+            self.users, min(len(self.users) // 2, len(self.users))
+        ):
             num_requests = random.randint(1, 3)
 
             for _ in range(num_requests):
-                start_date = timezone.now().date() + timedelta(days=random.randint(-30, 90))
+                start_date = timezone.now().date() + timedelta(
+                    days=random.randint(-30, 90)
+                )
                 end_date = start_date + timedelta(days=random.randint(1, 10))
 
                 # start_date/end_date are DateTimeFields — build aware datetimes
                 # spanning the leave (business-hours start to end-of-day end).
                 start = timezone.make_aware(
-                    datetime.combine(start_date, datetime.strptime('09:00', '%H:%M').time())
+                    datetime.combine(
+                        start_date, datetime.strptime("09:00", "%H:%M").time()
+                    )
                 )
                 end = timezone.make_aware(
-                    datetime.combine(end_date, datetime.strptime('17:30', '%H:%M').time())
+                    datetime.combine(
+                        end_date, datetime.strptime("17:30", "%H:%M").time()
+                    )
                 )
 
                 leave = LeaveRequest.objects.create(
@@ -867,8 +1105,8 @@ class Command(BaseCommand):
                     start_date=start,
                     end_date=end,
                     type_of_leave=random.choice(LeaveRequestTypes.CHOICES)[0],
-                    notes=fake.sentence() if random.random() > 0.5 else '',
-                    authorised=random.random() > 0.3
+                    notes=fake.sentence() if random.random() > 0.5 else "",
+                    authorised=random.random() > 0.3,
                 )
 
                 if leave.authorised and user.manager:
