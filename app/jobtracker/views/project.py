@@ -9,9 +9,13 @@ from django.shortcuts import get_object_or_404
 from chaotica_utils.views import ChaoticaBaseView
 from chaotica_utils.decorators import permission_required_or_403
 from chaotica_utils.models import User
+from django.contrib.auth.decorators import login_required
+from django.template import loader
+from django.http import JsonResponse
 from ..models import Project, TimeSlot
 from ..forms import ProjectForm
 from ..utils import get_scheduler_slots, get_scheduler_members
+import json
 import logging
 
 logger = logging.getLogger(__name__)
@@ -48,6 +52,33 @@ def view_project_schedule_members(request, slug):
     )
 
 
+@login_required
+@permission_required_or_403("jobtracker.view_project")
+def project_stats_partial(request, slug):
+    """Lazily-loaded stats tab for the project detail page.
+
+    Mirrors ``orgunit_stats_partial`` / ``team_stats_partial`` — computes the
+    day-based stats once and renders them into the partial, also emitting the
+    serialised ``stats_json`` for the echarts / raw-data view.
+    """
+    project = get_object_or_404(Project, slug=slug)
+    stats = project.get_stats()
+    context = {
+        "project": project,
+        "stats": stats,
+        "stats_json": json.dumps(stats, indent=4, default=str),
+    }
+    html = loader.render_to_string(
+        "partials/project/project_stats.html", context, request=request
+    )
+    # The Project detail "Team" tab reuses the same per-member block, so return
+    # it separately — the page fetches this endpoint once and fills both panes.
+    members_html = loader.render_to_string(
+        "partials/project/project_members_table.html", context, request=request
+    )
+    return JsonResponse({"html": html, "members_html": members_html})
+
+
 class ProjectBaseView(PermissionRequiredMixin, ChaoticaBaseView):
     model = Project
     fields = "__all__"
@@ -77,13 +108,8 @@ class ProjectDetailView(ProjectBaseView, PermissionRequiredMixin, DetailView):
     permission_required = "jobtracker.view_project"
     accept_global_perms = True
     return_403 = True
-
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        ctx["scheduled_users"] = _project_scheduled_users(self.object).order_by(
-            "first_name", "last_name"
-        )
-        return ctx
+    # Team + Stats tabs are lazily loaded (see project_stats_partial), so the
+    # base detail page stays lightweight — no eager stats/member computation.
 
 
 class ProjectCreateView(ProjectBaseView, PermissionRequiredMixin, CreateView):

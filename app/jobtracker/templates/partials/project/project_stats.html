@@ -1,0 +1,212 @@
+{% load static %}
+
+<!-- Summary tiles -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-4 col-xl">
+    <div class="card h-100 border border-translucent">
+      <div class="card-body text-center">
+        <i class="fa-solid fa-calendar-days fs-6 lh-1 text-primary"></i>
+        <h2 class="fs-6 pt-3 mb-0">{{ stats.summary.total_days }}</h2>
+        <p class="fs-9 mb-0 text-body-secondary">Total Days</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-4 col-xl">
+    <div class="card h-100 border border-translucent">
+      <div class="card-body text-center">
+        <i class="fa-solid fa-check fs-6 lh-1 text-success"></i>
+        <h2 class="fs-6 pt-3 mb-0">{{ stats.summary.used_days }}</h2>
+        <p class="fs-9 mb-0 text-body-secondary">Used Days<br /><span class="fs-10 text-body-tertiary">(in the past)</span></p>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-4 col-xl">
+    <div class="card h-100 border border-translucent">
+      <div class="card-body text-center">
+        <i class="fa-solid fa-clock fs-6 lh-1 text-warning"></i>
+        <h2 class="fs-6 pt-3 mb-0">{{ stats.summary.scheduled_days }}</h2>
+        <p class="fs-9 mb-0 text-body-secondary">Scheduled Days<br /><span class="fs-10 text-body-tertiary">(upcoming)</span></p>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-4 col-xl">
+    <div class="card h-100 border border-translucent">
+      <div class="card-body text-center">
+        <i class="fa-solid fa-users fs-6 lh-1 text-info"></i>
+        <h2 class="fs-6 pt-3 mb-0">{{ stats.summary.team_size }}</h2>
+        <p class="fs-9 mb-0 text-body-secondary">Team Size</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-4 col-xl">
+    <div class="card h-100 border border-translucent">
+      <div class="card-body text-center">
+        <i class="fa-solid fa-scale-balanced fs-6 lh-1 text-secondary"></i>
+        <h2 class="fs-6 pt-3 mb-0">{{ stats.summary.confirmed_days }} <span class="fs-9 text-body-tertiary">/ {{ stats.summary.tentative_days }}</span></h2>
+        <p class="fs-9 mb-0 text-body-secondary">Confirmed vs Tentative</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Per-member + Per-role tables -->
+<div class="row g-3 mb-4">
+  <div class="col-md-6">
+    {% include 'partials/project/project_members_table.html' %}
+  </div>
+
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header p-3 border-bottom">
+        <h5 class="text-body mb-0">Delivery Type</h5>
+        <p class="text-body-secondary fs-10 mb-0">Time split by delivery role.</p>
+      </div>
+      <div class="card-body p-0">
+        {% if stats.roles_data %}
+        <div class="echart-project-roles" style="min-height:220px"></div>
+        {% endif %}
+        <div class="table-responsive">
+          <table class="table table-sm fs-9 mb-0">
+            <thead>
+              <tr>
+                <th class="border-top ps-3">Type</th>
+                <th class="border-top text-end" style="width:15%;">Used</th>
+                <th class="border-top text-end" style="width:15%;">Scheduled</th>
+                <th class="border-top text-end pe-3" style="width:15%;">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for entry in stats.roles_data %}
+              <tr>
+                <td class="align-middle ps-3">{{ entry.role_name }}</td>
+                <td class="align-middle text-end">{{ entry.used_days }}d</td>
+                <td class="align-middle text-end">{{ entry.scheduled_days }}d</td>
+                <td class="align-middle text-end pe-3">{{ entry.total_days }}d</td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="4" class="text-center text-body-secondary py-3">No scheduled time</td>
+              </tr>
+              {% endfor %}
+              {% if stats.roles_data %}
+              <tr class="fw-bold border-top border-translucent">
+                <td class="align-middle ps-3">Total</td>
+                <td class="align-middle text-end">{{ stats.roles_total_used }}d</td>
+                <td class="align-middle text-end">{{ stats.roles_total_scheduled }}d</td>
+                <td class="align-middle text-end pe-3">{{ stats.roles_total }}d</td>
+              </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Monthly burn-down -->
+<div class="row g-3 mb-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header p-3 border-bottom">
+        <h5 class="text-body mb-0">Monthly Burn-down</h5>
+        <p class="text-body-secondary fs-10 mb-0">Days consumed each month with a running cumulative total.</p>
+      </div>
+      <div class="card-body">
+        {% if stats.monthly_data %}
+        <div class="echart-project-burndown" style="width:100%; min-height:300px;"></div>
+        {% else %}
+        <p class="text-body-secondary fs-9 mb-0">No completed timeslots yet.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+$(function() {
+    const { getColor } = window.phoenix.utils;
+
+    // ---- Per-role horizontal bar ----
+    const $rolesEl = document.querySelector('.echart-project-roles');
+    if ($rolesEl) {
+        const chart = window.echarts.init($rolesEl);
+        chart.setOption({
+            tooltip: {
+                trigger: 'axis', axisPointer: { type: 'shadow' }, padding: [7, 10],
+                backgroundColor: getColor('body-highlight-bg'), borderColor: getColor('border-color'),
+                textStyle: { color: getColor('light-text-emphasis') }, borderWidth: 1, transitionDuration: 0,
+                formatter: function(params) {
+                    return params[0].name + ': ' + params[0].value + 'd';
+                }
+            },
+            xAxis: {
+                type: 'value', minInterval: 1,
+                axisLabel: { color: getColor('quaternary-color'), formatter: '{value}d' },
+                splitLine: { lineStyle: { color: getColor('secondary-bg') } }
+            },
+            yAxis: {
+                type: 'category',
+                data: [{% for entry in stats.roles_data %}'{{ entry.role_name|escapejs }}',{% endfor %}],
+                inverse: true,
+                axisLine: { lineStyle: { color: getColor('tertiary-bg') } },
+                axisTick: { show: false }, axisLabel: { color: getColor('quaternary-color') }
+            },
+            series: [{
+                name: 'Total', type: 'bar',
+                itemStyle: { color: getColor('primary'), borderRadius: [0, 3, 3, 0] },
+                data: [{% for entry in stats.roles_data %}{{ entry.total_days }},{% endfor %}]
+            }],
+            grid: { right: 15, left: 5, bottom: 5, top: '5%', containLabel: true }
+        });
+        window.addEventListener('resize', function() { chart.resize(); });
+    }
+
+    // ---- Monthly burn-down (bar + cumulative line) ----
+    const $burnEl = document.querySelector('.echart-project-burndown');
+    if ($burnEl) {
+        const chart = window.echarts.init($burnEl);
+        chart.setOption({
+            tooltip: {
+                trigger: 'axis', padding: [7, 10],
+                backgroundColor: getColor('body-highlight-bg'), borderColor: getColor('border-color'),
+                textStyle: { color: getColor('light-text-emphasis') }, borderWidth: 1, transitionDuration: 0,
+                formatter: function(params) {
+                    var result = params[0].axisValue + '<br/>';
+                    params.forEach(function(p) {
+                        result += p.marker + ' ' + p.seriesName + ': ' + p.value + 'd<br/>';
+                    });
+                    return result;
+                }
+            },
+            legend: { data: ['Monthly', 'Cumulative'], textStyle: { color: getColor('tertiary-color') } },
+            xAxis: {
+                type: 'category', boundaryGap: true,
+                data: [{% for entry in stats.monthly_data %}'{{ entry.month }}',{% endfor %}],
+                axisLabel: { color: getColor('quaternary-color') },
+                axisLine: { lineStyle: { color: getColor('tertiary-bg') } }
+            },
+            yAxis: {
+                type: 'value',
+                axisLabel: { color: getColor('quaternary-color'), formatter: '{value}d' },
+                splitLine: { lineStyle: { color: getColor('secondary-bg') } }
+            },
+            series: [
+                {
+                    name: 'Monthly', type: 'bar',
+                    data: [{% for entry in stats.monthly_data %}{{ entry.days }},{% endfor %}],
+                    itemStyle: { color: getColor('primary'), borderRadius: [4, 4, 0, 0] }
+                },
+                {
+                    name: 'Cumulative', type: 'line',
+                    data: [{% for entry in stats.monthly_data %}{{ entry.cumulative }},{% endfor %}],
+                    itemStyle: { color: getColor('warning') },
+                    lineStyle: { width: 2 }, symbol: 'circle', symbolSize: 6
+                }
+            ],
+            grid: { left: '3%', right: '4%', bottom: '3%', top: '12%', containLabel: true }
+        });
+        window.addEventListener('resize', function() { chart.resize(); });
+    }
+});
+</script>

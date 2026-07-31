@@ -229,6 +229,9 @@
             <a class="nav-link active" id="overview-tab" data-bs-toggle="tab" href="#overview" role="tab" aria-controls="tab-overview" aria-selected="true"><span class="fa-solid fa-info me-2 tab-icon-color"></span>Overview</a>
           </li>
           <li class="nav-item text-nowrap me-2" role="presentation">
+            <a class="nav-link" id="stats-tab" data-bs-toggle="tab" href="#stats" role="tab" aria-controls="tab-stats" aria-selected="false"><span class="fa-solid fa-chart-column me-2 tab-icon-color"></span>Stats</a>
+          </li>
+          <li class="nav-item text-nowrap me-2" role="presentation">
             <a class="nav-link" id="team-tab" data-bs-toggle="tab" href="#team" role="tab" aria-controls="tab-team" aria-selected="true"><span class="fa-solid fa-people-group me-2 tab-icon-color"></span>Team</a>
           </li>
           <li class="nav-item text-nowrap me-2" role="presentation">
@@ -247,20 +250,20 @@
         </div>
 
         <div class="tab-content" id="myTabContent">
+          <div class="tab-pane fade" id="stats" role="tabpanel" aria-labelledby="stats-tab">
+            <div id="project-stats-content" class="text-center py-5">
+              <div class="spinner-border text-primary" role="status"></div>
+              <p class="mt-2 text-body-secondary">Loading stats...</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-content" id="myTabContent">
           <div class="tab-pane fade" id="team" role="tabpanel" aria-labelledby="team-tab">
-            {% if scheduled_users %}
-              <div class="row g-2">
-                {% for member in scheduled_users %}
-                  <div class="col-12 col-sm-6 col-md-4">
-                    <div class="border rounded-3 p-2 border-translucent">
-                      {% include 'partials/users/user_link.html' with user_profile=member %}
-                    </div>
-                  </div>
-                {% endfor %}
-              </div>
-            {% else %}
-              <div class="alert alert-phoenix-info" role="alert">No one is scheduled on this project yet.</div>
-            {% endif %}
+            <div id="project-team-content" class="text-center py-5">
+              <div class="spinner-border text-primary" role="status"></div>
+              <p class="mt-2 text-body-secondary">Loading team...</p>
+            </div>
           </div>
         </div>
 
@@ -298,5 +301,39 @@
   document.getElementById('schedule-tab')?.addEventListener('shown.bs.tab', function () {
     if (window.__schedRedraw) window.__schedRedraw();
   });
+
+  // Lazily load the project stats + team member breakdown on first tab show.
+  // A single fetch feeds both the Stats pane (full stats) and the Team pane
+  // (the shared per-member block), so the base page stays lightweight.
+  (function () {
+    var statsUrl = "{% url 'project_stats_partial' project.slug %}";
+    var loading = false;
+    var loaded = false;
+
+    function fillError() {
+      var msg = '<div class="text-center py-5 text-danger">Failed to load. Please refresh the page.</div>';
+      $('#project-stats-content').html(msg);
+      $('#project-team-content').html(msg);
+    }
+
+    function loadStats() {
+      if (loaded || loading) return;
+      loading = true;
+      fetch(statsUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          // jQuery .html() evaluates the inline <script> in the stats partial
+          // (native innerHTML would not), initialising the echarts.
+          $('#project-stats-content').html(data.html);
+          $('#project-team-content').html(data.members_html);
+          loaded = true;
+          loading = false;
+        })
+        .catch(function () { loading = false; fillError(); });
+    }
+
+    document.getElementById('stats-tab')?.addEventListener('shown.bs.tab', loadStats);
+    document.getElementById('team-tab')?.addEventListener('shown.bs.tab', loadStats);
+  })();
 </script>
 {% endblock extra_js %}

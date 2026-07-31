@@ -198,7 +198,9 @@
         })
         .then(function(r) { return r.json(); })
         .then(function(data) {
-          document.getElementById(containerId).innerHTML = data.html;
+          // Use jQuery .html() (not native innerHTML) so the inline <script>
+          // in the injected partial is evaluated and the echarts initialise.
+          $('#' + containerId).html(data.html);
         })
         .catch(function() {
           document.getElementById(containerId).innerHTML =

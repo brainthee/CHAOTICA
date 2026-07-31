@@ -6,6 +6,8 @@ from ..enums import (
 )
 from django.conf import settings
 from django.urls import reverse
+from django.utils import timezone
+from decimal import Decimal
 from simple_history.models import HistoricalRecords
 from django.db.models import Q
 from django.contrib.contenttypes.fields import GenericRelation
@@ -223,6 +225,170 @@ class Project(models.Model):
     @property
     def is_tracked(self):
         return self.status > ProjectStatuses.UNTRACKED
+
+    def get_hours_in_day(self):
+        """Day divisor for converting timeslot hours into whole days.
+
+        Mirrors ``FrameworkAgreement.get_hours_in_day`` — use the client's
+        configured hours-in-day when a client is set, otherwise fall back to
+        the global ``DEFAULT_HOURS_IN_DAY`` constance value. Guards against a
+        zero/blank value so callers never divide by zero.
+        """
+        if self.client and self.client.hours_in_day:
+            return self.client.hours_in_day
+        return Decimal(str(config.DEFAULT_HOURS_IN_DAY))
+
+    def get_stats(self):
+        """Day-based delivery stats aggregated from this project's timeslots.
+
+        Projects link to ``TimeSlot``s directly (no phases, no revenue, and a
+        ``deliveryRole`` on each slot), so this mirrors the framework detail
+        view's ``_calc_days`` aggregation rather than the per-user availability
+        engine. All work is computed from a single prefetched slot list — the
+        business hours of each slot are cached once so the repeated filtered
+        day sums don't re-query the DB.
+        """
+        from chaotica_utils.utils import slots_to_days, classify_delivery_slot
+
+        hours_in_day = self.get_hours_in_day()
+        now = timezone.now()
+
+        slots = list(self.timeslots.select_related("user", "phase"))
+        for s in slots:
+            s._cached_hours = s.get_business_hours()
+
+        def used_fn(s):
+            return s.end < now
+
+        def sched_fn(s):
+            return s.start >= now
+
+        # --- Confirmed / tentative split via the shared classification ---
+        # A project slot's confirmation is driven by the project state +
+        # deliverable flag (and the phase status if the slot happens to link a
+        # phase), keeping this consistent with utilisation.
+        confirmed_slots = []
+        tentative_slots = []
+        for s in slots:
+            flags = classify_delivery_slot(
+                {
+                    "phase__status": s.phase.status if s.phase_id else None,
+                    "project__state": self.state,
+                    "project__deliverable": self.deliverable,
+                    "slot_type__is_working": None,
+                }
+            )
+            if flags["is_confirmed"]:
+                confirmed_slots.append(s)
+            elif flags["is_tentative"]:
+                tentative_slots.append(s)
+
+        summary = {
+            "total_days": slots_to_days(slots, hours_in_day),
+            "used_days": slots_to_days(slots, hours_in_day, used_fn),
+            "scheduled_days": slots_to_days(slots, hours_in_day, sched_fn),
+            "team_size": len({s.user_id for s in slots}),
+            "confirmed_days": slots_to_days(confirmed_slots, hours_in_day),
+            "tentative_days": slots_to_days(tentative_slots, hours_in_day),
+        }
+
+        # --- Per-user breakdown (mirrors the framework view) ---
+        role_labels = dict(TimeSlotDeliveryRole.CHOICES)
+        users_by_id = {}
+        for s in slots:
+            if s.user_id not in users_by_id:
+                users_by_id[s.user_id] = {"user": s.user, "slots": []}
+            users_by_id[s.user_id]["slots"].append(s)
+        users_data = []
+        for data in users_by_id.values():
+            member_roles = sorted(
+                {
+                    role_labels.get(sl.deliveryRole)
+                    for sl in data["slots"]
+                    if sl.deliveryRole
+                }
+            )
+            users_data.append(
+                {
+                    "user": data["user"],
+                    "used_days": slots_to_days(data["slots"], hours_in_day, used_fn),
+                    "scheduled_days": slots_to_days(
+                        data["slots"], hours_in_day, sched_fn
+                    ),
+                    "total_days": slots_to_days(data["slots"], hours_in_day),
+                    "roles": member_roles,
+                }
+            )
+        users_data.sort(key=lambda x: x["total_days"], reverse=True)
+        # Share of the project's total days, so the member tables can render a
+        # simple proportional progress bar without template-side arithmetic.
+        project_total = summary["total_days"] or 0
+        for entry in users_data:
+            entry["pct"] = (
+                round(entry["total_days"] / project_total * 100, 1)
+                if project_total
+                else 0
+            )
+
+        # --- Per-delivery-role breakdown (role 0 = None is skipped) ---
+        roles_data = []
+        for role_val, role_name in TimeSlotDeliveryRole.CHOICES:
+            if role_val == 0:
+                continue
+            role_slots = [s for s in slots if s.deliveryRole == role_val]
+            if role_slots:
+                roles_data.append(
+                    {
+                        "role_name": role_name,
+                        "used_days": slots_to_days(role_slots, hours_in_day, used_fn),
+                        "scheduled_days": slots_to_days(
+                            role_slots, hours_in_day, sched_fn
+                        ),
+                        "total_days": slots_to_days(role_slots, hours_in_day),
+                    }
+                )
+
+        # --- Monthly burn-down (days consumed per past month + cumulative) ---
+        monthly = {}
+        for s in slots:
+            if s.end >= now:
+                continue
+            month_key = s.start.strftime("%Y-%m")
+            monthly.setdefault(month_key, []).append(s)
+        # Walk every month from the first to the last consumed month so gap
+        # months render as empty (0 days) rather than being skipped, which
+        # would make the burn-down jump across missing months.
+        monthly_data = []
+        if monthly:
+            keys = sorted(monthly.keys())
+            year, month = (int(p) for p in keys[0].split("-"))
+            last_year, last_month = (int(p) for p in keys[-1].split("-"))
+            cumulative = Decimal()
+            while (year, month) <= (last_year, last_month):
+                month_key = "%04d-%02d" % (year, month)
+                days = slots_to_days(monthly.get(month_key, []), hours_in_day)
+                cumulative += Decimal(str(days))
+                monthly_data.append(
+                    {
+                        "month": month_key,
+                        "days": days,
+                        "cumulative": round(cumulative, 1),
+                    }
+                )
+                month += 1
+                if month > 12:
+                    month = 1
+                    year += 1
+
+        return {
+            "summary": summary,
+            "users_data": users_data,
+            "roles_data": roles_data,
+            "roles_total_used": summary["used_days"],
+            "roles_total_scheduled": summary["scheduled_days"],
+            "roles_total": summary["total_days"],
+            "monthly_data": monthly_data,
+        }
 
     def get_system_notes(self):
         return self.notes.filter(is_system_note=True)
