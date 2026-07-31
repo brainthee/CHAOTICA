@@ -15,6 +15,29 @@ class task_sync_rm_schedule(CronJobBase):
     schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
     code = "rm_sync.task_sync_rm_schedule"
 
+    def _touch_lock(self, task_lock, logger):
+        """Heartbeat the task lock's ``last_updated`` timestamp.
+
+        Returns ``True`` while the lock is still ours. Returns ``False`` if the
+        lock row has gone: a concurrent run that considered this run stale will
+        delete the lock (see :meth:`RMTaskLock.is_stale`), after which Django
+        raises ``DatabaseError`` on the zero-row UPDATE. In that case we bow out
+        cleanly — another run now owns the sync — rather than crashing the whole
+        task part-way through (which previously aborted the RM import).
+        """
+        from django.db import DatabaseError
+
+        try:
+            task_lock.last_updated = timezone.now()
+            task_lock.save(update_fields=["last_updated"])
+            return True
+        except DatabaseError:
+            logger.warning(
+                "RM sync lock lost (reclaimed as stale by a concurrent run); "
+                "aborting this run to avoid double-processing."
+            )
+            return False
+
     def do(self):
         # Create a string buffer and a handler to capture logs
         log_stream = io.StringIO()
@@ -64,8 +87,8 @@ class task_sync_rm_schedule(CronJobBase):
                     direction=RMSyncDirection.PUSH
                 ):
                     sync_record.sync_records()
-                    task_lock.last_updated = timezone.now()
-                    task_lock.save(update_fields=["last_updated"])
+                    if not self._touch_lock(task_lock, logger):
+                        return log_stream.getvalue()
 
             # PULL: RM → CHAOTICA. Reads from RM, writes to CHAOTICA, so it is safe under
             # the read-only guard and runs whenever RM_SYNC_PULL_ENABLED is set.
@@ -77,8 +100,8 @@ class task_sync_rm_schedule(CronJobBase):
                     sync_rm_users()
                 except Exception:
                     logger.exception("RM user import failed")
-                task_lock.last_updated = timezone.now()
-                task_lock.save(update_fields=["last_updated"])
+                if not self._touch_lock(task_lock, logger):
+                    return log_stream.getvalue()
 
                 for sync_record in RMSyncRecord.objects.filter(
                     direction=RMSyncDirection.PULL
@@ -87,8 +110,8 @@ class task_sync_rm_schedule(CronJobBase):
                         sync_record.pull_records()
                     except Exception:
                         logger.exception("Inbound pull failed for %s", sync_record.user)
-                    task_lock.last_updated = timezone.now()
-                    task_lock.save(update_fields=["last_updated"])
+                    if not self._touch_lock(task_lock, logger):
+                        return log_stream.getvalue()
 
             logger.info("Task successfully completed")
 

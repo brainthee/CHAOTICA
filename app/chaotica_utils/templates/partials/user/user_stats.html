@@ -17,22 +17,22 @@
                 <div class="col col-md-auto">
                     <div class="d-flex flex-row text-center">
                             <div class="m0 px-3 border-translucent border-end">
-                                <h4 class="text-body mb-0">{{ stats.upcoming_availability.thisweek.confirmed_percentage }}%</h4>
+                                <h4 class="text-body mb-0">{{ stats.upcoming_availability.thisweek.confirmed_percentage|default_if_none:0 }}%</h4>
                                 <p class="text-body-secondary fs-10 mb-0">This<br />Week</p>
                             </div>
 
                             <div class="m0 px-3 border-translucent border-end">
-                                <h4 class="text-body mb-0">{{ stats.upcoming_availability.twoweeks.confirmed_percentage }}%</h4>
+                                <h4 class="text-body mb-0">{{ stats.upcoming_availability.twoweeks.confirmed_percentage|default_if_none:0 }}%</h4>
                                 <p class="text-body-secondary fs-10 mb-0">Two<br />Weeks</p>
                             </div>
 
                             <div class="m0 px-3 border-translucent border-end">
-                                <h4 class="text-body mb-0">{{ stats.upcoming_availability.fourweeks.confirmed_percentage }}%</h4>
+                                <h4 class="text-body mb-0">{{ stats.upcoming_availability.fourweeks.confirmed_percentage|default_if_none:0 }}%</h4>
                                 <p class="text-body-secondary fs-10 mb-0">Four<br />Weeks</p>
                             </div>
 
                             <div class="m0 ps-3">
-                                <h4 class="text-body mb-0">{{ stats.upcoming_availability.eightweeks.confirmed_percentage }}%</h4>
+                                <h4 class="text-body mb-0">{{ stats.upcoming_availability.eightweeks.confirmed_percentage|default_if_none:0 }}%</h4>
                                 <p class="text-body-secondary fs-10 mb-0">Eight<br />Weeks</p>
                             </div>
                       </div>
@@ -345,10 +345,10 @@ $(function() {
                         focus: 'series'
                     },
                     data: [
-                    {{ stats.upcoming_availability.eightweeks.confirmed_percentage }},
-                    {{ stats.upcoming_availability.fourweeks.confirmed_percentage }},
-                    {{ stats.upcoming_availability.twoweeks.confirmed_percentage }},
-                    {{ stats.upcoming_availability.thisweek.confirmed_percentage }},
+                    {{ stats.upcoming_availability.eightweeks.confirmed_percentage|default_if_none:0 }},
+                    {{ stats.upcoming_availability.fourweeks.confirmed_percentage|default_if_none:0 }},
+                    {{ stats.upcoming_availability.twoweeks.confirmed_percentage|default_if_none:0 }},
+                    {{ stats.upcoming_availability.thisweek.confirmed_percentage|default_if_none:0 }},
                     ]
                 },
                 {
@@ -365,10 +365,10 @@ $(function() {
                         focus: 'series'
                     },
                     data: [
-                    {{ stats.upcoming_availability.eightweeks.tentative_percentage }},
-                    {{ stats.upcoming_availability.fourweeks.tentative_percentage }},
-                    {{ stats.upcoming_availability.twoweeks.tentative_percentage }},
-                    {{ stats.upcoming_availability.thisweek.tentative_percentage }},
+                    {{ stats.upcoming_availability.eightweeks.tentative_percentage|default_if_none:0 }},
+                    {{ stats.upcoming_availability.fourweeks.tentative_percentage|default_if_none:0 }},
+                    {{ stats.upcoming_availability.twoweeks.tentative_percentage|default_if_none:0 }},
+                    {{ stats.upcoming_availability.thisweek.tentative_percentage|default_if_none:0 }},
                     ]
                 },
                 {
@@ -385,10 +385,10 @@ $(function() {
                         focus: 'series'
                     },
                     data: [
-                    {{ stats.upcoming_availability.eightweeks.non_delivery_percentage }},
-                    {{ stats.upcoming_availability.fourweeks.non_delivery_percentage }},
-                    {{ stats.upcoming_availability.twoweeks.non_delivery_percentage }},
-                    {{ stats.upcoming_availability.thisweek.non_delivery_percentage }},
+                    {{ stats.upcoming_availability.eightweeks.non_delivery_percentage|default_if_none:0 }},
+                    {{ stats.upcoming_availability.fourweeks.non_delivery_percentage|default_if_none:0 }},
+                    {{ stats.upcoming_availability.twoweeks.non_delivery_percentage|default_if_none:0 }},
+                    {{ stats.upcoming_availability.thisweek.non_delivery_percentage|default_if_none:0 }},
                     ]
                 },
                 {
@@ -405,10 +405,10 @@ $(function() {
                         focus: 'series'
                     },
                     data: [
-                    {{ stats.upcoming_availability.eightweeks.available_percentage }},
-                    {{ stats.upcoming_availability.fourweeks.available_percentage }},
-                    {{ stats.upcoming_availability.twoweeks.available_percentage }},
-                    {{ stats.upcoming_availability.thisweek.available_percentage }},
+                    {{ stats.upcoming_availability.eightweeks.available_percentage|default_if_none:0 }},
+                    {{ stats.upcoming_availability.fourweeks.available_percentage|default_if_none:0 }},
+                    {{ stats.upcoming_availability.twoweeks.available_percentage|default_if_none:0 }},
+                    {{ stats.upcoming_availability.thisweek.available_percentage|default_if_none:0 }},
                     ]
                 }
             ],
