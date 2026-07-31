@@ -161,9 +161,11 @@ class UserDetailView(UserBaseView, DetailView):
             role_int = grp.getGlobalRoleINT()
             global_roles.append(
                 {
-                    "label": GlobalRoles.CHOICES[role_int][1]
-                    if role_int is not None
-                    else grp.name,
+                    "label": (
+                        GlobalRoles.CHOICES[role_int][1]
+                        if role_int is not None
+                        else grp.name
+                    ),
                     "colour": grp.role_bs_colour() or "secondary",
                 }
             )
@@ -233,6 +235,67 @@ def update_own_theme(request):
 
 
 @login_required
+@require_http_methods(["POST"])
+def create_own_api_token(request):
+    """Create the caller's personal API token if they don't have one yet.
+
+    DRF's ``authtoken`` is one token per user, stored retrievably, so this is a
+    non-destructive get-or-create. An API token acts entirely as its owner: it
+    inherits exactly the same permissions and object scoping the user has in the
+    UI, and can never do more.
+    """
+    from rest_framework.authtoken.models import Token
+
+    _, created = Token.objects.get_or_create(user=request.user)
+    if created:
+        messages.success(request, "API token created.")
+    else:
+        messages.info(request, "You already have an API token.")
+    return HttpResponseRedirect(reverse("view_own_profile") + "#api-tokens")
+
+
+@login_required
+def reset_own_api_token(request):
+    """Regenerate the caller's API token (invalidates the previous key)."""
+    from rest_framework.authtoken.models import Token
+
+    data = {"form_is_valid": False}
+    if request.method == "POST" and request.POST.get("user_action") == (
+        "approve_action"
+    ):
+        Token.objects.filter(user=request.user).delete()
+        Token.objects.create(user=request.user)
+        messages.success(request, "API token regenerated. The old key no longer works.")
+        data["form_is_valid"] = True
+        data["next"] = reverse("view_own_profile") + "#api-tokens"
+
+    data["html_form"] = loader.render_to_string(
+        "modals/api_token_reset.html", {}, request=request
+    )
+    return JsonResponse(data)
+
+
+@login_required
+def revoke_own_api_token(request):
+    """Delete the caller's API token entirely (revoke API access)."""
+    from rest_framework.authtoken.models import Token
+
+    data = {"form_is_valid": False}
+    if request.method == "POST" and request.POST.get("user_action") == (
+        "approve_action"
+    ):
+        Token.objects.filter(user=request.user).delete()
+        messages.info(request, "API token revoked.")
+        data["form_is_valid"] = True
+        data["next"] = reverse("view_own_profile") + "#api-tokens"
+
+    data["html_form"] = loader.render_to_string(
+        "modals/api_token_revoke.html", {}, request=request
+    )
+    return JsonResponse(data)
+
+
+@login_required
 @require_http_methods(["GET", "POST"])
 def update_profile(request, email):
     from jobtracker.models import Skill
@@ -257,19 +320,24 @@ def update_profile(request, email):
         if can_manage_levels:
             job_level_form = UpdateUserJobLevelForm(request.POST)
             if job_level_form.is_valid():
-                job_level = job_level_form.cleaned_data.get('job_level_id')
-                job_level_notes = job_level_form.cleaned_data.get('job_level_notes', '')
-                clear_job_level = job_level_form.cleaned_data.get('clear_job_level', False)
+                job_level = job_level_form.cleaned_data.get("job_level_id")
+                job_level_notes = job_level_form.cleaned_data.get("job_level_notes", "")
+                clear_job_level = job_level_form.cleaned_data.get(
+                    "clear_job_level", False
+                )
 
                 if job_level:
                     # Only create new assignment if it's different from current
-                    if not current_job_level or current_job_level.job_level != job_level:
+                    if (
+                        not current_job_level
+                        or current_job_level.job_level != job_level
+                    ):
                         UserJobLevel.assign_level(
-                            user=usr,
-                            job_level=job_level,
-                            notes=job_level_notes
+                            user=usr, job_level=job_level, notes=job_level_notes
                         )
-                        messages.success(request, f"Job level updated to {job_level.short_label}")
+                        messages.success(
+                            request, f"Job level updated to {job_level.short_label}"
+                        )
                 elif clear_job_level and current_job_level:
                     # Mark current level as inactive if clearing
                     current_job_level.is_current = False
@@ -296,7 +364,9 @@ def update_profile(request, email):
 
     context = {
         "usr": usr,
-        "skills": Skill.objects.all().prefetch_related("category").order_by("category", "name"),
+        "skills": Skill.objects.all()
+        .prefetch_related("category")
+        .order_by("category", "name"),
         "user_skills": {us.skill_id: us for us in usr.skills.all()},
         "languages": Language.objects.all(),
         "current_job_level": current_job_level,
@@ -318,6 +388,10 @@ def update_profile(request, email):
                 kwargs={"cal_key": usr.schedule_feed_family_id},
             )
         )
+        # Personal API token (one per user; None until they create one).
+        from rest_framework.authtoken.models import Token
+
+        context["api_token"] = Token.objects.filter(user=usr).first()
 
     context["profileForm"] = form
     template = loader.get_template("update_profile.html")
@@ -329,6 +403,7 @@ def update_profile(request, email):
 @require_http_methods(["GET", "POST"])
 def update_skills(request, email):
     from jobtracker.models import Skill, UserSkill
+
     data = {}
     usr = can_manage_user(request.user, email)
     if not usr:
@@ -336,16 +411,16 @@ def update_skills(request, email):
 
     if request.method == "POST":
         # Check if this is an improvement update
-        if request.POST.get('action') == 'update_improvement':
-            skill_slug = request.POST.get('skill_slug')
-            interested = request.POST.get('interested_in_improving') == '1'
+        if request.POST.get("action") == "update_improvement":
+            skill_slug = request.POST.get("skill_slug")
+            interested = request.POST.get("interested_in_improving") == "1"
 
             try:
                 skill = Skill.objects.get(slug=skill_slug)
                 user_skill, created = UserSkill.objects.get_or_create(
                     user=usr,
                     skill=skill,
-                    defaults={'rating': 0}  # Default to no experience if creating new
+                    defaults={"rating": 0},  # Default to no experience if creating new
                 )
                 user_skill.interested_in_improving_skill = interested
                 user_skill.last_updated_on = timezone.now()
@@ -357,7 +432,12 @@ def update_skills(request, email):
             # Handle regular skill rating updates
             for field in request.POST:
                 # Skip CSRF token and other non-skill fields
-                if field in ['csrfmiddlewaretoken', 'action', 'skill_slug', 'interested_in_improving']:
+                if field in [
+                    "csrfmiddlewaretoken",
+                    "action",
+                    "skill_slug",
+                    "interested_in_improving",
+                ]:
                     continue
 
                 # get skill..
@@ -365,7 +445,9 @@ def update_skills(request, email):
                     skill = Skill.objects.get(slug=field)
                     value = int(request.POST.get(field))
 
-                    user_skill, created = UserSkill.objects.get_or_create(user=usr, skill=skill)
+                    user_skill, created = UserSkill.objects.get_or_create(
+                        user=usr, skill=skill
+                    )
                     if user_skill.rating != value:
                         user_skill.rating = value
                         user_skill.last_updated_on = timezone.now()
@@ -495,20 +577,9 @@ def user_manage_status(request, email, state):
     u = get_object_or_404(User, email=email)
     data = dict()
     if request.method == "POST":
-        if u.is_active and state == "deactivate":
-            u.is_active = False
-            u.save()
-            from django.utils import timezone
-            now = timezone.now()
-            u.teams.filter(left_at__isnull=True).update(left_at=now.date())
-            u.unit_memberships.filter(left_date__isnull=True).update(left_date=now)
-            data["form_is_valid"] = True
-        elif not u.is_active and state == "activate":
-            u.is_active = True
-            u.save()
-            data["form_is_valid"] = True
-        else:
-            data["form_is_valid"] = False
+        # set_active_status is the shared source of truth (also used by the
+        # /api/v1/ set-status action); it returns False for a no-op request.
+        data["form_is_valid"] = u.set_active_status(state == "activate")
 
     context = {"u": u, "state": state}
     data["html_form"] = loader.render_to_string(
@@ -557,8 +628,12 @@ def user_feedback_summary(request, email):
         date_range_split = date_range_raw.split(" to ")
         if len(date_range_split) == 2:
             try:
-                start_date = timezone.datetime.strptime(date_range_split[0], "%Y-%m-%d").date()
-                end_date = timezone.datetime.strptime(date_range_split[1], "%Y-%m-%d").date()
+                start_date = timezone.datetime.strptime(
+                    date_range_split[0], "%Y-%m-%d"
+                ).date()
+                end_date = timezone.datetime.strptime(
+                    date_range_split[1], "%Y-%m-%d"
+                ).date()
             except ValueError:
                 # Invalid date format, ignore
                 pass
@@ -568,7 +643,9 @@ def user_feedback_summary(request, email):
         start_date_param = request.GET.get("start_date")
         if start_date_param:
             try:
-                start_date = timezone.datetime.strptime(start_date_param, "%Y-%m-%d").date()
+                start_date = timezone.datetime.strptime(
+                    start_date_param, "%Y-%m-%d"
+                ).date()
             except ValueError:
                 pass
 
@@ -586,9 +663,11 @@ def user_feedback_summary(request, email):
         start_date = end_date - datetime.timedelta(days=365)
 
     # Get user's authored reports with QA data
-    reports = user.get_reports().select_related(
-        'techqa_by', 'presqa_by', 'service', 'job'
-    ).prefetch_related('job__client', 'feedback__author')
+    reports = (
+        user.get_reports()
+        .select_related("techqa_by", "presqa_by", "service", "job")
+        .prefetch_related("job__client", "feedback__author")
+    )
 
     # Apply date filtering if dates are provided
     if start_date:
@@ -598,11 +677,19 @@ def user_feedback_summary(request, email):
 
     # Calculate summary statistics
     total_reports = reports.count()
-    techqa_ratings = [r.techqa_report_rating for r in reports if r.techqa_report_rating is not None]
-    presqa_ratings = [r.presqa_report_rating for r in reports if r.presqa_report_rating is not None]
+    techqa_ratings = [
+        r.techqa_report_rating for r in reports if r.techqa_report_rating is not None
+    ]
+    presqa_ratings = [
+        r.presqa_report_rating for r in reports if r.presqa_report_rating is not None
+    ]
 
-    avg_techqa_rating = sum(techqa_ratings) / len(techqa_ratings) if techqa_ratings else None
-    avg_presqa_rating = sum(presqa_ratings) / len(presqa_ratings) if presqa_ratings else None
+    avg_techqa_rating = (
+        sum(techqa_ratings) / len(techqa_ratings) if techqa_ratings else None
+    )
+    avg_presqa_rating = (
+        sum(presqa_ratings) / len(presqa_ratings) if presqa_ratings else None
+    )
 
     # Calculate combined average if both ratings exist
     combined_avg_rating = None
@@ -612,20 +699,22 @@ def user_feedback_summary(request, email):
     # Format date range for display
     date_range_display = ""
     if start_date and end_date:
-        date_range_display = f"{start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}"
+        date_range_display = (
+            f"{start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}"
+        )
 
     context = {
-        'user_profile': user,
-        'reports': reports,
-        'total_reports': total_reports,
-        'techqa_reports_count': len(techqa_ratings),
-        'presqa_reports_count': len(presqa_ratings),
-        'avg_techqa_rating': avg_techqa_rating,
-        'avg_presqa_rating': avg_presqa_rating,
-        'combined_avg_rating': combined_avg_rating,
-        'start_date': start_date,
-        'end_date': end_date,
-        'date_range_display': date_range_display,
+        "user_profile": user,
+        "reports": reports,
+        "total_reports": total_reports,
+        "techqa_reports_count": len(techqa_ratings),
+        "presqa_reports_count": len(presqa_ratings),
+        "avg_techqa_rating": avg_techqa_rating,
+        "avg_presqa_rating": avg_presqa_rating,
+        "combined_avg_rating": combined_avg_rating,
+        "start_date": start_date,
+        "end_date": end_date,
+        "date_range_display": date_range_display,
     }
 
     template = loader.get_template("chaotica_utils/user_feedback_summary.html")

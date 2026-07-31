@@ -76,7 +76,8 @@ def manage_leave(request):
     all_leave = list(
         LeaveRequest.objects.filter(
             # Show future leave and past leave within the configured history window
-            Q(end_date__gte=timezone.now()) | Q(start_date__gte=history_cutoff),
+            Q(end_date__gte=timezone.now())
+            | Q(start_date__gte=history_cutoff),
         )
         .filter(
             Q(
@@ -104,17 +105,23 @@ def manage_leave(request):
             ),
             Prefetch(
                 "user__job_level_history",
-                queryset=UserJobLevel.objects.filter(is_current=True).select_related("job_level"),
+                queryset=UserJobLevel.objects.filter(is_current=True).select_related(
+                    "job_level"
+                ),
                 to_attr="_current_levels",
             ),
             Prefetch(
                 "user__manager__job_level_history",
-                queryset=UserJobLevel.objects.filter(is_current=True).select_related("job_level"),
+                queryset=UserJobLevel.objects.filter(is_current=True).select_related(
+                    "job_level"
+                ),
                 to_attr="_current_levels",
             ),
             Prefetch(
                 "user__acting_manager__job_level_history",
-                queryset=UserJobLevel.objects.filter(is_current=True).select_related("job_level"),
+                queryset=UserJobLevel.objects.filter(is_current=True).select_related(
+                    "job_level"
+                ),
                 to_attr="_current_levels",
             ),
         )
@@ -132,7 +139,9 @@ def manage_leave(request):
     )
 
     # Split in Python (avoids running the query + prefetches twice)
-    pending_leave = [l for l in all_leave if not l.authorised and not l.cancelled and not l.declined]
+    pending_leave = [
+        l for l in all_leave if not l.authorised and not l.cancelled and not l.declined
+    ]
     leave_list = [l for l in all_leave if l.authorised or l.cancelled or l.declined]
 
     context = {

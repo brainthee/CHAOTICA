@@ -58,8 +58,15 @@ class UserJobLevelInline(admin.TabularInline):
 
 
 class CustomUserAdmin(UserAdmin, GuardedModelAdmin):
-    list_display = ["email", "first_name", "last_name", "is_active", "is_staff", "last_login"]
-    search_fields = ['email', 'first_name', 'last_name']
+    list_display = [
+        "email",
+        "first_name",
+        "last_name",
+        "is_active",
+        "is_staff",
+        "last_login",
+    ]
+    search_fields = ["email", "first_name", "last_name"]
     ordering = ["email"]
     list_filter = [
         "is_active",
@@ -98,6 +105,7 @@ class CustomUserAdmin(UserAdmin, GuardedModelAdmin):
     def activate_users(self, request, queryset):
         count = queryset.update(is_active=True)
         self.message_user(request, f"{count} user(s) activated.")
+
     fieldsets = (
         (
             None,
@@ -158,24 +166,27 @@ class UserCostAdmin(admin.ModelAdmin):
 class UserInvitationAdmin(admin.ModelAdmin):
     list_display = ["invited_email", "sent", "accepted", "invited_by"]
 
+
 admin.site.register(Group, GroupAdmin)
 admin.site.register(Language)
 admin.site.register(Note)
 admin.site.register(Quote)
 
+
 @admin.register(LeaveRequest)
 class LeaveRequestAdmin(admin.ModelAdmin):
-    readonly_fields = ['user', 'timeslot']
-    list_display = ["user", 
-                    "requested_on", 
-                    "start_date",
-                    "end_date", 
-                    "type_of_leave",
-                    "timeslot", 
-                    "authorised",
-                    "cancelled",
-                    "declined",
-                    ]
+    readonly_fields = ["user", "timeslot"]
+    list_display = [
+        "user",
+        "requested_on",
+        "start_date",
+        "end_date",
+        "type_of_leave",
+        "timeslot",
+        "authorised",
+        "cancelled",
+        "declined",
+    ]
     list_filter = [
         "type_of_leave",
         "start_date",
@@ -220,12 +231,17 @@ class JobLevelAdmin(admin.ModelAdmin):
 class UserJobLevelAdmin(admin.ModelAdmin):
     list_display = ["user", "job_level", "assigned_date", "is_current"]
     list_filter = ["is_current", "assigned_date", "job_level"]
-    search_fields = ["user__email", "user__first_name", "user__last_name", "job_level__short_label"]
+    search_fields = [
+        "user__email",
+        "user__first_name",
+        "user__last_name",
+        "job_level__short_label",
+    ]
     readonly_fields = ["created_at"]
     date_hierarchy = "assigned_date"
 
     def get_queryset(self, request):
-        return super().get_queryset(request).select_related('user', 'job_level')
+        return super().get_queryset(request).select_related("user", "job_level")
 
 
 class IPCIDRRangeInline(admin.TabularInline):
@@ -263,4 +279,4 @@ class IPCIDRRangeAdmin(admin.ModelAdmin):
         return ["created_at", "updated_at"]
 
     def get_queryset(self, request):
-        return super().get_queryset(request).select_related('tag')
+        return super().get_queryset(request).select_related("tag")

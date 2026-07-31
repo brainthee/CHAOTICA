@@ -25,19 +25,18 @@ class LoginView(auth_views.LoginView):
     def get(self, request, *args, **kwargs):
         if config.ADFS_ENABLED and config.ADFS_AUTO_LOGIN:
             # Build ADFS URL with next parameter
-            adfs_url = reverse('django_auth_adfs:login')
+            adfs_url = reverse("django_auth_adfs:login")
             try:
                 # This method already validates the next parameter
                 success_url = self.get_success_url()
             except:
                 success_url = None
-            
+
             if success_url:
                 adfs_url += f"?next={success_url}"
             return redirect(adfs_url)
 
         return super().get(request, *args, **kwargs)
-    
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -127,7 +126,7 @@ def signup(request, invite_id=None):
             email = form.cleaned_data.get("email")
             raw_password = form.cleaned_data.get("password1")
             user = authenticate(email=email, password=raw_password)
-            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+            login(request, user, backend="django.contrib.auth.backends.ModelBackend")
             return redirect("home")
 
         return render(request, "signup.html", {"form": form})

@@ -1,0 +1,27 @@
+<div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+        <form method="post" action="{{ request.get_full_path }}" class="js-submit-modal-form">
+            {% csrf_token %}
+            <div class="modal-header bg-danger">
+                <h6 class="modal-title text-white font-weight-normal" id="modal-title-default">
+                    Revoke API Token
+                </h6>
+                <button type="button" class="btn-close text-body-emphasis"
+                    data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>
+                    Are you sure you wish to revoke your API token? Your key will be
+                    deleted and API access will stop working immediately. You can
+                    generate a new token later if you need one.
+                </p>
+            </div>
+            <div class="modal-footer bg-danger">
+                <input type="hidden" name="user_action" value="">
+                <button type="submit" onclick="this.form.user_action.value=this.value"
+                    value="approve_action" class="btn btn-phoenix-danger mb-0">Revoke</button>
+                <button type="button" class="btn btn-light shadow-none mb-0" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>

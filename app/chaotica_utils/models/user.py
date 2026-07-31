@@ -66,7 +66,7 @@ class Group(django.contrib.auth.models.Group):
 
         # If we reach this; this group isn't matched with a global role in code
         return False
-    
+
 
 class UserInvitation(models.Model):
     invited_email = models.EmailField(
@@ -112,7 +112,10 @@ class UserInvitation(models.Model):
             context["action_link"] = ext_reverse(self.get_absolute_url())
 
             from notifications.email import send_templated_email
-            send_templated_email("emails/user_invite.html", context, [self.invited_email])
+
+            send_templated_email(
+                "emails/user_invite.html", context, [self.invited_email]
+            )
 
             self.sent = timezone.now()
             self.save()
@@ -170,16 +173,20 @@ class User(AbstractUser):
         verbose_name="Job Title", max_length=255, null=True, blank=True, default=""
     )
     alias = models.CharField(
-        verbose_name="Alias/Nickname", max_length=255, null=True, blank=True, default="", 
-        help_text="A nickname or preferred display name for this user"
+        verbose_name="Alias/Nickname",
+        max_length=255,
+        null=True,
+        blank=True,
+        default="",
+        help_text="A nickname or preferred display name for this user",
     )
     city = models.ForeignKey(
-        'cities_light.City',
+        "cities_light.City",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         verbose_name="Location",
-        help_text="Select your primary city/location"
+        help_text="Select your primary city/location",
     )
     # Removed: location, longitude, latitude fields (coordinates now come from City model)
 
@@ -378,7 +385,6 @@ class User(AbstractUser):
 
         return True
 
-
     def email_address(self):
         if self.notification_email and parseaddr(self.notification_email)[1]:
             return self.notification_email
@@ -426,18 +432,18 @@ class User(AbstractUser):
     def _get_last_leave_renewal_date(self):
         # Get current datetime in UTC
         now_utc = timezone.now()
-        
+
         # Convert to user's timezone if available
-        if hasattr(self, 'pref_timezone') and self.pref_timezone:
+        if hasattr(self, "pref_timezone") and self.pref_timezone:
             user_tz = pytz.timezone(self.pref_timezone)
             today = now_utc.astimezone(user_tz).date()
         else:
             # Fall back to server timezone if user preference isn't set
             today = now_utc.date()
-        
+
         # Calculate renewal date in current year
         renewal_date = self.contracted_leave_renewal.replace(year=today.year)
-        
+
         # If renewal date hasn't occurred yet this year, use last year's date
         if renewal_date > today:
             return renewal_date.replace(year=today.year - 1)
@@ -447,9 +453,9 @@ class User(AbstractUser):
     def _get_next_leave_renewal_date(self):
         # Get current datetime in UTC
         now_utc = timezone.now()
-        
+
         # Convert to user's timezone if available
-        if hasattr(self, 'pref_timezone') and self.pref_timezone:
+        if hasattr(self, "pref_timezone") and self.pref_timezone:
             user_tz = pytz.timezone(self.pref_timezone)
             today = now_utc.astimezone(user_tz).date()
         else:
@@ -503,7 +509,7 @@ class User(AbstractUser):
             return reverse("user_profile", kwargs={"email": self.email})
         else:
             return None
-    
+
     def get_profile_url(self):
         if self.email:
             return reverse("user_profile", kwargs={"email": self.email})
@@ -522,14 +528,14 @@ class User(AbstractUser):
                 "admin:%s_%s_change" % (self._meta.app_label, self._meta.model_name),
                 args=[self.id],
             )
-    
+
     def has_manager(self):
-        return (self.manager or self.acting_manager)
+        return self.manager or self.acting_manager
 
     def can_be_managed_by(self, requesting_user):
         if not requesting_user:
             return False
-        
+
         # Case 1: Self-management - user can always manage themselves
         if requesting_user.pk == self.pk:
             return True
@@ -584,15 +590,42 @@ class User(AbstractUser):
             .filter(status__in=PhaseStatuses.ACTIVE_STATUSES)
             .order_by("-job__id", "-id")
         )
-    
+
     def get_current_level(self):
         # Fast path: use prefetched data when available
-        if hasattr(self, '_current_levels'):
+        if hasattr(self, "_current_levels"):
             return self._current_levels[0] if self._current_levels else None
         if self.job_level_history.filter(is_current=True).exists():
             return self.job_level_history.get(is_current=True)
         else:
             return None
+
+    def set_active_status(self, active):
+        """Activate or deactivate this account.
+
+        The single source of truth for what "deactivating a user" means, shared
+        by the management UI (``user_manage_status``) and the ``/api/v1/`` write
+        action so the two can never drift. Deactivation also closes any open team
+        and org-unit memberships (mirroring a leaver), which is why this lives on
+        the model rather than being a bare ``is_active`` flip.
+
+        Returns ``True`` if the account changed state, ``False`` if it was
+        already in the requested state (idempotent no-op).
+        """
+        active = bool(active)
+        if active == self.is_active:
+            return False
+
+        self.is_active = active
+        self.save()
+
+        if not active:
+            now = timezone.now()
+            self.teams.filter(left_at__isnull=True).update(left_at=now.date())
+            self.unit_memberships.filter(left_date__isnull=True).update(
+                left_date=now
+            )
+        return True
 
     def get_jobs(self):
         from jobtracker.models import Job
@@ -654,21 +687,15 @@ class User(AbstractUser):
         from django.utils import timezone
 
         tz = timezone.get_current_timezone()
-        if isinstance(start_date, date) and not isinstance(
-            start_date, datetime
-        ):
-            start_date = datetime.combine(
-                start_date, time.min
-            ).replace(tzinfo=tz)
+        if isinstance(start_date, date) and not isinstance(start_date, datetime):
+            start_date = datetime.combine(start_date, time.min).replace(tzinfo=tz)
         elif isinstance(start_date, datetime) and start_date.tzinfo is None:
             start_date = start_date.replace(tzinfo=tz)
 
         # Convert end_date to datetime (end of day if it's a date object)
         if isinstance(end_date, date) and not isinstance(end_date, datetime):
             # If end_date is a date, use the end of that day (23:59:59)
-            end_date = datetime.combine(end_date, time.max).replace(
-                tzinfo=tz
-            )
+            end_date = datetime.combine(end_date, time.max).replace(tzinfo=tz)
         elif isinstance(end_date, datetime) and end_date.tzinfo is None:
             end_date = end_date.replace(tzinfo=tz)
 
@@ -694,21 +721,15 @@ class User(AbstractUser):
         from django.utils import timezone
 
         tz = timezone.get_current_timezone()
-        if isinstance(start_date, date) and not isinstance(
-            start_date, datetime
-        ):
-            start_date = datetime.combine(
-                start_date, time.min
-            ).replace(tzinfo=tz)
+        if isinstance(start_date, date) and not isinstance(start_date, datetime):
+            start_date = datetime.combine(start_date, time.min).replace(tzinfo=tz)
         elif isinstance(start_date, datetime) and start_date.tzinfo is None:
             start_date = start_date.replace(tzinfo=tz)
 
         # Convert end_date to datetime (end of day if it's a date object)
         if isinstance(end_date, date) and not isinstance(end_date, datetime):
             # If end_date is a date, use the end of that day (23:59:59)
-            end_date = datetime.combine(end_date, time.max).replace(
-                tzinfo=tz
-            )
+            end_date = datetime.combine(end_date, time.max).replace(tzinfo=tz)
         elif isinstance(end_date, datetime) and end_date.tzinfo is None:
             end_date = end_date.replace(tzinfo=tz)
 
@@ -746,21 +767,15 @@ class User(AbstractUser):
         tz = timezone.get_current_timezone()
 
         # Convert date to datetime (start of day)
-        if isinstance(start_date, date) and not isinstance(
-            start_date, datetime
-        ):
-            start_date = datetime.combine(
-                start_date, time.min
-            ).replace(tzinfo=tz)
+        if isinstance(start_date, date) and not isinstance(start_date, datetime):
+            start_date = datetime.combine(start_date, time.min).replace(tzinfo=tz)
         elif isinstance(start_date, datetime) and start_date.tzinfo is None:
             start_date = start_date.replace(tzinfo=tz)
 
         # Convert end_date to datetime (end of day if it's a date object)
         if isinstance(end_date, date) and not isinstance(end_date, datetime):
             # If end_date is a date, use the end of that day (23:59:59)
-            end_date = datetime.combine(end_date, time.max).replace(
-                tzinfo=tz
-            )
+            end_date = datetime.combine(end_date, time.max).replace(tzinfo=tz)
         elif isinstance(end_date, datetime) and end_date.tzinfo is None:
             end_date = end_date.replace(tzinfo=tz)
 
@@ -949,21 +964,15 @@ class User(AbstractUser):
         tz = timezone.get_current_timezone()
 
         # Convert date to datetime (start of day)
-        if isinstance(start_date, date) and not isinstance(
-            start_date, datetime
-        ):
-            start_date = datetime.combine(
-                start_date, time.min
-            ).replace(tzinfo=tz)
+        if isinstance(start_date, date) and not isinstance(start_date, datetime):
+            start_date = datetime.combine(start_date, time.min).replace(tzinfo=tz)
         elif isinstance(start_date, datetime) and start_date.tzinfo is None:
             start_date = start_date.replace(tzinfo=tz)
 
         # Convert end_date to datetime (end of day if it's a date object)
         if isinstance(end_date, date) and not isinstance(end_date, datetime):
             # If end_date is a date, use the end of that day (23:59:59)
-            end_date = datetime.combine(end_date, time.max).replace(
-                tzinfo=tz
-            )
+            end_date = datetime.combine(end_date, time.max).replace(tzinfo=tz)
         elif isinstance(end_date, datetime) and end_date.tzinfo is None:
             end_date = end_date.replace(tzinfo=tz)
 
@@ -1367,9 +1376,9 @@ class User(AbstractUser):
         """Adjust datetime to respect working hours"""
         working_hours = self.get_working_hours()
 
-        day_start = datetime.combine(
-            dt.date(), working_hours["start"]
-        ).replace(tzinfo=dt.tzinfo)
+        day_start = datetime.combine(dt.date(), working_hours["start"]).replace(
+            tzinfo=dt.tzinfo
+        )
         day_end = datetime.combine(dt.date(), working_hours["end"]).replace(
             tzinfo=dt.tzinfo
         )
@@ -1422,10 +1431,8 @@ class User(AbstractUser):
         return datetime.combine(next_day, working_hours["start"]).replace(
             tzinfo=dt.tzinfo
         )
-    
-    def get_availability_perc(
-        self, start_date=None, end_date=None
-    ):
+
+    def get_availability_perc(self, start_date=None, end_date=None):
         util = self.calculate_user_utilization(start_date=start_date, end_date=end_date)
         if util["available_percentage"]:
             return util["available_percentage"]
@@ -1437,7 +1444,7 @@ class User(AbstractUser):
         if util["utilisation_percentage"]:
             return util["utilisation_percentage"]
         else:
-            return 0        
+            return 0
 
     def get_stats(self, org=None, start_date=None, end_date=None):
         data = {
@@ -1460,7 +1467,7 @@ class User(AbstractUser):
         )
         end_date = timezone.make_aware(datetime.combine(end_date, datetime.max.time()))
 
-        if not org and self.unit_memberships.count()>0:
+        if not org and self.unit_memberships.count() > 0:
             org = self.unit_memberships.first().unit
 
         # ranged stats
@@ -1498,7 +1505,7 @@ class User(AbstractUser):
             dict: see :func:`chaotica_utils.utils.utilisation.calculate_utilisation`
         """
         from .models import Holiday
-        from ..utils import calculate_utilisation
+        from ..utils import calculate_utilisation, classify_delivery_slot
 
         # Holidays for the user's country plus any global (country=NULL) ones.
         holidays = Holiday.objects.filter(
@@ -1521,18 +1528,17 @@ class User(AbstractUser):
         # needs. slot_type__is_working=False marks non-working time (leave/sick).
         timeslots = self.timeslots.filter(
             start__date__lte=end_date, end__date__gte=start_date
-        ).values("start", "end", "phase__status", "slot_type__is_working")
+        ).values(
+            "start",
+            "end",
+            "phase__status",
+            "project__state",
+            "project__deliverable",
+            "slot_type__is_working",
+        )
 
         slots = [
-            {
-                "start": ts["start"],
-                "end": ts["end"],
-                "is_confirmed": ts["phase__status"] is not None
-                and ts["phase__status"] >= PhaseStatuses.SCHEDULED_CONFIRMED,
-                "is_tentative": ts["phase__status"] is not None
-                and ts["phase__status"] < PhaseStatuses.SCHEDULED_CONFIRMED,
-                "is_non_working_slot": ts["slot_type__is_working"] is False,
-            }
+            {"start": ts["start"], "end": ts["end"], **classify_delivery_slot(ts)}
             for ts in timeslots
         ]
 
@@ -1570,7 +1576,6 @@ class User(AbstractUser):
         (Q(start__gte=start_date) & Q(end__lte=end_date))
         return top_services
 
-
     def get_distance_to_city(self, target_city):
         """
         Calculate distance in kilometers between user's city and target city using Haversine formula.
@@ -1578,31 +1583,38 @@ class User(AbstractUser):
         """
         if not self.city or not target_city:
             return None
-        
-        if not (self.city.latitude and self.city.longitude and 
-                target_city.latitude and target_city.longitude):
+
+        if not (
+            self.city.latitude
+            and self.city.longitude
+            and target_city.latitude
+            and target_city.longitude
+        ):
             return None
-        
+
         # Haversine formula
         import math
-        
+
         # Convert to radians
         lat1 = math.radians(self.city.latitude)
         lon1 = math.radians(self.city.longitude)
         lat2 = math.radians(target_city.latitude)
         lon2 = math.radians(target_city.longitude)
-        
+
         # Differences
         dlat = lat2 - lat1
         dlon = lon2 - lon1
-        
+
         # Haversine formula
-        a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
-        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
-        
+        a = (
+            math.sin(dlat / 2) ** 2
+            + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2) ** 2
+        )
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
         # Earth's radius in kilometers
         R = 6371.0
-        
+
         return R * c
 
     def get_distance_to_coordinates(self, target_lat, target_lon):
@@ -1612,26 +1624,29 @@ class User(AbstractUser):
         """
         if not self.city or not (self.city.latitude and self.city.longitude):
             return None
-        
+
         import math
-        
+
         # Convert to radians
         lat1 = math.radians(self.city.latitude)
         lon1 = math.radians(self.city.longitude)
         lat2 = math.radians(target_lat)
         lon2 = math.radians(target_lon)
-        
+
         # Differences
         dlat = lat2 - lat1
         dlon = lon2 - lon1
-        
+
         # Haversine formula
-        a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
-        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
-        
+        a = (
+            math.sin(dlat / 2) ** 2
+            + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2) ** 2
+        )
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
         # Earth's radius in kilometers
         R = 6371.0
-        
+
         return R * c
 
 
@@ -1641,7 +1656,7 @@ def create_default_notification_settings(sender, instance, created, **kwargs):
     if created:
         from notifications.models import NotificationSubscription
         from notifications.enums import NotificationTypes
-        
+
         # Create subscriptions for basic notification types
         default_notification_types = [
             NotificationTypes.SYSTEM,
@@ -1649,13 +1664,13 @@ def create_default_notification_settings(sender, instance, created, **kwargs):
             NotificationTypes.LEAVE_REJECTED,
             # Add more as needed
         ]
-        
+
         for notification_type in default_notification_types:
             NotificationSubscription.objects.create(
                 user=instance,
                 notification_type=notification_type,
                 email_enabled=True,
-                in_app_enabled=True
+                in_app_enabled=True,
             )
 
 

@@ -11,95 +11,170 @@
 {% endblock breadcrumbItem %}
 
 {% block content %}
-<div class="row my-3 justify-content-between">
-  <div class="col-md-9 col-auto">
-    <h2 class="text-bold text-body-emphasis">User Configuration</h2>
-    <h5 class="text-body-tertiary fw-semibold">Control which users are synchronized</h5>
+<div class="row my-3 justify-content-between align-items-center">
+  <div class="col-md-6 col-auto">
+    <h2 class="text-bold text-body-emphasis">Resource Manager Sync</h2>
+    <h5 class="text-body-tertiary fw-semibold">
+      {% if rm_read_only %}
+      <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle me-1" title="All writes to RM are blocked">
+        <span class="fa-solid fa-lock me-1"></span>RM Read-Only
+      </span>
+      {% endif %}
+      <span class="badge {% if rm_pull_enabled %}bg-success-subtle text-success-emphasis border-success-subtle{% else %}bg-body-secondary text-body-tertiary{% endif %} border">
+        Inbound (PULL) {% if rm_pull_enabled %}on{% else %}off{% endif %}
+      </span>
+    </h5>
   </div>
   <div class="col-12 col-md-auto">
-    <a class="btn btn-phoenix-secondary" href="{% url 'rm_run_sync' %}">
-      <span class="fa-solid fa-rotate me-sm-2"></span>
-      <span class="d-none d-sm-inline">Manual Sync</span>
+    <a class="btn btn-sm btn-phoenix-info" href="{% url 'rm_pull_preview' %}" title="Dry-run: report inbound changes without writing">
+      <span class="fa-solid fa-magnifying-glass me-1"></span>Preview Inbound
     </a>
-    {% comment %} <a class="btn btn-phoenix-danger" href="{% url 'rm_clear_projects' %}">
-      <span class="fa-solid fa-rotate me-sm-2"></span>
-      <span class="d-none d-sm-inline">Clear Data</span>
-    </a> {% endcomment %}
+    <a class="btn btn-sm btn-phoenix-secondary" href="{% url 'rm_import_users' %}" title="Adopt existing + create missing RM users (grouped by market unit)">
+      <span class="fa-solid fa-user-plus me-1"></span>Import Users
+    </a>
+    <a class="btn btn-sm btn-phoenix-secondary" href="{% url 'rm_apply_maps' %}" title="Assign OU + direction to users from their market unit map">
+      <span class="fa-solid fa-wand-magic-sparkles me-1"></span>Apply Maps
+    </a>
+    <a class="btn btn-sm btn-phoenix-secondary" href="{% url 'rm_import_clients' %}" title="Pre-import RM clients">
+      <span class="fa-solid fa-building me-1"></span>Import Clients
+    </a>
+    <a class="btn btn-sm btn-phoenix-secondary" href="{% url 'rm_run_sync' %}" title="Run a push (CHAOTICA → RM) sync now">
+      <span class="fa-solid fa-rotate me-1"></span>Manual Sync
+    </a>
   </div>
 </div>
 
-      <div class="mx-n4 mx-lg-n6 px-4 px-lg-6 mb-9 bg-body-emphasis border-y mt-2 position-relative top-1">
-        <div class="table-responsive scrollbar ms-n1 ps-1">
-          <table class="table table-sm fs-9 mb-0">
-            <thead>
-              <tr>
-                <th class="sort align-middle" scope="col" data-sort="customer">User</th>
-                <th class="sort align-middle pe-3" scope="col">RM ID</th>
-                <th class="sort" scope="col">Sync Authoritive</th>
-                <th class="sort" scope="col">Sync Active</th>
-                <th class="sort align-middle text-end pe-0" scope="col" ></th>
-              </tr>
-            </thead>
-            <tbody id="rm_records">
-              {% for rm_user in all_users %}
-                <tr class="hover-actions-trigger btn-reveal-trigger position-static">
-                  <td class="align-middle ">
-                    <input type="hidden" name="user" value="{{ rm_user.pk }}">
-                    {% if rm_user.rm_sync_record %}
-                    <input type="hidden" name="pk" value="{{ rm_user.rm_sync_record.pk }}">
-                    {% endif%}
-                    {% csrf_token %}
-                    {% include 'partials/users/user_table_display.html' with u=rm_user %}
-                  </td>
-                  <td class="align-middle ">
-                    <div class="input-group">
-                      <input class="form-control" type="text" name="rm_id" 
-                      id="id_rm_id" placeholder="ID" aria-label="ID" 
-                      aria-describedby="basic-addon1" value="{% if rm_user.rm_sync_record %}{{ rm_user.rm_sync_record.rm_id }}{% endif%}"/>
-                    </div>
-                  </td>
-                  <td class="align-middle">
-                    <div class="form-check form-switch">
-                      <input class="form-check-input text-success" 
-                      id="id_sync_authoritative"
-                      name="sync_authoritative" type="checkbox" {% if rm_user.rm_sync_record and rm_user.rm_sync_record.sync_authoritative %}checked=""{% endif%} />
-                    </div>                    
-                  </td>
-                  <td class="align-middle">
-                    <div class="form-check form-switch">
-                      <input class="form-check-input text-success" 
-                      id="id_sync_enabled"
-                      name="sync_enabled" type="checkbox" {% if rm_user.rm_sync_record and rm_user.rm_sync_record.sync_enabled %}checked=""{% endif%} />
-                    </div>      
-                  </td>
-                  <td class="align-middle text-body-tertiary text-end"></td>
-                </tr>
+<!-- ============================ Market Unit maps ============================ -->
+<div class="row mt-4">
+  <div class="col-12">
+    <h4 class="text-body-emphasis">Market Unit Maps</h4>
+    <p class="text-body-tertiary fs-9 mb-2">
+      Each RM "Market Unit" maps to a CHAOTICA org unit and a sync direction
+      (e.g. UKI → Push, EU units → Pull). Rows are created automatically when you import
+      users; set the org unit + direction, tick <em>Enabled</em>, then <strong>Apply Maps</strong>.
+    </p>
+  </div>
+</div>
+<div class="mx-n4 mx-lg-n6 px-4 px-lg-6 mb-6 bg-body-emphasis border-y position-relative top-1">
+  <div class="table-responsive scrollbar">
+    <table class="table table-sm fs-9 mb-0">
+      <thead>
+        <tr>
+          <th scope="col">Market Unit</th>
+          <th scope="col">Users</th>
+          <th scope="col" class="pe-3">Org Unit</th>
+          <th scope="col">Direction</th>
+          <th scope="col" class="text-center">Enabled</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in unit_maps %}
+        <tr data-pk="{{ m.pk }}">
+          <td class="align-middle fw-semibold">{{ m.market_unit }}</td>
+          <td class="align-middle text-body-tertiary">{{ m.user_count }}</td>
+          <td class="align-middle">
+            <select class="form-select form-select-sm umap-field" name="unit" id="id_unit">
+              <option value="">— unmapped —</option>
+              {% for ou in org_units %}
+              <option value="{{ ou.pk }}" {% if m.unit_id == ou.pk %}selected{% endif %}>{{ ou.name }}</option>
               {% endfor %}
-            </tbody>
-          </table>
-        </div>
-        
-      </div>
-{% endblock content %}  
+            </select>
+          </td>
+          <td class="align-middle">
+            <select class="form-select form-select-sm umap-field" name="direction" id="id_direction">
+              {% for val, label in directions %}
+              <option value="{{ val }}" {% if m.direction == val %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </td>
+          <td class="align-middle text-center">
+            <div class="form-check form-switch d-inline-block">
+              <input class="form-check-input umap-field" type="checkbox" name="enabled" id="id_enabled" {% if m.enabled %}checked{% endif %} />
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-body-tertiary p-3">No market units yet — run <strong>Import Users</strong> to populate them.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ============================ Synced users (read-only) ============================ -->
+<div class="row mt-2">
+  <div class="col-12">
+    <h4 class="text-body-emphasis">Synced Users <span class="text-body-tertiary fs-9">({{ sync_records|length }})</span></h4>
+    <p class="text-body-tertiary fs-9 mb-2">
+      Read-only. Direction and org unit come from the Market Unit maps above; edit an
+      individual record in the <a href="{% url 'admin:rm_sync_rmsyncrecord_changelist' %}">admin</a> if needed.
+    </p>
+  </div>
+</div>
+<div class="mx-n4 mx-lg-n6 px-4 px-lg-6 mb-9 bg-body-emphasis border-y position-relative top-1">
+  <div class="table-responsive scrollbar">
+    <table class="table table-sm fs-9 mb-0">
+      <thead>
+        <tr>
+          <th scope="col">User</th>
+          <th scope="col">Market Unit</th>
+          <th scope="col">RM ID</th>
+          <th scope="col">Direction</th>
+          <th scope="col" class="text-center">Authoritative</th>
+          <th scope="col">Last Synced</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for rec in sync_records %}
+        <tr>
+          <td class="align-middle">{% include 'partials/users/user_table_display.html' with u=rec.user %}</td>
+          <td class="align-middle">{{ rec.market_unit|default:"—" }}</td>
+          <td class="align-middle text-body-tertiary">{{ rec.rm_id }}</td>
+          <td class="align-middle">
+            {% if rec.direction == 1 %}<span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle">Push → RM</span>
+            {% elif rec.direction == 2 %}<span class="badge bg-info-subtle text-info-emphasis border border-info-subtle">Pull ← RM</span>
+            {% else %}<span class="badge bg-body-secondary text-body-tertiary border">Off</span>{% endif %}
+          </td>
+          <td class="align-middle text-center">
+            {% if rec.sync_authoritative %}<span class="fa-solid fa-check text-success"></span>{% else %}<span class="text-body-tertiary">—</span>{% endif %}
+          </td>
+          <td class="align-middle text-body-tertiary">
+            {% if rec.last_synced %}{{ rec.last_synced|date:"Y-m-d H:i" }}
+              {% if rec.last_sync_result %}<span class="fa-solid fa-circle-check text-success ms-1"></span>{% else %}<span class="fa-solid fa-circle-exclamation text-warning ms-1"></span>{% endif %}
+            {% else %}—{% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-body-tertiary p-3">No synced users yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock content %}
 
 {% block extra_js %}
 <script>
-  $(document).on("change", "#id_rm_id, .form-check-input", function() {   
-    var url = '{% url 'rm_update_record' %}';
+  var RM_CSRF = '{{ csrf_token }}';
+  var RM_UNIT_MAP_URL = "{% url 'rm_update_unit_map' 0 %}";  // trailing /0 replaced per row
+  $(document).on("change", ".umap-field", function () {
     var row = $(this).parents("tr").first();
-    var data = row.find("input").serialize();
-    $.post(url, data, function(result){ 
-      if(result.form_is_valid) {
-        // validate any changed fields for 2 seconds
-        for (let fieldKey = 0; fieldKey < result.changed_data.length; fieldKey++) {
-           let fieldName = result.changed_data[fieldKey]
-           var changed_field = row.find('#id_'+fieldName);
-           changed_field.addClass('is-valid');
-           setTimeout(function() {
-              changed_field.removeClass('is-valid');
-           }, 4000);
-        };
-     }
+    var pk = row.data("pk");
+    var url = RM_UNIT_MAP_URL.replace(/0$/, pk);
+    var data = {
+      csrfmiddlewaretoken: RM_CSRF,
+      unit: row.find("[name=unit]").val(),
+      direction: row.find("[name=direction]").val(),
+      enabled: row.find("[name=enabled]").is(":checked") ? "on" : "",
+    };
+    $.post(url, data, function (result) {
+      if (result.form_is_valid) {
+        row.addClass("table-success");
+        setTimeout(function () { row.removeClass("table-success"); }, 1500);
+      } else {
+        row.addClass("table-danger");
+        setTimeout(function () { row.removeClass("table-danger"); }, 2500);
+      }
     });
   });
 </script>

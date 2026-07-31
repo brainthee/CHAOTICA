@@ -151,7 +151,7 @@ class DefaultTimeSlotTypes:
             "name": "Internal Project",
             "built_in": True,
             "is_delivery": False,
-            "is_assignable": False, # No - this should be used only when booking through a phase
+            "is_assignable": False,  # No - this should be used only when booking through a phase
             "is_working": True,
             "availability": AvailabilityType.BUSY_INTERNAL,
         },
@@ -201,6 +201,7 @@ class TimeSlotDeliveryRole:
     )
     REQUIRED_ALLOCATIONS = (DELIVERY, QA)
 
+
 class JobGuestPermissions:
     ALLOWED = [
         "jobtracker.view_job_schedule",
@@ -209,6 +210,7 @@ class JobGuestPermissions:
         "jobtracker.can_view_jobs",
         "jobtracker.view_job_schedule",
     ]
+
 
 class JobSupportRole:
     OTHER = 0
@@ -242,6 +244,38 @@ class ProjectStatuses:
         (IN_PROGRESS, "warning"),
         (COMPLETE, "success"),
     )
+
+
+class ProjectState:
+    """Commercial certainty of a project, mirroring RM's ``project_state``.
+
+    Orthogonal to :class:`ProjectStatuses` (which is the lifecycle). Combined with
+    ``Project.deliverable`` it decides whether a project's scheduled time counts toward
+    utilisation: only ``CONFIRMED`` + ``deliverable`` is treated as confirmed client delivery.
+    """
+
+    INTERNAL = 0
+    TENTATIVE = 1
+    CONFIRMED = 2
+
+    CHOICES = (
+        (INTERNAL, "Internal"),
+        (TENTATIVE, "Tentative"),
+        (CONFIRMED, "Confirmed"),
+    )
+
+    BS_COLOURS = (
+        (INTERNAL, "secondary"),
+        (TENTATIVE, "warning"),
+        (CONFIRMED, "success"),
+    )
+
+    # Map RM's project_state string → this enum.
+    FROM_RM = {
+        "Confirmed": CONFIRMED,
+        "Tentative": TENTATIVE,
+        "Internal": INTERNAL,
+    }
 
 
 class JobStatuses:

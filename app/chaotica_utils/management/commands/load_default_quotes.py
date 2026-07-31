@@ -11,11 +11,11 @@ from chaotica_utils.models import Quote
 
 
 class Command(BaseCommand):
-    help = 'Loads default quotes for CHAOTICA system'
+    help = "Loads default quotes for CHAOTICA system"
 
     @transaction.atomic
     def handle(self, *args, **options):
-        self.stdout.write(self.style.SUCCESS('Loading default quotes...'))
+        self.stdout.write(self.style.SUCCESS("Loading default quotes..."))
 
         lines = json.load(
             open(
@@ -26,13 +26,20 @@ class Command(BaseCommand):
         )
 
         for line in lines:
-            q,_created = Quote.objects.get_or_create(
-                author=line["author"].strip(),
-                content=line["quote"].strip()
+            q, _created = Quote.objects.get_or_create(
+                author=line["author"].strip(), content=line["quote"].strip()
             )
             if _created:
-                self.stdout.write(self.style.SUCCESS("Creating {} - {}".format(line["author"], line["quote"])))
+                self.stdout.write(
+                    self.style.SUCCESS(
+                        "Creating {} - {}".format(line["author"], line["quote"])
+                    )
+                )
             else:
-                self.stdout.write(self.style.SUCCESS("Skipped {} - {}".format(line["author"], line["quote"])))
+                self.stdout.write(
+                    self.style.SUCCESS(
+                        "Skipped {} - {}".format(line["author"], line["quote"])
+                    )
+                )
 
-        self.stdout.write(self.style.SUCCESS('Default quotes loaded successfully!'))
+        self.stdout.write(self.style.SUCCESS("Default quotes loaded successfully!"))

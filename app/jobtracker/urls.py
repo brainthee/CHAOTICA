@@ -213,6 +213,16 @@ urlpatterns = [
         name="project_update",
     ),
     path(
+        "project/<uuid:slug>/schedule/slots",
+        views.view_project_schedule_slots,
+        name="view_project_schedule_slots",
+    ),
+    path(
+        "project/<uuid:slug>/schedule/members",
+        views.view_project_schedule_members,
+        name="view_project_schedule_members",
+    ),
+    path(
         "project/<uuid:slug>/schedule/slot/<int:pk>/delete",
         views.ProjectSlotDeleteView.as_view(),
         name="project_slot_delete",

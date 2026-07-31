@@ -149,9 +149,11 @@ class ChaoticaClient:
     def _url(self, resource):
         return self.base_url + "/" + resource.strip("/") + "/"
 
-    def _request(self, url, params=None):
+    def _request(self, url, params=None, method="get", json=None):
         try:
-            response = self.session.get(url, params=params)
+            response = self.session.request(
+                method, url, params=params, json=json
+            )
         except requests.exceptions.SSLError as exc:
             raise ChaoticaClientError(
                 "TLS certificate verification failed: {}\n"
@@ -192,6 +194,14 @@ class ChaoticaClient:
         if self.page_size and "page_size" not in params:
             params["page_size"] = self.page_size
         return self._request(self._url(resource), params=params or None)
+
+    def post(self, resource, json=None):
+        """POST a JSON body to ``resource`` and return the parsed JSON response.
+
+        The v1 API is read-only apart from a few explicit write actions (e.g.
+        ``users/{id}/set-status``); this is how the examples exercise them.
+        """
+        return self._request(self._url(resource), method="post", json=json)
 
     def iterate(self, resource, **params):
         """Yield every result row for a list resource, following ``next``.

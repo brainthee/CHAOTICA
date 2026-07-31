@@ -24,6 +24,10 @@
   px-5
 {% endblock %}
 
+{% block extra_css %}
+  {% include 'partials/scheduler/vis_scheduler_css.html' %}
+{% endblock extra_css %}
+
 {% block content %}
   {% get_obj_perms request.user for project as 'project_perms' %}
 
@@ -108,6 +112,21 @@
                   </tr>
                   <tr>
                     <td class="">
+                      <p class="fw-bold mb-0">Client</p>
+                    </td>
+                    <td class="d-none d-sm-block pe-sm-2">:</td>
+                    <td class="">
+                      <p class="ps-6 ps-sm-0 fw-semi-bold mb-0">
+                        {% if project.client %}
+                          <a href="{{ project.client.get_absolute_url }}">{{ project.client }}</a>
+                        {% else %}
+                          None
+                        {% endif %}
+                      </p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="">
                       <p class="fw-bold mb-0">Billing Codes</p>
                     </td>
                     <td class="d-none d-sm-block pe-sm-2">:</td>
@@ -145,6 +164,52 @@
                       <h4 class="ps-6 ps-sm-0 mb-0">{% include 'partials/project/status_badge.html' %}</h4>
                     </td>
                   </tr>
+                  <tr>
+                    <td class="">
+                      <p class="fw-bold mb-0">State</p>
+                    </td>
+                    <td class="d-none d-sm-block pe-sm-2">:</td>
+                    <td class="">
+                      <p class="ps-6 ps-sm-0 mb-0">
+                        <span class="badge badge-phoenix badge-phoenix-{{ project.state_bs_colour }}">{{ project.get_state_display }}</span>
+                        {% if project.deliverable %}
+                          <span class="badge badge-phoenix badge-phoenix-primary ms-1" title="Counts toward utilisation when confirmed">Deliverable</span>
+                        {% endif %}
+                      </p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="">
+                      <p class="fw-bold mb-0">Dates</p>
+                    </td>
+                    <td class="d-none d-sm-block pe-sm-2">:</td>
+                    <td class="">
+                      <p class="ps-6 ps-sm-0 fw-semi-bold mb-0">
+                        {{ project.start_date|default:"—" }} &rarr; {{ project.delivery_date|default:"—" }}
+                      </p>
+                    </td>
+                  </tr>
+                  {% if project.is_imported or project.external_url or project.external_id %}
+                  <tr>
+                    <td class="">
+                      <p class="fw-bold mb-0">Source</p>
+                    </td>
+                    <td class="d-none d-sm-block pe-sm-2">:</td>
+                    <td class="">
+                      <p class="ps-6 ps-sm-0 fw-semi-bold mb-0">
+                        {% if project.is_imported %}
+                          <span class="badge badge-phoenix badge-phoenix-info me-1"><span class="fa-solid fa-cloud-arrow-down me-1"></span>Imported</span>
+                        {% endif %}
+                        {% if project.external_url %}
+                          <a href="{{ project.external_url }}" target="_blank" rel="noopener">Open in RM<span class="fa-solid fa-arrow-up-right-from-square ms-1 fs-10"></span></a>
+                        {% endif %}
+                        {% if project.external_id %}
+                          <span class="text-body-tertiary fs-9 ms-1">({{ project.external_id }})</span>
+                        {% endif %}
+                      </p>
+                    </td>
+                  </tr>
+                  {% endif %}
                 </tbody>
               </table>
             </div>
@@ -183,16 +248,55 @@
 
         <div class="tab-content" id="myTabContent">
           <div class="tab-pane fade" id="team" role="tabpanel" aria-labelledby="team-tab">
-            <div class="alert alert-phoenix-info" role="alert">Not Available Yet (sorry!)</div>
+            {% if scheduled_users %}
+              <div class="row g-2">
+                {% for member in scheduled_users %}
+                  <div class="col-12 col-sm-6 col-md-4">
+                    <div class="border rounded-3 p-2 border-translucent">
+                      {% include 'partials/users/user_link.html' with user_profile=member %}
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            {% else %}
+              <div class="alert alert-phoenix-info" role="alert">No one is scheduled on this project yet.</div>
+            {% endif %}
           </div>
         </div>
 
         <div class="tab-content" id="myTabContent">
           <div class="tab-pane fade" id="schedule" role="tabpanel" aria-labelledby="schedule-tab">
-            <div class="alert alert-phoenix-info" role="alert">Not Available Yet (sorry!)</div>
+            {% include 'partials/scheduler/vis_scheduler_toolbar.html' with readonly=True %}
+            <div id="sched-progress" class="sched-progress" role="progressbar" aria-hidden="true"></div>
+            <div id="vis-timeline"></div>
           </div>
         </div>
       </div>
     </div>
   </div>
 {% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'vendors/vis-timeline/vis-timeline-graph2d.min.js' %}"></script>
+<script>
+  window.SCHEDULER_CONFIG = {
+    scope: 'project',
+    readonly: true,
+    membersUrl: "{% url 'view_project_schedule_members' project.slug %}",
+    slotsUrl: "{% url 'view_project_schedule_slots' project.slug %}",
+    createUrls: {},
+    scopeId: {{ project.pk }},
+    historyUrl: "{% url 'schedule_action_history' %}",
+    revertUrl: "{% url 'schedule_action_revert' %}",
+    sinceUrl: "{% url 'view_scheduler_slots_since' %}",
+    wsUrl: null,
+    cards: null
+  };
+</script>
+<script>{% include 'js/scheduler_vis_init.js' %}</script>
+<script>
+  document.getElementById('schedule-tab')?.addEventListener('shown.bs.tab', function () {
+    if (window.__schedRedraw) window.__schedRedraw();
+  });
+</script>
+{% endblock extra_js %}

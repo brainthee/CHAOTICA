@@ -1,6 +1,7 @@
 """Tests for the read-only permissions-visibility UI: the role/permission
 matrix page, the admin-only profile permissions panel, and the grouping helper.
 """
+
 from django.conf import settings
 from django.test import TestCase, override_settings
 from django.urls import reverse
@@ -24,7 +25,9 @@ def _give_user_role(user):
 class PermissionsMatrixViewTests(TestCase):
     def setUp(self):
         # First create_user is auto-promoted to superuser + Global: Admin group.
-        self.admin = User.objects.create_user(email="admin@test.com", password="pw12345")
+        self.admin = User.objects.create_user(
+            email="admin@test.com", password="pw12345"
+        )
         self.user = User.objects.create_user(email="user@test.com", password="pw12345")
         _give_user_role(self.user)
 
@@ -53,7 +56,9 @@ class PermissionsMatrixViewTests(TestCase):
 @override_settings(ALLOWED_HOSTS=["*", "testserver"])
 class ProfilePermissionsPanelTests(TestCase):
     def setUp(self):
-        self.admin = User.objects.create_user(email="admin@test.com", password="pw12345")
+        self.admin = User.objects.create_user(
+            email="admin@test.com", password="pw12345"
+        )
         self.user = User.objects.create_user(email="user@test.com", password="pw12345")
         _give_user_role(self.user)
 

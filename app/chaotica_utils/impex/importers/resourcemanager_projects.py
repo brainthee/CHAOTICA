@@ -88,7 +88,8 @@ class ResourceManagerProjectImporter(BaseImporter):
                     # For the moment, also skip if only no client
                     if not project["client"]:
                         log.warning(
-                            "No client defined - setting default " + project["name"].strip()
+                            "No client defined - setting default "
+                            + project["name"].strip()
                         )
                         db_client, _ = Client.objects.get_or_create(
                             name="Unknown Client"
@@ -111,7 +112,8 @@ class ResourceManagerProjectImporter(BaseImporter):
 
                     if not project["owner_name"]:
                         log.warning(
-                            "No owner defined - setting default " + project["name"].strip()
+                            "No owner defined - setting default "
+                            + project["name"].strip()
                         )
                         primary_am = get_sentinel_user()
                     else:
@@ -138,7 +140,7 @@ class ResourceManagerProjectImporter(BaseImporter):
                         db_unit, _ = OrganisationalUnit.objects.get_or_create(
                             name="Unknown Unit"
                         )
-                        
+
                     title = project["name"].strip()
 
                     if project["mapped_sheet_id"]:
@@ -160,8 +162,12 @@ class ResourceManagerProjectImporter(BaseImporter):
                             "unit": db_unit,
                             "account_manager": primary_am,
                             "created_by": primary_am,
-                            "external_id": project["mapped_sheet_id"] if project["mapped_sheet_id"] else project["id"],
-                        }
+                            "external_id": (
+                                project["mapped_sheet_id"]
+                                if project["mapped_sheet_id"]
+                                else project["id"]
+                            ),
+                        },
                     )
                     db_job.data = project
                     db_job.save()

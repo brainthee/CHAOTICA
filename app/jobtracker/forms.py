@@ -3036,6 +3036,19 @@ class ProjectForm(forms.ModelForm):
             },
         ),
     )
+    client = forms.ModelChoiceField(
+        required=False,
+        queryset=Client.objects.all(),
+        widget=s2forms.ModelSelect2Widget(
+            attrs={
+                "class": "select2-widget",
+                "data-minimum-input-length": 2,
+                "data-ajax--url": "/autocomplete/clients",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
+            },
+        ),
+    )
 
     overview = forms.CharField(
         required=False,
@@ -3065,8 +3078,17 @@ class ProjectForm(forms.ModelForm):
             "overview",
             "primary_poc",
             "status",
+            "state",
+            "deliverable",
             "unit",
+            "client",
+            "desired_start_date",
+            "desired_delivery_date",
         ]
+        widgets = {
+            "desired_start_date": DatePickerInput(),
+            "desired_delivery_date": DatePickerInput(range_from="desired_start_date"),
+        }
 
 
 class TeamForm(forms.ModelForm):

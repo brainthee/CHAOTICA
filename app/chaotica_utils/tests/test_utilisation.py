@@ -26,9 +26,7 @@ def _slot(start, end, confirmed=False, tentative=False, non_working=False):
 
 
 def _calc(slots, holidays=None):
-    return calculate_utilisation(
-        slots, START, END, WORKING_DAYS, holidays or []
-    )
+    return calculate_utilisation(slots, START, END, WORKING_DAYS, holidays or [])
 
 
 class CalculateUtilisationTests(SimpleTestCase):
@@ -109,7 +107,10 @@ class WorkingDaysCoercionTests(SimpleTestCase):
     def test_int_working_days(self):
         r = calculate_utilisation(
             [_slot(date(2026, 7, 6), date(2026, 7, 6), confirmed=True)],
-            START, END, 1, [],  # only Monday
+            START,
+            END,
+            1,
+            [],  # only Monday
         )
         # Two Mondays in the fortnight, one confirmed.
         self.assertEqual(r["working_days"], 2)
@@ -156,3 +157,70 @@ class FormulaDescriptionTests(SimpleTestCase):
     def test_description_is_present(self):
         self.assertIn("Utilisation", UTILISATION_FORMULA_DESCRIPTION)
         self.assertIn("effective working days", UTILISATION_FORMULA_DESCRIPTION)
+
+
+class ClassifyDeliverySlotTests(SimpleTestCase):
+    """The single-source policy for what counts as delivery (phase or project)."""
+
+    def _flags(self, **kw):
+        from chaotica_utils.utils.utilisation import classify_delivery_slot
+
+        base = {
+            "phase__status": None,
+            "project__state": None,
+            "project__deliverable": None,
+            "slot_type__is_working": True,
+        }
+        base.update(kw)
+        return classify_delivery_slot(base)
+
+    def test_confirmed_phase_counts(self):
+        from jobtracker.enums import PhaseStatuses
+
+        f = self._flags(phase__status=PhaseStatuses.SCHEDULED_CONFIRMED)
+        self.assertTrue(f["is_confirmed"])
+        self.assertFalse(f["is_tentative"])
+
+    def test_tentative_phase(self):
+        from jobtracker.enums import PhaseStatuses
+
+        f = self._flags(phase__status=PhaseStatuses.SCHEDULED_TENTATIVE)
+        self.assertFalse(f["is_confirmed"])
+        self.assertTrue(f["is_tentative"])
+
+    def test_confirmed_deliverable_project_counts(self):
+        from jobtracker.enums import ProjectState
+
+        f = self._flags(
+            project__state=ProjectState.CONFIRMED, project__deliverable=True
+        )
+        self.assertTrue(f["is_confirmed"])
+
+    def test_confirmed_but_not_deliverable_project_is_internal(self):
+        from jobtracker.enums import ProjectState
+
+        f = self._flags(
+            project__state=ProjectState.CONFIRMED, project__deliverable=False
+        )
+        self.assertFalse(f["is_confirmed"])
+        self.assertFalse(f["is_tentative"])  # falls through to internal
+
+    def test_tentative_deliverable_project(self):
+        from jobtracker.enums import ProjectState
+
+        f = self._flags(
+            project__state=ProjectState.TENTATIVE, project__deliverable=True
+        )
+        self.assertFalse(f["is_confirmed"])
+        self.assertTrue(f["is_tentative"])
+
+    def test_internal_state_project_never_counts(self):
+        from jobtracker.enums import ProjectState
+
+        f = self._flags(project__state=ProjectState.INTERNAL, project__deliverable=True)
+        self.assertFalse(f["is_confirmed"])
+        self.assertFalse(f["is_tentative"])
+
+    def test_non_working_slot(self):
+        f = self._flags(slot_type__is_working=False)
+        self.assertTrue(f["is_non_working_slot"])

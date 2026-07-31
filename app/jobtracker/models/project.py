@@ -1,6 +1,7 @@
 from django.db import models
 from ..enums import (
     ProjectStatuses,
+    ProjectState,
     TimeSlotDeliveryRole,
 )
 from django.conf import settings
@@ -37,9 +38,7 @@ class ProjectManager(models.Manager):
 
         # Projects link to timeslots directly (there is no Project->phases
         # relation), so scope by the project's own scheduled slots.
-        matches = self.filter(
-            Q(timeslots__user=user)  # Filter by scheduled
-        ).distinct()
+        matches = self.filter(Q(timeslots__user=user)).distinct()  # Filter by scheduled
         return matches
 
 
@@ -64,6 +63,14 @@ class Project(models.Model):
         blank=True,
         on_delete=models.CASCADE,
     )
+    client = models.ForeignKey(
+        "Client",
+        related_name="projects",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        help_text="Optional client this project is associated with.",
+    )
     status = models.IntegerField(
         verbose_name="Job Status",
         help_text="Current state of the job",
@@ -71,6 +78,16 @@ class Project(models.Model):
         default=ProjectStatuses.UNTRACKED,
     )
     status_changed_date = MonitorField(monitor="status")
+    state = models.IntegerField(
+        verbose_name="Project State",
+        help_text="Commercial certainty (mirrors RM). Confirmed + deliverable counts toward utilisation.",
+        choices=ProjectState.CHOICES,
+        default=ProjectState.INTERNAL,
+    )
+    deliverable = models.BooleanField(
+        default=False,
+        help_text="This is client-deliverable work — confirmed deliverable time counts toward utilisation.",
+    )
     is_imported = models.BooleanField(default=False)
     external_id = models.CharField(
         verbose_name="External ID",
@@ -82,6 +99,14 @@ class Project(models.Model):
         default=None,
     )
     title = models.CharField("Project Title", max_length=250)
+    external_url = models.URLField(
+        verbose_name="External URL",
+        max_length=500,
+        blank=True,
+        null=True,
+        default=None,
+        help_text="Link back to the source system this project was imported from (e.g. RM).",
+    )
     history = HistoricalRecords()
     data = JSONField(verbose_name="Data", null=True, blank=True, default=dict)
     notes = GenericRelation(Note)
@@ -178,6 +203,22 @@ class Project(models.Model):
     @property
     def status_bs_colour(self):
         return ProjectStatuses.BS_COLOURS[self.status][1]
+
+    @property
+    def state_bs_colour(self):
+        return ProjectState.BS_COLOURS[self.state][1]
+
+    @property
+    def state_is_confirmed(self):
+        return self.state == ProjectState.CONFIRMED
+
+    @property
+    def state_is_tentative(self):
+        return self.state == ProjectState.TENTATIVE
+
+    def counts_as_delivery(self):
+        """A confirmed, deliverable project counts toward utilisation like confirmed delivery."""
+        return self.deliverable and self.state == ProjectState.CONFIRMED
 
     @property
     def is_tracked(self):

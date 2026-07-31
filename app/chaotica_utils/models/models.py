@@ -131,23 +131,20 @@ class IPTag(models.Model):
     Represents a tag for IP addresses (e.g., "Office", "VPN", "Home").
     Each tag can have multiple CIDR ranges associated with it.
     """
+
     name = models.CharField(
-        max_length=100,
-        unique=True,
-        help_text="Tag name (e.g., Office, VPN, Home)"
+        max_length=100, unique=True, help_text="Tag name (e.g., Office, VPN, Home)"
     )
     description = models.TextField(
-        blank=True,
-        help_text="Optional description of what this tag represents"
+        blank=True, help_text="Optional description of what this tag represents"
     )
     color = models.CharField(
         max_length=7,
         default="#6c757d",
-        help_text="Hex color code for the tag badge (e.g., #007bff)"
+        help_text="Hex color code for the tag badge (e.g., #007bff)",
     )
     is_active = models.BooleanField(
-        default=True,
-        help_text="Whether this tag is active and should be used"
+        default=True, help_text="Whether this tag is active and should be used"
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -169,24 +166,22 @@ class IPCIDRRange(models.Model):
     """
     Represents a CIDR range associated with an IP tag.
     """
+
     tag = models.ForeignKey(
         IPTag,
         on_delete=models.CASCADE,
         related_name="cidrranges",
-        help_text="The tag this CIDR range belongs to"
+        help_text="The tag this CIDR range belongs to",
     )
     cidr = models.CharField(
         max_length=43,  # Max length for IPv6 CIDR (e.g., 2001:db8::/32)
-        help_text="CIDR notation (e.g., 192.168.1.0/24 or 2001:db8::/32)"
+        help_text="CIDR notation (e.g., 192.168.1.0/24 or 2001:db8::/32)",
     )
     description = models.CharField(
-        max_length=255,
-        blank=True,
-        help_text="Optional description of this CIDR range"
+        max_length=255, blank=True, help_text="Optional description of this CIDR range"
     )
     is_active = models.BooleanField(
-        default=True,
-        help_text="Whether this CIDR range is active"
+        default=True, help_text="Whether this CIDR range is active"
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -203,5 +198,5 @@ class IPCIDRRange(models.Model):
     def get_network(self):
         """Return the ipaddress.IPv4Network or IPv6Network object."""
         import ipaddress
-        return ipaddress.ip_network(self.cidr, strict=False)
 
+        return ipaddress.ip_network(self.cidr, strict=False)

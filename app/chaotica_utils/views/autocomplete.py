@@ -18,44 +18,54 @@ from django.views.decorators.http import require_POST
 # Autocomplete fields
 ######################################
 
-SEARCH_REGEX = r'.*{}.*'
+SEARCH_REGEX = r".*{}.*"
+
 
 @login_required
 def city_autocomplete(request):
-    term = request.GET.get('term', '').strip()
+    term = request.GET.get("term", "").strip()
     if not term:
-        return JsonResponse({'results': [], 'pagination': {'more': False}})
+        return JsonResponse({"results": [], "pagination": {"more": False}})
 
     from django.db.models import Case, When, Value, IntegerField
-    cities = City.objects.filter(
-        Q(name__icontains=term) | Q(search_names__icontains=term)
-    ).annotate(
-        rank=Case(
-            When(name__iexact=term, then=Value(0)),
-            When(name__istartswith=term, then=Value(1)),
-            When(name__icontains=term, then=Value(2)),
-            default=Value(3),
-            output_field=IntegerField(),
-        )
-    ).select_related('country').order_by('rank', 'name')[:30]
 
-    results = [{'id': city.pk, 'text': f"{city.name}, {city.country.name}"} for city in cities]
-    return JsonResponse({'results': results, 'pagination': {'more': False}})
+    cities = (
+        City.objects.filter(Q(name__icontains=term) | Q(search_names__icontains=term))
+        .annotate(
+            rank=Case(
+                When(name__iexact=term, then=Value(0)),
+                When(name__istartswith=term, then=Value(1)),
+                When(name__icontains=term, then=Value(2)),
+                default=Value(3),
+                output_field=IntegerField(),
+            )
+        )
+        .select_related("country")
+        .order_by("rank", "name")[:30]
+    )
+
+    results = [
+        {"id": city.pk, "text": f"{city.name}, {city.country.name}"} for city in cities
+    ]
+    return JsonResponse({"results": results, "pagination": {"more": False}})
+
 
 class UserAutocomplete(AutoResponseView):
     def get(self, request, *args, **kwargs):
         # Don't forget to filter out results depending on the visitor !
         if not request.user.is_authenticated:
-            return JsonResponse({'results': [], 'pagination': {'more': False}})
+            return JsonResponse({"results": [], "pagination": {"more": False}})
 
         # Get the search term
-        self.term = request.GET.get('term', '')
-        self.page_size = int(request.GET.get('page_size', 20))
-        self.page = int(request.GET.get('page', 1))
+        self.term = request.GET.get("term", "")
+        self.page_size = int(request.GET.get("page_size", 20))
+        self.page = int(request.GET.get("page", 1))
 
-        qs = User.objects.filter(is_active=True).annotate(
-            full_name=Concat("first_name", Value(" "), "last_name")
-        ).order_by("full_name")
+        qs = (
+            User.objects.filter(is_active=True)
+            .annotate(full_name=Concat("first_name", Value(" "), "last_name"))
+            .order_by("full_name")
+        )
 
         if self.term:
             qs = qs.filter(
@@ -63,7 +73,10 @@ class UserAutocomplete(AutoResponseView):
                 | Q(full_name__iregex=SEARCH_REGEX.format(self.term))
                 | Q(first_name__iregex=SEARCH_REGEX.format(self.term))
                 | Q(last_name__iregex=SEARCH_REGEX.format(self.term))
-                | (Q(alias__iregex=SEARCH_REGEX.format(self.term)) & Q(alias__isnull=False)),
+                | (
+                    Q(alias__iregex=SEARCH_REGEX.format(self.term))
+                    & Q(alias__isnull=False)
+                ),
             )
 
         # Pagination
@@ -72,17 +85,16 @@ class UserAutocomplete(AutoResponseView):
 
         results = []
         for user in qs[start:end]:
-            results.append({
-                'id': user.pk,
-                'text': str(user),
-            })
+            results.append(
+                {
+                    "id": user.pk,
+                    "text": str(user),
+                }
+            )
 
         has_more = qs.count() > end
 
-        return JsonResponse({
-            'results': results,
-            'pagination': {'more': has_more}
-        })
+        return JsonResponse({"results": results, "pagination": {"more": has_more}})
 
 
 @login_required
@@ -233,7 +245,9 @@ def site_search(request):
                 | Q(lower_notification_email__contains=q)
                 | (Q(lower_alias__contains=q) & Q(alias__isnull=False)),
                 is_active=True,
-            )[:result_limit]
+            )[
+                :result_limit
+            ]
         )
         context["search_users"] = us_search
         results_count = results_count + len(us_search)
@@ -282,9 +296,7 @@ def search_goto(request):
             if phase:
                 url = phase.get_absolute_url()
         elif q.isdigit():
-            job = Job.objects.filter(
-                unit__in=units_with_job_perms, id=int(q)
-            ).first()
+            job = Job.objects.filter(unit__in=units_with_job_perms, id=int(q)).first()
             if job:
                 url = job.get_absolute_url()
 

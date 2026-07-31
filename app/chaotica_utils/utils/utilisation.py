@@ -23,8 +23,10 @@ where::
   least one timeslot whose ``slot_type.is_working`` is ``False`` (annual leave,
   sick, bank holiday booked on the scheduler, or any custom non-working type).
 * **confirmed_delivery_days** — the remaining working days on which the user has
-  at least one timeslot linked to a phase whose status is at least
-  ``SCHEDULED_CONFIRMED``.
+  at least one timeslot that is *confirmed delivery*: linked to a phase whose status is at
+  least ``SCHEDULED_CONFIRMED``, **or** linked to a ``deliverable`` project in the
+  ``CONFIRMED`` state (see :func:`classify_delivery_slot`). This lets teams whose work lives
+  on internal ``Project``s (e.g. RM-imported EU teams) register utilisation.
 
 Rules
 -----
@@ -35,8 +37,9 @@ Rules
 * **Zero effective working days.** A user with no effective working days in the
   period (e.g. fully on leave) has ``utilisation_percentage = None`` and is
   excluded from team/unit averages, so they do not drag the average to 0%.
-* Tentative bookings and internal working time (training, catch-ups, internal
-  projects) do **not** count toward utilisation; they are reported separately.
+* Tentative bookings and internal working time (training, catch-ups, and
+  non-deliverable / ``INTERNAL``-state projects) do **not** count toward utilisation; they
+  are reported separately. Only ``CONFIRMED`` + ``deliverable`` project work counts.
 
 Implementation note
 --------------------
@@ -56,10 +59,49 @@ from datetime import datetime, date
 # documentation (via mkdocstrings), so both stay in sync with the code.
 UTILISATION_FORMULA_DESCRIPTION = (
     "Utilisation = confirmed client-delivery days ÷ effective working days × 100. "
-    "Effective working days excludes weekends, public holidays, and any day blocked "
-    "by a non-working slot (annual leave, sick, etc.). Tentative bookings and internal "
-    "working time (training, catch-ups) do not count toward utilisation."
+    "Confirmed delivery means a confirmed phase booking or a deliverable project in the "
+    "Confirmed state. Effective working days excludes weekends, public holidays, and any day "
+    "blocked by a non-working slot (annual leave, sick, etc.). Tentative bookings and internal "
+    "working time (training, catch-ups, internal projects) do not count toward utilisation."
 )
+
+
+def classify_delivery_slot(slot):
+    """Classify a timeslot for utilisation from a ``.values()`` dict.
+
+    Single source of truth for *what counts as delivery*. Accepts the keys
+    ``phase__status``, ``project__state``, ``project__deliverable`` and
+    ``slot_type__is_working`` and returns the three flags the engine consumes.
+
+    Confirmed delivery = a slot on a phase at/above ``SCHEDULED_CONFIRMED``, **or** a slot on a
+    ``deliverable`` project in the ``CONFIRMED`` state. Tentative = a phase below
+    ``SCHEDULED_CONFIRMED`` or a ``deliverable`` project in the ``TENTATIVE`` state. Internal
+    (non-deliverable / ``INTERNAL``-state) projects are neither, so they stay "internal" time
+    and never enter the utilisation numerator.
+    """
+    # Lazy import to avoid a chaotica_utils → jobtracker import cycle at module load.
+    from jobtracker.enums import PhaseStatuses, ProjectState
+
+    phase_status = slot.get("phase__status")
+    p_state = slot.get("project__state")
+    p_deliverable = bool(slot.get("project__deliverable"))
+
+    phase_conf = (
+        phase_status is not None and phase_status >= PhaseStatuses.SCHEDULED_CONFIRMED
+    )
+    phase_tent = (
+        phase_status is not None and phase_status < PhaseStatuses.SCHEDULED_CONFIRMED
+    )
+    proj_conf = p_deliverable and p_state == ProjectState.CONFIRMED
+    proj_tent = p_deliverable and p_state == ProjectState.TENTATIVE
+
+    is_confirmed = bool(phase_conf or proj_conf)
+    is_tentative = bool((phase_tent or proj_tent) and not is_confirmed)
+    return {
+        "is_confirmed": is_confirmed,
+        "is_tentative": is_tentative,
+        "is_non_working_slot": slot.get("slot_type__is_working") is False,
+    }
 
 
 def _as_date(value):
@@ -221,7 +263,11 @@ def calculate_utilisation(
             tentative_mask |= mask
         # "Internal" = a working slot that is neither confirmed nor tentative
         # delivery (e.g. training, catch-up, internal project, unassigned).
-        if not slot["is_non_working_slot"] and not slot["is_confirmed"] and not slot["is_tentative"]:
+        if (
+            not slot["is_non_working_slot"]
+            and not slot["is_confirmed"]
+            and not slot["is_tentative"]
+        ):
             internal_mask |= mask
 
     # Non-working wins: strip those days out of the effective working days.

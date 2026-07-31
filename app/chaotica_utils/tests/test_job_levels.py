@@ -18,15 +18,11 @@ class JobLevelTests(TestCase):
         self.assertTrue(level.is_active)
 
     def test_str_with_long_label(self):
-        level = JobLevel.objects.create(
-            short_label="JL1", long_label="Senior", order=1
-        )
+        level = JobLevel.objects.create(short_label="JL1", long_label="Senior", order=1)
         self.assertEqual(str(level), "JL1 - Senior")
 
     def test_str_without_long_label(self):
-        level = JobLevel.objects.create(
-            short_label="JL1", long_label=None, order=1
-        )
+        level = JobLevel.objects.create(short_label="JL1", long_label=None, order=1)
         self.assertEqual(str(level), "JL1")
 
     def test_ordering(self):

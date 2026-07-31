@@ -6,6 +6,7 @@ from chaotica_utils.utils import (
     unique_slug_generator,
     build_period_masks,
     calculate_utilisation,
+    classify_delivery_slot,
 )
 from django.urls import reverse
 from simple_history.models import HistoricalRecords
@@ -172,9 +173,7 @@ class OrganisationalUnit(models.Model):
         # matches the old behaviour so members who have left still get their
         # stale permissions cleared.
         if users is None:
-            target_ids = set(
-                self.members.all().values_list("member__pk", flat=True)
-            )
+            target_ids = set(self.members.all().values_list("member__pk", flat=True))
         else:
             target_ids = {getattr(u, "pk", u) for u in users}
         if not target_ids:
@@ -322,26 +321,23 @@ class OrganisationalUnit(models.Model):
         members = self.members.filter(left_date__isnull=True)
         if not include_disabled:
             members = members.filter(member__is_active=True)
-        return (
-            members.select_related(
-                "member__city",
-                "member__city__country",
-                "member__manager",
-            )
-            .prefetch_related(
-                Prefetch(
-                    "member__unit_memberships",
-                    queryset=OrganisationalUnitMember.objects.select_related("unit"),
+        return members.select_related(
+            "member__city",
+            "member__city__country",
+            "member__manager",
+        ).prefetch_related(
+            Prefetch(
+                "member__unit_memberships",
+                queryset=OrganisationalUnitMember.objects.select_related("unit"),
+            ),
+            "roles",
+            Prefetch(
+                "member__job_level_history",
+                queryset=UserJobLevel.objects.filter(is_current=True).select_related(
+                    "job_level"
                 ),
-                "roles",
-                Prefetch(
-                    "member__job_level_history",
-                    queryset=UserJobLevel.objects.filter(
-                        is_current=True
-                    ).select_related("job_level"),
-                    to_attr="_current_levels",
-                ),
-            )
+                to_attr="_current_levels",
+            ),
         )
 
     def get_active_members_with_perm(self, permission_str, include_su=False):
@@ -450,21 +446,26 @@ class OrganisationalUnit(models.Model):
             user_id__in=[u["id"] for u in users],
             start__date__lte=end_date,
             end__date__gte=start_date,
-        ).values("user_id", "start", "end", "phase__status", "slot_type__is_working")
+        ).values(
+            "user_id",
+            "start",
+            "end",
+            "phase__status",
+            "project__state",
+            "project__deliverable",
+            "slot_type__is_working",
+        )
 
         # Group timeslots by user as engine-ready dicts.
         timeslots_by_user = defaultdict(list)
         for slot in timeslots:
-            status = slot["phase__status"]
-            timeslots_by_user[slot["user_id"]].append({
-                "start": slot["start"],
-                "end": slot["end"],
-                "is_confirmed": status is not None
-                and status >= PhaseStatuses.SCHEDULED_CONFIRMED,
-                "is_tentative": status is not None
-                and status < PhaseStatuses.SCHEDULED_CONFIRMED,
-                "is_non_working_slot": slot["slot_type__is_working"] is False,
-            })
+            timeslots_by_user[slot["user_id"]].append(
+                {
+                    "start": slot["start"],
+                    "end": slot["end"],
+                    **classify_delivery_slot(slot),
+                }
+            )
 
         # Period masks depend only on the unit's working days + holidays, which
         # are shared per country — build them once per country and reuse.
@@ -572,9 +573,7 @@ class OrganisationalUnit(models.Model):
                     ),
                 }
             )
-        data["member_utilisation"].sort(
-            key=lambda r: r["confirmed_pct"], reverse=True
-        )
+        data["member_utilisation"].sort(key=lambda r: r["confirmed_pct"], reverse=True)
 
         # --- Service participation breakdown (phases grouped by service) ---
         service_rows = (
@@ -623,7 +622,9 @@ class OrganisationalUnit(models.Model):
         )
         data["delivery_throughput"] = {
             "labels": [
-                row["month"].strftime("%b %Y") for row in throughput_rows if row["month"]
+                row["month"].strftime("%b %Y")
+                for row in throughput_rows
+                if row["month"]
             ],
             "counts": [row["count"] for row in throughput_rows if row["month"]],
         }
@@ -713,9 +714,7 @@ class OrganisationalUnit(models.Model):
             totals["confirmed_days_percentage"] = _pct(
                 totals["confirmed_days"], effective
             )
-            totals["utilisation_percentage"] = _pct(
-                totals["confirmed_days"], effective
-            )
+            totals["utilisation_percentage"] = _pct(totals["confirmed_days"], effective)
             totals["available_days_percentage"] = _pct(
                 totals["available_days"], effective
             )

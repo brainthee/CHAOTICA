@@ -191,13 +191,83 @@ Additional email addresses (comma-separated) to receive workflow notifications f
 
 Settings for synchronising data with [Smartsheet Resource Management](https://www.smartsheet.com/resource-management) (formerly 10,000ft).
 
+The integration is **two-way**, controlled per user by a **direction** on each user's sync
+record:
+
+- **PUSH** — CHAOTICA is the source of truth. The user's CHAOTICA schedule is mirrored into
+  RM (this is the original behaviour).
+- **PULL** — RM is the source of truth. The user's RM schedule is imported into CHAOTICA:
+  RM projects become internal CHAOTICA Projects (linked back to RM), assignments become
+  timeslots, and RM leave becomes authorised leave requests.
+- **OFF** — no sync.
+
+The **Authoritative** flag is orthogonal to direction and controls pruning: for PUSH it
+deletes RM assignments CHAOTICA doesn't know about; for PULL it deletes imported CHAOTICA
+slots that no longer exist in RM. With it off, the sync only adds/updates and never deletes.
+
+### PULL date window
+
+Inbound PULL fetches a date-bounded slice of each user's RM schedule. By default it pulls
+**from today forward one year** — no history. The window is configurable:
+
+- **`RM_SYNC_PULL_LOOKBACK_DAYS`** (default `0`) — days of *past* schedule to import. Set to
+  `365` to pull the last year of history. `0` means today onwards only.
+- **`RM_SYNC_PULL_LOOKAHEAD_DAYS`** (default `365`) — days of *future* schedule to import,
+  counting from today.
+
+!!! warning "Look-back and authoritative pruning"
+    For **authoritative** PULL records, imported slots not present in the fetched window are
+    deleted. Increasing the look-back widens the range that reconciliation considers, and a
+    large look-back imports proportionally more historical timeslots (which also feed
+    utilisation). Raise it deliberately.
+
+### Reflecting other teams (RM-only users) via Market Units
+
+Users are grouped by RM's **Market Unit** custom field (`UKI`, `Iberia`, `Prague`,
+`Nordics`, …). A **Unit Map** (admin: *RM unit maps*) ties each market unit to an
+OrganisationalUnit **and** a sync direction — e.g. `UKI → UK OU, PUSH` (CHAOTICA stays
+authoritative) and `Iberia/Prague/… → EU OUs, PULL` (reflect RM's schedule).
+
+Typical workflow:
+
+1. `python manage.py run_rm_users` — adopts existing CHAOTICA users by email and creates any
+   missing RM users (active, password-less). It sets each record's RM ID + market unit, and
+   **auto-creates a Unit Map row (with no OU, disabled) for every market unit it sees**. Add
+   `--dry-run` to preview, `--market-unit Prague` to scope.
+2. In admin, fill in each Unit Map's **OU + direction** and tick **enabled**.
+3. `python manage.py apply_rm_unit_maps` — assigns those OUs and directions to the imported
+   users. (OU assignment is non-invasive: users who already belong to a unit are left alone.)
+
+Safety rules that prevent clobbering existing config:
+
+- **Existing direction is never changed.** A record already on PUSH/PULL is left untouched
+  (so UKI users stay PUSH) unless you pass `--force-direction`.
+- **`--create-missing` only creates absent users**; adopting an existing user is additive
+  (fills a blank RM ID / market unit) and never repoints them.
+- A different existing RM ID is only overwritten with `--overwrite-rm-id`.
+
+`python manage.py match_rm_users` is the adopt-only variant (same rules; `--create-missing`
+optional). Use **Preview Inbound** on the settings page (or `run_rm_pull --dry-run`) to see
+what an inbound schedule sync would change without writing.
+
+### Clients
+
+`python manage.py run_rm_clients` pre-imports RM clients (`/api/v1/clients`) into CHAOTICA
+`Client`s (keyed on external ID). When inbound sync mirrors an RM project into an internal
+`Project`, it links the project's optional **client** by name (creating the Client if needed).
+
 | Setting | Default | Description |
 |---------|---------|-------------|
 | **RM_SYNC_ENABLED** | `False` | Master toggle for all RM synchronisation. When disabled, sync tasks and API views are blocked. |
+| **RM_SYNC_READ_ONLY** | `False` | Hard-blocks **all writes** (POST/PUT/DELETE) to the RM API while still allowing reads. Set this on non-production instances that point at a production RM token so they can pull/preview without ever modifying RM. |
+| **RM_SYNC_PULL_ENABLED** | `False` | Enables inbound (RM → CHAOTICA) sync for users whose direction is PULL, and the periodic RM user import. |
+| **RM_SYNC_PULL_LOOKBACK_DAYS** | `0` | Days of *past* RM schedule to import on PULL. `0` = today onwards only; e.g. `365` pulls the last year of history. |
+| **RM_SYNC_PULL_LOOKAHEAD_DAYS** | `365` | Days of *future* RM schedule to import on PULL, from today. |
 | **RM_SYNC_API_SITE** | `https://api.rm.smartsheet.com` | Base URL for the RM API. |
 | **RM_SYNC_API_TOKEN** | *(empty)* | Developer API token for authenticating with the RM API. |
 | **RM_SYNC_STALE_TIMEOUT** | `60` | Minutes before a running sync task is considered stale/stuck. |
-| **RM_WARNING_MSG** | `This project is managed via CHAOTICA.` | Warning text appended to project descriptions in RM to indicate that changes may be overwritten. |
+| **RM_SYNC_DOMAIN_REWRITE** | `False` | Rewrite legacy email domains (`accenture.com`/`contextis.com` → `cyberdefense.global`) when matching/creating RM users. A migration artefact; off by default. |
+| **RM_WARNING_MSG** | `This project is managed via CHAOTICA.` | Warning text appended to project descriptions in RM to indicate that changes may be overwritten. Also used to detect CHAOTICA-origin projects during inbound sync (loop prevention). |
 
 ---
 

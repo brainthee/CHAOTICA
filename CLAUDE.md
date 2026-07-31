@@ -43,7 +43,7 @@ The project is structured as a multi-app Django project:
 - **reporting/** - Reporting and analytics features
 - **notifications/** - Notification system with rules and subscriptions
 - **chaotica_utils/** - Shared utilities and common functionality
-- **rm_sync/** - Risk management synchronization
+- **rm_sync/** - Resource Manager (Smartsheet RM) two-way schedule synchronisation
 - **virtualpet/** - Additional feature module
 
 ### Key Technical Components
@@ -70,7 +70,7 @@ URLs are organized hierarchically:
 - `/reporting/` - Reports and analytics
 - `/notifications/` - Notification management
 - `/jobtracker/` - Job/engagement tracking
-- `/rm_sync/` - Risk management sync
+- `/rm_sync/` - Resource Manager (Smartsheet RM) sync
 - `/oauth2/` - ADFS authentication
 
 ### File Structure

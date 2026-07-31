@@ -22,8 +22,10 @@ def to_utf8mb4(apps, schema_editor):
         return
     schema_editor.execute(
         ALTER.format(
-            table=TABLE, col=COLUMN,
-            charset="utf8mb4", collation="utf8mb4_unicode_ci",
+            table=TABLE,
+            col=COLUMN,
+            charset="utf8mb4",
+            collation="utf8mb4_unicode_ci",
         )
     )
 
@@ -34,8 +36,10 @@ def to_utf8mb3(apps, schema_editor):
         return
     schema_editor.execute(
         ALTER.format(
-            table=TABLE, col=COLUMN,
-            charset="utf8mb3", collation="utf8mb3_bin",
+            table=TABLE,
+            col=COLUMN,
+            charset="utf8mb3",
+            collation="utf8mb3_bin",
         )
     )
 

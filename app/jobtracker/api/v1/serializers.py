@@ -38,11 +38,46 @@ from ...models import (
 
 class UserSerializer(serializers.ModelSerializer):
     """Minimal user representation. PII (phone number, etc.) is deliberately
-    excluded — programmatic clients get identity, not the full profile."""
+    excluded — programmatic clients get identity, not the full profile.
+
+    ``job_title`` (free-text) and the current job level (from the
+    ``UserJobLevel`` history, ``is_current=True``) are included: they are
+    org-chart facts already shown across the UI, and drive HR/AAD-style
+    automation. ``job_level`` is the short label (e.g. ``"JL5"``);
+    ``job_level_label`` is the long description (may be null)."""
+
+    job_level = serializers.SerializerMethodField()
+    job_level_label = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ["id", "first_name", "last_name", "email", "is_active"]
+        fields = [
+            "id",
+            "first_name",
+            "last_name",
+            "email",
+            "is_active",
+            "job_title",
+            "job_level",
+            "job_level_label",
+        ]
+
+    def get_job_level(self, obj):
+        current = obj.get_current_level()
+        return current.job_level.short_label if current else None
+
+    def get_job_level_label(self, obj):
+        current = obj.get_current_level()
+        return current.job_level.long_label if current else None
+
+
+class UserStatusUpdateSerializer(serializers.Serializer):
+    """Write body for the ``users/{id}/set-status/`` action.
+
+    The only write surface in the v1 API. Deliberately tiny: a single boolean
+    so the endpoint can never be repurposed to edit arbitrary user fields."""
+
+    is_active = serializers.BooleanField()
 
 
 class OrganisationalUnitSerializer(serializers.ModelSerializer):

@@ -326,6 +326,12 @@ CONSTANCE_CONFIG = {
     ),
     # ResourceManager Integration
     "RM_SYNC_ENABLED": (False, "Should RM Synchronisation be enabled"),
+    "RM_SYNC_READ_ONLY": (
+        False,
+        "Block ALL writes (POST/PUT/DELETE) to the RM API. Reads still work. "
+        "Set this on non-production instances that point at a production RM token so "
+        "they can pull/preview without ever modifying RM.",
+    ),
     "RM_SYNC_API_TOKEN": ("", "Developer API Token"),
     "RM_SYNC_API_SITE": ("https://api.rm.smartsheet.com", "Domain of RM API"),
     "RM_WARNING_MSG": (
@@ -333,6 +339,27 @@ CONSTANCE_CONFIG = {
         "Warning message to display in project descriptions.",
     ),
     "RM_SYNC_STALE_TIMEOUT": (60, "Amount of minutes before a sync task is stale"),
+    "RM_SYNC_PULL_ENABLED": (
+        False,
+        "Enable inbound RM → CHAOTICA sync for users whose direction is set to PULL.",
+    ),
+    "RM_SYNC_PULL_LOOKBACK_DAYS": (
+        0,
+        "How many days of PAST RM schedule to pull (inbound). 0 = today onwards "
+        "only (default). Set to e.g. 365 to import the last year of history. "
+        "Larger values import more data and, for authoritative PULL records, "
+        "widen the window in which stale slots are reconciled.",
+    ),
+    "RM_SYNC_PULL_LOOKAHEAD_DAYS": (
+        365,
+        "How many days of FUTURE RM schedule to pull (inbound), counting from "
+        "today. Default 365.",
+    ),
+    "RM_SYNC_DOMAIN_REWRITE": (
+        False,
+        "Rewrite legacy email domains (accenture.com/contextis.com → cyberdefense.global) "
+        "when matching/creating RM users. Off by default; a migration artefact.",
+    ),
     "MAINTENANCE_MODE": (False, "Toggle maintenance mode"),
     # Calendar Feed settings
     "CALENDAR_FEED_ENABLED": (

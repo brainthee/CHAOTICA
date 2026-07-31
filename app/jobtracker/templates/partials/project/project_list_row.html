@@ -5,6 +5,12 @@
 
   <td class="align-middle time ps-0 projectName py-4">
     <a class="fw-bold fs-8" href="{{ project.get_absolute_url }}">{{ project.title }}</a>
+    {% if project.is_imported %}
+    <span class="fa-solid fa-cloud-arrow-down text-body-tertiary ms-1 fs-10" title="Imported from Resource Manager"></span>
+    {% endif %}
+    {% if project.external_url %}
+    <a href="{{ project.external_url }}" target="_blank" rel="noopener" class="text-body-tertiary ms-1 fs-10" title="Open in RM"><span class="fa-solid fa-arrow-up-right-from-square"></span></a>
+    {% endif %}
   </td>
 
   <td class="align-middle unit ps-3 py-4">
@@ -13,7 +19,14 @@
     {% endif %}
   </td>
 
+  <td class="align-middle client ps-3 py-4">
+    {% if project.client %}
+    <a class="fw-bold fs-8" href="{{ project.client.get_absolute_url }}">{{ project.client }}</a>
+    {% endif %}
+  </td>
+
   <td class="align-middle text-end status_display">
+    <span class="badge badge-phoenix badge-phoenix-{{ project.state_bs_colour }} me-1">{{ project.get_state_display }}</span>
     {% include 'partials/project/status_badge.html' with badge_size='sm' %}
   </td>
 </tr>

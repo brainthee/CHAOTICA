@@ -51,8 +51,7 @@ class SmartSheetCSVImporter(BaseImporter):
                 name[0].lower(), name[-1].lower(), "cyberdefense.global"
             )
         existingUser = User.objects.filter(
-            Q(first_name=name[0].title(), last_name=name[-1].title()) |
-            Q(email=email)
+            Q(first_name=name[0].title(), last_name=name[-1].title()) | Q(email=email)
         )
         if existingUser.exists():
             db_user = existingUser.first()
@@ -133,7 +132,7 @@ class SmartSheetCSVImporter(BaseImporter):
         if not data:
             log.error("Data is null to SmartSheetCSVImporter")
             raise ValueError("Data is null to SmartSheetCSVImporter")
-        
+
         files_total = len(data)
         files_imported = 0
         skipped_files = []
@@ -224,7 +223,9 @@ class SmartSheetCSVImporter(BaseImporter):
                     if phaseState:
                         if (
                             phaseState
-                            not in projectData["phases"][row["Phase Name"].strip()]["state"]
+                            not in projectData["phases"][row["Phase Name"].strip()][
+                                "state"
+                            ]
                         ):
                             projectData["phases"][row["Phase Name"].strip()]["state"][
                                 phaseState
@@ -238,7 +239,8 @@ class SmartSheetCSVImporter(BaseImporter):
                             "external_links": row["External Link"].strip(),
                         }
                         assigned = [
-                            x.strip() for x in re.split(";|,", row["Assigned To"].strip())
+                            x.strip()
+                            for x in re.split(";|,", row["Assigned To"].strip())
                         ]
                         line_data["assigned"] = assigned
                         projectData["phases"][row["Phase Name"].strip()]["state"][
@@ -246,14 +248,19 @@ class SmartSheetCSVImporter(BaseImporter):
                         ].append(line_data)
 
             if not projectData:
-                log.warning("projectData is empty - something went wrong! - skipping " + str(project_file))
+                log.warning(
+                    "projectData is empty - something went wrong! - skipping "
+                    + str(project_file)
+                )
                 skipped_files.append(str(project_file))
                 continue
             if "external_links" not in projectData:
-                log.warning("projectData is malformed - suspect file isn't pentest - skipping " + str(project_file))
+                log.warning(
+                    "projectData is malformed - suspect file isn't pentest - skipping "
+                    + str(project_file)
+                )
                 skipped_files.append(str(project_file))
                 continue
-
 
             # Lets add the DB stuff!
             # Sync the client...
@@ -322,13 +329,21 @@ class SmartSheetCSVImporter(BaseImporter):
 
             log.info("Syncing Job...")
             if projectData["name"] in bad_values:
-                log.warning("Bad job name '{}' - skipping {}".format(projectData["name"], projectData["filename"]))
+                log.warning(
+                    "Bad job name '{}' - skipping {}".format(
+                        projectData["name"], projectData["filename"]
+                    )
+                )
                 skipped_files.append(projectData["filename"])
                 continue
             # Ok, lets see if there's a project with this ID!
             if Project.objects.filter(external_id=projectData["sheet_id"]).exists():
                 # Weird?
-                log.warning("ID found in Projects?! '{}' - skipping {}".format(projectData["name"], projectData["filename"]))
+                log.warning(
+                    "ID found in Projects?! '{}' - skipping {}".format(
+                        projectData["name"], projectData["filename"]
+                    )
+                )
                 skipped_files.append(projectData["filename"])
                 continue
             # Ok, lets see if there's a Job with this ID!
@@ -340,12 +355,12 @@ class SmartSheetCSVImporter(BaseImporter):
                     title=projectData["name"].strip(),
                     is_imported=True,
                     defaults={
-                        "external_id":projectData["sheet_id"],
-                        "account_manager":primary_am,
-                        "created_by":primary_am,
-                        "client":db_client,
-                        "unit":db_unit,
-                    }
+                        "external_id": projectData["sheet_id"],
+                        "account_manager": primary_am,
+                        "created_by": primary_am,
+                        "client": db_client,
+                        "unit": db_unit,
+                    },
                 )
                 if db_job_created:
                     log.info('Created Job: "' + str(db_job) + '"')
@@ -355,7 +370,11 @@ class SmartSheetCSVImporter(BaseImporter):
                             projectData["filename"]
                         ),
                     )
-                log.warning("ID not found in Projects or Jobs! '{}' {}".format(projectData["name"], projectData["filename"]))
+                log.warning(
+                    "ID not found in Projects or Jobs! '{}' {}".format(
+                        projectData["name"], projectData["filename"]
+                    )
+                )
 
             # Lets update some info...
             db_job.client = db_client
@@ -449,7 +468,9 @@ class SmartSheetCSVImporter(BaseImporter):
                         db_service = Service.objects.get(name=svc)
 
                 db_phase, db_phase_created = Phase.objects.get_or_create(
-                    job=db_job, title=phaseName, is_imported=True,
+                    job=db_job,
+                    title=phaseName,
+                    is_imported=True,
                 )
                 if db_phase.service != db_service:
                     db_phase.service = db_service
@@ -488,7 +509,10 @@ class SmartSheetCSVImporter(BaseImporter):
                 # Lets update reporting info
                 if "reporting" in phaseData["state"]:
                     # We check for author here.
-                    if phaseData["state"]["reporting"][0]["assigned"][0] not in bad_values:
+                    if (
+                        phaseData["state"]["reporting"][0]["assigned"][0]
+                        not in bad_values
+                    ):
                         db_author = self._convert_name_to_db_user(
                             log,
                             projectData["filename"],
@@ -703,14 +727,14 @@ class SmartSheetCSVImporter(BaseImporter):
                                         user=db_assigned,
                                         phase=db_phase,
                                     )
-                
+
                 # Ok, lets see if author or lead isn't set and we can set it:
-                if ( job_lead and db_phase.project_lead is None):
+                if job_lead and db_phase.project_lead is None:
                     db_phase.project_lead = job_lead
-                    
-                if ( job_author and db_phase.report_author is None):
-                    db_phase.report_author = job_author                    
-                
+
+                if job_author and db_phase.report_author is None:
+                    db_phase.report_author = job_author
+
                 # Lets try and sort the phase status...
                 # Lets check if delivered first!
                 if (
@@ -864,9 +888,11 @@ class SmartSheetCSVImporter(BaseImporter):
             db_job.save()
             files_imported = files_imported + 1
 
-        log.info("{} files successfully imported of {} provided".format(
-            str(files_imported), str(files_total)
-        ))
+        log.info(
+            "{} files successfully imported of {} provided".format(
+                str(files_imported), str(files_total)
+            )
+        )
         log.warning("Skipped summary:")
         for bad_filename in skipped_files:
             log.warning(" - {}".format(bad_filename))
