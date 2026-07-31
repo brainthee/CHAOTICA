@@ -106,6 +106,7 @@ Full system access including user management, impersonation, site settings, and 
 | Workflow Tasks | View, Add, Change, Delete |
 | Leave | Manage Leave |
 | Billing Codes | View, Add, Change, Delete |
+| Projects | View, Add, Change, Delete |
 | Users | Manage User, Impersonate Users, Manage Site Settings, View Activity Logs |
 
 ### Global: Manager (Delivery Manager)
@@ -126,6 +127,7 @@ Focused on delivery operations — full service and team management, skills, qua
 | Workflow Tasks | View |
 | Leave | Manage Leave |
 | Billing Codes | View, Add, Change, Delete |
+| Projects | View, Add, Change, Delete |
 | Users | Manage User |
 
 ### Global: Service Delivery
@@ -146,6 +148,7 @@ Client and framework management with service delivery focus. Read-only access to
 | Workflow Tasks | View |
 | Leave | Manage Leave |
 | Billing Codes | View, Add |
+| Projects | View |
 
 ### Global: Sales Manager
 
@@ -163,6 +166,7 @@ Client and commercial management with full billing code access.
 | Organisational Units | View |
 | Qualifications | View, View Users |
 | Billing Codes | View, Add, Change, Delete |
+| Projects | View, Add, Change |
 
 ### Global: Sales Member
 
@@ -180,6 +184,7 @@ Client creation and contact management. Limited to viewing most other areas.
 | Organisational Units | View |
 | Qualifications | View, View Users |
 | Billing Codes | View, Add |
+| Projects | View, Add, Change |
 
 ### Global: User
 
@@ -197,6 +202,7 @@ Baseline read-only access. All authenticated users receive this role by default.
 | Organisational Units | View |
 | Qualifications | View, View Users |
 | Billing Codes | View |
+| Projects | View |
 
 ---
 
@@ -515,6 +521,27 @@ Jobs can have a support team with defined roles, stored in the `JobSupportTeamRo
 ### Global Roles
 
 Global permissions are stored as standard Django Group permissions. Each global role maps to a Group with a configurable prefix (`GLOBAL_GROUP_PREFIX`). The `Group.sync_global_permissions()` method ensures group permissions match the `GlobalRoles.PERMISSIONS` definitions.
+
+!!! warning "Applying changes to `GlobalRoles.PERMISSIONS` on an existing install"
+    Editing `GlobalRoles.PERMISSIONS` in code is **not** enough on its own — the
+    change only takes effect once `sync_global_permissions()` re-runs against the
+    existing `Group` rows. The `post_migrate` seeder (`populate_groups`) only syncs
+    groups it *creates*, so a redeploy will **not** re-sync groups that already
+    exist. To apply immediately, run the **Admin menu → Sync global permissions**
+    action (`admin_task_sync_global_permissions`); otherwise the daily
+    `task_sync_global_permissions` cron (07:30) picks it up. Group members inherit
+    the change on their next request — no per-user re-assignment is needed.
+
+!!! note "Projects are gated site-wide, not per unit"
+    Unlike jobs/phases (which are scoped per organisational unit via Guardian),
+    `Project` access is governed by the standard Django model permissions
+    (`view_project` / `add_project` / `change_project` / `delete_project`) granted
+    through global roles. Every authenticated user with the `User` role can read
+    all projects; Sales, Managers and Admins can create/edit; Managers and Admins
+    can delete. This deliberately generalised model reflects that projects
+    (including those mirrored in from the RM pull sync) are less sensitive than
+    job/phase delivery data. A user is *additionally* able to see any project they
+    are scheduled on, regardless of role (`Project.objects.projects_for_user`).
 
 ### Unit Roles
 

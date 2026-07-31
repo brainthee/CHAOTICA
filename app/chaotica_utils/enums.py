@@ -100,6 +100,11 @@ class GlobalRoles:
                 "chaotica_utils.impersonate_users",
                 "chaotica_utils.manage_site_settings",
                 "chaotica_utils.view_activity_logs",
+                # Project
+                "jobtracker.view_project",
+                "jobtracker.add_project",
+                "jobtracker.change_project",
+                "jobtracker.delete_project",
             ],
         ),
         (
@@ -152,6 +157,11 @@ class GlobalRoles:
                 "jobtracker.delete_billingcode",
                 # Leave
                 "chaotica_utils.manage_leave",
+                # Project
+                "jobtracker.view_project",
+                "jobtracker.add_project",
+                "jobtracker.change_project",
+                "jobtracker.delete_project",
             ],
         ),
         (
@@ -193,6 +203,8 @@ class GlobalRoles:
                 # Billing Codes
                 "jobtracker.view_billingcode",
                 "jobtracker.add_billingcode",
+                # Project
+                "jobtracker.view_project",
             ],
         ),
         (
@@ -235,6 +247,10 @@ class GlobalRoles:
                 "jobtracker.add_billingcode",
                 "jobtracker.change_billingcode",
                 "jobtracker.delete_billingcode",
+                # Project
+                "jobtracker.view_project",
+                "jobtracker.add_project",
+                "jobtracker.change_project",
             ],
         ),
         (
@@ -270,6 +286,10 @@ class GlobalRoles:
                 # Billing Codes
                 "jobtracker.view_billingcode",
                 "jobtracker.add_billingcode",
+                # Project
+                "jobtracker.view_project",
+                "jobtracker.add_project",
+                "jobtracker.change_project",
             ],
         ),
         (
@@ -298,6 +318,8 @@ class GlobalRoles:
                 "jobtracker.view_users_qualification",
                 # Billing Codes
                 "jobtracker.view_billingcode",
+                # Project
+                "jobtracker.view_project",
             ],
         ),
     )

@@ -116,7 +116,7 @@ Menu.add_item(
         "Projects",
         reverse("project_list"),
         check=lambda request: request.user.is_authenticated,
-        perm="jobtracker.view_projects",
+        perm="jobtracker.view_project",
         icon="diagram-project",
         weight=3,
     ),
