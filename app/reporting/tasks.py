@@ -3,7 +3,6 @@ import logging
 import os
 import re
 import tempfile
-import traceback
 
 from django_cron import CronJobBase, Schedule
 from django.conf import settings
@@ -231,8 +230,11 @@ class ProcessReportRuns(CronJobBase):
             run.error_message = str(e)
             run.completed_at = timezone.now()
             run.save()
-            logger.error(f"Report run {run.id} failed: {e}")
-            logger.error(traceback.format_exc())
+            # Single structured event (message + traceback) instead of two
+            # separate logger.error calls, which Sentry split into two issues
+            # for one failure (CHAOTICA-121/122). logger.exception attaches the
+            # active exception's traceback automatically.
+            logger.exception(f"Report run {run.id} failed: {e}")
 
 
 class CleanupOldReportRuns(CronJobBase):
