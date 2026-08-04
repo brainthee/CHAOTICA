@@ -68,6 +68,38 @@ def index(request):
         request.user, "can_schedule_job", klass=OrganisationalUnit
     )
 
+    # Queue tabs are scoped to the units the user is actually a MEMBER of
+    # (intersected with the relevant permission) — NOT every unit a global role
+    # happens to grant can_view/can_tqa/etc. across. The personal-involvement
+    # predicates below are OR'd in so work the user is directly assigned to
+    # (e.g. doing PQA on a phase in another unit) still shows regardless of
+    # membership. Alarms further down keep their own wider role-based scoping.
+    member_units = OrganisationalUnit.objects.filter(
+        members__member=request.user, members__left_date__isnull=True
+    )
+    q_view_units = units_can_view.filter(pk__in=member_units)
+    q_scope_units = units_can_scope.filter(pk__in=member_units)
+    q_signoff_units = units_can_signoff.filter(pk__in=member_units)
+    q_deliver_units = units_can_deliver.filter(pk__in=member_units)
+
+    queue_phase_involved = (
+        Q(timeslots__user=request.user)
+        | Q(report_author=request.user)
+        | Q(project_lead=request.user)
+        | Q(techqa_by=request.user)
+        | Q(presqa_by=request.user)
+    )
+    queue_job_involved = (
+        Q(phases__timeslots__user=request.user)
+        | Q(phases__report_author=request.user)
+        | Q(phases__project_lead=request.user)
+        | Q(phases__techqa_by=request.user)
+        | Q(phases__presqa_by=request.user)
+        | Q(scoped_by=request.user)
+        | Q(account_manager=request.user)
+        | Q(dep_account_manager=request.user)
+    )
+
     # Boolean flags for template tab visibility
     can_scope = units_can_scope.exists()
     can_signoff_scope = units_can_signoff.exists()
@@ -84,10 +116,10 @@ def index(request):
     context["is_people_manager"] = is_people_mgr
 
     all_phases = Phase.objects.filter(
-        Q(job__unit__in=units_can_view),
+        Q(job__unit__in=q_view_units) | queue_phase_involved,
         status__in=PhaseStatuses.ACTIVE_STATUSES,  # Include active phase statuses only
         job__status__in=JobStatuses.ACTIVE_STATUSES,  # Include active job statuses only
-    )
+    ).distinct()
 
     has_oversight_role = (
         can_tqa or can_pqa or can_scope or can_signoff_scope or can_deliver
@@ -215,11 +247,11 @@ def index(request):
     if can_scope:
         context["pendingScoping"] = list(
             Job.objects.filter(
-                Q(unit__in=units_can_scope),
+                Q(unit__in=q_scope_units) | queue_job_involved,
                 Q(status=JobStatuses.PENDING_SCOPE)
                 | Q(status=JobStatuses.SCOPING_ADDITIONAL_INFO_REQUIRED)
                 | Q(status=JobStatuses.SCOPING),
-            ).select_related("unit", "client")
+            ).distinct().select_related("unit", "client")
             .prefetch_related("phases", "scoped_by")
         )
     else:
@@ -228,9 +260,9 @@ def index(request):
     if can_signoff_scope:
         context["scopesToSignoff"] = list(
             Job.objects.filter(
-                Q(unit__in=units_can_signoff),
+                Q(unit__in=q_signoff_units) | queue_job_involved,
                 status=JobStatuses.PENDING_SCOPING_SIGNOFF,
-            ).select_related("unit", "client")
+            ).distinct().select_related("unit", "client")
             .prefetch_related("phases")
         )
     else:
@@ -245,9 +277,9 @@ def index(request):
     if can_deliver:
         context["pendingDelivery"] = list(
             Phase.objects.filter(
-                Q(job__unit__in=units_can_deliver),
+                Q(job__unit__in=q_deliver_units) | queue_phase_involved,
                 Q(status=PhaseStatuses.COMPLETED)
-            ).select_related(
+            ).distinct().select_related(
                 "project_lead", "job__client", "job__account_manager", "job__unit",
             )
         )
