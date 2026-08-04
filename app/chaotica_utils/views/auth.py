@@ -1,3 +1,6 @@
+import logging
+
+from django.contrib import messages
 from django.contrib.auth import login, authenticate
 from django.shortcuts import render, redirect
 from django.template import loader
@@ -20,10 +23,42 @@ from django.views.decorators.http import require_http_methods
 from django.contrib.auth import views as auth_views
 from django.urls import reverse
 
+logger = logging.getLogger(__name__)
+
+
+def resilient_adfs_login(request, *args, **kwargs):
+    """Front ``/oauth2/login`` so a broken ADFS redirect degrades gracefully.
+
+    ``django_auth_adfs``'s login view 500s if it can't build the authorize
+    redirect (e.g. the provider's OpenID discovery endpoint is unreachable or
+    misconfigured) — Sentry CHAOTICA-YK. On the happy path we delegate to the
+    real view unchanged; on failure we send the user to the local login page
+    with a message (``?sso_error=1`` so LoginView doesn't just bounce them
+    straight back into ADFS and loop).
+    """
+    from django_auth_adfs.views import OAuth2LoginView
+
+    try:
+        return OAuth2LoginView.as_view()(request, *args, **kwargs)
+    except Exception:
+        logger.exception("ADFS login redirect failed; falling back to local login")
+        messages.error(
+            request,
+            "Single sign-on is temporarily unavailable. "
+            "Please try again shortly, or use local login if enabled.",
+        )
+        return redirect(reverse("login") + "?sso_error=1")
+
 
 class LoginView(auth_views.LoginView):
     def get(self, request, *args, **kwargs):
-        if config.ADFS_ENABLED and config.ADFS_AUTO_LOGIN:
+        # Skip the auto-bounce to ADFS when we've just fallen back from a failed
+        # SSO attempt (resilient_adfs_login), otherwise the user loops.
+        if (
+            config.ADFS_ENABLED
+            and config.ADFS_AUTO_LOGIN
+            and not request.GET.get("sso_error")
+        ):
             # Build ADFS URL with next parameter
             adfs_url = reverse("django_auth_adfs:login")
             try:

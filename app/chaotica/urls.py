@@ -21,12 +21,18 @@ from django.http import HttpResponseRedirect
 from django.conf import settings
 from django.conf.urls.static import static
 
+from chaotica_utils.views.auth import resilient_adfs_login
+
 urlpatterns = [
     re_path(r"^$", lambda r: HttpResponseRedirect("dashboard/"), name="home"),
     re_path(r"^dashboard/", include("dashboard.urls")),
     path("admin/doc/", include("django.contrib.admindocs.urls")),
     path("admin/", admin.site.urls),
     path('explorer/', include('explorer.urls')),
+    # Front the ADFS login with a resilient wrapper (must precede the include so
+    # it wins for this exact path) so a failed SSO redirect degrades to the local
+    # login page instead of 500ing (Sentry CHAOTICA-YK).
+    path("oauth2/login", resilient_adfs_login, name="adfs-login-resilient"),
     path("oauth2/", include("django_auth_adfs.urls")),
     path("select2/", include("django_select2.urls")),
     path('reporting/', include('reporting.urls')),
