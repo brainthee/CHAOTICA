@@ -320,6 +320,10 @@ class GlobalRoles:
                 "jobtracker.view_billingcode",
                 # Project
                 "jobtracker.view_project",
+                "jobtracker.add_project",
+                # Reports
+                "reporting.add_report",
+                "reporting.view_report",
             ],
         ),
     )

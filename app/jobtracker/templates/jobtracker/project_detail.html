@@ -237,6 +237,9 @@
           <li class="nav-item text-nowrap me-2" role="presentation">
             <a class="nav-link" id="schedule-tab" data-bs-toggle="tab" href="#schedule" role="tab" aria-controls="tab-schedule" aria-selected="true"><span class="fa-solid fa-calendar me-2 tab-icon-color"></span>Schedule</a>
           </li>
+          <li class="nav-item text-nowrap me-2" role="presentation">
+            <a class="nav-link" id="activity-tab" data-bs-toggle="tab" href="#activity" role="tab" aria-controls="tab-activity" aria-selected="false"><span class="fa-solid fa-clock-rotate-left me-2 tab-icon-color"></span>Activity</a>
+          </li>
         </ul>
 
         <div class="tab-content" id="myTabContent">
@@ -272,6 +275,12 @@
             {% include 'partials/scheduler/vis_scheduler_toolbar.html' with readonly=True %}
             <div id="sched-progress" class="sched-progress" role="progressbar" aria-hidden="true"></div>
             <div id="vis-timeline"></div>
+          </div>
+        </div>
+
+        <div class="tab-content" id="myTabContent">
+          <div class="tab-pane fade" id="activity" role="tabpanel" aria-labelledby="activity-tab">
+            {% include 'partials/project/widgets/activity.html' %}
           </div>
         </div>
       </div>

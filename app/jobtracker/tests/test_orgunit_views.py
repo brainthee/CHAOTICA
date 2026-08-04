@@ -85,3 +85,41 @@ class OrgUnitConsultantUtilisationTests(ScheduleHistoryBase):
         # Roster count still reflects everyone; consultants is the booked subset.
         self.assertEqual(stats["summary"]["active_members"], 2)
         self.assertEqual(stats["summary"]["consultants"], 1)
+
+
+class OrgUnitGetManagersTests(ScheduleHistoryBase):
+    """get_managers() resolves members holding a manage_role via the roles m2m.
+
+    Regression: it previously filtered a non-existent ``role`` field against the
+    UnitRoles enum, which raised FieldError instead of returning managers.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.manager_role, _ = OrganisationalUnitRole.objects.get_or_create(
+            name="Manager", defaults={"manage_role": True}
+        )
+        if not self.manager_role.manage_role:
+            self.manager_role.manage_role = True
+            self.manager_role.save()
+        self.consultant_role, _ = OrganisationalUnitRole.objects.get_or_create(
+            name="Consultant"
+        )
+
+        self.manager_ms = OrganisationalUnitMember.objects.create(
+            unit=self.unit, member=self.actor
+        )
+        self.manager_ms.roles.add(self.manager_role)
+        self.consultant_ms = OrganisationalUnitMember.objects.create(
+            unit=self.unit, member=self.other
+        )
+        self.consultant_ms.roles.add(self.consultant_role)
+
+    def test_returns_manage_role_members_only(self):
+        managers = list(self.unit.get_managers())
+        self.assertEqual(managers, [self.actor])
+
+    def test_excludes_inactive_managers(self):
+        self.actor.is_active = False
+        self.actor.save()
+        self.assertEqual(list(self.unit.get_managers()), [])

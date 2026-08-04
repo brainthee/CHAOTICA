@@ -6,7 +6,7 @@ from django.views.generic.list import ListView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from django.shortcuts import get_object_or_404
-from chaotica_utils.views import ChaoticaBaseView
+from chaotica_utils.views import ChaoticaBaseView, log_system_activity
 from chaotica_utils.decorators import permission_required_or_403
 from chaotica_utils.models import User
 from django.contrib.auth.decorators import login_required
@@ -123,7 +123,11 @@ class ProjectCreateView(ProjectBaseView, PermissionRequiredMixin, CreateView):
 
     def form_valid(self, form):
         form.instance.created_by = self.request.user
-        return super().form_valid(form)
+        response = super().form_valid(form)
+        log_system_activity(
+            self.object, "Project created", author=self.request.user
+        )
+        return response
 
 
 class ProjectUpdateView(ProjectBaseView, PermissionRequiredMixin, UpdateView):
@@ -133,6 +137,13 @@ class ProjectUpdateView(ProjectBaseView, PermissionRequiredMixin, UpdateView):
     permission_required = "jobtracker.change_project"
     accept_global_perms = True
     return_403 = True
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        log_system_activity(
+            self.object, "Project updated", author=self.request.user
+        )
+        return response
 
 
 class ProjectDeleteView(ProjectBaseView, PermissionRequiredMixin, DeleteView):

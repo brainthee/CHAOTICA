@@ -9,12 +9,14 @@ carries its own delivery role.
 
 The project detail page opens on descriptive information (point of contact,
 unit, client, billing codes, status/state, dates, and the RM source link) and
-provides four tabs:
+provides five tabs:
 
 - **Overview** — the free-text project overview.
 - **Stats** — quantitative analytics (loaded on demand, see below).
 - **Team** — each member's contribution to the project.
 - **Schedule** — a read-only timeline of the project's booked time.
+- **Activity** — a chronological system-note feed of changes to the project
+  (created, updated, …), mirroring the activity history on jobs.
 
 ## Stats tab
 
@@ -35,6 +37,13 @@ and converted to days using the client's configured hours-in-day (or the
   total.
 
 The **Team** tab shows the same per-member contribution table.
+
+## Activity tab
+
+The **Activity** tab shows a timeline of system notes recorded against the
+project — currently when it is created and updated — with the author and time of
+each change. It uses the same system-note feed as job activity, so any future
+project events logged via `log_system_activity` appear here automatically.
 
 !!! note
     Projects carry no revenue and no service link on their slots, so the stats

@@ -258,16 +258,18 @@ class OrganisationalUnit(models.Model):
         return self.name
 
     def get_managers(self):
-        ids = []
-        for mgr in OrganisationalUnitMember.objects.filter(
-            unit=self, role=UnitRoles.MANAGER, member__is_active=True
-        ):
-            if mgr.member.pk not in ids:
-                ids.append(mgr.member.pk)
-        if ids:
-            return User.objects.filter(pk__in=ids)
-        else:
-            return User.objects.none()
+        # Members hold a ``roles`` m2m to OrganisationalUnitRole; a management
+        # role is flagged via ``manage_role=True`` (same signal used by
+        # ensure_lead_memberships / sync_default_permissions). The old code
+        # filtered a non-existent ``role`` field against the UnitRoles enum,
+        # which raised FieldError.
+        return User.objects.filter(
+            pk__in=OrganisationalUnitMember.objects.filter(
+                unit=self,
+                roles__manage_role=True,
+                member__is_active=True,
+            ).values("member")
+        ).distinct()
 
     def get_consultants(self):
         ids = []
