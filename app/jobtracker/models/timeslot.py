@@ -154,19 +154,35 @@ class TimeSlot(models.Model):
     )
 
     @property
+    def phase_or_none(self):
+        """The related Phase, or None when phase_id is dangling.
+
+        Accessing ``self.phase`` raises ``Phase.DoesNotExist`` if phase_id
+        points at a row that was hard-deleted outside Django's CASCADE (orphaned
+        delivery slot). That 500s anything that renders the slot — the profile
+        page, the scheduler, etc. (Sentry CHAOTICA-12Q). Read the phase through
+        this everywhere we only need to display/inspect it.
+        """
+        try:
+            return self.phase
+        except Phase.DoesNotExist:
+            return None
+
+    @property
     def slug(self):
         if self.is_delivery():
-            return self.phase.job.slug
+            phase = self.phase_or_none
+            return phase.job.slug if phase else None
         elif self.is_project():
             return None
         return None
 
     def is_valid(self):
-        if self.is_delivery() and self.phase:
+        if self.is_delivery() and self.phase_or_none:
             return True
         elif self.is_project() and self.project:
             return True
-        elif self.is_internal() and not self.phase and not self.project:
+        elif self.is_internal() and not self.phase_or_none and not self.project:
             return True
         return False
 
@@ -198,8 +214,11 @@ class TimeSlot(models.Model):
                 if tentative or onsite
                 else ""
             )
+            phase = self.phase_or_none
             return "{}: {} {}".format(
-                str(self.phase), self.get_deliveryRole_display(), extra
+                str(phase) if phase else "(deleted phase)",
+                self.get_deliveryRole_display(),
+                extra,
             )
         elif self.is_project():
             return "{}: {}".format(
@@ -329,14 +348,15 @@ class TimeSlot(models.Model):
 
         data["textColor"] = self.get_schedule_slot_text_colour(data["backgroundColor"])
 
-        if self.is_delivery():
+        if self.is_delivery() and self.phase_or_none:
+            phase = self.phase_or_none
             data["deliveryRole"] = self.deliveryRole
-            data["phaseId"] = self.phase.pk
+            data["phaseId"] = phase.pk
             data["edit_url"] = reverse(
                 "change_job_schedule_slot",
-                kwargs={"slug": self.phase.job.slug, "pk": self.pk},
+                kwargs={"slug": phase.job.slug, "pk": self.pk},
             )
-            data["viewURL"] = self.phase.get_absolute_url()
+            data["viewURL"] = phase.get_absolute_url()
         elif self.is_project():
             data["projectId"] = self.project.pk
             data["edit_url"] = reverse(
@@ -487,12 +507,17 @@ class TimeSlot(models.Model):
             # If no phase attached... always confirmed ;)
             return True
         else:
-            # Phase attached - only proceed if scheduling confirmed on phase
-            return self.phase.status >= PhaseStatuses.SCHEDULED_CONFIRMED
+            # Phase attached - only proceed if scheduling confirmed on phase.
+            # A dangling phase (deleted out from under the slot) can't be
+            # confirmed, so treat it as tentative rather than crashing.
+            phase = self.phase_or_none
+            if phase is None:
+                return False
+            return phase.status >= PhaseStatuses.SCHEDULED_CONFIRMED
 
     def get_target_url(self):
-        if self.is_delivery():
-            return self.phase.get_absolute_url()
+        if self.is_delivery() and self.phase_or_none:
+            return self.phase_or_none.get_absolute_url()
         if self.is_project():
             return self.project.get_absolute_url()
         # Eventually return more useful URLs... but for now, return home.
