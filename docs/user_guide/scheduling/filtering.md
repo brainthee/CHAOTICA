@@ -21,6 +21,15 @@ Next time you open `/scheduler/` with no filters in the URL, it loads your saved
 - **Clear filters** shows everything *this visit* but keeps your saved default for next time.
 - **Clear my default** (in the panel) removes the saved default entirely, so future visits open unfiltered.
 
+!!! note "Stale selections are dropped, not fatal"
+    A saved default stores the exact people, teams, units, jobs, phases, etc. you
+    picked. If one of those later disappears — a colleague is deactivated, a job or
+    phase is deleted — that single selection is silently ignored and the **rest of
+    your default still applies**. (Previously any one stale selection quietly wiped
+    the *whole* default, dropping you onto the full unfiltered schedule while the
+    badge still claimed "Default view".) Note the date range is saved as fixed
+    dates, so a very old default may need its dates refreshed.
+
 !!! note "Personal and non‑privileged"
     Your default is stored against your own account only — it doesn't affect anyone else. It's purely a display shortcut: it can only narrow what you're already allowed to see and never grants access to extra people, jobs, or phases.
 

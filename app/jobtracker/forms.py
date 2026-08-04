@@ -65,6 +65,51 @@ from django.conf import settings
 from cities_light.models import City
 
 
+class LenientModelMultipleChoiceField(forms.ModelMultipleChoiceField):
+    """Like ``ModelMultipleChoiceField`` but silently drops submitted PKs that no
+    longer resolve — deleted rows, or rows now excluded by the queryset (e.g. a
+    user who has since been deactivated) — instead of failing validation.
+
+    The scheduler persists a user's saved "default view" as raw PKs. With the
+    stock field, a single stale PK (a teammate who left, a deleted job/phase)
+    made the whole ``SchedulerFilter`` invalid, so ``cleaned_data`` was never
+    populated and *every* filter was silently discarded — the user fell back to
+    the full unfiltered schedule while the "Default view" pill still showed.
+    Here only the stale entries are dropped; the rest of the saved view applies.
+    """
+
+    def _check_values(self, value):
+        key = self.to_field_name or "pk"
+        try:
+            value = frozenset(value)
+        except TypeError:
+            raise forms.ValidationError(
+                self.error_messages["invalid_list"], code="invalid_list"
+            )
+        # Keep only the values that actually resolve; drop deleted/excluded rows
+        # and malformed PKs (bad type for the key) rather than raising.
+        resolved = []
+        for pk in value:
+            try:
+                if self.queryset.filter(**{key: pk}).exists():
+                    resolved.append(pk)
+            except (ValueError, TypeError):
+                continue
+        return self.queryset.filter(**{"%s__in" % key: resolved})
+
+
+class LenientModelChoiceField(forms.ModelChoiceField):
+    """Single-value counterpart to :class:`LenientModelMultipleChoiceField`: an
+    unresolvable PK becomes ``None`` (no selection) instead of a validation
+    error, so a stale saved default doesn't invalidate the whole filter form."""
+
+    def to_python(self, value):
+        try:
+            return super().to_python(value)
+        except forms.ValidationError:
+            return None
+
+
 class SchedulerFilter(forms.Form):
     ordering = forms.ChoiceField(
         required=False,
@@ -89,7 +134,7 @@ class SchedulerFilter(forms.Form):
         initial=False,
         label="Compressed View",
     )
-    filter_by_city = forms.ModelChoiceField(
+    filter_by_city = LenientModelChoiceField(
         required=False,
         label="Filter by Distance from City",
         queryset=City.objects.all(),
@@ -106,7 +151,7 @@ class SchedulerFilter(forms.Form):
         ),
         help_text="Select a city to order users by straight-line distance from here",
     )
-    skills_specialist = forms.ModelMultipleChoiceField(
+    skills_specialist = LenientModelMultipleChoiceField(
         required=False,
         label="Specialist",
         queryset=Skill.objects.all().prefetch_related("category"),
@@ -120,7 +165,7 @@ class SchedulerFilter(forms.Form):
             },
         ),
     )
-    skills_can_do_alone = forms.ModelMultipleChoiceField(
+    skills_can_do_alone = LenientModelMultipleChoiceField(
         required=False,
         label="Independent",
         queryset=Skill.objects.all().prefetch_related("category"),
@@ -134,7 +179,7 @@ class SchedulerFilter(forms.Form):
             },
         ),
     )
-    skills_can_do_support = forms.ModelMultipleChoiceField(
+    skills_can_do_support = LenientModelMultipleChoiceField(
         required=False,
         label="Require Support",
         queryset=Skill.objects.all().prefetch_related("category"),
@@ -149,7 +194,7 @@ class SchedulerFilter(forms.Form):
         ),
     )
 
-    teams = forms.ModelMultipleChoiceField(
+    teams = LenientModelMultipleChoiceField(
         required=False,
         queryset=Team.objects.all(),
         widget=s2forms.ModelSelect2MultipleWidget(
@@ -163,7 +208,7 @@ class SchedulerFilter(forms.Form):
         ),
     )
 
-    services = forms.ModelMultipleChoiceField(
+    services = LenientModelMultipleChoiceField(
         required=False,
         queryset=Service.objects.all(),
         widget=s2forms.ModelSelect2MultipleWidget(
@@ -177,7 +222,7 @@ class SchedulerFilter(forms.Form):
         ),
     )
 
-    org_units = forms.ModelMultipleChoiceField(
+    org_units = LenientModelMultipleChoiceField(
         required=False,
         queryset=OrganisationalUnit.objects.all(),
         widget=s2forms.ModelSelect2MultipleWidget(
@@ -191,7 +236,7 @@ class SchedulerFilter(forms.Form):
         ),
     )
 
-    org_unit_roles = forms.ModelMultipleChoiceField(
+    org_unit_roles = LenientModelMultipleChoiceField(
         required=False,
         queryset=OrganisationalUnitRole.objects.all(),
         widget=s2forms.ModelSelect2MultipleWidget(
@@ -205,7 +250,7 @@ class SchedulerFilter(forms.Form):
         ),
     )
 
-    job_levels = forms.ModelMultipleChoiceField(
+    job_levels = LenientModelMultipleChoiceField(
         required=False,
         label="Job Levels",
         queryset=JobLevel.objects.filter(is_active=True).order_by("order"),
@@ -230,7 +275,7 @@ class SchedulerFilter(forms.Form):
         ),
     )
 
-    users = forms.ModelMultipleChoiceField(
+    users = LenientModelMultipleChoiceField(
         required=False,
         queryset=User.objects.filter(is_active=True),
         widget=s2forms.ModelSelect2MultipleWidget(
@@ -249,7 +294,7 @@ class SchedulerFilter(forms.Form):
         ),
     )
 
-    include_user = forms.ModelMultipleChoiceField(
+    include_user = LenientModelMultipleChoiceField(
         required=False,
         queryset=User.objects.filter(is_active=True),
         widget=s2forms.ModelSelect2MultipleWidget(
@@ -268,7 +313,7 @@ class SchedulerFilter(forms.Form):
         ),
     )
 
-    jobs = forms.ModelMultipleChoiceField(
+    jobs = LenientModelMultipleChoiceField(
         required=False,
         queryset=Job.objects.filter(),
         widget=s2forms.ModelSelect2MultipleWidget(
@@ -283,7 +328,7 @@ class SchedulerFilter(forms.Form):
         ),
     )
 
-    phases = forms.ModelMultipleChoiceField(
+    phases = LenientModelMultipleChoiceField(
         required=False,
         queryset=Phase.objects.filter(),
         widget=s2forms.ModelSelect2MultipleWidget(
@@ -298,7 +343,7 @@ class SchedulerFilter(forms.Form):
         ),
     )
 
-    projects = forms.ModelMultipleChoiceField(
+    projects = LenientModelMultipleChoiceField(
         required=False,
         queryset=Project.objects.filter(),
         widget=s2forms.ModelSelect2MultipleWidget(
@@ -313,7 +358,7 @@ class SchedulerFilter(forms.Form):
         ),
     )
 
-    onboarded_to = forms.ModelMultipleChoiceField(
+    onboarded_to = LenientModelMultipleChoiceField(
         label="Onboarded to Client",
         required=False,
         queryset=Client.objects.filter(onboarded_users__isnull=False).distinct(),
