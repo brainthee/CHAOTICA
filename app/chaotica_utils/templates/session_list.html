@@ -88,6 +88,8 @@
                             </th>
                             <th scope="col">Device
                             </th>
+                            <th scope="col">Last Seen
+                            </th>
                             <th scope="col">Expires
                             </th>
                             <th scope="col" class="text-center">Actions</th>
@@ -159,6 +161,19 @@
                                 </div>
                             </td>
                             <td>
+                                {% if session.updated_at %}
+                                    <small class="text-muted"
+                                           data-bs-toggle="tooltip"
+                                           data-bs-placement="top"
+                                           title="Last seen {{ session.updated_at|date:'Y-m-d H:i' }}{% if session.created_at %} · First seen {{ session.created_at|date:'Y-m-d H:i' }}{% endif %}">
+                                        <i class="fa fa-clock"></i>
+                                        {{ session.updated_at|naturaltime }}
+                                    </small>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
                                 {% if session.expire_date %}
                                     {% if session.is_expired %}
                                         <span class="badge bg-danger">
@@ -180,7 +195,7 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="8" class="text-center py-5">
+                            <td colspan="9" class="text-center py-5">
                                 <div class="text-muted">
                                     <i class="fa fa-inbox fs-1"></i>
                                     <p class="mt-2">No active sessions found</p>

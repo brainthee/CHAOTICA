@@ -68,9 +68,13 @@ class SessionListView(PrefetchRelatedMixin, SessionBaseView, ListView):
     def get_queryset(self):
         """
         Get all active (non-expired) sessions, ordered by most recent activity.
+
+        ``updated_at`` (auto_now) is bumped every time qsessions saves the row —
+        i.e. whenever the IP/UA or session data changes — so it's our best
+        "last seen" signal and a more meaningful sort key than expiry.
         """
         queryset = Session.objects.filter(expire_date__gt=timezone.now()).order_by(
-            "-expire_date"
+            "-updated_at"
         )
 
         return queryset
