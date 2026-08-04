@@ -1,5 +1,6 @@
 from ..models import *
 from django.conf import settings as django_settings
+from decimal import Decimal
 from datetime import timedelta, time, timezone, datetime
 from uuid import UUID
 import re, logging
@@ -458,3 +459,19 @@ def can_manage_job_level(requesting_user, target_user):
         return True
 
     return False
+
+
+def slots_to_days(slots, hours_in_day, filter_fn=None):
+    """Sum a list of timeslots into whole days, optionally filtered.
+
+    Shared by the framework detail view and ``Project.get_stats`` so the
+    day-summing behaviour stays identical in one place. Honours a
+    pre-computed ``_cached_hours`` attribute (set once per slot by the caller)
+    to avoid re-running :meth:`TimeSlot.get_business_hours` for every filter
+    pass over the same slots.
+    """
+    total = Decimal()
+    for s in slots:
+        if filter_fn is None or filter_fn(s):
+            total += s._cached_hours if hasattr(s, "_cached_hours") else s.get_business_hours()
+    return round(total / hours_in_day, 1) if hours_in_day else 0

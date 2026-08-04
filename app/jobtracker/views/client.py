@@ -478,14 +478,10 @@ class ClientFrameworkListView(
     to access all job objects"""
 
 
-def _calc_days(slots, hours_in_day, filter_fn=None):
-    """Calculate days from a list of timeslots, optionally filtered.
-    Uses _cached_hours if available (pre-computed once per slot)."""
-    total = Decimal()
-    for s in slots:
-        if filter_fn is None or filter_fn(s):
-            total += getattr(s, '_cached_hours', s.get_business_hours())
-    return round(total / hours_in_day, 1) if hours_in_day else 0
+# The day-summing helper is shared with ``Project.get_stats`` so the behaviour
+# stays identical in one place. Kept aliased as ``_calc_days`` for the existing
+# call sites below.
+from chaotica_utils.utils import slots_to_days as _calc_days
 
 
 class ClientFrameworkDetailView(

@@ -1,0 +1,63 @@
+{% comment %}
+Per-member contribution to the project, driven by ``stats.users_data`` from
+``Project.get_stats``. Shared by the Stats tab and the Project detail Team tab.
+{% endcomment %}
+<div class="card">
+  <div class="card-header p-3 border-bottom">
+    <h5 class="text-body mb-0">Team</h5>
+    <p class="text-body-secondary fs-10 mb-0">Individual contribution to this project.</p>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-sm fs-9 mb-0">
+        <thead>
+          <tr>
+            <th class="border-top ps-3">Person</th>
+            <th class="border-top" style="width:20%;">Share</th>
+            <th class="border-top text-end" style="width:12%;">Used</th>
+            <th class="border-top text-end" style="width:12%;">Scheduled</th>
+            <th class="border-top text-end pe-3" style="width:12%;">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for entry in stats.users_data %}
+          <tr>
+            <td class="align-middle ps-3">
+              {% include 'partials/users/user_link.html' with user_profile=entry.user %}
+              {% if entry.roles %}
+                <div class="mt-1">
+                  {% for role in entry.roles %}<span class="badge badge-phoenix badge-phoenix-secondary fs-10 me-1">{{ role }}</span>{% endfor %}
+                </div>
+              {% endif %}
+            </td>
+            <td class="align-middle">
+              <div class="d-flex align-items-center">
+                <div class="progress flex-1 me-2" style="height: 6px; min-width: 50px;">
+                  <div class="progress-bar bg-primary" role="progressbar" style="width: {{ entry.pct }}%;"></div>
+                </div>
+                <span class="fs-10 text-body-secondary">{{ entry.pct }}%</span>
+              </div>
+            </td>
+            <td class="align-middle text-end">{{ entry.used_days }}d</td>
+            <td class="align-middle text-end">{{ entry.scheduled_days }}d</td>
+            <td class="align-middle text-end pe-3">{{ entry.total_days }}d</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="5" class="text-center text-body-secondary py-3">No one is scheduled on this project yet.</td>
+          </tr>
+          {% endfor %}
+          {% if stats.users_data %}
+          <tr class="fw-bold border-top border-translucent">
+            <td class="align-middle ps-3">Total</td>
+            <td class="align-middle"></td>
+            <td class="align-middle text-end">{{ stats.roles_total_used }}d</td>
+            <td class="align-middle text-end">{{ stats.roles_total_scheduled }}d</td>
+            <td class="align-middle text-end pe-3">{{ stats.roles_total }}d</td>
+          </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

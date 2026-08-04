@@ -188,7 +188,8 @@ Client creation and contact management. Limited to viewing most other areas.
 
 ### Global: User
 
-Baseline read-only access. All authenticated users receive this role by default.
+Baseline access for all authenticated users (assigned by default). Mostly
+read-only, but every user can create projects and create/own their own reports.
 
 | Area | Permissions |
 |---|---|
@@ -202,7 +203,8 @@ Baseline read-only access. All authenticated users receive this role by default.
 | Organisational Units | View |
 | Qualifications | View, View Users |
 | Billing Codes | View |
-| Projects | View |
+| Projects | View, Add |
+| Reports | View, Add (create + own) |
 
 ---
 
@@ -532,13 +534,19 @@ Global permissions are stored as standard Django Group permissions. Each global 
     `task_sync_global_permissions` cron (07:30) picks it up. Group members inherit
     the change on their next request — no per-user re-assignment is needed.
 
+    When a permission change needs to land deterministically on deploy (rather
+    than waiting for the cron), ship it with a data migration that re-runs
+    `sync_global_permissions()` for the existing groups — as
+    `chaotica_utils/migrations/0036_resync_global_role_permissions.py` does for
+    the project-creation and report create/view grants.
+
 !!! note "Projects are gated site-wide, not per unit"
     Unlike jobs/phases (which are scoped per organisational unit via Guardian),
     `Project` access is governed by the standard Django model permissions
     (`view_project` / `add_project` / `change_project` / `delete_project`) granted
     through global roles. Every authenticated user with the `User` role can read
-    all projects; Sales, Managers and Admins can create/edit; Managers and Admins
-    can delete. This deliberately generalised model reflects that projects
+    **and create** all projects; Sales, Managers and Admins can additionally edit;
+    Managers and Admins can delete. This deliberately generalised model reflects that projects
     (including those mirrored in from the RM pull sync) are less sensitive than
     job/phase delivery data. A user is *additionally* able to see any project they
     are scheduled on, regardless of role (`Project.objects.projects_for_user`).

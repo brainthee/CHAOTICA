@@ -4,6 +4,14 @@ The report builder lets you define a report against a data area (Users, Jobs,
 Phases, Projects, Clients), choose columns, filter and sort, and either view it
 on screen, export it, or have it **emailed automatically on a schedule**.
 
+!!! note "Who can create reports"
+    Every authenticated user can create and own reports — the base **User**
+    global role grants `reporting.add_report` and `reporting.view_report`. New
+    reports are owned by whoever creates them; owners can always view, edit and
+    delete their own reports (and by default they're private). What a report can
+    *see* is still scoped to the running user's permissions (below), and
+    cross-org reporting still needs **Can run all reports**.
+
 ## Building a report
 
 1. Go to **Reporting → New report** and pick a **data area** (e.g. *Phases*).

@@ -1,7 +1,9 @@
 from django.db import models
 from chaotica_utils.enums import UpcomingAvailabilityRanges
 from chaotica_utils.models import Holiday, User
-from ..enums import PhaseStatuses
+from ..enums import PhaseStatuses, JobStatuses
+from django.db.models import Count
+from django.db.models.functions import TruncMonth
 from django.conf import settings
 from django.templatetags.static import static
 from chaotica_utils.utils import (
@@ -209,18 +211,163 @@ class Team(models.Model):
         return results
 
     def get_stats(self, start_date=None, end_date=None, user_ids=None):
-        data = {
-            "upcoming_availability": {},
-        }
+        """Assemble the data used to render the team stats tab.
+
+        Mirrors :meth:`OrganisationalUnit.get_stats`, but a Team has no
+        job-ownership FK (there is no ``Job -> Team`` relation), so every
+        aggregate is scoped through the team members' scheduled ``TimeSlot``s
+        (``phases__timeslots__user_id__in`` / ``timeslots__user_id__in``).
+        Because a phase/job has many timeslots across members, all counts use
+        ``distinct=True`` to avoid inflating the totals via the join fan-out.
+        """
+        from ..models import Phase, Job
+
         # clean vars
         if not start_date:
-            start_date = (timezone.now().date() - timedelta(days=30)).date()
+            start_date = (timezone.now() - timedelta(days=30)).date()
         if not end_date:
-            end_date = timezone.now().date().date()
+            end_date = timezone.now().date()
+        if isinstance(start_date, datetime):
+            start_date = start_date.date()
+        if isinstance(end_date, datetime):
+            end_date = end_date.date()
 
-        data["upcoming_availability"] = self.get_upcoming_availability(
-            user_ids=user_ids
+        memberships = list(self.active_memberships().select_related("user"))
+        member_ids = list(
+            self.active_memberships().values_list("user", flat=True).distinct()
         )
+
+        data = {
+            "upcoming_availability": self.get_upcoming_availability(
+                user_ids=user_ids
+            ),
+            "summary": {},
+            "member_utilisation": [],
+            "delivery_throughput": {},
+            "service_breakdown": [],
+            "job_status_breakdown": [],
+        }
+
+        # --- Member utilisation over the selected range (single bulk call) ---
+        util = (
+            self.calculate_bulk_utilization(start_date, end_date, user_ids=user_ids)
+            if member_ids
+            else {}
+        )
+        for ms in memberships:
+            m = util.get(ms.user_id, {})
+            working = m.get("working_days", 0)
+            effective = m.get("effective_working_days", working)
+            confirmed = m.get("confirmed_days", 0)
+            scheduled = m.get("scheduled_days", 0)
+            data["member_utilisation"].append(
+                {
+                    "user_id": ms.user_id,
+                    "user": ms.user,
+                    "name": ms.user.get_full_name() or str(ms.user),
+                    "confirmed_days": confirmed,
+                    "scheduled_days": scheduled,
+                    "available_days": m.get("available_days", 0),
+                    "working_days": working,
+                    "effective_working_days": effective,
+                    "confirmed_pct": (
+                        round(confirmed / effective * 100, 1) if effective else 0
+                    ),
+                    "scheduled_pct": (
+                        round(scheduled / effective * 100, 1) if effective else 0
+                    ),
+                }
+            )
+        data["member_utilisation"].sort(
+            key=lambda r: r["confirmed_pct"], reverse=True
+        )
+
+        # --- Service participation breakdown (phases the team worked on) ---
+        service_rows = (
+            Phase.objects.filter(
+                timeslots__user_id__in=member_ids, service__isnull=False
+            )
+            .exclude(status__in=PhaseStatuses.IGNORED_STATUSES)
+            .values("service__name")
+            .annotate(participation_count=Count("id", distinct=True))
+            .order_by("-participation_count")
+        )
+        data["service_breakdown"] = [
+            {
+                "name": row["service__name"],
+                "participation_count": row["participation_count"],
+            }
+            for row in service_rows
+        ]
+
+        # --- Job pipeline counts by status (jobs the team has slots on) ---
+        status_labels = dict(JobStatuses.CHOICES)
+        status_colours = dict(JobStatuses.BS_COLOURS)
+        job_rows = (
+            Job.objects.filter(phases__timeslots__user_id__in=member_ids)
+            .values("status")
+            .annotate(count=Count("id", distinct=True))
+        )
+        counts_by_status = {row["status"]: row["count"] for row in job_rows}
+        data["job_status_breakdown"] = [
+            {
+                "status": status,
+                "label": status_labels.get(status, str(status)),
+                "count": counts_by_status.get(status, 0),
+                "bs_colour": status_colours.get(status, "secondary"),
+            }
+            for status in JobStatuses.ALL()
+            if counts_by_status.get(status, 0) > 0
+        ]
+
+        # --- Delivery throughput: phases delivered per month (last ~6 months) ---
+        throughput_start = (timezone.now() - timedelta(days=182)).date()
+        throughput_rows = (
+            Phase.objects.filter(
+                timeslots__user_id__in=member_ids,
+                status=PhaseStatuses.DELIVERED,
+                actual_delivery_date__date__gte=throughput_start,
+            )
+            .annotate(month=TruncMonth("actual_delivery_date"))
+            .values("month")
+            .annotate(count=Count("id", distinct=True))
+            .order_by("month")
+        )
+        data["delivery_throughput"] = {
+            "labels": [
+                row["month"].strftime("%b %Y")
+                for row in throughput_rows
+                if row["month"]
+            ],
+            "counts": [row["count"] for row in throughput_rows if row["month"]],
+        }
+
+        # --- Summary tiles ---
+        phases_delivered = (
+            Phase.objects.filter(
+                timeslots__user_id__in=member_ids,
+                status=PhaseStatuses.DELIVERED,
+                actual_delivery_date__date__range=(start_date, end_date),
+            )
+            .distinct()
+            .count()
+        )
+        data["summary"] = {
+            "active_members": len(memberships),
+            "active_jobs": (
+                Job.objects.filter(
+                    phases__timeslots__user_id__in=member_ids,
+                    status__in=JobStatuses.ACTIVE_STATUSES,
+                )
+                .distinct()
+                .count()
+            ),
+            "phases_delivered": phases_delivered,
+            "utilisation_4wk": data["upcoming_availability"]
+            .get("fourweeks", {})
+            .get("totals", {})
+            .get("utilisation_percentage", 0),
+        }
 
         return data
 

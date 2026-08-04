@@ -36,7 +36,10 @@ nav:
     - Organisational Units:
       - Overview: user_guide/organisational_units/overview.md
       - Pre-loading & Importing Members: user_guide/organisational_units/preloading_members.md
+    - Projects:
+      - Overview: user_guide/projects/overview.md
     - Team & Users:
+      - Overview: user_guide/team/overview.md
       - User Management: user_guide/team/user_management.md
     - Qualifications:
       - Overview: user_guide/qualifications/overview.md

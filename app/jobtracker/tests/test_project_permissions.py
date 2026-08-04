@@ -69,12 +69,15 @@ class ProjectPermissionBase(TestCase):
 class ProjectViewGateTests(ProjectPermissionBase):
     """End-to-end gating through the real (guardian-protected) views."""
 
-    def test_user_role_can_view_but_not_edit(self):
+    def test_user_role_can_view_and_create_but_not_edit(self):
         user = self._user_with_role("user@test.com", GlobalRoles.USER)
         self.client.force_login(user)
 
         self.assertEqual(self.client.get(reverse("project_list")).status_code, 200)
         self.assertEqual(self.client.get(self.detail_url()).status_code, 200)
+        # Every user can now create projects...
+        self.assertEqual(self.client.get(reverse("project_create")).status_code, 200)
+        # ...but not edit or delete existing ones.
         self.assertEqual(self.client.get(self.update_url()).status_code, 403)
         self.assertEqual(self.client.get(self.delete_url()).status_code, 403)
 
@@ -103,7 +106,7 @@ class ProjectPermissionMatrixTests(ProjectPermissionBase):
     """Belt-and-braces: assert the role → permission wiring directly."""
 
     CASES = {
-        GlobalRoles.USER: {"view": True, "add": False, "change": False, "delete": False},
+        GlobalRoles.USER: {"view": True, "add": True, "change": False, "delete": False},
         GlobalRoles.SERVICE_DELIVERY: {
             "view": True, "add": False, "change": False, "delete": False,
         },
