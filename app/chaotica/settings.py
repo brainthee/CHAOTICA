@@ -997,10 +997,24 @@ EXPLORER_DATA_EXPORTERS = [
     ("json", "explorer.exporters.JSONExporter"),
 ]
 
-CLAMAV_ENABLED = os.environ.get("CLAMAV_ENABLED", default=False)
+# NB: env vars arrive as strings, so a plain os.environ.get("CLAMAV_ENABLED")
+# returns "0" — which is truthy — when the deployment sets CLAMAV_ENABLED=0.
+# That silently *enabled* the scanner in prod and 500'd file uploads against a
+# non-existent clamd socket (Sentry CHAOTICA-VG). Parse to a real bool.
+CLAMAV_ENABLED = str(os.environ.get("CLAMAV_ENABLED", "")).strip().lower() in (
+    "1",
+    "true",
+    "yes",
+    "on",
+)
 CLAMAV_UNIX_SOCKET = os.environ.get(
     "CLAMAV_UNIX_SOCKET", default="/var/run/clamav/clamd.ctl"
 )
-CLAMAV_USE_TCP = os.environ.get("CLAMAV_USE_TCP", default=False)
+CLAMAV_USE_TCP = str(os.environ.get("CLAMAV_USE_TCP", "")).strip().lower() in (
+    "1",
+    "true",
+    "yes",
+    "on",
+)
 CLAMAV_TCP_PORT = os.environ.get("CLAMAV_TCP_PORT", default=3310)
 CLAMAV_TCP_ADDR = os.environ.get("CLAMAV_TCP_ADDR", default="127.0.0.1")
