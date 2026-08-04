@@ -2701,7 +2701,6 @@ class OrganisationalUnitForm(forms.ModelForm):
             "leads",
             "image",
             "special_requirements",
-            "approval_required",
             "targetProfit",
             "businessHours_startTime",
             "businessHours_endTime",

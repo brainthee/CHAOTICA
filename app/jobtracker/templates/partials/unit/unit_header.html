@@ -26,9 +26,6 @@
       {% if 'change_organisationalunit' in unit_perms %}
         <a href="{% url 'organisationalunit_update' organisationalunit.slug %}" class="btn btn-phoenix-secondary"><span class="fa-solid fa-pen me-2"></span>Edit</a>
       {% endif %}
-      {% if not is_active_member %}
-        <a href="#" data-url="{% url 'organisationalunit_join' organisationalunit.slug %}" class="btn btn-phoenix-primary js-load-modal-form"><span class="fa-solid fa-right-to-bracket me-2"></span>Join</a>
-      {% endif %}
     </div>
   </div>
 </div>

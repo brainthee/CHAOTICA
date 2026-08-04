@@ -79,11 +79,6 @@ class OrganisationalUnit(models.Model):
         default="Europe/London",
         help_text="Timezone that business hours are defined in (e.g., Europe/London, Europe/Berlin)",
     )
-    approval_required = models.BooleanField(
-        "Approval Required",
-        default=True,
-        help_text="Approval by a Manager is required to join the unit",
-    )
     special_requirements = BleachField(blank=True, null=True)
     history = HistoricalRecords()
     leads = models.ManyToManyField(

@@ -1,0 +1,33 @@
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+<div class="modal-dialog modal- modal-dialog-centered" role="document">
+    <div class="modal-content">
+        <form method="post" action="{{ request.get_full_path }}" class="js-submit-modal-form">
+            {% csrf_token %}
+            <div class="modal-header">
+                <h6 class="modal-title" id="modal-title-default">
+                    {% if is_lead %}Remove as Lead{% else %}Make Unit Lead{% endif %}
+                </h6>
+                <button type="button" class="btn-close"
+                    data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                {% if is_lead %}
+                <p>Remove {{ membership.member }} as a lead of {{ orgUnit.name }}?</p>
+                <p class="text-body-secondary fs-9 mb-0">They will no longer be a unit lead and will lose the manager role their lead status granted. Any other roles you have assigned them are left unchanged.</p>
+                {% else %}
+                <p>Make {{ membership.member }} a lead of {{ orgUnit.name }}?</p>
+                <p class="text-body-secondary fs-9 mb-0">Leads gain manager rights over this unit, including managing members.</p>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                {% if is_lead %}
+                <button type="submit" class="btn btn-phoenix-warning mb-0">Remove as Lead</button>
+                {% else %}
+                <button type="submit" class="btn btn-phoenix-success mb-0">Make Lead</button>
+                {% endif %}
+                <button type="button" class="btn btn-light shadow-none mb-0" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </form>
+    </div>
+ </div>

@@ -765,19 +765,19 @@ urlpatterns = [
         name="download_unit_members_template",
     ),
     path(
-        "ops/unit/<str:slug>/members/join",
-        views.organisationalunit_join,
-        name="organisationalunit_join",
-    ),
-    path(
-        "ops/unit/<str:slug>/members/review/<int:member_pk>",
-        views.organisationalunit_review_join_request,
-        name="review_join_request",
-    ),
-    path(
         "ops/unit/<str:slug>/members/manage_roles/<int:member_pk>",
         views.organisationalunit_manage_roles,
         name="organisationalunit_manage_roles",
+    ),
+    path(
+        "ops/unit/<str:slug>/members/remove/<int:member_pk>",
+        views.organisationalunit_remove_member,
+        name="organisationalunit_remove_member",
+    ),
+    path(
+        "ops/unit/<str:slug>/members/toggle_lead/<int:member_pk>",
+        views.organisationalunit_toggle_lead,
+        name="organisationalunit_toggle_lead",
     ),
     path(
         "ops/unit/<str:slug>/detail",

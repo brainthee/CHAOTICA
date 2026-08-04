@@ -3,35 +3,31 @@
 <div class="modal-dialog modal- modal-dialog-centered" role="document">
     <div class="modal-content">
         <form method="post" action="{{ request.get_full_path }}" class="js-submit-modal-form">
-            {% csrf_token %}            
+            {% csrf_token %}
             <div class="modal-header">
-                <h6 class="modal-title" 
-                    id="modal-title-default">
-                        Review Membership Request
+                <h6 class="modal-title" id="modal-title-default">
+                    Remove from Unit
                 </h6>
-                <button type="button" class="btn-close" 
+                <button type="button" class="btn-close"
                     data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p>The following user has requested to join {{ orgUnit.name }}</p>
+                <p>Remove the following member from {{ orgUnit.name }}?</p>
                 <p>
                     <li class="border-0 d-flex align-items-center px-0 mb-2 pt-0">
                         <div class="avatar me-3">
-                           <img src="{{ membership.member.get_avatar_url }}" alt="kal" class="border-radius-lg shadow">
+                           <img src="{{ membership.member.get_avatar_url }}" alt="avatar" class="border-radius-lg shadow">
                         </div>
                         <div class="d-flex align-items-start flex-column justify-content-center">
                            <h6 class="mb-0 text-sm">{{ membership.member }}</h6>
                         </div>
                      </li>
                 </p>
+                <p class="text-body-secondary fs-9 mb-0">They will lose access to this unit and its jobs. Their membership history is retained, and re-adding them restores access.</p>
             </div>
             <div class="modal-footer">
-                <input type="hidden" name="user_action" value="">
-                <button type="submit" onclick="this.form.user_action.value=this.value" 
-                    value="approve_action" class="btn btn-phoenix-success mb-0">Approve</button>
-                <button type="submit" onclick="this.form.user_action.value=this.value" 
-                    value="reject_action" class="btn btn-phoenix-danger mb-0">Reject</button>
-                <button type="button" class="btn btn-light shadow-none mb-0" data-bs-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-phoenix-danger mb-0">Remove Member</button>
+                <button type="button" class="btn btn-light shadow-none mb-0" data-bs-dismiss="modal">Cancel</button>
             </div>
         </form>
     </div>

@@ -79,14 +79,23 @@
                     <a class="dropdown-item" href="mailto:{{ member.member.email }}"><span class="fa-solid fa-envelope me-2 text-body-tertiary"></span>Email</a>
                     {% if 'manage_members' in unit_perms %}
                       <div class="dropdown-divider"></div>
-                      <a class="dropdown-item text-primary js-load-modal-form" href="#"
+                      <a class="dropdown-item js-load-modal-form" href="#"
                         data-url="{% url 'organisationalunit_manage_roles' organisationalunit.slug member.pk %}">
-                        <span class="fa-solid fa-user-shield me-2"></span>Manage Roles
+                        <span class="fa-solid fa-user-shield me-2 text-body-tertiary"></span>Manage Roles
                       </a>
-                      {% if not member.roles.all %}
-                      <a class="dropdown-item text-warning js-load-modal-form" href="#"
-                          data-url="{% url 'review_join_request' organisationalunit.slug member.pk %}">
-                          <span class="fa-solid fa-user-check me-2"></span>Review Join Request
+                      <a class="dropdown-item js-load-modal-form" href="#"
+                        data-url="{% url 'organisationalunit_toggle_lead' organisationalunit.slug member.pk %}">
+                        {% if member.member in organisationalunit.leads.all %}
+                        <span class="fa-solid fa-user-minus me-2 text-body-tertiary"></span>Remove as Lead
+                        {% else %}
+                        <span class="fa-solid fa-user-tie me-2 text-body-tertiary"></span>Make Unit Lead
+                        {% endif %}
+                      </a>
+                      {% if member.member != request.user %}
+                      <div class="dropdown-divider"></div>
+                      <a class="dropdown-item text-danger js-load-modal-form" href="#"
+                          data-url="{% url 'organisationalunit_remove_member' organisationalunit.slug member.pk %}">
+                          <span class="fa-solid fa-user-xmark me-2"></span>Remove from Unit
                       </a>
                       {% endif %}
                     {% endif %}

@@ -100,12 +100,6 @@ class OrganisationalUnitDetailView(
         context = super().get_context_data(**kwargs)
         unit = self.object
 
-        # Pre-compute active membership check (avoids get_activeMembers query in template)
-        context["is_active_member"] = unit.members.filter(
-            member=self.request.user,
-            left_date__isnull=True,
-        ).exists()
-
         # Evaluate memberships once with proper prefetches. Disabled members are
         # included so the team table can offer a "show disabled" toggle; they're
         # flagged (below) and hidden by default client-side.
@@ -488,18 +482,13 @@ def organisationalunit_add(request, slug):
                 data["form_is_valid"] = False
             else:
                 membership.unit = org_unit
-                if membership:
-                    # Ok, lets see if we need to make it pending...
-                    if org_unit.approval_required:
-                        messages.info(
-                            request, "Request to join unit " + org_unit.name + " sent."
-                        )
-                    else:
-                        # Add ourselves as inviter!
-                        membership.inviter = request.user
-                        messages.info(request, "Joined Unit " + org_unit.name)
-                    membership.save()
-                    data["form_is_valid"] = True
+                membership.inviter = request.user
+                membership.save()
+                messages.info(
+                    request,
+                    "Added " + str(membership.member) + " to " + org_unit.name,
+                )
+                data["form_is_valid"] = True
         else:
             messages.error(request, "Error requesting membership. Please report this!")
             data["form_is_valid"] = False
@@ -887,48 +876,6 @@ def download_unit_members_template(request, slug):
     return response
 
 
-def organisationalunit_join(request, slug):
-    org_unit = get_object_or_404(OrganisationalUnit, slug=slug)
-    # Lets check they aren't already a member!
-    if OrganisationalUnitMember.objects.filter(
-        unit=org_unit, member=request.user, left_date__isnull=True
-    ).exists():
-        # Already a current member!
-        return HttpResponseBadRequest()
-
-    data = dict()
-    if request.method == "POST":
-        # Lets assume they want to if it's a POST!
-        # Lets add the membership...
-        membership = OrganisationalUnitMember.objects.create(
-            unit=org_unit, member=request.user
-        )
-        if membership:
-            # Ok, lets see if we need to make it pending...
-            if org_unit.approval_required:
-                membership.roles.add = OrganisationalUnitRole.objects.get(
-                    pk=UnitRoles.PENDING
-                )
-                messages.info(
-                    request, "Request to join unit " + org_unit.name + " sent."
-                )
-            else:
-                # Add ourselves as inviter!
-                membership.inviter = request.user
-                messages.info(request, "Joined Unit " + org_unit.name)
-            membership.save()
-            data["form_is_valid"] = True
-        else:
-            messages.error(request, "Error requesting membership. Please report this!")
-            data["form_is_valid"] = False
-
-    context = {"orgUnit": org_unit}
-    data["html_form"] = loader.render_to_string(
-        "jobtracker/modals/organisationalunit_join.html", context, request=request
-    )
-    return JsonResponse(data)
-
-
 @unit_permission_required_or_403(
     "jobtracker.manage_members", (OrganisationalUnit, "slug", "slug")
 )
@@ -977,40 +924,91 @@ def organisationalunit_manage_roles(request, slug, member_pk):
 @unit_permission_required_or_403(
     "jobtracker.manage_members", (OrganisationalUnit, "slug", "slug")
 )
-def organisationalunit_review_join_request(request, slug, member_pk):
-    org_unit = get_object_or_404(OrganisationalUnit, slug=slug)
+def organisationalunit_remove_member(request, slug, member_pk):
+    """Offboard a member from the unit (soft-leave via ``left_date``).
 
-    # Only pass if the membership is pending...
+    Keeps the membership row (and its history) but sets ``left_date`` so the
+    member drops out of every active-membership view and their unit
+    permissions are revoked. If the member was also a lead, that is cleared
+    too so they don't retain manager rights via ``ensure_lead_memberships``.
+    """
+    org_unit = get_object_or_404(OrganisationalUnit, slug=slug)
     membership = get_object_or_404(
-        OrganisationalUnitMember, unit=org_unit, pk=member_pk, roles=None
+        OrganisationalUnitMember, unit=org_unit, pk=member_pk, left_date__isnull=True
     )
 
-    # Okay, lets go!
+    # Don't let a manager remove their own membership (unless superuser) - the
+    # same guard used by manage_roles, so you can't accidentally lock yourself out.
+    if membership.member == request.user and not request.user.is_superuser:
+        return HttpResponseBadRequest()
+
     data = dict()
     if request.method == "POST":
-        # We need to check which button was pressed... accept or reject!
-        if request.POST.get("user_action") == "approve_action":
-            # Approve it!
-            messages.info(request, "Accepted request from " + str(membership.member))
-            membership.inviter = request.user
-            default_role = OrganisationalUnitRole.objects.filter(
-                default_role=True
-            ).first()
-            membership.roles.add(default_role)
-            membership.save()
-            data["form_is_valid"] = True
-
-        elif request.POST.get("user_action") == "reject_action":
-            # remove it!
-            messages.warning(request, "Removed request from " + str(membership.member))
-            membership.delete()
-            data["form_is_valid"] = True
-        else:
-            # invalid choice...
-            data["form_is_valid"] = False
+        member = membership.member
+        org_unit.leads.remove(member)
+        membership.left_date = timezone.now()
+        membership.save()
+        # Clear the leaver's unit permissions (expected perms for a left member
+        # are empty, so this revokes everything they held).
+        org_unit.sync_permissions(users=[member])
+        messages.info(request, "Removed " + str(member) + " from " + org_unit.name)
+        data["form_is_valid"] = True
 
     context = {"orgUnit": org_unit, "membership": membership}
     data["html_form"] = loader.render_to_string(
-        "jobtracker/modals/organisationalunit_review.html", context, request=request
+        "jobtracker/modals/organisationalunit_remove_member.html",
+        context,
+        request=request,
+    )
+    return JsonResponse(data)
+
+
+@unit_permission_required_or_403(
+    "jobtracker.manage_members", (OrganisationalUnit, "slug", "slug")
+)
+def organisationalunit_toggle_lead(request, slug, member_pk):
+    """Promote a member to unit lead, or demote them again.
+
+    Leads confer manager rights via ``ensure_lead_memberships``; adding a lead
+    calls it so they gain the management role. Demoting a lead drops the
+    ``leads`` m2m and strips the management role it granted (mirroring the
+    promotion), then re-syncs permissions.
+    """
+    org_unit = get_object_or_404(OrganisationalUnit, slug=slug)
+    membership = get_object_or_404(
+        OrganisationalUnitMember, unit=org_unit, pk=member_pk, left_date__isnull=True
+    )
+    is_lead = org_unit.leads.filter(pk=membership.member_id).exists()
+
+    data = dict()
+    if request.method == "POST":
+        member = membership.member
+        if is_lead:
+            org_unit.leads.remove(member)
+            # Drop the management role the lead status granted, so demoting a
+            # lead actually removes their manager rights.
+            management_role = OrganisationalUnitRole.objects.filter(
+                manage_role=True
+            ).first()
+            if management_role:
+                membership.roles.remove(management_role)
+            org_unit.sync_permissions(users=[member])
+            messages.info(
+                request, str(member) + " is no longer a lead of " + org_unit.name
+            )
+        else:
+            org_unit.leads.add(member)
+            # Grants the management role + syncs permissions.
+            org_unit.ensure_lead_memberships()
+            messages.info(
+                request, str(member) + " is now a lead of " + org_unit.name
+            )
+        data["form_is_valid"] = True
+
+    context = {"orgUnit": org_unit, "membership": membership, "is_lead": is_lead}
+    data["html_form"] = loader.render_to_string(
+        "jobtracker/modals/organisationalunit_toggle_lead.html",
+        context,
+        request=request,
     )
     return JsonResponse(data)
