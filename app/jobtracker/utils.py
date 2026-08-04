@@ -168,6 +168,13 @@ def get_unit_40x_or_None(
 def _filter_users_on_query(request, cleaned_data=None):
     query = Q()
 
+    # cleaned_data is None when the SchedulerFilter form failed validation (see
+    # get_scheduler_slots/get_scheduler_members). Treat that as "no filters" so a
+    # malformed query string degrades to defaults instead of 500ing here — every
+    # access below is a .get() with a sensible default.
+    if cleaned_data is None:
+        cleaned_data = {}
+
     show_inactive_users = cleaned_data.get("show_inactive_users")
 
     # Starting users filter
@@ -295,7 +302,7 @@ def _filter_users_on_query(request, cleaned_data=None):
     # Filter on service
     # This is a bit mind bending. Of the service(s) selected, each will have some desired/needed skills
     # We then need to select the users based off containing a skill in either desired or needed..
-    services = cleaned_data.get("services")
+    services = cleaned_data.get("services") or []
     for service in services:
         query.add(Q(pk__in=service.can_conduct()), Q.AND)
 
