@@ -2131,6 +2131,9 @@ class Phase(models.Model):
             author=user,
         )
         self.cancellation_date = timezone.now()
+        # Guard against TimeSlot.delete() auto-reverting the phase to Pending
+        # Scheduling while we tear it down (see TimeSlot.delete).
+        self._suppress_status_revert = True
         for slot in self.timeslots.all():
             slot.delete()
 
@@ -2199,6 +2202,7 @@ class Phase(models.Model):
         )
         # Erase any scheduled timeslots so a deleted phase leaves nothing
         # behind on the scheduler (mirrors to_cancelled()).
+        self._suppress_status_revert = True
         for slot in self.timeslots.all():
             slot.delete()
         self.fire_status_notification(PhaseStatuses.DELETED)
