@@ -423,3 +423,22 @@ def apply_rule_to_all_entities(rule, entity_type=None):
 
         for entity in entities:
             apply_rule_to_entity(rule, entity)
+
+
+def remove_subscriptions_for_entity(entity):
+    """Delete all subscriptions and opt-outs tied to a specific entity.
+
+    Subscriptions/opt-outs reference their target by ``(entity_type, entity_id)``
+    strings rather than a FK, so there is no cascade to clean them up when the
+    target is deleted (including our soft-deletes). Call this when an entity is
+    deleted so stale rows — including rule-created ones the rule engine would
+    otherwise keep re-evaluating — don't accumulate.
+    """
+    entity_type = entity.__class__.__name__
+    subs = NotificationSubscription.objects.filter(
+        entity_type=entity_type, entity_id=entity.id
+    ).delete()
+    optouts = NotificationOptOut.objects.filter(
+        entity_type=entity_type, entity_id=entity.id
+    ).delete()
+    return (subs[0], optouts[0])

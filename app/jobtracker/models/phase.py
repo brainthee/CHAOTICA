@@ -2220,6 +2220,10 @@ class Phase(models.Model):
         for slot in self.timeslots.all():
             slot.delete()
         self.fire_status_notification(PhaseStatuses.DELETED)
+        # Tidy up dangling subscriptions/opt-outs for this phase (no FK cascade).
+        from notifications.utils import remove_subscriptions_for_entity
+
+        remove_subscriptions_for_entity(self)
 
     def can_proceed_to_deleted(self):
         return can_proceed(self.to_deleted)

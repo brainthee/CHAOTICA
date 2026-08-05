@@ -71,3 +71,5 @@ class JobtrackerConfig(AppConfig):
             from .signals import skill_cache  # noqa: F401
         except ImportError:
             pass  # Signals module doesn't exist yet
+
+        from .signals import subscription_cleanup  # noqa: F401

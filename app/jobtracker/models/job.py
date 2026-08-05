@@ -1082,6 +1082,10 @@ class Job(models.Model):
             if phase.can_to_deleted():
                 phase.to_deleted(user)
                 phase.save()
+        # Tidy up dangling subscriptions/opt-outs for this job (no FK cascade).
+        from notifications.utils import remove_subscriptions_for_entity
+
+        remove_subscriptions_for_entity(self)
 
     def can_proceed_to_delete(self):
         return can_proceed(self.to_delete)
