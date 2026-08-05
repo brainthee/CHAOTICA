@@ -304,6 +304,37 @@ class ChaoticaBaseView(LoginRequiredMixin, View):
         return context
 
 
+class ProtectedDeleteMixin:
+    """Turn a ``ProtectedError`` into a friendly message + redirect.
+
+    A bare ``DeleteView`` on a model referenced by ``on_delete=PROTECT`` FKs
+    raises an unhandled ``ProtectedError`` (HTTP 500) when the object is still
+    in use. Mix this in (before ``DeleteView`` in the bases) so the user gets a
+    clear "still in use" message and is sent back to the success URL instead.
+    """
+
+    protected_error_message = None
+
+    def form_valid(self, form):
+        from django.db.models import ProtectedError
+
+        try:
+            return super().form_valid(form)
+        except ProtectedError:
+            messages.error(self.request, self.get_protected_error_message())
+            return HttpResponseRedirect(self.get_success_url())
+
+    def get_protected_error_message(self):
+        if self.protected_error_message:
+            return self.protected_error_message
+        obj = getattr(self, "object", None)
+        name = str(obj) if obj else "This item"
+        return (
+            f"{name} can't be deleted because other records still reference it. "
+            "Remove or reassign those first."
+        )
+
+
 class ChaoticaBaseGlobalRoleView(ChaoticaBaseView, UserPassesTestMixin):
 
     role_required = None

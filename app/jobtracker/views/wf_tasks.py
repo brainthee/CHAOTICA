@@ -2,7 +2,7 @@ from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
-from chaotica_utils.views import ChaoticaBaseView
+from chaotica_utils.views import ChaoticaBaseView, ProtectedDeleteMixin
 from ..models import WorkflowTask
 from ..forms import WFTaskForm
 from ..enums import PhaseStatuses, JobStatuses
@@ -95,5 +95,5 @@ class WFTaskUpdateView(WFTaskBaseView, UpdateView):
         return super(WFTaskUpdateView, self).form_valid(form)
 
 
-class WFTaskDeleteView(WFTaskBaseView, DeleteView):
+class WFTaskDeleteView(ProtectedDeleteMixin, WFTaskBaseView, DeleteView):
     pass

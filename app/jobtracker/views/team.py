@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
-from chaotica_utils.views import ChaoticaBaseView
+from chaotica_utils.views import ChaoticaBaseView, ProtectedDeleteMixin
 from chaotica_utils.utils import get_week
 from chaotica_utils.models import User
 from ..models import Team, TeamMember, TimeSlot
@@ -83,7 +83,7 @@ class TeamUpdateView(TeamBaseView, PermissionRequiredMixin, UpdateView):
     return_403 = True
 
 
-class TeamDeleteView(TeamBaseView, PermissionRequiredMixin, DeleteView):
+class TeamDeleteView(ProtectedDeleteMixin, TeamBaseView, PermissionRequiredMixin, DeleteView):
     """View to delete a job"""
 
     permission_required = "jobtracker.delete_team"

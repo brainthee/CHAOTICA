@@ -3,7 +3,7 @@ from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
-from chaotica_utils.views import ChaoticaBaseView
+from chaotica_utils.views import ChaoticaBaseView, ProtectedDeleteMixin
 from ..models import BillingCode
 from ..forms import BillingCodeForm
 import logging
@@ -66,7 +66,7 @@ class BillingCodeUpdateView(BillingCodeBaseView, PermissionRequiredMixin, Update
     slug_field = "code"
 
 
-class BillingCodeDeleteView(BillingCodeBaseView, PermissionRequiredMixin, DeleteView):
+class BillingCodeDeleteView(ProtectedDeleteMixin, BillingCodeBaseView, PermissionRequiredMixin, DeleteView):
     """View to delete a job"""
 
     permission_required = "jobtracker.delete_billingcode"

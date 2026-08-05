@@ -7,7 +7,7 @@ from django.template import loader
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
-from chaotica_utils.views import log_system_activity, ChaoticaBaseView
+from chaotica_utils.views import log_system_activity, ChaoticaBaseView, ProtectedDeleteMixin
 from ..models import Holiday
 from ..forms.common import HolidayForm, HolidayImportLibForm
 import logging
@@ -210,7 +210,7 @@ class HolidayUpdateView(HolidayBaseView, PermissionRequiredMixin, UpdateView):
     return_403 = True
 
 
-class HolidayDeleteView(HolidayBaseView, PermissionRequiredMixin, DeleteView):
+class HolidayDeleteView(ProtectedDeleteMixin, HolidayBaseView, PermissionRequiredMixin, DeleteView):
     """View to delete a job"""
 
     permission_required = "chaotica_utils.delete_holiday"

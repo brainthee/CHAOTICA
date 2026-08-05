@@ -11,7 +11,7 @@ from django.views.decorators.http import (
     require_http_methods,
 )
 from django.template import loader
-from chaotica_utils.views import log_system_activity, ChaoticaBaseView
+from chaotica_utils.views import log_system_activity, ChaoticaBaseView, ProtectedDeleteMixin
 from django.views.generic.list import ListView
 from django.contrib import messages
 from django.views.generic.detail import DetailView
@@ -425,7 +425,7 @@ class ClientContactUpdateView(
 
 
 class ClientContactDeleteView(
-    ClientContactBaseView, PermissionRequiredMixin, DeleteView
+    ProtectedDeleteMixin, ClientContactBaseView, PermissionRequiredMixin, DeleteView
 ):
     def get_success_url(self):
         if "client_slug" in self.kwargs:
@@ -666,7 +666,7 @@ class ClientFrameworkUpdateView(
 
 
 class ClientFrameworkDeleteView(
-    ClientFrameworkBaseView, PermissionRequiredMixin, DeleteView
+    ProtectedDeleteMixin, ClientFrameworkBaseView, PermissionRequiredMixin, DeleteView
 ):
 
     permission_required = "jobtracker.delete_frameworkagreement"

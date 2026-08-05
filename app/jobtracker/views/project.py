@@ -6,7 +6,7 @@ from django.views.generic.list import ListView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from django.shortcuts import get_object_or_404
-from chaotica_utils.views import ChaoticaBaseView, log_system_activity
+from chaotica_utils.views import ChaoticaBaseView, ProtectedDeleteMixin, log_system_activity
 from chaotica_utils.decorators import permission_required_or_403
 from chaotica_utils.models import User
 from django.contrib.auth.decorators import login_required
@@ -146,7 +146,7 @@ class ProjectUpdateView(ProjectBaseView, PermissionRequiredMixin, UpdateView):
         return response
 
 
-class ProjectDeleteView(ProjectBaseView, PermissionRequiredMixin, DeleteView):
+class ProjectDeleteView(ProtectedDeleteMixin, ProjectBaseView, PermissionRequiredMixin, DeleteView):
     """View to delete a job"""
 
     permission_required = "jobtracker.delete_project"
