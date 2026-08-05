@@ -955,11 +955,6 @@ def phase_update_workflow(request, job_slug, slug, new_state):
     return JsonResponse(data)
 
 
-class PhaseDeleteView(UnitPermissionRequiredMixin, PhaseBaseView, DeleteView):
-    permission_required = "jobtracker.can_delete_phases"
-    """View to delete a job"""
-
-
 @job_permission_required_or_403("jobtracker.can_update_job", (Job, "slug", "job_slug"))
 def phases_bulk_workflow_modal(request, job_slug, new_state):
     """

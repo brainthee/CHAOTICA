@@ -509,11 +509,6 @@ urlpatterns = [
         name="phase_rating_scope",
     ),
     path(
-        "job/<str:job_slug>/phase/<str:slug>/delete/",
-        views.PhaseDeleteView.as_view(),
-        name="phase_delete",
-    ),
-    path(
         "job/<str:job_slug>/phase/<str:slug>/schedule/",
         views.PhaseScheduleView.as_view(),
         name="phase_schedule",
