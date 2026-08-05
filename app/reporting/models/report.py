@@ -3,6 +3,7 @@ from django.conf import settings
 from django.urls import reverse
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
+from chaotica_utils.utils import get_sentinel_user
 import uuid
 import json
 
@@ -34,7 +35,7 @@ class Report(models.Model):
     # Basic information
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
-    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='created_reports')
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET(get_sentinel_user), related_name='created_reports')
     category = models.ForeignKey(ReportCategory, on_delete=models.SET_NULL, null=True, blank=True, related_name='reports')
     is_private = models.BooleanField(default=True, help_text="Private reports are only visible to the owner")
     
