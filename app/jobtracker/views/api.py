@@ -1,5 +1,5 @@
 from chaotica_utils.models import User
-from django.db.models import Q, Prefetch, Max, Min
+from django.db.models import Q, Prefetch, Max, Min, Count
 from guardian.shortcuts import get_objects_for_user
 from ..models import Job, OrganisationalUnit, Client
 from ..enums import JobStatuses
@@ -75,7 +75,11 @@ class ClientViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = get_objects_for_user(
             self.request.user, "jobtracker.view_client", klass=Client
-        ).prefetch_related("account_managers", "tech_account_managers", "jobs")
+        ).prefetch_related("account_managers", "tech_account_managers").annotate(
+            # Number of live jobs (excludes soft-deleted ones); read by the
+            # serializer's jobs_count and orderable server-side.
+            jobs_count=Count("jobs", filter=~Q(jobs__status=JobStatuses.DELETED))
+        )
         return queryset
 
 

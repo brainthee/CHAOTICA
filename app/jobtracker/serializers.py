@@ -26,7 +26,7 @@ class OrganisationalUnitSerializer(serializers.HyperlinkedModelSerializer):
 class ClientSerializer(serializers.HyperlinkedModelSerializer):
     name_link =  serializers.SerializerMethodField()
     status_display  =  serializers.SerializerMethodField()
-    jobs_count = serializers.IntegerField(source="jobs.count", read_only=True)
+    jobs_count = serializers.IntegerField(read_only=True)
     ams_display  =  serializers.SerializerMethodField()
     tams_display  =  serializers.SerializerMethodField()
 
