@@ -335,6 +335,25 @@ class ProtectedDeleteMixin:
         )
 
 
+class SoftDeleteViewMixin:
+    """Make a ``DeleteView`` soft-delete instead of removing the row.
+
+    Sets ``is_deleted`` (via ``SoftDeleteModel.soft_delete``) rather than issuing
+    a DB delete, so the object drops out of default querysets/lists while its
+    dependent records (jobs, phases, timeslots, history) survive. Requires the
+    target model to inherit ``SoftDeleteModel`` and the view to provide a
+    ``success_url``/``get_success_url`` that does not point at the deleted
+    object's own detail page.
+    """
+
+    def form_valid(self, form):
+        self.object.soft_delete(user=getattr(self.request, "user", None))
+        messages.success(
+            self.request, f"{self.object} deleted. It can be restored by an administrator."
+        )
+        return HttpResponseRedirect(self.get_success_url())
+
+
 class ChaoticaBaseGlobalRoleView(ChaoticaBaseView, UserPassesTestMixin):
 
     role_required = None

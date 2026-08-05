@@ -11,7 +11,7 @@ from django.views.decorators.http import (
     require_http_methods,
 )
 from django.template import loader
-from chaotica_utils.views import log_system_activity, ChaoticaBaseView, ProtectedDeleteMixin
+from chaotica_utils.views import log_system_activity, ChaoticaBaseView, ProtectedDeleteMixin, SoftDeleteViewMixin
 from django.views.generic.list import ListView
 from django.contrib import messages
 from django.views.generic.detail import DetailView
@@ -107,10 +107,11 @@ class ClientUpdateView(ClientBaseView, UpdateView):
     permission_required = "jobtracker.change_client"
 
 
-class ClientDeleteView(ClientBaseView, DeleteView):
-    """View to delete a job"""
+class ClientDeleteView(SoftDeleteViewMixin, ClientBaseView, DeleteView):
+    """Soft-delete a client (preserves its jobs/history)."""
 
     permission_required = "jobtracker.delete_client"
+    success_url = reverse_lazy("client_list")
 
 
 @permission_required_or_403("jobtracker.change_client")

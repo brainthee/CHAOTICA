@@ -20,6 +20,7 @@ from django.db.models import JSONField
 import pytz
 import uuid, os, random
 from chaotica_utils.models import User, get_sentinel_user, Holiday
+from chaotica_utils.models.soft_delete import SoftDeleteModel
 from ..models import TimeSlot
 from chaotica_utils.enums import UnitRoles, UpcomingAvailabilityRanges
 from ..enums import PhaseStatuses, JobStatuses
@@ -45,7 +46,7 @@ def get_media_image_file_path(instance, filename):
     return os.path.join("media/images", filename)
 
 
-class OrganisationalUnit(models.Model):
+class OrganisationalUnit(SoftDeleteModel):
     name = models.CharField(max_length=255, unique=True)
     slug = models.SlugField(null=False, default="", unique=True)
     description = BleachField(default="", null=True)
@@ -89,6 +90,10 @@ class OrganisationalUnit(models.Model):
 
     class Meta:
         ordering = [Lower("name")]
+        # Related access (job.unit, memberships) on a soft-deleted unit must
+        # still resolve, so the unfiltered manager is the base manager.
+        base_manager_name = "all_objects"
+        default_manager_name = "objects"
         permissions = (
             ("manage_members", "Assign Members"),
             # Job permissions

@@ -9,6 +9,7 @@ from django.utils import timezone
 from datetime import timedelta
 from phone_field import PhoneField
 from chaotica_utils.models import Note
+from chaotica_utils.models.soft_delete import SoftDeleteModel
 from constance import config
 from decimal import Decimal
 from django_bleach.models import BleachField
@@ -18,7 +19,7 @@ from chaotica_utils.views.common import log_system_activity
 from notifications.enums import NotificationTypes
 
 
-class Client(models.Model):
+class Client(SoftDeleteModel):
     name = models.CharField(
         max_length=255, unique=True, help_text="Legal name of the client"
     )
@@ -99,6 +100,10 @@ class Client(models.Model):
     class Meta:
         ordering = [Lower("name")]
         permissions = (("assign_account_managers_client", "Assign Account Managers"),)
+        # Related access (job.client on a soft-deleted client's jobs) must still
+        # resolve, so the unfiltered manager is the base manager.
+        base_manager_name = "all_objects"
+        default_manager_name = "objects"
 
     def __str__(self):
         return self.name
