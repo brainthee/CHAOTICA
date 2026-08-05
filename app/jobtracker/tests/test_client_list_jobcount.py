@@ -3,7 +3,7 @@ from django.test import TestCase, Client as HttpClient, override_settings
 from django.urls import reverse
 
 from chaotica_utils.models import User
-from jobtracker.models import Client, Job, OrganisationalUnit
+from jobtracker.models import Client, Job, OrganisationalUnit, Project
 from jobtracker.enums import JobStatuses
 
 
@@ -28,11 +28,23 @@ class ClientJobCountTests(TestCase):
             status=JobStatuses.DELETED,
             created_by=self.superuser, account_manager=self.superuser,
         )
+        # Three projects — a different count from jobs, so a JOIN fan-out
+        # (missing distinct=True) would give the wrong number for both.
+        for i in range(3):
+            Project.objects.create(
+                title=f"Proj {i}", client=self.client_obj, created_by=self.superuser
+            )
         self.http = HttpClient(HTTP_HOST="localhost")
+
+    def _row(self):
+        resp = self.http.get(reverse("client-list") + "?format=datatables")
+        self.assertEqual(resp.status_code, 200)
+        return next(r for r in resp.json()["data"] if r["name"] == "Acme")
 
     def test_jobs_count_excludes_deleted(self):
         self.http.force_login(self.superuser)
-        resp = self.http.get(reverse("client-list") + "?format=datatables")
-        self.assertEqual(resp.status_code, 200)
-        row = next(r for r in resp.json()["data"] if r["name"] == "Acme")
-        self.assertEqual(row["jobs_count"], 2)
+        self.assertEqual(self._row()["jobs_count"], 2)
+
+    def test_projects_count(self):
+        self.http.force_login(self.superuser)
+        self.assertEqual(self._row()["projects_count"], 3)

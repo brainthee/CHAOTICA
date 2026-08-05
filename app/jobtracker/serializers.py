@@ -27,6 +27,7 @@ class ClientSerializer(serializers.HyperlinkedModelSerializer):
     name_link =  serializers.SerializerMethodField()
     status_display  =  serializers.SerializerMethodField()
     jobs_count = serializers.IntegerField(read_only=True)
+    projects_count = serializers.IntegerField(read_only=True)
     ams_display  =  serializers.SerializerMethodField()
     tams_display  =  serializers.SerializerMethodField()
 
@@ -50,7 +51,7 @@ class ClientSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Client
-        fields = ['name', 'name_link', 'ams_display', 'tams_display', 'jobs_count', 'status_display']
+        fields = ['name', 'name_link', 'ams_display', 'tams_display', 'jobs_count', 'projects_count', 'status_display']
         datatables_always_serialize = ('name',)
 
 

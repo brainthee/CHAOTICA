@@ -76,9 +76,13 @@ class ClientViewSet(viewsets.ModelViewSet):
         queryset = get_objects_for_user(
             self.request.user, "jobtracker.view_client", klass=Client
         ).prefetch_related("account_managers", "tech_account_managers").annotate(
-            # Number of live jobs (excludes soft-deleted ones); read by the
-            # serializer's jobs_count and orderable server-side.
-            jobs_count=Count("jobs", filter=~Q(jobs__status=JobStatuses.DELETED))
+            # Number of live jobs (excludes soft-deleted ones) and projects.
+            # distinct=True is required: counting over two reverse relations in
+            # one query fans out the JOIN and would otherwise inflate both.
+            jobs_count=Count(
+                "jobs", filter=~Q(jobs__status=JobStatuses.DELETED), distinct=True
+            ),
+            projects_count=Count("projects", distinct=True),
         )
         return queryset
 
