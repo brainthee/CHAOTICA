@@ -428,6 +428,9 @@ class ClientContactUpdateView(
 class ClientContactDeleteView(
     ProtectedDeleteMixin, ClientContactBaseView, PermissionRequiredMixin, DeleteView
 ):
+    # Base view only grants view_contact; deleting must require delete_contact.
+    permission_required = "jobtracker.delete_contact"
+
     def get_success_url(self):
         if "client_slug" in self.kwargs:
             client_slug = self.kwargs["client_slug"]
