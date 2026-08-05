@@ -72,12 +72,19 @@ class LeaveRequest(models.Model):
     def overlaps_confirmed_work(self):
         from jobtracker.enums import PhaseStatuses
 
-        return self.user.timeslots.filter(
-            slot_type=DefaultTimeSlotTypes.DELIVERY,
-            phase__status__gte=PhaseStatuses.SCHEDULED_CONFIRMED,
-            start__lte=self.end_date,
-            end__gte=self.start_date,
-        ).exists()
+        return (
+            self.user.timeslots.filter(
+                slot_type=DefaultTimeSlotTypes.DELIVERY,
+                phase__status__gte=PhaseStatuses.SCHEDULED_CONFIRMED,
+                start__lte=self.end_date,
+                end__gte=self.start_date,
+            )
+            # Cancelled/postponed/deleted phases are >= SCHEDULED_CONFIRMED too;
+            # a leave request overlapping one of those is not overlapping real
+            # confirmed work.
+            .exclude(phase__status__in=PhaseStatuses.IGNORED_STATUSES)
+            .exists()
+        )
 
     def requested_late(self):
         return self.start_date < (
