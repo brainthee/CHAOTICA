@@ -14,7 +14,7 @@ from ..mixins import UnitPermissionRequiredMixin, JobPermissionRequiredMixin, Pr
 from django.views import View
 from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
-from django.views.generic.edit import CreateView, UpdateView, DeleteView
+from django.views.generic.edit import CreateView, UpdateView
 from django.urls import reverse_lazy
 from django_select2.views import AutoResponseView
 from chaotica_utils.views import log_system_activity, ChaoticaBaseView
@@ -798,12 +798,6 @@ def job_schedule_export(request, slug):
     return build_schedule_xlsx(
         timeslots, filename, title=title, header_rows=job_header_rows(job)
     )
-
-
-class JobDeleteView(UnitPermissionRequiredMixin, JobBaseView, DeleteView):
-    permission_required = "jobtracker.can_delete_job"
-    return_403 = True
-    """View to delete a job"""
 
 
 @job_permission_required_or_403("jobtracker.can_update_job", (Job, "slug", "slug"))
