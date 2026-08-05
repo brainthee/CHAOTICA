@@ -26,6 +26,10 @@
       {% if 'change_organisationalunit' in unit_perms %}
         <a href="{% url 'organisationalunit_update' organisationalunit.slug %}" class="btn btn-phoenix-secondary"><span class="fa-solid fa-pen me-2"></span>Edit</a>
       {% endif %}
+
+      {% if 'delete_organisationalunit' in unit_perms %}
+        <a href="{% url 'organisationalunit_delete' organisationalunit.slug %}" class="btn btn-phoenix-secondary text-danger"><span class="fa-solid fa-trash me-2"></span>Delete</a>
+      {% endif %}
     </div>
   </div>
 </div>

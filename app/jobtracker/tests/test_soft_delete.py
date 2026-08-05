@@ -64,6 +64,14 @@ class ClientDeleteViewTests(TestCase):
         # custom SessionMiddleware rejects requests without HTTP_HOST
         self.http = HttpClient(HTTP_HOST="localhost")
 
+    def test_delete_confirm_page_renders(self):
+        self.http.force_login(self.superuser)
+        resp = self.http.get(
+            reverse("client_delete", kwargs={"slug": self.client_obj.slug})
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Delete Client")
+
     def test_delete_view_soft_deletes(self):
         self.http.force_login(self.superuser)
         resp = self.http.post(

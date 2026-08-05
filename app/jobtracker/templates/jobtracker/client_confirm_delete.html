@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% load menu %}
+{% load static %}
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+
+{% block pageTitle %}
+  Delete Client
+{% endblock %}
+{% block head_title %}
+  Delete Client
+{% endblock %}
+
+{% block breadcrumbItem %}
+  <li class="breadcrumb-item text-sm">
+    <a class="opacity-50 text-body-emphasis" href="{% url 'client_list' %}">Clients</a>
+  </li>
+  <li class="breadcrumb-item text-sm opacity-50 text-body-emphasis">{{ client }}</li>
+  <li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">Delete</li>
+{% endblock %}
+
+{% block content %}
+  <div class="mt-3">
+    <form method="post">
+      {% csrf_token %}
+      {{ form.media }}
+
+      <div class="row g-3 flex-between-end mb-5">
+        <div class="col-auto">
+          <h2 class="mb-2">Delete Client</h2>
+        </div>
+        <div class="col-auto">
+          <button onclick="history.back()" class="btn btn-phoenix-secondary me-2 mb-2 mb-sm-0" type="button">Discard</button>
+          <button class="btn btn-outline-danger mb-2 mb-sm-0" type="submit">Delete</button>
+        </div>
+      </div>
+
+      {{ form.errors }}
+
+      <div class="row">
+        <div class="col-12 col-xl-8 g-2">
+          <h4 class="mb-3">Are you sure you wish to delete <strong>{{ client }}</strong>?</h4>
+          <p>
+            The client will be hidden from lists and cannot be selected for new
+            jobs. Its existing jobs, phases, schedule and history are kept and
+            remain accessible &mdash; an administrator can restore the client later.
+          </p>
+        </div>
+        <div class="col-12 col-xl-4"></div>
+      </div>
+    </form>
+  </div>
+{% endblock %}

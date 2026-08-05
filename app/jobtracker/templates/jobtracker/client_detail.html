@@ -43,6 +43,9 @@
                 <div class="dropdown-menu shadow dropdown-menu-end me-sm-n4 me-n3" aria-labelledby="navbarDropdownMenuLink">
                   <a class="dropdown-item" href="{% url 'client_update' client.slug %}">Edit</a>
                   <button class="dropdown-item text-danger js-load-modal-form" data-url="{% url 'client_merge' client.slug %}">Merge other client</button>
+                  {% if 'delete_client' in client_perms %}
+                    <a class="dropdown-item text-danger" href="{% url 'client_delete' client.slug %}">Delete</a>
+                  {% endif %}
                 </div>
               </div>
             {% endif %}
