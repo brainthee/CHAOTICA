@@ -2173,6 +2173,12 @@ class Phase(models.Model):
             self.MOVED_TO + PhaseStatuses.CHOICES[PhaseStatuses.POSTPONED][1],
             author=user,
         )
+        # Free the scheduler: a postponed phase should not keep occupying
+        # timeslots (which would also be miscounted as confirmed utilisation).
+        # Mirrors to_cancelled()/to_deleted().
+        self._suppress_status_revert = True
+        for slot in self.timeslots.all():
+            slot.delete()
         self.fire_status_notification(PhaseStatuses.POSTPONED)
 
     def can_proceed_to_postponed(self):
@@ -2188,6 +2194,14 @@ class Phase(models.Model):
             if notify_request:
                 messages.add_message(notify_request, messages.ERROR, self.INVALID_STATE)
             _can_proceed = False
+        else:
+            # Warn the user that postponing frees the schedule (mirrors cancel).
+            if notify_request:
+                messages.add_message(
+                    notify_request,
+                    messages.INFO,
+                    "Warning - any scheduled timeslots will be deleted!",
+                )
         return _can_proceed
 
     #####################
