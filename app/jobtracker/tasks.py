@@ -17,8 +17,13 @@ class task_progress_workflows(CronJobBase):
     def do(self):
         # Lets work through the different times we want to auto-progress!
 
+        # Never auto-progress phases belonging to a deleted or archived job.
+        live_phases = Phase.objects.exclude(
+            job__status__in=[JobStatuses.DELETED, JobStatuses.ARCHIVED]
+        )
+
         ## Move to checks if scheduling confirmed and < 5 days to start...
-        for phase in Phase.objects.filter(status=PhaseStatuses.SCHEDULED_CONFIRMED):
+        for phase in live_phases.filter(status=PhaseStatuses.SCHEDULED_CONFIRMED):
             if phase.start_date:
                 days_to_start = phase.start_date - date.today()
                 if days_to_start.days < 7:
@@ -28,7 +33,7 @@ class task_progress_workflows(CronJobBase):
                         phase.save()
 
         # Lets see if we can auto-start any phases!
-        for phase in Phase.objects.filter(status=PhaseStatuses.READY_TO_BEGIN):
+        for phase in live_phases.filter(status=PhaseStatuses.READY_TO_BEGIN):
             if phase.start_date and date.today() >= phase.start_date:
                 # Ok, today is the day!
                 if phase.can_to_in_progress():
@@ -68,8 +73,13 @@ class task_fire_job_notifications(CronJobBase):
         # - Report late to PQA
         # - Report late to Delivery
 
+        # Never notify for phases belonging to a deleted or archived job.
+        live_phases = Phase.objects.exclude(
+            job__status__in=[JobStatuses.DELETED, JobStatuses.ARCHIVED]
+        )
+
         ## Phase pre-checks are late
-        for phase in Phase.objects.filter(
+        for phase in live_phases.filter(
             status=PhaseStatuses.PRE_CHECKS
         ):
             # Check if we're past the start date...
@@ -77,7 +87,7 @@ class task_fire_job_notifications(CronJobBase):
                 phase.fire_late_prechecks_notification()
 
         ## Report late to TQA
-        for phase in Phase.objects.filter(
+        for phase in live_phases.filter(
             Q(status=PhaseStatuses.IN_PROGRESS) | Q(status=PhaseStatuses.PENDING_TQA)
         ):
             if phase.is_tqa_late:
@@ -85,7 +95,7 @@ class task_fire_job_notifications(CronJobBase):
                 phase.fire_late_to_tqa_notification()
 
         ## Report late to PQA
-        for phase in Phase.objects.filter(
+        for phase in live_phases.filter(
             Q(status=PhaseStatuses.PENDING_PQA)
             | Q(status=PhaseStatuses.QA_TECH)
             | Q(status=PhaseStatuses.QA_TECH_AUTHOR_UPDATES)
@@ -95,7 +105,7 @@ class task_fire_job_notifications(CronJobBase):
                 phase.fire_late_to_pqa_notification()
 
         ## Report late to PQA
-        for phase in Phase.objects.filter(
+        for phase in live_phases.filter(
             Q(status=PhaseStatuses.PENDING_PQA)
             | Q(status=PhaseStatuses.QA_PRES)
             | Q(status=PhaseStatuses.QA_PRES_AUTHOR_UPDATES)

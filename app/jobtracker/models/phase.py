@@ -2197,6 +2197,10 @@ class Phase(models.Model):
             self.MOVED_TO + PhaseStatuses.CHOICES[PhaseStatuses.DELETED][1],
             author=user,
         )
+        # Erase any scheduled timeslots so a deleted phase leaves nothing
+        # behind on the scheduler (mirrors to_cancelled()).
+        for slot in self.timeslots.all():
+            slot.delete()
         self.fire_status_notification(PhaseStatuses.DELETED)
 
     def can_proceed_to_deleted(self):
