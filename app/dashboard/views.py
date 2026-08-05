@@ -278,7 +278,8 @@ def index(request):
         context["pendingDelivery"] = list(
             Phase.objects.filter(
                 Q(job__unit__in=q_deliver_units) | queue_phase_involved,
-                Q(status=PhaseStatuses.COMPLETED)
+                Q(status=PhaseStatuses.COMPLETED),
+                job__status__in=JobStatuses.ACTIVE_STATUSES,  # not deleted/archived/lost jobs
             ).distinct().select_related(
                 "project_lead", "job__client", "job__account_manager", "job__unit",
             )
