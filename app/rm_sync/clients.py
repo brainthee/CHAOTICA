@@ -34,10 +34,12 @@ def sync_rm_clients(client=None, dry_run=False):
                 result.skipped_no_name += 1
                 continue
             external_id = str(rm_client["id"])
-            existing = Client.objects.filter(external_id=external_id).first()
+            # all_objects: match soft-deleted clients too, so we link/reuse them
+            # instead of colliding on the unique name.
+            existing = Client.all_objects.filter(external_id=external_id).first()
             if existing:
                 continue
-            by_name = Client.objects.filter(name__iexact=name).first()
+            by_name = Client.all_objects.filter(name__iexact=name).first()
             if by_name:
                 if not by_name.external_id and not dry_run:
                     by_name.external_id = external_id
@@ -61,7 +63,8 @@ def get_or_create_client(name, external_id=None):
     name = (name or "").strip()
     if not name:
         return None
-    existing = Client.objects.filter(name__iexact=name).first()
+    # all_objects so a soft-deleted client of the same unique name is reused.
+    existing = Client.all_objects.filter(name__iexact=name).first()
     if existing:
         if external_id and not existing.external_id:
             existing.external_id = str(external_id)

@@ -91,11 +91,11 @@ class ResourceManagerProjectImporter(BaseImporter):
                             "No client defined - setting default "
                             + project["name"].strip()
                         )
-                        db_client, _ = Client.objects.get_or_create(
+                        db_client, _ = Client.all_objects.get_or_create(
                             name="Unknown Client"
                         )
                     else:
-                        db_client, db_client_created = Client.objects.get_or_create(
+                        db_client, db_client_created = Client.all_objects.get_or_create(
                             name__iexact=project["client"].strip(),
                             defaults={"name": project["client"].strip()},
                         )
@@ -137,7 +137,7 @@ class ResourceManagerProjectImporter(BaseImporter):
                     if primary_am.unit_memberships.all().count():
                         db_unit = primary_am.unit_memberships.first().unit
                     else:
-                        db_unit, _ = OrganisationalUnit.objects.get_or_create(
+                        db_unit, _ = OrganisationalUnit.all_objects.get_or_create(
                             name="Unknown Unit"
                         )
 
