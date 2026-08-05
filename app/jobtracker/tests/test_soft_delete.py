@@ -78,6 +78,10 @@ class ClientDeleteViewTests(TestCase):
             reverse("client_delete", kwargs={"slug": self.client_obj.slug})
         )
         self.assertEqual(resp.status_code, 302)
+        # Must redirect to the list, NOT the just-deleted client's detail (404).
+        self.assertEqual(resp.url, reverse("client_list"))
+        follow = self.http.get(resp.url)
+        self.assertEqual(follow.status_code, 200)
         self.client_obj.refresh_from_db()
         self.assertTrue(self.client_obj.is_deleted)
 

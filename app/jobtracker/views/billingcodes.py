@@ -67,10 +67,11 @@ class BillingCodeUpdateView(BillingCodeBaseView, PermissionRequiredMixin, Update
 
 
 class BillingCodeDeleteView(ProtectedDeleteMixin, BillingCodeBaseView, PermissionRequiredMixin, DeleteView):
-    """View to delete a job"""
+    """View to delete a billing code."""
 
     permission_required = "jobtracker.delete_billingcode"
     accept_global_perms = True
     return_403 = True
+    success_url = reverse_lazy("billingcode_list")
     slug_url_kwarg = "code"
     slug_field = "code"

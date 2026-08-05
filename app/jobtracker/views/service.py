@@ -138,8 +138,9 @@ class ServiceUpdateView(ServiceBaseView, PermissionRequiredMixin, UpdateView):
 
 
 class ServiceDeleteView(ProtectedDeleteMixin, ServiceBaseView, PermissionRequiredMixin, DeleteView):
-    """View to delete a job"""
+    """View to delete a service."""
 
     permission_required = "jobtracker.delete_service"
     accept_global_perms = True
     return_403 = True
+    success_url = reverse_lazy("service_list")

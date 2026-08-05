@@ -211,8 +211,9 @@ class HolidayUpdateView(HolidayBaseView, PermissionRequiredMixin, UpdateView):
 
 
 class HolidayDeleteView(ProtectedDeleteMixin, HolidayBaseView, PermissionRequiredMixin, DeleteView):
-    """View to delete a job"""
+    """View to delete a holiday."""
 
     permission_required = "chaotica_utils.delete_holiday"
     accept_global_perms = True
     return_403 = True
+    success_url = reverse_lazy("holiday_list")

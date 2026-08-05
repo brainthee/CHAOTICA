@@ -210,3 +210,4 @@ class QualificationDeleteView(
     permission_required = "jobtracker.delete_qualification"
     accept_global_perms = True
     return_403 = True
+    success_url = reverse_lazy("qualification_list")
