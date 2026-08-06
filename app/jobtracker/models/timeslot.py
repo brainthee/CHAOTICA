@@ -535,6 +535,15 @@ class TimeSlot(models.Model):
 
         super(TimeSlot, self).delete()
         if self.is_delivery():
+            # Skip the auto-revert when the phase itself is being torn down
+            # (cancelled/postponed/deleted). Those transitions delete their
+            # slots inside the FSM transition body, at which point phase.status
+            # is still the source status (SCHEDULED_*), so without this guard
+            # removing the last slot would fire a spurious "moved to Pending
+            # Scheduling" transition + notification before the phase lands on
+            # its real target status.
+            if getattr(phase, "_suppress_status_revert", False):
+                return
             # Ok we're deleted... lets check if we should move the phase status back to pending
             if not TimeSlot.objects.filter(phase=phase).exists():
                 # No more slots... move back to pending scheduling

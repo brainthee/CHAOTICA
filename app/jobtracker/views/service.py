@@ -3,7 +3,7 @@ from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
-from chaotica_utils.views import ChaoticaBaseView
+from chaotica_utils.views import ChaoticaBaseView, ProtectedDeleteMixin
 from ..models import Service
 from ..forms import ServiceForm
 from ..mixins import PrefetchRelatedMixin
@@ -137,9 +137,10 @@ class ServiceUpdateView(ServiceBaseView, PermissionRequiredMixin, UpdateView):
     return_403 = True
 
 
-class ServiceDeleteView(ServiceBaseView, PermissionRequiredMixin, DeleteView):
-    """View to delete a job"""
+class ServiceDeleteView(ProtectedDeleteMixin, ServiceBaseView, PermissionRequiredMixin, DeleteView):
+    """View to delete a service."""
 
     permission_required = "jobtracker.delete_service"
     accept_global_perms = True
     return_403 = True
+    success_url = reverse_lazy("service_list")

@@ -11,7 +11,7 @@ from django.views.decorators.http import (
     require_http_methods,
 )
 from django.template import loader
-from chaotica_utils.views import log_system_activity, ChaoticaBaseView
+from chaotica_utils.views import log_system_activity, ChaoticaBaseView, ProtectedDeleteMixin, SoftDeleteViewMixin
 from django.views.generic.list import ListView
 from django.contrib import messages
 from django.views.generic.detail import DetailView
@@ -107,10 +107,11 @@ class ClientUpdateView(ClientBaseView, UpdateView):
     permission_required = "jobtracker.change_client"
 
 
-class ClientDeleteView(ClientBaseView, DeleteView):
-    """View to delete a job"""
+class ClientDeleteView(SoftDeleteViewMixin, ClientBaseView, DeleteView):
+    """Soft-delete a client (preserves its jobs/history)."""
 
     permission_required = "jobtracker.delete_client"
+    success_url = reverse_lazy("client_list")
 
 
 @permission_required_or_403("jobtracker.change_client")
@@ -425,8 +426,11 @@ class ClientContactUpdateView(
 
 
 class ClientContactDeleteView(
-    ClientContactBaseView, PermissionRequiredMixin, DeleteView
+    ProtectedDeleteMixin, ClientContactBaseView, PermissionRequiredMixin, DeleteView
 ):
+    # Base view only grants view_contact; deleting must require delete_contact.
+    permission_required = "jobtracker.delete_contact"
+
     def get_success_url(self):
         if "client_slug" in self.kwargs:
             client_slug = self.kwargs["client_slug"]
@@ -666,7 +670,7 @@ class ClientFrameworkUpdateView(
 
 
 class ClientFrameworkDeleteView(
-    ClientFrameworkBaseView, PermissionRequiredMixin, DeleteView
+    ProtectedDeleteMixin, ClientFrameworkBaseView, PermissionRequiredMixin, DeleteView
 ):
 
     permission_required = "jobtracker.delete_frameworkagreement"

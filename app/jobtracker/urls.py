@@ -265,7 +265,6 @@ urlpatterns = [
         name="job_update_scope",
     ),
     path("job/<str:slug>/update/", views.JobUpdateView.as_view(), name="job_update"),
-    path("job/<str:slug>/delete/", views.JobDeleteView.as_view(), name="job_delete"),
     path(
         "job/<str:slug>/support/add",
         views.job_support_team_add,
@@ -508,11 +507,6 @@ urlpatterns = [
         "job/<str:job_slug>/phase/<str:slug>/rating/scope",
         views.phase_rating_scope,
         name="phase_rating_scope",
-    ),
-    path(
-        "job/<str:job_slug>/phase/<str:slug>/delete/",
-        views.PhaseDeleteView.as_view(),
-        name="phase_delete",
     ),
     path(
         "job/<str:job_slug>/phase/<str:slug>/schedule/",

@@ -655,6 +655,9 @@ MIDDLEWARE = [
     # 'django.middleware.cache.FetchFromCacheMiddleware',
     # 'django.middleware.common.CommonMiddleware',
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    # Converts login_required's 302->login into a 401 JSON for AJAX requests so
+    # expired-session XHRs surface a clear message instead of an opaque parse error.
+    "chaotica_utils.middleware.AjaxLoginRedirect401Middleware",
     "chaotica_utils.middleware.CurrentUserMiddleware",  # Must be after AuthenticationMiddleware
     "chaotica_utils.middleware.TimezoneMiddleware",  # Must be after AuthenticationMiddleware
     "django.contrib.messages.middleware.MessageMiddleware",

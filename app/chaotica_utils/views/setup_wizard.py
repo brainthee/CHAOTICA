@@ -379,7 +379,7 @@ class SetupWizardView(View):
             user = self._get_wizard_user(request, wizard_data)
 
             for client_name in clients:
-                client, created = Client.objects.get_or_create(
+                client, created = Client.all_objects.get_or_create(
                     name=client_name, defaults={"short_name": client_name[:20]}
                 )
                 if created:

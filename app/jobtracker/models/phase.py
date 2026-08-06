@@ -2131,6 +2131,9 @@ class Phase(models.Model):
             author=user,
         )
         self.cancellation_date = timezone.now()
+        # Guard against TimeSlot.delete() auto-reverting the phase to Pending
+        # Scheduling while we tear it down (see TimeSlot.delete).
+        self._suppress_status_revert = True
         for slot in self.timeslots.all():
             slot.delete()
 
@@ -2170,6 +2173,12 @@ class Phase(models.Model):
             self.MOVED_TO + PhaseStatuses.CHOICES[PhaseStatuses.POSTPONED][1],
             author=user,
         )
+        # Free the scheduler: a postponed phase should not keep occupying
+        # timeslots (which would also be miscounted as confirmed utilisation).
+        # Mirrors to_cancelled()/to_deleted().
+        self._suppress_status_revert = True
+        for slot in self.timeslots.all():
+            slot.delete()
         self.fire_status_notification(PhaseStatuses.POSTPONED)
 
     def can_proceed_to_postponed(self):
@@ -2185,6 +2194,14 @@ class Phase(models.Model):
             if notify_request:
                 messages.add_message(notify_request, messages.ERROR, self.INVALID_STATE)
             _can_proceed = False
+        else:
+            # Warn the user that postponing frees the schedule (mirrors cancel).
+            if notify_request:
+                messages.add_message(
+                    notify_request,
+                    messages.INFO,
+                    "Warning - any scheduled timeslots will be deleted!",
+                )
         return _can_proceed
 
     #####################
@@ -2197,7 +2214,16 @@ class Phase(models.Model):
             self.MOVED_TO + PhaseStatuses.CHOICES[PhaseStatuses.DELETED][1],
             author=user,
         )
+        # Erase any scheduled timeslots so a deleted phase leaves nothing
+        # behind on the scheduler (mirrors to_cancelled()).
+        self._suppress_status_revert = True
+        for slot in self.timeslots.all():
+            slot.delete()
         self.fire_status_notification(PhaseStatuses.DELETED)
+        # Tidy up dangling subscriptions/opt-outs for this phase (no FK cascade).
+        from notifications.utils import remove_subscriptions_for_entity
+
+        remove_subscriptions_for_entity(self)
 
     def can_proceed_to_deleted(self):
         return can_proceed(self.to_deleted)

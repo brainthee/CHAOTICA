@@ -115,7 +115,9 @@ effective working days = working days − public holidays − non-working-slot d
   any timeslot whose slot type is *not working* (annual leave, sick, bank
   holidays booked on the scheduler, or any custom non-working type).
 - **Confirmed delivery days** — the remaining working days with at least one
-  timeslot on a phase that has reached *Scheduled – Confirmed*.
+  timeslot on a phase that has reached *Scheduled – Confirmed*. Bookings on
+  cancelled, postponed or deleted phases are ignored (they never count as
+  delivery even though those are later phase states).
 
 What is **excluded** from utilisation:
 

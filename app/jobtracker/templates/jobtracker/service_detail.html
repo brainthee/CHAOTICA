@@ -33,8 +33,11 @@
         </div>
 
         <div class="col-md-auto">
-          <div class="d-flex">
+          <div class="d-flex gap-2">
             <a href="{% url 'service_update' service.slug %}" class="btn btn-outline-secondary ms-auto">Edit</a>
+            {% if perms.jobtracker.delete_service %}
+              <a href="{% url 'service_delete' service.slug %}" class="btn btn-outline-danger">Delete</a>
+            {% endif %}
           </div>
         </div>
       </div>

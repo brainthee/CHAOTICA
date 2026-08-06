@@ -12,7 +12,7 @@ from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from django.db.models import Count
 from django.contrib.auth.decorators import login_required
-from chaotica_utils.views import ChaoticaBaseView
+from chaotica_utils.views import ChaoticaBaseView, SoftDeleteViewMixin
 from notifications.utils import AppNotification, send_notifications
 from notifications.enums import NotificationTypes
 from chaotica_utils.models import User, Group
@@ -420,9 +420,10 @@ def orgunit_board_partial(request, slug):
 
 
 class OrganisationalUnitDeleteView(
-    PermissionRequiredMixin, OrganisationalUnitBaseView, DeleteView
+    SoftDeleteViewMixin, PermissionRequiredMixin, OrganisationalUnitBaseView, DeleteView
 ):
     permission_required = "jobtracker.delete_organisationalunit"
+    success_url = reverse_lazy("organisationalunit_list")
 
 
 class OrganisationalUnitUpdateView(

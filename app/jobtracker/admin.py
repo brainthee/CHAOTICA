@@ -73,6 +73,12 @@ class OrganisationalUnitMemberInline(admin.TabularInline):
 @admin.register(OrganisationalUnit)
 class OrganisationalUnitAdmin(GuardedModelAdmin):
     inlines = [OrganisationalUnitMemberInline]
+    list_display = ("name", "is_deleted")
+    list_filter = ("is_deleted",)
+
+    def get_queryset(self, request):
+        # Include soft-deleted units so admins can see/restore them.
+        return self.model.all_objects.get_queryset()
 
 
 class SkillInline(admin.TabularInline):
@@ -280,6 +286,12 @@ class ClientResource(resources.ModelResource):
 @admin.register(Client)
 class ClientAdmin(ImportExportModelAdmin):
     resource_classes = [ClientResource]
+    list_display = ("name", "is_deleted")
+    list_filter = ("is_deleted",)
+
+    def get_queryset(self, request):
+        # Include soft-deleted clients so admins can see/restore them.
+        return self.model.all_objects.get_queryset()
 
 
 #### ClientOnboarding

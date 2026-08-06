@@ -8,7 +8,7 @@ from django.db.models import Prefetch
 from django.core.cache import cache
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
-from chaotica_utils.views import ChaoticaBaseView
+from chaotica_utils.views import ChaoticaBaseView, ProtectedDeleteMixin
 from chaotica_utils.models import User
 from chaotica_utils.utils import get_sentinel_user
 from ..models import Skill, SkillCategory, UserSkill
@@ -81,7 +81,7 @@ class SkillUpdateView(SkillBaseView, PermissionRequiredMixin, UpdateView):
     return_403 = True
 
 
-class SkillDeleteView(SkillBaseView, PermissionRequiredMixin, DeleteView):
+class SkillDeleteView(ProtectedDeleteMixin, SkillBaseView, PermissionRequiredMixin, DeleteView):
     """View to delete a job"""
 
     permission_required = "jobtracker.delete_skill"
@@ -115,7 +115,7 @@ class SkillCatUpdateView(SkillCatBaseView, PermissionRequiredMixin, UpdateView):
     accept_global_perms = True
 
 
-class SkillCatDeleteView(SkillCatBaseView, PermissionRequiredMixin, DeleteView):
+class SkillCatDeleteView(ProtectedDeleteMixin, SkillCatBaseView, PermissionRequiredMixin, DeleteView):
     """View to delete a job"""
 
     permission_required = "jobtracker.delete_skillcategory"

@@ -175,8 +175,11 @@ class task_update_phase_dates(CronJobBase):
 
     def do(self):
         from jobtracker.models import Phase
+        from jobtracker.enums import JobStatuses
 
-        for phase in Phase.objects.all():
+        for phase in Phase.objects.exclude(
+            job__status__in=[JobStatuses.DELETED, JobStatuses.ARCHIVED]
+        ):
             phase.update_stored_dates()
 
 

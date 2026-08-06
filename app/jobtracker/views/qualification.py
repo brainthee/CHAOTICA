@@ -6,7 +6,7 @@ from django.urls import reverse_lazy
 from django.utils import timezone
 from django.db.models import Count, Q, Prefetch
 from datetime import timedelta
-from chaotica_utils.views import ChaoticaBaseView
+from chaotica_utils.views import ChaoticaBaseView, ProtectedDeleteMixin
 from ..models import Qualification, AwardingBody, QualificationRecord, QualificationTag
 from ..enums import QualificationStatus
 from ..forms import QualificationForm, AwardingBodyForm
@@ -205,8 +205,9 @@ class QualificationUpdateView(
 
 
 class QualificationDeleteView(
-    QualificationBaseView, PermissionRequiredMixin, DeleteView
+    ProtectedDeleteMixin, QualificationBaseView, PermissionRequiredMixin, DeleteView
 ):
     permission_required = "jobtracker.delete_qualification"
     accept_global_perms = True
     return_403 = True
+    success_url = reverse_lazy("qualification_list")

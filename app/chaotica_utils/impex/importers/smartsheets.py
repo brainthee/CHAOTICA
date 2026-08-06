@@ -270,7 +270,7 @@ class SmartSheetCSVImporter(BaseImporter):
                 skipped_files.append(projectData["filename"])
                 continue
 
-            db_client, db_client_created = Client.objects.get_or_create(
+            db_client, db_client_created = Client.all_objects.get_or_create(
                 name__iexact=projectData["client"],
                 defaults={"name": projectData["client"]},
             )
@@ -323,7 +323,7 @@ class SmartSheetCSVImporter(BaseImporter):
             if primary_am.unit_memberships.all().count():
                 db_unit = primary_am.unit_memberships.first().unit
             else:
-                db_unit = OrganisationalUnit.objects.get(name="UKI")
+                db_unit = OrganisationalUnit.all_objects.get(name="UKI")
 
             list_of_service_names = Service.objects.all().values_list("name", flat=True)
 

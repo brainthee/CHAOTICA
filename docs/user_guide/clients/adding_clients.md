@@ -317,6 +317,14 @@ When migrating from other systems:
 - Test import procedures with sample data
 - Plan for data cleanup and standardization
 
+## Deleting a Client
+
+Deleting a client is a **soft delete**: the client is hidden from lists and
+selection dropdowns, but its jobs, phases, schedule and history are preserved
+intact (nothing is wiped from the database). A soft-deleted client can be
+restored by an administrator from the Django admin, which lists deleted clients
+via the *Is deleted* filter. The same applies to Organisational Units.
+
 ## Related Topics
 
 - [Managing Contacts](managing_contacts.md) - Detailed contact management

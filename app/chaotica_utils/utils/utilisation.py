@@ -24,9 +24,10 @@ where::
   sick, bank holiday booked on the scheduler, or any custom non-working type).
 * **confirmed_delivery_days** — the remaining working days on which the user has
   at least one timeslot that is *confirmed delivery*: linked to a phase whose status is at
-  least ``SCHEDULED_CONFIRMED``, **or** linked to a ``deliverable`` project in the
-  ``CONFIRMED`` state (see :func:`classify_delivery_slot`). This lets teams whose work lives
-  on internal ``Project``s (e.g. RM-imported EU teams) register utilisation.
+  least ``SCHEDULED_CONFIRMED`` (but not cancelled/postponed/deleted), **or** linked to a
+  ``deliverable`` project in the ``CONFIRMED`` state (see :func:`classify_delivery_slot`).
+  This lets teams whose work lives on internal ``Project``s (e.g. RM-imported EU teams)
+  register utilisation.
 
 Rules
 -----
@@ -78,6 +79,9 @@ def classify_delivery_slot(slot):
     ``SCHEDULED_CONFIRMED`` or a ``deliverable`` project in the ``TENTATIVE`` state. Internal
     (non-deliverable / ``INTERNAL``-state) projects are neither, so they stay "internal" time
     and never enter the utilisation numerator.
+
+    Phases in an *ignored* status (cancelled, postponed, deleted) never count as
+    delivery even though those status values are numerically ``>= SCHEDULED_CONFIRMED``.
     """
     # Lazy import to avoid a chaotica_utils → jobtracker import cycle at module load.
     from jobtracker.enums import PhaseStatuses, ProjectState
@@ -86,11 +90,21 @@ def classify_delivery_slot(slot):
     p_state = slot.get("project__state")
     p_deliverable = bool(slot.get("project__deliverable"))
 
+    # A slot on a cancelled/postponed/deleted phase is not real delivery — those
+    # statuses are all numerically >= SCHEDULED_CONFIRMED, so without this guard
+    # their leftover slots would be miscounted as confirmed delivery. ARCHIVED is
+    # deliberately NOT ignored: it is genuinely-delivered past work that should
+    # still count toward historical utilisation.
+    phase_ignored = phase_status in PhaseStatuses.IGNORED_STATUSES
     phase_conf = (
-        phase_status is not None and phase_status >= PhaseStatuses.SCHEDULED_CONFIRMED
+        phase_status is not None
+        and not phase_ignored
+        and phase_status >= PhaseStatuses.SCHEDULED_CONFIRMED
     )
     phase_tent = (
-        phase_status is not None and phase_status < PhaseStatuses.SCHEDULED_CONFIRMED
+        phase_status is not None
+        and not phase_ignored
+        and phase_status < PhaseStatuses.SCHEDULED_CONFIRMED
     )
     proj_conf = p_deliverable and p_state == ProjectState.CONFIRMED
     proj_tent = p_deliverable and p_state == ProjectState.TENTATIVE

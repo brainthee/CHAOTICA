@@ -223,7 +223,9 @@ class ResourceManagerUserImporter(BaseImporter):
                 if custom_field["custom_field_name"] == "Market Unit":
                     # Add to the right org unit...
                     if custom_field["value"]:
-                        org_unit, _ = OrganisationalUnit.objects.get_or_create(
+                        # all_objects so a soft-deleted unit of the same (unique)
+                        # name is reused rather than colliding on create.
+                        org_unit, _ = OrganisationalUnit.all_objects.get_or_create(
                             name=custom_field["value"].strip()
                         )
 
@@ -239,7 +241,7 @@ class ResourceManagerUserImporter(BaseImporter):
 
                 elif custom_field["custom_field_name"] == "Client Onboarded":
                     if custom_field["value"]:
-                        db_client, _ = Client.objects.get_or_create(
+                        db_client, _ = Client.all_objects.get_or_create(
                             name=custom_field["value"].strip()
                         )
                         db_client.onboarded_users.add(db_user)

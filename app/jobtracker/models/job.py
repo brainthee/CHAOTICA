@@ -1076,10 +1076,16 @@ class Job(models.Model):
             author=user,
         )
         self.fire_status_notification(JobStatuses.DELETED)
-        # Lets make all phases to cancelled.
+        # Cascade the delete to all phases so they don't linger as active
+        # phases generating notifications for a deleted job.
         for phase in self.phases.all():
             if phase.can_to_deleted():
-                phase.to_deleted()
+                phase.to_deleted(user)
+                phase.save()
+        # Tidy up dangling subscriptions/opt-outs for this job (no FK cascade).
+        from notifications.utils import remove_subscriptions_for_entity
+
+        remove_subscriptions_for_entity(self)
 
     def can_proceed_to_delete(self):
         return can_proceed(self.to_delete)

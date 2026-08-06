@@ -75,7 +75,19 @@
   /* Items */
   .vis-item { border-radius: 0.5rem; border-width: 1px; font-size: 0.72rem; }
   .vis-item.vis-selected { box-shadow: 0 0 0 2px var(--phoenix-primary); }
-  .vis-item .vis-item-content { padding: 2px 6px; }
+  /* Clip labels to the item's true time-width. vis's RangeItem force-widens an
+     item to `rangeWidth + contentWidth` whenever its content box isn't
+     overflow:hidden (it reads getComputedStyle(content).overflow). Left visible,
+     a labelled 1-day slot bleeds ~a day past its column, overlaps its neighbour
+     across the gap and gets bumped into a second lane — the alternating two-lane
+     "stagger" / zig-zag. Clipping keeps bars at their real width so stacking
+     reflects only genuine time overlaps. */
+  .vis-item .vis-item-content {
+    padding: 2px 6px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
   .vis-item.cmt { border-style: dashed; }
   /* Coarse zoom (week and wider): hide item labels so vis stops forcing each slot
      to its label width. Otherwise short slots overlap and stack into tall towers

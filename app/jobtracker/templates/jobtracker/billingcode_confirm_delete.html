@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block pageTitle %}Delete Billing Code{% endblock %}
+{% block head_title %}Delete Billing Code{% endblock %}
+
+{% block breadcrumbItem %}
+  <li class="breadcrumb-item text-sm">
+    <a class="opacity-50 text-body-emphasis" href="{% url 'billingcode_list' %}">Billing Codes</a>
+  </li>
+  <li class="breadcrumb-item text-sm opacity-50 text-body-emphasis">{{ billingcode }}</li>
+  <li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">Delete</li>
+{% endblock %}
+
+{% block content %}
+  <div class="mt-3">
+    <form method="post">
+      {% csrf_token %}
+      {{ form.media }}
+      <div class="row g-3 flex-between-end mb-5">
+        <div class="col-auto"><h2 class="mb-2">Delete Billing Code</h2></div>
+        <div class="col-auto">
+          <button onclick="history.back()" class="btn btn-phoenix-secondary me-2 mb-2 mb-sm-0" type="button">Discard</button>
+          <button class="btn btn-outline-danger mb-2 mb-sm-0" type="submit">Delete</button>
+        </div>
+      </div>
+      {{ form.errors }}
+      <div class="row">
+        <div class="col-12 col-xl-8 g-2">
+          <h4 class="mb-3">Are you sure you wish to delete <strong>{{ billingcode }}</strong>?</h4>
+          <p>If this billing code is still referenced it can't be deleted &mdash; you'll be told which records reference it.</p>
+        </div>
+      </div>
+    </form>
+  </div>
+{% endblock %}

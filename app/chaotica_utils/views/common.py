@@ -85,18 +85,19 @@ def page_defaults(request):
 
     # Lets add prompts/messages if we need to...
     # Prompt for skills review...
-    if request.user.is_authenticated and request.user.skills_last_updated():
-        days_since_updated = (timezone.now() - request.user.skills_last_updated()).days
-        if days_since_updated > config.SKILLS_REVIEW_DAYS:
+    if request.user.is_authenticated:
+        if request.user.skills_last_updated():
+            days_since_updated = (timezone.now() - request.user.skills_last_updated()).days
+            if days_since_updated > config.SKILLS_REVIEW_DAYS:
+                messages.info(
+                    request=request,
+                    message="It's time to review your skills! Please visit your Profile page",
+                )
+        else:
             messages.info(
                 request=request,
-                message="It's time to review your skills! Please visit your Profile page",
+                message="Make sure you remember to populate your skills! Please visit your Profile page",
             )
-    else:
-        messages.info(
-            request=request,
-            message="Make sure you remember to populate your skills! Please visit your Profile page",
-        )
 
     if request.user.is_authenticated and request.user.profile_last_updated:
         days_since_profile_updated = (
@@ -302,6 +303,74 @@ class ChaoticaBaseView(LoginRequiredMixin, View):
         context = super(ChaoticaBaseView, self).get_context_data(*args, **kwargs)
         context = {**context, **page_defaults(self.request)}
         return context
+
+
+class SafeDeleteSuccessUrlMixin:
+    """Make an explicit ``success_url`` authoritative for a delete view.
+
+    The per-model ``*BaseView.get_success_url`` implementations return the
+    object's *detail* page when a slug/pk is in the URL — correct for
+    create/update, but for a delete it redirects to the just-deleted object and
+    404s. Because those base methods ignore ``success_url``, mix this in (before
+    the base view) so a delete view's ``success_url`` (typically the list) wins.
+    Falls back to the base ``get_success_url`` when none is set (e.g. views that
+    intentionally redirect to a surviving parent).
+    """
+
+    def get_success_url(self):
+        if getattr(self, "success_url", None):
+            return str(self.success_url)
+        return super().get_success_url()
+
+
+class ProtectedDeleteMixin(SafeDeleteSuccessUrlMixin):
+    """Turn a ``ProtectedError`` into a friendly message + redirect.
+
+    A bare ``DeleteView`` on a model referenced by ``on_delete=PROTECT`` FKs
+    raises an unhandled ``ProtectedError`` (HTTP 500) when the object is still
+    in use. Mix this in (before ``DeleteView`` in the bases) so the user gets a
+    clear "still in use" message and is sent back to the success URL instead.
+    """
+
+    protected_error_message = None
+
+    def form_valid(self, form):
+        from django.db.models import ProtectedError
+
+        try:
+            return super().form_valid(form)
+        except ProtectedError:
+            messages.error(self.request, self.get_protected_error_message())
+            return HttpResponseRedirect(self.get_success_url())
+
+    def get_protected_error_message(self):
+        if self.protected_error_message:
+            return self.protected_error_message
+        obj = getattr(self, "object", None)
+        name = str(obj) if obj else "This item"
+        return (
+            f"{name} can't be deleted because other records still reference it. "
+            "Remove or reassign those first."
+        )
+
+
+class SoftDeleteViewMixin(SafeDeleteSuccessUrlMixin):
+    """Make a ``DeleteView`` soft-delete instead of removing the row.
+
+    Sets ``is_deleted`` (via ``SoftDeleteModel.soft_delete``) rather than issuing
+    a DB delete, so the object drops out of default querysets/lists while its
+    dependent records (jobs, phases, timeslots, history) survive. Requires the
+    target model to inherit ``SoftDeleteModel`` and the view to provide a
+    ``success_url`` (the list) — inherited ``SafeDeleteSuccessUrlMixin`` makes
+    it win over the base view's detail-page ``get_success_url``.
+    """
+
+    def form_valid(self, form):
+        self.object.soft_delete(user=getattr(self.request, "user", None))
+        messages.success(
+            self.request, f"{self.object} deleted. It can be restored by an administrator."
+        )
+        return HttpResponseRedirect(self.get_success_url())
 
 
 class ChaoticaBaseGlobalRoleView(ChaoticaBaseView, UserPassesTestMixin):

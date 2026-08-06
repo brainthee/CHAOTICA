@@ -41,6 +41,11 @@
             <a href="{% url 'qualification_update' qualification.awarding_body.slug qualification.slug %}" class="btn btn-outline-secondary">
             Edit
             </a>
+            {% if perms.jobtracker.delete_qualification %}
+            <a href="{% url 'qualification_delete' qualification.awarding_body.slug qualification.slug %}" class="btn btn-outline-danger">
+            Delete
+            </a>
+            {% endif %}
         </div>
       </div>
     </div>
