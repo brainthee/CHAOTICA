@@ -248,6 +248,16 @@ def create_own_api_token(request):
 
     _, created = Token.objects.get_or_create(user=request.user)
     if created:
+        from ..audit import record_audit
+        from ..models import AuditVerb, AuditCategory
+
+        record_audit(
+            request.user,
+            AuditVerb.TOKEN_ISSUED,
+            message="API token created",
+            category=AuditCategory.AUTH,
+            request=request,
+        )
         messages.success(request, "API token created.")
     else:
         messages.info(request, "You already have an API token.")
@@ -265,6 +275,16 @@ def reset_own_api_token(request):
     ):
         Token.objects.filter(user=request.user).delete()
         Token.objects.create(user=request.user)
+        from ..audit import record_audit
+        from ..models import AuditVerb, AuditCategory
+
+        record_audit(
+            request.user,
+            AuditVerb.TOKEN_ISSUED,
+            message="API token regenerated (previous key revoked)",
+            category=AuditCategory.AUTH,
+            request=request,
+        )
         messages.success(request, "API token regenerated. The old key no longer works.")
         data["form_is_valid"] = True
         data["next"] = reverse("view_own_profile") + "#api-tokens"
@@ -285,6 +305,16 @@ def revoke_own_api_token(request):
         "approve_action"
     ):
         Token.objects.filter(user=request.user).delete()
+        from ..audit import record_audit
+        from ..models import AuditVerb, AuditCategory
+
+        record_audit(
+            request.user,
+            AuditVerb.TOKEN_REVOKED,
+            message="API token revoked",
+            category=AuditCategory.AUTH,
+            request=request,
+        )
         messages.info(request, "API token revoked.")
         data["form_is_valid"] = True
         data["next"] = reverse("view_own_profile") + "#api-tokens"

@@ -232,6 +232,24 @@ class OrganisationalUnit(SoftDeleteModel):
             for user in User.objects.filter(pk__in=uids):
                 remove_perm(codename, user, self)
 
+        # One summarising SECURITY audit event per sync that actually changed
+        # something - not one per grant - to avoid write amplification on this
+        # hot path (fires on every membership save / import row).
+        if to_assign or to_remove:
+            from chaotica_utils.audit import record_audit
+            from chaotica_utils.models import AuditVerb, AuditCategory
+
+            record_audit(
+                self,
+                AuditVerb.PERMISSION_CHANGE,
+                message=f"Object permissions reconciled on unit '{self.name}'",
+                category=AuditCategory.SECURITY,
+                changes={
+                    "assigned": {c: uids for c, uids in to_assign.items()},
+                    "removed": {c: uids for c, uids in to_remove.items()},
+                },
+            )
+
     def ensure_lead_memberships(self):
         """Ensure every lead holds the management role on this unit.
 

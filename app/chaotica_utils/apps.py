@@ -24,3 +24,6 @@ class ChaoticaUtilsConfig(AppConfig):
         from django.db.models.signals import post_migrate
 
         post_migrate.connect(populate_groups, sender=self)
+
+        # Connect audit-trail signal receivers (auth events, etc.).
+        from . import signals  # noqa: F401

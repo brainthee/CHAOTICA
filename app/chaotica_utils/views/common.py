@@ -492,6 +492,18 @@ def log_system_activity(ref_obj, msg, author=None):
         content=msg, is_system_note=True, author=author, content_object=ref_obj
     )
     new_note.save()
+    # Dual-write to the central audit trail. When ``author`` is None the writer
+    # falls back to the request thread-local, improving attribution for the many
+    # call sites that omit it. Never let an audit failure break the caller.
+    from ..audit import record_audit, UNSET
+    from ..models import AuditVerb
+
+    record_audit(
+        ref_obj,
+        AuditVerb.OTHER,
+        message=msg,
+        actor=author if author is not None else UNSET,
+    )
     return new_note
 
 
@@ -543,6 +555,17 @@ def regenerate_health_api_key(request):
 
         api_key = HealthCheckAPIKey.get_or_create_for_user(request.user)
         new_key = api_key.regenerate_key()
+
+        from ..audit import record_audit
+        from ..models import AuditVerb, AuditCategory
+
+        record_audit(
+            request.user,
+            AuditVerb.TOKEN_ISSUED,
+            message="Health check API key regenerated",
+            category=AuditCategory.AUTH,
+            request=request,
+        )
 
         return JsonResponse({"success": True, "new_key": str(new_key)})
     except Exception as e:
