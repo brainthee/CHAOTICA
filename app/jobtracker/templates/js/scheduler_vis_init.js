@@ -82,7 +82,11 @@
 
   var options = {
     stack: true,
-    margin: { item: 3, axis: 6 },
+    // No horizontal item margin: day-blocks render edge-to-edge, so a 3px gap
+    // requirement would make back-to-back bookings (touching at the day boundary)
+    // count as overlapping and stack into a needless staircase. Vertical margin
+    // still spaces genuinely-overlapping slots when they do stack.
+    margin: { item: { horizontal: 0, vertical: 3 }, axis: 6 },
     zoomMin: 1000 * 60 * 60 * 24 * 2,           // ~2 days
     zoomMax: 1000 * 60 * 60 * 24 * 365 * 4,     // ~4 years
     verticalScroll: true,
@@ -94,6 +98,7 @@
     selectable: true,
     multiselect: false,
     groupHeightMode: 'auto',
+    align: 'left',   // left-anchor labels so clipped (narrow) slots stay readable from the start
     tooltip: { followMouse: true, overflowMethod: 'cap' },
     xss: { disabled: true },
     editable: readonly ? false : { updateTime: true, updateGroup: true, add: false, remove: false, overrideItems: false },
@@ -204,14 +209,28 @@
 
   function ajaxErrorTitle(jqXHR) {
     var status = jqXHR ? jqXHR.status : 0;
-    if (status === 403 || status === 401) return 'Not allowed';
+    if (status === 401) return 'Session expired';
+    if (status === 403) return 'Not allowed';
     if (status === 404) return 'Not found';
     return 'Error';
   }
 
   function notifyAjaxError(jqXHR) {
-    var icon = (jqXHR && (jqXHR.status === 403 || jqXHR.status === 401 || jqXHR.status === 404))
-      ? 'warning' : 'error';
+    var status = jqXHR ? jqXHR.status : 0;
+    // Expired session: the AjaxLoginRedirect401 middleware turns login_required's
+    // 302->login into a 401 for XHRs. Tell the user, then reload so the normal
+    // page-level redirect takes them to the sign-in page.
+    if (status === 401) {
+      if (typeof Swal !== 'undefined') {
+        Swal.fire(ajaxErrorTitle(jqXHR), ajaxErrorMessage(jqXHR), 'warning')
+          .then(function () { window.location.reload(); });
+      } else {
+        alert(ajaxErrorMessage(jqXHR));
+        window.location.reload();
+      }
+      return;
+    }
+    var icon = (status === 403 || status === 404) ? 'warning' : 'error';
     if (typeof Swal !== 'undefined') {
       Swal.fire(ajaxErrorTitle(jqXHR), ajaxErrorMessage(jqXHR), icon);
     } else {
@@ -476,35 +495,38 @@
         startISO = wr.start;
         endISO = wr.end;
       }
-      loading(true);
-      $.ajax({
-        url: changeBase + meta.origId,
-        type: 'POST',
-        dataType: 'json',
-        data: {
-          pk: meta.origId,
-          start: startISO,
-          end: endISO,
-          user: item.group,           // moving rows reassigns the user
-          csrfmiddlewaretoken: csrf
-        },
-        success: function (resp) {
-          if (resp.form_is_valid) {
-            callback(item);
-            loadSlots();
-            loadMembers();
-            refreshCards();
-          } else {
-            Swal.fire('Could not save', resp.error || 'The change was rejected. Check overlaps / constraints.', 'warning');
-            callback(null);
-          }
-        },
-        error: function () {
-          Swal.fire('Error', 'Something went wrong saving the change.', 'error');
-          callback(null);
-        },
-        complete: function () { loading(false); }
-      });
+      saveItemMove(item, callback, changeBase, meta, startISO, endISO, false);
+    });
+  }
+
+  function saveItemMove(item, callback, changeBase, meta, startISO, endISO, force) {
+    loading(true);
+    var payload = {
+      pk: meta.origId,
+      start: startISO,
+      end: endISO,
+      user: item.group,           // moving rows reassigns the user
+      csrfmiddlewaretoken: csrf
+    };
+    if (force) { payload.force = 1; }
+    $.ajax({
+      url: changeBase + meta.origId,
+      type: 'POST',
+      dataType: 'json',
+      data: payload,
+      success: function (resp) {
+        // Standard rejection / warning / confirmation decode (see schedulerResponse).
+        window.schedulerResponse(resp, {
+          onSuccess: function () { callback(item); loadSlots(); loadMembers(); refreshCards(); },
+          resubmit: function () { saveItemMove(item, callback, changeBase, meta, startISO, endISO, true); },
+          onReject: function () { callback(null); }  // revert the dragged item
+        });
+      },
+      error: function () {
+        Swal.fire('Error', 'Something went wrong saving the change.', 'error');
+        callback(null);
+      },
+      complete: function () { loading(false); }
     });
   }
 
@@ -522,6 +544,86 @@
   // (which normally live in the FullCalendar scheduler). Provide them so the modals
   // work unchanged. We deliberately do NOT add our own #mainModal submit handler.
   window.calendar = { refetchEvents: loadSlots, refetchResources: loadMembers };
+
+  // ---------------------------------------------------------------------------
+  // Standard scheduler-response handler.
+  // Every scheduler mutation endpoint returns one of three outcomes; decode them
+  // the same way everywhere (drag/resize + all slot modals) instead of hand-rolling
+  // it per call site:
+  //   • CONFIRMATION — data.form_is_valid === true            → opts.onSuccess(data)
+  //   • WARNING      — logic check failed but bypassable       → ask; "Save anyway"
+  //                                                              runs opts.resubmit(true),
+  //                                                              cancel runs opts.onReject()
+  //   • REJECTION    — logic check failed & non-bypassable, OR a plain form/validation
+  //                    error                                    → show the reason;
+  //                                                              opts.onFormError(data)
+  //                                                              handles field errors,
+  //                                                              else a Swal + opts.onReject()
+  //
+  // opts (all optional except onSuccess):
+  //   onSuccess(data)   confirmation.
+  //   resubmit(force)   called with true to bypass a warning. Omit to make warnings
+  //                     behave as plain rejections (no "Save anyway").
+  //   onFormError(data) field/validation errors (e.g. re-render html_form). Default:
+  //                     Swal the derived plain-text reason.
+  //   onReject()        called after any rejection / cancelled warning (e.g. to revert
+  //                     an optimistic UI change).
+  window.schedulerRejectReason = function (data) {
+    if (!data) { return 'The change was rejected. Check overlaps / constraints.'; }
+    if (data.error) { return data.error; }
+    if (data.form_errors) {
+      var parts = [];
+      Object.keys(data.form_errors).forEach(function (field) {
+        var label = field === '__all__' ? '' : (field + ': ');
+        [].concat(data.form_errors[field]).forEach(function (msg) {
+          parts.push(label + (msg && msg.message ? msg.message : msg));
+        });
+      });
+      if (parts.length) { return parts.join(' '); }
+    }
+    return 'The change was rejected. Check overlaps / constraints.';
+  };
+
+  window.schedulerResponse = function (data, opts) {
+    opts = opts || {};
+    var reject = function () { if (opts.onReject) { opts.onReject(); } };
+
+    if (data && data.form_is_valid) {
+      if (opts.onSuccess) { opts.onSuccess(data); }
+      return;
+    }
+
+    if (data && data.logic_checks_failed) {
+      if (data.logic_checks_can_bypass && typeof opts.resubmit === 'function') {
+        Swal.fire({
+          title: 'Warning',
+          icon: 'warning',
+          html: data.logic_checks_feedback,
+          showCancelButton: true,
+          confirmButtonText: 'Save anyway'
+        }).then(function (r) {
+          if (r.isConfirmed) { opts.resubmit(true); }
+          else { reject(); }
+        });
+      } else {
+        Swal.fire({
+          title: 'Could not save',
+          icon: 'error',
+          html: data.logic_checks_feedback || window.schedulerRejectReason(data)
+        });
+        reject();
+      }
+      return;
+    }
+
+    // Plain form/validation error (rejection).
+    if (opts.onFormError) {
+      opts.onFormError(data);
+    } else {
+      Swal.fire('Could not save', window.schedulerRejectReason(data), 'warning');
+    }
+    reject();
+  };
 
   function reloadCard(url, sel) {
     if (!url) return;

@@ -9,11 +9,16 @@
 {% block alerts %}
   {% if form.errors %}
   <div class="alert alert-outline-danger m-3" role="alert">
-      <strong>Danger!</strong> 
-      Your details were not recognised. 
+      <strong>Danger!</strong>
+      Your details were not recognised.
       Please try again.
   </div>
   {% endif %}
+  {% for message in messages %}
+  <div class="alert alert-outline-{% if message.tags == 'error' %}danger{% else %}{{ message.tags|default:'info' }}{% endif %} m-3" role="alert">
+      {{ message }}
+  </div>
+  {% endfor %}
 {% endblock alerts %}
 
 {% block left_col_content %}

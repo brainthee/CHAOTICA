@@ -85,18 +85,19 @@ def page_defaults(request):
 
     # Lets add prompts/messages if we need to...
     # Prompt for skills review...
-    if request.user.is_authenticated and request.user.skills_last_updated():
-        days_since_updated = (timezone.now() - request.user.skills_last_updated()).days
-        if days_since_updated > config.SKILLS_REVIEW_DAYS:
+    if request.user.is_authenticated:
+        if request.user.skills_last_updated():
+            days_since_updated = (timezone.now() - request.user.skills_last_updated()).days
+            if days_since_updated > config.SKILLS_REVIEW_DAYS:
+                messages.info(
+                    request=request,
+                    message="It's time to review your skills! Please visit your Profile page",
+                )
+        else:
             messages.info(
                 request=request,
-                message="It's time to review your skills! Please visit your Profile page",
+                message="Make sure you remember to populate your skills! Please visit your Profile page",
             )
-    else:
-        messages.info(
-            request=request,
-            message="Make sure you remember to populate your skills! Please visit your Profile page",
-        )
 
     if request.user.is_authenticated and request.user.profile_last_updated:
         days_since_profile_updated = (

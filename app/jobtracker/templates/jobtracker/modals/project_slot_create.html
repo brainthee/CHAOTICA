@@ -55,51 +55,24 @@
             type: form.attr("method"),
             dataType: 'json',
             success: function(data) {
-                if (data.form_is_valid) {
-                    if (data.next) {
-                        location.href = data.next
-                    } else {
+                // Standard rejection / warning / confirmation decode.
+                schedulerResponse(data, {
+                    onSuccess: function (d) {
+                        if (d.next) { location.href = d.next; return; }
                         calendar.refetchEvents();
-                      refreshUtilisation();
-                      refreshUserBreakdown();
-                      refreshPhaseStatus();
-                      $("#mainModal").modal("hide");
-                      if (data.summary) { Swal.fire("Scheduled", data.summary, "success"); }
-                    }
-                } else {
-                  // Check if it's due to validation
-                  if (data.logic_checks_failed) {
-                    if (data.logic_checks_can_bypass) {
-                      Swal.fire({
-                        title: "Warning",
-                        icon: "question",
-                        html: data.logic_checks_feedback,
-                        showCancelButton: true,
-                        confirmButtonText: "Save",
-                        denyButtonText: `Don't save`
-                      }).then((result) => {
-                        if (result.isConfirmed) {
-                          // Lets add a force param and re-submit...
-                          $('<input>').attr({
-                              type: 'hidden',
-                              id: 'force',
-                              name: 'force',
-                              value: '1',
-                          }).appendTo('.js-submit-modal-timeslot-form');
-
-                          $(".js-submit-modal-timeslot-form").submit();  
-                        } else if (result.isDenied) {
-                          Swal.fire("Changes are not saved", "", "info");
-                        }
-                      });
-                    } else {
-                      // Nothing
-                      $("#mainModalContent").html(data.html_form);
-                    }
-                  } else {
-                    $("#mainModalContent").html(data.html_form);
-                  }
-                }
+                        refreshUtilisation();
+                        refreshUserBreakdown();
+                        refreshPhaseStatus();
+                        $("#mainModal").modal("hide");
+                        if (d.summary) { Swal.fire("Scheduled", d.summary, "success"); }
+                    },
+                    resubmit: function () {
+                        $('<input>').attr({ type: 'hidden', id: 'force', name: 'force', value: '1' })
+                            .appendTo('.js-submit-modal-timeslot-form');
+                        $(".js-submit-modal-timeslot-form").submit();
+                    },
+                    onFormError: function (d) { $("#mainModalContent").html(d.html_form); }
+                });
             }
         });
         return false;

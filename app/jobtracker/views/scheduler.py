@@ -617,6 +617,14 @@ def change_scheduler_slot_date(request, pk=None):
         else:
             data["form_is_valid"] = False
             data["form_errors"] = form.errors
+            # Surface a plain-text reason so drag/resize (which can't render the
+            # modal form) can tell the user *why* the change was rejected.
+            reasons = []
+            for field, errors in form.errors.items():
+                label = "" if field == "__all__" else f"{field}: "
+                reasons.extend(f"{label}{err}" for err in errors)
+            if reasons:
+                data["error"] = " ".join(reasons)
     else:
         # Send the modal
         form = ChangeTimeSlotDateModalForm(instance=slot)

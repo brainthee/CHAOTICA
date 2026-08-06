@@ -2,10 +2,12 @@ from django.http import (
     HttpResponseForbidden,
     HttpResponse,
     HttpResponseRedirect,
+    JsonResponse,
 )
 from django.utils.deprecation import MiddlewareMixin
 from django.utils import timezone as dj_timezone
-from django.shortcuts import reverse, redirect
+from django.shortcuts import reverse, redirect, resolve_url
+from urllib.parse import urlparse
 from django.contrib.auth.models import AnonymousUser
 from ..models import User
 from django.urls import reverse
@@ -143,6 +145,42 @@ class CurrentUserMiddleware:
             # Clean up after the request to avoid memory leaks
             set_current_user(None)
 
+        return response
+
+
+class AjaxLoginRedirect401Middleware:
+    """Turn the ``login_required`` login redirect into a 401 for AJAX requests.
+
+    When a session expires, ``@login_required`` views answer with a 302 to the
+    login page. A browser follows that redirect transparently for an XHR/fetch,
+    so front-end code (e.g. the scheduler double-click modal loader) receives the
+    login *page* HTML with a 200 status and — expecting JSON — fails with an
+    opaque parse error instead of telling the user their session lapsed.
+
+    For requests flagged ``X-Requested-With: XMLHttpRequest`` we intercept the
+    redirect-to-login *before* the browser follows it and return a small 401 JSON
+    body. The client already renders 401 as "your session has expired — please
+    sign in again", so this fixes every AJAX endpoint uniformly.
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+        # Path of LOGIN_URL, resolved once (LOGIN_URL may be a name or a path).
+        self._login_path = urlparse(resolve_url(settings.LOGIN_URL)).path
+
+    def __call__(self, request):
+        response = self.get_response(request)
+
+        is_ajax = request.META.get("HTTP_X_REQUESTED_WITH") == "XMLHttpRequest"
+        if (
+            is_ajax
+            and response.status_code == 302
+            and urlparse(response.get("Location", "")).path == self._login_path
+        ):
+            return JsonResponse(
+                {"error": "Your session has expired — please sign in again."},
+                status=401,
+            )
         return response
 
 
