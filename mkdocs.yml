@@ -80,6 +80,7 @@ nav:
   - Security:
     - Access Control: security/access_control.md
     - Data Protection: security/data_protection.md
+    - Audit Trail & Activity History: security/audit_trail.md
   - Troubleshooting:
     - Common Issues: troubleshooting/common_issues.md
     - Performance: troubleshooting/performance.md
