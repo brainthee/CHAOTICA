@@ -92,6 +92,9 @@ _AUDITED_MODELS = {
     ("jobtracker", "OrganisationalUnit"): "config",
     ("jobtracker", "OrganisationalUnitRole"): "security",
     ("notifications", "EmailTemplate"): "config",
+    ("notifications", "SubscriptionRule"): "config",
+    ("reporting", "Report"): "config",
+    ("reporting", "ScheduledReport"): "config",
 }
 
 # (app_label, ModelName, m2m_field_name): AuditCategory value. Tracks
