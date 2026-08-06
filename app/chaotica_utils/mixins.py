@@ -5,6 +5,28 @@ from django.core.exceptions import ImproperlyConfigured
 from guardian.mixins import PermissionRequiredMixin
 
 
+class ObjectActivityMixin(object):
+    """Inject a permission-scoped audit-event feed for a DetailView's object.
+
+    Access to the detail view is already gated by the object's own permissions,
+    so "whoever can view the object sees its activity" holds automatically; this
+    mixin only adds the sensitivity sub-filter (AUTH/SECURITY/FINANCE rows are
+    hidden from non-admins) via :func:`chaotica_utils.audit.audit_events_for`.
+    """
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        from .audit import audit_events_for, user_is_global_admin
+
+        obj = getattr(self, "object", None)
+        if obj is not None:
+            context["audit_events"] = audit_events_for(obj, self.request.user)
+            context["can_view_sensitive_audit"] = user_is_global_admin(
+                self.request.user
+            )
+        return context
+
+
 class SecurePermissionRequiredMixin(PermissionRequiredMixin):
     """Guardian's ``PermissionRequiredMixin`` with a consistent auth story.
 

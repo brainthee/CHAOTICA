@@ -575,7 +575,9 @@ class Job(models.Model):
         return round(100 * float(scheduled) / float(total_scoped), 2)
 
     def get_system_notes(self):
-        return [n for n in self.notes.all() if n.is_system_note]
+        from chaotica_utils.audit import object_audit_events
+
+        return object_audit_events(self)
 
     def get_absolute_url(self):
         return reverse("job_detail", kwargs={"slug": self.slug})

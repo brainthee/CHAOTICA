@@ -1,4 +1,4 @@
-from chaotica_utils.mixins import SecurePermissionRequiredMixin as PermissionRequiredMixin
+from chaotica_utils.mixins import SecurePermissionRequiredMixin as PermissionRequiredMixin, ObjectActivityMixin
 from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
@@ -43,7 +43,7 @@ class SkillListView(SkillBaseView, ListView):
     
 
 
-class SkillDetailView(PrefetchRelatedMixin, SkillBaseView, PermissionRequiredMixin, DetailView):
+class SkillDetailView(ObjectActivityMixin, PrefetchRelatedMixin, SkillBaseView, PermissionRequiredMixin, DetailView):
     prefetch_related = ["category", "users"]
     """View to list the details from one job.
     Use the 'job' variable in the template to access

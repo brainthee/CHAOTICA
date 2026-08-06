@@ -21,7 +21,7 @@ from ..forms.common import (
 )
 from ..mixins import PrefetchRelatedMixin
 from ..enums import GlobalRoles
-from ..models import User, Note, Quote, Group
+from ..models import User, Note, Quote, Group, AuditEvent
 from ..utils import group_permissions
 from django.contrib.auth.models import Permission
 from django.views.generic import TemplateView
@@ -488,23 +488,24 @@ class PermissionsMatrixView(ChaoticaBaseAdminView, TemplateView):
 
 
 def log_system_activity(ref_obj, msg, author=None):
-    new_note = Note(
-        content=msg, is_system_note=True, author=author, content_object=ref_obj
-    )
-    new_note.save()
-    # Dual-write to the central audit trail. When ``author`` is None the writer
-    # falls back to the request thread-local, improving attribution for the many
-    # call sites that omit it. Never let an audit failure break the caller.
+    """Record a system activity event against ``ref_obj``.
+
+    System activity now lives in the central AuditEvent trail (user-authored
+    comments still use the Note model, unaffected). When ``author`` is None the
+    writer falls back to the request thread-local, improving attribution for the
+    many call sites that omit it. Returns the AuditEvent (whose ``.content`` /
+    ``.author`` / ``.create_date`` compat properties keep legacy callers happy),
+    or None if the write failed.
+    """
     from ..audit import record_audit, UNSET
     from ..models import AuditVerb
 
-    record_audit(
+    return record_audit(
         ref_obj,
         AuditVerb.OTHER,
         message=msg,
         actor=author if author is not None else UNSET,
     )
-    return new_note
 
 
 @require_safe
@@ -521,26 +522,22 @@ def get_quote(request):
 
 
 class NoteBaseView(ChaoticaBaseGlobalRoleView):
-    model = Note
-    fields = "__all__"
+    model = AuditEvent
     success_url = reverse_lazy("view_activity")
     role_required = GlobalRoles.ADMIN
 
-    def get_context_data(self, **kwargs):
-        context = super(NoteBaseView, self).get_context_data(**kwargs)
-        return context
+    def get_queryset(self):
+        return AuditEvent.objects.select_related("actor", "target_content_type")
+
+
+class NoteListView(NoteBaseView, ListView):
+    """Site-wide activity feed (ADMIN only). Shows every AuditEvent category."""
+
+    template_name = "chaotica_utils/note_list.html"
+    context_object_name = "events"
 
     def get_queryset(self):
-        queryset = Note.objects.all()
-        return queryset
-
-
-class NoteListView(PrefetchRelatedMixin, NoteBaseView, ListView):
-    prefetch_related = ["content_type"]
-
-    def get_queryset(self):
-        queryset = super(NoteListView, self).get_queryset()
-        return queryset[:200]
+        return super().get_queryset()[:200]
 
 
 @login_required

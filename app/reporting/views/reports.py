@@ -4,6 +4,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from chaotica_utils.mixins import ObjectActivityMixin
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponseRedirect, Http404, FileResponse
 from django.views.generic import ListView, DetailView, DeleteView
@@ -101,7 +102,7 @@ class ReportListView(LoginRequiredMixin, ListView):
         return context
 
 
-class ReportDetailView(ReportAccessMixin, DetailView):
+class ReportDetailView(ObjectActivityMixin, ReportAccessMixin, DetailView):
     """
     View a report's details
     """

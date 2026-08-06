@@ -1,4 +1,4 @@
-from chaotica_utils.mixins import SecurePermissionRequiredMixin as PermissionRequiredMixin
+from chaotica_utils.mixins import SecurePermissionRequiredMixin as PermissionRequiredMixin, ObjectActivityMixin
 from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
 from django.shortcuts import get_object_or_404
@@ -46,7 +46,7 @@ class TeamListView(TeamBaseView, ListView):
     to access all job objects"""
 
 
-class TeamDetailView(TeamBaseView, PermissionRequiredMixin, DetailView):
+class TeamDetailView(ObjectActivityMixin, TeamBaseView, PermissionRequiredMixin, DetailView):
     """View to list the details from one job.
     Use the 'job' variable in the template to access
     the specific job here and in the Views below"""

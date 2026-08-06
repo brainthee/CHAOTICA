@@ -9,6 +9,7 @@ from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from chaotica_utils.views import log_system_activity, ChaoticaBaseView
+from chaotica_utils.mixins import ObjectActivityMixin
 from ..models import Job, Phase, WorkflowTask, Feedback, Link
 from ..forms import (
     AddNote,
@@ -113,7 +114,9 @@ class PhaseBaseView(PrefetchRelatedMixin, ChaoticaBaseView, View):
         return context
 
 
-class PhaseDetailView(JobPermissionRequiredMixin, PhaseBaseView, DetailView):
+class PhaseDetailView(
+    ObjectActivityMixin, JobPermissionRequiredMixin, PhaseBaseView, DetailView
+):
     permission_required = "jobtracker.can_view_jobs"
 
     def get_context_data(self, **kwargs):

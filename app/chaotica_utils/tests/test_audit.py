@@ -154,22 +154,29 @@ class AuditReadScopingTests(TestCase):
 
 
 @override_settings(ALLOWED_HOSTS=["*", "testserver", "localhost"])
-class LogSystemActivityDualWriteTests(TestCase):
+class LogSystemActivityTests(TestCase):
+    """After the cutover, log_system_activity writes only an AuditEvent (system
+    activity no longer creates a Note; user-authored notes are unaffected)."""
+
     def setUp(self):
         self.user = User.objects.create_user(email="admin@test.com", password="pw12345")
         self.target = Holiday.objects.create(date="2026-03-01", reason="Dual Day")
         self.addCleanup(set_current_user, None)
 
-    def test_dual_write_creates_note_and_audit_event(self):
+    def test_writes_audit_event_and_no_system_note(self):
         from chaotica_utils.models import Note
 
-        note = log_system_activity(self.target, "Something happened", author=self.user)
-        self.assertTrue(note.is_system_note)
-        event = AuditEvent.objects.filter(message="Something happened").first()
-        self.assertIsNotNone(event)
+        event = log_system_activity(self.target, "Something happened", author=self.user)
+        # Returns the AuditEvent (compat properties keep legacy callers working).
+        self.assertEqual(event.content, "Something happened")
         self.assertEqual(event.actor, self.user)
+        self.assertEqual(
+            AuditEvent.objects.filter(message="Something happened").count(), 1
+        )
+        # No system Note is created anymore.
+        self.assertEqual(Note.objects.filter(is_system_note=True).count(), 0)
 
-    def test_dual_write_uses_thread_local_when_author_missing(self):
+    def test_uses_thread_local_when_author_missing(self):
         set_current_user(self.user)
         log_system_activity(self.target, "No author passed")
         event = AuditEvent.objects.filter(message="No author passed").first()

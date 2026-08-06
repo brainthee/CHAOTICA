@@ -1,4 +1,4 @@
-from chaotica_utils.mixins import SecurePermissionRequiredMixin as PermissionRequiredMixin
+from chaotica_utils.mixins import SecurePermissionRequiredMixin as PermissionRequiredMixin, ObjectActivityMixin
 from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
@@ -33,7 +33,7 @@ class BillingCodeListView(BillingCodeBaseView, ListView):
     to access all job objects"""
 
 
-class BillingCodeDetailView(BillingCodeBaseView, PermissionRequiredMixin, DetailView):
+class BillingCodeDetailView(ObjectActivityMixin, BillingCodeBaseView, PermissionRequiredMixin, DetailView):
     """View to list the details from one job.
     Use the 'job' variable in the template to access
     the specific job here and in the Views below"""

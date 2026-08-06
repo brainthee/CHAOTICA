@@ -36,35 +36,42 @@
             <thead>
               <tr>
                 <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Date</th>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Category</th>
                 <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Object</th>
-                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Author</th>
-                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Note</th>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Actor</th>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Event</th>
               </tr>
             </thead>
             <tbody>
-              {% for note in note_list %}
+              {% for event in events %}
                 <tr>
                   <td>
-                    <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ note.create_date }}">
-                        {{ note.create_date|naturaltime }}
+                    <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ event.timestamp }}">
+                        {{ event.timestamp|naturaltime }}
                     </span>
                   </td>
                   <td>
-                    {{ note.content_type }}
-                    <div class="d-flex px-2">
-                      <a href="{{ note.content_object.get_absolute_url }}">{{ note.content_object }}</a>
-                    </div>
+                    <span class="badge badge-phoenix {% if event.is_sensitive %}badge-phoenix-warning{% else %}badge-phoenix-secondary{% endif %}">{{ event.get_category_display }}</span>
                   </td>
                   <td>
-                    {% if note.author %}
+                    {% if event.target %}
+                    <div class="d-flex px-2">
+                      <a href="{{ event.target.get_absolute_url }}">{{ event.target_repr|default:event.target }}</a>
+                    </div>
+                    {% else %}
+                    <span class="text-body-secondary">{{ event.target_repr|default:"—" }}</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if event.actor %}
                       <div class="d-flex px-2">
-                        <a href="{{ note.author.get_absolute_url }}">{{ note.author }}</a>
+                        <a href="{{ event.actor.get_absolute_url }}">{{ event.actor_repr|default:event.actor }}</a>
                       </div>
                     {% else %}
                     <span class="fw-semi-bold">SYSTEM</span>
                     {% endif %}
                   </td>
-                  <td>{{ note.content }}</td>
+                  <td>{{ event.message }}</td>
                 </tr>
               {% endfor %}
             </tbody>

@@ -1,4 +1,4 @@
-from chaotica_utils.mixins import SecurePermissionRequiredMixin as PermissionRequiredMixin
+from chaotica_utils.mixins import SecurePermissionRequiredMixin as PermissionRequiredMixin, ObjectActivityMixin
 from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
@@ -86,7 +86,7 @@ class ServiceListView(ServiceBaseView, ListView):
 
 
 class ServiceDetailView(
-    PrefetchRelatedMixin, ServiceBaseView, PermissionRequiredMixin, DetailView
+    ObjectActivityMixin, PrefetchRelatedMixin, ServiceBaseView, PermissionRequiredMixin, DetailView
 ):
     prefetch_related = [
         "owners",

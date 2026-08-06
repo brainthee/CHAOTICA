@@ -1,4 +1,4 @@
-from chaotica_utils.mixins import SecurePermissionRequiredMixin as PermissionRequiredMixin
+from chaotica_utils.mixins import SecurePermissionRequiredMixin as PermissionRequiredMixin, ObjectActivityMixin
 import csv
 from django.http import (
     JsonResponse,
@@ -64,7 +64,7 @@ class ClientListView(ClientBaseView, ListView):
     to access all job objects"""
 
 
-class ClientDetailView(ClientBaseView, DetailView):
+class ClientDetailView(ObjectActivityMixin, ClientBaseView, DetailView):
     """View to list the details from one job.
     Use the 'job' variable in the template to access
     the specific job here and in the Views below"""

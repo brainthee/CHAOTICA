@@ -391,7 +391,9 @@ class Project(models.Model):
         }
 
     def get_system_notes(self):
-        return self.notes.filter(is_system_note=True)
+        from chaotica_utils.audit import object_audit_events
+
+        return object_audit_events(self)
 
     def get_user_notes(self):
         return self.notes.filter(is_system_note=False)

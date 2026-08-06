@@ -232,6 +232,22 @@ def user_is_global_admin(user):
     ).exists()
 
 
+def object_audit_events(obj, limit=200):
+    """All AuditEvents targeting ``obj`` (no sensitivity filter), newest first.
+
+    Use :func:`audit_events_for` for anything user-facing - it applies the
+    admin-only category filter. This unfiltered helper is for internal callers
+    that have no viewer context.
+    """
+    from django.contrib.contenttypes.models import ContentType
+    from .models import AuditEvent
+
+    ct = ContentType.objects.get_for_model(obj.__class__)
+    return AuditEvent.objects.filter(target_content_type=ct, target_id=str(obj.pk))[
+        :limit
+    ]
+
+
 def audit_events_for(obj, viewer, limit=200):
     """Permission-scoped AuditEvents for ``obj``, newest first.
 
