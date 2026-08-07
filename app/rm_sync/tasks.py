@@ -115,6 +115,22 @@ class task_sync_rm_schedule(CronJobBase):
 
             logger.info("Task successfully completed")
 
+            from chaotica_utils.audit import record_audit
+            from chaotica_utils.models import AuditVerb, AuditCategory, AuditSource
+
+            record_audit(
+                None,
+                AuditVerb.SYNC,
+                message="Resource Manager schedule sync completed",
+                actor=None,
+                category=AuditCategory.CONFIG,
+                source=AuditSource.RM_SYNC,
+                metadata={
+                    "read_only": bool(config.RM_SYNC_READ_ONLY),
+                    "pull_enabled": bool(config.RM_SYNC_PULL_ENABLED),
+                },
+            )
+
         except Exception as ex:
             logger.exception("Exception happened in sync_records")
 

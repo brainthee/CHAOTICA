@@ -2,6 +2,7 @@ from django.urls import include, path
 from . import views
 from .feeds import schedule_feed_view, family_feed_view
 from rest_framework import routers
+from chaotica_utils.api import AuditEventViewSet
 
 router = routers.DefaultRouter()
 router.register(r"users", views.UserViewSet, basename="user")
@@ -11,6 +12,7 @@ router.register(
 )
 router.register(r"client", views.ClientViewSet, basename="client")
 router.register(r"notes", views.NoteViewSet, basename="note")
+router.register(r"auditevents", AuditEventViewSet, basename="auditevent")
 
 urlpatterns = [
     # Extra profile bits

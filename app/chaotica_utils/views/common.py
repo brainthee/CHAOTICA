@@ -7,6 +7,7 @@ from django.http import (
     JsonResponse,
     HttpResponse,
     HttpResponseRedirect,
+    StreamingHttpResponse,
 )
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 import json, os, random, csv
@@ -21,7 +22,7 @@ from ..forms.common import (
 )
 from ..mixins import PrefetchRelatedMixin
 from ..enums import GlobalRoles
-from ..models import User, Note, Quote, Group
+from ..models import User, Note, Quote, Group, AuditEvent
 from ..utils import group_permissions
 from django.contrib.auth.models import Permission
 from django.views.generic import TemplateView
@@ -488,11 +489,24 @@ class PermissionsMatrixView(ChaoticaBaseAdminView, TemplateView):
 
 
 def log_system_activity(ref_obj, msg, author=None):
-    new_note = Note(
-        content=msg, is_system_note=True, author=author, content_object=ref_obj
+    """Record a system activity event against ``ref_obj``.
+
+    System activity now lives in the central AuditEvent trail (user-authored
+    comments still use the Note model, unaffected). When ``author`` is None the
+    writer falls back to the request thread-local, improving attribution for the
+    many call sites that omit it. Returns the AuditEvent (whose ``.content`` /
+    ``.author`` / ``.create_date`` compat properties keep legacy callers happy),
+    or None if the write failed.
+    """
+    from ..audit import record_audit, UNSET
+    from ..models import AuditVerb
+
+    return record_audit(
+        ref_obj,
+        AuditVerb.OTHER,
+        message=msg,
+        actor=author if author is not None else UNSET,
     )
-    new_note.save()
-    return new_note
 
 
 @require_safe
@@ -509,26 +523,97 @@ def get_quote(request):
 
 
 class NoteBaseView(ChaoticaBaseGlobalRoleView):
-    model = Note
-    fields = "__all__"
+    model = AuditEvent
     success_url = reverse_lazy("view_activity")
     role_required = GlobalRoles.ADMIN
 
+
+class NoteListView(NoteBaseView, ListView):
+    """Site-wide activity feed (ADMIN only).
+
+    The table itself loads server-side over AJAX (see the ``auditevent`` API), so
+    the page only needs to render the filter controls and an empty table shell.
+    """
+
+    template_name = "chaotica_utils/note_list.html"
+    context_object_name = "events"
+
+    def get_queryset(self):
+        # Rows come from the AJAX endpoint; the page renders no rows itself.
+        return AuditEvent.objects.none()
+
     def get_context_data(self, **kwargs):
-        context = super(NoteBaseView, self).get_context_data(**kwargs)
+        from django.contrib.contenttypes.models import ContentType
+        from ..models import AuditCategory, AuditVerb, AuditSource, AuditSeverity
+
+        context = super().get_context_data(**kwargs)
+        context["categories"] = AuditCategory.choices
+        context["verbs"] = AuditVerb.choices
+        context["sources"] = AuditSource.choices
+        context["severities"] = AuditSeverity.choices
+        context["content_types"] = ContentType.objects.order_by("app_label", "model")
         return context
 
-    def get_queryset(self):
-        queryset = Note.objects.all()
-        return queryset
+
+def _audit_csv_rows(queryset):
+    """Yield CSV rows (as lists) for the audit export, streaming."""
+    header = [
+        "timestamp",
+        "category",
+        "action",
+        "actor",
+        "source",
+        "severity",
+        "target_type",
+        "target",
+        "message",
+        "changes",
+    ]
+    yield header
+    for e in queryset.select_related("actor", "target_content_type").iterator(
+        chunk_size=1000
+    ):
+        yield [
+            e.timestamp.isoformat(),
+            e.get_category_display(),
+            e.get_verb_display(),
+            e.actor_repr or (str(e.actor) if e.actor_id else "SYSTEM"),
+            e.get_source_display(),
+            e.get_severity_display(),
+            str(e.target_content_type) if e.target_content_type_id else "",
+            e.target_repr or "",
+            e.message or "",
+            json.dumps(e.changes) if e.changes else "",
+        ]
 
 
-class NoteListView(PrefetchRelatedMixin, NoteBaseView, ListView):
-    prefetch_related = ["content_type"]
+class _Echo:
+    def write(self, value):
+        return value
 
-    def get_queryset(self):
-        queryset = super(NoteListView, self).get_queryset()
-        return queryset[:200]
+
+@login_required
+def export_activity_csv(request):
+    """Stream the filtered Activity Log as CSV (ADMIN only)."""
+    from ..audit import user_is_global_admin, apply_audit_filters
+
+    if not user_is_global_admin(request.user):
+        return HttpResponseForbidden()
+
+    qs = apply_audit_filters(AuditEvent.objects.all(), request.GET)
+    search = request.GET.get("search")
+    if search:
+        qs = qs.filter(message__icontains=search)
+    qs = qs.order_by("-timestamp")
+
+    writer = csv.writer(_Echo())
+    response = StreamingHttpResponse(
+        (writer.writerow(row) for row in _audit_csv_rows(qs)),
+        content_type="text/csv",
+    )
+    stamp = timezone.now().strftime("%Y%m%d_%H%M%S")
+    response["Content-Disposition"] = f'attachment; filename="activity_log_{stamp}.csv"'
+    return response
 
 
 @login_required
@@ -543,6 +628,17 @@ def regenerate_health_api_key(request):
 
         api_key = HealthCheckAPIKey.get_or_create_for_user(request.user)
         new_key = api_key.regenerate_key()
+
+        from ..audit import record_audit
+        from ..models import AuditVerb, AuditCategory
+
+        record_audit(
+            request.user,
+            AuditVerb.TOKEN_ISSUED,
+            message="Health check API key regenerated",
+            category=AuditCategory.AUTH,
+            request=request,
+        )
 
         return JsonResponse({"success": True, "new_key": str(new_key)})
     except Exception as e:

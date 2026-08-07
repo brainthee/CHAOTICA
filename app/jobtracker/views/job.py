@@ -18,6 +18,7 @@ from django.views.generic.edit import CreateView, UpdateView
 from django.urls import reverse_lazy
 from django_select2.views import AutoResponseView
 from chaotica_utils.views import log_system_activity, ChaoticaBaseView
+from chaotica_utils.mixins import ObjectActivityMixin
 from chaotica_utils.enums import UnitRoles
 from ..models import (
     Job,
@@ -458,7 +459,9 @@ class JobListView(JobBaseView, UserPassesTestMixin, ListView):
         return jobs
 
 
-class JobDetailView(JobPermissionRequiredMixin, JobBaseView, DetailView):
+class JobDetailView(
+    ObjectActivityMixin, JobPermissionRequiredMixin, JobBaseView, DetailView
+):
     permission_required = "jobtracker.can_view_jobs"
     return_403 = True
     # Override parent's prefetch_related to avoid conflicts

@@ -1,5 +1,6 @@
 from chaotica_utils.mixins import (
     SecurePermissionRequiredMixin as PermissionRequiredMixin,
+    ObjectActivityMixin,
 )
 from django.views.generic.detail import DetailView
 from django.views.generic.list import ListView
@@ -100,7 +101,9 @@ class ProjectListView(ProjectBaseView, ListView):
     to access all job objects"""
 
 
-class ProjectDetailView(ProjectBaseView, PermissionRequiredMixin, DetailView):
+class ProjectDetailView(
+    ObjectActivityMixin, ProjectBaseView, PermissionRequiredMixin, DetailView
+):
     """View to list the details from one job.
     Use the 'job' variable in the template to access
     the specific job here and in the Views below"""

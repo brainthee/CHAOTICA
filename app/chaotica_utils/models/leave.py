@@ -248,6 +248,17 @@ class LeaveRequest(models.Model):
             )
             self.timeslot = ts
             self.save()
+            from ..audit import record_audit
+            from ..models import AuditVerb, AuditCategory
+
+            record_audit(
+                self,
+                AuditVerb.STATUS_CHANGE,
+                message=f"Leave request approved for {self.user}",
+                actor=approved_by,
+                category=AuditCategory.WORKFLOW,
+                changes={"authorised": [False, True]},
+            )
             self.send_approved_notification()
 
     def decline(self, declined_by):
@@ -262,6 +273,17 @@ class LeaveRequest(models.Model):
             self.declined_by = declined_by
             self.declined_on = timezone.now()
             self.save()
+            from ..audit import record_audit
+            from ..models import AuditVerb, AuditCategory
+
+            record_audit(
+                self,
+                AuditVerb.STATUS_CHANGE,
+                message=f"Leave request declined for {self.user}",
+                actor=declined_by,
+                category=AuditCategory.WORKFLOW,
+                changes={"declined": [False, True]},
+            )
             self.send_declined_notification()
 
     def cancel(self):
@@ -277,4 +299,14 @@ class LeaveRequest(models.Model):
             if self.timeslot:
                 self.timeslot.delete()
             self.save()
+            from ..audit import record_audit
+            from ..models import AuditVerb, AuditCategory
+
+            record_audit(
+                self,
+                AuditVerb.STATUS_CHANGE,
+                message=f"Leave request cancelled for {self.user}",
+                category=AuditCategory.WORKFLOW,
+                changes={"cancelled": [False, True]},
+            )
             self.send_cancelled_notification()

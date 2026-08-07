@@ -151,6 +151,9 @@
               <a class="nav-link" id="debrief-tab" data-bs-toggle="tab" href="#debrief" role="tab" aria-controls="tab-debrief" aria-selected="false" tabindex="-1"><span class="fa-solid fa-clipboard-list me-2 tab-icon-color"></span>Debrief</a>
             </li>
           {% endif %}
+          <li class="nav-item text-nowrap me-2" role="presentation">
+            <a class="nav-link" id="activity-tab" data-bs-toggle="tab" href="#activity" role="tab" aria-controls="tab-activity" aria-selected="false" tabindex="-1"><span class="fa-solid fa-clock-rotate-left me-2 tab-icon-color"></span>Activity</a>
+          </li>
         </ul>
 
         <div class="tab-content" id="myTabContent">
@@ -175,6 +178,10 @@
               </div>
             </div>
           {% endif %}
+
+          <div class="tab-pane fade" id="activity" role="tabpanel" aria-labelledby="activity-tab">
+            {% include 'partials/audit_activity.html' %}
+          </div>
 
         </div>
       </div>

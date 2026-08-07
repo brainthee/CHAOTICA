@@ -725,7 +725,9 @@ class Phase(models.Model):
         return [n for n in self.notes.all() if not n.is_system_note]
 
     def get_system_notes(self):
-        return [n for n in self.notes.all() if n.is_system_note]
+        from chaotica_utils.audit import object_audit_events
+
+        return object_audit_events(self)
 
     def is_confirmed(self):
         return self.status >= PhaseStatuses.SCHEDULED_CONFIRMED

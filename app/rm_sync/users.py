@@ -262,6 +262,17 @@ def import_rm_users(
                 user.external_id = rm_id
                 user.save()
                 _ensure_default_global_role(user)
+                from chaotica_utils.audit import record_audit
+                from chaotica_utils.models import AuditVerb, AuditCategory, AuditSource
+
+                record_audit(
+                    user,
+                    AuditVerb.CREATE,
+                    message=f"User auto-created from Resource Manager: {email}",
+                    actor=None,
+                    category=AuditCategory.SECURITY,
+                    source=AuditSource.RM_SYNC,
+                )
             else:
                 result.matched += 1
                 if _looks_active(user):

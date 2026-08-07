@@ -24,3 +24,9 @@ class ChaoticaUtilsConfig(AppConfig):
         from django.db.models.signals import post_migrate
 
         post_migrate.connect(populate_groups, sender=self)
+
+        # Connect audit-trail signal receivers: auth events auto-connect on
+        # import; finance/config CRUD + M2M relations are wired explicitly.
+        from . import signals
+
+        signals.connect_audit_signals()
