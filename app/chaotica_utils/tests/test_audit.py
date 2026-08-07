@@ -185,6 +185,76 @@ class LogSystemActivityTests(TestCase):
 
 
 @override_settings(ALLOWED_HOSTS=["*", "testserver", "localhost"])
+class ActivityLogApiTests(TestCase):
+    """The server-side DataTables API + CSV export for the Activity Log."""
+
+    def setUp(self):
+        self.client = Client(HTTP_HOST="localhost")
+        # First create_user is auto-promoted to superuser + Global: Admin.
+        self.admin = User.objects.create_user(email="admin@test.com", password="pw12345")
+        self.user = User.objects.create_user(email="user@test.com", password="pw12345")
+        _give_user_role(self.user)
+        self.target = Holiday.objects.create(date="2026-05-01", reason="Api Day")
+        record_audit(self.target, AuditVerb.UPDATE, message="general one", actor=self.admin)
+        record_audit(
+            self.target,
+            AuditVerb.PERMISSION_CHANGE,
+            message="security one",
+            actor=self.admin,
+            category=AuditCategory.SECURITY,
+        )
+
+    def _holiday_ct_id(self):
+        from django.contrib.contenttypes.models import ContentType
+
+        return ContentType.objects.get_for_model(Holiday).id
+
+    def test_api_lists_events_for_admin(self):
+        self.client.force_login(self.admin)
+        # Scope to this Holiday's events (setUp's group changes also emit
+        # SECURITY events against Users - correct, but noise for this assertion).
+        resp = self.client.get(
+            f"/api/auditevents/?format=datatables&draw=1&length=10"
+            f"&target_type={self._holiday_ct_id()}"
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["recordsTotal"], 2)
+
+    def test_api_category_filter(self):
+        self.client.force_login(self.admin)
+        resp = self.client.get(
+            f"/api/auditevents/?format=datatables&draw=1&length=10"
+            f"&category=security&target_type={self._holiday_ct_id()}"
+        )
+        self.assertEqual(resp.json()["recordsFiltered"], 1)
+
+    def test_api_forbidden_for_non_admin(self):
+        self.client.force_login(self.user)
+        resp = self.client.get("/api/auditevents/?format=datatables&draw=1&length=10")
+        self.assertEqual(resp.status_code, 403)
+
+    def test_csv_export_admin(self):
+        self.client.force_login(self.admin)
+        resp = self.client.get(reverse("export_activity_csv"))
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp["Content-Type"], "text/csv")
+        body = b"".join(resp.streaming_content).decode()
+        self.assertIn("timestamp,category,action", body)
+        self.assertIn("security one", body)
+
+    def test_csv_export_respects_filters(self):
+        self.client.force_login(self.admin)
+        resp = self.client.get(reverse("export_activity_csv") + "?category=security")
+        body = b"".join(resp.streaming_content).decode()
+        self.assertIn("security one", body)
+        self.assertNotIn("general one", body)
+
+    def test_csv_export_forbidden_for_non_admin(self):
+        self.client.force_login(self.user)
+        self.assertEqual(self.client.get(reverse("export_activity_csv")).status_code, 403)
+
+
+@override_settings(ALLOWED_HOSTS=["*", "testserver", "localhost"])
 class AuthSignalAuditTests(TestCase):
     def setUp(self):
         # Custom SessionMiddleware rejects requests without a Host header.

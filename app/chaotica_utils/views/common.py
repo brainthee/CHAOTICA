@@ -7,6 +7,7 @@ from django.http import (
     JsonResponse,
     HttpResponse,
     HttpResponseRedirect,
+    StreamingHttpResponse,
 )
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 import json, os, random, csv
@@ -526,18 +527,93 @@ class NoteBaseView(ChaoticaBaseGlobalRoleView):
     success_url = reverse_lazy("view_activity")
     role_required = GlobalRoles.ADMIN
 
-    def get_queryset(self):
-        return AuditEvent.objects.select_related("actor", "target_content_type")
-
 
 class NoteListView(NoteBaseView, ListView):
-    """Site-wide activity feed (ADMIN only). Shows every AuditEvent category."""
+    """Site-wide activity feed (ADMIN only).
+
+    The table itself loads server-side over AJAX (see the ``auditevent`` API), so
+    the page only needs to render the filter controls and an empty table shell.
+    """
 
     template_name = "chaotica_utils/note_list.html"
     context_object_name = "events"
 
     def get_queryset(self):
-        return super().get_queryset()[:200]
+        # Rows come from the AJAX endpoint; the page renders no rows itself.
+        return AuditEvent.objects.none()
+
+    def get_context_data(self, **kwargs):
+        from django.contrib.contenttypes.models import ContentType
+        from ..models import AuditCategory, AuditVerb, AuditSource, AuditSeverity
+
+        context = super().get_context_data(**kwargs)
+        context["categories"] = AuditCategory.choices
+        context["verbs"] = AuditVerb.choices
+        context["sources"] = AuditSource.choices
+        context["severities"] = AuditSeverity.choices
+        context["content_types"] = ContentType.objects.order_by("app_label", "model")
+        return context
+
+
+def _audit_csv_rows(queryset):
+    """Yield CSV rows (as lists) for the audit export, streaming."""
+    header = [
+        "timestamp",
+        "category",
+        "action",
+        "actor",
+        "source",
+        "severity",
+        "target_type",
+        "target",
+        "message",
+        "changes",
+    ]
+    yield header
+    for e in queryset.select_related("actor", "target_content_type").iterator(
+        chunk_size=1000
+    ):
+        yield [
+            e.timestamp.isoformat(),
+            e.get_category_display(),
+            e.get_verb_display(),
+            e.actor_repr or (str(e.actor) if e.actor_id else "SYSTEM"),
+            e.get_source_display(),
+            e.get_severity_display(),
+            str(e.target_content_type) if e.target_content_type_id else "",
+            e.target_repr or "",
+            e.message or "",
+            json.dumps(e.changes) if e.changes else "",
+        ]
+
+
+class _Echo:
+    def write(self, value):
+        return value
+
+
+@login_required
+def export_activity_csv(request):
+    """Stream the filtered Activity Log as CSV (ADMIN only)."""
+    from ..audit import user_is_global_admin, apply_audit_filters
+
+    if not user_is_global_admin(request.user):
+        return HttpResponseForbidden()
+
+    qs = apply_audit_filters(AuditEvent.objects.all(), request.GET)
+    search = request.GET.get("search")
+    if search:
+        qs = qs.filter(message__icontains=search)
+    qs = qs.order_by("-timestamp")
+
+    writer = csv.writer(_Echo())
+    response = StreamingHttpResponse(
+        (writer.writerow(row) for row in _audit_csv_rows(qs)),
+        content_type="text/csv",
+    )
+    stamp = timezone.now().strftime("%Y%m%d_%H%M%S")
+    response["Content-Disposition"] = f'attachment; filename="activity_log_{stamp}.csv"'
+    return response
 
 
 @login_required

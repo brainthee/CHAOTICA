@@ -24,60 +24,156 @@
     <div class="col">
       <h2 class="mb-0">Activity Log</h2>
     </div>
-    <div class="col-3 d-flex justify-content-end"></div>
+    <div class="col-auto d-flex justify-content-end">
+      <a href="{% url 'export_activity_csv' %}" id="exportCsv" class="btn btn-sm btn-phoenix-secondary">
+        <span class="fa-solid fa-file-csv me-1"></span>Export CSV
+      </a>
+    </div>
+  </div>
+
+  {# ---- Filter bar ---- #}
+  <div class="card mb-3">
+    <div class="card-body py-3">
+      <div class="row g-2 align-items-end">
+        <div class="col-sm-6 col-md-3 col-lg-2">
+          <label class="form-label fs-9 mb-1" for="f_category">Category</label>
+          <select id="f_category" class="form-select form-select-sm">
+            <option value="">All</option>
+            {% for value, label in categories %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="col-sm-6 col-md-3 col-lg-2">
+          <label class="form-label fs-9 mb-1" for="f_verb">Action</label>
+          <select id="f_verb" class="form-select form-select-sm">
+            <option value="">All</option>
+            {% for value, label in verbs %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="col-sm-6 col-md-3 col-lg-2">
+          <label class="form-label fs-9 mb-1" for="f_source">Source</label>
+          <select id="f_source" class="form-select form-select-sm">
+            <option value="">All</option>
+            {% for value, label in sources %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="col-sm-6 col-md-3 col-lg-2">
+          <label class="form-label fs-9 mb-1" for="f_severity">Min. severity</label>
+          <select id="f_severity" class="form-select form-select-sm">
+            <option value="">Any</option>
+            {% for value, label in severities %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="col-sm-6 col-md-3 col-lg-2">
+          <label class="form-label fs-9 mb-1" for="f_target">Object type</label>
+          <select id="f_target" class="form-select form-select-sm">
+            <option value="">All</option>
+            {% for ct in content_types %}<option value="{{ ct.id }}">{{ ct.app_label }} · {{ ct.model }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="col-sm-6 col-md-3 col-lg-2">
+          <label class="form-label fs-9 mb-1" for="f_actor">Actor</label>
+          <input id="f_actor" type="text" class="form-control form-control-sm" placeholder="name or email">
+        </div>
+        <div class="col-sm-6 col-md-3 col-lg-2">
+          <label class="form-label fs-9 mb-1" for="f_from">From</label>
+          <input id="f_from" type="date" class="form-control form-control-sm">
+        </div>
+        <div class="col-sm-6 col-md-3 col-lg-2">
+          <label class="form-label fs-9 mb-1" for="f_to">To</label>
+          <input id="f_to" type="date" class="form-control form-control-sm">
+        </div>
+        <div class="col-sm-6 col-md-3 col-lg-2">
+          <button type="button" id="f_clear" class="btn btn-sm btn-phoenix-secondary w-100">
+            <span class="fa-solid fa-xmark me-1"></span>Clear
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="row my-3">
     <div class="col-12">
       <div class="card p-2">
         <div class="card-body py-2">
-          <table class="table datatable align-items-center mb-0">
-            <caption>Audit Logs</caption>
+          <table class="table table-sm align-items-center mb-0 mw-100" id="auditTable" style="width:100%">
+            <caption class="visually-hidden">Audit Logs</caption>
             <thead>
               <tr>
                 <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Date</th>
                 <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Category</th>
-                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Object</th>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Action</th>
                 <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Actor</th>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Object</th>
+                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Source</th>
                 <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Event</th>
               </tr>
             </thead>
-            <tbody>
-              {% for event in events %}
-                <tr>
-                  <td>
-                    <span data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ event.timestamp }}">
-                        {{ event.timestamp|naturaltime }}
-                    </span>
-                  </td>
-                  <td>
-                    <span class="badge badge-phoenix {% if event.is_sensitive %}badge-phoenix-warning{% else %}badge-phoenix-secondary{% endif %}">{{ event.get_category_display }}</span>
-                  </td>
-                  <td>
-                    {% if event.target %}
-                    <div class="d-flex px-2">
-                      <a href="{{ event.target.get_absolute_url }}">{{ event.target_repr|default:event.target }}</a>
-                    </div>
-                    {% else %}
-                    <span class="text-body-secondary">{{ event.target_repr|default:"—" }}</span>
-                    {% endif %}
-                  </td>
-                  <td>
-                    {% if event.actor %}
-                      <div class="d-flex px-2">
-                        <a href="{{ event.actor.get_absolute_url }}">{{ event.actor_repr|default:event.actor }}</a>
-                      </div>
-                    {% else %}
-                    <span class="fw-semi-bold">SYSTEM</span>
-                    {% endif %}
-                  </td>
-                  <td>{{ event.message }}</td>
-                </tr>
-              {% endfor %}
-            </tbody>
           </table>
         </div>
       </div>
     </div>
   </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var ids = ['f_category', 'f_verb', 'f_source', 'f_severity', 'f_target', 'f_actor', 'f_from', 'f_to'];
+
+  function filterParams() {
+    return {
+      category: document.getElementById('f_category').value,
+      verb: document.getElementById('f_verb').value,
+      source: document.getElementById('f_source').value,
+      severity_min: document.getElementById('f_severity').value,
+      target_type: document.getElementById('f_target').value,
+      actor: document.getElementById('f_actor').value,
+      date_from: document.getElementById('f_from').value,
+      date_to: document.getElementById('f_to').value
+    };
+  }
+
+  var table = new DataTable('#auditTable', {
+    serverSide: true,
+    processing: true,
+    pageLength: 25,
+    lengthMenu: [[25, 50, 100, -1], [25, 50, 100, 'All']],
+    order: [[0, 'desc']],
+    ajax: {
+      url: "{% url 'auditevent-list' %}?format=datatables",
+      data: function (d) { Object.assign(d, filterParams()); }
+    },
+    columns: [
+      { data: 'timestamp_display', name: 'timestamp', searchable: false },
+      { data: 'category_display', name: 'category', searchable: false },
+      { data: 'verb_display', name: 'verb', searchable: false },
+      { data: 'actor_display', name: 'actor__email' },
+      { data: 'target_display', name: 'target_repr', orderable: false },
+      { data: 'source_display', name: 'source', searchable: false },
+      { data: 'message', name: 'message' }
+    ]
+  });
+
+  // Re-query the server whenever a filter changes.
+  var reload = function () { table.ajax.reload(); };
+  ids.forEach(function (id) {
+    var el = document.getElementById(id);
+    el.addEventListener(el.tagName === 'SELECT' || el.type === 'date' ? 'change' : 'input', reload);
+  });
+
+  document.getElementById('f_clear').addEventListener('click', function () {
+    ids.forEach(function (id) { document.getElementById(id).value = ''; });
+    reload();
+  });
+
+  // Export the currently-filtered set (incl. the free-text search).
+  document.getElementById('exportCsv').addEventListener('click', function (e) {
+    e.preventDefault();
+    var params = new URLSearchParams(filterParams());
+    var search = table.search();
+    if (search) { params.set('search', search); }
+    window.location = "{% url 'export_activity_csv' %}?" + params.toString();
+  });
+});
+</script>
 {% endblock %}

@@ -232,6 +232,52 @@ def user_is_global_admin(user):
     ).exists()
 
 
+def apply_audit_filters(qs, params):
+    """Apply the Activity Log filter query-params to an AuditEvent queryset.
+
+    Shared by the DataTables API viewset and the CSV export so both honour the
+    same filters. ``params`` is any dict-like (``request.query_params`` / GET).
+    Unknown/blank values are ignored.
+    """
+    from django.db.models import Q
+
+    category = params.get("category")
+    if category:
+        qs = qs.filter(category=category)
+    verb = params.get("verb")
+    if verb:
+        qs = qs.filter(verb=verb)
+    source = params.get("source")
+    if source:
+        qs = qs.filter(source=source)
+    severity_min = params.get("severity_min")
+    if severity_min:
+        try:
+            qs = qs.filter(severity__gte=int(severity_min))
+        except (TypeError, ValueError):
+            pass
+    actor = params.get("actor")
+    if actor:
+        qs = qs.filter(
+            Q(actor__email__icontains=actor)
+            | Q(actor__first_name__icontains=actor)
+            | Q(actor__last_name__icontains=actor)
+        )
+    target_type = params.get("target_type")
+    if target_type:
+        try:
+            qs = qs.filter(target_content_type_id=int(target_type))
+        except (TypeError, ValueError):
+            pass
+    date_from = params.get("date_from")
+    if date_from:
+        qs = qs.filter(timestamp__date__gte=date_from)
+    date_to = params.get("date_to")
+    if date_to:
+        qs = qs.filter(timestamp__date__lte=date_to)
+    return qs
+
+
 def object_audit_events(obj, limit=200):
     """All AuditEvents targeting ``obj`` (no sensitivity filter), newest first.
 

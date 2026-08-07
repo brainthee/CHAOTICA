@@ -126,6 +126,7 @@ urlpatterns = [
         name="restore_media_backup",
     ),
     path("activity/", views.NoteListView.as_view(), name="view_activity"),
+    path("activity/export/", views.export_activity_csv, name="export_activity_csv"),
     # Own profile bits
     path(
         "profile/", views.view_own_profile, name="view_own_profile"
