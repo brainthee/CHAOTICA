@@ -558,6 +558,7 @@ def get_scheduler_members(
                 ),
                 "seniority": job_level_order,
                 "job_level": job_level_label,
+                "org_unit": main_org.name if main_org else "",
                 "url": user.get_absolute_url(),
                 "html_view": user.get_table_display_html(
                     cleaned_data.get("compressed_view", False)

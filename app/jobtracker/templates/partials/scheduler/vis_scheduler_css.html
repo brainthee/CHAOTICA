@@ -26,6 +26,8 @@
     color: var(--phoenix-secondary-color);
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
+  /* Org unit, shown inline after the job level ("CL8 - Associate Manager · Prague") */
+  .sched-res .sched-org { font-style: italic; opacity: 0.85; }
   .sched-res .badge { flex: 0 0 auto; }
   /* Subtle role tags (Account Manager / Lead / Author / QA …) on scoped views */
   .sched-res .sched-roles { display: block; margin-top: 2px; line-height: 1.1; }
@@ -94,8 +96,11 @@
      that scroll out of view ("slots disappear when zoomed out"). Bars then keep
      their true time-width, so the zoomed-out picture stays faithful. */
   #vis-timeline.sched-coarse .vis-item .vis-item-content { display: none; }
-  /* Out-of-scope blocks on a job/phase view: shown as faded context (never hidden) */
-  .vis-item.sched-faded { opacity: 0.38; filter: grayscale(45%); }
+  /* Out-of-scope blocks on a job/phase view: shown as faded context (never hidden).
+     Opacity alone (composited) de-emphasises them — deliberately NO `filter: grayscale`,
+     which forces a paint on every scroll/redraw frame and stutters scoped schedules
+     that carry many out-of-scope bars. */
+  .vis-item.sched-faded { opacity: 0.32; }
   .vis-item.sched-faded:hover { opacity: 0.6; }
   /* Current time bar */
   .vis-current-time { background-color: var(--phoenix-danger); }
@@ -122,15 +127,15 @@
   .vis-item.vis-background.sched-selection {
     background-color: rgba(13, 110, 253, 0.20); border: 1px dashed var(--phoenix-primary);
   }
-  /* Not-yet-loaded time regions: hatched band spanning all rows */
+  /* Not-yet-loaded time regions: static hatched band spanning all rows. No pulse
+     animation — an infinite keyframe repaints continuously while any stripe is on
+     screen (and compounds scroll cost); the hatch alone reads clearly as "loading". */
   .vis-item.vis-background.sched-unloaded {
     background-image: repeating-linear-gradient(45deg,
-      rgba(120, 130, 150, 0.13) 0, rgba(120, 130, 150, 0.13) 8px,
-      rgba(120, 130, 150, 0.04) 8px, rgba(120, 130, 150, 0.04) 16px);
-    border: none; animation: sched-unloaded-pulse 1.4s ease-in-out infinite;
+      rgba(120, 130, 150, 0.15) 0, rgba(120, 130, 150, 0.15) 8px,
+      rgba(120, 130, 150, 0.05) 8px, rgba(120, 130, 150, 0.05) 16px);
+    border: none;
   }
-  @keyframes sched-unloaded-pulse { 0%,100% { opacity: 0.65; } 50% { opacity: 1; } }
-  @media (prefers-reduced-motion: reduce) { .vis-item.vis-background.sched-unloaded { animation: none; } }
   .sched-toolbar { gap: 0.5rem; }
   .sched-legend .dot {
     display: inline-block; width: 0.7rem; height: 0.7rem; border-radius: 0.2rem;

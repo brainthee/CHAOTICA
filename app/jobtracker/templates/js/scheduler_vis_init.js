@@ -98,7 +98,11 @@
     selectable: true,
     multiselect: false,
     groupHeightMode: 'auto',
-    align: 'left',   // left-anchor labels so clipped (narrow) slots stay readable from the start
+    // 'auto': labels stick to the visible edge. A bar wider than the window (e.g. a
+    // multi-month booking) would otherwise anchor its label to its own off-screen left
+    // edge and show no text; 'auto' slides the label to the panel edge so it stays
+    // readable, while narrow/fully-visible slots still read from their left as before.
+    align: 'auto',
     tooltip: { followMouse: true, overflowMethod: 'cap' },
     xss: { disabled: true },
     editable: readonly ? false : { updateTime: true, updateGroup: true, add: false, remove: false, overrideItems: false },
@@ -173,7 +177,7 @@
   var resizeTimer = null;
   window.addEventListener('resize', function () {
     clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(function () { fitHeight(); chooseAxisScale(); }, 150);
+    resizeTimer = setTimeout(function () { fitHeight(); chooseAxisScale(); forceRanged(); }, 150);
   });
 
   // ---- Loading helpers (subtle, non-blocking: toolbar spinner + top progress bar) ----
@@ -273,6 +277,7 @@
   function buildGroupContent(r) {
     var name = escapeHtml(r.title || ((r.first_name || '') + ' ' + (r.last_name || '')).trim());
     var lvl = escapeHtml(r.job_level || '');
+    var org = escapeHtml(r.org_unit || '');
     var util = Math.round((r.util != null) ? r.util : 0);
     var roles = (r.roles || []).map(function (role) {
       return '<span class="sched-role">' + escapeHtml(role) + '</span>';
@@ -280,10 +285,14 @@
     var nameHtml = r.url
       ? '<a class="name" href="' + escapeHtml(r.url) + '">' + name + '</a>'
       : '<span class="name">' + name + '</span>';
+    // Level and org unit share a line ("CL8 - Associate Manager · Prague").
+    var subParts = [];
+    if (lvl) subParts.push(lvl);
+    if (org) subParts.push('<span class="sched-org">' + org + '</span>');
     return '<div class="sched-res">' +
              '<span class="meta">' +
                nameHtml +
-               (lvl ? '<span class="lvl">' + lvl + '</span>' : '') +
+               (subParts.length ? '<span class="lvl">' + subParts.join(' · ') + '</span>' : '') +
                (roles ? '<span class="sched-roles">' + roles + '</span>' : '') +
              '</span>' +
              '<span class="badge badge-phoenix ' + utilBadgeClass(util) + '">' + util + '%</span>' +
@@ -816,17 +825,55 @@
     openMenuAt(gids, d.start, d.lastDay, props.event.pageX, props.event.pageY);
   });
 
+  // ---- Force vis to re-render window-spanning items ----
+  // vis-timeline 7.7.3's per-group visible-item optimisation (Group._updateItemsInRange)
+  // MISSES range items that span the ENTIRE window — i.e. start before the left edge AND
+  // end past the right edge. Its fast path locates visible items with a binary search over
+  // the byEnd array using a comparator that isn't monotonic in that array's sort order, so
+  // for a fully-spanning item the search can return "not found" and the bar is dropped. vis
+  // only avoids this by running an exhaustive scan, which it arms (emitting 'checkRangedItems')
+  // ONLY when Range.setRange sees a fully-disjoint range jump — never on a smooth pan and,
+  // crucially, never on a vertical scroll (which re-renders groups with no range change).
+  // Result: a multi-month booking renders while one of its ends is on screen, then vanishes
+  // once its row is scrolled out of view and back (re-render via the buggy fast path).
+  // Re-arm that exhaustive scan ourselves. armRanged() just sets the per-group flag;
+  // the NEXT redraw consumes it. vis already redraws on wheel/scroll/pan, so we lean on
+  // that redraw rather than forcing our own — the trick is to arm the flag BEFORE vis
+  // redraws. Vertical scroll/zoom is wheel- or scrollbar-driven and vis's handlers run in
+  // the bubble phase, so a CAPTURE-phase listener on the container runs first and the flag
+  // is set in time (no extra redraw, so scrolling stays smooth). forceRanged() is the
+  // heavier variant (arm + our own rAF redraw) reserved for settle points that aren't
+  // otherwise followed by a vis redraw (drag end, resize, first paint of a hidden tab).
+  function armRanged() {
+    var b = timeline.body;
+    if (b && b.emitter) b.emitter.emit('checkRangedItems');
+  }
+  var rangedRaf = null;
+  function forceRanged() {
+    armRanged();
+    if (rangedRaf) return;
+    rangedRaf = requestAnimationFrame(function () { rangedRaf = null; timeline.redraw(); });
+  }
+  // Vertical scroll (wheel + scrollbar drag) re-renders groups with no range event.
+  // Capture phase => we arm the flag before vis's own scroll/wheel redraw consumes it.
+  // 'scroll' doesn't bubble, but capture-phase listeners still receive it from descendants.
+  ['wheel', 'mousewheel', 'DOMMouseScroll', 'scroll'].forEach(function (ev) {
+    container.addEventListener(ev, armRanged, true);
+  });
+
   // ---- Refetch on pan/zoom (infinite scroll on time) ----
   var debounceTimer = null;
   timeline.on('rangechanged', function () {
     chooseAxisScale();
     pruneFar();
     renderUnloaded();
+    forceRanged();   // settle: guarantee the final frame shows spanning bars
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(loadSlots, 250);
   });
   var unloadedRaf = null;
   timeline.on('rangechange', function () {
+    armRanged();     // vis redraws each pan frame; arming lets that redraw show spanning bars
     if (unloadedRaf) return;
     unloadedRaf = requestAnimationFrame(function () {
       unloadedRaf = null;
@@ -1032,6 +1079,7 @@
   // Read-only embeds can't fit-to-data until they're visible, so do it on first reveal.
   window.__schedRedraw = function () {
     fitHeight();
+    armRanged();     // arm before the redraw below so first paint keeps window-spanning bars
     timeline.redraw();
     if (scopedFit && !didScopedFit) { didScopedFit = true; fitToData(); }
   };
