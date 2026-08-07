@@ -58,7 +58,10 @@ def _ensure_default_global_role(user):
     created any other way. No-op if they already hold any global role.
     """
     from django.conf import settings
-    from django.contrib.auth.models import Group
+    # Must be CHAOTICA's custom Group (a subclass of auth.Group); ``user.groups``
+    # relates to it, so adding a plain ``auth.Group`` raises
+    # "'Group' instance expected" (Sentry CHAOTICA-136).
+    from chaotica_utils.models import Group
 
     if user.groups.filter(name__startswith=settings.GLOBAL_GROUP_PREFIX).exists():
         return  # already has a global role — don't clobber
