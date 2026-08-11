@@ -1,8 +1,9 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.apps import apps
 from django.contrib.contenttypes.models import ContentType
+from django.views.decorators.http import require_POST
 
 from ..models import DataArea, DataField, DataSource, Report, ReportField, ReportFilter, ReportSort
 
@@ -40,6 +41,7 @@ def validate_fields(request):
             'valid': [],
             'invalid': [],
             'warnings': [],
+            'disabled': [],
         }
 
         # Resolve the model class
@@ -62,7 +64,10 @@ def validate_fields(request):
             results.append(area_result)
             continue
 
-        for field in data_area.fields.filter(is_available=True):
+        for field in data_area.fields.all():
+            if not field.is_available:
+                area_result['disabled'].append({'field': field})
+                continue
             validation = _validate_field_path(model_class, field)
             if validation['status'] == 'valid':
                 area_result['valid'].append(validation)
@@ -76,12 +81,14 @@ def validate_fields(request):
     total_valid = sum(len(r['valid']) for r in results)
     total_invalid = sum(len(r['invalid']) for r in results)
     total_warnings = sum(len(r['warnings']) for r in results)
+    total_disabled = sum(len(r['disabled']) for r in results)
 
     context = {
         'results': results,
         'total_valid': total_valid,
         'total_invalid': total_invalid,
         'total_warnings': total_warnings,
+        'total_disabled': total_disabled,
     }
     return render(request, 'reporting/admin/validate_fields.html', context)
 
@@ -116,6 +123,74 @@ def delete_invalid_fields(request):
     return redirect('reporting:admin_validate_fields')
 
 
+def _field_usage(field):
+    """How many saved-report components reference this field."""
+    return (
+        field.report_fields.count()
+        + field.report_filters.count()
+        + field.report_sorts.count()
+    )
+
+
+@login_required
+@user_passes_test(is_superuser)
+@require_POST
+def field_toggle(request, field_id):
+    """Enable or disable a single DataField."""
+    field = get_object_or_404(DataField, pk=field_id)
+    field.is_available = not field.is_available
+    field.save(update_fields=['is_available'])
+    state = "enabled" if field.is_available else "disabled"
+    messages.success(request, f"Field '{field.display_name}' {state}.")
+    return redirect('reporting:admin_validate_fields')
+
+
+@login_required
+@user_passes_test(is_superuser)
+@require_POST
+def field_delete(request, field_id):
+    """Permanently delete a single DataField.
+
+    Cascades to any report columns/filters/sorts that use it, so the usage count
+    is surfaced in the confirmation message.
+    """
+    field = get_object_or_404(DataField, pk=field_id)
+    name = field.display_name
+    usage = _field_usage(field)
+    field.delete()
+    msg = f"Deleted field '{name}'."
+    if usage:
+        msg += f" Removed {usage} report reference(s) that used it."
+    messages.success(request, msg)
+    return redirect('reporting:admin_validate_fields')
+
+
+@login_required
+@user_passes_test(is_superuser)
+@require_POST
+def reenable_disabled_fields(request):
+    """Re-enable every currently-disabled DataField."""
+    count = DataField.objects.filter(is_available=False).update(is_available=True)
+    messages.success(request, f"Re-enabled {count} disabled field(s).")
+    return redirect('reporting:admin_validate_fields')
+
+
+@login_required
+@user_passes_test(is_superuser)
+@require_POST
+def purge_disabled_fields(request):
+    """Permanently delete every currently-disabled DataField."""
+    qs = DataField.objects.filter(is_available=False)
+    usage = sum(_field_usage(f) for f in qs)
+    count = qs.count()
+    qs.delete()
+    msg = f"Deleted {count} disabled field(s)."
+    if usage:
+        msg += f" Removed {usage} report reference(s)."
+    messages.success(request, msg)
+    return redirect('reporting:admin_validate_fields')
+
+
 def _validate_field_path(model_class, data_field):
     """
     Validate a single DataField's field_path against the Django model.
@@ -129,6 +204,25 @@ def _validate_field_path(model_class, data_field):
         'error': None,
         'resolved_type': None,
     }
+
+    # Resolver-sourced fields are computed in Python and don't resolve through the
+    # ORM - their field_path is a sentinel (e.g. 'resolver:charge_codes'). Validate
+    # the resolver_key against the whitelist registry instead of walking model fields.
+    if data_field.source_type == DataField.SOURCE_RESOLVER:
+        from ..resolvers import REPORTING_RESOLVERS
+        key = data_field.resolver_key
+        if not key:
+            result['status'] = 'invalid'
+            result['error'] = "Resolver field has no resolver_key set."
+        elif key not in REPORTING_RESOLVERS:
+            result['status'] = 'invalid'
+            result['error'] = (
+                f"resolver_key '{key}' is not registered in "
+                f"reporting.resolvers.REPORTING_RESOLVERS."
+            )
+        else:
+            result['resolved_type'] = f'resolver:{key}'
+        return result
 
     parts = field_path.split('__')
     current_model = model_class

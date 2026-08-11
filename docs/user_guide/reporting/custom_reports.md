@@ -78,29 +78,34 @@ For example, "phases starting in the next month" is two filters on the start
 date: *on or after* `today` and *on or before* `today+30d`. Changing `30` to
 another number changes the window — it's just data, no code change needed.
 
-## Running a report (background execution)
+## Running a report
 
-Reports run **in the background** rather than blocking your browser. When you
-press **Run Report** (or pick a **Download As** format), the run is queued and a
-progress page appears showing *Queued… → Running…*; it updates itself and then
-loads the results on screen (or starts the download) as soon as they're ready.
-You can leave the page open while it works.
+When you press **Run Report**, most reports run **inline** and the results appear
+on screen straight away. Larger reports (and any **Download As** export) fall back
+to **background execution**: a progress page appears showing *Queued… →
+Running…*, updates itself, and loads the results (or starts the download) as soon
+as they're ready. You can leave the page open while it works.
 
-This means large reports no longer time out: previously a big report tied up the
-request until an upstream proxy (load balancer / nginx) cut it off with an error.
-Now the heavy work happens out of band and the browser just polls for the result.
+Background execution means large reports never time out: a big report used to tie
+up the request until an upstream proxy (load balancer / nginx) cut it off with an
+error. Now the heavy work happens out of band and the browser polls for the result.
 
 Two things worth knowing:
 
-- **Start-up delay.** Queued runs are picked up by a background job that fires
-  about once a minute, so a report can sit at *Queued…* for up to ~60 seconds
+- **Fast path vs. queue.** On-screen reports are attempted inline for a few
+  seconds first, so quick reports are instant. Only reports that overrun that
+  budget (and all downloads) drop to the background job, which is picked up about
+  once a minute — so a queued report can sit at *Queued…* for up to ~60 seconds
   before it starts. This is normal.
 - **Results expire.** A finished run's on-screen data and any exported file are
   kept for a couple of hours, then cleaned up automatically. Re-run the report to
   regenerate them.
 
-Operationally this relies on the `runcrons` scheduler (the same one that sends
-scheduled report emails) running — via `reporting.tasks.ProcessReportRuns`.
+Results are stored durably (on-screen rows in the database, export files in shared
+object storage), so they load correctly no matter which server instance handles
+your request. The background job (`reporting.tasks.ProcessReportRuns`, run by the
+same `runcrons` scheduler that sends scheduled report emails) also re-queues any
+run left stuck *Running…* by a crashed worker.
 
 ## The Tentative Projects report
 

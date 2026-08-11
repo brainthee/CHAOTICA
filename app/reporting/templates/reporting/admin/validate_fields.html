@@ -13,6 +13,20 @@
         </button>
       </form>
       {% endif %}
+      {% if total_disabled > 0 %}
+      <form method="post" action="{% url 'reporting:admin_reenable_disabled_fields' %}" class="d-inline">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-outline-success" onclick="return confirm('Re-enable all {{ total_disabled }} disabled field(s)?')">
+          <i class="fas fa-rotate-left"></i> Re-enable {{ total_disabled }} Disabled
+        </button>
+      </form>
+      <form method="post" action="{% url 'reporting:admin_purge_disabled_fields' %}" class="d-inline">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Permanently DELETE all {{ total_disabled }} disabled field(s)? This also removes any report columns/filters/sorts that use them.')">
+          <i class="fas fa-trash"></i> Delete Disabled
+        </button>
+      </form>
+      {% endif %}
       <a href="{% url 'reporting:admin_dashboard' %}" class="btn btn-outline-secondary ms-2">
         <i class="fas fa-arrow-left"></i> Back to Admin
       </a>
@@ -20,7 +34,7 @@
   </div>
 
   <div class="row mb-4">
-    <div class="col-md-4">
+    <div class="col-md-3">
       <div class="card border-success">
         <div class="card-body text-center">
           <h2 class="mb-0 text-success">{{ total_valid }}</h2>
@@ -28,7 +42,7 @@
         </div>
       </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-3">
       <div class="card border-warning">
         <div class="card-body text-center">
           <h2 class="mb-0 text-warning">{{ total_warnings }}</h2>
@@ -36,11 +50,19 @@
         </div>
       </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-3">
       <div class="card border-danger">
         <div class="card-body text-center">
           <h2 class="mb-0 text-danger">{{ total_invalid }}</h2>
           <p class="text-body-secondary mb-0">Invalid Fields</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card border-secondary">
+        <div class="card-body text-center">
+          <h2 class="mb-0 text-body-secondary">{{ total_disabled }}</h2>
+          <p class="text-body-secondary mb-0">Disabled Fields</p>
         </div>
       </div>
     </div>
@@ -61,6 +83,9 @@
         {% if area_result.warnings %}
           <span class="badge bg-warning text-dark">{{ area_result.warnings|length }} warning{{ area_result.warnings|length|pluralize }}</span>
         {% endif %}
+        {% if area_result.disabled %}
+          <span class="badge bg-secondary">{{ area_result.disabled|length }} disabled</span>
+        {% endif %}
         <span class="badge bg-success">{{ area_result.valid|length }} valid</span>
       </div>
     </div>
@@ -74,6 +99,7 @@
             <th>Field Type</th>
             <th>Resolved As</th>
             <th>Details</th>
+            <th style="width: 140px;" class="text-end">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -85,6 +111,18 @@
             <td>{% if item.field %}{{ item.field.field_type.name }}{% else %}-{% endif %}</td>
             <td>-</td>
             <td><small>{{ item.error }}</small></td>
+            <td class="text-end">
+              {% if item.field %}
+              <form method="post" action="{% url 'reporting:admin_field_toggle' item.field.id %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline-secondary" title="Disable this field"><i class="fas fa-ban"></i></button>
+              </form>
+              <form method="post" action="{% url 'reporting:admin_field_delete' item.field.id %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete permanently" onclick="return confirm('Permanently delete this field? Any report columns/filters/sorts using it will also be removed.')"><i class="fas fa-trash"></i></button>
+              </form>
+              {% endif %}
+            </td>
           </tr>
           {% endfor %}
           {% for item in area_result.warnings %}
@@ -95,6 +133,12 @@
             <td>{{ item.field.field_type.name }}</td>
             <td><code>{{ item.resolved_type }}</code></td>
             <td><small>{{ item.error }}</small></td>
+            <td class="text-end">
+              <form method="post" action="{% url 'reporting:admin_field_toggle' item.field.id %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline-secondary" title="Disable this field"><i class="fas fa-ban"></i></button>
+              </form>
+            </td>
           </tr>
           {% endfor %}
           {% for item in area_result.valid %}
@@ -105,6 +149,32 @@
             <td>{{ item.field.field_type.name }}</td>
             <td><code>{{ item.resolved_type }}</code></td>
             <td>-</td>
+            <td class="text-end">
+              <form method="post" action="{% url 'reporting:admin_field_toggle' item.field.id %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline-secondary" title="Disable this field"><i class="fas fa-ban"></i></button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+          {% for item in area_result.disabled %}
+          <tr class="text-body-secondary">
+            <td><i class="fas fa-eye-slash text-body-secondary"></i></td>
+            <td>{{ item.field.display_name }}</td>
+            <td><code>{{ item.field.field_path }}</code></td>
+            <td>{{ item.field.field_type.name }}</td>
+            <td><span class="badge bg-secondary">disabled</span></td>
+            <td><small>Not available for reports.</small></td>
+            <td class="text-end">
+              <form method="post" action="{% url 'reporting:admin_field_toggle' item.field.id %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline-success" title="Re-enable this field"><i class="fas fa-rotate-left"></i></button>
+              </form>
+              <form method="post" action="{% url 'reporting:admin_field_delete' item.field.id %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete permanently" onclick="return confirm('Permanently delete this field? Any report columns/filters/sorts using it will also be removed.')"><i class="fas fa-trash"></i></button>
+              </form>
+            </td>
           </tr>
           {% endfor %}
         </tbody>

@@ -52,6 +52,7 @@ class Command(BaseCommand):
             self.setup_phase_data_area()
             self.setup_project_data_area()
             self.setup_client_data_area()
+            self.setup_billingcode_data_area()
 
             # Setup data area relationships
             self.setup_data_sources()
@@ -147,7 +148,6 @@ class Command(BaseCommand):
             {'name': 'last_login', 'display_name': 'Last Login', 'field_path': 'last_login', 'field_type': datetime_type, 'group': 'Dates'},
             {'name': 'manager', 'display_name': 'Manager', 'field_path': 'manager__last_name', 'field_type': foreign_key_type, 'group': 'Work'},
             {'name': 'acting_manager', 'display_name': 'Acting Manager', 'field_path': 'acting_manager__last_name', 'field_type': foreign_key_type, 'group': 'Work'},
-            {'name': 'location', 'display_name': 'Location (legacy)', 'field_path': 'location', 'field_type': text_type, 'group': 'Work'},
             {'name': 'country', 'display_name': 'Country (legacy)', 'field_path': 'country', 'field_type': text_type, 'group': 'Work'},
             {'name': 'city', 'display_name': 'City', 'field_path': 'city__name', 'field_type': foreign_key_type, 'group': 'Work'},
             {'name': 'city_country', 'display_name': 'Country', 'field_path': 'city__country__name', 'field_type': foreign_key_type, 'group': 'Work'},
@@ -198,7 +198,6 @@ class Command(BaseCommand):
             # Basic
             {'name': 'id', 'display_name': 'Job ID', 'field_path': 'id', 'field_type': integer_type, 'group': 'Basic'},
             {'name': 'title', 'display_name': 'Job Title', 'field_path': 'title', 'field_type': text_type, 'group': 'Basic'},
-            {'name': 'description', 'display_name': 'Description', 'field_path': 'description', 'field_type': long_text_type, 'group': 'Basic'},
             {'name': 'overview', 'display_name': 'Overview', 'field_path': 'overview', 'field_type': long_text_type, 'group': 'Basic'},
             # Client
             {'name': 'client', 'display_name': 'Client', 'field_path': 'client__name', 'field_type': foreign_key_type, 'group': 'Client'},
@@ -216,7 +215,7 @@ class Command(BaseCommand):
             {'name': 'dep_account_manager', 'display_name': 'Deputy Account Manager', 'field_path': 'dep_account_manager__last_name', 'field_type': foreign_key_type, 'group': 'Management'},
             {'name': 'created_by', 'display_name': 'Created By', 'field_path': 'created_by__last_name', 'field_type': foreign_key_type, 'group': 'Management'},
             {'name': 'scoped_signed_off_by', 'display_name': 'Scoped Signed Off By', 'field_path': 'scoped_signed_off_by__last_name', 'field_type': foreign_key_type, 'group': 'Management'},
-            {'name': 'primary_client_poc', 'display_name': 'Primary Client POC', 'field_path': 'primary_client_poc__full_name', 'field_type': foreign_key_type, 'group': 'Management'},
+            {'name': 'primary_client_poc', 'display_name': 'Primary Client POC', 'field_path': 'primary_client_poc__last_name', 'field_type': foreign_key_type, 'group': 'Management'},
             # Management email addresses (e.g. to split a scheduled report per manager)
             {'name': 'account_manager_email', 'display_name': 'Account Manager Email', 'field_path': 'account_manager__email', 'field_type': email_type, 'group': 'Management'},
             {'name': 'dep_account_manager_email', 'display_name': 'Deputy Account Manager Email', 'field_path': 'dep_account_manager__email', 'field_type': email_type, 'group': 'Management'},
@@ -442,7 +441,6 @@ class Command(BaseCommand):
         })
 
         text_type = self.field_types['Text']
-        datetime_type = self.field_types['DateTime']
         foreign_key_type = self.field_types['Foreign Key']
         integer_type = self.field_types['Integer']
 
@@ -451,7 +449,6 @@ class Command(BaseCommand):
             {'name': 'title', 'display_name': 'Project Title', 'field_path': 'title', 'field_type': text_type, 'group': 'Basic'},
             {'name': 'status', 'display_name': 'Status', 'field_path': 'status', 'field_type': integer_type, 'group': 'Status'},
             {'name': 'created_by', 'display_name': 'Created By', 'field_path': 'created_by__last_name', 'field_type': foreign_key_type, 'group': 'Management'},
-            {'name': 'created_at', 'display_name': 'Created At', 'field_path': 'created_at', 'field_type': datetime_type, 'group': 'Dates'},
             {'name': 'primary_poc', 'display_name': 'Primary POC', 'field_path': 'primary_poc__last_name', 'field_type': foreign_key_type, 'group': 'Management'},
             {'name': 'external_id', 'display_name': 'External ID', 'field_path': 'external_id', 'field_type': text_type, 'group': 'External'},
         ]
@@ -501,6 +498,44 @@ class Command(BaseCommand):
 
         self._sync_fields(data_area, fields)
 
+    def setup_billingcode_data_area(self):
+        """Set up BillingCode data area and fields."""
+        self.stdout.write('Setting up Billing Code data area...')
+
+        from jobtracker.models import BillingCode
+
+        content_type = ContentType.objects.get_for_model(BillingCode)
+
+        data_area = self._get_or_create_data_area('Billing Codes', {
+            'description': 'Billing / charge codes and their usage',
+            'content_type': content_type,
+            'model_name': 'BillingCode',
+            'default_sort_field': 'code',
+            'icon_class': 'fa-receipt',
+            'population_options': {
+                'chargeable': {'label': 'Chargeable Only'},
+                'internal': {'label': 'Internal Only'},
+                'client_less': {'label': 'Client-less (WBS) Only'},
+            }
+        })
+
+        text_type = self.field_types['Text']
+        boolean_type = self.field_types['Boolean']
+        integer_type = self.field_types['Integer']
+
+        fields = [
+            {'name': 'id', 'display_name': 'ID', 'field_path': 'id', 'field_type': integer_type, 'group': 'Basic'},
+            {'name': 'code', 'display_name': 'Code', 'field_path': 'code', 'field_type': text_type, 'group': 'Basic'},
+            {'name': 'client_name', 'display_name': 'Client', 'field_path': 'client__name', 'field_type': text_type, 'group': 'Basic'},
+            {'name': 'region', 'display_name': 'Region', 'field_path': 'region', 'field_type': text_type, 'group': 'Basic'},
+            {'name': 'is_chargeable', 'display_name': 'Chargeable', 'field_path': 'is_chargeable', 'field_type': boolean_type, 'group': 'Type'},
+            {'name': 'is_recoverable', 'display_name': 'Recoverable', 'field_path': 'is_recoverable', 'field_type': boolean_type, 'group': 'Type'},
+            {'name': 'is_internal', 'display_name': 'Internal', 'field_path': 'is_internal', 'field_type': boolean_type, 'group': 'Type'},
+            {'name': 'is_closed', 'display_name': 'Closed', 'field_path': 'is_closed', 'field_type': boolean_type, 'group': 'Type'},
+        ]
+
+        self._sync_fields(data_area, fields)
+
     def setup_data_sources(self):
         """Set up relationships between data areas"""
         self.stdout.write('Setting up data source relationships...')
@@ -514,8 +549,23 @@ class Command(BaseCommand):
             phases_area = DataArea.objects.get(name='Phases')
             projects_area = DataArea.objects.get(name='Projects')
             clients_area = DataArea.objects.get(name='Clients')
+            billingcodes_area = DataArea.objects.get(name='Billing Codes')
 
             relationships = [
+                {
+                    'from_area': billingcodes_area,
+                    'to_area': clients_area,
+                    'relationship_type': many_to_one,
+                    'join_field': 'client',
+                    'display_name': 'Billing Code Client',
+                },
+                {
+                    'from_area': jobs_area,
+                    'to_area': billingcodes_area,
+                    'relationship_type': one_to_many,
+                    'join_field': 'billing_code_assignments__code',
+                    'display_name': 'Job Billing Codes',
+                },
                 {
                     'from_area': jobs_area,
                     'to_area': phases_area,

@@ -39,10 +39,15 @@ class ReportRun(models.Model):
     # None => on-screen HTML results. Otherwise one of Report.PRESENTATION_CHOICES => a download.
     export_format = models.CharField(max_length=50, blank=True, null=True)
 
-    # Computed rows persisted as JSON (DjangoJSONEncoder) for the on-screen results page.
+    # Computed rows for the on-screen results page, persisted in the DB so any
+    # web instance can render them (node-local temp files broke across the
+    # multi-instance load balancer - a poll could land on an instance that never
+    # wrote the file). result_path is retained only for backwards compatibility.
+    result_json = models.JSONField(null=True, blank=True)
     result_path = models.CharField(max_length=500, blank=True)
     row_count = models.IntegerField(null=True, blank=True)
     # Rendered export file (when export_format is set) plus how to serve it back.
+    # export_path holds a key into default_storage (S3 in prod), not a local path.
     export_path = models.CharField(max_length=500, blank=True)
     export_content_type = models.CharField(max_length=255, blank=True)
     export_filename = models.CharField(max_length=255, blank=True)

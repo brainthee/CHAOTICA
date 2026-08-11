@@ -1,15 +1,15 @@
-import json
 import logging
-import os
 import re
-import tempfile
+import threading
 
 from django_cron import CronJobBase, Schedule
 from django.conf import settings
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
 from django.core.mail import EmailMultiAlternatives
-from django.core.serializers.json import DjangoJSONEncoder
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
+from django.db import connection
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.html import strip_tags
@@ -166,13 +166,107 @@ def _parse_content_disposition_filename(header):
     return match.group(1) if match else ''
 
 
+# How long the request will wait for an on-screen run to finish inline before
+# falling back to the background/polling path (keeps snappy reports instant while
+# large ones still can't block past the ALB/nginx idle timeouts).
+INLINE_RUN_BUDGET_SECONDS = 12
+# A run left 'running' longer than this is presumed dead (crashed worker / killed
+# inline thread) and gets re-queued so it can't get stuck forever.
+STALE_RUNNING_MINUTES = 15
+
+
+def process_report_run(run):
+    """Compute a report run, persisting rows to the DB and any export file to
+    ``default_storage`` (S3 in prod) so results survive across web instances.
+
+    Safe to call from either the cron worker or an inline request thread.
+    """
+    logger.info(f"Processing report run {run.id} for user {run.user}")
+    run.status = ReportRun.STATUS_RUNNING
+    run.started_at = timezone.now()
+    run.save(update_fields=['status', 'started_at'])
+
+    try:
+        rows = DataService.get_report_data(run.report, run.user, run.filter_values or {})
+        run.row_count = len(rows)
+
+        # Persist the rows in the DB for the on-screen results page. Any web
+        # instance can then render them (no node-local temp file to go missing).
+        run.result_json = rows
+
+        # Render a download file too, if this run asked for an export format.
+        if run.export_format:
+            response = ExportService.export_report(run.report, rows, run.export_format)
+            filename = _parse_content_disposition_filename(
+                response.get('Content-Disposition', '')
+            )
+            # Extension is cosmetic (the download name comes from export_filename);
+            # derive it from the produced filename, falling back to the format.
+            ext = filename.rsplit('.', 1)[-1] if '.' in filename else run.export_format
+            key = f"report_runs/{run.id}.{ext}"
+            # Overwrite defensively in case a retry produced a stale object.
+            if default_storage.exists(key):
+                default_storage.delete(key)
+            run.export_path = default_storage.save(key, ContentFile(response.content))
+            run.export_content_type = response.get('Content-Type', 'application/octet-stream')
+            run.export_filename = filename
+
+        run.status = ReportRun.STATUS_COMPLETE
+        run.completed_at = timezone.now()
+        run.save()
+
+        # last_run_at bookkeeping now happens here rather than in the request.
+        run.report.last_run_at = timezone.now()
+        run.report.save(update_fields=['last_run_at'])
+
+        logger.info(f"Report run {run.id} completed ({run.row_count} rows)")
+
+    except Exception as e:
+        run.status = ReportRun.STATUS_FAILED
+        run.error_message = str(e)
+        run.completed_at = timezone.now()
+        run.save()
+        # Single structured event (message + traceback) instead of two
+        # separate logger.error calls, which Sentry split into two issues
+        # for one failure (CHAOTICA-121/122). logger.exception attaches the
+        # active exception's traceback automatically.
+        logger.exception(f"Report run {run.id} failed: {e}")
+
+
+def run_inline_within_budget(run, budget_seconds=INLINE_RUN_BUDGET_SECONDS):
+    """Process ``run`` in a worker thread, waiting up to ``budget_seconds``.
+
+    Returns True if it finished within the budget (the request can render the
+    results immediately). If it overruns, the thread keeps going to completion in
+    the background and the caller falls back to the polling page. Any thread that
+    dies mid-run is recovered by ProcessReportRuns' stale-run sweep.
+
+    Assumes autocommit requests (ATOMIC_REQUESTS is not enabled): the caller's
+    ReportRun.create() must be committed so the worker thread's own DB connection
+    can see it. If ATOMIC_REQUESTS is ever turned on, this fast path must be
+    revisited (the run would be invisible to the thread until the request commits).
+    """
+    def _work():
+        try:
+            process_report_run(run)
+        finally:
+            # Threads get their own DB connection; close it so it isn't leaked.
+            connection.close()
+
+    thread = threading.Thread(target=_work, name=f"reportrun-{run.id}", daemon=True)
+    thread.start()
+    thread.join(budget_seconds)
+    return not thread.is_alive()
+
+
 class ProcessReportRuns(CronJobBase):
     """Execute queued report runs out of band.
 
     Mirrors ``chaotica_utils.tasks.ProcessManualBackupJobs``: pick up one pending
     run, mark it running, compute the rows (and render an export file if the run
     asked for a download), then mark it complete/failed. The browser polls the
-    status endpoint meanwhile.
+    status endpoint meanwhile. On-screen runs are usually processed inline in the
+    request; this cron is the reliable fallback and the export/queued-overflow path.
     """
 
     RUN_EVERY_MINS = 1
@@ -181,60 +275,25 @@ class ProcessReportRuns(CronJobBase):
     code = 'reporting.process_report_runs'
 
     def do(self):
+        self._requeue_stale_runs()
         pending = ReportRun.objects.filter(status=ReportRun.STATUS_PENDING).order_by('created_at')
         for run in pending[:1]:  # one at a time to avoid overloading the container
             self.process_run(run)
 
+    def _requeue_stale_runs(self):
+        """Re-queue runs stuck 'running' past the threshold (dead worker/thread)."""
+        cutoff = timezone.now() - timezone.timedelta(minutes=STALE_RUNNING_MINUTES)
+        stale = ReportRun.objects.filter(
+            status=ReportRun.STATUS_RUNNING, started_at__lt=cutoff
+        )
+        for run in stale:
+            logger.warning(f"Re-queuing stale running report run {run.id}")
+            run.status = ReportRun.STATUS_PENDING
+            run.started_at = None
+            run.save(update_fields=['status', 'started_at'])
+
     def process_run(self, run):
-        logger.info(f"Processing report run {run.id} for user {run.user}")
-        run.status = ReportRun.STATUS_RUNNING
-        run.started_at = timezone.now()
-        run.save(update_fields=['status', 'started_at'])
-
-        try:
-            rows = DataService.get_report_data(run.report, run.user, run.filter_values or {})
-            run.row_count = len(rows)
-
-            # Persist the rows for the on-screen results page.
-            with tempfile.NamedTemporaryFile(
-                mode='w', delete=False, suffix='.json', prefix='reportrun_'
-            ) as fh:
-                json.dump(rows, fh, cls=DjangoJSONEncoder)
-                run.result_path = fh.name
-
-            # Render a download file too, if this run asked for an export format.
-            if run.export_format:
-                response = ExportService.export_report(run.report, rows, run.export_format)
-                with tempfile.NamedTemporaryFile(
-                    delete=False, prefix='reportexport_'
-                ) as fh:
-                    fh.write(response.content)
-                    run.export_path = fh.name
-                run.export_content_type = response.get('Content-Type', 'application/octet-stream')
-                run.export_filename = _parse_content_disposition_filename(
-                    response.get('Content-Disposition', '')
-                )
-
-            run.status = ReportRun.STATUS_COMPLETE
-            run.completed_at = timezone.now()
-            run.save()
-
-            # last_run_at bookkeeping now happens here rather than in the request.
-            run.report.last_run_at = timezone.now()
-            run.report.save(update_fields=['last_run_at'])
-
-            logger.info(f"Report run {run.id} completed ({run.row_count} rows)")
-
-        except Exception as e:
-            run.status = ReportRun.STATUS_FAILED
-            run.error_message = str(e)
-            run.completed_at = timezone.now()
-            run.save()
-            # Single structured event (message + traceback) instead of two
-            # separate logger.error calls, which Sentry split into two issues
-            # for one failure (CHAOTICA-121/122). logger.exception attaches the
-            # active exception's traceback automatically.
-            logger.exception(f"Report run {run.id} failed: {e}")
+        process_report_run(run)
 
 
 class CleanupOldReportRuns(CronJobBase):
@@ -262,9 +321,11 @@ class CleanupOldReportRuns(CronJobBase):
             run.delete()
 
     def _remove_files(self, run):
-        for path in (run.result_path, run.export_path):
-            if path and os.path.exists(path):
-                try:
-                    os.remove(path)
-                except OSError as e:
-                    logger.error(f"Error deleting report run file {path}: {e}")
+        # On-screen rows live in run.result_json and go away with the row itself.
+        # The export file lives in default_storage (S3 in prod) - remove it.
+        if run.export_path:
+            try:
+                if default_storage.exists(run.export_path):
+                    default_storage.delete(run.export_path)
+            except Exception as e:
+                logger.error(f"Error deleting report export {run.export_path}: {e}")

@@ -50,5 +50,9 @@ urlpatterns = [
     path('admin/', reporting_admin.admin_dashboard, name='admin_dashboard'),
     path('admin/validate-fields/', reporting_admin.validate_fields, name='admin_validate_fields'),
     path('admin/delete-invalid-fields/', reporting_admin.delete_invalid_fields, name='admin_delete_invalid_fields'),
+    path('admin/fields/<int:field_id>/toggle/', reporting_admin.field_toggle, name='admin_field_toggle'),
+    path('admin/fields/<int:field_id>/delete/', reporting_admin.field_delete, name='admin_field_delete'),
+    path('admin/fields/reenable-disabled/', reporting_admin.reenable_disabled_fields, name='admin_reenable_disabled_fields'),
+    path('admin/fields/purge-disabled/', reporting_admin.purge_disabled_fields, name='admin_purge_disabled_fields'),
     path('admin/validate-reports/', reporting_admin.validate_reports, name='admin_validate_reports'),
 ]
