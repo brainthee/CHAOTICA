@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% load menu %}{% load static %}
+
+{% block pageTitle %}{% if internal_only %}WBS{% else %}Billing{% endif %} Analytics{% endblock pageTitle %}
+{% block head_title %}{% if internal_only %}WBS{% else %}Billing{% endif %} Analytics{% endblock head_title %}
+
+{% block breadcrumbItem %}
+<li class="breadcrumb-item text-sm"><a href="{% url 'billingcode_list' %}">Billing Codes</a></li>
+<li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">{% if internal_only %}WBS{% else %}Billing{% endif %} Analytics</li>
+{% endblock breadcrumbItem %}
+
+{% block content %}
+<div class="row pt-4 pb-2 align-items-center">
+  <div class="col-auto">
+    <h3 class="mb-0">{% if internal_only %}Internal (WBS){% else %}Billing{% endif %} Analytics</h3>
+    <p class="text-body-secondary fs-9 mb-0">Scheduled hours per billing code across your reachable teams. Person-days, not a timesheet.</p>
+  </div>
+  <div class="col-12 col-md-auto ms-md-auto mt-3 mt-md-0">
+    <form method="get" class="d-flex align-items-end gap-2">
+      <input type="hidden" name="dateRange" id="dateRangeField" value="{{ start_date|date:'Y-m-d' }} to {{ end_date|date:'Y-m-d' }}">
+      <div>
+        <label class="form-label fs-10 mb-1">From</label>
+        <input type="date" name="_start" value="{{ start_date|date:'Y-m-d' }}" class="form-control form-control-sm" onchange="document.getElementById('dateRangeField').value=this.value+' to '+this.form._end.value;">
+      </div>
+      <div>
+        <label class="form-label fs-10 mb-1">To</label>
+        <input type="date" name="_end" value="{{ end_date|date:'Y-m-d' }}" class="form-control form-control-sm" onchange="document.getElementById('dateRangeField').value=this.form._start.value+' to '+this.value;">
+      </div>
+      <button type="submit" class="btn btn-sm btn-phoenix-primary">Update</button>
+    </form>
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-6 col-md-3">
+    <div class="card h-100"><div class="card-body py-3">
+      <p class="text-body-secondary fs-10 mb-1">Total hours</p>
+      <h4 class="mb-0">{{ totals.hours|floatformat:1 }}</h4>
+    </div></div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card h-100"><div class="card-body py-3">
+      <p class="text-body-secondary fs-10 mb-1">Chargeable hours</p>
+      <h4 class="mb-0 text-success">{{ totals.chargeable|floatformat:1 }}</h4>
+    </div></div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card h-100"><div class="card-body py-3">
+      <p class="text-body-secondary fs-10 mb-1">Internal hours</p>
+      <h4 class="mb-0 text-info">{{ totals.internal|floatformat:1 }}</h4>
+    </div></div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card h-100"><div class="card-body py-3">
+      <p class="text-body-secondary fs-10 mb-1">Codes in use</p>
+      <h4 class="mb-0">{{ per_code|length }}</h4>
+    </div></div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-12 col-xl-6">
+    <div class="card h-100">
+      <div class="card-header"><h5 class="mb-0">Hours per code</h5></div>
+      <div class="card-body">
+        <div id="code-hours-chart" style="height:280px;"></div>
+      </div>
+    </div>
+  </div>
+  {% if not internal_only %}
+  <div class="col-12 col-xl-6">
+    <div class="card h-100">
+      <div class="card-header"><h5 class="mb-0">Per client</h5></div>
+      <div class="card-body p-0">
+        <table class="table table-sm align-middle mb-0">
+          <thead><tr class="fs-9 text-body-secondary">
+            <th class="ps-3">Client</th><th class="text-end">Chargeable</th><th class="text-end">Internal</th><th class="text-end pe-3">Total</th>
+          </tr></thead>
+          <tbody>
+            {% for b in by_client %}
+              <tr>
+                <td class="ps-3 fs-9">{% if b.client %}{{ b.client }}{% else %}<em class="text-body-secondary">Internal / no client</em>{% endif %}</td>
+                <td class="text-end fs-9">{{ b.chargeable_hours|floatformat:1 }}</td>
+                <td class="text-end fs-9">{{ b.internal_hours|floatformat:1 }}</td>
+                <td class="text-end pe-3 fs-9">{{ b.hours|floatformat:1 }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="4" class="text-center text-body-secondary py-4">No usage in this window.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<div class="card mt-3">
+  <div class="card-header"><h5 class="mb-0">Per code</h5></div>
+  <div class="card-body p-0">
+    <table class="table table-sm align-middle mb-0">
+      <thead><tr class="fs-9 text-body-secondary">
+        <th class="ps-3">Code</th><th>Client</th><th class="text-center">Type</th><th class="text-end">Person-days</th><th class="text-end pe-3">Hours</th>
+      </tr></thead>
+      <tbody>
+        {% for c in per_code %}
+          <tr>
+            <td class="ps-3"><a href="{{ c.code.get_absolute_url }}">{{ c.code.code }}</a></td>
+            <td class="fs-9">{% if c.code.client %}{{ c.code.client }}{% else %}<em class="text-body-secondary">—</em>{% endif %}</td>
+            <td class="text-center fs-10">
+              {% if c.is_chargeable %}<span class="badge badge-phoenix badge-phoenix-success">Chargeable</span>{% endif %}
+              {% if c.is_internal %}<span class="badge badge-phoenix badge-phoenix-info">Internal</span>{% endif %}
+            </td>
+            <td class="text-end fs-9">{{ c.days }}</td>
+            <td class="text-end pe-3 fs-9">{{ c.hours|floatformat:1 }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="5" class="text-center text-body-secondary py-4">No usage in this window.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  (function () {
+    if (typeof echarts === 'undefined') { return; }
+    var el = document.getElementById('code-hours-chart');
+    if (!el) { return; }
+    var names = [{% for c in per_code %}"{{ c.code.code|escapejs }}",{% endfor %}];
+    var values = [{% for c in per_code %}{{ c.hours|floatformat:1 }},{% endfor %}];
+    if (!names.length) { return; }
+    var chart = echarts.init(el);
+    chart.setOption({
+      grid: { left: 120, right: 20, top: 10, bottom: 20 },
+      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: '{b}: {c}h' },
+      xAxis: { type: 'value' },
+      yAxis: { type: 'category', data: names.slice().reverse(), axisLabel: { fontSize: 10 } },
+      series: [{ type: 'bar', data: values.slice().reverse() }]
+    });
+    window.addEventListener('resize', function () { chart.resize(); });
+  })();
+</script>
+{% endblock content %}

@@ -47,6 +47,7 @@
                 <div class="dropdown-menu shadow dropdown-menu-end me-sm-n4 me-n3" aria-labelledby="navbarDropdownMenuLink">
                   {% if 'change_project' in project_perms or perms.jobtracker.change_project %}
                     <a class="dropdown-item" href="{% url 'project_update' project.slug %}">Edit</a>
+                    <button data-url="{% url 'assign_project_billingcodes' project.slug %}" class="dropdown-item js-load-modal-form">Assign Billing Codes</button>
                   {% endif %}
                   {% if 'delete_project' in project_perms or perms.jobtracker.delete_project %}
                     <a href="{% url 'project_delete' project.slug %}" class="dropdown-item text-danger">Delete</a>
@@ -131,10 +132,13 @@
                     </td>
                     <td class="d-none d-sm-block pe-sm-2">:</td>
                     <td class="">
-                      <div class="d-flex">
-                        {% for billingcode in project.charge_codes.all %}
+                      <div class="d-flex flex-wrap">
+                        {% for assignment in project.get_billing_assignments %}
                           <div class="m-1">
-                            {% include 'partials/billingcode/billingcode_badge.html' with billingcode=billingcode %}
+                            {% include 'partials/billingcode/billingcode_badge.html' with billingcode=assignment.code %}
+                            {% if assignment.start_date or assignment.end_date %}
+                              <span class="fs-10 text-body-secondary">({{ assignment.start_date|default:"…" }} → {{ assignment.end_date|default:"…" }})</span>
+                            {% endif %}
                           </div>
                         {% endfor %}
                       </div>

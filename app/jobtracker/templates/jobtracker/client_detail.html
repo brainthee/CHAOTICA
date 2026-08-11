@@ -117,6 +117,9 @@
           <li class="nav-item text-nowrap me-2" role="presentation">
             <a class="nav-link" id="frameworks-tab" data-bs-toggle="tab" href="#frameworks" role="tab" aria-controls="tab-frameworks" aria-selected="false" tabindex="-1"><span class="fa-solid fa-clipboard me-2 tab-icon-color"></span>Framework Agreements</a>
           </li>
+          <li class="nav-item" role="presentation">
+            <a class="nav-link" id="billingcodes-tab" data-bs-toggle="tab" href="#billingcodes" role="tab" aria-controls="tab-billingcodes" aria-selected="false" tabindex="-1"><span class="fa-solid fa-file-invoice-dollar me-2 tab-icon-color"></span>Billing Codes</a>
+          </li>
           <li class="nav-item text-nowrap me-2" role="presentation">
             <a class="nav-link" id="onboarding-tab" data-bs-toggle="tab" href="#onboarding" role="tab" aria-controls="tab-onboarding" aria-selected="false" tabindex="-1"><span class="fa-solid fa-person-snowboarding me-2 tab-icon-color"></span>Onboarding</a>
           </li>
@@ -164,6 +167,25 @@
             <div class="row">
               <div class="p-0 pt-3 bg-body-emphasis border-top border-200 position-relative top-1">
                 {% include 'partials/client/frameworks_table.html' with frameworks=frameworks %}
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-pane fade" id="billingcodes" role="tabpanel" aria-labelledby="billingcodes-tab">
+            <div class="row mb-3">
+              <div class="col-auto my-auto">
+                <h4>Billing Codes</h4>
+              </div>
+              {% if perms.jobtracker.add_billingcode %}
+              <div class="col-4 text-end ms-sm-auto me-sm-0 mx-auto mt-3">
+                <a href="{% url 'billingcode_create' %}" class="btn btn-phoenix-primary ms-auto">Add Billing Code</a>
+              </div>
+              {% endif %}
+            </div>
+
+            <div class="row">
+              <div class="p-0 pt-3 bg-body-emphasis border-top border-200 position-relative top-1">
+                {% include 'partials/client/billingcodes_table.html' with billing_codes=client.billing_codes.all %}
               </div>
             </div>
           </div>

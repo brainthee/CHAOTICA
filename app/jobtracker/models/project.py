@@ -126,11 +126,6 @@ class Project(models.Model):
         help_text="If left blank, this will be automatically determined from scheduled slots",
     )
 
-    # Sales fields
-    charge_codes = models.ManyToManyField(
-        "BillingCode", verbose_name="Charge Code", related_name="projects", blank=True
-    )
-
     # People Fields
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -154,8 +149,23 @@ class Project(models.Model):
         verbose_name = "Project"
         ordering = [Lower("title")]
 
+    @property
+    def charge_codes(self):
+        """Backwards-compatible accessor: the distinct billing codes on this project.
+
+        Now backed by :class:`BillingCodeAssignment` rows; kept as a property
+        returning a queryset so ``project.charge_codes.all`` keeps working.
+        """
+        from ..models import BillingCode
+
+        return BillingCode.objects.filter(assignments__project=self).distinct()
+
+    def get_billing_assignments(self):
+        """Billing-code assignments attached directly to this project."""
+        return self.billing_code_assignments.select_related("code")
+
     def is_chargable(self):
-        return self.charge_codes.exists()
+        return self.billing_code_assignments.exists()
 
     def __str__(self):
         return "{id}: {title}".format(id=self.id, title=self.title)

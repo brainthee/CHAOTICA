@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load menu %}{% load static %}
+
+{% block pageTitle %}Internal Codes (WBS){% endblock pageTitle %}
+{% block head_title %}Internal Codes (WBS){% endblock head_title %}
+
+{% block headerBlock_css %}mb-6{% endblock headerBlock_css %}
+
+{% block breadcrumbItem %}
+<li class="breadcrumb-item text-sm"><a href="{% url 'billingcode_list' %}">Billing Codes</a></li>
+<li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">Internal Codes (WBS)</li>
+{% endblock breadcrumbItem %}
+
+{% block content %}
+<div class="row mb-4 gx-6 gy-3 mt-2 align-items-center">
+  <div class="col">
+    <h2 class="mb-0">Internal Codes (WBS)</h2>
+    <p class="text-body-secondary fs-9 mb-0">Client-less billing codes used for internal / work-breakdown-structure activity.</p>
+  </div>
+  <div class="col-auto d-flex justify-content-end">
+    <a class="btn btn-phoenix-secondary me-2" href="{% url 'billingcode_wbs_analytics' %}">
+      <i class="fa-solid fa-chart-pie me-2"></i> WBS Analytics
+    </a>
+    <a class="btn btn-phoenix-primary" href="{% url 'billingcode_create' %}">
+      <i class="fa-solid fa-plus me-2"></i> Add new Billing Code
+    </a>
+  </div>
+</div>
+
+<div class="mx-n4 px-3 py-3 mx-lg-n6 px-lg-6 bg-body-emphasis border-top border-bottom border-200 position-relative top-1">
+  {% include 'partials/billingcode/billingcode_list_table.html' %}
+</div>
+{% endblock content %}

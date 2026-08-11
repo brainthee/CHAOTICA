@@ -156,6 +156,28 @@ Menu.add_item(
 Menu.add_item(
     "ops",
     PermMenuItem(
+        "Billing Analytics",
+        reverse("billingcode_analytics"),
+        check=lambda request: request.user.is_authenticated,
+        perm="jobtracker.view_billingcode",
+        icon="chart-pie",
+        weight=5,
+    ),
+)
+Menu.add_item(
+    "ops",
+    PermMenuItem(
+        "Internal Codes (WBS)",
+        reverse("billingcode_wbs_list"),
+        check=lambda request: request.user.is_authenticated,
+        perm="jobtracker.view_billingcode",
+        icon="diagram-project",
+        weight=5,
+    ),
+)
+Menu.add_item(
+    "ops",
+    PermMenuItem(
         "Organisational Units",
         reverse("organisationalunit_list"),
         check=lambda request: request.user.is_authenticated,

@@ -33,6 +33,7 @@ nav:
       - Adding Clients: user_guide/clients/adding_clients.md
       - Managing Contacts: user_guide/clients/managing_contacts.md
       - Framework Agreements: user_guide/clients/framework_agreements.md
+      - Billing Codes: user_guide/clients/billing_codes.md
     - Organisational Units:
       - Overview: user_guide/organisational_units/overview.md
       - Pre-loading & Importing Members: user_guide/organisational_units/preloading_members.md

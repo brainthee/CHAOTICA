@@ -158,6 +158,11 @@ urlpatterns = [
     # Other user profile bits
     path("profile/<str:email>", views.UserDetailView.as_view(), name="user_profile"),
     path(
+        "profile/<str:email>/allocations",
+        views.user_code_allocation,
+        name="user_code_allocation",
+    ),
+    path(
         "profile/<str:email>/assign_role/",
         views.user_assign_global_role,
         name="user_assign_global_role",

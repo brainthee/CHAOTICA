@@ -84,6 +84,7 @@ def audit_user_login_failed(sender, credentials=None, request=None, **kwargs):
 # / delete on plain models.
 _AUDITED_MODELS = {
     ("jobtracker", "BillingCode"): "finance",
+    ("jobtracker", "BillingCodeAssignment"): "finance",
     ("chaotica_utils", "UserCost"): "finance",
     ("jobtracker", "Service"): "config",
     ("jobtracker", "Skill"): "config",
@@ -103,7 +104,6 @@ _AUDITED_M2M = {
     ("chaotica_utils", "User", "groups"): "security",  # global roles
     ("jobtracker", "OrganisationalUnitMember", "roles"): "security",
     ("jobtracker", "OrganisationalUnit", "leads"): "security",
-    ("jobtracker", "Job", "charge_codes"): "finance",
     ("jobtracker", "Skill", "prerequisites"): "config",
     ("jobtracker", "Skill", "related_skills"): "config",
 }

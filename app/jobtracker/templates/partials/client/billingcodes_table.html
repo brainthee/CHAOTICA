@@ -1,0 +1,57 @@
+<table class="table align-items-center mb-0">
+    <caption>Billing Code List</caption>
+    <thead>
+        <tr>
+            <th class="px-3 text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Code</th>
+            <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Type</th>
+            <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Region</th>
+            <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Usage</th>
+            <th class="text-end px-3 text-uppercase text-secondary text-xxs font-weight-bolder opacity-7"></th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for billingcode in billing_codes %}
+        <tr>
+            <td class="px-3">
+                <h6 class="mb-0 text-xs">
+                    <a href="{{ billingcode.get_absolute_url }}">{{ billingcode.code }}</a>
+                    {% if billingcode.is_closed %}
+                        <span class="badge badge-phoenix badge-phoenix-secondary">Closed</span>
+                    {% endif %}
+                </h6>
+            </td>
+            <td class="align-middle text-center text-sm">
+                {% if billingcode.is_chargeable %}
+                    <span class="badge badge-phoenix badge-phoenix-success">Chargeable</span>
+                {% endif %}
+                {% if billingcode.is_internal %}
+                    <span class="badge badge-phoenix badge-phoenix-info">Internal</span>
+                {% endif %}
+                {% if billingcode.is_recoverable %}
+                    <span class="badge badge-phoenix badge-phoenix-warning">Recoverable</span>
+                {% endif %}
+            </td>
+            <td class="align-middle text-center text-sm">
+                <p class="text-xs text-secondary mb-0">{{ billingcode.region.name }}</p>
+            </td>
+            <td class="align-middle text-center text-sm">
+                <p class="text-body-secondary fs-10 mb-0">{{ billingcode.assignments.count }} assignment{{ billingcode.assignments.count|pluralize }}</p>
+            </td>
+            <td class="align-middle text-end text-sm pe-3">
+                {% if perms.jobtracker.change_billingcode %}
+                    <a href="{% url 'billingcode_update' billingcode.code %}" class="btn btn-sm btn-phoenix-secondary">Edit</a>
+                {% endif %}
+                {% if perms.jobtracker.delete_billingcode %}
+                    <a href="{% url 'billingcode_delete' billingcode.code %}" class="btn btn-sm btn-phoenix-danger">Delete</a>
+                {% endif %}
+            </td>
+        </tr>
+    {% empty %}
+        <tr>
+            <td colspan="5">
+                <p class="text-xs px-3 text-secondary mb-0">No billing codes found</p>
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>

@@ -74,6 +74,24 @@ def view_phase_schedule_members(request, job_slug, slug):
     )
 
 
+@job_permission_required_or_403(
+    "jobtracker.can_update_job", (Phase, "slug", "slug")
+)
+def assign_phase_billingcodes(request, job_slug, slug):
+    from ..forms import phase_billingcode_formset
+    from .job import _process_assign_billingcodes
+
+    phase = get_object_or_404(Phase, slug=slug, job__slug=job_slug)
+    return _process_assign_billingcodes(
+        request,
+        target=phase,
+        formset_cls=phase_billingcode_formset(),
+        client=phase.job.client,
+        template="modals/assign_phase_billingcodes.html",
+        extra_context={"phase": phase, "job": phase.job},
+    )
+
+
 @job_permission_required_or_403("jobtracker.can_update_job", (Phase, "slug", "slug"))
 def assign_phase_field(request, job_slug, slug, field):
     valid_fields = ["project_lead", "report_author", "techqa_by", "presqa_by"]
