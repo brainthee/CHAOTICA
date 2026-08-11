@@ -84,13 +84,31 @@ class Command(BaseCommand):
 def _validate_field_path(model_class, data_field):
     """Validate a DataField's field_path against the Django model."""
     field_path = data_field.field_path
-    parts = field_path.split('__')
-    current_model = model_class
     result = {
         'status': 'valid',
         'error': None,
         'resolved_type': None,
     }
+
+    # Resolver-sourced fields are computed in Python (field_path is a sentinel like
+    # 'resolver:charge_codes'); validate the resolver_key against the registry.
+    if data_field.source_type == DataField.SOURCE_RESOLVER:
+        from reporting.resolvers import REPORTING_RESOLVERS
+        key = data_field.resolver_key
+        if not key:
+            result['status'] = 'invalid'
+            result['error'] = "Resolver field has no resolver_key set."
+        elif key not in REPORTING_RESOLVERS:
+            result['status'] = 'invalid'
+            result['error'] = (
+                f"resolver_key '{key}' is not registered in REPORTING_RESOLVERS."
+            )
+        else:
+            result['resolved_type'] = f'resolver:{key}'
+        return result
+
+    parts = field_path.split('__')
+    current_model = model_class
 
     for part in parts:
         if part.startswith('_'):

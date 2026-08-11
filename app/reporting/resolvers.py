@@ -204,8 +204,11 @@ REPORTING_RESOLVERS = {
     ),
     # Job M2M / computed fields.
     "job.charge_codes": Resolver(
-        lambda job, ctx: _join_names(job.charge_codes.all(), "code"),
-        prefetch_related=("charge_codes",),
+        lambda job, ctx: _join_names(
+            {a.code_id: a.code for a in job.billing_code_assignments.all()}.values(),
+            "code",
+        ),
+        prefetch_related=("billing_code_assignments__code",),
     ),
     "job.indicative_services": Resolver(
         lambda job, ctx: _join_names(job.indicative_services.all(), "name"),

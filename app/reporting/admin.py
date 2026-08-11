@@ -147,7 +147,7 @@ class ReportRunAdmin(admin.ModelAdmin):
     search_fields = ['id', 'report__name', 'user__email']
     raw_id_fields = ['report', 'user']
     readonly_fields = [
-        'id', 'report', 'user', 'filter_values', 'export_format', 'result_path',
-        'row_count', 'export_path', 'export_content_type', 'export_filename',
+        'id', 'report', 'user', 'filter_values', 'export_format', 'row_count',
+        'export_path', 'export_content_type', 'export_filename',
         'error_message', 'created_at', 'started_at', 'completed_at',
     ]

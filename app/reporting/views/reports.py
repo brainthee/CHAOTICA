@@ -1,11 +1,10 @@
-import os
-
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from chaotica_utils.mixins import ObjectActivityMixin
 from django.contrib import messages
+from django.core.files.storage import default_storage
 from django.http import JsonResponse, HttpResponseRedirect, Http404, FileResponse
 from django.views.generic import ListView, DetailView, DeleteView
 from django.views.decorators.http import require_POST, require_safe, require_http_methods
@@ -15,12 +14,12 @@ import logging
 from ..models import Report, ReportCategory, ReportFilter, ReportRun
 from ..services.data_service import DataService
 from ..services.export_service import ExportService
+from ..tasks import run_inline_within_budget
 from ..permissions import (
     can_view_report, can_edit_report, can_delete_report,
     ReportAccessMixin, ReportEditMixin, ReportDeleteMixin
 )
 
-import json
 from django.utils import timezone
 
 @login_required
@@ -183,6 +182,16 @@ def run_report(request, uuid):
         export_format=export_format or None,
     )
 
+    # Fast path: on-screen results are run inline with a short time budget so
+    # snappy reports return immediately instead of waiting for the ~1-min cron
+    # pickup. Exports (potentially large files) always go through the background
+    # path. Anything that overruns the budget falls back to the polling page and
+    # keeps running in the background.
+    if not run.export_format and run_inline_within_budget(run):
+        run.refresh_from_db()
+        if run.status == ReportRun.STATUS_COMPLETE:
+            return redirect('reporting:report_run_result', uuid=report.uuid, run_id=run.id)
+
     return render(request, 'reporting/report_running.html', {
         'report': report,
         'run': run,
@@ -238,24 +247,24 @@ def report_run_result(request, uuid, run_id):
     if run.status != ReportRun.STATUS_COMPLETE:
         return redirect('reporting:report_detail', uuid=report.uuid)
 
-    # Export download
+    # Export download - streamed from default_storage (S3 in prod) server-side so
+    # the file stays private and works regardless of which instance produced it.
     if run.is_export:
-        if not run.export_path or not os.path.exists(run.export_path):
+        if not run.export_path or not default_storage.exists(run.export_path):
             messages.error(request, "The exported file has expired. Please run the report again.")
             return redirect('reporting:report_detail', uuid=report.uuid)
         response = FileResponse(
-            open(run.export_path, 'rb'),
+            default_storage.open(run.export_path, 'rb'),
             content_type=run.export_content_type or 'application/octet-stream',
         )
         response['Content-Disposition'] = f'attachment; filename="{run.export_filename or "report"}"'
         return response
 
-    # On-screen HTML results, rendered from the persisted rows.
-    if not run.result_path or not os.path.exists(run.result_path):
+    # On-screen HTML results, rendered from the DB-persisted rows.
+    if run.result_json is None:
         messages.error(request, "These results have expired. Please run the report again.")
         return redirect('reporting:report_detail', uuid=report.uuid)
-    with open(run.result_path) as fh:
-        data = json.load(fh)
+    data = run.result_json
 
     runtime_filters = report.filters.filter(prompt_at_runtime=True)
     return render(request, 'reporting/report_results.html', {

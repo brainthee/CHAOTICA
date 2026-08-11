@@ -133,7 +133,10 @@ class ResolverTests(SimpleTestCase):
         from jobtracker.enums import JobStatuses
         job = SimpleNamespace(
             status=JobStatuses.PENDING_START,
-            charge_codes=_StubRelation([SimpleNamespace(code='ABC-1'), SimpleNamespace(code='ABC-2')]),
+            billing_code_assignments=_StubRelation([
+                SimpleNamespace(code_id=1, code=SimpleNamespace(code='ABC-1')),
+                SimpleNamespace(code_id=2, code=SimpleNamespace(code='ABC-2')),
+            ]),
             indicative_services=_StubRelation([SimpleNamespace(name='Web App')]),
             scoped_by=_StubRelation([
                 SimpleNamespace(id=1, get_full_name=lambda: 'Zoe Zheng'),
@@ -234,7 +237,7 @@ class ScheduledReportLogicTests(SimpleTestCase):
         self.assertEqual(len(groups['x@x.com']), 2)
 
 
-from django.test import TestCase
+from django.test import TestCase, TransactionTestCase
 from guardian.shortcuts import assign_perm
 
 
@@ -324,7 +327,6 @@ class RunAsUserFormTests(TestCase):
 
 
 from unittest import mock
-import os
 
 
 def _make_report(owner):
@@ -347,12 +349,6 @@ class ReportRunProcessingTests(TestCase):
         self.user = User.objects.create_user(email="runproc@test.com", password="pw12345")
         self.report = _make_report(self.user)
 
-    def _addCleanupFiles(self, run):
-        run.refresh_from_db()
-        for path in (run.result_path, run.export_path):
-            if path:
-                self.addCleanup(lambda p=path: os.path.exists(p) and os.remove(p))
-
     def test_html_run_marks_complete_and_persists_rows(self):
         from reporting.models import ReportRun
         from reporting.tasks import ProcessReportRuns
@@ -360,15 +356,16 @@ class ReportRunProcessingTests(TestCase):
         rows = [{"id": 1, "title": "A"}, {"id": 2, "title": "B"}]
         with mock.patch("reporting.tasks.DataService.get_report_data", return_value=rows):
             ProcessReportRuns().process_run(run)
-        self._addCleanupFiles(run)
         run.refresh_from_db()
         self.assertEqual(run.status, ReportRun.STATUS_COMPLETE)
         self.assertEqual(run.row_count, 2)
-        self.assertTrue(run.result_path and os.path.exists(run.result_path))
+        # Rows now live in the DB, not a node-local temp file.
+        self.assertEqual(run.result_json, rows)
         self.report.refresh_from_db()
         self.assertIsNotNone(self.report.last_run_at)
 
     def test_export_run_writes_download_file(self):
+        from django.core.files.storage import default_storage
         from django.http import HttpResponse
         from reporting.models import ReportRun
         from reporting.tasks import ProcessReportRuns
@@ -378,10 +375,11 @@ class ReportRunProcessingTests(TestCase):
         with mock.patch("reporting.tasks.DataService.get_report_data", return_value=[{"id": 1}]), \
              mock.patch("reporting.tasks.ExportService.export_report", return_value=fake):
             ProcessReportRuns().process_run(run)
-        self._addCleanupFiles(run)
         run.refresh_from_db()
+        self.addCleanup(lambda: default_storage.exists(run.export_path) and default_storage.delete(run.export_path))
         self.assertEqual(run.status, ReportRun.STATUS_COMPLETE)
-        self.assertTrue(run.export_path and os.path.exists(run.export_path))
+        # Export is stored via default_storage (S3 in prod), not a local path.
+        self.assertTrue(run.export_path and default_storage.exists(run.export_path))
         self.assertEqual(run.export_content_type, "text/csv")
         self.assertEqual(run.export_filename, "test.csv")
 
@@ -394,6 +392,45 @@ class ReportRunProcessingTests(TestCase):
         run.refresh_from_db()
         self.assertEqual(run.status, ReportRun.STATUS_FAILED)
         self.assertIn("boom", run.error_message)
+
+    def test_stale_running_run_is_requeued(self):
+        from django.utils import timezone
+        from reporting.models import ReportRun
+        from reporting.tasks import ProcessReportRuns, STALE_RUNNING_MINUTES
+        stale = ReportRun.objects.create(
+            report=self.report, user=self.user,
+            status=ReportRun.STATUS_RUNNING,
+            started_at=timezone.now() - timezone.timedelta(minutes=STALE_RUNNING_MINUTES + 1),
+        )
+        ProcessReportRuns()._requeue_stale_runs()
+        stale.refresh_from_db()
+        self.assertEqual(stale.status, ReportRun.STATUS_PENDING)
+        self.assertIsNone(stale.started_at)
+
+
+class ReportRunInlineTests(TransactionTestCase):
+    """The inline fast-path runs a report in a worker thread within a budget.
+
+    Uses TransactionTestCase so the created run is committed and visible to the
+    worker thread's separate DB connection (mirrors autocommit prod requests).
+    """
+
+    def setUp(self):
+        from chaotica_utils.models import User
+        self.user = User.objects.create_user(email="inline@test.com", password="pw12345")
+        self.report = _make_report(self.user)
+
+    def test_inline_within_budget_completes_synchronously(self):
+        from reporting.models import ReportRun
+        from reporting.tasks import run_inline_within_budget
+        run = ReportRun.objects.create(report=self.report, user=self.user)
+        rows = [{"id": 1, "title": "A"}]
+        with mock.patch("reporting.tasks.DataService.get_report_data", return_value=rows):
+            finished = run_inline_within_budget(run, budget_seconds=10)
+        self.assertTrue(finished)
+        run.refresh_from_db()
+        self.assertEqual(run.status, ReportRun.STATUS_COMPLETE)
+        self.assertEqual(run.result_json, rows)
 
 
 class ReportRunStatusEndpointTests(TestCase):
