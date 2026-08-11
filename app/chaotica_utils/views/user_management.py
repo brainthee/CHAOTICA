@@ -139,6 +139,9 @@ class UserDetailView(UserBaseView, DetailView):
             name=prefix + GlobalRoles.CHOICES[GlobalRoles.ADMIN][1]
         ).exists()
         context["can_view_permissions"] = is_admin
+        context["can_view_allocation"] = self.get_object().can_be_managed_by(
+            self.request.user
+        )
         if is_admin:
             context["user_permissions"] = self._get_effective_permissions(
                 self.get_object(), prefix
@@ -210,6 +213,84 @@ class UserDetailView(UserBaseView, DetailView):
 def view_own_profile(request):
     # Redirect to public profile
     return HttpResponseRedirect(redirect_to=request.user.get_absolute_url())
+
+
+def _parse_allocation_range(request):
+    """Parse the ``dateRange`` / ``start_date`` / ``end_date`` GET params.
+
+    Mirrors the convention used by ``team_stats_partial`` / ``UserDetailView``.
+    Defaults to the next four weeks (a forward-looking allocation view).
+    """
+    start = end = None
+    date_range_raw = request.GET.get("dateRange", "")
+    if " to " in date_range_raw:
+        parts = date_range_raw.split(" to ")
+        if len(parts) == 2:
+            try:
+                start = datetime.datetime.strptime(parts[0], "%Y-%m-%d").date()
+                end = datetime.datetime.strptime(parts[1], "%Y-%m-%d").date()
+            except ValueError:
+                start = end = None
+    # Also accept discrete start_date / end_date params (the picker form posts
+    # these) as a fallback.
+    if start is None or end is None:
+        try:
+            if request.GET.get("start_date"):
+                start = datetime.datetime.strptime(
+                    request.GET["start_date"], "%Y-%m-%d"
+                ).date()
+            if request.GET.get("end_date"):
+                end = datetime.datetime.strptime(
+                    request.GET["end_date"], "%Y-%m-%d"
+                ).date()
+        except ValueError:
+            start = end = None
+    if start is None or end is None:
+        today = timezone.now().date()
+        start = today
+        end = today + datetime.timedelta(days=28)
+    return start, end
+
+
+@login_required
+def user_code_allocation(request, email):
+    """"Code Allocations" for a user: which billing code(s) to book against,
+    on which days, for how many hours.
+
+    Deliberately not a timesheet — it reads the schedule against the effective
+    billing-code assignments. Visible to the user themselves and to anyone who
+    can manage them (unit managers / leads), reusing
+    :meth:`User.can_be_managed_by`.
+    """
+    target = get_object_or_404(User, email=email)
+    if not target.can_be_managed_by(request.user):
+        return HttpResponseForbidden()
+
+    start, end = _parse_allocation_range(request)
+    allocation = target.get_billing_allocation(start, end)
+
+    # per_code is keyed by code id; present as a sorted list for the template.
+    per_code = sorted(
+        allocation["per_code"].values(),
+        key=lambda c: str(c["code"].code).lower(),
+    )
+
+    context = page_defaults(request)
+    context.update(
+        {
+            "userProfile": target,
+            "start_date": start,
+            "end_date": end,
+            "date_range": "{} to {}".format(start, end),
+            "per_day": allocation["per_day"],
+            "per_code": per_code,
+        }
+    )
+    return HttpResponse(
+        loader.render_to_string(
+            "chaotica_utils/user_code_allocation.html", context, request=request
+        )
+    )
 
 
 @login_required

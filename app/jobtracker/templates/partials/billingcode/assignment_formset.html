@@ -1,0 +1,52 @@
+{% load widget_tweaks %}
+{# Renders an inline formset of BillingCodeAssignment rows.               #}
+{# Dated rows apply only within their range; a row with no dates applies  #}
+{# for the whole target span (see the model docstring).                   #}
+<div class="modal-body pt-3">
+    {{ formset.management_form }}
+    {% if formset.non_form_errors %}
+        <div class="alert alert-danger py-2">{{ formset.non_form_errors }}</div>
+    {% endif %}
+    <table class="table table-sm align-middle mb-0" id="billingcode-assignment-table">
+        <thead>
+            <tr class="fs-9 text-body-secondary">
+                <th style="width:50%">Billing Code</th>
+                <th>Start date</th>
+                <th>End date</th>
+                <th class="text-center">Remove</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for form in formset %}
+            <tr>
+                <td>
+                    {{ form.id }}
+                    {{ form.code }}
+                    {% if form.code.errors %}<div class="text-danger fs-10">{{ form.code.errors }}</div>{% endif %}
+                </td>
+                <td>
+                    {{ form.start_date }}
+                    {% if form.start_date.errors %}<div class="text-danger fs-10">{{ form.start_date.errors }}</div>{% endif %}
+                </td>
+                <td>
+                    {{ form.end_date }}
+                    {% if form.end_date.errors %}<div class="text-danger fs-10">{{ form.end_date.errors }}</div>{% endif %}
+                </td>
+                <td class="text-center">
+                    {% if form.instance.pk %}{{ form.DELETE }}{% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <p class="fs-10 text-body-secondary mt-2 mb-0">
+        Leave both dates blank for a code that applies for the whole span. Add a
+        date range to have a code apply only for part of it — several dated codes
+        can coexist. Blank rows are ignored.
+    </p>
+</div>
+<div class="modal-footer">
+    <div class="button-row d-flex">
+        <button type="submit" class="btn btn-outline-success ms-auto mb-0">Save</button>
+    </div>
+</div>

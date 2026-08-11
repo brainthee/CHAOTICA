@@ -230,6 +230,11 @@ urlpatterns = [
         name="project_stats_partial",
     ),
     path(
+        "project/<uuid:slug>/assign/billingcodes",
+        views.assign_project_billingcodes,
+        name="assign_project_billingcodes",
+    ),
+    path(
         "project/<uuid:slug>/schedule/slot/<int:pk>/delete",
         views.ProjectSlotDeleteView.as_view(),
         name="project_slot_delete",
@@ -571,6 +576,11 @@ urlpatterns = [
         name="phase_schedule_onsite",
     ),
     path(
+        "job/<str:job_slug>/phase/<str:slug>/assign/billingcodes",
+        views.assign_phase_billingcodes,
+        name="assign_phase_billingcodes",
+    ),
+    path(
         "job/<str:job_slug>/phase/<str:slug>/assign/<str:field>",
         views.assign_phase_field,
         name="assign_phase_field",
@@ -671,6 +681,22 @@ urlpatterns = [
         "ops/billingcodes/",
         views.BillingCodeListView.as_view(),
         name="billingcode_list",
+    ),
+    path(
+        "ops/billingcodes/wbs/",
+        views.BillingCodeWBSListView.as_view(),
+        name="billingcode_wbs_list",
+    ),
+    path(
+        "ops/billingcodes/analytics/",
+        views.billingcode_analytics,
+        name="billingcode_analytics",
+    ),
+    path(
+        "ops/billingcodes/wbs/analytics/",
+        views.billingcode_analytics,
+        {"internal_only": True},
+        name="billingcode_wbs_analytics",
     ),
     path(
         "ops/billingcode/create/",

@@ -23,6 +23,7 @@ from jobtracker.models import (
     OrganisationalUnitRole,
     Contact,
     BillingCode,
+    BillingCodeAssignment,
     UserSkill,
     FrameworkAgreement,
     Feedback,
@@ -688,7 +689,7 @@ class Command(BaseCommand):
                 is_chargeable=True,
                 is_recoverable=True,
             )
-            job.charge_codes.add(billing_code)
+            BillingCodeAssignment.objects.create(code=billing_code, job=job)
 
             num_phases = random.randint(1, 3)
             current_phase_date = job_start_date

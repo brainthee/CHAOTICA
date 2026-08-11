@@ -29,13 +29,22 @@ class JobBillingCodeAutocomplete(AutoResponseView):
         if not job_slug:
             return JsonResponse({'results': [], 'pagination': {'more': False}})
 
-        # TODO: return only if job allowed
         try:
             job = Job.objects.get(slug=job_slug)
         except Job.DoesNotExist:
             return JsonResponse({'results': [], 'pagination': {'more': False}})
 
-        qs = BillingCode.objects.filter(Q(client=job.client) | Q(client__isnull=True))
+        # Only expose codes if the user can actually view this job (its unit).
+        if not request.user.is_superuser:
+            units = get_objects_for_user(
+                request.user, "jobtracker.can_view_jobs", klass=OrganisationalUnit
+            )
+            if job.unit_id not in set(units.values_list("id", flat=True)):
+                return JsonResponse({'results': [], 'pagination': {'more': False}})
+
+        qs = BillingCode.objects.filter(
+            Q(client=job.client) | Q(client__isnull=True)
+        ).filter(is_closed=False)
 
         if self.term:
             qs = qs.filter(code__istartswith=self.term)

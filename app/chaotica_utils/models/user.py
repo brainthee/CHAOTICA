@@ -1546,6 +1546,17 @@ class User(AbstractUser):
             slots, start_date, end_date, working_days, holiday_dates
         )
 
+    def get_billing_allocation(self, start_date, end_date):
+        """Billing-code allocation for this user over a date range.
+
+        Delegates to :func:`chaotica_utils.utils.build_user_code_allocation`;
+        mirrors :meth:`calculate_user_utilization`. Returns ``per_day`` and
+        ``per_code`` breakdowns — see that function for the shape.
+        """
+        from ..utils import build_user_code_allocation
+
+        return build_user_code_allocation(self, start_date, end_date)
+
     def get_upcoming_availability(self, org=None):
         data = {}
         # Get future availability

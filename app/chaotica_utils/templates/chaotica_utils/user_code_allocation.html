@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block pageTitle %}Code Allocations — {{ userProfile }}{% endblock %}
+{% block head_title %}Code Allocations — {{ userProfile }}{% endblock %}
+
+{% block breadcrumbItem %}
+  <li class="breadcrumb-item text-sm"><a href="{% url 'user_list' %}">Users</a></li>
+  <li class="breadcrumb-item text-sm"><a href="{{ userProfile.get_absolute_url }}">{{ userProfile }}</a></li>
+  <li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">Code Allocations</li>
+{% endblock %}
+
+{% block content %}
+  <div class="row pt-4 pb-2 align-items-center">
+    <div class="col-auto">
+      <h3 class="mb-0">Code Allocations</h3>
+      <p class="text-body-secondary fs-9 mb-0">
+        Which billing code(s) {{ userProfile.first_name }} should book against, per day and per code.
+        This reads the schedule against effective billing-code assignments — it is not a timesheet.
+      </p>
+    </div>
+    <div class="col-12 col-md-auto ms-md-auto mt-3 mt-md-0">
+      <form method="get" class="d-flex align-items-end gap-2">
+        <div>
+          <label class="form-label fs-10 mb-1">From</label>
+          <input type="date" name="start_date" value="{{ start_date|date:'Y-m-d' }}" class="form-control form-control-sm">
+        </div>
+        <div>
+          <label class="form-label fs-10 mb-1">To</label>
+          <input type="date" name="end_date" value="{{ end_date|date:'Y-m-d' }}" class="form-control form-control-sm">
+        </div>
+        <button type="submit" class="btn btn-sm btn-phoenix-primary">Update</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-12 col-xl-7">
+      <div class="card h-100">
+        <div class="card-header"><h5 class="mb-0">Per day</h5></div>
+        <div class="card-body p-0">
+          <table class="table table-sm align-middle mb-0">
+            <thead>
+              <tr class="fs-9 text-body-secondary">
+                <th class="ps-3">Day</th>
+                <th>Code(s)</th>
+                <th class="text-end pe-3">Hours</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for day, entries in per_day.items %}
+                <tr>
+                  <td class="ps-3 fs-9">{{ day|date:'D d M Y' }}</td>
+                  <td>
+                    {% for entry in entries %}
+                      {% include 'partials/billingcode/billingcode_badge.html' with billingcode=entry.code %}
+                    {% endfor %}
+                  </td>
+                  <td class="text-end pe-3 fs-9">
+                    {% for entry in entries %}
+                      <div>{{ entry.hours|floatformat:2 }}</div>
+                    {% endfor %}
+                  </td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="3" class="text-center text-body-secondary py-4">No scheduled work with billing codes in this window.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-xl-5">
+      <div class="card h-100">
+        <div class="card-header"><h5 class="mb-0">Per code</h5></div>
+        <div class="card-body">
+          <div id="code-allocation-chart" style="height:220px;"></div>
+          <table class="table table-sm align-middle mb-0 mt-3">
+            <thead>
+              <tr class="fs-9 text-body-secondary">
+                <th>Code</th>
+                <th class="text-center">Type</th>
+                <th class="text-end">Days</th>
+                <th class="text-end">Hours</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for c in per_code %}
+                <tr>
+                  <td>{% include 'partials/billingcode/billingcode_badge.html' with billingcode=c.code %}</td>
+                  <td class="text-center fs-10">
+                    {% if c.is_chargeable %}<span class="badge badge-phoenix badge-phoenix-success">Chargeable</span>{% endif %}
+                    {% if c.is_internal %}<span class="badge badge-phoenix badge-phoenix-info">Internal</span>{% endif %}
+                  </td>
+                  <td class="text-end fs-9">{{ c.days }}</td>
+                  <td class="text-end fs-9">{{ c.hours|floatformat:2 }}</td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="4" class="text-center text-body-secondary py-4">No codes in this window.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      if (typeof echarts === 'undefined') { return; }
+      var el = document.getElementById('code-allocation-chart');
+      if (!el) { return; }
+      var data = [
+        {% for c in per_code %}
+          { value: {{ c.hours|floatformat:2 }}, name: "{{ c.code.code|escapejs }}" },
+        {% endfor %}
+      ];
+      if (!data.length) { return; }
+      var chart = echarts.init(el);
+      chart.setOption({
+        tooltip: { trigger: 'item', formatter: '{b}: {c}h ({d}%)' },
+        series: [{
+          type: 'pie', radius: ['45%', '70%'],
+          data: data,
+          label: { fontSize: 10 }
+        }]
+      });
+      window.addEventListener('resize', function () { chart.resize(); });
+    })();
+  </script>
+{% endblock %}

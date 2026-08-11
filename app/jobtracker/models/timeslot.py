@@ -488,6 +488,17 @@ class TimeSlot(models.Model):
         # Ensure we don't return negative hours
         return Decimal(max(0, adjusted_hours))
 
+    def get_daily_business_hours(self):
+        """Business hours worked per calendar day: ``{date: Decimal}``.
+
+        Thin wrapper over :func:`chaotica_utils.utils.slot_daily_hours` — see
+        there for the split-at-midnight semantics. Kept as a method so callers
+        holding a slot instance can ask it directly.
+        """
+        from chaotica_utils.utils import slot_daily_hours
+
+        return slot_daily_hours(self)
+
     def cost(self):
         # Only support a single cost field at the moment... :(
         if UserCost.objects.filter(user=self.user).exists():

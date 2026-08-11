@@ -27,6 +27,7 @@ from .models import (
     WorkflowTask,
     SkillCategory,
     BillingCode,
+    BillingCodeAssignment,
     OrganisationalUnitRole,
 )
 from chaotica_utils.models import Note, User, JobLevel, Group
@@ -543,53 +544,122 @@ class AssignJobFramework(forms.ModelForm):
         fields = ("associated_framework",)
 
 
-class AssignJobBillingCode(forms.ModelForm):
-    charge_codes = forms.ModelMultipleChoiceField(
-        required=False,
-        queryset=BillingCode.objects.filter(),
-        widget=s2forms.ModelSelect2MultipleWidget(
-            attrs={
-                "class": "select2-widget",
-                "data-html": True,
-                "data-ajax--url": "/autocomplete/billingcodes/",
-                "data-ajax--cache": "true",
-                "data-ajax--type": "GET",
-            },
-            search_fields=["code__icontains"],
-        ),
-    )
+class BillingCodeAssignmentForm(forms.ModelForm):
+    """A single dated billing-code assignment row (used inside a formset).
 
-    def __init__(self, *args, **kwargs):
-        super(AssignJobBillingCode, self).__init__(*args, **kwargs)
-        self.helper = FormHelper(self)
-        # Note: Forward functionality needs to be handled differently with django-select2
-        # You may need to customize the autocomplete view to filter based on job slug
-        self.helper.layout = Layout(
-            Div(
-                Row(
-                    Div(
-                        Field("charge_codes", style="width: 100%;"),
-                        css_class="input-group input-group-dynamic",
-                    )
-                ),
-                css_class="modal-body pt-3",
-            ),
-            Div(
-                Div(
-                    StrictButton(
-                        "Save",
-                        type="submit",
-                        css_class="btn btn-outline-success ms-auto mb-0",
-                    ),
-                    css_class="button-row d-flex",
-                ),
-                css_class="modal-footer",
-            ),
-        )
+    The ``code`` queryset is scoped to the target's client plus client-less
+    (internal) codes — passed in by the parent formset — which closes the
+    unfiltered-queryset gap the prior review flagged.
+    """
 
     class Meta:
-        model = Job
-        fields = ("charge_codes",)
+        model = BillingCodeAssignment
+        fields = ("code", "start_date", "end_date")
+        widgets = {
+            "start_date": forms.DateInput(
+                attrs={"type": "date", "class": "form-control form-control-sm"},
+                format="%Y-%m-%d",
+            ),
+            "end_date": forms.DateInput(
+                attrs={"type": "date", "class": "form-control form-control-sm"},
+                format="%Y-%m-%d",
+            ),
+        }
+
+    def __init__(self, *args, client=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        qs = BillingCode.objects.filter(is_closed=False)
+        if client is not None:
+            qs = qs.filter(Q(client=client) | Q(client__isnull=True))
+        else:
+            qs = qs.filter(client__isnull=True)
+        self.fields["code"].queryset = qs.select_related("client")
+        self.fields["code"].widget.attrs.update({"class": "form-select form-select-sm"})
+        self.fields["start_date"].required = False
+        self.fields["end_date"].required = False
+        for f in ("start_date", "end_date"):
+            self.fields[f].input_formats = ["%Y-%m-%d"]
+
+    def clean(self):
+        cleaned = super().clean()
+        start = cleaned.get("start_date")
+        end = cleaned.get("end_date")
+        if start and end and end < start:
+            self.add_error("end_date", "End date must not be before the start date.")
+        return cleaned
+
+
+class BaseBillingAssignmentFormSet(forms.BaseInlineFormSet):
+    """Injects the client scope into each row form and blocks duplicate
+    *undated* assignments of the same code (the DB unique constraint can't,
+    because SQL treats NULL date bounds as distinct)."""
+
+    def __init__(self, *args, client=None, **kwargs):
+        self.client = client
+        super().__init__(*args, **kwargs)
+
+    def _construct_form(self, i, **kwargs):
+        kwargs["client"] = self.client
+        return super()._construct_form(i, **kwargs)
+
+    @property
+    def empty_form(self):
+        # Keep add-row templates client-scoped too.
+        form = self.form(
+            auto_id=self.auto_id,
+            prefix=self.add_prefix("__prefix__"),
+            empty_permitted=True,
+            use_required_attribute=False,
+            client=self.client,
+            renderer=self.renderer,
+        )
+        self.add_fields(form, None)
+        return form
+
+    def clean(self):
+        super().clean()
+        if any(self.errors):
+            return
+        seen_undated = set()
+        for form in self.forms:
+            if not hasattr(form, "cleaned_data"):
+                continue
+            cd = form.cleaned_data
+            if cd.get("DELETE") or not cd.get("code"):
+                continue
+            if cd.get("start_date") is None and cd.get("end_date") is None:
+                if cd["code"].id in seen_undated:
+                    raise forms.ValidationError(
+                        "You can only assign a billing code once without a date "
+                        "range. Add a date range to use it more than once."
+                    )
+                seen_undated.add(cd["code"].id)
+
+
+def _billing_assignment_formset(target_model, fk_name):
+    from django.forms import inlineformset_factory
+
+    return inlineformset_factory(
+        target_model,
+        BillingCodeAssignment,
+        form=BillingCodeAssignmentForm,
+        formset=BaseBillingAssignmentFormSet,
+        fk_name=fk_name,
+        extra=2,
+        can_delete=True,
+    )
+
+
+def job_billingcode_formset():
+    return _billing_assignment_formset(Job, "job")
+
+
+def phase_billingcode_formset():
+    return _billing_assignment_formset(Phase, "phase")
+
+
+def project_billingcode_formset():
+    return _billing_assignment_formset(Project, "project")
 
 
 class AssignContact(forms.Form):

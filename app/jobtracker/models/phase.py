@@ -700,6 +700,26 @@ class Phase(models.Model):
             "phase_detail", kwargs={"slug": self.slug, "job_slug": self.job.slug}
         )
 
+    def get_own_billing_assignments(self):
+        """Billing-code assignments attached directly to this phase (override)."""
+        return self.billing_code_assignments.select_related("code")
+
+    def get_effective_billing_assignments(self):
+        """Billing-code assignments that apply to this phase.
+
+        A phase *overrides* its job's codes: if the phase has any of its own
+        assignments they replace the job's for this phase; otherwise the phase
+        inherits the job's assignments. (Confirmed decision #1.) Precedent:
+        :meth:`UserJobLevel.get_current_level`.
+        """
+        own = self.get_own_billing_assignments()
+        if own.exists():
+            return own
+        return self.job.get_billing_assignments()
+
+    def has_own_billing_assignments(self):
+        return self.billing_code_assignments.exists()
+
     ########################################################################################
     ##
     ## Main Methods

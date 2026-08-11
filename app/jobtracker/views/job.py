@@ -39,7 +39,7 @@ from ..forms import (
     AssignUserField,
     ScopeForm,
     AssignJobFramework,
-    AssignJobBillingCode,
+    job_billingcode_formset,
     JobSupportTeamRoleForm,
     LinkForm,
 )
@@ -113,27 +113,48 @@ def assign_job_framework(request, slug):
     return JsonResponse(data)
 
 
-@job_permission_required_or_403("jobtracker.assign_billingcodes", (Job, "slug", "slug"))
+@job_permission_required_or_403("jobtracker.can_update_job", (Job, "slug", "slug"))
 def assign_job_billingcodes(request, slug):
     job = get_object_or_404(Job, slug=slug)
+    return _process_assign_billingcodes(
+        request,
+        target=job,
+        formset_cls=job_billingcode_formset(),
+        client=job.client,
+        template="modals/assign_job_billingcodes.html",
+        extra_context={"job": job},
+    )
+
+
+def _process_assign_billingcodes(
+    request, target, formset_cls, client, template, extra_context
+):
+    """Shared handler for the job/phase/project billing-code assign modals.
+
+    Renders/saves an inline formset of :class:`BillingCodeAssignment` rows,
+    stamping ``created_by`` on new rows. Returns the ``js-submit-modal-form``
+    JSON envelope the modal JS expects.
+    """
     data = dict()
     if request.method == "POST":
-        form = AssignJobBillingCode(request.POST, instance=job)
-        if form.is_valid():
-            form.save()
+        formset = formset_cls(request.POST, instance=target, client=client)
+        if formset.is_valid():
+            instances = formset.save(commit=False)
+            for obj in instances:
+                if obj.created_by_id is None:
+                    obj.created_by = request.user
+                obj.save()
+            for obj in formset.deleted_objects:
+                obj.delete()
             data["form_is_valid"] = True
         else:
             data["form_is_valid"] = False
     else:
-        form = AssignJobBillingCode(instance=job)
+        formset = formset_cls(instance=target, client=client)
 
-    context = {
-        "form": form,
-        "job": job,
-    }
-    data["html_form"] = loader.render_to_string(
-        "modals/assign_job_billingcodes.html", context, request=request
-    )
+    context = {"formset": formset, "target": target}
+    context.update(extra_context or {})
+    data["html_form"] = loader.render_to_string(template, context, request=request)
     return JsonResponse(data)
 
 
@@ -599,7 +620,16 @@ def job_clone(request, slug):
         new_job.save()
 
         if request.POST.get("clone_financials"):
-            new_job.charge_codes.set(job.charge_codes.all())
+            from ..models import BillingCodeAssignment
+
+            for assignment in job.billing_code_assignments.all():
+                BillingCodeAssignment.objects.create(
+                    code=assignment.code,
+                    job=new_job,
+                    start_date=assignment.start_date,
+                    end_date=assignment.end_date,
+                    created_by=request.user,
+                )
 
         if request.POST.get("clone_services"):
             new_job.indicative_services.set(job.indicative_services.all())

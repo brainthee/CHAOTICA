@@ -35,6 +35,11 @@
           <a href="{% url 'user_feedback_summary' email=user.email %}" class="btn btn-phoenix btn-phoenix-primary btn-sm">
             <i class="fas fa-chart-line me-1"></i> Feedback Summary
           </a>
+          {% if can_view_allocation %}
+          <a href="{% url 'user_code_allocation' email=user.email %}" class="btn btn-phoenix btn-phoenix-primary btn-sm">
+            <i class="fas fa-file-invoice-dollar me-1"></i> Code Allocations
+          </a>
+          {% endif %}
         </div>
       </div>
       

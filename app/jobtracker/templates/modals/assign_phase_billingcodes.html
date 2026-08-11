@@ -4,10 +4,16 @@
             {% csrf_token %}
             <div class="modal-header">
                 <h6 class="modal-title font-weight-normal" id="modal-title-default">
-                    Assign Billing Codes
+                    Assign Billing Codes to Phase
                 </h6>
                 <button type="button" class="btn-close text-body-emphasis"
                     data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="px-3 pt-3">
+                <p class="fs-10 text-body-secondary mb-0">
+                    Assigning codes here <strong>overrides</strong> the job's codes for
+                    this phase. Leave empty to inherit the job's codes.
+                </p>
             </div>
             {% include "partials/billingcode/assignment_formset.html" %}
         </form>

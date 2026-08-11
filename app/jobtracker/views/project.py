@@ -28,6 +28,22 @@ def _project_scheduled_users(project):
     )
 
 
+@permission_required_or_403("jobtracker.change_project")
+def assign_project_billingcodes(request, slug):
+    from ..forms import project_billingcode_formset
+    from .job import _process_assign_billingcodes
+
+    project = get_object_or_404(Project, slug=slug)
+    return _process_assign_billingcodes(
+        request,
+        target=project,
+        formset_cls=project_billingcode_formset(),
+        client=project.client,
+        template="modals/assign_project_billingcodes.html",
+        extra_context={"project": project},
+    )
+
+
 @permission_required_or_403("jobtracker.view_project")
 def view_project_schedule_slots(request, slug):
     """Read-only vis-timeline slots feed scoped to a single project's timeslots."""

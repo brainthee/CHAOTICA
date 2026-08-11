@@ -134,9 +134,6 @@ class Job(models.Model):
     )
 
     # Sales fields
-    charge_codes = models.ManyToManyField(
-        "BillingCode", verbose_name="Charge Code", related_name="jobs", blank=True
-    )
     revenue = models.DecimalField(
         max_digits=10,
         decimal_places=2,
@@ -146,6 +143,22 @@ class Job(models.Model):
         verbose_name="Sales Revenue",
         help_text="Optional: Cost of the job to the client",
     )
+
+    def get_billing_assignments(self):
+        """Billing-code assignments attached directly to this job."""
+        return self.billing_code_assignments.select_related("code")
+
+    @property
+    def charge_codes(self):
+        """Backwards-compatible accessor: the distinct billing codes on this job.
+
+        Historically ``charge_codes`` was a ``ManyToManyField``; it is now backed
+        by :class:`BillingCodeAssignment` rows. Kept as a property returning a
+        queryset so existing call sites (``job.charge_codes.all``) keep working.
+        """
+        from ..models import BillingCode
+
+        return BillingCode.objects.filter(assignments__job=self).distinct()
 
     def staff_cost(self):
         total_cost = 0
