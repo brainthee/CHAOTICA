@@ -1,5 +1,6 @@
 import io
 import csv
+import datetime
 import json
 from django.http import HttpResponse, FileResponse
 from django.template.loader import render_to_string
@@ -70,17 +71,29 @@ class ExportService:
             'valign': 'vcenter',
             'align': 'center',
         })
-        
+
+        # Date/datetime cells must carry an Excel number format, otherwise
+        # xlsxwriter writes them as bare serial numbers (e.g. 46245.37) and Excel
+        # shows the raw number instead of a date.
+        date_format = workbook.add_format({'num_format': 'yyyy-mm-dd'})
+        datetime_format = workbook.add_format({'num_format': 'yyyy-mm-dd hh:mm:ss'})
+
         # Write the headers
         for col_num, column_title in enumerate(field_names):
             worksheet.write(0, col_num, column_title, header_format)
             worksheet.set_column(col_num, col_num, 15)  # Set column width
-        
+
         # Write the data rows
         row_num = 1
         for row in data:
             for col_num, cell_value in zip(range(len(field_names)), row.values()):
-                worksheet.write(row_num, col_num, cell_value)
+                # datetime is a subclass of date, so check it first.
+                if isinstance(cell_value, datetime.datetime):
+                    worksheet.write_datetime(row_num, col_num, cell_value, datetime_format)
+                elif isinstance(cell_value, datetime.date):
+                    worksheet.write_datetime(row_num, col_num, cell_value, date_format)
+                else:
+                    worksheet.write(row_num, col_num, cell_value)
             row_num += 1
         
         # Set auto-filter

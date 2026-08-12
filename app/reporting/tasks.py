@@ -225,6 +225,10 @@ def process_report_run(run):
         run.status = ReportRun.STATUS_FAILED
         run.error_message = str(e)
         run.completed_at = timezone.now()
+        # Drop any partial rows so a failure while persisting results can't make
+        # the FAILED save itself unsaveable (which would leave the run stuck
+        # 'running' forever).
+        run.result_json = None
         run.save()
         # Single structured event (message + traceback) instead of two
         # separate logger.error calls, which Sentry split into two issues

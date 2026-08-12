@@ -350,17 +350,27 @@ class ReportRunProcessingTests(TestCase):
         self.report = _make_report(self.user)
 
     def test_html_run_marks_complete_and_persists_rows(self):
+        import datetime
+        from decimal import Decimal
         from reporting.models import ReportRun
         from reporting.tasks import ProcessReportRuns
         run = ReportRun.objects.create(report=self.report, user=self.user)
-        rows = [{"id": 1, "title": "A"}, {"id": 2, "title": "B"}]
+        # Include a date / datetime / Decimal — real reports do, and the plain
+        # stdlib JSON encoder can't serialize these (regression: result_json must
+        # use DjangoJSONEncoder or the save throws and the run sticks 'running').
+        rows = [
+            {"id": 1, "title": "A", "start": datetime.date(2026, 1, 2),
+             "when": datetime.datetime(2026, 1, 2, 9, 30), "revenue": Decimal("10.50")},
+            {"id": 2, "title": "B", "start": None, "when": None, "revenue": None},
+        ]
         with mock.patch("reporting.tasks.DataService.get_report_data", return_value=rows):
             ProcessReportRuns().process_run(run)
         run.refresh_from_db()
         self.assertEqual(run.status, ReportRun.STATUS_COMPLETE)
         self.assertEqual(run.row_count, 2)
-        # Rows now live in the DB, not a node-local temp file.
-        self.assertEqual(run.result_json, rows)
+        # Rows now live in the DB (dates/Decimals persisted as JSON strings).
+        self.assertEqual(run.result_json[0]["start"], "2026-01-02")
+        self.assertEqual(run.result_json[0]["revenue"], "10.50")
         self.report.refresh_from_db()
         self.assertIsNotNone(self.report.last_run_at)
 
@@ -392,6 +402,26 @@ class ReportRunProcessingTests(TestCase):
         run.refresh_from_db()
         self.assertEqual(run.status, ReportRun.STATUS_FAILED)
         self.assertIn("boom", run.error_message)
+
+    def test_excel_export_writes_native_dates(self):
+        # Regression: xlsxwriter must write dates/datetimes as real Excel dates
+        # with a number format, not bare serial numbers (46245.37...).
+        import io
+        import datetime
+        import openpyxl
+        from reporting.services.export_service import ExportService
+        data = [{
+            "when": datetime.datetime(2026, 1, 2, 9, 30),
+            "day": datetime.date(2026, 1, 3),
+            "n": 5,
+        }]
+        resp = ExportService.export_to_excel(data, ["When", "Day", "N"], "t")
+        ws = openpyxl.load_workbook(io.BytesIO(resp.content)).active
+        when_cell, day_cell = ws.cell(row=2, column=1), ws.cell(row=2, column=2)
+        self.assertIsInstance(when_cell.value, datetime.datetime)
+        self.assertIn("yyyy", when_cell.number_format)
+        self.assertIsInstance(day_cell.value, datetime.date)
+        self.assertIn("yyyy", day_cell.number_format)
 
     def test_stale_running_run_is_requeued(self):
         from django.utils import timezone

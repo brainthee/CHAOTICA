@@ -1,6 +1,7 @@
 import uuid
 
 from django.conf import settings
+from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 
 from .report import Report
@@ -43,7 +44,9 @@ class ReportRun(models.Model):
     # web instance can render them (node-local temp files broke across the
     # multi-instance load balancer - a poll could land on an instance that never
     # wrote the file). result_path is retained only for backwards compatibility.
-    result_json = models.JSONField(null=True, blank=True)
+    # DjangoJSONEncoder so report rows containing dates / datetimes / Decimals
+    # (which the plain stdlib JSON encoder can't serialize) persist correctly.
+    result_json = models.JSONField(null=True, blank=True, encoder=DjangoJSONEncoder)
     result_path = models.CharField(max_length=500, blank=True)
     row_count = models.IntegerField(null=True, blank=True)
     # Rendered export file (when export_format is set) plus how to serve it back.
