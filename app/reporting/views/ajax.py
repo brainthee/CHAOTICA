@@ -10,7 +10,8 @@ from ..models import (
 from ..services.data_service import DataService
 from ..permissions import can_view_report
 from ..utils.filter_utils import (
-    get_filter_type_choices, get_dynamic_filter_values, get_filter_value_widget_type
+    get_filter_type_choices, get_dynamic_filter_values, get_filter_value_widget_type,
+    get_filter_widget_and_choices, normalise_field_type,
 )
 
 @login_required
@@ -80,8 +81,8 @@ def get_field_filter_types(request):
     
     try:
         field = DataField.objects.get(pk=field_id)
-        field_type = field.field_type.name.lower()
-        
+        field_type = normalise_field_type(field.field_type.name)
+
         # Get available filter types from the database
         available_filter_types = field.get_available_filter_types().order_by('display_order')
         
@@ -124,33 +125,24 @@ def get_filter_widget(request):
     
     try:
         field = DataField.objects.get(pk=field_id)
-        field_type = field.field_type.name.lower()
-        
-        # Get widget type
-        widget_type = get_filter_value_widget_type(field_type, filter_type)
-        
-        # For select fields, get choices
-        choices = []
-        if widget_type == 'select' or widget_type == 'multi_select':
-            if field_type in ('foreign_key', 'many_to_many'):
-                # This would need more implementation to get actual choices
-                # from related models - simplified for this example
-                choices = [
-                    {'value': '1', 'label': 'Example Choice 1'},
-                    {'value': '2', 'label': 'Example Choice 2'},
-                ]
-            elif field_type == 'boolean':
-                choices = [
-                    {'value': 'true', 'label': 'Yes'},
-                    {'value': 'false', 'label': 'No'},
-                ]
-        
+
+        # ``filter_type`` from the UI is a FilterType id; use its operator for the
+        # widget logic (falls back to treating the value as an operator string).
+        operator = filter_type
+        try:
+            from ..models import FilterType
+            operator = FilterType.objects.get(pk=filter_type).operator
+        except (FilterType.DoesNotExist, ValueError, TypeError):
+            pass
+
+        widget_type, choices = get_filter_widget_and_choices(field, operator, request.user)
+
         return JsonResponse({
             'success': True,
             'widget_type': widget_type,
-            'choices': choices
+            'choices': choices,
         })
-        
+
     except DataField.DoesNotExist:
         return JsonResponse({
             'success': False,

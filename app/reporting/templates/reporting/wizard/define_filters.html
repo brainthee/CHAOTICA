@@ -397,15 +397,16 @@
                 break;
                 
               case 'select':
-                widget = '<select class="form-select" id="filter-value">';
+                widget = '<select class="form-select" id="filter-value" data-searchable>';
+                widget += '<option value="">Any</option>';
                 data.choices.forEach(choice => {
                   widget += `<option value="${choice.value}">${choice.label}</option>`;
                 });
                 widget += '</select>';
                 break;
-                
+
               case 'multi_select':
-                widget = '<select class="form-select" id="filter-value" multiple>';
+                widget = '<select class="form-select" id="filter-value" multiple data-searchable>';
                 data.choices.forEach(choice => {
                   widget += `<option value="${choice.value}">${choice.label}</option>`;
                 });
@@ -449,6 +450,17 @@
             }
             
             $('#filter-value-container').html(widget);
+
+            // Initialise a searchable dropdown on newly-inserted selects. Phoenix
+            // only auto-inits [data-choices] on page load, so do it manually here.
+            const sel = document.getElementById('filter-value');
+            if (sel && sel.matches('select[data-searchable]') && window.Choices) {
+              new Choices(sel, {
+                searchEnabled: true,
+                shouldSort: false,
+                removeItemButton: sel.multiple,
+              });
+            }
           }
         },
         error: function() {

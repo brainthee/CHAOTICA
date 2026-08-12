@@ -502,3 +502,46 @@ class ReportRunStatusEndpointTests(TestCase):
             status=ReportRun.STATUS_FAILED, error_message="nope",
         )
         self.assertEqual(self._status(failed)['status'], 'failed')
+
+
+class FilterDropdownHelperTests(SimpleTestCase):
+    """Value-picklist helpers for filter dropdowns (status/org-unit/etc.)."""
+
+    def test_normalise_field_type(self):
+        from reporting.utils.filter_utils import normalise_field_type
+        self.assertEqual(normalise_field_type('Foreign Key'), 'foreign_key')
+        self.assertEqual(normalise_field_type('Long Text'), 'long_text')
+        self.assertEqual(normalise_field_type('Integer'), 'integer')
+
+    def test_resolve_model_field(self):
+        from reporting.utils.filter_utils import resolve_model_field
+        from jobtracker.models import Phase
+        self.assertIsNotNone(resolve_model_field(Phase, 'status'))
+        self.assertIsNotNone(resolve_model_field(Phase, 'job__unit__name'))
+        self.assertIsNone(resolve_model_field(Phase, 'nope__nope'))
+
+    def test_status_field_exposes_choices(self):
+        # The enum/choice detection that turns 'status' into a dropdown.
+        from reporting.utils.filter_utils import resolve_model_field
+        from jobtracker.models import Phase
+        field = resolve_model_field(Phase, 'status')
+        self.assertTrue(getattr(field, 'choices', None))
+
+    def test_convert_value_handles_lists(self):
+        # Multi-select 'in' values must convert per element, not int([...]) -> 0.
+        from reporting.utils.query_builder import convert_value_to_proper_type
+        self.assertEqual(convert_value_to_proper_type(['1', '2', '3'], 'IntegerField'), [1, 2, 3])
+        self.assertEqual(convert_value_to_proper_type('5', 'IntegerField'), 5)
+
+    def test_collect_filter_values_multi_and_empty(self):
+        from django.test import RequestFactory
+        from reporting.views.reports import _collect_filter_values
+        # single value + an empty one (should be skipped) + a non-filter key
+        req = RequestFactory().post('/x', {'filter_10': 'a', 'filter_11': '', 'other': 'z'})
+        self.assertEqual(_collect_filter_values(req), {'10': 'a'})
+        # multi values keep the list
+        req2 = RequestFactory().post(
+            '/x', 'filter_10=a&filter_10=b&filter_11=',
+            content_type='application/x-www-form-urlencoded',
+        )
+        self.assertEqual(_collect_filter_values(req2), {'10': ['a', 'b']})

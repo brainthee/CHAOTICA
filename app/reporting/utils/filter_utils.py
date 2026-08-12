@@ -1,5 +1,106 @@
 import datetime
 
+# Equality-style operators where offering a value picklist makes sense.
+_CHOICE_FRIENDLY_OPERATORS = {'exact', 'iexact', 'in'}
+
+
+def normalise_field_type(name):
+    """'Foreign Key' -> 'foreign_key' so it matches the widget/type lookups."""
+    return (name or '').lower().replace(' ', '_')
+
+
+def resolve_model_field(model, field_path):
+    """Walk an ``a__b__c`` ORM path from ``model``; return the terminal Django
+    field, or ``None`` if the path doesn't resolve."""
+    field = None
+    current = model
+    for part in field_path.split('__'):
+        try:
+            field = current._meta.get_field(part)
+        except Exception:
+            return None
+        related = getattr(field, 'related_model', None)
+        if related is not None:
+            current = related
+    return field
+
+
+def get_field_filter_choices(data_field, user=None, limit=1000):
+    """Return ``[{'value','label'}, ...]`` for a filter field that has a bounded
+    set of values (enum/choice fields like status, booleans, and related-name
+    paths like ``unit__name``), else ``None`` to fall back to free text.
+
+    Related-name value lists are scoped to what ``user`` may see (same permission
+    filter the report results use) and capped at ``limit`` — beyond that we return
+    ``None`` so huge columns stay as free text rather than an unusable dropdown.
+    """
+    from django.db import models as dj_models
+    from ..models import DataField
+
+    if getattr(data_field, 'source_type', None) == DataField.SOURCE_RESOLVER:
+        return None  # resolver fields aren't ORM-filterable
+
+    area = data_field.data_area
+    try:
+        model = area.content_type.model_class()
+    except Exception:
+        model = None
+    if model is None:
+        return None
+
+    field = resolve_model_field(model, data_field.field_path)
+    if field is None:
+        return None
+
+    # 1. Explicit model choices (status enums, etc.) — value is the stored value.
+    if getattr(field, 'choices', None):
+        return [{'value': str(v), 'label': str(label)} for v, label in field.choices]
+
+    # 2. Booleans.
+    if isinstance(field, dj_models.BooleanField):
+        return [{'value': 'true', 'label': 'Yes'}, {'value': 'false', 'label': 'No'}]
+
+    # 3. Related-name paths (unit__name, client__name, service__name, ...) — the
+    #    filter matches the name, so enumerate the distinct names the user can see.
+    if '__' in data_field.field_path:
+        queryset = model.objects.all()
+        if user is not None:
+            try:
+                from ..services.data_service import DataService
+                queryset = DataService._apply_permission_filter(queryset, area, user)
+            except Exception:
+                pass
+        path = data_field.field_path
+        try:
+            values = list(
+                queryset.exclude(**{f'{path}__isnull': True})
+                .order_by(path)
+                .values_list(path, flat=True)
+                .distinct()[: limit + 1]
+            )
+        except Exception:
+            return None
+        if not values or len(values) > limit:
+            return None
+        return [{'value': str(v), 'label': str(v)} for v in values if str(v) != '']
+
+    return None
+
+
+def get_filter_widget_and_choices(data_field, operator, user=None):
+    """Resolve the value widget type and (optionally) its choices for a field +
+    filter operator. Upgrades to a (searchable) select/multi-select when the field
+    has a bounded value set and the operator is equality-style."""
+    field_type = normalise_field_type(data_field.field_type.name)
+    widget_type = get_filter_value_widget_type(field_type, operator)
+    choices = None
+    if operator in _CHOICE_FRIENDLY_OPERATORS:
+        choices = get_field_filter_choices(data_field, user)
+    if choices:
+        widget_type = 'multi_select' if operator == 'in' else 'select'
+    return widget_type, (choices or [])
+
+
 def get_filter_type_choices(field_type):
     """
     Get available filter types for a field type

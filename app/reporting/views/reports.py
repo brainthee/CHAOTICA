@@ -136,12 +136,20 @@ class ReportDetailView(ObjectActivityMixin, ReportAccessMixin, DetailView):
 
 
 def _collect_filter_values(request):
-    """Pull filter_<id> values out of POST (form) or GET (export links)."""
+    """Pull filter_<id> values out of POST (form) or GET (export links).
+
+    Uses getlist so multi-select ('in') filters keep all their values, and skips
+    empty submissions so an unset dropdown ('Any') doesn't apply a blank filter.
+    """
     filter_values = {}
     source = request.POST if request.method == 'POST' else request.GET
-    for key, value in source.items():
-        if key.startswith('filter_'):
-            filter_values[key[7:]] = value  # strip 'filter_' prefix
+    for key in source.keys():
+        if not key.startswith('filter_'):
+            continue
+        values = [v for v in source.getlist(key) if v not in ('', None)]
+        if not values:
+            continue
+        filter_values[key[7:]] = values if len(values) > 1 else values[0]
     return filter_values
 
 
@@ -165,11 +173,20 @@ def run_report(request, uuid):
     filter_values = _collect_filter_values(request)
 
     # Prompt for runtime filters before queuing, if we don't have values yet.
-    runtime_filters = report.filters.filter(prompt_at_runtime=True)
+    runtime_filters = report.filters.filter(prompt_at_runtime=True).select_related(
+        'data_field__field_type', 'data_field__data_area__content_type', 'filter_type'
+    )
     if runtime_filters.exists() and not filter_values:
+        from ..utils.filter_utils import get_filter_widget_and_choices
+        filter_specs = []
+        for rf in runtime_filters:
+            widget_type, choices = get_filter_widget_and_choices(
+                rf.data_field, rf.filter_type.operator, request.user
+            )
+            filter_specs.append({'filter': rf, 'widget_type': widget_type, 'choices': choices})
         return render(request, 'reporting/report_filter_prompt.html', {
             'report': report,
-            'runtime_filters': runtime_filters,
+            'filter_specs': filter_specs,
             'presentation_choices': Report.PRESENTATION_CHOICES if report.allow_presentation_choice else None,
             # Preserve a requested download format across the prompt round-trip.
             'requested_format': export_format or '',

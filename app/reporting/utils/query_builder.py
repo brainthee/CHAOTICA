@@ -212,7 +212,12 @@ def convert_value_to_proper_type(value, field_type):
     """
     if value is None:
         return None
-    
+
+    # Multi-value filters (e.g. 'in' from a multi-select) — convert each element
+    # so a list isn't mangled into 0 by int([...]).
+    if isinstance(value, (list, tuple)):
+        return [convert_value_to_proper_type(v, field_type) for v in value]
+
     if field_type in ('IntegerField', 'AutoField', 'BigIntegerField', 'SmallIntegerField', 'PositiveIntegerField'):
         try:
             return int(value)

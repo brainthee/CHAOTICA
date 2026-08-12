@@ -29,24 +29,41 @@
                             <p class="text-muted">This report requires additional information before it can be run. Please provide values for the following filters:</p>
                         </div>
 
-                        {% for filter in runtime_filters %}
+                        {% for spec in filter_specs %}
                         <div class="mb-3">
-                            <label for="filter_{{ filter.id }}" class="form-label">
-                                {{ filter.prompt_text|default:filter.data_field.display_name }}
+                            <label for="filter_{{ spec.filter.id }}" class="form-label">
+                                {{ spec.filter.prompt_text|default:spec.filter.data_field.display_name }}
                             </label>
-                            
-                            {% if filter.filter_type.name == 'Date' or filter.filter_type.name == 'Date Range' %}
-                                <input type="date" class="form-control" id="filter_{{ filter.id }}" name="filter_{{ filter.id }}">
-                            {% elif filter.filter_type.name == 'Boolean' %}
-                                <select class="form-select" id="filter_{{ filter.id }}" name="filter_{{ filter.id }}">
+
+                            {% if spec.widget_type == 'select' %}
+                                <select class="form-select" id="filter_{{ spec.filter.id }}" name="filter_{{ spec.filter.id }}" data-choices data-options='{"searchEnabled": true, "shouldSort": false}'>
+                                    <option value="">Any</option>
+                                    {% for choice in spec.choices %}
+                                        <option value="{{ choice.value }}">{{ choice.label }}</option>
+                                    {% endfor %}
+                                </select>
+                            {% elif spec.widget_type == 'multi_select' %}
+                                <select class="form-select" id="filter_{{ spec.filter.id }}" name="filter_{{ spec.filter.id }}" multiple data-choices data-options='{"searchEnabled": true, "shouldSort": false, "removeItemButton": true}'>
+                                    {% for choice in spec.choices %}
+                                        <option value="{{ choice.value }}">{{ choice.label }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">Pick one or more values.</div>
+                            {% elif spec.widget_type == 'boolean' %}
+                                <select class="form-select" id="filter_{{ spec.filter.id }}" name="filter_{{ spec.filter.id }}">
+                                    <option value="">Any</option>
                                     <option value="true">Yes</option>
                                     <option value="false">No</option>
                                 </select>
+                            {% elif spec.widget_type == 'date' %}
+                                <input type="date" class="form-control" id="filter_{{ spec.filter.id }}" name="filter_{{ spec.filter.id }}">
+                            {% elif spec.widget_type == 'number' %}
+                                <input type="number" step="any" class="form-control" id="filter_{{ spec.filter.id }}" name="filter_{{ spec.filter.id }}" placeholder="Enter a number">
                             {% else %}
-                                <input type="text" class="form-control" id="filter_{{ filter.id }}" name="filter_{{ filter.id }}" placeholder="Enter value">
+                                <input type="text" class="form-control" id="filter_{{ spec.filter.id }}" name="filter_{{ spec.filter.id }}" placeholder="Enter value">
                             {% endif %}
 
-                            <div class="form-text">{{ filter.filter_type.display_label }}</div>
+                            <div class="form-text">{{ spec.filter.filter_type.display_label }}</div>
                         </div>
                         {% endfor %}
 
