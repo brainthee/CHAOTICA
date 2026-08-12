@@ -126,6 +126,19 @@ python manage.py setup_tentative_report       # create/refresh the report
 
 It's an ordinary report — you can duplicate or tweak it in the wizard.
 
+## Syncing the built-in fields (admins)
+
+The available data areas and fields are defined in code and materialised into the
+database by the `setup_reporting_models` command. New releases sometimes add or
+change these built-in fields.
+
+Superusers can apply the update **without shell access**: go to **Reporting →
+Admin** and click **Sync Field Definitions**. This runs the same command from the
+web UI — it creates/updates the defined fields and disables any that no longer
+exist. It never deletes anything, so existing saved reports keep working, and the
+output (created/updated/disabled counts per area) is shown afterwards. Run it once
+after each deploy that changes the reporting fields.
+
 ## What data a report shows
 
 Reports are scoped to what the **running user** is allowed to see, using the same

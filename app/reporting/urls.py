@@ -48,6 +48,7 @@ urlpatterns = [
 
     # Admin
     path('admin/', reporting_admin.admin_dashboard, name='admin_dashboard'),
+    path('admin/setup-models/', reporting_admin.run_setup_reporting_models, name='admin_setup_models'),
     path('admin/validate-fields/', reporting_admin.validate_fields, name='admin_validate_fields'),
     path('admin/delete-invalid-fields/', reporting_admin.delete_invalid_fields, name='admin_delete_invalid_fields'),
     path('admin/fields/<int:field_id>/toggle/', reporting_admin.field_toggle, name='admin_field_toggle'),

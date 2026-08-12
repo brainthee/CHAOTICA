@@ -11,8 +11,26 @@
       <a href="{% url 'reporting:admin_validate_reports' %}" class="btn btn-outline-primary ms-2">
         <i class="fas fa-file-medical-alt"></i> Report Health Check
       </a>
+      <form method="post" action="{% url 'reporting:admin_setup_models' %}" class="d-inline">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-outline-secondary ms-2"
+          onclick="return confirm('Sync data areas and fields to the current code definitions?\n\nThis creates/updates the built-in fields and disables any no longer defined. Nothing is deleted, so saved reports keep working.')">
+          <i class="fas fa-sync"></i> Sync Field Definitions
+        </button>
+      </form>
     </div>
   </div>
+
+  {% if setup_output %}
+  <div class="card mb-4 border-info border-translucent">
+    <div class="card-header">
+      <h6 class="mb-0"><i class="fas fa-terminal me-2"></i>Field definition sync — output</h6>
+    </div>
+    <div class="card-body p-0">
+      <pre class="mb-0 p-3 fs-10" style="max-height: 320px; overflow: auto;">{{ setup_output }}</pre>
+    </div>
+  </div>
+  {% endif %}
 
   <div class="row mb-4">
     <div class="col-md-4">

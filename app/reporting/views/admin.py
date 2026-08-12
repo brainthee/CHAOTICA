@@ -1,8 +1,11 @@
+from io import StringIO
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.apps import apps
 from django.contrib.contenttypes.models import ContentType
+from django.core.management import call_command
 from django.views.decorators.http import require_POST
 
 from ..models import DataArea, DataField, DataSource, Report, ReportField, ReportFilter, ReportSort
@@ -24,8 +27,33 @@ def admin_dashboard(request):
     context = {
         'data_areas': data_areas,
         'data_sources': data_sources,
+        # Output from the last "Sync Field Definitions" run, shown once.
+        'setup_output': request.session.pop('setup_reporting_output', None),
     }
     return render(request, 'reporting/admin/dashboard.html', context)
+
+
+@login_required
+@user_passes_test(is_superuser)
+@require_POST
+def run_setup_reporting_models(request):
+    """Run the ``setup_reporting_models`` command from the web UI.
+
+    Lets superusers sync the built-in data areas/fields to the current code
+    definitions after a deploy without shell access. Idempotent (never uses
+    ``--reset``): it creates/updates the defined fields and disables ones no
+    longer defined — it does not delete anything, so saved reports keep working.
+    """
+    out = StringIO()
+    try:
+        call_command('setup_reporting_models', stdout=out, stderr=out)
+        # Keep the tail of the output (counts per area) for display; cap the size.
+        request.session['setup_reporting_output'] = out.getvalue()[-8000:]
+        messages.success(request, "Reporting field definitions synced.")
+    except Exception as e:
+        request.session['setup_reporting_output'] = out.getvalue()[-8000:]
+        messages.error(request, f"Sync failed: {e}")
+    return redirect('reporting:admin_dashboard')
 
 
 @login_required
