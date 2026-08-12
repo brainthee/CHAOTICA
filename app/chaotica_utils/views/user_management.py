@@ -284,6 +284,7 @@ def user_code_allocation(request, email):
             "date_range": "{} to {}".format(start, end),
             "per_day": allocation["per_day"],
             "per_code": per_code,
+            "uncoded": allocation["uncoded"],
         }
     )
     return HttpResponse(

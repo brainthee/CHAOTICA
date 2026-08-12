@@ -185,7 +185,30 @@ class BillingAllocationTests(TestCase):
         alloc = build_user_code_allocation(
             self.user, day - timedelta(days=2), day + timedelta(days=2)
         )
-        self.assertNotIn(day, alloc["per_day"])
+        # The code doesn't apply in-window, so it contributes no coded hours...
+        self.assertEqual(alloc["per_code"], {})
+        # ...but the scheduled work is surfaced as uncoded, not silently dropped.
+        self.assertIn(day, alloc["per_day"])
+        self.assertTrue(all(e["code"] is None for e in alloc["per_day"][day]))
+        self.assertGreater(alloc["uncoded"]["hours"], 0)
+
+    def test_uncoded_slot_is_surfaced(self):
+        # A scheduled slot whose engagement has no billing code at all must still
+        # appear, flagged as uncoded, so missing codes are visible.
+        monday = _monday(timezone.now())
+        self._slot(monday, monday.replace(hour=17, minute=30))
+        day = monday.date()
+        alloc = build_user_code_allocation(
+            self.user, day - timedelta(days=1), day + timedelta(days=1)
+        )
+        self.assertEqual(alloc["per_code"], {})
+        self.assertIn(day, alloc["per_day"])
+        entries = alloc["per_day"][day]
+        self.assertEqual(len(entries), 1)
+        self.assertIsNone(entries[0]["code"])
+        self.assertEqual(entries[0]["kind"], "phase")
+        self.assertGreater(alloc["uncoded"]["hours"], 0)
+        self.assertEqual(len(alloc["uncoded"]["by_target"]), 1)
 
 
 class BillingCodeScopingTests(TestCase):

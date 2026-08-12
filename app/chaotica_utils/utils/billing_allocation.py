@@ -89,6 +89,29 @@ def slot_daily_hours(slot):
     return result
 
 
+def _slot_target(slot):
+    """Identify the engagement a slot belongs to, for labelling uncoded work.
+
+    Returns ``(key, label, url, kind)`` where ``kind`` is ``'phase'`` |
+    ``'project'`` | ``'other'`` (leave / internal time that has no engagement to
+    hang a billing code off). ``key`` is a hashable used to group a day's uncoded
+    hours by engagement.
+    """
+    if getattr(slot, "phase_id", None) is not None:
+        phase = slot.phase_or_none
+        if phase is not None:
+            url = phase.get_absolute_url() if hasattr(phase, "get_absolute_url") else None
+            return ("phase", phase.id), str(phase), url, "phase"
+    if getattr(slot, "project_id", None) is not None:
+        project = getattr(slot, "project", None)
+        if project is not None:
+            url = project.get_absolute_url() if hasattr(project, "get_absolute_url") else None
+            return ("project", project.id), str(project), url, "project"
+    slot_type = getattr(slot, "slot_type", None)
+    label = (getattr(slot_type, "name", None) or "Internal / non-project time")
+    return ("other", getattr(slot, "slot_type_id", None)), label, None, "other"
+
+
 def _target_assignments(slot, phase_assignments, job_assignments, project_assignments):
     """Effective assignments for a single slot, applying the override rule.
 
@@ -123,6 +146,9 @@ def build_user_code_allocation(user, start, end, masks=None):
       show-all-applicable; hours are the day's business hours, not split).
     * ``per_code``: ``{code_id: {code, hours, days, is_chargeable, is_internal,
       client_id}}`` — totals per code across the window.
+    * ``uncoded``: ``{hours, days, by_target: {key: {label, url, kind, hours,
+      days}}}`` — scheduled work that has **no** applicable billing code, so
+      missing codes are visible rather than silently dropped.
     """
     from jobtracker.models import BillingCodeAssignment
 
@@ -176,37 +202,51 @@ def build_user_code_allocation(user, start, end, masks=None):
     ).select_related("code", "code__client"):
         _bucket(project_assignments, a.project_id, a)
 
-    # day -> code_id -> hours
+    # day -> code_id -> hours (coded work)
     day_code_hours = {}
     codes = {}
+    # day -> target_key -> {hours, label, url, kind} (scheduled work with no
+    # applicable code on that day — surfaced so missing codes are visible).
+    day_uncoded = {}
 
     for slot in slots:
         assignments = _target_assignments(
             slot, phase_assignments, job_assignments, project_assignments
         )
-        if not assignments:
-            continue
         daily = slot_daily_hours(slot)
+        if not daily:
+            continue
+        tkey, tlabel, turl, tkind = _slot_target(slot)
         for day, hours in daily.items():
             if day < start or day > end:
                 continue
-            for a in assignments:
-                if not code_applies_on(a, day):
-                    continue
-                code = a.code
-                codes[code.id] = code
-                per_day = day_code_hours.setdefault(day, {})
-                per_day[code.id] = per_day.get(code.id, Decimal(0)) + hours
+            applicable = [a for a in assignments if code_applies_on(a, day)]
+            if applicable:
+                for a in applicable:
+                    code = a.code
+                    codes[code.id] = code
+                    per_day = day_code_hours.setdefault(day, {})
+                    per_day[code.id] = per_day.get(code.id, Decimal(0)) + hours
+            else:
+                bucket = day_uncoded.setdefault(day, {})
+                entry = bucket.setdefault(
+                    tkey,
+                    {"hours": Decimal(0), "label": tlabel, "url": turl, "kind": tkind},
+                )
+                entry["hours"] += hours
 
-    return _finalise_allocation(day_code_hours, codes)
+    return _finalise_allocation(day_code_hours, codes, day_uncoded)
 
 
-def _finalise_allocation(day_code_hours, codes):
+def _finalise_allocation(day_code_hours, codes, day_uncoded=None):
+    day_uncoded = day_uncoded or {}
     per_day = {}
     per_code = {}
-    for day in sorted(day_code_hours):
+    uncoded = {"hours": Decimal(0), "days": 0, "by_target": {}}
+
+    for day in sorted(set(day_code_hours) | set(day_uncoded)):
         entries = []
-        for code_id, hours in day_code_hours[day].items():
+        for code_id, hours in day_code_hours.get(day, {}).items():
             code = codes[code_id]
             entries.append({"code_id": code_id, "code": code, "hours": hours})
             summary = per_code.setdefault(
@@ -222,9 +262,29 @@ def _finalise_allocation(day_code_hours, codes):
             )
             summary["hours"] += hours
             summary["days"] += 1
+        for tkey, u in day_uncoded.get(day, {}).items():
+            entries.append(
+                {
+                    "code_id": None,
+                    "code": None,
+                    "hours": u["hours"],
+                    "target_label": u["label"],
+                    "target_url": u["url"],
+                    "kind": u["kind"],
+                }
+            )
+            uncoded["hours"] += u["hours"]
+            uncoded["days"] += 1
+            tsum = uncoded["by_target"].setdefault(
+                tkey,
+                {"label": u["label"], "url": u["url"], "kind": u["kind"],
+                 "hours": Decimal(0), "days": 0},
+            )
+            tsum["hours"] += u["hours"]
+            tsum["days"] += 1
         per_day[day] = entries
 
-    return {"per_day": per_day, "per_code": per_code}
+    return {"per_day": per_day, "per_code": per_code, "uncoded": uncoded}
 
 
 def build_code_analytics(users, start, end, internal_only=False):

@@ -84,19 +84,23 @@
                 <td class="d-none d-sm-block pe-sm-2">:</td>
                 <td class="">
                   <div class="d-flex flex-wrap align-items-center">
-                    {% for assignment in phase.get_effective_billing_assignments %}
-                      <div class="m-1">
-                        {% include 'partials/billingcode/billingcode_badge.html' with billingcode=assignment.code %}
-                        {% if assignment.start_date or assignment.end_date %}
-                          <span class="fs-10 text-body-secondary">({{ assignment.start_date|default:"…" }} → {{ assignment.end_date|default:"…" }})</span>
-                        {% endif %}
-                      </div>
-                    {% endfor %}
-                    {% if phase.has_own_billing_assignments %}
-                      <span class="badge badge-phoenix badge-phoenix-warning fs-10 ms-1">Overridden</span>
-                    {% else %}
-                      <span class="badge badge-phoenix badge-phoenix-secondary fs-10 ms-1">Inherited from job</span>
-                    {% endif %}
+                    {% with eff=phase.get_effective_billing_assignments %}
+                      {% for assignment in eff %}
+                        <div class="m-1">
+                          {% include 'partials/billingcode/billingcode_badge.html' with billingcode=assignment.code %}
+                          {% if assignment.start_date or assignment.end_date %}
+                            <span class="fs-10 text-body-secondary">({{ assignment.start_date|default:"…" }} → {{ assignment.end_date|default:"…" }})</span>
+                          {% endif %}
+                        </div>
+                      {% empty %}
+                        <span class="fs-10 text-body-secondary m-1">No billing code</span>
+                      {% endfor %}
+                      {% if phase.has_own_billing_assignments %}
+                        <span class="badge badge-phoenix badge-phoenix-warning fs-10 ms-1">Overridden</span>
+                      {% elif eff %}
+                        <i class="fas fa-info-circle text-body-tertiary ms-1" data-bs-toggle="tooltip" data-bs-placement="top" title="Inherited from the job"></i>
+                      {% endif %}
+                    {% endwith %}
                   </div>
                 </td>
               </tr>

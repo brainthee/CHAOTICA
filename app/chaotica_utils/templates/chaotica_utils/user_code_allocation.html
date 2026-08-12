@@ -5,8 +5,8 @@
 {% block head_title %}Code Allocations — {{ userProfile }}{% endblock %}
 
 {% block breadcrumbItem %}
-  <li class="breadcrumb-item text-sm"><a href="{% url 'user_list' %}">Users</a></li>
-  <li class="breadcrumb-item text-sm"><a href="{{ userProfile.get_absolute_url }}">{{ userProfile }}</a></li>
+  <li class="breadcrumb-item text-sm"><a class="opacity-50 text-body-emphasis" href="{% url 'user_list' %}">Users</a></li>
+  <li class="breadcrumb-item text-sm"><a class="opacity-50 text-body-emphasis" href="{{ userProfile.get_absolute_url }}">{{ userProfile }}</a></li>
   <li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">Code Allocations</li>
 {% endblock %}
 
@@ -15,8 +15,9 @@
     <div class="col-auto">
       <h3 class="mb-0">Code Allocations</h3>
       <p class="text-body-secondary fs-9 mb-0">
-        Which billing code(s) {{ userProfile.first_name }} should book against, per day and per code.
-        This reads the schedule against effective billing-code assignments — it is not a timesheet.
+        {{ userProfile.first_name }}'s scheduled work, per day and per code, read against the
+        effective billing-code assignments — it is not a timesheet. Scheduled work with
+        <span class="text-warning-emphasis">no applicable code</span> is shown explicitly so missing codes are visible.
       </p>
     </div>
     <div class="col-12 col-md-auto ms-md-auto mt-3 mt-md-0">
@@ -34,7 +35,17 @@
     </div>
   </div>
 
-  <div class="row g-3">
+  {% if uncoded.hours %}
+    <div class="alert alert-subtle-warning d-flex align-items-center mt-3 mb-0 py-2 fs-9" role="alert">
+      <i class="fas fa-exclamation-triangle me-2"></i>
+      <div>
+        <strong>{{ uncoded.hours|floatformat:2 }}h</strong> of scheduled work in this window has no applicable billing code.
+        Check the <span class="badge badge-phoenix badge-phoenix-warning">No code</span> rows below and assign codes where they're missing.
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="row g-3 mt-0">
     <div class="col-12 col-xl-7">
       <div class="card h-100">
         <div class="card-header"><h5 class="mb-0">Per day</h5></div>
@@ -53,17 +64,28 @@
                   <td class="ps-3 fs-9">{{ day|date:'D d M Y' }}</td>
                   <td>
                     {% for entry in entries %}
-                      {% include 'partials/billingcode/billingcode_badge.html' with billingcode=entry.code %}
+                      <div class="mb-1">
+                        {% if entry.code %}
+                          {% include 'partials/billingcode/billingcode_badge.html' with billingcode=entry.code %}
+                        {% else %}
+                          <span class="badge badge-phoenix badge-phoenix-warning">No code</span>
+                          {% if entry.target_url %}
+                            <a href="{{ entry.target_url }}" class="fs-10 ms-1">{{ entry.target_label }}</a>
+                          {% else %}
+                            <span class="fs-10 text-body-secondary ms-1">{{ entry.target_label }}</span>
+                          {% endif %}
+                        {% endif %}
+                      </div>
                     {% endfor %}
                   </td>
                   <td class="text-end pe-3 fs-9">
                     {% for entry in entries %}
-                      <div>{{ entry.hours|floatformat:2 }}</div>
+                      <div class="mb-1">{{ entry.hours|floatformat:2 }}</div>
                     {% endfor %}
                   </td>
                 </tr>
               {% empty %}
-                <tr><td colspan="3" class="text-center text-body-secondary py-4">No scheduled work with billing codes in this window.</td></tr>
+                <tr><td colspan="3" class="text-center text-body-secondary py-4">No scheduled work in this window.</td></tr>
               {% endfor %}
             </tbody>
           </table>
@@ -101,6 +123,33 @@
               {% endfor %}
             </tbody>
           </table>
+
+          {% if uncoded.by_target %}
+            <hr class="my-3">
+            <h6 class="text-warning-emphasis mb-2 fs-9">
+              <i class="fas fa-exclamation-triangle me-1"></i>Uncoded work — {{ uncoded.hours|floatformat:2 }}h
+            </h6>
+            <table class="table table-sm align-middle mb-0">
+              <thead>
+                <tr class="fs-9 text-body-secondary">
+                  <th>Engagement</th>
+                  <th class="text-end">Days</th>
+                  <th class="text-end">Hours</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for t in uncoded.by_target.values %}
+                  <tr>
+                    <td class="fs-9">
+                      {% if t.url %}<a href="{{ t.url }}">{{ t.label }}</a>{% else %}<span class="text-body-secondary">{{ t.label }}</span>{% endif %}
+                    </td>
+                    <td class="text-end fs-9">{{ t.days }}</td>
+                    <td class="text-end fs-9">{{ t.hours|floatformat:2 }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          {% endif %}
         </div>
       </div>
     </div>
