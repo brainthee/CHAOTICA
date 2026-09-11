@@ -21,19 +21,96 @@
       </p>
     </div>
     <div class="col-12 col-md-auto ms-md-auto mt-3 mt-md-0">
-      <form method="get" class="d-flex align-items-end gap-2">
+      <div class="d-flex align-items-center justify-content-md-end gap-2">
+        <a class="btn btn-sm btn-phoenix-secondary" title="Previous period"
+           href="?start_date={{ prev_start|date:'Y-m-d' }}&amp;end_date={{ prev_end|date:'Y-m-d' }}">
+          <span class="fas fa-chevron-left"></span>
+        </a>
+        <div class="text-center" style="min-width: 12rem;">
+          <div class="fw-semibold fs-9">{{ start_date|date:'j M Y' }} &ndash; {{ end_date|date:'j M Y' }}</div>
+          {% if is_current_period %}
+            <span class="text-body-tertiary fs-10">Current period</span>
+          {% else %}
+            <a class="fs-10" href="?start_date={{ current_period_start|date:'Y-m-d' }}&amp;end_date={{ current_period_end|date:'Y-m-d' }}">Jump to current period</a>
+          {% endif %}
+        </div>
+        <a class="btn btn-sm btn-phoenix-secondary" title="Next period"
+           href="?start_date={{ next_start|date:'Y-m-d' }}&amp;end_date={{ next_end|date:'Y-m-d' }}">
+          <span class="fas fa-chevron-right"></span>
+        </a>
+      </div>
+      <form method="get" class="d-flex align-items-end justify-content-md-end gap-2 mt-2">
         <div>
           <label class="form-label fs-10 mb-1">From</label>
-          <input type="date" name="start_date" value="{{ start_date|date:'Y-m-d' }}" class="form-control form-control-sm">
+          <input type="text" name="start_date" value="{{ start_date|date:'Y-m-d' }}" class="form-control form-control-sm js-alloc-date">
         </div>
         <div>
           <label class="form-label fs-10 mb-1">To</label>
-          <input type="date" name="end_date" value="{{ end_date|date:'Y-m-d' }}" class="form-control form-control-sm">
+          <input type="text" name="end_date" value="{{ end_date|date:'Y-m-d' }}" class="form-control form-control-sm js-alloc-date">
         </div>
-        <button type="submit" class="btn btn-sm btn-phoenix-primary">Update</button>
+        <button type="submit" class="btn btn-sm btn-phoenix-primary">Custom range</button>
       </form>
     </div>
   </div>
+
+  <div class="row g-2 mt-1">
+    {% with s=alloc_stats %}
+    <div class="col-6 col-md">
+      <div class="border border-translucent rounded-3 p-2 h-100">
+        <div class="fs-10 text-body-tertiary">Capacity</div>
+        <div class="fs-7 fw-semibold">{{ s.capacity_hours|floatformat:1 }}<span class="fs-10 text-body-tertiary">h</span></div>
+      </div>
+    </div>
+    <div class="col-6 col-md">
+      <div class="border border-translucent rounded-3 p-2 h-100">
+        <div class="fs-10 text-body-tertiary">Coded</div>
+        <div class="fs-7 fw-semibold text-success">{{ s.coded_hours|floatformat:1 }}<span class="fs-10 text-body-tertiary">h</span></div>
+      </div>
+    </div>
+    <div class="col-6 col-md">
+      <div class="border border-translucent rounded-3 p-2 h-100">
+        <div class="fs-10 text-body-tertiary">Uncoded</div>
+        <div class="fs-7 fw-semibold {% if s.uncoded_hours %}text-warning-emphasis{% else %}text-body-tertiary{% endif %}">{{ s.uncoded_hours|floatformat:1 }}<span class="fs-10 text-body-tertiary">h</span></div>
+      </div>
+    </div>
+    <div class="col-6 col-md">
+      <div class="border border-translucent rounded-3 p-2 h-100">
+        <div class="fs-10 text-body-tertiary">Unavailable</div>
+        <div class="fs-7 fw-semibold">{{ s.unavailable_hours|floatformat:1 }}<span class="fs-10 text-body-tertiary">h</span></div>
+      </div>
+    </div>
+    <div class="col-6 col-md">
+      <div class="border border-translucent rounded-3 p-2 h-100">
+        <div class="fs-10 text-body-tertiary">Internal</div>
+        <div class="fs-7 fw-semibold">{{ s.internal_hours|floatformat:1 }}<span class="fs-10 text-body-tertiary">h</span></div>
+      </div>
+    </div>
+    {% if s.support_hours %}
+    <div class="col-6 col-md">
+      <div class="border border-translucent rounded-3 p-2 h-100">
+        <div class="fs-10 text-body-tertiary">Support</div>
+        <div class="fs-7 fw-semibold text-success">{{ s.support_hours|floatformat:1 }}<span class="fs-10 text-body-tertiary">h</span></div>
+      </div>
+    </div>
+    {% endif %}
+    {% endwith %}
+  </div>
+
+  {% if has_multi_code_day %}
+    <div class="alert alert-subtle-info d-flex align-items-start mt-3 mb-0 py-2 fs-9" role="alert">
+      <i class="fas fa-circle-info me-2 mt-1"></i>
+      <div>
+        {% if dup_policy == 'split' %}
+          Some days have <strong>more than one applicable billing code</strong>, so the day's hours are <strong>split evenly</strong> between them — that's why a code may show a part-day.
+        {% elif dup_policy == 'stack' %}
+          Some days have more than one applicable billing code; each code shows the <strong>full</strong> day's hours (they overlap), so per-code totals can exceed the hours worked.
+        {% else %}
+          Some days have more than one applicable billing code; the whole day is attributed to a <strong>single</strong> code ({{ dup_policy }}).
+        {% endif %}
+        Set how this behaves under <strong>Settings → Finance → Billing Codes</strong>.
+      </div>
+    </div>
+  {% endif %}
 
   {% if uncoded.hours %}
     <div class="alert alert-subtle-warning d-flex align-items-center mt-3 mb-0 py-2 fs-9" role="alert">
@@ -67,6 +144,19 @@
                       <div class="mb-1">
                         {% if entry.code %}
                           {% include 'partials/billingcode/billingcode_badge.html' with billingcode=entry.code %}
+                          {% if entry.kind == 'support' %}<span class="badge badge-phoenix badge-phoenix-success fs-10 ms-1" title="Cashed-out support budget">support</span>{% endif %}
+                          {% for t in entry.targets %}
+                            <span class="fs-10 text-body-secondary ms-1">
+                              <i class="fas fa-{% if t.kind == 'project' %}diagram-project{% elif t.kind == 'job' %}briefcase{% else %}layer-group{% endif %} me-1"></i>{% if t.url %}<a href="{{ t.url }}">{{ t.label }}</a>{% else %}{{ t.label }}{% endif %}
+                            </span>
+                          {% endfor %}
+                        {% elif entry.kind == 'support' %}
+                          <span class="badge badge-phoenix badge-phoenix-success"><i class="fas fa-user-tie me-1"></i>Support</span>
+                          {% for t in entry.targets %}<span class="fs-10 text-body-secondary ms-1">{% if t.url %}<a href="{{ t.url }}">{{ t.label }}</a>{% else %}{{ t.label }}{% endif %}</span>{% endfor %}
+                        {% elif entry.kind == 'unavailable' %}
+                          <span class="badge badge-phoenix badge-phoenix-secondary"><i class="fas fa-plane-departure me-1"></i>{{ entry.target_label }}</span>
+                        {% elif entry.kind == 'internal' %}
+                          <span class="badge badge-phoenix badge-phoenix-info">{{ entry.target_label }}</span>
                         {% else %}
                           <span class="badge badge-phoenix badge-phoenix-warning">No code</span>
                           {% if entry.target_url %}
@@ -155,6 +245,69 @@
     </div>
   </div>
 
+  {% if support_budget.per_job %}
+  <div class="row g-3 mt-1">
+    <div class="col-12">
+      <div class="card h-100">
+        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <div>
+            <h5 class="mb-0 d-inline">Support budget</h5>
+            <span class="text-body-tertiary fs-10 ms-2">
+              Budget {{ support_budget.totals.budget_hours|floatformat:1 }}h ·
+              drawn {{ support_budget.totals.drawn_hours|floatformat:1 }}h ·
+              remaining {{ support_budget.totals.remaining_hours|floatformat:1 }}h
+            </span>
+          </div>
+          {% if support_budget.totals.remaining_hours > 0 %}
+          <form method="post" action="{% url 'user_support_auto_draw' email=userProfile.email %}"
+                onsubmit="return confirm('Cash out the remaining support budget for {{ start_date|date:'j M' }} – {{ end_date|date:'j M Y' }} across all your jobs?');">
+            {% csrf_token %}
+            <input type="hidden" name="start" value="{{ start_date|date:'Y-m-d' }}">
+            <input type="hidden" name="end" value="{{ end_date|date:'Y-m-d' }}">
+            <button type="submit" class="btn btn-sm btn-phoenix-success">
+              <i class="fas fa-wand-magic-sparkles me-1"></i>Auto cash out this period
+            </button>
+          </form>
+          {% endif %}
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table fs-10 mb-0">
+              <thead>
+                <tr>
+                  <th class="ps-3">Job</th>
+                  {% if can_view_loaded_costs %}<th class="text-end">Budget</th>{% endif %}
+                  <th class="text-end">Budget (h)</th>
+                  <th class="text-end">Drawn (period)</th>
+                  <th class="text-end">Remaining</th>
+                  <th class="text-end pe-3"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for entry in support_budget.per_job %}
+                <tr>
+                  <td class="ps-3"><a href="{{ entry.job.get_absolute_url }}">{{ entry.job }}</a></td>
+                  {% if can_view_loaded_costs %}<td class="text-end">{% if entry.can_view_money %}{{ entry.budget_money|floatformat:2 }}{% else %}<span class="text-body-tertiary" title="No finance permission for this unit">—</span>{% endif %}</td>{% endif %}
+                  <td class="text-end">{% if entry.budget_hours != None %}{{ entry.budget_hours|floatformat:1 }}{% else %}—{% endif %}</td>
+                  <td class="text-end">{{ entry.period_drawn_hours|floatformat:1 }}</td>
+                  <td class="text-end {% if entry.remaining_hours != None and entry.remaining_hours < 0 %}text-danger{% endif %}">{% if entry.remaining_hours != None %}{{ entry.remaining_hours|floatformat:1 }}{% else %}—{% endif %}</td>
+                  <td class="text-end pe-3">
+                    <button class="btn btn-sm btn-phoenix-success py-0 px-2 fs-10 js-load-modal-form"
+                       data-url="{% url 'user_support_draw' email=userProfile.email role_pk=entry.role.pk %}?start={{ start_date|date:'Y-m-d' }}&amp;end={{ end_date|date:'Y-m-d' }}">
+                       Cash out
+                    </button>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
   <script>
     (function () {
       if (typeof echarts === 'undefined') { return; }
@@ -176,6 +329,22 @@
         }]
       });
       window.addEventListener('resize', function () { chart.resize(); });
+    })();
+  </script>
+
+  <script>
+    // Custom-range date inputs: UK-formatted display, ISO submitted value.
+    (function () {
+      if (typeof flatpickr === 'undefined') { return; }
+      document.querySelectorAll('.js-alloc-date').forEach(function (el) {
+        flatpickr(el, {
+          dateFormat: "Y-m-d",
+          altInput: true,
+          altFormat: "{{ site_date_format|escapejs }}",
+          allowInput: true,
+          disableMobile: true,
+        });
+      });
     })();
   </script>
 {% endblock %}

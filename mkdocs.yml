@@ -26,6 +26,7 @@ nav:
     - Jobs:
       - Managing Jobs: user_guide/Jobs/managing_jobs.md
       - Lifecycle: user_guide/Jobs/lifecycle.md
+      - Support-Team Budget: user_guide/Jobs/support_budget.md
       - Phases:
         - Managing Phases: user_guide/Jobs/phases/managing_phases.md
         - Phase Lifecycle: user_guide/Jobs/phases/lifecycle.md

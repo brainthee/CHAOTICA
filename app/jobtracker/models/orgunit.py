@@ -23,7 +23,7 @@ from chaotica_utils.models import User, get_sentinel_user, Holiday
 from chaotica_utils.models.soft_delete import SoftDeleteModel
 from ..models import TimeSlot
 from chaotica_utils.enums import UnitRoles, UpcomingAvailabilityRanges
-from ..enums import PhaseStatuses, JobStatuses
+from ..enums import PhaseStatuses, JobStatuses, JobSupportRole
 from django.utils import timezone
 from datetime import timedelta, date, datetime
 from decimal import Decimal
@@ -59,6 +59,13 @@ class OrganisationalUnit(SoftDeleteModel):
         default=Decimal(37),
         verbose_name="Target Profit",
         help_text="The % target profit for this unit",
+    )
+    support_premium_default = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal(8),
+        verbose_name="Support Premium Default (%)",
+        help_text="Default % of a job's revenue reserved for the support-team pool.",
     )
     businessHours_startTime = models.TimeField("Start Time", default="09:00:00")
     businessHours_endTime = models.TimeField("End Time", default="17:30:00")
@@ -130,6 +137,8 @@ class OrganisationalUnit(SoftDeleteModel):
                 "Can view all leave for members of the unit",
             ),
             ("can_approve_leave_requests", "Can approve leave requests"),
+            # Finance
+            ("can_view_loaded_costs", "Can view loaded cost rates"),
         )
 
     def get_working_days_in_range(self, start_date, end_date):
@@ -271,6 +280,46 @@ class OrganisationalUnit(SoftDeleteModel):
             membership.roles.add(management_role)
         # roles.add() doesn't trigger the member save() resync, so do it once here.
         self.sync_permissions()
+
+    def apply_support_template_to_job(self, job, *, overwrite=False):
+        """Apply this unit's support-team template to ``job``.
+
+        Idempotent upsert of :class:`JobSupportTeamRole` rows from
+        ``self.support_template``. Rows a user has manually edited
+        (``is_overridden=True``) are left untouched unless ``overwrite=True``.
+        Members removed from the template are *not* deleted from the job (their
+        history/draws are preserved); they simply stop being re-synced.
+
+        Returns a dict summary: ``{"created": n, "updated": n, "skipped": n}``.
+        """
+        from .job import JobSupportTeamRole
+
+        summary = {"created": 0, "updated": 0, "skipped": 0}
+        template_rows = self.support_template.select_related("user")
+        for tmpl in template_rows:
+            if tmpl.user_id is None:
+                continue
+            row, created = JobSupportTeamRole.objects.get_or_create(
+                job=job,
+                user_id=tmpl.user_id,
+                defaults={
+                    "role": tmpl.role,
+                    "profile_percent": tmpl.profile_percent,
+                },
+            )
+            if created:
+                summary["created"] += 1
+                continue
+            if row.is_overridden and not overwrite:
+                summary["skipped"] += 1
+                continue
+            row.role = tmpl.role
+            row.profile_percent = tmpl.profile_percent
+            if overwrite:
+                row.is_overridden = False
+            row.save()
+            summary["updated"] += 1
+        return summary
 
     def __str__(self):
         return self.name
@@ -942,6 +991,51 @@ class OrganisationalUnitMember(models.Model):
         # Resync only this member's permissions - reconciling the whole unit on
         # every membership save made bulk operations O(n^2).
         self.unit.sync_permissions(users=[self.member_id])
+
+
+class OrganisationalUnitSupportTemplateMember(models.Model):
+    """A member of a unit's default support team, with a profile allocation %.
+
+    UKI (and similar units) apply the same back-office support team to most
+    jobs. These template rows are copied into per-job
+    :class:`JobSupportTeamRole` rows via
+    :meth:`OrganisationalUnit.apply_support_template_to_job`.
+    """
+
+    unit = models.ForeignKey(
+        OrganisationalUnit,
+        on_delete=models.CASCADE,
+        related_name="support_template",
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        related_name="support_template_memberships",
+        on_delete=models.SET(get_sentinel_user),
+        null=True,
+        blank=True,
+    )
+    role = models.IntegerField(
+        verbose_name="Role",
+        choices=JobSupportRole.CHOICES,
+        default=JobSupportRole.OTHER,
+    )
+    profile_percent = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        default=Decimal("100"),
+        verbose_name="Profile Allocation (%)",
+        help_text="Coverage % (100 = full coverage). Drives this person's share of the support pool.",
+    )
+    history = HistoricalRecords()
+
+    class Meta:
+        ordering = ["user"]
+        unique_together = ["unit", "user"]
+
+    def __str__(self):
+        return "{} @ {} ({}%)".format(
+            str(self.user), str(self.unit), self.profile_percent
+        )
 
 
 @receiver(

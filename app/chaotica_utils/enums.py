@@ -557,6 +557,8 @@ class UnitRoles:
                 "jobtracker.can_signoff_own_scopes",
                 # Scheduling
                 "jobtracker.can_schedule_job",
+                # Finance
+                "jobtracker.can_view_loaded_costs",
             ],
         ),
         (

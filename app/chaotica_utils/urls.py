@@ -163,6 +163,16 @@ urlpatterns = [
         name="user_code_allocation",
     ),
     path(
+        "profile/<str:email>/allocations/draw/<int:role_pk>",
+        views.user_support_draw,
+        name="user_support_draw",
+    ),
+    path(
+        "profile/<str:email>/allocations/auto-draw",
+        views.user_support_auto_draw,
+        name="user_support_auto_draw",
+    ),
+    path(
         "profile/<str:email>/assign_role/",
         views.user_assign_global_role,
         name="user_assign_global_role",

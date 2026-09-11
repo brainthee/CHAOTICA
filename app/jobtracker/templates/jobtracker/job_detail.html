@@ -101,13 +101,9 @@
           </div>
         </div>
         <div class="tab-pane fade" id="sales" role="tabpanel" aria-labelledby="sales-tab">
-          <div class="alert alert-phoenix-primary" role="alert">
-            Coming soon...
+          <div id="sales-content">
+            <div class="text-center py-5 text-body-secondary"><span class="spinner-border spinner-border-sm me-2"></span>Loading sales&hellip;</div>
           </div>
-          {% comment %} <div class="row mt-4">
-            {% include 'partials/job/widgets/sales_stats.html' %}
-          </div>
-          {% include 'partials/job/widgets/sales_summary.html' %} {% endcomment %}
         </div>
         <div class="tab-pane fade" id="notes" role="tabpanel" aria-labelledby="notes-tab">
           {% include 'partials/job/widgets/notes.html' %}
@@ -139,14 +135,16 @@
                       <span class="fas fa-ellipsis-h fs-10"></span>
                   </button>              
                   <div class="dropdown-menu shadow dropdown-menu-end me-sm-n4 me-n3" aria-labelledby="navbarDropdownMenuLink">     
-                     <button class="dropdown-item js-load-modal-form" 
+                     <button class="dropdown-item js-load-modal-form"
                         data-url="{% url 'job_support_team_add' job.slug %}">
                         Add Support Role
                      </button>
-                     <button class="dropdown-item text-primary js-load-modal-form" 
-                        data-url="">
-                        Bulk Import
+                     {% if has_support_template %}
+                     <button class="dropdown-item text-primary js-load-modal-form"
+                        data-url="{% url 'job_support_team_apply_template' job.slug %}">
+                        Apply Support Template
                      </button>
+                     {% endif %}
                   </div>
                 </div>
               </div>
@@ -226,6 +224,20 @@ $("#scopeForm").dirty({preventLeaving: true});
         $('#team-content').html(html);
       }).fail(function () {
         $('#team-content').html('<div class="text-center py-5 text-danger">Failed to load. Please refresh the page.</div>');
+      });
+    });
+  })();
+
+  (function () {
+    var salesLoaded = false;
+    document.getElementById('sales-tab')?.addEventListener('shown.bs.tab', function () {
+      if (salesLoaded) return;
+      salesLoaded = true;
+      // jQuery .html() runs the partial's inline echarts init scripts.
+      $.get("{% url 'view_job_sales' job.slug %}", function (html) {
+        $('#sales-content').html(html);
+      }).fail(function () {
+        $('#sales-content').html('<div class="text-center py-5 text-danger">Failed to load. Please refresh the page.</div>');
       });
     });
   })();

@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.http import (
@@ -306,7 +307,10 @@ def job_support_team_edit(request, slug, pk):
     if request.method == "POST":
         form = JobSupportTeamRoleForm(request.POST, instance=support_role)
         if form.is_valid():
-            role = form.save()
+            role = form.save(commit=False)
+            # Manual edit: protect this row from being reset by a template re-apply.
+            role.is_overridden = True
+            role.save()
             log_system_activity(
                 job,
                 "{user} updated with {hrs}hrs as {role} support role.".format(
@@ -378,6 +382,80 @@ def job_support_team_delete(request, slug, pk):
     context = {"job": job, "instance": support_role}
     data["html_form"] = loader.render_to_string(
         "jobtracker/modals/job_support_team_delete.html", context, request=request
+    )
+    return JsonResponse(data)
+
+
+@job_permission_required_or_403("jobtracker.can_schedule_job", (Job, "slug", "slug"))
+def job_support_team_apply_template(request, slug):
+    """Apply (or re-apply) the unit's support-team template to this job.
+
+    Manually-edited rows (``is_overridden``) are preserved unless the caller
+    ticks the overwrite option.
+    """
+    job = get_object_or_404(Job, slug=slug)
+    data = dict()
+    if request.method == "POST" and request.POST.get("user_action") == "approve_action":
+        overwrite = request.POST.get("overwrite") == "on"
+        summary = job.unit.apply_support_template_to_job(job, overwrite=overwrite)
+        log_system_activity(
+            job,
+            "Support template applied ({created} added, {updated} updated, "
+            "{skipped} preserved).".format(**summary),
+            author=request.user,
+        )
+        data["form_is_valid"] = True
+    else:
+        data["form_is_valid"] = False
+
+    context = {
+        "job": job,
+        "has_template": job.unit.support_template.exists(),
+    }
+    data["html_form"] = loader.render_to_string(
+        "jobtracker/modals/job_support_team_apply_template.html",
+        context,
+        request=request,
+    )
+    return JsonResponse(data)
+
+
+@job_permission_required_or_403("jobtracker.can_schedule_job", (Job, "slug", "slug"))
+def job_support_team_draw(request, slug, pk):
+    """Cash-out (draw down) budgeted support hours for a timesheet period."""
+    from ..forms import SupportBudgetDrawForm
+
+    job = get_object_or_404(Job, slug=slug)
+    support_role = get_object_or_404(JobSupportTeamRole, pk=pk, job=job)
+    data = dict()
+    if request.method == "POST":
+        form = SupportBudgetDrawForm(request.POST)
+        if form.is_valid():
+            draw = form.save(commit=False)
+            draw.support_role = support_role
+            draw.user = support_role.user
+            draw.created_by = request.user
+            draw.save()
+            log_system_activity(
+                job,
+                "{user} drew down {hrs}h of support budget ({start} - {end}).".format(
+                    user=support_role.user,
+                    hrs=str(draw.hours_drawn),
+                    start=draw.period_start,
+                    end=draw.period_end,
+                ),
+                author=request.user,
+            )
+            data["form_is_valid"] = True
+        else:
+            data["form_is_valid"] = False
+            data["form_errors"] = form.errors
+    else:
+        form = SupportBudgetDrawForm()
+
+    context = {"form": form, "job": job, "instance": support_role}
+    data["html_form"] = loader.render_to_string(
+        "jobtracker/modals/job_support_team_draw.html", context, request=request
     )
     return JsonResponse(data)
 
@@ -539,6 +617,22 @@ class JobDetailView(
 
         context["entity_type"] = "Job"
         context["entity_id"] = context["job"].id
+
+        # Support-team budget (read-only computed view). Money/LCR columns are
+        # only shown to users with the finance permission on the job's unit.
+        job = context["job"]
+        context["can_view_loaded_costs"] = self.request.user.has_perm(
+            "jobtracker.can_view_loaded_costs", job.unit
+        )
+        support_budget = job.get_support_budget()
+        context["support_budget"] = support_budget
+        context["has_support_template"] = job.unit.support_template.exists()
+        # Attach each member's computed budget to its role for easy rendering.
+        per_member = support_budget["per_member"]
+        support_roles = list(job.supporting_team.select_related("user").all())
+        for role in support_roles:
+            role.budget = per_member.get(role.user_id)
+        context["support_roles"] = support_roles
 
         return context
 
@@ -804,6 +898,75 @@ def view_job_team(request, slug):
         "show_phases": True,
     }
     return render(request, "partials/scheduler/team_summary.html", context)
+
+
+@job_permission_required_or_403("jobtracker.can_view_jobs", (Job, "slug", "slug"))
+def view_job_sales(request, slug):
+    """Lazy-loaded Sales dashboard partial for the job detail 'Sales' tab.
+
+    Financials are shown to job viewers (``can_view_jobs``); the support-team
+    pool money is additionally gated on the finance permission
+    (``can_view_loaded_costs``) for the job's unit.
+    """
+    job = get_object_or_404(Job, slug=slug)
+
+    revenue = Decimal(job.revenue or 0)
+    staff_cost = Decimal(str(job.staff_cost() or 0))
+    profit = revenue - staff_cost
+    # Compute defensively (the model properties divide by revenue / scoped days).
+    profit_perc = round(profit / revenue * 100, 1) if revenue else Decimal(0)
+    target_profit = Decimal(job.unit.targetProfit) if job.unit_id else Decimal(0)
+    scoped_days = Decimal(str(job.get_total_scoped_days() or 0))
+    avg_day_rate = round(revenue / scoped_days, 2) if scoped_days else Decimal(0)
+
+    can_view_loaded_costs = request.user.is_superuser or (
+        job.unit_id
+        and request.user.has_perm("jobtracker.can_view_loaded_costs", job.unit)
+    )
+    support = job.get_support_budget()
+
+    # Scoped effort by category, summed across the job's phases.
+    effort_fields = [
+        ("Delivery", "delivery_hours"),
+        ("Reporting", "reporting_hours"),
+        ("Management", "mgmt_hours"),
+        ("QA", "qa_hours"),
+        ("Oversight", "oversight_hours"),
+        ("Debrief", "debrief_hours"),
+        ("Contingency", "contingency_hours"),
+        ("Other", "other_hours"),
+    ]
+    phases = list(job.phases.all())
+    effort = []
+    for label, field in effort_fields:
+        total = sum((getattr(p, field, 0) or Decimal(0)) for p in phases)
+        if total:
+            effort.append({"label": label, "hours": total})
+
+    # Support-team members (share % always; money gated).
+    support_members = sorted(
+        support["per_member"].values(),
+        key=lambda m: m["budget_money"],
+        reverse=True,
+    )
+
+    context = {
+        "job": job,
+        "revenue": revenue,
+        "staff_cost": staff_cost,
+        "profit": profit,
+        "profit_perc": profit_perc,
+        "target_profit": target_profit,
+        "meets_target": profit_perc >= target_profit,
+        "scoped_days": scoped_days,
+        "avg_day_rate": avg_day_rate,
+        "support_pool": support["pool"],
+        "support_premium": support["premium"],
+        "support_members": support_members,
+        "effort": effort,
+        "can_view_loaded_costs": can_view_loaded_costs,
+    }
+    return render(request, "partials/job/widgets/sales_dashboard.html", context)
 
 
 @job_permission_required_or_403("jobtracker.view_job_schedule", (Job, "slug", "slug"))

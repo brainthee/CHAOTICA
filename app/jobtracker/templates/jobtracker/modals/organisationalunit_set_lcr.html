@@ -1,0 +1,29 @@
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+<div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+        <form method="post" action="{{ request.get_full_path }}" class="js-submit-modal-form">
+            {% csrf_token %}
+            <div class="modal-header">
+                <h6 class="modal-title" id="modal-title-default">Loaded cost rate &mdash; {{ membership.member }}</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body pb-0">
+                <p class="text-body-tertiary fs-10 mb-2">
+                    Rates are date-effective &mdash; adding a new rate keeps the old ones for historical budgets.
+                </p>
+                {% if history %}
+                <table class="table table-sm fs-10 mb-0">
+                    <thead><tr><th>Effective from</th><th class="text-end">Rate (/hr)</th></tr></thead>
+                    <tbody>
+                        {% for h in history %}
+                        <tr><td>{{ h.effective_from|default:"—" }}</td><td class="text-end">{{ h.cost_per_hour|floatformat:2 }}</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% endif %}
+            </div>
+            {% crispy form %}
+        </form>
+    </div>
+ </div>

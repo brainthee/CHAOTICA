@@ -7,6 +7,7 @@ from .models import (
     Job,
     Link,
     JobSupportTeamRole,
+    SupportBudgetDraw,
     Qualification,
     QualificationRecord,
     AwardingBody,
@@ -22,6 +23,7 @@ from .models import (
     Project,
     OrganisationalUnit,
     OrganisationalUnitMember,
+    OrganisationalUnitSupportTemplateMember,
     Skill,
     Service,
     WorkflowTask,
@@ -30,7 +32,7 @@ from .models import (
     BillingCodeAssignment,
     OrganisationalUnitRole,
 )
-from chaotica_utils.models import Note, User, JobLevel, Group
+from chaotica_utils.models import Note, User, JobLevel, Group, UserCost
 from chaotica_utils.enums import GlobalRoles
 from .enums import (
     DefaultTimeSlotTypes,
@@ -2600,6 +2602,140 @@ class OrganisationalUnitMemberForm(forms.ModelForm):
         ]
 
 
+class OrganisationalUnitFinanceSettingsForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(OrganisationalUnitFinanceSettingsForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.helper.layout = Layout(
+            Div(
+                Row(
+                    Div(
+                        Field("support_premium_default"),
+                        css_class="input-group input-group-dynamic",
+                    )
+                ),
+                css_class="modal-body pt-3",
+            ),
+            Div(
+                Div(
+                    StrictButton(
+                        "Save",
+                        type="submit",
+                        css_class="btn btn-outline-success ms-auto mb-0",
+                    ),
+                    css_class="button-row d-flex",
+                ),
+                css_class="modal-footer",
+            ),
+        )
+
+    class Meta:
+        model = OrganisationalUnit
+        fields = ("support_premium_default",)
+
+
+class SupportTemplateMemberForm(forms.ModelForm):
+    user = forms.ModelChoiceField(
+        queryset=User.objects.filter(is_active=True),
+        widget=s2forms.ModelSelect2Widget(
+            attrs={
+                "class": "select2-widget",
+                "data-minimum-input-length": 3,
+                "data-ajax--url": "/autocomplete/users",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
+            },
+            search_fields=[
+                "first_name__icontains",
+                "last_name__icontains",
+                "email__icontains",
+            ],
+        ),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super(SupportTemplateMemberForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.helper.layout = Layout(
+            Div(
+                Row(Div(Field("user", style="width: 100%;"))),
+                Row(Div(Field("role"), css_class="input-group input-group-dynamic")),
+                Row(
+                    Div(
+                        Field("profile_percent"),
+                        css_class="input-group input-group-dynamic",
+                    )
+                ),
+                css_class="modal-body pt-3",
+            ),
+            Div(
+                Div(
+                    StrictButton(
+                        "Save",
+                        type="submit",
+                        css_class="btn btn-outline-success ms-auto mb-0",
+                    ),
+                    css_class="button-row d-flex",
+                ),
+                css_class="modal-footer",
+            ),
+        )
+
+    class Meta:
+        model = OrganisationalUnitSupportTemplateMember
+        fields = ("user", "role", "profile_percent")
+
+
+class UserCostForm(forms.ModelForm):
+    """Add a new date-effective loaded cost rate for a user.
+
+    ``user`` is fixed by the view (the member whose rate is being set), so the
+    form only captures the effective date and rate — a new row per change keeps
+    the history.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super(UserCostForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.helper.layout = Layout(
+            Div(
+                Row(
+                    Column(
+                        Div(
+                            Field("effective_from"),
+                            css_class="input-group input-group-dynamic",
+                        )
+                    ),
+                    Column(
+                        Div(
+                            Field("cost_per_hour"),
+                            css_class="input-group input-group-dynamic",
+                        )
+                    ),
+                ),
+                css_class="modal-body pt-3",
+            ),
+            Div(
+                Div(
+                    StrictButton(
+                        "Save rate",
+                        type="submit",
+                        css_class="btn btn-outline-success ms-auto mb-0",
+                    ),
+                    css_class="button-row d-flex",
+                ),
+                css_class="modal-footer",
+            ),
+        )
+
+    class Meta:
+        model = UserCost
+        fields = ("effective_from", "cost_per_hour")
+        widgets = {
+            "effective_from": forms.DateInput(attrs={"type": "date"}),
+        }
+
+
 class OrganisationalUnitMemberRolesForm(forms.ModelForm):
     roles = forms.ModelMultipleChoiceField(
         queryset=OrganisationalUnitRole.objects.all(),
@@ -3601,18 +3737,10 @@ class JobSupportTeamRoleForm(forms.ModelForm):
                 Row(Div(Field("user"), css_class="input-group input-group-dynamic")),
                 Row(Div(Field("role"), css_class="input-group input-group-dynamic")),
                 Row(
-                    Column(
-                        Div(
-                            Field("allocated_hours"),
-                            css_class="input-group input-group-dynamic",
-                        )
-                    ),
-                    Column(
-                        Div(
-                            Field("billed_hours"),
-                            css_class="input-group input-group-dynamic",
-                        )
-                    ),
+                    Div(
+                        Field("profile_percent"),
+                        css_class="input-group input-group-dynamic",
+                    )
                 ),
                 css_class="modal-body pt-3",
             ),
@@ -3631,4 +3759,54 @@ class JobSupportTeamRoleForm(forms.ModelForm):
 
     class Meta:
         model = JobSupportTeamRole
-        fields = ("user", "role", "allocated_hours", "billed_hours")
+        fields = ("user", "role", "profile_percent")
+
+
+class SupportBudgetDrawForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(SupportBudgetDrawForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.helper.layout = Layout(
+            Div(
+                Row(
+                    Column(
+                        Div(
+                            Field("period_start"),
+                            css_class="input-group input-group-dynamic",
+                        )
+                    ),
+                    Column(
+                        Div(
+                            Field("period_end"),
+                            css_class="input-group input-group-dynamic",
+                        )
+                    ),
+                ),
+                Row(
+                    Div(
+                        Field("hours_drawn"),
+                        css_class="input-group input-group-dynamic",
+                    )
+                ),
+                css_class="modal-body pt-3",
+            ),
+            Div(
+                Div(
+                    StrictButton(
+                        "Cash out",
+                        type="submit",
+                        css_class="btn btn-outline-success ms-auto mb-0",
+                    ),
+                    css_class="button-row d-flex",
+                ),
+                css_class="modal-footer",
+            ),
+        )
+
+    class Meta:
+        model = SupportBudgetDraw
+        fields = ("period_start", "period_end", "hours_drawn")
+        widgets = {
+            "period_start": forms.DateInput(attrs={"type": "date"}),
+            "period_end": forms.DateInput(attrs={"type": "date"}),
+        }

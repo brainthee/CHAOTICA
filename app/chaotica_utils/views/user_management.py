@@ -246,9 +246,11 @@ def _parse_allocation_range(request):
         except ValueError:
             start = end = None
     if start is None or end is None:
-        today = timezone.now().date()
-        start = today
-        end = today + datetime.timedelta(days=28)
+        # Default to the current configurable timesheet period (e.g. 1st–14th /
+        # 15th–end) rather than an arbitrary rolling window.
+        from ..utils import period_for_date
+
+        start, end = period_for_date(timezone.now().date())
     return start, end
 
 
@@ -275,6 +277,40 @@ def user_code_allocation(request, email):
         key=lambda c: str(c["code"].code).lower(),
     )
 
+    # Explain the duplicate-code handling when it actually applies to this view.
+    from ..utils.billing_allocation import duplicate_code_policy
+
+    dup_policy = duplicate_code_policy()
+    has_multi_code_day = any(
+        sum(1 for e in entries if e["code"]) > 1
+        for entries in allocation["per_day"].values()
+    )
+    from constance import config
+
+    site_date_format = config.SITE_DATE_FORMAT
+
+    # Support-team budget. Money/LCR are gated PER JOB on the finance permission
+    # for that job's unit — a viewer who can see costs in one unit must not see a
+    # different unit's budget money just because it appears on this page.
+    support_budget = target.get_support_budget(start, end)
+    is_super = request.user.is_superuser
+    for entry in support_budget["per_job"]:
+        entry["can_view_money"] = is_super or request.user.has_perm(
+            "jobtracker.can_view_loaded_costs", entry["job"].unit
+        )
+    # Whether to render the money column at all (any row visible).
+    can_view_loaded_costs = any(
+        e["can_view_money"] for e in support_budget["per_job"]
+    )
+
+    # Period navigation (prev/next jump by whole timesheet periods, anchored on
+    # the current start date).
+    from ..utils import next_period, previous_period, period_for_date
+
+    prev_start, prev_end = previous_period(start)
+    next_start, next_end = next_period(start)
+    cur_start, cur_end = period_for_date(timezone.now().date())
+
     context = page_defaults(request)
     context.update(
         {
@@ -282,15 +318,159 @@ def user_code_allocation(request, email):
             "start_date": start,
             "end_date": end,
             "date_range": "{} to {}".format(start, end),
+            "prev_start": prev_start,
+            "prev_end": prev_end,
+            "next_start": next_start,
+            "next_end": next_end,
+            "current_period_start": cur_start,
+            "current_period_end": cur_end,
+            "is_current_period": (start == cur_start and end == cur_end),
             "per_day": allocation["per_day"],
             "per_code": per_code,
             "uncoded": allocation["uncoded"],
+            "alloc_stats": allocation["stats"],
+            "dup_policy": dup_policy,
+            "has_multi_code_day": has_multi_code_day,
+            "site_date_format": site_date_format,
+            "support_budget": support_budget,
+            "can_view_loaded_costs": can_view_loaded_costs,
         }
     )
     return HttpResponse(
         loader.render_to_string(
             "chaotica_utils/user_code_allocation.html", context, request=request
         )
+    )
+
+
+@login_required
+def user_support_draw(request, email, role_pk):
+    """Cash out (draw down) support-budget hours from the user's own Billing
+    Codes page.
+
+    Self-service: gated on the same self-or-manager rule as the allocations page
+    (``can_be_managed_by``), NOT on the job's ``can_schedule_job`` — a support
+    member draws down their own budget without needing scheduling rights on the
+    job. The role must belong to the profile owner (``user=target``)."""
+    from jobtracker.models import JobSupportTeamRole
+    from jobtracker.forms import SupportBudgetDrawForm
+    from ..utils import period_for_date
+
+    target = get_object_or_404(User, email=email)
+    if not target.can_be_managed_by(request.user):
+        return HttpResponseForbidden()
+    support_role = get_object_or_404(JobSupportTeamRole, pk=role_pk, user=target)
+
+    data = dict()
+    if request.method == "POST":
+        form = SupportBudgetDrawForm(request.POST)
+        if form.is_valid():
+            draw = form.save(commit=False)
+            draw.support_role = support_role
+            draw.user = target
+            draw.created_by = request.user
+            draw.save()
+            data["form_is_valid"] = True
+        else:
+            data["form_is_valid"] = False
+            data["form_errors"] = form.errors
+    else:
+        from decimal import Decimal
+        from chaotica_utils.utils.support_budget import build_job_support_budget
+
+        # Pre-fill the period the page is showing (falls back to the current one),
+        # and the hours with the member's remaining budget — one-click cash-out.
+        def _d(value):
+            try:
+                return datetime.datetime.strptime(value, "%Y-%m-%d").date()
+            except (TypeError, ValueError):
+                return None
+
+        p_start = _d(request.GET.get("start"))
+        p_end = _d(request.GET.get("end"))
+        if not (p_start and p_end):
+            p_start, p_end = period_for_date(timezone.now().date())
+
+        initial = {"period_start": p_start, "period_end": p_end}
+        budget = build_job_support_budget(support_role.job, on_date=p_end)
+        member = budget["per_member"].get(support_role.user_id)
+        remaining = member.get("remaining_hours") if member else None
+        if remaining is not None and remaining > 0:
+            initial["hours_drawn"] = remaining.quantize(Decimal("0.01"))
+        form = SupportBudgetDrawForm(initial=initial)
+
+    context = {"form": form, "job": support_role.job, "instance": support_role}
+    data["html_form"] = loader.render_to_string(
+        "jobtracker/modals/job_support_team_draw.html", context, request=request
+    )
+    return JsonResponse(data)
+
+
+@login_required
+@require_http_methods(["POST"])
+def user_support_auto_draw(request, email):
+    """One-click cash out: fill the viewed period across ALL the user's support
+    roles with each role's remaining budget.
+
+    Only creates a draw for a role that has no draw yet in this period (so it's
+    safe to click again). Same self/manager gate as the allocations page.
+    """
+    from decimal import Decimal
+    from jobtracker.models import JobSupportTeamRole, SupportBudgetDraw
+    from jobtracker.enums import JobStatuses
+    from chaotica_utils.utils.support_budget import build_job_support_budget
+    from ..utils import period_for_date
+
+    target = get_object_or_404(User, email=email)
+    if not target.can_be_managed_by(request.user):
+        return HttpResponseForbidden()
+
+    def _d(value):
+        try:
+            return datetime.datetime.strptime(value, "%Y-%m-%d").date()
+        except (TypeError, ValueError):
+            return None
+
+    p_start = _d(request.POST.get("start"))
+    p_end = _d(request.POST.get("end"))
+    if not (p_start and p_end):
+        p_start, p_end = period_for_date(timezone.now().date())
+
+    roles = JobSupportTeamRole.objects.filter(
+        user=target, job__status__in=JobStatuses.ACTIVE_STATUSES
+    ).select_related("job")
+    created = 0
+    for role in roles:
+        budget = build_job_support_budget(role.job, on_date=p_end)
+        member = budget["per_member"].get(target.id)
+        remaining = member.get("remaining_hours") if member else None
+        if not remaining or remaining <= 0:
+            continue
+        _obj, was_created = SupportBudgetDraw.objects.get_or_create(
+            support_role=role,
+            period_start=p_start,
+            period_end=p_end,
+            defaults={
+                "user": target,
+                "hours_drawn": remaining.quantize(Decimal("0.01")),
+                "created_by": request.user,
+            },
+        )
+        if was_created:
+            created += 1
+
+    if created:
+        messages.success(
+            request, "Cashed out {} support {} for {} – {}.".format(
+                created, "role" if created == 1 else "roles", p_start, p_end
+            )
+        )
+    else:
+        messages.info(request, "Nothing to cash out for this period.")
+
+    url = reverse("user_code_allocation", kwargs={"email": target.email})
+    return HttpResponseRedirect(
+        "{}?start={}&end={}".format(url, p_start, p_end)
     )
 
 

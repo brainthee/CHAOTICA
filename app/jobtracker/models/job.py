@@ -1,4 +1,6 @@
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from ..enums import (
     JobStatuses,
     RestrictedClassifications,
@@ -143,6 +145,34 @@ class Job(models.Model):
         verbose_name="Sales Revenue",
         help_text="Optional: Cost of the job to the client",
     )
+    support_premium_override = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name="Support Premium Override (%)",
+        help_text="Per-job override of the support pool premium %. Blank = unit/global default.",
+    )
+
+    def get_effective_premium(self):
+        """Resolve the support-pool premium % for this job.
+
+        Precedence: per-job ``support_premium_override`` → the unit's
+        ``support_premium_default`` → global constance ``SUPPORT_PREMIUM_DEFAULT``.
+        Returns a Decimal percent (e.g. ``Decimal("8")``).
+        """
+        if self.support_premium_override is not None:
+            return Decimal(self.support_premium_override)
+        if self.unit_id and self.unit.support_premium_default is not None:
+            return Decimal(self.unit.support_premium_default)
+        return Decimal(str(config.SUPPORT_PREMIUM_DEFAULT))
+
+    def get_support_budget(self, on_date=None):
+        """Read-only computed support-team budget for this job. See
+        :mod:`chaotica_utils.utils.support_budget`."""
+        from chaotica_utils.utils.support_budget import build_job_support_budget
+
+        return build_job_support_budget(self, on_date=on_date)
 
     def get_billing_assignments(self):
         """Billing-code assignments attached directly to this job."""
@@ -1172,6 +1202,18 @@ class JobSupportTeamRole(models.Model):
         choices=JobSupportRole.CHOICES,
         default=JobSupportRole.OTHER,
     )
+    profile_percent = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        default=Decimal("100"),
+        verbose_name="Profile Allocation (%)",
+        help_text="Coverage % (100 = full coverage). Drives this person's share of the support pool.",
+    )
+    is_overridden = models.BooleanField(
+        default=False,
+        help_text="Set when this row is manually edited, so re-applying the unit "
+        "support template leaves it untouched.",
+    )
     allocated_hours = models.FloatField(
         verbose_name="Allocated Hours",
         help_text="Hours allocated to this person",
@@ -1189,3 +1231,77 @@ class JobSupportTeamRole(models.Model):
             return round(100 * self.billed_hours / self.allocated_hours, 2)
         else:
             return 0.0
+
+    def drawn_hours(self):
+        """Total hours drawn down from the ledger for this support role."""
+        total = self.draws.aggregate(total=models.Sum("hours_drawn"))["total"]
+        return total or Decimal("0")
+
+
+class SupportBudgetDraw(models.Model):
+    """A per-period 'cash-out' of budgeted support hours.
+
+    Support members draw down hours each timesheet period; remaining budget is
+    always computed (budget_hours − Σ draws), never stored, so accumulation
+    carries forward across periods.
+    """
+
+    support_role = models.ForeignKey(
+        JobSupportTeamRole,
+        on_delete=models.CASCADE,
+        related_name="draws",
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        related_name="support_budget_draws",
+        null=True,
+        blank=True,
+        on_delete=models.SET(get_sentinel_user),
+        help_text="Denormalised from support_role.user for fast per-user queries.",
+    )
+    period_start = models.DateField(verbose_name="Period Start")
+    period_end = models.DateField(verbose_name="Period End")
+    hours_drawn = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        verbose_name="Hours Drawn",
+        help_text="Hours cashed out for this period.",
+    )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        related_name="+",
+        null=True,
+        blank=True,
+        on_delete=models.SET(get_sentinel_user),
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    history = HistoricalRecords()
+
+    class Meta:
+        ordering = ["-period_start"]
+        indexes = [
+            models.Index(fields=["user", "period_start"]),
+        ]
+
+    def __str__(self):
+        return "{} {} → {} ({}h)".format(
+            str(self.user), self.period_start, self.period_end, self.hours_drawn
+        )
+
+    def save(self, *args, **kwargs):
+        # Keep the denormalised user in sync with the support role.
+        if self.user_id is None and self.support_role_id:
+            self.user_id = self.support_role.user_id
+        super().save(*args, **kwargs)
+
+
+@receiver(post_save, sender=Job, dispatch_uid="apply_support_template_on_job_create")
+def apply_support_template_on_job_create(sender, instance, created, **kwargs):
+    """Seed a new job's support team from its unit's template, if one exists."""
+    # Never fire during fixture/dump loads (related rows may not exist yet).
+    if kwargs.get("raw"):
+        return
+    if not created or not instance.unit_id:
+        return
+    if instance.unit.support_template.exists():
+        instance.unit.apply_support_template_to_job(instance)

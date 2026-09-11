@@ -214,9 +214,9 @@ class JobGuestPermissions:
 
 class JobSupportRole:
     OTHER = 0
-    COMMERCIAL = 1
-    QA = 1
+    QA = 1  # kept at 1: existing rows with value 1 have always displayed as "QA"
     SCOPE = 2
+    COMMERCIAL = 3  # was 1 (collided with QA); moved to a distinct value
     CHOICES = (
         (OTHER, "Other"),
         (COMMERCIAL, "Commercial"),

@@ -4,8 +4,10 @@ from .models import (
     Phase,
     Job,
     JobSupportTeamRole,
+    SupportBudgetDraw,
     OrganisationalUnit,
     OrganisationalUnitMember,
+    OrganisationalUnitSupportTemplateMember,
     Team, TeamMember,
     Skill,
     SkillCategory,
@@ -53,6 +55,7 @@ class JobAdmin(admin.ModelAdmin):
 
 
 admin.site.register(JobSupportTeamRole)
+admin.site.register(SupportBudgetDraw)
 
 
 class TeamMemberInline(admin.TabularInline):
@@ -70,9 +73,17 @@ class OrganisationalUnitMemberInline(admin.TabularInline):
     extra = 1
 
 
+class OrganisationalUnitSupportTemplateMemberInline(admin.TabularInline):
+    model = OrganisationalUnitSupportTemplateMember
+    extra = 0
+
+
 @admin.register(OrganisationalUnit)
 class OrganisationalUnitAdmin(GuardedModelAdmin):
-    inlines = [OrganisationalUnitMemberInline]
+    inlines = [
+        OrganisationalUnitMemberInline,
+        OrganisationalUnitSupportTemplateMemberInline,
+    ]
     list_display = ("name", "is_deleted")
     list_filter = ("is_deleted",)
 

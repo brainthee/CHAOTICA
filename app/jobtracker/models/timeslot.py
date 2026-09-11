@@ -370,9 +370,27 @@ class TimeSlot(models.Model):
             )
         return data
 
-    def _get_business_tz(self):
+    def _business_membership(self):
+        """The user's primary org membership, memoised on the user instance.
+
+        Business-hours resolution reads the same membership for every slot the
+        user owns — and, via :func:`slot_daily_hours`, once per calendar day of
+        each multi-day slot through ephemeral sub-slots that share this
+        ``user``. Fetching it once per user (with the ``unit`` joined) instead
+        of once per call turns the allocation/analytics roll-up from thousands
+        of queries into a handful. ``None`` (no membership) is cached too.
+        """
+        user = self.user
+        if not hasattr(user, "_business_membership_cache"):
+            user._business_membership_cache = (
+                user.unit_memberships.select_related("unit").first()
+            )
+        return user._business_membership_cache
+
+    def _get_business_tz(self, org=None):
         """Resolve timezone for business hours: org unit → user pref → UTC."""
-        org = self.user.unit_memberships.first()
+        if org is None:
+            org = self._business_membership()
         if org and getattr(org.unit, "businessHours_timezone", None):
             return zoneinfo.ZoneInfo(org.unit.businessHours_timezone)
         if self.user.pref_timezone:
@@ -387,12 +405,12 @@ class TimeSlot(models.Model):
         import datetime
 
         unit = "hour"
-        org = self.user.unit_memberships.first()
+        org = self._business_membership()
 
         # Resolve the timezone that business hours are defined in, and convert
         # slot times to that timezone so wall-clock comparisons are correct
         # across DST transitions.
-        local_tz = self._get_business_tz()
+        local_tz = self._get_business_tz(org)
         local_start = self.start.astimezone(local_tz)
         local_end = self.end.astimezone(local_tz)
 

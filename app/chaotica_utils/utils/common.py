@@ -461,6 +461,52 @@ def can_manage_job_level(requesting_user, target_user):
     return False
 
 
+def can_manage_user_lcr(requesting_user, target_user):
+    """Determine if ``requesting_user`` may view/manage ``target_user``'s loaded
+    cost rate (LCR).
+
+    Loaded cost rates are gated by the ``jobtracker.can_view_loaded_costs``
+    permission (the same permission the org-unit Finance tab uses). This is the
+    finance boundary — deliberately *not* the same as ``manage_user``/manager,
+    so profile-editing rights never leak into cost-rate access. Granted if:
+
+    1. requesting_user is a superuser, or holds the permission globally
+       (model-level, e.g. via a finance group); or
+    2. the target belongs to at least one active org-unit and requesting_user
+       holds ``can_view_loaded_costs`` on *every* such unit (so you can only set
+       the LCR of people entirely within your finance remit).
+
+    Self-service is intentionally excluded — a person cannot set their own LCR.
+    """
+    from ..models import User
+
+    if not requesting_user or not requesting_user.is_authenticated:
+        return False
+    if isinstance(target_user, str):
+        try:
+            target_user = User.objects.get(email=target_user)
+        except User.DoesNotExist:
+            return False
+
+    if requesting_user.is_superuser:
+        return True
+    # Global (model-level) grant — a finance admin who can see all costs.
+    if requesting_user.has_perm("jobtracker.can_view_loaded_costs"):
+        return True
+
+    memberships = list(
+        target_user.unit_memberships.filter(left_date__isnull=True).select_related(
+            "unit"
+        )
+    )
+    if not memberships:
+        return False
+    return all(
+        requesting_user.has_perm("jobtracker.can_view_loaded_costs", ms.unit)
+        for ms in memberships
+    )
+
+
 def slots_to_days(slots, hours_in_day, filter_fn=None):
     """Sum a list of timeslots into whole days, optionally filtered.
 

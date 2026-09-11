@@ -1,0 +1,186 @@
+{% load static %}
+{% load humanize %}
+
+<!-- KPI tiles -->
+<div class="row g-2 mt-1">
+  <div class="col-6 col-lg">
+    <div class="border border-translucent rounded-3 p-3 h-100">
+      <div class="fs-10 text-body-tertiary text-uppercase">Revenue</div>
+      <div class="fs-6 fw-bold">£{{ revenue|floatformat:0|intcomma }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg">
+    <div class="border border-translucent rounded-3 p-3 h-100">
+      <div class="fs-10 text-body-tertiary text-uppercase">Staff cost</div>
+      <div class="fs-6 fw-bold">£{{ staff_cost|floatformat:0|intcomma }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg">
+    <div class="border border-translucent rounded-3 p-3 h-100">
+      <div class="fs-10 text-body-tertiary text-uppercase">Gross profit</div>
+      <div class="fs-6 fw-bold {% if profit < 0 %}text-danger{% elif meets_target %}text-success{% else %}text-warning-emphasis{% endif %}">
+        £{{ profit|floatformat:0|intcomma }}
+        <span class="fs-9 fw-semibold">({{ profit_perc|floatformat:1 }}%)</span>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg">
+    <div class="border border-translucent rounded-3 p-3 h-100">
+      <div class="fs-10 text-body-tertiary text-uppercase">Avg day rate</div>
+      <div class="fs-6 fw-bold">£{{ avg_day_rate|floatformat:0|intcomma }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg">
+    <div class="border border-translucent rounded-3 p-3 h-100">
+      <div class="fs-10 text-body-tertiary text-uppercase">Scoped days</div>
+      <div class="fs-6 fw-bold">{{ scoped_days|floatformat:1 }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg">
+    <div class="border border-translucent rounded-3 p-3 h-100">
+      <div class="fs-10 text-body-tertiary text-uppercase">Support pool</div>
+      <div class="fs-6 fw-bold">
+        {% if can_view_loaded_costs %}£{{ support_pool|floatformat:0|intcomma }}{% else %}<span class="text-body-tertiary fs-9" title="Needs finance permission">—</span>{% endif %}
+        <span class="fs-10 text-body-tertiary">@ {{ support_premium|floatformat:"-2" }}%</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mt-0">
+  <!-- Margin vs target gauge -->
+  <div class="col-12 col-xl-5">
+    <div class="card h-100">
+      <div class="card-header pb-0"><h5 class="mb-0 fs-9">Margin vs target</h5></div>
+      <div class="card-body">
+        <div id="sales-margin-gauge" style="height:230px;"></div>
+        <p class="text-center text-body-tertiary fs-10 mb-0">
+          Unit target: <strong>{{ target_profit|floatformat:1 }}%</strong>
+          · This job:
+          <strong class="{% if profit < 0 %}text-danger{% elif meets_target %}text-success{% else %}text-warning-emphasis{% endif %}">{{ profit_perc|floatformat:1 }}%</strong>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scoped effort breakdown -->
+  <div class="col-12 col-xl-7">
+    <div class="card h-100">
+      <div class="card-header pb-0"><h5 class="mb-0 fs-9">Scoped effort (hours)</h5></div>
+      <div class="card-body">
+        {% if effort %}
+          <div id="sales-effort-bar" style="height:230px;"></div>
+        {% else %}
+          <div class="text-center text-body-secondary py-5 fs-9">No scoped hours on this job's phases yet.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Support-team cut -->
+<div class="row g-3 mt-0">
+  <div class="col-12">
+    <div class="card h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fs-9">Support-team cut</h5>
+        <span class="text-body-tertiary fs-10">{{ support_premium|floatformat:"-2" }}% of revenue{% if can_view_loaded_costs %} = £{{ support_pool|floatformat:0|intcomma }}{% endif %}</span>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-sm fs-10 mb-0">
+            <thead>
+              <tr>
+                <th class="ps-3">Person</th>
+                <th class="text-end">Share</th>
+                {% if can_view_loaded_costs %}<th class="text-end">Budget</th>{% endif %}
+                <th class="text-end pe-3">Budget (h)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for m in support_members %}
+              <tr>
+                <td class="ps-3 align-middle">{% include 'partials/users/user_table_display.html' with notitle=1 noorg=1 u=m.user %}</td>
+                <td class="text-end align-middle">{{ m.share_percent|floatformat:2 }}%</td>
+                {% if can_view_loaded_costs %}<td class="text-end align-middle">£{{ m.budget_money|floatformat:2|intcomma }}</td>{% endif %}
+                <td class="text-end align-middle pe-3">{% if m.budget_hours != None %}{{ m.budget_hours|floatformat:1 }}{% else %}—{% endif %}</td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="4" class="text-center text-body-secondary py-3">No support team on this job.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    if (typeof echarts === 'undefined') { return; }
+    var css = getComputedStyle(document.documentElement);
+    var muted = (css.getPropertyValue('--phoenix-tertiary-color') || '#8a94ad').trim();
+    var ink = (css.getPropertyValue('--phoenix-body-color') || '#3e465b').trim();
+
+    // --- Margin vs target gauge ---
+    (function () {
+      var el = document.getElementById('sales-margin-gauge');
+      if (!el) { return; }
+      var margin = {{ profit_perc|default:0 }};
+      var target = {{ target_profit|default:0 }};
+      var max = Math.max(50, Math.ceil(target * 1.5), Math.ceil(margin) + 10);
+      var targetFrac = max > 0 ? Math.min(1, Math.max(0, target / max)) : 0;
+      var ok = margin >= target, loss = margin < 0;
+      var valColour = loss ? '#e5352b' : (ok ? '#25b003' : '#e5780b');
+      var chart = echarts.init(el);
+      chart.setOption({
+        series: [{
+          type: 'gauge', min: 0, max: max, radius: '100%', center: ['50%', '62%'],
+          startAngle: 200, endAngle: -20,
+          progress: { show: false },
+          axisLine: { lineStyle: { width: 14, color: [
+            [targetFrac, '#e5780b'], [1, '#25b003']
+          ] } },
+          pointer: { width: 5, length: '62%', itemStyle: { color: valColour } },
+          axisTick: { show: false },
+          splitLine: { length: 10, lineStyle: { color: muted, width: 1 } },
+          axisLabel: { color: muted, fontSize: 9, distance: 12,
+                       formatter: function (v) { return v + '%'; } },
+          anchor: { show: true, size: 8, itemStyle: { color: valColour } },
+          detail: { valueAnimation: true, fontSize: 22, fontWeight: 'bold',
+                    offsetCenter: [0, '38%'], color: valColour,
+                    formatter: '{value}%' },
+          data: [{ value: margin }]
+        }]
+      });
+      window.addEventListener('resize', function () { chart.resize(); });
+    })();
+
+    // --- Scoped effort bar (single series, one hue) ---
+    (function () {
+      var el = document.getElementById('sales-effort-bar');
+      if (!el) { return; }
+      var labels = [{% for e in effort %}"{{ e.label|escapejs }}"{% if not forloop.last %},{% endif %}{% endfor %}];
+      var vals = [{% for e in effort %}{{ e.hours|floatformat:1 }}{% if not forloop.last %},{% endif %}{% endfor %}];
+      var chart = echarts.init(el);
+      chart.setOption({
+        grid: { left: 90, right: 30, top: 10, bottom: 20 },
+        tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' },
+                   valueFormatter: function (v) { return v + 'h'; } },
+        xAxis: { type: 'value', axisLabel: { color: muted, fontSize: 9 },
+                 splitLine: { lineStyle: { color: muted, opacity: 0.2 } } },
+        yAxis: { type: 'category', inverse: true, data: labels,
+                 axisLabel: { color: ink, fontSize: 10 },
+                 axisTick: { show: false }, axisLine: { show: false } },
+        series: [{
+          type: 'bar', data: vals, barWidth: '58%',
+          itemStyle: { color: '#3874ff', borderRadius: [0, 4, 4, 0] },
+          label: { show: true, position: 'right', color: muted, fontSize: 9,
+                   formatter: '{c}h' }
+        }]
+      });
+      window.addEventListener('resize', function () { chart.resize(); });
+    })();
+  })();
+</script>

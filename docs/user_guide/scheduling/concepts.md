@@ -49,9 +49,19 @@ If a **client requires onboarding**, a person must have an onboarding record for
 
 A client's **framework agreement** sets a total number of days that can be scheduled across its jobs. Bookings check against it: a **closed** framework blocks all scheduling; exceeding the budget either blocks (if over‑allocation isn't allowed) or warns. See [Framework Agreements](../clients/framework_agreements.md).
 
+## One source of truth (for developers)
+
+What appears on the schedule — the time slots, leave, holidays and per-user
+availability for a date window, and *who* you're allowed to see — is assembled by
+a single shared core in the backend. Both the in-app vis-timeline scheduler and
+the read-only [schedule REST API](../../integration/apis.md) render from that same
+core, so the calendar and the API can never disagree. Changes to what counts as
+availability or which slots are shown land in one place.
+
 ## Related Topics
 
 - [Booking & Validation](validation.md) — how these rules fire when you book
 - [Sidebar Widgets](widgets.md) — where scoped/scheduled/remaining and confirmed/tentative are shown
+- [Calendar Feeds](calendar_feeds.md) — iCal subscriptions and the schedule REST API
 - [Framework Agreements](../clients/framework_agreements.md)
 - [Managing Leave](../operations/managing_leave.md)

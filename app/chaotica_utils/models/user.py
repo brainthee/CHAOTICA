@@ -1557,6 +1557,16 @@ class User(AbstractUser):
 
         return build_user_code_allocation(self, start_date, end_date)
 
+    def get_support_budget(self, start=None, end=None):
+        """Support-team budget roll-up for this user across active jobs.
+
+        Delegates to :func:`chaotica_utils.utils.build_user_support_budget`.
+        Draws are filtered to ``[start, end]`` when provided.
+        """
+        from ..utils import build_user_support_budget
+
+        return build_user_support_budget(self, start=start, end=end)
+
     def get_upcoming_availability(self, org=None):
         data = {}
         # Get future availability
@@ -1712,3 +1722,32 @@ class UserCost(models.Model):
 
     def __str__(self):
         return "{} {}".format(str(self.user), str(self.cost_per_hour))
+
+    @classmethod
+    def cost_on(cls, user, on_date):
+        """Return the loaded cost-per-hour effective for ``user`` on ``on_date``.
+
+        Date-aware lookup: picks the latest row whose ``effective_from`` is on or
+        before ``on_date``, falling back to any undated row (``effective_from``
+        NULL is treated as "applies always"). Returns a Decimal or None.
+
+        NB: this deliberately uses explicit ordering rather than the Meta default
+        + ``.last()`` (as TimeSlot.cost() does), which returns the *oldest*
+        eligible rate.
+        """
+        if user is None or on_date is None:
+            return None
+        dated = (
+            cls.objects.filter(user=user, effective_from__lte=on_date)
+            .order_by("-effective_from")
+            .first()
+        )
+        if dated is not None:
+            return dated.cost_per_hour
+        # Fall back to an undated ("applies always") row if present.
+        undated = (
+            cls.objects.filter(user=user, effective_from__isnull=True)
+            .order_by("-pk")
+            .first()
+        )
+        return undated.cost_per_hour if undated is not None else None
