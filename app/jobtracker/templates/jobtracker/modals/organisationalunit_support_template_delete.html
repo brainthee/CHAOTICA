@@ -1,0 +1,24 @@
+{% load widget_tweaks %}
+<div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+        <form method="post" action="{{ request.get_full_path }}" class="js-submit-modal-form">
+            {% csrf_token %}
+            <div class="modal-header">
+                <h6 class="modal-title" id="modal-title-default">Remove template member</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Remove <strong>{{ instance.user }}</strong> from {{ orgUnit.name }}'s support template?</p>
+                <p class="text-body-tertiary fs-10 mb-0">
+                    This only changes the template. Existing jobs keep the support rows already applied to them.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <input type="hidden" name="user_action" value="">
+                <button type="submit" onclick="this.form.user_action.value=this.value"
+                    value="approve_action" class="btn btn-phoenix-warning mb-0">Remove</button>
+                <button type="button" class="btn btn-light shadow-none mb-0" data-bs-dismiss="modal">Close</button>
+            </div>
+        </form>
+    </div>
+ </div>

@@ -414,6 +414,12 @@ class CustomConfigForm(ConstanceForm):
                             "SKILLS_REVIEW_DAYS",
                             "PROFILE_REVIEW_DAYS",
                         ),
+                        sect(
+                            "Localisation",
+                            "SITE_DATE_FORMAT",
+                            help="Date-picker display format (flatpickr tokens). "
+                            "Django-rendered dates follow the LANGUAGE_CODE setting.",
+                        ),
                     ),
                 ),
             ),
@@ -447,6 +453,9 @@ class CustomConfigForm(ConstanceForm):
                             "Work Settings",
                             "DEFAULT_HOURS_IN_DAY",
                             "DEFAULT_WORKING_DAYS",
+                            "TIMESHEET_PERIOD_START_DAYS",
+                            help="Timesheet period start days drive the period "
+                            "navigation on the billing-codes page (e.g. '1,15').",
                         ),
                         sect(
                             "Schedule Thresholds",
@@ -495,6 +504,28 @@ class CustomConfigForm(ConstanceForm):
                             "LEAVE_DAYS_NOTICE",
                             "LEAVE_HISTORY_MONTHS",
                             "LEAVE_ENFORCE_LIMIT",
+                        ),
+                    ),
+                ),
+            ),
+            Tab(
+                "Finance",
+                Row(
+                    col(
+                        sect(
+                            "Support Team",
+                            "SUPPORT_PREMIUM_DEFAULT",
+                            help="Default % of a job's revenue reserved for the "
+                            "support-team pool. Org units and individual jobs can "
+                            "override this.",
+                        ),
+                    ),
+                    col(
+                        sect(
+                            "Billing Codes",
+                            "BILLING_DUPLICATE_CODE_POLICY",
+                            help="How to attribute a day's hours when it maps to "
+                            "more than one billing code (on the Billing Codes page).",
                         ),
                     ),
                 ),

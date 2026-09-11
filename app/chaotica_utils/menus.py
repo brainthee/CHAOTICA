@@ -29,6 +29,19 @@ Menu.add_item(
 Menu.add_item(
     "user",
     MenuItem(
+        "My Billing Codes",
+        lambda request: reverse(
+            "user_code_allocation", kwargs={"email": request.user.email}
+        ),
+        check=lambda request: request.user.is_authenticated,
+        icon="file-invoice-dollar",
+        weight=1,
+    ),
+)
+
+Menu.add_item(
+    "user",
+    MenuItem(
         "Manage Annual Leave",
         reverse("view_own_leave"),
         check=lambda request: request.user.is_authenticated,

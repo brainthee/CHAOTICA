@@ -29,7 +29,17 @@ Feeds are gated by site‑wide settings, so an administrator can turn them on or
 
 If a feed type is disabled site‑wide, its URLs stop returning data regardless of individual settings. See [Application Settings](../../administration/chaotica_settings.md).
 
+## Programmatic access (REST API)
+
+If you want the schedule as **data** (to drive your own tool) rather than an iCal
+subscription, use the read-only schedule REST API: `GET /api/v1/users/{id}/schedule/`
+for one person, or `GET /api/v1/schedule/` for everyone you may see. It returns
+work timeslots, leave, holidays and availability for a date window in one call.
+See [External APIs](../../integration/apis.md) and the
+[REST API (v1) reference](../../development/api_v1.md#schedule-composite-window).
+
 ## Related Topics
 
 - [Scheduling Overview](overview.md)
+- [External APIs](../../integration/apis.md) — the schedule REST API
 - [Application Settings](../../administration/chaotica_settings.md) — the feed toggles and schedule colours

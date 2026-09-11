@@ -214,6 +214,30 @@ CONSTANCE_CONFIG = {
     ),
     # Work settings
     "DEFAULT_HOURS_IN_DAY": (7.5, "Default hours in a work day"),
+    "SUPPORT_PREMIUM_DEFAULT": (
+        8.0,
+        "Default % of a job's revenue reserved for the support-team pool (fallback when no unit/job value is set).",
+    ),
+    "TIMESHEET_PERIOD_START_DAYS": (
+        "1,15",
+        "Days of the month that timesheet periods start on (comma-separated). "
+        "E.g. '1,15' = two periods per month: 1st–14th and 15th–end of month. "
+        "'1' = whole-month periods. Drives the period navigation on the billing-codes page.",
+    ),
+    "BILLING_DUPLICATE_CODE_POLICY": (
+        "split",
+        "How to attribute a day's hours when it maps to more than one billing code. "
+        "split = divide hours evenly across the codes (day totals match real hours); "
+        "stack = each code gets the full day's hours; "
+        "prefer_newest / prefer_oldest = give the whole day to a single code by assignment date.",
+        "duplicate_code_policy",
+    ),
+    "SITE_DATE_FORMAT": (
+        "d/m/Y",
+        "Display format for date pickers, in flatpickr tokens (d=day, m=month, "
+        "Y=4-digit year). Default 'd/m/Y' = DD/MM/YYYY. Django-rendered dates "
+        "follow the LANGUAGE_CODE setting instead.",
+    ),
     # Schedule thresholds (% of scoped time scheduled)
     "SCHEDULE_THRESHOLD_SUCCESS": (
         90,
@@ -393,6 +417,18 @@ CONSTANCE_ADDITIONAL_FIELDS = {
                 ("success", "Success"),
                 ("danger", "Danger"),
                 ("warning", "Warning"),
+            ),
+        },
+    ],
+    "duplicate_code_policy": [
+        "django.forms.fields.ChoiceField",
+        {
+            "widget": "django.forms.Select",
+            "choices": (
+                ("split", "Split evenly across codes"),
+                ("stack", "Stack (each code gets full hours)"),
+                ("prefer_newest", "Prefer newest assignment"),
+                ("prefer_oldest", "Prefer oldest assignment"),
             ),
         },
     ],
@@ -821,7 +857,10 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
-LANGUAGE_CODE = "en-us"
+# Central locale control for all Django-rendered dates/numbers. en-gb gives
+# DD/MM/YYYY everywhere Django localises a date (tables, labels, form inputs).
+# Override with the LANGUAGE_CODE env var if a different locale is ever needed.
+LANGUAGE_CODE = os.environ.get("LANGUAGE_CODE", default="en-gb")
 TIME_ZONE = os.environ.get("TZ", default="UTC")
 USE_I18N = True
 USE_L10N = True

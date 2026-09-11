@@ -264,6 +264,7 @@ urlpatterns = [
     path("job/<str:slug>/clone/", views.job_clone, name="job_clone"),
     path("job/<str:slug>/schedule/export/", views.job_schedule_export, name="job_schedule_export"),
     path("job/<str:slug>/team/", views.view_job_team, name="view_job_team"),
+    path("job/<str:slug>/sales/", views.view_job_sales, name="view_job_sales"),
     path("job/<str:slug>/team/export/", views.job_team_export, name="job_team_export"),
     path("job/<str:slug>/edit/scope", views.job_edit_scope, name="job_edit_scope"),
     path(
@@ -291,6 +292,16 @@ urlpatterns = [
         "job/<str:slug>/support/<int:pk>/delete",
         views.job_support_team_delete,
         name="job_support_team_delete",
+    ),
+    path(
+        "job/<str:slug>/support/apply_template",
+        views.job_support_team_apply_template,
+        name="job_support_team_apply_template",
+    ),
+    path(
+        "job/<str:slug>/support/<int:pk>/draw",
+        views.job_support_team_draw,
+        name="job_support_team_draw",
     ),
     path(
         "job/<str:slug>/schedule/", views.JobScheduleView.as_view(), name="job_schedule"
@@ -805,6 +816,31 @@ urlpatterns = [
         "ops/unit/<str:slug>/detail",
         views.OrganisationalUnitDetailView.as_view(),
         name="organisationalunit_detail",
+    ),
+    path(
+        "ops/unit/<str:slug>/finance/settings",
+        views.organisationalunit_finance_settings,
+        name="organisationalunit_finance_settings",
+    ),
+    path(
+        "ops/unit/<str:slug>/finance/template/add",
+        views.organisationalunit_support_template_add,
+        name="organisationalunit_support_template_add",
+    ),
+    path(
+        "ops/unit/<str:slug>/finance/template/<int:pk>/edit",
+        views.organisationalunit_support_template_edit,
+        name="organisationalunit_support_template_edit",
+    ),
+    path(
+        "ops/unit/<str:slug>/finance/template/<int:pk>/delete",
+        views.organisationalunit_support_template_delete,
+        name="organisationalunit_support_template_delete",
+    ),
+    path(
+        "ops/unit/<str:slug>/finance/lcr/<int:member_pk>",
+        views.organisationalunit_set_lcr,
+        name="organisationalunit_set_lcr",
     ),
     path(
         "ops/unit/<str:slug>/stats/",

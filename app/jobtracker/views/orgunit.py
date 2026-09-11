@@ -21,6 +21,7 @@ from ..models import (
     OrganisationalUnit,
     OrganisationalUnitMember,
     OrganisationalUnitRole,
+    OrganisationalUnitSupportTemplateMember,
     Job,
     Phase,
     TimeSlot,
@@ -36,6 +37,9 @@ from ..forms import (
     OrganisationalUnitMemberRolesForm,
     PreloadUnitMemberForm,
     ImportUnitMembersForm,
+    OrganisationalUnitFinanceSettingsForm,
+    SupportTemplateMemberForm,
+    UserCostForm,
 )
 from ..mixins import PrefetchRelatedMixin
 from ..utils import get_scheduler_members, get_scheduler_slots
@@ -202,6 +206,28 @@ class OrganisationalUnitDetailView(
                 {"role": role, "permissions": group_permissions(role.permissions.all())}
                 for role in roles
             ]
+
+        # Finance tab — support template, LCRs and settings. Gated on the
+        # dedicated finance permission; the tab and all its data are only built
+        # for users who can see loaded cost rates.
+        can_view_loaded_costs = self.request.user.has_perm(
+            "jobtracker.can_view_loaded_costs", unit
+        )
+        context["can_view_loaded_costs"] = can_view_loaded_costs
+        if can_view_loaded_costs:
+            from chaotica_utils.models import UserCost
+
+            context["support_template_members"] = list(
+                unit.support_template.select_related("user").all()
+            )
+            # Current (latest-effective) LCR per member, one query.
+            latest_cost = {}
+            for uc in UserCost.objects.filter(user_id__in=member_ids).order_by(
+                "user_id", "-effective_from"
+            ):
+                latest_cost.setdefault(uc.user_id, uc)
+            for ms in memberships:
+                ms.current_lcr = latest_cost.get(ms.member_id)
 
         return context
 
@@ -1011,6 +1037,165 @@ def organisationalunit_toggle_lead(request, slug, member_pk):
     context = {"orgUnit": org_unit, "membership": membership, "is_lead": is_lead}
     data["html_form"] = loader.render_to_string(
         "jobtracker/modals/organisationalunit_toggle_lead.html",
+        context,
+        request=request,
+    )
+    return JsonResponse(data)
+
+
+# ---------------------------------------------------------------------------
+# Finance tab: support-team template, loaded cost rates and settings.
+# All gated on the dedicated ``can_view_loaded_costs`` unit permission so the
+# whole surface lives in the main UI (no Django admin needed).
+# ---------------------------------------------------------------------------
+
+
+@permission_required_or_403(
+    "jobtracker.can_view_loaded_costs", (OrganisationalUnit, "slug", "slug")
+)
+def organisationalunit_finance_settings(request, slug):
+    """Edit the unit's finance settings (support premium default)."""
+    org_unit = get_object_or_404(OrganisationalUnit, slug=slug)
+    data = dict()
+    if request.method == "POST":
+        form = OrganisationalUnitFinanceSettingsForm(request.POST, instance=org_unit)
+        if form.is_valid():
+            form.save()
+            data["form_is_valid"] = True
+        else:
+            data["form_is_valid"] = False
+            data["form_errors"] = form.errors
+    else:
+        form = OrganisationalUnitFinanceSettingsForm(instance=org_unit)
+
+    context = {"orgUnit": org_unit, "form": form}
+    data["html_form"] = loader.render_to_string(
+        "jobtracker/modals/organisationalunit_finance_settings.html",
+        context,
+        request=request,
+    )
+    return JsonResponse(data)
+
+
+@permission_required_or_403(
+    "jobtracker.can_view_loaded_costs", (OrganisationalUnit, "slug", "slug")
+)
+def organisationalunit_support_template_add(request, slug):
+    org_unit = get_object_or_404(OrganisationalUnit, slug=slug)
+    data = dict()
+    if request.method == "POST":
+        form = SupportTemplateMemberForm(request.POST)
+        if form.is_valid():
+            member = form.save(commit=False)
+            member.unit = org_unit
+            member.save()
+            data["form_is_valid"] = True
+        else:
+            data["form_is_valid"] = False
+            data["form_errors"] = form.errors
+    else:
+        form = SupportTemplateMemberForm()
+
+    context = {"orgUnit": org_unit, "form": form}
+    data["html_form"] = loader.render_to_string(
+        "jobtracker/modals/organisationalunit_support_template_form.html",
+        context,
+        request=request,
+    )
+    return JsonResponse(data)
+
+
+@permission_required_or_403(
+    "jobtracker.can_view_loaded_costs", (OrganisationalUnit, "slug", "slug")
+)
+def organisationalunit_support_template_edit(request, slug, pk):
+    org_unit = get_object_or_404(OrganisationalUnit, slug=slug)
+    member = get_object_or_404(
+        OrganisationalUnitSupportTemplateMember, pk=pk, unit=org_unit
+    )
+    data = dict()
+    if request.method == "POST":
+        form = SupportTemplateMemberForm(request.POST, instance=member)
+        if form.is_valid():
+            form.save()
+            data["form_is_valid"] = True
+        else:
+            data["form_is_valid"] = False
+            data["form_errors"] = form.errors
+    else:
+        form = SupportTemplateMemberForm(instance=member)
+
+    context = {"orgUnit": org_unit, "form": form}
+    data["html_form"] = loader.render_to_string(
+        "jobtracker/modals/organisationalunit_support_template_form.html",
+        context,
+        request=request,
+    )
+    return JsonResponse(data)
+
+
+@permission_required_or_403(
+    "jobtracker.can_view_loaded_costs", (OrganisationalUnit, "slug", "slug")
+)
+def organisationalunit_support_template_delete(request, slug, pk):
+    org_unit = get_object_or_404(OrganisationalUnit, slug=slug)
+    member = get_object_or_404(
+        OrganisationalUnitSupportTemplateMember, pk=pk, unit=org_unit
+    )
+    data = dict()
+    if request.method == "POST":
+        if request.POST.get("user_action") == "approve_action":
+            member.delete()
+            data["form_is_valid"] = True
+        else:
+            data["form_is_valid"] = False
+
+    context = {"orgUnit": org_unit, "instance": member}
+    data["html_form"] = loader.render_to_string(
+        "jobtracker/modals/organisationalunit_support_template_delete.html",
+        context,
+        request=request,
+    )
+    return JsonResponse(data)
+
+
+@permission_required_or_403(
+    "jobtracker.can_view_loaded_costs", (OrganisationalUnit, "slug", "slug")
+)
+def organisationalunit_set_lcr(request, slug, member_pk):
+    """Add a new date-effective loaded cost rate for a unit member."""
+    from chaotica_utils.models import UserCost
+
+    org_unit = get_object_or_404(OrganisationalUnit, slug=slug)
+    membership = get_object_or_404(
+        OrganisationalUnitMember, unit=org_unit, pk=member_pk
+    )
+    data = dict()
+    if request.method == "POST":
+        form = UserCostForm(request.POST)
+        if form.is_valid():
+            cost = form.save(commit=False)
+            cost.user = membership.member
+            cost.save()
+            data["form_is_valid"] = True
+        else:
+            data["form_is_valid"] = False
+            data["form_errors"] = form.errors
+    else:
+        form = UserCostForm()
+
+    # Show existing rate history for context.
+    history = UserCost.objects.filter(user=membership.member).order_by(
+        "-effective_from"
+    )
+    context = {
+        "orgUnit": org_unit,
+        "membership": membership,
+        "form": form,
+        "history": history,
+    }
+    data["html_form"] = loader.render_to_string(
+        "jobtracker/modals/organisationalunit_set_lcr.html",
         context,
         request=request,
     )

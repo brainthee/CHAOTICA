@@ -414,6 +414,102 @@ def phase_assigned_role_map(phase):
     return role_map
 
 
+def collect_schedule_slots(
+    users, start, end, scope_phases=None, scope_projects=None, hard_scope=True
+):
+    """Request-independent gather of the raw schedule data for a window.
+
+    Single source of truth for *what is on the schedule* — the TimeSlots,
+    Holidays and TimeSlotComments for ``users`` between ``start`` and ``end`` —
+    shared by the vis-timeline feed views (:func:`get_scheduler_slots`) and the
+    ``/api/v1/`` schedule endpoints. Rendering (vis-timeline item shape / colours
+    vs. clean REST serialisers) stays with each caller; only data selection and
+    scoping live here so the two surfaces cannot drift.
+
+    ``users`` is an iterable/queryset of User. ``start``/``end`` are datetimes.
+
+    Returns a dict:
+      - ``timeslots``: prefetched TimeSlot queryset (window- and scope-filtered).
+      - ``holidays``: Holiday queryset for the window (caller matches by
+        ``user.country``).
+      - ``comments``: TimeSlotComment queryset for the window.
+      - ``scope_phase_ids`` / ``scope_project_ids``: the scope id sets (or None)
+        so callers can fade soft-/out-of-scope slots.
+    """
+    scope_phase_ids = (
+        set(p.pk for p in scope_phases) if scope_phases is not None else None
+    )
+    scope_project_ids = (
+        set(p.pk for p in scope_projects) if scope_projects is not None else None
+    )
+
+    slot_qs = TimeSlot.objects.filter(user__in=users, end__gte=start, start__lte=end)
+    if scope_project_ids is not None and hard_scope:
+        # Hard project scope — restrict to that project's slots only.
+        slot_qs = slot_qs.filter(project_id__in=scope_project_ids)
+    elif scope_phase_ids is not None and hard_scope:
+        # Hard job/phase scope — restrict to that job/phase's slots only.
+        slot_qs = slot_qs.filter(phase_id__in=scope_phase_ids)
+    slot_qs = slot_qs.prefetch_related(
+        "phase",
+        "phase__job",
+        "phase__job__client",
+        "project",
+        "slot_type",
+        "user",
+        "leaverequest",
+    )
+
+    holidays = Holiday.objects.filter(date__gte=start.date(), date__lte=end.date())
+
+    comments = TimeSlotComment.objects.filter(
+        user__in=users, end__gte=start, start__lte=end
+    ).select_related("user")
+
+    return {
+        "timeslots": slot_qs,
+        "holidays": holidays,
+        "comments": comments,
+        "scope_phase_ids": scope_phase_ids,
+        "scope_project_ids": scope_project_ids,
+    }
+
+
+def collect_schedule_members(users, start, end):
+    """Per-user availability/utilisation for a window, request-independent.
+
+    Calls :meth:`UserManager.calculate_bulk_utilization` — the single utilisation
+    engine — for the requested window only, and returns plain dicts (availability
+    %, utilisation %, business hours) for the ``/api/v1/`` schedule endpoints to
+    serialise. ``users`` must be a queryset (the engine calls ``.values_list``).
+
+    Note we deliberately do NOT use ``get_bulk_stats`` here: it also computes the
+    "upcoming availability" ranges (~5 extra utilisation passes) that a schedule
+    window doesn't need.
+    """
+    stats = User.objects.calculate_bulk_utilization(users, start, end)
+    members = []
+    for user_stat in stats["by_user"].values():
+        main_org = user_stat["main_org"]
+        members.append(
+            {
+                "user": user_stat["user"].pk,
+                "availability": user_stat.get("available_percentage") or 0,
+                "utilisation": user_stat.get("utilisation_percentage") or 0,
+                "business_hours": (
+                    {
+                        "startTime": main_org.businessHours_startTime,
+                        "endTime": main_org.businessHours_endTime,
+                        "daysOfWeek": main_org.businessHours_days,
+                    }
+                    if main_org
+                    else {"startTime": "", "endTime": "", "daysOfWeek": ""}
+                ),
+            }
+        )
+    return members
+
+
 def get_scheduler_members(
     request,
     filtered_users=None,
@@ -673,32 +769,20 @@ def get_scheduler_slots(
         cleaned_data.get("compressed_view", False) if cleaned_data else False
     )
 
-    scope_phase_ids = (
-        set(p.pk for p in scope_phases) if scope_phases is not None else None
+    # Gather the raw schedule data via the shared core so the vis-timeline feed
+    # and the /api/v1/ schedule endpoints select the same slots/holidays/comments.
+    dataset = collect_schedule_slots(
+        filtered_users,
+        start,
+        end,
+        scope_phases=scope_phases,
+        scope_projects=scope_projects,
+        hard_scope=hard_scope,
     )
-    scope_project_ids = (
-        set(p.pk for p in scope_projects) if scope_projects is not None else None
-    )
+    scope_phase_ids = dataset["scope_phase_ids"]
 
     # Load the timeslots
-    slot_qs = TimeSlot.objects.filter(
-        user__in=filtered_users, end__gte=start, start__lte=end
-    )
-    if scope_project_ids is not None and hard_scope:
-        # Hard project scope — restrict to that project's slots only.
-        slot_qs = slot_qs.filter(project_id__in=scope_project_ids)
-    elif scope_phase_ids is not None and hard_scope:
-        # Hard job/phase scope — restrict to that job/phase's slots only.
-        slot_qs = slot_qs.filter(phase_id__in=scope_phase_ids)
-    for slot in slot_qs.prefetch_related(
-        "phase",
-        "phase__job",
-        "phase__job__client",
-        "project",
-        "slot_type",
-        "user",
-        "leaverequest",
-    ):
+    for slot in dataset["timeslots"]:
         slot_json = slot.get_schedule_json(
             schedule_colours=schedule_colours, compressed_view=compressed_view
         )
@@ -719,9 +803,8 @@ def get_scheduler_slots(
         data.append(slot_json)
 
     # Add the holidays
-    holidays = Holiday.objects.filter(date__gte=start.date(), date__lte=end.date())
     for user in filtered_users:
-        for hol in holidays:
+        for hol in dataset["holidays"]:
             if user.country == hol.country:
                 data.append(
                     {
@@ -736,8 +819,6 @@ def get_scheduler_slots(
                 )
 
     # Add the comments
-    for comment in TimeSlotComment.objects.filter(
-        user__in=filtered_users, end__gte=start, start__lte=end
-    ).select_related("user"):
+    for comment in dataset["comments"]:
         data.append(comment.get_schedule_json(schedule_colours=schedule_colours))
     return JsonResponse(data, safe=False)

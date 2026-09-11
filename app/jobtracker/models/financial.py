@@ -78,10 +78,13 @@ class BillingCode(models.Model):
     def jobs(self):
         from ..models import Job
 
+        # ``job_id`` is the FK value == the Job's *primary key* (``db_id``), which
+        # is NOT the same as Job's separate business ``id`` field — so filter by
+        # ``pk``, never ``id`` (that would resolve to the wrong job).
         job_ids = self.assignments.filter(job__isnull=False).values_list(
             "job_id", flat=True
         )
-        return Job.objects.filter(id__in=job_ids)
+        return Job.objects.filter(pk__in=job_ids)
 
     def phases(self):
         from ..models import Phase
@@ -89,15 +92,16 @@ class BillingCode(models.Model):
         phase_ids = self.assignments.filter(phase__isnull=False).values_list(
             "phase_id", flat=True
         )
-        return Phase.objects.filter(id__in=phase_ids)
+        return Phase.objects.filter(pk__in=phase_ids)
 
     def projects(self):
         from ..models import Project
 
+        # ``Project`` also has a ``db_id`` PK distinct from its business ``id``.
         project_ids = self.assignments.filter(project__isnull=False).values_list(
             "project_id", flat=True
         )
-        return Project.objects.filter(id__in=project_ids)
+        return Project.objects.filter(pk__in=project_ids)
 
     class Meta:
         ordering = [Lower("code")]

@@ -1,0 +1,42 @@
+{% load widget_tweaks %}
+<div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+        <form method="post" action="{{ request.get_full_path }}" class="js-submit-modal-form">
+            {% csrf_token %}
+            <div class="modal-header">
+                <h6 class="modal-title font-weight-normal" id="modal-title-default">
+                    Apply support template
+                </h6>
+                <button type="button" class="btn-close text-body-emphasis"
+                    data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                {% if has_template %}
+                <p>
+                    Apply <strong>{{ job.unit }}</strong>'s support-team template to this job?
+                    New members are added and template weights refreshed. Rows you've
+                    manually edited are left untouched.
+                </p>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="overwrite" id="overwrite">
+                    <label class="form-check-label" for="overwrite">
+                        Also overwrite manually-edited rows
+                    </label>
+                </div>
+                {% else %}
+                <div class="alert alert-phoenix-info mb-0" role="alert">
+                    This unit has no support template configured.
+                </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <input type="hidden" name="user_action" value="">
+                {% if has_template %}
+                <button type="submit" onclick="this.form.user_action.value=this.value"
+                    value="approve_action" class="btn btn-phoenix-success mb-0">Apply</button>
+                {% endif %}
+                <button type="button" class="btn btn-light shadow-none mb-0" data-bs-dismiss="modal">Close</button>
+            </div>
+        </form>
+    </div>
+ </div>

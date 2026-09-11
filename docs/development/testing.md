@@ -23,6 +23,34 @@ cd app && python manage.py test jobtracker.tests.test_qualification_models.Quali
 
 The `--keepdb` flag reuses the test database between runs, significantly speeding up test execution.
 
+## Generating test data
+
+Two dev-only management commands seed data (both refuse to run with `DEBUG=False`
+unless `--force`):
+
+- **`generate_demo_data`** — creates a full synthetic world from scratch (users,
+  units, clients, jobs, phases, timeslots, leave). Use `--clear` to wipe first,
+  `--minimal` for a small set.
+- **`generate_billing_test_data`** — *decorates existing* jobs scheduled in the
+  last N months (default 6): a variety of billing/WBS codes (client-level &
+  reused, job-level, phase overrides, date-bound, internal WBS), revenue derived
+  from scheduled days × a day rate, the support-team template applied to jobs
+  whose unit already has one, backdated loaded cost rates, and some support
+  draw-downs. Idempotent (deterministic `get_or_create`), so re-running is safe.
+
+  ```bash
+  cd app
+  python manage.py generate_billing_test_data                 # last 6 months
+  python manage.py generate_billing_test_data --months 12 --day-rate 1400
+  python manage.py generate_billing_test_data --clear         # remove what it generated
+  ```
+
+  It never creates jobs/clients — it only annotates the ones already scheduled.
+  `--clear` removes only the codes/assignments/draws it generated (tracked via the
+  sentinel "system" user + deterministic code strings); it does not touch revenue,
+  LCRs or support-team rows. Audit signals are muted during the run so the bulk
+  writes don't spam the activity log.
+
 ## Coverage & Continuous Integration
 
 ### Measuring coverage locally
