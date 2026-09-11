@@ -9,9 +9,10 @@ Sensitive fields are deliberately omitted — see the module-level notes on each
 serializer and the permission section of the implementation plan.
 """
 
+from cities_light.models import City
 from rest_framework import serializers
 
-from chaotica_utils.models import User
+from chaotica_utils.models import User, JobLevel, Holiday
 from chaotica_utils.models.leave import LeaveRequest
 
 from ...models import (
@@ -48,6 +49,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     job_level = serializers.SerializerMethodField()
     job_level_label = serializers.SerializerMethodField()
+    city_name = serializers.CharField(source="city.name", read_only=True, default=None)
 
     class Meta:
         model = User
@@ -60,6 +62,9 @@ class UserSerializer(serializers.ModelSerializer):
             "job_title",
             "job_level",
             "job_level_label",
+            "city",
+            "city_name",
+            "country",
         ]
 
     def get_job_level(self, obj):
@@ -74,16 +79,119 @@ class UserSerializer(serializers.ModelSerializer):
 class UserStatusUpdateSerializer(serializers.Serializer):
     """Write body for the ``users/{id}/set-status/`` action.
 
-    The only write surface in the v1 API. Deliberately tiny: a single boolean
-    so the endpoint can never be repurposed to edit arbitrary user fields."""
+    Deliberately tiny: a single boolean so the endpoint can never be repurposed
+    to edit arbitrary user fields."""
 
     is_active = serializers.BooleanField()
+
+
+class UserProfileUpdateSerializer(serializers.ModelSerializer):
+    """Write body for ``users/{id}/update-profile/``.
+
+    Partial update of org-chart profile facts only — the fields an HR / AAD sync
+    legitimately owns. Sensitive/security fields (is_active, password, perms,
+    email) are intentionally NOT writable here; account status has its own
+    ``set-status`` action, and cost rates have ``set-cost``."""
+
+    # City is a cities_light FK; accept it by primary key (nullable to clear).
+    city = serializers.PrimaryKeyRelatedField(
+        queryset=City.objects.all(), allow_null=True, required=False
+    )
+
+    class Meta:
+        model = User
+        fields = ["first_name", "last_name", "job_title", "city", "country"]
+        extra_kwargs = {
+            "first_name": {"required": False},
+            "last_name": {"required": False},
+            "job_title": {"required": False},
+            "country": {"required": False},
+        }
+
+
+class UserJobLevelUpdateSerializer(serializers.Serializer):
+    """Write body for ``users/{id}/set-job-level/``.
+
+    Either sets the current career level (by its short label, e.g. ``"JL5"``) or
+    clears it. Resolving happens here so the view stays thin."""
+
+    job_level = serializers.CharField(required=False, allow_blank=True)
+    clear = serializers.BooleanField(required=False, default=False)
+    notes = serializers.CharField(required=False, allow_blank=True, default="")
+    # When the change actually took effect (defaults to today). A new assignment
+    # is created with this date and the prior one is closed off (is_current=False).
+    effective_from = serializers.DateField(required=False)
+
+    def validate_effective_from(self, value):
+        # Mirror UserJobLevel.clean(): an assignment can't start in the future.
+        from django.utils import timezone
+
+        if value and value > timezone.now().date():
+            raise serializers.ValidationError(
+                "Effective date cannot be in the future."
+            )
+        return value
+
+    def validate(self, attrs):
+        clear = attrs.get("clear", False)
+        label = (attrs.get("job_level") or "").strip()
+        if clear and label:
+            raise serializers.ValidationError(
+                "Provide either 'job_level' or 'clear', not both."
+            )
+        if not clear and not label:
+            raise serializers.ValidationError(
+                "Provide 'job_level' (short label) or set 'clear' to true."
+            )
+        if label:
+            try:
+                attrs["job_level_obj"] = JobLevel.objects.get(short_label=label)
+            except JobLevel.DoesNotExist:
+                raise serializers.ValidationError(
+                    {"job_level": f"No job level with short label '{label}'."}
+                )
+        return attrs
+
+
+class UserCostUpdateSerializer(serializers.Serializer):
+    """Write body for ``users/{id}/set-cost/`` — a date-effective loaded cost rate.
+
+    Mirrors the org-unit Finance tab's "set rate" action: add-only history, one
+    row per effective date (re-posting the same date updates it)."""
+
+    cost_per_hour = serializers.DecimalField(
+        max_digits=10, decimal_places=2, min_value=0
+    )
+    effective_from = serializers.DateField(required=False)
 
 
 class OrganisationalUnitSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrganisationalUnit
         fields = ["id", "name", "slug"]
+
+
+class OrganisationalUnitMemberSerializer(serializers.Serializer):
+    """Slim representation of a user's membership in an org unit.
+
+    Returned by ``GET /api/v1/org-units/{id}/members/``.  Sensitive fields
+    (phone, cost rates, etc.) are deliberately excluded — this endpoint is
+    about team composition, not HR records.
+
+    ``is_lead`` is an annotation added by the viewset (a boolean derived from
+    whether the member appears in the unit's ``leads`` M2M)."""
+
+    user_id = serializers.IntegerField(source="member.id")
+    first_name = serializers.CharField(source="member.first_name")
+    last_name = serializers.CharField(source="member.last_name")
+    email = serializers.EmailField(source="member.email")
+    is_active = serializers.BooleanField(source="member.is_active")
+    job_title = serializers.CharField(source="member.job_title", default=None)
+    is_lead = serializers.BooleanField()  # annotated by viewset
+    roles = serializers.SerializerMethodField()
+
+    def get_roles(self, obj):
+        return [r.name for r in obj.roles.all()]
 
 
 class ClientSerializer(serializers.ModelSerializer):
@@ -311,6 +419,38 @@ class LeaveRequestSerializer(serializers.ModelSerializer):
             "declined",
             "timeslot",
         ]
+
+
+class HolidaySerializer(serializers.ModelSerializer):
+    """Public/non-working day. Applies to a country; a consumer matches it to a
+    user via the user's country."""
+
+    class Meta:
+        model = Holiday
+        fields = ["id", "date", "country", "reason"]
+
+
+class ScheduleUserAvailabilitySerializer(serializers.Serializer):
+    """Per-user availability/utilisation for a schedule window (documentation /
+    schema shape — the values come from ``collect_schedule_members``)."""
+
+    user = serializers.IntegerField()
+    availability = serializers.FloatField()
+    utilisation = serializers.FloatField()
+    business_hours = serializers.DictField()
+
+
+class ScheduleSerializer(serializers.Serializer):
+    """Composite read-only schedule window: work timeslots, leave, holidays and
+    per-user availability for ``[start, end]``. Assembled by
+    ``jobtracker.api.v1.schedule.build_schedule_payload``."""
+
+    start = serializers.DateField()
+    end = serializers.DateField()
+    users = ScheduleUserAvailabilitySerializer(many=True)
+    timeslots = TimeSlotSerializer(many=True)
+    leave = LeaveRequestSerializer(many=True)
+    holidays = HolidaySerializer(many=True)
 
 
 class SkillCategorySerializer(serializers.ModelSerializer):

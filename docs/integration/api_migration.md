@@ -33,6 +33,11 @@ New and migrating consumers should use `/api/v1/`.
 `skill-categories`, `user-skills`, `qualifications`, `qualification-records`,
 `services`.
 
+The composite **schedule** feed is also v1-only — `GET /api/v1/schedule/` and
+`GET /api/v1/users/{id}/schedule/` return timeslots + leave + holidays +
+availability for a date window in one call (see
+[REST API (v1) → Schedule](../development/api_v1.md#schedule-composite-window)).
+
 Plus the supporting endpoints:
 
 - `POST /api/v1/auth/token/` — obtain an auth token
