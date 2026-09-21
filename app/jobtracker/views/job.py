@@ -136,9 +136,22 @@ def _process_assign_billingcodes(
     stamping ``created_by`` on new rows. Returns the ``js-submit-modal-form``
     JSON envelope the modal JS expects.
     """
+    from ..forms import InlineBillingCodeForm
+
+    # Point the code select2 at the shared autocomplete, narrowed to the
+    # target's client for relevance (security still comes from ``for_user``).
+    autocomplete_url = reverse("billingcode-autocomplete")
+    if client is not None:
+        autocomplete_url += f"?client={client.pk}"
+
     data = dict()
     if request.method == "POST":
-        formset = formset_cls(request.POST, instance=target, client=client)
+        formset = formset_cls(
+            request.POST,
+            instance=target,
+            client=client,
+            autocomplete_url=autocomplete_url,
+        )
         if formset.is_valid():
             instances = formset.save(commit=False)
             for obj in instances:
@@ -151,9 +164,25 @@ def _process_assign_billingcodes(
         else:
             data["form_is_valid"] = False
     else:
-        formset = formset_cls(instance=target, client=client)
+        formset = formset_cls(
+            instance=target, client=client, autocomplete_url=autocomplete_url
+        )
 
-    context = {"formset": formset, "target": target}
+    can_add_billingcode = request.user.has_perm("jobtracker.add_billingcode")
+    newcode_form = None
+    if can_add_billingcode:
+        newcode_form = InlineBillingCodeForm(
+            prefix="newbc",
+            user=request.user,
+            initial={"client": client.pk if client is not None else None},
+        )
+
+    context = {
+        "formset": formset,
+        "target": target,
+        "newcode_form": newcode_form,
+        "can_add_billingcode": can_add_billingcode,
+    }
     context.update(extra_context or {})
     data["html_form"] = loader.render_to_string(template, context, request=request)
     return JsonResponse(data)

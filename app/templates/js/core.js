@@ -322,6 +322,74 @@ $(function() {
         });        
     };
 
+    // Inline "create a new billing code" from within the assign-codes modal.
+    // Serialises just the create panel, POSTs it, and on success injects the
+    // new code straight into the code select2(s) without leaving the modal.
+    var createBillingCode = function() {
+        var btn = $(this);
+        var panel = btn.closest(".collapse");
+        var feedback = panel.find(".js-newcode-feedback").removeClass("text-danger text-success").text("");
+        panel.find(".js-newcode-error-code, .js-newcode-error-client").text("");
+
+        var data = panel.find("input, select, textarea").serialize();
+        var token = btn.closest("form").find("input[name=csrfmiddlewaretoken]").val();
+        if (token) {
+            data += "&csrfmiddlewaretoken=" + encodeURIComponent(token);
+        }
+
+        btn.prop("disabled", true);
+        $.ajax({
+            url: btn.attr("data-url"),
+            type: "post",
+            data: data,
+            dataType: "json",
+            success: function(resp) {
+                btn.prop("disabled", false);
+                if (resp && resp.success) {
+                    var selects = $("#billingcode-assignment-table select[name$='-code']");
+                    var placed = false;
+                    selects.each(function() {
+                        var $sel = $(this);
+                        if ($sel.find("option[value='" + resp.id + "']").length === 0) {
+                            $sel.append(new Option(resp.text, resp.id, false, false));
+                        }
+                        if (!placed && !$sel.val()) {
+                            $sel.val(String(resp.id)).trigger("change");
+                            placed = true;
+                        }
+                    });
+                    // Reset & collapse the panel for the next code.
+                    panel.find("input[type=text], input:not([type]), textarea").val("");
+                    panel.find("input[type=checkbox]").prop("checked", false);
+                    panel.find("select").val("").trigger("change");
+                    if (window.bootstrap && bootstrap.Collapse) {
+                        bootstrap.Collapse.getOrCreateInstance(panel[0]).hide();
+                    }
+                    feedback.addClass("text-success").text("Added " + resp.text);
+                } else {
+                    var errs = (resp && resp.errors) || {};
+                    if (errs.code) { panel.find(".js-newcode-error-code").text(errs.code[0].message); }
+                    if (errs.client) { panel.find(".js-newcode-error-client").text(errs.client[0].message); }
+                    var general = errs.__all__ ? errs.__all__[0].message : "";
+                    feedback.addClass("text-danger").text(general || "Please fix the highlighted fields.");
+                }
+            },
+            error: function(xhr) {
+                btn.prop("disabled", false);
+                var msg = "Could not create the code.";
+                try {
+                    var r = JSON.parse(xhr.responseText);
+                    if (r.errors) {
+                        if (r.errors.code) { panel.find(".js-newcode-error-code").text(r.errors.code[0].message); }
+                        if (r.errors.client) { panel.find(".js-newcode-error-client").text(r.errors.client[0].message); }
+                        msg = "Please fix the highlighted fields.";
+                    }
+                } catch (e) { /* keep default message */ }
+                feedback.addClass("text-danger").text(msg);
+            }
+        });
+    };
+
     $(".js-update-job-workflow").click(loadWorkflowConf);
     $(".js-update-phase-workflow").click(loadWorkflowConf);
     $(".js-bulk-workflow-phases").click(loadWorkflowConf);
@@ -332,6 +400,7 @@ $(function() {
     $("#mainModal").on("submit", ".js-bulk-workflow-phases-form", saveBulkWorkflowForm);
     $("#mainModal").on("submit", ".js-submit-modal-form", saveForm);
     $("#mainModal").on("submit", ".js-submit-file-modal-form", saveFileForm);
+    $("#mainModal").on("click", ".js-create-billingcode", createBillingCode);
     
 
     const themeController = document.body;

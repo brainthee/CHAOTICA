@@ -42,6 +42,20 @@ assignment is a row with a code and an optional start/end date:
 
 A code can only be assigned **once without a date range** per target.
 
+The code picker is a **searchable, type-ahead** field: start typing to search
+the codes available for the target's client (plus internal/WBS codes) — they are
+loaded on demand rather than all rendered up front.
+
+### Creating a new code without leaving the modal
+
+If the code you need doesn't exist yet, expand **"Can't find the code? Create a
+new one"** at the bottom of the assign modal. Fill in the code (client defaults
+to the target's client, or clear it for an internal/WBS code), set the
+chargeable / recoverable / internal flags and region, and click **Create code**.
+The new code is created and selected into the current row immediately, so you can
+carry on assigning without a page reload. This shortcut is only shown to users
+with permission to add billing codes.
+
 ### Phase override / inheritance
 
 A phase **inherits** its job's codes by default. If you assign codes directly to

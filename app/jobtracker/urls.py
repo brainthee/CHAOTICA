@@ -715,6 +715,11 @@ urlpatterns = [
         name="billingcode_create",
     ),
     path(
+        "ops/billingcode/create/inline/",
+        views.billingcode_create_inline,
+        name="billingcode_create_inline",
+    ),
+    path(
         "ops/billingcode/<str:code>/",
         views.BillingCodeDetailView.as_view(),
         name="billingcode_detail",
@@ -1023,5 +1028,10 @@ urlpatterns = [
         "autocomplete/clients",
         views.ClientAutocomplete.as_view(),
         name="client-autocomplete",
+    ),
+    path(
+        "autocomplete/billingcodes",
+        views.BillingCodeAutocomplete.as_view(),
+        name="billingcode-autocomplete",
     ),
 ]

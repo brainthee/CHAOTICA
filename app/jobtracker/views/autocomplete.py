@@ -1,3 +1,5 @@
+import re
+
 from django.http import JsonResponse
 from django.db.models import Q
 from django_select2.views import AutoResponseView
@@ -66,6 +68,44 @@ class JobBillingCodeAutocomplete(AutoResponseView):
             'results': results,
             'pagination': {'more': has_more}
         })
+
+
+class BillingCodeAutocomplete(LoginRequiredMixin, AutoResponseView):
+    """AJAX source for the billing-code select2 in the assign modals.
+
+    Permission-faithful: results come from :meth:`BillingCodeManager.for_user`
+    (superuser sees all; others see client-less codes plus codes whose client
+    has a job in a unit they can view). An optional ``client`` GET param merely
+    *narrows* the list to that client (plus client-less) for relevance — it is
+    not a security boundary, so a forged pk can never widen what ``for_user``
+    already allows.
+    """
+
+    def get(self, request, *args, **kwargs):
+        term = request.GET.get("term", "")
+        page = int(request.GET.get("page", 1))
+        page_size = int(request.GET.get("page_size", 20))
+
+        qs = BillingCode.objects.for_user(request.user).filter(is_closed=False)
+
+        client_id = request.GET.get("client")
+        if client_id:
+            qs = qs.filter(Q(client_id=client_id) | Q(client__isnull=True))
+
+        if term:
+            qs = qs.filter(code__iregex=SEARCH_REGEX.format(re.escape(term)))
+
+        start = (page - 1) * page_size
+        end = start + page_size
+
+        results = []
+        for bc in qs.select_related("client")[start:end]:
+            text = bc.code if not bc.client else f"{bc.code} — {bc.client}"
+            results.append({"id": bc.pk, "text": text})
+
+        return JsonResponse(
+            {"results": results, "pagination": {"more": qs.count() > end}}
+        )
 
 
 class JobAutocomplete(AutoResponseView):

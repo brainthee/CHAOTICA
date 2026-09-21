@@ -4,6 +4,7 @@ from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse, HttpResponseBadRequest
 from django.shortcuts import render
 from django.utils import timezone
 from guardian.shortcuts import get_objects_for_user
@@ -11,7 +12,7 @@ from chaotica_utils.decorators import permission_required_or_403
 from chaotica_utils.models import User
 from chaotica_utils.views import ChaoticaBaseView, ProtectedDeleteMixin
 from ..models import BillingCode, OrganisationalUnit
-from ..forms import BillingCodeForm
+from ..forms import BillingCodeForm, InlineBillingCodeForm
 import datetime
 import logging
 
@@ -105,6 +106,29 @@ class BillingCodeWBSListView(BillingCodeListView):
 
     def get_queryset(self):
         return super().get_queryset().filter(client__isnull=True)
+
+
+@login_required
+@permission_required_or_403("jobtracker.add_billingcode")
+def billingcode_create_inline(request):
+    """Create a billing code from inside the assign modal, returning JSON.
+
+    Mirrors the ``js-submit-modal-form`` envelope loosely: on success returns
+    ``{success, id, text}`` so the modal JS can inject the new code straight
+    into the select2 without a page reload; on failure returns the field errors.
+    Gated on ``add_billingcode`` (and per-client ``view_client`` in the form).
+    """
+    if request.method != "POST":
+        return HttpResponseBadRequest()
+
+    form = InlineBillingCodeForm(request.POST, prefix="newbc", user=request.user)
+    if form.is_valid():
+        bc = form.save()
+        text = bc.code if not bc.client else f"{bc.code} — {bc.client}"
+        return JsonResponse({"success": True, "id": bc.pk, "text": text})
+    return JsonResponse(
+        {"success": False, "errors": form.errors.get_json_data()}, status=400
+    )
 
 
 def _analytics_users(request):

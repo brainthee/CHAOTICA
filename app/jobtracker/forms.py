@@ -63,7 +63,7 @@ from bootstrap_datepicker_plus.widgets import (
 )
 from tinymce.widgets import TinyMCE
 from django_clamav.validators import validate_file_infection
-from guardian.shortcuts import assign_perm, remove_perm
+from guardian.shortcuts import assign_perm, remove_perm, get_objects_for_user
 from django.conf import settings
 from cities_light.models import City
 
@@ -568,15 +568,37 @@ class BillingCodeAssignmentForm(forms.ModelForm):
             ),
         }
 
-    def __init__(self, *args, client=None, **kwargs):
+    def __init__(self, *args, client=None, autocomplete_url=None, **kwargs):
         super().__init__(*args, **kwargs)
+        # AJAX select2 so the (potentially large) code list is searched on the
+        # server rather than rendered inline. The queryset below still scopes
+        # what a submitted pk may be — the autocomplete only feeds the UI.
         qs = BillingCode.objects.filter(is_closed=False)
         if client is not None:
             qs = qs.filter(Q(client=client) | Q(client__isnull=True))
         else:
             qs = qs.filter(client__isnull=True)
-        self.fields["code"].queryset = qs.select_related("client")
-        self.fields["code"].widget.attrs.update({"class": "form-select form-select-sm"})
+        qs = qs.select_related("client")
+
+        # Pass queryset + search_fields to the widget so it can resolve the
+        # *currently-selected* code into an <option> when editing an existing
+        # assignment (a bare heavy widget renders no options and shows blank).
+        # The client still talks to our own data-ajax--url, not the built-in one.
+        ac_url = str(autocomplete_url or reverse("billingcode-autocomplete"))
+        self.fields["code"].widget = s2forms.ModelSelect2Widget(
+            queryset=qs,
+            search_fields=["code__icontains"],
+            attrs={
+                "class": "select2-widget form-select form-select-sm",
+                "data-minimum-input-length": 0,
+                "data-ajax--url": ac_url,
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
+                "data-placeholder": "Search billing codes…",
+                "data-width": "100%",
+            },
+        )
+        self.fields["code"].queryset = qs
         self.fields["start_date"].required = False
         self.fields["end_date"].required = False
         for f in ("start_date", "end_date"):
@@ -596,12 +618,14 @@ class BaseBillingAssignmentFormSet(forms.BaseInlineFormSet):
     *undated* assignments of the same code (the DB unique constraint can't,
     because SQL treats NULL date bounds as distinct)."""
 
-    def __init__(self, *args, client=None, **kwargs):
+    def __init__(self, *args, client=None, autocomplete_url=None, **kwargs):
         self.client = client
+        self.autocomplete_url = autocomplete_url
         super().__init__(*args, **kwargs)
 
     def _construct_form(self, i, **kwargs):
         kwargs["client"] = self.client
+        kwargs["autocomplete_url"] = self.autocomplete_url
         return super()._construct_form(i, **kwargs)
 
     @property
@@ -613,6 +637,7 @@ class BaseBillingAssignmentFormSet(forms.BaseInlineFormSet):
             empty_permitted=True,
             use_required_attribute=False,
             client=self.client,
+            autocomplete_url=self.autocomplete_url,
             renderer=self.renderer,
         )
         self.add_fields(form, None)
@@ -662,6 +687,74 @@ def phase_billingcode_formset():
 
 def project_billingcode_formset():
     return _billing_assignment_formset(Project, "project")
+
+
+class InlineBillingCodeForm(forms.ModelForm):
+    """Lightweight create form for adding a brand-new billing code from inside
+    the assign modal (see :func:`billingcode_create_inline`).
+
+    Client defaults (via ``initial``, set by the caller) to the target's client
+    but can be changed to any client the user may view, or cleared for an
+    internal/WBS (client-less) code. Kept separate from :class:`BillingCodeForm`
+    (a full-page crispy form with a *multiple* client widget) so the modal panel
+    stays compact and single-select.
+    """
+
+    client = forms.ModelChoiceField(
+        required=False,
+        queryset=Client.objects.all(),
+        widget=s2forms.ModelSelect2Widget(
+            attrs={
+                "class": "select2-widget",
+                "data-minimum-input-length": 2,
+                "data-ajax--url": "/autocomplete/clients",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
+                "data-placeholder": "Internal / no client (WBS)",
+                "data-width": "100%",
+            },
+        ),
+    )
+
+    class Meta:
+        model = BillingCode
+        fields = [
+            "code",
+            "client",
+            "is_chargeable",
+            "is_recoverable",
+            "is_internal",
+            "region",
+        ]
+
+    def __init__(self, *args, user=None, **kwargs):
+        self.user = user
+        super().__init__(*args, **kwargs)
+        # The panel lives inside the assign modal's <form>; without this its
+        # required fields would block the outer form's HTML5 validation on Save.
+        # Server-side validation (this form) still enforces required fields.
+        self.use_required_attribute = False
+        self.fields["is_chargeable"].initial = True
+        self.fields["code"].widget.attrs.update(
+            {"class": "form-control form-control-sm", "placeholder": "e.g. ACME-1234"}
+        )
+        self.fields["region"].widget.attrs.update(
+            {"class": "form-select form-select-sm"}
+        )
+        for name in ("is_chargeable", "is_recoverable", "is_internal"):
+            self.fields[name].widget.attrs.update({"class": "form-check-input"})
+
+    def clean_client(self):
+        client = self.cleaned_data.get("client")
+        if client and self.user is not None and not self.user.is_superuser:
+            allowed = get_objects_for_user(
+                self.user, "jobtracker.view_client", Client
+            )
+            if not allowed.filter(pk=client.pk).exists():
+                raise forms.ValidationError(
+                    "You can only create a code for a client you have access to."
+                )
+        return client
 
 
 class AssignContact(forms.Form):
