@@ -286,9 +286,14 @@ CONSTANCE_CONFIG = {
         "notice_colour",
     ),
     # Schedule Colours
+    "SCHEDULE_SHADE_AVAILABLE": (
+        True,
+        "Shade days in the schedule when a person is available "
+        "(a working day for them, and not on leave or a public holiday)",
+    ),
     "SCHEDULE_COLOR_AVAILABLE": (
         "#8BC34A",
-        "Colour to show available in the schedule",
+        "Colour used to shade available days in the schedule",
         "colour_picker",
     ),
     "SCHEDULE_COLOR_UNAVAILABLE": (

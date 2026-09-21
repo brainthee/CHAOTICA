@@ -41,6 +41,12 @@ Hours are shown as **days** using the client's **hours‑per‑day** (see below)
 
 A phase's delivery bookings are **tentative** until the phase status reaches **Scheduled – Confirmed**, after which they're **confirmed**. The scheduler colours them differently, and the Utilisation widget splits scheduled hours into confirmed vs tentative so you can see how firm a plan is.
 
+## Availability shading
+
+Days on which a person is **available** (free to be booked) are shaded (green by default) behind their row in the scheduler, so you can see at a glance who has capacity on any given day. A day counts as available when it's a **working day** for that person (their unit's business days), it's **not a public holiday** for their country, and they have **no booking at all** that day — anything already scheduled (delivery/internal work, leave, sick, etc.), a weekend, or a holiday is left unshaded.
+
+Both the colour and whether the shading is shown at all are controlled on the **Settings → Appearance** page (*Schedule Colours*): the **"Shade available days"** switch turns it on/off, and **"Colour used to shade available days"** sets the colour.
+
 ## Onboarding
 
 If a **client requires onboarding**, a person must have an onboarding record for that client before they can be booked on its delivery work (a hard block otherwise). If their onboarding is **stale** (past its renewal), booking is still allowed but warns. See the client's onboarding configuration.

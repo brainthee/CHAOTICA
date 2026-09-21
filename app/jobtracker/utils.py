@@ -697,6 +697,43 @@ def get_scheduler_members(
     return JsonResponse(data, safe=False)
 
 
+def available_day_runs(
+    start_date, end_date, business_days, holiday_dates, occupied_dates
+):
+    """Contiguous runs of AVAILABLE days in ``[start_date, end_date]`` (inclusive).
+
+    A day is available if it is one of the user's working weekdays, is not a
+    public holiday, and has NO booking at all (``occupied_dates`` — any timeslot,
+    whether delivery/internal work or leave/sick). Runs break on any non-available
+    day — including weekends — so weekends, holidays and booked days are never
+    shaded. Returns ``[(run_start_date, run_end_date), ...]``.
+    """
+    from datetime import timedelta
+
+    runs = []
+    run_start = run_end = None
+    cur = start_date
+    while cur <= end_date:
+        # Their business-days scheme is Sunday==0, Monday==1 … which matches
+        # ``weekday() + 1`` for Mon–Fri (see working_day_runs).
+        available = (
+            (cur.weekday() + 1) in business_days
+            and cur not in holiday_dates
+            and cur not in occupied_dates
+        )
+        if available:
+            if run_start is None:
+                run_start = cur
+            run_end = cur
+        elif run_start is not None:
+            runs.append((run_start, run_end))
+            run_start = run_end = None
+        cur += timedelta(days=1)
+    if run_start is not None:
+        runs.append((run_start, run_end))
+    return runs
+
+
 def get_scheduler_slots(
     request,
     filtered_users=None,
@@ -814,6 +851,71 @@ def get_scheduler_slots(
                         "allDay": True,
                         "display": "background",
                         "id": hol.pk,
+                        "resourceId": user.pk,
+                    }
+                )
+
+    # Shade each member's AVAILABLE days (a working day for them, not a public
+    # holiday, and with no non-working/leave slot) with the configured colour.
+    # Emitted per-user as `display: background` runs — mirroring the holiday
+    # bands above — so vis-timeline draws them behind the booked slots.
+    if config.SCHEDULE_SHADE_AVAILABLE and start and end:
+        from collections import defaultdict
+        from datetime import timedelta
+
+        available_colour = str(config.SCHEDULE_COLOR_AVAILABLE)
+
+        # Public holidays for the window, split into per-country and global
+        # (country-less applies to everyone — mirrors User.get_holidays).
+        holiday_by_country = defaultdict(set)
+        global_holidays = set()
+        for hol in dataset["holidays"]:
+            if hol.country:
+                holiday_by_country[str(hol.country)].add(hol.date)
+            else:
+                global_holidays.add(hol.date)
+
+        # Days a member already has ANY booking on (delivery, internal, leave,
+        # sick, etc.) — a booked day is NOT available. Queried UNSCOPED so a
+        # job/phase-scoped feed still hides days the member is booked elsewhere.
+        occupied_dates = defaultdict(set)
+        booked = TimeSlot.objects.filter(
+            user__in=filtered_users,
+            end__gte=start,
+            start__lte=end,
+        ).values_list("user_id", "start", "end")
+        for uid, slot_start, slot_end in booked:
+            d, last = slot_start.date(), slot_end.date()
+            while d <= last:
+                occupied_dates[uid].add(d)
+                d += timedelta(days=1)
+
+        # Each user's working days (first unit membership; default Mon–Fri),
+        # resolved in one query to avoid an N+1 over the member list.
+        member_days = {}
+        for m in (
+            OrganisationalUnitMember.objects.filter(member__in=filtered_users)
+            .select_related("unit")
+            .order_by("member_id", "pk")
+        ):
+            if m.member_id not in member_days:
+                member_days[m.member_id] = m.unit.businessHours_days or [1, 2, 3, 4, 5]
+
+        for user in filtered_users:
+            business_days = member_days.get(user.pk, [1, 2, 3, 4, 5])
+            user_holidays = holiday_by_country.get(str(user.country), set()) | global_holidays
+            user_occupied = occupied_dates.get(user.pk, set())
+            for run_start, run_end in available_day_runs(
+                start.date(), end.date(), business_days, user_holidays, user_occupied
+            ):
+                data.append(
+                    {
+                        "id": "avail-%d-%s" % (user.pk, run_start.isoformat()),
+                        "title": "",
+                        "start": run_start,
+                        "end": run_end + timedelta(days=1),
+                        "display": "background",
+                        "backgroundColor": available_colour,
                         "resourceId": user.pk,
                     }
                 )

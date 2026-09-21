@@ -536,6 +536,7 @@ class CustomConfigForm(ConstanceForm):
                     col(
                         sect(
                             "Schedule Colours",
+                            "SCHEDULE_SHADE_AVAILABLE",
                             "SCHEDULE_COLOR_AVAILABLE",
                             "SCHEDULE_COLOR_UNAVAILABLE",
                             "SCHEDULE_COLOR_INTERNAL",

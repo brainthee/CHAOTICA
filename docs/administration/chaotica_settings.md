@@ -159,7 +159,8 @@ Hex colour values used in the calendar/schedule views for different timeslot typ
 
 | Setting | Default | Used For |
 |---------|---------|----------|
-| **SCHEDULE_COLOR_AVAILABLE** | `#8BC34A` | Available/free time |
+| **SCHEDULE_SHADE_AVAILABLE** | `True` | Shade days when a person is available (a working day with no booking — nothing scheduled, not on leave, not a holiday). Turn off to hide the shading. |
+| **SCHEDULE_COLOR_AVAILABLE** | `#8BC34A` | Colour used to shade available days |
 | **SCHEDULE_COLOR_UNAVAILABLE** | `#F44336` | Unavailable/blocked time |
 | **SCHEDULE_COLOR_INTERNAL** | `#FFC107` | Internal/overhead timeslots |
 | **SCHEDULE_COLOR_PROJECT** | `#9C27B0` | Project-level timeslots |

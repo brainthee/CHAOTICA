@@ -327,6 +327,16 @@
   }
   function startOfDay(d) { var x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
   function startOfNextDay(d) { var x = startOfDay(d); x.setDate(x.getDate() + 1); return x; }
+  // Turn a #rgb/#rrggbb into an rgba() so a configured background colour can be
+  // used as a subtle shade behind slots. Non-hex input is passed through as-is.
+  function hexToRgba(hex, alpha) {
+    if (!hex) return null;
+    var h = String(hex).trim().replace(/^#/, '');
+    if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+    if (h.length !== 6 || /[^0-9a-fA-F]/.test(h)) return hex;
+    return 'rgba(' + parseInt(h.slice(0, 2), 16) + ',' + parseInt(h.slice(2, 4), 16) +
+      ',' + parseInt(h.slice(4, 6), 16) + ',' + alpha + ')';
+  }
 
   function buildTooltip(e) {
     var t = e.title || '';
@@ -345,6 +355,17 @@
       var endBg = e.end;
       if (!endBg || new Date(endBg) <= new Date(e.start)) endBg = dayAfter(e.start);
       var isHoliday = e.allDay === true;
+      // Holidays keep their red tint; a server-provided colour (e.g. the green
+      // "available" shading) is applied as a subtle rgba; otherwise the default
+      // grey (out-of-scope) tint.
+      var bgFill;
+      if (isHoliday) {
+        bgFill = 'rgba(220,53,69,0.12)';
+      } else if (e.backgroundColor) {
+        bgFill = hexToRgba(e.backgroundColor, 0.18);
+      } else {
+        bgFill = 'rgba(120,130,150,0.10)';
+      }
       return {
         id: 'bg-' + e.id + '-' + e.resourceId,
         group: e.resourceId,
@@ -352,7 +373,7 @@
         end: endBg,
         type: 'background',
         content: escapeHtml(e.title || ''),
-        style: 'background-color:' + (isHoliday ? 'rgba(220,53,69,0.12)' : 'rgba(120,130,150,0.10)') + ';'
+        style: 'background-color:' + bgFill + ';'
       };
     }
     var bg = e.backgroundColor || e.color || '#5e6e82';
