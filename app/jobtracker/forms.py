@@ -2341,7 +2341,7 @@ class ScopeForm(forms.ModelForm):
 class MergeClientForm(forms.Form):
     client_to_merge = forms.ModelChoiceField(
         queryset=Client.objects.all(),
-        widget=s2forms.ModelSelect2MultipleWidget(
+        widget=s2forms.ModelSelect2Widget(
             attrs={
                 "class": "select2-widget",
                 "data-minimum-input-length": 2,
@@ -2354,7 +2354,15 @@ class MergeClientForm(forms.Form):
     )
 
     def __init__(self, *args, **kwargs):
+        user = kwargs.pop("user", None)
         super(MergeClientForm, self).__init__(*args, **kwargs)
+        if user is not None and not user.is_superuser:
+            # Restrict validatable choices to clients the user can see (matching
+            # the autocomplete's view_client scope). The view still re-checks
+            # change/delete perms on the target and reports a friendly error.
+            self.fields["client_to_merge"].queryset = get_objects_for_user(
+                user, "jobtracker.view_client", Client
+            )
         self.helper = FormHelper(self)
         self.helper.form_tag = False
         self.helper.layout = Layout(

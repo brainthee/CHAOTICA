@@ -311,7 +311,7 @@ def client_merge(request, slug):
     context = {}
     data = dict()
     if request.method == "POST":
-        form = MergeClientForm(request.POST)
+        form = MergeClientForm(request.POST, user=request.user)
         if form.is_valid():
             # Lets merge!
             client_to_merge = form.cleaned_data["client_to_merge"]
@@ -339,7 +339,7 @@ def client_merge(request, slug):
                     form.add_error("", "Failed to merge!")
     else:
         # Send the modal
-        form = MergeClientForm()
+        form = MergeClientForm(user=request.user)
 
     context = {"form": form, "client": client}
     data["html_form"] = loader.render_to_string(

@@ -128,9 +128,9 @@ class JobAutocomplete(AutoResponseView):
         )
         if self.term:
             qs = qs.filter(
-                Q(title__iregex=SEARCH_REGEX.format(self.term))
-                | Q(slug__iregex=SEARCH_REGEX.format(self.term))
-                | Q(id__iregex=SEARCH_REGEX.format(self.term)),
+                Q(title__iregex=SEARCH_REGEX.format(re.escape(self.term)))
+                | Q(slug__iregex=SEARCH_REGEX.format(re.escape(self.term)))
+                | Q(id__iregex=SEARCH_REGEX.format(re.escape(self.term))),
             )
 
         # Pagination
@@ -168,9 +168,9 @@ class PhaseAutocomplete(AutoResponseView):
         )
         if self.term:
             qs = qs.filter(
-                Q(title__iregex=SEARCH_REGEX.format(self.term))
-                | Q(phase_id__iregex=SEARCH_REGEX.format(self.term))
-                | Q(job__id__iregex=SEARCH_REGEX.format(self.term))
+                Q(title__iregex=SEARCH_REGEX.format(re.escape(self.term)))
+                | Q(phase_id__iregex=SEARCH_REGEX.format(re.escape(self.term)))
+                | Q(job__id__iregex=SEARCH_REGEX.format(re.escape(self.term)))
             )
 
         # Pagination
@@ -206,8 +206,8 @@ class ProjectAutocomplete(AutoResponseView):
         qs = Project.objects.all().order_by('-id')
         if self.term:
             qs = qs.filter(
-                Q(title__iregex=SEARCH_REGEX.format(self.term)) |
-                Q(id__iregex=SEARCH_REGEX.format(self.term))
+                Q(title__iregex=SEARCH_REGEX.format(re.escape(self.term))) |
+                Q(id__iregex=SEARCH_REGEX.format(re.escape(self.term)))
             )
 
         # Pagination
@@ -250,8 +250,8 @@ class SkillAutocomplete(LoginRequiredMixin, AutoResponseView):
         # Apply case-insensitive search using iregex for MySQL compatibility
         if self.term:
             qs = qs.filter(
-                Q(name__iregex=SEARCH_REGEX.format(self.term)) |
-                Q(category__name__iregex=SEARCH_REGEX.format(self.term))
+                Q(name__iregex=SEARCH_REGEX.format(re.escape(self.term))) |
+                Q(category__name__iregex=SEARCH_REGEX.format(re.escape(self.term)))
             )
 
         # Order by name for consistent results
@@ -295,7 +295,7 @@ class TeamAutocomplete(LoginRequiredMixin, AutoResponseView):
 
         # Apply case-insensitive search
         if self.term:
-            qs = qs.filter(name__iregex=SEARCH_REGEX.format(self.term))
+            qs = qs.filter(name__iregex=SEARCH_REGEX.format(re.escape(self.term)))
 
         # Order by name
         qs = qs.order_by('name')
@@ -338,7 +338,7 @@ class ServiceAutocomplete(LoginRequiredMixin, AutoResponseView):
 
         # Apply case-insensitive search
         if self.term:
-            qs = qs.filter(name__iregex=SEARCH_REGEX.format(self.term))
+            qs = qs.filter(name__iregex=SEARCH_REGEX.format(re.escape(self.term)))
 
         # Order by name
         qs = qs.order_by('name')
@@ -381,7 +381,7 @@ class OrganisationalUnitAutocomplete(LoginRequiredMixin, AutoResponseView):
 
         # Apply case-insensitive search
         if self.term:
-            qs = qs.filter(name__iregex=SEARCH_REGEX.format(self.term))
+            qs = qs.filter(name__iregex=SEARCH_REGEX.format(re.escape(self.term)))
 
         # Order by name
         qs = qs.order_by('name')
@@ -424,7 +424,7 @@ class OrganisationalUnitRoleAutocomplete(LoginRequiredMixin, AutoResponseView):
 
         # Apply case-insensitive search
         if self.term:
-            qs = qs.filter(name__iregex=SEARCH_REGEX.format(self.term))
+            qs = qs.filter(name__iregex=SEARCH_REGEX.format(re.escape(self.term)))
 
         # Order by name
         qs = qs.order_by('name')
@@ -470,8 +470,8 @@ class ClientAutocomplete(LoginRequiredMixin, AutoResponseView):
         # Apply case-insensitive search
         if self.term:
             qs = qs.filter(
-                Q(name__iregex=SEARCH_REGEX.format(self.term)) |
-                Q(short_name__iregex=SEARCH_REGEX.format(self.term))
+                Q(name__iregex=SEARCH_REGEX.format(re.escape(self.term))) |
+                Q(short_name__iregex=SEARCH_REGEX.format(re.escape(self.term)))
             )
 
         # Order by name

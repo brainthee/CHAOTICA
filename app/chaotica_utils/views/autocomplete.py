@@ -69,12 +69,12 @@ class UserAutocomplete(AutoResponseView):
 
         if self.term:
             qs = qs.filter(
-                Q(email__iregex=SEARCH_REGEX.format(self.term))
-                | Q(full_name__iregex=SEARCH_REGEX.format(self.term))
-                | Q(first_name__iregex=SEARCH_REGEX.format(self.term))
-                | Q(last_name__iregex=SEARCH_REGEX.format(self.term))
+                Q(email__iregex=SEARCH_REGEX.format(re.escape(self.term)))
+                | Q(full_name__iregex=SEARCH_REGEX.format(re.escape(self.term)))
+                | Q(first_name__iregex=SEARCH_REGEX.format(re.escape(self.term)))
+                | Q(last_name__iregex=SEARCH_REGEX.format(re.escape(self.term)))
                 | (
-                    Q(alias__iregex=SEARCH_REGEX.format(self.term))
+                    Q(alias__iregex=SEARCH_REGEX.format(re.escape(self.term)))
                     & Q(alias__isnull=False)
                 ),
             )
