@@ -488,7 +488,7 @@ class PermissionsMatrixView(ChaoticaBaseAdminView, TemplateView):
         return context
 
 
-def log_system_activity(ref_obj, msg, author=None):
+def log_system_activity(ref_obj, msg, author=None, *, category=None, verb=None):
     """Record a system activity event against ``ref_obj``.
 
     System activity now lives in the central AuditEvent trail (user-authored
@@ -497,15 +497,22 @@ def log_system_activity(ref_obj, msg, author=None):
     many call sites that omit it. Returns the AuditEvent (whose ``.content`` /
     ``.author`` / ``.create_date`` compat properties keep legacy callers happy),
     or None if the write failed.
+
+    ``category``/``verb`` are optional overrides: callers that know the event's
+    domain (e.g. scheduler mutations) can file it under the right
+    :class:`AuditCategory`/:class:`AuditVerb` so the Activity Log's category
+    filter finds it. Left unset, ``record_audit`` applies its defaults
+    (GENERAL / OTHER), preserving behaviour for every existing call site.
     """
     from ..audit import record_audit, UNSET
     from ..models import AuditVerb
 
     return record_audit(
         ref_obj,
-        AuditVerb.OTHER,
+        verb or AuditVerb.OTHER,
         message=msg,
         actor=author if author is not None else UNSET,
+        category=category,
     )
 
 

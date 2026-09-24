@@ -183,6 +183,68 @@ class LogSystemActivityTests(TestCase):
         self.assertIsNotNone(event)
         self.assertEqual(event.actor, self.user)
 
+    def test_category_and_verb_overrides_are_applied(self):
+        event = log_system_activity(
+            self.target,
+            "A scheduled thing",
+            author=self.user,
+            category=AuditCategory.SCHEDULE,
+            verb=AuditVerb.SCHEDULE,
+        )
+        self.assertEqual(event.category, AuditCategory.SCHEDULE)
+        self.assertEqual(event.verb, AuditVerb.SCHEDULE)
+
+    def test_defaults_unchanged_when_overrides_omitted(self):
+        event = log_system_activity(self.target, "A plain thing", author=self.user)
+        self.assertEqual(event.category, AuditCategory.GENERAL)
+        self.assertEqual(event.verb, AuditVerb.OTHER)
+
+
+@override_settings(ALLOWED_HOSTS=["*", "testserver", "localhost"])
+class ScheduleAuditTests(TestCase):
+    """Every slot type (not just delivery) writes a SCHEDULE-category event so
+    the Activity Log's Schedule filter is complete."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(email="admin@test.com", password="pw12345")
+        self.addCleanup(set_current_user, None)
+
+    def _schedule_events_for(self, obj):
+        from django.contrib.contenttypes.models import ContentType
+
+        ct = ContentType.objects.get_for_model(obj.__class__)
+        return AuditEvent.objects.filter(
+            category=AuditCategory.SCHEDULE,
+            verb=AuditVerb.SCHEDULE,
+            target_content_type=ct,
+            target_id=str(obj.pk),
+        )
+
+    def test_internal_slot_logs_schedule_event_targeting_user(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        from jobtracker.enums import DefaultTimeSlotTypes
+        from jobtracker.models.timeslot import TimeSlot, TimeSlotType
+
+        # Any type that is neither DELIVERY nor INTERNAL_PROJECT is "internal".
+        slot_type = TimeSlotType.objects.create(name="Training (audit test)")
+        self.assertNotIn(
+            slot_type.pk,
+            (DefaultTimeSlotTypes.DELIVERY, DefaultTimeSlotTypes.INTERNAL_PROJECT),
+        )
+        slot = TimeSlot.objects.create(
+            user=self.user,
+            slot_type=slot_type,
+            start=timezone.now(),
+            end=timezone.now() + timedelta(days=1),
+        )
+        self.assertTrue(slot.is_internal())
+        events = self._schedule_events_for(self.user)
+        self.assertTrue(events.filter(message__startswith="Slot created:").exists())
+
+        slot.delete()
+        self.assertTrue(events.filter(message__startswith="Slot deleted:").exists())
+
 
 @override_settings(ALLOWED_HOSTS=["*", "testserver", "localhost"])
 class ActivityLogApiTests(TestCase):

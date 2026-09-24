@@ -552,15 +552,63 @@ class TimeSlot(models.Model):
         # Eventually return more useful URLs... but for now, return home.
         return ext_reverse(reverse("home"))
 
+    def _slot_audit_descriptor(self):
+        """Human label describing this slot for a schedule audit message."""
+        who = self.user.get_full_name()
+        start = dj_timezone.localtime(self.start).strftime("%Y-%m-%d")
+        end = dj_timezone.localtime(self.end).strftime("%Y-%m-%d")
+        if self.is_delivery():
+            what = self.get_deliveryRole_display()
+        elif self.is_project() and self.project_id:
+            what = self.project.title
+        else:
+            what = self.slot_type.name
+        return "{} ({}) {} to {}".format(who, what, start, end)
+
+    def _schedule_audit_targets(self):
+        """Objects a schedule AuditEvent for this slot should target.
+
+        Delivery slots attach to both the job and the phase (so the change
+        shows on each Activity tab); project slots to their project; everything
+        else (internal, leave, training, …) to the owning user, whose profile
+        is the natural home for "my schedule changed". Falls back to the owning
+        user whenever the expected relation is missing.
+        """
+        if self.is_delivery():
+            phase = self.phase_or_none
+            if phase:
+                return [phase.job, phase]
+        elif self.is_project() and self.project_id:
+            return [self.project]
+        return [self.user]
+
+    def _log_schedule_change(self, msg):
+        """Write a SCHEDULE-category audit event for this slot to each target.
+
+        Covers every slot type (delivery, project, internal, leave, …) so the
+        Activity Log's "Schedule" filter reflects all schedule mutations. The
+        write is best-effort — ``log_system_activity`` swallows its own errors,
+        so auditing never breaks a slot save/delete.
+        """
+        from chaotica_utils.models import AuditCategory, AuditVerb
+
+        current_user = get_current_user()
+        for target in self._schedule_audit_targets():
+            log_system_activity(
+                target,
+                msg,
+                author=current_user,
+                category=AuditCategory.SCHEDULE,
+                verb=AuditVerb.SCHEDULE,
+            )
+
     def delete(self):
         phase = self.phase
 
-        # Log deletion for delivery timeslots before deleting
-        if self.is_delivery() and phase:
-            current_user = get_current_user()
-            msg = f"Slot deleted: {self.user.get_full_name()} ({self.get_deliveryRole_display()}) from {dj_timezone.localtime(self.start).strftime('%Y-%m-%d')} to {dj_timezone.localtime(self.end).strftime('%Y-%m-%d')}"
-            log_system_activity(phase.job, msg, author=current_user)
-            log_system_activity(phase, msg, author=current_user)
+        # Record the schedule change before the row (and its relations) go away.
+        self._log_schedule_change(
+            "Slot deleted: {}".format(self._slot_audit_descriptor())
+        )
 
         super(TimeSlot, self).delete()
         if self.is_delivery():
@@ -596,6 +644,7 @@ class TimeSlot(models.Model):
         old_end = None
         old_user = None
         old_role = None
+        old_slot_type = None
         if not is_new:
             try:
                 old_instance = TimeSlot.objects.get(pk=self.pk)
@@ -603,42 +652,46 @@ class TimeSlot(models.Model):
                 old_end = old_instance.end
                 old_user = old_instance.user
                 old_role = old_instance.get_deliveryRole_display()
+                old_slot_type = old_instance.slot_type
             except TimeSlot.DoesNotExist:
                 pass
 
         super(TimeSlot, self).save(*args, **kwargs)
 
-        # Log system activity for delivery timeslots
-        if self.is_delivery() and self.phase:
-            current_user = get_current_user()
-            if is_new:
-                msg = f"Slot created: {self.user.get_full_name()} ({self.get_deliveryRole_display()}) {dj_timezone.localtime(self.start).strftime('%Y-%m-%d')} to {dj_timezone.localtime(self.end).strftime('%Y-%m-%d')}"
-            else:
-                # Check what changed and build a descriptive message
-                changes = []
-                if old_user and old_user != self.user:
-                    changes.append(
-                        f"user: {old_user.get_full_name()} → {self.user.get_full_name()}"
-                    )
-                if old_role and old_role != self.get_deliveryRole_display():
-                    changes.append(
-                        f"role: {old_role} → {self.get_deliveryRole_display()}"
-                    )
-                if old_start and old_start != self.start:
-                    changes.append(
-                        f"start: {dj_timezone.localtime(old_start).strftime('%Y-%m-%d')} → {dj_timezone.localtime(self.start).strftime('%Y-%m-%d')}"
-                    )
-                if old_end and old_end != self.end:
-                    changes.append(
-                        f"end: {dj_timezone.localtime(old_end).strftime('%Y-%m-%d')} → {dj_timezone.localtime(self.end).strftime('%Y-%m-%d')}"
-                    )
+        # Record the schedule change for every slot type (delivery, project,
+        # internal, leave, …) so the Activity Log's "Schedule" filter is complete.
+        if is_new:
+            msg = "Slot created: {}".format(self._slot_audit_descriptor())
+        else:
+            # Build a descriptive message from whatever actually changed.
+            changes = []
+            if old_user and old_user != self.user:
+                changes.append(
+                    f"user: {old_user.get_full_name()} → {self.user.get_full_name()}"
+                )
+            if old_slot_type and old_slot_type != self.slot_type:
+                changes.append(f"type: {old_slot_type.name} → {self.slot_type.name}")
+            # deliveryRole only carries meaning for delivery slots.
+            if (
+                self.is_delivery()
+                and old_role
+                and old_role != self.get_deliveryRole_display()
+            ):
+                changes.append(f"role: {old_role} → {self.get_deliveryRole_display()}")
+            if old_start and old_start != self.start:
+                changes.append(
+                    f"start: {dj_timezone.localtime(old_start).strftime('%Y-%m-%d')} → {dj_timezone.localtime(self.start).strftime('%Y-%m-%d')}"
+                )
+            if old_end and old_end != self.end:
+                changes.append(
+                    f"end: {dj_timezone.localtime(old_end).strftime('%Y-%m-%d')} → {dj_timezone.localtime(self.end).strftime('%Y-%m-%d')}"
+                )
 
-                if changes:
-                    msg = f"Slot updated: {', '.join(changes)}"
-                else:
-                    msg = f"Slot updated: {self.user.get_full_name()} ({self.get_deliveryRole_display()})"
-            log_system_activity(self.phase.job, msg, author=current_user)
-            log_system_activity(self.phase, msg, author=current_user)
+            if changes:
+                msg = f"Slot updated: {', '.join(changes)}"
+            else:
+                msg = "Slot updated: {}".format(self._slot_audit_descriptor())
+        self._log_schedule_change(msg)
 
         if self.is_delivery():
             # Lets see if we need to update our parent phase

@@ -6,7 +6,7 @@ rather than replacing them:
 
 | Mechanism | Purpose |
 | --- | --- |
-| **AuditEvent** (this feature) | Cross-cutting "who did what" feed: auth, finance, security, config, workflow and general activity. Powers the activity tabs and the site-wide feed. |
+| **AuditEvent** (this feature) | Cross-cutting "who did what" feed: auth, finance, security, config, workflow, schedule and general activity. Powers the activity tabs and the site-wide feed. |
 | **django-simple-history** | Full field-level before/after snapshots on selected models (Job, Phase, Client, TimeSlot, …). |
 | **ScheduleAction** | The scheduler's reversible commit log (undo / revert). |
 
@@ -30,6 +30,13 @@ Coverage includes:
   email templates, report definitions/schedules and notification rules.
 - **Workflow** — leave request approve / decline / cancel, and the existing
   job/phase lifecycle transitions.
+- **Schedule** — every timeslot change (create / update / delete) across **all**
+  slot types: delivery, internal project, and internal slots such as training
+  and leave. Delivery changes are recorded against both the job and the phase;
+  project slots against their project; internal/leave slots against the owning
+  user (so they surface on that user's profile activity). The scheduler's own
+  reversible undo/redo history is still driven by `ScheduleAction` — the audit
+  events are the flat, filterable "what changed" view of the same activity.
 - **Sync** — a summary event per Resource Manager sync run, plus a record when a
   user is auto-created from Resource Manager.
 
@@ -86,5 +93,10 @@ record_audit(
 - To add a plain model to automatic create/update/delete auditing, add one line
   to `_AUDITED_MODELS` in `chaotica_utils/signals.py`; for a relation, add to
   `_AUDITED_M2M`.
+- `log_system_activity(obj, msg, ...)` accepts optional `category` / `verb`
+  overrides. Callers that know an event's domain should set them so the Activity
+  Log's category filter finds it — e.g. `TimeSlot.save()`/`delete()` pass
+  `category=AuditCategory.SCHEDULE, verb=AuditVerb.SCHEDULE`. Left unset, it
+  defaults to GENERAL / OTHER.
 - `audit_events_for(obj, viewer)` returns the permission-scoped queryset used by
   the UI (hides sensitive categories from non-admins).
