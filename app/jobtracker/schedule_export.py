@@ -614,7 +614,7 @@ SCHEDULER_EXPORT_MAX_DAYS = 1200
 
 def build_scheduler_xlsx(
     members, users, dataset, start_date, end_date,
-    filename, title=None, header_rows=None, focus=None,
+    filename, title=None, header_rows=None, focus=None, hide_unfocused=False,
 ):
     """Build an internal XLSX of the global scheduler's current view.
 
@@ -626,9 +626,12 @@ def build_scheduler_xlsx(
     ``members``  ordered resource rows from ``scheduler_member_rows``.
     ``users``    ``{pk: User}`` for those rows.
     ``dataset``  the ``collect_schedule_slots`` result for the window.
-    ``focus``    ``scheduler_focus()`` result; delivery slots outside the
-                 filtered jobs/phases/clients are muted, matching the on-screen
+    ``focus``    ``SchedulerFocus`` for the filter; slots outside the filtered
+                 jobs/phases/clients/projects are muted, matching the on-screen
                  faded styling.
+    ``hide_unfocused``  the "clean" view: unfocused slots are left out (grid
+                 and Bookings), but the days they cover are marked Unavailable —
+                 never blank — so nobody looks free when they're booked.
 
     Sheets: "Overview" (filters + key), "Schedule" (resources x dates grid),
     "Bookings" (one row per slot) and "Resources" (availability/utilisation).
@@ -636,12 +639,10 @@ def build_scheduler_xlsx(
     import xlsxwriter
     from django.utils import timezone
     from .models import OrganisationalUnitMember
-    from .utils import slot_out_of_focus
 
     output = io.BytesIO()
     workbook = xlsxwriter.Workbook(output, {"remove_timezone": True})
     colours = _schedule_colours()
-    focus_selected, focus_clients = focus or ([], set())
 
     title_fmt = workbook.add_format({
         "bold": True, "font_size": 16, "font_color": "#FFFFFF",
@@ -761,27 +762,43 @@ def build_scheduler_xlsx(
             hols.update(holidays_by_country.get(str(user.country), {}))
         return hols
 
-    # Booked cells: (user_pk, date) -> [labels], first slot decides the colour.
-    slots = [s for s in dataset["timeslots"] if s.user_id in users]
+    def slot_days(slot):
+        day = max(timezone.localtime(slot.start).date(), start_date)
+        last = min(timezone.localtime(slot.end).date(), end_date)
+        while day <= last:
+            yield day
+            day = _next_day(day)
+
+    # Booked cells: (user_pk, date) -> [labels]. The first focused slot decides
+    # the colour; a day with only unfocused work is muted.
+    slots = []  # the slots that appear in the export
+    hidden_days = set()  # (user_pk, date) covered only by hidden slots
+    hidden_count = 0
     cell_labels = defaultdict(list)
     cell_style = {}
-    for slot in slots:
+    for slot in dataset["timeslots"]:
+        if slot.user_id not in users:
+            continue
+        unfocused = bool(focus and focus.is_unfocused(slot))
+        if unfocused and hide_unfocused:
+            hidden_count += 1
+            hidden_days.update((slot.user_id, day) for day in slot_days(slot))
+            continue
+        slots.append(slot)
         label = slot.get_schedule_title()
         if slot.is_delivery() and slot.deliveryRole != TimeSlotDeliveryRole.NA:
             label = "{} [{}]".format(label, slot.get_deliveryRole_display())
         bg = slot.get_schedule_slot_colour(schedule_colours=colours)
         style = (
-            "muted" if slot_out_of_focus(slot, focus_selected, focus_clients)
+            "muted" if unfocused
             else (bg, slot.get_schedule_slot_text_colour(bg), not slot.is_confirmed())
         )
-        day = max(timezone.localtime(slot.start).date(), start_date)
-        last = min(timezone.localtime(slot.end).date(), end_date)
-        while day <= last:
+        for day in slot_days(slot):
             key = (slot.user_id, day)
             if label not in cell_labels[key]:
                 cell_labels[key].append(label)
-            cell_style.setdefault(key, style)
-            day = _next_day(day)
+            if cell_style.get(key, "muted") == "muted":
+                cell_style[key] = style
 
     # Comments become Excel cell notes on each day they cover.
     cell_notes = defaultdict(list)
@@ -822,7 +839,8 @@ def build_scheduler_xlsx(
         (colours["SCHEDULE_COLOR_PHASE_AWAY"], "Tentative — onsite"),
         (colours["SCHEDULE_COLOR_PROJECT"], "Internal project"),
         (colours["SCHEDULE_COLOR_INTERNAL"], "Internal / leave / other"),
-        (PHX_GRAY_100, "Outside the filtered clients/jobs/phases"),
+        (PHX_GRAY_100, "Outside the filtered clients/jobs/phases/projects"),
+        (PHX_GRAY_200, "Unavailable — booked on work hidden from this export"),
         (PHX_GRAY_200, "Public holiday"),
         ("#eef2fb", "Non-working day"),
         (None, "Blank — available"),
@@ -837,6 +855,19 @@ def build_scheduler_xlsx(
         r += 1
     note_fmt = workbook.add_format({"italic": True, "font_color": PHX_SECONDARY})
     ov.write(r + 1, 0, "Comments are attached as cell notes on the Schedule sheet.", note_fmt)
+    if hide_unfocused and hidden_count:
+        warn_fmt = workbook.add_format({
+            "bold": True, "font_color": "#9a3412", "bg_color": "#ffedd5",
+            "border": 1, "border_color": "#fdba74", "text_wrap": True, "valign": "vcenter",
+        })
+        ov.merge_range(
+            r + 3, 0, r + 3, 1,
+            "{} slot(s) outside the filters are HIDDEN from this export. The days "
+            "they cover are marked Unavailable — check the live scheduler before "
+            "booking.".format(hidden_count),
+            warn_fmt,
+        )
+        ov.set_row(r + 3, 32)
 
     # =========================================================
     # Sheet 2: Schedule (grid)
@@ -874,6 +905,8 @@ def build_scheduler_xlsx(
                 fmt = muted_fmt if style == "muted" else booked_fmt(*style)
                 ws.write(row, col, text, fmt)
                 max_lines = max(max_lines, _est_lines(text, GRID_COL_WIDTH))
+            elif key in hidden_days:
+                ws.write(row, col, "Unavailable", holiday_fmt)
             elif day in hols:
                 ws.write(row, col, hols[day], holiday_fmt)
             elif (day.weekday() + 1) not in working:

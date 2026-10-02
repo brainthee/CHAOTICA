@@ -328,7 +328,7 @@ def export_scheduler_view(request):
     from ..utils import (
         _filter_users_on_query,
         collect_schedule_slots,
-        scheduler_focus,
+        SchedulerFocus,
         scheduler_member_rows,
     )
 
@@ -370,11 +370,19 @@ def export_scheduler_view(request):
     members = [m for m in members if m["id"] in users]
     dataset = collect_schedule_slots(filtered_users, start, end)
 
+    focus = SchedulerFocus(cleaned_data)
+    hide_unfocused = focus.active and request.GET.get("hide_unfocused") == "1"
+
     fmt = "%d %b %Y"
     header_rows = [
         ("Date Range", "{} to {}".format(start_date.strftime(fmt), end_date.strftime(fmt))),
         ("Filters", _describe_scheduler_filter(filter_form)),
         ("Resources", str(len(members))),
+        ("Other Slots", (
+            "HIDDEN — only work matching the filters is shown; days booked on "
+            "hidden work are marked Unavailable" if hide_unfocused
+            else "Shown greyed" if focus.active else "n/a (no job/phase/client/project filter)"
+        )),
         ("Generated", "{} by {}".format(
             timezone.localtime().strftime("%d %b %Y %H:%M"), request.user.get_full_name()
         )),
@@ -388,7 +396,8 @@ def export_scheduler_view(request):
         filename="schedule-{}-to-{}".format(start_date.isoformat(), end_date.isoformat()),
         title="Schedule — {} to {}".format(start_date.strftime(fmt), end_date.strftime(fmt)),
         header_rows=header_rows,
-        focus=scheduler_focus(cleaned_data),
+        focus=focus,
+        hide_unfocused=hide_unfocused,
     )
 
 

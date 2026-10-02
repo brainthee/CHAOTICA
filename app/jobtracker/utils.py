@@ -796,30 +796,44 @@ def available_day_runs(
     return runs
 
 
-def scheduler_focus(cleaned_data):
-    """The jobs/phases and client PKs a SchedulerFilter puts "in focus".
+class SchedulerFocus:
+    """The work a SchedulerFilter "highlights": its jobs, phases, clients and projects.
 
-    Delivery slots outside the focus are faded on screen (and greyed in the
-    export) so the filtered work stands out from people's other commitments.
-    Returns ``(selected_jobs_and_phases, client_pks)``."""
-    if not cleaned_data:
-        return [], set()
-    selected = list(cleaned_data.get("jobs") or []) + list(cleaned_data.get("phases") or [])
-    client_ids = {c.pk for c in cleaned_data.get("clients") or []}
-    return selected, client_ids
+    When any are selected, every slot that doesn't match — other clients' work,
+    unselected projects, internal time, leave — is *unfocused*: faded on screen
+    (never hidden by default, so nobody is overbooked because their other work
+    was filtered out of view) and greyed in the export. The toolbar's "Other
+    slots" toggle can hide unfocused slots for a clean view.
+    """
 
+    def __init__(self, cleaned_data=None):
+        cleaned_data = cleaned_data or {}
 
-def slot_out_of_focus(slot, selected, client_ids):
-    """Whether a delivery slot falls outside the filter's focus (see scheduler_focus).
-    Non-delivery slots (leave, internal, projects) are never faded."""
-    if not selected and not client_ids:
-        return False
-    phase = slot.phase_or_none if slot.is_delivery() else None
-    if phase is None:
-        return False
-    if phase in selected or phase.job in selected:
-        return False
-    return phase.job.client_id not in client_ids
+        def pks(name):
+            return {obj.pk for obj in cleaned_data.get(name) or []}
+
+        self.job_ids = pks("jobs")
+        self.phase_ids = pks("phases")
+        self.client_ids = pks("clients")
+        self.project_ids = pks("projects")
+
+    @property
+    def active(self):
+        return bool(self.job_ids or self.phase_ids or self.client_ids or self.project_ids)
+
+    def is_unfocused(self, slot):
+        if not self.active:
+            return False
+        if slot.is_delivery():
+            phase = slot.phase_or_none
+            return phase is None or not (
+                phase.pk in self.phase_ids
+                or phase.job_id in self.job_ids
+                or phase.job.client_id in self.client_ids
+            )
+        if slot.is_project():
+            return slot.project_id not in self.project_ids
+        return True  # internal time, leave, etc.
 
 
 def get_scheduler_slots(
@@ -839,7 +853,7 @@ def get_scheduler_slots(
         filter_form = SchedulerFilter(request.GET)
         if filter_form.is_valid():
             cleaned_data = filter_form.clean()
-    selected_phases, focus_client_ids = scheduler_focus(cleaned_data)
+    focus = SchedulerFocus(cleaned_data)
 
     if filtered_users is None:
         filtered_users = _filter_users_on_query(request, cleaned_data).prefetch_related(
@@ -904,8 +918,10 @@ def get_scheduler_slots(
         slot_json = slot.get_schedule_json(
             schedule_colours=schedule_colours, compressed_view=compressed_view
         )
-        if slot_out_of_focus(slot, selected_phases, focus_client_ids):
-            slot_json["display"] = "background"
+        # Not part of the filtered jobs/phases/clients/projects: faded, and
+        # hideable client-side via the "Other slots" toggle.
+        if focus.is_unfocused(slot):
+            slot_json["out_of_scope"] = True
         # Soft-scope: keep the member's other commitments visible but faded so
         # it's clear which blocks belong to this job/phase (vs. context).
         if (

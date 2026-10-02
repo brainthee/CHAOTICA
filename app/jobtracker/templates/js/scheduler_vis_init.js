@@ -17,8 +17,37 @@
   var createExtraParams = CFG.createExtraParams || '';
   var readonly = !!CFG.readonly;   // embedded read-only view (detail tabs)
   // Job/phase views fade in "other" slots (commitments outside this job/phase) so
-  // gaps can be trusted. This lets the user hide that noise; remembered per browser.
-  var showOthers = (localStorage.getItem('sched-show-others') !== '0');
+  // gaps can be trusted; on the global view, slots outside the job/phase/client/
+  // project filters are faded the same way. The user can hide that noise — remembered
+  // per browser on job/phase views, but always starting visible on the global view
+  // so nobody lands on a silently-thinned schedule.
+  var isGlobal = (CFG.scope === 'global');
+  var showOthers = isGlobal || (localStorage.getItem('sched-show-others') !== '0');
+
+  // Global view: does the current filter highlight any work?
+  function focusFilterActive() {
+    var p = new URLSearchParams(filterParams);
+    return ['jobs', 'phases', 'clients', 'projects'].some(function (k) {
+      return p.getAll(k).some(function (v) { return !!v; });
+    });
+  }
+
+  // Prominent "slots are hidden" banner (see vis_scheduler_toolbar.html).
+  function paintHiddenBanner(hiddenCount) {
+    var banner = document.getElementById('sched-hidden-banner');
+    if (!banner) return;
+    var on = !showOthers;
+    banner.classList.toggle('d-none', !on);
+    banner.classList.toggle('d-flex', on);
+    var count = document.getElementById('sched-hidden-count');
+    if (count && on) {
+      var what = isGlobal ? 'outside your job/phase/client/project filters'
+                          : "that aren't part of this job/phase";
+      count.textContent = (hiddenCount == null ? 'Slots' : hiddenCount + ' slot' + (hiddenCount === 1 ? '' : 's')) +
+        ' ' + what + (hiddenCount == null ? ' are' : (hiddenCount === 1 ? ' is' : ' are')) + ' hidden in the loaded range.';
+    }
+    if (typeof fitHeight === 'function') fitHeight();
+  }
   // Existing filter querystring (without the leading "?") so the global page can
   // re-apply the same SchedulerFilter. Ignored by the scoped endpoints.
   var filterParams = window.location.search.replace(/^\?/, '');
@@ -484,6 +513,7 @@
       success: function (data) {
         // Optionally drop out-of-scope ("other") slots so the view isn't noisy.
         var rows = showOthers ? data : data.filter(function (e) { return !e.out_of_scope; });
+        paintHiddenBanner(data.length - rows.length);
         var mapped = rows.map(mapEvent);
         var keep = {};
         mapped.forEach(function (m) { keep[m.id] = true; });
@@ -945,7 +975,9 @@
         en = new Date(w.end.getTime() + span);
       }
       loading(true);
-      fetch(buildUrl(CFG.exportUrl, s.toISOString(), en.toISOString()), { credentials: 'same-origin' })
+      var exportUrl = buildUrl(CFG.exportUrl, s.toISOString(), en.toISOString());
+      if (!showOthers) exportUrl += '&hide_unfocused=1';   // the "clean" export
+      fetch(exportUrl, { credentials: 'same-origin' })
         .then(function (resp) {
           if (!resp.ok) {
             return resp.text().then(function (msg) { throw new Error(msg || resp.statusText); });
@@ -979,28 +1011,41 @@
     });
   });
 
-  // ---- Show/hide "other" (out-of-scope) slots — job/phase views only ----
+  // ---- Show/hide "other" (unhighlighted) slots ----
+  // Job/phase views: slots outside the job/phase. Global view: slots outside the
+  // job/phase/client/project filters — the toggle only appears while one is set.
+  var refreshOthersToggle = function () {};
   (function () {
     var grp = document.getElementById('grpToggleOthers');
     if (!grp) return;
-    if (CFG.scope === 'global') { grp.hidden = true; return; }  // nothing out of scope globally
-    grp.hidden = false;
     var btn = document.getElementById('btnToggleOthers');
     var icon = document.getElementById('btnToggleOthersIcon');
+    var what = isGlobal ? "outside your job/phase/client/project filters" : "that aren't part of this job/phase";
     function paint() {
       btn.classList.toggle('active', showOthers);
       if (icon) icon.className = (showOthers ? 'fas fa-eye' : 'fas fa-eye-slash') + ' me-1';
-      btn.title = showOthers
-        ? "Hide slots that aren't part of this job/phase"
-        : "Show slots that aren't part of this job/phase";
+      btn.title = (showOthers ? 'Hide' : 'Show') + ' slots ' + what +
+        (showOthers ? ' for a clean view (and export)' : '');
     }
-    paint();
-    btn.addEventListener('click', function () {
-      showOthers = !showOthers;
-      localStorage.setItem('sched-show-others', showOthers ? '1' : '0');
+    function setShowOthers(val) {
+      showOthers = val;
+      if (!isGlobal) localStorage.setItem('sched-show-others', showOthers ? '1' : '0');
       paint();
+      paintHiddenBanner(null);
       loadSlots();
-    });
+    }
+    refreshOthersToggle = function () {
+      var available = !isGlobal || focusFilterActive();
+      grp.hidden = !available;
+      // Nothing is unhighlighted without a focus filter — never leave slots hidden.
+      if (!available && !showOthers) setShowOthers(true);
+    };
+    paint();
+    refreshOthersToggle();
+    paintHiddenBanner(null);
+    btn.addEventListener('click', function () { setShowOthers(!showOthers); });
+    var showAll = document.getElementById('btnShowHidden');
+    if (showAll) showAll.addEventListener('click', function () { setShowOthers(true); });
   })();
 
   // Hide the "default view" pill/note — the user is now on a custom (non-default) view.
@@ -1015,6 +1060,7 @@
     // so the applied view is now a custom one — drop the default-view indicator.
     filterParams = $(this).serialize();
     history.replaceState(null, '', filterParams ? '?' + filterParams : location.pathname);
+    refreshOthersToggle();
     hideDefaultViewIndicator();
     groups.clear();
     items.clear();

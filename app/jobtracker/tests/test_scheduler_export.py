@@ -232,14 +232,15 @@ class SchedulerClientFilterTests(HiddenWorkBase):
     def test_client_filter_does_not_fade_its_own_work(self):
         rows = self._delivery_rows({"clients": [str(self.client_obj.pk)]})
         self.assertEqual(len(rows), 1)
-        self.assertNotEqual(rows[0].get("display"), "background")
+        self.assertFalse(rows[0].get("out_of_scope"))
 
     def test_other_clients_work_is_faded(self):
         other_client = Client.objects.create(name="Elsewhere Ltd")
         rows = self._delivery_rows({
             "clients": [str(other_client.pk)], "include_user": [str(self.actor.pk)],
         })
-        self.assertEqual(rows[0].get("display"), "background")
+        self.assertTrue(rows[0].get("out_of_scope"))
+        self.assertNotEqual(rows[0].get("display"), "background")
 
     def test_client_filter_respects_job_schedule_permission(self):
         params = {"clients": [str(self.hidden_job.client.pk)]}
@@ -279,3 +280,99 @@ class SchedulerClientFilterTests(HiddenWorkBase):
         self._reload_actor()
         form = SchedulerFilter({}, user=self.actor)
         self.assertIn(self.client_obj, form.fields["clients"].queryset)
+
+
+class SchedulerFocusTests(HiddenWorkBase):
+    """Unhighlighted slots: faded on screen, hideable, and never "available"."""
+
+    def setUp(self):
+        super().setUp()
+        self.focused = self._delivery_slot()  # actor, Test Client
+        # Actor's other commitments: an internal slot on day+2, a project on day+3.
+        self.internal = TimeSlot.objects.create(
+            user=self.actor, slot_type=self.internal_type,
+            start=self.start + timedelta(days=2), end=self.end + timedelta(days=2),
+        )
+        self.project = Project.objects.create(
+            title="Side Project", unit=self.unit, created_by=self.actor
+        )
+        self.project_slot = TimeSlot.objects.create(
+            user=self.actor, project=self.project,
+            slot_type=TimeSlotType.get_builtin_object(DefaultTimeSlotTypes.INTERNAL_PROJECT),
+            start=self.start + timedelta(days=3), end=self.end + timedelta(days=3),
+        )
+        self.client_params = {"clients": [str(self.client_obj.pk)]}
+
+    def _slot_rows(self, params):
+        query = {
+            "start": (self.start - timedelta(days=1)).isoformat(),
+            "end": (self.end + timedelta(days=6)).isoformat(),
+        }
+        query.update(params)
+        req = self.rf.get("/jobtracker/scheduler/timeslots", query)
+        req.user = self.actor
+        return json.loads(sched_views.view_scheduler_slots(req).content)
+
+    def _by_id(self, rows):
+        return {r["id"]: r for r in rows if isinstance(r.get("id"), int) and "slot_type_ID" in r}
+
+    def test_everything_outside_the_focus_is_faded_not_backgrounded(self):
+        rows = self._by_id(self._slot_rows(self.client_params))
+        self.assertFalse(rows[self.focused.pk].get("out_of_scope"))
+        for slot in (self.internal, self.project_slot):
+            self.assertTrue(rows[slot.pk].get("out_of_scope"), slot)
+            self.assertNotEqual(rows[slot.pk].get("display"), "background")
+
+    def test_selected_project_is_in_focus(self):
+        rows = self._by_id(self._slot_rows({"projects": [str(self.project.pk)]}))
+        self.assertFalse(rows[self.project_slot.pk].get("out_of_scope"))
+        self.assertTrue(rows[self.focused.pk].get("out_of_scope"))
+
+    def test_no_focus_filter_fades_nothing(self):
+        rows = self._by_id(self._slot_rows({}))
+        self.assertFalse(any(r.get("out_of_scope") for r in rows.values()))
+
+    def test_unfocused_days_are_never_shaded_available(self):
+        from constance.test import override_config
+
+        with override_config(SCHEDULE_SHADE_AVAILABLE=True):
+            rows = self._slot_rows(self.client_params)
+        avail = [r for r in rows if str(r.get("id", "")).startswith("avail-%d-" % self.actor.pk)]
+        self.assertTrue(avail, "expected some available-day shading in the window")
+        shaded = set()
+        for r in avail:
+            from datetime import date
+            d = date.fromisoformat(str(r["start"])[:10])
+            while d < date.fromisoformat(str(r["end"])[:10]):
+                shaded.add(d)
+                d += timedelta(days=1)
+        for slot in (self.focused, self.internal, self.project_slot):
+            self.assertNotIn(slot.start.date(), shaded, slot)
+
+    def _grid_cell(self, wb, slot):
+        ws = wb["Schedule"]
+        row = self._resources(wb).index(self.actor.get_full_name()) + 2
+        for col in range(6, ws.max_column + 1):
+            if ws.cell(row=1, column=col).value.date() == slot.start.date():
+                return ws.cell(row=row, column=col)
+
+    def test_clean_export_hides_unfocused_but_marks_days_unavailable(self):
+        wb = self._workbook(self._export(dict(self.client_params, hide_unfocused="1")))
+        self.assertEqual(self._grid_cell(wb, self.internal).value, "Unavailable")
+        self.assertEqual(self._grid_cell(wb, self.project_slot).value, "Unavailable")
+        self.assertIn("Phase 1", str(self._grid_cell(wb, self.focused).value))
+        bookings = wb["Bookings"]
+        self.assertEqual(bookings.max_row, 2)  # just the focused slot
+        overview = " ".join(
+            str(c.value) for row in wb["Overview"].iter_rows() for c in row if c.value
+        )
+        self.assertIn("HIDDEN", overview)
+
+    def test_export_without_hide_keeps_unfocused_slots(self):
+        wb = self._workbook(self._export(self.client_params))
+        self.assertEqual(wb["Bookings"].max_row, 4)
+        self.assertNotEqual(self._grid_cell(wb, self.project_slot).value, "Unavailable")
+
+    def test_hide_flag_ignored_without_focus_filter(self):
+        wb = self._workbook(self._export({"hide_unfocused": "1"}))
+        self.assertEqual(wb["Bookings"].max_row, 4)
