@@ -82,6 +82,15 @@ $(function() {
             success: function(data) {
                 $("#mainModalContent").html(data.html_form);
                 $("#mainModal").modal("show");
+            },
+            error: function(xhr) {
+                Swal.fire({
+                    title: xhr.status === 403 ? "Not allowed" : "Something went wrong",
+                    text: xhr.status === 403
+                        ? "You don't have permission to do that."
+                        : "This couldn't be opened. Please try again.",
+                    icon: "error"
+                });
             }
         });
     };
@@ -393,8 +402,15 @@ $(function() {
     $(".js-update-job-workflow").click(loadWorkflowConf);
     $(".js-update-phase-workflow").click(loadWorkflowConf);
     $(".js-bulk-workflow-phases").click(loadWorkflowConf);
-    $(".js-load-modal-form").click(loadForm);
-    $(".datatable").on("click", ".js-load-modal-form", loadForm);
+    // Delegated so buttons in content injected after load (lazy dashboard/org-unit
+    // tabs, DataTables redraws) work too. Buttons inside #mainModal are skipped:
+    // modal templates (e.g. slot delete) bind their own handlers to this class.
+    $(document).on("click", ".js-load-modal-form", function(e) {
+        if ($(this).closest("#mainModal").length) {
+            return;
+        }
+        return loadForm.call(this, e);
+    });
     $("#mainModal").on("submit", ".js-workflow-phase-form", saveForm);
     $("#mainModal").on("submit", ".js-workflow-job-form", saveForm);
     $("#mainModal").on("submit", ".js-bulk-workflow-phases-form", saveBulkWorkflowForm);
