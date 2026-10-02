@@ -43,7 +43,7 @@ Users without `can_schedule_job` can look but not change anything — the create
 - **Zoom** buttons and quick‑zoom presets (2w / 2m / 6m / 1y) are in the toolbar.
 - **Today** re‑centres on the current week; **Fit** zooms to the *actual data* (the earliest→latest booking in scope), so repeatedly pressing Fit is stable rather than creeping outward.
 - **Pan / Select** mode toggle: *Pan* (default) drags the timeline; *Select* lets you drag a box across rows and dates to act on several people at once (see below).
-- **Other slots** toggle (job/phase views): show or hide the faded commitments that aren't part of this job/phase. Hide them when the view gets noisy and you only care about this job/phase's bookings; your choice is remembered per browser.
+- **Other slots** toggle: show or hide the faded slots that aren't highlighted. On a job/phase view these are commitments outside this job/phase (your choice is remembered per browser). On the main scheduler the toggle appears while a **Jobs**, **Phases**, **Clients** or **Projects** filter is set: everything that doesn't match — other clients' work, unselected projects, internal time and leave — is faded, and the toggle hides it for a clean view (it always starts with everything visible). Whenever slots are hidden a **warning banner** says how many, with a one-click **Show all slots**. Hidden bookings still count: those days are **never shaded as available**, so a person never looks free when they aren't.
 
 ## Booking work
 
@@ -119,6 +119,17 @@ The **Schedule** tab on a job or phase has an **Export XLSX** button that downlo
 The three export flavours (phase, job and client) all produce the **same layout** — only the scope of what's included differs.
 
 A **client‑level** export is also available (`Client → Schedule Export`): a small dialog lets you pick a **date range** and, optionally, a single **framework agreement** to scope which jobs are included. The Overview records the client, chosen range and framework.
+
+### Exporting the main scheduler
+
+The global **Scheduler** page has an **Export** button in its toolbar. It downloads exactly what you're looking at: the **current filters** (resources, org units, skills, jobs/phases, ordering…) across the **date range the scheduler has loaded** — the visible window plus the buffer either side that's fetched for smooth scrolling (roughly three times the visible span). Zoom or pan first to change the range; exports are capped at 1,200 days.
+
+Unlike the client‑ready exports above, this one is **internal** — nothing is masked, so only share it with people who can already see these schedules:
+
+- **Overview** — date range, a readable list of the filters applied, resource count, who generated it and when, plus a colour key.
+- **Schedule** — every filtered resource in the **same order as on screen** (including people with nothing booked), with org unit, job level, availability and utilisation, against a continuous run of dates. Cells carry the slot title as shown on the scheduler (delivery with its role, internal projects, leave type, other internal time) in the scheduler's colours; **tentative** work has a dashed border. Public holidays are named, non‑working days are lightly shaded, and when you've filtered by jobs/phases/clients/projects, slots outside them are greyed (as they're faded on screen). If you've hidden **Other slots**, the export is the clean view too: unhighlighted slots are left out of the grid and Bookings, the days they cover are marked **Unavailable** (never blank), and the Overview carries a prominent warning with the number hidden. **Comments** appear as Excel cell notes.
+- **Bookings** — one row per slot (resource, type, title, client, job, phase/project, role, confirmed/tentative, onsite, start, end) with an autofilter — handy for pivots.
+- **Resources** — one row per person with email, org unit, job level, roles, availability and utilisation for the exported range.
 
 ## Related Topics
 

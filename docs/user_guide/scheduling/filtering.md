@@ -49,12 +49,16 @@ Next time you open `/scheduler/` with no filters in the URL, it loads your saved
 | **Job levels** | Restrict to the selected job level(s). |
 | **Date range (from / to)** | The window to load. |
 | **Users** | Show specific named people. |
+| **Clients** | Restrict to people booked on any of the selected client(s)' jobs (deleted jobs ignored). Their work for other clients is faded, so the client's bookings stand out — on screen and in the Export. Only clients you can view are offered. |
 | **Jobs** | Restrict to people working the selected job(s). |
 | **Phases** | Restrict to people working the selected phase(s). |
 | **Onboarded to** | Restrict to people onboarded to the selected client(s). |
 | **Show inactive users** | Include deactivated accounts. |
 
 Most multi‑selects are type‑ahead (Select2) autocompletes.
+
+!!! info "Filters only ever narrow what you can see"
+    The global scheduler (and its **Export**) shows only people whose schedule you're allowed to view: members of units where you hold *View users' schedule*, plus yourself. Filtering by a **job** or **phase** also shows that job's whole team — including people outside your units — but **only if you can view that job's schedule**. Filtering by a **client** shows people booked on that client's jobs whose schedule you can view. Filtering by a **project** does the same if you can view projects. **Include user** extras (added regardless of the other filters) are subject to the same limit; people outside it are silently ignored.
 
 !!! tip "Finding the Red Team / a particular group"
     Set up a **Team** for the group and filter by it (Teams field). Team membership then becomes a one‑click filter on the scheduler.

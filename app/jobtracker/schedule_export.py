@@ -604,3 +604,390 @@ def build_schedule_xlsx(timeslots, filename, title=None, header_rows=None):
     )
     response["Content-Disposition"] = 'attachment; filename="{}.xlsx"'.format(filename)
     return response
+
+
+# The global scheduler export spans the whole loaded buffer (3x the visible
+# window), so a 1-year zoom asks for ~3 years. Cap it so a hand-crafted URL
+# can't request an unbounded grid.
+SCHEDULER_EXPORT_MAX_DAYS = 1200
+
+
+def build_scheduler_xlsx(
+    members, users, dataset, start_date, end_date,
+    filename, title=None, header_rows=None, focus=None, hide_unfocused=False,
+):
+    """Build an internal XLSX of the global scheduler's current view.
+
+    Unlike :func:`build_schedule_xlsx` (client-facing: other work masked as
+    "Unavailable"), this mirrors what the viewer sees on screen — every filtered
+    resource (including those with nothing booked), every slot type with its
+    real title and scheduler colour, holidays and comments.
+
+    ``members``  ordered resource rows from ``scheduler_member_rows``.
+    ``users``    ``{pk: User}`` for those rows.
+    ``dataset``  the ``collect_schedule_slots`` result for the window.
+    ``focus``    ``SchedulerFocus`` for the filter; slots outside the filtered
+                 jobs/phases/clients/projects are muted, matching the on-screen
+                 faded styling.
+    ``hide_unfocused``  the "clean" view: unfocused slots are left out (grid
+                 and Bookings), but the days they cover are marked Unavailable —
+                 never blank — so nobody looks free when they're booked.
+
+    Sheets: "Overview" (filters + key), "Schedule" (resources x dates grid),
+    "Bookings" (one row per slot) and "Resources" (availability/utilisation).
+    """
+    import xlsxwriter
+    from django.utils import timezone
+    from .models import OrganisationalUnitMember
+
+    output = io.BytesIO()
+    workbook = xlsxwriter.Workbook(output, {"remove_timezone": True})
+    colours = _schedule_colours()
+
+    title_fmt = workbook.add_format({
+        "bold": True, "font_size": 16, "font_color": "#FFFFFF",
+        "bg_color": PHX_PRIMARY, "valign": "vcenter", "indent": 1,
+    })
+    section_fmt = workbook.add_format({
+        "bold": True, "font_size": 11, "font_color": PHX_PRIMARY, "valign": "vcenter",
+    })
+    hdr_label_fmt = workbook.add_format({
+        "bold": True, "bg_color": PHX_GRAY_100, "font_color": PHX_INK,
+        "border": 1, "border_color": PHX_BORDER, "valign": "vcenter",
+    })
+    hdr_value_fmt = workbook.add_format({
+        "border": 1, "border_color": PHX_BORDER, "valign": "vcenter", "text_wrap": True,
+    })
+    grid_hdr_fmt = workbook.add_format({
+        "bold": True, "bg_color": PHX_PRIMARY, "font_color": "#FFFFFF",
+        "border": 1, "border_color": PHX_BORDER,
+        "align": "center", "valign": "vcenter", "text_wrap": True,
+    })
+    date_fmt = workbook.add_format({
+        "bold": True, "bg_color": PHX_PRIMARY, "font_color": "#FFFFFF",
+        "border": 1, "border_color": PHX_BORDER, "align": "center", "num_format": "ddd dd/mm/yy",
+    })
+    weekend_date_fmt = workbook.add_format({
+        "bold": True, "bg_color": "#7ba0ff", "font_color": "#FFFFFF",
+        "border": 1, "border_color": PHX_BORDER, "align": "center", "num_format": "ddd dd/mm/yy",
+    })
+    resource_fmt = workbook.add_format({
+        "bold": True, "bg_color": PHX_GRAY_100, "font_color": PHX_INK,
+        "border": 1, "border_color": PHX_BORDER, "valign": "vcenter",
+    })
+    resource_meta_fmt = workbook.add_format({
+        "bg_color": PHX_GRAY_100, "font_color": PHX_SECONDARY,
+        "border": 1, "border_color": PHX_BORDER, "valign": "vcenter",
+    })
+    pct_fmt = workbook.add_format({
+        "bg_color": PHX_GRAY_100, "border": 1, "border_color": PHX_BORDER,
+        "valign": "vcenter", "align": "center", "num_format": "0%",
+    })
+    empty_fmt = workbook.add_format({"border": 1, "border_color": PHX_BORDER})
+    nonworking_fmt = workbook.add_format({
+        "border": 1, "border_color": PHX_BORDER, "bg_color": "#eef2fb",
+    })
+    holiday_fmt = workbook.add_format({
+        "border": 1, "border_color": PHX_BORDER, "bg_color": PHX_GRAY_200,
+        "font_color": PHX_SECONDARY, "italic": True,
+        "align": "center", "valign": "vcenter", "text_wrap": True,
+    })
+    muted_fmt = workbook.add_format({
+        "border": 1, "border_color": PHX_BORDER, "bg_color": PHX_GRAY_100,
+        "font_color": PHX_SECONDARY, "align": "center", "valign": "vcenter",
+        "text_wrap": True,
+    })
+    list_hdr_fmt = workbook.add_format({
+        "bold": True, "bg_color": PHX_PRIMARY, "font_color": "#FFFFFF",
+        "border": 1, "border_color": PHX_BORDER, "text_wrap": True,
+    })
+    list_cell_fmt = workbook.add_format({
+        "border": 1, "border_color": PHX_BORDER, "valign": "vcenter", "text_wrap": True,
+    })
+    list_dt_fmt = workbook.add_format({
+        "border": 1, "border_color": PHX_BORDER, "valign": "vcenter",
+        "num_format": "ddd dd/mm/yy hh:mm",
+    })
+    list_pct_fmt = workbook.add_format({
+        "border": 1, "border_color": PHX_BORDER, "valign": "vcenter",
+        "align": "center", "num_format": "0%",
+    })
+
+    # Booked-cell formats keyed by (bg, fg, tentative). Tentative work gets a
+    # dashed border, echoing the on-screen dashed "ghost" styling.
+    booked_formats = {}
+
+    def booked_fmt(bg, fg, tentative):
+        key = (bg, fg, tentative)
+        if key not in booked_formats:
+            booked_formats[key] = workbook.add_format({
+                "border": 3 if tentative else 1,
+                "border_color": PHX_INK if tentative else PHX_BORDER,
+                "text_wrap": True, "align": "center", "valign": "vcenter",
+                "bg_color": bg, "font_color": "#FFFFFF" if fg == "white" else "#000000",
+            })
+        return booked_formats[key]
+
+    # Continuous run of dates across the window.
+    sorted_dates = []
+    d = start_date
+    while d <= end_date:
+        sorted_dates.append(d)
+        d = _next_day(d)
+
+    # Working weekdays per user (first org membership, else the org default) —
+    # the same rule the scheduler's availability shading uses.
+    default_working = set(json.loads(config.DEFAULT_WORKING_DAYS))
+    user_working = {}
+    for m in (
+        OrganisationalUnitMember.objects.filter(member_id__in=list(users))
+        .select_related("unit")
+        .order_by("member_id", "pk")
+    ):
+        if m.member_id not in user_working and m.unit and m.unit.businessHours_days:
+            user_working[m.member_id] = set(m.unit.businessHours_days)
+
+    # Holidays per user: their country's plus global (country-less) ones.
+    holidays_by_country = defaultdict(dict)
+    global_holidays = {}
+    for hol in dataset["holidays"]:
+        if hol.country:
+            holidays_by_country[str(hol.country)][hol.date] = str(hol)
+        else:
+            global_holidays[hol.date] = str(hol)
+
+    def user_holidays(user):
+        hols = dict(global_holidays)
+        if user.country:
+            hols.update(holidays_by_country.get(str(user.country), {}))
+        return hols
+
+    def slot_days(slot):
+        day = max(timezone.localtime(slot.start).date(), start_date)
+        last = min(timezone.localtime(slot.end).date(), end_date)
+        while day <= last:
+            yield day
+            day = _next_day(day)
+
+    # Booked cells: (user_pk, date) -> [labels]. The first focused slot decides
+    # the colour; a day with only unfocused work is muted.
+    slots = []  # the slots that appear in the export
+    hidden_days = set()  # (user_pk, date) covered only by hidden slots
+    hidden_count = 0
+    cell_labels = defaultdict(list)
+    cell_style = {}
+    for slot in dataset["timeslots"]:
+        if slot.user_id not in users:
+            continue
+        unfocused = bool(focus and focus.is_unfocused(slot))
+        if unfocused and hide_unfocused:
+            hidden_count += 1
+            hidden_days.update((slot.user_id, day) for day in slot_days(slot))
+            continue
+        slots.append(slot)
+        label = slot.get_schedule_title()
+        if slot.is_delivery() and slot.deliveryRole != TimeSlotDeliveryRole.NA:
+            label = "{} [{}]".format(label, slot.get_deliveryRole_display())
+        bg = slot.get_schedule_slot_colour(schedule_colours=colours)
+        style = (
+            "muted" if unfocused
+            else (bg, slot.get_schedule_slot_text_colour(bg), not slot.is_confirmed())
+        )
+        for day in slot_days(slot):
+            key = (slot.user_id, day)
+            if label not in cell_labels[key]:
+                cell_labels[key].append(label)
+            if cell_style.get(key, "muted") == "muted":
+                cell_style[key] = style
+
+    # Comments become Excel cell notes on each day they cover.
+    cell_notes = defaultdict(list)
+    for comment in dataset["comments"]:
+        if comment.user_id not in users:
+            continue
+        day = max(timezone.localtime(comment.start).date(), start_date)
+        last = min(timezone.localtime(comment.end).date(), end_date)
+        while day <= last:
+            cell_notes[(comment.user_id, day)].append(comment.comment)
+            day = _next_day(day)
+
+    # =========================================================
+    # Sheet 1: Overview
+    # =========================================================
+    ov = workbook.add_worksheet("Overview")
+    ov.hide_gridlines(2)
+    ov.set_column(0, 0, 22)
+    ov.set_column(1, 1, 60)
+
+    r = 0
+    ov.merge_range(r, 0, r, 1, title or "Schedule", title_fmt)
+    ov.set_row(r, 26)
+    r += 2
+    for label, value in header_rows or []:
+        ov.write(r, 0, label, hdr_label_fmt)
+        ov.write(r, 1, value, hdr_value_fmt)
+        ov.set_row(r, _row_height(_est_lines(value, 60)))
+        r += 1
+    r += 1
+
+    ov.write(r, 0, "Key", section_fmt)
+    r += 1
+    legend = [
+        (colours["SCHEDULE_COLOR_PHASE_CONFIRMED"], "Confirmed delivery"),
+        (colours["SCHEDULE_COLOR_PHASE"], "Tentative delivery (dashed border)"),
+        (colours["SCHEDULE_COLOR_PHASE_CONFIRMED_AWAY"], "Confirmed — onsite"),
+        (colours["SCHEDULE_COLOR_PHASE_AWAY"], "Tentative — onsite"),
+        (colours["SCHEDULE_COLOR_PROJECT"], "Internal project"),
+        (colours["SCHEDULE_COLOR_INTERNAL"], "Internal / leave / other"),
+        (PHX_GRAY_100, "Outside the filtered clients/jobs/phases/projects"),
+        (PHX_GRAY_200, "Unavailable — booked on work hidden from this export"),
+        (PHX_GRAY_200, "Public holiday"),
+        ("#eef2fb", "Non-working day"),
+        (None, "Blank — available"),
+    ]
+    label_fmt = workbook.add_format({"valign": "vcenter", "font_color": PHX_INK})
+    for swatch, desc in legend:
+        sw = {"border": 1, "border_color": PHX_BORDER}
+        if swatch:
+            sw["bg_color"] = swatch
+        ov.write_blank(r, 0, None, workbook.add_format(sw))
+        ov.write(r, 1, desc, label_fmt)
+        r += 1
+    note_fmt = workbook.add_format({"italic": True, "font_color": PHX_SECONDARY})
+    ov.write(r + 1, 0, "Comments are attached as cell notes on the Schedule sheet.", note_fmt)
+    if hide_unfocused and hidden_count:
+        warn_fmt = workbook.add_format({
+            "bold": True, "font_color": "#9a3412", "bg_color": "#ffedd5",
+            "border": 1, "border_color": "#fdba74", "text_wrap": True, "valign": "vcenter",
+        })
+        ov.merge_range(
+            r + 3, 0, r + 3, 1,
+            "{} slot(s) outside the filters are HIDDEN from this export. The days "
+            "they cover are marked Unavailable — check the live scheduler before "
+            "booking.".format(hidden_count),
+            warn_fmt,
+        )
+        ov.set_row(r + 3, 32)
+
+    # =========================================================
+    # Sheet 2: Schedule (grid)
+    # =========================================================
+    ws = workbook.add_worksheet("Schedule")
+    meta_cols = ["Resource", "Org Unit", "Job Level", "Availability", "Utilisation"]
+    first_date_col = len(meta_cols)
+    for col, name in enumerate(meta_cols):
+        ws.write(0, col, name, grid_hdr_fmt)
+    ws.set_column(0, 0, 24)
+    ws.set_column(1, 2, 16)
+    ws.set_column(3, 4, 11)
+    for i, day in enumerate(sorted_dates):
+        col = first_date_col + i
+        ws.write_datetime(0, col, day, weekend_date_fmt if day.weekday() >= 5 else date_fmt)
+        ws.set_column(col, col, GRID_COL_WIDTH)
+    ws.freeze_panes(1, first_date_col)
+
+    for row, member in enumerate(members, start=1):
+        user = users[member["id"]]
+        ws.write(row, 0, member["title"], resource_fmt)
+        ws.write(row, 1, member.get("org_unit", ""), resource_meta_fmt)
+        ws.write(row, 2, member.get("job_level", ""), resource_meta_fmt)
+        ws.write(row, 3, (member.get("availability") or 0) / 100.0, pct_fmt)
+        ws.write(row, 4, (member.get("util") or 0) / 100.0, pct_fmt)
+        working = user_working.get(user.pk, default_working)
+        hols = user_holidays(user)
+        max_lines = 1
+        for i, day in enumerate(sorted_dates):
+            col = first_date_col + i
+            key = (user.pk, day)
+            if key in cell_labels:
+                text = " / ".join(cell_labels[key])
+                style = cell_style[key]
+                fmt = muted_fmt if style == "muted" else booked_fmt(*style)
+                ws.write(row, col, text, fmt)
+                max_lines = max(max_lines, _est_lines(text, GRID_COL_WIDTH))
+            elif key in hidden_days:
+                ws.write(row, col, "Unavailable", holiday_fmt)
+            elif day in hols:
+                ws.write(row, col, hols[day], holiday_fmt)
+            elif (day.weekday() + 1) not in working:
+                ws.write_blank(row, col, None, nonworking_fmt)
+            else:
+                ws.write_blank(row, col, None, empty_fmt)
+            if key in cell_notes:
+                ws.write_comment(row, col, "\n".join(cell_notes[key]))
+        ws.set_row(row, _row_height(max_lines))
+
+    # =========================================================
+    # Sheet 3: Bookings (flat list — pivot/filter friendly)
+    # =========================================================
+    bk = workbook.add_worksheet("Bookings")
+    bk_cols = [
+        ("Resource", 24), ("Type", 16), ("Title", 40), ("Client", 22),
+        ("Job", 30), ("Phase / Project", 30), ("Delivery Role", 14),
+        ("Status", 12), ("Onsite", 8), ("Start", 18), ("End", 18),
+    ]
+    for col, (name, width) in enumerate(bk_cols):
+        bk.write(0, col, name, list_hdr_fmt)
+        bk.set_column(col, col, width)
+    bk.freeze_panes(1, 0)
+    bk.autofilter(0, 0, max(1, len(slots)), len(bk_cols) - 1)
+
+    order = {m["id"]: i for i, m in enumerate(members)}
+    for row, slot in enumerate(
+        sorted(slots, key=lambda s: (order.get(s.user_id, 0), s.start)), start=1
+    ):
+        phase = slot.phase_or_none if slot.is_delivery() else None
+        job = phase.job if phase else None
+        if phase:
+            target = "{}: {}".format(phase.get_id(), phase.title)
+        elif slot.is_project() and slot.project:
+            target = "{}: {}".format(slot.project.id, slot.project.title)
+        else:
+            target = ""
+        values = [
+            users[slot.user_id].get_full_name(),
+            slot.slot_type.name,
+            slot.get_schedule_title(),
+            str(job.client) if job and job.client else "",
+            "{}: {}".format(job.id, job.title) if job else "",
+            target,
+            slot.get_deliveryRole_display() if slot.is_delivery() else "",
+            "Confirmed" if slot.is_confirmed() else "Tentative",
+            "Yes" if slot.is_onsite else "",
+        ]
+        for col, value in enumerate(values):
+            bk.write(row, col, value, list_cell_fmt)
+        bk.write_datetime(row, 9, timezone.localtime(slot.start), list_dt_fmt)
+        bk.write_datetime(row, 10, timezone.localtime(slot.end), list_dt_fmt)
+
+    # =========================================================
+    # Sheet 4: Resources
+    # =========================================================
+    rs = workbook.add_worksheet("Resources")
+    rs_cols = [
+        ("Resource", 24), ("Email", 30), ("Org Unit", 20), ("Job Level", 18),
+        ("Roles", 20), ("Availability", 12), ("Utilisation", 12),
+    ]
+    for col, (name, width) in enumerate(rs_cols):
+        rs.write(0, col, name, list_hdr_fmt)
+        rs.set_column(col, col, width)
+    rs.freeze_panes(1, 0)
+    for row, member in enumerate(members, start=1):
+        user = users[member["id"]]
+        rs.write(row, 0, member["title"], list_cell_fmt)
+        rs.write(row, 1, user.email, list_cell_fmt)
+        rs.write(row, 2, member.get("org_unit", ""), list_cell_fmt)
+        rs.write(row, 3, member.get("job_level", ""), list_cell_fmt)
+        rs.write(row, 4, ", ".join(member.get("roles", [])), list_cell_fmt)
+        rs.write(row, 5, (member.get("availability") or 0) / 100.0, list_pct_fmt)
+        rs.write(row, 6, (member.get("util") or 0) / 100.0, list_pct_fmt)
+
+    workbook.close()
+    output.seek(0)
+
+    response = HttpResponse(
+        output.getvalue(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+    response["Content-Disposition"] = 'attachment; filename="{}.xlsx"'.format(filename)
+    return response

@@ -23,7 +23,7 @@ from .models import (
     OrganisationalUnitRole,
     TimeSlotComment,
 )
-from .enums import UserSkillRatings
+from .enums import UserSkillRatings, JobStatuses
 import logging
 from chaotica_utils.utils import clean_fullcalendar_datetime, is_ajax
 from chaotica_utils.models import Holiday
@@ -177,17 +177,12 @@ def _filter_users_on_query(request, cleaned_data=None):
 
     show_inactive_users = cleaned_data.get("show_inactive_users")
 
-    # Starting users filter
-    users_pk = []
-    # This pre-loads which users we can see the schedule of.
-    # It's actually not ideal because if we view a job/phase,
-    # but say we don't have permission to see the schedule of someone - we can't see a complete schedule for that job
-    for org_unit in get_objects_for_user(
-        request.user, "jobtracker.view_users_schedule"
-    ):
-        for user in org_unit.get_allMembers():
-            if user.pk not in users_pk:
-                users_pk.append(user.pk)
+    # Everyone whose schedule the viewer may see: members of units they hold
+    # view_users_schedule on (plus themselves), widened below by the teams of any
+    # filtered job/phase/project they're allowed to view. EVERY result — including
+    # include_user extras — is clamped to this set, so no query-string filter can
+    # surface someone the viewer has no right to see.
+    allowed_pks = viewable_schedule_user_pks(request.user)
 
     onboarded_to = cleaned_data.get("onboarded_to")
     if onboarded_to:
@@ -207,23 +202,55 @@ def _filter_users_on_query(request, cleaned_data=None):
         query.add(Q(pk__in=users_memberof), Q.AND)
 
     # If we're passed a job/phase ID - filter on that.
+    # A job/phase you may view the schedule of shows its whole team, even people
+    # outside your units (same gate as the job/phase schedule tabs).
     jobs = cleaned_data.get("jobs")
     if jobs:
         for job in jobs:
-            query.add(Q(pk__in=job.team()), Q.AND)
+            team = job.team()
+            query.add(Q(pk__in=team), Q.AND)
+            if can_view_job_schedule(request.user, job):
+                allowed_pks.update(u.pk for u in team)
 
     phases = cleaned_data.get("phases")
     if phases:
         for phase in phases:
-            query.add(Q(pk__in=phase.team()), Q.AND)
+            team = phase.team()
+            query.add(Q(pk__in=team), Q.AND)
+            if can_view_job_schedule(request.user, phase.job):
+                allowed_pks.update(u.pk for u in team)
+
+    # Clients: people booked on any (non-deleted) job for the client. Widens scope
+    # only via jobs whose schedule the viewer may see — resolved set-based (global
+    # perm / unit perm / jobs they're booked on) rather than a check per job.
+    clients = cleaned_data.get("clients")
+    if clients:
+        client_slots = TimeSlot.objects.filter(
+            phase__job__client__in=clients
+        ).exclude(phase__job__status=JobStatuses.DELETED)
+        query.add(Q(pk__in=client_slots.values("user_id")), Q.AND)
+        viewer = request.user
+        if not viewer.has_perm(VIEW_JOB_SCHEDULE_PERM):
+            viewable_units = get_objects_for_user(
+                viewer, VIEW_JOB_SCHEDULE_PERM, OrganisationalUnit
+            )
+            own_jobs = TimeSlot.objects.filter(user=viewer).values("phase__job_id")
+            client_slots = client_slots.filter(
+                Q(phase__job__unit__in=viewable_units) | Q(phase__job_id__in=own_jobs)
+            )
+        allowed_pks.update(client_slots.values_list("user_id", flat=True))
 
     # Projects have no team() method - members are users with a timeslot on them.
+    # Gated like the project schedule tab (global view_project).
     projects = cleaned_data.get("projects")
     if projects:
         query.add(Q(timeslots__project__in=projects), Q.AND)
-
-    if not jobs and not phases and not projects:
-        query.add(Q(pk__in=users_pk), Q.AND)
+        if request.user.has_perm("jobtracker.view_project"):
+            allowed_pks.update(
+                TimeSlot.objects.filter(project__in=projects).values_list(
+                    "user_id", flat=True
+                )
+            )
 
     # Now lets apply the filters from the query...
     ## Filter users
@@ -318,12 +345,15 @@ def _filter_users_on_query(request, cleaned_data=None):
         if users_with_job_levels:
             query.add(Q(pk__in=users_with_job_levels), Q.AND)
 
+    query.add(Q(pk__in=allowed_pks), Q.AND)
+
+    # "Always include" users bypass the other filters, but never the visibility
+    # scope above.
     extra_users = cleaned_data.get("include_user")
     if extra_users:
-        query.add(
-            Q(pk__in=extra_users),
-            Q.OR,
-        )
+        extra_pks = [u.pk for u in extra_users if u.pk in allowed_pks]
+        if extra_pks:
+            query.add(Q(pk__in=extra_pks), Q.OR)
 
     return (
         User.objects.filter(query)
@@ -519,6 +549,34 @@ def get_scheduler_members(
     role_job=None,
     role_phase=None,
 ):
+    data = scheduler_member_rows(
+        request,
+        filtered_users=filtered_users,
+        start=start,
+        end=end,
+        use_filter_form=use_filter_form,
+        role_job=role_job,
+        role_phase=role_phase,
+    )
+    return JsonResponse(data, safe=False)
+
+
+def scheduler_member_rows(
+    request,
+    filtered_users=None,
+    start=None,
+    end=None,
+    use_filter_form=True,
+    role_job=None,
+    role_phase=None,
+    include_html=True,
+):
+    """The scheduler's resource rows (filtered, stat-annotated and ordered).
+
+    Shared by the members feed and the global scheduler XLSX export so both list
+    the same people in the same order. ``include_html=False`` skips rendering the
+    per-row HTML card, which the export doesn't need.
+    """
     data = []
     selected_phases = []
     cleaned_data = None
@@ -656,10 +714,14 @@ def get_scheduler_members(
                 "job_level": job_level_label,
                 "org_unit": main_org.name if main_org else "",
                 "url": user.get_absolute_url(),
-                "html_view": user.get_table_display_html(
-                    cleaned_data.get("compressed_view", False)
-                    if cleaned_data
-                    else False
+                "html_view": (
+                    user.get_table_display_html(
+                        cleaned_data.get("compressed_view", False)
+                        if cleaned_data
+                        else False
+                    )
+                    if include_html
+                    else ""
                 ),
                 "distance": round(distance, 1) if distance is not None else None,
                 "distance_display": (
@@ -694,7 +756,7 @@ def get_scheduler_members(
             }
         )
 
-    return JsonResponse(data, safe=False)
+    return data
 
 
 def available_day_runs(
@@ -734,6 +796,46 @@ def available_day_runs(
     return runs
 
 
+class SchedulerFocus:
+    """The work a SchedulerFilter "highlights": its jobs, phases, clients and projects.
+
+    When any are selected, every slot that doesn't match — other clients' work,
+    unselected projects, internal time, leave — is *unfocused*: faded on screen
+    (never hidden by default, so nobody is overbooked because their other work
+    was filtered out of view) and greyed in the export. The toolbar's "Other
+    slots" toggle can hide unfocused slots for a clean view.
+    """
+
+    def __init__(self, cleaned_data=None):
+        cleaned_data = cleaned_data or {}
+
+        def pks(name):
+            return {obj.pk for obj in cleaned_data.get(name) or []}
+
+        self.job_ids = pks("jobs")
+        self.phase_ids = pks("phases")
+        self.client_ids = pks("clients")
+        self.project_ids = pks("projects")
+
+    @property
+    def active(self):
+        return bool(self.job_ids or self.phase_ids or self.client_ids or self.project_ids)
+
+    def is_unfocused(self, slot):
+        if not self.active:
+            return False
+        if slot.is_delivery():
+            phase = slot.phase_or_none
+            return phase is None or not (
+                phase.pk in self.phase_ids
+                or phase.job_id in self.job_ids
+                or phase.job.client_id in self.client_ids
+            )
+        if slot.is_project():
+            return slot.project_id not in self.project_ids
+        return True  # internal time, leave, etc.
+
+
 def get_scheduler_slots(
     request,
     filtered_users=None,
@@ -745,20 +847,13 @@ def get_scheduler_slots(
     hard_scope=True,
 ):
     data = []
-    selected_phases = []
     cleaned_data = None
 
     if use_filter_form:
         filter_form = SchedulerFilter(request.GET)
         if filter_form.is_valid():
             cleaned_data = filter_form.clean()
-
-            jobs = cleaned_data.get("jobs", [])
-            for job in jobs:
-                selected_phases.append(job)
-            phases = cleaned_data.get("phases", [])
-            for phase in phases:
-                selected_phases.append(phase)
+    focus = SchedulerFocus(cleaned_data)
 
     if filtered_users is None:
         filtered_users = _filter_users_on_query(request, cleaned_data).prefetch_related(
@@ -823,12 +918,10 @@ def get_scheduler_slots(
         slot_json = slot.get_schedule_json(
             schedule_colours=schedule_colours, compressed_view=compressed_view
         )
-        if selected_phases:
-            if slot.phase and (
-                slot.phase not in selected_phases
-                and slot.phase.job not in selected_phases
-            ):
-                slot_json["display"] = "background"
+        # Not part of the filtered jobs/phases/clients/projects: faded, and
+        # hideable client-side via the "Other slots" toggle.
+        if focus.is_unfocused(slot):
+            slot_json["out_of_scope"] = True
         # Soft-scope: keep the member's other commitments visible but faded so
         # it's clear which blocks belong to this job/phase (vs. context).
         if (

@@ -1,5 +1,5 @@
 from django.shortcuts import get_object_or_404, redirect
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, SuspiciousOperation
 from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest, QueryDict
 from django.template import loader
 from django.db.models import Q, Prefetch
@@ -280,7 +280,7 @@ def view_scheduler(request):
     context = {"scheduler_scope": "global"}
     template = loader.get_template("scheduler.html")
     context = {**context, **page_defaults(request)}
-    context["filter_form"] = SchedulerFilter(request.GET)
+    context["filter_form"] = SchedulerFilter(request.GET, user=request.user)
     context["has_default_filter"] = bool(saved)
     context["is_default_view"] = request.GET.get("_dv") == "1"
     return HttpResponse(template.render(context, request))
@@ -294,6 +294,111 @@ def view_scheduler_slots(request):
 @login_required
 def view_scheduler_members(request):
     return get_scheduler_members(request)
+
+
+def _describe_scheduler_filter(form):
+    """Human-readable summary of the applied SchedulerFilter, for the export cover."""
+    if not form.is_valid():
+        return "None"
+    parts = []
+    for name, field in form.fields.items():
+        value = form.cleaned_data.get(name)
+        if not value or name == "compressed_view":
+            continue
+        if isinstance(value, bool):
+            text = "Yes"
+        elif hasattr(value, "__iter__") and not isinstance(value, str):
+            text = ", ".join(str(v) for v in value)
+        elif getattr(field, "choices", None) and not hasattr(field, "queryset"):
+            text = str(dict(field.choices).get(value, value))
+        else:
+            text = str(value)
+        if text:
+            parts.append("{}: {}".format(field.label or name, text))
+    return "\n".join(parts) or "None"
+
+
+@login_required
+def export_scheduler_view(request):
+    """XLSX of the global scheduler as currently shown: the page's SchedulerFilter
+    applied exactly as the members/slots feeds apply it, across the date range the
+    page has loaded (``start``/``end``, sent by the toolbar Export button)."""
+    from django.utils import timezone
+    from ..schedule_export import build_scheduler_xlsx, SCHEDULER_EXPORT_MAX_DAYS
+    from ..utils import (
+        _filter_users_on_query,
+        collect_schedule_slots,
+        SchedulerFocus,
+        scheduler_member_rows,
+    )
+
+    try:
+        start = clean_fullcalendar_datetime(request.GET.get("start"))
+        end = clean_fullcalendar_datetime(request.GET.get("end"))
+    except (ValueError, SuspiciousOperation):
+        start = end = None
+    if not start or not end or end < start:
+        return HttpResponseBadRequest("A valid start and end are required.")
+    start_date = timezone.localtime(start).date()
+    end_date = timezone.localtime(end).date()
+    if (end_date - start_date).days + 1 > SCHEDULER_EXPORT_MAX_DAYS:
+        return HttpResponseBadRequest(
+            "Export range is limited to {} days — zoom in and try again.".format(
+                SCHEDULER_EXPORT_MAX_DAYS
+            )
+        )
+
+    filter_form = SchedulerFilter(request.GET)
+    cleaned_data = filter_form.cleaned_data if filter_form.is_valid() else None
+
+    # Drop the blanket ``timeslots`` prefetch _filter_users_on_query adds — it
+    # would load every slot each user has ever had; the window is fetched below.
+    filtered_users = (
+        _filter_users_on_query(request, cleaned_data)
+        .prefetch_related(None)
+        .prefetch_related(
+            "unit_memberships",
+            "unit_memberships__unit",
+            "job_level_history",
+            "job_level_history__job_level",
+        )
+    )
+    members = scheduler_member_rows(
+        request, filtered_users=filtered_users, start=start, end=end, include_html=False
+    )
+    users = {u.pk: u for u in filtered_users}
+    members = [m for m in members if m["id"] in users]
+    dataset = collect_schedule_slots(filtered_users, start, end)
+
+    focus = SchedulerFocus(cleaned_data)
+    hide_unfocused = focus.active and request.GET.get("hide_unfocused") == "1"
+
+    fmt = "%d %b %Y"
+    header_rows = [
+        ("Date Range", "{} to {}".format(start_date.strftime(fmt), end_date.strftime(fmt))),
+        ("Filters", _describe_scheduler_filter(filter_form)),
+        ("Resources", str(len(members))),
+        ("Other Slots", (
+            "HIDDEN — only work matching the filters is shown; days booked on "
+            "hidden work are marked Unavailable" if hide_unfocused
+            else "Shown greyed" if focus.active else "n/a (no job/phase/client/project filter)"
+        )),
+        ("Generated", "{} by {}".format(
+            timezone.localtime().strftime("%d %b %Y %H:%M"), request.user.get_full_name()
+        )),
+    ]
+    return build_scheduler_xlsx(
+        members,
+        users,
+        dataset,
+        start_date,
+        end_date,
+        filename="schedule-{}-to-{}".format(start_date.isoformat(), end_date.isoformat()),
+        title="Schedule — {} to {}".format(start_date.strftime(fmt), end_date.strftime(fmt)),
+        header_rows=header_rows,
+        focus=focus,
+        hide_unfocused=hide_unfocused,
+    )
 
 
 # Cap the stored filter to bound the redirect Location header / row size.

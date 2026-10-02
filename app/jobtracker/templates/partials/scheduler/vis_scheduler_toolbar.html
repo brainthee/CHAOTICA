@@ -30,7 +30,15 @@
       <span class="fas fa-clock-rotate-left me-1"></span>History
     </button>
   </div>
-  {# Only meaningful on job/phase-scoped views (hidden by JS on the global view). #}
+  {# Global scheduler only (shown by JS when SCHEDULER_CONFIG.exportUrl is set). #}
+  <div class="btn-group btn-group-sm" role="group" aria-label="Export" id="grpExport" hidden>
+    <button class="btn btn-phoenix-secondary" id="btnExport" type="button"
+            title="Download the current filtered view across the loaded date range as XLSX">
+      <span class="fas fa-file-excel me-1"></span>Export
+    </button>
+  </div>
+  {% comment %}Job/phase views: slots outside the job/phase. Global view: shown by JS only
+  while a job/phase/client/project filter is highlighting work.{% endcomment %}
   <div class="btn-group btn-group-sm" role="group" aria-label="Other slots" id="grpToggleOthers" hidden>
     <button class="btn btn-phoenix-secondary active" id="btnToggleOthers" type="button"
             title="Show or hide slots that aren't part of this job/phase">
@@ -52,6 +60,20 @@
     <span class="me-2"><span class="dot holiday"></span>Holiday</span>
   </div>
   <span class="ms-2 small text-body-secondary"><span class="fas fa-circle-info me-1"></span>Scroll = up/down &nbsp;·&nbsp; Ctrl/⌘ + scroll (or pinch) = zoom{% if not readonly %} &nbsp;·&nbsp; Right-click a row to book &nbsp;·&nbsp; Double-click to edit &nbsp;·&nbsp; Ctrl/⌘+Z to undo{% endif %}</span>
+</div>
+
+{% comment %}Shown by JS whenever "Other slots" are hidden — it must be impossible to miss,
+because a hidden booking still makes that person unavailable.{% endcomment %}
+<div id="sched-hidden-banner" class="alert alert-warning d-none align-items-center rounded-0 border-0 border-bottom border-warning mb-0 py-2 px-3" role="status" aria-live="polite">
+  <span class="fas fa-eye-slash fs-7 me-3"></span>
+  <div class="flex-1">
+    <strong>Some slots are hidden.</strong>
+    <span id="sched-hidden-count"></span>
+    Hidden bookings still block their days — those days are never shaded as available — but check the full view before booking anyone.
+  </div>
+  <button type="button" class="btn btn-sm btn-warning ms-3 text-nowrap" id="btnShowHidden">
+    <span class="fas fa-eye me-1"></span>Show all slots
+  </button>
 </div>
 
 {% comment %}Schedule change history / version control panel.{% endcomment %}

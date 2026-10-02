@@ -3,6 +3,7 @@ from django.test import TestCase
 from django.core.exceptions import PermissionDenied
 from django.utils import timezone
 from django.contrib.auth.models import Permission
+from guardian.shortcuts import assign_perm
 
 from chaotica_utils.models import User
 from jobtracker.models import (
@@ -188,6 +189,9 @@ class RevertTests(ScheduleHistoryBase):
     def test_revert_delivery_recalcs_phase_status(self):
         # Booking a slot moves the phase to tentative; reverting the create should
         # drop it back to pending scheduling (TimeSlot.delete side effect fires).
+        # Job-scoped reverts need the actor to still hold can_schedule_job.
+        assign_perm("jobtracker.can_schedule_job", self.actor, self.unit)
+        self.actor = User.objects.get(pk=self.actor.pk)  # reset perm cache
         self.phase.status = PhaseStatuses.PENDING_SCHED
         self.phase.save()
         slot = self._delivery_slot()
