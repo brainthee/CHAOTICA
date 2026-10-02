@@ -927,6 +927,44 @@
     });
   }
   on('btnFit', fitToData);
+
+  // ---- Export (global view): current filter across the LOADED range ----
+  if (CFG.exportUrl) {
+    var grpExport = document.getElementById('grpExport');
+    if (grpExport) grpExport.hidden = false;
+    on('btnExport', function () {
+      var s, en;
+      if (loadedRanges.length) {
+        s = new Date(loadedRanges[0][0]);
+        en = new Date(loadedRanges[loadedRanges.length - 1][1]);
+      } else {
+        // Nothing fetched yet — use the same buffer loadSlots() would request.
+        var w = timeline.getWindow();
+        var span = w.end - w.start;
+        s = new Date(w.start.getTime() - span);
+        en = new Date(w.end.getTime() + span);
+      }
+      loading(true);
+      fetch(buildUrl(CFG.exportUrl, s.toISOString(), en.toISOString()), { credentials: 'same-origin' })
+        .then(function (resp) {
+          if (!resp.ok) {
+            return resp.text().then(function (msg) { throw new Error(msg || resp.statusText); });
+          }
+          var cd = resp.headers.get('Content-Disposition') || '';
+          var m = /filename="([^"]+)"/.exec(cd);
+          return resp.blob().then(function (blob) {
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = m ? m[1] : 'schedule.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+          });
+        })
+        .catch(function (err) { Swal.fire('Export failed', escapeHtml(err.message), 'error'); })
+        .finally(function () { loading(false); });
+    });
+  }
   on('btnToday',   function () {
     var n = new Date();
     timeline.setWindow(new Date(n.getTime() - 7 * 24 * 60 * 60 * 1000),

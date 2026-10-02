@@ -92,6 +92,7 @@ urlpatterns = [
     path(
         "scheduler/timeslots", views.view_scheduler_slots, name="view_scheduler_slots"
     ),
+    path("scheduler/export", views.export_scheduler_view, name="export_scheduler_view"),
     path(
         "scheduler/filter/default/set",
         views.set_scheduler_filter_default,

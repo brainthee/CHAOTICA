@@ -120,6 +120,17 @@ The three export flavours (phase, job and client) all produce the **same layout*
 
 A **client‑level** export is also available (`Client → Schedule Export`): a small dialog lets you pick a **date range** and, optionally, a single **framework agreement** to scope which jobs are included. The Overview records the client, chosen range and framework.
 
+### Exporting the main scheduler
+
+The global **Scheduler** page has an **Export** button in its toolbar. It downloads exactly what you're looking at: the **current filters** (resources, org units, skills, jobs/phases, ordering…) across the **date range the scheduler has loaded** — the visible window plus the buffer either side that's fetched for smooth scrolling (roughly three times the visible span). Zoom or pan first to change the range; exports are capped at 1,200 days.
+
+Unlike the client‑ready exports above, this one is **internal** — nothing is masked, so only share it with people who can already see these schedules:
+
+- **Overview** — date range, a readable list of the filters applied, resource count, who generated it and when, plus a colour key.
+- **Schedule** — every filtered resource in the **same order as on screen** (including people with nothing booked), with org unit, job level, availability and utilisation, against a continuous run of dates. Cells carry the slot title as shown on the scheduler (delivery with its role, internal projects, leave type, other internal time) in the scheduler's colours; **tentative** work has a dashed border. Public holidays are named, non‑working days are lightly shaded, and when you've filtered by jobs/phases, slots outside them are greyed (as they're faded on screen). **Comments** appear as Excel cell notes.
+- **Bookings** — one row per slot (resource, type, title, client, job, phase/project, role, confirmed/tentative, onsite, start, end) with an autofilter — handy for pivots.
+- **Resources** — one row per person with email, org unit, job level, roles, availability and utilisation for the exported range.
+
 ## Related Topics
 
 - [Scheduling Concepts](concepts.md) — slots, delivery roles, scoped vs scheduled, confirmed/tentative, hours‑per‑day

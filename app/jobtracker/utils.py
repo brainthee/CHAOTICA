@@ -519,6 +519,34 @@ def get_scheduler_members(
     role_job=None,
     role_phase=None,
 ):
+    data = scheduler_member_rows(
+        request,
+        filtered_users=filtered_users,
+        start=start,
+        end=end,
+        use_filter_form=use_filter_form,
+        role_job=role_job,
+        role_phase=role_phase,
+    )
+    return JsonResponse(data, safe=False)
+
+
+def scheduler_member_rows(
+    request,
+    filtered_users=None,
+    start=None,
+    end=None,
+    use_filter_form=True,
+    role_job=None,
+    role_phase=None,
+    include_html=True,
+):
+    """The scheduler's resource rows (filtered, stat-annotated and ordered).
+
+    Shared by the members feed and the global scheduler XLSX export so both list
+    the same people in the same order. ``include_html=False`` skips rendering the
+    per-row HTML card, which the export doesn't need.
+    """
     data = []
     selected_phases = []
     cleaned_data = None
@@ -656,10 +684,14 @@ def get_scheduler_members(
                 "job_level": job_level_label,
                 "org_unit": main_org.name if main_org else "",
                 "url": user.get_absolute_url(),
-                "html_view": user.get_table_display_html(
-                    cleaned_data.get("compressed_view", False)
-                    if cleaned_data
-                    else False
+                "html_view": (
+                    user.get_table_display_html(
+                        cleaned_data.get("compressed_view", False)
+                        if cleaned_data
+                        else False
+                    )
+                    if include_html
+                    else ""
                 ),
                 "distance": round(distance, 1) if distance is not None else None,
                 "distance_display": (
@@ -694,7 +726,7 @@ def get_scheduler_members(
             }
         )
 
-    return JsonResponse(data, safe=False)
+    return data
 
 
 def available_day_runs(
