@@ -37,8 +37,8 @@
       <span class="fas fa-file-excel me-1"></span>Export
     </button>
   </div>
-  {# Job/phase views: slots outside the job/phase. Global view: shown by JS only while
-     a job/phase/client/project filter is highlighting work. #}
+  {% comment %}Job/phase views: slots outside the job/phase. Global view: shown by JS only
+  while a job/phase/client/project filter is highlighting work.{% endcomment %}
   <div class="btn-group btn-group-sm" role="group" aria-label="Other slots" id="grpToggleOthers" hidden>
     <button class="btn btn-phoenix-secondary active" id="btnToggleOthers" type="button"
             title="Show or hide slots that aren't part of this job/phase">
