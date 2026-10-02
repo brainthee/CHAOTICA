@@ -147,6 +147,18 @@ for p in psutil.process_iter(['pid', 'name', 'cpu_percent']):
 
 ## Database Issues
 
+### "Server has gone away" (MySQL 2006) on error pages
+
+**Symptom**: Sentry shows `OperationalError: (2006, 'Server has gone away')`, almost always chained after a `Resolver404`/`Http404` — typically from scanner traffic hitting unknown URLs.
+
+**Cause**: under ASGI (gunicorn + uvicorn worker), Django renders error responses in a thread pool (`response_for_exception` with `thread_sensitive=False`) that never runs the per-request connection cleanup. A DB connection opened while rendering an error page lingered in that thread until MySQL's idle timeout closed it, and the next error page on the same thread reused the dead connection.
+
+**Most common trigger — real users, not just scanners**: the page JS (`templates/js/core.js`, tab restore) used to strip the trailing slash from the address bar. The next reload (e.g. after pushing a phase through the workflow, or any modal save) requested `/job/<id>/phase/<slug>` with no slash. Django answers that with a 404 that `CommonMiddleware` turns into a redirect to the `/` URL — but the 404 page crashed on the stale connection, so the user got a **500** instead of the redirect. It was intermittent because it only failed once the pool thread's connection had been idle past MySQL's timeout.
+
+**Reproducing locally**: run uvicorn against MySQL with `init_command="SET SESSION wait_timeout=5"` and `DEBUG=0`. Logged in, request an unknown URL, wait more than 5 s, then request a slash-less URL: with Django's stock handlers it returns 500; with the wrapped handlers it returns 301.
+
+**Fix**: the trailing slash is no longer stripped, and the 400/403/404/500 handlers (`chaotica_utils/views/errors.py`, registered in `chaotica/urls.py`) release stale connections before rendering and close their own afterwards. If you add a custom error handler, wrap it with `_with_fresh_db`.
+
 ### Connection Errors
 
 **Error**: "Unable to connect to database"

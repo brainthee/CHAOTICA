@@ -436,7 +436,10 @@ $(function() {
         if (target && target !== '#') window.location.hash = target;
     });
 
-    let url = location.href.replace(/\/$/, "");
+    // Keep the trailing slash: every page URL ends in "/", and a slash-less
+    // address bar makes the next reload (e.g. after a modal save) request a URL
+    // that only works via an APPEND_SLASH 404 -> redirect round trip.
+    let url = location.href;
     const _savedTab = sessionStorage.getItem('chaotica.restoreTab');
     if (_savedTab) sessionStorage.removeItem('chaotica.restoreTab');
     const _activeHash = (_savedTab || location.hash || '').replace('#', '');

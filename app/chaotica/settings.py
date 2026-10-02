@@ -1,5 +1,6 @@
 from pathlib import Path
 import os
+import sys
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
 from dotenv import load_dotenv
@@ -44,7 +45,11 @@ def _sentry_before_send(event, hint):
     return event
 
 
-if SENTRY_BACKEND_DSN is not None:
+# Test runs must never report to Sentry: a local .env DSN otherwise turns every
+# deliberately-raised test exception (e.g. mocked ValueError("boom")) into an issue.
+TESTING = len(sys.argv) > 1 and sys.argv[1] == "test" or "pytest" in sys.modules
+
+if SENTRY_BACKEND_DSN and not TESTING:
     sentry_sdk.init(
         dsn=SENTRY_BACKEND_DSN,
         integrations=[DjangoIntegration()],
