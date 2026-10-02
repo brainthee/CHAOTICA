@@ -27,6 +27,11 @@ class HistoryViewTests(ScheduleHistoryBase):
         return view(req)
 
     def test_history_lists_scope_with_can_revert(self):
+        # Reverting a job-scoped action needs the actor to still hold
+        # can_schedule_job on the job's unit (see ScheduleAction.can_revert;
+        # the no-longer-permitted case is in test_security_permissions).
+        assign_perm("jobtracker.can_schedule_job", self.actor, self.unit)
+        self.actor = type(self.actor).objects.get(pk=self.actor.pk)  # reset perm cache
         slot = self._delivery_slot()
         schedule_history.record_creates(self.actor, [slot])
         resp = self._get(

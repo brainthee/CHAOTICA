@@ -56,6 +56,9 @@ Next time you open `/scheduler/` with no filters in the URL, it loads your saved
 
 Most multi‑selects are type‑ahead (Select2) autocompletes.
 
+!!! info "Filters only ever narrow what you can see"
+    The global scheduler (and its **Export**) shows only people whose schedule you're allowed to view: members of units where you hold *View users' schedule*, plus yourself. Filtering by a **job** or **phase** also shows that job's whole team — including people outside your units — but **only if you can view that job's schedule**. Filtering by a **project** does the same if you can view projects. **Include user** extras (added regardless of the other filters) are subject to the same limit; people outside it are silently ignored.
+
 !!! tip "Finding the Red Team / a particular group"
     Set up a **Team** for the group and filter by it (Teams field). Team membership then becomes a one‑click filter on the scheduler.
 

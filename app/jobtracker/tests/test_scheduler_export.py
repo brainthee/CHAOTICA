@@ -8,13 +8,25 @@ from guardian.shortcuts import assign_perm
 from openpyxl import load_workbook
 
 from chaotica_utils.models import User
-from jobtracker.models import OrganisationalUnit, OrganisationalUnitMember
+from jobtracker.enums import DefaultTimeSlotTypes, TimeSlotDeliveryRole
+from jobtracker.models import (
+    Client,
+    Job,
+    OrganisationalUnit,
+    OrganisationalUnitMember,
+    Phase,
+    Project,
+    TimeSlot,
+    TimeSlotType,
+)
 from jobtracker.schedule_export import SCHEDULER_EXPORT_MAX_DAYS
 from jobtracker.views import scheduler as sched_views
 from .test_schedule_history import ScheduleHistoryBase
 
 
-class SchedulerExportTests(ScheduleHistoryBase):
+class SchedulerScopeBase(ScheduleHistoryBase):
+    """actor + other share a unit the actor may view; hidden sits in another."""
+
     def setUp(self):
         super().setUp()
         self.rf = RequestFactory()
@@ -28,9 +40,12 @@ class SchedulerExportTests(ScheduleHistoryBase):
         self.hidden = User.objects.create_user(
             email="hidden@test.com", password="pw12345", first_name="Hal", last_name="Hidden"
         )
-        hidden_unit = OrganisationalUnit.objects.create(name="Hidden Unit")
-        OrganisationalUnitMember.objects.create(unit=hidden_unit, member=self.hidden)
+        self.hidden_unit = OrganisationalUnit.objects.create(name="Hidden Unit")
+        OrganisationalUnitMember.objects.create(unit=self.hidden_unit, member=self.hidden)
         assign_perm("jobtracker.view_users_schedule", self.actor, self.unit)
+        self._reload_actor()
+
+    def _reload_actor(self):
         self.actor = User.objects.get(pk=self.actor.pk)  # reset perm cache
 
     def _export(self, params=None, user=None, start=None, end=None):
@@ -52,6 +67,8 @@ class SchedulerExportTests(ScheduleHistoryBase):
         ws = wb["Schedule"]
         return [ws.cell(row=r, column=1).value for r in range(2, ws.max_row + 1)]
 
+
+class SchedulerExportTests(SchedulerScopeBase):
     def test_export_has_all_sheets_and_visible_members_only(self):
         wb = self._workbook(self._export())
         self.assertEqual(wb.sheetnames, ["Overview", "Schedule", "Bookings", "Resources"])
@@ -113,3 +130,67 @@ class SchedulerExportTests(ScheduleHistoryBase):
         data = json.loads(sched_views.view_scheduler_members(req).content)
         self.assertEqual({r["id"] for r in data}, {self.actor.pk, self.other.pk})
         self.assertTrue(all(r["html_view"] for r in data))
+
+
+class SchedulerFilterScopeTests(SchedulerScopeBase):
+    """Query-string filters must never widen the global scheduler beyond the
+    viewer's view_users_schedule scope (shared by the feeds and the export)."""
+
+    def setUp(self):
+        super().setUp()
+        self.hidden_job = Job.objects.create(
+            unit=self.hidden_unit, client=Client.objects.create(name="Hidden Client"),
+            title="Hidden Job", created_by=self.hidden, account_manager=self.hidden,
+        )
+        self.hidden_phase = Phase.objects.create(job=self.hidden_job, title="Hidden Phase")
+        TimeSlot.objects.create(
+            user=self.hidden, slot_type=self.delivery_type, phase=self.hidden_phase,
+            deliveryRole=TimeSlotDeliveryRole.DELIVERY, start=self.start, end=self.end,
+        )
+        self.hidden_project = Project.objects.create(
+            title="Hidden Project", unit=self.hidden_unit, created_by=self.hidden
+        )
+        TimeSlot.objects.create(
+            user=self.hidden, project=self.hidden_project, start=self.start, end=self.end,
+            slot_type=TimeSlotType.get_builtin_object(DefaultTimeSlotTypes.INTERNAL_PROJECT),
+        )
+
+    def _member_ids(self, params, user=None):
+        query = {"start": self.start.isoformat(), "end": self.end.isoformat()}
+        query.update(params)
+        req = self.rf.get("/jobtracker/scheduler/members", query)
+        req.user = user or self.actor
+        return {r["id"] for r in json.loads(sched_views.view_scheduler_members(req).content)}
+
+    def test_include_user_cannot_add_out_of_scope_user(self):
+        ids = self._member_ids({"include_user": [str(self.hidden.pk)]})
+        self.assertNotIn(self.hidden.pk, ids)
+        wb = self._workbook(self._export({"include_user": [str(self.hidden.pk)]}))
+        self.assertNotIn(self.hidden.get_full_name(), self._resources(wb))
+
+    def test_include_user_still_adds_in_scope_user(self):
+        ids = self._member_ids({
+            "users": [str(self.actor.pk)], "include_user": [str(self.other.pk)],
+        })
+        self.assertEqual(ids, {self.actor.pk, self.other.pk})
+
+    def test_job_filter_on_unviewable_job_hides_team(self):
+        ids = self._member_ids({"jobs": [str(self.hidden_job.pk)]})
+        self.assertNotIn(self.hidden.pk, ids)
+
+    def test_job_filter_on_viewable_job_shows_whole_team(self):
+        assign_perm("jobtracker.view_job_schedule", self.actor, self.hidden_unit)
+        self._reload_actor()
+        ids = self._member_ids({"jobs": [str(self.hidden_job.pk)]})
+        self.assertIn(self.hidden.pk, ids)
+
+    def test_phase_filter_on_unviewable_phase_hides_team(self):
+        ids = self._member_ids({"phases": [str(self.hidden_phase.pk)]})
+        self.assertNotIn(self.hidden.pk, ids)
+
+    def test_project_filter_respects_view_project(self):
+        params = {"projects": [str(self.hidden_project.pk)]}
+        self.assertNotIn(self.hidden.pk, self._member_ids(params))
+        assign_perm("jobtracker.view_project", self.actor)
+        self._reload_actor()
+        self.assertIn(self.hidden.pk, self._member_ids(params))

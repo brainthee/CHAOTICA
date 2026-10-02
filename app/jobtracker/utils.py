@@ -177,17 +177,12 @@ def _filter_users_on_query(request, cleaned_data=None):
 
     show_inactive_users = cleaned_data.get("show_inactive_users")
 
-    # Starting users filter
-    users_pk = []
-    # This pre-loads which users we can see the schedule of.
-    # It's actually not ideal because if we view a job/phase,
-    # but say we don't have permission to see the schedule of someone - we can't see a complete schedule for that job
-    for org_unit in get_objects_for_user(
-        request.user, "jobtracker.view_users_schedule"
-    ):
-        for user in org_unit.get_allMembers():
-            if user.pk not in users_pk:
-                users_pk.append(user.pk)
+    # Everyone whose schedule the viewer may see: members of units they hold
+    # view_users_schedule on (plus themselves), widened below by the teams of any
+    # filtered job/phase/project they're allowed to view. EVERY result — including
+    # include_user extras — is clamped to this set, so no query-string filter can
+    # surface someone the viewer has no right to see.
+    allowed_pks = viewable_schedule_user_pks(request.user)
 
     onboarded_to = cleaned_data.get("onboarded_to")
     if onboarded_to:
@@ -207,23 +202,35 @@ def _filter_users_on_query(request, cleaned_data=None):
         query.add(Q(pk__in=users_memberof), Q.AND)
 
     # If we're passed a job/phase ID - filter on that.
+    # A job/phase you may view the schedule of shows its whole team, even people
+    # outside your units (same gate as the job/phase schedule tabs).
     jobs = cleaned_data.get("jobs")
     if jobs:
         for job in jobs:
-            query.add(Q(pk__in=job.team()), Q.AND)
+            team = job.team()
+            query.add(Q(pk__in=team), Q.AND)
+            if can_view_job_schedule(request.user, job):
+                allowed_pks.update(u.pk for u in team)
 
     phases = cleaned_data.get("phases")
     if phases:
         for phase in phases:
-            query.add(Q(pk__in=phase.team()), Q.AND)
+            team = phase.team()
+            query.add(Q(pk__in=team), Q.AND)
+            if can_view_job_schedule(request.user, phase.job):
+                allowed_pks.update(u.pk for u in team)
 
     # Projects have no team() method - members are users with a timeslot on them.
+    # Gated like the project schedule tab (global view_project).
     projects = cleaned_data.get("projects")
     if projects:
         query.add(Q(timeslots__project__in=projects), Q.AND)
-
-    if not jobs and not phases and not projects:
-        query.add(Q(pk__in=users_pk), Q.AND)
+        if request.user.has_perm("jobtracker.view_project"):
+            allowed_pks.update(
+                TimeSlot.objects.filter(project__in=projects).values_list(
+                    "user_id", flat=True
+                )
+            )
 
     # Now lets apply the filters from the query...
     ## Filter users
@@ -318,12 +325,15 @@ def _filter_users_on_query(request, cleaned_data=None):
         if users_with_job_levels:
             query.add(Q(pk__in=users_with_job_levels), Q.AND)
 
+    query.add(Q(pk__in=allowed_pks), Q.AND)
+
+    # "Always include" users bypass the other filters, but never the visibility
+    # scope above.
     extra_users = cleaned_data.get("include_user")
     if extra_users:
-        query.add(
-            Q(pk__in=extra_users),
-            Q.OR,
-        )
+        extra_pks = [u.pk for u in extra_users if u.pk in allowed_pks]
+        if extra_pks:
+            query.add(Q(pk__in=extra_pks), Q.OR)
 
     return (
         User.objects.filter(query)
