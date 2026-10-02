@@ -316,6 +316,23 @@ class SchedulerFilter(forms.Form):
         ),
     )
 
+    clients = LenientModelMultipleChoiceField(
+        label="Clients",
+        required=False,
+        queryset=Client.objects.all(),
+        help_text="People booked on the client's jobs; their other work is faded.",
+        widget=s2forms.ModelSelect2MultipleWidget(
+            attrs={
+                "class": "select2-widget",
+                "data-minimum-input-length": 2,
+                "data-ajax--url": "/autocomplete/clients",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
+            },
+            search_fields=["name__icontains", "short_name__icontains"],
+        ),
+    )
+
     jobs = LenientModelMultipleChoiceField(
         required=False,
         queryset=Job.objects.filter(),
@@ -380,8 +397,15 @@ class SchedulerFilter(forms.Form):
         required=False,
     )
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, user=None, **kwargs):
         super(SchedulerFilter, self).__init__(*args, **kwargs)
+        # When rendering for a user, only offer/echo clients they may view (the
+        # feeds bind without a user: there the field only narrows the people
+        # list, which is already clamped to the viewer's schedule scope).
+        if user is not None:
+            self.fields["clients"].queryset = get_objects_for_user(
+                user, "jobtracker.view_client", Client, accept_global_perms=True
+            )
         self.helper = FormHelper(self)
         self.helper.form_method = "get"
         self.helper.form_class = "form-inline form-control-sm"
@@ -444,6 +468,7 @@ class SchedulerFilter(forms.Form):
                     '<span class="fas fa-briefcase me-2 text-body-tertiary"></span>Job'
                 ),
                 Row(
+                    Field("clients", style="width: 100%;"),
                     Field("jobs", style="width: 100%;"),
                     Field("phases", style="width: 100%;"),
                     Field("projects", style="width: 100%;"),
@@ -496,6 +521,7 @@ class SchedulerFilter(forms.Form):
             "onboarded_users",
             "include_user",
             "services",
+            "clients",
             "jobs",
             "phases",
             "projects",

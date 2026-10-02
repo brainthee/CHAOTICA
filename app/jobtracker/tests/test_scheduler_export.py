@@ -30,8 +30,13 @@ class SchedulerScopeBase(ScheduleHistoryBase):
     def setUp(self):
         super().setUp()
         self.rf = RequestFactory()
+        # User.save() promotes the only user to superuser + Global Admin; on a
+        # freshly flushed DB (just guardian's AnonymousUser) that's the actor.
+        # Scope tests need an ordinary user, so demote explicitly.
+        self.actor.is_superuser = self.actor.is_staff = False
         self.actor.first_name, self.actor.last_name = "Ada", "Actor"
         self.actor.save()
+        self.actor.groups.clear()
         self.other.first_name, self.other.last_name = "Olly", "Other"
         self.other.save()
         OrganisationalUnitMember.objects.create(unit=self.unit, member=self.actor)
@@ -132,9 +137,8 @@ class SchedulerExportTests(SchedulerScopeBase):
         self.assertTrue(all(r["html_view"] for r in data))
 
 
-class SchedulerFilterScopeTests(SchedulerScopeBase):
-    """Query-string filters must never widen the global scheduler beyond the
-    viewer's view_users_schedule scope (shared by the feeds and the export)."""
+class HiddenWorkBase(SchedulerScopeBase):
+    """Adds a job, phase and project in the hidden unit, all booked for hidden."""
 
     def setUp(self):
         super().setUp()
@@ -161,6 +165,11 @@ class SchedulerFilterScopeTests(SchedulerScopeBase):
         req = self.rf.get("/jobtracker/scheduler/members", query)
         req.user = user or self.actor
         return {r["id"] for r in json.loads(sched_views.view_scheduler_members(req).content)}
+
+
+class SchedulerFilterScopeTests(HiddenWorkBase):
+    """Query-string filters must never widen the global scheduler beyond the
+    viewer's view_users_schedule scope (shared by the feeds and the export)."""
 
     def test_include_user_cannot_add_out_of_scope_user(self):
         ids = self._member_ids({"include_user": [str(self.hidden.pk)]})
@@ -194,3 +203,79 @@ class SchedulerFilterScopeTests(SchedulerScopeBase):
         assign_perm("jobtracker.view_project", self.actor)
         self._reload_actor()
         self.assertIn(self.hidden.pk, self._member_ids(params))
+
+
+class SchedulerClientFilterTests(HiddenWorkBase):
+    """Clients filter: people booked on the client's jobs, other work faded."""
+
+    def setUp(self):
+        super().setUp()
+        self._delivery_slot()  # actor on self.job (Test Client); other has nothing
+
+    def _slots(self, params):
+        query = {
+            "start": (self.start - timedelta(days=1)).isoformat(),
+            "end": (self.end + timedelta(days=1)).isoformat(),
+        }
+        query.update(params)
+        req = self.rf.get("/jobtracker/scheduler/timeslots", query)
+        req.user = self.actor
+        return json.loads(sched_views.view_scheduler_slots(req).content)
+
+    def _delivery_rows(self, params):
+        return [r for r in self._slots(params) if r.get("phaseId") == self.phase.pk]
+
+    def test_client_filter_shows_only_people_booked_for_client(self):
+        ids = self._member_ids({"clients": [str(self.client_obj.pk)]})
+        self.assertEqual(ids, {self.actor.pk})
+
+    def test_client_filter_does_not_fade_its_own_work(self):
+        rows = self._delivery_rows({"clients": [str(self.client_obj.pk)]})
+        self.assertEqual(len(rows), 1)
+        self.assertNotEqual(rows[0].get("display"), "background")
+
+    def test_other_clients_work_is_faded(self):
+        other_client = Client.objects.create(name="Elsewhere Ltd")
+        rows = self._delivery_rows({
+            "clients": [str(other_client.pk)], "include_user": [str(self.actor.pk)],
+        })
+        self.assertEqual(rows[0].get("display"), "background")
+
+    def test_client_filter_respects_job_schedule_permission(self):
+        params = {"clients": [str(self.hidden_job.client.pk)]}
+        self.assertNotIn(self.hidden.pk, self._member_ids(params))
+        assign_perm("jobtracker.view_job_schedule", self.actor, self.hidden_unit)
+        self._reload_actor()
+        self.assertIn(self.hidden.pk, self._member_ids(params))
+
+    def test_deleted_jobs_are_ignored(self):
+        from jobtracker.enums import JobStatuses
+
+        Job.objects.filter(pk=self.job.pk).update(status=JobStatuses.DELETED)
+        ids = self._member_ids({"clients": [str(self.client_obj.pk)]})
+        self.assertNotIn(self.actor.pk, ids)
+
+    def test_export_mutes_slots_outside_client(self):
+        other_client = Client.objects.create(name="Elsewhere Ltd")
+        wb = self._workbook(self._export({
+            "clients": [str(other_client.pk)], "include_user": [str(self.actor.pk)],
+        }))
+        overview = " ".join(
+            str(c.value) for row in wb["Overview"].iter_rows() for c in row if c.value
+        )
+        self.assertIn("Elsewhere Ltd", overview)
+        ws = wb["Schedule"]
+        row = self._resources(wb).index(self.actor.get_full_name()) + 2
+        booked = [c for c in ws[row] if c.value and "Phase 1" in str(c.value)]
+        self.assertTrue(booked)
+        self.assertEqual(booked[0].fill.fgColor.rgb[-6:].lower(), "eff2f6")  # muted
+
+    def test_form_offers_only_viewable_clients(self):
+        from jobtracker.forms import SchedulerFilter
+
+        form = SchedulerFilter({}, user=self.actor)
+        self.assertNotIn(self.client_obj, form.fields["clients"].queryset)
+        assign_perm("jobtracker.view_client", self.actor)
+        self._reload_actor()
+        form = SchedulerFilter({}, user=self.actor)
+        self.assertIn(self.client_obj, form.fields["clients"].queryset)

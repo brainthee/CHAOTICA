@@ -280,7 +280,7 @@ def view_scheduler(request):
     context = {"scheduler_scope": "global"}
     template = loader.get_template("scheduler.html")
     context = {**context, **page_defaults(request)}
-    context["filter_form"] = SchedulerFilter(request.GET)
+    context["filter_form"] = SchedulerFilter(request.GET, user=request.user)
     context["has_default_filter"] = bool(saved)
     context["is_default_view"] = request.GET.get("_dv") == "1"
     return HttpResponse(template.render(context, request))
@@ -325,7 +325,12 @@ def export_scheduler_view(request):
     page has loaded (``start``/``end``, sent by the toolbar Export button)."""
     from django.utils import timezone
     from ..schedule_export import build_scheduler_xlsx, SCHEDULER_EXPORT_MAX_DAYS
-    from ..utils import _filter_users_on_query, collect_schedule_slots, scheduler_member_rows
+    from ..utils import (
+        _filter_users_on_query,
+        collect_schedule_slots,
+        scheduler_focus,
+        scheduler_member_rows,
+    )
 
     try:
         start = clean_fullcalendar_datetime(request.GET.get("start"))
@@ -345,11 +350,6 @@ def export_scheduler_view(request):
 
     filter_form = SchedulerFilter(request.GET)
     cleaned_data = filter_form.cleaned_data if filter_form.is_valid() else None
-    selected_phases = []
-    if cleaned_data:
-        selected_phases = list(cleaned_data.get("jobs") or []) + list(
-            cleaned_data.get("phases") or []
-        )
 
     # Drop the blanket ``timeslots`` prefetch _filter_users_on_query adds — it
     # would load every slot each user has ever had; the window is fetched below.
@@ -388,7 +388,7 @@ def export_scheduler_view(request):
         filename="schedule-{}-to-{}".format(start_date.isoformat(), end_date.isoformat()),
         title="Schedule — {} to {}".format(start_date.strftime(fmt), end_date.strftime(fmt)),
         header_rows=header_rows,
-        selected_phases=selected_phases,
+        focus=scheduler_focus(cleaned_data),
     )
 
 

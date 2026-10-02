@@ -23,7 +23,7 @@ from .models import (
     OrganisationalUnitRole,
     TimeSlotComment,
 )
-from .enums import UserSkillRatings
+from .enums import UserSkillRatings, JobStatuses
 import logging
 from chaotica_utils.utils import clean_fullcalendar_datetime, is_ajax
 from chaotica_utils.models import Holiday
@@ -219,6 +219,26 @@ def _filter_users_on_query(request, cleaned_data=None):
             query.add(Q(pk__in=team), Q.AND)
             if can_view_job_schedule(request.user, phase.job):
                 allowed_pks.update(u.pk for u in team)
+
+    # Clients: people booked on any (non-deleted) job for the client. Widens scope
+    # only via jobs whose schedule the viewer may see — resolved set-based (global
+    # perm / unit perm / jobs they're booked on) rather than a check per job.
+    clients = cleaned_data.get("clients")
+    if clients:
+        client_slots = TimeSlot.objects.filter(
+            phase__job__client__in=clients
+        ).exclude(phase__job__status=JobStatuses.DELETED)
+        query.add(Q(pk__in=client_slots.values("user_id")), Q.AND)
+        viewer = request.user
+        if not viewer.has_perm(VIEW_JOB_SCHEDULE_PERM):
+            viewable_units = get_objects_for_user(
+                viewer, VIEW_JOB_SCHEDULE_PERM, OrganisationalUnit
+            )
+            own_jobs = TimeSlot.objects.filter(user=viewer).values("phase__job_id")
+            client_slots = client_slots.filter(
+                Q(phase__job__unit__in=viewable_units) | Q(phase__job_id__in=own_jobs)
+            )
+        allowed_pks.update(client_slots.values_list("user_id", flat=True))
 
     # Projects have no team() method - members are users with a timeslot on them.
     # Gated like the project schedule tab (global view_project).
@@ -776,6 +796,32 @@ def available_day_runs(
     return runs
 
 
+def scheduler_focus(cleaned_data):
+    """The jobs/phases and client PKs a SchedulerFilter puts "in focus".
+
+    Delivery slots outside the focus are faded on screen (and greyed in the
+    export) so the filtered work stands out from people's other commitments.
+    Returns ``(selected_jobs_and_phases, client_pks)``."""
+    if not cleaned_data:
+        return [], set()
+    selected = list(cleaned_data.get("jobs") or []) + list(cleaned_data.get("phases") or [])
+    client_ids = {c.pk for c in cleaned_data.get("clients") or []}
+    return selected, client_ids
+
+
+def slot_out_of_focus(slot, selected, client_ids):
+    """Whether a delivery slot falls outside the filter's focus (see scheduler_focus).
+    Non-delivery slots (leave, internal, projects) are never faded."""
+    if not selected and not client_ids:
+        return False
+    phase = slot.phase_or_none if slot.is_delivery() else None
+    if phase is None:
+        return False
+    if phase in selected or phase.job in selected:
+        return False
+    return phase.job.client_id not in client_ids
+
+
 def get_scheduler_slots(
     request,
     filtered_users=None,
@@ -787,20 +833,13 @@ def get_scheduler_slots(
     hard_scope=True,
 ):
     data = []
-    selected_phases = []
     cleaned_data = None
 
     if use_filter_form:
         filter_form = SchedulerFilter(request.GET)
         if filter_form.is_valid():
             cleaned_data = filter_form.clean()
-
-            jobs = cleaned_data.get("jobs", [])
-            for job in jobs:
-                selected_phases.append(job)
-            phases = cleaned_data.get("phases", [])
-            for phase in phases:
-                selected_phases.append(phase)
+    selected_phases, focus_client_ids = scheduler_focus(cleaned_data)
 
     if filtered_users is None:
         filtered_users = _filter_users_on_query(request, cleaned_data).prefetch_related(
@@ -865,12 +904,8 @@ def get_scheduler_slots(
         slot_json = slot.get_schedule_json(
             schedule_colours=schedule_colours, compressed_view=compressed_view
         )
-        if selected_phases:
-            if slot.phase and (
-                slot.phase not in selected_phases
-                and slot.phase.job not in selected_phases
-            ):
-                slot_json["display"] = "background"
+        if slot_out_of_focus(slot, selected_phases, focus_client_ids):
+            slot_json["display"] = "background"
         # Soft-scope: keep the member's other commitments visible but faded so
         # it's clear which blocks belong to this job/phase (vs. context).
         if (

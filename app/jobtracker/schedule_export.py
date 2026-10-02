@@ -614,7 +614,7 @@ SCHEDULER_EXPORT_MAX_DAYS = 1200
 
 def build_scheduler_xlsx(
     members, users, dataset, start_date, end_date,
-    filename, title=None, header_rows=None, selected_phases=None,
+    filename, title=None, header_rows=None, focus=None,
 ):
     """Build an internal XLSX of the global scheduler's current view.
 
@@ -626,8 +626,9 @@ def build_scheduler_xlsx(
     ``members``  ordered resource rows from ``scheduler_member_rows``.
     ``users``    ``{pk: User}`` for those rows.
     ``dataset``  the ``collect_schedule_slots`` result for the window.
-    ``selected_phases`` jobs/phases picked in the filter; slots outside them
-                 are muted, matching the on-screen background styling.
+    ``focus``    ``scheduler_focus()`` result; delivery slots outside the
+                 filtered jobs/phases/clients are muted, matching the on-screen
+                 faded styling.
 
     Sheets: "Overview" (filters + key), "Schedule" (resources x dates grid),
     "Bookings" (one row per slot) and "Resources" (availability/utilisation).
@@ -635,11 +636,12 @@ def build_scheduler_xlsx(
     import xlsxwriter
     from django.utils import timezone
     from .models import OrganisationalUnitMember
+    from .utils import slot_out_of_focus
 
     output = io.BytesIO()
     workbook = xlsxwriter.Workbook(output, {"remove_timezone": True})
     colours = _schedule_colours()
-    selected_phases = selected_phases or []
+    focus_selected, focus_clients = focus or ([], set())
 
     title_fmt = workbook.add_format({
         "bold": True, "font_size": 16, "font_color": "#FFFFFF",
@@ -759,12 +761,6 @@ def build_scheduler_xlsx(
             hols.update(holidays_by_country.get(str(user.country), {}))
         return hols
 
-    def is_muted(slot):
-        if not selected_phases:
-            return False
-        phase = slot.phase_or_none if slot.is_delivery() else None
-        return bool(phase) and phase not in selected_phases and phase.job not in selected_phases
-
     # Booked cells: (user_pk, date) -> [labels], first slot decides the colour.
     slots = [s for s in dataset["timeslots"] if s.user_id in users]
     cell_labels = defaultdict(list)
@@ -775,7 +771,7 @@ def build_scheduler_xlsx(
             label = "{} [{}]".format(label, slot.get_deliveryRole_display())
         bg = slot.get_schedule_slot_colour(schedule_colours=colours)
         style = (
-            "muted" if is_muted(slot)
+            "muted" if slot_out_of_focus(slot, focus_selected, focus_clients)
             else (bg, slot.get_schedule_slot_text_colour(bg), not slot.is_confirmed())
         )
         day = max(timezone.localtime(slot.start).date(), start_date)
@@ -826,7 +822,7 @@ def build_scheduler_xlsx(
         (colours["SCHEDULE_COLOR_PHASE_AWAY"], "Tentative — onsite"),
         (colours["SCHEDULE_COLOR_PROJECT"], "Internal project"),
         (colours["SCHEDULE_COLOR_INTERNAL"], "Internal / leave / other"),
-        (PHX_GRAY_100, "Outside the filtered jobs/phases"),
+        (PHX_GRAY_100, "Outside the filtered clients/jobs/phases"),
         (PHX_GRAY_200, "Public holiday"),
         ("#eef2fb", "Non-working day"),
         (None, "Blank — available"),
