@@ -55,3 +55,10 @@ if settings.DEBUG:
     from debug_toolbar.toolbar import debug_toolbar_urls
 
     urlpatterns += debug_toolbar_urls()
+
+# Error handlers that reset stale DB connections — under ASGI, error pages render
+# in a thread pool outside the per-request connection cleanup (see errors.py).
+handler400 = "chaotica_utils.views.errors.bad_request"
+handler403 = "chaotica_utils.views.errors.permission_denied"
+handler404 = "chaotica_utils.views.errors.page_not_found"
+handler500 = "chaotica_utils.views.errors.server_error"

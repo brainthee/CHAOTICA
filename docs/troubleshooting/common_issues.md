@@ -147,6 +147,14 @@ for p in psutil.process_iter(['pid', 'name', 'cpu_percent']):
 
 ## Database Issues
 
+### "Server has gone away" (MySQL 2006) on error pages
+
+**Symptom**: Sentry shows `OperationalError: (2006, 'Server has gone away')`, almost always chained after a `Resolver404`/`Http404` — typically from scanner traffic hitting unknown URLs.
+
+**Cause**: under ASGI (gunicorn + uvicorn worker), Django renders error responses in a thread pool (`response_for_exception` with `thread_sensitive=False`) that never runs the per-request connection cleanup. A DB connection opened while rendering an error page lingered in that thread until MySQL's idle timeout closed it, and the next error page on the same thread reused the dead connection.
+
+**Fix**: the 400/403/404/500 handlers (`chaotica_utils/views/errors.py`, registered in `chaotica/urls.py`) release stale connections before rendering and close their own afterwards. If you add a custom error handler, wrap it with `_with_fresh_db`.
+
 ### Connection Errors
 
 **Error**: "Unable to connect to database"
