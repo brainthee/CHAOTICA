@@ -1,0 +1,36 @@
+# ---------------------------------------------------------------------------
+# Demo configuration. Everything that makes this instance "the demo" is an app
+# environment variable rendered into /opt/chaotica-demo/.env — the image and
+# its process model are identical to production.
+#
+# Secrets here are deliberately throwaway: the demo holds only generated data
+# and is wiped nightly. Override any of them with -e or a host_vars file.
+# ---------------------------------------------------------------------------
+
+demo_dir: /opt/chaotica-demo
+demo_domain: demo.chaotica.app
+demo_timezone: Europe/London
+
+chaotica_image: brainthee/chaotica:latest
+
+# Nightly full rebuild (systemd OnCalendar, host local time = demo_timezone).
+# demo_reset_time also drives the "resets in X" banner on the login page.
+demo_reset_time: "02:00"
+
+# Advertised login (pre-filled on the login page) — a superuser.
+demo_user: admin@demo.chaotica.app
+demo_pass: DemoAdmin123!
+# Shared password for the generated first.last@demo.chaotica.app users.
+demo_user_password: DemoUser123!
+
+demo_seed_users: 25
+demo_seed_clients: 12
+demo_seed_jobs: 100
+
+demo_secret_key: demo-not-secret-0f4c2b7e
+demo_db_password: demo-db-pass
+demo_db_root_password: demo-db-root-pass
+demo_health_check_api_key: demo-health
+
+# Optional GeoLite2 key for the entrypoint's GeoIP download. Blank skips it.
+maxmind_license_key: ""

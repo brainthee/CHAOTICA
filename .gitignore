@@ -137,3 +137,6 @@ venv/
 
 # Local-only bug/feedback backlog (never commit)
 bugs.md
+
+# Demo reset maintenance flag (created/removed by reset_demo.sh)
+deploy/demo/maintenance/on

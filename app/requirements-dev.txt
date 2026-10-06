@@ -20,10 +20,6 @@ vcversioner==2.16.0.0
 pyfakefs==5.8.0
 responses==0.25.6
 
-# Demo/seed data generation (management command: generate_demo_data)
-Faker==37.4.0
-faker-microservice==2.0.0
-
 # Model/graph tooling
 graphviz==0.21
 

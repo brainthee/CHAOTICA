@@ -1,0 +1,13 @@
+# {{ ansible_managed }}
+[Unit]
+Description=CHAOTICA demo: full nightly rebuild with fresh demo data
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory={{ demo_dir }}
+ExecStart={{ demo_dir }}/reset_demo.sh
+# A from-scratch migrate on MariaDB is slow; leave plenty of headroom.
+TimeoutStartSec=1h

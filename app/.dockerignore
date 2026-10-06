@@ -20,3 +20,7 @@ media
 .sonarlint
 .idea
 .vscode
+
+# Local env files hold real secrets; settings.load_dotenv() would read them in-image
+.env
+.env.*

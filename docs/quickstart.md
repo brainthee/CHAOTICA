@@ -57,7 +57,7 @@ python manage.py generate_demo_data --minimal  # small dataset for quick testing
 python manage.py generate_demo_data --clear    # clear existing demo data, then regenerate
 ```
 
-Options: `--users`, `--clients` and `--jobs` control how much data is created; `--minimal` creates a small dataset; `--clear` wipes previously generated data before regenerating (built-in reference data such as the standard timeslot types is preserved). Demo users are created with the password `DemoPass123!`.
+Options: `--users`, `--clients` and `--jobs` control how much data is created; `--minimal` creates a small dataset; `--clear` wipes previously generated data before regenerating (built-in reference data such as the standard timeslot types is preserved). Generated users get the password given by `--password`; without it a random password is generated and printed once. `--admin-email` + `--admin-password` also create (or reset) a superuser who is a member of every generated unit — this is how the public demo provisions its pre-set login. With `DEBUG=0` the command refuses to run unless `--force` is passed.
 
 !!! Warning
     `generate_demo_data` is intended for development/demo environments only — do not run it against a production database.

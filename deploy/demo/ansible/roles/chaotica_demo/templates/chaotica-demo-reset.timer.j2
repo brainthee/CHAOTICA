@@ -1,0 +1,11 @@
+# {{ ansible_managed }}
+[Unit]
+Description=Nightly CHAOTICA demo reset ({{ demo_reset_time }} {{ demo_timezone }})
+
+[Timer]
+OnCalendar=*-*-* {{ demo_reset_time }}:00
+# Catch up on boot if the host was off at reset time.
+Persistent=true
+
+[Install]
+WantedBy=timers.target

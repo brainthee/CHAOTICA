@@ -93,9 +93,11 @@ Python dependencies are split into two files in `app/`:
 - **`requirements.txt`** — runtime dependencies only. This is the sole file installed into
   the production Docker image.
 - **`requirements-dev.txt`** — dev/test/build tooling (black, linters, pytest helpers,
-  Faker for `generate_demo_data`, django-debug-toolbar, etc.). It starts with
-  `-r requirements.txt`, so `pip install -r requirements-dev.txt` gives a full local env.
-  These are intentionally kept out of the image to reduce size and vulnerability surface.
+  django-debug-toolbar, etc.). It starts with `-r requirements.txt`, so
+  `pip install -r requirements-dev.txt` gives a full local env. These are intentionally
+  kept out of the image to reduce size and vulnerability surface. Faker is NOT dev-only:
+  it stays in `requirements.txt` because the public demo runs `generate_demo_data` in the
+  prod image (see `deploy/demo/`).
 
 Key runtime packages include:
 - Django and Django extensions (auth-adfs, REST framework, etc.)

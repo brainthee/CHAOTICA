@@ -1,0 +1,15 @@
+# Provision demo.chaotica.app on a fresh Ubuntu 24.04 host.
+#
+#   cd deploy/demo/ansible
+#   ansible-galaxy collection install -r requirements.yml
+#   ansible-playbook site.yml            # add -K if sudo needs a password
+#
+# Idempotent: re-run any time to push config changes. The first run (no stack
+# yet) performs an initial demo reset, which builds and seeds the database.
+- name: CHAOTICA public demo
+  hosts: demo
+  become: true
+  roles:
+    - common
+    - docker
+    - chaotica_demo
