@@ -25,10 +25,22 @@ These variables must be set for production deployments:
 | `SITE_DOMAIN` | `127.0.0.1:8000` | Primary domain for the application |
 | `SITE_PROTO` | `http` | Protocol (`http`/`https`) |
 
+## Demo Mode
+
+Used by the public demo (see `deploy/demo/`). Demo mode only changes the login page; it does not lock down any features.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DEMO_ENV` | `false` | `true`/`1`/`yes`/`on` shows the demo banner and pre-fills the login form |
+| `DEMO_USER` | - | Email pre-filled on the login page |
+| `DEMO_PASS` | - | Password pre-filled on the login page |
+| `DEMO_RESET_TIME` | `00:00` | Daily reset time (`HH:MM`, in `TZ`) used for the banner's "resets in…" countdown |
+
 ## Security Settings
 
 | Variable | Default | Description |
 |----------|---------|-------------|
+| `CSRF_TRUSTED_ORIGINS` | *(empty)* | Space-separated full origins trusted for CSRF, e.g. `https://chaotica.example.com`. Useful behind a TLS-terminating proxy |
 | `CSRF_COOKIE_SECURE` | `True` (prod) | Secure CSRF cookies (HTTPS only) |
 | `SESSION_COOKIE_SECURE` | `True` (prod) | Secure session cookies (HTTPS only) |
 | `SESSION_EXPIRE_AT_BROWSER_CLOSE` | `True` | Sessions expire when browser closes |

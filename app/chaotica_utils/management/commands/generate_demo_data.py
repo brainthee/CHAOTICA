@@ -99,6 +99,20 @@ class Command(BaseCommand):
             "password printed once, so demo accounts are not created with a "
             "well-known credential.",
         )
+        parser.add_argument(
+            "--admin-email",
+            default=None,
+            help="Ensure a superuser with this email exists and is a member of "
+            "every generated organisational unit (with every role bar Pending "
+            "Approval), so it lands on a populated dashboard. Used by the "
+            "public demo for its pre-set login.",
+        )
+        parser.add_argument(
+            "--admin-password",
+            default=None,
+            help="Password for --admin-email. Always (re)set, so the advertised "
+            "demo credentials keep working.",
+        )
 
     @transaction.atomic
     def handle(self, *args, **options):
@@ -127,6 +141,10 @@ class Command(BaseCommand):
                 )
             )
 
+        self.admin_email = options["admin_email"]
+        if self.admin_email and not options["admin_password"]:
+            raise CommandError("--admin-email requires --admin-password.")
+
         self.stdout.write(self.style.SUCCESS("Starting demo data generation..."))
 
         if options["minimal"]:
@@ -148,10 +166,37 @@ class Command(BaseCommand):
         self.create_jobs_and_phases(options["jobs"])
         self.create_timeslots()
         self.create_leave_requests()
+        if self.admin_email:
+            self.ensure_admin_user(self.admin_email, options["admin_password"])
 
         self.stdout.write(
             self.style.SUCCESS("Demo data generation completed successfully!")
         )
+
+    def ensure_admin_user(self, email, password):
+        """Create (or reset) the demo superuser and make it a member of every
+        generated unit. Superusers already pass every permission check, but the
+        dashboard and unit views are membership-driven, so without this the
+        admin lands on "You are not a member of any organisational units"."""
+        self.stdout.write(f"Ensuring admin user {email}...")
+        admin = User.objects.filter(email=email).first()
+        if admin is None:
+            admin = User.objects.create_superuser(email=email, password=password)
+        else:
+            admin.is_superuser = True
+            admin.is_staff = True
+            admin.is_active = True
+            admin.set_password(password)
+            admin.save()
+
+        # Matched by name, not pk: role pks have drifted from the enum before.
+        roles = list(OrganisationalUnitRole.objects.exclude(name="Pending Approval"))
+        for unit in self.units:
+            member, _ = OrganisationalUnitMember.objects.get_or_create(
+                member=admin, unit=unit
+            )
+            member.roles.set(roles)
+            member.save()
 
     def load_builtin_timeslot_types(self):
         """Reference the built-in TimeSlotTypes (seeded by post_migrate) rather
@@ -190,7 +235,9 @@ class Command(BaseCommand):
         ]
         for model in models_to_clear:
             model.objects.all().delete()
-        User.objects.all().exclude(email="admin@demo.chaotica.app").delete()
+        User.objects.all().exclude(
+            email__in={"admin@demo.chaotica.app", self.admin_email}
+        ).delete()
 
         # Reset auto-increment sequences for all tables to avoid ID conflicts
         from django.db import connection
@@ -478,6 +525,10 @@ class Command(BaseCommand):
         self.stdout.write(f"Creating {count} users...")
 
         self.users = []
+        # Seeded by jobtracker's post_migrate (populate_default_unit_roles).
+        self.default_roles = list(
+            OrganisationalUnitRole.objects.filter(default_role=True)
+        ) or [OrganisationalUnitRole.objects.get_or_create(name="Member")[0]]
 
         region_data = {
             "UK": {
@@ -545,14 +596,13 @@ class Command(BaseCommand):
             except Exception:
                 pass
 
-            role, _ = OrganisationalUnitRole.objects.get_or_create(
-                name="Member",
-            )
+            # Use the seeded default roles (e.g. Consultant) so demo users carry
+            # real unit permissions, rather than an ad-hoc permissionless role.
             member = OrganisationalUnitMember.objects.create(
                 member=user,
                 unit=unit,
             )
-            member.roles.add(role)
+            member.roles.add(*self.default_roles)
             member.save()
 
             if i > 0 and i % 5 != 0:
@@ -656,8 +706,23 @@ class Command(BaseCommand):
         for i in range(count):
             client = random.choice(self.clients)
 
-            job_start_date = fake.date_between(
-                start_date=three_months_ago, end_date=today - timedelta(days=30)
+            # Spread jobs across the whole delivery lifecycle instead of all in
+            # the past (which made every phase land on COMPLETED). Each band maps
+            # roughly to a lifecycle stage once progress_job_workflow derives
+            # statuses from the resulting delivery dates.
+            start_low, start_high = random.choices(
+                [
+                    (-150, -80),  # long-since delivered
+                    (-65, -20),  # recently delivered / finishing QA
+                    (-21, 2),  # in progress / in QA (spans today)
+                    (3, 28),  # scheduled & confirmed / pre-checks
+                    (28, 110),  # pipeline: draft / scoping / pending schedule
+                ],
+                weights=[16, 16, 26, 21, 21],
+                k=1,
+            )[0]
+            job_start_date = today + timedelta(
+                days=random.randint(start_low, start_high)
             )
             job_duration = random.randint(10, 45)
             job_end_date = job_start_date + timedelta(days=job_duration)
@@ -759,11 +824,16 @@ class Command(BaseCommand):
             else:
                 status_choice = random.choice(
                     [
-                        PhaseStatuses.SCHEDULED_CONFIRMED,
-                        PhaseStatuses.PRE_CHECKS,
-                        PhaseStatuses.IN_PROGRESS,
+                        PhaseStatuses.DRAFT,
                         PhaseStatuses.PENDING_SCHED,
+                        PhaseStatuses.PENDING_SCHED,
+                        PhaseStatuses.SCHEDULED_TENTATIVE,
+                        PhaseStatuses.SCHEDULED_TENTATIVE,
                         PhaseStatuses.SCHEDULED_CONFIRMED,
+                        PhaseStatuses.SCHEDULED_CONFIRMED,
+                        PhaseStatuses.CLIENT_NOT_READY,
+                        PhaseStatuses.READY_TO_BEGIN,
+                        PhaseStatuses.PRE_CHECKS,
                     ]
                 )
                 phase.status = status_choice
@@ -785,12 +855,36 @@ class Command(BaseCommand):
             elif max_phase_status >= PhaseStatuses.SCHEDULED_TENTATIVE:
                 job.status = JobStatuses.SCOPING_COMPLETE
             else:
-                job.status = random.choice([JobStatuses.DRAFT, JobStatuses.SCOPING])
+                job.status = random.choice(
+                    [
+                        JobStatuses.DRAFT,
+                        JobStatuses.PENDING_SCOPE,
+                        JobStatuses.SCOPING,
+                        JobStatuses.SCOPING,
+                        JobStatuses.SCOPING_ADDITIONAL_INFO_REQUIRED,
+                        JobStatuses.PENDING_SCOPING_SIGNOFF,
+                    ]
+                )
+            # A slice of early-stage opportunities are lost, for a realistic pipeline.
+            if (
+                job.status in (JobStatuses.DRAFT, JobStatuses.SCOPING)
+                and random.random() < 0.15
+            ):
+                job.status = JobStatuses.LOST
             job.save()
 
     def progress_phase_to_completion(self, phase):
 
-        phase.status = PhaseStatuses.COMPLETED
+        # A finished engagement has usually been DELIVERED to the client; only a
+        # portion sit at COMPLETED (testing done, report not yet delivered).
+        phase.status = random.choice(
+            [
+                PhaseStatuses.DELIVERED,
+                PhaseStatuses.DELIVERED,
+                PhaseStatuses.DELIVERED,
+                PhaseStatuses.COMPLETED,
+            ]
+        )
         phase.feedback_scope_correct = True
 
         if phase.techqa_by:

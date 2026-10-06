@@ -22,7 +22,13 @@ DJANGO_VERSION = os.environ.get("DJANGO_VERSION", default="bleeding-edge")
 SENTRY_BACKEND_DSN = os.environ.get("SENTRY_BACKEND_DSN", default=None)
 SENTRY_FRONTEND_DSN = os.environ.get("SENTRY_FRONTEND_DSN", default=None)
 
-DEMO_ENV = os.environ.get("DEMO_ENV", default=False)
+# Parsed as a real bool: a raw env string makes "false"/"0" truthy.
+DEMO_ENV = str(os.environ.get("DEMO_ENV", "")).strip().lower() in (
+    "1",
+    "true",
+    "yes",
+    "on",
+)
 DEMO_USER = os.environ.get("DEMO_USER", default=None)
 DEMO_PASS = os.environ.get("DEMO_PASS", default=None)
 DEMO_RESET_TIME = os.environ.get("DEMO_RESET_TIME", default="00:00")
@@ -732,6 +738,9 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")  # If behind HTTPS
 USE_X_FORWARDED_HOST = bool(os.environ.get("USE_X_FORWARDED_HOST", default=True))
 USE_X_FORWARDED_PORT = bool(os.environ.get("USE_X_FORWARDED_PORT", default=True))
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", default="* web").split(" ")
+# Space-separated full origins, e.g. "https://demo.chaotica.app". Optional: without
+# it CSRF relies on the proxy passing X-Forwarded-Proto: https through untouched.
+CSRF_TRUSTED_ORIGINS = os.environ.get("CSRF_TRUSTED_ORIGINS", default="").split()
 
 # Define trusted proxy networks
 # Only requests from these IPs/networks will have their forwarded headers trusted

@@ -1,0 +1,69 @@
+# The stack files live one level up (deploy/demo/) so they stay usable without
+# Ansible; this role ships them verbatim and renders only .env + systemd units.
+- name: Create demo directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  loop:
+    - "{{ demo_dir }}"
+    - "{{ demo_dir }}/maintenance"
+
+- name: Install stack files
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../{{ item.name }}"
+    dest: "{{ demo_dir }}/{{ item.name }}"
+    owner: root
+    group: root
+    mode: "{{ item.mode }}"
+  loop:
+    - { name: docker-compose.yml, mode: "0644" }
+    - { name: nginx.conf, mode: "0644" }
+    - { name: reset_demo.sh, mode: "0755" }
+    - { name: maintenance/maintenance.html, mode: "0644" }
+  notify: Apply stack config
+
+- name: Render environment file
+  ansible.builtin.template:
+    src: env.j2
+    dest: "{{ demo_dir }}/.env"
+    owner: root
+    group: root
+    mode: "0600"
+  notify: Apply stack config
+
+- name: Install reset service and timer
+  ansible.builtin.template:
+    src: "{{ item }}.j2"
+    dest: "/etc/systemd/system/{{ item }}"
+    mode: "0644"
+  loop:
+    - chaotica-demo-reset.service
+    - chaotica-demo-reset.timer
+  register: reset_units
+
+- name: Enable the nightly reset timer
+  ansible.builtin.systemd_service:
+    name: chaotica-demo-reset.timer
+    enabled: true
+    state: started
+    daemon_reload: "{{ reset_units.changed }}"
+
+- name: Check whether the stack has been built
+  ansible.builtin.command: docker compose ps --all --quiet web
+  args:
+    chdir: "{{ demo_dir }}"
+  register: web_container
+  changed_when: false
+
+# First deploy: build + seed the database via the same path the timer uses.
+# A from-scratch migrate can take a while, hence async.
+- name: Initial demo build (runs the reset)
+  ansible.builtin.systemd_service:
+    name: chaotica-demo-reset.service
+    state: started
+  when: web_container.stdout | length == 0
+  async: 3600
+  poll: 30

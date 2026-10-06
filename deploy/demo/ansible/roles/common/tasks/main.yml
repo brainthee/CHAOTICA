@@ -1,0 +1,60 @@
+# The Ubuntu installer only allocates half the volume group to / by default;
+# images + a nightly-rebuilt DB want the lot.
+- name: Check for unallocated space in the root volume group
+  ansible.builtin.command: vgs --noheadings --options vg_free_count ubuntu-vg
+  register: root_vg_free
+  changed_when: false
+  failed_when: false
+
+- name: Grow the root logical volume (and filesystem) into it
+  ansible.builtin.command: lvextend --resizefs --extents +100%FREE /dev/ubuntu-vg/ubuntu-lv
+  when: root_vg_free.rc == 0 and (root_vg_free.stdout | trim | int) > 0
+
+- name: Upgrade base packages
+  ansible.builtin.apt:
+    update_cache: true
+    upgrade: dist
+    cache_valid_time: 3600
+
+- name: Install base packages
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - curl
+      - gnupg
+      - python3-debian  # needed by ansible.builtin.deb822_repository (docker role)
+      - unattended-upgrades
+    state: present
+
+- name: Enable unattended security upgrades
+  ansible.builtin.copy:
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+    mode: "0644"
+
+- name: Set timezone (the reset timer fires in host local time)
+  community.general.timezone:
+    name: "{{ demo_timezone }}"
+
+- name: Create journald drop-in directory
+  ansible.builtin.file:
+    path: /etc/systemd/journald.conf.d
+    state: directory
+    mode: "0755"
+
+- name: Cap the systemd journal so logs can't fill the disk
+  ansible.builtin.copy:
+    dest: /etc/systemd/journald.conf.d/10-size.conf
+    content: |
+      [Journal]
+      SystemMaxUse=500M
+    mode: "0644"
+  register: journald_conf
+
+- name: Restart journald
+  ansible.builtin.systemd_service:
+    name: systemd-journald
+    state: restarted
+  when: journald_conf.changed

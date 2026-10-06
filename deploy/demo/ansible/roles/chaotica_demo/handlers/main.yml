@@ -1,0 +1,11 @@
+# Re-apply compose/nginx/.env changes to a running stack without wiping data
+# (the next nightly reset rebuilds from scratch anyway). No-op until the first
+# build has created the stack.
+- name: Apply stack config
+  ansible.builtin.shell: |
+    if [ -n "$(docker compose ps --all --quiet web)" ]; then
+      docker compose up -d --remove-orphans
+      docker compose exec -T nginx nginx -s reload
+    fi
+  args:
+    chdir: "{{ demo_dir }}"
