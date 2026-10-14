@@ -1066,6 +1066,19 @@ class Job(models.Model):
             _can_proceed = False
         return _can_proceed
 
+    def all_phases_finished(self, exclude_phase=None):
+        """True when no phase still needs work, so the job can be completed.
+
+        Delivered, cancelled, deleted and archived phases count as finished;
+        anything before delivery, or postponed, does not.
+        """
+        phases = self.phases.all()
+        if exclude_phase is not None:
+            phases = phases.exclude(pk=exclude_phase.pk)
+        return not phases.filter(
+            Q(status__lt=PhaseStatuses.DELIVERED) | Q(status=PhaseStatuses.POSTPONED)
+        ).exists()
+
     # COMPLETED
     @transition(
         field=status, source=JobStatuses.IN_PROGRESS, target=JobStatuses.COMPLETED

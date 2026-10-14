@@ -2105,11 +2105,7 @@ class Phase(models.Model):
         self.actual_delivery_date = timezone.now()
 
         # Ok, check if all phases have completed...
-        if (
-            not self.job.phases.filter(status__lt=PhaseStatuses.DELIVERED)
-            .exclude(pk=self.pk)
-            .exists()
-        ):
+        if self.job.all_phases_finished(exclude_phase=self):
             if self.job.can_to_complete():
                 self.job.to_complete()
                 self.job.save()

@@ -48,12 +48,7 @@ class task_progress_workflows(CronJobBase):
             job.refresh_from_db(fields=["status"])
             if job.status != JobStatuses.IN_PROGRESS:
                 continue
-            # Check there's no phases LTE DELIVERED
-            can_progress = True
-            for phase in job.phases.all():
-                if phase.status < PhaseStatuses.DELIVERED or phase.status == PhaseStatuses.POSTPONED:
-                    can_progress = False
-            if can_progress:
+            if job.all_phases_finished():
                 if job.can_to_complete():
                     job.to_complete()
                     job.save()

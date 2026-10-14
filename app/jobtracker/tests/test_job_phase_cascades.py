@@ -149,3 +149,37 @@ class AutoCompleteCronTests(CascadeTestBase):
             c for c in fired.call_args_list if c.args == (JobStatuses.COMPLETED,)
         ]
         self.assertEqual(len(completed_calls), 1)
+
+
+class AllPhasesFinishedTests(CascadeTestBase):
+    """C4: delivering a phase and the cron agree on "all phases finished"."""
+
+    def setUp(self):
+        super().setUp()
+        self._set_job_status(JobStatuses.IN_PROGRESS)
+
+    def _deliver(self, phase):
+        phase.to_delivered(self.actor)
+        phase.save()
+        self.job.refresh_from_db()
+
+    def test_postponed_phase_blocks_completion_on_delivery(self):
+        phase = self._phase(PhaseStatuses.COMPLETED)
+        self._phase(PhaseStatuses.POSTPONED)
+        self._deliver(phase)
+        self.assertEqual(self.job.status, JobStatuses.IN_PROGRESS)
+
+    def test_postponed_phase_blocks_completion_in_cron(self):
+        from jobtracker.tasks import task_progress_workflows
+
+        self._phase(PhaseStatuses.DELIVERED)
+        self._phase(PhaseStatuses.POSTPONED)
+        task_progress_workflows().do()
+        self.job.refresh_from_db()
+        self.assertEqual(self.job.status, JobStatuses.IN_PROGRESS)
+
+    def test_cancelled_phase_counts_as_finished(self):
+        phase = self._phase(PhaseStatuses.COMPLETED)
+        self._phase(PhaseStatuses.CANCELLED)
+        self._deliver(phase)
+        self.assertEqual(self.job.status, JobStatuses.COMPLETED)
