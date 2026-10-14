@@ -7,7 +7,7 @@ Permissions in CHAOTICA are managed through a layered approach combining role-ba
 | **Global Roles** | Django Groups | Site-wide | `chaotica_utils.enums.GlobalRoles` |
 | **Organisational Unit Roles** | Django Guardian (object-level) | Per unit and its jobs | `chaotica_utils.enums.UnitRoles` |
 | **Object-Level Permissions** | Django Guardian (per object) | Individual clients, services, etc. | Model `Meta.permissions` |
-| **Job Guest Access** | Django Guardian | Per job | `jobtracker.enums.JobGuestPermissions` |
+| **Job Guest Access** | Computed at request time from the job team | Per job | `jobtracker.enums.JobGuestPermissions` |
 
 ## How Permissions Are Enforced
 
@@ -89,7 +89,7 @@ Every user is assigned exactly one global role. The **default role** for new use
 
 ### Global: Admin
 
-Full system access including user management, impersonation, site settings, and activity logs.
+User management, site settings, and activity logs. (Impersonation is **superuser-only** - see [Impersonation](#impersonation).)
 
 | Area | Permissions |
 |---|---|
@@ -107,7 +107,7 @@ Full system access including user management, impersonation, site settings, and 
 | Leave | Manage Leave |
 | Billing Codes | View, Add, Change, Delete |
 | Projects | View, Add, Change, Delete |
-| Users | Manage User, Impersonate Users, Manage Site Settings, View Activity Logs |
+| Users | Manage User, Impersonate Users (unused - see [Impersonation](#impersonation)), Manage Site Settings, View Activity Logs |
 
 ### Global: Manager (Delivery Manager)
 
@@ -411,7 +411,7 @@ These custom permissions are defined on the `OrganisationalUnit` model's `Meta.p
 |---|---|
 | `can_tqa_jobs` | Can perform Technical QA |
 | `can_pqa_jobs` | Can perform Presentation QA |
-| `can_deliver_jobs` | Can deliver jobs |
+| `can_deliver_jobs` | Legacy duplicate - unused; the dashboard delivery queue checks `can_deliver_job` |
 | `can_conduct_review` | Can conduct reviews |
 | `can_view_all_reviews` | Can view all reviews |
 
@@ -468,22 +468,40 @@ When a user is set as the **owner** of a service, they are granted `change_servi
 |---|---|
 | `manage_user` | Can manage the user |
 | `manage_leave` | Manage leave |
-| `impersonate_users` | Can impersonate other users |
-| `manage_site_settings` | Can change site settings |
+| `impersonate_users` | Can impersonate other users (not checked - impersonation is superuser-only) |
+| `manage_site_settings` | Can change site settings (also gates the site-data import on the Settings page) |
 | `view_activity_logs` | Can review the activity logs |
+
+### Impersonation
+
+Impersonation ([django-impersonate](https://pypi.org/project/django-impersonate/))
+is restricted to **superusers** (`IMPERSONATE = {"REQUIRE_SUPERUSER": True}` in
+settings). Before this setting, the package default let any `is_staff` user
+impersonate. Every impersonation start and stop is written to the Activity Log as
+a `SECURITY` event (actor = the impersonator, target = the impersonated user).
 
 ---
 
 ## Job Guest Permissions
 
-Users added as **guests** on a job receive a limited set of guardian permissions, defined in `JobGuestPermissions.ALLOWED` (`jobtracker/enums.py`):
+Members of a job's **team** get a limited set of permissions on that job without
+holding a unit role. No guardian rows are involved: `job_permission_required_or_403`
+and `JobPermissionRequiredMixin` compute this at request time via
+`JobGuestPermissions.permits()` (`jobtracker/enums.py`).
 
-| Permission | Description |
+The team (`Job.team()`) is anyone booked on the job, phase leads, report authors,
+TQA/PQA reviewers, the creator, account managers, scopers and the scope signer.
+
+| Permission | Granted to |
 |---|---|
-| `view_job_schedule` | View the job's schedule |
-| `can_update_job` | Update the job |
-| `can_add_note_job` | Add notes to the job |
-| `can_view_jobs` | View the job |
+| `can_view_jobs` | Any team member |
+| `view_job_schedule` | Any team member |
+| `can_add_note_job` | Any team member |
+| `can_update_job` | **Phase role holders only** - project lead, report author, TQA or PQA on one of the job's phases |
+
+Being booked on a job, or having created it, doesn't grant edit rights:
+`can_update_job` gates workflow transitions, field/role assignment, cloning,
+links, billing codes and dates. Edit rights otherwise come from a unit role.
 
 ---
 
@@ -538,7 +556,17 @@ Global permissions are stored as standard Django Group permissions. Each global 
     than waiting for the cron), ship it with a data migration that re-runs
     `sync_global_permissions()` for the existing groups — as
     `chaotica_utils/migrations/0036_resync_global_role_permissions.py` does for
-    the project-creation and report create/view grants.
+    the project-creation and report create/view grants (and `0040` for the
+    corrected codenames below).
+
+!!! warning "Codenames must exist - typos are dropped"
+    Permission strings in `GlobalRoles.PERMISSIONS` / `UnitRoles.PERMISSIONS`
+    must be `app_label.codename` of a real permission. An unknown one is skipped
+    by the sync and logged as an error (it used to be skipped silently). The test
+    `chaotica_utils/tests/test_role_codenames.py` fails CI on any unknown codename.
+    It was added after three typos had been silently dropping grants:
+    `view_users_qualifications` (all global roles), `chaotica_utils.manage_user`
+    (Delivery Manager), and the Consultant delivery queue (`can_deliver_job`).
 
 !!! note "Projects are gated site-wide, not per unit"
     Unlike jobs/phases (which are scoped per organisational unit via Guardian),
@@ -575,6 +603,37 @@ When a user's membership changes (join, leave, role change), `OrganisationalUnit
 
 This ensures permissions always reflect the user's current roles.
 
+### Assigning Unit Roles (role ceiling)
+
+Anyone with `manage_members` on a unit can assign roles there. However, a role
+that carries a **privileged** unit permission can only be granted by someone who
+holds that permission in the unit themselves (superusers are exempt). The
+privileged permissions are `manage_members`, `change_organisationalunit`,
+`delete_organisationalunit`, `can_view_loaded_costs`,
+`can_approve_leave_requests` and `can_view_all_leave_requests`
+(`OrganisationalUnit.PRIVILEGED_PERMS`).
+
+For example, Service Delivery (which has `manage_members`) can assign Consultant,
+QA or Scheduler roles but **not** Manager. The rule applies to the role-edit
+modal, single pre-load and CSV import. When editing a member, any roles they
+already hold above the editor's ceiling are kept rather than stripped. Nobody
+(except superusers) can edit their own unit roles or pre-load/import themselves.
+
+### Deactivating and Re-enabling Accounts
+
+Deactivating a user (`User.set_active_status(False)`, used by the user management
+UI and `/api/v1/`) closes their team and unit memberships and **immediately**
+revokes their unit permissions. Re-enabling the account does not restore them -
+they have to be re-added to a unit. Both changes are recorded as `SECURITY`
+audit events.
+
 ### Customising Role Permissions
 
-Unit role permissions can be customised beyond their defaults. Since `OrganisationalUnitRole.permissions` is a standard `ManyToManyField`, administrators can add or remove individual permissions from any role via the Django admin. The `sync_default_permissions()` method only runs when explicitly called to reset a role to its defaults.
+!!! warning "Default roles are reset every day"
+    The daily `task_sync_role_permissions_to_default` cron (07:30) resets every
+    unit role whose **name** matches a `UnitRoles` default back to its code
+    definition, then re-syncs every unit. Global role groups are likewise reset by
+    `task_sync_global_permissions`. Manual edits to a default role's or global
+    group's permissions are therefore **lost the next morning**. To change a
+    default role, change `UnitRoles.PERMISSIONS` / `GlobalRoles.PERMISSIONS` in
+    code. Roles with a custom (non-default) name are left untouched by the reset.

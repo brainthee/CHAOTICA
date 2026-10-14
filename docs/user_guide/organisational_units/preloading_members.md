@@ -26,9 +26,21 @@ through the setup wizard).
 5. Save.
 
 If the email already belongs to an existing user, they're simply added to the
-unit (their existing site role is left untouched). If that account had been
-**disabled**, pre-loading (or importing) it again **re-enables** it — so someone
-who was off-boarded and later returns regains access.
+unit (their existing site role is left untouched).
+
+If that account had been **disabled**:
+
+- Users with the global **Manage Users** permission **re-enable** it by
+  pre-loading or importing it, so someone who was off-boarded and later returns
+  regains access. The re-enable is recorded in the Activity Log.
+- Unit managers without that permission add the membership, but the account
+  **stays disabled** and you're told to ask an admin. Re-enabling an account is
+  a site-wide change, not a unit one.
+
+You can't pre-load or import **yourself**, and you can only assign unit roles
+within your own authority: a role that carries unit-admin rights (managing
+members, editing the unit, loaded costs, leave approval) needs you to hold those
+rights in the unit. For example, Service Delivery can't make someone a Manager.
 
 ### Site (global) roles
 
@@ -63,7 +75,8 @@ silently.
 | `unit_roles` | No | One or more unit role names separated by `;` or `,` (e.g. `Consultant;Scoper`). Defaults to the standard member role if left blank. |
 
 Rows are skipped (and reported) when the email is missing, the domain isn't
-allowed (see below), or a named unit/site role doesn't exist.
+allowed (see below), a named unit/site role doesn't exist, the row is your own
+email, or a unit role is above what you can assign.
 
 ## Email domain allowlist
 
