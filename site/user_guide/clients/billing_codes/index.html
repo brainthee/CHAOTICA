@@ -1115,10 +1115,32 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#missing-billing-codes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Missing billing codes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#code-allocations-per-user" class="md-nav__link">
     <span class="md-ellipsis">
       
         Code Allocations (per user)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#team-and-unit-billing-tabs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Team and unit billing tabs
       
     </span>
   </a>
@@ -3204,10 +3226,32 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#missing-billing-codes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Missing billing codes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#code-allocations-per-user" class="md-nav__link">
     <span class="md-ellipsis">
       
         Code Allocations (per user)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#team-and-unit-billing-tabs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Team and unit billing tabs
       
     </span>
   </a>
@@ -3332,6 +3376,23 @@ with permission to add billing codes.</p>
 a phase, those <strong>override</strong> the job's codes for that phase (they replace, not
 add). The phase header shows whether codes are <em>Inherited from job</em> or
 <em>Overridden</em>.</p>
+<h2 id="missing-billing-codes">Missing billing codes<a class="headerlink" href="#missing-billing-codes" title="Permanent link">&para;</a></h2>
+<p>A phase <strong>needs a code</strong> when neither the phase nor its job has any billing-code
+assignment — time booked to it can't be coded. CHAOTICA flags this (it never
+blocks):</p>
+<ul>
+<li><strong>Moving a phase to Schedule Confirmed</strong> — the confirm dialog shows a note,
+  and the bulk "move phases" dialog marks each such phase with a <strong>No billing
+  code</strong> badge plus a summary line.</li>
+<li><strong>Banners</strong> on the phase page and on the job page (listing the affected
+  phases), for live phases only: not cancelled / postponed / deleted / archived,
+  and the job isn't lost, deleted or archived.</li>
+<li><strong>Dashboard alarm</strong> — <em>Phases with No Billing Code</em> lists phases from Schedule
+  Tentative through Completed on active jobs in your scheduling scope (or that
+  you're on). It also counts towards the dashboard entropy score.</li>
+</ul>
+<p>Assign a code to the job (all its phases inherit it) or to the phase to clear
+the warning.</p>
 <h2 id="code-allocations-per-user">Code Allocations (per user)<a class="headerlink" href="#code-allocations-per-user" title="Permanent link">&para;</a></h2>
 <p>From a user's profile, <strong>Code Allocations</strong> shows which code(s) that person
 should book against, day by day, with the business hours scheduled each day, and
@@ -3339,6 +3400,21 @@ a per-code summary (days, hours, chargeable vs internal). This is a view over
 the schedule — <strong>not</strong> a timesheet. A day can map to several codes (all
 applicable codes are shown). Visible to the user and to anyone who can manage
 them (their manager / unit lead).</p>
+<h2 id="team-and-unit-billing-tabs">Team and unit billing tabs<a class="headerlink" href="#team-and-unit-billing-tabs" title="Permanent link">&para;</a></h2>
+<p>The <strong>Team</strong> page (team owners and admins) and the <strong>Organisational Unit</strong> page
+(<code>can_view_jobs</code> on the unit) each have a <strong>Billing</strong> tab. It covers the active
+members for one timesheet period (◀ / ▶ step periods; <em>Jump to current period</em>
+returns), and shows:</p>
+<ul>
+<li>totals tiles — capacity, coded, uncoded, unavailable, internal and support
+  hours;</li>
+<li>a <strong>per-member</strong> table with the same columns. A name links to that person's
+  own Billing Codes page when you can manage them;</li>
+<li>a <strong>per-code</strong> roll-up — code, client, chargeable, hours and person-days.</li>
+</ul>
+<p>The figures are <strong>hours only</strong> (no money) and come from the same calculation as
+each member's own Billing Codes page — multi-code days, leave wins and support
+cash-outs included — so the team totals add up to the individual pages.</p>
 <h2 id="analytics-operations">Analytics &amp; operations<a class="headerlink" href="#analytics-operations" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Operations → Billing Analytics</strong> — hours per code across your reachable

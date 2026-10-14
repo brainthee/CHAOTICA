@@ -139,6 +139,17 @@ the job's **profile** and effective premium, and the table lists **Person**,
 The full picture — budget in money/hours, drawn and remaining — lives on each
 member's **Billing Codes** page, so the job view stays uncluttered.
 
+When adding or editing a support member, **type at least three letters** of
+their name or email to search; only active accounts are offered, and a person
+is required. The same search is used when adding people to a support profile
+or an organisational unit.
+
+Every change is logged in the job's **Activity** tab, for example *"Ada
+Lovelace added at 20.5% as QA support role."*, *"… updated to 100% …"* (only
+when something actually changed), *"… deleted from support role."*, *"… cashed
+out 2.5h of support budget (2026-09-01 - 2026-09-07)."* and *"Reversed …'s
+cash-out of 2.5h (…)."*.
+
 ## Cashing out budget
 
 Each timesheet period, a support member "cashes out" hours against their budget.
@@ -151,8 +162,11 @@ There are three ways to do this:
   needed.
 - **Auto cash out this period**: this tops up every job with whatever remains
   for that member. Clicking it again does nothing, because nothing is left.
-- **From the job**: **Cash out hours** on the job's Support widget, for people
-  with scheduling rights on that job.
+- **From the job**: **Cash out hours** on the job's Support widget. This needs
+  scheduling rights on the job **and** either being the member, managing them,
+  or holding **Can view loaded cost rates** on the job's unit. Scheduling rights
+  alone don't let you cash out someone else's budget, and the menu item is
+  hidden for people who can't use it.
 
 ### Limits
 
@@ -161,6 +175,8 @@ Cash-outs are checked on the server and are rejected when:
 - the hours are more than the member has **remaining**;
 - the hours are zero or negative;
 - the period ends before it starts;
+- the period **starts in the future** — cash-outs cover the current or a past
+  period only;
 - the member has no loaded cost rate (no rate, no hours);
 - the job isn't **active or completed**. Completed jobs can still be cashed out
   (the work was done, so the budget was earned). Deleted, archived and lost jobs
@@ -183,6 +199,9 @@ rate. Hours already cashed out are never re-priced, and a rate rise can't push
 anyone into a negative balance.
 
 ### Reversing a cash-out
+
+A support budget lowered after hours were cashed out (e.g. revenue reduced)
+shows a **negative** remaining balance; nothing is clawed back automatically.
 
 Mistakes are fixed from **Cash-out history**, which is in the job's Support row
 menu and behind the **History** button on the Billing Codes page.

@@ -63,6 +63,25 @@ a phase, those **override** the job's codes for that phase (they replace, not
 add). The phase header shows whether codes are *Inherited from job* or
 *Overridden*.
 
+## Missing billing codes
+
+A phase **needs a code** when neither the phase nor its job has any billing-code
+assignment — time booked to it can't be coded. CHAOTICA flags this (it never
+blocks):
+
+- **Moving a phase to Schedule Confirmed** — the confirm dialog shows a note,
+  and the bulk "move phases" dialog marks each such phase with a **No billing
+  code** badge plus a summary line.
+- **Banners** on the phase page and on the job page (listing the affected
+  phases), for live phases only: not cancelled / postponed / deleted / archived,
+  and the job isn't lost, deleted or archived.
+- **Dashboard alarm** — *Phases with No Billing Code* lists phases from Schedule
+  Tentative through Completed on active jobs in your scheduling scope (or that
+  you're on). It also counts towards the dashboard entropy score.
+
+Assign a code to the job (all its phases inherit it) or to the phase to clear
+the warning.
+
 ## Code Allocations (per user)
 
 From a user's profile, **Code Allocations** shows which code(s) that person
@@ -71,6 +90,23 @@ a per-code summary (days, hours, chargeable vs internal). This is a view over
 the schedule — **not** a timesheet. A day can map to several codes (all
 applicable codes are shown). Visible to the user and to anyone who can manage
 them (their manager / unit lead).
+
+## Team and unit billing tabs
+
+The **Team** page (team owners and admins) and the **Organisational Unit** page
+(`can_view_jobs` on the unit) each have a **Billing** tab. It covers the active
+members for one timesheet period (◀ / ▶ step periods; *Jump to current period*
+returns), and shows:
+
+- totals tiles — capacity, coded, uncoded, unavailable, internal and support
+  hours;
+- a **per-member** table with the same columns. A name links to that person's
+  own Billing Codes page when you can manage them;
+- a **per-code** roll-up — code, client, chargeable, hours and person-days.
+
+The figures are **hours only** (no money) and come from the same calculation as
+each member's own Billing Codes page — multi-code days, leave wins and support
+cash-outs included — so the team totals add up to the individual pages.
 
 ## Analytics & operations
 

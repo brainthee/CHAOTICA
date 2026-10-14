@@ -3521,6 +3521,15 @@ the job's <strong>profile</strong> and effective premium, and the table lists <s
 </ul>
 <p>The full picture — budget in money/hours, drawn and remaining — lives on each
 member's <strong>Billing Codes</strong> page, so the job view stays uncluttered.</p>
+<p>When adding or editing a support member, <strong>type at least three letters</strong> of
+their name or email to search; only active accounts are offered, and a person
+is required. The same search is used when adding people to a support profile
+or an organisational unit.</p>
+<p>Every change is logged in the job's <strong>Activity</strong> tab, for example <em>"Ada
+Lovelace added at 20.5% as QA support role."</em>, <em>"… updated to 100% …"</em> (only
+when something actually changed), <em>"… deleted from support role."</em>, <em>"… cashed
+out 2.5h of support budget (2026-09-01 - 2026-09-07)."</em> and <em>"Reversed …'s
+cash-out of 2.5h (…)."</em>.</p>
 <h2 id="cashing-out-budget">Cashing out budget<a class="headerlink" href="#cashing-out-budget" title="Permanent link">&para;</a></h2>
 <p>Each timesheet period, a support member "cashes out" hours against their budget.
 There are three ways to do this:</p>
@@ -3532,8 +3541,11 @@ There are three ways to do this:</p>
   needed.</li>
 <li><strong>Auto cash out this period</strong>: this tops up every job with whatever remains
   for that member. Clicking it again does nothing, because nothing is left.</li>
-<li><strong>From the job</strong>: <strong>Cash out hours</strong> on the job's Support widget, for people
-  with scheduling rights on that job.</li>
+<li><strong>From the job</strong>: <strong>Cash out hours</strong> on the job's Support widget. This needs
+  scheduling rights on the job <strong>and</strong> either being the member, managing them,
+  or holding <strong>Can view loaded cost rates</strong> on the job's unit. Scheduling rights
+  alone don't let you cash out someone else's budget, and the menu item is
+  hidden for people who can't use it.</li>
 </ul>
 <h3 id="limits">Limits<a class="headerlink" href="#limits" title="Permanent link">&para;</a></h3>
 <p>Cash-outs are checked on the server and are rejected when:</p>
@@ -3541,6 +3553,8 @@ There are three ways to do this:</p>
 <li>the hours are more than the member has <strong>remaining</strong>;</li>
 <li>the hours are zero or negative;</li>
 <li>the period ends before it starts;</li>
+<li>the period <strong>starts in the future</strong> — cash-outs cover the current or a past
+  period only;</li>
 <li>the member has no loaded cost rate (no rate, no hours);</li>
 <li>the job isn't <strong>active or completed</strong>. Completed jobs can still be cashed out
   (the work was done, so the budget was earned). Deleted, archived and lost jobs
@@ -3560,6 +3574,8 @@ they can't both spend the same remaining budget.</p>
 rate. Hours already cashed out are never re-priced, and a rate rise can't push
 anyone into a negative balance.</p>
 <h3 id="reversing-a-cash-out">Reversing a cash-out<a class="headerlink" href="#reversing-a-cash-out" title="Permanent link">&para;</a></h3>
+<p>A support budget lowered after hours were cashed out (e.g. revenue reduced)
+shows a <strong>negative</strong> remaining balance; nothing is clawed back automatically.</p>
 <p>Mistakes are fixed from <strong>Cash-out history</strong>, which is in the job's Support row
 menu and behind the <strong>History</strong> button on the Billing Codes page.</p>
 <ul>

@@ -6,11 +6,14 @@ from its members' scheduled work rather than from job ownership.
 
 ## Team detail page
 
-The team detail page has three tabs:
+The team detail page has these tabs:
 
 - **Team** — the current membership list.
 - **Stats** — quantitative analytics (loaded on demand, see below).
 - **Debrief** — a weekly delivery debrief (team owners and admins only).
+- **Billing** — members' billing-code hours for a timesheet period (team owners
+  and admins only). See
+  [Team and unit billing tabs](../clients/billing_codes.md#team-and-unit-billing-tabs).
 
 ## Stats tab
 
