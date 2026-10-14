@@ -2,6 +2,7 @@ from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
+from chaotica_utils.mixins import SecurePermissionRequiredMixin as PermissionRequiredMixin
 from chaotica_utils.views import ChaoticaBaseView, ProtectedDeleteMixin
 from ..models import WorkflowTask
 from ..forms import WFTaskForm
@@ -12,9 +13,12 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class WFTaskBaseView(ChaoticaBaseView):
+class WFTaskBaseView(PermissionRequiredMixin, ChaoticaBaseView):
     model = WorkflowTask
     fields = "__all__"
+    permission_required = "jobtracker.view_workflowtask"
+    accept_global_perms = True
+    return_403 = True
 
     def get_success_url(self):
         return reverse_lazy("wf_tasks_list")
@@ -31,6 +35,8 @@ class WFTaskDetailView(WFTaskBaseView, DetailView):
 class WFTaskCreateView(WFTaskBaseView, CreateView):
     form_class = WFTaskForm
     fields = None
+    permission_required = "jobtracker.add_workflowtask"
+    permission_object = WorkflowTask
 
     def get_context_data(self, **kwargs):
         context = super(WFTaskCreateView, self).get_context_data(**kwargs)
@@ -72,6 +78,7 @@ class WFTaskCreateView(WFTaskBaseView, CreateView):
 class WFTaskUpdateView(WFTaskBaseView, UpdateView):
     form_class = WFTaskForm
     fields = None
+    permission_required = "jobtracker.change_workflowtask"
 
     def get_form_kwargs(self):
         kwargs = super(WFTaskUpdateView, self).get_form_kwargs()
@@ -96,4 +103,4 @@ class WFTaskUpdateView(WFTaskBaseView, UpdateView):
 
 
 class WFTaskDeleteView(ProtectedDeleteMixin, WFTaskBaseView, DeleteView):
-    pass
+    permission_required = "jobtracker.delete_workflowtask"
