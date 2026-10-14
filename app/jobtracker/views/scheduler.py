@@ -1,5 +1,5 @@
 from django.shortcuts import get_object_or_404, redirect
-from django.core.exceptions import PermissionDenied, SuspiciousOperation
+from django.core.exceptions import PermissionDenied, SuspiciousOperation, ValidationError
 from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest, QueryDict
 from django.template import loader
 from django.db.models import Q, Prefetch
@@ -35,7 +35,7 @@ from ..forms import (
     ScheduleSwapForm,
     ScheduleOnsiteForm,
 )
-from ..enums import UserSkillRatings, TimeSlotDeliveryRole, PhaseStatuses, DefaultTimeSlotTypes
+from ..enums import UserSkillRatings, TimeSlotDeliveryRole, PhaseStatuses, DefaultTimeSlotTypes, JobStatuses
 from ..models import ScheduleAction, ScheduleActionType
 from ..utils import (
     get_scheduler_slots,
@@ -503,6 +503,8 @@ def schedule_action_revert(request):
             {"ok": False, "error": "You don't have permission to revert this change."},
             status=403,
         )
+    except ValidationError as e:
+        return JsonResponse({"ok": False, "error": " ".join(e.messages)})
     return JsonResponse({"ok": True, "action_id": inverse.pk if inverse else None})
 
 
@@ -527,6 +529,8 @@ def schedule_action_undo(request):
             {"ok": False, "error": "You can no longer schedule this work, so it can't be undone."},
             status=403,
         )
+    except ValidationError as e:
+        return JsonResponse({"ok": False, "error": " ".join(e.messages)})
     return JsonResponse(
         {"ok": True, "reverted": action.pk, "action_id": inverse.pk if inverse else None}
     )
@@ -801,7 +805,10 @@ def change_scheduler_slot(request, pk=None):
                         "jobtracker/modals/job_slot.html", {"form": form}, request=request
                     )
                     return JsonResponse(_data)
-            updated_slot.save()
+            try:
+                updated_slot.save()
+            except ValidationError as e:
+                return JsonResponse({"form_is_valid": False, "error": " ".join(e.messages)})
             schedule_history.record(
                 request.user, ScheduleActionType.UPDATE,
                 [before], [schedule_history.snapshot(updated_slot)],
@@ -850,6 +857,16 @@ def _evaluate_delivery_slot(slot, request, force, check_overlaps=True):
     path handles overlaps via the around/over/destructive chooser instead).
     Returns {"failed": bool, "can_bypass": bool, "feedback": str}."""
     result = {"failed": False, "can_bypass": True, "feedback": ""}
+
+    # Non-bypassable: phase or job closed (TimeSlot.save() enforces this too)
+    if not slot.phase.is_bookable():
+        return {"failed": True, "can_bypass": False,
+                "feedback": loader.render_to_string(
+                    "partials/scheduler/logicchecks/phase_closed.html",
+                    {"phase": slot.phase,
+                     "job_closed": slot.phase.job.status in JobStatuses.CLOSED_STATUSES},
+                    request=request)}
+
     slots = slot.overlapping_slots()
     framework = slot.phase.job.associated_framework
 

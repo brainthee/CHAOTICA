@@ -763,6 +763,13 @@ class User(AbstractUser):
         from jobtracker.models import TimeSlot
         from django.forms.models import model_to_dict
 
+        def _fragment(**kwargs):
+            # Leftover piece of an existing booking, not a new one, so it's
+            # allowed even if the phase has since closed.
+            fragment = TimeSlot(**kwargs)
+            fragment.save(allow_closed_phase=True)
+            return fragment
+
         # Ensure we have datetime objects with proper timezone
         tz = timezone.get_current_timezone()
 
@@ -819,7 +826,7 @@ class User(AbstractUser):
 
                     # Only create "before" slot if it would have non-zero duration
                     if adjusted_end > slot.start:
-                        before_slot = TimeSlot.objects.create(
+                        before_slot = _fragment(
                             user=slot.user,
                             slot_type=slot.slot_type,
                             phase=slot.phase,
@@ -841,7 +848,7 @@ class User(AbstractUser):
 
                     # Only create "after" slot if it would have non-zero duration
                     if slot.end > adjusted_start:
-                        after_slot = TimeSlot.objects.create(
+                        after_slot = _fragment(
                             user=slot.user,
                             start=adjusted_start,
                             slot_type=slot.slot_type,
@@ -877,7 +884,7 @@ class User(AbstractUser):
 
                     # Only create the new slot if it would have non-zero duration
                     if adjusted_end > slot.start:
-                        before_slot = TimeSlot.objects.create(
+                        before_slot = _fragment(
                             user=slot.user,
                             start=slot.start,
                             slot_type=slot.slot_type,
@@ -921,7 +928,7 @@ class User(AbstractUser):
                             ],
                         )
 
-                        after_slot = TimeSlot.objects.create(
+                        after_slot = _fragment(
                             user=slot.user,
                             start=adjusted_start,
                             slot_type=slot.slot_type,

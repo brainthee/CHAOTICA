@@ -1494,12 +1494,19 @@ class DeliveryTimeSlotModalForm(forms.ModelForm):
         self.fields["slot_type"].disabled = True
         self.fields["deliveryRole"].initial = TimeSlotDeliveryRole.DELIVERY
 
+        # Only open phases on open jobs can be booked. An existing slot keeps
+        # its current phase as a valid choice so it can still be edited.
+        bookable = Phase.bookable_q()
+        if self.instance.phase_id:
+            bookable |= Q(pk=self.instance.phase_id)
+        self.fields["phase"].queryset = Phase.objects.filter(bookable)
+
         if phase:
             self.fields["phase"].disabled = True
             self.fields["phase"].initial = phase
         else:
             if job:
-                phases = Phase.objects.filter(job=job)
+                phases = Phase.objects.filter(bookable, job=job)
                 self.fields["phase"].queryset = phases
                 self.fields["phase"].widget = forms.Select(
                     attrs={"class": "form-select"},

@@ -7,6 +7,7 @@ viewers of the same scope. :func:`revert` applies the inverse of an action and
 logs the inverse as its own (redoable) REVERT action.
 """
 import logging
+from django.db import transaction
 
 from django.core.exceptions import PermissionDenied
 from django.utils.dateparse import parse_datetime
@@ -312,50 +313,53 @@ def revert(action, actor):
     if not action.can_revert(actor):
         raise PermissionDenied("You can't revert this schedule change.")
 
-    inverse_before = []
-    inverse_after = []
+    # Atomic so a refused restore (e.g. a slot on a now-closed phase raises
+    # ValidationError) leaves nothing half-reverted.
+    with transaction.atomic():
+        inverse_before = []
+        inverse_after = []
 
-    for item in action.payload:
-        model = item["model"]
-        pk = item["pk"]
-        before = item["before"]
-        after = item["after"]
+        for item in action.payload:
+            model = item["model"]
+            pk = item["pk"]
+            before = item["before"]
+            after = item["after"]
 
-        if before is None:
-            # Was a create → delete the object. Inverse looks like a delete.
-            instance = _get_instance(model, pk)
-            if instance is not None:
-                snap = snapshot(instance) if model == "timeslot" else snapshot_comment(instance)
-                inverse_before.append(snap)
-                instance.delete()
-        elif after is None:
-            # Was a delete → recreate from before. Inverse looks like a create.
-            if model == "timeslot":
-                instance = _recreate_timeslot(before)
-                inverse_after.append(snapshot(instance))
+            if before is None:
+                # Was a create → delete the object. Inverse looks like a delete.
+                instance = _get_instance(model, pk)
+                if instance is not None:
+                    snap = snapshot(instance) if model == "timeslot" else snapshot_comment(instance)
+                    inverse_before.append(snap)
+                    instance.delete()
+            elif after is None:
+                # Was a delete → recreate from before. Inverse looks like a create.
+                if model == "timeslot":
+                    instance = _recreate_timeslot(before)
+                    inverse_after.append(snapshot(instance))
+                else:
+                    instance = _recreate_comment(before)
+                    inverse_after.append(snapshot_comment(instance))
             else:
-                instance = _recreate_comment(before)
-                inverse_after.append(snapshot_comment(instance))
-        else:
-            # Was an update → restore before. Inverse is update from after→before.
-            if model == "timeslot":
-                current = _get_instance("timeslot", pk)
-                if current is not None:
-                    inverse_before.append(snapshot(current))
-                instance = _restore_timeslot(pk, before)
-                inverse_after.append(snapshot(instance))
-            else:
-                current = _get_instance("timeslotcomment", pk)
-                if current is not None:
-                    inverse_before.append(snapshot_comment(current))
-                instance = _restore_comment(pk, before)
-                inverse_after.append(snapshot_comment(instance))
+                # Was an update → restore before. Inverse is update from after→before.
+                if model == "timeslot":
+                    current = _get_instance("timeslot", pk)
+                    if current is not None:
+                        inverse_before.append(snapshot(current))
+                    instance = _restore_timeslot(pk, before)
+                    inverse_after.append(snapshot(instance))
+                else:
+                    current = _get_instance("timeslotcomment", pk)
+                    if current is not None:
+                        inverse_before.append(snapshot_comment(current))
+                    instance = _restore_comment(pk, before)
+                    inverse_after.append(snapshot_comment(instance))
 
-    action.reverted = True
-    inverse = record(actor, ScheduleActionType.REVERT, inverse_before, inverse_after)
-    if inverse is not None:
-        action.reverted_by = inverse
-    action.save(update_fields=["reverted", "reverted_by"])
+        action.reverted = True
+        inverse = record(actor, ScheduleActionType.REVERT, inverse_before, inverse_after)
+        if inverse is not None:
+            action.reverted_by = inverse
+        action.save(update_fields=["reverted", "reverted_by"])
     return inverse
 
 

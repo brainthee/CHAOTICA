@@ -621,18 +621,10 @@ class TimeSlot(models.Model):
             # its real target status.
             if getattr(phase, "_suppress_status_revert", False):
                 return
-            # Ok we're deleted... lets check if we should move the phase status back to pending
-            if not TimeSlot.objects.filter(phase=phase).exists():
-                # No more slots... move back to pending scheduling
-                if (
-                    phase.status == PhaseStatuses.SCHEDULED_CONFIRMED
-                    or phase.status == PhaseStatuses.SCHEDULED_TENTATIVE
-                ):
-                    if phase.can_to_pending_sched():
-                        phase.to_pending_sched()
-                        phase.save()
+            # Ok we're deleted... move the phase back to pending if it's now empty
+            phase.revert_to_pending_if_unscheduled()
 
-    def save(self, *args, **kwargs):
+    def save(self, *args, allow_closed_phase=False, **kwargs):
         if self.start > self.end:
             raise ValidationError("End time must come after the start")
 
@@ -645,18 +637,45 @@ class TimeSlot(models.Model):
         old_user = None
         old_role = None
         old_slot_type = None
+        old_phase = None
+        in_db = False
         if not is_new:
             try:
                 old_instance = TimeSlot.objects.get(pk=self.pk)
+                in_db = True
                 old_start = old_instance.start
                 old_end = old_instance.end
                 old_user = old_instance.user
                 old_role = old_instance.get_deliveryRole_display()
                 old_slot_type = old_instance.slot_type
+                old_phase = old_instance.phase
             except TimeSlot.DoesNotExist:
                 pass
 
+        # No new bookings on closed phases/jobs. Only checked when the slot is
+        # new (or recreated) or re-pointed at another phase, so edits to
+        # existing slots (e.g. delivered/archived history) still work.
+        # ``allow_closed_phase`` is for splitting an existing booking.
+        old_phase_id = old_phase.pk if old_phase else None
+        phase_changed = in_db and old_phase_id != self.phase_id
+        if (
+            self.is_delivery()
+            and self.phase_id
+            and (not in_db or phase_changed)
+            and not allow_closed_phase
+            and not self.phase.is_bookable()
+        ):
+            raise ValidationError(
+                "{} is closed (or its job is), so it can't be scheduled.".format(
+                    self.phase
+                )
+            )
+
         super(TimeSlot, self).save(*args, **kwargs)
+
+        # Moving a slot to another phase may leave the old one with nothing booked.
+        if phase_changed and old_phase is not None:
+            old_phase.revert_to_pending_if_unscheduled()
 
         # Record the schedule change for every slot type (delivery, project,
         # internal, leave, …) so the Activity Log's "Schedule" filter is complete.

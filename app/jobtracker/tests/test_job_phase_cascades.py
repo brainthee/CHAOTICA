@@ -10,6 +10,7 @@ from jobtracker.models import (
     Job,
     Phase,
     OrganisationalUnit,
+    OrganisationalUnitMember,
     TimeSlot,
     TimeSlotType,
 )
@@ -306,3 +307,135 @@ class PhaseRevivalGuardTests(CascadeTestBase):
         started.assert_not_called()
         ready.refresh_from_db()
         self.assertEqual(ready.status, PhaseStatuses.READY_TO_BEGIN)
+
+
+class ClosedPhaseBookingTests(CascadeTestBase):
+    """G2: no new bookings on closed phases/jobs; moving a slot reverts the
+    phase it left."""
+
+    def test_booking_on_cancelled_phase_raises(self):
+        from django.core.exceptions import ValidationError
+
+        phase = self._phase(PhaseStatuses.CANCELLED)
+        with self.assertRaises(ValidationError):
+            self._slot(phase)
+        self.assertEqual(phase.timeslots.count(), 0)
+
+    def test_booking_on_lost_job_raises(self):
+        from django.core.exceptions import ValidationError
+
+        phase = self._phase(PhaseStatuses.PENDING_SCHED)
+        self._set_job_status(JobStatuses.LOST)
+        with self.assertRaises(ValidationError):
+            self._slot(phase)
+
+    def test_create_view_refuses_closed_phase(self):
+        from urllib.parse import urlencode
+
+        phase = self._phase(PhaseStatuses.POSTPONED)
+        start = timezone.localtime(timezone.now()).replace(
+            hour=9, minute=0, second=0, microsecond=0
+        ) + timedelta(days=7)
+        end = start + timedelta(hours=8)
+        query = urlencode(
+            {
+                "start": start.isoformat(),
+                "end": end.isoformat(),
+                "resource_id": self.actor.pk,
+                "job": self.job.pk,
+                "phase": phase.pk,
+            }
+        )
+        self.http.force_login(self.actor)
+        resp = self.http.post(
+            reverse("create_scheduler_phase_slot") + "?" + query,
+            {
+                "user": self.actor.pk,
+                "users": [self.actor.pk],
+                "phase": phase.pk,
+                "slot_type": DefaultTimeSlotTypes.DELIVERY,
+                "deliveryRole": TimeSlotDeliveryRole.DELIVERY,
+                "start": timezone.localtime(start).strftime("%Y-%m-%d %H:%M"),
+                "end": timezone.localtime(end).strftime("%Y-%m-%d %H:%M"),
+            },
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(resp.json()["form_is_valid"])
+        self.assertEqual(phase.timeslots.count(), 0)
+
+    def test_editing_slot_on_archived_phase_still_works(self):
+        phase = self._phase(PhaseStatuses.DELIVERED)
+        slot = self._slot(phase)
+        Phase.objects.filter(pk=phase.pk).update(status=PhaseStatuses.ARCHIVED)
+        slot.refresh_from_db()
+        slot.end = slot.end - timedelta(hours=1)
+        slot.save()  # must not raise
+
+    def test_splitting_slot_on_archived_phase_still_works(self):
+        phase = self._phase(PhaseStatuses.DELIVERED)
+        start = timezone.localtime(timezone.now()).replace(
+            hour=9, minute=0, second=0, microsecond=0
+        )
+        slot = TimeSlot.objects.create(
+            user=self.actor,
+            slot_type=self.delivery_type,
+            phase=phase,
+            deliveryRole=TimeSlotDeliveryRole.DELIVERY,
+            start=start,
+            end=start + timedelta(days=4, hours=8),
+        )
+        Phase.objects.filter(pk=phase.pk).update(status=PhaseStatuses.ARCHIVED)
+        # Splitting reads the user's unit working hours.
+        OrganisationalUnitMember.objects.create(unit=self.unit, member=self.actor)
+        middle = start + timedelta(days=2)
+        self.actor.clear_timeslots_in_range(
+            middle.replace(hour=0), middle.replace(hour=23, minute=59),
+            respect_working_hours=False,
+        )
+        self.assertFalse(TimeSlot.objects.filter(pk=slot.pk).exists())
+        self.assertEqual(phase.timeslots.count(), 2)
+
+    def test_moving_last_slot_reverts_old_phase(self):
+        old = self._phase(PhaseStatuses.SCHEDULED_CONFIRMED)
+        new = self._phase(PhaseStatuses.PENDING_SCHED)
+        slot = self._slot(old)
+        slot.phase = new
+        slot.save()
+
+        old.refresh_from_db()
+        new.refresh_from_db()
+        self.assertEqual(old.status, PhaseStatuses.PENDING_SCHED)
+        self.assertEqual(new.status, PhaseStatuses.SCHEDULED_TENTATIVE)
+
+    def test_moving_slot_to_closed_phase_raises(self):
+        from django.core.exceptions import ValidationError
+
+        live = self._phase(PhaseStatuses.SCHEDULED_CONFIRMED)
+        closed = self._phase(PhaseStatuses.CANCELLED)
+        slot = self._slot(live)
+        slot.phase = closed
+        with self.assertRaises(ValidationError):
+            slot.save()
+
+    def test_revert_onto_closed_phase_is_refused_cleanly(self):
+        from jobtracker import schedule_history
+        from jobtracker.models import ScheduleAction
+
+        phase = self._phase(PhaseStatuses.SCHEDULED_CONFIRMED)
+        slot = self._slot(phase)
+        before = [schedule_history.snapshot(slot)]
+        slot.delete()
+        schedule_history.record_deletes(self.actor, before)
+        action = ScheduleAction.objects.latest("pk")
+
+        phase.refresh_from_db()
+        phase.to_cancelled(self.actor)
+        phase.save()
+
+        self.http.force_login(self.actor)
+        resp = self.http.post(reverse("schedule_action_revert"), {"pk": action.pk})
+        self.assertFalse(resp.json()["ok"])
+        self.assertEqual(phase.timeslots.count(), 0)
+        action.refresh_from_db()
+        self.assertFalse(action.reverted)
+

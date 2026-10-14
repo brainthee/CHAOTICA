@@ -449,6 +449,32 @@ class Phase(models.Model):
             # return today's date
             return timezone.now().today()
 
+    @staticmethod
+    def bookable_q():
+        """Q for phases that can take new bookings: the phase isn't closed
+        (cancelled/postponed/deleted/archived) and neither is its job."""
+        return ~Q(status__in=PhaseStatuses.INACTIVE_STATUSES) & ~Q(
+            job__status__in=JobStatuses.CLOSED_STATUSES
+        )
+
+    def is_bookable(self):
+        return (
+            self.status not in PhaseStatuses.INACTIVE_STATUSES
+            and self.job.status not in JobStatuses.CLOSED_STATUSES
+        )
+
+    def revert_to_pending_if_unscheduled(self):
+        """Move a Scheduled phase back to Pending Scheduling once it has no slots."""
+        if self.timeslots.exists():
+            return
+        if self.status in (
+            PhaseStatuses.SCHEDULED_CONFIRMED,
+            PhaseStatuses.SCHEDULED_TENTATIVE,
+        ):
+            if self.can_to_pending_sched():
+                self.to_pending_sched()
+                self.save()
+
     def update_stored_dates(self):
         """Updates the stored _*_date fields based on the schedule"""
 
