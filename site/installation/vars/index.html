@@ -410,6 +410,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#demo-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Demo Mode
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#security-settings" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3228,6 +3239,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#demo-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Demo Mode
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#security-settings" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3475,6 +3497,39 @@
 </tr>
 </tbody>
 </table>
+<h2 id="demo-mode">Demo Mode<a class="headerlink" href="#demo-mode" title="Permanent link">&para;</a></h2>
+<p>Used by the public demo (see <code>deploy/demo/</code>). Demo mode only changes the login page; it does not lock down any features.</p>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>DEMO_ENV</code></td>
+<td><code>false</code></td>
+<td><code>true</code>/<code>1</code>/<code>yes</code>/<code>on</code> shows the demo banner and pre-fills the login form</td>
+</tr>
+<tr>
+<td><code>DEMO_USER</code></td>
+<td>-</td>
+<td>Email pre-filled on the login page</td>
+</tr>
+<tr>
+<td><code>DEMO_PASS</code></td>
+<td>-</td>
+<td>Password pre-filled on the login page</td>
+</tr>
+<tr>
+<td><code>DEMO_RESET_TIME</code></td>
+<td><code>00:00</code></td>
+<td>Daily reset time (<code>HH:MM</code>, in <code>TZ</code>) used for the banner's "resets in…" countdown</td>
+</tr>
+</tbody>
+</table>
 <h2 id="security-settings">Security Settings<a class="headerlink" href="#security-settings" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -3485,6 +3540,11 @@
 </tr>
 </thead>
 <tbody>
+<tr>
+<td><code>CSRF_TRUSTED_ORIGINS</code></td>
+<td><em>(empty)</em></td>
+<td>Space-separated full origins trusted for CSRF, e.g. <code>https://chaotica.example.com</code>. Useful behind a TLS-terminating proxy</td>
+</tr>
 <tr>
 <td><code>CSRF_COOKIE_SECURE</code></td>
 <td><code>True</code> (prod)</td>

@@ -3209,7 +3209,7 @@ rather than replacing them:</p>
 <tbody>
 <tr>
 <td><strong>AuditEvent</strong> (this feature)</td>
-<td>Cross-cutting "who did what" feed: auth, finance, security, config, workflow and general activity. Powers the activity tabs and the site-wide feed.</td>
+<td>Cross-cutting "who did what" feed: auth, finance, security, config, workflow, schedule and general activity. Powers the activity tabs and the site-wide feed.</td>
 </tr>
 <tr>
 <td><strong>django-simple-history</strong></td>
@@ -3239,6 +3239,13 @@ and the <strong>source</strong> (web, API, background task, Resource Manager syn
   email templates, report definitions/schedules and notification rules.</li>
 <li><strong>Workflow</strong> — leave request approve / decline / cancel, and the existing
   job/phase lifecycle transitions.</li>
+<li><strong>Schedule</strong> — every timeslot change (create / update / delete) across <strong>all</strong>
+  slot types: delivery, internal project, and internal slots such as training
+  and leave. Delivery changes are recorded against both the job and the phase;
+  project slots against their project; internal/leave slots against the owning
+  user (so they surface on that user's profile activity). The scheduler's own
+  reversible undo/redo history is still driven by <code>ScheduleAction</code> — the audit
+  events are the flat, filterable "what changed" view of the same activity.</li>
 <li><strong>Sync</strong> — a summary event per Resource Manager sync run, plus a record when a
   user is auto-created from Resource Manager.</li>
 </ul>
@@ -3286,6 +3293,11 @@ message for each event.</p>
 <li>To add a plain model to automatic create/update/delete auditing, add one line
   to <code>_AUDITED_MODELS</code> in <code>chaotica_utils/signals.py</code>; for a relation, add to
   <code>_AUDITED_M2M</code>.</li>
+<li><code>log_system_activity(obj, msg, ...)</code> accepts optional <code>category</code> / <code>verb</code>
+  overrides. Callers that know an event's domain should set them so the Activity
+  Log's category filter finds it — e.g. <code>TimeSlot.save()</code>/<code>delete()</code> pass
+  <code>category=AuditCategory.SCHEDULE, verb=AuditVerb.SCHEDULE</code>. Left unset, it
+  defaults to GENERAL / OTHER.</li>
 <li><code>audit_events_for(obj, viewer)</code> returns the permission-scoped queryset used by
   the UI (hides sensitive categories from non-admins).</li>
 </ul>

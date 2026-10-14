@@ -1671,6 +1671,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Exporting the schedule">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#exporting-the-main-scheduler" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Exporting the main scheduler
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -3299,6 +3316,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Exporting the schedule">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#exporting-the-main-scheduler" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Exporting the main scheduler
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -3412,7 +3446,7 @@
 <li><strong>Zoom</strong> buttons and quick‑zoom presets (2w / 2m / 6m / 1y) are in the toolbar.</li>
 <li><strong>Today</strong> re‑centres on the current week; <strong>Fit</strong> zooms to the <em>actual data</em> (the earliest→latest booking in scope), so repeatedly pressing Fit is stable rather than creeping outward.</li>
 <li><strong>Pan / Select</strong> mode toggle: <em>Pan</em> (default) drags the timeline; <em>Select</em> lets you drag a box across rows and dates to act on several people at once (see below).</li>
-<li><strong>Other slots</strong> toggle (job/phase views): show or hide the faded commitments that aren't part of this job/phase. Hide them when the view gets noisy and you only care about this job/phase's bookings; your choice is remembered per browser.</li>
+<li><strong>Other slots</strong> toggle: show or hide the faded slots that aren't highlighted. On a job/phase view these are commitments outside this job/phase (your choice is remembered per browser). On the main scheduler the toggle appears while a <strong>Jobs</strong>, <strong>Phases</strong>, <strong>Clients</strong> or <strong>Projects</strong> filter is set: everything that doesn't match — other clients' work, unselected projects, internal time and leave — is faded, and the toggle hides it for a clean view (it always starts with everything visible). Whenever slots are hidden a <strong>warning banner</strong> says how many, with a one-click <strong>Show all slots</strong>. Hidden bookings still count: those days are <strong>never shaded as available</strong>, so a person never looks free when they aren't.</li>
 </ul>
 <h2 id="booking-work">Booking work<a class="headerlink" href="#booking-work" title="Permanent link">&para;</a></h2>
 <p><strong>Right‑click</strong> a resource row (on empty space) to open the booking menu:</p>
@@ -3500,6 +3534,15 @@ or the global board see it update <strong>live</strong> — no reload needed. Se
 </ul>
 <p>The three export flavours (phase, job and client) all produce the <strong>same layout</strong> — only the scope of what's included differs.</p>
 <p>A <strong>client‑level</strong> export is also available (<code>Client → Schedule Export</code>): a small dialog lets you pick a <strong>date range</strong> and, optionally, a single <strong>framework agreement</strong> to scope which jobs are included. The Overview records the client, chosen range and framework.</p>
+<h3 id="exporting-the-main-scheduler">Exporting the main scheduler<a class="headerlink" href="#exporting-the-main-scheduler" title="Permanent link">&para;</a></h3>
+<p>The global <strong>Scheduler</strong> page has an <strong>Export</strong> button in its toolbar. It downloads exactly what you're looking at: the <strong>current filters</strong> (resources, org units, skills, jobs/phases, ordering…) across the <strong>date range the scheduler has loaded</strong> — the visible window plus the buffer either side that's fetched for smooth scrolling (roughly three times the visible span). Zoom or pan first to change the range; exports are capped at 1,200 days.</p>
+<p>Unlike the client‑ready exports above, this one is <strong>internal</strong> — nothing is masked, so only share it with people who can already see these schedules:</p>
+<ul>
+<li><strong>Overview</strong> — date range, a readable list of the filters applied, resource count, who generated it and when, plus a colour key.</li>
+<li><strong>Schedule</strong> — every filtered resource in the <strong>same order as on screen</strong> (including people with nothing booked), with org unit, job level, availability and utilisation, against a continuous run of dates. Cells carry the slot title as shown on the scheduler (delivery with its role, internal projects, leave type, other internal time) in the scheduler's colours; <strong>tentative</strong> work has a dashed border. Public holidays are named, non‑working days are lightly shaded, and when you've filtered by jobs/phases/clients/projects, slots outside them are greyed (as they're faded on screen). If you've hidden <strong>Other slots</strong>, the export is the clean view too: unhighlighted slots are left out of the grid and Bookings, the days they cover are marked <strong>Unavailable</strong> (never blank), and the Overview carries a prominent warning with the number hidden. <strong>Comments</strong> appear as Excel cell notes.</li>
+<li><strong>Bookings</strong> — one row per slot (resource, type, title, client, job, phase/project, role, confirmed/tentative, onsite, start, end) with an autofilter — handy for pivots.</li>
+<li><strong>Resources</strong> — one row per person with email, org unit, job level, roles, availability and utilisation for the exported range.</li>
+</ul>
 <h2 id="related-topics">Related Topics<a class="headerlink" href="#related-topics" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../concepts/">Scheduling Concepts</a> — slots, delivery roles, scoped vs scheduled, confirmed/tentative, hours‑per‑day</li>

@@ -3254,6 +3254,10 @@ dates, so a very old default may need its dates refreshed.</p>
 <td>Show specific named people.</td>
 </tr>
 <tr>
+<td><strong>Clients</strong></td>
+<td>Restrict to people booked on any of the selected client(s)' jobs (deleted jobs ignored). Their work for other clients is faded, so the client's bookings stand out — on screen and in the Export. Only clients you can view are offered.</td>
+</tr>
+<tr>
 <td><strong>Jobs</strong></td>
 <td>Restrict to people working the selected job(s).</td>
 </tr>
@@ -3272,6 +3276,10 @@ dates, so a very old default may need its dates refreshed.</p>
 </tbody>
 </table>
 <p>Most multi‑selects are type‑ahead (Select2) autocompletes.</p>
+<div class="admonition info">
+<p class="admonition-title">Filters only ever narrow what you can see</p>
+<p>The global scheduler (and its <strong>Export</strong>) shows only people whose schedule you're allowed to view: members of units where you hold <em>View users' schedule</em>, plus yourself. Filtering by a <strong>job</strong> or <strong>phase</strong> also shows that job's whole team — including people outside your units — but <strong>only if you can view that job's schedule</strong>. Filtering by a <strong>client</strong> shows people booked on that client's jobs whose schedule you can view. Filtering by a <strong>project</strong> does the same if you can view projects. <strong>Include user</strong> extras (added regardless of the other filters) are subject to the same limit; people outside it are silently ignored.</p>
+</div>
 <div class="admonition tip">
 <p class="admonition-title">Finding the Red Team / a particular group</p>
 <p>Set up a <strong>Team</strong> for the group and filter by it (Teams field). Team membership then becomes a one‑click filter on the scheduler.</p>

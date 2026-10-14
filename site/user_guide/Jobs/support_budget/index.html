@@ -781,10 +781,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#organisational-unit-template" class="md-nav__link">
+  <a href="#support-profiles" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Organisational-unit template
+        Support profiles
       
     </span>
   </a>
@@ -853,13 +853,52 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#drawing-down-budget" class="md-nav__link">
+  <a href="#cashing-out-budget" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Drawing down budget
+        Cashing out budget
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Cashing out budget">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#limits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limits
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-remaining-is-worked-out" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How remaining is worked out
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reversing-a-cash-out" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reversing a cash-out
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -874,6 +913,17 @@
   
     <nav class="md-nav" aria-label="The per-user Billing Codes page">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#multiple-codes-on-a-day-leave" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multiple codes on a day &amp; leave
+      
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#timesheet-periods" class="md-nav__link">
@@ -3170,10 +3220,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#organisational-unit-template" class="md-nav__link">
+  <a href="#support-profiles" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Organisational-unit template
+        Support profiles
       
     </span>
   </a>
@@ -3242,13 +3292,52 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#drawing-down-budget" class="md-nav__link">
+  <a href="#cashing-out-budget" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Drawing down budget
+        Cashing out budget
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Cashing out budget">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#limits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limits
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-remaining-is-worked-out" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How remaining is worked out
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reversing-a-cash-out" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reversing a cash-out
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -3263,6 +3352,17 @@
   
     <nav class="md-nav" aria-label="The per-user Billing Codes page">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#multiple-codes-on-a-day-leave" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multiple codes on a day &amp; leave
+      
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#timesheet-periods" class="md-nav__link">
@@ -3310,7 +3410,8 @@ should each support person book, and how much have they used?"</em></p>
 <p>For a job of value <strong>V</strong> (<code>Sales Revenue</code> on the job):</p>
 <ol>
 <li><strong>Support pool</strong> = <code>V × premium%</code>. The premium defaults to <strong>8%</strong> but can be
-   overridden (see <a href="#configuring-the-premium">Configuring the premium</a>).</li>
+   set per support profile or per job (see
+   <a href="#configuring-the-premium">Configuring the premium</a>).</li>
 <li>Each support member has a <strong>profile allocation %</strong> — their coverage
    (<code>100</code> = full, <code>20</code> = 20%).</li>
 <li>A member's <strong>share</strong> of the pool = <code>percent ÷ Σ percents</code>. For example, six
@@ -3320,90 +3421,185 @@ should each support person book, and how much have they used?"</em></p>
 <li><strong>Budget (hours)</strong> = <code>budget ÷ loaded cost rate</code>; <strong>days</strong> = <code>hours ÷
    hours-in-day</code> (the client's working-day length, default 7.5).</li>
 </ol>
-<h2 id="organisational-unit-template">Organisational-unit template<a class="headerlink" href="#organisational-unit-template" title="Permanent link">&para;</a></h2>
-<p>Most jobs in a unit use the same support team, so each <strong>organisational unit</strong>
-can hold a <strong>support-team template</strong>: a list of members, each with a role and a
-profile allocation %, plus the unit's default premium %.</p>
-<p>Everything is managed from the <strong>Finance tab</strong> on the organisational-unit detail
-page (see <a href="#the-finance-tab">The Finance tab</a>) — the Django admin is not needed.</p>
+<p>Support rows without a live person (e.g. a deleted account) are left out of the
+split, so they never dilute everyone else's share.</p>
+<h2 id="support-profiles">Support profiles<a class="headerlink" href="#support-profiles" title="Permanent link">&para;</a></h2>
+<p>A unit can run more than one support team. For example, UKI might have a
+<strong>Context</strong> team and a <strong>CCX</strong> team, with different people and different figures.
+Each one is a <strong>support profile</strong>, which has:</p>
 <ul>
-<li>When a <strong>new job</strong> is created in that unit, the template is applied
-  automatically, creating a support-team row per member.</li>
-<li>On an existing job, use <strong>Support → Apply Support Template</strong> to (re)apply it.</li>
+<li>a <strong>name</strong> (and optional description);</li>
+<li>its own <strong>members</strong>, each with a role and a profile allocation %. The same
+  person can be in several profiles;</li>
+<li>an optional <strong>premium %</strong>. Leave it blank to use the unit's support premium
+  default.</li>
 </ul>
+<p>One profile per unit is the <strong>default</strong>. The first profile you create becomes the
+default, and if you delete the default, another profile takes its place.</p>
+<p>Each job uses <strong>one</strong> profile:</p>
+<ul>
+<li>When a <strong>new job</strong> is created, the unit's default profile is applied
+  automatically, with one support-team row per member.</li>
+<li>On an existing job, use <strong>Support → Change Support Profile</strong> to pick a
+  different profile, or to re-apply the current one after its members changed.
+  The options are:<ul>
+<li><strong>Remove people who aren't in this profile</strong>: ticked by default, which is
+  what you want when switching teams. People who have already cashed out
+  hours on the job are always kept, because their cash-outs are financial
+  records.</li>
+<li><strong>Also overwrite manually-edited rows</strong>: see <a href="#overrides">Overrides</a>.</li>
+<li><strong>Premium override (%)</strong>: only shown to holders of <em>Can view loaded cost
+  rates</em>.</li>
+</ul>
+</li>
+</ul>
+<p>Everything is managed in the main UI (the Django admin is not needed). Profiles
+live on the <strong>Finance tab</strong> (see <a href="#the-finance-tab">The Finance tab</a>), and a
+job's profile is chosen on the job page.</p>
 <h2 id="the-finance-tab">The Finance tab<a class="headerlink" href="#the-finance-tab" title="Permanent link">&para;</a></h2>
 <p>On the organisational-unit detail page, users with the <strong>Can view loaded cost
 rates</strong> permission see an extra <strong>Finance</strong> tab (hidden from everyone else). It
 holds three cards:</p>
 <ul>
-<li><strong>Settings</strong> — edit the unit's <em>support premium default %</em>.</li>
-<li><strong>Support Template</strong> — add / edit / remove template members and their profile
-  allocation %.</li>
+<li><strong>Settings</strong>: edit the unit's <em>support premium default %</em>, which is used by
+  any profile that has no premium of its own.</li>
+<li><strong>Support Profiles</strong>: add, edit or delete profiles (name, premium, default).
+  Use each profile's menu to add members, and the member rows to edit or remove
+  them.</li>
 <li><strong>Loaded Cost Rates</strong> — set each member's date-effective LCR (see below). Rates
   are add-only: a new rate keeps the previous ones for historical budgets.</li>
 </ul>
 <p>Because all of this is normal data behind a permission, changing the support
 model is a day-to-day operation, not a code change.</p>
 <h3 id="overrides">Overrides<a class="headerlink" href="#overrides" title="Permanent link">&para;</a></h3>
-<p>You can change people, allocation % and hours on an individual job. Any row you edit
-is flagged as <strong>overridden</strong> and is left untouched when the template is
-re-applied — unless you tick <em>"Also overwrite manually-edited rows"</em>. Members
-removed from the template are never auto-deleted from a job (their history and
-draw-downs are preserved).</p>
+<p>You can change people and allocation % on an individual job. Any row you edit is
+flagged as <strong>overridden</strong> and is left untouched when a profile is re-applied,
+unless you tick <em>"Also overwrite manually-edited rows"</em>. Some rules:</p>
+<ul>
+<li>A person can appear only once on a job's support team.</li>
+<li>Once someone has cashed out hours on a row, that row can't be deleted, and its
+  person can't be changed. To remove it, reverse the cash-outs first (see
+  <a href="#reversing-a-cash-out">Reversing a cash-out</a>).</li>
+</ul>
 <h2 id="configuring-the-premium">Configuring the premium<a class="headerlink" href="#configuring-the-premium" title="Permanent link">&para;</a></h2>
 <p>The premium % is resolved in this order (no code change needed to adjust it):</p>
 <ol>
-<li><strong>Per-job override</strong> — <code>Support Premium Override (%)</code> on the job.</li>
-<li><strong>Unit default</strong> — <code>Support Premium Default (%)</code> on the organisational unit.</li>
-<li><strong>Global default</strong> — <code>SUPPORT_PREMIUM_DEFAULT</code> (8%), on the <strong>Settings</strong> page
+<li><strong>Per-job override</strong>: <em>Premium override (%)</em> in the job's <strong>Change Support
+   Profile</strong> dialog (finance users only).</li>
+<li><strong>Support profile</strong>: the job's profile's <em>Support Premium (%)</em>, if one is set.</li>
+<li><strong>Unit default</strong>: <code>Support Premium Default (%)</code> on the organisational unit.</li>
+<li><strong>Global default</strong>: <code>SUPPORT_PREMIUM_DEFAULT</code> (8%), on the <strong>Settings</strong> page
    under <strong>Finance → Support Team</strong>.</li>
 </ol>
+<p>Premiums and allocation % can't be negative.</p>
 <p>Profile allocation %, membership, loaded cost rates and the working-day length
 are likewise all editable data, not code.</p>
 <h2 id="loaded-cost-rates-lcr">Loaded cost rates (LCR)<a class="headerlink" href="#loaded-cost-rates-lcr" title="Permanent link">&para;</a></h2>
-<p>The money→hours conversion uses each person's <strong>loaded cost rate</strong> — a per-user,
-date-effective cost. The rate in force on the relevant date is used, so
-historical changes are respected. Manage rates from the unit's <strong>Finance →
-Loaded Cost Rates</strong> card.</p>
-<p><strong>Visibility:</strong> loaded cost rates are financially sensitive and are only shown on
-the unit <strong>Finance</strong> tab and a member's own <strong>Billing Codes</strong> page to holders of
-the <strong>Can view loaded cost rates</strong> (<code>can_view_loaded_costs</code>) permission.</p>
+<p>The money→hours conversion uses each person's <strong>loaded cost rate</strong>, a per-user,
+date-effective cost. Budgets are always shown at <strong>today's</strong> rate. Each cash-out
+also records the rate in force when it was made (see
+<a href="#cashing-out-budget">Cashing out budget</a>). Manage rates from the unit's
+<strong>Finance → Loaded Cost Rates</strong> card.</p>
+<p><strong>Visibility:</strong> loaded cost rates are financially sensitive. They, and any £
+figures derived from them, are only shown to holders of the <strong>Can view loaded
+cost rates</strong> (<code>can_view_loaded_costs</code>) permission. That covers the unit
+<strong>Finance</strong> tab, money columns on the <strong>Billing Codes</strong> page, and the per-person
+budget and hours on the job's <strong>Sales</strong> tab. Hours alone, next to revenue and
+share, would reveal a person's rate, so they are hidden too.</p>
 <h2 id="the-job-support-widget">The job Support widget<a class="headerlink" href="#the-job-support-widget" title="Permanent link">&para;</a></h2>
-<p>The <strong>Support</strong> panel on the job page is intentionally minimal — <strong>Person</strong>,
-<strong>Role</strong> and <strong>Share</strong> (each member's % of the support pool). Use the row menu to:</p>
+<p>The <strong>Support</strong> panel on the job page is intentionally minimal. Its header shows
+the job's <strong>profile</strong> and effective premium, and the table lists <strong>Person</strong>,
+<strong>Role</strong> and <strong>Share</strong> (each member's % of the support pool). The row menu has:</p>
 <ul>
-<li><strong>Edit</strong> — override a member's profile allocation % for this job (the row is
-  then flagged <em>override</em> and protected from a template re-apply).</li>
-<li><strong>Draw Down Hours</strong> — see below.</li>
-<li><strong>Delete</strong> — remove the member from this job.</li>
+<li><strong>Edit</strong>: override a member's profile allocation % for this job. The row is
+  then flagged <em>override</em> and protected when the profile is re-applied.</li>
+<li><strong>Cash out hours</strong>: see below.</li>
+<li><strong>Cash-out history</strong>: every cash-out on this row, with reversal for people
+  who are allowed to reverse.</li>
+<li><strong>Delete</strong>: remove the member from this job. This is blocked if they have
+  cashed out hours.</li>
 </ul>
 <p>The full picture — budget in money/hours, drawn and remaining — lives on each
 member's <strong>Billing Codes</strong> page, so the job view stays uncluttered.</p>
-<h2 id="drawing-down-budget">Drawing down budget<a class="headerlink" href="#drawing-down-budget" title="Permanent link">&para;</a></h2>
-<p>Each timesheet period a support member "cashes out" hours against their budget.
-Two places do this:</p>
+<h2 id="cashing-out-budget">Cashing out budget<a class="headerlink" href="#cashing-out-budget" title="Permanent link">&para;</a></h2>
+<p>Each timesheet period, a support member "cashes out" hours against their budget.
+There are three ways to do this:</p>
 <ul>
-<li><strong>Self-service</strong> — on their own <strong>Billing Codes</strong> page, the <em>Support budget</em>
-  table has a <strong>Cash out</strong> button per job. The period defaults to the current
-  timesheet period. This is gated to the member themselves and their managers
-  (no scheduling rights on the job required).</li>
-<li><strong>From the job</strong> — <strong>Draw Down Hours</strong> on the job's Support widget (for people
-  with scheduling rights on that job).</li>
+<li><strong>Self-service</strong>: on their own <strong>Billing Codes</strong> page, the <em>Support budget</em>
+  table has a <strong>Cash out</strong> button per job. The period defaults to the period
+  being viewed, and the hours default to everything remaining. Only the member
+  themselves and their managers can do this; no scheduling rights on the job are
+  needed.</li>
+<li><strong>Auto cash out this period</strong>: this tops up every job with whatever remains
+  for that member. Clicking it again does nothing, because nothing is left.</li>
+<li><strong>From the job</strong>: <strong>Cash out hours</strong> on the job's Support widget, for people
+  with scheduling rights on that job.</li>
 </ul>
-<p><strong>Remaining</strong> = budget hours − everything drawn, and it <strong>carries forward</strong> across
-periods; over-drawing is allowed and shown in red.</p>
+<h3 id="limits">Limits<a class="headerlink" href="#limits" title="Permanent link">&para;</a></h3>
+<p>Cash-outs are checked on the server and are rejected when:</p>
+<ul>
+<li>the hours are more than the member has <strong>remaining</strong>;</li>
+<li>the hours are zero or negative;</li>
+<li>the period ends before it starts;</li>
+<li>the member has no loaded cost rate (no rate, no hours);</li>
+<li>the job isn't <strong>active or completed</strong>. Completed jobs can still be cashed out
+  (the work was done, so the budget was earned). Deleted, archived and lost jobs
+  can't.</li>
+</ul>
+<p>Simultaneous submissions (a double-click, or two tabs open) are handled safely:
+they can't both spend the same remaining budget.</p>
+<h3 id="how-remaining-is-worked-out">How remaining is worked out<a class="headerlink" href="#how-remaining-is-worked-out" title="Permanent link">&para;</a></h3>
+<p>Budget is tracked in <strong>money</strong>:</p>
+<ul>
+<li>Each cash-out records its hours, the loaded cost rate at that moment, and its
+  value (hours × rate).</li>
+<li><strong>Remaining</strong> = budget money − the value of all cash-outs. It is shown in hours
+  at today's rate, and it <strong>carries forward</strong> from one period to the next.</li>
+</ul>
+<p>So if a person's rate changes, their <strong>remaining hours</strong> shift to match the new
+rate. Hours already cashed out are never re-priced, and a rate rise can't push
+anyone into a negative balance.</p>
+<h3 id="reversing-a-cash-out">Reversing a cash-out<a class="headerlink" href="#reversing-a-cash-out" title="Permanent link">&para;</a></h3>
+<p>Mistakes are fixed from <strong>Cash-out history</strong>, which is in the job's Support row
+menu and behind the <strong>History</strong> button on the Billing Codes page.</p>
+<ul>
+<li>Members (and their managers) can see their history.</li>
+<li>Only people with <strong>scheduling rights on the job</strong> or <strong>Can view loaded cost
+  rates</strong> on its unit can <strong>reverse</strong> a cash-out. Reversing deletes the cash-out,
+  returns its value to the remaining budget, and logs it in the job's activity.</li>
+</ul>
 <h2 id="the-per-user-billing-codes-page">The per-user Billing Codes page<a class="headerlink" href="#the-per-user-billing-codes-page" title="Permanent link">&para;</a></h2>
 <p>Every user has a <strong>Billing Codes</strong> page (top-right user menu → <em>My Billing
 Codes</em>, or a manager can open it from a person's profile). It shows, for a date
 range:</p>
 <ul>
 <li><strong>billing-code usage from their schedule</strong> — which codes their booked time maps
-  to, per day and per code; and</li>
-<li>their <strong>support budget</strong> — per-job budget hours, drawn this period and
-  remaining.</li>
+  to, per day and per code, with the phase/project shown against each; and</li>
+<li>their <strong>support budget</strong>: per-job budget hours, hours cashed out this period,
+  and remaining, for active and completed jobs. Any problems are shown above the
+  table, such as a missing loaded cost rate.</li>
 </ul>
+<p>Headline <strong>stats</strong> for the period sit at the top: <em>Capacity</em> (working days ×
+hours-per-day), <em>Coded</em>, <em>Uncoded</em> (scheduled work missing a code), <em>Unavailable</em>
+(leave / sick / bank holiday) and <em>Internal</em> (training / internal time) hours — so
+the numbers read against a real week.</p>
 <p>It's visible to the user themselves and to anyone who can manage them; money/LCR
 figures on it are gated by <code>can_view_loaded_costs</code>.</p>
+<h3 id="multiple-codes-on-a-day-leave">Multiple codes on a day &amp; leave<a class="headerlink" href="#multiple-codes-on-a-day-leave" title="Permanent link">&para;</a></h3>
+<p>When a day maps to <strong>more than one billing code</strong>, how the hours are attributed is
+controlled site-wide by <strong>Settings → Finance → Billing Codes</strong>
+(<code>BILLING_DUPLICATE_CODE_POLICY</code>):</p>
+<ul>
+<li><strong>Split evenly</strong> (default) — the day's hours are divided across the codes (2
+  codes ⇒ 50/50), so day totals match real hours.</li>
+<li><strong>Stack</strong> — each code gets the full day's hours (totals can exceed the day).</li>
+<li><strong>Prefer newest / oldest</strong> — the whole day goes to a single code by assignment
+  date.</li>
+</ul>
+<p><strong>Leave wins:</strong> if a job's schedule overran into a day you were on leave, that
+day's <em>coded</em> hours are reduced by the overlapping leave — you didn't actually
+deliver — and the day shows the leave instead. Leave/sick time is reported under
+<em>Unavailable</em>, separate from <em>Uncoded</em> (missing-code) work.</p>
 <h3 id="timesheet-periods">Timesheet periods<a class="headerlink" href="#timesheet-periods" title="Permanent link">&para;</a></h3>
 <p>The page opens on the <strong>current timesheet period</strong> and has ◀ / ▶ buttons to step
 between periods (plus a <em>Custom range</em> picker for anything else). The period

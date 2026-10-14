@@ -1088,6 +1088,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#creating-a-new-code-without-leaving-the-modal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Creating a new code without leaving the modal
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#phase-override-inheritance" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3166,6 +3177,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#creating-a-new-code-without-leaving-the-modal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Creating a new code without leaving the modal
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#phase-override-inheritance" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3294,6 +3316,17 @@ assignment is a row with a code and an optional start/end date:</p>
   dates). Overlapping dates are allowed and surfaced, not blocked.</li>
 </ul>
 <p>A code can only be assigned <strong>once without a date range</strong> per target.</p>
+<p>The code picker is a <strong>searchable, type-ahead</strong> field: start typing to search
+the codes available for the target's client (plus internal/WBS codes) — they are
+loaded on demand rather than all rendered up front.</p>
+<h3 id="creating-a-new-code-without-leaving-the-modal">Creating a new code without leaving the modal<a class="headerlink" href="#creating-a-new-code-without-leaving-the-modal" title="Permanent link">&para;</a></h3>
+<p>If the code you need doesn't exist yet, expand <strong>"Can't find the code? Create a
+new one"</strong> at the bottom of the assign modal. Fill in the code (client defaults
+to the target's client, or clear it for an internal/WBS code), set the
+chargeable / recoverable / internal flags and region, and click <strong>Create code</strong>.
+The new code is created and selected into the current row immediately, so you can
+carry on assigning without a page reload. This shortcut is only shown to users
+with permission to add billing codes.</p>
 <h3 id="phase-override-inheritance">Phase override / inheritance<a class="headerlink" href="#phase-override-inheritance" title="Permanent link">&para;</a></h3>
 <p>A phase <strong>inherits</strong> its job's codes by default. If you assign codes directly to
 a phase, those <strong>override</strong> the job's codes for that phase (they replace, not

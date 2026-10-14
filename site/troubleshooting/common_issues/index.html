@@ -2917,6 +2917,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#server-has-gone-away-mysql-2006-on-error-pages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        "Server has gone away" (MySQL 2006) on error pages
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#connection-errors" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3537,6 +3548,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#server-has-gone-away-mysql-2006-on-error-pages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        "Server has gone away" (MySQL 2006) on error pages
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#connection-errors" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4006,6 +4028,12 @@ import<span class="w"> </span>psutil
 3. Optimize report generation and data processing
 4. Consider scaling horizontally with load balancing</p>
 <h2 id="database-issues">Database Issues<a class="headerlink" href="#database-issues" title="Permanent link">&para;</a></h2>
+<h3 id="server-has-gone-away-mysql-2006-on-error-pages">"Server has gone away" (MySQL 2006) on error pages<a class="headerlink" href="#server-has-gone-away-mysql-2006-on-error-pages" title="Permanent link">&para;</a></h3>
+<p><strong>Symptom</strong>: Sentry shows <code>OperationalError: (2006, 'Server has gone away')</code>, almost always chained after a <code>Resolver404</code>/<code>Http404</code> — typically from scanner traffic hitting unknown URLs.</p>
+<p><strong>Cause</strong>: under ASGI (gunicorn + uvicorn worker), Django renders error responses in a thread pool (<code>response_for_exception</code> with <code>thread_sensitive=False</code>) that never runs the per-request connection cleanup. A DB connection opened while rendering an error page lingered in that thread until MySQL's idle timeout closed it, and the next error page on the same thread reused the dead connection.</p>
+<p><strong>Most common trigger — real users, not just scanners</strong>: the page JS (<code>templates/js/core.js</code>, tab restore) used to strip the trailing slash from the address bar. The next reload (e.g. after pushing a phase through the workflow, or any modal save) requested <code>/job/&lt;id&gt;/phase/&lt;slug&gt;</code> with no slash. Django answers that with a 404 that <code>CommonMiddleware</code> turns into a redirect to the <code>/</code> URL — but the 404 page crashed on the stale connection, so the user got a <strong>500</strong> instead of the redirect. It was intermittent because it only failed once the pool thread's connection had been idle past MySQL's timeout.</p>
+<p><strong>Reproducing locally</strong>: run uvicorn against MySQL with <code>init_command="SET SESSION wait_timeout=5"</code> and <code>DEBUG=0</code>. Logged in, request an unknown URL, wait more than 5 s, then request a slash-less URL: with Django's stock handlers it returns 500; with the wrapped handlers it returns 301.</p>
+<p><strong>Fix</strong>: the trailing slash is no longer stripped, and the 400/403/404/500 handlers (<code>chaotica_utils/views/errors.py</code>, registered in <code>chaotica/urls.py</code>) release stale connections before rendering and close their own afterwards. If you add a custom error handler, wrap it with <code>_with_fresh_db</code>.</p>
 <h3 id="connection-errors">Connection Errors<a class="headerlink" href="#connection-errors" title="Permanent link">&para;</a></h3>
 <p><strong>Error</strong>: "Unable to connect to database"</p>
 <p><strong>Diagnosis and Solutions</strong>:
