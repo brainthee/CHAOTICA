@@ -487,3 +487,189 @@ class BillingViewSmokeTests(TestCase):
         for name in ("billingcode_analytics", "billingcode_wbs_list", "billingcode_wbs_analytics"):
             resp = self.http.get(reverse(name))
             self.assertEqual(resp.status_code, 200, name)
+
+
+class BuildCohortCodeAllocationTests(TestCase):
+    """Team / org-unit billing tab engine: per-member stats must equal the
+    member's own Billing Codes page, with batched (constant) queries."""
+
+    def setUp(self):
+        from jobtracker.models import JobSupportTeamRole, SupportBudgetDraw
+
+        self.root = User.objects.create_user(email="root@co.com", password="pw")
+        self.unit = OrganisationalUnit.objects.create(name="CoUnit")
+        self.client_obj = Client.objects.create(name="Acme")
+        self.delivery_type = TimeSlotType.get_builtin_object(DefaultTimeSlotTypes.DELIVERY)
+        self.leave_type = TimeSlotType.get_builtin_object(DefaultTimeSlotTypes.LEAVE)
+
+        def job(title):
+            return Job.objects.create(
+                title=title, client=self.client_obj, unit=self.unit,
+                created_by=self.root, account_manager=self.root,
+            )
+
+        self.coded_job = job("Coded")
+        self.uncoded_job = job("Uncoded")
+        self.code_a = BillingCode.objects.create(code="A-1", client=self.client_obj, is_chargeable=True)
+        self.code_b = BillingCode.objects.create(code="B-1", client=self.client_obj)
+        BillingCodeAssignment.objects.create(code=self.code_a, job=self.coded_job)
+        p_coded = Phase.objects.create(job=self.coded_job, title="P1", status=PhaseStatuses.IN_PROGRESS)
+        p_uncoded = Phase.objects.create(job=self.uncoded_job, title="P2", status=PhaseStatuses.IN_PROGRESS)
+        p_multi = Phase.objects.create(job=self.coded_job, title="P3", status=PhaseStatuses.IN_PROGRESS)
+        BillingCodeAssignment.objects.create(code=self.code_a, phase=p_multi)
+        BillingCodeAssignment.objects.create(code=self.code_b, phase=p_multi)
+
+        self.monday = _monday(timezone.now())
+        self.users = [
+            User.objects.create_user(
+                email=f"c{i}@co.com", password="pw", first_name=f"F{i}", last_name=f"L{i}"
+            )
+            for i in range(4)
+        ]
+        u0, u1, u2, u3 = self.users
+
+        def slot(user, phase, day_offset, kind=None, end_hour=17):
+            start = self.monday + timedelta(days=day_offset)
+            return TimeSlot.objects.create(
+                user=user, slot_type=kind or self.delivery_type, phase=phase,
+                start=start, end=start.replace(hour=end_hour),
+                deliveryRole=TimeSlotDeliveryRole.DELIVERY,
+            )
+
+        # u0: coded day overlapped by half a day's leave (leave wins).
+        slot(u0, p_coded, 0)
+        slot(u0, None, 0, kind=self.leave_type, end_hour=13)
+        slot(u0, p_coded, 1)
+        # u1: uncoded work + a coded day.
+        slot(u1, p_uncoded, 0)
+        slot(u1, p_coded, 2)
+        # u2: multi-code day + a support cash-out on the coded job.
+        slot(u2, p_multi, 1)
+        role = JobSupportTeamRole.objects.create(
+            job=self.coded_job, user=u2, profile_percent=Decimal("100")
+        )
+        SupportBudgetDraw.objects.create(
+            support_role=role, user=u2,
+            period_start=self.monday.date(), period_end=self.monday.date() + timedelta(days=4),
+            hours_drawn=Decimal("5"), lcr_at_draw=Decimal("50"), money_drawn=Decimal("250"),
+        )
+        # u3: nothing booked.
+        self.win = (self.monday.date(), self.monday.date() + timedelta(days=6))
+
+    def test_rows_equal_per_user_page(self):
+        from chaotica_utils.utils import build_cohort_code_allocation
+
+        cohort = build_cohort_code_allocation(self.users, *self.win)
+        self.assertEqual([r["user"] for r in cohort["rows"]], self.users)  # by name
+        for row in cohort["rows"]:
+            fresh = User.objects.get(pk=row["user"].pk)
+            expected = build_user_code_allocation(fresh, *self.win)["stats"]
+            self.assertEqual(row["stats"], expected, row["user"])
+        # The fixture really exercises leave-wins, uncoded and support.
+        stats = {r["user"].email: r["stats"] for r in cohort["rows"]}
+        self.assertGreater(stats["c0@co.com"]["unavailable_hours"], 0)
+        self.assertGreater(stats["c1@co.com"]["uncoded_hours"], 0)
+        self.assertEqual(stats["c2@co.com"]["support_hours"], Decimal("5"))
+        self.assertEqual(stats["c3@co.com"]["coded_hours"], 0)
+        # Totals and the code roll-up are the per-member sums.
+        self.assertEqual(
+            cohort["totals"]["coded_hours"],
+            sum((r["stats"]["coded_hours"] for r in cohort["rows"]), Decimal(0)),
+        )
+        self.assertEqual(
+            sum((c["hours"] for c in cohort["per_code"].values()), Decimal(0)),
+            cohort["totals"]["coded_hours"] + cohort["totals"]["support_hours"],
+        )
+        self.assertIn(self.code_b.id, cohort["per_code"])
+
+    def test_query_count_constant_in_cohort_size(self):
+        from chaotica_utils.utils import build_cohort_code_allocation
+        from django.test.utils import CaptureQueriesContext
+        from django.db import connection
+
+        u0, u1, u2, u3 = self.users
+        with CaptureQueriesContext(connection) as two:
+            build_cohort_code_allocation([u2, u0], *self.win)
+        with CaptureQueriesContext(connection) as four:
+            build_cohort_code_allocation([u2, u0, u1, u3], *self.win)
+        self.assertEqual(len(four), len(two))
+
+
+class CohortBillingTabViewTests(TestCase):
+    """Team (owners) and org-unit (can_view_jobs) Billing tab partials."""
+
+    def setUp(self):
+        from guardian.shortcuts import assign_perm
+        from jobtracker.models import Team, TeamMember
+
+        self.root = User.objects.create_user(email="root@tab.com", password="pw")
+        self.root.is_superuser = False
+        self.root.save()
+        self.unit = OrganisationalUnit.objects.create(name="TabUnit")
+        self.team = Team.objects.create(name="Tab team", slug="tab-team")
+        self.owner = User.objects.create_user(email="own@tab.com", password="pw")
+        self.member = User.objects.create_user(
+            email="mem@tab.com", password="pw", first_name="Mem", last_name="Ber"
+        )
+        self.stranger = User.objects.create_user(email="str@tab.com", password="pw")
+        self.team.owners.add(self.owner)
+        TeamMember.objects.create(
+            team=self.team, user=self.member,
+            joined_at=timezone.now().date() - timedelta(days=30),
+        )
+        for u in (self.owner, self.stranger):
+            assign_perm("jobtracker.view_team", u)
+            assign_perm("jobtracker.view_team", u, self.team)
+        self.unit.members.create(member=self.member)
+        self.viewer = User.objects.create_user(email="view@tab.com", password="pw")
+        assign_perm("jobtracker.can_view_jobs", self.viewer, self.unit)
+        self.http = TestHttpClient(HTTP_HOST="localhost")
+
+    def _team_url(self):
+        return reverse("team_billing_partial", kwargs={"slug": self.team.slug})
+
+    def _unit_url(self):
+        return reverse("orgunit_billing_partial", kwargs={"slug": self.unit.slug})
+
+    def test_team_owner_sees_members(self):
+        self.http.force_login(self.owner)
+        resp = self.http.get(self._team_url() + "?start_date=2026-09-01&end_date=2026-09-14")
+        self.assertEqual(resp.status_code, 200)
+        html = resp.json()["html"]
+        self.assertIn("Mem Ber", html)
+        self.assertIn("Per code", html)
+        self.assertIn("data-billing-range", html)
+        # Owner isn't the member's manager -> no profile link.
+        self.assertNotIn(
+            reverse("user_code_allocation", kwargs={"email": self.member.email}), html
+        )
+
+    def test_team_non_owner_forbidden(self):
+        self.http.force_login(self.stranger)
+        self.assertEqual(self.http.get(self._team_url()).status_code, 403)
+
+    def test_team_superuser_allowed_and_tab_rendered(self):
+        su = User.objects.create_superuser(email="su@tab.com", password="pw")
+        self.http.force_login(su)
+        self.assertEqual(self.http.get(self._team_url()).status_code, 200)
+        body = self.http.get(
+            reverse("team_detail", kwargs={"slug": self.team.slug})
+        ).content.decode()
+        self.assertIn('id="billing-tab"', body)
+
+    def test_unit_requires_can_view_jobs(self):
+        self.http.force_login(self.stranger)
+        self.assertEqual(self.http.get(self._unit_url()).status_code, 403)
+        self.http.force_login(self.viewer)
+        resp = self.http.get(self._unit_url())
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("Mem Ber", resp.json()["html"])
+
+    def test_profile_link_only_for_manageable_members(self):
+        self.member.manager = self.viewer
+        self.member.save()
+        self.http.force_login(self.viewer)
+        html = self.http.get(self._unit_url()).json()["html"]
+        self.assertIn(
+            reverse("user_code_allocation", kwargs={"email": self.member.email}), html
+        )

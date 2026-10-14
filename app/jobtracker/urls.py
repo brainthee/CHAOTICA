@@ -879,6 +879,11 @@ urlpatterns = [
         name="orgunit_stats_partial",
     ),
     path(
+        "ops/unit/<str:slug>/billing/",
+        views.orgunit_billing_partial,
+        name="orgunit_billing_partial",
+    ),
+    path(
         "ops/unit/<str:slug>/header-stats/",
         views.orgunit_header_stats_partial,
         name="orgunit_header_stats_partial",
@@ -913,6 +918,7 @@ urlpatterns = [
     path("team/<str:slug>/", views.TeamDetailView.as_view(), name="team_detail"),
     path("team/<str:slug>/stats/", views.team_stats_partial, name="team_stats_partial"),
     path("team/<str:slug>/debrief/", views.team_debrief_partial, name="team_debrief_partial"),
+    path("team/<str:slug>/billing/", views.team_billing_partial, name="team_billing_partial"),
     path(
         "team/<str:slug>/update/",
         views.TeamUpdateView.as_view(),

@@ -216,42 +216,11 @@ def view_own_profile(request):
 
 
 def _parse_allocation_range(request):
-    """Parse the ``dateRange`` / ``start_date`` / ``end_date`` GET params.
+    """Billing-period GET params → ``(start, end)`` (shared with the team /
+    org-unit billing tabs)."""
+    from ..utils.periods import parse_period_range
 
-    Mirrors the convention used by ``team_stats_partial`` / ``UserDetailView``.
-    Defaults to the next four weeks (a forward-looking allocation view).
-    """
-    start = end = None
-    date_range_raw = request.GET.get("dateRange", "")
-    if " to " in date_range_raw:
-        parts = date_range_raw.split(" to ")
-        if len(parts) == 2:
-            try:
-                start = datetime.datetime.strptime(parts[0], "%Y-%m-%d").date()
-                end = datetime.datetime.strptime(parts[1], "%Y-%m-%d").date()
-            except ValueError:
-                start = end = None
-    # Also accept discrete start_date / end_date params (the picker form posts
-    # these) as a fallback.
-    if start is None or end is None:
-        try:
-            if request.GET.get("start_date"):
-                start = datetime.datetime.strptime(
-                    request.GET["start_date"], "%Y-%m-%d"
-                ).date()
-            if request.GET.get("end_date"):
-                end = datetime.datetime.strptime(
-                    request.GET["end_date"], "%Y-%m-%d"
-                ).date()
-        except ValueError:
-            start = end = None
-    if start is None or end is None:
-        # Default to the current configurable timesheet period (e.g. 1st–14th /
-        # 15th–end) rather than an arbitrary rolling window.
-        from ..utils import period_for_date
-
-        start, end = period_for_date(timezone.now().date())
-    return start, end
+    return parse_period_range(request.GET)
 
 
 @login_required
@@ -303,28 +272,15 @@ def user_code_allocation(request, email):
         e["can_view_money"] for e in support_budget["per_job"]
     )
 
-    # Period navigation (prev/next jump by whole timesheet periods, anchored on
-    # the current start date).
-    from ..utils import next_period, previous_period, period_for_date
-
-    prev_start, prev_end = previous_period(start)
-    next_start, next_end = next_period(start)
-    cur_start, cur_end = period_for_date(timezone.now().date())
+    # Period navigation (prev/next jump by whole timesheet periods).
+    from ..utils.periods import period_nav_context
 
     context = page_defaults(request)
+    context.update(period_nav_context(start, end))
     context.update(
         {
             "userProfile": target,
-            "start_date": start,
-            "end_date": end,
             "date_range": "{} to {}".format(start, end),
-            "prev_start": prev_start,
-            "prev_end": prev_end,
-            "next_start": next_start,
-            "next_end": next_end,
-            "current_period_start": cur_start,
-            "current_period_end": cur_end,
-            "is_current_period": (start == cur_start and end == cur_end),
             "per_day": allocation["per_day"],
             "per_code": per_code,
             "uncoded": allocation["uncoded"],

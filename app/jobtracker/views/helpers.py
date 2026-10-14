@@ -137,3 +137,35 @@ def _process_assign_contact(request, obj, prop, multiple=False, contacts=None):
         "modals/assign_contact_modal.html", context, request=request
     )
     return JsonResponse(data)
+
+
+def _render_cohort_billing(request, user_qs, partial_url):
+    """Team / org-unit Billing tab: hours per member and per code for a
+    timesheet period, from the same engine as each member's own Billing Codes
+    page. Returns the partial's ``JsonResponse({"html": ...})``."""
+    from chaotica_utils.utils import build_cohort_code_allocation
+    from chaotica_utils.utils.periods import parse_period_range, period_nav_context
+
+    start, end = parse_period_range(request.GET)
+    users = list(user_qs.select_related("manager", "acting_manager"))
+    cohort = build_cohort_code_allocation(users, start, end)
+    per_code = sorted(
+        cohort["per_code"].values(), key=lambda c: str(c["code"].code).lower()
+    )
+    context = period_nav_context(start, end)
+    context.update(
+        {
+            "rows": cohort["rows"],
+            "per_code": per_code,
+            "totals": cohort["totals"],
+            "partial_url": partial_url,
+            # Link to a member's own Billing Codes page only where it'd open.
+            "manageable_ids": {
+                u.pk for u in users if u.can_be_managed_by(request.user)
+            },
+        }
+    )
+    html = loader.render_to_string(
+        "partials/billing/cohort_allocation.html", context, request=request
+    )
+    return JsonResponse({"html": html})

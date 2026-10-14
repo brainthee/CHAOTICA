@@ -88,3 +88,57 @@ def previous_period(anchor, days=None):
     days = days or parse_period_start_days()
     start, _ = period_for_date(anchor, days)
     return period_for_date(start - timedelta(days=1), days)
+
+
+def parse_period_range(params):
+    """Parse a ``dateRange`` ("Y-m-d to Y-m-d") or ``start_date`` /
+    ``end_date`` pair from GET ``params``; defaults to the current timesheet
+    period. Shared by the per-user, team and org-unit billing views."""
+    from datetime import datetime
+
+    from django.utils import timezone
+
+    def _d(value):
+        return datetime.strptime(value, "%Y-%m-%d").date()
+
+    start = end = None
+    raw = params.get("dateRange", "")
+    if " to " in raw:
+        parts = raw.split(" to ")
+        if len(parts) == 2:
+            try:
+                start, end = _d(parts[0]), _d(parts[1])
+            except ValueError:
+                start = end = None
+    if start is None or end is None:
+        try:
+            if params.get("start_date"):
+                start = _d(params["start_date"])
+            if params.get("end_date"):
+                end = _d(params["end_date"])
+        except ValueError:
+            start = end = None
+    if start is None or end is None:
+        start, end = period_for_date(timezone.now().date())
+    return start, end
+
+
+def period_nav_context(start, end):
+    """Template context for prev / next / jump-to-current period navigation
+    (prev/next step whole periods, anchored on ``start``)."""
+    from django.utils import timezone
+
+    prev_start, prev_end = previous_period(start)
+    next_start, next_end = next_period(start)
+    cur_start, cur_end = period_for_date(timezone.now().date())
+    return {
+        "start_date": start,
+        "end_date": end,
+        "prev_start": prev_start,
+        "prev_end": prev_end,
+        "next_start": next_start,
+        "next_end": next_end,
+        "current_period_start": cur_start,
+        "current_period_end": cur_end,
+        "is_current_period": (start == cur_start and end == cur_end),
+    }

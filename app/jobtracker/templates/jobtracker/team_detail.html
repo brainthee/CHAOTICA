@@ -150,6 +150,9 @@
             <li class="nav-item text-nowrap me-2" role="presentation">
               <a class="nav-link" id="debrief-tab" data-bs-toggle="tab" href="#debrief" role="tab" aria-controls="tab-debrief" aria-selected="false" tabindex="-1"><span class="fa-solid fa-clipboard-list me-2 tab-icon-color"></span>Debrief</a>
             </li>
+            <li class="nav-item text-nowrap me-2" role="presentation">
+              <a class="nav-link" id="billing-tab" data-bs-toggle="tab" href="#billing" role="tab" aria-controls="tab-billing" aria-selected="false" tabindex="-1"><span class="fa-solid fa-file-invoice-dollar me-2 tab-icon-color"></span>Billing</a>
+            </li>
           {% endif %}
           <li class="nav-item text-nowrap me-2" role="presentation">
             <a class="nav-link" id="activity-tab" data-bs-toggle="tab" href="#activity" role="tab" aria-controls="tab-activity" aria-selected="false" tabindex="-1"><span class="fa-solid fa-clock-rotate-left me-2 tab-icon-color"></span>Activity</a>
@@ -175,6 +178,12 @@
               <div id="debrief-content" class="text-center py-5">
                 <div class="spinner-border text-primary" role="status"></div>
                 <p class="mt-2 text-body-secondary">Loading debrief...</p>
+              </div>
+            </div>
+            <div class="tab-pane fade" id="billing" role="tabpanel" aria-labelledby="billing-tab">
+              <div id="billing-content" class="text-center py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="mt-2 text-body-secondary">Loading billing...</p>
               </div>
             </div>
           {% endif %}
@@ -252,6 +261,27 @@
           }
         });
       }
+
+      // Billing tab: lazy load + period navigation (delegated; the links
+      // carry the full partial URL).
+      var billingLoaded = false;
+      var billingUrl = "{% url 'team_billing_partial' team.slug %}";
+      var billingTab = document.getElementById('billing-tab');
+      if (billingTab) {
+        billingTab.addEventListener('shown.bs.tab', function() {
+          if (!billingLoaded) {
+            billingLoaded = true;
+            loadTab(billingUrl, 'billing-content');
+          }
+        });
+      }
+      document.addEventListener('click', function(e) {
+        var link = e.target.closest('#billing-content a[data-billing-range]');
+        if (link) {
+          e.preventDefault();
+          loadTab(link.getAttribute('data-billing-range'), 'billing-content');
+        }
+      });
 
       // Handle week navigation inside debrief (delegated click handler)
       document.addEventListener('click', function(e) {

@@ -1,0 +1,153 @@
+{# Team / org-unit Billing tab. Hours only; numbers come from the same engine #}
+{# as each member's own Billing Codes page. Period links are handled by a    #}
+{# delegated click on [data-billing-range] in the host page.                 #}
+<div class="text-start" data-billing-container>
+  <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+    <div>
+      <h4 class="mb-0">Billing codes</h4>
+      <p class="fs-9 text-body-tertiary mb-0">Hours each member's schedule (and support cash-outs) puts against billing codes this period.</p>
+    </div>
+    <div class="d-flex align-items-center gap-2 ms-md-auto">
+      <a class="btn btn-sm btn-phoenix-secondary" title="Previous period" href="#"
+         data-billing-range="{{ partial_url }}?start_date={{ prev_start|date:'Y-m-d' }}&amp;end_date={{ prev_end|date:'Y-m-d' }}">
+        <span class="fas fa-chevron-left"></span>
+      </a>
+      <div class="text-center" style="min-width: 12rem;">
+        <div class="fw-semibold fs-9">{{ start_date|date:'j M Y' }} &ndash; {{ end_date|date:'j M Y' }}</div>
+        {% if is_current_period %}
+          <span class="text-body-tertiary fs-10">Current period</span>
+        {% else %}
+          <a class="fs-10" href="#"
+             data-billing-range="{{ partial_url }}?start_date={{ current_period_start|date:'Y-m-d' }}&amp;end_date={{ current_period_end|date:'Y-m-d' }}">Jump to current period</a>
+        {% endif %}
+      </div>
+      <a class="btn btn-sm btn-phoenix-secondary" title="Next period" href="#"
+         data-billing-range="{{ partial_url }}?start_date={{ next_start|date:'Y-m-d' }}&amp;end_date={{ next_end|date:'Y-m-d' }}">
+        <span class="fas fa-chevron-right"></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="row g-2">
+    {% with s=totals %}
+    <div class="col-6 col-md">
+      <div class="border border-translucent rounded-3 p-2 h-100">
+        <div class="fs-10 text-body-tertiary">Capacity</div>
+        <div class="fs-7 fw-semibold">{{ s.capacity_hours|default:0|floatformat:1 }}<span class="fs-10 text-body-tertiary">h</span></div>
+      </div>
+    </div>
+    <div class="col-6 col-md">
+      <div class="border border-translucent rounded-3 p-2 h-100">
+        <div class="fs-10 text-body-tertiary">Coded</div>
+        <div class="fs-7 fw-semibold text-success">{{ s.coded_hours|default:0|floatformat:1 }}<span class="fs-10 text-body-tertiary">h</span></div>
+      </div>
+    </div>
+    <div class="col-6 col-md">
+      <div class="border border-translucent rounded-3 p-2 h-100">
+        <div class="fs-10 text-body-tertiary">Uncoded</div>
+        <div class="fs-7 fw-semibold {% if s.uncoded_hours %}text-warning-emphasis{% else %}text-body-tertiary{% endif %}">{{ s.uncoded_hours|default:0|floatformat:1 }}<span class="fs-10 text-body-tertiary">h</span></div>
+      </div>
+    </div>
+    <div class="col-6 col-md">
+      <div class="border border-translucent rounded-3 p-2 h-100">
+        <div class="fs-10 text-body-tertiary">Unavailable</div>
+        <div class="fs-7 fw-semibold">{{ s.unavailable_hours|default:0|floatformat:1 }}<span class="fs-10 text-body-tertiary">h</span></div>
+      </div>
+    </div>
+    <div class="col-6 col-md">
+      <div class="border border-translucent rounded-3 p-2 h-100">
+        <div class="fs-10 text-body-tertiary">Internal</div>
+        <div class="fs-7 fw-semibold">{{ s.internal_hours|default:0|floatformat:1 }}<span class="fs-10 text-body-tertiary">h</span></div>
+      </div>
+    </div>
+    <div class="col-6 col-md">
+      <div class="border border-translucent rounded-3 p-2 h-100">
+        <div class="fs-10 text-body-tertiary">Support</div>
+        <div class="fs-7 fw-semibold">{{ s.support_hours|default:0|floatformat:1 }}<span class="fs-10 text-body-tertiary">h</span></div>
+      </div>
+    </div>
+    {% endwith %}
+  </div>
+
+  {% if totals.uncoded_hours %}
+    <div class="alert alert-subtle-warning d-flex align-items-center mt-3 mb-0 py-2 fs-9" role="alert">
+      <i class="fas fa-exclamation-triangle me-2"></i>
+      <div><strong>{{ totals.uncoded_hours|floatformat:2 }}h</strong> of scheduled work this period has no applicable billing code.</div>
+    </div>
+  {% endif %}
+
+  <div class="row g-3 mt-0">
+    <div class="col-12 col-xl-7">
+      <div class="card h-100">
+        <div class="card-header"><h5 class="mb-0">Per member</h5></div>
+        <div class="card-body p-0">
+          <table class="table table-sm align-middle mb-0 fs-9">
+            <thead>
+              <tr class="text-body-secondary">
+                <th class="ps-3">Member</th>
+                <th class="text-end">Capacity</th>
+                <th class="text-end">Coded</th>
+                <th class="text-end">Uncoded</th>
+                <th class="text-end">Unavailable</th>
+                <th class="text-end">Internal</th>
+                <th class="text-end pe-3">Support</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in rows %}
+                <tr>
+                  <td class="ps-3">
+                    {% if row.user.pk in manageable_ids %}
+                      <a href="{% url 'user_code_allocation' email=row.user.email %}?start_date={{ start_date|date:'Y-m-d' }}&amp;end_date={{ end_date|date:'Y-m-d' }}">{{ row.user }}</a>
+                    {% else %}
+                      {{ row.user }}
+                    {% endif %}
+                  </td>
+                  <td class="text-end">{{ row.stats.capacity_hours|floatformat:1 }}</td>
+                  <td class="text-end text-success">{{ row.stats.coded_hours|floatformat:1 }}</td>
+                  <td class="text-end {% if row.stats.uncoded_hours %}text-warning-emphasis fw-semibold{% else %}text-body-tertiary{% endif %}">{{ row.stats.uncoded_hours|floatformat:1 }}</td>
+                  <td class="text-end">{{ row.stats.unavailable_hours|floatformat:1 }}</td>
+                  <td class="text-end">{{ row.stats.internal_hours|floatformat:1 }}</td>
+                  <td class="text-end pe-3">{{ row.stats.support_hours|floatformat:1 }}</td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="7" class="text-center text-body-tertiary py-3">No active members.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-xl-5">
+      <div class="card h-100">
+        <div class="card-header"><h5 class="mb-0">Per code</h5></div>
+        <div class="card-body p-0">
+          <table class="table table-sm align-middle mb-0 fs-9">
+            <thead>
+              <tr class="text-body-secondary">
+                <th class="ps-3">Code</th>
+                <th>Client</th>
+                <th>Chargeable</th>
+                <th class="text-end">Hours</th>
+                <th class="text-end pe-3" title="Person-days booked against the code">Person-days</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for c in per_code %}
+                <tr>
+                  <td class="ps-3">{% include 'partials/billingcode/billingcode_badge.html' with billingcode=c.code %}</td>
+                  <td>{% if c.code.client %}{{ c.code.client }}{% else %}<span class="text-body-tertiary">Internal</span>{% endif %}</td>
+                  <td>{% if c.is_chargeable %}<span class="fas fa-check text-success"></span>{% else %}<span class="text-body-tertiary">&mdash;</span>{% endif %}</td>
+                  <td class="text-end">{{ c.hours|floatformat:1 }}</td>
+                  <td class="text-end pe-3">{{ c.days }}</td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="5" class="text-center text-body-tertiary py-3">No coded time this period.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -52,6 +52,11 @@
           <li class="nav-item text-nowrap me-2" role="presentation">
             <a class="nav-link" id="stats-tab" data-bs-toggle="tab" href="#stats" role="tab" aria-controls="tab-stats" aria-selected="false" tabindex="-1"><span class="fa-solid fa-clipboard me-2 tab-icon-color"></span>Stats</a>
           </li>
+          {% if 'can_view_jobs' in unit_perms %}
+          <li class="nav-item text-nowrap me-2" role="presentation">
+            <a class="nav-link" id="billing-tab" data-bs-toggle="tab" href="#billing" role="tab" aria-controls="tab-billing" aria-selected="false" tabindex="-1"><span class="fa-solid fa-file-invoice-dollar me-2 tab-icon-color"></span>Billing</a>
+          </li>
+          {% endif %}
           {% if 'can_view_all_reviews' in unit_perms %}
           <li class="nav-item text-nowrap me-2" role="presentation">
             <a class="nav-link" id="reviews-tab" data-bs-toggle="tab" href="#reviews" role="tab" aria-controls="tab-reviews" aria-selected="false" tabindex="-1"><span class="fa-solid fa-star me-2 tab-icon-color"></span>Reviews</a>
@@ -107,6 +112,15 @@
               <p class="mt-2 text-body-secondary">Loading stats...</p>
             </div>
           </div>
+
+          {% if 'can_view_jobs' in unit_perms %}
+          <div class="tab-pane fade" id="billing" role="tabpanel" aria-labelledby="billing-tab">
+            <div id="billing-content" class="text-center py-5">
+              <div class="spinner-border text-primary" role="status"></div>
+              <p class="mt-2 text-body-secondary">Loading billing...</p>
+            </div>
+          </div>
+          {% endif %}
 
           {% if 'can_view_all_reviews' in unit_perms %}
           <div class="tab-pane fade" id="reviews" role="tabpanel" aria-labelledby="reviews-tab">
@@ -239,6 +253,26 @@
           }
         });
       }
+
+      // Billing tab: lazy load + period navigation (delegated; the links
+      // carry the full partial URL).
+      var billingLoaded = false;
+      var billingTab = document.getElementById('billing-tab');
+      if (billingTab) {
+        billingTab.addEventListener('shown.bs.tab', function() {
+          if (!billingLoaded) {
+            billingLoaded = true;
+            loadTab("{% url 'orgunit_billing_partial' organisationalunit.slug %}", 'billing-content');
+          }
+        });
+      }
+      document.addEventListener('click', function(e) {
+        var link = e.target.closest('#billing-content a[data-billing-range]');
+        if (link) {
+          e.preventDefault();
+          loadTab(link.getAttribute('data-billing-range'), 'billing-content');
+        }
+      });
 
       // Load board when tab is shown
       var boardTab = document.getElementById('board-tab');

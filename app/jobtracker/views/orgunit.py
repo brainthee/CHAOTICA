@@ -1281,3 +1281,21 @@ def organisationalunit_set_lcr(request, slug, member_pk):
         request=request,
     )
     return JsonResponse(data)
+
+
+@login_required
+@unit_permission_required_or_403(
+    "jobtracker.can_view_jobs", (OrganisationalUnit, "slug", "slug")
+)
+def orgunit_billing_partial(request, slug):
+    """Billing tab: active members' coded / uncoded hours for a period."""
+    from .helpers import _render_cohort_billing
+
+    unit = get_object_or_404(OrganisationalUnit, slug=slug)
+    return _render_cohort_billing(
+        request,
+        User.objects.filter(
+            pk__in=unit.get_activeMemberships().values("member_id")
+        ),
+        reverse("orgunit_billing_partial", kwargs={"slug": unit.slug}),
+    )

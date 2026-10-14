@@ -468,3 +468,24 @@ def teammember_remove(request, slug, member_pk):
         "jobtracker/modals/teammember_remove.html", context, request=request
     )
     return JsonResponse(data)
+
+
+@login_required
+@permission_required_or_403(
+    "jobtracker.view_team", (Team, "slug", "slug")
+)
+def team_billing_partial(request, slug):
+    """Billing tab: members' coded / uncoded hours for a period (owners only,
+    like the debrief)."""
+    from django.urls import reverse
+    from .helpers import _render_cohort_billing
+
+    team = get_object_or_404(Team, slug=slug)
+    user = request.user
+    if not (user.is_superuser or team.owners.filter(pk=user.pk).exists()):
+        return HttpResponseForbidden()
+    return _render_cohort_billing(
+        request,
+        team.get_activeMembers(),
+        reverse("team_billing_partial", kwargs={"slug": team.slug}),
+    )

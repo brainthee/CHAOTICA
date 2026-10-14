@@ -160,7 +160,9 @@ def _iter_days(d0, d1):
         day += datetime.timedelta(days=1)
 
 
-def _add_support_draws(alloc, user, start, end, policy):
+def _add_support_draws(
+    alloc, user, start, end, policy, draws=None, job_assignments=None
+):
     """Overlay cashed-out support-budget hours onto the schedule allocation.
 
     A :class:`SupportBudgetDraw` records hours a support-team member "cashed out"
@@ -169,14 +171,19 @@ def _add_support_draws(alloc, user, start, end, policy):
     duplicate-code policy), and add them to ``per_day`` / ``per_code`` tagged as
     ``kind="support"`` — so the page reads as the member's timesheet, not just
     their delivery schedule.
+
+    Cohort callers pass pre-fetched ``draws`` (this user's, overlapping the
+    window) and ``job_assignments`` (``{job_pk: [assignment, ...]}``) so no
+    per-user / per-job query is made.
     """
     from jobtracker.models import SupportBudgetDraw
 
-    draws = list(
-        SupportBudgetDraw.objects.filter(
-            user=user, period_start__lte=end, period_end__gte=start
-        ).select_related("support_role__job")
-    )
+    if draws is None:
+        draws = list(
+            SupportBudgetDraw.objects.filter(
+                user=user, period_start__lte=end, period_end__gte=start
+            ).select_related("support_role__job")
+        )
     if not draws:
         return
 
@@ -190,7 +197,11 @@ def _add_support_draws(alloc, user, start, end, policy):
         job = draw.support_role.job
         if job.pk not in job_cache:
             url = job.get_absolute_url() if hasattr(job, "get_absolute_url") else None
-            job_cache[job.pk] = (str(job), url, list(job.get_billing_assignments()))
+            if job_assignments is not None:
+                assigned = job_assignments.get(job.pk, [])
+            else:
+                assigned = list(job.get_billing_assignments())
+            job_cache[job.pk] = (str(job), url, assigned)
 
     for draw in draws:
         label, url, assignments = job_cache[draw.support_role.job_id]
@@ -277,8 +288,13 @@ def build_user_code_allocation(user, start, end, masks=None):
 
     # Overlay cashed-out support-budget hours so the page reads as a timesheet.
     _add_support_draws(alloc, user, start, end, policy)
+    _add_capacity(alloc, start, end)
+    return alloc
 
-    # Notional capacity for the window: working weekdays × hours per day.
+
+def _add_capacity(alloc, start, end):
+    """Notional capacity for the window (working weekdays × hours per day) and
+    the scheduled total."""
     from constance import config
 
     hours_per_day = Decimal(str(config.DEFAULT_HOURS_IN_DAY))
@@ -288,7 +304,6 @@ def build_user_code_allocation(user, start, end, masks=None):
         s["coded_hours"] + s["uncoded_hours"]
         + s["unavailable_hours"] + s["internal_hours"]
     )
-    return alloc
 
 
 def _business_days(start, end):
@@ -616,6 +631,120 @@ def _finalise_allocation(agg, apply_leave_wins=False):
     return {"per_day": per_day, "per_code": per_code, "uncoded": uncoded, "stats": stats}
 
 
+def _load_cohort_slots(users, start, end):
+    """Batched slot load for a cohort over ``[start, end]`` (dates).
+
+    One query for every slot in the window across the whole cohort, bound to
+    the shared User instances, plus one query priming each user's
+    business-hours membership memo (first membership, ``unit`` joined; ``None``
+    cached too) so no per-slot lookup happens. Returns ``(users_by_id, slots,
+    slots_by_user)``.
+    """
+    from jobtracker.models import TimeSlot, OrganisationalUnitMember
+
+    users_by_id = {u.id: u for u in users}
+    user_ids = list(users_by_id)
+
+    slots = list(
+        TimeSlot.objects.filter(
+            user_id__in=user_ids, start__date__lte=end, end__date__gte=start
+        ).select_related(
+            "slot_type", "phase", "phase__job", "phase__job__client", "project"
+        )
+    )
+    slots_by_user = {}
+    for slot in slots:
+        owner = users_by_id.get(slot.user_id)
+        if owner is None:
+            continue
+        slot.user = owner
+        slots_by_user.setdefault(owner.id, []).append(slot)
+
+    for uid in user_ids:
+        users_by_id[uid]._business_membership_cache = None
+    for m in (
+        OrganisationalUnitMember.objects.filter(member_id__in=user_ids)
+        .select_related("unit")
+        .order_by("member_id", "pk")
+    ):
+        owner = users_by_id.get(m.member_id)
+        if owner is not None and owner._business_membership_cache is None:
+            owner._business_membership_cache = m
+
+    return users_by_id, slots, slots_by_user
+
+
+def build_cohort_code_allocation(users, start, end):
+    """Per-member billing-code allocation for a team / org unit.
+
+    Each member's ``stats`` are computed exactly as on their own page
+    (:func:`build_user_code_allocation`: uncoded work, leave-wins, support
+    cash-outs and capacity), but every query is batched across the cohort so
+    the cost doesn't grow with the number of members.
+
+    Returns:
+
+    * ``rows``: ``[{user, stats}, ...]`` sorted by name.
+    * ``per_code``: merged ``{code_id: {code, hours, days, ...}}`` (``days`` is
+      a person-day count).
+    * ``totals``: the sum of every member's ``stats``.
+    """
+    from jobtracker.models import BillingCodeAssignment, SupportBudgetDraw
+
+    if isinstance(start, datetime.datetime):
+        start = start.date()
+    if isinstance(end, datetime.datetime):
+        end = end.date()
+
+    users_by_id, slots, slots_by_user = _load_cohort_slots(users, start, end)
+    assignments = _resolve_slot_assignments(slots)
+    policy = duplicate_code_policy()
+
+    draws_by_user = {}
+    for draw in SupportBudgetDraw.objects.filter(
+        user_id__in=list(users_by_id), period_start__lte=end, period_end__gte=start
+    ).select_related("support_role__job", "support_role__job__client"):
+        draws_by_user.setdefault(draw.user_id, []).append(draw)
+    draw_job_assignments = {}
+    draw_job_ids = {
+        d.support_role.job_id for ds in draws_by_user.values() for d in ds
+    }
+    if draw_job_ids:
+        for a in BillingCodeAssignment.objects.filter(
+            job_id__in=draw_job_ids
+        ).select_related("code", "code__client"):
+            draw_job_assignments.setdefault(a.job_id, []).append(a)
+
+    rows = []
+    per_code = {}
+    totals = {}
+    for user in sorted(
+        users_by_id.values(),
+        key=lambda u: (str(u.last_name).lower(), str(u.first_name).lower(), u.email),
+    ):
+        agg = _aggregate_slots(
+            slots_by_user.get(user.id, []), start, end, *assignments, policy=policy
+        )
+        alloc = _finalise_allocation(agg, apply_leave_wins=True)
+        _add_support_draws(
+            alloc, user, start, end, policy,
+            draws=draws_by_user.get(user.id, []),
+            job_assignments=draw_job_assignments,
+        )
+        _add_capacity(alloc, start, end)
+        rows.append({"user": user, "stats": alloc["stats"]})
+        for key, value in alloc["stats"].items():
+            totals[key] = totals.get(key, Decimal(0)) + value
+        for code_id, summary in alloc["per_code"].items():
+            merged = per_code.setdefault(
+                code_id, {**summary, "hours": Decimal(0), "days": 0}
+            )
+            merged["hours"] += summary["hours"]
+            merged["days"] += summary["days"]
+
+    return {"rows": rows, "per_code": per_code, "totals": totals}
+
+
 def build_code_analytics(users, start, end, internal_only=False):
     """Aggregate billing-code usage across many users over ``[start, end]``.
 
@@ -636,45 +765,12 @@ def build_code_analytics(users, start, end, internal_only=False):
     read once for the whole cohort — rather than the per-user fan-out that made
     this page pathologically slow (hundreds of near-identical queries).
     """
-    from jobtracker.models import TimeSlot, OrganisationalUnitMember
-
     if isinstance(start, datetime.datetime):
         start = start.date()
     if isinstance(end, datetime.datetime):
         end = end.date()
 
-    users_by_id = {u.id: u for u in users}
-    user_ids = list(users_by_id)
-
-    # One query for every slot in the window across the whole cohort, bound to
-    # the shared User instances so the business-hours membership memo (primed
-    # below) is reused per user instead of re-queried per slot.
-    slots = list(
-        TimeSlot.objects.filter(
-            user_id__in=user_ids, start__date__lte=end, end__date__gte=start
-        ).select_related("slot_type", "phase", "phase__job", "project")
-    )
-    slots_by_user = {}
-    for slot in slots:
-        owner = users_by_id.get(slot.user_id)
-        if owner is None:
-            continue
-        slot.user = owner
-        slots_by_user.setdefault(owner.id, []).append(slot)
-
-    # Prime each user's business-hours membership in one query (first membership
-    # per user, ``unit`` joined). ``None`` is cached too, so users without a
-    # membership don't fall through to a per-slot lookup.
-    for uid in user_ids:
-        users_by_id[uid]._business_membership_cache = None
-    for m in (
-        OrganisationalUnitMember.objects.filter(member_id__in=user_ids)
-        .select_related("unit")
-        .order_by("member_id")
-    ):
-        owner = users_by_id.get(m.member_id)
-        if owner is not None and owner._business_membership_cache is None:
-            owner._business_membership_cache = m
+    users_by_id, slots, slots_by_user = _load_cohort_slots(users, start, end)
 
     # Assignments depend only on the target, so resolve them once for everyone.
     assignments = _resolve_slot_assignments(slots)
