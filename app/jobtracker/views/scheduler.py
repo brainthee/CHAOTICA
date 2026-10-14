@@ -694,6 +694,8 @@ def change_scheduler_slot_date(request, pk=None):
         form = ChangeTimeSlotDateModalForm(request.POST, instance=slot)
         if form.is_valid():
             updated_slot = form.save(commit=False)
+            # Re-verify against the edited values (e.g. a new user).
+            _verify_slot_unit_access(request, updated_slot)
             # Framework checks for delivery slots
             if updated_slot.is_delivery() and updated_slot.phase:
                 framework = updated_slot.phase.job.associated_framework
@@ -782,6 +784,8 @@ def change_scheduler_slot(request, pk=None):
 
         if form.is_valid():
             updated_slot = form.save(commit=False)
+            # Re-verify against the edited values (new phase / project / user).
+            _verify_slot_unit_access(request, updated_slot)
             # Framework checks for delivery slots
             if updated_slot.is_delivery() and updated_slot.phase:
                 framework = updated_slot.phase.job.associated_framework
@@ -1261,6 +1265,8 @@ def create_scheduler_project_slot(request):
         )
         if form.is_valid():
             base = form.save(commit=False)
+            # The project may come from POST (no project param) — verify its unit.
+            _verify_slot_unit_access(request, base)
 
             def build_slot(u):
                 return TimeSlot(
@@ -1314,7 +1320,7 @@ def create_scheduler_phase_slot(request):
 
     if job_id:
         job = get_object_or_404(Job, pk=job_id)
-        phase = get_object_or_404(Phase, pk=phase_id) if phase_id else None
+        phase = get_object_or_404(Phase, pk=phase_id, job=job) if phase_id else None
     else:
         job = None
         phase = None
@@ -1332,6 +1338,8 @@ def create_scheduler_phase_slot(request):
         )
         if form.is_valid():
             base = form.save(commit=False)
+            # The phase may come from POST (no job param) — verify its unit too.
+            _verify_slot_unit_access(request, base)
 
             if len(users) > 1:
                 def build_slot(u):

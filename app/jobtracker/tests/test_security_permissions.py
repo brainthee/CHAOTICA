@@ -7,6 +7,7 @@ superuser (first user created), so these tests create dedicated NON-superuser
 users with explicit guardian perms to actually exercise the gates.
 """
 import json
+from datetime import timedelta
 from django.core.exceptions import PermissionDenied
 from django.test import RequestFactory, override_settings
 from guardian.shortcuts import assign_perm, remove_perm
@@ -14,6 +15,7 @@ from guardian.shortcuts import assign_perm, remove_perm
 from chaotica_utils.models import User
 from jobtracker import schedule_history
 from jobtracker.models import TimeSlot
+from jobtracker.enums import TimeSlotDeliveryRole
 from jobtracker.views import scheduler as sched_views
 from .test_schedule_history import ScheduleHistoryBase
 
@@ -139,6 +141,116 @@ class SchedulerPermissionTests(ScheduleHistoryBase):
         resp = view(req, pk=slot.pk)
         self.assertEqual(resp.status_code, 200)
         self.assertFalse(TimeSlot.objects.filter(pk=slot.pk).exists())
+
+
+@override_settings(
+    CHANNEL_LAYERS={"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
+)
+class SchedulerCrossUnitTests(ScheduleHistoryBase):
+    """A scheduler of unit A must not book onto, or move slots into, unit B —
+    whatever phase / user the request smuggles in."""
+
+    def setUp(self):
+        super().setUp()
+        from jobtracker.models import OrganisationalUnit, OrganisationalUnitMember, Job, Phase
+
+        self.rf = RequestFactory()
+        self.unit_b = OrganisationalUnit.objects.create(name="Other Unit")
+        self.job_b = Job.objects.create(
+            unit=self.unit_b, client=self.client_obj, title="Other Job",
+            created_by=self.actor, account_manager=self.actor,
+        )
+        self.phase_b = Phase.objects.create(job=self.job_b, title="Other Phase")
+
+        self.scheduler = User.objects.create_user(email="sched@test.com", password="pw12345")
+        self.user_a = User.objects.create_user(email="ua@test.com", password="pw12345")
+        self.user_b = User.objects.create_user(email="ub@test.com", password="pw12345")
+        OrganisationalUnitMember.objects.create(unit=self.unit, member=self.scheduler)
+        OrganisationalUnitMember.objects.create(unit=self.unit, member=self.user_a)
+        OrganisationalUnitMember.objects.create(unit=self.unit_b, member=self.user_b)
+        # Direct perms after the memberships (member save re-syncs unit perms).
+        assign_perm("jobtracker.can_schedule_job", self.scheduler, self.unit)
+        self.scheduler = _reload(self.scheduler)
+
+    def _fmt(self, dt):
+        return dt.strftime("%Y-%m-%d %H:%M:%S")
+
+    def _req(self, path, params=None, data=None):
+        req = self.rf.post(path + ("?" + params if params else ""), data or {})
+        req.user = self.scheduler
+        return req
+
+    def test_create_rejects_phase_from_another_job(self):
+        from django.http import Http404
+
+        req = self._req(
+            "/scheduler/timeslot/create/phase",
+            "job={}&phase={}&resource_id={}".format(self.job.pk, self.phase_b.pk, self.user_a.pk),
+        )
+        with self.assertRaises(Http404):
+            sched_views.create_scheduler_phase_slot(req)
+
+    def test_create_without_job_rejects_foreign_phase(self):
+        req = self._req(
+            "/scheduler/timeslot/create/phase",
+            "resource_id={}".format(self.user_a.pk),
+            {
+                "user": self.user_a.pk,
+                "phase": self.phase_b.pk,
+                "deliveryRole": TimeSlotDeliveryRole.DELIVERY,
+                "start": self._fmt(self.start),
+                "end": self._fmt(self.end),
+            },
+        )
+        with self.assertRaises(PermissionDenied):
+            sched_views.create_scheduler_phase_slot(req)
+        self.assertFalse(TimeSlot.objects.filter(phase=self.phase_b).exists())
+
+    def test_edit_rejects_move_to_foreign_phase(self):
+        slot = self._delivery_slot(user=self.user_a)
+        req = self._req(
+            "/scheduler/timeslot/change/{}".format(slot.pk),
+            data={
+                "user": self.user_a.pk,
+                "phase": self.phase_b.pk,
+                "deliveryRole": TimeSlotDeliveryRole.DELIVERY,
+                "start": self._fmt(self.start),
+                "end": self._fmt(self.end),
+            },
+        )
+        with self.assertRaises(PermissionDenied):
+            sched_views.change_scheduler_slot(req, pk=slot.pk)
+        slot.refresh_from_db()
+        self.assertEqual(slot.phase_id, self.phase.pk)
+
+    def test_drag_rejects_internal_slot_onto_foreign_user(self):
+        slot = self._internal_slot(user=self.user_a)
+        req = self._req(
+            "/scheduler/timeslot/change/{}/date".format(slot.pk),
+            data={
+                "user": self.user_b.pk,
+                "start": self._fmt(self.start),
+                "end": self._fmt(self.end),
+            },
+        )
+        with self.assertRaises(PermissionDenied):
+            sched_views.change_scheduler_slot_date(req, pk=slot.pk)
+        slot.refresh_from_db()
+        self.assertEqual(slot.user_id, self.user_a.pk)
+
+    def test_drag_within_unit_still_allowed(self):
+        slot = self._internal_slot(user=self.user_a)
+        new_end = self.end + timedelta(hours=1)
+        req = self._req(
+            "/scheduler/timeslot/change/{}/date".format(slot.pk),
+            data={
+                "user": self.user_a.pk,
+                "start": self._fmt(self.start),
+                "end": self._fmt(new_end),
+            },
+        )
+        resp = sched_views.change_scheduler_slot_date(req, pk=slot.pk)
+        self.assertTrue(json.loads(resp.content)["form_is_valid"])
 
 
 class DeltaFilterUnitTests(ScheduleHistoryBase):
