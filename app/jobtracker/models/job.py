@@ -523,6 +523,13 @@ class Job(models.Model):
         else:
             return User.objects.none()
 
+    def phase_role_holder_ids(self):
+        """PKs of users holding a phase role (lead / author / TQA / PQA)."""
+        ids = set()
+        for row in self.phases.values_list('project_lead', 'report_author', 'techqa_by', 'presqa_by'):
+            ids.update(pk for pk in row if pk is not None)
+        return ids
+
     def team_scheduled(self):
         from ..models import TimeSlot
 

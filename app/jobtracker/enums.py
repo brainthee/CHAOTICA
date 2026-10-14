@@ -203,13 +203,30 @@ class TimeSlotDeliveryRole:
 
 
 class JobGuestPermissions:
+    """Perms granted to a job's team (Job.team()) without a unit role."""
+
     ALLOWED = [
         "jobtracker.view_job_schedule",
         "jobtracker.can_update_job",
         "jobtracker.can_add_note_job",
         "jobtracker.can_view_jobs",
-        "jobtracker.view_job_schedule",
     ]
+    # Of ALLOWED, only phase role holders (lead / author / TQA / PQA) get these —
+    # merely being booked on (or having created) a job doesn't grant edit rights.
+    PHASE_ROLE_ONLY = [
+        "jobtracker.can_update_job",
+    ]
+
+    @classmethod
+    def permits(cls, user, job, perms):
+        """Whether the team fallback grants ``user`` every perm in ``perms``."""
+        if any(perm not in cls.ALLOWED for perm in perms):
+            return False
+        if not job.team().filter(pk=user.pk).exists():
+            return False
+        if any(perm in cls.PHASE_ROLE_ONLY for perm in perms):
+            return user.pk in job.phase_role_holder_ids()
+        return True
 
 
 class JobSupportRole:

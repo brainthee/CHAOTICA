@@ -83,21 +83,15 @@ class JobPermissionRequiredMixin(PermissionRequiredMixin):
 
         if forbidden:
             from .models import Job, Phase
-            team = None
+            job = None
             if isinstance(obj, Job):
-                team = obj.team()
+                job = obj
             elif isinstance(obj, Phase):
-                team = obj.job.team()
+                job = obj.job
 
-            # It's forbidden - lets check if we have specific job permissions...
-            if team is not None and request.user in team:
-                should_permit = True  # We're in the team - permit for now!
-                # We're in the team but check if we're doing a permission we'll permit for the moment?
-                for perm in perms:
-                    if perm not in JobGuestPermissions.ALLOWED:
-                        should_permit = False  # Ok, asking for a denied perm.
-
-                if should_permit:
+            # Forbidden by unit perms - fall back to the job team's guest perms.
+            if job is not None and request.user.is_authenticated:
+                if JobGuestPermissions.permits(request.user, job, perms):
                     forbidden = False
 
         if forbidden:

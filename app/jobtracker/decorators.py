@@ -174,28 +174,18 @@ def job_permission_required_or_403(perm, lookup_variables=None, **kwargs):
                 accept_global_perms=accept_global_perms,
             )
 
-            team = None
             from .models import Job, Phase
+            job = None
             if isinstance(obj, Job):
-                team = obj.team()
+                job = obj
             elif isinstance(obj, Phase):
-                team = obj.job.team()
-            
-            if not team and response:
-                # Fail safe - if we can't load the obj!
-                return response
+                job = obj.job
 
-            if response:
-                # It's forbidden - lets check if we have specific job permissions...
-                if request.user in team:
-                    should_permit = True # We're in the team - permit for now!
-                    # We're in the team but check if we're doing a permission we'll permit for the moment?
-                    if perm not in JobGuestPermissions.ALLOWED:
-                        should_permit = False # Ok, asking for a denied perm. 
-                            
-                    if should_permit:
-                        response = False
-                    
+            # Forbidden by unit perms - fall back to the job team's guest perms.
+            if response and job is not None and request.user.is_authenticated:
+                if JobGuestPermissions.permits(request.user, job, [perm]):
+                    response = False
+
             if response:
                 return response
             return view_func(request, *args, **kwargs)
