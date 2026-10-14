@@ -28,6 +28,7 @@ from ..enums import PhaseStatuses, JobStatuses, JobSupportRole
 from django.utils import timezone
 from datetime import timedelta, date, datetime
 from decimal import Decimal
+import logging
 from django.templatetags.static import static
 from django_bleach.models import BleachField
 from django.db.models.functions import Lower
@@ -35,6 +36,8 @@ from django.db.models.signals import m2m_changed
 from django.dispatch import receiver
 from django.contrib.auth.models import Permission
 from collections import defaultdict
+
+logger = logging.getLogger(__name__)
 
 
 def _default_business_days():
@@ -932,9 +935,17 @@ class OrganisationalUnitRole(models.Model):
         for perm in perms:
             if not perm:
                 continue
-            codeword = perm.split(".")[1] if "." in perm else perm
-            if Permission.objects.filter(codename=codeword).exists():
-                self.permissions.add(Permission.objects.get(codename=codeword))
+            app_label, _, codeword = perm.rpartition(".")
+            lookup = Permission.objects.filter(codename=codeword)
+            if app_label:
+                lookup = lookup.filter(content_type__app_label=app_label)
+            permission = lookup.first()
+            if permission:
+                self.permissions.add(permission)
+            else:
+                logger.error(
+                    "Unit role '%s' references unknown permission '%s'", self.name, perm
+                )
         self.save()
         return True
 

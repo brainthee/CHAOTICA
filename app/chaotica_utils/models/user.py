@@ -30,6 +30,9 @@ from geopy.geocoders import Nominatim
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from ..utils import get_sentinel_user
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Group(django.contrib.auth.models.Group):
@@ -52,7 +55,12 @@ class Group(django.contrib.auth.models.Group):
         else:
             return ""
 
-    def sync_global_permissions(self):
+    def sync_global_permissions(self, log_missing=True):
+        """Reset this global-role group's perms to GlobalRoles.PERMISSIONS.
+
+        A codename that doesn't exist is skipped and logged as an error (a
+        typo here silently drops the grant). ``log_missing=False`` is for the
+        post_migrate bootstrap, where later apps' perms don't exist yet."""
         for global_role in GlobalRoles.CHOICES:
             if self.name == settings.GLOBAL_GROUP_PREFIX + global_role[1]:
                 # Ok, we match a global role..
@@ -61,7 +69,11 @@ class Group(django.contrib.auth.models.Group):
                     try:
                         assign_perm(perm, self, None)
                     except Permission.DoesNotExist:
-                        pass  # ignore this for the moment!
+                        if log_missing:
+                            logger.error(
+                                "Global role '%s' references unknown permission '%s'",
+                                self.name, perm,
+                            )
                 return True
 
         # If we reach this; this group isn't matched with a global role in code
@@ -427,7 +439,7 @@ class User(AbstractUser):
     def can_deliver(self):
         from jobtracker.models.orgunit import OrganisationalUnit
 
-        return get_objects_for_user(self, "can_deliver_jobs", OrganisationalUnit)
+        return get_objects_for_user(self, "can_deliver_job", OrganisationalUnit)
 
     def _get_last_leave_renewal_date(self):
         # Get current datetime in UTC

@@ -56,7 +56,7 @@ def index(request):
         request.user, "can_pqa_jobs", klass=OrganisationalUnit
     )
     units_can_deliver = get_objects_for_user(
-        request.user, "can_deliver_jobs", klass=OrganisationalUnit
+        request.user, "can_deliver_job", klass=OrganisationalUnit
     )
     # Unit managers (change_organisationalunit) get the full unit-wide alarm view;
     # schedulers (can_schedule_job, held by Manager + Service Delivery) get the

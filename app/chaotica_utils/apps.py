@@ -13,7 +13,7 @@ def populate_groups(sender, **kwargs):
         )
         # Only sync permissions on startup if the group doesn't exist
         if created:
-            group.sync_global_permissions()
+            group.sync_global_permissions(log_missing=False)
 
 
 class ChaoticaUtilsConfig(AppConfig):

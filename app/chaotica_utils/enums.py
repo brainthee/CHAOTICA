@@ -82,7 +82,7 @@ class GlobalRoles:
                 "jobtracker.add_qualification",
                 "jobtracker.change_qualification",
                 "jobtracker.delete_qualification",
-                "jobtracker.view_users_qualification",
+                "jobtracker.view_users_qualifications",
                 # Workflow tracking,
                 "jobtracker.view_workflowtask",
                 "jobtracker.add_workflowtask",
@@ -147,9 +147,9 @@ class GlobalRoles:
                 "jobtracker.add_qualification",
                 "jobtracker.change_qualification",
                 "jobtracker.delete_qualification",
-                "jobtracker.view_users_qualification",
+                "jobtracker.view_users_qualifications",
                 # Users
-                "jobtracker.manage_user",
+                "chaotica_utils.manage_user",
                 # Billing Codes
                 "jobtracker.view_billingcode",
                 "jobtracker.add_billingcode",
@@ -197,7 +197,7 @@ class GlobalRoles:
                 "jobtracker.view_users_schedule",
                 # qualification
                 "jobtracker.view_qualification",
-                "jobtracker.view_users_qualification",
+                "jobtracker.view_users_qualifications",
                 # Leave
                 "chaotica_utils.manage_leave",
                 # Billing Codes
@@ -241,7 +241,7 @@ class GlobalRoles:
                 "jobtracker.view_organisationalunit",
                 # qualification
                 "jobtracker.view_qualification",
-                "jobtracker.view_users_qualification",
+                "jobtracker.view_users_qualifications",
                 # Billing Codes
                 "jobtracker.view_billingcode",
                 "jobtracker.add_billingcode",
@@ -282,7 +282,7 @@ class GlobalRoles:
                 "jobtracker.view_organisationalunit",
                 # qualification
                 "jobtracker.view_qualification",
-                "jobtracker.view_users_qualification",
+                "jobtracker.view_users_qualifications",
                 # Billing Codes
                 "jobtracker.view_billingcode",
                 "jobtracker.add_billingcode",
@@ -315,7 +315,7 @@ class GlobalRoles:
                 "jobtracker.view_organisationalunit",
                 # qualification
                 "jobtracker.view_qualification",
-                "jobtracker.view_users_qualification",
+                "jobtracker.view_users_qualifications",
                 # Billing Codes
                 "jobtracker.view_billingcode",
                 # Project
