@@ -620,49 +620,49 @@ class Phase(models.Model):
     ################
     delivery_hours = models.DecimalField(
         "Delivery Hours",
-        max_digits=6,
+        max_digits=9,
         default=0,
         decimal_places=3,
     )
     reporting_hours = models.DecimalField(
         "Reporting Hours",
-        max_digits=6,
+        max_digits=9,
         default=0,
         decimal_places=3,
     )
     mgmt_hours = models.DecimalField(
         "Management Hours",
-        max_digits=6,
+        max_digits=9,
         default=0,
         decimal_places=3,
     )
     qa_hours = models.DecimalField(
         "QA Hours",
-        max_digits=6,
+        max_digits=9,
         default=0,
         decimal_places=3,
     )
     oversight_hours = models.DecimalField(
         "Oversight Hours",
-        max_digits=6,
+        max_digits=9,
         default=0,
         decimal_places=3,
     )
     debrief_hours = models.DecimalField(
         "Debrief Hours",
-        max_digits=6,
+        max_digits=9,
         default=0,
         decimal_places=3,
     )
     contingency_hours = models.DecimalField(
         "Contingency Hours",
-        max_digits=6,
+        max_digits=9,
         default=0,
         decimal_places=3,
     )
     other_hours = models.DecimalField(
         "Other Hours",
-        max_digits=6,
+        max_digits=9,
         default=0,
         decimal_places=3,
     )
