@@ -439,3 +439,45 @@ class ClosedPhaseBookingTests(CascadeTestBase):
         action.refresh_from_db()
         self.assertFalse(action.reverted)
 
+
+class CleanupMigrationTests(CascadeTestBase):
+    """Migration 0087 repairs lost-job phases, stray slots and empty
+    Scheduled phases, and is safe to run twice."""
+
+    def _run(self):
+        import importlib
+        from django.apps import apps
+
+        mod = importlib.import_module(
+            "jobtracker.migrations.0087_cleanup_lost_job_phases_and_stray_slots"
+        )
+        mod.cleanup_lost_job_phases_and_stray_slots(apps, None)
+
+    def test_cleanup_is_correct_and_idempotent(self):
+        lost_live = self._phase(PhaseStatuses.SCHEDULED_CONFIRMED)
+        self._slot(lost_live)
+        lost_delivered = self._phase(PhaseStatuses.DELIVERED)
+        self._set_job_status(JobStatuses.LOST)
+
+        other = Job.objects.create(
+            unit=self.unit, client=self.client_obj, title="Other",
+            created_by=self.actor, account_manager=self.actor,
+        )
+        cancelled = self._phase(PhaseStatuses.SCHEDULED_CONFIRMED, job=other)
+        stray = self._slot(cancelled)
+        Phase.objects.filter(pk=cancelled.pk).update(status=PhaseStatuses.CANCELLED)
+        empty_sched = self._phase(PhaseStatuses.SCHEDULED_TENTATIVE, job=other)
+        booked = self._phase(PhaseStatuses.SCHEDULED_CONFIRMED, job=other)
+        self._slot(booked)
+
+        for _ in range(2):
+            self._run()
+            for p in (lost_live, lost_delivered, cancelled, empty_sched, booked):
+                p.refresh_from_db()
+            self.assertEqual(lost_live.status, PhaseStatuses.CANCELLED)
+            self.assertEqual(lost_live.timeslots.count(), 0)
+            self.assertEqual(lost_delivered.status, PhaseStatuses.DELIVERED)
+            self.assertFalse(TimeSlot.objects.filter(pk=stray.pk).exists())
+            self.assertEqual(empty_sched.status, PhaseStatuses.PENDING_SCHED)
+            self.assertEqual(booked.status, PhaseStatuses.SCHEDULED_CONFIRMED)
+            self.assertEqual(booked.timeslots.count(), 1)
