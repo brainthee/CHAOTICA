@@ -460,6 +460,19 @@ class SupportBudgetViewTests(SupportBudgetTestBase):
         body = resp.content.decode()
         self.assertIn("Revenue", body)
         self.assertIn("Margin vs target", body)
+        self.assertIn(self.owner.get_absolute_url(), body)  # person column is populated
+        self.assertIn("Budget (h)", body)
+
+    def test_sales_dashboard_hides_hours_without_finance_perm(self):
+        # Hours + revenue x premium x share would reveal the member's LCR.
+        viewer = User.objects.create_user(email="viewer@test.com", password="pw")
+        assign_perm("jobtracker.can_view_jobs", viewer, self.unit)
+        self.http.force_login(viewer)
+        resp = self.http.get(reverse("view_job_sales", kwargs={"slug": self.job.slug}))
+        self.assertEqual(resp.status_code, 200)
+        body = resp.content.decode()
+        self.assertNotIn("Budget (h)", body)
+        self.assertNotIn("16.0", body)
 
     def test_sales_dashboard_requires_job_view_perm(self):
         self.http.force_login(self.stranger)

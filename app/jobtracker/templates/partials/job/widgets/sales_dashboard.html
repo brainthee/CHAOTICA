@@ -93,8 +93,8 @@
               <tr>
                 <th class="ps-3">Person</th>
                 <th class="text-end">Share</th>
-                {% if can_view_loaded_costs %}<th class="text-end">Budget</th>{% endif %}
-                <th class="text-end pe-3">Budget (h)</th>
+                {# Per-person hours stay finance-gated: revenue x premium x share / hours = that person's LCR. #}
+                {% if can_view_loaded_costs %}<th class="text-end">Budget</th><th class="text-end pe-3">Budget (h)</th>{% endif %}
               </tr>
             </thead>
             <tbody>
@@ -102,8 +102,10 @@
               <tr>
                 <td class="ps-3 align-middle">{% include 'partials/users/user_table_display.html' with notitle=1 noorg=1 u=m.user %}</td>
                 <td class="text-end align-middle">{{ m.share_percent|floatformat:2 }}%</td>
-                {% if can_view_loaded_costs %}<td class="text-end align-middle">£{{ m.budget_money|floatformat:2|intcomma }}</td>{% endif %}
+                {% if can_view_loaded_costs %}
+                <td class="text-end align-middle">£{{ m.budget_money|floatformat:2|intcomma }}</td>
                 <td class="text-end align-middle pe-3">{% if m.budget_hours != None %}{{ m.budget_hours|floatformat:1 }}{% else %}—{% endif %}</td>
+                {% endif %}
               </tr>
               {% empty %}
               <tr><td colspan="4" class="text-center text-body-secondary py-3">No support team on this job.</td></tr>
