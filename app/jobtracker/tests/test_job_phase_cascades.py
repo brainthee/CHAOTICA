@@ -183,3 +183,33 @@ class AllPhasesFinishedTests(CascadeTestBase):
         self._phase(PhaseStatuses.CANCELLED)
         self._deliver(phase)
         self.assertEqual(self.job.status, JobStatuses.COMPLETED)
+
+
+class ScopedClearTests(CascadeTestBase):
+    """C5: a phase-scoped scheduler clear must revert the emptied phase."""
+
+    def test_scoped_clear_reverts_phase_to_pending(self):
+        from urllib.parse import urlencode
+
+        phase = self._phase(PhaseStatuses.SCHEDULED_CONFIRMED)
+        slot = self._slot(phase)
+        day = timezone.localtime(slot.start).date().isoformat()
+        query = urlencode(
+            {
+                "start": day + "T00:00:00",
+                "end": day + "T23:59:59",
+                "resource_id": self.actor.pk,
+                "phase": phase.pk,
+            }
+        )
+        self.http.force_login(self.actor)
+        resp = self.http.post(
+            reverse("clear_scheduler_range") + "?" + query,
+            {"user_action": "approve_action"},
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(resp.json()["form_is_valid"])
+
+        phase.refresh_from_db()
+        self.assertEqual(phase.timeslots.count(), 0)
+        self.assertEqual(phase.status, PhaseStatuses.PENDING_SCHED)

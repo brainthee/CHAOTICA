@@ -1458,7 +1458,10 @@ def clear_scheduler_range(request):
                     resource.clear_timeslots_in_range(start, end)
                     resource.clear_timeslot_comments_in_range(start, end)
             else:
-                timeslots.delete()
+                # Per-row delete() so emptied phases revert to Pending
+                # Scheduling (bulk .delete() bypasses TimeSlot.delete()).
+                for slot in timeslots:
+                    slot.delete()
             schedule_history.record_deletes(
                 request.user, before, action_type=ScheduleActionType.CLEAR
             )
