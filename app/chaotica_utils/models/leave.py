@@ -162,8 +162,11 @@ class LeaveRequest(models.Model):
         ) and user == self.user:
             # No managers defined - can self approve
             return True
-        for membership in self.user.unit_memberships.all():
-            # Check if user has permission in any of the units...
+        if user == self.user:
+            # Unit approvers can't approve their own leave.
+            return False
+        for membership in self.user.unit_memberships.filter(left_date__isnull=True):
+            # Check if user has permission in any of the requester's current units...
             if user.has_perm("can_approve_leave_requests", membership.unit):
                 return True
         return False

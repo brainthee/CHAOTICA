@@ -9,6 +9,7 @@ from django.http import (
     Http404,
     HttpResponseBadRequest,
 )
+from django.core.exceptions import PermissionDenied
 import json
 from ..forms import (
     ChaoticaUserForm,
@@ -791,9 +792,24 @@ def user_merge(request, email):
     return JsonResponse(data)
 
 
+def _get_schedule_viewable_user(request, email):
+    """The user whose calendar is requested, if the requester may see it: the
+    same rule as the scheduler / API v1 (view_users_schedule on their unit),
+    plus anyone who can manage them (self, (acting) manager, manage_user)."""
+    from jobtracker.utils import viewable_schedule_user_pks
+
+    user = get_object_or_404(User, email=email)
+    if not (
+        user.can_be_managed_by(request.user)
+        or user.pk in viewable_schedule_user_pks(request.user)
+    ):
+        raise PermissionDenied
+    return user
+
+
 @login_required
 def user_schedule_timeslots(request, email):
-    user = get_object_or_404(User, email=email)
+    user = _get_schedule_viewable_user(request, email)
     # Change FullCalendar format to DateTime
     start = clean_fullcalendar_datetime(request.GET.get("start", None))
     end = clean_fullcalendar_datetime(request.GET.get("end", None))
@@ -806,7 +822,7 @@ def user_schedule_timeslots(request, email):
 
 @login_required
 def user_schedule_holidays(request, email):
-    user = get_object_or_404(User, email=email)
+    user = _get_schedule_viewable_user(request, email)
     # Change FullCalendar format to DateTime
     start = clean_fullcalendar_datetime(request.GET.get("start", None))
     end = clean_fullcalendar_datetime(request.GET.get("end", None))

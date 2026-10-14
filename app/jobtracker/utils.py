@@ -59,17 +59,39 @@ def can_view_job_schedule(user, job):
         return False
 
 
+def can_view_job(user, job):
+    """Whether ``user`` may view ``job`` - the same gate as JobDetailView /
+    PhaseDetailView (can_view_jobs on the job or its unit, else the job team's
+    guest perms)."""
+    from .enums import JobGuestPermissions
+
+    perm = "jobtracker.can_view_jobs"
+    if not user or not user.is_authenticated:
+        return False
+    if user.has_perm(perm, job):
+        return True
+    if job.unit and user.has_perm(perm, job.unit):
+        return True
+    return JobGuestPermissions.permits(user, job, [perm])
+
+
 def viewable_schedule_user_pks(user):
     """Set of user PKs whose schedule ``user`` may view in the *global* scope.
 
     Mirrors the ``view_users_schedule`` filter the global slots view applies
     (:func:`_filter_users_on_query`) so the live/polled delta layers only ever
     hand a user slot data they could already see in the calendar. Always includes
-    the user themselves."""
-    pks = set()
-    for org_unit in get_objects_for_user(user, "jobtracker.view_users_schedule"):
-        for member in org_unit.get_allMembers():
-            pks.add(member.pk)
+    the user themselves.
+
+    Excludes people who left the unit but are still active elsewhere (moved
+    on); disabled accounts stay visible so ``show_inactive_users`` still works."""
+    pks = set(
+        OrganisationalUnitMember.objects.filter(
+            unit__in=get_objects_for_user(user, "jobtracker.view_users_schedule"),
+        )
+        .filter(Q(left_date__isnull=True) | Q(member__is_active=False))
+        .values_list("member_id", flat=True)
+    )
     if getattr(user, "pk", None):
         pks.add(user.pk)
     return pks

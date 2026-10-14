@@ -1034,6 +1034,16 @@ class EditProfileForm(forms.ModelForm):
             "contracted_leave_renewal",
         )
 
+    def clean(self):
+        cleaned = super().clean()
+        # Nobody can be their own (acting) manager - it would let them approve
+        # their own leave and manage their own record.
+        for field in ("manager", "acting_manager"):
+            chosen = cleaned.get(field)
+            if chosen and self.instance.pk and chosen.pk == self.instance.pk:
+                self.add_error(field, "You can't be your own manager.")
+        return cleaned
+
     def clean_profile_image(self):
         profile_image = self.cleaned_data["profile_image"]
         if profile_image:

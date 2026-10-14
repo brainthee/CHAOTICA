@@ -227,7 +227,20 @@ def follow_entity(request):
             entity = get_object_or_404(OrganisationalUnit, id=entity_id)
         else:
             return JsonResponse({'error': 'Invalid entity type'}, status=400)
-            
+
+        # Only follow things you can see - notifications carry titles/links.
+        from jobtracker.utils import can_view_job
+        if entity_type == 'Job':
+            can_view = can_view_job(request.user, entity)
+        elif entity_type == 'Phase':
+            can_view = can_view_job(request.user, entity.job)
+        else:
+            can_view = request.user.has_perm(
+                'jobtracker.view_organisationalunit'
+            ) or request.user.has_perm('jobtracker.view_organisationalunit', entity)
+        if not can_view:
+            return JsonResponse({'error': 'Permission denied'}, status=403)
+
         # If no specific notification types provided, use defaults for that entity type
         if not notification_types:
             if entity_type == 'Job':
