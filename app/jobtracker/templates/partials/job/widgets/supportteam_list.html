@@ -34,10 +34,12 @@
                            data-url="{% url 'job_support_team_edit' slug=support_role.job.slug pk=support_role.pk %}">
                            Edit
                         </button>
+                        {% if support_role.can_cash_out %}
                         <button class="dropdown-item text-success js-load-modal-form"
                            data-url="{% url 'job_support_team_draw' slug=support_role.job.slug pk=support_role.pk %}">
                            Cash out hours
                         </button>
+                        {% endif %}
                         <button class="dropdown-item js-load-modal-form"
                            data-url="{% url 'job_support_team_draws' slug=support_role.job.slug pk=support_role.pk %}">
                            Cash-out history

@@ -451,6 +451,9 @@ def user_support_auto_draw(request, email):
     if p_start > p_end:
         messages.error(request, "The period end must be on or after its start.")
         created = 0
+    elif p_start > timezone.now().date():
+        messages.error(request, "Support can't be cashed out for a future period.")
+        created = 0
     else:
         draws = auto_cash_out(target, p_start, p_end, created_by=request.user)
         created = len(draws)

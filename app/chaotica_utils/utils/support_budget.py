@@ -288,6 +288,12 @@ def create_support_draw(role, period_start, period_end, hours, created_by=None):
         raise ValidationError(
             {"period_end": "The period end must be on or after its start."}
         )
+    if period_start and period_start > date_cls.today():
+        # Cash-outs record time already (being) worked: current or past
+        # periods only.
+        raise ValidationError(
+            {"period_start": "Support can't be cashed out for a future period."}
+        )
 
     with transaction.atomic():
         # Serialise concurrent cash-outs on the same role (double-clicks, two

@@ -493,9 +493,14 @@ def job_support_team_draw(request, slug, pk):
     from ..forms import SupportBudgetDrawForm
     from chaotica_utils.utils import create_support_draw, period_for_date
     from chaotica_utils.utils.support_budget import remaining_hours_for_role
+    from django.http import HttpResponseForbidden
 
     job = get_object_or_404(Job, slug=slug)
-    support_role = get_object_or_404(JobSupportTeamRole, pk=pk, job=job)
+    support_role = get_object_or_404(
+        JobSupportTeamRole.objects.select_related("user", "job__unit"), pk=pk, job=job
+    )
+    if not can_cash_out_support_role(request.user, support_role):
+        return HttpResponseForbidden()
     data = dict()
     if request.method == "POST":
         form = SupportBudgetDrawForm(request.POST)
@@ -553,6 +558,18 @@ def can_reverse_support_draws(user, job):
         or user.has_perm("jobtracker.can_schedule_job", job.unit)
         or user.has_perm("jobtracker.can_view_loaded_costs", job.unit)
     )
+
+
+def can_cash_out_support_role(user, support_role):
+    """Who may cash out a support role from the job page (on top of
+    ``can_schedule_job``): the member themselves, their managers, or unit
+    finance. Scheduling rights alone don't let you draw someone else's
+    budget."""
+    if user.is_superuser:
+        return True
+    if support_role.user_id and support_role.user.can_be_managed_by(user):
+        return True
+    return user.has_perm("jobtracker.can_view_loaded_costs", support_role.job.unit)
 
 
 def _can_view_support_draws(user, support_role):
@@ -794,6 +811,12 @@ class JobDetailView(
         support_roles = list(job.supporting_team.select_related("user").all())
         for role in support_roles:
             role.budget = per_member.get(role.user_id)
+            # Same rule as can_cash_out_support_role, finance check hoisted.
+            role.can_cash_out = (
+                self.request.user.is_superuser
+                or context["can_view_loaded_costs"]
+                or bool(role.user_id and role.user.can_be_managed_by(self.request.user))
+            )
         context["support_roles"] = support_roles
 
         return context

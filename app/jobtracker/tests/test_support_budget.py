@@ -1032,3 +1032,107 @@ class SupportProfileTests(SupportBudgetTestBase):
         )
         self.assertTrue(resp.json()["form_is_valid"])
         self.assertFalse(SupportProfile.objects.filter(pk=ops.pk).exists())
+
+
+class CashOutRulesTests(SupportBudgetTestBase):
+    """Server-side cash-out rules: never overdraw (all three entry points),
+    scheduling rights alone don't cash out someone else's budget, and only
+    current/past periods can be cashed out."""
+
+    def setUp(self):
+        super().setUp()
+        self.member = self._user(1, lcr=50)
+        self.role = self._role(self.member, 100)  # £800 -> 16h
+        self.manager = self._user(2)
+        self.member.manager = self.manager
+        self.member.save()
+        self.scheduler = self._user(3)
+        self.finance = self._user(4)
+        for u in (self.scheduler, self.manager, self.finance):
+            assign_perm("jobtracker.can_schedule_job", u, self.unit)
+            assign_perm("jobtracker.can_view_jobs", u, self.unit)
+        assign_perm("jobtracker.can_view_loaded_costs", self.finance, self.unit)
+        self.http = TestHttpClient(HTTP_HOST="localhost")
+
+    def _job_url(self):
+        return reverse(
+            "job_support_team_draw", kwargs={"slug": self.job.slug, "pk": self.role.pk}
+        )
+
+    def _user_url(self):
+        return reverse(
+            "user_support_draw",
+            kwargs={"email": self.member.email, "role_pk": self.role.pk},
+        )
+
+    def _payload(self, hours, start="2026-09-01", end="2026-09-14"):
+        return {"period_start": start, "period_end": end, "hours_drawn": str(hours)}
+
+    def test_overdraw_rejected_job_page(self):
+        self.http.force_login(self.finance)
+        body = self.http.post(self._job_url(), self._payload(17)).json()
+        self.assertFalse(body["form_is_valid"])
+        self.assertFalse(self.role.draws.exists())
+
+    def test_overdraw_rejected_user_page(self):
+        self.http.force_login(self.member)
+        body = self.http.post(self._user_url(), self._payload(17)).json()
+        self.assertFalse(body["form_is_valid"])
+        self.assertFalse(self.role.draws.exists())
+
+    def test_auto_draw_caps_at_remaining(self):
+        create_support_draw(
+            self.role, date(2026, 9, 1), date(2026, 9, 7), Decimal("10"), self.member
+        )
+        self.http.force_login(self.member)
+        self.http.post(
+            reverse("user_support_auto_draw", kwargs={"email": self.member.email}),
+            {"start": "2026-09-08", "end": "2026-09-14"},
+        )
+        self.assertEqual(self.role.drawn_hours(), Decimal("16"))
+
+    def test_scheduler_cannot_cash_out_others(self):
+        self.http.force_login(self.scheduler)
+        self.assertEqual(self.http.get(self._job_url()).status_code, 403)
+        self.assertEqual(
+            self.http.post(self._job_url(), self._payload(2)).status_code, 403
+        )
+        self.assertFalse(self.role.draws.exists())
+        # ...and the menu item is hidden for them.
+        resp = self.http.get(reverse("job_detail", kwargs={"slug": self.job.slug}))
+        self.assertNotIn('"%s"' % self._job_url(), resp.content.decode())
+
+    def test_manager_and_finance_can_cash_out_on_job_page(self):
+        for u in (self.manager, self.finance):
+            self.http.force_login(u)
+            self.assertTrue(
+                self.http.post(self._job_url(), self._payload(2)).json()["form_is_valid"]
+            )
+        self.assertEqual(self.role.drawn_hours(), Decimal("4"))
+        resp = self.http.get(reverse("job_detail", kwargs={"slug": self.job.slug}))
+        self.assertIn('"%s"' % self._job_url(), resp.content.decode())
+
+    def test_future_period_rejected(self):
+        from datetime import timedelta
+
+        start = date.today() + timedelta(days=1)
+        end = start + timedelta(days=6)
+        with self.assertRaises(ValidationError):
+            create_support_draw(self.role, start, end, Decimal("1"), self.member)
+        self.http.force_login(self.member)
+        body = self.http.post(
+            self._user_url(), self._payload(1, start.isoformat(), end.isoformat())
+        ).json()
+        self.assertFalse(body["form_is_valid"])
+        self.http.post(
+            reverse("user_support_auto_draw", kwargs={"email": self.member.email}),
+            {"start": start.isoformat(), "end": end.isoformat()},
+        )
+        self.assertFalse(self.role.draws.exists())
+
+    def test_current_period_allowed(self):
+        from chaotica_utils.utils import period_for_date
+
+        start, end = period_for_date(date.today())
+        create_support_draw(self.role, start, end, Decimal("1"), self.member)
+        self.assertEqual(self.role.draws.count(), 1)
