@@ -1044,7 +1044,7 @@ def phases_bulk_workflow_modal(request, job_slug, new_state):
         elif new_state == PhaseStatuses.POSTPONED:
             can_proceed = phase.can_proceed_to_postponed()
         elif new_state == PhaseStatuses.DELETED:
-            can_proceed = phase.can_proceed_to_delete()
+            can_proceed = phase.can_proceed_to_deleted()
         elif new_state == PhaseStatuses.ARCHIVED:
             can_proceed = phase.can_proceed_to_archived()
         else:

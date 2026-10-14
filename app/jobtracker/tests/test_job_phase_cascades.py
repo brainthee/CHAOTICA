@@ -111,3 +111,19 @@ class JobDeleteWithDeletedPhaseTests(CascadeTestBase):
         live.refresh_from_db()
         self.assertEqual(self.job.status, JobStatuses.DELETED)
         self.assertEqual(live.status, PhaseStatuses.DELETED)
+
+
+class PhaseBulkDeleteTests(CascadeTestBase):
+    """C2: the bulk "Deleted" workflow modal used a non-existent method."""
+
+    def test_bulk_deleted_modal_returns_200(self):
+        phase = self._phase(PhaseStatuses.PENDING_SCHED)
+        self.http.force_login(self.actor)
+        resp = self.http.get(
+            reverse(
+                "phases_bulk_workflow_modal",
+                kwargs={"job_slug": self.job.slug, "new_state": PhaseStatuses.DELETED},
+            )
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn(phase.title, resp.json()["html_form"])
