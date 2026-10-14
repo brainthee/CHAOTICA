@@ -17,9 +17,9 @@ class task_progress_workflows(CronJobBase):
     def do(self):
         # Lets work through the different times we want to auto-progress!
 
-        # Never auto-progress phases belonging to a deleted or archived job.
+        # Never auto-progress phases belonging to a lost, deleted or archived job.
         live_phases = Phase.objects.exclude(
-            job__status__in=[JobStatuses.DELETED, JobStatuses.ARCHIVED]
+            job__status__in=JobStatuses.CLOSED_STATUSES
         )
 
         ## Move to checks if scheduling confirmed and < 5 days to start...
@@ -74,9 +74,9 @@ class task_fire_job_notifications(CronJobBase):
         # - Report late to PQA
         # - Report late to Delivery
 
-        # Never notify for phases belonging to a deleted or archived job.
+        # Never notify for phases belonging to a lost, deleted or archived job.
         live_phases = Phase.objects.exclude(
-            job__status__in=[JobStatuses.DELETED, JobStatuses.ARCHIVED]
+            job__status__in=JobStatuses.CLOSED_STATUSES
         )
 
         ## Phase pre-checks are late

@@ -261,3 +261,48 @@ class StoredDatesCronTests(CascadeTestBase):
         phase.refresh_from_db()
         self.assertIsNone(phase._start_date)
         self.assertIsNone(phase._delivery_date)
+
+
+class PhaseRevivalGuardTests(CascadeTestBase):
+    """G1: closed phases can't be revived; closed jobs' phases can't progress."""
+
+    def test_cancelled_phase_cannot_be_postponed(self):
+        phase = self._phase(PhaseStatuses.CANCELLED)
+        self.assertFalse(phase.can_to_postponed())
+        self.assertFalse(phase.can_to_cancelled())
+
+    def test_closed_phases_cannot_be_postponed(self):
+        for status in (PhaseStatuses.DELETED, PhaseStatuses.ARCHIVED):
+            self.assertFalse(self._phase(status).can_proceed_to_postponed())
+
+    def test_live_phase_can_still_be_postponed(self):
+        self.assertTrue(self._phase(PhaseStatuses.IN_PROGRESS).can_proceed_to_postponed())
+
+    def test_phase_on_lost_job_cannot_progress(self):
+        phase = self._phase(PhaseStatuses.POSTPONED)
+        ready = self._phase(PhaseStatuses.READY_TO_BEGIN)
+        self._set_job_status(JobStatuses.LOST)
+        phase.refresh_from_db()
+        ready.refresh_from_db()
+        self.assertFalse(phase.can_to_pending_sched())
+        self.assertFalse(ready.can_proceed_to_in_progress())
+
+    def test_phase_on_completed_job_can_still_progress(self):
+        phase = self._phase(PhaseStatuses.COMPLETED)
+        self._set_job_status(JobStatuses.COMPLETED)
+        phase.refresh_from_db()
+        self.assertTrue(phase.can_proceed_to_delivered())
+
+    def test_cron_skips_lost_jobs(self):
+        from jobtracker.tasks import task_progress_workflows
+
+        ready = self._phase(
+            PhaseStatuses.READY_TO_BEGIN,
+            desired_start_date=timezone.now().date() - timedelta(days=1),
+        )
+        self._set_job_status(JobStatuses.LOST)
+        with mock.patch.object(Phase, "to_in_progress") as started:
+            task_progress_workflows().do()
+        started.assert_not_called()
+        ready.refresh_from_db()
+        self.assertEqual(ready.status, PhaseStatuses.READY_TO_BEGIN)

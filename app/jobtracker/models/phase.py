@@ -31,6 +31,19 @@ from ..enums import (
 from guardian.shortcuts import get_objects_for_user
 
 
+def _job_is_open(phase):
+    """FSM condition: forward phase transitions need a job that isn't closed
+    (lost/deleted/archived). Completed jobs still allow legacy phases to move."""
+    return phase.job.status not in JobStatuses.CLOSED_STATUSES
+
+
+# Statuses a phase can be cancelled/postponed from. Closed phases
+# (cancelled/postponed/deleted/archived) can't be revived this way.
+OPEN_PHASE_STATUSES = [
+    s for s, _ in PhaseStatuses.CHOICES if s not in PhaseStatuses.INACTIVE_STATUSES
+]
+
+
 class PhaseManager(models.Manager):
 
     def phases_with_unit_permission(
@@ -1405,6 +1418,7 @@ class Phase(models.Model):
             PhaseStatuses.POSTPONED,
         ],
         target=PhaseStatuses.PENDING_SCHED,
+        conditions=[_job_is_open],
     )
     def to_pending_sched(self, user=None):
         log_system_activity(
@@ -1436,6 +1450,7 @@ class Phase(models.Model):
         field=status,
         source=[PhaseStatuses.PENDING_SCHED, PhaseStatuses.SCHEDULED_CONFIRMED],
         target=PhaseStatuses.SCHEDULED_TENTATIVE,
+        conditions=[_job_is_open],
     )
     def to_sched_tentative(self, user=None):
         log_system_activity(
@@ -1474,6 +1489,7 @@ class Phase(models.Model):
         field=status,
         source=[PhaseStatuses.PENDING_SCHED, PhaseStatuses.SCHEDULED_TENTATIVE],
         target=PhaseStatuses.SCHEDULED_CONFIRMED,
+        conditions=[_job_is_open],
     )
     def to_sched_confirmed(self, user=None):
         log_system_activity(
@@ -1547,6 +1563,7 @@ class Phase(models.Model):
             PhaseStatuses.SCHEDULED_CONFIRMED,
         ],
         target=PhaseStatuses.PRE_CHECKS,
+        conditions=[_job_is_open],
     )
     def to_pre_checks(self, user=None):
         log_system_activity(
@@ -1580,6 +1597,7 @@ class Phase(models.Model):
             PhaseStatuses.PRE_CHECKS,
         ],
         target=PhaseStatuses.CLIENT_NOT_READY,
+        conditions=[_job_is_open],
     )
     def to_not_ready(self, user=None):
         log_system_activity(
@@ -1611,6 +1629,7 @@ class Phase(models.Model):
         field=status,
         source=[PhaseStatuses.PRE_CHECKS, PhaseStatuses.CLIENT_NOT_READY],
         target=PhaseStatuses.READY_TO_BEGIN,
+        conditions=[_job_is_open],
     )
     def to_ready(self, user=None):
         log_system_activity(
@@ -1645,6 +1664,7 @@ class Phase(models.Model):
             PhaseStatuses.READY_TO_BEGIN,
         ],
         target=PhaseStatuses.IN_PROGRESS,
+        conditions=[_job_is_open],
     )
     def to_in_progress(self, user=None):
         log_system_activity(
@@ -1682,6 +1702,7 @@ class Phase(models.Model):
         field=status,
         source=[PhaseStatuses.IN_PROGRESS, PhaseStatuses.QA_TECH_AUTHOR_UPDATES],
         target=PhaseStatuses.PENDING_TQA,
+        conditions=[_job_is_open],
     )
     def to_pending_tech_qa(self, user=None):
         log_system_activity(
@@ -1778,6 +1799,7 @@ class Phase(models.Model):
             PhaseStatuses.PENDING_TQA,
         ],
         target=PhaseStatuses.QA_TECH,
+        conditions=[_job_is_open],
     )
     def to_tech_qa(self, user=None):
         log_system_activity(
@@ -1829,6 +1851,7 @@ class Phase(models.Model):
             PhaseStatuses.QA_TECH,
         ],
         target=PhaseStatuses.QA_TECH_AUTHOR_UPDATES,
+        conditions=[_job_is_open],
     )
     def to_tech_qa_updates(self, user=None):
         log_system_activity(
@@ -1877,6 +1900,7 @@ class Phase(models.Model):
         field=status,
         source=[PhaseStatuses.QA_TECH, PhaseStatuses.QA_PRES_AUTHOR_UPDATES],
         target=PhaseStatuses.PENDING_PQA,
+        conditions=[_job_is_open],
     )
     def to_pending_pres_qa(self, user=None):
         log_system_activity(
@@ -1926,6 +1950,7 @@ class Phase(models.Model):
             PhaseStatuses.PENDING_PQA,
         ],
         target=PhaseStatuses.QA_PRES,
+        conditions=[_job_is_open],
     )
     def to_pres_qa(self, user=None):
         log_system_activity(
@@ -1979,6 +2004,7 @@ class Phase(models.Model):
             PhaseStatuses.QA_PRES,
         ],
         target=PhaseStatuses.QA_PRES_AUTHOR_UPDATES,
+        conditions=[_job_is_open],
     )
     def to_pres_qa_updates(self, user=None):
         log_system_activity(
@@ -2027,6 +2053,7 @@ class Phase(models.Model):
         field=status,
         source=[PhaseStatuses.QA_PRES, PhaseStatuses.IN_PROGRESS],
         target=PhaseStatuses.COMPLETED,
+        conditions=[_job_is_open],
     )
     def to_completed(self, user=None):
         log_system_activity(
@@ -2102,7 +2129,10 @@ class Phase(models.Model):
     ## DELIVERED
     #####################
     @transition(
-        field=status, source=PhaseStatuses.COMPLETED, target=PhaseStatuses.DELIVERED
+        field=status,
+        source=PhaseStatuses.COMPLETED,
+        target=PhaseStatuses.DELIVERED,
+        conditions=[_job_is_open],
     )
     def to_delivered(self, user=None):
         log_system_activity(
@@ -2149,7 +2179,9 @@ class Phase(models.Model):
     #####################
     ## CANCELLED
     #####################
-    @transition(field=status, source="+", target=PhaseStatuses.CANCELLED)
+    @transition(
+        field=status, source=OPEN_PHASE_STATUSES, target=PhaseStatuses.CANCELLED
+    )
     def to_cancelled(self, user=None):
         log_system_activity(
             self,
@@ -2192,7 +2224,9 @@ class Phase(models.Model):
     #####################
     ## POSTPONED
     #####################
-    @transition(field=status, source="+", target=PhaseStatuses.POSTPONED)
+    @transition(
+        field=status, source=OPEN_PHASE_STATUSES, target=PhaseStatuses.POSTPONED
+    )
     def to_postponed(self, user=None):
         log_system_activity(
             self,

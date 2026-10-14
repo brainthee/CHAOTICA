@@ -466,6 +466,9 @@ class JobStatuses:
     # completed ones (the work is done, the budget is earned).
     SUPPORT_DRAWABLE_STATUSES = ACTIVE_STATUSES + [COMPLETED]
 
+    # Jobs that are closed for work: their phases can't progress or be booked.
+    CLOSED_STATUSES = [LOST, DELETED, ARCHIVED]
+
     BS_COLOURS = (
         (DRAFT, "secondary"),
         (PENDING_SCOPE, "info"),
