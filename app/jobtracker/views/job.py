@@ -774,6 +774,7 @@ class JobDetailView(
             'job', 'job__client',
         ).prefetch_related(
             Prefetch('timeslots', queryset=timeslot_qs),
+            'billing_code_assignments',
             Prefetch('report_author__unit_memberships', queryset=unit_membership_qs),
             Prefetch('project_lead__unit_memberships', queryset=unit_membership_qs),
         )
@@ -817,6 +818,21 @@ class JobDetailView(
                 or bool(role.user_id and role.user.can_be_managed_by(self.request.user))
             )
         context["support_roles"] = support_roles
+
+        # Live phases with no effective billing code (none of their own and
+        # none on the job). Phase assignments are prefetched.
+        phases_missing_code = []
+        if (
+            job.status not in JobStatuses.CLOSED_STATUSES
+            and not job.billing_code_assignments.exists()
+        ):
+            phases_missing_code = [
+                p
+                for p in job.phases.all()
+                if p.status not in PhaseStatuses.INACTIVE_STATUSES
+                and not p.billing_code_assignments.all()
+            ]
+        context["phases_missing_code"] = phases_missing_code
 
         return context
 

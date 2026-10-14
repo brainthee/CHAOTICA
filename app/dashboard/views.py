@@ -414,6 +414,19 @@ def index(request):
         ).filter(timeslots__isnull=True).select_related("service", "job__client", "project_lead")
     )
 
+    # Not base_sched: that's ACTIVE-only, and completed phases still need a
+    # code for the time already booked.
+    alarms["no_billing_code"] = list(
+        Phase.objects.filter(
+            Q(job__unit__in=manager_units | units_can_schedule) | phase_involved,
+            status__in=PhaseStatuses.CODE_REQUIRED_STATUSES,
+            job__status__in=JobStatuses.ACTIVE_STATUSES,
+        )
+        .filter(Phase.missing_billing_code_q())
+        .distinct()
+        .select_related("service", "job__client", "project_lead")
+    )
+
     alarms["job_overdue"] = list(
         alarm_job_qs.annotate(
             db_delivery_date=Coalesce("desired_delivery_date", "_delivery_date")

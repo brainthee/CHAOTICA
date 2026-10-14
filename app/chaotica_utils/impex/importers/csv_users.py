@@ -44,9 +44,6 @@ class CSVUserImporter(BaseImporter):
         "contracted_leave",
         "carry_over_leave",
         "contracted_leave_renewal",
-        "is_active",
-        "is_staff",
-        "is_superuser",
     ]
 
     def import_data(self, request, data):
@@ -104,34 +101,30 @@ class CSVUserImporter(BaseImporter):
 
                 for header in row:
                     if header in CSVUserImporter.allowed_fields:
-                        if header == "manager":
-                            # translate manager email to
+                        if header in ("manager", "acting_manager"):
+                            # Translate the email to an existing user - never
+                            # create accounts from a manager column.
                             person = row[header].lower().strip()
-                            db_target_person, db_target_person_created = (
-                                User.objects.get_or_create(
-                                    email__iexact=person,
-                                    defaults={
-                                        "email": person,
-                                    },
+                            if not person:
+                                continue
+                            db_target_person = User.objects.filter(
+                                email__iexact=person
+                            ).first()
+                            if not db_target_person:
+                                log.warning(
+                                    "{} {} doesn't exist in CHAOTICA. Skipping".format(
+                                        header, person
+                                    )
                                 )
-                            )
-                            if db_target_person_created:
-                                log.info("Created manager {}".format(person))
-                            db_user.manager = db_target_person
-                        elif header == "acting_manager":
-                            # translate manager email to
-                            person = row[header].lower().strip()
-                            db_target_person, db_target_person_created = (
-                                User.objects.get_or_create(
-                                    email__iexact=person,
-                                    defaults={
-                                        "email": person,
-                                    },
+                                continue
+                            if db_target_person.pk == db_user.pk:
+                                log.warning(
+                                    "{} can't be their own {}. Skipping".format(
+                                        auth_email, header
+                                    )
                                 )
-                            )
-                            if db_target_person_created:
-                                log.info("Created acting manager {}".format(person))
-                            db_user.acting_manager = db_target_person
+                                continue
+                            setattr(db_user, header, db_target_person)
                         else:
                             setattr(db_user, header, row[header])
 

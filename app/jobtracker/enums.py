@@ -851,6 +851,24 @@ class PhaseStatuses:
         QA_PRES_AUTHOR_UPDATES,
     ]
 
+    #: Phases that should carry a billing code (booked time is being coded):
+    #: Schedule Tentative through Completed.
+    CODE_REQUIRED_STATUSES = [
+        SCHEDULED_TENTATIVE,
+        SCHEDULED_CONFIRMED,
+        PRE_CHECKS,
+        CLIENT_NOT_READY,
+        READY_TO_BEGIN,
+        IN_PROGRESS,
+        PENDING_TQA,
+        QA_TECH,
+        QA_TECH_AUTHOR_UPDATES,
+        PENDING_PQA,
+        QA_PRES,
+        QA_PRES_AUTHOR_UPDATES,
+        COMPLETED,
+    ]
+
     QA_STATUSES = [
         PENDING_TQA,
         QA_TECH,

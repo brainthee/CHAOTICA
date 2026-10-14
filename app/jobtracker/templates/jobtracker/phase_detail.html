@@ -33,6 +33,12 @@
     {% endfor %}
   </div>
   {% endif %}
+  {% if missing_billing_code %}
+  <div class="alert alert-phoenix-warning py-2 px-3 mt-2 mb-0" role="alert">
+    <span class="fas fa-file-invoice-dollar me-2"></span>
+    <strong>No billing code:</strong> neither this phase nor its job has a billing code, so time booked won't be coded.
+  </div>
+  {% endif %}
 </div>
 
 <div class="row mt-3 border-1 border-top bg-body-secondary h-100 px-3">

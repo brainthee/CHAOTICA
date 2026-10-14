@@ -46,6 +46,10 @@
                     <div class="alert alert-outline-info pt-2 pb-2">
                         {{ message }}
                     </div>
+                    {% elif message.tags == "warning" %}
+                    <div class="alert alert-outline-warning pt-2 pb-2">
+                        {{ message }}
+                    </div>
                     {% endif %}
                     {% endfor %}
                     {% endif %}

@@ -33,6 +33,12 @@
                     </ul>
                     {% endif %}
 
+                    {% if missing_code_count %}
+                    <div class="alert alert-outline-warning pt-2 pb-2">
+                        {{ missing_code_count }} eligible phase{{ missing_code_count|pluralize }} ha{{ missing_code_count|pluralize:"s,ve" }} no billing code (on the phase or the job) — time booked won't be coded.
+                    </div>
+                    {% endif %}
+
                     <p class="mb-2">Select phases to move to <mark>{{ new_state_str }}</mark>:</p>
                     
                     {% if eligible_phases %}
@@ -54,6 +60,9 @@
                                     <span class="badge badge-phoenix badge-phoenix-{% include 'partials/phase/status_colour.html' %} ms-2">
                                         {{ phase.get_status_display }}
                                     </span>
+                                    {% if phase.missing_billing_code %}
+                                    <span class="badge badge-phoenix badge-phoenix-warning ms-1">No billing code</span>
+                                    {% endif %}
                                 </div>
                             </label>
                             {% endfor %}

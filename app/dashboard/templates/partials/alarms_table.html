@@ -273,6 +273,46 @@
 </div>
 {% endif %}
 
+{% if alarms.no_billing_code %}
+<div class="card mb-3">
+  <div class="card-header">
+    <h5 class="mb-0 text-warning-emphasis">
+      <span class="fas fa-file-invoice-dollar me-2"></span>Phases with No Billing Code
+      <span class="badge bg-warning text-dark ms-2">{{ alarms.no_billing_code|length }}</span>
+    </h5>
+  </div>
+  <div class="p-3 bg-body-emphasis">
+    <table class="table table-responsive table-sm datatable align-items-center mb-0">
+      <caption>Phases with no billing code on the phase or its job</caption>
+      <thead>
+        <tr>
+          <th class="text-uppercase text-secondary text-xxs font-weight-bolder">ID</th>
+          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Phase</th>
+          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Client</th>
+          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Status</th>
+          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Lead</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for phase in alarms.no_billing_code %}
+        <tr>
+          <td><a href="{{ phase.get_absolute_url }}">{{ phase.phase_id }}</a></td>
+          <td><a href="{{ phase.get_absolute_url }}">{{ phase.title }}</a></td>
+          <td><a href="{{ phase.job.client.get_absolute_url }}">{{ phase.job.client }}</a></td>
+          <td>{% include 'partials/phase/status_badge.html' with badge_size='sm' %}</td>
+          <td>
+            {% if phase.project_lead %}
+              {% include 'partials/users/user_link.html' with user_profile=phase.project_lead %}
+            {% else %}&mdash;{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
 {% if alarms.job_overdue %}
 <div class="card mb-3">
   <div class="card-header">

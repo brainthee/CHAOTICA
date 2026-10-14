@@ -177,6 +177,12 @@ class PhaseDetailView(
                 ]
             )
 
+        context["missing_billing_code"] = (
+            phase.status not in PhaseStatuses.INACTIVE_STATUSES
+            and phase.job.status not in JobStatuses.CLOSED_STATUSES
+            and not phase.has_billing_code()
+        )
+
         return context
 
 
@@ -1055,11 +1061,27 @@ def phases_bulk_workflow_modal(request, job_slug, new_state):
         else:
             ineligible_phases.append(phase)
     
+    # Confirming without a billing code is allowed but flagged per phase.
+    missing_code_count = 0
+    if new_state == PhaseStatuses.SCHEDULED_CONFIRMED and eligible_phases:
+        job_coded = job.billing_code_assignments.exists()
+        coded_ids = set()
+        if not job_coded:
+            coded_ids = set(
+                job.phases.filter(billing_code_assignments__isnull=False)
+                .values_list("pk", flat=True)
+            )
+        for phase in eligible_phases:
+            phase.missing_billing_code = not job_coded and phase.pk not in coded_ids
+            if phase.missing_billing_code:
+                missing_code_count += 1
+
     # Get workflow tasks for this state
     tasks = WorkflowTask.objects.filter(
         appliedModel=WorkflowTask.WF_PHASE, status=new_state
     )
     
+    context["missing_code_count"] = missing_code_count
     context["job"] = job
     context["new_state_str"] = new_state_str
     context["new_state"] = new_state

@@ -767,6 +767,21 @@ class Phase(models.Model):
     def has_own_billing_assignments(self):
         return self.billing_code_assignments.exists()
 
+    def has_billing_code(self):
+        """True if any code applies to this phase (its own or its job's)."""
+        return self.get_effective_billing_assignments().exists()
+
+    @staticmethod
+    def missing_billing_code_q():
+        """Q for phases with no effective code: none of their own AND none on
+        the job. For list/dashboard querysets (no per-phase queries)."""
+        from django.db.models import Exists, OuterRef
+        from .financial import BillingCodeAssignment
+
+        return ~Exists(
+            BillingCodeAssignment.objects.filter(phase=OuterRef("pk"))
+        ) & ~Exists(BillingCodeAssignment.objects.filter(job=OuterRef("job")))
+
     ########################################################################################
     ##
     ## Main Methods
@@ -1560,6 +1575,15 @@ class Phase(models.Model):
         if not self.has_reports() and notify_request:
             messages.add_message(
                 notify_request, messages.INFO, "Beware - no reports required!"
+            )
+
+        # Non-blocking: confirming without a code is allowed, just flagged.
+        if notify_request and not self.has_billing_code():
+            messages.add_message(
+                notify_request,
+                messages.INFO,
+                "No billing code is set for this phase or its job — time booked "
+                "won't be coded.",
             )
 
         if self.job.status < JobStatuses.SCOPING_COMPLETE:

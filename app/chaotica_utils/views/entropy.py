@@ -38,6 +38,7 @@ _WEIGHTS = {
     "no_techqa": 6,
     "no_presqa": 6,
     "unscheduled": 5,
+    "no_billing_code": 3,
 }
 
 _LABELS = {
@@ -48,6 +49,7 @@ _LABELS = {
     "no_techqa": "Tech QA unassigned",
     "no_presqa": "Pres QA unassigned",
     "unscheduled": "Unscheduled phases",
+    "no_billing_code": "Phases without a billing code",
 }
 
 # Order factors are presented in the full UI.
@@ -59,6 +61,7 @@ _ORDER = [
     "no_techqa",
     "no_presqa",
     "unscheduled",
+    "no_billing_code",
 ]
 
 TREND_WEEKS = 8
@@ -184,6 +187,16 @@ def compute_entropy(user):
         ],
         timeslots__isnull=True,
     ).count()
+    counts["no_billing_code"] = (
+        Phase.objects.filter(
+            Q(job__unit__in=manager_units | units_can_schedule) | phase_involved,
+            status__in=PhaseStatuses.CODE_REQUIRED_STATUSES,
+            job__status__in=JobStatuses.ACTIVE_STATUSES,
+        )
+        .filter(Phase.missing_billing_code_q())
+        .distinct()
+        .count()
+    )
     counts["job_overdue"] = (
         Job.objects.filter(
             Q(unit__in=manager_units) | job_involved,

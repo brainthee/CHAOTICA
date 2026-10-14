@@ -188,7 +188,7 @@ def app_settings(request):
     return HttpResponse(template.render(context, request))
 
 
-@login_required
+@permission_required_or_403("chaotica_utils.manage_site_settings")
 @require_http_methods(["GET", "POST"])
 def settings_import_data(request):
     data = {}
@@ -268,7 +268,7 @@ def settings_export_data(request):
 @permission_required_or_403("chaotica_utils.manage_user")
 @require_http_methods(["GET"])
 def csv_template_users(request):
-    from impex.importers.csv_users import CSVUserImporter
+    from ..impex.importers.csv_users import CSVUserImporter
 
     response = HttpResponse(content_type="text/csv")
     response["Content-Disposition"] = 'attachment; filename="chaotica_users.csv"'
