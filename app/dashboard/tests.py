@@ -19,6 +19,7 @@ from jobtracker.models import (
     Client as JobClient,
     Job,
     OrganisationalUnit,
+    OrganisationalUnitMember,
     Phase,
 )
 from jobtracker.enums import JobStatuses, PhaseStatuses
@@ -57,10 +58,14 @@ class DashboardScopingTests(TestCase):
         )
 
         # A consultant who can view the unit's jobs (as the CONSULTANT role grants)
-        # but is not scheduled/lead/author on the phase, and manages nobody.
+        # but is not scheduled/lead/author on the phase, and manages nobody. They
+        # must be a unit member: the queue tabs only go unit-wide for units the
+        # user belongs to. Membership is created first because its save() re-syncs
+        # guardian perms from roles and would strip the direct grant below.
         self.consultant = User.objects.create_user(
             email="consultant@test.com", password="pw12345"
         )
+        OrganisationalUnitMember.objects.create(unit=self.unit, member=self.consultant)
         assign_perm("jobtracker.can_view_jobs", self.consultant, self.unit)
 
     def _dashboard_context(self, user):
