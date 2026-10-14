@@ -357,7 +357,7 @@ def user_support_draw(request, email, role_pk):
     from jobtracker.models import JobSupportTeamRole
     from jobtracker.forms import SupportBudgetDrawForm
     from ..utils import period_for_date, create_support_draw
-    from ..utils.support_budget import remaining_hours_for_role
+    from ..utils.support_budget import remaining_hours_for_role, support_draw_message
 
     target = get_object_or_404(User, email=email)
     if not target.can_be_managed_by(request.user):
@@ -381,12 +381,7 @@ def user_support_draw(request, email, role_pk):
             else:
                 log_system_activity(
                     support_role.job,
-                    "{user} cashed out {hrs}h of support budget ({start} - {end}).".format(
-                        user=target,
-                        hrs=str(draw.hours_drawn),
-                        start=draw.period_start,
-                        end=draw.period_end,
-                    ),
+                    support_draw_message(target, draw),
                     author=request.user,
                 )
         data["form_is_valid"] = not form.errors
@@ -432,6 +427,7 @@ def user_support_auto_draw(request, email):
     click again. Same self/manager gate as the allocations page.
     """
     from ..utils import period_for_date, auto_cash_out
+    from ..utils.support_budget import support_draw_message
 
     target = get_object_or_404(User, email=email)
     if not target.can_be_managed_by(request.user):
@@ -460,12 +456,7 @@ def user_support_auto_draw(request, email):
         for draw in draws:
             log_system_activity(
                 draw.support_role.job,
-                "{user} cashed out {hrs}h of support budget ({start} - {end}).".format(
-                    user=target,
-                    hrs=str(draw.hours_drawn),
-                    start=draw.period_start,
-                    end=draw.period_end,
-                ),
+                support_draw_message(target, draw),
                 author=request.user,
             )
 

@@ -50,6 +50,7 @@ from ..models import ScheduleActionType
 from .. import schedule_history
 from .helpers import _process_assign_user, _process_assign_contact
 from chaotica_utils.utils import ext_reverse
+from chaotica_utils.utils.support_budget import fmt_decimal, support_draw_message
 import logging
 
 
@@ -309,7 +310,7 @@ def job_support_team_add(request, slug):
                 job,
                 "{user} added at {pct}% as {role} support role.".format(
                     user=role.user,
-                    pct=str(role.profile_percent),
+                    pct=fmt_decimal(role.profile_percent),
                     role=role.get_role_display(),
                 ),
                 author=request.user,
@@ -341,15 +342,18 @@ def job_support_team_edit(request, slug, pk):
             # Manual edit: protect this row from being reset by a template re-apply.
             role.is_overridden = True
             role.save()
-            log_system_activity(
-                job,
-                "{user} updated to {pct}% as {role} support role.".format(
-                    user=role.user,
-                    pct=str(role.profile_percent),
-                    role=role.get_role_display(),
-                ),
-                author=request.user,
-            )
+            # Only a real change is worth an audit entry (re-saving the modal
+            # unchanged still marks the row overridden).
+            if form.has_changed():
+                log_system_activity(
+                    job,
+                    "{user} updated to {pct}% as {role} support role.".format(
+                        user=role.user,
+                        pct=fmt_decimal(role.profile_percent),
+                        role=role.get_role_display(),
+                    ),
+                    author=request.user,
+                )
             data["form_is_valid"] = True
         else:
             data["form_is_valid"] = False
@@ -518,12 +522,7 @@ def job_support_team_draw(request, slug, pk):
             else:
                 log_system_activity(
                     job,
-                    "{user} cashed out {hrs}h of support budget ({start} - {end}).".format(
-                        user=support_role.user,
-                        hrs=str(draw.hours_drawn),
-                        start=draw.period_start,
-                        end=draw.period_end,
-                    ),
+                    support_draw_message(support_role.user, draw),
                     author=request.user,
                 )
         data["form_is_valid"] = not form.errors
@@ -629,7 +628,7 @@ def job_support_team_draw_delete(request, slug, pk, draw_pk):
         job,
         "Reversed {user}'s cash-out of {hrs}h ({start} - {end}).".format(
             user=support_role.user,
-            hrs=str(draw.hours_drawn),
+            hrs=fmt_decimal(draw.hours_drawn),
             start=draw.period_start,
             end=draw.period_end,
         ),

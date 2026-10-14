@@ -40,6 +40,25 @@ SENTINEL_EMAIL = "deleted@chaotica.app"
 DRAW_TOLERANCE_HOURS = Decimal("0.005")
 
 
+def fmt_decimal(value):
+    """Render a percent/hours Decimal for messages: ``20``, ``20.5``, ``7.5``
+    (no trailing zeros, never exponent notation)."""
+    if value is None:
+        return "0"
+    value = Decimal(value).normalize()
+    return format(value, "f")
+
+
+def support_draw_message(user, draw):
+    """Audit-trail text for a cash-out (same wording on every entry point)."""
+    return "{user} cashed out {hrs}h of support budget ({start} - {end}).".format(
+        user=user,
+        hrs=fmt_decimal(draw.hours_drawn),
+        start=draw.period_start,
+        end=draw.period_end,
+    )
+
+
 def _is_real_member(row):
     """A support row that can hold (and draw) a share: has a live user."""
     return row.user_id is not None and row.user.email != SENTINEL_EMAIL

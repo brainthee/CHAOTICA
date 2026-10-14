@@ -1195,3 +1195,127 @@ class SupportRoleFormTests(SupportBudgetTestBase):
             )
         ).json()["html_form"]
         self.assertIn("Edit Support Role", html)
+
+
+class SupportAuditMessageTests(SupportBudgetTestBase):
+    """Every support-role change leaves an exact, readable audit entry on the
+    job (regression: prod logged "added with 0.0hrs" from a legacy field)."""
+
+    def setUp(self):
+        super().setUp()
+        self.root.is_superuser = True
+        self.root.save()
+        self.member = self._user(1, lcr=50)
+        self.member.first_name, self.member.last_name = "Ada", "Lovelace"
+        self.member.save()
+        self.http = TestHttpClient(HTTP_HOST="localhost")
+        self.http.force_login(self.root)
+
+    def _messages(self):
+        from django.contrib.contenttypes.models import ContentType
+        from chaotica_utils.models import AuditEvent
+
+        return list(
+            AuditEvent.objects.filter(
+                target_content_type=ContentType.objects.get_for_model(Job),
+                target_id=str(self.job.pk),
+            ).values_list("message", flat=True)
+        )
+
+    def _add(self, percent="20.50"):
+        return self.http.post(
+            reverse("job_support_team_add", kwargs={"slug": self.job.slug}),
+            {"user": self.member.pk, "role": 0, "profile_percent": percent},
+        ).json()
+
+    def test_fmt_decimal(self):
+        from chaotica_utils.utils.support_budget import fmt_decimal
+
+        self.assertEqual(fmt_decimal(Decimal("20.00")), "20")
+        self.assertEqual(fmt_decimal(Decimal("20.50")), "20.5")
+        self.assertEqual(fmt_decimal(Decimal("7.50")), "7.5")
+        self.assertEqual(fmt_decimal(Decimal("100")), "100")
+
+    def test_add_message(self):
+        self.assertTrue(self._add()["form_is_valid"])
+        role = JobSupportTeamRole.objects.get(job=self.job, user=self.member)
+        self.assertIn(
+            "Ada Lovelace added at 20.5% as {} support role.".format(
+                role.get_role_display()
+            ),
+            self._messages(),
+        )
+
+    def test_edit_logs_only_real_changes(self):
+        self._add("20")
+        role = JobSupportTeamRole.objects.get(job=self.job, user=self.member)
+        url = reverse(
+            "job_support_team_edit", kwargs={"slug": self.job.slug, "pk": role.pk}
+        )
+        before = len(self._messages())
+        # Unchanged re-save: no entry.
+        self.http.post(url, {"user": self.member.pk, "role": 0, "profile_percent": "20.00"})
+        self.assertEqual(len(self._messages()), before)
+        self.http.post(url, {"user": self.member.pk, "role": 0, "profile_percent": "100"})
+        self.assertIn(
+            "Ada Lovelace updated to 100% as {} support role.".format(
+                role.get_role_display()
+            ),
+            self._messages(),
+        )
+
+    def test_delete_message(self):
+        self._add()
+        role = JobSupportTeamRole.objects.get(job=self.job, user=self.member)
+        self.http.post(
+            reverse(
+                "job_support_team_delete", kwargs={"slug": self.job.slug, "pk": role.pk}
+            ),
+            {"user_action": "approve_action"},
+        )
+        self.assertIn("Ada Lovelace deleted from support role.", self._messages())
+
+    def test_cash_out_messages(self):
+        self._add("100")  # £800 -> 16h
+        role = JobSupportTeamRole.objects.get(job=self.job, user=self.member)
+        # Job page.
+        self.http.post(
+            reverse("job_support_team_draw", kwargs={"slug": self.job.slug, "pk": role.pk}),
+            {"period_start": "2026-09-01", "period_end": "2026-09-07", "hours_drawn": "2.50"},
+        )
+        # Self-service.
+        self.http.force_login(self.member)
+        self.http.post(
+            reverse(
+                "user_support_draw",
+                kwargs={"email": self.member.email, "role_pk": role.pk},
+            ),
+            {"period_start": "2026-09-08", "period_end": "2026-09-14", "hours_drawn": "3"},
+        )
+        # Auto (tops up the remaining 10.5h).
+        self.http.post(
+            reverse("user_support_auto_draw", kwargs={"email": self.member.email}),
+            {"start": "2026-09-15", "end": "2026-09-21"},
+        )
+        msgs = self._messages()
+        for expected in (
+            "Ada Lovelace cashed out 2.5h of support budget (2026-09-01 - 2026-09-07).",
+            "Ada Lovelace cashed out 3h of support budget (2026-09-08 - 2026-09-14).",
+            "Ada Lovelace cashed out 10.5h of support budget (2026-09-15 - 2026-09-21).",
+        ):
+            self.assertIn(expected, msgs)
+
+        # Reversal.
+        self.http.force_login(self.root)
+        draw = role.draws.get(period_start=date(2026, 9, 1))
+        self.http.post(
+            reverse(
+                "job_support_team_draw_delete",
+                kwargs={"slug": self.job.slug, "pk": role.pk, "draw_pk": draw.pk},
+            ),
+            {"user_action": "approve_action"},
+        )
+        self.assertIn(
+            "Reversed Ada Lovelace's cash-out of 2.5h (2026-09-01 - 2026-09-07).",
+            self._messages(),
+        )
