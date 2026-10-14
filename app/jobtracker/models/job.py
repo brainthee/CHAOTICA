@@ -154,6 +154,7 @@ class Job(models.Model):
         blank=True,
         verbose_name="Support Premium Override (%)",
         help_text="Per-job override of the support pool premium %. Blank = unit/global default.",
+        validators=[MinValueValidator(Decimal("0"))],
     )
 
     def get_effective_premium(self):
@@ -1210,6 +1211,7 @@ class JobSupportTeamRole(models.Model):
         default=Decimal("100"),
         verbose_name="Profile Allocation (%)",
         help_text="Coverage % (100 = full coverage). Drives this person's share of the support pool.",
+        validators=[MinValueValidator(Decimal("0"))],
     )
     is_overridden = models.BooleanField(
         default=False,
@@ -1227,6 +1229,10 @@ class JobSupportTeamRole(models.Model):
         default=0.0,
     )
     history = HistoricalRecords()
+
+    class Meta:
+        # One row per person per job: the engine keys members by user.
+        unique_together = ["job", "user"]
 
     def used_perc(self):
         if self.allocated_hours > 0.0:
@@ -1254,7 +1260,9 @@ class SupportBudgetDraw(models.Model):
 
     support_role = models.ForeignKey(
         JobSupportTeamRole,
-        on_delete=models.CASCADE,
+        # A cash-out is a financial record: a role with draws can't be deleted
+        # (reverse the draws first).
+        on_delete=models.PROTECT,
         related_name="draws",
     )
     user = models.ForeignKey(

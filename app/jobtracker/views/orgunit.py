@@ -1084,7 +1084,7 @@ def organisationalunit_support_template_add(request, slug):
     org_unit = get_object_or_404(OrganisationalUnit, slug=slug)
     data = dict()
     if request.method == "POST":
-        form = SupportTemplateMemberForm(request.POST)
+        form = SupportTemplateMemberForm(request.POST, unit=org_unit)
         if form.is_valid():
             member = form.save(commit=False)
             member.unit = org_unit
@@ -1094,7 +1094,7 @@ def organisationalunit_support_template_add(request, slug):
             data["form_is_valid"] = False
             data["form_errors"] = form.errors
     else:
-        form = SupportTemplateMemberForm()
+        form = SupportTemplateMemberForm(unit=org_unit)
 
     context = {"orgUnit": org_unit, "form": form}
     data["html_form"] = loader.render_to_string(

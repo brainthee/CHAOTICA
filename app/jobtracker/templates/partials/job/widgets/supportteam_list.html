@@ -38,6 +38,10 @@
                            data-url="{% url 'job_support_team_draw' slug=support_role.job.slug pk=support_role.pk %}">
                            Cash out hours
                         </button>
+                        <button class="dropdown-item js-load-modal-form"
+                           data-url="{% url 'job_support_team_draws' slug=support_role.job.slug pk=support_role.pk %}">
+                           Cash-out history
+                        </button>
                         <button class="dropdown-item text-warning js-load-modal-form"
                            data-url="{% url 'job_support_team_delete' slug=support_role.job.slug pk=support_role.pk %}">
                            Delete

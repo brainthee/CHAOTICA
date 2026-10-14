@@ -13,6 +13,7 @@ from guardian.shortcuts import get_objects_for_user
 from ..decorators import unit_permission_required_or_403, job_permission_required_or_403
 from ..mixins import UnitPermissionRequiredMixin, JobPermissionRequiredMixin, PrefetchRelatedMixin
 from django.views import View
+from django.views.decorators.http import require_http_methods
 from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView
@@ -299,16 +300,16 @@ def job_support_team_add(request, slug):
     job = get_object_or_404(Job, slug=slug)
     data = dict()
     if request.method == "POST":
-        form = JobSupportTeamRoleForm(request.POST)
+        form = JobSupportTeamRoleForm(request.POST, job=job)
         if form.is_valid():
             role = form.save(commit=False)
             role.job = job
             role.save()
             log_system_activity(
                 job,
-                "{user} added with {hrs}hrs as {role} support role.".format(
+                "{user} added at {pct}% as {role} support role.".format(
                     user=role.user,
-                    hrs=str(role.allocated_hours),
+                    pct=str(role.profile_percent),
                     role=role.get_role_display(),
                 ),
                 author=request.user,
@@ -319,7 +320,7 @@ def job_support_team_add(request, slug):
             data["form_errors"] = form.errors
     else:
         # Send the modal
-        form = JobSupportTeamRoleForm()
+        form = JobSupportTeamRoleForm(job=job)
 
     context = {"form": form, "job": job}
     data["html_form"] = loader.render_to_string(
@@ -334,7 +335,7 @@ def job_support_team_edit(request, slug, pk):
     support_role = get_object_or_404(JobSupportTeamRole, pk=pk, job=job)
     data = dict()
     if request.method == "POST":
-        form = JobSupportTeamRoleForm(request.POST, instance=support_role)
+        form = JobSupportTeamRoleForm(request.POST, instance=support_role, job=job)
         if form.is_valid():
             role = form.save(commit=False)
             # Manual edit: protect this row from being reset by a template re-apply.
@@ -342,9 +343,9 @@ def job_support_team_edit(request, slug, pk):
             role.save()
             log_system_activity(
                 job,
-                "{user} updated with {hrs}hrs as {role} support role.".format(
+                "{user} updated to {pct}% as {role} support role.".format(
                     user=role.user,
-                    hrs=str(role.allocated_hours),
+                    pct=str(role.profile_percent),
                     role=role.get_role_display(),
                 ),
                 author=request.user,
@@ -355,7 +356,7 @@ def job_support_team_edit(request, slug, pk):
             data["form_errors"] = form.errors
     else:
         # Send the modal
-        form = JobSupportTeamRoleForm(instance=support_role)
+        form = JobSupportTeamRoleForm(instance=support_role, job=job)
 
     context = {"form": form, "job": job}
     data["html_form"] = loader.render_to_string(
@@ -395,9 +396,13 @@ def job_support_team_mark_used(request, slug, pk):
 def job_support_team_delete(request, slug, pk):
     job = get_object_or_404(Job, slug=slug)
     support_role = get_object_or_404(JobSupportTeamRole, pk=pk, job=job)
+    has_draws = support_role.draws.exists()
     data = dict()
     if request.method == "POST":
-        if request.POST.get("user_action") == "approve_action":
+        if has_draws:
+            # Cash-outs are financial records (FK is PROTECT): reverse them first.
+            data["form_is_valid"] = False
+        elif request.POST.get("user_action") == "approve_action":
             support_role.delete()
             log_system_activity(
                 job,
@@ -408,7 +413,7 @@ def job_support_team_delete(request, slug, pk):
         else:
             data["form_is_valid"] = False
 
-    context = {"job": job, "instance": support_role}
+    context = {"job": job, "instance": support_role, "has_draws": has_draws}
     data["html_form"] = loader.render_to_string(
         "jobtracker/modals/job_support_team_delete.html", context, request=request
     )
@@ -506,6 +511,87 @@ def job_support_team_draw(request, slug, pk):
         "jobtracker/modals/job_support_team_draw.html", context, request=request
     )
     return JsonResponse(data)
+
+
+def can_reverse_support_draws(user, job):
+    """Who may reverse (delete) a cash-out: job schedulers or unit finance.
+
+    Members can't reverse their own draws — that would let them re-time or
+    re-price cash-outs at will."""
+    if user.is_superuser:
+        return True
+    return (
+        user.has_perm("jobtracker.can_schedule_job", job)
+        or user.has_perm("jobtracker.can_schedule_job", job.unit)
+        or user.has_perm("jobtracker.can_view_loaded_costs", job.unit)
+    )
+
+
+def _can_view_support_draws(user, support_role):
+    if support_role.user_id and support_role.user.can_be_managed_by(user):
+        return True
+    return can_reverse_support_draws(user, support_role.job)
+
+
+def _render_support_draws(request, job, support_role):
+    can_view_money = request.user.is_superuser or request.user.has_perm(
+        "jobtracker.can_view_loaded_costs", job.unit
+    )
+    context = {
+        "job": job,
+        "instance": support_role,
+        "draws": list(support_role.draws.select_related("created_by")),
+        "can_reverse": can_reverse_support_draws(request.user, job),
+        "can_view_money": can_view_money,
+    }
+    return loader.render_to_string(
+        "jobtracker/modals/job_support_team_draws.html", context, request=request
+    )
+
+
+def job_support_team_draws(request, slug, pk):
+    """Cash-out history modal for one support role (with reversal actions).
+
+    Visible to the member (and their managers) plus anyone who can reverse."""
+    from django.http import HttpResponseForbidden
+
+    if not request.user.is_authenticated:
+        return HttpResponseForbidden()
+    job = get_object_or_404(Job, slug=slug)
+    support_role = get_object_or_404(
+        JobSupportTeamRole.objects.select_related("user", "job__unit"), pk=pk, job=job
+    )
+    if not _can_view_support_draws(request.user, support_role):
+        return HttpResponseForbidden()
+    return JsonResponse(
+        {"html_form": _render_support_draws(request, job, support_role)}
+    )
+
+
+@require_http_methods(["POST"])
+def job_support_team_draw_delete(request, slug, pk, draw_pk):
+    """Reverse (delete) a single cash-out, returning its value to the budget."""
+    from django.http import HttpResponseForbidden
+
+    if not request.user.is_authenticated:
+        return HttpResponseForbidden()
+    job = get_object_or_404(Job, slug=slug)
+    support_role = get_object_or_404(JobSupportTeamRole, pk=pk, job=job)
+    draw = get_object_or_404(support_role.draws, pk=draw_pk)
+    if not can_reverse_support_draws(request.user, job):
+        return HttpResponseForbidden()
+    log_system_activity(
+        job,
+        "Reversed {user}'s cash-out of {hrs}h ({start} - {end}).".format(
+            user=support_role.user,
+            hrs=str(draw.hours_drawn),
+            start=draw.period_start,
+            end=draw.period_end,
+        ),
+        author=request.user,
+    )
+    draw.delete()
+    return JsonResponse({"form_is_valid": True})
 
 
 @job_permission_required_or_403("jobtracker.can_add_note_job", (Job, "slug", "slug"))

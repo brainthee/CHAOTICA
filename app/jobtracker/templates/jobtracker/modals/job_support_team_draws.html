@@ -1,0 +1,59 @@
+<div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h6 class="modal-title font-weight-normal" id="modal-title-default">
+                Cash-out history &mdash; {{ instance.user }} on {{ job }}
+            </h6>
+            <button type="button" class="btn-close text-body-emphasis"
+                data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-0">
+            {% if draws %}
+            <div class="table-responsive">
+                <table class="table fs-10 mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-3">Period</th>
+                            <th class="text-end">Hours</th>
+                            {% if can_view_money %}<th class="text-end">LCR</th><th class="text-end">Value</th>{% endif %}
+                            <th>Cashed out by</th>
+                            <th>On</th>
+                            {% if can_reverse %}<th class="pe-3"></th>{% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for draw in draws %}
+                        <tr>
+                            <td class="ps-3">{{ draw.period_start|date:"j M Y" }} &ndash; {{ draw.period_end|date:"j M Y" }}</td>
+                            <td class="text-end">{{ draw.hours_drawn|floatformat:2 }}</td>
+                            {% if can_view_money %}
+                            <td class="text-end">{% if draw.lcr_at_draw != None %}{{ draw.lcr_at_draw|floatformat:2 }}{% else %}&mdash;{% endif %}</td>
+                            <td class="text-end">{{ draw.money_drawn|floatformat:2 }}</td>
+                            {% endif %}
+                            <td>{{ draw.created_by|default:"&mdash;" }}</td>
+                            <td>{{ draw.created_at|date:"j M Y" }}</td>
+                            {% if can_reverse %}
+                            <td class="text-end pe-3">
+                                <form method="post" class="js-submit-modal-form d-inline"
+                                    action="{% url 'job_support_team_draw_delete' slug=job.slug pk=instance.pk draw_pk=draw.pk %}"
+                                    onsubmit="return confirm('Reverse this cash-out of {{ draw.hours_drawn|floatformat:2 }}h? The value returns to the remaining budget.');">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="user_action" value="approve_action">
+                                    <button type="submit" class="btn btn-sm btn-phoenix-warning py-0 px-2 fs-10">Reverse</button>
+                                </form>
+                            </td>
+                            {% endif %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-body-secondary m-3">No cash-outs recorded for this role yet.</p>
+            {% endif %}
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-light shadow-none mb-0" data-bs-dismiss="modal">Close</button>
+        </div>
+    </div>
+</div>

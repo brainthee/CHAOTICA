@@ -13,14 +13,23 @@
                     data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
+                {% if has_draws %}
+                <p class="mb-0">
+                    {{ instance.user }} has cashed out hours on this role, so it can't be removed.
+                    Reverse their cash-outs first (row menu &rarr; Cash-out history).
+                </p>
+                {% else %}
                 <p>
                     Are you sure you wish to remove {{ instance.user }} from the support team of this job?
                 </p>
+                {% endif %}
             </div>
             <div class="modal-footer">
                 <input type="hidden" name="user_action" value="">
+                {% if not has_draws %}
                 <button type="submit" onclick="this.form.user_action.value=this.value" 
                     value="approve_action" class="btn btn-phoenix-warning mb-0">Remove</button>
+                {% endif %}
                 <button type="button" class="btn btn-light shadow-none mb-0" data-bs-dismiss="modal">Close</button>
             </div>
         </form>

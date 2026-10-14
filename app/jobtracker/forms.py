@@ -2781,6 +2781,7 @@ class SupportTemplateMemberForm(forms.ModelForm):
     )
 
     def __init__(self, *args, **kwargs):
+        self.unit = kwargs.pop("unit", None)
         super(SupportTemplateMemberForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
         self.helper.layout = Layout(
@@ -2807,6 +2808,23 @@ class SupportTemplateMemberForm(forms.ModelForm):
                 css_class="modal-footer",
             ),
         )
+
+    def clean_user(self):
+        # ``unit`` isn't a form field, so ModelForm.validate_unique can't see
+        # the (unit, user) clash — check it here rather than 500 on save.
+        user = self.cleaned_data.get("user")
+        unit = self.unit or getattr(self.instance, "unit", None)
+        if user and unit is not None:
+            clash = OrganisationalUnitSupportTemplateMember.objects.filter(
+                unit=unit, user=user
+            )
+            if self.instance.pk:
+                clash = clash.exclude(pk=self.instance.pk)
+            if clash.exists():
+                raise forms.ValidationError(
+                    "{} is already in this support template.".format(user)
+                )
+        return user
 
     class Meta:
         model = OrganisationalUnitSupportTemplateMember
@@ -3857,7 +3875,15 @@ class SkillCatForm(forms.ModelForm):
 
 class JobSupportTeamRoleForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
+        self.job = kwargs.pop("job", None)
         super(JobSupportTeamRoleForm, self).__init__(*args, **kwargs)
+        if self.instance.pk and self.instance.draws.exists():
+            # Cash-outs belong to this person — re-pointing the role would
+            # move their history onto someone else.
+            self.fields["user"].disabled = True
+            self.fields["user"].help_text = (
+                "Locked: this person has cashed out hours on this role."
+            )
         self.helper = FormHelper(self)
         self.helper.layout = Layout(
             Div(
@@ -3883,6 +3909,19 @@ class JobSupportTeamRoleForm(forms.ModelForm):
                 css_class="modal-footer",
             ),
         )
+
+    def clean_user(self):
+        user = self.cleaned_data.get("user")
+        job = self.job or getattr(self.instance, "job", None)
+        if user and job is not None:
+            clash = JobSupportTeamRole.objects.filter(job=job, user=user)
+            if self.instance.pk:
+                clash = clash.exclude(pk=self.instance.pk)
+            if clash.exists():
+                raise forms.ValidationError(
+                    "{} is already on this job's support team.".format(user)
+                )
+        return user
 
     class Meta:
         model = JobSupportTeamRole

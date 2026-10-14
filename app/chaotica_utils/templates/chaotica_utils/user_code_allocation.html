@@ -303,6 +303,12 @@
                        Cash out
                     </button>
                     {% endif %}
+                    {% if entry.drawn_hours %}
+                    <button class="btn btn-sm btn-phoenix-secondary py-0 px-2 fs-10 js-load-modal-form"
+                       data-url="{% url 'job_support_team_draws' slug=entry.job.slug pk=entry.role.pk %}" title="Cash-out history">
+                       History
+                    </button>
+                    {% endif %}
                   </td>
                 </tr>
                 {% endfor %}

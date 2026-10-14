@@ -707,3 +707,115 @@ class FinanceTabViewTests(SupportBudgetTestBase):
         self.assertTrue(resp.json()["form_is_valid"])
         self.unit.refresh_from_db()
         self.assertEqual(self.unit.support_premium_default, Decimal("12.50"))
+
+
+class SupportIntegrityTests(SupportBudgetTestBase):
+    """Uniqueness, PROTECTed cash-outs, validators and draw reversal."""
+
+    def setUp(self):
+        super().setUp()
+        self.root.is_superuser = True
+        self.root.save()
+        self.member = self._user(1, lcr=50)
+        self.role = self._role(self.member, 100)  # £800 -> 16h
+        self.stranger = self._user(2)
+        self.http = TestHttpClient(HTTP_HOST="localhost")
+
+    def _draw(self, hours=4):
+        return create_support_draw(
+            self.role, date(2026, 9, 1), date(2026, 9, 14), Decimal(str(hours)),
+            created_by=self.member,
+        )
+
+    def test_duplicate_member_rejected_by_add_view(self):
+        self.http.force_login(self.root)
+        resp = self.http.post(
+            reverse("job_support_team_add", kwargs={"slug": self.job.slug}),
+            {"user": self.member.pk, "role": 0, "profile_percent": "50"},
+        )
+        self.assertFalse(resp.json()["form_is_valid"])
+        self.assertEqual(self.job.supporting_team.count(), 1)
+
+    def test_negative_percent_rejected(self):
+        from jobtracker.forms import JobSupportTeamRoleForm
+
+        form = JobSupportTeamRoleForm(
+            {"user": self.stranger.pk, "role": 0, "profile_percent": "-10"}, job=self.job
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn("profile_percent", form.errors)
+
+    def test_duplicate_template_member_is_form_error(self):
+        from jobtracker.forms import SupportTemplateMemberForm
+
+        OrganisationalUnitSupportTemplateMember.objects.create(
+            unit=self.unit, user=self.member
+        )
+        form = SupportTemplateMemberForm(
+            {"user": self.member.pk, "role": 0, "profile_percent": "100"}, unit=self.unit
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn("user", form.errors)
+
+    def test_role_with_draws_cannot_be_deleted(self):
+        self._draw()
+        self.http.force_login(self.root)
+        resp = self.http.post(
+            reverse(
+                "job_support_team_delete",
+                kwargs={"slug": self.job.slug, "pk": self.role.pk},
+            ),
+            {"user_action": "approve_action"},
+        )
+        self.assertFalse(resp.json()["form_is_valid"])
+        self.assertTrue(JobSupportTeamRole.objects.filter(pk=self.role.pk).exists())
+
+    def test_user_locked_on_role_with_draws(self):
+        from jobtracker.forms import JobSupportTeamRoleForm
+
+        self._draw()
+        form = JobSupportTeamRoleForm(
+            {"user": self.stranger.pk, "role": 0, "profile_percent": "100"},
+            instance=self.role,
+            job=self.job,
+        )
+        self.assertTrue(form.fields["user"].disabled)
+        self.assertTrue(form.is_valid())
+        self.assertEqual(form.save().user_id, self.member.id)
+
+    def _history_url(self):
+        return reverse(
+            "job_support_team_draws", kwargs={"slug": self.job.slug, "pk": self.role.pk}
+        )
+
+    def _reverse_url(self, draw):
+        return reverse(
+            "job_support_team_draw_delete",
+            kwargs={"slug": self.job.slug, "pk": self.role.pk, "draw_pk": draw.pk},
+        )
+
+    def test_history_visible_to_member_not_stranger(self):
+        self._draw()
+        self.http.force_login(self.member)
+        resp = self.http.get(self._history_url())
+        self.assertEqual(resp.status_code, 200)
+        self.assertNotIn("Reverse</button>", resp.json()["html_form"])
+        self.http.force_login(self.stranger)
+        self.assertEqual(self.http.get(self._history_url()).status_code, 403)
+
+    def test_member_cannot_reverse_own_draw(self):
+        draw = self._draw()
+        self.http.force_login(self.member)
+        resp = self.http.post(self._reverse_url(draw), {"user_action": "approve_action"})
+        self.assertEqual(resp.status_code, 403)
+        self.assertTrue(self.role.draws.exists())
+
+    def test_scheduler_reverses_draw_and_budget_returns(self):
+        draw = self._draw(4)
+        self.http.force_login(self.root)
+        self.assertIn("Reverse</button>", self.http.get(self._history_url()).json()["html_form"])
+        resp = self.http.post(self._reverse_url(draw), {"user_action": "approve_action"})
+        self.assertTrue(resp.json()["form_is_valid"])
+        self.assertFalse(self.role.draws.exists())
+        m = self.job.get_support_budget()["per_member"][self.member.id]
+        self.assertEqual(m["remaining_hours"], Decimal("16"))

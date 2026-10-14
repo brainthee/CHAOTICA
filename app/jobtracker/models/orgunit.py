@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.validators import MinValueValidator
 from django.db.models import F, Q, Count, Prefetch
 from django.db.models.functions import ExtractDay, TruncMonth
 from django.conf import settings
@@ -66,6 +67,7 @@ class OrganisationalUnit(SoftDeleteModel):
         default=Decimal(8),
         verbose_name="Support Premium Default (%)",
         help_text="Default % of a job's revenue reserved for the support-team pool.",
+        validators=[MinValueValidator(Decimal("0"))],
     )
     businessHours_startTime = models.TimeField("Start Time", default="09:00:00")
     businessHours_endTime = models.TimeField("End Time", default="17:30:00")
@@ -1025,6 +1027,7 @@ class OrganisationalUnitSupportTemplateMember(models.Model):
         default=Decimal("100"),
         verbose_name="Profile Allocation (%)",
         help_text="Coverage % (100 = full coverage). Drives this person's share of the support pool.",
+        validators=[MinValueValidator(Decimal("0"))],
     )
     history = HistoricalRecords()
 

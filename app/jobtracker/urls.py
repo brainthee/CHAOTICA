@@ -305,6 +305,16 @@ urlpatterns = [
         name="job_support_team_draw",
     ),
     path(
+        "job/<str:slug>/support/<int:pk>/draws",
+        views.job_support_team_draws,
+        name="job_support_team_draws",
+    ),
+    path(
+        "job/<str:slug>/support/<int:pk>/draws/<int:draw_pk>/delete",
+        views.job_support_team_draw_delete,
+        name="job_support_team_draw_delete",
+    ),
+    path(
         "job/<str:slug>/schedule/", views.JobScheduleView.as_view(), name="job_schedule"
     ),
     path(
