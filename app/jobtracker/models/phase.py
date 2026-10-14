@@ -451,6 +451,10 @@ class Phase(models.Model):
                 .earliest("start")
                 .start
             ).date()
+        else:
+            # No longer scheduled: drop the stale date so the start_date
+            # property falls back to the set/desired dates.
+            self._start_date = None
 
         # Now due to *qa
         # Calculate start from last delivery slot
@@ -475,6 +479,10 @@ class Phase(models.Model):
             self._delivery_date = last_delivery_date + timedelta(
                 days=config.DAYS_TO_DELIVERY
             )
+        else:
+            self._due_to_techqa = None
+            self._due_to_presqa = None
+            self._delivery_date = None
 
     @property
     def start_date(self):

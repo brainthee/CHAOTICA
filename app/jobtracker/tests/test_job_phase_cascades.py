@@ -228,3 +228,36 @@ class DeletedEntitySubscriptionTests(CascadeTestBase):
             self.job.to_delete(self.actor)
             self.job.save()
         subscribe.assert_not_called()
+
+
+class StoredDatesCronTests(CascadeTestBase):
+    """C7: the nightly dates cron must persist (and clear) stored dates."""
+
+    def _run_cron(self):
+        from chaotica_utils.tasks import task_update_phase_dates
+
+        task_update_phase_dates().do()
+
+    def test_cron_persists_dates_from_slots(self):
+        phase = self._phase(PhaseStatuses.SCHEDULED_CONFIRMED)
+        slot = self._slot(phase, days_ahead=3)
+        Phase.objects.filter(pk=phase.pk).update(_start_date=None, _delivery_date=None)
+
+        self._run_cron()
+
+        phase.refresh_from_db()
+        self.assertEqual(phase._start_date, slot.start.date())
+        self.assertIsNotNone(phase._delivery_date)
+
+    def test_cron_clears_dates_when_no_slots(self):
+        phase = self._phase(PhaseStatuses.PENDING_SCHED)
+        stale = timezone.now().date()
+        Phase.objects.filter(pk=phase.pk).update(
+            _start_date=stale, _delivery_date=stale
+        )
+
+        self._run_cron()
+
+        phase.refresh_from_db()
+        self.assertIsNone(phase._start_date)
+        self.assertIsNone(phase._delivery_date)

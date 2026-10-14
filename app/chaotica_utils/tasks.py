@@ -177,10 +177,17 @@ class task_update_phase_dates(CronJobBase):
         from jobtracker.models import Phase
         from jobtracker.enums import JobStatuses
 
+        fields = ["_start_date", "_due_to_techqa", "_due_to_presqa", "_delivery_date"]
         for phase in Phase.objects.exclude(
             job__status__in=[JobStatuses.DELETED, JobStatuses.ARCHIVED]
         ):
+            before = [getattr(phase, f) for f in fields]
             phase.update_stored_dates()
+            after = [getattr(phase, f) for f in fields]
+            # Write only changed rows, and via update() so the nightly run
+            # doesn't fire save() signals (subscriptions etc.) for every phase.
+            if after != before:
+                Phase.objects.filter(pk=phase.pk).update(**dict(zip(fields, after)))
 
 
 class task_sync_global_permissions(CronJobBase):
