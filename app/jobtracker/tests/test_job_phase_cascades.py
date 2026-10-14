@@ -213,3 +213,18 @@ class ScopedClearTests(CascadeTestBase):
         phase.refresh_from_db()
         self.assertEqual(phase.timeslots.count(), 0)
         self.assertEqual(phase.status, PhaseStatuses.PENDING_SCHED)
+
+
+class DeletedEntitySubscriptionTests(CascadeTestBase):
+    """C6: saving a deleted job/phase must not re-run auto-subscription."""
+
+    def test_deleted_job_and_phase_are_not_resubscribed(self):
+        self._phase(PhaseStatuses.PENDING_SCHED)
+        with mock.patch("notifications.signals.auto_subscribe_users") as subscribe:
+            self.job.save()
+            self.assertTrue(subscribe.called)  # sanity: live saves subscribe
+            subscribe.reset_mock()
+
+            self.job.to_delete(self.actor)
+            self.job.save()
+        subscribe.assert_not_called()

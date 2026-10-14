@@ -1,6 +1,7 @@
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from jobtracker.models import Job, Phase, ClientOnboarding, Client
+from jobtracker.enums import JobStatuses, PhaseStatuses
 from chaotica_utils.models import LeaveRequest, User
 from notifications.enums import NotificationTypes
 from .utils import auto_subscribe_users
@@ -42,7 +43,11 @@ def leave_post_save_handler(sender, instance, created, **kwargs):
                 auto_subscribe_users(eventType, instance)
                 
 @receiver(post_save, sender=Job)
-def job_post_save_handler(sender, instance, created, **kwargs):    
+def job_post_save_handler(sender, instance, created, **kwargs):
+    # A deleted job had its subscriptions removed by to_delete(); the save()
+    # that follows must not add them back.
+    if instance.status == JobStatuses.DELETED:
+        return
     for eventType, eventCat in NotificationTypes.CATEGORIES.items():
         if eventCat == "Job":
             if created and eventType == NotificationTypes.JOB_CREATED:
@@ -52,6 +57,9 @@ def job_post_save_handler(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=Phase)
 def phase_post_save_handler(sender, instance, created, **kwargs):
+    # As above: don't re-subscribe users to a deleted phase.
+    if instance.status == PhaseStatuses.DELETED:
+        return
     for eventType, eventCat in NotificationTypes.CATEGORIES.items():
         if eventCat == "Phase":
             if created and eventType == NotificationTypes.PHASE_CREATED:
