@@ -12,3 +12,14 @@
         </form>
     </div>
  </div>
+
+<script>
+  $(function () {
+    // AJAX user search: bind the dropdown to the modal so it's typeable/scrolls
+    // with it. Runs on every (re-)render, including invalid-form re-renders.
+    $('#mainModal .select2-widget').select2({
+      dropdownParent: $('#mainModal .modal-content'),
+      width: '100%'
+    });
+  });
+</script>

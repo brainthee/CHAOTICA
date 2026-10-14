@@ -3981,9 +3981,38 @@ class SkillCatForm(forms.ModelForm):
 
 
 class JobSupportTeamRoleForm(forms.ModelForm):
+    user = forms.ModelChoiceField(
+        queryset=User.objects.filter(is_active=True).exclude(
+            email="deleted@chaotica.app"
+        ),
+        required=True,
+        widget=s2forms.ModelSelect2Widget(
+            attrs={
+                "class": "select2-widget",
+                "data-minimum-input-length": 3,
+                "data-ajax--url": "/autocomplete/users",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
+            },
+            search_fields=[
+                "first_name__icontains",
+                "last_name__icontains",
+                "email__icontains",
+            ],
+        ),
+    )
+
     def __init__(self, *args, **kwargs):
         self.job = kwargs.pop("job", None)
         super(JobSupportTeamRoleForm, self).__init__(*args, **kwargs)
+        if self.instance.pk and self.instance.user_id:
+            # Keep the current person selectable (and rendered) even if they've
+            # since been deactivated.
+            qs = User.objects.filter(
+                Q(is_active=True) | Q(pk=self.instance.user_id)
+            ).exclude(email="deleted@chaotica.app")
+            self.fields["user"].queryset = qs
+            self.fields["user"].widget.queryset = qs
         if self.instance.pk and self.instance.draws.exists():
             # Cash-outs belong to this person — re-pointing the role would
             # move their history onto someone else.
@@ -3994,7 +4023,7 @@ class JobSupportTeamRoleForm(forms.ModelForm):
         self.helper = FormHelper(self)
         self.helper.layout = Layout(
             Div(
-                Row(Div(Field("user"), css_class="input-group input-group-dynamic")),
+                Row(Div(Field("user", style="width: 100%;"))),
                 Row(Div(Field("role"), css_class="input-group input-group-dynamic")),
                 Row(
                     Div(

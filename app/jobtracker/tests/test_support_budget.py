@@ -1136,3 +1136,62 @@ class CashOutRulesTests(SupportBudgetTestBase):
         start, end = period_for_date(date.today())
         create_support_draw(self.role, start, end, Decimal("1"), self.member)
         self.assertEqual(self.role.draws.count(), 1)
+
+
+class SupportRoleFormTests(SupportBudgetTestBase):
+    """The support-role picker is an AJAX user search over live users only."""
+
+    def test_user_required(self):
+        from jobtracker.forms import JobSupportTeamRoleForm
+
+        form = JobSupportTeamRoleForm({"role": 0, "profile_percent": "100"}, job=self.job)
+        self.assertFalse(form.is_valid())
+        self.assertIn("user", form.errors)
+
+    def test_inactive_and_sentinel_excluded(self):
+        from jobtracker.forms import JobSupportTeamRoleForm
+
+        gone = self._user(1)
+        gone.is_active = False
+        gone.save()
+        for u in (gone, get_sentinel_user()):
+            form = JobSupportTeamRoleForm(
+                {"user": u.pk, "role": 0, "profile_percent": "100"}, job=self.job
+            )
+            self.assertFalse(form.is_valid())
+            self.assertIn("user", form.errors)
+
+    def test_edit_keeps_deactivated_member_selected(self):
+        from jobtracker.forms import JobSupportTeamRoleForm
+
+        u = self._user(1)
+        role = self._role(u, 100)
+        u.is_active = False
+        u.save()
+        form = JobSupportTeamRoleForm(instance=role, job=self.job)
+        self.assertIn('value="%d" selected' % u.pk, str(form["user"]))
+
+    def test_modal_uses_ajax_search(self):
+        self.root.is_superuser = True
+        self.root.save()
+        http = TestHttpClient(HTTP_HOST="localhost")
+        http.force_login(self.root)
+        html = http.get(
+            reverse("job_support_team_add", kwargs={"slug": self.job.slug})
+        ).json()["html_form"]
+        self.assertIn('data-ajax--url="/autocomplete/users"', html)
+        self.assertIn("dropdownParent", html)
+        self.assertIn("Add Support Role", html)
+        # Not a full user list: no option per user.
+        self._user(9)
+        html = http.get(
+            reverse("job_support_team_add", kwargs={"slug": self.job.slug})
+        ).json()["html_form"]
+        self.assertNotIn("u9@test.com", html)
+        role = self._role(self._user(10), 50)
+        html = http.get(
+            reverse(
+                "job_support_team_edit", kwargs={"slug": self.job.slug, "pk": role.pk}
+            )
+        ).json()["html_form"]
+        self.assertIn("Edit Support Role", html)

@@ -7,7 +7,7 @@
             <div class="modal-header">
                 <h6 class="modal-title font-weight-normal" 
                     id="modal-title-default">
-                        Add Support Role
+                        {% if form.instance.pk %}Edit{% else %}Add{% endif %} Support Role
                 </h6>
                 <button type="button" class="btn-close text-body-emphasis" 
                     data-bs-dismiss="modal" aria-label="Close"></button>
@@ -17,3 +17,14 @@
         </form>
     </div>
  </div>
+
+<script>
+  $(function () {
+    // AJAX user search: bind the dropdown to the modal so it's typeable/scrolls
+    // with it. Runs on every (re-)render, including invalid-form re-renders.
+    $('#mainModal .select2-widget').select2({
+      dropdownParent: $('#mainModal .modal-content'),
+      width: '100%'
+    });
+  });
+</script>
