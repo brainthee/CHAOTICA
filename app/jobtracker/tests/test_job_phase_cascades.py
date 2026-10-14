@@ -94,3 +94,20 @@ class JobLostCascadeTests(CascadeTestBase):
         deleted.refresh_from_db()
         self.assertEqual(delivered.status, PhaseStatuses.DELIVERED)
         self.assertEqual(deleted.status, PhaseStatuses.DELETED)
+
+
+class JobDeleteWithDeletedPhaseTests(CascadeTestBase):
+    """C1: an already-deleted phase must not block deleting its job."""
+
+    def test_job_with_deleted_phase_is_deletable(self):
+        self._phase(PhaseStatuses.DELETED)
+        live = self._phase(PhaseStatuses.PENDING_SCHED)
+
+        self.assertTrue(self.job.can_to_delete())
+        self.job.to_delete(self.actor)
+        self.job.save()
+
+        self.job.refresh_from_db()
+        live.refresh_from_db()
+        self.assertEqual(self.job.status, JobStatuses.DELETED)
+        self.assertEqual(live.status, PhaseStatuses.DELETED)

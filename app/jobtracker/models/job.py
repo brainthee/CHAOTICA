@@ -1148,7 +1148,7 @@ class Job(models.Model):
         self.fire_status_notification(JobStatuses.DELETED)
         # Cascade the delete to all phases so they don't linger as active
         # phases generating notifications for a deleted job.
-        for phase in self.phases.all():
+        for phase in self.phases.exclude(status=PhaseStatuses.DELETED):
             if phase.can_to_deleted():
                 phase.to_deleted(user)
                 phase.save()
@@ -1162,8 +1162,8 @@ class Job(models.Model):
 
     def can_to_delete(self, notify_request=None):
         _can_proceed = True
-        # Do logic checks
-        for phase in self.phases.all():
+        # Do logic checks. Phases that are already deleted don't block it.
+        for phase in self.phases.exclude(status=PhaseStatuses.DELETED):
             if not phase.can_to_deleted():
                 if notify_request:
                     messages.add_message(
