@@ -1374,8 +1374,8 @@ class User(AbstractUser):
             data["end"] = self.unit_memberships.first().unit.businessHours_endTime
         else:
             # Do site defaults...
-            data["start"] = timezone.datetime.time(9, 0, 0)
-            data["end"] = timezone.datetime.time(17, 30, 0)
+            data["start"] = time(9, 0, 0)
+            data["end"] = time(17, 30, 0)
         return data
 
     # Helper function to adjust to working hours
