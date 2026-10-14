@@ -1267,9 +1267,9 @@ def job_update_workflow(request, slug, new_state):
     slot_count = 0
     phase_count = 0
     if new_state == JobStatuses.LOST:
-        affected_phases = job.phases.exclude(
-            status__in=PhaseStatuses.INACTIVE_STATUSES
-        )
+        affected_phases = job.phases.filter(
+            status__lt=PhaseStatuses.DELIVERED
+        ).exclude(status__in=PhaseStatuses.INACTIVE_STATUSES)
         phase_count = affected_phases.count()
         slot_count = TimeSlot.objects.filter(phase__in=affected_phases).count()
         warn_clear_slots = slot_count > 0

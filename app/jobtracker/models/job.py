@@ -1110,11 +1110,16 @@ class Job(models.Model):
         log_system_activity(
             self, self.MOVED_TO + JobStatuses.CHOICES[JobStatuses.LOST][1], author=user
         )
-        # Cancel any remaining phases. to_cancelled() also deletes the phase's
-        # timeslots, so a lost job stops occupying the schedule (BUG-006).
-        for phase in self.phases.all():
+        # Cancel any remaining live phases. to_cancelled() also deletes the
+        # phase's timeslots, so a lost job stops occupying the schedule
+        # (BUG-006). The transition only sets the field in memory, so the
+        # phase must be saved (T-01). Delivered/closed phases are left alone.
+        for phase in self.phases.filter(status__lt=PhaseStatuses.DELIVERED).exclude(
+            status__in=PhaseStatuses.INACTIVE_STATUSES
+        ):
             if phase.can_to_cancelled():
                 phase.to_cancelled(user=user)
+                phase.save()
         self.fire_status_notification(JobStatuses.LOST)
 
     def can_proceed_to_lost(self):
