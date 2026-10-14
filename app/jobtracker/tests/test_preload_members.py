@@ -128,13 +128,14 @@ class SinglePreloadTests(PreloadMemberBase):
         user = User.objects.get(email="boss@test.com")
         self.assertIn(admin_group, user.groups.all())
 
-    def test_preload_reenables_disabled_user(self):
-        disabled = User.objects.create_user(
-            email="dormant@test.com", password="pw12345"
-        )
-        disabled.is_active = False
-        disabled.save()
+    def _disabled(self, email):
+        user = User.objects.create_user(email=email, password="pw12345")
+        user.is_active = False
+        user.save()
+        return user
 
+    def test_manager_preload_keeps_disabled_user_disabled(self):
+        disabled = self._disabled("dormant@test.com")
         self.client.force_login(self.manager)
         resp = self.client.post(
             self.preload_url(),
@@ -142,16 +143,25 @@ class SinglePreloadTests(PreloadMemberBase):
         )
         self.assertTrue(resp.json()["form_is_valid"])
         disabled.refresh_from_db()
-        # A previously disabled account is re-enabled when re-imported.
+        # Re-enabling is site-wide - a unit manager without manage_user can't.
+        self.assertFalse(disabled.is_active)
+        self.assertTrue(
+            OrganisationalUnitMember.objects.filter(unit=self.unit, member=disabled).exists()
+        )
+
+    def test_admin_preload_reenables_disabled_user(self):
+        disabled = self._disabled("dormant3@test.com")
+        self.client.force_login(self.admin)
+        resp = self.client.post(
+            self.preload_url(),
+            {"email": "dormant3@test.com", "unit_roles": [self.consultant_role.pk]},
+        )
+        self.assertTrue(resp.json()["form_is_valid"])
+        disabled.refresh_from_db()
         self.assertTrue(disabled.is_active)
 
-    def test_csv_import_reenables_disabled_user(self):
-        disabled = User.objects.create_user(
-            email="dormant2@test.com", password="pw12345"
-        )
-        disabled.is_active = False
-        disabled.save()
-
+    def test_manager_csv_import_keeps_disabled_user_disabled(self):
+        disabled = self._disabled("dormant2@test.com")
         self.client.force_login(self.manager)
         f = SimpleUploadedFile(
             "members.csv",
@@ -160,7 +170,60 @@ class SinglePreloadTests(PreloadMemberBase):
         )
         self.client.post(self.import_url(), {"csv_file": f})
         disabled.refresh_from_db()
+        self.assertFalse(disabled.is_active)
+
+    def test_admin_csv_import_reenables_disabled_user(self):
+        disabled = self._disabled("dormant4@test.com")
+        self.client.force_login(self.admin)
+        f = SimpleUploadedFile(
+            "members.csv",
+            b"email,unit_roles\ndormant4@test.com,Consultant\n",
+            "text/csv",
+        )
+        self.client.post(self.import_url(), {"csv_file": f})
+        disabled.refresh_from_db()
         self.assertTrue(disabled.is_active)
+
+    def test_cannot_preload_self(self):
+        self.client.force_login(self.manager)
+        resp = self.client.post(
+            self.preload_url(),
+            {"email": "mgr@test.com", "unit_roles": [self.consultant_role.pk]},
+        )
+        self.assertFalse(resp.json()["form_is_valid"])
+        self.assertFalse(
+            OrganisationalUnitMember.objects.filter(unit=self.unit, member=self.manager).exists()
+        )
+
+    def test_cannot_csv_import_self(self):
+        self.client.force_login(self.manager)
+        f = SimpleUploadedFile(
+            "members.csv", b"email,unit_roles\nmgr@test.com,Manager\n", "text/csv"
+        )
+        self.client.post(self.import_url(), {"csv_file": f})
+        self.assertFalse(
+            OrganisationalUnitMember.objects.filter(unit=self.unit, member=self.manager).exists()
+        )
+
+    def test_role_ceiling_blocks_privileged_role(self):
+        # The manager here holds manage_members only - not the unit-admin perms
+        # the Manager role carries - so can't grant it.
+        manager_role = OrganisationalUnitRole.objects.get(name="Manager")
+        self.client.force_login(self.manager)
+        resp = self.client.post(
+            self.preload_url(),
+            {"email": "climber@test.com", "unit_roles": [manager_role.pk]},
+        )
+        self.assertFalse(resp.json()["form_is_valid"])
+        self.assertFalse(User.objects.filter(email="climber@test.com").exists())
+
+    def test_role_ceiling_blocks_privileged_role_in_csv(self):
+        self.client.force_login(self.manager)
+        f = SimpleUploadedFile(
+            "members.csv", b"email,unit_roles\nclimber2@test.com,Manager\n", "text/csv"
+        )
+        self.client.post(self.import_url(), {"csv_file": f})
+        self.assertFalse(User.objects.filter(email="climber2@test.com").exists())
 
     def test_existing_user_added_without_touching_site_role(self):
         existing = User.objects.create_user(
@@ -364,3 +427,21 @@ class DomainValidatorUnitTests(TestCase):
         with override_config(ALLOWED_SIGNUP_EMAIL_DOMAINS="Example.com, Other.org"):
             self.assertTrue(email_domain_allowed("Bob@EXAMPLE.COM"))
             self.assertFalse(email_domain_allowed("bob@nope.com"))
+
+
+class DeactivationRevokesUnitPermsTests(PreloadMemberBase):
+    def test_deactivation_revokes_unit_perms_immediately(self):
+        from guardian.shortcuts import get_user_perms
+
+        member = User.objects.create_user(email="leaver@test.com", password="pw12345")
+        membership = OrganisationalUnitMember.objects.create(unit=self.unit, member=member)
+        membership.roles.add(self.consultant_role)
+        self.unit.sync_permissions(users=[member.pk])
+        self.assertTrue(get_user_perms(member, self.unit).exists())
+
+        member.set_active_status(False)
+        self.assertFalse(get_user_perms(member, self.unit).exists())
+
+        # Re-enabling doesn't resurrect the (now left) membership's perms.
+        member.set_active_status(True)
+        self.assertFalse(get_user_perms(member, self.unit).exists())

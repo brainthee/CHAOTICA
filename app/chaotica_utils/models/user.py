@@ -625,6 +625,21 @@ class User(AbstractUser):
             self.unit_memberships.filter(left_date__isnull=True).update(
                 left_date=now
             )
+            # .update() skips OrganisationalUnitMember.save(), so revoke the
+            # unit object permissions now rather than at the next daily sync -
+            # otherwise re-enabling the account would restore them.
+            for membership in self.unit_memberships.select_related("unit"):
+                membership.unit.sync_permissions(users=[self.pk])
+
+        from ..audit import record_audit
+        from .audit import AuditVerb, AuditCategory
+
+        record_audit(
+            self,
+            AuditVerb.STATUS_CHANGE,
+            message="Account {}".format("enabled" if active else "disabled"),
+            category=AuditCategory.SECURITY,
+        )
         return True
 
     def get_jobs(self):

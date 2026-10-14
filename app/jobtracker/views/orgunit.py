@@ -4,6 +4,7 @@ from django.http import HttpResponseBadRequest, JsonResponse, HttpResponse
 from django.template import loader
 from django.urls import reverse
 from django.db import transaction
+from django.core.exceptions import PermissionDenied
 from django.views.decorators.http import require_http_methods
 from django.conf import settings
 import csv, io, re
@@ -549,17 +550,23 @@ def _preload_unit_member(
     site_group=None,
     unit_roles=None,
     can_assign_site_roles=False,
+    can_reactivate=False,
 ):
     """Create (or adopt) a user by email and attach site + unit roles.
 
     A real ``User`` row is created up-front so that first login (SSO adopts by
     email) picks up the pre-assigned roles. Returns ``(user, user_created)``.
+    A disabled account is only re-enabled when ``can_reactivate`` (the
+    requester holds ``manage_user``); otherwise it is added but stays disabled
+    - callers check ``user.is_active`` to report that.
     Does NOT sync unit permissions — the caller should call
     ``org_unit.sync_permissions()`` once after processing (so a bulk import only
     syncs once).
     """
     email = (email or "").strip()
     user = User.objects.filter(email__iexact=email).first()
+    if user is not None and user.pk == requesting_user.pk and not requesting_user.is_superuser:
+        raise PermissionDenied("You can't pre-load yourself.")
     user_created = False
     if user is None:
         user = User(
@@ -571,11 +578,11 @@ def _preload_unit_member(
         user.set_unusable_password()
         user.save()
         user_created = True
-    elif not user.is_active:
+    elif not user.is_active and can_reactivate:
         # Re-importing a previously disabled account re-enables it, so a person
         # who was off-boarded and later returns regains access to the unit.
-        user.is_active = True
-        user.save()
+        # Site-wide effect, so only for manage_user holders (audited).
+        user.set_active_status(True)
 
     # Site (global) role. Only an assigner with manage_user may pick an
     # elevated role; everyone else (and every new user) gets the default role.
@@ -639,11 +646,18 @@ def organisationalunit_preload_member(request, slug):
                     site_group=form.cleaned_data.get("site_role"),
                     unit_roles=form.cleaned_data.get("unit_roles"),
                     can_assign_site_roles=form.can_assign_site_roles,
+                    can_reactivate=form.can_assign_site_roles,
                 )
                 org_unit.sync_permissions()
-            if form.cleaned_data.get("send_email"):
+            if form.cleaned_data.get("send_email") and user.is_active:
                 _send_preload_notification(user)
-            if created:
+            if not user.is_active:
+                messages.warning(
+                    request,
+                    "Added %s to %s, but the account is disabled - ask an admin "
+                    "to re-enable it." % (user.email, org_unit.name),
+                )
+            elif created:
                 messages.success(
                     request, "Pre-loaded %s into %s" % (user.email, org_unit.name)
                 )
@@ -749,6 +763,10 @@ def organisationalunit_import_members(request, slug):
                     r.name.strip().lower(): r
                     for r in OrganisationalUnitRole.objects.all()
                 }
+                assignable_role_pks = set(
+                    org_unit.assignable_roles(request.user).values_list("pk", flat=True)
+                )
+                disabled_emails = []
                 default_unit_role = OrganisationalUnitRole.objects.filter(
                     default_role=True
                 ).first()
@@ -782,6 +800,19 @@ def organisationalunit_import_members(request, slug):
                             )
                             continue
 
+                        if (
+                            email.lower() == (request.user.email or "").lower()
+                            and not request.user.is_superuser
+                        ):
+                            failed_rows.append(
+                                {
+                                    "row": row_num,
+                                    "email": email,
+                                    "reason": "You can't pre-load yourself",
+                                }
+                            )
+                            continue
+
                         # Unit roles (semicolon/comma separated names)
                         unit_roles = []
                         bad_role = None
@@ -805,6 +836,19 @@ def organisationalunit_import_members(request, slug):
                             continue
                         if not unit_roles and default_unit_role:
                             unit_roles = [default_unit_role]
+                        over_ceiling = [
+                            r.name for r in unit_roles if r.pk not in assignable_role_pks
+                        ]
+                        if over_ceiling:
+                            failed_rows.append(
+                                {
+                                    "row": row_num,
+                                    "email": email,
+                                    "reason": "You can't assign unit role(s) "
+                                    + ", ".join(f"'{n}'" for n in over_ceiling),
+                                }
+                            )
+                            continue
 
                         # Site role (only honoured for privileged importers)
                         site_group = None
@@ -835,8 +879,11 @@ def organisationalunit_import_members(request, slug):
                                 site_group=site_group,
                                 unit_roles=unit_roles,
                                 can_assign_site_roles=can_assign_site_roles,
+                                can_reactivate=can_assign_site_roles,
                             )
                             imported_count += 1
+                            if not user.is_active:
+                                disabled_emails.append(user.email)
                             if created:
                                 created_count += 1
                                 if send_email:
@@ -862,6 +909,12 @@ def organisationalunit_import_members(request, slug):
                     if created_count:
                         summary += f" ({created_count} newly created)"
                     messages.success(request, summary)
+                if disabled_emails:
+                    messages.warning(
+                        request,
+                        "These accounts are disabled and stay disabled - ask an "
+                        "admin to re-enable them: " + ", ".join(disabled_emails),
+                    )
 
                 # Clean import - nothing to review, head back to the unit.
                 if not failed_rows:
@@ -936,11 +989,19 @@ def organisationalunit_manage_roles(request, slug, member_pk):
     # Okay, lets go!
     data = dict()
     if request.method == "POST":
+        # Roles above the requester's ceiling aren't offered, so keep any the
+        # member already holds rather than silently stripping them.
+        kept_roles = list(
+            membership.roles.exclude(pk__in=org_unit.assignable_roles(request.user))
+        )
         form = OrganisationalUnitMemberRolesForm(
-            request.POST, instance=membership, org_unit=org_unit
+            request.POST, instance=membership, org_unit=org_unit,
+            requesting_user=request.user,
         )
         if form.is_valid():
             membership = form.save()
+            if kept_roles:
+                membership.roles.add(*kept_roles)
             # Lets update the unit's permissions...
             membership.unit.sync_permissions()
             data["form_is_valid"] = True
@@ -948,7 +1009,9 @@ def organisationalunit_manage_roles(request, slug, member_pk):
             messages.error(request, "Error requesting membership. Please report this!")
             data["form_is_valid"] = False
     else:
-        form = OrganisationalUnitMemberRolesForm(instance=membership, org_unit=org_unit)
+        form = OrganisationalUnitMemberRolesForm(
+            instance=membership, org_unit=org_unit, requesting_user=request.user
+        )
 
     context = {"orgUnit": org_unit, "membership": membership, "form": form}
     data["html_form"] = loader.render_to_string(

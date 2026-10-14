@@ -2988,6 +2988,11 @@ class UserCostForm(forms.ModelForm):
         }
 
 
+_ROLE_CEILING_ERROR = (
+    "You can only assign roles whose permissions you hold in this unit."
+)
+
+
 class OrganisationalUnitMemberRolesForm(forms.ModelForm):
     roles = forms.ModelMultipleChoiceField(
         queryset=OrganisationalUnitRole.objects.all(),
@@ -3004,7 +3009,11 @@ class OrganisationalUnitMemberRolesForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         org_unit = kwargs.pop("org_unit", None)
+        requesting_user = kwargs.pop("requesting_user", None)
         super(OrganisationalUnitMemberRolesForm, self).__init__(*args, **kwargs)
+        if org_unit is not None and requesting_user is not None:
+            self.fields["roles"].queryset = org_unit.assignable_roles(requesting_user)
+            self.fields["roles"].error_messages["invalid_choice"] = _ROLE_CEILING_ERROR
         self.helper = FormHelper(self)
         self.helper.form_tag = False
         self.helper.layout = Layout(
@@ -3066,6 +3075,13 @@ class PreloadUnitMemberForm(forms.Form):
             self.requesting_user
             and self.requesting_user.has_perm("chaotica_utils.manage_user")
         )
+        if self.org_unit is not None and self.requesting_user is not None:
+            self.fields["unit_roles"].queryset = self.org_unit.assignable_roles(
+                self.requesting_user
+            )
+            self.fields["unit_roles"].error_messages["invalid_choice"] = (
+                _ROLE_CEILING_ERROR
+            )
 
         # Default unit role = the flagged default_role (Consultant)
         default_unit_role = OrganisationalUnitRole.objects.filter(
@@ -3106,7 +3122,14 @@ class PreloadUnitMemberForm(forms.Form):
     def clean_email(self):
         from chaotica_utils.utils import validate_email_domain
 
-        return validate_email_domain(self.cleaned_data.get("email"))
+        email = validate_email_domain(self.cleaned_data.get("email"))
+        if (
+            self.requesting_user is not None
+            and not self.requesting_user.is_superuser
+            and (email or "").strip().lower() == (self.requesting_user.email or "").lower()
+        ):
+            raise forms.ValidationError("You can't pre-load yourself.")
+        return email
 
 
 class ImportUnitMembersForm(forms.Form):

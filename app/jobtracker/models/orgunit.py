@@ -168,6 +168,31 @@ class OrganisationalUnit(SoftDeleteModel):
 
         return working_days_list
 
+    #: Unit perms that confer authority over the unit / its people. A role
+    #: carrying one of these can only be granted by someone who holds it here.
+    PRIVILEGED_PERMS = {
+        "manage_members",
+        "change_organisationalunit",
+        "delete_organisationalunit",
+        "can_view_loaded_costs",
+        "can_approve_leave_requests",
+        "can_view_all_leave_requests",
+    }
+
+    def assignable_roles(self, user):
+        """Unit roles ``user`` may hand out in this unit (superusers: all).
+
+        A role is assignable unless it carries a PRIVILEGED_PERMS permission
+        that ``user`` doesn't hold here - so a member manager can't grant a role
+        more powerful than their own (e.g. Service Delivery -> Manager)."""
+        from guardian.shortcuts import get_user_perms
+
+        roles = OrganisationalUnitRole.objects.all()
+        if user.is_superuser:
+            return roles
+        lacking = self.PRIVILEGED_PERMS - set(get_user_perms(user, self))
+        return roles.exclude(permissions__codename__in=lacking).distinct()
+
     def sync_permissions(self, users=None):
         """Reconcile guardian object permissions from each member's roles.
 
