@@ -41,7 +41,13 @@ class task_progress_workflows(CronJobBase):
                     phase.save()
 
         # # Lets see if we can finish any jobs
-        for job in Job.objects.filter(status=JobStatuses.IN_PROGRESS).filter(phases__status__gte=PhaseStatuses.DELIVERED):
+        # The phases join yields one row per matching phase, so de-duplicate
+        # or each job is completed (and notified) once per phase.
+        for job in Job.objects.filter(status=JobStatuses.IN_PROGRESS).filter(phases__status__gte=PhaseStatuses.DELIVERED).distinct():
+            # Skip anything that changed since the queryset was evaluated.
+            job.refresh_from_db(fields=["status"])
+            if job.status != JobStatuses.IN_PROGRESS:
+                continue
             # Check there's no phases LTE DELIVERED
             can_progress = True
             for phase in job.phases.all():

@@ -1,4 +1,5 @@
 from datetime import timedelta
+from unittest import mock
 from django.test import TestCase, Client as TestClient
 from django.urls import reverse
 from django.utils import timezone
@@ -127,3 +128,24 @@ class PhaseBulkDeleteTests(CascadeTestBase):
         )
         self.assertEqual(resp.status_code, 200)
         self.assertIn(phase.title, resp.json()["html_form"])
+
+
+class AutoCompleteCronTests(CascadeTestBase):
+    """C3: the auto-complete cron must complete each job exactly once."""
+
+    def test_job_completed_once_with_many_delivered_phases(self):
+        from jobtracker.tasks import task_progress_workflows
+
+        self._set_job_status(JobStatuses.IN_PROGRESS)
+        for _ in range(3):
+            self._phase(PhaseStatuses.DELIVERED)
+
+        with mock.patch.object(Job, "fire_status_notification") as fired:
+            task_progress_workflows().do()
+
+        self.job.refresh_from_db()
+        self.assertEqual(self.job.status, JobStatuses.COMPLETED)
+        completed_calls = [
+            c for c in fired.call_args_list if c.args == (JobStatuses.COMPLETED,)
+        ]
+        self.assertEqual(len(completed_calls), 1)
