@@ -344,16 +344,20 @@ class ScheduledReportForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         self.report = kwargs.pop('report', None)
+        self.requesting_user = kwargs.pop('requesting_user', None)
         super().__init__(*args, **kwargs)
         # run_time renders/parses as HH:MM
         self.fields['run_time'].input_formats = ['%H:%M', '%H:%M:%S']
-        # The report runs with run_as_user's permissions. Never allow a superuser
-        # (or inactive account) to be chosen — that would side-step reporting's
-        # unit scoping / restricted-job exclusion and leak protected data.
+        # The report runs with run_as_user's permissions, so only offer people the
+        # requester already covers (self / their reports, or anyone for report
+        # admins). Never a superuser or inactive account — that would side-step
+        # reporting's unit scoping / restricted-job exclusion.
         from chaotica_utils.models import User
-        self.fields['run_as_user'].queryset = User.objects.filter(
-            is_active=True, is_superuser=False
-        ).order_by('first_name', 'last_name')
+        from .permissions import run_as_candidates
+        if self.requesting_user is not None:
+            self.fields['run_as_user'].queryset = run_as_candidates(self.requesting_user)
+        else:
+            self.fields['run_as_user'].queryset = User.objects.none()
         # Limit the split field to columns of this report's data area.
         if self.report is not None:
             self.fields['split_by_field'].queryset = DataField.objects.filter(
@@ -369,6 +373,22 @@ class ScheduledReportForm(forms.ModelForm):
                 _("Scheduled reports may not run as a superuser or inactive account.")
             )
         return user
+
+    def clean_recipient_emails(self):
+        from .permissions import is_internal_recipient
+
+        raw = self.cleaned_data.get('recipient_emails', '') or ''
+        external = [
+            addr.strip()
+            for addr in raw.replace('\n', ',').split(',')
+            if addr.strip() and not is_internal_recipient(addr)
+        ]
+        if external:
+            raise forms.ValidationError(
+                _("Recipients must be CHAOTICA users or on an allowed email domain: %(addrs)s"),
+                params={'addrs': ", ".join(external)},
+            )
+        return raw
 
     def clean(self):
         cleaned = super().clean()

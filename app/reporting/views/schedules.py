@@ -31,7 +31,7 @@ def schedule_list(request, uuid):
 def schedule_create(request, uuid):
     report = _get_editable_report(request, uuid)
     if request.method == 'POST':
-        form = ScheduledReportForm(request.POST, report=report)
+        form = ScheduledReportForm(request.POST, report=report, requesting_user=request.user)
         if form.is_valid():
             schedule = form.save(commit=False)
             schedule.report = report
@@ -39,7 +39,10 @@ def schedule_create(request, uuid):
             messages.success(request, f"Schedule '{schedule.name}' created.")
             return redirect('reporting:schedule_list', uuid=report.uuid)
     else:
-        form = ScheduledReportForm(report=report, initial={'email_subject': report.name})
+        form = ScheduledReportForm(
+            report=report, requesting_user=request.user,
+            initial={'email_subject': report.name, 'run_as_user': request.user},
+        )
     return render(request, 'reporting/schedule_form.html', {
         'report': report, 'form': form, 'is_create': True,
     })
@@ -51,13 +54,15 @@ def schedule_edit(request, uuid, pk):
     report = _get_editable_report(request, uuid)
     schedule = get_object_or_404(ScheduledReport, pk=pk, report=report)
     if request.method == 'POST':
-        form = ScheduledReportForm(request.POST, instance=schedule, report=report)
+        form = ScheduledReportForm(
+            request.POST, instance=schedule, report=report, requesting_user=request.user
+        )
         if form.is_valid():
             form.save()
             messages.success(request, f"Schedule '{schedule.name}' updated.")
             return redirect('reporting:schedule_list', uuid=report.uuid)
     else:
-        form = ScheduledReportForm(instance=schedule, report=report)
+        form = ScheduledReportForm(instance=schedule, report=report, requesting_user=request.user)
     return render(request, 'reporting/schedule_form.html', {
         'report': report, 'form': form, 'schedule': schedule, 'is_create': False,
     })

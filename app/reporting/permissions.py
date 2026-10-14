@@ -80,6 +80,49 @@ def can_share_report(user, report):
     
     return False
 
+def can_run_as_anyone(user):
+    """Whether ``user`` may schedule a report to run as any (non-superuser)."""
+    return (
+        user.is_superuser
+        or user.has_perm('reporting.can_run_all_reports')
+        or user.has_perm('chaotica_utils.manage_user')
+    )
+
+
+def run_as_candidates(user):
+    """Users a scheduled report created by ``user`` may run as: themselves, the
+    people they (acting-)manage, or anyone for ``can_run_as_anyone`` holders.
+    Superusers and inactive accounts are never valid targets."""
+    from django.db.models import Q
+    from chaotica_utils.models import User
+
+    qs = User.objects.filter(is_active=True, is_superuser=False)
+    if not can_run_as_anyone(user):
+        qs = qs.filter(Q(pk=user.pk) | Q(manager=user) | Q(acting_manager=user))
+    return qs.order_by('first_name', 'last_name')
+
+
+def is_internal_recipient(address, known_emails=None):
+    """True if ``address`` belongs to an active user, or its domain is on the
+    ALLOWED_SIGNUP_EMAIL_DOMAINS allowlist (a blank allowlist allows none)."""
+    from django.db.models import Q
+    from chaotica_utils.utils import get_allowed_signup_email_domains
+    from chaotica_utils.models import User
+
+    address = (address or '').strip().lower()
+    if '@' not in address:
+        return False
+    if known_emails is not None:
+        if address in known_emails:
+            return True
+    elif User.objects.filter(is_active=True).filter(
+        Q(email__iexact=address) | Q(notification_email__iexact=address)
+    ).exists():
+        return True
+    allowed = get_allowed_signup_email_domains()
+    return bool(allowed) and address.rsplit('@', 1)[1] in allowed
+
+
 def can_access_data_area(user, data_area):
     """
     Check if user can access a data area

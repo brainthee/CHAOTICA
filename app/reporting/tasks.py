@@ -18,6 +18,7 @@ from constance import config
 
 from chaotica_utils.models import User
 from .models import ReportRun, ScheduledReport
+from .permissions import is_internal_recipient
 from .services.data_service import DataService
 from .services.export_service import ExportService
 
@@ -95,8 +96,21 @@ class task_send_scheduled_reports(CronJobBase):
         # Aggregated email to the fixed (admin-curated) recipient list / group.
         # Drop anything that isn't a well-formed address so a malformed entry
         # can't derail the send.
+        # Also drop external addresses (schedules saved before recipients were
+        # validated) so report data can't be emailed outside the organisation.
         if sched.send_aggregate_to_group:
-            recipients = [r for r in sched.recipient_list() if _is_valid_email(r)]
+            known = _known_user_emails()
+            recipients = []
+            for r in sched.recipient_list():
+                if not _is_valid_email(r):
+                    continue
+                if is_internal_recipient(r, known_emails=known):
+                    recipients.append(r)
+                else:
+                    logger.warning(
+                        "Scheduled report '%s': skipping external recipient '%s'.",
+                        sched, r,
+                    )
             if recipients:
                 self._send(sched, recipients, field_names, display_rows(data))
 

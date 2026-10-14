@@ -314,16 +314,73 @@ class RunAsUserFormTests(TestCase):
 
     def test_run_as_user_queryset_excludes_superusers(self):
         from reporting.forms import ScheduledReportForm
-        form = ScheduledReportForm()
+        form = ScheduledReportForm(requesting_user=self.superuser)
         qs = form.fields['run_as_user'].queryset
         self.assertIn(self.normal, qs)
         self.assertNotIn(self.superuser, qs)
 
     def test_run_as_user_rejects_superuser_on_clean(self):
         from reporting.forms import ScheduledReportForm
-        form = ScheduledReportForm(data={'run_as_user': self.superuser.pk})
+        form = ScheduledReportForm(
+            data={'run_as_user': self.superuser.pk}, requesting_user=self.superuser
+        )
         self.assertFalse(form.is_valid())
         self.assertIn('run_as_user', form.errors)
+
+
+class RunAsScopeTests(TestCase):
+    """A schedule may only run as the requester, someone they manage, or anyone
+    for report admins; recipients must be internal."""
+
+    def setUp(self):
+        from chaotica_utils.models import User
+        User.objects.create_user(email="bootstrap@test.com", password="pw12345")
+        self.owner = User.objects.create_user(email="owner@test.com", password="pw12345")
+        self.report_to = User.objects.create_user(email="rt@test.com", password="pw12345")
+        self.report_to.manager = self.owner
+        self.report_to.save()
+        self.unrelated = User.objects.create_user(email="boss@test.com", password="pw12345")
+        self.admin = User.objects.create_user(email="radmin@test.com", password="pw12345")
+        assign_perm("reporting.can_run_all_reports", self.admin)
+
+    def _qs(self, user):
+        from reporting.forms import ScheduledReportForm
+        return ScheduledReportForm(requesting_user=user).fields['run_as_user'].queryset
+
+    def test_owner_limited_to_self_and_reports(self):
+        qs = self._qs(self.owner)
+        self.assertIn(self.owner, qs)
+        self.assertIn(self.report_to, qs)
+        self.assertNotIn(self.unrelated, qs)
+
+    def test_owner_cannot_submit_unrelated_user(self):
+        from reporting.forms import ScheduledReportForm
+        form = ScheduledReportForm(
+            data={'run_as_user': self.unrelated.pk}, requesting_user=self.owner
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn('run_as_user', form.errors)
+
+    def test_report_admin_can_pick_anyone(self):
+        self.assertIn(self.unrelated, self._qs(self.admin))
+
+    def test_external_recipient_rejected(self):
+        from reporting.forms import ScheduledReportForm
+        form = ScheduledReportForm(
+            data={'recipient_emails': 'rt@test.com, evil@attacker.example'},
+            requesting_user=self.owner,
+        )
+        form.is_valid()
+        self.assertIn('recipient_emails', form.errors)
+        self.assertIn('evil@attacker.example', str(form.errors['recipient_emails']))
+
+    def test_internal_recipient_accepted(self):
+        from reporting.forms import ScheduledReportForm
+        form = ScheduledReportForm(
+            data={'recipient_emails': 'rt@test.com'}, requesting_user=self.owner
+        )
+        form.is_valid()
+        self.assertNotIn('recipient_emails', form.errors)
 
 
 from unittest import mock
