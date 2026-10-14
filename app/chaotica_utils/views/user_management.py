@@ -25,7 +25,7 @@ from ..utils import (
     can_manage_user,
     group_permissions,
 )
-from .common import ChaoticaBaseGlobalRoleView, page_defaults
+from .common import ChaoticaBaseGlobalRoleView, page_defaults, log_system_activity
 from django.conf import settings as django_settings
 from django.contrib.auth.models import Permission
 from guardian.shortcuts import get_user_perms
@@ -352,9 +352,12 @@ def user_support_draw(request, email, role_pk):
     (``can_be_managed_by``), NOT on the job's ``can_schedule_job`` — a support
     member draws down their own budget without needing scheduling rights on the
     job. The role must belong to the profile owner (``user=target``)."""
+    from decimal import Decimal
+    from django.core.exceptions import ValidationError
     from jobtracker.models import JobSupportTeamRole
     from jobtracker.forms import SupportBudgetDrawForm
-    from ..utils import period_for_date
+    from ..utils import period_for_date, create_support_draw
+    from ..utils.support_budget import remaining_hours_for_role
 
     target = get_object_or_404(User, email=email)
     if not target.can_be_managed_by(request.user):
@@ -365,21 +368,34 @@ def user_support_draw(request, email, role_pk):
     if request.method == "POST":
         form = SupportBudgetDrawForm(request.POST)
         if form.is_valid():
-            draw = form.save(commit=False)
-            draw.support_role = support_role
-            draw.user = target
-            draw.created_by = request.user
-            draw.save()
-            data["form_is_valid"] = True
-        else:
-            data["form_is_valid"] = False
+            try:
+                draw = create_support_draw(
+                    support_role,
+                    form.cleaned_data["period_start"],
+                    form.cleaned_data["period_end"],
+                    form.cleaned_data["hours_drawn"],
+                    created_by=request.user,
+                )
+            except ValidationError as e:
+                form.add_error(None, e)
+            else:
+                log_system_activity(
+                    support_role.job,
+                    "{user} cashed out {hrs}h of support budget ({start} - {end}).".format(
+                        user=target,
+                        hrs=str(draw.hours_drawn),
+                        start=draw.period_start,
+                        end=draw.period_end,
+                    ),
+                    author=request.user,
+                )
+        data["form_is_valid"] = not form.errors
+        if form.errors:
             data["form_errors"] = form.errors
     else:
-        from decimal import Decimal
-        from chaotica_utils.utils.support_budget import build_job_support_budget
-
         # Pre-fill the period the page is showing (falls back to the current one),
         # and the hours with the member's remaining budget — one-click cash-out.
+        # The period only labels the draw; it never changes the LCR used.
         def _d(value):
             try:
                 return datetime.datetime.strptime(value, "%Y-%m-%d").date()
@@ -392,11 +408,11 @@ def user_support_draw(request, email, role_pk):
             p_start, p_end = period_for_date(timezone.now().date())
 
         initial = {"period_start": p_start, "period_end": p_end}
-        budget = build_job_support_budget(support_role.job, on_date=p_end)
-        member = budget["per_member"].get(support_role.user_id)
-        remaining = member.get("remaining_hours") if member else None
+        remaining = remaining_hours_for_role(support_role)
         if remaining is not None and remaining > 0:
-            initial["hours_drawn"] = remaining.quantize(Decimal("0.01"))
+            initial["hours_drawn"] = remaining.quantize(
+                Decimal("0.01"), rounding="ROUND_DOWN"
+            )
         form = SupportBudgetDrawForm(initial=initial)
 
     context = {"form": form, "job": support_role.job, "instance": support_role}
@@ -412,14 +428,10 @@ def user_support_auto_draw(request, email):
     """One-click cash out: fill the viewed period across ALL the user's support
     roles with each role's remaining budget.
 
-    Only creates a draw for a role that has no draw yet in this period (so it's
-    safe to click again). Same self/manager gate as the allocations page.
+    Tops up each role with whatever remains (never more), so it's safe to
+    click again. Same self/manager gate as the allocations page.
     """
-    from decimal import Decimal
-    from jobtracker.models import JobSupportTeamRole, SupportBudgetDraw
-    from jobtracker.enums import JobStatuses
-    from chaotica_utils.utils.support_budget import build_job_support_budget
-    from ..utils import period_for_date
+    from ..utils import period_for_date, auto_cash_out
 
     target = get_object_or_404(User, email=email)
     if not target.can_be_managed_by(request.user):
@@ -436,28 +448,23 @@ def user_support_auto_draw(request, email):
     if not (p_start and p_end):
         p_start, p_end = period_for_date(timezone.now().date())
 
-    roles = JobSupportTeamRole.objects.filter(
-        user=target, job__status__in=JobStatuses.ACTIVE_STATUSES
-    ).select_related("job")
-    created = 0
-    for role in roles:
-        budget = build_job_support_budget(role.job, on_date=p_end)
-        member = budget["per_member"].get(target.id)
-        remaining = member.get("remaining_hours") if member else None
-        if not remaining or remaining <= 0:
-            continue
-        _obj, was_created = SupportBudgetDraw.objects.get_or_create(
-            support_role=role,
-            period_start=p_start,
-            period_end=p_end,
-            defaults={
-                "user": target,
-                "hours_drawn": remaining.quantize(Decimal("0.01")),
-                "created_by": request.user,
-            },
-        )
-        if was_created:
-            created += 1
+    if p_start > p_end:
+        messages.error(request, "The period end must be on or after its start.")
+        created = 0
+    else:
+        draws = auto_cash_out(target, p_start, p_end, created_by=request.user)
+        created = len(draws)
+        for draw in draws:
+            log_system_activity(
+                draw.support_role.job,
+                "{user} cashed out {hrs}h of support budget ({start} - {end}).".format(
+                    user=target,
+                    hrs=str(draw.hours_drawn),
+                    start=draw.period_start,
+                    end=draw.period_end,
+                ),
+                author=request.user,
+            )
 
     if created:
         messages.success(

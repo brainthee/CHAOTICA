@@ -451,8 +451,15 @@ def job_support_team_apply_template(request, slug):
 
 @job_permission_required_or_403("jobtracker.can_schedule_job", (Job, "slug", "slug"))
 def job_support_team_draw(request, slug, pk):
-    """Cash-out (draw down) budgeted support hours for a timesheet period."""
+    """Cash-out (draw down) budgeted support hours for a timesheet period.
+
+    Goes through :func:`create_support_draw`, which refuses to overdraw the
+    member's remaining budget."""
+    from django.core.exceptions import ValidationError
+    from django.utils import timezone
     from ..forms import SupportBudgetDrawForm
+    from chaotica_utils.utils import create_support_draw, period_for_date
+    from chaotica_utils.utils.support_budget import remaining_hours_for_role
 
     job = get_object_or_404(Job, slug=slug)
     support_role = get_object_or_404(JobSupportTeamRole, pk=pk, job=job)
@@ -460,27 +467,39 @@ def job_support_team_draw(request, slug, pk):
     if request.method == "POST":
         form = SupportBudgetDrawForm(request.POST)
         if form.is_valid():
-            draw = form.save(commit=False)
-            draw.support_role = support_role
-            draw.user = support_role.user
-            draw.created_by = request.user
-            draw.save()
-            log_system_activity(
-                job,
-                "{user} drew down {hrs}h of support budget ({start} - {end}).".format(
-                    user=support_role.user,
-                    hrs=str(draw.hours_drawn),
-                    start=draw.period_start,
-                    end=draw.period_end,
-                ),
-                author=request.user,
-            )
-            data["form_is_valid"] = True
-        else:
-            data["form_is_valid"] = False
+            try:
+                draw = create_support_draw(
+                    support_role,
+                    form.cleaned_data["period_start"],
+                    form.cleaned_data["period_end"],
+                    form.cleaned_data["hours_drawn"],
+                    created_by=request.user,
+                )
+            except ValidationError as e:
+                form.add_error(None, e)
+            else:
+                log_system_activity(
+                    job,
+                    "{user} cashed out {hrs}h of support budget ({start} - {end}).".format(
+                        user=support_role.user,
+                        hrs=str(draw.hours_drawn),
+                        start=draw.period_start,
+                        end=draw.period_end,
+                    ),
+                    author=request.user,
+                )
+        data["form_is_valid"] = not form.errors
+        if form.errors:
             data["form_errors"] = form.errors
     else:
-        form = SupportBudgetDrawForm()
+        p_start, p_end = period_for_date(timezone.now().date())
+        initial = {"period_start": p_start, "period_end": p_end}
+        remaining = remaining_hours_for_role(support_role)
+        if remaining is not None and remaining > 0:
+            initial["hours_drawn"] = remaining.quantize(
+                Decimal("0.01"), rounding="ROUND_DOWN"
+            )
+        form = SupportBudgetDrawForm(initial=initial)
 
     context = {"form": form, "job": job, "instance": support_role}
     data["html_form"] = loader.render_to_string(

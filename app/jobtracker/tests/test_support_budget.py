@@ -14,12 +14,17 @@ from django.test import TestCase, Client as TestHttpClient
 from django.urls import reverse
 from guardian.shortcuts import assign_perm
 
-from chaotica_utils.models import User, UserCost
+from chaotica_utils.models import User, UserCost, get_sentinel_user
+from django.core.exceptions import ValidationError
+
 from chaotica_utils.utils import (
+    auto_cash_out,
     build_job_support_budget,
     build_user_support_budget,
+    create_support_draw,
     resolve_lcr,
 )
+from jobtracker.enums import JobStatuses
 from jobtracker.models import (
     Client,
     Job,
@@ -176,68 +181,110 @@ class LCRDateAwarenessTests(SupportBudgetTestBase):
 
 
 class LedgerTests(SupportBudgetTestBase):
-    def _remaining(self, user, on):
+    """Cash-outs go through ``create_support_draw`` — a money ledger that can
+    never be overdrawn and never re-prices past draws."""
+
+    def _remaining(self, user):
         # What production reads: the engine's per-member remaining hours.
-        budget = self.job.get_support_budget(on_date=on)
+        budget = self.job.get_support_budget()
         return budget["per_member"][user.id]["remaining_hours"]
+
+    def _draw(self, role, hours, start=date(2026, 9, 1), end=date(2026, 9, 7)):
+        return create_support_draw(
+            role, start, end, Decimal(str(hours)), created_by=self.root
+        )
 
     def test_draws_reduce_remaining_and_carry_forward(self):
         u = self._user(1, lcr=50)
         role = self._role(u, 100)  # budget_money 800 -> 16h @50
-        on = date(2026, 9, 30)
-        self.assertEqual(self._remaining(u, on), Decimal("16"))
+        self.assertEqual(self._remaining(u), Decimal("16"))
 
-        SupportBudgetDraw.objects.create(
-            support_role=role,
-            period_start=date(2026, 9, 1),
-            period_end=date(2026, 9, 7),
-            hours_drawn=Decimal("5"),
-            created_by=self.root,
-        )
-        SupportBudgetDraw.objects.create(
-            support_role=role,
-            period_start=date(2026, 9, 8),
-            period_end=date(2026, 9, 14),
-            hours_drawn=Decimal("4"),
-            created_by=self.root,
-        )
+        self._draw(role, 5)
+        self._draw(role, 4, start=date(2026, 9, 8), end=date(2026, 9, 14))
         self.assertEqual(role.drawn_hours(), Decimal("9"))
-        self.assertEqual(self._remaining(u, on), Decimal("7"))
+        self.assertEqual(self._remaining(u), Decimal("7"))
 
-    def test_over_draw_goes_negative(self):
+    def test_draw_records_lcr_and_money(self):
+        u = self._user(1, lcr=50)
+        d = self._draw(self._role(u, 100), 3)
+        self.assertEqual(d.lcr_at_draw, Decimal("50"))
+        self.assertEqual(d.money_drawn, Decimal("150.00"))
+
+    def test_over_draw_rejected(self):
         u = self._user(1, lcr=50)
         role = self._role(u, 100)
-        SupportBudgetDraw.objects.create(
-            support_role=role,
-            period_start=date(2026, 9, 1),
-            period_end=date(2026, 9, 7),
-            hours_drawn=Decimal("20"),
-            created_by=self.root,
+        with self.assertRaises(ValidationError):
+            self._draw(role, 20)
+        self._draw(role, 16)  # exactly the budget is fine
+        with self.assertRaises(ValidationError):
+            self._draw(role, Decimal("0.01"))
+        self.assertEqual(role.draws.count(), 1)
+
+    def test_zero_negative_and_reversed_rejected(self):
+        u = self._user(1, lcr=50)
+        role = self._role(u, 100)
+        for hours in (0, -5):
+            with self.assertRaises(ValidationError):
+                self._draw(role, hours)
+        with self.assertRaises(ValidationError):
+            self._draw(role, 1, start=date(2026, 9, 10), end=date(2026, 9, 1))
+        self.assertFalse(role.draws.exists())
+
+    def test_no_lcr_cannot_draw(self):
+        u = self._user(1)  # no cost rate
+        with self.assertRaises(ValidationError):
+            self._draw(self._role(u, 100), 1)
+
+    def test_lcr_rise_does_not_reprice_past_draws(self):
+        u = self._user(1, lcr=50)
+        role = self._role(u, 100)  # £800
+        self._draw(role, 16)  # all £800 drawn at £50/h
+        UserCost.objects.create(
+            user=u, effective_from=date(2021, 1, 1), cost_per_hour=Decimal("100")
         )
-        self.assertEqual(self._remaining(u, date(2026, 9, 30)), Decimal("-4"))
+        m = self.job.get_support_budget()["per_member"][u.id]
+        self.assertEqual(m["remaining_money"], Decimal("0"))
+        self.assertEqual(m["remaining_hours"], Decimal("0"))  # not -8
+
+    def test_lcr_rise_values_remaining_at_new_rate(self):
+        u = self._user(1, lcr=50)
+        role = self._role(u, 100)  # £800
+        self._draw(role, 8)  # £400 left
+        UserCost.objects.create(
+            user=u, effective_from=date(2021, 1, 1), cost_per_hour=Decimal("100")
+        )
+        self.assertEqual(self._remaining(u), Decimal("4"))  # £400 @ £100
+
+    def test_drawable_statuses(self):
+        u = self._user(1, lcr=50)
+        role = self._role(u, 100)
+        for status in (JobStatuses.DELETED, JobStatuses.ARCHIVED, JobStatuses.LOST):
+            Job.objects.filter(pk=self.job.pk).update(status=status)
+            with self.assertRaises(ValidationError):
+                self._draw(role, 1)
+        Job.objects.filter(pk=self.job.pk).update(status=JobStatuses.COMPLETED)
+        self._draw(role, 1)
+        self.assertEqual(role.draws.count(), 1)
+
+    def test_sentinel_and_null_rows_excluded_from_split(self):
+        u = self._user(1, lcr=50)
+        self._role(u, 100)
+        JobSupportTeamRole.objects.create(job=self.job, user=None)
+        JobSupportTeamRole.objects.create(job=self.job, user=get_sentinel_user())
+        b = self.job.get_support_budget()
+        self.assertEqual(b["percent_sum"], Decimal("100"))
+        self.assertEqual(b["per_member"][u.id]["budget_money"], Decimal("800"))
+        self.assertTrue(b["warnings"])
 
     def test_draw_denormalises_user(self):
         u = self._user(1, lcr=50)
-        role = self._role(u, 100)
-        d = SupportBudgetDraw.objects.create(
-            support_role=role,
-            period_start=date(2026, 9, 1),
-            period_end=date(2026, 9, 7),
-            hours_drawn=Decimal("1"),
-            created_by=self.root,
-        )
+        d = self._draw(self._role(u, 100), 1)
         self.assertEqual(d.user_id, u.id)
 
     def test_user_rollup_period_filter(self):
         u = self._user(1, lcr=50)
         role = self._role(u, 100)
-        SupportBudgetDraw.objects.create(
-            support_role=role,
-            period_start=date(2026, 9, 1),
-            period_end=date(2026, 9, 7),
-            hours_drawn=Decimal("3"),
-            created_by=self.root,
-        )
+        self._draw(role, 3)
         roll = build_user_support_budget(
             u, start=date(2026, 9, 1), end=date(2026, 9, 30)
         )
@@ -245,6 +292,28 @@ class LedgerTests(SupportBudgetTestBase):
         entry = roll["per_job"][0]
         self.assertEqual(entry["period_drawn_hours"], Decimal("3"))
         self.assertEqual(entry["remaining_hours"], Decimal("13"))  # 16 - 3
+        self.assertTrue(roll["has_remaining"])
+
+    def test_user_rollup_includes_completed_jobs(self):
+        u = self._user(1, lcr=50)
+        self._role(u, 100)
+        Job.objects.filter(pk=self.job.pk).update(status=JobStatuses.COMPLETED)
+        self.assertEqual(len(build_user_support_budget(u)["per_job"]), 1)
+        Job.objects.filter(pk=self.job.pk).update(status=JobStatuses.ARCHIVED)
+        self.assertEqual(len(build_user_support_budget(u)["per_job"]), 0)
+
+    def test_auto_cash_out_tops_up_partial_draw(self):
+        u = self._user(1, lcr=50)
+        role = self._role(u, 100)
+        self._draw(role, 1, start=date(2026, 9, 1), end=date(2026, 9, 14))
+        created = auto_cash_out(u, date(2026, 9, 1), date(2026, 9, 14), self.root)
+        self.assertEqual(len(created), 1)
+        self.assertEqual(created[0].hours_drawn, Decimal("15.00"))
+        # Nothing left — a second run creates nothing.
+        self.assertEqual(
+            auto_cash_out(u, date(2026, 9, 1), date(2026, 9, 14), self.root), []
+        )
+        self.assertEqual(role.drawn_hours(), Decimal("16"))
 
 
 class TemplateApplyTests(SupportBudgetTestBase):
@@ -463,6 +532,58 @@ class SupportBudgetViewTests(SupportBudgetTestBase):
             {"period_start": "2026-09-01", "period_end": "2026-09-14", "hours_drawn": "2"},
         )
         self.assertEqual(resp.status_code, 403)
+
+    def test_view_rejects_overdraw(self):
+        self.http.force_login(self.owner)
+        resp = self.http.post(
+            self._draw_url(),
+            {"period_start": "2026-09-01", "period_end": "2026-09-14", "hours_drawn": "17"},
+        )
+        body = resp.json()
+        self.assertFalse(body["form_is_valid"])
+        self.assertIn("hours_drawn", body["form_errors"])
+        self.assertFalse(self.role.draws.exists())
+
+    def test_view_rejects_reversed_period_and_negative(self):
+        self.http.force_login(self.owner)
+        for payload in (
+            {"period_start": "2026-09-14", "period_end": "2026-09-01", "hours_drawn": "1"},
+            {"period_start": "2026-09-01", "period_end": "2026-09-14", "hours_drawn": "-1"},
+        ):
+            self.assertFalse(self.http.post(self._draw_url(), payload).json()["form_is_valid"])
+        self.assertFalse(self.role.draws.exists())
+
+    def test_get_prefill_ignores_period_for_lcr(self):
+        # A cheaper historic rate must not inflate the pre-filled hours.
+        UserCost.objects.create(
+            user=self.owner, effective_from=date(2010, 1, 1), cost_per_hour=Decimal("10")
+        )
+        self.http.force_login(self.owner)
+        resp = self.http.get(self._draw_url() + "?start=2015-01-01&end=2015-01-14")
+        self.assertIn('value="16.00"', resp.json()["html_form"])
+
+    def test_auto_cash_out_never_exceeds_remaining(self):
+        self.http.force_login(self.owner)
+        url = reverse("user_support_auto_draw", kwargs={"email": self.owner.email})
+        self.http.post(url, {"start": "2026-09-01", "end": "2026-09-14"})
+        self.http.post(url, {"start": "2026-09-15", "end": "2026-09-30"})
+        self.assertEqual(self.role.drawn_hours(), Decimal("16.00"))
+
+    def test_job_page_draw_requires_schedule_perm_and_is_limited(self):
+        url = reverse(
+            "job_support_team_draw", kwargs={"slug": self.job.slug, "pk": self.role.pk}
+        )
+        payload = {"period_start": "2026-09-01", "period_end": "2026-09-14", "hours_drawn": "2"}
+        self.http.force_login(self.stranger)
+        self.assertEqual(self.http.post(url, payload).status_code, 403)
+
+        self.http.force_login(self.root)  # sole first user -> superuser
+        self.root.is_superuser = True
+        self.root.save()
+        self.assertTrue(self.http.post(url, payload).json()["form_is_valid"])
+        payload["hours_drawn"] = "15"
+        self.assertFalse(self.http.post(url, payload).json()["form_is_valid"])
+        self.assertEqual(self.role.drawn_hours(), Decimal("2"))
 
     def test_role_must_belong_to_profile_owner(self):
         # A role on a different user can't be drawn via this profile's URL.

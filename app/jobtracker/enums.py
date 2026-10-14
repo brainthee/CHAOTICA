@@ -462,6 +462,10 @@ class JobStatuses:
         IN_PROGRESS,
     ]
 
+    # Jobs whose support-team budget can still be cashed out: live jobs plus
+    # completed ones (the work is done, the budget is earned).
+    SUPPORT_DRAWABLE_STATUSES = ACTIVE_STATUSES + [COMPLETED]
+
     BS_COLOURS = (
         (DRAFT, "secondary"),
         (PENDING_SCOPE, "info"),

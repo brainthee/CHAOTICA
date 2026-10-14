@@ -1,4 +1,6 @@
 from django.db import models
+from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from ..enums import (
@@ -1241,9 +1243,13 @@ class JobSupportTeamRole(models.Model):
 class SupportBudgetDraw(models.Model):
     """A per-period 'cash-out' of budgeted support hours.
 
-    Support members draw down hours each timesheet period; remaining budget is
-    always computed (budget_hours − Σ draws), never stored, so accumulation
-    carries forward across periods.
+    Support members draw down hours each timesheet period. Each draw records
+    the LCR it was cashed out at and its money value; remaining budget is
+    always computed in money (budget_money − Σ money_drawn), never stored, so
+    accumulation carries forward across periods and a later LCR change never
+    re-prices past draws. Create draws via
+    :func:`chaotica_utils.utils.support_budget.create_support_draw`, which
+    enforces the remaining-budget limit.
     """
 
     support_role = models.ForeignKey(
@@ -1266,6 +1272,22 @@ class SupportBudgetDraw(models.Model):
         decimal_places=2,
         verbose_name="Hours Drawn",
         help_text="Hours cashed out for this period.",
+        validators=[MinValueValidator(Decimal("0.01"))],
+    )
+    lcr_at_draw = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name="LCR at Cash-out",
+        help_text="Loaded cost rate (per hour) the hours were valued at.",
+    )
+    money_drawn = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal("0"),
+        verbose_name="Value Drawn",
+        help_text="hours_drawn × lcr_at_draw — what this draw consumed of the budget.",
     )
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -1287,6 +1309,17 @@ class SupportBudgetDraw(models.Model):
         return "{} {} → {} ({}h)".format(
             str(self.user), self.period_start, self.period_end, self.hours_drawn
         )
+
+    def clean(self):
+        super().clean()
+        if (
+            self.period_start
+            and self.period_end
+            and self.period_start > self.period_end
+        ):
+            raise ValidationError(
+                {"period_end": "The period end must be on or after its start."}
+            )
 
     def save(self, *args, **kwargs):
         # Keep the denormalised user in sync with the support role.

@@ -254,11 +254,11 @@
             <h5 class="mb-0 d-inline">Support budget</h5>
             <span class="text-body-tertiary fs-10 ms-2">
               Budget {{ support_budget.totals.budget_hours|floatformat:1 }}h ·
-              drawn {{ support_budget.totals.drawn_hours|floatformat:1 }}h ·
+              drawn to date {{ support_budget.totals.drawn_hours|floatformat:1 }}h ·
               remaining {{ support_budget.totals.remaining_hours|floatformat:1 }}h
             </span>
           </div>
-          {% if support_budget.totals.remaining_hours > 0 %}
+          {% if support_budget.has_remaining %}
           <form method="post" action="{% url 'user_support_auto_draw' email=userProfile.email %}"
                 onsubmit="return confirm('Cash out the remaining support budget for {{ start_date|date:'j M' }} – {{ end_date|date:'j M Y' }} across all your jobs?');">
             {% csrf_token %}
@@ -271,6 +271,11 @@
           {% endif %}
         </div>
         <div class="card-body p-0">
+          {% if support_budget.warnings %}
+          <div class="alert alert-subtle-warning fs-10 m-3 mb-0 py-2">
+            {% for w in support_budget.warnings %}<div>{{ w }}</div>{% endfor %}
+          </div>
+          {% endif %}
           <div class="table-responsive">
             <table class="table fs-10 mb-0">
               <thead>
@@ -292,10 +297,12 @@
                   <td class="text-end">{{ entry.period_drawn_hours|floatformat:1 }}</td>
                   <td class="text-end {% if entry.remaining_hours != None and entry.remaining_hours < 0 %}text-danger{% endif %}">{% if entry.remaining_hours != None %}{{ entry.remaining_hours|floatformat:1 }}{% else %}—{% endif %}</td>
                   <td class="text-end pe-3">
+                    {% if entry.remaining_hours != None and entry.remaining_hours > 0 %}
                     <button class="btn btn-sm btn-phoenix-success py-0 px-2 fs-10 js-load-modal-form"
                        data-url="{% url 'user_support_draw' email=userProfile.email role_pk=entry.role.pk %}?start={{ start_date|date:'Y-m-d' }}&amp;end={{ end_date|date:'Y-m-d' }}">
                        Cash out
                     </button>
+                    {% endif %}
                   </td>
                 </tr>
                 {% endfor %}

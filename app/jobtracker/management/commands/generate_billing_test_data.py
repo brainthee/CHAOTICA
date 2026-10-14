@@ -25,7 +25,11 @@ from django.utils import timezone
 
 from chaotica_utils.models import User, UserCost, get_sentinel_user
 from chaotica_utils.utils import period_for_date, previous_period
-from chaotica_utils.utils.support_budget import build_job_support_budget
+from django.core.exceptions import ValidationError
+from chaotica_utils.utils.support_budget import (
+    build_job_support_budget,
+    create_support_draw,
+)
 from jobtracker.enums import DefaultTimeSlotTypes, JobStatuses
 from jobtracker.models import (
     BillingCode,
@@ -343,21 +347,20 @@ class Command(BaseCommand):
                     drawn = (hours * frac).quantize(Decimal("0.01"))
                     if drawn <= 0:
                         continue
-                    _obj, created = SupportBudgetDraw.objects.get_or_create(
-                        support_role=role,
-                        period_start=p_start,
-                        period_end=p_end,
-                        defaults={
-                            "user": role.user,
-                            "hours_drawn": drawn,
-                            "created_by": self.marker,
-                        },
-                    )
                     # Count existing draws toward the cap too, so re-runs converge
                     # (a member already drawn for a period isn't drawn again).
                     made += 1
-                    if created:
-                        self.counts["draws"] += 1
+                    if SupportBudgetDraw.objects.filter(
+                        support_role=role, period_start=p_start, period_end=p_end
+                    ).exists():
+                        continue
+                    try:
+                        create_support_draw(
+                            role, p_start, p_end, drawn, created_by=self.marker
+                        )
+                    except ValidationError:
+                        continue  # job not drawable / no LCR
+                    self.counts["draws"] += 1
 
     # -- Clear ---------------------------------------------------------------
 
