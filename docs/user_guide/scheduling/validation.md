@@ -10,11 +10,13 @@ Each check returns one of:
 - **Hard block** — the slot can't be saved; you see an error you can only dismiss.
 - **Bypassable warning** — you see a warning with a **Save** option; choosing it re‑submits with `force` set to skip bypassable checks.
 
-The non‑overlap checks run first (framework → onboarding → phase scope). If they pass, overlaps are handled by the **chooser** described below.
+The non‑overlap checks run first (closed phase → framework → onboarding → phase scope). If they pass, overlaps are handled by the **chooser** described below.
 
 ```mermaid
 flowchart TD
-    A[Create / edit delivery slot] --> B{Framework closed?}
+    A[Create / edit delivery slot] --> P{Phase or job closed?}
+    P -->|Yes| P1[Hard block]
+    P -->|No| B{Framework closed?}
     B -->|Yes| B1[Hard block]
     B -->|No| C{Over-allocation blocked?}
     C -->|Yes| C1[Hard block]
@@ -32,6 +34,7 @@ flowchart TD
 
 | Check | Trigger | Result |
 |---|---|---|
+| **Phase closed** | The phase is Cancelled, Postponed, Deleted or Archived, or its job is Lost, Deleted or Archived | No new bookings. Existing slots on delivered/archived phases can still be edited, but a slot can't be moved onto a closed phase. Enforced on every save path (booking modal, batch booking, scheduling assistant, undo/revert). Closed phases aren't offered in the booking modal's phase list. |
 | **Framework closed** | `framework.closed` | Can't schedule against a closed framework. |
 | **Framework over‑allocated** | Booking pushes days above `total_days` **and** `allow_over_allocation` is off | Hard block with a budget breakdown (budget / allocated / this slot / would‑be total). |
 | **Client onboarding required** | Client has `onboarding_required` and the user has **no** onboarding record for that client | The user must be onboarded first. |

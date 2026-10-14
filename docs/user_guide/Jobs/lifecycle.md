@@ -5,6 +5,16 @@
 
 A job has a `status` which follows a strict workflow. Much of the functionality within CHAOTICA for a job is tied to it's status.
 
+## What happens to phases
+
+Some job transitions cascade to the job's phases:
+
+- **Lost**: every phase that isn't finished yet (anything before *Delivered*, and not already cancelled, postponed, deleted or archived) is moved to **Cancelled**, and its scheduled timeslots are deleted. Delivered phases are left alone. The confirmation modal shows how many phases and slots will be cleared.
+- **Deleted**: every phase is moved to **Deleted** and its timeslots are removed. Phases that are already deleted don't block deleting the job.
+- **Completed**: happens automatically once all phases are finished, either when the last phase is delivered or via the background workflow task. *Delivered*, *Cancelled*, *Deleted* and *Archived* phases count as finished. A **Postponed** phase does not, so a job with a postponed phase stays *In Progress*.
+
+Once a job is **Lost**, **Deleted** or **Archived**, its phases can't move forward through the workflow, can't take new scheduler bookings, and are ignored by the automatic workflow and late-notification tasks.
+
 The raw state diagram is below and shows the allowed transitions between states.
 
 ```dot

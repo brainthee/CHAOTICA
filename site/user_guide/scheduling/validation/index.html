@@ -3238,9 +3238,11 @@
 <li><strong>Hard block</strong> — the slot can't be saved; you see an error you can only dismiss.</li>
 <li><strong>Bypassable warning</strong> — you see a warning with a <strong>Save</strong> option; choosing it re‑submits with <code>force</code> set to skip bypassable checks.</li>
 </ul>
-<p>The non‑overlap checks run first (framework → onboarding → phase scope). If they pass, overlaps are handled by the <strong>chooser</strong> described below.</p>
+<p>The non‑overlap checks run first (closed phase → framework → onboarding → phase scope). If they pass, overlaps are handled by the <strong>chooser</strong> described below.</p>
 <pre class="mermaid"><code>flowchart TD
-    A[Create / edit delivery slot] --&gt; B{Framework closed?}
+    A[Create / edit delivery slot] --&gt; P{Phase or job closed?}
+    P --&gt;|Yes| P1[Hard block]
+    P --&gt;|No| B{Framework closed?}
     B --&gt;|Yes| B1[Hard block]
     B --&gt;|No| C{Over-allocation blocked?}
     C --&gt;|Yes| C1[Hard block]
@@ -3262,6 +3264,11 @@
 </tr>
 </thead>
 <tbody>
+<tr>
+<td><strong>Phase closed</strong></td>
+<td>The phase is Cancelled, Postponed, Deleted or Archived, or its job is Lost, Deleted or Archived</td>
+<td>No new bookings. Existing slots on delivered/archived phases can still be edited, but a slot can't be moved onto a closed phase. Enforced on every save path (booking modal, batch booking, scheduling assistant, undo/revert). Closed phases aren't offered in the booking modal's phase list.</td>
+</tr>
 <tr>
 <td><strong>Framework closed</strong></td>
 <td><code>framework.closed</code></td>

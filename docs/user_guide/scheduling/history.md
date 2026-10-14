@@ -24,7 +24,10 @@ Reverting applies the exact inverse of a change:
 | Edited / moved a slot | Restores its previous dates, person, role, onsite flag, etc. |
 
 Reverts are routed through the normal save path, so phase status and dates recalculate
-and the activity log updates just as they would for a manual change.
+and the activity log updates just as they would for a manual change. That includes the
+closed-phase check: a revert that would put a slot back on a phase that has since been
+cancelled, postponed or deleted (or whose job is lost) is refused as a whole, and
+nothing is changed.
 
 !!! note "A revert is itself undoable (redo)"
     Each revert is recorded as its own action, so you can revert the revert to redo the
