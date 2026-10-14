@@ -733,6 +733,12 @@ INTERNAL_IPS = [
     "127.0.0.1",
 ]
 
+# django-impersonate: superusers only (the package default lets any is_staff
+# user impersonate). Sessions are audited via chaotica_utils.signals.
+IMPERSONATE = {
+    "REQUIRE_SUPERUSER": True,
+}
+
 # Additional security settings
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")  # If behind HTTPS proxy
 USE_X_FORWARDED_HOST = bool(os.environ.get("USE_X_FORWARDED_HOST", default=True))

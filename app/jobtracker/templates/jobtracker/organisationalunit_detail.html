@@ -195,7 +195,9 @@
         .then(function(r) { return r.json(); })
         .then(function(data) {
           var container = document.getElementById(containerId);
-          container.innerHTML = data.html;
+          // jQuery .html() (not innerHTML) so the partials' inline <script>s
+          // run (stats echarts, board sticky headers).
+          $(container).html(data.html);
           // Re-init Bootstrap tooltips for the freshly injected content
           // (e.g. the utilisation info icon).
           if (window.bootstrap && bootstrap.Tooltip) {

@@ -13,6 +13,7 @@ from django.contrib.auth.signals import (
 )
 from django.db.models.signals import pre_save, post_save, pre_delete, m2m_changed
 from django.dispatch import receiver
+from impersonate.signals import session_begin, session_end
 
 from .audit import record_audit, diff_model
 
@@ -70,6 +71,32 @@ def audit_user_login_failed(sender, credentials=None, request=None, **kwargs):
         request=request,
         metadata={"identifier": identifier},
     )
+
+
+def _audit_impersonation(impersonator, impersonating, request, started):
+    from .models import AuditVerb, AuditCategory, AuditSeverity
+
+    action = "started" if started else "stopped"
+    record_audit(
+        impersonating,
+        AuditVerb.OTHER,
+        message=f"Impersonation {action} by '{impersonator}'",
+        actor=impersonator,
+        category=AuditCategory.SECURITY,
+        severity=AuditSeverity.WARNING,
+        request=request,
+        metadata={"impersonation": action},
+    )
+
+
+@receiver(session_begin, dispatch_uid="chaotica_utils.audit_impersonation_begin")
+def audit_impersonation_begin(sender, impersonator, impersonating, request=None, **kwargs):
+    _audit_impersonation(impersonator, impersonating, request, started=True)
+
+
+@receiver(session_end, dispatch_uid="chaotica_utils.audit_impersonation_end")
+def audit_impersonation_end(sender, impersonator, impersonating, request=None, **kwargs):
+    _audit_impersonation(impersonator, impersonating, request, started=False)
 
 
 # ---------------------------------------------------------------------------
