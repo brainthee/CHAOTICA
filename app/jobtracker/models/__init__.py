@@ -24,4 +24,5 @@ from .orgunit import (
     OrganisationalUnitMember,
     OrganisationalUnitRole,
     OrganisationalUnitSupportTemplateMember,
+    SupportProfile,
 )

@@ -4,13 +4,13 @@
         <form method="post" action="{{ request.get_full_path }}" class="js-submit-modal-form">
             {% csrf_token %}
             <div class="modal-header">
-                <h6 class="modal-title" id="modal-title-default">Remove template member</h6>
+                <h6 class="modal-title" id="modal-title-default">Remove profile member</h6>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p>Remove <strong>{{ instance.user }}</strong> from {{ orgUnit.name }}'s support template?</p>
+                <p>Remove <strong>{{ instance.user }}</strong> from the <strong>{{ instance.profile.name }}</strong> support profile?</p>
                 <p class="text-body-tertiary fs-10 mb-0">
-                    This only changes the template. Existing jobs keep the support rows already applied to them.
+                    This only changes the profile. Existing jobs keep the support rows already applied to them.
                 </p>
             </div>
             <div class="modal-footer">

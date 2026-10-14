@@ -422,29 +422,57 @@ def job_support_team_delete(request, slug, pk):
 
 @job_permission_required_or_403("jobtracker.can_schedule_job", (Job, "slug", "slug"))
 def job_support_team_apply_template(request, slug):
-    """Apply (or re-apply) the unit's support-team template to this job.
+    """Choose / switch / re-apply the job's support profile.
 
-    Manually-edited rows (``is_overridden``) are preserved unless the caller
-    ticks the overwrite option.
+    Applies the chosen unit profile's members (manually-edited rows are kept
+    unless ``overwrite``; with ``replace`` people outside the profile are
+    removed unless they have cash-outs). Finance users
+    (``can_view_loaded_costs``) can also set the job's premium override.
     """
+    from ..forms import JobSupportProfileForm
+
     job = get_object_or_404(Job, slug=slug)
+    can_set_premium = request.user.is_superuser or request.user.has_perm(
+        "jobtracker.can_view_loaded_costs", job.unit
+    )
     data = dict()
-    if request.method == "POST" and request.POST.get("user_action") == "approve_action":
-        overwrite = request.POST.get("overwrite") == "on"
-        summary = job.unit.apply_support_template_to_job(job, overwrite=overwrite)
-        log_system_activity(
-            job,
-            "Support template applied ({created} added, {updated} updated, "
-            "{skipped} preserved).".format(**summary),
-            author=request.user,
+    if request.method == "POST":
+        form = JobSupportProfileForm(
+            request.POST, job=job, can_set_premium=can_set_premium
         )
-        data["form_is_valid"] = True
+        if form.is_valid():
+            profile = form.cleaned_data["profile"]
+            summary = profile.apply_to_job(
+                job,
+                overwrite=form.cleaned_data["overwrite"],
+                replace=form.cleaned_data["replace"],
+            )
+            msg = (
+                "Support profile {profile} applied ({created} added, {updated} "
+                "updated, {skipped} preserved, {removed} removed, {retained} kept "
+                "with cash-outs).".format(profile=profile.name, **summary)
+            )
+            if can_set_premium:
+                premium = form.cleaned_data.get("support_premium_override")
+                if premium != job.support_premium_override:
+                    Job.objects.filter(pk=job.pk).update(
+                        support_premium_override=premium
+                    )
+                    msg += " Premium override {}.".format(
+                        "set to {}%".format(premium) if premium is not None else "cleared"
+                    )
+            log_system_activity(job, msg, author=request.user)
+            data["form_is_valid"] = True
+        else:
+            data["form_is_valid"] = False
+            data["form_errors"] = form.errors
     else:
-        data["form_is_valid"] = False
+        form = JobSupportProfileForm(job=job, can_set_premium=can_set_premium)
 
     context = {
         "job": job,
-        "has_template": job.unit.support_template.exists(),
+        "form": form,
+        "has_profiles": job.unit.support_profiles.exists(),
     }
     data["html_form"] = loader.render_to_string(
         "jobtracker/modals/job_support_team_apply_template.html",
@@ -712,7 +740,7 @@ class JobDetailView(
         from ..models import OrganisationalUnitMember, Phase, TimeSlot
 
         # Get base queryset without parent's prefetch
-        qs = Job.objects.filter(slug=self.kwargs.get('slug')).select_related('client', 'unit')
+        qs = Job.objects.filter(slug=self.kwargs.get('slug')).select_related('client', 'unit', 'support_profile')
         
         # Prefetch unit memberships ordered so .first() doesn't cause extra queries
         unit_membership_qs = OrganisationalUnitMember.objects.select_related('unit').order_by(
@@ -760,7 +788,7 @@ class JobDetailView(
         )
         support_budget = job.get_support_budget()
         context["support_budget"] = support_budget
-        context["has_support_template"] = job.unit.support_template.exists()
+        context["has_support_profiles"] = job.unit.support_profiles.exists()
         # Attach each member's computed budget to its role for easy rendering.
         per_member = support_budget["per_member"]
         support_roles = list(job.supporting_team.select_related("user").all())

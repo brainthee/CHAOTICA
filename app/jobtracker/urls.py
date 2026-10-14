@@ -839,7 +839,22 @@ urlpatterns = [
         name="organisationalunit_finance_settings",
     ),
     path(
-        "ops/unit/<str:slug>/finance/template/add",
+        "ops/unit/<str:slug>/finance/profile/add",
+        views.organisationalunit_support_profile_add,
+        name="organisationalunit_support_profile_add",
+    ),
+    path(
+        "ops/unit/<str:slug>/finance/profile/<int:pk>/edit",
+        views.organisationalunit_support_profile_edit,
+        name="organisationalunit_support_profile_edit",
+    ),
+    path(
+        "ops/unit/<str:slug>/finance/profile/<int:pk>/delete",
+        views.organisationalunit_support_profile_delete,
+        name="organisationalunit_support_profile_delete",
+    ),
+    path(
+        "ops/unit/<str:slug>/finance/profile/<int:profile_pk>/member/add",
         views.organisationalunit_support_template_add,
         name="organisationalunit_support_template_add",
     ),

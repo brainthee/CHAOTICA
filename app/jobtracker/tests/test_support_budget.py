@@ -32,6 +32,7 @@ from jobtracker.models import (
     OrganisationalUnitSupportTemplateMember,
     JobSupportTeamRole,
     SupportBudgetDraw,
+    SupportProfile,
 )
 
 
@@ -628,6 +629,7 @@ class FinanceTabViewTests(SupportBudgetTestBase):
         assign_perm("jobtracker.view_organisationalunit", self.plain, self.unit)
         self.member_user = User.objects.create_user(email="m@test.com", password="pw")
         self.membership = self.unit.members.create(member=self.member_user)
+        self.profile = SupportProfile.objects.create(unit=self.unit, name="Context")
         self.http = TestHttpClient(HTTP_HOST="localhost")
 
     def _detail_url(self):
@@ -651,7 +653,19 @@ class FinanceTabViewTests(SupportBudgetTestBase):
         self.http.force_login(self.plain)
         for name, kwargs in [
             ("organisationalunit_finance_settings", {"slug": self.unit.slug}),
-            ("organisationalunit_support_template_add", {"slug": self.unit.slug}),
+            (
+                "organisationalunit_support_template_add",
+                {"slug": self.unit.slug, "profile_pk": self.profile.pk},
+            ),
+            ("organisationalunit_support_profile_add", {"slug": self.unit.slug}),
+            (
+                "organisationalunit_support_profile_edit",
+                {"slug": self.unit.slug, "pk": self.profile.pk},
+            ),
+            (
+                "organisationalunit_support_profile_delete",
+                {"slug": self.unit.slug, "pk": self.profile.pk},
+            ),
             ("organisationalunit_set_lcr", {"slug": self.unit.slug, "member_pk": self.membership.pk}),
         ]:
             resp = self.http.get(reverse(name, kwargs=kwargs))
@@ -661,14 +675,17 @@ class FinanceTabViewTests(SupportBudgetTestBase):
         self.http.force_login(self.finance)
         # Add a template member.
         resp = self.http.post(
-            reverse("organisationalunit_support_template_add", kwargs={"slug": self.unit.slug}),
+            reverse(
+                "organisationalunit_support_template_add",
+                kwargs={"slug": self.unit.slug, "profile_pk": self.profile.pk},
+            ),
             {"user": self.member_user.pk, "role": 0, "profile_percent": "100"},
         )
         self.assertEqual(resp.status_code, 200)
         self.assertTrue(resp.json()["form_is_valid"])
         self.assertTrue(
             OrganisationalUnitSupportTemplateMember.objects.filter(
-                unit=self.unit, user=self.member_user
+                profile=self.profile, unit=self.unit, user=self.member_user
             ).exists()
         )
         # Set a loaded cost rate for a member.
@@ -761,11 +778,12 @@ class SupportIntegrityTests(SupportBudgetTestBase):
     def test_duplicate_template_member_is_form_error(self):
         from jobtracker.forms import SupportTemplateMemberForm
 
-        OrganisationalUnitSupportTemplateMember.objects.create(
+        tm = OrganisationalUnitSupportTemplateMember.objects.create(
             unit=self.unit, user=self.member
         )
         form = SupportTemplateMemberForm(
-            {"user": self.member.pk, "role": 0, "profile_percent": "100"}, unit=self.unit
+            {"user": self.member.pk, "role": 0, "profile_percent": "100"},
+            profile=tm.profile,
         )
         self.assertFalse(form.is_valid())
         self.assertIn("user", form.errors)
@@ -832,3 +850,185 @@ class SupportIntegrityTests(SupportBudgetTestBase):
         self.assertFalse(self.role.draws.exists())
         m = self.job.get_support_budget()["per_member"][self.member.id]
         self.assertEqual(m["remaining_hours"], Decimal("16"))
+
+
+class SupportProfileTests(SupportBudgetTestBase):
+    """Multiple named support profiles per unit (e.g. UKI Context vs CCX)."""
+
+    def setUp(self):
+        super().setUp()
+        self.a = self._user(1, lcr=50)
+        self.b = self._user(2, lcr=50)
+        self.c = self._user(3, lcr=50)
+        self.context = SupportProfile.objects.create(unit=self.unit, name="Context")
+        self.ccx = SupportProfile.objects.create(
+            unit=self.unit, name="CCX", premium_percent=Decimal("4")
+        )
+        for user, profile in ((self.a, self.context), (self.b, self.context),
+                              (self.a, self.ccx), (self.c, self.ccx)):
+            OrganisationalUnitSupportTemplateMember.objects.create(
+                profile=profile, user=user, profile_percent=Decimal("100")
+            )
+
+    def _new_job(self):
+        return Job.objects.create(
+            title="New", client=self.client_obj, unit=self.unit,
+            created_by=self.root, account_manager=self.root, revenue=Decimal("10000"),
+        )
+
+    def test_first_profile_is_default_and_only_one_default(self):
+        self.context.refresh_from_db()
+        self.ccx.refresh_from_db()
+        self.assertTrue(self.context.is_default)
+        self.assertFalse(self.ccx.is_default)
+        self.ccx.is_default = True
+        self.ccx.save()
+        self.context.refresh_from_db()
+        self.assertFalse(self.context.is_default)
+        self.assertEqual(self.unit.get_default_support_profile(), self.ccx)
+
+    def test_deleting_default_promotes_another(self):
+        self.context.delete()
+        self.ccx.refresh_from_db()
+        self.assertTrue(self.ccx.is_default)
+
+    def test_same_person_in_two_profiles(self):
+        self.assertEqual(
+            OrganisationalUnitSupportTemplateMember.objects.filter(user=self.a).count(), 2
+        )
+
+    def test_new_job_gets_default_profile(self):
+        job = self._new_job()
+        job.refresh_from_db()
+        self.assertEqual(job.support_profile, self.context)
+        self.assertEqual(
+            set(job.supporting_team.values_list("user_id", flat=True)),
+            {self.a.id, self.b.id},
+        )
+        self.assertEqual(job.get_effective_premium(), Decimal("8"))  # unit default
+
+    def test_profile_premium_precedence(self):
+        self.context.apply_to_job(self.job)
+        self.ccx.apply_to_job(self.job, replace=True)
+        self.job.refresh_from_db()
+        self.assertEqual(self.job.get_effective_premium(), Decimal("4"))
+        b = self.job.get_support_budget()
+        self.assertEqual(b["pool"], Decimal("400"))
+        self.job.support_premium_override = Decimal("10")
+        self.assertEqual(self.job.get_effective_premium(), Decimal("10"))
+
+    def test_switch_with_replace_keeps_rows_with_cash_outs(self):
+        self.context.apply_to_job(self.job)
+        role_b = JobSupportTeamRole.objects.get(job=self.job, user=self.b)
+        create_support_draw(role_b, date(2026, 9, 1), date(2026, 9, 14), Decimal("1"))
+        summary = self.ccx.apply_to_job(self.job, replace=True)
+        self.assertEqual(summary["created"], 1)  # c
+        self.assertEqual(summary["retained"], 1)  # b has a cash-out
+        self.assertEqual(
+            set(self.job.supporting_team.values_list("user_id", flat=True)),
+            {self.a.id, self.b.id, self.c.id},
+        )
+        self.context.apply_to_job(self.job, replace=True)
+        self.assertFalse(self.job.supporting_team.filter(user=self.c).exists())
+
+    def test_switch_without_replace_keeps_everyone(self):
+        self.context.apply_to_job(self.job)
+        self.ccx.apply_to_job(self.job)
+        self.assertEqual(self.job.supporting_team.count(), 3)
+
+    def test_unit_only_member_lands_in_default_profile(self):
+        d = self._user(4)
+        tm = OrganisationalUnitSupportTemplateMember.objects.create(unit=self.unit, user=d)
+        self.assertEqual(tm.profile, self.context)
+
+    def test_change_profile_view(self):
+        self.root.is_superuser = True
+        self.root.save()
+        http = TestHttpClient(HTTP_HOST="localhost")
+        http.force_login(self.root)
+        url = reverse("job_support_team_apply_template", kwargs={"slug": self.job.slug})
+        resp = http.get(url)
+        self.assertIn("Premium override", resp.json()["html_form"])
+        resp = http.post(
+            url,
+            {"profile": self.ccx.pk, "replace": "on", "support_premium_override": "6"},
+        )
+        self.assertTrue(resp.json()["form_is_valid"])
+        self.job.refresh_from_db()
+        self.assertEqual(self.job.support_profile, self.ccx)
+        self.assertEqual(self.job.support_premium_override, Decimal("6"))
+        self.assertEqual(
+            set(self.job.supporting_team.values_list("user_id", flat=True)),
+            {self.a.id, self.c.id},
+        )
+
+    def test_change_profile_view_premium_needs_finance_perm(self):
+        scheduler = self._user(9)
+        assign_perm("jobtracker.can_schedule_job", scheduler, self.unit)
+        assign_perm("jobtracker.can_view_jobs", scheduler, self.unit)
+        http = TestHttpClient(HTTP_HOST="localhost")
+        http.force_login(scheduler)
+        url = reverse("job_support_team_apply_template", kwargs={"slug": self.job.slug})
+        resp = http.get(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertNotIn("Premium override", resp.json()["html_form"])
+        resp = http.post(url, {"profile": self.ccx.pk, "support_premium_override": "50"})
+        self.assertTrue(resp.json()["form_is_valid"])
+        self.job.refresh_from_db()
+        self.assertEqual(self.job.support_profile, self.ccx)
+        self.assertIsNone(self.job.support_premium_override)
+
+    def test_profile_from_other_unit_rejected(self):
+        other_unit = OrganisationalUnit.objects.create(name="Other")
+        foreign = SupportProfile.objects.create(unit=other_unit, name="Foreign")
+        self.root.is_superuser = True
+        self.root.save()
+        http = TestHttpClient(HTTP_HOST="localhost")
+        http.force_login(self.root)
+        resp = http.post(
+            reverse("job_support_team_apply_template", kwargs={"slug": self.job.slug}),
+            {"profile": foreign.pk},
+        )
+        self.assertFalse(resp.json()["form_is_valid"])
+
+    def test_finance_tab_profile_crud(self):
+        fin = self._user(8)
+        assign_perm("jobtracker.view_organisationalunit", fin, self.unit)
+        assign_perm("jobtracker.can_view_loaded_costs", fin, self.unit)
+        http = TestHttpClient(HTTP_HOST="localhost")
+        http.force_login(fin)
+        resp = http.post(
+            reverse("organisationalunit_support_profile_add", kwargs={"slug": self.unit.slug}),
+            {"name": "Ops", "premium_percent": "3"},
+        )
+        self.assertTrue(resp.json()["form_is_valid"])
+        ops = SupportProfile.objects.get(unit=self.unit, name="Ops")
+        # Duplicate name is a form error.
+        resp = http.post(
+            reverse("organisationalunit_support_profile_add", kwargs={"slug": self.unit.slug}),
+            {"name": "ops"},
+        )
+        self.assertFalse(resp.json()["form_is_valid"])
+        resp = http.post(
+            reverse(
+                "organisationalunit_support_profile_edit",
+                kwargs={"slug": self.unit.slug, "pk": ops.pk},
+            ),
+            {"name": "Ops", "premium_percent": "3", "is_default": "on"},
+        )
+        self.assertTrue(resp.json()["form_is_valid"])
+        self.assertEqual(self.unit.get_default_support_profile(), ops)
+        body = http.get(
+            reverse("organisationalunit_detail", kwargs={"slug": self.unit.slug})
+        ).content.decode()
+        self.assertIn("Support Profiles", body)
+        self.assertIn("CCX", body)
+        resp = http.post(
+            reverse(
+                "organisationalunit_support_profile_delete",
+                kwargs={"slug": self.unit.slug, "pk": ops.pk},
+            ),
+            {"user_action": "approve_action"},
+        )
+        self.assertTrue(resp.json()["form_is_valid"])
+        self.assertFalse(SupportProfile.objects.filter(pk=ops.pk).exists())

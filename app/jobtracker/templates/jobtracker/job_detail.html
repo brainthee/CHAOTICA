@@ -126,6 +126,11 @@
           <div class="row">
               <div class="col-md-10 d-flex align-items-center">
                 <h4 class="mb-3">Support</h4>
+                {% if job.support_profile %}
+                <span class="badge badge-phoenix badge-phoenix-secondary ms-2 mb-3" title="Support profile · premium {{ support_budget.premium|floatformat:'-2' }}%">
+                  {{ job.support_profile.name }} &middot; {{ support_budget.premium|floatformat:"-2" }}%
+                </span>
+                {% endif %}
               </div>
               <div class="col-md-2 text-end">
                 <div class="btn-reveal-trigger position-static">
@@ -139,10 +144,10 @@
                         data-url="{% url 'job_support_team_add' job.slug %}">
                         Add Support Role
                      </button>
-                     {% if has_support_template %}
+                     {% if has_support_profiles %}
                      <button class="dropdown-item text-primary js-load-modal-form"
                         data-url="{% url 'job_support_team_apply_template' job.slug %}">
-                        Apply Support Template
+                        Change Support Profile
                      </button>
                      {% endif %}
                   </div>

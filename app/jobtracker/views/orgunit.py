@@ -11,7 +11,7 @@ from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
-from django.db.models import Count
+from django.db.models import Count, Prefetch
 from django.contrib.auth.decorators import login_required
 from chaotica_utils.views import ChaoticaBaseView, SoftDeleteViewMixin
 from notifications.utils import AppNotification, send_notifications
@@ -22,6 +22,7 @@ from ..models import (
     OrganisationalUnitMember,
     OrganisationalUnitRole,
     OrganisationalUnitSupportTemplateMember,
+    SupportProfile,
     Job,
     Phase,
     TimeSlot,
@@ -39,6 +40,7 @@ from ..forms import (
     ImportUnitMembersForm,
     OrganisationalUnitFinanceSettingsForm,
     SupportTemplateMemberForm,
+    SupportProfileForm,
     UserCostForm,
 )
 from ..mixins import PrefetchRelatedMixin
@@ -217,8 +219,15 @@ class OrganisationalUnitDetailView(
         if can_view_loaded_costs:
             from chaotica_utils.models import UserCost
 
-            context["support_template_members"] = list(
-                unit.support_template.select_related("user").all()
+            context["support_profiles"] = list(
+                unit.support_profiles.prefetch_related(
+                    Prefetch(
+                        "members",
+                        queryset=OrganisationalUnitSupportTemplateMember.objects.select_related(
+                            "user"
+                        ),
+                    )
+                )
             )
             # Current (latest-effective) LCR per member, one query.
             latest_cost = {}
@@ -1080,21 +1089,22 @@ def organisationalunit_finance_settings(request, slug):
 @permission_required_or_403(
     "jobtracker.can_view_loaded_costs", (OrganisationalUnit, "slug", "slug")
 )
-def organisationalunit_support_template_add(request, slug):
+def organisationalunit_support_template_add(request, slug, profile_pk):
     org_unit = get_object_or_404(OrganisationalUnit, slug=slug)
+    profile = get_object_or_404(SupportProfile, pk=profile_pk, unit=org_unit)
     data = dict()
     if request.method == "POST":
-        form = SupportTemplateMemberForm(request.POST, unit=org_unit)
+        form = SupportTemplateMemberForm(request.POST, profile=profile)
         if form.is_valid():
             member = form.save(commit=False)
-            member.unit = org_unit
+            member.profile = profile
             member.save()
             data["form_is_valid"] = True
         else:
             data["form_is_valid"] = False
             data["form_errors"] = form.errors
     else:
-        form = SupportTemplateMemberForm(unit=org_unit)
+        form = SupportTemplateMemberForm(profile=profile)
 
     context = {"orgUnit": org_unit, "form": form}
     data["html_form"] = loader.render_to_string(
@@ -1153,6 +1163,77 @@ def organisationalunit_support_template_delete(request, slug, pk):
     context = {"orgUnit": org_unit, "instance": member}
     data["html_form"] = loader.render_to_string(
         "jobtracker/modals/organisationalunit_support_template_delete.html",
+        context,
+        request=request,
+    )
+    return JsonResponse(data)
+
+
+@permission_required_or_403(
+    "jobtracker.can_view_loaded_costs", (OrganisationalUnit, "slug", "slug")
+)
+def organisationalunit_support_profile_add(request, slug):
+    return _support_profile_form(request, slug)
+
+
+@permission_required_or_403(
+    "jobtracker.can_view_loaded_costs", (OrganisationalUnit, "slug", "slug")
+)
+def organisationalunit_support_profile_edit(request, slug, pk):
+    return _support_profile_form(request, slug, pk)
+
+
+def _support_profile_form(request, slug, pk=None):
+    org_unit = get_object_or_404(OrganisationalUnit, slug=slug)
+    profile = (
+        get_object_or_404(SupportProfile, pk=pk, unit=org_unit) if pk else None
+    )
+    data = dict()
+    if request.method == "POST":
+        form = SupportProfileForm(request.POST, instance=profile, unit=org_unit)
+        if form.is_valid():
+            obj = form.save(commit=False)
+            obj.unit = org_unit
+            obj.save()
+            data["form_is_valid"] = True
+        else:
+            data["form_is_valid"] = False
+            data["form_errors"] = form.errors
+    else:
+        form = SupportProfileForm(instance=profile, unit=org_unit)
+
+    context = {"orgUnit": org_unit, "form": form, "instance": profile}
+    data["html_form"] = loader.render_to_string(
+        "jobtracker/modals/organisationalunit_support_profile_form.html",
+        context,
+        request=request,
+    )
+    return JsonResponse(data)
+
+
+@permission_required_or_403(
+    "jobtracker.can_view_loaded_costs", (OrganisationalUnit, "slug", "slug")
+)
+def organisationalunit_support_profile_delete(request, slug, pk):
+    """Delete a profile. Jobs using it keep their support rows (and cash-outs)
+    but fall back to the unit premium; the default passes to another profile."""
+    org_unit = get_object_or_404(OrganisationalUnit, slug=slug)
+    profile = get_object_or_404(SupportProfile, pk=pk, unit=org_unit)
+    context = {
+        "orgUnit": org_unit,
+        "instance": profile,
+        "job_count": profile.jobs.count(),
+    }
+    data = dict()
+    if request.method == "POST":
+        if request.POST.get("user_action") == "approve_action":
+            profile.delete()
+            data["form_is_valid"] = True
+        else:
+            data["form_is_valid"] = False
+
+    data["html_form"] = loader.render_to_string(
+        "jobtracker/modals/organisationalunit_support_profile_delete.html",
         context,
         request=request,
     )

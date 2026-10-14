@@ -156,16 +156,33 @@ class Job(models.Model):
         help_text="Per-job override of the support pool premium %. Blank = unit/global default.",
         validators=[MinValueValidator(Decimal("0"))],
     )
+    support_profile = models.ForeignKey(
+        "SupportProfile",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="jobs",
+        verbose_name="Support Profile",
+        help_text="The unit support team (and premium) this job's pool uses.",
+    )
 
     def get_effective_premium(self):
         """Resolve the support-pool premium % for this job.
 
-        Precedence: per-job ``support_premium_override`` → the unit's
-        ``support_premium_default`` → global constance ``SUPPORT_PREMIUM_DEFAULT``.
+        Precedence: per-job ``support_premium_override`` → the job's support
+        profile's ``premium_percent`` → the unit's ``support_premium_default``
+        → global constance ``SUPPORT_PREMIUM_DEFAULT``.
         Returns a Decimal percent (e.g. ``Decimal("8")``).
         """
         if self.support_premium_override is not None:
             return Decimal(self.support_premium_override)
+        profile = self.support_profile
+        if (
+            profile is not None
+            and profile.unit_id == self.unit_id
+            and profile.premium_percent is not None
+        ):
+            return Decimal(profile.premium_percent)
         if self.unit_id and self.unit.support_premium_default is not None:
             return Decimal(self.unit.support_premium_default)
         return Decimal(str(config.SUPPORT_PREMIUM_DEFAULT))
@@ -1338,11 +1355,12 @@ class SupportBudgetDraw(models.Model):
 
 @receiver(post_save, sender=Job, dispatch_uid="apply_support_template_on_job_create")
 def apply_support_template_on_job_create(sender, instance, created, **kwargs):
-    """Seed a new job's support team from its unit's template, if one exists."""
+    """Seed a new job's support team from its unit's default support profile."""
     # Never fire during fixture/dump loads (related rows may not exist yet).
     if kwargs.get("raw"):
         return
     if not created or not instance.unit_id:
         return
-    if instance.unit.support_template.exists():
-        instance.unit.apply_support_template_to_job(instance)
+    profile = instance.unit.get_default_support_profile()
+    if profile is not None:
+        profile.apply_to_job(instance)

@@ -24,6 +24,7 @@ from .models import (
     OrganisationalUnit,
     OrganisationalUnitMember,
     OrganisationalUnitSupportTemplateMember,
+    SupportProfile,
     Skill,
     Service,
     WorkflowTask,
@@ -2761,6 +2762,105 @@ class OrganisationalUnitFinanceSettingsForm(forms.ModelForm):
         fields = ("support_premium_default",)
 
 
+def _modal_layout(*fields, submit="Save"):
+    """Standard modal body + footer layout for the small finance forms."""
+    return Layout(
+        Div(
+            *[
+                Row(Div(Field(f), css_class="input-group input-group-dynamic"))
+                for f in fields
+            ],
+            css_class="modal-body pt-3",
+        ),
+        Div(
+            Div(
+                StrictButton(
+                    submit,
+                    type="submit",
+                    css_class="btn btn-outline-success ms-auto mb-0",
+                ),
+                css_class="button-row d-flex",
+            ),
+            css_class="modal-footer",
+        ),
+    )
+
+
+class SupportProfileForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        self.unit = kwargs.pop("unit", None)
+        super(SupportProfileForm, self).__init__(*args, **kwargs)
+        self.fields["description"].widget = forms.Textarea(attrs={"rows": 2})
+        self.helper = FormHelper(self)
+        self.helper.form_tag = False
+        self.helper.layout = _modal_layout(
+            "name", "description", "premium_percent", "is_default"
+        )
+
+    def clean_name(self):
+        name = (self.cleaned_data.get("name") or "").strip()
+        unit = self.unit or getattr(self.instance, "unit", None)
+        if name and unit is not None:
+            clash = SupportProfile.objects.filter(unit=unit, name__iexact=name)
+            if self.instance.pk:
+                clash = clash.exclude(pk=self.instance.pk)
+            if clash.exists():
+                raise forms.ValidationError(
+                    "This unit already has a profile called {}.".format(name)
+                )
+        return name
+
+    class Meta:
+        model = SupportProfile
+        fields = ("name", "description", "premium_percent", "is_default")
+
+
+class JobSupportProfileForm(forms.Form):
+    """Choose (or switch) a job's support profile, and — for finance users —
+    the job-level premium override."""
+
+    profile = forms.ModelChoiceField(
+        queryset=SupportProfile.objects.none(),
+        label="Support profile",
+    )
+    replace = forms.BooleanField(
+        required=False,
+        initial=True,
+        label="Remove people who aren't in this profile",
+        help_text="People who have already cashed out hours are always kept.",
+    )
+    overwrite = forms.BooleanField(
+        required=False,
+        label="Also overwrite manually-edited rows",
+    )
+    support_premium_override = forms.DecimalField(
+        required=False,
+        min_value=0,
+        max_digits=5,
+        decimal_places=2,
+        label="Premium override (%)",
+        help_text="Blank = use the profile's premium (or the unit default).",
+    )
+
+    def __init__(self, *args, **kwargs):
+        job = kwargs.pop("job")
+        can_set_premium = kwargs.pop("can_set_premium", False)
+        super(JobSupportProfileForm, self).__init__(*args, **kwargs)
+        self.fields["profile"].queryset = SupportProfile.objects.filter(unit=job.unit)
+        self.fields["profile"].initial = (
+            job.support_profile_id or getattr(job.unit.get_default_support_profile(), "pk", None)
+        )
+        fields = ["profile", "replace", "overwrite"]
+        if can_set_premium:
+            self.fields["support_premium_override"].initial = job.support_premium_override
+            fields.append("support_premium_override")
+        else:
+            del self.fields["support_premium_override"]
+        self.helper = FormHelper(self)
+        self.helper.form_tag = False
+        self.helper.layout = _modal_layout(*fields, submit="Apply")
+
+
 class SupportTemplateMemberForm(forms.ModelForm):
     user = forms.ModelChoiceField(
         queryset=User.objects.filter(is_active=True),
@@ -2781,7 +2881,7 @@ class SupportTemplateMemberForm(forms.ModelForm):
     )
 
     def __init__(self, *args, **kwargs):
-        self.unit = kwargs.pop("unit", None)
+        self.profile = kwargs.pop("profile", None)
         super(SupportTemplateMemberForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
         self.helper.layout = Layout(
@@ -2810,19 +2910,19 @@ class SupportTemplateMemberForm(forms.ModelForm):
         )
 
     def clean_user(self):
-        # ``unit`` isn't a form field, so ModelForm.validate_unique can't see
-        # the (unit, user) clash — check it here rather than 500 on save.
+        # ``profile`` isn't a form field, so ModelForm.validate_unique can't see
+        # the (profile, user) clash — check it here rather than 500 on save.
         user = self.cleaned_data.get("user")
-        unit = self.unit or getattr(self.instance, "unit", None)
-        if user and unit is not None:
+        profile = self.profile or getattr(self.instance, "profile", None)
+        if user and profile is not None:
             clash = OrganisationalUnitSupportTemplateMember.objects.filter(
-                unit=unit, user=user
+                profile=profile, user=user
             )
             if self.instance.pk:
                 clash = clash.exclude(pk=self.instance.pk)
             if clash.exists():
                 raise forms.ValidationError(
-                    "{} is already in this support template.".format(user)
+                    "{} is already in the {} profile.".format(user, profile.name)
                 )
         return user
 

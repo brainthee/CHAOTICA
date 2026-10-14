@@ -8,6 +8,7 @@ from .models import (
     OrganisationalUnit,
     OrganisationalUnitMember,
     OrganisationalUnitSupportTemplateMember,
+    SupportProfile,
     Team, TeamMember,
     Skill,
     SkillCategory,
@@ -56,6 +57,7 @@ class JobAdmin(admin.ModelAdmin):
 
 admin.site.register(JobSupportTeamRole)
 admin.site.register(SupportBudgetDraw)
+admin.site.register(SupportProfile)
 
 
 class TeamMemberInline(admin.TabularInline):

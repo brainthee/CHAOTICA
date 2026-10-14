@@ -283,45 +283,25 @@ class OrganisationalUnit(SoftDeleteModel):
         # roles.add() doesn't trigger the member save() resync, so do it once here.
         self.sync_permissions()
 
+    def get_default_support_profile(self):
+        """The unit's default :class:`SupportProfile` (or its first, or None)."""
+        profiles = list(self.support_profiles.all())
+        for profile in profiles:
+            if profile.is_default:
+                return profile
+        return profiles[0] if profiles else None
+
     def apply_support_template_to_job(self, job, *, overwrite=False):
-        """Apply this unit's support-team template to ``job``.
+        """Apply this unit's *default* support profile to ``job``.
 
-        Idempotent upsert of :class:`JobSupportTeamRole` rows from
-        ``self.support_template``. Rows a user has manually edited
-        (``is_overridden=True``) are left untouched unless ``overwrite=True``.
-        Members removed from the template are *not* deleted from the job (their
-        history/draws are preserved); they simply stop being re-synced.
-
-        Returns a dict summary: ``{"created": n, "updated": n, "skipped": n}``.
+        Thin wrapper over :meth:`SupportProfile.apply_to_job` kept for callers
+        that just want "the unit's support team" (new-job signal, test data).
+        Returns the same summary dict; all zeros when the unit has no profile.
         """
-        from .job import JobSupportTeamRole
-
-        summary = {"created": 0, "updated": 0, "skipped": 0}
-        template_rows = self.support_template.select_related("user")
-        for tmpl in template_rows:
-            if tmpl.user_id is None:
-                continue
-            row, created = JobSupportTeamRole.objects.get_or_create(
-                job=job,
-                user_id=tmpl.user_id,
-                defaults={
-                    "role": tmpl.role,
-                    "profile_percent": tmpl.profile_percent,
-                },
-            )
-            if created:
-                summary["created"] += 1
-                continue
-            if row.is_overridden and not overwrite:
-                summary["skipped"] += 1
-                continue
-            row.role = tmpl.role
-            row.profile_percent = tmpl.profile_percent
-            if overwrite:
-                row.is_overridden = False
-            row.save()
-            summary["updated"] += 1
-        return summary
+        profile = self.get_default_support_profile()
+        if profile is None:
+            return {"created": 0, "updated": 0, "skipped": 0, "removed": 0, "retained": 0}
+        return profile.apply_to_job(job, overwrite=overwrite)
 
     def __str__(self):
         return self.name
@@ -995,8 +975,143 @@ class OrganisationalUnitMember(models.Model):
         self.unit.sync_permissions(users=[self.member_id])
 
 
+class SupportProfile(models.Model):
+    """A named support team for a unit (e.g. UKI "Context" vs "CCX").
+
+    Each profile has its own members (with profile %s) and optionally its own
+    premium %; a job uses exactly one profile (``Job.support_profile``). One
+    profile per unit is the default, applied automatically to new jobs.
+    """
+
+    unit = models.ForeignKey(
+        OrganisationalUnit,
+        on_delete=models.CASCADE,
+        related_name="support_profiles",
+    )
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True, default="")
+    premium_percent = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name="Support Premium (%)",
+        help_text="% of a job's revenue reserved for this team's pool. Blank = "
+        "the unit's support premium default.",
+        validators=[MinValueValidator(Decimal("0"))],
+    )
+    is_default = models.BooleanField(
+        default=False,
+        verbose_name="Default profile",
+        help_text="Applied automatically to new jobs in this unit.",
+    )
+    history = HistoricalRecords()
+
+    class Meta:
+        ordering = ["-is_default", "name"]
+        unique_together = ["unit", "name"]
+
+    def __str__(self):
+        return "{} ({})".format(self.name, self.unit)
+
+    def get_effective_premium(self):
+        """This profile's premium %, falling back to the unit default."""
+        if self.premium_percent is not None:
+            return Decimal(self.premium_percent)
+        return Decimal(self.unit.support_premium_default)
+
+    def save(self, *args, **kwargs):
+        from django.db import transaction
+
+        with transaction.atomic():
+            others = SupportProfile.objects.filter(unit_id=self.unit_id)
+            if self.pk is not None:
+                others = others.exclude(pk=self.pk)
+            if not self.is_default and not others.filter(is_default=True).exists():
+                # A unit always has a default (the first profile becomes it).
+                self.is_default = True
+            super().save(*args, **kwargs)
+            if self.is_default:
+                # One default per unit — enforced here as MySQL has no
+                # conditional unique constraints. Re-scope now the pk is set.
+                SupportProfile.objects.filter(
+                    unit_id=self.unit_id, is_default=True
+                ).exclude(pk=self.pk).update(is_default=False)
+
+    def delete(self, *args, **kwargs):
+        from django.db import transaction
+
+        with transaction.atomic():
+            was_default = self.is_default
+            unit_id = self.unit_id
+            result = super().delete(*args, **kwargs)
+            if was_default:
+                successor = (
+                    SupportProfile.objects.filter(unit_id=unit_id)
+                    .order_by("name")
+                    .first()
+                )
+                if successor is not None:
+                    successor.is_default = True
+                    successor.save(update_fields=["is_default"])
+            return result
+
+    def apply_to_job(self, job, *, overwrite=False, replace=False):
+        """Apply this profile's members to ``job`` and make it the job's profile.
+
+        Idempotent upsert of :class:`JobSupportTeamRole` rows. Rows a user has
+        manually edited (``is_overridden=True``) are left untouched unless
+        ``overwrite=True``. With ``replace=True`` (switching profile), job rows
+        for people not in this profile are removed — except rows with cash-outs,
+        which are financial records and are retained (counted in the summary).
+
+        Returns ``{"created", "updated", "skipped", "removed", "retained"}``.
+        """
+        from .job import Job, JobSupportTeamRole
+
+        summary = {"created": 0, "updated": 0, "skipped": 0, "removed": 0, "retained": 0}
+        if job.support_profile_id != self.pk:
+            Job.objects.filter(pk=job.pk).update(support_profile=self)
+            job.support_profile = self
+
+        member_ids = set()
+        for tmpl in self.members.select_related("user"):
+            if tmpl.user_id is None:
+                continue
+            member_ids.add(tmpl.user_id)
+            row, created = JobSupportTeamRole.objects.get_or_create(
+                job=job,
+                user_id=tmpl.user_id,
+                defaults={
+                    "role": tmpl.role,
+                    "profile_percent": tmpl.profile_percent,
+                },
+            )
+            if created:
+                summary["created"] += 1
+                continue
+            if row.is_overridden and not overwrite:
+                summary["skipped"] += 1
+                continue
+            row.role = tmpl.role
+            row.profile_percent = tmpl.profile_percent
+            if overwrite:
+                row.is_overridden = False
+            row.save()
+            summary["updated"] += 1
+
+        if replace:
+            for row in job.supporting_team.exclude(user_id__in=member_ids):
+                if row.draws.exists():
+                    summary["retained"] += 1
+                else:
+                    row.delete()
+                    summary["removed"] += 1
+        return summary
+
+
 class OrganisationalUnitSupportTemplateMember(models.Model):
-    """A member of a unit's default support team, with a profile allocation %.
+    """A member of a unit's :class:`SupportProfile`, with a profile allocation %.
 
     UKI (and similar units) apply the same back-office support team to most
     jobs. These template rows are copied into per-job
@@ -1008,6 +1123,11 @@ class OrganisationalUnitSupportTemplateMember(models.Model):
         OrganisationalUnit,
         on_delete=models.CASCADE,
         related_name="support_template",
+    )
+    profile = models.ForeignKey(
+        SupportProfile,
+        on_delete=models.CASCADE,
+        related_name="members",
     )
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -1033,12 +1153,26 @@ class OrganisationalUnitSupportTemplateMember(models.Model):
 
     class Meta:
         ordering = ["user"]
-        unique_together = ["unit", "user"]
+        # The same person may sit in several profiles (e.g. Context and CCX).
+        unique_together = ["profile", "user"]
 
     def __str__(self):
         return "{} @ {} ({}%)".format(
-            str(self.user), str(self.unit), self.profile_percent
+            str(self.user), str(self.profile or self.unit), self.profile_percent
         )
+
+    def save(self, *args, **kwargs):
+        if self.profile_id is None and self.unit_id is not None:
+            # Unit-only callers: use the unit's default profile (created on
+            # first use), so a unit always has somewhere to put members.
+            self.profile = self.unit.get_default_support_profile() or (
+                SupportProfile.objects.create(
+                    unit_id=self.unit_id, name="Default", is_default=True
+                )
+            )
+        if self.profile_id is not None:
+            self.unit_id = self.profile.unit_id
+        super().save(*args, **kwargs)
 
 
 @receiver(

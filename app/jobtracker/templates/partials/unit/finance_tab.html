@@ -17,66 +17,98 @@
           <span class="fw-semibold">{{ organisationalunit.support_premium_default|floatformat:2 }}%</span>
         </div>
         <p class="text-body-tertiary fs-10 mt-3 mb-0">
-          The % of a job's revenue reserved for the support-team pool. Applied to
-          new jobs in this unit; each job can override it.
+          The % of a job's revenue reserved for the support-team pool, used by
+          any profile without its own premium. Each job can override it.
         </p>
       </div>
     </div>
   </div>
 
-  <!-- Support Template -->
+  <!-- Support Profiles -->
   <div class="col-12 col-xl-8">
     <div class="card h-100">
       <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">Support Template</h5>
+        <div>
+          <h5 class="mb-0">Support Profiles</h5>
+          <span class="text-body-tertiary fs-10">Named support teams (e.g. Context, CCX). Each job uses one; the default is applied to new jobs.</span>
+        </div>
         <button class="btn btn-sm btn-phoenix-primary js-load-modal-form"
-           data-url="{% url 'organisationalunit_support_template_add' slug=organisationalunit.slug %}">
-           <span class="fas fa-plus me-1"></span>Add member
+           data-url="{% url 'organisationalunit_support_profile_add' slug=organisationalunit.slug %}">
+           <span class="fas fa-plus me-1"></span>Add profile
         </button>
       </div>
       <div class="card-body p-0">
-        <div class="table-responsive">
-          <table class="table fs-10 mb-0">
-            <thead>
-              <tr>
-                <th class="ps-3">Person</th>
-                <th>Role</th>
-                <th class="text-end">Profile</th>
-                <th class="text-end pe-3"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for tm in support_template_members %}
-              <tr>
-                <td class="ps-3 align-middle">
-                  {% include 'partials/users/user_table_display.html' with notitle=1 noorg=1 u=tm.user %}
-                </td>
-                <td class="align-middle"><span class="text-body-tertiary fw-semibold">{{ tm.get_role_display }}</span></td>
-                <td class="align-middle text-end"><span class="text-body-tertiary fw-semibold">{{ tm.profile_percent|floatformat:"-2" }}%</span></td>
-                <td class="align-middle text-end pe-3">
-                  <div class="btn-reveal-trigger position-static">
-                    <button class="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal fs-10"
-                        type="button" data-bs-toggle="dropdown" data-boundary="window" aria-haspopup="true" aria-expanded="false" data-bs-reference="parent">
-                        <span class="fas fa-ellipsis-h fs-10"></span>
-                    </button>
-                    <div class="dropdown-menu shadow dropdown-menu-end">
-                      <button class="dropdown-item js-load-modal-form"
-                        data-url="{% url 'organisationalunit_support_template_edit' slug=organisationalunit.slug pk=tm.pk %}">Edit</button>
-                      <button class="dropdown-item text-warning js-load-modal-form"
-                        data-url="{% url 'organisationalunit_support_template_delete' slug=organisationalunit.slug pk=tm.pk %}">Remove</button>
+        {% for profile in support_profiles %}
+        <div class="border-bottom border-translucent">
+          <div class="d-flex justify-content-between align-items-center px-3 pt-3 pb-2">
+            <div>
+              <span class="fw-bold">{{ profile.name }}</span>
+              {% if profile.is_default %}<span class="badge badge-phoenix badge-phoenix-primary ms-2">Default</span>{% endif %}
+              <span class="text-body-tertiary fs-10 ms-2">
+                Premium {% if profile.premium_percent != None %}{{ profile.premium_percent|floatformat:"-2" }}%{% else %}{{ organisationalunit.support_premium_default|floatformat:"-2" }}% (unit default){% endif %}
+              </span>
+              {% if profile.description %}<div class="text-body-tertiary fs-10">{{ profile.description }}</div>{% endif %}
+            </div>
+            <div class="btn-reveal-trigger position-static">
+              <button class="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal fs-10"
+                  type="button" data-bs-toggle="dropdown" data-boundary="window" aria-haspopup="true" aria-expanded="false" data-bs-reference="parent">
+                  <span class="fas fa-ellipsis-h fs-10"></span>
+              </button>
+              <div class="dropdown-menu shadow dropdown-menu-end">
+                <button class="dropdown-item js-load-modal-form"
+                  data-url="{% url 'organisationalunit_support_template_add' slug=organisationalunit.slug profile_pk=profile.pk %}">Add member</button>
+                <button class="dropdown-item js-load-modal-form"
+                  data-url="{% url 'organisationalunit_support_profile_edit' slug=organisationalunit.slug pk=profile.pk %}">Edit profile</button>
+                <button class="dropdown-item text-warning js-load-modal-form"
+                  data-url="{% url 'organisationalunit_support_profile_delete' slug=organisationalunit.slug pk=profile.pk %}">Delete profile</button>
+              </div>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="table fs-10 mb-0">
+              <thead>
+                <tr>
+                  <th class="ps-3">Person</th>
+                  <th>Role</th>
+                  <th class="text-end">Profile</th>
+                  <th class="text-end pe-3"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for tm in profile.members.all %}
+                <tr>
+                  <td class="ps-3 align-middle">
+                    {% include 'partials/users/user_table_display.html' with notitle=1 noorg=1 u=tm.user %}
+                  </td>
+                  <td class="align-middle"><span class="text-body-tertiary fw-semibold">{{ tm.get_role_display }}</span></td>
+                  <td class="align-middle text-end"><span class="text-body-tertiary fw-semibold">{{ tm.profile_percent|floatformat:"-2" }}%</span></td>
+                  <td class="align-middle text-end pe-3">
+                    <div class="btn-reveal-trigger position-static">
+                      <button class="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal fs-10"
+                          type="button" data-bs-toggle="dropdown" data-boundary="window" aria-haspopup="true" aria-expanded="false" data-bs-reference="parent">
+                          <span class="fas fa-ellipsis-h fs-10"></span>
+                      </button>
+                      <div class="dropdown-menu shadow dropdown-menu-end">
+                        <button class="dropdown-item js-load-modal-form"
+                          data-url="{% url 'organisationalunit_support_template_edit' slug=organisationalunit.slug pk=tm.pk %}">Edit</button>
+                        <button class="dropdown-item text-warning js-load-modal-form"
+                          data-url="{% url 'organisationalunit_support_template_delete' slug=organisationalunit.slug pk=tm.pk %}">Remove</button>
+                      </div>
                     </div>
-                  </div>
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+                  </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="4" class="ps-3 text-body-secondary">No members yet &mdash; use the profile menu to add people.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
         </div>
-        {% if not support_template_members %}
+        {% empty %}
         <div class="alert m-3 alert-phoenix-info" role="alert">
-          No support template configured. Add members so new jobs get a support team automatically.
+          No support profiles configured. Add a profile (e.g. "Context") and its members so new jobs get a support team automatically.
         </div>
-        {% endif %}
+        {% endfor %}
       </div>
     </div>
   </div>

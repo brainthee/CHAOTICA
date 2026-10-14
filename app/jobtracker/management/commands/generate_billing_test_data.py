@@ -312,10 +312,15 @@ class Command(BaseCommand):
 
     def _apply_support(self, job):
         unit = job.unit
-        if not unit or not unit.support_template.exists():
+        profile = unit.get_default_support_profile() if unit else None
+        if profile is None or not profile.members.exists():
             return
-        unit.apply_support_template_to_job(job)
-        for tmpl in unit.support_template.select_related("user"):
+        # Spread jobs across the unit's profiles so multi-profile units get
+        # realistic data (default first, then round-robin by job pk).
+        profiles = [p for p in unit.support_profiles.all() if p.members.exists()]
+        profile = profiles[job.pk % len(profiles)] if len(profiles) > 1 else profile
+        profile.apply_to_job(job, replace=True)
+        for tmpl in profile.members.select_related("user"):
             self._ensure_lcr(tmpl.user)
         self.counts["support_applied"] += 1
 
