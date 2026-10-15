@@ -741,6 +741,18 @@ MIDDLEWARE = [
 if DEBUG:
     MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")
 
+# The Templates panel keeps a pformat'd copy of every render's context, which
+# grows with (renders x context size): a Billing Codes page with ~300 support
+# rows used >6GB and froze the dev machine. Off by default (toggle it on from
+# the toolbar when needed); the other two are the toolbar's own defaults.
+DEBUG_TOOLBAR_CONFIG = {
+    "DISABLE_PANELS": {
+        "debug_toolbar.panels.profiling.ProfilingPanel",
+        "debug_toolbar.panels.redirects.RedirectsPanel",
+        "debug_toolbar.panels.templates.TemplatesPanel",
+    },
+}
+
 # CACHE_MIDDLEWARE_ALIAS  = ' ' # cache alias
 CACHE_MIDDLEWARE_SECONDS = 600  # number of seconds each page should be cached.
 CACHE_MIDDLEWARE_KEY_PREFIX = ""  # name of site if multiple sites are used
