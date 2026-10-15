@@ -36,6 +36,19 @@ jobs are ignored.
 Reopening a phase (see [Phase lifecycle](phases/lifecycle.md#reopening-a-phase))
 also reopens its job to In Progress if the job was Completed.
 
+### One-off cleanup (migration 0088)
+
+Existing data from before these guards was tidied once on upgrade. On each
+**Completed** job:
+
+- an in-flight phase with activity in the last 90 days (a booking, or created /
+  status changed) reopens the job to **In Progress**;
+- older in-flight phases, and **Draft** phases that were never started, are
+  moved to **Archived**.
+
+Each change is logged in the Activity log as a workflow status change by
+*SYSTEM*, with "data cleanup" as the reason.
+
 Once a job is **Lost**, **Deleted** or **Archived**, its phases can't move forward through the workflow, can't take new scheduler bookings, and are ignored by the automatic workflow and late-notification tasks. A **Completed** job's schedule is locked too — see [Booking & Validation](../scheduling/validation.md).
 
 The raw state diagram is below and shows the allowed transitions between states.

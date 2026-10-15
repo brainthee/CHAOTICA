@@ -277,3 +277,63 @@ class BookingRuleTests(CascadeTestBase):
         with self.assertRaises(ValidationError):
             schedule_history.revert(action, self.actor)
         self.assertEqual(TimeSlot.objects.get(pk=slot.pk).end, slot.end)
+
+
+class CompletedJobCleanupMigrationTests(CascadeTestBase):
+    """0088: recent in-flight work reopens its job; stale work and never-started
+    drafts on Completed jobs are archived; every change is audited."""
+
+    def _run(self):
+        import importlib
+        from django.apps import apps
+
+        importlib.import_module(
+            "jobtracker.migrations.0088_cleanup_completed_jobs_with_open_phases"
+        ).cleanup_completed_jobs_with_open_phases(apps, None)
+
+    def _age(self, phase, days=400):
+        old = timezone.now() - timedelta(days=days)
+        Phase.objects.filter(pk=phase.pk).update(created_date=old, status_changed_date=old)
+
+    def test_recent_in_flight_phase_reopens_job_and_keeps_its_drafts(self):
+        live = self._phase(PhaseStatuses.QA_TECH)
+        self._age(live)
+        self._slot(live, days_ahead=-3)  # booked recently
+        draft = self._phase(PhaseStatuses.DRAFT)
+        self._set_job_status(JobStatuses.COMPLETED)
+        self._run()
+        self.job.refresh_from_db()
+        live.refresh_from_db()
+        draft.refresh_from_db()
+        self.assertEqual(self.job.status, JobStatuses.IN_PROGRESS)
+        self.assertEqual(live.status, PhaseStatuses.QA_TECH)
+        self.assertEqual(draft.status, PhaseStatuses.DRAFT)  # job is live again
+        self.assertIn("data cleanup", _workflow_events(self.job).get().message)
+
+    def test_stale_in_flight_and_drafts_are_archived(self):
+        stale = self._phase(PhaseStatuses.IN_PROGRESS)
+        draft = self._phase(PhaseStatuses.DRAFT)
+        delivered = self._phase(PhaseStatuses.DELIVERED)
+        for p in (stale, draft):
+            self._age(p)
+        self._set_job_status(JobStatuses.COMPLETED)
+        self._run()
+        self.job.refresh_from_db()
+        self.assertEqual(self.job.status, JobStatuses.COMPLETED)
+        for p, expected in (
+            (stale, PhaseStatuses.ARCHIVED),
+            (draft, PhaseStatuses.ARCHIVED),
+            (delivered, PhaseStatuses.DELIVERED),
+        ):
+            p.refresh_from_db()
+            self.assertEqual(p.status, expected)
+        self.assertIn("stale In Progress", _workflow_events(stale).get().message)
+        self.assertIn("never started", _workflow_events(draft).get().message)
+
+    def test_active_jobs_untouched(self):
+        self._set_job_status(JobStatuses.IN_PROGRESS)
+        draft = self._phase(PhaseStatuses.DRAFT)
+        self._age(draft)
+        self._run()
+        draft.refresh_from_db()
+        self.assertEqual(draft.status, PhaseStatuses.DRAFT)
