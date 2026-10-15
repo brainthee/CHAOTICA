@@ -305,6 +305,17 @@ def calculate_utilisation(
     ).bit_count()
     available_days = effective_working_days - scheduled_days
 
+    # Mutually exclusive split of the effective days for stacked charts:
+    # confirmed > tentative > internal > available, so the four always sum to
+    # effective_working_days (the raw tentative/internal counts can overlap
+    # confirmed days and each other).
+    tentative_exclusive_days = (
+        effective_mask & tentative_mask & ~confirmed_mask
+    ).bit_count()
+    internal_exclusive_days = (
+        effective_mask & internal_mask & ~(confirmed_mask | tentative_mask)
+    ).bit_count()
+
     # Backwards-compatible "no client delivery today" count: any working,
     # non-holiday day with a phase-less slot (leave/sick or internal).
     non_delivery_days = (
@@ -333,6 +344,8 @@ def calculate_utilisation(
         "tentative_days": tentative_days,
         "confirmed_days": confirmed_days,
         "internal_days": internal_days,
+        "tentative_exclusive_days": tentative_exclusive_days,
+        "internal_exclusive_days": internal_exclusive_days,
         # Backwards-compatible key (feeds existing chart data).
         "non_delivery_days": non_delivery_days,
         "utilisation_percentage": utilisation_percentage,
@@ -340,6 +353,12 @@ def calculate_utilisation(
         "tentative_percentage": _percentage(tentative_days, effective_working_days),
         "internal_percentage": _percentage(internal_days, effective_working_days),
         "available_percentage": _percentage(available_days, effective_working_days),
+        "tentative_exclusive_percentage": _percentage(
+            tentative_exclusive_days, effective_working_days
+        ),
+        "internal_exclusive_percentage": _percentage(
+            internal_exclusive_days, effective_working_days
+        ),
         # These keep the old denominator (working_days) because their numerators
         # can include days outside the effective set (leave days).
         "non_working_slot_percentage": _percentage(

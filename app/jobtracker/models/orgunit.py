@@ -756,6 +756,9 @@ class OrganisationalUnit(SoftDeleteModel):
                 "available_days": 0,
                 "working_days": 0,
                 "effective_working_days": 0,
+                "tentative_exclusive_days": 0,
+                "internal_exclusive_days": 0,
+                "non_working_slot_days": 0,
             }
             for uid, m in data[rang].items():
                 if uid == "totals":
@@ -767,6 +770,9 @@ class OrganisationalUnit(SoftDeleteModel):
                 totals["available_days"] += m["available_days"]
                 totals["working_days"] += m["working_days"]
                 totals["effective_working_days"] += m["effective_working_days"]
+                totals["tentative_exclusive_days"] += m["tentative_exclusive_days"]
+                totals["internal_exclusive_days"] += m["internal_exclusive_days"]
+                totals["non_working_slot_days"] += m["non_working_slot_days"]
             data[rang]["totals"] = totals
 
             # Guard against a zero denominator (e.g. a unit with no consultants,
@@ -796,6 +802,15 @@ class OrganisationalUnit(SoftDeleteModel):
             totals["utilisation_percentage"] = _pct(totals["confirmed_days"], effective)
             totals["available_days_percentage"] = _pct(
                 totals["available_days"], effective
+            )
+            # Stacked-chart split: confirmed / tentative / internal / available
+            # are mutually exclusive over the effective days, so they sum to
+            # 100% (leave is already outside the effective days).
+            totals["tentative_exclusive_days_percentage"] = _pct(
+                totals["tentative_exclusive_days"], effective
+            )
+            totals["internal_exclusive_days_percentage"] = _pct(
+                totals["internal_exclusive_days"], effective
             )
         return data
 

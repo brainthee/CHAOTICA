@@ -295,9 +295,9 @@ $(function() {
                 position: (...params) => handleTooltipPosition(params), formatter: tooltipFormatter
             },
             toolbox: { feature: { magicType: { type: ['stack', 'tiled'] } }, right: 0 },
-            legend: { data: ['Confirmed', 'Tentative', 'Non-Delivery', 'Available'], textStyle: { color: getColor('tertiary-color') }, left: 0 },
+            legend: { data: ['Confirmed', 'Tentative', 'Internal', 'Available'], textStyle: { color: getColor('tertiary-color') }, left: 0 },
             xAxis: {
-                type: 'value',
+                type: 'value', max: 100,
                 axisLine: { show: true, lineStyle: { color: getColor('tertiary-bg') } },
                 axisTick: { show: false }, axisLabel: { color: getColor('quaternary-color') },
                 splitLine: { lineStyle: { show: true, color: getColor('secondary-bg') } }
@@ -314,15 +314,15 @@ $(function() {
                     {{ stats.upcoming_availability.twoweeks.totals.confirmed_days_percentage }},
                     {{ stats.upcoming_availability.thisweek.totals.confirmed_days_percentage }} ] },
                 { name: 'Tentative', type: 'bar', stack: 'total', emphasis: { focus: 'series' }, data: [
-                    {{ stats.upcoming_availability.eightweeks.totals.tentative_days_percentage }},
-                    {{ stats.upcoming_availability.fourweeks.totals.tentative_days_percentage }},
-                    {{ stats.upcoming_availability.twoweeks.totals.tentative_days_percentage }},
-                    {{ stats.upcoming_availability.thisweek.totals.tentative_days_percentage }} ] },
-                { name: 'Non-Delivery', type: 'bar', stack: 'total', emphasis: { focus: 'series' }, data: [
-                    {{ stats.upcoming_availability.eightweeks.totals.non_delivery_days_percentage }},
-                    {{ stats.upcoming_availability.fourweeks.totals.non_delivery_days_percentage }},
-                    {{ stats.upcoming_availability.twoweeks.totals.non_delivery_days_percentage }},
-                    {{ stats.upcoming_availability.thisweek.totals.non_delivery_days_percentage }} ] },
+                    {{ stats.upcoming_availability.eightweeks.totals.tentative_exclusive_days_percentage }},
+                    {{ stats.upcoming_availability.fourweeks.totals.tentative_exclusive_days_percentage }},
+                    {{ stats.upcoming_availability.twoweeks.totals.tentative_exclusive_days_percentage }},
+                    {{ stats.upcoming_availability.thisweek.totals.tentative_exclusive_days_percentage }} ] },
+                { name: 'Internal', type: 'bar', stack: 'total', emphasis: { focus: 'series' }, data: [
+                    {{ stats.upcoming_availability.eightweeks.totals.internal_exclusive_days_percentage }},
+                    {{ stats.upcoming_availability.fourweeks.totals.internal_exclusive_days_percentage }},
+                    {{ stats.upcoming_availability.twoweeks.totals.internal_exclusive_days_percentage }},
+                    {{ stats.upcoming_availability.thisweek.totals.internal_exclusive_days_percentage }} ] },
                 { name: 'Available', type: 'bar', stack: 'total', emphasis: { focus: 'series' }, data: [
                     {{ stats.upcoming_availability.eightweeks.totals.available_days_percentage }},
                     {{ stats.upcoming_availability.fourweeks.totals.available_days_percentage }},

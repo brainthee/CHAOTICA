@@ -64,7 +64,7 @@ A kanban-style board showing all active phases for the unit's jobs, organised by
 AJAX-loaded statistics with date-range filtering, laid out top to bottom:
 
 1. **Summary tiles** — active members, active jobs, phases delivered in the selected range, coming-4-week utilisation, and (only for users with `can_view_jobs`) total active-job revenue.
-2. **Upcoming availability** — consultant utilisation across four time periods (this week, 2 weeks, 4 weeks, 8 weeks) for confirmed, tentative, non-delivery, and available time, with a stacked ECharts bar chart.
+2. **Upcoming availability** — consultant utilisation across four time periods (this week, 2 weeks, 4 weeks, 8 weeks) for confirmed, tentative, internal, and available time, with a stacked ECharts bar chart. Each bar is 100% of the effective working days (leave and public holidays are already removed), and every day falls in exactly one segment — confirmed, then tentative, then internal, then available — so the green segment always matches the utilisation figure.
 3. **Delivery throughput** — phases delivered per month over the last six months (bar chart).
 4. **Service breakdown** — phases grouped by service (bar chart).
 5. **Job pipeline** — job counts by status.

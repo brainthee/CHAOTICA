@@ -288,7 +288,7 @@ $(function() {
                 data: [
                     'Confirmed',
                     'Tentative',
-                    'Non-Delivery',
+                    'Internal',
                     'Available',
                 ],
                 textStyle: {
@@ -297,7 +297,7 @@ $(function() {
                 left: 0
             },
             xAxis: {
-                type: 'value',
+                type: 'value', max: 100,
                 axisLine: {
                     show: true,
                     lineStyle: {
@@ -365,14 +365,14 @@ $(function() {
                         focus: 'series'
                     },
                     data: [
-                    {{ stats.upcoming_availability.eightweeks.tentative_percentage|default_if_none:0 }},
-                    {{ stats.upcoming_availability.fourweeks.tentative_percentage|default_if_none:0 }},
-                    {{ stats.upcoming_availability.twoweeks.tentative_percentage|default_if_none:0 }},
-                    {{ stats.upcoming_availability.thisweek.tentative_percentage|default_if_none:0 }},
+                    {{ stats.upcoming_availability.eightweeks.tentative_exclusive_percentage|default_if_none:0 }},
+                    {{ stats.upcoming_availability.fourweeks.tentative_exclusive_percentage|default_if_none:0 }},
+                    {{ stats.upcoming_availability.twoweeks.tentative_exclusive_percentage|default_if_none:0 }},
+                    {{ stats.upcoming_availability.thisweek.tentative_exclusive_percentage|default_if_none:0 }},
                     ]
                 },
                 {
-                    name: 'Non-Delivery',
+                    name: 'Internal',
                     type: 'bar',
                     stack: 'total',
                     label: {
@@ -385,10 +385,10 @@ $(function() {
                         focus: 'series'
                     },
                     data: [
-                    {{ stats.upcoming_availability.eightweeks.non_delivery_percentage|default_if_none:0 }},
-                    {{ stats.upcoming_availability.fourweeks.non_delivery_percentage|default_if_none:0 }},
-                    {{ stats.upcoming_availability.twoweeks.non_delivery_percentage|default_if_none:0 }},
-                    {{ stats.upcoming_availability.thisweek.non_delivery_percentage|default_if_none:0 }},
+                    {{ stats.upcoming_availability.eightweeks.internal_exclusive_percentage|default_if_none:0 }},
+                    {{ stats.upcoming_availability.fourweeks.internal_exclusive_percentage|default_if_none:0 }},
+                    {{ stats.upcoming_availability.twoweeks.internal_exclusive_percentage|default_if_none:0 }},
+                    {{ stats.upcoming_availability.thisweek.internal_exclusive_percentage|default_if_none:0 }},
                     ]
                 },
                 {
@@ -431,21 +431,14 @@ $(function() {
     );
 
     const getFormatter = params => {
-        const indicators = [[
-            {% for serv in stats.service_breakdown %}
-            '{{ serv.name }}',
-            {% endfor %}
-        ]];
-        const num = params.seriesIndex;
-        return `<strong > ${params.name} </strong>
-            <div class="fs-9 text-body-tertiary">
-            <strong >${indicators[params.seriesIndex][0]}</strong>: ${
-            params.value[0]
-            }  <br>
-            {% for serv in stats.service_breakdown %}
-            <strong>${indicators[num][{{ forloop.counter }}]}</strong>: ${params.value[{{ forloop.counter }}]}  <br>
-            {% endfor %}
-            </div>`;
+        const names = [
+            {% for serv in stats.service_breakdown %}'{{ serv.name|escapejs }}',{% endfor %}
+        ];
+        const rows = names.map(
+            (name, i) => `<strong>${name}</strong>: ${params.value[i]}`
+        ).join('<br>');
+        return `<strong>${params.name}</strong>
+            <div class="fs-9 text-body-tertiary">${rows}</div>`;
     };
 
     if ($chartEl_serviceBreakdown) {
