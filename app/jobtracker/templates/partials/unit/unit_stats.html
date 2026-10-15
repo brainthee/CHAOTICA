@@ -1,224 +1,199 @@
 {% load index %}
+{% load humanize %}
 
-<!-- Summary tiles -->
-<div class="row g-3 mb-4">
-  <div class="col-6 col-md-4 col-xl">
-    <div class="card h-100 border border-translucent">
-      <div class="card-body text-center">
-        <i class="fa-solid fa-users fs-6 lh-1 text-primary"></i>
-        <h2 class="fs-6 pt-3 mb-0">{{ stats.summary.active_members }}</h2>
-        <p class="fs-9 mb-0 text-body-secondary">Active Members</p>
+{# Range links/picker are handled by a delegated handler on [data-stats-range] #}
+{# and #stats-range-picker in organisationalunit_detail.html.                  #}
+<div class="text-start">
+  <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+    <div>
+      <h4 class="mb-0">Unit stats</h4>
+      <p class="fs-9 text-body-tertiary mb-0">
+        {{ start_date|date:'j M Y' }} &ndash; {{ end_date|date:'j M Y' }}.
+        The range applies to phases delivered and consultant utilisation.
+      </p>
+    </div>
+    <div class="d-flex flex-wrap align-items-center gap-2 ms-md-auto">
+      <div class="btn-group btn-group-sm" role="group" aria-label="Date range presets">
+        {% for p in presets %}
+          <a href="#" class="btn btn-phoenix-secondary{% if p.active %} active{% endif %}"
+             data-stats-range="{{ partial_url }}?start_date={{ p.start|date:'Y-m-d' }}&amp;end_date={{ p.end|date:'Y-m-d' }}">{{ p.label }}</a>
+        {% endfor %}
       </div>
+      <input type="text" id="stats-range-picker" class="form-control form-control-sm{% if is_custom_range %} border-primary{% endif %}"
+             style="width: 14rem;" placeholder="Custom range" aria-label="Custom date range"
+             data-start="{{ start_date|date:'Y-m-d' }}" data-end="{{ end_date|date:'Y-m-d' }}"
+             data-url="{{ partial_url }}" />
     </div>
   </div>
-  <div class="col-6 col-md-4 col-xl">
-    <div class="card h-100 border border-translucent">
-      <div class="card-body text-center">
-        <i class="fa-solid fa-briefcase fs-6 lh-1 text-warning"></i>
-        <h2 class="fs-6 pt-3 mb-0">{{ stats.summary.active_jobs }}</h2>
-        <p class="fs-9 mb-0 text-body-secondary">Active Jobs</p>
-      </div>
-    </div>
-  </div>
-  <div class="col-6 col-md-4 col-xl">
-    <div class="card h-100 border border-translucent">
-      <div class="card-body text-center">
-        <i class="fa-solid fa-truck fs-6 lh-1 text-success"></i>
-        <h2 class="fs-6 pt-3 mb-0">{{ stats.summary.phases_delivered }}</h2>
-        <p class="fs-9 mb-0 text-body-secondary">Phases Delivered<br /><span class="fs-10 text-body-tertiary">(in range)</span></p>
-      </div>
-    </div>
-  </div>
-  <div class="col-6 col-md-4 col-xl">
-    <div class="card h-100 border border-translucent">
-      <div class="card-body text-center">
-        <i class="fa-solid fa-percent fs-6 lh-1 text-info"></i>
-        <h2 class="fs-6 pt-3 mb-0">{{ stats.summary.utilisation_4wk }}%</h2>
-        <p class="fs-9 mb-0 text-body-secondary">Utilisation{% include 'partials/_util_info_icon.html' %}<br /><span class="fs-10 text-body-tertiary">(coming 4 weeks)</span></p>
-      </div>
-    </div>
-  </div>
-  {% if can_view_financials %}
-  <div class="col-6 col-md-4 col-xl">
-    <div class="card h-100 border border-translucent">
-      <div class="card-body text-center">
-        <i class="fa-solid fa-sterling-sign fs-6 lh-1 text-success"></i>
-        <h2 class="fs-6 pt-3 mb-0">{{ stats.summary.total_revenue }}</h2>
-        <p class="fs-9 mb-0 text-body-secondary">Active Revenue</p>
-      </div>
-    </div>
-  </div>
-  {% endif %}
-</div>
 
-<!-- Date range picker -->
-<div class="row g-3 mb-4 justify-content-end">
-  <div class="col-auto">
-    <form class="profile-stats-form" action="" method="get">
-      <div class="flatpickr-input-container">
-        <label class="form-label fs-9 mb-1" for="dateRangePicker">Date Range</label>
-        <input name="dateRange" class="form-control form-control-sm datetimepicker" id="dateRangePicker" type="text" />
+  <div class="row g-2">
+    <div class="col-6 col-md">
+      <div class="border border-translucent rounded-3 p-2 h-100">
+        <div class="fs-10 text-body-tertiary">Active members</div>
+        <div class="fs-7 fw-semibold">{{ stats.summary.active_members }}</div>
       </div>
-    </form>
-  </div>
-</div>
-
-<!-- Upcoming availability -->
-<div class="row gy-3 mb-3 justify-content-between">
-    <div class="col">
-        <h3 class="mb-0 text-primary position-relative fw-bold">
-            <span class="bg-body pe-2">Upcoming Availability</span>
-            <span class="border border-primary position-absolute top-50 translate-middle-y w-100 start-0 z-n1"></span>
-        </h3>
     </div>
-</div>
+    <div class="col-6 col-md">
+      <div class="border border-translucent rounded-3 p-2 h-100">
+        <div class="fs-10 text-body-tertiary">Active jobs</div>
+        <div class="fs-7 fw-semibold">{{ stats.summary.active_jobs }}</div>
+      </div>
+    </div>
+    <div class="col-6 col-md">
+      <div class="border border-translucent rounded-3 p-2 h-100">
+        <div class="fs-10 text-body-tertiary">Phases delivered <span class="text-body-quaternary">(in range)</span></div>
+        <div class="fs-7 fw-semibold text-success">{{ stats.summary.phases_delivered }}</div>
+      </div>
+    </div>
+    <div class="col-6 col-md">
+      <div class="border border-translucent rounded-3 p-2 h-100">
+        <div class="fs-10 text-body-tertiary">Utilisation{% include 'partials/_util_info_icon.html' %} <span class="text-body-quaternary">(next 4 weeks)</span></div>
+        <div class="fs-7 fw-semibold">{{ stats.summary.utilisation_4wk }}<span class="fs-10 text-body-tertiary">%</span></div>
+      </div>
+    </div>
+    {% if can_view_financials %}
+      <div class="col-6 col-md">
+        <div class="border border-translucent rounded-3 p-2 h-100">
+          <div class="fs-10 text-body-tertiary">Active revenue</div>
+          <div class="fs-7 fw-semibold">{{ stats.summary.total_revenue|floatformat:0|intcomma }}</div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
 
-<div class="row g-4 mb-4 justify-content-between">
-    <div class="card px-0 mx-3 shadow-none border">
-        <div class="card-header p-4 border-bottom bg-body">
-            <div class="row g-3 justify-content-between align-items-center">
-                <div class="col-8 col-md">
-                    <h4 class="text-body mb-0">Future Utilisation</h4>
-                    <span class="bg-body pe-2">Consultant scheduled time as percentages from the start of the current week.</span>
-                </div>
-                <div class="col col-md-auto">
-                    <div class="d-flex flex-row text-center">
-                        <div class="m0 px-3 border-translucent border-end">
-                            <h4 class="text-body mb-0">{{ stats.upcoming_availability.thisweek.totals.utilisation_percentage }}%</h4>
-                            <p class="text-body-secondary fs-10 mb-0">This<br />Week</p>
-                        </div>
-                        <div class="m0 px-3 border-translucent border-end">
-                            <h4 class="text-body mb-0">{{ stats.upcoming_availability.twoweeks.totals.utilisation_percentage }}%</h4>
-                            <p class="text-body-secondary fs-10 mb-0">Two<br />Weeks</p>
-                        </div>
-                        <div class="m0 px-3 border-translucent border-end">
-                            <h4 class="text-body mb-0">{{ stats.upcoming_availability.fourweeks.totals.utilisation_percentage }}%</h4>
-                            <p class="text-body-secondary fs-10 mb-0">Four<br />Weeks</p>
-                        </div>
-                        <div class="m0 ps-3">
-                            <h4 class="text-body mb-0">{{ stats.upcoming_availability.eightweeks.totals.utilisation_percentage }}%</h4>
-                            <p class="text-body-secondary fs-10 mb-0">Eight<br />Weeks</p>
-                        </div>
-                    </div>
-                </div>
+  <div class="row g-3 mt-0">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header d-flex flex-wrap align-items-center gap-3">
+          <div>
+            <h5 class="mb-0">Upcoming availability</h5>
+            <p class="fs-9 text-body-tertiary mb-0">Consultants, from the start of this week (not affected by the date range). Each bar is 100% of available working days, after leave and holidays.</p>
+          </div>
+          <div class="d-flex text-center ms-md-auto">
+            <div class="px-3 border-end border-translucent">
+              <div class="fs-7 fw-semibold">{{ stats.upcoming_availability.thisweek.totals.utilisation_percentage }}<span class="fs-10 text-body-tertiary">%</span></div>
+              <div class="fs-10 text-body-tertiary">This week</div>
             </div>
+            <div class="px-3 border-end border-translucent">
+              <div class="fs-7 fw-semibold">{{ stats.upcoming_availability.twoweeks.totals.utilisation_percentage }}<span class="fs-10 text-body-tertiary">%</span></div>
+              <div class="fs-10 text-body-tertiary">Two weeks</div>
+            </div>
+            <div class="px-3 border-end border-translucent">
+              <div class="fs-7 fw-semibold">{{ stats.upcoming_availability.fourweeks.totals.utilisation_percentage }}<span class="fs-10 text-body-tertiary">%</span></div>
+              <div class="fs-10 text-body-tertiary">Four weeks</div>
+            </div>
+            <div class="ps-3">
+              <div class="fs-7 fw-semibold">{{ stats.upcoming_availability.eightweeks.totals.utilisation_percentage }}<span class="fs-10 text-body-tertiary">%</span></div>
+              <div class="fs-10 text-body-tertiary">Eight weeks</div>
+            </div>
+          </div>
         </div>
-        <div class="card-body p-0">
-            <div class="echart-availability" style="min-height:350px"></div>
+        <div class="card-body">
+          <div class="echart-availability" style="min-height:350px"></div>
         </div>
+      </div>
     </div>
-</div>
 
-<!-- Delivery throughput + Service breakdown -->
-<div class="row g-4 mb-4">
     <div class="col-12 col-xl-7">
-        <div class="card h-100 shadow-none border">
-            <div class="card-header p-4 border-bottom bg-body">
-                <h4 class="text-body mb-0">Delivery Throughput</h4>
-                <span class="text-body-secondary fs-9">Phases delivered per month (last 6 months)</span>
-            </div>
-            <div class="card-body p-2">
-                <div class="echart-throughput" style="min-height:300px"></div>
-            </div>
+      <div class="card h-100">
+        <div class="card-header">
+          <h5 class="mb-0">Delivery throughput</h5>
+          <p class="fs-9 text-body-tertiary mb-0">Phases delivered per month (last 6 months).</p>
         </div>
+        <div class="card-body">
+          <div class="echart-throughput" style="min-height:300px"></div>
+        </div>
+      </div>
     </div>
     <div class="col-12 col-xl-5">
-        <div class="card h-100 shadow-none border">
-            <div class="card-header p-4 border-bottom bg-body">
-                <h4 class="text-body mb-0">Service Breakdown</h4>
-                <span class="text-body-secondary fs-9">Phases by service</span>
-            </div>
-            <div class="card-body p-2">
-                {% if stats.service_breakdown %}
-                <div class="echart-service-breakdown" style="min-height:300px"></div>
-                {% else %}
-                <p class="text-body-tertiary text-center py-5 mb-0">No service data</p>
-                {% endif %}
-            </div>
+      <div class="card h-100">
+        <div class="card-header">
+          <h5 class="mb-0">Service breakdown</h5>
+          <p class="fs-9 text-body-tertiary mb-0">Phases on this unit's jobs, by service (all time).</p>
         </div>
+        <div class="card-body">
+          {% if stats.service_breakdown %}
+            <div class="echart-service-breakdown" style="min-height:300px"></div>
+          {% else %}
+            <p class="fs-9 text-body-tertiary text-center py-5 mb-0">No service data.</p>
+          {% endif %}
+        </div>
+      </div>
     </div>
-</div>
 
-<!-- Job status breakdown -->
-<div class="row g-4 mb-4">
     <div class="col-12">
-        <div class="card shadow-none border">
-            <div class="card-header p-4 border-bottom bg-body">
-                <h4 class="text-body mb-0">Job Pipeline</h4>
-                <span class="text-body-secondary fs-9">Jobs owned by this unit, by status</span>
-            </div>
-            <div class="card-body">
-                {% if stats.job_status_breakdown %}
-                <div class="d-flex flex-wrap gap-3">
-                    {% for row in stats.job_status_breakdown %}
-                    <div class="text-center border border-translucent rounded-2 px-3 py-2">
-                        <h4 class="mb-0">{{ row.count }}</h4>
-                        <span class="badge badge-phoenix badge-phoenix-{{ row.bs_colour }} fs-10">{{ row.label }}</span>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% else %}
-                <p class="text-body-tertiary text-center mb-0">No jobs</p>
-                {% endif %}
-            </div>
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">Job pipeline</h5>
+          <p class="fs-9 text-body-tertiary mb-0">Jobs owned by this unit, by status.</p>
         </div>
+        <div class="card-body">
+          {% if stats.job_status_breakdown %}
+            <div class="d-flex flex-wrap gap-2">
+              {% for row in stats.job_status_breakdown %}
+                <div class="text-center border border-translucent rounded-3 px-3 py-2">
+                  <div class="fs-7 fw-semibold">{{ row.count }}</div>
+                  <span class="badge badge-phoenix badge-phoenix-{{ row.bs_colour }} fs-10">{{ row.label }}</span>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p class="fs-9 text-body-tertiary text-center mb-0">No jobs.</p>
+          {% endif %}
+        </div>
+      </div>
     </div>
-</div>
 
-<!-- Member utilisation table -->
-<div class="row gy-3 mb-3 justify-content-between">
-    <div class="col">
-        <h3 class="mb-0 text-primary position-relative fw-bold">
-            <span class="bg-body pe-2">Consultant Utilisation{% include 'partials/_util_info_icon.html' %}</span>
-            <span class="border border-primary position-absolute top-50 translate-middle-y w-100 start-0 z-n1"></span>
-        </h3>
-    </div>
-</div>
-
-<div class="table-responsive mb-4">
-<table class="table table-sm datatable align-items-center mb-0">
-    <caption>Member utilisation over the selected date range</caption>
-    <thead>
-        <tr>
-            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Member</th>
-            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Utilisation</th>
-            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2 text-center">Confirmed Days</th>
-            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2 text-center">Available Days</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for member in active_memberships %}
-            {% with row=member_util_map|index:member.member_id %}
-            <tr>
-                <td>{% include 'partials/users/user_table_display.html' with u=member.member noorg=1 notitle=1 nojl=1 noloc=1 %}</td>
-                <td class="ps-2" style="min-width: 140px;">
-                    <div class="d-flex align-items-center">
-                        <div class="progress flex-1 me-2" style="height: 6px; min-width: 60px;">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">Consultant utilisation{% include 'partials/_util_info_icon.html' %}</h5>
+          <p class="fs-9 text-body-tertiary mb-0">Confirmed delivery over the selected range.</p>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0 fs-9">
+              <caption class="visually-hidden">Consultant utilisation over the selected date range</caption>
+              <thead>
+                <tr class="text-body-secondary">
+                  <th class="ps-3">Member</th>
+                  <th>Utilisation</th>
+                  <th class="text-end">Confirmed days</th>
+                  <th class="text-end pe-3">Available days</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for member in active_memberships %}
+                  {% with row=member_util_map|index:member.member_id %}
+                    <tr>
+                      <td class="ps-3">{% include 'partials/users/user_table_display.html' with u=member.member noorg=1 notitle=1 nojl=1 noloc=1 %}</td>
+                      <td style="min-width: 140px;">
+                        <div class="d-flex align-items-center">
+                          <div class="progress flex-1 me-2" style="height: 6px; min-width: 60px;">
                             <div class="progress-bar bg-info" role="progressbar" style="width: {{ row.confirmed_pct }}%;"></div>
+                          </div>
+                          <span class="text-body-secondary">{{ row.confirmed_pct }}%</span>
                         </div>
-                        <span class="fs-9 text-body-secondary">{{ row.confirmed_pct }}%</span>
-                    </div>
-                </td>
-                <td class="ps-2 text-center">{{ row.confirmed_days }}</td>
-                <td class="ps-2 text-center">{{ row.available_days }}</td>
-            </tr>
-            {% endwith %}
-        {% endfor %}
-    </tbody>
-</table>
+                      </td>
+                      <td class="text-end">{{ row.confirmed_days }}</td>
+                      <td class="text-end pe-3">{{ row.available_days }}</td>
+                    </tr>
+                  {% endwith %}
+                {% empty %}
+                  <tr><td colspan="4" class="text-center text-body-tertiary py-3">No consultants in this unit.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
 $(function() {
-    $("#dateRangePicker").flatpickr({
-        mode: "range",
-        dateFormat: "Y-m-d",
-        disableMobile: true,
-        defaultDate: ["{{ start_date.isoformat }}", "{{ end_date.isoformat }}"],
-        onClose: function(selectedDates, dateStr, instance) {
-            $(".profile-stats-form").submit();
-        },
-    });
+    // Range picker is wired by organisationalunit_detail.html after each load.
 
     const { merge } = window._;
 

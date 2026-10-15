@@ -1653,3 +1653,9 @@ svg.christmas {
     box-shadow: 0px 4.6666666667px 24px 3px rgba(247, 0, 148, 0.2);
   }
 }
+
+/* Bleached rich-text (e.g. team/unit descriptions) rendered inside a styled
+   wrapper: drop the trailing paragraph margin so it sits like plain text. */
+.rich-text-flush > :last-child {
+  margin-bottom: 0;
+}

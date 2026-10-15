@@ -12,7 +12,7 @@ from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
-from django.db.models import Count, Prefetch
+from django.db.models import Count, Prefetch, Q
 from django.contrib.auth.decorators import login_required
 from chaotica_utils.views import ChaoticaBaseView, SoftDeleteViewMixin
 from notifications.utils import AppNotification, send_notifications
@@ -77,11 +77,30 @@ class OrganisationalUnitBaseView(ChaoticaBaseView):
 class OrganisationalUnitListView(
     PrefetchRelatedMixin, PermissionRequiredMixin, OrganisationalUnitBaseView, ListView
 ):
-    prefetch_related = [
-        "jobs",
-        "members",
-    ]
+    prefetch_related = ["leads"]
     permission_required = "jobtracker.view_organisationalunit"
+
+    def get_queryset(self):
+        # Same "active member" rule as OrganisationalUnit.get_activeMembers.
+        active = Q(members__left_date__isnull=True, members__member__is_active=True)
+        return (
+            super()
+            .get_queryset()
+            .annotate(
+                active_member_count=Count(
+                    "members__member", filter=active, distinct=True
+                ),
+                job_count=Count("jobs", distinct=True),
+            )
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["my_unit_ids"] = set(
+            self.request.user.unit_memberships.filter(left_date__isnull=True)
+            .values_list("unit_id", flat=True)
+        )
+        return context
 
 
 class OrganisationalUnitDetailView(
@@ -154,11 +173,16 @@ class OrganisationalUnitDetailView(
             ms.is_consultant = ms.member_id in consultant_ids
             ms.is_disabled = not ms.member.is_active
             m = util.get(ms.member_id, {})
-            working = m.get("working_days", 0)
+            effective = m.get("effective_working_days", 0)
             ms.util_pct = (
-                round(m.get("confirmed_days", 0) / working * 100, 1) if working else 0
+                round(m.get("confirmed_days", 0) / effective * 100, 1)
+                if effective
+                else 0
             )
             ms.active_job_count = active_job_counts.get(ms.member_id, 0)
+        context["active_member_count"] = sum(
+            1 for ms in memberships if not ms.is_disabled
+        )
 
         # Add QA review data for users with permission
         if self.request.user.has_perm("can_view_all_reviews", unit):
@@ -248,26 +272,16 @@ class OrganisationalUnitDetailView(
     (OrganisationalUnit, "slug", "slug"),
 )
 def orgunit_stats_partial(request, slug):
+    from .helpers import _stats_range
+
     unit = get_object_or_404(OrganisationalUnit, slug=slug)
-    context = {}
-
-    date_range_raw = request.GET.get("dateRange", "")
-    if " to " in date_range_raw:
-        date_range_split = date_range_raw.split(" to ")
-        if len(date_range_split) == 2:
-            context["start_date"] = timezone.datetime.strptime(
-                date_range_split[0], "%Y-%m-%d"
-            ).date()
-            context["end_date"] = timezone.datetime.strptime(
-                date_range_split[1], "%Y-%m-%d"
-            ).date()
-
-    if "start_date" not in context:
-        context["start_date"] = request.GET.get(
-            "start_date",
-            (timezone.now() - datetime.timedelta(days=30)).date(),
-        )
-        context["end_date"] = request.GET.get("end_date", timezone.now().date())
+    start_date, end_date, range_ctx = _stats_range(request)
+    context = {
+        "start_date": start_date,
+        "end_date": end_date,
+        "partial_url": reverse("orgunit_stats_partial", kwargs={"slug": unit.slug}),
+        **range_ctx,
+    }
 
     include_financials = request.user.has_perm("jobtracker.can_view_jobs", unit)
     context["can_view_financials"] = include_financials
@@ -320,9 +334,11 @@ def orgunit_header_stats_partial(request, slug):
     util = unit.calculate_bulk_utilization(
         week_start, week_start + datetime.timedelta(days=28), user_ids=consultant_ids
     )
+    # Central formula: confirmed / effective working days (matches the Stats
+    # tab's four-week figure).
     total_confirmed = sum(m.get("confirmed_days", 0) for m in util.values())
-    total_working = sum(m.get("working_days", 0) for m in util.values())
-    pct = round(total_confirmed / total_working * 100, 1) if total_working else 0
+    total_effective = sum(m.get("effective_working_days", 0) for m in util.values())
+    pct = round(total_confirmed / total_effective * 100, 1) if total_effective else 0
     return JsonResponse({"utilisation_4wk": pct})
 
 
@@ -337,8 +353,8 @@ def orgunit_jobs_partial(request, slug):
         unit.jobs.annotate(phase_count=Count("phases")).select_related("client")
     )
     html = loader.render_to_string(
-        "partials/job/job_list_table.html",
-        {"job_list": job_list, "disableAjax": True},
+        "partials/unit/jobs_table.html",
+        {"job_list": job_list},
         request=request,
     )
     return JsonResponse({"html": html})

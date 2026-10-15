@@ -1,103 +1,99 @@
 {% load static %}
 
-<div class="row px-5 align-items-start justify-content-between g-3 mt-0 mb-0">
-  <div class="col-12 col-md">
-    <h2 class="mb-1">{{ organisationalunit.name }}</h2>
-    {% if organisationalunit.description %}
-      <p class="text-body-secondary mb-0">{{ organisationalunit.description }}</p>
-    {% endif %}
-  </div>
-
-  <div class="col-12 col-md-auto">
-    <div class="d-flex flex-wrap gap-2 justify-content-md-end">
-      {% if 'manage_members' in unit_perms %}
-        <div class="dropdown">
-          <button class="btn btn-phoenix-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-            <span class="fa-solid fa-user-plus me-2"></span>Members
-          </button>
-          <ul class="dropdown-menu dropdown-menu-end">
-            <li><a class="dropdown-item js-load-modal-form" href="#" data-url="{% url 'organisationalunit_add' organisationalunit.slug %}"><span class="fa-solid fa-user-plus me-2 text-body-tertiary"></span>Add Member</a></li>
-            <li><a class="dropdown-item js-load-modal-form" href="#" data-url="{% url 'organisationalunit_preload_member' organisationalunit.slug %}"><span class="fa-solid fa-user-clock me-2 text-body-tertiary"></span>Pre-load Member</a></li>
-            <li><a class="dropdown-item" href="{% url 'organisationalunit_import_members' organisationalunit.slug %}"><span class="fa-solid fa-file-csv me-2 text-body-tertiary"></span>Import CSV</a></li>
-          </ul>
-        </div>
-      {% endif %}
-
-      {% if 'change_organisationalunit' in unit_perms %}
-        <a href="{% url 'organisationalunit_update' organisationalunit.slug %}" class="btn btn-phoenix-secondary"><span class="fa-solid fa-pen me-2"></span>Edit</a>
-      {% endif %}
-
-      {% if 'delete_organisationalunit' in unit_perms %}
-        <a href="{% url 'organisationalunit_delete' organisationalunit.slug %}" class="btn btn-phoenix-secondary text-danger"><span class="fa-solid fa-trash me-2"></span>Delete</a>
-      {% endif %}
-    </div>
-  </div>
-</div>
-
-<div class="row px-5 g-3 mt-0 mb-0 pb-3">
-  <!-- Leads -->
-  <div class="col-12 col-lg-4">
-    <div class="card h-100 border border-translucent">
-      <div class="card-body">
-        <h6 class="text-body-tertiary text-uppercase fs-10 mb-3">Leads</h6>
-        {% if organisationalunit.leads.all %}
-          <div class="d-flex flex-wrap gap-2">
+<div class="px-5 mt-2 mb-3">
+  <div class="card">
+    <div class="card-body">
+      <div class="d-flex flex-wrap align-items-start gap-3">
+        <div class="flex-1" style="min-width: 16rem;">
+          <h3 class="mb-1">{{ organisationalunit.name }}</h3>
+          {% if organisationalunit.description %}
+            <div class="fs-9 text-body-tertiary mb-2 rich-text-flush">{{ organisationalunit.description }}</div>
+          {% endif %}
+          <div class="d-flex flex-wrap align-items-center gap-2 fs-9 text-body-secondary">
+            <span class="fa-solid fa-user-tie text-body-tertiary"></span>
             {% for lead in organisationalunit.leads.all %}
-              <a href="{{ lead.get_absolute_url }}" class="d-inline-flex align-items-center text-decoration-none bg-body-highlight rounded-pill py-1 pe-3 ps-1 border border-translucent" title="{{ lead.get_full_name }}">
-                <div class="avatar avatar-s me-2">
-                  <img class="rounded-circle" src="{{ lead.get_avatar_url }}" alt="{{ lead.get_full_name }}">
-                </div>
-                <span class="fs-9 text-body-emphasis">{{ lead.get_full_name }}</span>
+              <a href="{{ lead.get_absolute_url }}" class="d-inline-flex align-items-center text-decoration-none bg-body-highlight rounded-pill py-1 pe-2 ps-1 border border-translucent" title="{{ lead.get_full_name }}">
+                <span class="avatar avatar-xs me-1">
+                  <img class="rounded-circle" src="{{ lead.get_avatar_url }}" alt="" />
+                </span>
+                <span class="fs-10 fw-semibold text-body-emphasis">{{ lead.get_full_name }}</span>
               </a>
+            {% empty %}
+              <span class="text-body-tertiary">No leads assigned</span>
             {% endfor %}
           </div>
-        {% else %}
-          <p class="text-body-tertiary fs-9 mb-0">No leads assigned</p>
-        {% endif %}
-      </div>
-    </div>
-  </div>
-
-  <!-- At a glance stat tiles -->
-  <div class="col-6 col-lg-4">
-    <div class="card h-100 border border-translucent">
-      <div class="card-body d-flex flex-column justify-content-center">
-        <div class="d-flex align-items-center mb-2">
-          <span class="fa-solid fa-diagram-project fs-6 text-primary me-2"></span>
-          <h6 class="text-body-tertiary text-uppercase fs-10 mb-0">Phases in flight</h6>
         </div>
-        <h2 class="fw-bolder mb-0">{{ phases_in_flight_count }}</h2>
-        <p class="text-body-secondary fs-10 mb-0">In progress &amp; in QA</p>
-      </div>
-    </div>
-  </div>
 
-  <div class="col-6 col-lg-4">
-    <div class="card h-100 border border-translucent">
-      <div class="card-body d-flex flex-column justify-content-center">
-        <div class="d-flex align-items-center mb-2">
-          <span class="fa-solid fa-chart-line fs-6 text-info me-2"></span>
-          <h6 class="text-body-tertiary text-uppercase fs-10 mb-0">Team utilisation{% include 'partials/_util_info_icon.html' %}</h6>
+        <div class="d-flex flex-wrap align-items-center gap-2 ms-lg-auto">
+          {% if 'manage_members' in unit_perms %}
+            <button class="btn btn-sm btn-phoenix-primary js-load-modal-form" data-url="{% url 'organisationalunit_add' organisationalunit.slug %}">
+              <span class="fa-solid fa-user-plus me-1"></span>Add member
+            </button>
+          {% endif %}
+          {% if 'manage_members' in unit_perms or 'change_organisationalunit' in unit_perms or 'delete_organisationalunit' in unit_perms %}
+            <div class="dropdown">
+              <button class="btn btn-sm btn-phoenix-secondary" type="button" data-bs-toggle="dropdown" data-boundary="window" aria-haspopup="true" aria-expanded="false" aria-label="More actions">
+                <span class="fas fa-ellipsis-h"></span>
+              </button>
+              <div class="dropdown-menu dropdown-menu-end py-2">
+                {% if 'manage_members' in unit_perms %}
+                  <button class="dropdown-item js-load-modal-form" data-url="{% url 'organisationalunit_preload_member' organisationalunit.slug %}">
+                    <span class="fa-solid fa-user-clock text-body-secondary me-2"></span>Pre-load member
+                  </button>
+                  <a class="dropdown-item" href="{% url 'organisationalunit_import_members' organisationalunit.slug %}">
+                    <span class="fa-solid fa-file-csv text-body-secondary me-2"></span>Import members (CSV)
+                  </a>
+                {% endif %}
+                {% if 'change_organisationalunit' in unit_perms %}
+                  <a class="dropdown-item" href="{% url 'organisationalunit_update' organisationalunit.slug %}">
+                    <span class="fa-solid fa-gear text-body-secondary me-2"></span>Unit settings
+                  </a>
+                {% endif %}
+                {% if 'delete_organisationalunit' in unit_perms %}
+                  <div class="dropdown-divider"></div>
+                  <a class="dropdown-item text-danger" href="{% url 'organisationalunit_delete' organisationalunit.slug %}">
+                    <span class="fa-solid fa-trash me-2"></span>Delete unit
+                  </a>
+                {% endif %}
+              </div>
+            </div>
+          {% endif %}
         </div>
-        <h2 class="fw-bolder mb-0" id="unit-util-tile">
-          <div class="spinner-border spinner-border-sm text-info" role="status"></div>
-        </h2>
-        <p class="text-body-secondary fs-10 mb-0">Consultants, confirmed &middot; coming 4 weeks</p>
       </div>
-    </div>
-  </div>
 
-  {% if organisationalunit.special_requirements %}
-    <div class="col-12">
-      <div class="card border border-warning">
-        <div class="card-body py-2 d-flex align-items-start">
-          <span class="fa-solid fa-triangle-exclamation text-warning me-2 mt-1"></span>
-          <div>
-            <h6 class="mb-1">Special Requirements</h6>
-            <div class="fs-9 text-body-secondary">{{ organisationalunit.special_requirements }}</div>
+      {# At-a-glance tiles (utilisation is filled in asynchronously) #}
+      <div class="row g-2 mt-2">
+        <div class="col-6 col-md-3">
+          <div class="border border-translucent rounded-3 p-2 h-100">
+            <div class="fs-10 text-body-tertiary">Members</div>
+            <div class="fs-7 fw-semibold">{{ active_member_count }}</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="border border-translucent rounded-3 p-2 h-100">
+            <div class="fs-10 text-body-tertiary">Phases in flight <span class="text-body-quaternary">(in progress &amp; QA)</span></div>
+            <div class="fs-7 fw-semibold">{{ phases_in_flight_count }}</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="border border-translucent rounded-3 p-2 h-100">
+            <div class="fs-10 text-body-tertiary">Utilisation{% include 'partials/_util_info_icon.html' %} <span class="text-body-quaternary">(consultants, next 4 weeks)</span></div>
+            <div class="fs-7 fw-semibold" id="unit-util-tile">
+              <span class="spinner-border spinner-border-sm text-body-tertiary" role="status"></span>
+            </div>
           </div>
         </div>
       </div>
+
+      {% if organisationalunit.special_requirements %}
+        <div class="alert alert-subtle-warning d-flex align-items-start mt-3 mb-0 py-2 fs-9" role="alert">
+          <i class="fas fa-exclamation-triangle me-2 mt-1"></i>
+          <div>
+            <strong>Special requirements</strong>
+            <div>{{ organisationalunit.special_requirements }}</div>
+          </div>
+        </div>
+      {% endif %}
     </div>
-  {% endif %}
+  </div>
 </div>

@@ -169,3 +169,58 @@ def _render_cohort_billing(request, user_qs, partial_url):
         "partials/billing/cohort_allocation.html", context, request=request
     )
     return JsonResponse({"html": html})
+
+
+STATS_RANGE_PRESETS = (("30d", 30), ("3m", 91), ("6m", 182), ("12m", 365))
+
+
+def _stats_range(request, default_days=91):
+    """Parse a Stats-tab date range from the request.
+
+    Accepts flatpickr's ``dateRange=YYYY-MM-DD to YYYY-MM-DD`` or explicit
+    ``start_date`` / ``end_date``; anything unparseable falls back to the last
+    ``default_days``. Returns ``(start, end, extra_context)`` where the context
+    carries the preset buttons for the range header.
+    """
+    import datetime
+    from django.utils import timezone
+
+    today = timezone.now().date()
+
+    def _parse(value):
+        try:
+            return datetime.datetime.strptime(value.strip(), "%Y-%m-%d").date()
+        except (AttributeError, ValueError):
+            return None
+
+    date_range_raw = request.GET.get("dateRange", "")
+    if " to " in date_range_raw:
+        start_raw, _, end_raw = date_range_raw.partition(" to ")
+        start_date, end_date = _parse(start_raw), _parse(end_raw)
+    else:
+        start_date = _parse(request.GET.get("start_date"))
+        end_date = _parse(request.GET.get("end_date"))
+    if not (start_date and end_date):
+        start_date, end_date = today - datetime.timedelta(days=default_days), today
+    if start_date > end_date:
+        start_date, end_date = end_date, start_date
+
+    presets = []
+    for label, days in STATS_RANGE_PRESETS:
+        p_start = today - datetime.timedelta(days=days)
+        presets.append(
+            {
+                "label": label,
+                "start": p_start,
+                "end": today,
+                "active": (start_date, end_date) == (p_start, today),
+            }
+        )
+    return (
+        start_date,
+        end_date,
+        {
+            "presets": presets,
+            "is_custom_range": not any(p["active"] for p in presets),
+        },
+    )

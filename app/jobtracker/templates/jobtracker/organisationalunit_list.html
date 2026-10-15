@@ -20,17 +20,30 @@
 </div>
 {% endif %}
 
-<div class="row">
-  <div class="col-lg-6 col-12 d-flex ms-auto">
-    <a href="{% url 'organisationalunit_create' %}" class="btn btn-phoenix-primary ms-auto">
-    New Organisational Unit
-    </a>
+<div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+  <div>
+    <h4 class="mb-0">Organisational units</h4>
+    <p class="fs-9 text-body-tertiary mb-0">Every job belongs to a unit; members can only see jobs in the units they belong to.</p>
   </div>
+  {% if perms.jobtracker.add_organisationalunit %}
+    <a href="{% url 'organisationalunit_create' %}" class="btn btn-sm btn-phoenix-primary ms-md-auto">
+      <span class="fa-solid fa-plus me-1"></span>New unit
+    </a>
+  {% endif %}
 </div>
 
-<div class="row my-4 g-2">
+<div class="row g-3">
   {% for unit in organisationalunit_list %}
     {% include 'partials/unit/orgunit_card.html' %}
+  {% empty %}
+    <div class="col-12">
+      <div class="card">
+        <div class="card-body text-center text-body-tertiary py-5">
+          <span class="fa-solid fa-sitemap fs-5 mb-3 d-block"></span>
+          <p class="fs-9 mb-0">No organisational units yet.</p>
+        </div>
+      </div>
+    </div>
   {% endfor %}
 </div>
 {% endblock content %}

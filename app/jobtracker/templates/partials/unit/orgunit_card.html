@@ -1,36 +1,43 @@
-<div class="col-3 g-2 mb-3">
+{# Counts come from annotations on OrganisationalUnitListView. #}
+<div class="col-12 col-md-6 col-xl-4 col-xxl-3">
   <div class="card h-100">
-    <div class="card-body">
-      <div class="d-flex align-items-center">
-        <h4 class="mb-2 line-clamp-1 lh-sm flex-1 me-5">
-          <a href="{{ unit.get_absolute_url }}">
-            {{ unit.name }}
-          </a>
-        </h4>
+    <div class="card-body d-flex flex-column">
+      <div class="d-flex align-items-start gap-2 mb-2">
+        <h5 class="mb-0 flex-1 line-clamp-1">
+          <a class="text-body-emphasis" href="{{ unit.get_absolute_url }}">{{ unit.name }}</a>
+        </h5>
+        {% if unit.pk in my_unit_ids %}
+          <span class="badge badge-phoenix badge-phoenix-success fs-10">Member</span>
+        {% endif %}
+      </div>
+      {% if unit.description %}
+        <div class="fs-9 text-body-tertiary mb-2 line-clamp-2 rich-text-flush">{{ unit.description }}</div>
+      {% endif %}
+
+      <div class="fs-9 text-body-secondary mb-3">
+        <span class="fa-solid fa-user-tie text-body-tertiary me-1"></span>
+        {% with leads=unit.leads.all %}
+          {% if leads %}
+            Lead{{ leads|length|pluralize }}:
+            {% for lead in leads %}<a class="fw-semibold" href="{{ lead.get_absolute_url }}">{{ lead }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}
+          {% else %}
+            <span class="text-body-tertiary">No leads</span>
+          {% endif %}
+        {% endwith %}
       </div>
 
-      <div class="d-flex align-items-center mb-2">
-        <span class="fa-solid fa-user me-2 text-700 fs-9 fw-extra-bold"></span>
-        <p class="fw-bold mb-0 text-truncate lh-1">
-          {{ unit.leads.all|length|pluralize:"Lead,Leads" }} :
-          {% for lead in unit.leads.all %}
-            <span class="fw-semi-bold text-primary ms-1"><a href="{{ lead.get_absolute_url }}">{{ lead }}</a></span>{% if not forloop.last %}, {% endif %}
-          {% empty %}
-            <span class="fw-semi-bold text-body-secondary ms-1">None</span>
-          {% endfor %}
-        </p>
-      </div>
-      <div class="d-flex d-lg-block d-xl-flex justify-content-between align-items-center mt-3">
-        <div class="mt-lg-3 mt-xl-0">
-          <i class="fa-solid fa-people-group me-1"></i>
-          <p class="d-inline-block fw-bold mb-0">{{ unit.get_activeMembers.count }}<span class="fw-normal">	Members</span></p>
+      <div class="row g-2 mt-auto">
+        <div class="col-6">
+          <div class="border border-translucent rounded-3 p-2 h-100">
+            <div class="fs-10 text-body-tertiary">Members</div>
+            <div class="fs-7 fw-semibold">{{ unit.active_member_count }}</div>
+          </div>
         </div>
-        {% if request.user in unit.get_activeMembers.all %}
-        <span class="badge badge-phoenix fs-10 mb-2 mt-2 badge-phoenix-success">Member</span>
-        {% endif %}
-        <div class="mt-lg-3 mt-xl-0">
-          <i class="fa-solid fa-list-check me-1"></i>
-          <p class="d-inline-block fw-bold mb-0">{{ unit.jobs.count }}<span class="fw-normal">	Jobs</span></p>
+        <div class="col-6">
+          <div class="border border-translucent rounded-3 p-2 h-100">
+            <div class="fs-10 text-body-tertiary">Jobs</div>
+            <div class="fs-7 fw-semibold">{{ unit.job_count }}</div>
+          </div>
         </div>
       </div>
     </div>

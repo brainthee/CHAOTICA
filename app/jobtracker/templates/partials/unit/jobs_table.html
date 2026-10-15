@@ -1,0 +1,40 @@
+{# Org-unit Jobs tab. Loaded lazily, so it initialises its own DataTable #}
+{# (core.js only auto-inits tables present at page load).               #}
+<table id="unitJobsTable" class="table table-sm align-middle mb-0 fs-9">
+  <caption class="visually-hidden">Jobs owned by this unit</caption>
+  <thead>
+    <tr class="text-body-secondary">
+      <th class="ps-3">ID</th>
+      <th>Job</th>
+      <th>Client</th>
+      <th>Start</th>
+      <th>End</th>
+      <th class="text-end">Phases</th>
+      <th class="text-end pe-3">Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for job in job_list %}
+      <tr>
+        <td class="ps-3 text-body-tertiary" data-order="{{ job.id }}">{{ job.id }}</td>
+        <td><a class="fw-semibold" href="{{ job.get_absolute_url }}">{{ job.title }}</a></td>
+        <td>{% if job.client %}<a href="{{ job.client.get_absolute_url }}">{{ job.client }}</a>{% else %}<span class="text-body-tertiary">&mdash;</span>{% endif %}</td>
+        <td class="text-nowrap" data-order="{{ job.start_date|date:'c' }}">{% if job.start_date %}{{ job.start_date|date:'j M Y' }}{% else %}<span class="text-body-tertiary">&mdash;</span>{% endif %}</td>
+        <td class="text-nowrap" data-order="{{ job.delivery_date|date:'c' }}">{% if job.delivery_date %}{{ job.delivery_date|date:'j M Y' }}{% else %}<span class="text-body-tertiary">&mdash;</span>{% endif %}</td>
+        <td class="text-end">{{ job.phase_count|default:0 }}</td>
+        <td class="text-end pe-3">{% include 'partials/job/status_badge.html' with badge_size='sm' %}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<script>
+  (function () {
+    var table = document.getElementById('unitJobsTable');
+    if (!table || !window.DataTable || DataTable.isDataTable(table)) return;
+    new DataTable(table, {
+      {% include 'js/dtDefaultConfig.js' %}
+      language: { emptyTable: 'No jobs in this unit yet.' }
+    });
+  })();
+</script>

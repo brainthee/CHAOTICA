@@ -29,12 +29,12 @@
 
   {% include 'partials/unit/unit_header.html' %}
 
-  <div class="row g-0 mt-3 border-1 border-top bg-body-secondary h-100">
-    <div class="col-12 px-6 pt-3 border-1 border-end">
+  <div class="row g-0 border-1 border-top bg-body-secondary h-100">
+    <div class="col-12 pt-3 border-1 border-end">
       <div class="row mx-1">
-        <ul class="nav nav-underline scrollbar flex-nowrap w-100 pb-1 mb-3" id="sectionNav" role="tablist" style="overflow-y: hidden;">
+        <ul class="nav nav-underline scrollbar px-6 flex-nowrap w-100 pb-1 mb-3" id="sectionNav" role="tablist" style="overflow-y: hidden;">
           <li class="nav-item text-nowrap me-2" role="presentation">
-            <a class="nav-link active" id="team-tab" data-bs-toggle="tab" href="#team" role="tab" aria-controls="tab-team" aria-selected="true"><span class="fa-solid fa-video me-2 tab-icon-color"></span>Team</a>
+            <a class="nav-link active" id="team-tab" data-bs-toggle="tab" href="#team" role="tab" aria-controls="tab-team" aria-selected="true"><span class="fa-solid fa-users me-2 tab-icon-color"></span>Team</a>
           </li>
           {% comment %} 
           <!-- Leave out D3 for now. This will break the org chart but it's not really used -->
@@ -42,7 +42,7 @@
             <a class="nav-link" id="orgchart-tab" data-bs-toggle="tab" href="#orgchart" role="tab" aria-controls="tab-orgchart" aria-selected="false" tabindex="-1"><span class="fa-solid fa-sitemap me-2 tab-icon-color"></span>Organisation Chart</a>
           </li> {% endcomment %}
           <li class="nav-item text-nowrap me-2" role="presentation">
-            <a class="nav-link" id="jobs-tab" data-bs-toggle="tab" href="#jobs" role="tab" aria-controls="tab-jobs" aria-selected="false" tabindex="-1"><span class="fa-solid fa-clipboard me-2 tab-icon-color"></span>Jobs</a>
+            <a class="nav-link" id="jobs-tab" data-bs-toggle="tab" href="#jobs" role="tab" aria-controls="tab-jobs" aria-selected="false" tabindex="-1"><span class="fa-solid fa-briefcase me-2 tab-icon-color"></span>Jobs</a>
           </li>
           {% if 'can_view_jobs' in unit_perms %}
           <li class="nav-item text-nowrap me-2" role="presentation">
@@ -50,7 +50,7 @@
           </li>
           {% endif %}
           <li class="nav-item text-nowrap me-2" role="presentation">
-            <a class="nav-link" id="stats-tab" data-bs-toggle="tab" href="#stats" role="tab" aria-controls="tab-stats" aria-selected="false" tabindex="-1"><span class="fa-solid fa-clipboard me-2 tab-icon-color"></span>Stats</a>
+            <a class="nav-link" id="stats-tab" data-bs-toggle="tab" href="#stats" role="tab" aria-controls="tab-stats" aria-selected="false" tabindex="-1"><span class="fa-solid fa-chart-column me-2 tab-icon-color"></span>Stats</a>
           </li>
           {% if 'can_view_jobs' in unit_perms %}
           <li class="nav-item text-nowrap me-2" role="presentation">
@@ -77,8 +77,10 @@
           </li>
         </ul>
 
-        <div class="tab-content" id="myTabContent">
-          <div class="tab-pane fade active show" id="team" role="tabpanel" aria-labelledby="team-tab">
+        {# Every pane shares the same padding; lazy panes keep their spinner #}
+        {# inside the container so the loaded partial isn't centred/padded.  #}
+        <div class="tab-content pb-5" id="myTabContent">
+          <div class="tab-pane fade active show py-3" id="team" role="tabpanel" aria-labelledby="team-tab">
             {% include 'partials/unit/team_table.html' %}
           </div>
 
@@ -88,60 +90,92 @@
             {% include 'partials/unit/org_chart.html' %}
           </div> {% endcomment %}
 
-          <div class="tab-pane fade" id="jobs" role="tabpanel" aria-labelledby="jobs-tab">
+          <div class="tab-pane fade py-3" id="jobs" role="tabpanel" aria-labelledby="jobs-tab">
+            <div class="mb-3">
+              <h4 class="mb-0">Jobs</h4>
+              <p class="fs-9 text-body-tertiary mb-0">Every job owned by this unit.</p>
+            </div>
             {% if 'can_view_jobs' in unit_perms %}
-              <div id="jobs-content" class="text-center py-5">
-                <div class="spinner-border text-primary" role="status"></div>
-                <p class="mt-2 text-body-secondary">Loading jobs...</p>
+              <div class="card">
+                <div class="card-body">
+                  <div id="jobs-content">
+                    <div class="text-center py-5">
+                      <div class="spinner-border text-primary" role="status"></div>
+                      <p class="mt-2 text-body-secondary">Loading jobs...</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            {% else %}
+              <div class="card">
+                <div class="card-body text-center text-body-tertiary fs-9 py-5">You don't have permission to view this unit's jobs.</div>
               </div>
             {% endif %}
           </div>
 
           {% if 'can_view_jobs' in unit_perms %}
-          <div class="tab-pane fade" id="board" role="tabpanel" aria-labelledby="board-tab" style="margin: 0 -2.75rem;">
-            <div id="board-content" class="text-center py-5">
-              <div class="spinner-border text-primary" role="status"></div>
-              <p class="mt-2 text-body-secondary">Loading board...</p>
+          <div class="tab-pane fade py-3" id="board" role="tabpanel" aria-labelledby="board-tab">
+            <div class="mb-3">
+              <h4 class="mb-0">Board</h4>
+              <p class="fs-9 text-body-tertiary mb-0">Phases on this unit's jobs, by status.</p>
+            </div>
+            <div id="board-content">
+              <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="mt-2 text-body-secondary">Loading board...</p>
+              </div>
             </div>
           </div>
           {% endif %}
 
-          <div class="tab-pane fade" id="stats" role="tabpanel" aria-labelledby="stats-tab">
-            <div id="stats-content" class="text-center py-5">
-              <div class="spinner-border text-primary" role="status"></div>
-              <p class="mt-2 text-body-secondary">Loading stats...</p>
+          <div class="tab-pane fade py-3" id="stats" role="tabpanel" aria-labelledby="stats-tab">
+            <div id="stats-content">
+              <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="mt-2 text-body-secondary">Loading stats...</p>
+              </div>
             </div>
           </div>
 
           {% if 'can_view_jobs' in unit_perms %}
-          <div class="tab-pane fade" id="billing" role="tabpanel" aria-labelledby="billing-tab">
-            <div id="billing-content" class="text-center py-5">
-              <div class="spinner-border text-primary" role="status"></div>
-              <p class="mt-2 text-body-secondary">Loading billing...</p>
+          <div class="tab-pane fade py-3" id="billing" role="tabpanel" aria-labelledby="billing-tab">
+            <div id="billing-content">
+              <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="mt-2 text-body-secondary">Loading billing...</p>
+              </div>
             </div>
           </div>
           {% endif %}
 
           {% if 'can_view_all_reviews' in unit_perms %}
-          <div class="tab-pane fade" id="reviews" role="tabpanel" aria-labelledby="reviews-tab">
+          <div class="tab-pane fade py-3" id="reviews" role="tabpanel" aria-labelledby="reviews-tab">
             {% include 'partials/review_org_display.html' %}
           </div>
           {% endif %}
 
           {% if can_view_unit_permissions %}
-          <div class="tab-pane fade" id="permissions" role="tabpanel" aria-labelledby="permissions-tab">
+          <div class="tab-pane fade py-3" id="permissions" role="tabpanel" aria-labelledby="permissions-tab">
             {% include 'partials/unit/unit_permissions.html' %}
           </div>
           {% endif %}
 
           {% if 'can_view_loaded_costs' in unit_perms %}
-          <div class="tab-pane fade" id="finance" role="tabpanel" aria-labelledby="finance-tab">
+          <div class="tab-pane fade py-3" id="finance" role="tabpanel" aria-labelledby="finance-tab">
             {% include 'partials/unit/finance_tab.html' %}
           </div>
           {% endif %}
 
-          <div class="tab-pane fade" id="activity" role="tabpanel" aria-labelledby="activity-tab">
-            {% include 'partials/audit_activity.html' %}
+          <div class="tab-pane fade py-3" id="activity" role="tabpanel" aria-labelledby="activity-tab">
+            <div class="mb-3">
+              <h4 class="mb-0">Activity</h4>
+              <p class="fs-9 text-body-tertiary mb-0">Changes made to this unit, its members and its settings.</p>
+            </div>
+            <div class="card">
+              <div class="card-body pb-0">
+                {% include 'partials/audit_activity.html' %}
+              </div>
+            </div>
           </div>
 
         </div>
@@ -177,7 +211,7 @@
         <div class="settings-popover">
           <span class="fa-solid fa-filter"></span>
         </div>
-      </div><small class="text-uppercase text-700 fw-bold py-2 pe-2 ps-1 rounded-end">Detail</small>
+      </div><small class="text-uppercase text-body-secondary fw-bold py-2 pe-2 ps-1 rounded-end">Detail</small>
     </div>
   </a>
 {% endblock %}
@@ -198,8 +232,10 @@
       if (utilTile) {
         fetch(headerStatsUrl, {headers: {'X-Requested-With': 'XMLHttpRequest'}})
           .then(function(r) { return r.json(); })
-          .then(function(data) { utilTile.textContent = data.utilisation_4wk + '%'; })
-          .catch(function() { utilTile.innerHTML = '<span class="text-body-tertiary fs-7">&ndash;</span>'; });
+          .then(function(data) {
+            utilTile.innerHTML = Number(data.utilisation_4wk) + '<span class="fs-10 text-body-tertiary">%</span>';
+          })
+          .catch(function() { utilTile.innerHTML = '<span class="text-body-tertiary">&ndash;</span>'; });
       }
 
       function loadTab(url, containerId, callback) {
@@ -227,21 +263,57 @@
         });
       }
 
+      // Stats: after each (re)load, wire the custom range picker and show
+      // the raw data in the "Detail" offcanvas.
+      function onStatsLoaded(data) {
+        var picker = document.getElementById('stats-range-picker');
+        if (picker && window.flatpickr) {
+          flatpickr(picker, {
+            mode: 'range',
+            dateFormat: 'Y-m-d',
+            altInput: true,
+            altFormat: 'j M Y',
+            altInputClass: picker.className,
+            disableMobile: true,
+            maxDate: 'today',
+            defaultDate: [picker.dataset.start, picker.dataset.end],
+            onClose: function(dates, dateStr, fp) {
+              if (dates.length !== 2) return;
+              var fmt = function(d) { return fp.formatDate(d, 'Y-m-d'); };
+              loadStats(picker.dataset.url + '?start_date=' + fmt(dates[0]) + '&end_date=' + fmt(dates[1]));
+            }
+          });
+        }
+        if (data && data.stats_json) {
+          var code = document.getElementById('stats-json-display');
+          code.textContent = data.stats_json;
+          code.removeAttribute('data-highlighted');
+          if (window.hljs) hljs.highlightElement(code);
+        }
+      }
+
+      function loadStats(url) {
+        document.getElementById('stats-content').innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><p class="mt-2 text-body-secondary">Loading stats...</p></div>';
+        loadTab(url, 'stats-content', onStatsLoaded);
+      }
+
       // Load stats when tab is shown
       var statsTab = document.getElementById('stats-tab');
       if (statsTab) {
         statsTab.addEventListener('shown.bs.tab', function() {
           if (!statsLoaded) {
             statsLoaded = true;
-            loadTab(statsUrl, 'stats-content', function(data) {
-              if (data.stats_json) {
-                document.getElementById('stats-json-display').textContent = data.stats_json;
-                hljs.highlightAll();
-              }
-            });
+            loadStats(statsUrl);
           }
         });
       }
+      document.addEventListener('click', function(e) {
+        var link = e.target.closest('#stats-content a[data-stats-range]');
+        if (link) {
+          e.preventDefault();
+          loadStats(link.getAttribute('data-stats-range'));
+        }
+      });
 
       // Load jobs when tab is shown
       var jobsTab = document.getElementById('jobs-tab');

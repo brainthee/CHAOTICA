@@ -2,6 +2,12 @@
 
 Organisational units are the teams and departments that own jobs and manage members in CHAOTICA. They form the core organisational structure — permissions, job ownership, and scheduling access are all scoped to units.
 
+## Unit list
+
+**Operations → Organisational Units** shows every unit you can see as a card with
+its leads, member count and job count. Units you belong to carry a **Member**
+badge. **New unit** appears only for people with `add_organisationalunit`.
+
 ## Detail Page
 
 The unit detail page is accessed from the unit list or by navigating to a specific unit. The header displays:
@@ -9,10 +15,11 @@ The unit detail page is accessed from the unit list or by navigating to a specif
 - Unit name and description
 - **Leads** — the unit's lead(s) shown as clickable avatar chips linking to each profile (or "No leads assigned"). Being named a lead automatically grants that person **manager rights** on the unit (including the ability to add and [import members](preloading_members.md)).
 - **At-a-glance stats**:
+    - **Members** — active (non-disabled) members
     - **Phases in flight** — count of the unit's phases currently in progress or in QA
-    - **Team utilisation** — confirmed utilisation across the coming four weeks. Utilisation is calculated over **consultants only** (the members who get booked onto delivery), so managers, sales and other roles don't drag the figure down. This figure is loaded asynchronously (a spinner resolves to a percentage) because it is calculated from the full schedule.
+    - **Utilisation** — confirmed utilisation across the coming four weeks, using the [central formula](../scheduling/overview.md) (confirmed days over effective working days), so it matches the Stats tab's four-week figure. Utilisation is calculated over **consultants only** (the members who get booked onto delivery), so managers, sales and other roles don't drag the figure down. This figure is loaded asynchronously (a spinner resolves to a percentage) because it is calculated from the full schedule.
 - Special requirements (if any) shown as a highlighted banner
-- Actions: a **Members** dropdown grouping **Add Member**, **Pre-load Member** and **Import CSV** (all require `manage_members`), and an **Edit** button (requires `change_organisationalunit`)
+- Actions: **Add member** (requires `manage_members`), and a **⋯** menu with **Pre-load member** and **Import members (CSV)** (`manage_members`), **Unit settings** (`change_organisationalunit`) and **Delete unit** (`delete_organisationalunit`)
 
 > **Add Member** adds an *existing* user; **Pre-load Member** and **Import CSV** let you onboard people who haven't logged in yet. See [Pre-loading & Importing Members](preloading_members.md).
 >
@@ -30,7 +37,7 @@ Displays a table of active unit members with, per member:
 
 - **Member** — name and avatar (links to the profile)
 - **Job level & title** — current job-level badge and job title
-- **Utilisation** — a bar and percentage of confirmed utilisation across the coming four weeks (consultants only; other roles show "—")
+- **Utilisation** — a bar and percentage of confirmed utilisation across the coming four weeks (consultants only; other roles show "—"), over effective working days like everywhere else
 - **Active jobs** — the number of the unit's active jobs the member is scheduled on
 - **Roles** — assigned unit role badges
 - **Actions** — a per-row menu. Everyone sees **View Profile**, **View Schedule** and **Email**. Members with `manage_members` additionally get:
@@ -40,16 +47,16 @@ Displays a table of active unit members with, per member:
 
 Utilisation and active-job counts are computed in bulk for the whole team, so the table stays fast regardless of member count.
 
-The table can be filtered above the header by **Role** and **Job level**, and searched
+The table can be filtered by **Role** and **Job level** (top right of the tab), and searched
 by the free-text box (name, title, etc.). Members whose account is **disabled** are
-hidden by default; tick **Show disabled users** to include them (they're tagged with a
+hidden by default; switch on **Show disabled** to include them (they're tagged with a
 "Disabled" badge).
 
 ### Jobs
 
 *Requires `can_view_jobs` permission.*
 
-An AJAX-loaded table listing all jobs owned by the unit, with phase counts and status information.
+An AJAX-loaded, searchable and paginated table of every job owned by the unit — ID, title, client, start/end dates, phase count and status.
 
 ### Board
 
@@ -61,12 +68,16 @@ A kanban-style board showing all active phases for the unit's jobs, organised by
 
 *Always visible.*
 
-AJAX-loaded statistics with date-range filtering, laid out top to bottom:
+AJAX-loaded statistics. The header has quick ranges (**30d**, **3m**, **6m**,
+**12m**) and a custom range picker (default: last three months); changing the
+range reloads the tab in place. The range applies to **phases delivered** and
+the **consultant utilisation table**; the other sections note their own period.
+Laid out top to bottom:
 
 1. **Summary tiles** — active members, active jobs, phases delivered in the selected range, coming-4-week utilisation, and (only for users with `can_view_jobs`) total active-job revenue.
 2. **Upcoming availability** — consultant utilisation across four time periods (this week, 2 weeks, 4 weeks, 8 weeks) for confirmed, tentative, internal, and available time, with a stacked ECharts bar chart. Each bar is 100% of the effective working days (leave and public holidays are already removed), and every day falls in exactly one segment — confirmed, then tentative, then internal, then available — so the green segment always matches the utilisation figure.
 3. **Delivery throughput** — phases delivered per month over the last six months (bar chart).
-4. **Service breakdown** — phases grouped by service (bar chart).
+4. **Service breakdown** — all-time phases on the unit's jobs, grouped by service (bar chart).
 5. **Job pipeline** — job counts by status.
 6. **Consultant utilisation table** — each consultant's confirmed utilisation over the selected date range (utilisation is tracked for consultants only).
 
@@ -84,7 +95,28 @@ roll-up. See
 
 *Requires `can_view_all_reviews` permission.*
 
-Shows in-progress and recently completed (last 30 days) QA reviews for the unit. Users with `can_conduct_review` permission can start new reviews from this tab.
+Shows in-progress and recently completed (last 30 days) QA reviews for the unit, each with a count. Users with `can_conduct_review` permission can start new reviews from this tab.
+
+### Roles & Permissions
+
+*Requires permission to view the unit's permissions.*
+
+A read-only grid of which members hold which unit roles, followed by a card per
+role listing the object-level permissions it grants. Roles are assigned from a
+member's **Manage roles** action on the Team tab.
+
+### Finance
+
+*Requires `can_view_loaded_costs`.*
+
+The unit's support-premium default, its support profiles (and their members),
+and each member's current loaded cost rate with a **Set rate** action.
+
+### Activity
+
+*Always visible.*
+
+A timeline of changes to the unit, its members and its settings.
 
 ## Kanban Board
 

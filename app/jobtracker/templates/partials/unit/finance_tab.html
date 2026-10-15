@@ -1,4 +1,9 @@
 {% load static %}
+<div class="mb-3">
+  <h4 class="mb-0">Finance</h4>
+  <p class="fs-9 text-body-tertiary mb-0">Support-team defaults and loaded cost rates for this unit.</p>
+</div>
+
 <div class="row g-3">
 
   <!-- Settings -->
@@ -12,11 +17,11 @@
         </button>
       </div>
       <div class="card-body">
-        <div class="d-flex justify-content-between border-bottom border-translucent py-2">
+        <div class="d-flex justify-content-between border-bottom border-translucent py-2 fs-9">
           <span class="text-body-secondary">Support premium default</span>
           <span class="fw-semibold">{{ organisationalunit.support_premium_default|floatformat:2 }}%</span>
         </div>
-        <p class="text-body-tertiary fs-10 mt-3 mb-0">
+        <p class="text-body-tertiary fs-9 mt-3 mb-0">
           The % of a job's revenue reserved for the support-team pool, used by
           any profile without its own premium. Each job can override it.
         </p>
@@ -30,7 +35,7 @@
       <div class="card-header d-flex justify-content-between align-items-center">
         <div>
           <h5 class="mb-0">Support Profiles</h5>
-          <span class="text-body-tertiary fs-10">Named support teams (e.g. Context, CCX). Each job uses one; the default is applied to new jobs.</span>
+          <p class="text-body-tertiary fs-9 mb-0">Named support teams (e.g. Context, CCX). Each job uses one; the default is applied to new jobs.</p>
         </div>
         <button class="btn btn-sm btn-phoenix-primary js-load-modal-form"
            data-url="{% url 'organisationalunit_support_profile_add' slug=organisationalunit.slug %}">
@@ -42,32 +47,32 @@
         <div class="border-bottom border-translucent">
           <div class="d-flex justify-content-between align-items-center px-3 pt-3 pb-2">
             <div>
-              <span class="fw-bold">{{ profile.name }}</span>
+              <span class="fw-semibold">{{ profile.name }}</span>
               {% if profile.is_default %}<span class="badge badge-phoenix badge-phoenix-primary ms-2">Default</span>{% endif %}
-              <span class="text-body-tertiary fs-10 ms-2">
+              <span class="text-body-tertiary fs-9 ms-2">
                 Premium {% if profile.premium_percent != None %}{{ profile.premium_percent|floatformat:"-2" }}%{% else %}{{ organisationalunit.support_premium_default|floatformat:"-2" }}% (unit default){% endif %}
               </span>
-              {% if profile.description %}<div class="text-body-tertiary fs-10">{{ profile.description }}</div>{% endif %}
+              {% if profile.description %}<div class="text-body-tertiary fs-9">{{ profile.description }}</div>{% endif %}
             </div>
             <div class="btn-reveal-trigger position-static">
               <button class="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal fs-10"
                   type="button" data-bs-toggle="dropdown" data-boundary="window" aria-haspopup="true" aria-expanded="false" data-bs-reference="parent">
                   <span class="fas fa-ellipsis-h fs-10"></span>
               </button>
-              <div class="dropdown-menu shadow dropdown-menu-end">
+              <div class="dropdown-menu shadow dropdown-menu-end py-2">
                 <button class="dropdown-item js-load-modal-form"
-                  data-url="{% url 'organisationalunit_support_template_add' slug=organisationalunit.slug profile_pk=profile.pk %}">Add member</button>
+                  data-url="{% url 'organisationalunit_support_template_add' slug=organisationalunit.slug profile_pk=profile.pk %}"><span class="fa-solid fa-user-plus text-body-secondary me-2"></span>Add member</button>
                 <button class="dropdown-item js-load-modal-form"
-                  data-url="{% url 'organisationalunit_support_profile_edit' slug=organisationalunit.slug pk=profile.pk %}">Edit profile</button>
-                <button class="dropdown-item text-warning js-load-modal-form"
-                  data-url="{% url 'organisationalunit_support_profile_delete' slug=organisationalunit.slug pk=profile.pk %}">Delete profile</button>
+                  data-url="{% url 'organisationalunit_support_profile_edit' slug=organisationalunit.slug pk=profile.pk %}"><span class="fa-solid fa-pen text-body-secondary me-2"></span>Edit profile</button>
+                <button class="dropdown-item text-danger js-load-modal-form"
+                  data-url="{% url 'organisationalunit_support_profile_delete' slug=organisationalunit.slug pk=profile.pk %}"><span class="fa-solid fa-trash me-2"></span>Delete profile</button>
               </div>
             </div>
           </div>
           <div class="table-responsive">
-            <table class="table fs-10 mb-0">
+            <table class="table table-sm align-middle fs-9 mb-0">
               <thead>
-                <tr>
+                <tr class="text-body-secondary">
                   <th class="ps-3">Person</th>
                   <th>Role</th>
                   <th class="text-end">Profile</th>
@@ -77,35 +82,35 @@
               <tbody>
                 {% for tm in profile.members.all %}
                 <tr>
-                  <td class="ps-3 align-middle">
+                  <td class="ps-3">
                     {% include 'partials/users/user_table_display.html' with notitle=1 noorg=1 u=tm.user %}
                   </td>
-                  <td class="align-middle"><span class="text-body-tertiary fw-semibold">{{ tm.get_role_display }}</span></td>
-                  <td class="align-middle text-end"><span class="text-body-tertiary fw-semibold">{{ tm.profile_percent|floatformat:"-2" }}%</span></td>
-                  <td class="align-middle text-end pe-3">
+                  <td><span class="text-body-secondary">{{ tm.get_role_display }}</span></td>
+                  <td class="text-end">{{ tm.profile_percent|floatformat:"-2" }}%</td>
+                  <td class="text-end pe-3">
                     <div class="btn-reveal-trigger position-static">
                       <button class="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal fs-10"
                           type="button" data-bs-toggle="dropdown" data-boundary="window" aria-haspopup="true" aria-expanded="false" data-bs-reference="parent">
                           <span class="fas fa-ellipsis-h fs-10"></span>
                       </button>
-                      <div class="dropdown-menu shadow dropdown-menu-end">
+                      <div class="dropdown-menu shadow dropdown-menu-end py-2">
                         <button class="dropdown-item js-load-modal-form"
-                          data-url="{% url 'organisationalunit_support_template_edit' slug=organisationalunit.slug pk=tm.pk %}">Edit</button>
-                        <button class="dropdown-item text-warning js-load-modal-form"
-                          data-url="{% url 'organisationalunit_support_template_delete' slug=organisationalunit.slug pk=tm.pk %}">Remove</button>
+                          data-url="{% url 'organisationalunit_support_template_edit' slug=organisationalunit.slug pk=tm.pk %}"><span class="fa-solid fa-pen text-body-secondary me-2"></span>Edit</button>
+                        <button class="dropdown-item text-danger js-load-modal-form"
+                          data-url="{% url 'organisationalunit_support_template_delete' slug=organisationalunit.slug pk=tm.pk %}"><span class="fa-solid fa-user-minus me-2"></span>Remove</button>
                       </div>
                     </div>
                   </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="4" class="ps-3 text-body-secondary">No members yet &mdash; use the profile menu to add people.</td></tr>
+                <tr><td colspan="4" class="text-center text-body-tertiary py-3">No members yet &mdash; use the profile menu to add people.</td></tr>
                 {% endfor %}
               </tbody>
             </table>
           </div>
         </div>
         {% empty %}
-        <div class="alert m-3 alert-phoenix-info" role="alert">
+        <div class="alert alert-subtle-info m-3 py-2 fs-9" role="alert">
           No support profiles configured. Add a profile (e.g. "Context") and its members so new jobs get a support team automatically.
         </div>
         {% endfor %}
@@ -118,13 +123,13 @@
     <div class="card h-100">
       <div class="card-header">
         <h5 class="mb-0">Loaded Cost Rates</h5>
-        <span class="text-body-tertiary fs-10">Only visible to holders of the "view loaded cost rates" permission.</span>
+        <p class="text-body-tertiary fs-9 mb-0">Only visible to holders of the "view loaded cost rates" permission.</p>
       </div>
       <div class="card-body p-0">
         <div class="table-responsive">
-          <table class="table fs-10 mb-0">
+          <table class="table table-sm align-middle fs-9 mb-0">
             <thead>
-              <tr>
+              <tr class="text-body-secondary">
                 <th class="ps-3">Person</th>
                 <th class="text-end">Current rate (/hr)</th>
                 <th>Effective from</th>
@@ -135,16 +140,16 @@
               {% for ms in active_memberships %}
               {% if not ms.is_disabled %}
               <tr>
-                <td class="ps-3 align-middle">
+                <td class="ps-3">
                   {% include 'partials/users/user_table_display.html' with notitle=1 noorg=1 u=ms.member %}
                 </td>
-                <td class="align-middle text-end">
+                <td class="text-end">
                   <span class="fw-semibold {% if not ms.current_lcr %}text-danger{% endif %}">
                     {% if ms.current_lcr %}{{ ms.current_lcr.cost_per_hour|floatformat:2 }}{% else %}not set{% endif %}
                   </span>
                 </td>
-                <td class="align-middle"><span class="text-body-tertiary">{{ ms.current_lcr.effective_from|default:"—" }}</span></td>
-                <td class="align-middle text-end pe-3">
+                <td><span class="text-body-secondary">{{ ms.current_lcr.effective_from|default:"—" }}</span></td>
+                <td class="text-end pe-3">
                   <button class="btn btn-sm btn-phoenix-secondary js-load-modal-form"
                      data-url="{% url 'organisationalunit_set_lcr' slug=organisationalunit.slug member_pk=ms.pk %}">
                      Set rate

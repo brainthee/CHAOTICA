@@ -100,41 +100,10 @@ class TeamDeleteView(ProtectedDeleteMixin, TeamBaseView, PermissionRequiredMixin
     "jobtracker.view_team", (Team, "slug", "slug")
 )
 def team_stats_partial(request, slug):
+    from .helpers import _stats_range
+
     team = get_object_or_404(Team, slug=slug)
-    today = timezone.now().date()
-
-    def _parse(value):
-        try:
-            return datetime.datetime.strptime(value.strip(), "%Y-%m-%d").date()
-        except (AttributeError, ValueError):
-            return None
-
-    # Accept flatpickr's "YYYY-MM-DD to YYYY-MM-DD" or explicit start/end;
-    # anything unparseable falls back to the default (last 3 months).
-    start_date = end_date = None
-    date_range_raw = request.GET.get("dateRange", "")
-    if " to " in date_range_raw:
-        start_raw, _, end_raw = date_range_raw.partition(" to ")
-        start_date, end_date = _parse(start_raw), _parse(end_raw)
-    else:
-        start_date = _parse(request.GET.get("start_date"))
-        end_date = _parse(request.GET.get("end_date"))
-    if not (start_date and end_date):
-        start_date, end_date = today - datetime.timedelta(days=91), today
-    if start_date > end_date:
-        start_date, end_date = end_date, start_date
-
-    presets = []
-    for label, days in (("30d", 30), ("3m", 91), ("6m", 182), ("12m", 365)):
-        p_start = today - datetime.timedelta(days=days)
-        presets.append(
-            {
-                "label": label,
-                "start": p_start,
-                "end": today,
-                "active": (start_date, end_date) == (p_start, today),
-            }
-        )
+    start_date, end_date, range_ctx = _stats_range(request)
 
     stats = team.get_stats(start_date, end_date)
     context = {
@@ -142,8 +111,7 @@ def team_stats_partial(request, slug):
         "stats": stats,
         "start_date": stats["start_date"],
         "end_date": stats["end_date"],
-        "presets": presets,
-        "is_custom_range": not any(p["active"] for p in presets),
+        **range_ctx,
         "partial_url": reverse("team_stats_partial", kwargs={"slug": team.slug}),
         "stats_json": json.dumps(stats, indent=4, default=str),
     }

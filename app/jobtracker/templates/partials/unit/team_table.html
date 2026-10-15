@@ -1,110 +1,107 @@
 {% load static %}
 
-<div class="d-flex flex-wrap align-items-center gap-3 mb-3" id="teamFilters">
-  <div class="d-flex align-items-center">
-    <label for="teamRoleFilter" class="form-label mb-0 me-2 fs-9 text-body-secondary text-nowrap">Role</label>
-    <select id="teamRoleFilter" class="form-select form-select-sm" style="min-width: 150px;">
+<div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+  <div>
+    <h4 class="mb-0">Members</h4>
+    <p class="fs-9 text-body-tertiary mb-0">Current members of this unit. Utilisation is confirmed delivery over the next 4 weeks (consultants only).</p>
+  </div>
+  <div class="d-flex flex-wrap align-items-center gap-2 ms-md-auto" id="teamFilters">
+    <select id="teamRoleFilter" class="form-select form-select-sm" style="width: auto; min-width: 9rem;" aria-label="Filter by role">
       <option value="">All roles</option>
     </select>
-  </div>
-  <div class="d-flex align-items-center">
-    <label for="teamLevelFilter" class="form-label mb-0 me-2 fs-9 text-body-secondary text-nowrap">Level</label>
-    <select id="teamLevelFilter" class="form-select form-select-sm" style="min-width: 130px;">
+    <select id="teamLevelFilter" class="form-select form-select-sm" style="width: auto; min-width: 8rem;" aria-label="Filter by level">
       <option value="">All levels</option>
     </select>
-  </div>
-  <div class="form-check form-switch mb-0 ms-md-2">
-    <input class="form-check-input" type="checkbox" id="teamShowDisabled">
-    <label class="form-check-label fs-9" for="teamShowDisabled">Show disabled users</label>
+    <div class="form-check form-switch mb-0 ms-1">
+      <input class="form-check-input" type="checkbox" id="teamShowDisabled">
+      <label class="form-check-label fs-9" for="teamShowDisabled">Show disabled</label>
+    </div>
   </div>
 </div>
 
-<div class="table-responsive">
-<table id="teamTable" class="table table-sm datatable align-items-center mb-0">
-  <caption>Team</caption>
-    <thead>
-      <tr>
-        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Member</th>
-        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Job Level &amp; Title</th>
-        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Utilisation</th>
-        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2 text-center">Active Jobs</th>
-        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Roles</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for member in active_memberships %}
-          <tr data-disabled="{% if member.is_disabled %}1{% else %}0{% endif %}" data-roles="|{% for role in member.roles.all %}{{ role.name }}|{% endfor %}"{% if member.member.get_current_level %} data-level="{{ member.member.get_current_level.job_level.short_label }}"{% endif %}{% if member.is_disabled %} class="text-body-tertiary"{% endif %}>
-              <td>
-                  {% include 'partials/users/user_table_display.html' with u=member.member noorg=1 notitle=1 nojl=1 noloc=1 %}
-                  {% if member.is_disabled %}<span class="badge badge-phoenix badge-phoenix-secondary ms-1" title="This user's account is disabled">Disabled</span>{% endif %}
-              </td>
-              <td class="ps-2">
-                  {% if member.member.get_current_level %}
-                    {% include 'partials/users/joblevel_badge.html' with level=member.member.get_current_level %}
-                  {% endif %}
-                  <div class="fs-9 text-body-secondary">
-                    {% if member.member.job_title %}{{ member.member.job_title }}{% else %}<span class="text-body-tertiary">&ndash;</span>{% endif %}
+<div class="card">
+  <div class="card-body">
+    <table id="teamTable" class="table table-sm datatable align-middle mb-0 fs-9">
+      <caption class="visually-hidden">Unit members</caption>
+      <thead>
+        <tr class="text-body-secondary">
+          <th class="ps-3" scope="col">Member</th>
+          <th scope="col">Job level &amp; title</th>
+          <th scope="col">Utilisation</th>
+          <th class="text-end" scope="col">Active jobs</th>
+          <th scope="col">Roles</th>
+          <th class="text-end pe-3" scope="col" data-orderable="false"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for member in active_memberships %}
+          <tr class="btn-reveal-trigger position-static" data-disabled="{% if member.is_disabled %}1{% else %}0{% endif %}" data-roles="|{% for role in member.roles.all %}{{ role.name }}|{% endfor %}"{% if member.member.get_current_level %} data-level="{{ member.member.get_current_level.job_level.short_label }}"{% endif %}>
+            <td class="ps-3{% if member.is_disabled %} opacity-50{% endif %}">
+              {% include 'partials/users/user_table_display.html' with u=member.member noorg=1 notitle=1 nojl=1 noloc=1 %}
+              {% if member.is_disabled %}<span class="badge badge-phoenix badge-phoenix-secondary ms-1" title="This user's account is disabled">Disabled</span>{% endif %}
+            </td>
+            <td>
+              {% if member.member.get_current_level %}
+                {% include 'partials/users/joblevel_badge.html' with level=member.member.get_current_level %}
+              {% endif %}
+              <div class="text-body-secondary">
+                {% if member.member.job_title %}{{ member.member.job_title }}{% else %}<span class="text-body-tertiary">&ndash;</span>{% endif %}
+              </div>
+            </td>
+            <td style="min-width: 120px;" data-order="{% if member.is_consultant %}{{ member.util_pct }}{% else %}-1{% endif %}">
+              {% if member.is_consultant %}
+                <div class="d-flex align-items-center">
+                  <div class="progress flex-1 me-2" style="height: 6px; min-width: 60px;">
+                    <div class="progress-bar bg-info" role="progressbar" style="width: {{ member.util_pct }}%;" aria-valuenow="{{ member.util_pct }}" aria-valuemin="0" aria-valuemax="100"></div>
                   </div>
-              </td>
-              <td class="ps-2" style="min-width: 120px;">
-                  {% if member.is_consultant %}
-                  <div class="d-flex align-items-center">
-                    <div class="progress flex-1 me-2" style="height: 6px; min-width: 60px;">
-                      <div class="progress-bar bg-info" role="progressbar" style="width: {{ member.util_pct }}%;" aria-valuenow="{{ member.util_pct }}" aria-valuemin="0" aria-valuemax="100"></div>
-                    </div>
-                    <span class="fs-9 text-body-secondary">{{ member.util_pct }}%</span>
-                  </div>
-                  {% else %}
-                  <span class="fs-9 text-body-tertiary" title="Utilisation is tracked for consultants only">&ndash;</span>
-                  {% endif %}
-              </td>
-              <td class="ps-2 text-center">
-                  <span class="badge badge-phoenix {% if member.active_job_count %}badge-phoenix-primary{% else %}badge-phoenix-secondary{% endif %}">{{ member.active_job_count }}</span>
-              </td>
-              <td class="ps-2">
-                  <p class="text-xs font-weight-normal mb-0">
-                    {% for role in member.roles.all %}
-                    {% include 'partials/unit/role_badge.html' %}
-                    {% endfor %}
-                  </p>
-              </td>
-              <td class="align-end text-end">
-                  <button class="btn btn-link text-secondary ps-0 pe-2" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                     <i class="fa fa-ellipsis-v text-lg" aria-hidden="true"></i>
-                  </button>
-                  <div class="dropdown-menu shadow dropdown-menu-end me-sm-n4 me-n3">
-                    <a class="dropdown-item" href="{{ member.member.get_absolute_url }}"><span class="fa-solid fa-id-card me-2 text-body-tertiary"></span>View Profile</a>
-                    <a class="dropdown-item" href="{% url 'view_scheduler' %}?users={{ member.member.id }}"><span class="fa-solid fa-calendar-days me-2 text-body-tertiary"></span>View Schedule</a>
-                    <a class="dropdown-item" href="mailto:{{ member.member.email }}"><span class="fa-solid fa-envelope me-2 text-body-tertiary"></span>Email</a>
-                    {% if 'manage_members' in unit_perms %}
-                      <div class="dropdown-divider"></div>
-                      <a class="dropdown-item js-load-modal-form" href="#"
-                        data-url="{% url 'organisationalunit_manage_roles' organisationalunit.slug member.pk %}">
-                        <span class="fa-solid fa-user-shield me-2 text-body-tertiary"></span>Manage Roles
-                      </a>
-                      <a class="dropdown-item js-load-modal-form" href="#"
-                        data-url="{% url 'organisationalunit_toggle_lead' organisationalunit.slug member.pk %}">
-                        {% if member.member in organisationalunit.leads.all %}
-                        <span class="fa-solid fa-user-minus me-2 text-body-tertiary"></span>Remove as Lead
-                        {% else %}
-                        <span class="fa-solid fa-user-tie me-2 text-body-tertiary"></span>Make Unit Lead
-                        {% endif %}
-                      </a>
-                      {% if member.member != request.user %}
-                      <div class="dropdown-divider"></div>
-                      <a class="dropdown-item text-danger js-load-modal-form" href="#"
-                          data-url="{% url 'organisationalunit_remove_member' organisationalunit.slug member.pk %}">
-                          <span class="fa-solid fa-user-xmark me-2"></span>Remove from Unit
-                      </a>
+                  <span class="text-body-secondary">{{ member.util_pct }}%</span>
+                </div>
+              {% else %}
+                <span class="text-body-tertiary" title="Utilisation is tracked for consultants only">&ndash;</span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              {% if member.active_job_count %}{{ member.active_job_count }}{% else %}<span class="text-body-tertiary">0</span>{% endif %}
+            </td>
+            <td>
+              {% for role in member.roles.all %}
+                {% include 'partials/unit/role_badge.html' %}
+              {% endfor %}
+            </td>
+            <td class="text-end pe-3">
+              <div class="btn-reveal-trigger position-static">
+                <button class="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal fs-10" type="button" data-bs-toggle="dropdown" data-boundary="window" aria-haspopup="true" aria-expanded="false" data-bs-reference="parent" aria-label="Member actions"><span class="fas fa-ellipsis-h fs-10"></span></button>
+                <div class="dropdown-menu shadow dropdown-menu-end py-2">
+                  <a class="dropdown-item" href="{{ member.member.get_absolute_url }}"><span class="fa-solid fa-id-card me-2 text-body-secondary"></span>View profile</a>
+                  <a class="dropdown-item" href="{% url 'view_scheduler' %}?users={{ member.member.id }}"><span class="fa-solid fa-calendar-days me-2 text-body-secondary"></span>View schedule</a>
+                  <a class="dropdown-item" href="mailto:{{ member.member.email }}"><span class="fa-solid fa-envelope me-2 text-body-secondary"></span>Email</a>
+                  {% if 'manage_members' in unit_perms %}
+                    <div class="dropdown-divider"></div>
+                    <button class="dropdown-item js-load-modal-form" data-url="{% url 'organisationalunit_manage_roles' organisationalunit.slug member.pk %}">
+                      <span class="fa-solid fa-user-shield me-2 text-body-secondary"></span>Manage roles
+                    </button>
+                    <button class="dropdown-item js-load-modal-form" data-url="{% url 'organisationalunit_toggle_lead' organisationalunit.slug member.pk %}">
+                      {% if member.member in organisationalunit.leads.all %}
+                        <span class="fa-solid fa-user-minus me-2 text-body-secondary"></span>Remove as lead
+                      {% else %}
+                        <span class="fa-solid fa-user-tie me-2 text-body-secondary"></span>Make unit lead
                       {% endif %}
+                    </button>
+                    {% if member.member != request.user %}
+                      <div class="dropdown-divider"></div>
+                      <button class="dropdown-item text-danger js-load-modal-form" data-url="{% url 'organisationalunit_remove_member' organisationalunit.slug member.pk %}">
+                        <span class="fa-solid fa-user-xmark me-2"></span>Remove from unit
+                      </button>
                     {% endif %}
-                  </div>
-               </td>
+                  {% endif %}
+                </div>
+              </div>
+            </td>
           </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 
 <script>
