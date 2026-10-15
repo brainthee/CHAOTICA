@@ -60,13 +60,13 @@ Each job uses **one** profile:
       rates*.
 
 Everything is managed in the main UI (the Django admin is not needed). Profiles
-live on the **Finance tab** (see [The Finance tab](#the-finance-tab)), and a
+live on the **Support Teams tab** (see [The Support Teams tab](#the-support-teams-tab)), and a
 job's profile is chosen on the job page.
 
-## The Finance tab
+## The Support Teams tab
 
 On the organisational-unit detail page, users with the **Can view loaded cost
-rates** permission see an extra **Finance** tab (hidden from everyone else). It
+rates** permission see an extra **Support Teams** tab (hidden from everyone else). It
 holds three cards:
 
 - **Settings**: edit the unit's *support premium default %*, which is used by
@@ -113,12 +113,12 @@ The money→hours conversion uses each person's **loaded cost rate**, a per-user
 date-effective cost. Budgets are always shown at **today's** rate. Each cash-out
 also records the rate in force when it was made (see
 [Cashing out budget](#cashing-out-budget)). Manage rates from the unit's
-**Finance → Loaded Cost Rates** card.
+**Support Teams → Loaded Cost Rates** card.
 
 **Visibility:** loaded cost rates are financially sensitive. They, and any £
 figures derived from them, are only shown to holders of the **Can view loaded
 cost rates** (`can_view_loaded_costs`) permission. That covers the unit
-**Finance** tab, money columns on the **Billing Codes** page, and the per-person
+**Support Teams** tab, money columns on the **Billing Codes** page, and the per-person
 budget and hours on the job's **Sales** tab. Hours alone, next to revenue and
 share, would reveal a person's rate, so they are hidden too.
 

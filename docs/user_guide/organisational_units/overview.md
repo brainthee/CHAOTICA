@@ -105,7 +105,7 @@ A read-only grid of which members hold which unit roles, followed by a card per
 role listing the object-level permissions it grants. Roles are assigned from a
 member's **Manage roles** action on the Team tab.
 
-### Finance
+### Support Teams
 
 *Requires `can_view_loaded_costs`.*
 

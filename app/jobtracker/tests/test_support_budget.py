@@ -640,7 +640,7 @@ class FinanceTabViewTests(SupportBudgetTestBase):
         resp = self.http.get(self._detail_url())
         self.assertEqual(resp.status_code, 200)
         body = resp.content.decode()
-        self.assertIn("Finance", body)
+        self.assertIn("Support Teams", body)
         self.assertIn("Loaded Cost Rates", body)
 
     def test_finance_tab_hidden_without_perm(self):
