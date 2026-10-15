@@ -261,6 +261,16 @@ class ManagerImportTests(_Base):
         self.http.post(self.url, {"action": "apply"})
         self.assertIsNone(User.objects.get(pk=self.person.pk).acting_manager)
 
+    def test_placeholder_account_is_not_a_manager(self):
+        User.objects.get_or_create(email="deleted@chaotica.app")
+        resp = self._upload(
+            "email,manager_email,acting_manager_email\n"
+            "person@route.com,deleted@chaotica.app,\n"
+        )
+        self.assertEqual(
+            resp.context["plan"][0]["reason"], "Unknown manager deleted@chaotica.app"
+        )
+
     def test_missing_email_column_rejected(self):
         resp = self._upload("name,manager_email\nx,y\n")
         self.assertRedirects(resp, self.url, fetch_redirect_response=False)

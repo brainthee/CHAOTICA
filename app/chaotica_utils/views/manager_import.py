@@ -27,6 +27,8 @@ MANAGER_CSV_HEADERS = ["email", "manager_email", "acting_manager_email"]
 # A cell with one of these clears the field; a blank cell leaves it as is.
 CLEAR_VALUES = {"-", "none"}
 SESSION_KEY = "manager_import_rows"
+# Placeholder accounts that are never real people.
+NOT_PEOPLE = {"deleted@chaotica.app", "anonymoususer"}
 MAX_ROWS = 5000
 
 
@@ -120,7 +122,7 @@ def plan_manager_changes(rows):
         if value.lower() in CLEAR_VALUES:
             return None, True, None
         found = users.get(value.lower())
-        if found is None:
+        if found is None or value.lower() in NOT_PEOPLE:
             return None, False, f"Unknown {label} {value}"
         if not found.is_active:
             return None, False, f"{label.capitalize()} {value} is deactivated"
@@ -134,7 +136,7 @@ def plan_manager_changes(rows):
             entry["reason"] = "No email"
             continue
         person = users.get(r["email"].lower())
-        if person is None:
+        if person is None or r["email"].lower() in NOT_PEOPLE:
             entry["reason"] = "Unknown person"
             continue
         entry["person"] = person
