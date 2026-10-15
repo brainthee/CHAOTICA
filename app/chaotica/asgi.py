@@ -21,15 +21,17 @@ django_asgi_app = get_asgi_application()
 
 from channels.routing import ProtocolTypeRouter, URLRouter  # noqa: E402
 from channels.auth import AuthMiddlewareStack  # noqa: E402
-from channels.security.websocket import AllowedHostsOriginValidator  # noqa: E402
 
+from chaotica_utils.ws_auth import WsAuthMiddleware  # noqa: E402
 from jobtracker.routing import websocket_urlpatterns  # noqa: E402
 
 application = ProtocolTypeRouter(
     {
         "http": django_asgi_app,
-        "websocket": AllowedHostsOriginValidator(
-            AuthMiddlewareStack(URLRouter(websocket_urlpatterns))
+        # Origin is checked against this site, not ALLOWED_HOSTS (which is a
+        # wildcard in most deployments) — see chaotica_utils/ws_auth.py.
+        "websocket": AuthMiddlewareStack(
+            WsAuthMiddleware(URLRouter(websocket_urlpatterns))
         ),
     }
 )
