@@ -93,7 +93,7 @@ def viewable_schedule_user_pks(user):
     the user themselves.
 
     Excludes people who left the unit but are still active elsewhere (moved
-    on); disabled accounts stay visible so ``show_inactive_users`` still works."""
+    on); deactivated accounts stay visible so ``show_inactive_users`` still works."""
     pks = set(
         OrganisationalUnitMember.objects.filter(
             unit__in=get_objects_for_user(user, "jobtracker.view_users_schedule"),

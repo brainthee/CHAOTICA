@@ -442,6 +442,6 @@ class DeactivationRevokesUnitPermsTests(PreloadMemberBase):
         member.set_active_status(False)
         self.assertFalse(get_user_perms(member, self.unit).exists())
 
-        # Re-enabling doesn't resurrect the (now left) membership's perms.
+        # Reactivating reopens the membership deactivation closed, perms too.
         member.set_active_status(True)
-        self.assertFalse(get_user_perms(member, self.unit).exists())
+        self.assertTrue(get_user_perms(member, self.unit).exists())

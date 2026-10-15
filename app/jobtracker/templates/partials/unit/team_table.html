@@ -13,9 +13,15 @@
       <option value="">All levels</option>
     </select>
     <div class="form-check form-switch mb-0 ms-1">
-      <input class="form-check-input" type="checkbox" id="teamShowDisabled">
-      <label class="form-check-label fs-9" for="teamShowDisabled">Show disabled</label>
+      <input class="form-check-input" type="checkbox" id="teamShowDeactivated">
+      <label class="form-check-label fs-9" for="teamShowDeactivated">Show deactivated</label>
     </div>
+    {% if former_memberships %}
+    <div class="form-check form-switch mb-0 ms-1">
+      <input class="form-check-input" type="checkbox" id="teamShowFormer" data-bs-toggle="collapse" data-bs-target="#teamFormerMembers" aria-controls="teamFormerMembers" aria-expanded="false">
+      <label class="form-check-label fs-9" for="teamShowFormer">Show former members ({{ former_memberships|length }})</label>
+    </div>
+    {% endif %}
   </div>
 </div>
 
@@ -35,10 +41,10 @@
       </thead>
       <tbody>
         {% for member in active_memberships %}
-          <tr class="btn-reveal-trigger position-static" data-disabled="{% if member.is_disabled %}1{% else %}0{% endif %}" data-roles="|{% for role in member.roles.all %}{{ role.name }}|{% endfor %}"{% if member.member.get_current_level %} data-level="{{ member.member.get_current_level.job_level.short_label }}"{% endif %}>
-            <td class="ps-3{% if member.is_disabled %} opacity-50{% endif %}">
+          <tr class="btn-reveal-trigger position-static" data-deactivated="{% if member.is_deactivated %}1{% else %}0{% endif %}" data-roles="|{% for role in member.roles.all %}{{ role.name }}|{% endfor %}"{% if member.member.get_current_level %} data-level="{{ member.member.get_current_level.job_level.short_label }}"{% endif %}>
+            <td class="ps-3{% if member.is_deactivated %} opacity-50{% endif %}">
               {% include 'partials/users/user_table_display.html' with u=member.member noorg=1 notitle=1 nojl=1 noloc=1 %}
-              {% if member.is_disabled %}<span class="badge badge-phoenix badge-phoenix-secondary ms-1" title="This user's account is disabled">Disabled</span>{% endif %}
+              {% if member.is_deactivated %}<span class="badge badge-phoenix badge-phoenix-secondary ms-1" title="This person's account is deactivated">Deactivated</span>{% endif %}
             </td>
             <td>
               {% if member.member.get_current_level %}
@@ -104,9 +110,54 @@
   </div>
 </div>
 
+{% if former_memberships %}
+<div class="collapse mt-3" id="teamFormerMembers">
+  <div class="card">
+    <div class="card-body">
+      <h5 class="mb-1">Former members</h5>
+      <p class="fs-9 text-body-tertiary">People who have left this unit. Rejoining brings them back with the roles they had.</p>
+      <table class="table table-sm align-middle mb-0 fs-9" id="teamFormerTable">
+        <caption class="visually-hidden">Former unit members</caption>
+        <thead>
+          <tr class="text-body-secondary">
+            <th class="ps-3" scope="col">Member</th>
+            <th scope="col">Left</th>
+            <th scope="col">Roles</th>
+            <th class="text-end pe-3" scope="col"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for member in former_memberships %}
+            <tr>
+              <td class="ps-3">
+                <a href="{{ member.member.get_absolute_url }}">{{ member.member }}</a>
+                {% if not member.member.is_active %}<span class="badge badge-phoenix badge-phoenix-secondary ms-1" title="This person's account is deactivated">Deactivated</span>{% endif %}
+              </td>
+              <td data-order="{{ member.left_date|date:'c' }}">{{ member.left_date|date }}</td>
+              <td>
+                {% for role in member.roles.all %}
+                  {% include 'partials/unit/role_badge.html' %}
+                {% endfor %}
+              </td>
+              <td class="text-end pe-3">
+                {% if 'manage_members' in unit_perms %}
+                  <button class="btn btn-sm btn-phoenix-primary js-load-modal-form" data-url="{% url 'organisationalunit_rejoin_member' organisationalunit.slug member.pk %}">
+                    <span class="fa-solid fa-user-plus me-1"></span>Rejoin
+                  </button>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
+
 <script>
   (function () {
-    // Wire the Role / Level / "show disabled" controls to the team DataTable.
+    // Wire the Role / Level / "show deactivated" controls to the team DataTable.
     // core.js initialises DataTables globally on `table.datatable`, so we wait
     // until that has happened before attaching our filters.
     function initTeamFilters() {
@@ -118,7 +169,7 @@
       var dt = $(table).DataTable();
       var roleSel = document.getElementById('teamRoleFilter');
       var levelSel = document.getElementById('teamLevelFilter');
-      var showDisabled = document.getElementById('teamShowDisabled');
+      var showDeactivated = document.getElementById('teamShowDeactivated');
 
       // Build the Role / Level option lists from the rows actually present.
       var roles = new Set();
@@ -138,7 +189,7 @@
       $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
         if (settings.nTable !== table) return true;
         var tr = settings.aoData[dataIndex].nTr;
-        if (tr.getAttribute('data-disabled') === '1' && !showDisabled.checked) return false;
+        if (tr.getAttribute('data-deactivated') === '1' && !showDeactivated.checked) return false;
         var role = roleSel.value;
         if (role && (tr.getAttribute('data-roles') || '').indexOf('|' + role + '|') === -1) return false;
         var lvl = levelSel.value;
@@ -146,10 +197,10 @@
         return true;
       });
 
-      [roleSel, levelSel, showDisabled].forEach(function (el) {
+      [roleSel, levelSel, showDeactivated].forEach(function (el) {
         el.addEventListener('change', function () { dt.draw(); });
       });
-      dt.draw(); // apply the default filter (hide disabled users)
+      dt.draw(); // apply the default filter (hide deactivated people)
     }
 
     if (document.readyState === 'loading') {

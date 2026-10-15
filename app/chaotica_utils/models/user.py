@@ -618,8 +618,9 @@ class User(AbstractUser):
         The single source of truth for what "deactivating a user" means, shared
         by the management UI (``user_manage_status``) and the ``/api/v1/`` write
         action so the two can never drift. Deactivation also closes any open team
-        and org-unit memberships (mirroring a leaver), which is why this lives on
-        the model rather than being a bare ``is_active`` flip.
+        and org-unit memberships (mirroring a leaver), and reactivation reopens
+        the ones it closed, which is why this lives on the model rather than
+        being a bare ``is_active`` flip.
 
         Returns ``True`` if the account changed state, ``False`` if it was
         already in the requested state (idempotent no-op).
@@ -642,6 +643,8 @@ class User(AbstractUser):
             # otherwise re-enabling the account would restore them.
             for membership in self.unit_memberships.select_related("unit"):
                 membership.unit.sync_permissions(users=[self.pk])
+        else:
+            self._reopen_memberships_closed_by_deactivation()
 
         from ..audit import record_audit
         from .audit import AuditVerb, AuditCategory
@@ -649,10 +652,52 @@ class User(AbstractUser):
         record_audit(
             self,
             AuditVerb.STATUS_CHANGE,
-            message="Account {}".format("enabled" if active else "disabled"),
+            message="Account {}".format("reactivated" if active else "deactivated"),
             category=AuditCategory.SECURITY,
         )
         return True
+
+    # How far a membership's left_date may sit from the deactivation audit
+    # event and still count as closed by it.
+    DEACTIVATION_MATCH_WINDOW = timedelta(minutes=5)
+
+    def _reopen_memberships_closed_by_deactivation(self):
+        """Undo what deactivation did to memberships, keeping roles.
+
+        Deactivation closes every open membership with one shared ``left_date``
+        timestamp, so the rows carrying the latest ``left_date`` are the ones it
+        closed (plus team rows that left on that day). Memberships left earlier,
+        for any other reason, stay closed. When the deactivation was audited,
+        the latest ``left_date`` must also match its time, so reactivating
+        someone who had no open memberships doesn't reopen an older leave.
+        """
+        from django.db.models import Max
+        from .audit import AuditEvent, AuditVerb
+
+        closed_at = self.unit_memberships.aggregate(latest=Max("left_date"))["latest"]
+        if closed_at is None:
+            return
+        deactivation = (
+            AuditEvent.objects.filter(
+                target_content_type__app_label="chaotica_utils",
+                target_content_type__model="user",
+                target_id=str(self.pk),
+                verb=AuditVerb.STATUS_CHANGE,
+                message__in=["Account deactivated", "Account disabled"],
+            )
+            .order_by("-timestamp")
+            .first()
+        )
+        if (
+            deactivation is not None
+            and abs(deactivation.timestamp - closed_at) > self.DEACTIVATION_MATCH_WINDOW
+        ):
+            return
+        for membership in self.unit_memberships.filter(
+            left_date=closed_at
+        ).select_related("unit"):
+            membership.reopen()
+        self.teams.filter(left_at=closed_at.date()).update(left_at=None)
 
     def get_jobs(self):
         from jobtracker.models import Job

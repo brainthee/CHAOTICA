@@ -29,7 +29,11 @@ def unit_members(entity, params=None):
         unit = entity.job.unit
 
     if unit:
-        return User.objects.filter(unit_memberships__unit=unit, is_active=True)
+        return User.objects.filter(
+            unit_memberships__unit=unit,
+            unit_memberships__left_date__isnull=True,
+            is_active=True,
+        ).distinct()
     return User.objects.none()
 
 

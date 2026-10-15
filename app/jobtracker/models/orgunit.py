@@ -307,6 +307,8 @@ class OrganisationalUnit(SoftDeleteModel):
             membership, _ = OrganisationalUnitMember.objects.get_or_create(
                 unit=self, member=lead_user
             )
+            # A lead who'd left the unit rejoins it.
+            membership.reopen()
             membership.roles.add(management_role)
         # roles.add() doesn't trigger the member save() resync, so do it once here.
         self.sync_permissions()
@@ -344,6 +346,7 @@ class OrganisationalUnit(SoftDeleteModel):
             pk__in=OrganisationalUnitMember.objects.filter(
                 unit=self,
                 roles__manage_role=True,
+                left_date__isnull=True,
                 member__is_active=True,
             ).values("member")
         ).distinct()
@@ -394,11 +397,20 @@ class OrganisationalUnit(SoftDeleteModel):
             .distinct()
         )
 
-    def get_activeMemberships(self, include_disabled=False):
+    def get_formerMemberships(self):
+        """Memberships that have left the unit, most recent leaver first."""
+        return (
+            self.members.filter(left_date__isnull=False)
+            .select_related("member")
+            .prefetch_related("roles")
+            .order_by("-left_date")
+        )
+
+    def get_activeMemberships(self, include_deactivated=False):
         from chaotica_utils.models.job_levels import UserJobLevel
 
         members = self.members.filter(left_date__isnull=True)
-        if not include_disabled:
+        if not include_deactivated:
             members = members.filter(member__is_active=True)
         return members.select_related(
             "member__city",
@@ -1018,6 +1030,17 @@ class OrganisationalUnitMember(models.Model):
             member=self.member,
             left_date__isnull=True,
         )
+
+    def reopen(self):
+        """Bring a member who left back into the unit, keeping their roles.
+
+        ``save()`` resyncs their unit permissions. Returns ``True`` if the
+        membership had left, ``False`` if it was already open (no-op)."""
+        if self.left_date is None:
+            return False
+        self.left_date = None
+        self.save()
+        return True
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)

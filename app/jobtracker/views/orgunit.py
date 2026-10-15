@@ -127,11 +127,14 @@ class OrganisationalUnitDetailView(
         context = super().get_context_data(**kwargs)
         unit = self.object
 
-        # Evaluate memberships once with proper prefetches. Disabled members are
-        # included so the team table can offer a "show disabled" toggle; they're
-        # flagged (below) and hidden by default client-side.
-        memberships = list(unit.get_activeMemberships(include_disabled=True))
+        # Evaluate memberships once with proper prefetches. Deactivated members
+        # are included so the team table can offer a "show deactivated" toggle;
+        # they're flagged (below) and hidden by default client-side.
+        memberships = list(unit.get_activeMemberships(include_deactivated=True))
         context["active_memberships"] = memberships
+        # People who left the unit, for the "Show former members" list (and
+        # its Rejoin action).
+        context["former_memberships"] = list(unit.get_formerMemberships())
 
         # Phases "in flight" for the header at-a-glance tile (single COUNT)
         context["phases_in_flight_count"] = Phase.objects.filter(
@@ -170,7 +173,7 @@ class OrganisationalUnitDetailView(
         }
         for ms in memberships:
             ms.is_consultant = ms.member_id in consultant_ids
-            ms.is_disabled = not ms.member.is_active
+            ms.is_deactivated = not ms.member.is_active
             m = util.get(ms.member_id, {})
             effective = m.get("effective_working_days", 0)
             ms.util_pct = (
@@ -180,7 +183,7 @@ class OrganisationalUnitDetailView(
             )
             ms.active_job_count = active_job_counts.get(ms.member_id, 0)
         context["active_member_count"] = sum(
-            1 for ms in memberships if not ms.is_disabled
+            1 for ms in memberships if not ms.is_deactivated
         )
 
         # Add QA review data for users with permission
@@ -521,13 +524,20 @@ def organisationalunit_add(request, slug):
         form = OrganisationalUnitMemberForm(request.POST, org_unit=org_unit)
         if form.is_valid():
             membership = form.save(commit=False)
-            # lets check if they already exist...
-            if OrganisationalUnitMember.objects.filter(
+            existing = OrganisationalUnitMember.objects.filter(
                 member=membership.member, unit=org_unit
-            ).exists():
-                # Already a member - refuse it...
+            ).first()
+            if existing is not None and existing.left_date is None:
                 form.add_error("member", "User is already a member")
                 data["form_is_valid"] = False
+            elif existing is not None:
+                # They'd left: bring the old membership (and its roles) back.
+                existing.reopen()
+                messages.info(
+                    request,
+                    "Re-added " + str(existing.member) + " to " + org_unit.name,
+                )
+                data["form_is_valid"] = True
             else:
                 membership.unit = org_unit
                 membership.inviter = request.user
@@ -565,9 +575,10 @@ def _preload_unit_member(
 
     A real ``User`` row is created up-front so that first login (SSO adopts by
     email) picks up the pre-assigned roles. Returns ``(user, user_created)``.
-    A disabled account is only re-enabled when ``can_reactivate`` (the
-    requester holds ``manage_user``); otherwise it is added but stays disabled
-    - callers check ``user.is_active`` to report that.
+    A deactivated account is only reactivated when ``can_reactivate`` (the
+    requester holds ``manage_user``); otherwise it is added but stays
+    deactivated - callers check ``user.is_active`` to report that. A
+    membership the person had left is reopened.
     Does NOT sync unit permissions — the caller should call
     ``org_unit.sync_permissions()`` once after processing (so a bulk import only
     syncs once).
@@ -588,7 +599,7 @@ def _preload_unit_member(
         user.save()
         user_created = True
     elif not user.is_active and can_reactivate:
-        # Re-importing a previously disabled account re-enables it, so a person
+        # Re-importing a deactivated account reactivates it, so a person
         # who was off-boarded and later returns regains access to the unit.
         # Site-wide effect, so only for manage_user holders (audited).
         user.set_active_status(True)
@@ -610,6 +621,7 @@ def _preload_unit_member(
     if not membership.inviter:
         membership.inviter = requesting_user
         membership.save()
+    membership.reopen()
     if unit_roles:
         membership.roles.add(*unit_roles)
 
@@ -663,8 +675,8 @@ def organisationalunit_preload_member(request, slug):
             if not user.is_active:
                 messages.warning(
                     request,
-                    "Added %s to %s, but the account is disabled - ask an admin "
-                    "to re-enable it." % (user.email, org_unit.name),
+                    "Added %s to %s, but the account is deactivated - ask an "
+                    "admin to reactivate it." % (user.email, org_unit.name),
                 )
             elif created:
                 messages.success(
@@ -775,7 +787,7 @@ def organisationalunit_import_members(request, slug):
                 assignable_role_pks = set(
                     org_unit.assignable_roles(request.user).values_list("pk", flat=True)
                 )
-                disabled_emails = []
+                deactivated_emails = []
                 default_unit_role = OrganisationalUnitRole.objects.filter(
                     default_role=True
                 ).first()
@@ -892,7 +904,7 @@ def organisationalunit_import_members(request, slug):
                             )
                             imported_count += 1
                             if not user.is_active:
-                                disabled_emails.append(user.email)
+                                deactivated_emails.append(user.email)
                             if created:
                                 created_count += 1
                                 if send_email:
@@ -918,11 +930,12 @@ def organisationalunit_import_members(request, slug):
                     if created_count:
                         summary += f" ({created_count} newly created)"
                     messages.success(request, summary)
-                if disabled_emails:
+                if deactivated_emails:
                     messages.warning(
                         request,
-                        "These accounts are disabled and stay disabled - ask an "
-                        "admin to re-enable them: " + ", ".join(disabled_emails),
+                        "These accounts are deactivated and stay deactivated - "
+                        "ask an admin to reactivate them: "
+                        + ", ".join(deactivated_emails),
                     )
 
                 # Clean import - nothing to review, head back to the unit.
@@ -1067,6 +1080,33 @@ def organisationalunit_remove_member(request, slug, member_pk):
     context = {"orgUnit": org_unit, "membership": membership}
     data["html_form"] = loader.render_to_string(
         "jobtracker/modals/organisationalunit_remove_member.html",
+        context,
+        request=request,
+    )
+    return JsonResponse(data)
+
+
+@unit_permission_required_or_403(
+    "jobtracker.manage_members", (OrganisationalUnit, "slug", "slug")
+)
+def organisationalunit_rejoin_member(request, slug, member_pk):
+    """Bring a former member back into the unit with the roles they had."""
+    org_unit = get_object_or_404(OrganisationalUnit, slug=slug)
+    membership = get_object_or_404(
+        OrganisationalUnitMember, unit=org_unit, pk=member_pk, left_date__isnull=False
+    )
+
+    data = dict()
+    if request.method == "POST":
+        membership.reopen()
+        messages.info(
+            request, "Re-added " + str(membership.member) + " to " + org_unit.name
+        )
+        data["form_is_valid"] = True
+
+    context = {"orgUnit": org_unit, "membership": membership}
+    data["html_form"] = loader.render_to_string(
+        "jobtracker/modals/organisationalunit_rejoin_member.html",
         context,
         request=request,
     )

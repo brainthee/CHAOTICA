@@ -823,6 +823,11 @@ urlpatterns = [
         name="organisationalunit_remove_member",
     ),
     path(
+        "ops/unit/<str:slug>/members/rejoin/<int:member_pk>",
+        views.organisationalunit_rejoin_member,
+        name="organisationalunit_rejoin_member",
+    ),
+    path(
         "ops/unit/<str:slug>/members/toggle_lead/<int:member_pk>",
         views.organisationalunit_toggle_lead,
         name="organisationalunit_toggle_lead",

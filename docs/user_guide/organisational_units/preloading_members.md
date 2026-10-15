@@ -26,16 +26,18 @@ through the setup wizard).
 5. Save.
 
 If the email already belongs to an existing user, they're simply added to the
-unit (their existing site role is left untouched).
+unit (their existing site role is left untouched). If they had left the unit,
+their old membership is reopened with the roles it had, plus any you choose.
 
-If that account had been **disabled**:
+If that account had been **deactivated**:
 
-- Users with the global **Manage Users** permission **re-enable** it by
+- Users with the global **Manage Users** permission **reactivate** it by
   pre-loading or importing it, so someone who was off-boarded and later returns
-  regains access. The re-enable is recorded in the Activity Log.
+  regains access. Reactivation also reopens the unit and team memberships that
+  deactivation closed. It's recorded in the Activity Log.
 - Unit managers without that permission add the membership, but the account
-  **stays disabled** and you're told to ask an admin. Re-enabling an account is
-  a site-wide change, not a unit one.
+  **stays deactivated** and you're told to ask an admin. Reactivating an account
+  is a site-wide change, not a unit one.
 
 You can't pre-load or import **yourself**, and you can only assign unit roles
 within your own authority: a role that carries unit-admin rights (managing

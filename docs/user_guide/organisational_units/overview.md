@@ -15,7 +15,7 @@ The unit detail page is accessed from the unit list or by navigating to a specif
 - Unit name and description
 - **Leads** — the unit's lead(s) shown as clickable avatar chips linking to each profile (or "No leads assigned"). Being named a lead automatically grants that person **manager rights** on the unit (including the ability to add and [import members](preloading_members.md)).
 - **At-a-glance stats**:
-    - **Members** — active (non-disabled) members
+    - **Members** — current members whose accounts are active (not deactivated)
     - **Phases in flight** — count of the unit's phases currently in progress or in QA
     - **Utilisation** — confirmed utilisation across the coming four weeks, using the [central formula](../scheduling/overview.md) (confirmed days over effective working days), so it matches the Stats tab's four-week figure. Utilisation is calculated over **consultants only** (the members who get booked onto delivery), so managers, sales and other roles don't drag the figure down. This figure is loaded asynchronously (a spinner resolves to a percentage) because it is calculated from the full schedule.
 - Special requirements (if any) shown as a highlighted banner
@@ -43,14 +43,26 @@ Displays a table of active unit members with, per member:
 - **Actions** — a per-row menu. Everyone sees **View Profile**, **View Schedule** and **Email**. Members with `manage_members` additionally get:
     - **Manage Roles** — edit the member's unit roles
     - **Make Unit Lead** / **Remove as Lead** — promote the member to a unit lead (granting manager rights) or demote them again; the label reflects their current status. Demoting a lead also removes the manager role their lead status granted.
-    - **Remove from Unit** — offboard the member (not shown for yourself). This is a soft-leave: the person loses access to the unit and its jobs and is dropped from the roster, but their membership history is kept, so re-adding them restores access. Removing a member also clears any lead status.
+    - **Remove from Unit** — offboard the member (not shown for yourself). This is a soft-leave: the person loses access to the unit and its jobs and is dropped from the roster, but their membership history is kept, so re-adding them (or **Rejoin**, below) restores access with the roles they had. Removing a member also clears any lead status.
 
 Utilisation and active-job counts are computed in bulk for the whole team, so the table stays fast regardless of member count.
 
 The table can be filtered by **Role** and **Job level** (top right of the tab), and searched
-by the free-text box (name, title, etc.). Members whose account is **disabled** are
-hidden by default; switch on **Show disabled** to include them (they're tagged with a
-"Disabled" badge).
+by the free-text box (name, title, etc.). Members whose account is **deactivated** are
+hidden by default; switch on **Show deactivated** to include them (they're tagged with a
+"Deactivated" badge).
+
+**Show former members** (shown when anyone has left the unit) lists people who
+left, most recent first, with the date they left and the roles they held. Members
+with `manage_members` get a **Rejoin** button that brings the person back with
+those roles and permissions. **Add Member**, **Pre-load Member** and **Import CSV**
+do the same for someone who'd left, rather than refusing them.
+
+**Deactivated and reactivated accounts.** Deactivating an account closes all of
+the person's unit and team memberships. Reactivating it reopens the ones that
+deactivation closed, with their roles, so the person reappears in their units.
+Memberships they had left earlier for other reasons stay closed; use **Rejoin**
+for those.
 
 ### Jobs
 
