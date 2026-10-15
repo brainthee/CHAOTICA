@@ -820,3 +820,42 @@ class SyncEntryPointTests(RMSyncTestBase):
         self.assertEqual(resp.status_code, 302)
         do.assert_called_once()
         self.assertIsInstance(do.call_args[0][0], task_sync_rm_schedule)
+
+
+class TaskLockTests(RMSyncTestBase):
+    @override_config(RM_SYNC_STALE_TIMEOUT=60)
+    def test_lock_goes_stale_after_the_timeout_in_minutes(self):
+        from .models import RMTaskLock
+
+        lock = RMTaskLock.objects.create(task_id="t")
+        RMTaskLock.objects.filter(pk=lock.pk).update(
+            last_updated=timezone.now() - timedelta(minutes=30)
+        )
+        lock.refresh_from_db()
+        self.assertFalse(lock.is_stale())
+        RMTaskLock.objects.filter(pk=lock.pk).update(
+            last_updated=timezone.now() - timedelta(minutes=61)
+        )
+        lock.refresh_from_db()
+        self.assertTrue(lock.is_stale())
+
+    @override_config(RM_SYNC_ENABLED=True, RM_SYNC_READ_ONLY=True, RM_SYNC_STALE_TIMEOUT=60)
+    def test_run_button_refuses_a_live_lock_but_not_a_stale_one(self):
+        from django.test import Client as HttpClient
+        from django.urls import reverse
+
+        from .models import RMTaskLock
+        from .tasks import task_sync_rm_schedule
+
+        admin = _mk_user(email="locks@example.com", is_superuser=True)
+        http = HttpClient(HTTP_HOST="localhost")
+        http.force_login(admin)
+        lock = RMTaskLock.objects.create(task_id=task_sync_rm_schedule.code)
+        with patch.object(task_sync_rm_schedule, "do", autospec=True) as do:
+            http.get(reverse("rm_run_sync"))
+            do.assert_not_called()
+            RMTaskLock.objects.filter(pk=lock.pk).update(
+                last_updated=timezone.now() - timedelta(hours=2)
+            )
+            http.get(reverse("rm_run_sync"))
+            do.assert_called_once()

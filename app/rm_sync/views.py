@@ -131,8 +131,10 @@ def rm_run_sync(request):
         messages.warning(request, "RM Sync disabled")
         return HttpResponseRedirect(reverse("rm_settings"))
 
-    if RMTaskLock.objects.filter(task_id=task_sync_rm_schedule.code).exists():
-        # Task already in flight. Ignore this run
+    lock = RMTaskLock.objects.filter(task_id=task_sync_rm_schedule.code).first()
+    if lock is not None and not lock.is_stale():
+        # Task already in flight. Ignore this run (a stale lock is reclaimed
+        # by the task itself).
         messages.warning(request, "RM Sync already running")
         return HttpResponseRedirect(reverse("rm_settings"))
 

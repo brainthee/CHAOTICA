@@ -78,13 +78,9 @@ class RMTaskLock(models.Model):
     last_updated = models.DateTimeField(auto_now=True)
 
     def is_stale(self):
-        now = timezone.now()
-        time_diff = (
-            (now - self.last_updated).total_seconds()
-            / int(config.RM_SYNC_STALE_TIMEOUT)
-            * 60
-        )
-        return time_diff > 1
+        """No heartbeat for longer than ``RM_SYNC_STALE_TIMEOUT`` minutes."""
+        minutes = (timezone.now() - self.last_updated).total_seconds() / 60
+        return minutes > int(config.RM_SYNC_STALE_TIMEOUT)
 
 
 class RMAssignable(models.Model):
