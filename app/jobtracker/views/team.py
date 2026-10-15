@@ -4,7 +4,7 @@ from django.views.generic.detail import DetailView
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from chaotica_utils.views import ChaoticaBaseView, ProtectedDeleteMixin
 from chaotica_utils.utils import get_week
 from chaotica_utils.models import User
@@ -62,6 +62,10 @@ class TeamDetailView(ObjectActivityMixin, TeamBaseView, PermissionRequiredMixin,
         user = self.request.user
         is_team_owner = user.is_superuser or team.owners.filter(pk=user.pk).exists()
         context["is_team_owner"] = is_team_owner
+        # Header: owners + current members (evaluated once, used for counts
+        # and the mailto list).
+        context["owners"] = list(team.owners.all())
+        context["active_members"] = list(team.get_activeMembers())
 
         return context
 
@@ -97,38 +101,57 @@ class TeamDeleteView(ProtectedDeleteMixin, TeamBaseView, PermissionRequiredMixin
 )
 def team_stats_partial(request, slug):
     team = get_object_or_404(Team, slug=slug)
-    context = {}
+    today = timezone.now().date()
 
+    def _parse(value):
+        try:
+            return datetime.datetime.strptime(value.strip(), "%Y-%m-%d").date()
+        except (AttributeError, ValueError):
+            return None
+
+    # Accept flatpickr's "YYYY-MM-DD to YYYY-MM-DD" or explicit start/end;
+    # anything unparseable falls back to the default (last 3 months).
+    start_date = end_date = None
     date_range_raw = request.GET.get("dateRange", "")
     if " to " in date_range_raw:
-        date_range_split = date_range_raw.split(" to ")
-        if len(date_range_split) == 2:
-            context["start_date"] = timezone.datetime.strptime(
-                date_range_split[0], "%Y-%m-%d"
-            ).date()
-            context["end_date"] = timezone.datetime.strptime(
-                date_range_split[1], "%Y-%m-%d"
-            ).date()
+        start_raw, _, end_raw = date_range_raw.partition(" to ")
+        start_date, end_date = _parse(start_raw), _parse(end_raw)
+    else:
+        start_date = _parse(request.GET.get("start_date"))
+        end_date = _parse(request.GET.get("end_date"))
+    if not (start_date and end_date):
+        start_date, end_date = today - datetime.timedelta(days=91), today
+    if start_date > end_date:
+        start_date, end_date = end_date, start_date
 
-    if "start_date" not in context:
-        context["start_date"] = request.GET.get(
-            "start_date",
-            (timezone.now() - datetime.timedelta(days=30)).date(),
-        )
-        context["end_date"] = request.GET.get(
-            "end_date", timezone.now().date()
+    presets = []
+    for label, days in (("30d", 30), ("3m", 91), ("6m", 182), ("12m", 365)):
+        p_start = today - datetime.timedelta(days=days)
+        presets.append(
+            {
+                "label": label,
+                "start": p_start,
+                "end": today,
+                "active": (start_date, end_date) == (p_start, today),
+            }
         )
 
-    context["stats"] = team.get_stats(
-        context["start_date"], context["end_date"]
-    )
-    context["stats_json"] = json.dumps(context["stats"], indent=4, default=str)
-    context["team"] = team
+    stats = team.get_stats(start_date, end_date)
+    context = {
+        "team": team,
+        "stats": stats,
+        "start_date": stats["start_date"],
+        "end_date": stats["end_date"],
+        "presets": presets,
+        "is_custom_range": not any(p["active"] for p in presets),
+        "partial_url": reverse("team_stats_partial", kwargs={"slug": team.slug}),
+        "stats_json": json.dumps(stats, indent=4, default=str),
+    }
 
     html = loader.render_to_string(
         "partials/team/team_stats.html", context, request=request
     )
-    return JsonResponse({"html": html})
+    return JsonResponse({"html": html, "stats_json": context["stats_json"]})
 
 
 @login_required

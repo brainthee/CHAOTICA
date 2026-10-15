@@ -107,7 +107,9 @@ class Team(models.Model):
         else:
             return static("assets/img/bg/bg-11.png")
 
-    def calculate_bulk_utilization(self, start_date, end_date, user_ids=None):
+    def calculate_bulk_utilization(
+        self, start_date, end_date, user_ids=None, include_former=False
+    ):
         """
         Calculate utilization statistics for multiple users efficiently.
 
@@ -115,6 +117,8 @@ class Team(models.Model):
             start_date: datetime object for the start of the period
             end_date: datetime object for the end of the period
             user_ids: optional list of user IDs to analyze. If None, analyzes all active users
+            include_former: also allow users who have left the team or been
+                disabled (historical stats ranges)
 
         Returns:
             dict: User ID mapped to their utilization statistics
@@ -122,7 +126,10 @@ class Team(models.Model):
         from ..models import TimeSlot
 
         # Get users and their countries in one query
-        users_query = self.get_activeMembers()
+        if include_former:
+            users_query = User.objects.filter(pk__in=self.users.values("user"))
+        else:
+            users_query = self.get_activeMembers()
         if user_ids:
             users_query = users_query.filter(id__in=user_ids)
 
@@ -213,37 +220,85 @@ class Team(models.Model):
 
         return results
 
+    def memberships_in_range(self, start_date, end_date):
+        """Memberships overlapping ``start_date``..``end_date`` (inclusive),
+        including people who have since left or been disabled. A blank
+        ``joined_at`` / ``left_at`` is treated as open-ended."""
+        return self.users.filter(
+            Q(joined_at__isnull=True) | Q(joined_at__lte=end_date),
+            Q(left_at__isnull=True) | Q(left_at__gte=start_date),
+        ).select_related("user")
+
     def get_stats(self, start_date=None, end_date=None, user_ids=None):
         """Assemble the data used to render the team stats tab.
 
         Mirrors :meth:`OrganisationalUnit.get_stats`, but a Team has no
         job-ownership FK (there is no ``Job -> Team`` relation), so every
-        aggregate is scoped through the team members' scheduled ``TimeSlot``s
-        (``phases__timeslots__user_id__in`` / ``timeslots__user_id__in``).
-        Because a phase/job has many timeslots across members, all counts use
-        ``distinct=True`` to avoid inflating the totals via the join fan-out.
+        aggregate is scoped through the team members' scheduled ``TimeSlot``s.
+
+        Membership is date-aware: anyone whose membership overlaps the range
+        is included (even if they have since left), but only time booked while
+        they were a member counts. Each member therefore has a *window*
+        (membership clipped to the range) and every slot-based aggregate is
+        filtered to slots inside a member's window. Because a phase/job has
+        many timeslots across members, counts use ``distinct=True``.
+
+        ``upcoming_availability`` is forward-looking and always uses the
+        current members, independent of the range.
         """
         from ..models import Phase, Job
 
         # clean vars
         if not start_date:
-            start_date = (timezone.now() - timedelta(days=30)).date()
+            start_date = (timezone.now() - timedelta(days=91)).date()
         if not end_date:
             end_date = timezone.now().date()
         if isinstance(start_date, datetime):
             start_date = start_date.date()
         if isinstance(end_date, datetime):
             end_date = end_date.date()
+        if start_date > end_date:
+            start_date, end_date = end_date, start_date
 
-        memberships = list(self.active_memberships().select_related("user"))
-        member_ids = list(
-            self.active_memberships().values_list("user", flat=True).distinct()
-        )
+        memberships = self.memberships_in_range(start_date, end_date)
+        if user_ids:
+            memberships = memberships.filter(user_id__in=user_ids)
+
+        # Per-user windows: membership clipped to the range. A user can hold
+        # several (non-overlapping) memberships if they left and rejoined.
+        windows = defaultdict(list)
+        full_windows = defaultdict(list)  # unclipped, for delivery credit
+        users = {}
+        for ms in memberships:
+            joined = ms.joined_at or start_date
+            left = ms.left_at or end_date
+            windows[ms.user_id].append((max(start_date, joined), min(end_date, left)))
+            full_windows[ms.user_id].append((ms.joined_at, ms.left_at))
+            users[ms.user_id] = ms.user
+
+        def _slot_q(prefix, window_map):
+            q = Q(pk__in=[])
+            for uid, spans in window_map.items():
+                for ws, we in spans:
+                    cond = Q(**{f"{prefix}user_id": uid})
+                    if we:
+                        cond &= Q(**{f"{prefix}start__date__lte": we})
+                    if ws:
+                        cond &= Q(**{f"{prefix}end__date__gte": ws})
+                    q |= cond
+            return q
+
+        # Slots booked inside a member's window within the range.
+        phase_in_range = _slot_q("timeslots__", windows)
+        job_in_range = _slot_q("phases__timeslots__", windows)
+        # Slots booked at any point during their membership (a phase delivered
+        # in range was usually tested before it).
+        phase_while_member = _slot_q("timeslots__", full_windows)
 
         data = {
-            "upcoming_availability": self.get_upcoming_availability(
-                user_ids=user_ids
-            ),
+            "start_date": start_date,
+            "end_date": end_date,
+            "upcoming_availability": self.get_upcoming_availability(user_ids=user_ids),
             "summary": {},
             "member_utilisation": [],
             "delivery_throughput": {},
@@ -252,27 +307,38 @@ class Team(models.Model):
             "job_status_breakdown": [],
         }
 
-        # --- Member utilisation over the selected range (single bulk call) ---
-        util = (
-            self.calculate_bulk_utilization(start_date, end_date, user_ids=user_ids)
-            if member_ids
-            else {}
-        )
-        for ms in memberships:
-            m = util.get(ms.user_id, {})
-            working = m.get("working_days", 0)
-            effective = m.get("effective_working_days", working)
+        # --- Member utilisation: one bulk call per distinct window ---
+        uids_by_window = defaultdict(list)
+        for uid, spans in windows.items():
+            for span in spans:
+                uids_by_window[span].append(uid)
+        util = defaultdict(lambda: defaultdict(int))
+        for (ws, we), uids in uids_by_window.items():
+            for uid, m in self.calculate_bulk_utilization(
+                ws, we, user_ids=uids, include_former=True
+            ).items():
+                for key, value in m.items():
+                    if key.endswith("_days") and isinstance(value, int):
+                        util[uid][key] += value
+
+        team_confirmed = team_effective = 0
+        for uid, user in users.items():
+            m = util.get(uid, {})
+            effective = m.get("effective_working_days", 0)
             confirmed = m.get("confirmed_days", 0)
             scheduled = m.get("scheduled_days", 0)
+            team_confirmed += confirmed
+            team_effective += effective
+            spans = sorted(windows[uid])
             data["member_utilisation"].append(
                 {
-                    "user_id": ms.user_id,
-                    "user": ms.user,
-                    "name": ms.user.get_full_name() or str(ms.user),
+                    "user_id": uid,
+                    "user": user,
+                    "name": user.get_full_name() or str(user),
                     "confirmed_days": confirmed,
                     "scheduled_days": scheduled,
                     "available_days": m.get("available_days", 0),
-                    "working_days": working,
+                    "working_days": m.get("working_days", 0),
                     "effective_working_days": effective,
                     "confirmed_pct": (
                         round(confirmed / effective * 100, 1) if effective else 0
@@ -280,17 +346,18 @@ class Team(models.Model):
                     "scheduled_pct": (
                         round(scheduled / effective * 100, 1) if effective else 0
                     ),
+                    # Only a member for part of the range?
+                    "window_start": spans[0][0],
+                    "window_end": spans[-1][1],
+                    "joined_in_range": spans[0][0] > start_date,
+                    "left_in_range": spans[-1][1] < end_date,
                 }
             )
-        data["member_utilisation"].sort(
-            key=lambda r: r["confirmed_pct"], reverse=True
-        )
+        data["member_utilisation"].sort(key=lambda r: r["confirmed_pct"], reverse=True)
 
-        # --- Service participation breakdown (phases the team worked on) ---
+        # --- Service participation breakdown (phases worked in range) ---
         service_rows = (
-            Phase.objects.filter(
-                timeslots__user_id__in=member_ids, service__isnull=False
-            )
+            Phase.objects.filter(phase_in_range, service__isnull=False)
             .exclude(status__in=PhaseStatuses.IGNORED_STATUSES)
             .values("service__name")
             .annotate(participation_count=Count("id", distinct=True))
@@ -309,9 +376,7 @@ class Team(models.Model):
             breakdown = breakdown[:SERVICE_BREAKDOWN_TOP_N] + [
                 {
                     "name": f"Other ({len(tail)} services)",
-                    "participation_count": sum(
-                        r["participation_count"] for r in tail
-                    ),
+                    "participation_count": sum(r["participation_count"] for r in tail),
                 }
             ]
         data["service_breakdown"] = breakdown
@@ -319,13 +384,13 @@ class Team(models.Model):
             (r["participation_count"] for r in breakdown), default=0
         )
 
-        # --- Job pipeline counts by status (jobs the team has slots on) ---
+        # --- Job pipeline: jobs worked in range, by current status ---
         status_labels = dict(JobStatuses.CHOICES)
         status_colours = dict(JobStatuses.BS_COLOURS)
         job_rows = (
-            Job.objects.filter(phases__timeslots__user_id__in=member_ids)
+            Job.objects.filter(job_in_range)
             .values("status")
-            .annotate(count=Count("id", distinct=True))
+            .annotate(count=Count("pk", distinct=True))
         )
         counts_by_status = {row["status"]: row["count"] for row in job_rows}
         data["job_status_breakdown"] = [
@@ -339,53 +404,42 @@ class Team(models.Model):
             if counts_by_status.get(status, 0) > 0
         ]
 
-        # --- Delivery throughput: phases delivered per month (last ~6 months) ---
-        throughput_start = (timezone.now() - timedelta(days=182)).date()
-        throughput_rows = (
-            Phase.objects.filter(
-                timeslots__user_id__in=member_ids,
-                status=PhaseStatuses.DELIVERED,
-                actual_delivery_date__date__gte=throughput_start,
-            )
-            .annotate(month=TruncMonth("actual_delivery_date"))
+        # --- Delivery throughput: phases delivered per month in range ---
+        delivered = Phase.objects.filter(
+            phase_while_member,
+            status=PhaseStatuses.DELIVERED,
+            actual_delivery_date__date__range=(start_date, end_date),
+        )
+        per_month = {
+            (
+                row["month"].date()
+                if isinstance(row["month"], datetime)
+                else row["month"]
+            ): row["count"]
+            for row in delivered.annotate(month=TruncMonth("actual_delivery_date"))
             .values("month")
             .annotate(count=Count("id", distinct=True))
-            .order_by("month")
-        )
+            if row["month"]
+        }
+        labels, counts = [], []
+        month = start_date.replace(day=1)
+        while month <= end_date:
+            labels.append(month.strftime("%b %Y"))
+            counts.append(per_month.get(month, 0))
+            month = (month + timedelta(days=32)).replace(day=1)
         data["delivery_throughput"] = {
-            "labels": [
-                row["month"].strftime("%b %Y")
-                for row in throughput_rows
-                if row["month"]
-            ],
-            "counts": [row["count"] for row in throughput_rows if row["month"]],
+            "labels": labels if any(counts) else [],
+            "counts": counts if any(counts) else [],
         }
 
         # --- Summary tiles ---
-        phases_delivered = (
-            Phase.objects.filter(
-                timeslots__user_id__in=member_ids,
-                status=PhaseStatuses.DELIVERED,
-                actual_delivery_date__date__range=(start_date, end_date),
-            )
-            .distinct()
-            .count()
-        )
         data["summary"] = {
-            "active_members": len(memberships),
-            "active_jobs": (
-                Job.objects.filter(
-                    phases__timeslots__user_id__in=member_ids,
-                    status__in=JobStatuses.ACTIVE_STATUSES,
-                )
-                .distinct()
-                .count()
+            "members": len(users),
+            "jobs_worked": Job.objects.filter(job_in_range).distinct().count(),
+            "phases_delivered": delivered.distinct().count(),
+            "utilisation": (
+                round(team_confirmed / team_effective * 100, 1) if team_effective else 0
             ),
-            "phases_delivered": phases_delivered,
-            "utilisation_4wk": data["upcoming_availability"]
-            .get("fourweeks", {})
-            .get("totals", {})
-            .get("utilisation_percentage", 0),
         }
 
         return data
@@ -407,6 +461,9 @@ class Team(models.Model):
                 "available_days": 0,
                 "working_days": 0,
                 "effective_working_days": 0,
+                "tentative_exclusive_days": 0,
+                "internal_exclusive_days": 0,
+                "non_working_slot_days": 0,
             }
             for uid, m in data[rang].items():
                 if uid == "totals":
@@ -418,6 +475,9 @@ class Team(models.Model):
                 totals["available_days"] += m["available_days"]
                 totals["working_days"] += m["working_days"]
                 totals["effective_working_days"] += m["effective_working_days"]
+                totals["tentative_exclusive_days"] += m["tentative_exclusive_days"]
+                totals["internal_exclusive_days"] += m["internal_exclusive_days"]
+                totals["non_working_slot_days"] += m["non_working_slot_days"]
             data[rang]["totals"] = totals
 
             working = totals["working_days"]
@@ -445,6 +505,15 @@ class Team(models.Model):
             totals["utilisation_percentage"] = _pct(totals["confirmed_days"], effective)
             totals["available_days_percentage"] = _pct(
                 totals["available_days"], effective
+            )
+            # Stacked-chart split: confirmed / tentative / internal / available
+            # are mutually exclusive over the effective days, so they sum to
+            # 100% (leave is already outside the effective days).
+            totals["tentative_exclusive_days_percentage"] = _pct(
+                totals["tentative_exclusive_days"], effective
+            )
+            totals["internal_exclusive_days_percentage"] = _pct(
+                totals["internal_exclusive_days"], effective
             )
         return data
 

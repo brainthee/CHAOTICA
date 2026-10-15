@@ -236,15 +236,15 @@ class TeamGetStatsTests(TestCase):
     def test_empty_team_is_safe(self):
         empty = Team.objects.create(name="Empty")
         stats = empty.get_stats()
-        self.assertEqual(stats["summary"]["active_members"], 0)
+        self.assertEqual(stats["summary"]["members"], 0)
         self.assertEqual(stats["service_breakdown"], [])
         self.assertEqual(stats["job_status_breakdown"], [])
         self.assertEqual(stats["member_utilisation"], [])
 
-    def test_summary_counts_members_and_active_jobs(self):
+    def test_summary_counts_members_and_jobs_worked(self):
         s = self.team.get_stats()["summary"]
-        self.assertEqual(s["active_members"], 2)
-        self.assertEqual(s["active_jobs"], 1)
+        self.assertEqual(s["members"], 2)
+        self.assertEqual(s["jobs_worked"], 1)
         self.assertEqual(s["phases_delivered"], 1)
 
     def test_service_breakdown_deduplicated_by_distinct(self):
@@ -287,6 +287,71 @@ class TeamGetStatsTests(TestCase):
         # "Other" outranks the busiest single service, so it sets the radar max.
         self.assertEqual(stats["service_breakdown_max"], 3)
 
+    def _book(self, user, phase, days_ago):
+        start, end = _weekday_slot_times(timezone.now() - timedelta(days=days_ago))
+        TimeSlot.objects.create(
+            user=user,
+            slot_type=self.slot_type,
+            phase=phase,
+            start=start,
+            end=end,
+            deliveryRole=TimeSlotDeliveryRole.DELIVERY,
+        )
+
+    def test_range_respects_membership_windows(self):
+        today = timezone.now().date()
+        former = User.objects.create_user(email="former@test.com", password="pw")
+        TeamMember.objects.create(
+            team=self.team,
+            user=former,
+            joined_at=today - timedelta(days=80),
+            left_at=today - timedelta(days=30),
+        )
+        later = User.objects.create_user(email="later@test.com", password="pw")
+        TeamMember.objects.create(team=self.team, user=later, joined_at=today)
+
+        while_member = Service.objects.create(name="While member")
+        p1 = Phase.objects.create(job=self.job, title="Booked while member")
+        p1.service = while_member
+        p1.save()
+        self._book(former, p1, days_ago=50)
+
+        after_leaving = Service.objects.create(name="After leaving")
+        p2 = Phase.objects.create(job=self.job, title="Booked after leaving")
+        p2.service = after_leaving
+        p2.save()
+        self._book(former, p2, days_ago=10)
+
+        stats = self.team.get_stats(today - timedelta(days=90), today - timedelta(days=1))
+        names = {r["name"] for r in stats["service_breakdown"]}
+        self.assertIn("While member", names)
+        self.assertNotIn("After leaving", names)
+
+        rows = {r["user_id"]: r for r in stats["member_utilisation"]}
+        # Former member is included, flagged as leaving within the range;
+        # someone who joined after the range is not.
+        self.assertIn(former.pk, rows)
+        self.assertTrue(rows[former.pk]["left_in_range"])
+        self.assertEqual(rows[former.pk]["window_end"], today - timedelta(days=30))
+        self.assertNotIn(later.pk, rows)
+        self.assertEqual(stats["summary"]["members"], 3)
+
+    def test_range_outside_all_slots_is_empty(self):
+        today = timezone.now().date()
+        stats = self.team.get_stats(today - timedelta(days=400), today - timedelta(days=300))
+        self.assertEqual(stats["summary"]["members"], 0)
+        self.assertEqual(stats["service_breakdown"], [])
+        self.assertEqual(stats["summary"]["jobs_worked"], 0)
+
+    def test_stats_view_bad_range_falls_back(self):
+        http = TestHttpClient(HTTP_HOST="localhost")
+        http.force_login(self.root)
+        url = reverse("team_stats_partial", kwargs={"slug": self.team.slug})
+        for qs in ("?dateRange=nonsense to 2026-13-45", "?start_date=x&end_date=y", ""):
+            resp = http.get(url + qs)
+            self.assertEqual(resp.status_code, 200, qs)
+            self.assertIn("stats-range-picker", json.loads(resp.content)["html"])
+
     def test_job_pipeline_deduplicated_by_distinct(self):
         pipeline = self.team.get_stats()["job_status_breakdown"]
         self.assertEqual(len(pipeline), 1)
@@ -309,3 +374,45 @@ class TeamGetStatsTests(TestCase):
         # rows carry model instances, so confirm nothing blows up.
         stats = self.team.get_stats()
         self.assertIsInstance(json.dumps(stats, default=str), str)
+
+
+class UtilisationExclusiveSplitTests(TestCase):
+    """The stacked availability charts use the exclusive split, which must
+    always sum to the effective working days (no >100% bars)."""
+
+    def test_exclusive_split_sums_to_effective_days(self):
+        from datetime import date
+        from chaotica_utils.utils.utilisation import calculate_utilisation
+
+        mon = date(2026, 10, 5)  # Mon..Fri 5-9 Oct
+        day = lambda n: mon + timedelta(days=n)
+        slot = lambda d, **flags: {
+            "start": d, "end": d,
+            "is_confirmed": flags.get("c", False),
+            "is_tentative": flags.get("t", False),
+            "is_non_working_slot": flags.get("nw", False),
+        }
+        slots = [
+            slot(day(0), c=True), slot(day(0), t=True), slot(day(0)),  # all three on Mon
+            slot(day(1), t=True), slot(day(1)),  # tentative + internal on Tue
+            slot(day(2)),  # internal only on Wed
+            slot(day(3), nw=True), slot(day(3), c=True),  # leave wins on Thu
+        ]  # Fri free
+        m = calculate_utilisation(slots, mon, day(4), [1, 2, 3, 4, 5], [])
+
+        self.assertEqual(m["working_days"], 5)
+        self.assertEqual(m["effective_working_days"], 4)
+        self.assertEqual(m["confirmed_days"], 1)
+        self.assertEqual(m["tentative_exclusive_days"], 1)
+        self.assertEqual(m["internal_exclusive_days"], 1)
+        self.assertEqual(m["available_days"], 1)
+        self.assertEqual(
+            m["confirmed_days"] + m["tentative_exclusive_days"]
+            + m["internal_exclusive_days"] + m["available_days"],
+            m["effective_working_days"],
+        )
+        self.assertAlmostEqual(
+            m["confirmed_percentage"] + m["tentative_exclusive_percentage"]
+            + m["internal_exclusive_percentage"] + m["available_percentage"],
+            100, places=1,
+        )

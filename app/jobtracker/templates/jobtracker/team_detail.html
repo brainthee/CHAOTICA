@@ -28,106 +28,86 @@
 {% block content %}
   {% get_obj_perms request.user for team as 'team_perms' %}
 
-  {% if not team.owners.exists %}
-    <div class="alert m-3 alert-phoenix-warning" role="alert">There are no owners defined. Only Admins will be able to manage this team.</div>
-  {% endif %}
+  <div class="px-5 mt-2 mb-3">
+    {% if not owners %}
+      <div class="alert alert-subtle-warning d-flex align-items-center py-2 fs-9" role="alert">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <div>This team has no owners, so only admins can manage it.</div>
+      </div>
+    {% endif %}
 
-  <div class="row mt-2 mb-0 px-5">
-    <div class="card mb-3 px-0">
-      {% if team.profile_image or team.cover_image %}
-        <div class="card-header d-flex justify-content-center align-items-end position-relative mb-7 mb-xxl-0" style="min-height: 214px; ">
-          <div class="bg-holder rounded-top" style="background-image:url({{ team.get_cover_url }});"></div>
-          {% if team.profile_image %}
-            <div class="position-relative feed-profile bg-body-quaternary rounded-circle d-flex flex-center mb-xxl-7">
-              <div class="avatar avatar-5xl">
-                <img class="rounded-circle rounded-circle img-thumbnail shadow-sm border-0" src="{{ team.get_avatar_url }}" alt="" />
-              </div>
-            </div>
-          {% endif %}
+    <div class="card overflow-hidden">
+      {% if team.cover_image %}
+        <div class="position-relative" style="height: 120px;">
+          <div class="bg-holder" style="background-image:url({{ team.get_cover_url }});"></div>
         </div>
       {% endif %}
-
-      <div class="card-body pb-0">
-        <div class="row justify-content-xl-between">
-          <div class="col-8">
-            <div class="d-flex flex-wrap mb-3 align-items-center">
-              <h2 class="me-2">{{ team.name }}</h2>
-            </div>
-            <div class="mb-5">
-              <div class="d-md-flex align-items-center">
-                <div class="d-flex align-items-center">
-                  <span class="fa-solid fa-user-group fs-9 text-body-tertiary me-2 me-lg-1 me-xl-2"></span>
-                  <span class="fs-7 fw-bold text-body-tertiary text-opacity-85">
-                    {{ team.users.all|length }}
-                    <span class="fw-semibold ms-1 me-4">Members</span>
-                  </span>
-                </div>
-
-                <div class="d-flex align-items-center">
-                  <span class="fa-solid fa-location-dot fs-9 text-body-tertiary me-2 me-lg-1 me-xl-2"></span>
-                  <span class="fs-7 fw-bold text-body-tertiary text-opacity-85">
-                    Owners:{% for user in team.owners.all %}
-                      {% include 'partials/users/user_link.html' with user_profile=user link_css='fs-7 fw-bold text-body-tertiary text-opacity-85 text-body-emphasis-hover' %}
-                      {% if not forloop.last %}, {% endif %}
-                    {% endfor %}
-                  </span>
-                </div>
-              </div>
-            </div>
-            {% if team.description %}
-              <p class="fs-6 text-body-secondary">{{ team.description }}</p>
-            {% endif %}
+      <div class="card-body">
+        <div class="d-flex flex-wrap align-items-center gap-3">
+          <div class="avatar avatar-3xl flex-shrink-0">
+            <img class="rounded-circle border border-translucent" src="{{ team.get_avatar_url }}" alt="" />
           </div>
-          <div class="col-4">
-            <div class="row g-2">
-              <div class="col-auto">
-                <a href="{% url 'view_scheduler' %}?teams={{ team.pk }}" class="btn btn-phoenix-success lh-1">
-                  <span class="fa-solid fa-calendar me-2"></span>
-                  View Schedule
-                </a>
+
+          <div class="flex-1" style="min-width: 16rem;">
+            <h3 class="mb-1">{{ team.name }}</h3>
+            {% if team.description %}
+              <p class="fs-9 text-body-tertiary mb-2">{{ team.description }}</p>
+            {% endif %}
+            <div class="d-flex flex-wrap align-items-center gap-3 fs-9 text-body-secondary">
+              <span>
+                <span class="fa-solid fa-user-group text-body-tertiary me-1"></span>
+                <span class="fw-semibold text-body-emphasis">{{ active_members|length }}</span>
+                member{{ active_members|length|pluralize }}
+              </span>
+              <span>
+                <span class="fa-solid fa-user-shield text-body-tertiary me-1"></span>
+                {% if owners %}
+                  Owner{{ owners|length|pluralize }}:
+                  {% for user in owners %}
+                    {% include 'partials/users/user_link.html' with user_profile=user link_css='fw-semibold' %}{% if not forloop.last %}, {% endif %}
+                  {% endfor %}
+                {% else %}
+                  <span class="text-body-tertiary">No owners</span>
+                {% endif %}
+              </span>
+            </div>
+          </div>
+
+          <div class="d-flex flex-wrap align-items-center gap-2 ms-lg-auto">
+            <a href="{% url 'view_scheduler' %}?teams={{ team.pk }}" class="btn btn-sm btn-phoenix-secondary">
+              <span class="fa-solid fa-calendar me-1"></span>Schedule
+            </a>
+            {% if 'change_team' in team_perms %}
+              <button data-url="{% url 'teammember_add' team.slug %}" class="btn btn-sm btn-phoenix-primary js-load-modal-form">
+                <span class="fa-solid fa-plus me-1"></span>Add member
+              </button>
+            {% endif %}
+            <div class="dropdown">
+              <button class="btn btn-sm btn-phoenix-secondary" type="button" data-bs-toggle="dropdown" data-boundary="window" aria-haspopup="true" aria-expanded="false" aria-label="More actions">
+                <span class="fas fa-ellipsis-h"></span>
+              </button>
+              <div class="dropdown-menu dropdown-menu-end py-2">
                 {% if 'change_team' in team_perms %}
-                  <button data-url="{% url 'teammember_add' team.slug %}" class="btn btn-phoenix-primary lh-1 js-load-modal-form">
-                    <span class="fa-solid fa-plus me-2"></span>
-                    Add User
-                  </button>
-                  <button data-url="{% url 'teammember_bulk_add' team.slug %}" class="btn btn-phoenix-secondary lh-1 js-load-modal-form">
-                    <span class="fa-solid fa-users me-2"></span>
-                    Bulk Add
+                  <button class="dropdown-item js-load-modal-form" data-url="{% url 'teammember_bulk_add' team.slug %}">
+                    <span class="fa-solid fa-users text-body-secondary me-2"></span>Bulk add members
                   </button>
                 {% endif %}
-              </div>
-
-              <div class="col-auto">
-                <div class="position-static">
-                  <button class="btn btn-phoenix-secondary lh-1" data-bs-toggle="dropdown" data-boundary="window" aria-haspopup="true" aria-expanded="false" data-bs-reference="parent">
-                    <span class="fa-solid fa-chevron-down me-2"></span>
-                    More
-                  </button>
-
-                  <div class="dropdown-menu dropdown-menu-end py-2">
-                    <a class="dropdown-item"
-                      href="mailto:{% for user in team.get_activeMembers %}
-                        {{ user.email_address }}{% if not forloop.last %}, {% endif %}
-                      {% endfor %}">
-                      <span class="fa-solid fa-message text-body-secondary me-2"></span>
-                      Send Email
-                    </a>
-
-                    {% if 'change_team' in team_perms %}
-                      <a class="dropdown-item" href="{% url 'team_update' team.slug %}">
-                        <span class="fa-solid fa-gear text-body-secondary me-2"></span>
-                        Edit Team Settings
-                      </a>
-                    {% endif %}
-
-                    {% if 'delete_team' in team_perms %}
-                      <a class="dropdown-item" href="{% url 'team_delete' team.slug %}">
-                        <span class="fa-solid fa-ban text-danger me-2"></span>
-                        Delete Team
-                      </a>
-                    {% endif %}
-                  </div>
-                </div>
+                {% if active_members %}
+                  <a class="dropdown-item" href="mailto:{% for user in active_members %}{{ user.email_address }}{% if not forloop.last %},{% endif %}{% endfor %}">
+                    <span class="fa-solid fa-envelope text-body-secondary me-2"></span>Email members
+                  </a>
+                {% endif %}
+                {% if 'change_team' in team_perms %}
+                  <a class="dropdown-item" href="{% url 'team_update' team.slug %}">
+                    <span class="fa-solid fa-gear text-body-secondary me-2"></span>Team settings
+                  </a>
+                {% endif %}
+                {% if 'delete_team' in team_perms %}
+                  <div class="dropdown-divider"></div>
+                  <a class="dropdown-item text-danger" href="{% url 'team_delete' team.slug %}">
+                    <span class="fa-solid fa-trash me-2"></span>Delete team
+                  </a>
+                {% endif %}
               </div>
             </div>
           </div>
@@ -221,7 +201,7 @@
       var debriefUrl = "{% url 'team_debrief_partial' team.slug %}";
       var debriefSort = 'first_name';
 
-      function loadTab(url, containerId, extraParams) {
+      function loadTab(url, containerId, extraParams, onLoad) {
         var fullUrl = extraParams ? url + '?' + extraParams : url;
         fetch(fullUrl, {
           headers: {'X-Requested-With': 'XMLHttpRequest'}
@@ -231,6 +211,7 @@
           // Use jQuery .html() (not native innerHTML) so the inline <script>
           // in the injected partial is evaluated and the echarts initialise.
           $('#' + containerId).html(data.html);
+          if (onLoad) onLoad(data);
         })
         .catch(function() {
           document.getElementById(containerId).innerHTML =
@@ -252,16 +233,57 @@
         loadTab(debriefUrl, 'debrief-content', getDebriefParams(weekOverride));
       }
 
+      // Stats: after each (re)load, wire the custom range picker and show
+      // the raw data in the "Detail" offcanvas.
+      function onStatsLoaded(data) {
+        var picker = document.getElementById('stats-range-picker');
+        if (picker && window.flatpickr) {
+          flatpickr(picker, {
+            mode: 'range',
+            dateFormat: 'Y-m-d',
+            altInput: true,
+            altFormat: 'j M Y',
+            altInputClass: picker.className,
+            disableMobile: true,
+            maxDate: 'today',
+            defaultDate: [picker.dataset.start, picker.dataset.end],
+            onClose: function(dates, dateStr, fp) {
+              if (dates.length !== 2) return;
+              var fmt = function(d) { return fp.formatDate(d, 'Y-m-d'); };
+              loadStats(picker.dataset.url + '?start_date=' + fmt(dates[0]) + '&end_date=' + fmt(dates[1]));
+            }
+          });
+        }
+        if (data && data.stats_json) {
+          var pre = document.createElement('pre');
+          pre.className = 'fs-10';
+          pre.textContent = data.stats_json;
+          $('#themeController').empty().append(pre);
+        }
+      }
+
+      function loadStats(url) {
+        document.getElementById('stats-content').innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><p class="mt-2 text-body-secondary">Loading stats...</p></div>';
+        loadTab(url, 'stats-content', null, onStatsLoaded);
+      }
+
       // Load stats when tab is shown
       var statsTab = document.getElementById('stats-tab');
       if (statsTab) {
         statsTab.addEventListener('shown.bs.tab', function() {
           if (!statsLoaded) {
             statsLoaded = true;
-            loadTab(statsUrl, 'stats-content');
+            loadStats(statsUrl);
           }
         });
       }
+      document.addEventListener('click', function(e) {
+        var link = e.target.closest('#stats-content a[data-stats-range]');
+        if (link) {
+          e.preventDefault();
+          loadStats(link.getAttribute('data-stats-range'));
+        }
+      });
 
       // Load debrief when tab is shown
       var debriefTab = document.getElementById('debrief-tab');
