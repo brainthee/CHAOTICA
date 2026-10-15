@@ -1,159 +1,172 @@
 {% load static %}
 
-<div class="mx-n4 mb-3 px-3 py-3 mx-lg-n6 px-lg-6 bg-body-emphasis border-top border-bottom border-200 position-relative top-1">
-  <div class="d-flex justify-content-between align-items-center mb-3">
+<div class="text-start">
+  <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
     <div>
-      <h5 class="mb-0">Weekly Debrief</h5>
-      <span class="text-body-secondary fs-9">
-        {{ week_start|date:"D d M" }} – {{ week_friday|date:"D d M Y" }}
-      </span>
+      <h4 class="mb-0">Weekly debrief</h4>
+      <p class="fs-9 text-body-tertiary mb-0">What each member is booked on this week, and anything not ready for next week.</p>
     </div>
-    <div class="d-flex align-items-center gap-2">
+    <div class="d-flex align-items-center gap-2 ms-md-auto">
       <select id="debrief-sort" class="form-select form-select-sm" style="width: auto;" data-current-week="{{ debrief_week_offset }}">
         <option value="first_name" {% if debrief_sort == "first_name" %}selected{% endif %}>Sort: First Name</option>
         <option value="last_name" {% if debrief_sort == "last_name" %}selected{% endif %}>Sort: Surname</option>
         <option value="random" {% if debrief_sort == "random" %}selected{% endif %}>Sort: Random</option>
       </select>
-      <a href="#" data-debrief-week="{{ debrief_prev_week }}" class="btn btn-sm btn-phoenix-secondary">
-        <span class="fa-solid fa-chevron-left me-1"></span>Prev
+      <a class="btn btn-sm btn-phoenix-secondary" title="Previous week" href="#" data-debrief-week="{{ debrief_prev_week }}">
+        <span class="fas fa-chevron-left"></span>
       </a>
-      {% if debrief_week_offset != "0" %}
-        <a href="#" data-debrief-week="0" class="btn btn-sm btn-phoenix-secondary">
-          Today
-        </a>
-      {% endif %}
-      <a href="#" data-debrief-week="{{ debrief_next_week }}" class="btn btn-sm btn-phoenix-secondary">
-        Next<span class="fa-solid fa-chevron-right ms-1"></span>
+      <div class="text-center" style="min-width: 12rem;">
+        <div class="fw-semibold fs-9">{{ week_start|date:"D j M" }} &ndash; {{ week_friday|date:"D j M Y" }}</div>
+        {% if debrief_week_offset == "0" %}
+          <span class="text-body-tertiary fs-10">Current week</span>
+        {% else %}
+          <a class="fs-10" href="#" data-debrief-week="0">Jump to current week</a>
+        {% endif %}
+      </div>
+      <a class="btn btn-sm btn-phoenix-secondary" title="Next week" href="#" data-debrief-week="{{ debrief_next_week }}">
+        <span class="fas fa-chevron-right"></span>
       </a>
     </div>
   </div>
 
   {# Week summary #}
-  <div class="d-flex flex-row flex-fill mb-3">
-    <div class="col text-center border-translucent border-end py-3">
-      <i class="fa-solid fa-chart-pie fs-6 lh-1 {% if summary_utilisation_pct >= 75 %}text-success{% elif summary_utilisation_pct >= 40 %}text-warning{% else %}text-danger{% endif %}"></i>
-      <h2 class="fs-6 pt-3">{{ summary_utilisation_pct }}%</h2>
-      <p class="fs-9 mb-0">Utilised{% include 'partials/_util_info_icon.html' %}</p>
-      <p class="text-body-secondary fs-10 mb-0">{{ summary_confirmed_days }}/{{ summary_working_days }} days confirmed</p>
+  <div class="row g-2">
+    <div class="col-6 col-md">
+      <div class="border border-translucent rounded-3 p-2 h-100">
+        <div class="fs-10 text-body-tertiary">Utilised{% include 'partials/_util_info_icon.html' %}</div>
+        <div class="fs-7 fw-semibold {% if summary_utilisation_pct >= 75 %}text-success{% elif summary_utilisation_pct >= 40 %}text-warning-emphasis{% else %}text-danger{% endif %}">{{ summary_utilisation_pct }}<span class="fs-10 text-body-tertiary">%</span></div>
+        <div class="fs-10 text-body-tertiary">{{ summary_confirmed_days }}/{{ summary_working_days }} days confirmed</div>
+      </div>
     </div>
-    <div class="col text-center border-translucent border-end py-3">
-      <i class="fa-solid fa-clipboard-check fs-6 lh-1 {% if summary_prechecks_pending == 0 %}text-success{% else %}text-warning{% endif %}"></i>
-      <h2 class="fs-6 pt-3">{{ summary_prechecks_pending }}</h2>
-      <p class="fs-9 mb-0">Pre-checks Pending</p>
+    <div class="col-6 col-md">
+      <div class="border border-translucent rounded-3 p-2 h-100">
+        <div class="fs-10 text-body-tertiary">Pre-checks pending</div>
+        <div class="fs-7 fw-semibold {% if summary_prechecks_pending %}text-warning-emphasis{% else %}text-success{% endif %}">{{ summary_prechecks_pending }}</div>
+      </div>
     </div>
-    <div class="col text-center border-translucent border-end py-3">
-      <i class="fa-solid fa-triangle-exclamation fs-6 lh-1 {% if summary_phases_not_ready == 0 %}text-success{% else %}text-danger{% endif %}"></i>
-      <h2 class="fs-6 pt-3">{{ summary_phases_not_ready }}</h2>
-      <p class="fs-9 mb-0">Not Ready to Begin</p>
+    <div class="col-6 col-md">
+      <div class="border border-translucent rounded-3 p-2 h-100">
+        <div class="fs-10 text-body-tertiary">Not ready to begin</div>
+        <div class="fs-7 fw-semibold {% if summary_phases_not_ready %}text-danger{% else %}text-success{% endif %}">{{ summary_phases_not_ready }}</div>
+      </div>
     </div>
-    <div class="col text-center border-translucent py-3">
-      <i class="fa-solid fa-user-clock fs-6 lh-1 {% if summary_unscheduled %}text-warning{% else %}text-success{% endif %}"></i>
-      <h2 class="fs-6 pt-3">{{ summary_unscheduled|length }}</h2>
-      <p class="fs-9 mb-0">Unscheduled</p>
-      {% if summary_unscheduled %}
-        <p class="text-body-secondary fs-10 mb-0">{% for u in summary_unscheduled %}{{ u.first_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
-      {% endif %}
+    <div class="col-6 col-md">
+      <div class="border border-translucent rounded-3 p-2 h-100">
+        <div class="fs-10 text-body-tertiary">Unscheduled</div>
+        <div class="fs-7 fw-semibold {% if summary_unscheduled %}text-warning-emphasis{% else %}text-success{% endif %}">{{ summary_unscheduled|length }}</div>
+        {% if summary_unscheduled %}
+          <div class="fs-10 text-body-tertiary">{% for u in summary_unscheduled %}{{ u.first_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>
+        {% endif %}
+      </div>
     </div>
   </div>
 
-  {% for member in members_data %}
-    <div class="card mb-3">
-      <div class="card-body">
-        <div class="d-flex align-items-center mb-3">
-          <div class="avatar avatar-xl me-3">
-            <img class="rounded-circle" src="{{ member.user.get_avatar_url }}" alt="{{ member.user.get_full_name }}" />
-          </div>
-          <div>
+  <div class="row g-3 mt-0">
+    {% for member in members_data %}
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header d-flex align-items-center">
+            <div class="avatar avatar-m me-2">
+              <img class="rounded-circle" src="{{ member.user.get_avatar_url }}" alt="{{ member.user.get_full_name }}" />
+            </div>
             <h5 class="mb-0">
               <a href="{{ member.user.get_absolute_url }}" class="text-body-emphasis">{{ member.user.get_full_name }}</a>
             </h5>
           </div>
-        </div>
-
-        {# Mon-Fri schedule bar #}
-        <div class="row g-2 mb-3">
-          {% for day_idx, day_data in member.daily_slots.items %}
-            <div class="col">
-              <div class="text-center small fw-semibold text-body-tertiary mb-1">
-                {{ day_data.date|date:"D d" }}
-              </div>
-              <div class="border rounded p-1 bg-body-tertiary" style="min-height: 40px;">
-                {% if day_data.slots %}
-                  {% for slot in day_data.slots %}
-                    {% if slot.phase %}
-                      <a href="{{ slot.phase.get_absolute_url }}" class="text-decoration-none d-block">
-                        <div class="badge text-wrap w-100 mb-1"
-                             title="{{ slot.get_schedule_title }}"
-                             style="font-size: 0.7rem; background-color: {{ slot.cached_bg }}; color: {{ slot.cached_text }};">
-                          {{ slot.phase.phase_id }}
-                        </div>
-                      </a>
+          <div class="card-body">
+            {# Mon-Fri schedule bar #}
+            <div class="row g-2">
+              {% for day_idx, day_data in member.daily_slots.items %}
+                <div class="col">
+                  <div class="text-center fs-10 fw-semibold text-body-tertiary mb-1">
+                    {{ day_data.date|date:"D j" }}
+                  </div>
+                  <div class="border border-translucent rounded-3 p-1 bg-body-highlight" style="min-height: 40px;">
+                    {% if day_data.slots %}
+                      {% for slot in day_data.slots %}
+                        {% if slot.phase %}
+                          <a href="{{ slot.phase.get_absolute_url }}" class="text-decoration-none d-block">
+                            <div class="badge text-wrap w-100 mb-1"
+                                 title="{{ slot.get_schedule_title }}"
+                                 style="font-size: 0.7rem; background-color: {{ slot.cached_bg }}; color: {{ slot.cached_text }};">
+                              {{ slot.phase.phase_id }}
+                            </div>
+                          </a>
+                        {% else %}
+                          <div class="badge text-wrap w-100 mb-1"
+                               title="{{ slot.get_schedule_title }}"
+                               style="font-size: 0.7rem; background-color: {{ slot.cached_bg }}; color: {{ slot.cached_text }};">
+                            {{ slot.slot_type.name|truncatechars:12 }}
+                          </div>
+                        {% endif %}
+                      {% endfor %}
                     {% else %}
-                      <div class="badge text-wrap w-100 mb-1"
-                           title="{{ slot.get_schedule_title }}"
-                           style="font-size: 0.7rem; background-color: {{ slot.cached_bg }}; color: {{ slot.cached_text }};">
-                        {{ slot.slot_type.name|truncatechars:12 }}
-                      </div>
+                      <div class="text-center text-body-quaternary fs-9 py-1">&mdash;</div>
                     {% endif %}
-                  {% endfor %}
-                {% else %}
-                  <div class="text-center text-body-quaternary small py-1">—</div>
-                {% endif %}
-              </div>
+                  </div>
+                </div>
+              {% endfor %}
             </div>
-          {% endfor %}
+
+            {# Next week pre-checks warnings #}
+            {% if member.next_week_warnings %}
+              <div class="alert alert-subtle-warning d-flex align-items-center mt-3 mb-0 py-2 fs-9" role="alert">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <div>
+                  <strong>Next week &mdash; pre-checks not complete:</strong>
+                  {% for phase in member.next_week_warnings %}
+                    <a href="{{ phase.get_absolute_url }}">{{ phase.phase_id }}</a>
+                    ({% include 'partials/phase/status_badge.html' with phase=phase %}){% if not forloop.last %}, {% endif %}
+                  {% endfor %}
+                </div>
+              </div>
+            {% endif %}
+          </div>
+
+          {# Phases this week #}
+          <div class="card-body p-0 border-top border-translucent">
+            {% if member.phases_this_week %}
+              <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0 fs-9">
+                  <thead>
+                    <tr class="text-body-secondary">
+                      <th class="ps-3">Phase</th>
+                      <th>Client &mdash; Title</th>
+                      <th>Service</th>
+                      <th>Role</th>
+                      <th class="pe-3">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for entry in member.phases_this_week %}
+                      <tr>
+                        <td class="ps-3">
+                          <a href="{{ entry.phase.get_absolute_url }}">{{ entry.phase.phase_id }}</a>
+                        </td>
+                        <td>{{ entry.phase.job.client }} &mdash; {{ entry.phase.title }}</td>
+                        <td>{% if entry.phase.service %}{{ entry.phase.service }}{% else %}<span class="text-body-tertiary">&mdash;</span>{% endif %}</td>
+                        <td>{{ entry.role }}</td>
+                        <td class="pe-3">{% include 'partials/phase/status_badge.html' with phase=entry.phase %}</td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% else %}
+              <p class="fs-9 text-center text-body-tertiary py-3 mb-0">No phases scheduled this week.</p>
+            {% endif %}
+          </div>
         </div>
-
-        {# Phases this week #}
-        {% if member.phases_this_week %}
-          <h6 class="text-body-tertiary mb-2">Phases this week</h6>
-          <div class="table-responsive">
-            <table class="table table-sm table-striped mb-0 fs-9">
-              <thead>
-                <tr>
-                  <th>Phase</th>
-                  <th>Client — Title</th>
-                  <th>Service</th>
-                  <th>Role</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for entry in member.phases_this_week %}
-                  <tr>
-                    <td>
-                      <a href="{{ entry.phase.get_absolute_url }}">{{ entry.phase.phase_id }}</a>
-                    </td>
-                    <td>{{ entry.phase.job.client }} — {{ entry.phase.title }}</td>
-                    <td>{% if entry.phase.service %}{{ entry.phase.service }}{% else %}—{% endif %}</td>
-                    <td>{{ entry.role }}</td>
-                    <td>{% include 'partials/phase/status_badge.html' with phase=entry.phase %}</td>
-                  </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        {% else %}
-          <p class="text-body-tertiary fs-9 mb-0"><em>No phases scheduled this week</em></p>
-        {% endif %}
-
-        {# Next week pre-checks warnings #}
-        {% if member.next_week_warnings %}
-          <div class="alert alert-phoenix-warning mt-3 mb-0 py-2 px-3 fs-9">
-            <span class="fa-solid fa-triangle-exclamation me-1"></span>
-            <strong>Next week — pre-checks not complete:</strong>
-            {% for phase in member.next_week_warnings %}
-              <a href="{{ phase.get_absolute_url }}">{{ phase.phase_id }}</a>
-              ({% include 'partials/phase/status_badge.html' with phase=phase %}){% if not forloop.last %}, {% endif %}
-            {% endfor %}
-          </div>
-        {% endif %}
       </div>
-    </div>
-  {% empty %}
-    <div class="text-center text-body-tertiary py-5">
-      <span class="fa-solid fa-users-slash fa-3x mb-3 d-block"></span>
-      <p>No active team members found.</p>
-    </div>
-  {% endfor %}
+    {% empty %}
+      <div class="col-12">
+        <div class="card">
+          <div class="card-body text-center text-body-tertiary py-5">
+            <span class="fa-solid fa-users-slash fs-5 mb-3 d-block"></span>
+            <p class="fs-9 mb-0">No active team members found.</p>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
 </div>

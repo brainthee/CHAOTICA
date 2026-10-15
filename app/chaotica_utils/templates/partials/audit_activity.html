@@ -4,7 +4,7 @@ Generic audit-event timeline. Expects ``audit_events`` (an AuditEvent queryset,
 already permission-scoped by ObjectActivityMixin / audit_events_for). Reusable
 on any object detail page.
 {% endcomment %}
-<div class="timeline-basic mb-9">
+<div class="timeline-basic mb-3">
 {% for event in audit_events %}
    <div class="timeline-item">
       <div class="row g-3">
@@ -24,13 +24,13 @@ on any object detail page.
                      {% elif event.verb == 'token_issued' or event.verb == 'token_revoked' %}fa-key text-warning
                      {% else %}fa-clipboard text-success{% endif %} fs-9"></span>
                </div>
-               <span class="timeline-bar border-end border-dashed border-300"></span>
+               <span class="timeline-bar border-end border-dashed border-translucent"></span>
             </div>
          </div>
          <div class="col g-3">
             <div class="d-flex justify-content-between">
                <div class="d-flex mb-2 align-items-center">
-                  <h6 class="lh-sm mb-0 me-2 text-800 timeline-item-title">
+                  <h6 class="lh-sm mb-0 me-2 text-body-emphasis timeline-item-title">
                      {{ event.message }}
                   </h6>
                   {% if event.category and event.category != 'general' %}
@@ -39,25 +39,25 @@ on any object detail page.
                      fs-10">{{ event.get_category_display }}</span>
                   {% endif %}
                </div>
-               <p class="text-500 fs-9 mb-0 text-nowrap timeline-time"
+               <p class="text-body-tertiary fs-9 mb-0 text-nowrap timeline-time"
                   data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ event.timestamp }}">
                   <span class="fa-regular fa-clock me-1"></span>{{ event.timestamp|naturaltime }}
                </p>
             </div>
             <h6 class="fs-10 fw-normal mb-2">
                {% if event.actor is None %}
-               by <span class="fw-semi-bold">SYSTEM</span>
+               by <span class="fw-semibold">SYSTEM</span>
                {% else %}
-               by <a class="fw-semi-bold" href="{{ event.actor.get_absolute_url }}">{{ event.actor_repr|default:event.actor }}</a>
+               by <a class="fw-semibold" href="{{ event.actor.get_absolute_url }}">{{ event.actor_repr|default:event.actor }}</a>
                {% endif %}
                {% if event.source and event.source != 'web' %}
-               <span class="text-500">· {{ event.get_source_display }}</span>
+               <span class="text-body-tertiary">· {{ event.get_source_display }}</span>
                {% endif %}
             </h6>
             {% if event.changes %}
             <div class="fs-10 text-body-secondary">
                {% for field, delta in event.changes.items %}
-               <div><span class="fw-semi-bold">{{ field }}</span>:
+               <div><span class="fw-semibold">{{ field }}</span>:
                   {% if delta.added or delta.removed %}
                      {% if delta.added %}<span class="text-success">+{{ delta.added|join:", " }}</span>{% endif %}
                      {% if delta.removed %}<span class="text-danger">&minus;{{ delta.removed|join:", " }}</span>{% endif %}

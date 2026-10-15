@@ -141,10 +141,10 @@
       <div class="row mx-1">
         <ul class="nav nav-underline scrollbar px-6 flex-nowrap w-100 pb-1 mb-3" id="sectionNav" role="tablist" style="overflow-y: hidden;">
           <li class="nav-item text-nowrap me-2" role="presentation">
-            <a class="nav-link active" id="team-tab" data-bs-toggle="tab" href="#team" role="tab" aria-controls="tab-team" aria-selected="true"><span class="fa-solid fa-video me-2 tab-icon-color"></span>Team</a>
+            <a class="nav-link active" id="team-tab" data-bs-toggle="tab" href="#team" role="tab" aria-controls="tab-team" aria-selected="true"><span class="fa-solid fa-users me-2 tab-icon-color"></span>Team</a>
           </li>
           <li class="nav-item text-nowrap me-2" role="presentation">
-            <a class="nav-link" id="stats-tab" data-bs-toggle="tab" href="#stats" role="tab" aria-controls="tab-stats" aria-selected="false" tabindex="-1"><span class="fa-solid fa-clipboard me-2 tab-icon-color"></span>Stats</a>
+            <a class="nav-link" id="stats-tab" data-bs-toggle="tab" href="#stats" role="tab" aria-controls="tab-stats" aria-selected="false" tabindex="-1"><span class="fa-solid fa-chart-column me-2 tab-icon-color"></span>Stats</a>
           </li>
           {% if is_team_owner %}
             <li class="nav-item text-nowrap me-2" role="presentation">
@@ -159,37 +159,51 @@
           </li>
         </ul>
 
-        <div class="tab-content" id="myTabContent">
-          <div class="tab-pane fade active show" id="team" role="tabpanel" aria-labelledby="team-tab">
-            <div class="mx-n4 mb-3 px-3 py-3 mx-lg-n6 px-lg-6 bg-body-emphasis border-top border-bottom border-200 position-relative top-1">
-              {% include 'partials/team/teammember_table.html' with user=userMembership.user %}
-            </div>
+        {# Every pane shares the same padding; lazy panes keep their spinner #}
+        {# inside the container so the loaded partial isn't centred/padded.  #}
+        <div class="tab-content pb-5" id="myTabContent">
+          <div class="tab-pane fade active show py-3" id="team" role="tabpanel" aria-labelledby="team-tab">
+            {% include 'partials/team/teammember_table.html' %}
           </div>
 
-          <div class="tab-pane fade" id="stats" role="tabpanel" aria-labelledby="stats-tab">
-            <div id="stats-content" class="text-center py-5">
-              <div class="spinner-border text-primary" role="status"></div>
-              <p class="mt-2 text-body-secondary">Loading stats...</p>
+          <div class="tab-pane fade py-3" id="stats" role="tabpanel" aria-labelledby="stats-tab">
+            <div id="stats-content">
+              <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="mt-2 text-body-secondary">Loading stats...</p>
+              </div>
             </div>
           </div>
 
           {% if is_team_owner %}
-            <div class="tab-pane fade" id="debrief" role="tabpanel" aria-labelledby="debrief-tab">
-              <div id="debrief-content" class="text-center py-5">
-                <div class="spinner-border text-primary" role="status"></div>
-                <p class="mt-2 text-body-secondary">Loading debrief...</p>
+            <div class="tab-pane fade py-3" id="debrief" role="tabpanel" aria-labelledby="debrief-tab">
+              <div id="debrief-content">
+                <div class="text-center py-5">
+                  <div class="spinner-border text-primary" role="status"></div>
+                  <p class="mt-2 text-body-secondary">Loading debrief...</p>
+                </div>
               </div>
             </div>
-            <div class="tab-pane fade" id="billing" role="tabpanel" aria-labelledby="billing-tab">
-              <div id="billing-content" class="text-center py-5">
-                <div class="spinner-border text-primary" role="status"></div>
-                <p class="mt-2 text-body-secondary">Loading billing...</p>
+            <div class="tab-pane fade py-3" id="billing" role="tabpanel" aria-labelledby="billing-tab">
+              <div id="billing-content">
+                <div class="text-center py-5">
+                  <div class="spinner-border text-primary" role="status"></div>
+                  <p class="mt-2 text-body-secondary">Loading billing...</p>
+                </div>
               </div>
             </div>
           {% endif %}
 
-          <div class="tab-pane fade" id="activity" role="tabpanel" aria-labelledby="activity-tab">
-            {% include 'partials/audit_activity.html' %}
+          <div class="tab-pane fade py-3" id="activity" role="tabpanel" aria-labelledby="activity-tab">
+            <div class="mb-3">
+              <h4 class="mb-0">Activity</h4>
+              <p class="fs-9 text-body-tertiary mb-0">Changes made to this team and its membership.</p>
+            </div>
+            <div class="card">
+              <div class="card-body pb-0">
+                {% include 'partials/audit_activity.html' %}
+              </div>
+            </div>
           </div>
 
         </div>
@@ -344,7 +358,7 @@
         <div class="settings-popover">
           <span class="fa-solid fa-filter"></span>
         </div>
-      </div><small class="text-uppercase text-700 fw-bold py-2 pe-2 ps-1 rounded-end">Detail</small>
+      </div><small class="text-uppercase text-body-secondary fw-bold py-2 pe-2 ps-1 rounded-end">Detail</small>
     </div>
   </a>
 {% endblock %}
