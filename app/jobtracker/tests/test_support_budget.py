@@ -10,7 +10,9 @@ tests). The headline oracle is the Accenture MMP spreadsheet: 6 members at 100%
 from datetime import date
 from decimal import Decimal
 
+from django.db import connection
 from django.test import TestCase, Client as TestHttpClient
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from guardian.shortcuts import assign_perm
 
@@ -180,6 +182,33 @@ class LCRDateAwarenessTests(SupportBudgetTestBase):
         # Before any effective date -> falls back to None (no undated row).
         self.assertIsNone(resolve_lcr(u, date(2020, 1, 1)))
 
+    def test_batched_lookup_matches_single(self):
+        from chaotica_utils.utils.support_budget import resolve_lcrs
+
+        dated = self._user(1)
+        UserCost.objects.create(
+            user=dated, effective_from=date(2024, 1, 1), cost_per_hour=Decimal("40")
+        )
+        UserCost.objects.create(
+            user=dated, effective_from=date(2026, 1, 1), cost_per_hour=Decimal("60")
+        )
+        undated = self._user(2)
+        UserCost.objects.create(user=undated, cost_per_hour=Decimal("30"))
+        UserCost.objects.create(user=undated, cost_per_hour=Decimal("35"))
+        # Dated row wins over undated; undated is the fallback.
+        both = self._user(3)
+        UserCost.objects.create(user=both, cost_per_hour=Decimal("20"))
+        UserCost.objects.create(
+            user=both, effective_from=date(2025, 1, 1), cost_per_hour=Decimal("25")
+        )
+        none = self._user(4)
+        users = [dated, undated, both, none]
+        for on in (date(2020, 1, 1), date(2025, 6, 1), date(2026, 6, 1)):
+            with self.assertNumQueries(1):
+                batch = resolve_lcrs([u.pk for u in users], on)
+            for u in users:
+                self.assertEqual(batch[u.pk], resolve_lcr(u, on), (u, on))
+
 
 class LedgerTests(SupportBudgetTestBase):
     """Cash-outs go through ``create_support_draw`` — a money ledger that can
@@ -302,6 +331,45 @@ class LedgerTests(SupportBudgetTestBase):
         self.assertEqual(len(build_user_support_budget(u)["per_job"]), 1)
         Job.objects.filter(pk=self.job.pk).update(status=JobStatuses.ARCHIVED)
         self.assertEqual(len(build_user_support_budget(u)["per_job"]), 0)
+
+    def test_user_budget_query_count_is_flat(self):
+        u = self._user(1, lcr=50)
+
+        def add_jobs(n):
+            for i in range(n):
+                job = Job.objects.create(
+                    title="Extra %d" % Job.objects.count(),
+                    client=self.client_obj,
+                    unit=self.unit,
+                    created_by=self.root,
+                    account_manager=self.root,
+                    revenue=Decimal("1000"),
+                )
+                role = JobSupportTeamRole.objects.create(
+                    job=job, user=u, profile_percent=Decimal("100")
+                )
+                JobSupportTeamRole.objects.create(
+                    job=job, user=self._user(100 + job.pk, lcr=40),
+                    profile_percent=Decimal("50"),
+                )
+                self._draw(role, 1, start=date(2026, 9, 1), end=date(2026, 9, 14))
+
+        add_jobs(2)
+        with CaptureQueriesContext(connection) as small:
+            build_user_support_budget(u, date(2026, 9, 1), date(2026, 9, 14))
+        add_jobs(3)
+        with CaptureQueriesContext(connection) as big:
+            result = build_user_support_budget(u, date(2026, 9, 1), date(2026, 9, 14))
+        self.assertEqual(len(result["per_job"]), 5)
+        self.assertEqual(len(small.captured_queries), len(big.captured_queries))
+        for entry in result["per_job"]:
+            self.assertEqual(entry["period_drawn_hours"], Decimal("1"))
+            self.assertEqual(
+                entry["remaining_hours"],
+                build_job_support_budget(entry["job"])["per_member"][u.pk][
+                    "remaining_hours"
+                ],
+            )
 
     def test_auto_cash_out_tops_up_partial_draw(self):
         u = self._user(1, lcr=50)
@@ -487,6 +555,11 @@ class SupportBudgetViewTests(SupportBudgetTestBase):
         url = reverse("user_support_auto_draw", kwargs={"email": self.owner.email})
         resp = self.http.post(url, {"start": "2026-09-01", "end": "2026-09-14"})
         self.assertEqual(resp.status_code, 302)
+        # Lands back on the period that was cashed out (the page reads
+        # start_date/end_date).
+        self.assertTrue(
+            resp["Location"].endswith("?start_date=2026-09-01&end_date=2026-09-14")
+        )
         draws = SupportBudgetDraw.objects.filter(
             support_role__user=self.owner, period_start=date(2026, 9, 1)
         )
@@ -843,6 +916,15 @@ class SupportIntegrityTests(SupportBudgetTestBase):
         self.assertFalse(self.role.draws.exists())
         m = self.job.get_support_budget()["per_member"][self.member.id]
         self.assertEqual(m["remaining_hours"], Decimal("16"))
+
+
+    def test_no_reversal_on_closed_job(self):
+        draw = self._draw(4)
+        Job.objects.filter(pk=self.job.pk).update(status=JobStatuses.ARCHIVED)
+        self.http.force_login(self.root)
+        resp = self.http.post(self._reverse_url(draw), {"user_action": "approve_action"})
+        self.assertEqual(resp.status_code, 403)
+        self.assertTrue(self.role.draws.exists())
 
 
 class SupportProfileTests(SupportBudgetTestBase):
@@ -1312,3 +1394,202 @@ class SupportAuditMessageTests(SupportBudgetTestBase):
             "Reversed Ada Lovelace's cash-out of 2.5h (2026-09-01 - 2026-09-07).",
             self._messages(),
         )
+
+
+class AutoCashOutFreeHoursTests(SupportBudgetTestBase):
+    """Auto cash-out fills the period's free hours, oldest job first — never
+    the whole remaining budget regardless of the period."""
+
+    # Mon 7 – Fri 11 Sep 2026: 5 working days.
+    START, END = date(2026, 9, 7), date(2026, 9, 11)
+
+    def setUp(self):
+        super().setUp()
+        self.u = self._user(1, lcr=50)
+        # Big budgets (8% of 100k = 8000 -> 160h each), far more than a week.
+        Job.objects.filter(pk=self.job.pk).update(revenue=Decimal("100000"))
+        self.job.refresh_from_db()
+        self.old_role = self._role(self.u, 100)
+        self.new_job = Job.objects.create(
+            title="Newer job",
+            client=self.client_obj,
+            unit=self.unit,
+            created_by=self.root,
+            account_manager=self.root,
+            revenue=Decimal("100000"),
+        )
+        self.new_role = JobSupportTeamRole.objects.create(
+            job=self.new_job, user=self.u, profile_percent=Decimal("100")
+        )
+
+    def _free(self):
+        from chaotica_utils.utils import free_hours_in_period
+
+        return free_hours_in_period(self.u, self.START, self.END)
+
+    def test_caps_at_free_hours_oldest_job_first(self):
+        free = self._free()
+        self.assertGreater(free, 0)
+        created = auto_cash_out(self.u, self.START, self.END, self.root)
+        self.assertEqual(len(created), 1)
+        self.assertEqual(created[0].support_role_id, self.old_role.pk)
+        self.assertEqual(created[0].hours_drawn, free)
+        # Period is now full: a second run creates nothing.
+        self.assertEqual(self._free(), 0)
+        self.assertEqual(auto_cash_out(self.u, self.START, self.END, self.root), [])
+
+    def test_spills_into_next_job_when_oldest_runs_out(self):
+        # Oldest job only has 10h left; the rest comes from the newer one.
+        create_support_draw(
+            self.old_role, date(2026, 8, 3), date(2026, 8, 7), Decimal("150"),
+            created_by=self.root,
+        )
+        free = self._free()
+        created = auto_cash_out(self.u, self.START, self.END, self.root)
+        by_role = {d.support_role_id: d.hours_drawn for d in created}
+        self.assertEqual(by_role[self.old_role.pk], Decimal("10.00"))
+        self.assertEqual(by_role[self.new_role.pk], free - Decimal("10.00"))
+
+    def test_booked_work_reduces_free_hours(self):
+        from datetime import datetime, time
+        from django.utils import timezone as tz
+        from jobtracker.enums import (
+            DefaultTimeSlotTypes, PhaseStatuses, TimeSlotDeliveryRole,
+        )
+        from jobtracker.models import Phase, TimeSlot, TimeSlotType
+
+        before = self._free()
+        phase = Phase.objects.create(
+            job=self.new_job, title="P1", status=PhaseStatuses.SCHEDULED_CONFIRMED
+        )
+        TimeSlot.objects.create(
+            user=self.u,
+            slot_type=TimeSlotType.get_builtin_object(DefaultTimeSlotTypes.DELIVERY),
+            phase=phase,
+            start=tz.make_aware(datetime.combine(self.START, time(9))),
+            end=tz.make_aware(datetime.combine(self.START, time(17))),
+            deliveryRole=TimeSlotDeliveryRole.DELIVERY,
+        )
+        after = self._free()
+        self.assertLess(after, before)
+        created = auto_cash_out(self.u, self.START, self.END, self.root)
+        self.assertEqual(sum(d.hours_drawn for d in created), after)
+
+    def test_view_message_reports_hours(self):
+        self.http = TestHttpClient(HTTP_HOST="localhost")
+        self.http.force_login(self.u)
+        url = reverse("user_support_auto_draw", kwargs={"email": self.u.email})
+        resp = self.http.post(
+            url, {"start": self.START.isoformat(), "end": self.END.isoformat()},
+            follow=True,
+        )
+        text = " ".join(str(m) for m in resp.context["messages"])
+        self.assertIn("across 1 job", text)
+        resp = self.http.post(
+            url, {"start": self.START.isoformat(), "end": self.END.isoformat()},
+            follow=True,
+        )
+        text = " ".join(str(m) for m in resp.context["messages"])
+        self.assertIn("No free hours left", text)
+
+
+class BugFixRegressionTests(SupportBudgetTestBase):
+    def test_weekend_only_period_rejected(self):
+        u = self._user(1, lcr=50)
+        role = self._role(u, 100)
+        with self.assertRaises(ValidationError):
+            # Sat 12 – Sun 13 Sep 2026.
+            create_support_draw(role, date(2026, 9, 12), date(2026, 9, 13), Decimal("1"))
+        create_support_draw(role, date(2026, 9, 12), date(2026, 9, 14), Decimal("1"))
+
+    def test_period_range_is_clamped_and_ordered(self):
+        from chaotica_utils.utils.periods import MAX_PERIOD_RANGE_DAYS, parse_period_range
+
+        start, end = parse_period_range(
+            {"start_date": "1900-01-01", "end_date": "2100-12-31"}
+        )
+        self.assertEqual((end - start).days, MAX_PERIOD_RANGE_DAYS)
+        start, end = parse_period_range(
+            {"start_date": "2026-09-14", "end_date": "2026-09-01"}
+        )
+        self.assertEqual((start, end), (date(2026, 9, 1), date(2026, 9, 14)))
+
+    def test_support_team_notification_criterion(self):
+        from notifications.criteria_registry import job_support_team
+
+        u = self._user(1)
+        self._role(u, 100)
+        self.assertEqual(list(job_support_team(self.job)), [u])
+
+
+class DrawDayPlanTests(SupportBudgetTestBase):
+    """Cash-outs are laid on the timesheet as whole free days, saved with the
+    draw, instead of a sliver every day of the period."""
+
+    START, END = date(2026, 9, 7), date(2026, 9, 11)  # Mon–Fri
+
+    def setUp(self):
+        super().setUp()
+        self.u = self._user(1, lcr=50)
+        Job.objects.filter(pk=self.job.pk).update(revenue=Decimal("100000"))
+        self.role = self._role(self.u, 100)
+
+    def _days(self, draw):
+        return {d.day: d.hours for d in draw.days.all()}
+
+    def test_fills_whole_days_in_order(self):
+        draw = create_support_draw(self.role, self.START, self.END, Decimal("10"))
+        self.assertEqual(
+            self._days(draw),
+            {date(2026, 9, 7): Decimal("7.50"), date(2026, 9, 8): Decimal("2.50")},
+        )
+        # The next cash-out carries on from where the last one stopped.
+        nxt = create_support_draw(self.role, self.START, self.END, Decimal("6"))
+        self.assertEqual(
+            self._days(nxt),
+            {date(2026, 9, 8): Decimal("5.00"), date(2026, 9, 9): Decimal("1.00")},
+        )
+
+    def test_skips_booked_days(self):
+        from datetime import datetime, time
+        from django.utils import timezone as tz
+        from jobtracker.enums import (
+            DefaultTimeSlotTypes, PhaseStatuses, TimeSlotDeliveryRole,
+        )
+        from jobtracker.models import Phase, TimeSlot, TimeSlotType
+
+        phase = Phase.objects.create(
+            job=self.job, title="P1", status=PhaseStatuses.SCHEDULED_CONFIRMED
+        )
+        TimeSlot.objects.create(
+            user=self.u,
+            slot_type=TimeSlotType.get_builtin_object(DefaultTimeSlotTypes.DELIVERY),
+            phase=phase,
+            start=tz.make_aware(datetime.combine(self.START, time(9))),
+            end=tz.make_aware(datetime.combine(self.START, time(17, 30))),
+            deliveryRole=TimeSlotDeliveryRole.DELIVERY,
+        )
+        draw = create_support_draw(self.role, self.START, self.END, Decimal("3"))
+        days = self._days(draw)
+        self.assertEqual(sum(days.values()), Decimal("3.00"))
+        self.assertNotIn(date(2026, 9, 7), days)
+
+    def test_more_than_free_time_spreads_remainder(self):
+        draw = create_support_draw(self.role, self.START, self.END, Decimal("40"))
+        days = self._days(draw)
+        self.assertEqual(sum(days.values()), Decimal("40.00"))
+        self.assertEqual(len(days), 5)
+        self.assertEqual(days[date(2026, 9, 7)], Decimal("8.00"))
+
+    def test_page_uses_saved_days(self):
+        from chaotica_utils.utils import build_user_code_allocation
+
+        create_support_draw(self.role, self.START, self.END, Decimal("10"))
+        per_day = build_user_code_allocation(self.u, self.START, self.END)["per_day"]
+        support = {
+            day: sum(e["hours"] for e in es if e.get("kind") == "support")
+            for day, es in per_day.items()
+        }
+        self.assertEqual(support[date(2026, 9, 7)], Decimal("7.50"))
+        self.assertEqual(support[date(2026, 9, 8)], Decimal("2.50"))
+        self.assertNotIn(date(2026, 9, 9), support)

@@ -183,10 +183,21 @@ def _add_support_draws(
         draws = list(
             SupportBudgetDraw.objects.filter(
                 user=user, period_start__lte=end, period_end__gte=start
-            ).select_related("support_role__job")
+            )
+            .select_related("support_role__job", "support_role__job__client")
+            .prefetch_related("days")
         )
     if not draws:
         return
+    if job_assignments is None:
+        # One query for every drawn job's codes (not one per job).
+        from jobtracker.models import BillingCodeAssignment
+
+        job_assignments = {}
+        for a in BillingCodeAssignment.objects.filter(
+            job_id__in={d.support_role.job_id for d in draws}
+        ).select_related("code", "code__client"):
+            job_assignments.setdefault(a.job_id, []).append(a)
 
     per_day = alloc["per_day"]
     per_code = alloc["per_code"]
@@ -198,23 +209,38 @@ def _add_support_draws(
         job = draw.support_role.job
         if job.pk not in job_cache:
             url = job.get_absolute_url() if hasattr(job, "get_absolute_url") else None
-            if job_assignments is not None:
-                assigned = job_assignments.get(job.pk, [])
-            else:
-                assigned = list(job.get_billing_assignments())
+            assigned = job_assignments.get(job.pk, [])
             job_cache[job.pk] = (str(job), url, assigned)
 
+    # One support entry per (day, code) with the jobs as targets — like
+    # scheduled work — rather than one per draw per day (hundreds of draws
+    # in a period would otherwise render thousands of rows).
+    merged = {}  # (day, code_id) -> (entry, {job_pk: target})
+    # Code-days already counted by scheduled work, so a day isn't counted twice.
+    counted = {
+        (day, e["code_id"])
+        for day, day_entries in per_day.items()
+        for e in day_entries
+        if e.get("code_id") is not None
+    }
     for draw in draws:
-        label, url, assignments = job_cache[draw.support_role.job_id]
-        days = [d for d in _iter_days(draw.period_start, draw.period_end)
-                if d.weekday() < 5]
-        if not days:
-            continue
-        daily = draw.hours_drawn / len(days)
-        for day in days:
+        job_pk = draw.support_role.job_id
+        label, url, assignments = job_cache[job_pk]
+        planned = list(draw.days.all())
+        if planned:
+            # Days planned at cash-out (whole free days first).
+            day_hours = [(d.day, d.hours) for d in planned]
+        else:
+            # Older draws: spread evenly across the period's weekdays.
+            days = [d for d in _iter_days(draw.period_start, draw.period_end)
+                    if d.weekday() < 5]
+            if not days:
+                continue
+            daily = draw.hours_drawn / len(days)
+            day_hours = [(d, daily) for d in days]
+        for day, daily in day_hours:
             if day < start or day > end:
                 continue
-            entries = per_day.setdefault(day, [])
             applicable = [a for a in assignments if code_applies_on(a, day)]
             shares = (
                 _attribute_hours(applicable, daily, policy)
@@ -222,14 +248,23 @@ def _add_support_draws(
             )
             for a, hours in shares:
                 code = a.code if a is not None else None
-                entries.append({
-                    "code_id": code.id if code else None,
-                    "code": code,
-                    "hours": hours,
-                    "kind": "support",
-                    "targets": [{"label": label, "url": url, "kind": "job",
-                                 "hours": hours}],
+                key = (day, code.id if code else None)
+                if key not in merged:
+                    entry = {
+                        "code_id": key[1],
+                        "code": code,
+                        "hours": Decimal(0),
+                        "kind": "support",
+                        "targets": [],
+                    }
+                    per_day.setdefault(day, []).append(entry)
+                    merged[key] = (entry, {})
+                entry, targets = merged[key]
+                entry["hours"] += hours
+                target = targets.setdefault(job_pk, {
+                    "label": label, "url": url, "kind": "job", "hours": Decimal(0),
                 })
+                target["hours"] += hours
                 alloc["stats"]["support_hours"] += hours
                 if code is not None:
                     summary = per_code.setdefault(code.id, {
@@ -238,7 +273,12 @@ def _add_support_draws(
                         "is_internal": code.is_internal, "client_id": code.client_id,
                     })
                     summary["hours"] += hours
-                    summary["days"] += 1
+                    if key not in counted:
+                        summary["days"] += 1
+                        counted.add(key)
+
+    for entry, targets in merged.values():
+        entry["targets"] = sorted(targets.values(), key=lambda t: str(t["label"]))
 
     alloc["per_day"] = {d: per_day[d] for d in sorted(per_day)}
 
@@ -704,7 +744,9 @@ def build_cohort_code_allocation(users, start, end):
     draws_by_user = {}
     for draw in SupportBudgetDraw.objects.filter(
         user_id__in=list(users_by_id), period_start__lte=end, period_end__gte=start
-    ).select_related("support_role__job", "support_role__job__client"):
+    ).select_related("support_role__job", "support_role__job__client").prefetch_related(
+        "days"
+    ):
         draws_by_user.setdefault(draw.user_id, []).append(draw)
     draw_job_assignments = {}
     draw_job_ids = {

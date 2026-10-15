@@ -1493,6 +1493,29 @@ class SupportBudgetDraw(models.Model):
         super().save(*args, **kwargs)
 
 
+class SupportDrawDay(models.Model):
+    """How a cash-out's hours sit on the timesheet: hours per working day.
+
+    Planned once when the draw is made (whole free days first, see
+    :func:`chaotica_utils.utils.support_budget.plan_draw_days`) so the
+    Billing Codes page shows what was actually entered. Draws without day
+    rows (made before this existed) are spread evenly across the period.
+    """
+
+    draw = models.ForeignKey(
+        SupportBudgetDraw, on_delete=models.CASCADE, related_name="days"
+    )
+    day = models.DateField()
+    hours = models.DecimalField(max_digits=6, decimal_places=2)
+
+    class Meta:
+        ordering = ["day"]
+        unique_together = ["draw", "day"]
+
+    def __str__(self):
+        return "{} {}h".format(self.day, self.hours)
+
+
 @receiver(post_save, sender=Job, dispatch_uid="apply_support_template_on_job_create")
 def apply_support_template_on_job_create(sender, instance, created, **kwargs):
     """Seed a new job's support team from its unit's default support profile."""

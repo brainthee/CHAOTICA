@@ -24,6 +24,7 @@ from ..utils import (
     ext_reverse,
     clean_fullcalendar_datetime,
     can_manage_user,
+    free_hours_in_period,
     group_permissions,
 )
 from .common import ChaoticaBaseGlobalRoleView, page_defaults, log_system_activity
@@ -38,6 +39,7 @@ from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView
 from django.shortcuts import get_object_or_404
 import datetime
+from decimal import Decimal
 from django.views.decorators.http import (
     require_http_methods,
     require_safe,
@@ -224,6 +226,10 @@ def _parse_allocation_range(request):
     return parse_period_range(request.GET)
 
 
+# Support codes listed per day on the Billing Codes page before "+N more".
+SUPPORT_CODES_PER_DAY = 3
+
+
 @login_required
 def user_code_allocation(request, email):
     """"Code Allocations" for a user: which billing code(s) to book against,
@@ -255,6 +261,29 @@ def user_code_allocation(request, email):
         sum(1 for e in entries if e["code"]) > 1
         for entries in allocation["per_day"].values()
     )
+    # Per-day table: support can span hundreds of codes a day, so show the
+    # first few and roll the rest into one "+N more" line (the Per code table
+    # still has the full split).
+    per_day_rows = {}
+    for day, entries in allocation["per_day"].items():
+        shown, hidden, support_shown = [], [], 0
+        for entry in entries:
+            if entry.get("kind") == "support":
+                if support_shown >= SUPPORT_CODES_PER_DAY:
+                    hidden.append(entry)
+                    continue
+                support_shown += 1
+            shown.append(entry)
+        per_day_rows[day] = {
+            "entries": shown,
+            "support_more": {
+                "count": len(hidden),
+                "hours": sum((e["hours"] for e in hidden), Decimal(0)),
+            }
+            if hidden
+            else None,
+        }
+
     from constance import config
 
     site_date_format = config.SITE_DATE_FORMAT
@@ -282,7 +311,10 @@ def user_code_allocation(request, email):
         {
             "userProfile": target,
             "date_range": "{} to {}".format(start, end),
-            "per_day": allocation["per_day"],
+            "per_day": per_day_rows,
+            "period_free_hours": free_hours_in_period(
+                target, start, end, stats=allocation["stats"]
+            ),
             "per_code": per_code,
             "uncoded": allocation["uncoded"],
             "alloc_stats": allocation["stats"],
@@ -377,14 +409,15 @@ def user_support_draw(request, email, role_pk):
 @login_required
 @require_http_methods(["POST"])
 def user_support_auto_draw(request, email):
-    """One-click cash out: fill the viewed period across ALL the user's support
-    roles with each role's remaining budget.
+    """One-click cash out: fill the viewed period's free hours from the user's
+    support budgets, oldest job first.
 
-    Tops up each role with whatever remains (never more), so it's safe to
-    click again. Same self/manager gate as the allocations page.
+    Never draws more than the period's free hours or any role's remaining
+    budget, so it's safe to click again. Same self/manager gate as the
+    allocations page.
     """
     from ..utils import period_for_date, auto_cash_out
-    from ..utils.support_budget import support_draw_message
+    from ..utils.support_budget import fmt_decimal, support_draw_message
 
     target = get_object_or_404(User, email=email)
     if not target.can_be_managed_by(request.user):
@@ -419,16 +452,25 @@ def user_support_auto_draw(request, email):
 
     if created:
         messages.success(
-            request, "Cashed out {} support {} for {} – {}.".format(
-                created, "role" if created == 1 else "roles", p_start, p_end
+            request, "Cashed out {}h across {} {} for {} – {}.".format(
+                fmt_decimal(sum(d.hours_drawn for d in draws)),
+                created,
+                "job" if created == 1 else "jobs",
+                p_start,
+                p_end,
             )
         )
-    else:
-        messages.info(request, "Nothing to cash out for this period.")
+    elif p_start <= p_end and p_start <= timezone.now().date():
+        if free_hours_in_period(target, p_start, p_end) <= 0:
+            messages.info(
+                request, "No free hours left in this period to cash out."
+            )
+        else:
+            messages.info(request, "No support budget left to cash out.")
 
     url = reverse("user_code_allocation", kwargs={"email": target.email})
     return HttpResponseRedirect(
-        "{}?start={}&end={}".format(url, p_start, p_end)
+        "{}?start_date={}&end_date={}".format(url, p_start, p_end)
     )
 
 

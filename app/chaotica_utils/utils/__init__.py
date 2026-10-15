@@ -20,6 +20,7 @@ from .support_budget import (
     build_user_support_budget,
     create_support_draw,
     auto_cash_out,
+    free_hours_in_period,
 )
 from .periods import (
     parse_period_start_days,

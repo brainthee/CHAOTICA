@@ -15,6 +15,9 @@ from datetime import date, timedelta
 
 from constance import config
 
+# Longest range the billing views accept (a little over a year).
+MAX_PERIOD_RANGE_DAYS = 400
+
 
 def parse_period_start_days():
     """Sorted, de-duplicated boundary days from the constance setting.
@@ -120,6 +123,12 @@ def parse_period_range(params):
             start = end = None
     if start is None or end is None:
         start, end = period_for_date(timezone.now().date())
+    if start > end:
+        start, end = end, start
+    # These views walk every day for every member; cap the span so a crafted
+    # URL can't make them process decades.
+    if (end - start).days > MAX_PERIOD_RANGE_DAYS:
+        end = start + timedelta(days=MAX_PERIOD_RANGE_DAYS)
     return start, end
 
 

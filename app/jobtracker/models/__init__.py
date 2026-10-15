@@ -3,7 +3,7 @@ from .service import Service
 from .financial import BillingCode, BillingCodeAssignment
 from .client import Client, ClientOnboarding, Contact, Address, FrameworkAgreement
 
-from .job import Job, JobSupportTeamRole, SupportBudgetDraw
+from .job import Job, JobSupportTeamRole, SupportBudgetDraw, SupportDrawDay
 from .phase import Phase
 
 from .project import Project

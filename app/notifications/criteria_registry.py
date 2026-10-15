@@ -112,9 +112,11 @@ def job_support_team(entity, params=None):
     elif hasattr(entity, "job"):
         job = entity.job
 
-    if job and hasattr(job, "job_support_roles"):
+    if job:
         support_team_users = [
-            role.user for role in job.job_support_roles.all() if role.user
+            role.user
+            for role in job.supporting_team.select_related("user")
+            if role.user
         ]
         return User.objects.filter(
             id__in=[user.id for user in support_team_users], is_active=True

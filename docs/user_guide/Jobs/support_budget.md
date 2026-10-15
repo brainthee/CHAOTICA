@@ -163,8 +163,22 @@ There are three ways to do this:
   being viewed, and the hours default to everything remaining. Only the member
   themselves and their managers can do this; no scheduling rights on the job are
   needed.
-- **Auto cash out this period**: this tops up every job with whatever remains
-  for that member. Clicking it again does nothing, because nothing is left.
+- **Auto cash out this period**: this fills the period's **free hours** from the
+  member's support budgets. Free hours are the period's capacity (working days ×
+  hours per day) less everything already on their timesheet: booked work (coded
+  or not), leave and bank holidays, internal time, and support already cashed
+  out. They're shown next to the button. Jobs are used oldest first, each up to
+  its remaining budget, until the free hours run out. For example, a 12-day
+  period (90h) with 30h booked leaves 60h to fill. Clicking again does nothing
+  once the free hours are used.
+- **How cash-outs sit on the timesheet**: each cash-out is laid out as whole
+  days when it's made, filling each day's free time in date order. For example,
+  42h starting on a free Thursday becomes 7.5h a day Thu–Wed plus 4.57h on the
+  next Thursday, and the next cash-out carries on from there. Any hours beyond
+  the period's free time are spread evenly over its weekdays. A job with
+  several billing codes splits each day between them, per the site's
+  duplicate-code setting. Cash-outs made before this change stay spread evenly
+  across their period. A period with no weekdays can't be cashed out.
 - **From the job**: **Cash out hours** on the job's Support widget. This needs
   scheduling rights on the job **and** either being the member, managing them,
   or holding **Can view loaded cost rates** on the job's unit. Scheduling rights
@@ -221,7 +235,10 @@ Codes*, or a manager can open it from a person's profile). It shows, for a date
 range:
 
 - **billing-code usage from their schedule** — which codes their booked time maps
-  to, per day and per code, with the phase/project shown against each; and
+  to, per day and per code, with the phase/project shown against each. Cashed-out
+  support time shows as one *support* line per code per day, listing up to three
+  jobs. A day with more than three support codes shows a "+N more codes" line
+  with their hours; the **Per code** table has the full split; and
 - their **support budget**: per-job budget hours, hours cashed out this period,
   and remaining, for active and completed jobs. Any problems are shown above the
   table, such as a missing loaded cost rate.

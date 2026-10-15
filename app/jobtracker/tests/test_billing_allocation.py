@@ -268,6 +268,75 @@ class BillingAllocationTests(TestCase):
         self.assertTrue(support_entries)
         self.assertEqual(support_entries[0]["code"].id, self.code_a.id)
 
+    def _support_jobs(self, n, code_for=None):
+        """``n`` jobs the user cashed out 5h each on, Mon–Fri this week."""
+        from jobtracker.models import JobSupportTeamRole, SupportBudgetDraw
+
+        monday = _monday(timezone.now()).date()
+        friday = monday + timedelta(days=4)
+        for i in range(n):
+            job = Job.objects.create(
+                title="Support job %d" % i, client=self.client_obj, unit=self.unit,
+                created_by=self.root, account_manager=self.root,
+            )
+            code = code_for(i) if code_for else self.code_a
+            BillingCodeAssignment.objects.create(code=code, job=job)
+            role = JobSupportTeamRole.objects.create(
+                job=job, user=self.user, profile_percent=Decimal("100")
+            )
+            SupportBudgetDraw.objects.create(
+                support_role=role, user=self.user,
+                period_start=monday, period_end=friday,
+                hours_drawn=Decimal("5"), created_by=self.root,
+            )
+        return monday, friday
+
+    def test_support_draws_merge_per_day_and_code(self):
+        monday, friday = self._support_jobs(3)
+        alloc = build_user_code_allocation(self.user, monday, friday)
+        self.assertEqual(alloc["stats"]["support_hours"], Decimal("15"))
+        for day, entries in alloc["per_day"].items():
+            support = [e for e in entries if e.get("kind") == "support"]
+            # One line for the code, carrying all three jobs (1h each).
+            self.assertEqual(len(support), 1, day)
+            self.assertEqual(support[0]["hours"], Decimal("3"))
+            self.assertEqual(len(support[0]["targets"]), 3)
+        # Person-days counts each day once, not once per cash-out.
+        self.assertEqual(alloc["per_code"][self.code_a.id]["days"], 5)
+        self.assertEqual(alloc["per_code"][self.code_a.id]["hours"], Decimal("15"))
+
+    def test_support_overlay_query_count_is_flat(self):
+        from django.db import connection
+        from django.test.utils import CaptureQueriesContext
+
+        monday, friday = self._support_jobs(2)
+        with CaptureQueriesContext(connection) as small:
+            build_user_code_allocation(self.user, monday, friday)
+        self._support_jobs(4)
+        with CaptureQueriesContext(connection) as big:
+            build_user_code_allocation(self.user, monday, friday)
+        self.assertEqual(len(small.captured_queries), len(big.captured_queries))
+
+    def test_page_caps_support_codes_per_day(self):
+        codes = [
+            BillingCode.objects.create(code="S-%d" % i, client=self.client_obj)
+            for i in range(5)
+        ]
+        monday, friday = self._support_jobs(5, code_for=lambda i: codes[i])
+        http = TestHttpClient(HTTP_HOST="localhost")
+        http.force_login(self.root)
+        resp = http.get(
+            reverse("user_code_allocation", kwargs={"email": self.user.email}),
+            {"start_date": monday.isoformat(), "end_date": friday.isoformat()},
+        )
+        self.assertEqual(resp.status_code, 200)
+        for row in resp.context["per_day"].values():
+            shown = [e for e in row["entries"] if e.get("kind") == "support"]
+            self.assertEqual(len(shown), 3)
+            self.assertEqual(row["support_more"]["count"], 2)
+            self.assertEqual(row["support_more"]["hours"], Decimal("2"))
+        self.assertContains(resp, "+2 more codes")
+
     def test_coded_day_includes_phase_target(self):
         # Each coded per-day entry carries the phase/project the hours were on.
         BillingCodeAssignment.objects.create(code=self.code_a, job=self.job)

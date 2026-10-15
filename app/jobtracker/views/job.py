@@ -46,6 +46,7 @@ from ..forms import (
     JobSupportTeamRoleForm,
     LinkForm,
 )
+from django.db import transaction
 from ..enums import JobStatuses, PhaseStatuses, TimeSlotDeliveryRole, DefaultTimeSlotTypes, LinkType
 from ..models import ScheduleActionType
 from .. import schedule_history
@@ -562,10 +563,15 @@ def job_support_team_draw(request, slug, pk):
 
 
 def can_reverse_support_draws(user, job):
-    """Who may reverse (delete) a cash-out: job schedulers or unit finance.
+    """Who may reverse (delete) a cash-out: job schedulers or unit finance,
+    while the job can still be cashed out (reversing on a closed job would
+    free budget that can never be drawn again).
 
     Members can't reverse their own draws — that would let them re-time or
     re-price cash-outs at will."""
+
+    if job.status not in JobStatuses.SUPPORT_DRAWABLE_STATUSES:
+        return False
     if user.is_superuser:
         return True
     return (
@@ -640,17 +646,18 @@ def job_support_team_draw_delete(request, slug, pk, draw_pk):
     draw = get_object_or_404(support_role.draws, pk=draw_pk)
     if not can_reverse_support_draws(request.user, job):
         return HttpResponseForbidden()
-    log_system_activity(
-        job,
-        "Reversed {user}'s cash-out of {hrs}h ({start} - {end}).".format(
-            user=support_role.user,
-            hrs=fmt_decimal(draw.hours_drawn),
-            start=draw.period_start,
-            end=draw.period_end,
-        ),
-        author=request.user,
-    )
-    draw.delete()
+    with transaction.atomic():
+        log_system_activity(
+            job,
+            "Reversed {user}'s cash-out of {hrs}h ({start} - {end}).".format(
+                user=support_role.user,
+                hrs=fmt_decimal(draw.hours_drawn),
+                start=draw.period_start,
+                end=draw.period_end,
+            ),
+            author=request.user,
+        )
+        draw.delete()
     return JsonResponse({"form_is_valid": True})
 
 
