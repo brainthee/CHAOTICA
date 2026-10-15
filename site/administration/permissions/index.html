@@ -5024,7 +5024,10 @@ read-only, but every user can create projects and create/own their own reports.<
 </tbody>
 </table>
 <h3 id="service-delivery">Service Delivery<a class="headerlink" href="#service-delivery" title="Permanent link">&para;</a></h3>
-<p>Scheduling, member management, and leave oversight.</p>
+<p>Member management, support teams and leave oversight. Service Delivery <strong>does not
+schedule</strong>: only the <strong>Scheduler</strong> and <strong>Manager</strong> roles hold <code>can_schedule_job</code>
+(migration <code>0090</code> removed it from existing Service Delivery roles). SD members see a
+read‑only scheduler.</p>
 <table>
 <thead>
 <tr>
@@ -5062,12 +5065,8 @@ read-only, but every user can create projects and create/own their own reports.<
 <td>Can refire notifications for jobs</td>
 </tr>
 <tr>
-<td><code>can_schedule_job</code></td>
-<td>Can schedule phases</td>
-</tr>
-<tr>
 <td><code>manage_members</code></td>
-<td>Assign members</td>
+<td>Assign members (also gates the job <strong>support team</strong>)</td>
 </tr>
 <tr>
 <td><code>can_approve_leave_requests</code></td>
@@ -5633,6 +5632,11 @@ links, billing codes and dates. Edit rights otherwise come from a unit role.</p>
 <hr />
 <h2 id="job-support-team-roles">Job Support Team Roles<a class="headerlink" href="#job-support-team-roles" title="Permanent link">&para;</a></h2>
 <p>Jobs can have a support team with defined roles, stored in the <code>JobSupportTeamRole</code> model (<code>jobtracker/models/job.py</code>). These track allocation and billing but do not directly grant permissions.</p>
+<p>Managing a job's support team (add, edit, mark used, delete, apply/change profile,
+cash out) needs <code>manage_members</code> on the job's unit — <strong>Service Delivery</strong> and
+<strong>Manager</strong> — not scheduling rights. Cashing out someone else's budget additionally
+needs to be their manager or hold <code>can_view_loaded_costs</code>. Reversing a cash‑out is
+open to schedulers, <code>manage_members</code> holders and unit finance.</p>
 <table>
 <thead>
 <tr>
@@ -5739,10 +5743,14 @@ that carries a <strong>privileged</strong> unit permission can only be granted b
 holds that permission in the unit themselves (superusers are exempt). The
 privileged permissions are <code>manage_members</code>, <code>change_organisationalunit</code>,
 <code>delete_organisationalunit</code>, <code>can_view_loaded_costs</code>,
-<code>can_approve_leave_requests</code> and <code>can_view_all_leave_requests</code>
+<code>can_approve_leave_requests</code>, <code>can_view_all_leave_requests</code> and <code>can_schedule_job</code>
 (<code>OrganisationalUnit.PRIVILEGED_PERMS</code>).</p>
-<p>For example, Service Delivery (which has <code>manage_members</code>) can assign Consultant,
-QA or Scheduler roles but <strong>not</strong> Manager. The rule applies to the role-edit
+<p>For example, Service Delivery (which has <code>manage_members</code>) can assign Consultant or
+QA roles but <strong>not</strong> Manager or <strong>Scheduler</strong> — otherwise SD could hand itself
+scheduling rights. Managers and Schedulers can grant the Scheduler role.</p>
+<p>Endpoints that aren't tied to one object (e.g. "create a slot") first check that
+<strong>any</strong> of the user's current unit memberships grants the permission — not just the
+first one — and then verify the specific unit, job or person being changed. The rule applies to the role-edit
 modal, single pre-load and CSV import. When editing a member, any roles they
 already hold above the editor's ceiling are kept rather than stripped. Nobody
 (except superusers) can edit their own unit roles or pre-load/import themselves.</p>

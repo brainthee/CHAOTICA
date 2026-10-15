@@ -3354,7 +3354,7 @@
 <ul>
 <li><strong>Pass</strong> — no issue, continue.</li>
 <li><strong>Hard block</strong> — the slot can't be saved; you see an error you can only dismiss.</li>
-<li><strong>Bypassable warning</strong> — you see a warning with a <strong>Save</strong> option; choosing it re‑submits with <code>force</code> set to skip bypassable checks.</li>
+<li><strong>Bypassable warning</strong> — you see a warning with a <strong>Save anyway</strong> option and an optional <strong>Reason</strong> box; choosing it re‑submits with <code>force</code> set to skip bypassable checks. Every override is recorded — the change gets a ⚠ in <a href="../history/#overridden-warnings">History</a> (with your reason) and a warning entry in the Activity Log.</li>
 </ul>
 <p>The non‑overlap checks run first (closed phase → framework → onboarding → phase scope). If they pass, overlaps are handled by the <strong>chooser</strong> described below.</p>
 <pre class="mermaid"><code>flowchart TD
@@ -3444,6 +3444,11 @@ jobs.</p>
 <td>User is onboarded but the record is <strong>stale</strong> (past renewal)</td>
 <td>Warning; can force.</td>
 </tr>
+<tr>
+<td><strong>Overlap (edit / drag / resize)</strong></td>
+<td>The changed slot now overlaps one of the person's other bookings that it didn't overlap before</td>
+<td>Warning listing the bookings; can force. Overlapping <strong>leave or unavailability</strong> is a hard block instead.</td>
+</tr>
 </tbody>
 </table>
 <div class="admonition note">
@@ -3455,8 +3460,9 @@ jobs.</p>
 <ul>
 <li><strong>Book around</strong> — skip the occupied days and book only the free working days, splitting the booking into multiple slots as needed. Weekends/holidays inside a run don't split it; a busy working day does.</li>
 <li><strong>Schedule over</strong> — book one slot across the whole range on top of what's there (deliberate double‑booking).</li>
-<li><strong>Clear &amp; book (destructive)</strong> — delete the overlapping <strong>delivery and project</strong> work in the range, then book the whole range. <strong>Leave, sick, bank holidays and other internal time are always kept</strong> — the new booking sits on top of those.</li>
+<li><strong>Clear &amp; book (destructive)</strong> — delete the overlapping <strong>delivery and project</strong> work in the range, then book the whole range. <strong>Leave, sick, bank holidays and other internal time are always kept</strong> — the new booking sits on top of those. The cleared (and split) slots are recorded in the same change, so a single <strong>Undo</strong> brings them back.</li>
 </ul>
+<p><em>Schedule over</em> and <em>Clear &amp; book</em> count as overriding the overlap warning: the optional reason box in the chooser is recorded with the change.</p>
 <div class="admonition warning">
 <p class="admonition-title">Leave / time off is read‑only</p>
 <p>Annual‑leave, sick and bank‑holiday slots can't be moved or edited from the scheduler — the block isn't draggable and the backend refuses the change. Manage them via the leave request. (Destructive booking never deletes them either.)</p>
@@ -3466,7 +3472,8 @@ jobs.</p>
 <ul>
 <li>People with <strong>no issues</strong> are booked.</li>
 <li>People with a <strong>hard block</strong> (e.g. not onboarded, framework closed) are <strong>skipped</strong> and reported in the summary.</li>
-<li>If any have <strong>bypassable</strong> warnings, you're asked once to <strong>confirm/force</strong>; on confirm, all eligible people are booked and the summary reports how many were booked and how many skipped.</li>
+<li>If any have <strong>bypassable</strong> warnings, you're asked once to <strong>confirm/force</strong>; on confirm, all eligible people are booked and the summary reports how many were booked and how many skipped. People whose booking would overlap <strong>leave or unavailability</strong> stay skipped even when you force.</li>
+<li>If <strong>nobody</strong> can be booked (e.g. a single person who's on leave), you get the reason instead of an empty "saved".</li>
 </ul>
 <h2 id="budget-calculations">Budget calculations<a class="headerlink" href="#budget-calculations" title="Permanent link">&para;</a></h2>
 <p>Framework budget checks convert slot hours to days using the client's <code>hours_in_day</code>:</p>

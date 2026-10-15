@@ -130,6 +130,19 @@ Time Zone: User's time zone
 - Automatic busy time blocking
 - Travel and out-of-office schedules
 
+### Exporting someone's schedule
+
+A profile's **Export schedule** button opens a small dialog: pick a **date range**
+(defaults to 30 days back and 90 ahead, up to 1,200 days) and **Download XLSX**. The
+file is the same internal workbook as the main scheduler's export (Overview,
+Schedule grid, Bookings, Resources) for **just that person** — bookings, leave,
+holidays and comments.
+
+You can export, and see the profile's **Schedule** tab, if you can see that
+person's schedule: yourself, their (acting) manager, anyone with `manage_user`, or
+anyone holding `view_users_schedule` on one of their units. It works for
+**deactivated** people too. Otherwise the button and tab aren't shown.
+
 ### Communication Preferences
 
 **Notification Settings**:

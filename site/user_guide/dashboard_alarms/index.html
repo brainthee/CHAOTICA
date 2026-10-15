@@ -3209,6 +3209,19 @@ unit-wide, and everyone sees alarms for work they're on (booked, lead, report
 author, or on the job's account/scoping team).</p>
 <p>There are two groups. The red count on the tab is <strong>overdue</strong> only; stale items
 have their own grey count.</p>
+<div class="admonition info">
+<p class="admonition-title">Tabs load on demand and keep themselves fresh</p>
+<p>The dashboard opens on <strong>Alarms</strong> when you have overdue work (otherwise on
+<strong>Schedule</strong>), and only that tab is loaded up front. Every other tab — My Jobs,
+My Phases, In Flight, Scheduled This Week, Upcoming Reports, Scoping, Signoff,
+TQA, PQA, Pending Delivery, My Team, Team Leave — loads the first time you open
+it. Badge counts are shown straight away.</p>
+<p>The tab you're looking at <strong>refreshes itself every 3 minutes</strong> (the Schedule tab
+re-fetches its calendar), and its badge updates; an <em>Updated hh:mm</em> note shows
+when. Refreshing pauses while the browser tab is hidden and catches up as soon as
+you come back after a longer absence. Table search, page and scroll position are
+kept across refreshes.</p>
+</div>
 <h2 id="overdue">Overdue<a class="headerlink" href="#overdue" title="Permanent link">&para;</a></h2>
 <p>Live work that's late or missing something:</p>
 <table>

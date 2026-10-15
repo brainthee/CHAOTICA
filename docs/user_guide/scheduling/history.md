@@ -12,8 +12,24 @@ phase). It opens a panel listing recent changes for the scope you're viewing, ne
 first, each showing:
 
 - **what changed** (a short summary, e.g. *Created 1 slot*, *Moved 3 slots*, *Cleared 5 slots*),
+- a **⚠** and the **reason**, if the change was saved past a warning (see below),
 - **who** made it and **when** (relative time),
 - a **Revert** button, where allowed.
+
+### Overridden warnings
+
+When someone chooses **Save anyway** on a bypassable warning (an overlap, over scope,
+over the framework budget, stale onboarding — or books *over* / *clears* in the overlap
+chooser), the change is marked as an **override**:
+
+- in History it shows a **⚠**, the summary says what was overridden (e.g. *Updated 1
+  slot (overrode: overlap with 2 bookings; over scope)*) and the optional **reason**
+  typed in the warning dialog appears underneath;
+- a **warning‑level** entry (*Warning overridden: …*) is written to the **Activity Log**
+  of the phase or job (or the person, for non‑job work), so overrides are visible
+  outside the scheduler too.
+
+Hard blocks (leave, a closed phase, a closed framework) can't be overridden.
 
 Reverting applies the exact inverse of a change:
 

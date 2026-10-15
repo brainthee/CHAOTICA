@@ -281,7 +281,10 @@ Job viewing and creation with point-of-contact assignment.
 
 ### Service Delivery
 
-Scheduling, member management, and leave oversight.
+Member management, support teams and leave oversight. Service Delivery **does not
+schedule**: only the **Scheduler** and **Manager** roles hold `can_schedule_job`
+(migration `0090` removed it from existing Service Delivery roles). SD members see a
+read‑only scheduler.
 
 | Permission | Description |
 |---|---|
@@ -292,8 +295,7 @@ Scheduling, member management, and leave oversight.
 | `can_add_note_job` | Can add a note to jobs |
 | `view_users_schedule` | View member schedules |
 | `can_refire_notifications_job` | Can refire notifications for jobs |
-| `can_schedule_job` | Can schedule phases |
-| `manage_members` | Assign members |
+| `manage_members` | Assign members (also gates the job **support team**) |
 | `can_approve_leave_requests` | Can approve leave requests |
 | `can_view_all_leave_requests` | Can view all leave for members of the unit |
 
@@ -524,6 +526,12 @@ These assignments drive workflow transitions (e.g. who can move a phase into TQA
 
 Jobs can have a support team with defined roles, stored in the `JobSupportTeamRole` model (`jobtracker/models/job.py`). These track allocation and billing but do not directly grant permissions.
 
+Managing a job's support team (add, edit, mark used, delete, apply/change profile,
+cash out) needs `manage_members` on the job's unit — **Service Delivery** and
+**Manager** — not scheduling rights. Cashing out someone else's budget additionally
+needs to be their manager or hold `can_view_loaded_costs`. Reversing a cash‑out is
+open to schedulers, `manage_members` holders and unit finance.
+
 | Constant | Value | Display Name |
 |---|---|---|
 | `OTHER` | 0 | Other |
@@ -610,11 +618,16 @@ that carries a **privileged** unit permission can only be granted by someone who
 holds that permission in the unit themselves (superusers are exempt). The
 privileged permissions are `manage_members`, `change_organisationalunit`,
 `delete_organisationalunit`, `can_view_loaded_costs`,
-`can_approve_leave_requests` and `can_view_all_leave_requests`
+`can_approve_leave_requests`, `can_view_all_leave_requests` and `can_schedule_job`
 (`OrganisationalUnit.PRIVILEGED_PERMS`).
 
-For example, Service Delivery (which has `manage_members`) can assign Consultant,
-QA or Scheduler roles but **not** Manager. The rule applies to the role-edit
+For example, Service Delivery (which has `manage_members`) can assign Consultant or
+QA roles but **not** Manager or **Scheduler** — otherwise SD could hand itself
+scheduling rights. Managers and Schedulers can grant the Scheduler role.
+
+Endpoints that aren't tied to one object (e.g. "create a slot") first check that
+**any** of the user's current unit memberships grants the permission — not just the
+first one — and then verify the specific unit, job or person being changed. The rule applies to the role-edit
 modal, single pre-load and CSV import. When editing a member, any roles they
 already hold above the editor's ceiling are kept rather than stripped. Nobody
 (except superusers) can edit their own unit roles or pre-load/import themselves.

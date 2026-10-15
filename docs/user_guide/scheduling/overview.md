@@ -19,9 +19,9 @@ Viewing a schedule and **editing** it are separate rights:
 |---|---|
 | View the global scheduler | Any authenticated user |
 | View a job/phase schedule | `jobtracker.view_job_schedule` (on the job) |
-| Create / edit / delete / move slots | `jobtracker.can_schedule_job` (on the relevant **organisational unit**) |
+| Create / edit / delete / move slots | `jobtracker.can_schedule_job` (on the relevant **organisational unit**) — held by the **Scheduler** and **Manager** roles |
 
-Users without `can_schedule_job` can look but not change anything — the create/edit actions simply aren't offered, and the backend refuses them.
+Only **Schedulers** and **Managers** schedule. Everyone else — including **Service Delivery** — gets a **read‑only** timeline: no Pan/Select tools, no right‑click booking, no drag, and no schedule tools in the side panel. The backend refuses the change too. (Service Delivery still manage a job's **support team**; see [Permissions](../../administration/permissions.md).)
 
 !!! note "Job/phase views show the *full* schedule"
     On a job or phase schedule, each person's **other** commitments (other jobs, leave, internal time) are still shown — just **faded** — so an empty gap can be trusted as genuinely free. Only the current job/phase's work is shown in full colour.
@@ -81,6 +81,8 @@ See [Booking & Validation](validation.md) for exactly which checks run and how t
 - **Drag** a block to move its dates and/or drop it on a different person's row — both happen in one action; the destination person's working hours are applied automatically.
 - **Resize** a block to lengthen/shorten it.
 
+Edits, drags and resizes run the **same overlap check as booking**: landing on someone's existing booking asks you to confirm (**Save anyway**, with an optional reason); landing on their leave or unavailability is refused. Only *new* overlaps warn — nudging a slot that was already double‑booked doesn't ask again.
+
 !!! warning "Leave and time off are read‑only here"
     Annual leave, sick and bank‑holiday slots **cannot be moved or edited from the scheduler** — the block isn't draggable and the backend refuses the change. Manage those through the leave request (see [Managing Leave](../operations/managing_leave.md)).
 
@@ -95,12 +97,24 @@ The right‑click **Clear range** (and the sidebar **Clear** tool on job/phase p
 
 The **Edit Schedule** page for a job or phase has a **Tools** dropdown in the sidebar for bulk operations across the whole schedule (they act on the whole job, or just the phase when opened from a phase schedule):
 
-- **Shift schedule** — move *every* slot earlier or later by a number of days while **preserving each slot's length and the spacing between them**. Handy when a whole engagement slips. Tick *"Only shift slots starting today or later"* to leave already‑completed work where it is.
+- **Shift schedule** — move *every* slot, keeping **each slot's length and the spacing between them**. Handy when a whole engagement slips. Two modes:
+    - **By a number of days** — earlier or later by that many *calendar* days (weekends and holidays count).
+    - **To a new start date** — the earliest slot moves to the chosen date and the rest follow, with offsets and lengths counted in **working days**: each person's weekends and holidays (their country's, plus global ones) are skipped, so a Friday + Monday pair stays one working day apart. If the date isn't a working day for someone, their work starts on their next working day; each slot keeps its start and end times. Landing on existing bookings asks you to confirm (recorded as an override); landing on leave is refused. One **Undo** puts everything back.
+
+    Tick *"Only shift slots starting today or later"* to leave already‑completed work where it is. Slots on finished (locked) phases are left alone.
 - **Reassign person** — move all of one person's slots to another person (onboarding is re‑checked for the destination).
 - **Swap two people** — the two selected people trade all their slots.
 - **Set onsite / remote** — bulk‑set the onsite/remote flag on delivery slots, optionally limited to one person.
 
-Each tool shows a confirmation of what changed. Bulk changes don't run the per‑slot overlap checks, so glance over the timeline afterwards.
+Each tool shows a confirmation of what changed. Apart from *move to a start date*, bulk changes don't run the per‑slot overlap checks, so glance over the timeline afterwards.
+
+## Resizing the layout
+
+Three parts of the scheduler can be resized by dragging; sizes are remembered per browser:
+
+- **Name column** — drag the right edge of the people column (140–480 px).
+- **Side panel** (job & phase schedule pages) — drag the divider between the timeline and the tools panel, or use its **chevron** to collapse/expand the panel. On small screens the panel stacks below the timeline instead.
+- **Embedded timelines** (the *Schedule* tab on job, phase and project pages) — drag the bar under the timeline to make it taller or shorter.
 
 ## Change history, undo & live updates
 
@@ -112,6 +126,8 @@ or the global board see it update **live** — no reload needed. See
 [History, Undo & Live Updates](history.md).
 
 ## Exporting the schedule
+
+One person's schedule can also be exported from their **profile** — see [User Management](../team/user_management.md#exporting-someones-schedule).
 
 The **Schedule** tab on a job or phase has an **Export XLSX** button that downloads a themed, client‑ready Excel workbook — handy for sharing a plan with a client or working offline.
 

@@ -1680,6 +1680,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#resizing-the-layout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resizing the layout
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#change-history-undo-live-updates" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3381,6 +3392,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#resizing-the-layout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resizing the layout
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#change-history-undo-live-updates" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3506,11 +3528,11 @@
 </tr>
 <tr>
 <td>Create / edit / delete / move slots</td>
-<td><code>jobtracker.can_schedule_job</code> (on the relevant <strong>organisational unit</strong>)</td>
+<td><code>jobtracker.can_schedule_job</code> (on the relevant <strong>organisational unit</strong>) — held by the <strong>Scheduler</strong> and <strong>Manager</strong> roles</td>
 </tr>
 </tbody>
 </table>
-<p>Users without <code>can_schedule_job</code> can look but not change anything — the create/edit actions simply aren't offered, and the backend refuses them.</p>
+<p>Only <strong>Schedulers</strong> and <strong>Managers</strong> schedule. Everyone else — including <strong>Service Delivery</strong> — gets a <strong>read‑only</strong> timeline: no Pan/Select tools, no right‑click booking, no drag, and no schedule tools in the side panel. The backend refuses the change too. (Service Delivery still manage a job's <strong>support team</strong>; see <a href="../../../administration/permissions/">Permissions</a>.)</p>
 <div class="admonition note">
 <p class="admonition-title">Job/phase views show the <em>full</em> schedule</p>
 <p>On a job or phase schedule, each person's <strong>other</strong> commitments (other jobs, leave, internal time) are still shown — just <strong>faded</strong> — so an empty gap can be trusted as genuinely free. Only the current job/phase's work is shown in full colour.</p>
@@ -3587,6 +3609,7 @@
 <li><strong>Drag</strong> a block to move its dates and/or drop it on a different person's row — both happen in one action; the destination person's working hours are applied automatically.</li>
 <li><strong>Resize</strong> a block to lengthen/shorten it.</li>
 </ul>
+<p>Edits, drags and resizes run the <strong>same overlap check as booking</strong>: landing on someone's existing booking asks you to confirm (<strong>Save anyway</strong>, with an optional reason); landing on their leave or unavailability is refused. Only <em>new</em> overlaps warn — nudging a slot that was already double‑booked doesn't ask again.</p>
 <div class="admonition warning">
 <p class="admonition-title">Leave and time off are read‑only here</p>
 <p>Annual leave, sick and bank‑holiday slots <strong>cannot be moved or edited from the scheduler</strong> — the block isn't draggable and the backend refuses the change. Manage those through the leave request (see <a href="../../operations/managing_leave/">Managing Leave</a>).</p>
@@ -3600,12 +3623,26 @@
 <h2 id="management-tools-job-phase-schedules">Management tools (job &amp; phase schedules)<a class="headerlink" href="#management-tools-job-phase-schedules" title="Permanent link">&para;</a></h2>
 <p>The <strong>Edit Schedule</strong> page for a job or phase has a <strong>Tools</strong> dropdown in the sidebar for bulk operations across the whole schedule (they act on the whole job, or just the phase when opened from a phase schedule):</p>
 <ul>
-<li><strong>Shift schedule</strong> — move <em>every</em> slot earlier or later by a number of days while <strong>preserving each slot's length and the spacing between them</strong>. Handy when a whole engagement slips. Tick <em>"Only shift slots starting today or later"</em> to leave already‑completed work where it is.</li>
-<li><strong>Reassign person</strong> — move all of one person's slots to another person (onboarding is re‑checked for the destination).</li>
-<li><strong>Swap two people</strong> — the two selected people trade all their slots.</li>
-<li><strong>Set onsite / remote</strong> — bulk‑set the onsite/remote flag on delivery slots, optionally limited to one person.</li>
+<li>
+<p><strong>Shift schedule</strong> — move <em>every</em> slot, keeping <strong>each slot's length and the spacing between them</strong>. Handy when a whole engagement slips. Two modes:</p>
+<ul>
+<li><strong>By a number of days</strong> — earlier or later by that many <em>calendar</em> days (weekends and holidays count).</li>
+<li><strong>To a new start date</strong> — the earliest slot moves to the chosen date and the rest follow, with offsets and lengths counted in <strong>working days</strong>: each person's weekends and holidays (their country's, plus global ones) are skipped, so a Friday + Monday pair stays one working day apart. If the date isn't a working day for someone, their work starts on their next working day; each slot keeps its start and end times. Landing on existing bookings asks you to confirm (recorded as an override); landing on leave is refused. One <strong>Undo</strong> puts everything back.</li>
 </ul>
-<p>Each tool shows a confirmation of what changed. Bulk changes don't run the per‑slot overlap checks, so glance over the timeline afterwards.</p>
+<p>Tick <em>"Only shift slots starting today or later"</em> to leave already‑completed work where it is. Slots on finished (locked) phases are left alone.
+- <strong>Reassign person</strong> — move all of one person's slots to another person (onboarding is re‑checked for the destination).
+- <strong>Swap two people</strong> — the two selected people trade all their slots.
+- <strong>Set onsite / remote</strong> — bulk‑set the onsite/remote flag on delivery slots, optionally limited to one person.</p>
+</li>
+</ul>
+<p>Each tool shows a confirmation of what changed. Apart from <em>move to a start date</em>, bulk changes don't run the per‑slot overlap checks, so glance over the timeline afterwards.</p>
+<h2 id="resizing-the-layout">Resizing the layout<a class="headerlink" href="#resizing-the-layout" title="Permanent link">&para;</a></h2>
+<p>Three parts of the scheduler can be resized by dragging; sizes are remembered per browser:</p>
+<ul>
+<li><strong>Name column</strong> — drag the right edge of the people column (140–480 px).</li>
+<li><strong>Side panel</strong> (job &amp; phase schedule pages) — drag the divider between the timeline and the tools panel, or use its <strong>chevron</strong> to collapse/expand the panel. On small screens the panel stacks below the timeline instead.</li>
+<li><strong>Embedded timelines</strong> (the <em>Schedule</em> tab on job, phase and project pages) — drag the bar under the timeline to make it taller or shorter.</li>
+</ul>
 <h2 id="change-history-undo-live-updates">Change history, undo &amp; live updates<a class="headerlink" href="#change-history-undo-live-updates" title="Permanent link">&para;</a></h2>
 <p>Every change is recorded and reversible. The toolbar's <strong>History</strong> button lists recent
 changes for the current scope and lets you <strong>revert</strong> them (your own always; anyone's
@@ -3614,6 +3651,7 @@ last change. And when you change the schedule, other people viewing the same job
 or the global board see it update <strong>live</strong> — no reload needed. See
 <a href="../history/">History, Undo &amp; Live Updates</a>.</p>
 <h2 id="exporting-the-schedule">Exporting the schedule<a class="headerlink" href="#exporting-the-schedule" title="Permanent link">&para;</a></h2>
+<p>One person's schedule can also be exported from their <strong>profile</strong> — see <a href="../../team/user_management/#exporting-someones-schedule">User Management</a>.</p>
 <p>The <strong>Schedule</strong> tab on a job or phase has an <strong>Export XLSX</strong> button that downloads a themed, client‑ready Excel workbook — handy for sharing a plan with a client or working offline.</p>
 <ul>
 <li><strong>Overview</strong> sheet — a cover page with the title, key stats (client, job/phase, service, status, dates, lead, author, scoped days, reports, onsite) and a <strong>colour key</strong>.</li>

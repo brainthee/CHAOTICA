@@ -9,6 +9,19 @@ author, or on the job's account/scoping team).
 There are two groups. The red count on the tab is **overdue** only; stale items
 have their own grey count.
 
+!!! info "Tabs load on demand and keep themselves fresh"
+    The dashboard opens on **Alarms** when you have overdue work (otherwise on
+    **Schedule**), and only that tab is loaded up front. Every other tab — My Jobs,
+    My Phases, In Flight, Scheduled This Week, Upcoming Reports, Scoping, Signoff,
+    TQA, PQA, Pending Delivery, My Team, Team Leave — loads the first time you open
+    it. Badge counts are shown straight away.
+
+    The tab you're looking at **refreshes itself every 3 minutes** (the Schedule tab
+    re-fetches its calendar), and its badge updates; an *Updated hh:mm* note shows
+    when. Refreshing pauses while the browser tab is hidden and catches up as soon as
+    you come back after a longer absence. Table search, page and scroll position are
+    kept across refreshes.
+
 ## Overdue
 
 Live work that's late or missing something:

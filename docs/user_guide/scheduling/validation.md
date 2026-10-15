@@ -8,7 +8,7 @@ Each check returns one of:
 
 - **Pass** — no issue, continue.
 - **Hard block** — the slot can't be saved; you see an error you can only dismiss.
-- **Bypassable warning** — you see a warning with a **Save** option; choosing it re‑submits with `force` set to skip bypassable checks.
+- **Bypassable warning** — you see a warning with a **Save anyway** option and an optional **Reason** box; choosing it re‑submits with `force` set to skip bypassable checks. Every override is recorded — the change gets a ⚠ in [History](history.md#overridden-warnings) (with your reason) and a warning entry in the Activity Log.
 
 The non‑overlap checks run first (closed phase → framework → onboarding → phase scope). If they pass, overlaps are handled by the **chooser** described below.
 
@@ -65,6 +65,7 @@ jobs.
 | **Framework over‑budget** | Would exceed `total_days` but `allow_over_allocation` is on | Warning with budget breakdown; can force. |
 | **Phase over‑scoped** | Booking this role's hours would exceed the phase's **scoped** hours for that delivery role | Warning; can force. |
 | **Stale onboarding** | User is onboarded but the record is **stale** (past renewal) | Warning; can force. |
+| **Overlap (edit / drag / resize)** | The changed slot now overlaps one of the person's other bookings that it didn't overlap before | Warning listing the bookings; can force. Overlapping **leave or unavailability** is a hard block instead. |
 
 !!! note
     Multiple bypassable warnings can fire together (e.g. over‑budget *and* over‑scope); their messages are combined into one dialog.
@@ -75,7 +76,9 @@ When a delivery booking (for a single person) overlaps existing slots in the ran
 
 - **Book around** — skip the occupied days and book only the free working days, splitting the booking into multiple slots as needed. Weekends/holidays inside a run don't split it; a busy working day does.
 - **Schedule over** — book one slot across the whole range on top of what's there (deliberate double‑booking).
-- **Clear & book (destructive)** — delete the overlapping **delivery and project** work in the range, then book the whole range. **Leave, sick, bank holidays and other internal time are always kept** — the new booking sits on top of those.
+- **Clear & book (destructive)** — delete the overlapping **delivery and project** work in the range, then book the whole range. **Leave, sick, bank holidays and other internal time are always kept** — the new booking sits on top of those. The cleared (and split) slots are recorded in the same change, so a single **Undo** brings them back.
+
+*Schedule over* and *Clear & book* count as overriding the overlap warning: the optional reason box in the chooser is recorded with the change.
 
 !!! warning "Leave / time off is read‑only"
     Annual‑leave, sick and bank‑holiday slots can't be moved or edited from the scheduler — the block isn't draggable and the backend refuses the change. Manage them via the leave request. (Destructive booking never deletes them either.)
@@ -86,7 +89,8 @@ When you book across several people at once (Select‑mode multi‑row), each pe
 
 - People with **no issues** are booked.
 - People with a **hard block** (e.g. not onboarded, framework closed) are **skipped** and reported in the summary.
-- If any have **bypassable** warnings, you're asked once to **confirm/force**; on confirm, all eligible people are booked and the summary reports how many were booked and how many skipped.
+- If any have **bypassable** warnings, you're asked once to **confirm/force**; on confirm, all eligible people are booked and the summary reports how many were booked and how many skipped. People whose booking would overlap **leave or unavailability** stay skipped even when you force.
+- If **nobody** can be booked (e.g. a single person who's on leave), you get the reason instead of an empty "saved".
 
 ## Budget calculations
 
