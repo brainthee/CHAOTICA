@@ -422,14 +422,18 @@
     // (never hidden) so gaps can be trusted; they aren't editable from here.
     var faded = !!e.out_of_scope;
     var canEdit = !!e.can_edit && !faded;
+    // Booking guard: the server marks slots on finished / unscoped phases (or
+    // inactive jobs) as locked — show a lock and say why in the tooltip.
+    var locked = !!e.locked_reason;
+    if (locked) icon = '<i class="fa-solid fa-lock me-1"></i>' + icon;
     return {
       id: idPrefix + e.id,
       group: e.resourceId,
       start: dispStart,
       end: dispEnd,
       content: icon + escapeHtml(e.title || ''),
-      title: escapeHtml(buildTooltip(e)),
-      className: (e.is_comment ? 'cmt' : '') + (faded ? ' sched-faded' : '') + (e.is_tentative ? ' sched-slot-tentative' : ''),
+      title: escapeHtml(buildTooltip(e) + (locked ? '\nLocked: ' + e.locked_reason : '')),
+      className: (e.is_comment ? 'cmt' : '') + (faded ? ' sched-faded' : '') + (e.is_tentative ? ' sched-slot-tentative' : '') + (locked ? ' sched-slot-locked' : ''),
       style: 'background-color:' + bg + '; color:' + fg + '; border-color:' + bg + ';',
       editable: canEdit ? { updateTime: true, updateGroup: true, remove: false } : false,
       _meta: {

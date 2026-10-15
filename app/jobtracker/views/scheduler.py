@@ -696,6 +696,11 @@ def change_scheduler_slot_date(request, pk=None):
             updated_slot = form.save(commit=False)
             # Re-verify against the edited values (e.g. a new user).
             _verify_slot_unit_access(request, updated_slot)
+            # Booking guard first: no point asking framework/scope questions
+            # about a slot that can't move at all.
+            error = _booking_rule_error(updated_slot)
+            if error:
+                return JsonResponse({"form_is_valid": False, "error": error})
             # Framework checks for delivery slots
             if updated_slot.is_delivery() and updated_slot.phase:
                 framework = updated_slot.phase.job.associated_framework
@@ -719,7 +724,12 @@ def change_scheduler_slot_date(request, pk=None):
                         "jobtracker/modals/job_slot.html", {"form": form}, request=request
                     )
                     return JsonResponse(_data)
-            updated_slot.save()
+            try:
+                updated_slot.save()
+            except ValidationError as e:
+                # Booking guard (e.g. phase delivered / job completed): tell the
+                # timeline why so it can revert the drag with a clear message.
+                return JsonResponse({"form_is_valid": False, "error": " ".join(e.messages)})
             schedule_history.record(
                 request.user, ScheduleActionType.UPDATE,
                 [before], [schedule_history.snapshot(updated_slot)],
@@ -786,6 +796,15 @@ def change_scheduler_slot(request, pk=None):
             updated_slot = form.save(commit=False)
             # Re-verify against the edited values (new phase / project / user).
             _verify_slot_unit_access(request, updated_slot)
+            error = _booking_rule_error(updated_slot)
+            if error:
+                form.add_error(None, error)
+                data["form_is_valid"] = False
+                data["error"] = error
+                data["html_form"] = loader.render_to_string(
+                    "jobtracker/modals/job_slot.html", {"form": form}, request=request
+                )
+                return JsonResponse(data)
             # Framework checks for delivery slots
             if updated_slot.is_delivery() and updated_slot.phase:
                 framework = updated_slot.phase.job.associated_framework
@@ -854,6 +873,38 @@ def _selected_users(request):
     return [by_pk[i] for i in ids if i in by_pk]
 
 
+def _booking_rule_error(slot):
+    """User-facing booking rule for an edited delivery slot, or ``None``.
+
+    New slots, and existing ones whose phase, dates or person changed, must be
+    on a bookable phase (Phase.booking_block_reason); moving a slot *off* a
+    locked phase is refused too. Compares against the stored row because
+    ``form.save(commit=False)`` mutates the instance in place.
+    """
+    if not (slot.is_delivery() and slot.phase_id):
+        return None
+    old = None
+    if slot.pk:
+        old = TimeSlot.objects.filter(pk=slot.pk).select_related("phase", "phase__job").first()
+    if old is not None:
+        changed = (
+            old.phase_id != slot.phase_id
+            or old.start != slot.start
+            or old.end != slot.end
+            or old.user_id != slot.user_id
+        )
+        if not changed:
+            return None
+        if old.phase_id and old.phase_id != slot.phase_id:
+            reason = old.phase.booking_block_reason()
+            if reason:
+                return "{} can't be rescheduled. {}".format(old.phase, reason)
+    reason = slot.phase.booking_block_reason()
+    if reason:
+        return "{} can't be scheduled. {}".format(slot.phase, reason)
+    return None
+
+
 def _evaluate_delivery_slot(slot, request, force, check_overlaps=True):
     """Run all delivery-slot logic checks for ONE unsaved slot (no save).
     Mirrors the inline checks in create_scheduler_phase_slot.
@@ -862,13 +913,13 @@ def _evaluate_delivery_slot(slot, request, force, check_overlaps=True):
     Returns {"failed": bool, "can_bypass": bool, "feedback": str}."""
     result = {"failed": False, "can_bypass": True, "feedback": ""}
 
-    # Non-bypassable: phase or job closed (TimeSlot.save() enforces this too)
-    if not slot.phase.is_bookable():
+    # Non-bypassable: phase/job not bookable (TimeSlot.save() enforces this too)
+    reason = slot.phase.booking_block_reason()
+    if reason:
         return {"failed": True, "can_bypass": False,
                 "feedback": loader.render_to_string(
                     "partials/scheduler/logicchecks/phase_closed.html",
-                    {"phase": slot.phase,
-                     "job_closed": slot.phase.job.status in JobStatuses.CLOSED_STATUSES},
+                    {"phase": slot.phase, "reason": reason},
                     request=request)}
 
     slots = slot.overlapping_slots()
@@ -2046,7 +2097,16 @@ def move_job_schedule_slots(request, slug):
             to_user = form.cleaned_data["to_user"]
             # Iterate + save() per row so history + logging fire (bulk .update()
             # bypasses them), and emit one MOVE ScheduleAction covering all rows.
-            slots = list(TimeSlot.objects.filter(phase__job=job, user=from_user))
+            editable, _, notice = _reschedulable(
+                job, None, TimeSlot.objects.filter(phase__job=job, user=from_user)
+            )
+            slots = list(editable)
+            if not slots and notice:
+                _refuse_locked(form, notice)
+                data["form_is_valid"] = False
+                return JsonResponse({**data, "html_form": loader.render_to_string(
+                    "jobtracker/modals/move_schedule_slots.html",
+                    {"form": form, "job": job, "locked_notice": notice}, request=request)})
             before = [schedule_history.snapshot(s) for s in slots]
             for s in slots:
                 s.user = to_user
@@ -2064,7 +2124,8 @@ def move_job_schedule_slots(request, slug):
     else:
         form = MoveScheduleSlotsForm(scheduled_users=scheduled_users, unit=unit, client=job.client)
 
-    context = {"form": form, "job": job}
+    context = {"form": form, "job": job,
+               "locked_notice": _reschedulable(job, None, _base_slot_qs(job, None))[2]}
     data["html_form"] = loader.render_to_string(
         "jobtracker/modals/move_schedule_slots.html", context, request=request
     )
@@ -2086,7 +2147,17 @@ def move_phase_schedule_slots(request, job_slug, slug):
         if form.is_valid():
             from_user = form.cleaned_data["from_user"]
             to_user = form.cleaned_data["to_user"]
-            slots = list(phase.timeslots.filter(user=from_user))
+            editable, _, notice = _reschedulable(
+                job, phase, phase.timeslots.filter(user=from_user)
+            )
+            slots = list(editable)
+            if not slots and notice:
+                _refuse_locked(form, notice)
+                data["form_is_valid"] = False
+                return JsonResponse({**data, "html_form": loader.render_to_string(
+                    "jobtracker/modals/move_schedule_slots.html",
+                    {"form": form, "phase": phase, "job": job, "locked_notice": notice},
+                    request=request)})
             before = [schedule_history.snapshot(s) for s in slots]
             for s in slots:
                 s.user = to_user
@@ -2104,7 +2175,8 @@ def move_phase_schedule_slots(request, job_slug, slug):
     else:
         form = MoveScheduleSlotsForm(scheduled_users=scheduled_users, unit=unit, client=job.client)
 
-    context = {"form": form, "phase": phase, "job": job}
+    context = {"form": form, "phase": phase, "job": job,
+               "locked_notice": _reschedulable(job, phase, _base_slot_qs(job, phase))[2]}
     data["html_form"] = loader.render_to_string(
         "jobtracker/modals/move_schedule_slots.html", context, request=request
     )
@@ -2122,6 +2194,42 @@ def _base_slot_qs(job, phase):
     return TimeSlot.objects.filter(phase__job=job)
 
 
+def _reschedulable(job, phase, qs):
+    """Apply the booking guard to a bulk schedule tool's slots.
+
+    Returns ``(editable_qs, locked_count, notice)``. A single (locked) phase
+    or a closed/completed job locks everything; on an active job only the
+    slots on finished or not-yet-scoped phases are left out. ``notice`` is a
+    user-facing explanation (or ``None``) for the modal.
+    """
+    if phase is not None:
+        reason = phase.booking_block_reason()
+        if reason:
+            return qs.none(), qs.count(), "{} can't be rescheduled. {}".format(phase, reason)
+        return qs, 0, None
+    if job.status not in JobStatuses.ACTIVE_STATUSES:
+        hint = " Reopen the job to change its schedule." if job.status == JobStatuses.COMPLETED else ""
+        return qs.none(), qs.count(), "This job is {}, so its schedule can't be changed.{}".format(
+            job.get_status_display(), hint
+        )
+    editable = qs.filter(Q(phase__isnull=True) | Phase.bookable_q("phase__"))
+    locked = qs.count() - editable.count()
+    notice = None
+    if locked:
+        notice = (
+            "{} timeslot{} on phases that are finished (or not yet scoped) will be "
+            "left unchanged — reopen a phase to reschedule it.".format(
+                locked, "" if locked == 1 else "s"
+            )
+        )
+    return editable, locked, notice
+
+
+def _refuse_locked(form, notice):
+    """Mark a bound bulk-tool form invalid because nothing can be rescheduled."""
+    form.add_error(None, notice)
+
+
 def _refresh_phase_dates(phase_ids):
     """Re-derive stored phase dates after a bulk slot change."""
     for ph in Phase.objects.filter(pk__in=[p for p in phase_ids if p]):
@@ -2134,9 +2242,11 @@ def _handle_shift(request, job, phase, template):
     from django.utils import timezone
 
     data = {}
-    base = _base_slot_qs(job, phase)
+    base, _, notice = _reschedulable(job, phase, _base_slot_qs(job, phase))
     if request.method == "POST":
         form = ScheduleShiftForm(request.POST)
+        if form.is_valid() and not base.exists() and notice:
+            _refuse_locked(form, notice)
         if form.is_valid():
             qs = base
             if form.cleaned_data["only_future"]:
@@ -2167,16 +2277,18 @@ def _handle_shift(request, job, phase, template):
     else:
         form = ScheduleShiftForm()
 
-    context = {"form": form, "job": job, "phase": phase}
+    context = {"form": form, "job": job, "phase": phase, "locked_notice": notice}
     data["html_form"] = loader.render_to_string(template, context, request=request)
     return JsonResponse(data)
 
 
 def _handle_swap(request, job, phase, scheduled_users, template):
     data = {}
-    base = _base_slot_qs(job, phase)
+    base, _, notice = _reschedulable(job, phase, _base_slot_qs(job, phase))
     if request.method == "POST":
         form = ScheduleSwapForm(request.POST, scheduled_users=scheduled_users)
+        if form.is_valid() and not base.exists() and notice:
+            _refuse_locked(form, notice)
         if form.is_valid():
             a = form.cleaned_data["user_a"]
             b = form.cleaned_data["user_b"]
@@ -2203,18 +2315,20 @@ def _handle_swap(request, job, phase, scheduled_users, template):
     else:
         form = ScheduleSwapForm(scheduled_users=scheduled_users)
 
-    context = {"form": form, "job": job, "phase": phase}
+    context = {"form": form, "job": job, "phase": phase, "locked_notice": notice}
     data["html_form"] = loader.render_to_string(template, context, request=request)
     return JsonResponse(data)
 
 
 def _handle_onsite(request, job, phase, scheduled_users, template):
     data = {}
-    base = _base_slot_qs(job, phase).filter(
+    base, _, notice = _reschedulable(job, phase, _base_slot_qs(job, phase).filter(
         deliveryRole=TimeSlotDeliveryRole.DELIVERY
-    )
+    ))
     if request.method == "POST":
         form = ScheduleOnsiteForm(request.POST, scheduled_users=scheduled_users)
+        if form.is_valid() and not base.exists() and notice:
+            _refuse_locked(form, notice)
         if form.is_valid():
             onsite = form.cleaned_data["location"] == "onsite"
             qs = base
@@ -2241,7 +2355,7 @@ def _handle_onsite(request, job, phase, scheduled_users, template):
     else:
         form = ScheduleOnsiteForm(scheduled_users=scheduled_users)
 
-    context = {"form": form, "job": job, "phase": phase}
+    context = {"form": form, "job": job, "phase": phase, "locked_notice": notice}
     data["html_form"] = loader.render_to_string(template, context, request=request)
     return JsonResponse(data)
 

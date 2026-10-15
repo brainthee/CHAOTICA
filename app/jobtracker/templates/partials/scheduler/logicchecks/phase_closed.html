@@ -1,5 +1,5 @@
-<div class="alert alert-danger mb-3" role="alert">
+<div class="alert alert-subtle-danger mb-3 fs-9" role="alert">
     <p class="mb-0">
-        <strong>Phase closed:</strong> <strong>{{ phase }}</strong> is {{ phase.get_status_display|lower }}{% if job_closed %} and its job is {{ phase.job.get_status_display|lower }}{% endif %}. No further time can be scheduled against it.
+        <strong>Can't schedule {{ phase }}.</strong> {{ reason }}
     </p>
 </div>

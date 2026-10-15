@@ -54,6 +54,7 @@
                     </div>
                     {% endif %}
                     
+                    {% if require_reason %}{% include 'partials/workflow_reason_field.html' %}{% endif %}
                     <p>Are you sure you wish to progress to <mark>{{ new_state_str }}</mark>?</p>
                 {% endif %}
             </div>

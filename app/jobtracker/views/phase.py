@@ -199,18 +199,15 @@ class PhaseCreateView(UnitPermissionRequiredMixin, PhaseBaseView, CreateView):
             return job.unit
         return None
 
-    def get(self, request, *args, **kwargs):
-        # Check if the job is in the right stage!
+    def dispatch(self, request, *args, **kwargs):
+        # The job must be in a stage that takes new phases — checked for POST
+        # as well as GET so the form can't be submitted directly.
         if "job_slug" in self.kwargs:
             job = get_object_or_404(Job, slug=self.kwargs["job_slug"])
-            if (
-                job.status <= JobStatuses.PENDING_SCOPE
-                or job.status >= JobStatuses.COMPLETED
-            ):
-                # Outside approved range - lets nuke the call
-                return HttpResponseBadRequest()
+            if job.new_phase_block_reason():
+                return HttpResponseBadRequest(job.new_phase_block_reason())
 
-        return super().get(request, *args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
         form.instance.job = Job.objects.get(slug=self.kwargs["job_slug"])
@@ -331,7 +328,8 @@ def phase_clone(request, job_slug, slug):
     job = get_object_or_404(Job, slug=job_slug)
     phase = get_object_or_404(Phase, job=job, slug=slug)
     data = dict()
-    if request.method == "POST":
+    blocked = job.new_phase_block_reason()
+    if request.method == "POST" and not blocked:
         new_phase = Phase(job=job, status=PhaseStatuses.DRAFT)
 
         if request.POST.get("clone_identity"):
@@ -394,7 +392,8 @@ def phase_clone(request, job_slug, slug):
         data["form_is_valid"] = True
         data["next"] = new_phase.get_absolute_url()
     else:
-        context = {"job": job, "phase": phase}
+        context = {"job": job, "phase": phase, "blocked_reason": blocked}
+        data["form_is_valid"] = False
         data["html_form"] = loader.render_to_string(
             "jobtracker/modals/phase_clone.html", context, request=request
         )
@@ -781,8 +780,26 @@ def phase_update_workflow(request, job_slug, slug, new_state):
         return HttpResponseBadRequest()
 
     can_proceed = True
+    # Reopening (Completed/Delivered -> In Progress) needs a reason for the
+    # audit trail; it also reopens a completed parent job.
+    reopening = (
+        new_state == PhaseStatuses.IN_PROGRESS
+        and phase.status in PhaseStatuses.REOPENABLE_STATUSES
+    )
+    reason = request.POST.get("reason", "").strip() if request.method == "POST" else ""
+    reason_error = False
 
-    if new_state == PhaseStatuses.PENDING_SCHED:
+    if reopening:
+        new_state_str = "{} (reopen)".format(new_state_str)
+        if phase.can_to_reopen(request):
+            if request.method == "POST":
+                if reason:
+                    phase.to_reopen(request.user, reason=reason)
+                else:
+                    reason_error = True
+        else:
+            can_proceed = False
+    elif new_state == PhaseStatuses.PENDING_SCHED:
         if phase.can_to_pending_sched(request):
             if request.method == "POST":
                 phase.to_pending_sched(request.user)
@@ -960,7 +977,7 @@ def phase_update_workflow(request, job_slug, slug, new_state):
 
         # sendWebHookStatusAlert(redteam=rt, title="Engagement Status Changed", msg="Engagement "+rt.projectName+" status has changed to: "+str(dict(RTState.choices).get(new_state)))
 
-    if request.method == "POST" and can_proceed:
+    if request.method == "POST" and can_proceed and not reason_error:
         phase.save()
         data["form_is_valid"] = (
             True  # This is just to play along with the existing code
@@ -976,6 +993,9 @@ def phase_update_workflow(request, job_slug, slug, new_state):
     context["new_state_str"] = new_state_str
     context["new_state"] = new_state
     context["tasks"] = tasks
+    context["require_reason"] = reopening
+    context["reason"] = reason
+    context["reason_error"] = reason_error
     data["html_form"] = loader.render_to_string(
         "jobtracker/modals/phase_workflow.html", context, request=request
     )

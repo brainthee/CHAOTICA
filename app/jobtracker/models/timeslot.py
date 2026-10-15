@@ -330,6 +330,14 @@ class TimeSlot(models.Model):
         if compressed_view:
             data["classNames"] += " fc-title-nowrap"
 
+        # Booking guard: delivery slots on finished / not-yet-scoped phases (or
+        # inactive jobs) are locked on the timeline, with the reason shown.
+        if self.is_delivery() and self.phase_id:
+            reason = self.phase.booking_block_reason()
+            if reason:
+                data["can_edit"] = False
+                data["locked_reason"] = reason
+
         # Draft styling: a delivery slot on a not-yet-confirmed phase — or a slot on a
         # Tentative-state project — is a "proposed" booking; render it as a dashed ghost so
         # it's clearly distinct from committed work on the timeline.
@@ -652,10 +660,12 @@ class TimeSlot(models.Model):
             except TimeSlot.DoesNotExist:
                 pass
 
-        # No new bookings on closed phases/jobs. Only checked when the slot is
-        # new (or recreated) or re-pointed at another phase, so edits to
-        # existing slots (e.g. delivered/archived history) still work.
-        # ``allow_closed_phase`` is for splitting an existing booking.
+        # Hard integrity guard for every write (incl. imports of historical
+        # bookings): no new or re-pointed slots on closed phases/jobs. The
+        # stricter user-facing rule (Draft / Completed / Delivered phases,
+        # inactive jobs, and moving existing slots) is applied by the scheduler
+        # tooling via Phase.booking_block_reason(). ``allow_closed_phase`` is for
+        # splitting an existing booking.
         old_phase_id = old_phase.pk if old_phase else None
         phase_changed = in_db and old_phase_id != self.phase_id
         if (
@@ -663,7 +673,7 @@ class TimeSlot(models.Model):
             and self.phase_id
             and (not in_db or phase_changed)
             and not allow_closed_phase
-            and not self.phase.is_bookable()
+            and self.phase.is_closed_for_booking()
         ):
             raise ValidationError(
                 "{} is closed (or its job is), so it can't be scheduled.".format(

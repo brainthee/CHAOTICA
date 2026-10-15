@@ -7,6 +7,7 @@ from django.http import (
     JsonResponse,
 )
 from django.template import loader
+from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.contrib.auth.mixins import UserPassesTestMixin
 from guardian.shortcuts import get_objects_for_user
@@ -273,7 +274,22 @@ def change_job_schedule_slot(request, slug, pk=None):
             slot.slot_type = TimeSlotType.get_builtin_object(
                 DefaultTimeSlotTypes.DELIVERY
             )
-            slot.save()
+            from .scheduler import _booking_rule_error
+
+            error = _booking_rule_error(slot)
+            try:
+                if error:
+                    raise ValidationError(error)
+                slot.save()
+            except ValidationError as e:
+                # Booking rule / guard (phase finished / job not active).
+                form.add_error(None, " ".join(e.messages))
+                data["form_is_valid"] = False
+                data["form_errors"] = form.errors
+                data["html_form"] = loader.render_to_string(
+                    "jobtracker/modals/job_slot.html", {"form": form, "job": job}, request=request
+                )
+                return JsonResponse(data)
             if is_new:
                 schedule_history.record_creates(request.user, [slot])
             else:
@@ -1211,8 +1227,22 @@ def job_update_workflow(request, slug, new_state):
         return HttpResponseBadRequest()
 
     can_proceed = True
+    # Reopening (Completed -> Scoping) needs a reason for the audit trail.
+    reopening = new_state == JobStatuses.SCOPING and job.status == JobStatuses.COMPLETED
+    reason = request.POST.get("reason", "").strip() if request.method == "POST" else ""
+    reason_error = False
 
-    if new_state == JobStatuses.PENDING_SCOPE:
+    if reopening:
+        new_state_str = "{} (reopen)".format(new_state_str)
+        if job.can_to_reopen(request):
+            if request.method == "POST":
+                if reason:
+                    job.to_reopen(request.user, reason=reason)
+                else:
+                    reason_error = True
+        else:
+            can_proceed = False
+    elif new_state == JobStatuses.PENDING_SCOPE:
         if job.can_to_pending_scope(request):
             if request.method == "POST":
                 job.to_pending_scope(request.user)
@@ -1288,7 +1318,7 @@ def job_update_workflow(request, slug, new_state):
 
         # sendWebHookStatusAlert(redteam=rt, title="Engagement Status Changed", msg="Engagement "+rt.projectName+" status has changed to: "+str(dict(RTState.choices).get(new_state)))
 
-    if request.method == "POST" and can_proceed:
+    if request.method == "POST" and can_proceed and not reason_error:
         job.save()
         data["form_is_valid"] = (
             True  # This is just to play along with the existing code
@@ -1321,6 +1351,9 @@ def job_update_workflow(request, slug, new_state):
         "warn_clear_slots": warn_clear_slots,
         "slot_count": slot_count,
         "phase_count": phase_count,
+        "require_reason": reopening,
+        "reason": reason,
+        "reason_error": reason_error,
     }
     data["html_form"] = loader.render_to_string(
         "jobtracker/modals/job_workflow.html", context, request=request

@@ -313,6 +313,26 @@ def revert(action, actor):
     if not action.can_revert(actor):
         raise PermissionDenied("You can't revert this schedule change.")
 
+    # Booking rule: undo can't put slots back on (or move slots of) a phase
+    # that's since been finished / un-scoped, or a job that's no longer
+    # active. Undoing a create (a delete) is still fine.
+    from django.core.exceptions import ValidationError
+    from .models import Phase
+
+    phase_ids = set()
+    for item in action.payload:
+        if item["model"] != "timeslot" or item["before"] is None:
+            continue
+        for fields in (item["before"], item.get("after") or {}):
+            if fields.get("phase_id"):
+                phase_ids.add(fields["phase_id"])
+    for phase in Phase.objects.filter(pk__in=phase_ids).select_related("job"):
+        reason = phase.booking_block_reason()
+        if reason:
+            raise ValidationError(
+                "Can't undo this change: {} can't be rescheduled. {}".format(phase, reason)
+            )
+
     # Atomic so a refused restore (e.g. a slot on a now-closed phase raises
     # ValidationError) leaves nothing half-reverted.
     with transaction.atomic():

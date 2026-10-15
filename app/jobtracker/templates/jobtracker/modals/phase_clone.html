@@ -10,6 +10,12 @@
                 <button type="button" class="btn-close text-body-emphasis" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
+                {% if blocked_reason %}
+                <div class="alert alert-subtle-warning d-flex align-items-center py-2 fs-9 mb-0" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <div>{{ blocked_reason }}</div>
+                </div>
+                {% else %}
                 <p class="text-body-secondary small mb-3">
                     Creates a new <strong>Draft</strong> phase on <em>{{ job }}</em>.
                     Schedule, QA assignments, and ratings are never copied.
@@ -47,9 +53,10 @@
                         <small class="d-block text-body-secondary">Deliverable, technical data, and report data links</small>
                     </label>
                 </div>
+                {% endif %}
             </div>
             <div class="modal-footer">
-                <button type="submit" class="btn btn-primary mb-0">Clone Phase</button>
+                {% if not blocked_reason %}<button type="submit" class="btn btn-primary mb-0">Clone Phase</button>{% endif %}
                 <button type="button" class="btn btn-light shadow-none mb-0" data-bs-dismiss="modal">Cancel</button>
             </div>
         </form>

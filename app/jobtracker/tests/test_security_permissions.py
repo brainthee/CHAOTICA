@@ -15,7 +15,7 @@ from guardian.shortcuts import assign_perm, remove_perm
 from chaotica_utils.models import User
 from jobtracker import schedule_history
 from jobtracker.models import TimeSlot
-from jobtracker.enums import TimeSlotDeliveryRole
+from jobtracker.enums import PhaseStatuses, TimeSlotDeliveryRole
 from jobtracker.views import scheduler as sched_views
 from .test_schedule_history import ScheduleHistoryBase
 
@@ -160,7 +160,11 @@ class SchedulerCrossUnitTests(ScheduleHistoryBase):
             unit=self.unit_b, client=self.client_obj, title="Other Job",
             created_by=self.actor, account_manager=self.actor,
         )
-        self.phase_b = Phase.objects.create(job=self.job_b, title="Other Phase")
+        # Schedulable, so these tests exercise the cross-unit permission check
+        # rather than the (earlier) "Draft phases can't be booked" rule.
+        self.phase_b = Phase.objects.create(
+            job=self.job_b, title="Other Phase", status=PhaseStatuses.PENDING_SCHED
+        )
 
         self.scheduler = User.objects.create_user(email="sched@test.com", password="pw12345")
         self.user_a = User.objects.create_user(email="ua@test.com", password="pw12345")

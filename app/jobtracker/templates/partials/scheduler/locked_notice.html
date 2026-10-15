@@ -1,0 +1,7 @@
+{# Booking-guard notice for the bulk schedule tools (shift / swap / onsite / move). #}
+{% if locked_notice %}
+  <div class="alert alert-subtle-warning d-flex align-items-start py-2 fs-9" role="alert">
+    <i class="fas fa-lock me-2 mt-1"></i>
+    <div>{{ locked_notice }}</div>
+  </div>
+{% endif %}

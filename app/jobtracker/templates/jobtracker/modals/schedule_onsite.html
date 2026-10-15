@@ -11,6 +11,7 @@
         <button type="button" class="btn-close text-body-emphasis" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
+        {% include 'partials/scheduler/locked_notice.html' %}
         <p class="text-body-secondary fs-9">
           Bulk-set the onsite/remote flag on all delivery slots
           {% if phase %}on this phase{% else %}across the whole job{% endif %}.

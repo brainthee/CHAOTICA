@@ -34,10 +34,29 @@ flowchart TD
 
 | Check | Trigger | Result |
 |---|---|---|
-| **Phase closed** | The phase is Cancelled, Postponed, Deleted or Archived, or its job is Lost, Deleted or Archived | No new bookings. Existing slots on delivered/archived phases can still be edited, but a slot can't be moved onto a closed phase. Enforced on every save path (booking modal, batch booking, scheduling assistant, undo/revert). Closed phases aren't offered in the booking modal's phase list. |
+| **Phase not bookable** | The phase isn't between **Pending Scheduling** and the end of QA (so Draft, Completed, Delivered, Cancelled, Postponed, Deleted and Archived are all out), or its job isn't active (Completed, Lost, Deleted or Archived) | No new bookings, and **existing bookings can't be moved, resized, reassigned, shifted, swapped or switched onsite/remote** — reopen the phase or job first. The message says why (e.g. "It's Delivered. Reopen the phase to change its schedule."). Applies to the booking modal, batch booking, the scheduling assistant, drag/resize, the edit modal, the job/phase schedule tools and undo/revert. Such phases aren't offered in the booking modal's phase list. Deleting a booking is still allowed. |
 | **Framework closed** | `framework.closed` | Can't schedule against a closed framework. |
 | **Framework over‑allocated** | Booking pushes days above `total_days` **and** `allow_over_allocation` is off | Hard block with a budget breakdown (budget / allocated / this slot / would‑be total). |
 | **Client onboarding required** | Client has `onboarding_required` and the user has **no** onboarding record for that client | The user must be onboarded first. |
+
+### Locked bookings
+
+On the timeline, delivery bookings on a phase that can't be scheduled show a
+**lock icon** and diagonal stripes, can't be dragged or resized, and their
+tooltip says why (e.g. *Locked: It's Delivered. Reopen the phase to change its
+schedule.*).
+
+The job/phase schedule tools (**Shift**, **Swap**, **Onsite/remote** and
+**Move to another person**) show the same notice in their dialog. On a job
+that's still active they change only the bookings on schedulable phases and
+leave the rest alone; on a locked phase, or a Completed/closed job, they refuse
+and explain how to unlock it. **Undo** is refused too if it would put back or
+move a booking on a phase that has since been locked.
+
+Imports of historical bookings (Resource Manager, Smartsheets) and demo data
+aren't subject to these rules; they're only stopped from adding bookings to
+Cancelled, Postponed, Deleted or Archived phases, or Lost, Deleted or Archived
+jobs.
 
 ## Bypassable warnings (force to proceed)
 

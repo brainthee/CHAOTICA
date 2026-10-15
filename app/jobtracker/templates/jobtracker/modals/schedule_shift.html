@@ -11,6 +11,7 @@
         <button type="button" class="btn-close text-body-emphasis" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
+        {% include 'partials/scheduler/locked_notice.html' %}
         <p class="text-body-secondary fs-9">
           Move every scheduled slot {% if phase %}on this phase{% else %}across the whole job{% endif %}
           by a number of days. Each slot keeps its length and the spacing between them stays the same.

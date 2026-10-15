@@ -22,7 +22,7 @@ from model_utils.fields import MonitorField
 from django.db.models import JSONField
 from django.contrib import messages
 import uuid
-from chaotica_utils.models import Note, User, get_sentinel_user
+from chaotica_utils.models import AuditCategory, AuditVerb, Note, User, get_sentinel_user
 from notifications.utils import AppNotification, send_notifications
 from notifications.enums import NotificationTypes
 from chaotica_utils.views import log_system_activity
@@ -1073,6 +1073,23 @@ class Job(models.Model):
             _can_proceed = False
         return _can_proceed
 
+    def new_phase_block_reason(self):
+        """Why phases can't be added to this job right now, or ``None``.
+
+        Phases can be added from Scoping through In Progress. A completed job
+        must be reopened first so the new work is scoped and can't hide behind
+        the Completed status (it'd be missing from the dashboard and queues).
+        """
+        if JobStatuses.SCOPING <= self.status <= JobStatuses.IN_PROGRESS:
+            return None
+        if self.status == JobStatuses.COMPLETED:
+            return "This job is Completed. Reopen it to add more phases."
+        if self.status < JobStatuses.SCOPING:
+            return "Phases can be added once scoping has started."
+        return "This job is {}, so phases can't be added.".format(
+            self.get_status_display()
+        )
+
     def all_phases_finished(self, exclude_phase=None):
         """True when no phase still needs work, so the job can be completed.
 
@@ -1101,9 +1118,20 @@ class Job(models.Model):
     def can_proceed_to_complete(self):
         return can_proceed(self.to_complete)
 
-    def can_to_complete(self, notify_request=None):
+    def can_to_complete(self, notify_request=None, exclude_phase=None):
         _can_proceed = True
-        # Do logic checks
+        # Do logic checks: the same rule as the automatic completion paths.
+        # ``exclude_phase`` is the phase being delivered right now (its new
+        # status isn't saved yet).
+        if not self.all_phases_finished(exclude_phase=exclude_phase):
+            if notify_request:
+                messages.add_message(
+                    notify_request,
+                    messages.ERROR,
+                    "One or more phases are still in progress (or postponed). "
+                    "Deliver, cancel or delete them first.",
+                )
+            _can_proceed = False
 
         # Do general check
         can_proceed_result = can_proceed(self.to_complete)
@@ -1112,6 +1140,71 @@ class Job(models.Model):
                 messages.add_message(notify_request, messages.ERROR, self.STATE_ERROR)
             _can_proceed = False
         return _can_proceed
+
+    # REOPEN (COMPLETED -> SCOPING)
+    @transition(
+        field=status, source=JobStatuses.COMPLETED, target=JobStatuses.SCOPING
+    )
+    def to_reopen(self, user=None, reason=""):
+        """Reopen a completed job for more work (e.g. a new phase).
+
+        Goes back to Scoping (not In Progress) so the auto-complete cron can't
+        immediately re-close it while every existing phase is still finished;
+        the new work is scoped and signed off as normal.
+        """
+        log_system_activity(
+            self,
+            "Reopened: moved from {} to {}. Reason: {}".format(
+                JobStatuses.CHOICES[JobStatuses.COMPLETED][1],
+                JobStatuses.CHOICES[JobStatuses.SCOPING][1],
+                reason or "none given",
+            ),
+            author=user,
+            category=AuditCategory.WORKFLOW,
+            verb=AuditVerb.STATUS_CHANGE,
+        )
+        self.fire_status_notification(JobStatuses.SCOPING)
+
+    def can_proceed_to_reopen(self):
+        return can_proceed(self.to_reopen)
+
+    def can_to_reopen(self, notify_request=None):
+        _can_proceed = True
+        if notify_request:
+            messages.add_message(
+                notify_request,
+                messages.INFO,
+                "The job goes back to Scoping: add or update phases, then sign "
+                "the scope off again. Delivered phases are left as they are.",
+            )
+        can_proceed_result = can_proceed(self.to_reopen)
+        if not can_proceed_result:
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, self.STATE_ERROR)
+            _can_proceed = False
+        return _can_proceed
+
+    # REOPEN FOR A PHASE (COMPLETED -> IN_PROGRESS)
+    @transition(
+        field=status, source=JobStatuses.COMPLETED, target=JobStatuses.IN_PROGRESS
+    )
+    def to_reopen_for_phase(self, phase, user=None, reason=""):
+        """A phase on this completed job was reopened (or found unfinished):
+        put the job back In Progress so the phase is visible again. The
+        auto-complete cron re-closes it once that phase is delivered."""
+        log_system_activity(
+            self,
+            "Reopened: moved from {} to {} because {} was reopened. Reason: {}".format(
+                JobStatuses.CHOICES[JobStatuses.COMPLETED][1],
+                JobStatuses.CHOICES[JobStatuses.IN_PROGRESS][1],
+                phase.phase_id,
+                reason or "none given",
+            ),
+            author=user,
+            category=AuditCategory.WORKFLOW,
+            verb=AuditVerb.STATUS_CHANGE,
+        )
+        self.fire_status_notification(JobStatuses.IN_PROGRESS)
 
     # LOST
     @transition(

@@ -13,7 +13,7 @@ from model_utils.fields import MonitorField
 from django.db.models import JSONField
 from bs4 import BeautifulSoup
 from django.contrib import messages
-from chaotica_utils.models import Note, User
+from chaotica_utils.models import AuditCategory, AuditVerb, Note, User
 from notifications.enums import NotificationTypes
 from notifications.utils import AppNotification, send_notifications
 from chaotica_utils.views.common import log_system_activity
@@ -450,17 +450,53 @@ class Phase(models.Model):
             return timezone.now().today()
 
     @staticmethod
-    def bookable_q():
-        """Q for phases that can take new bookings: the phase isn't closed
-        (cancelled/postponed/deleted/archived) and neither is its job."""
-        return ~Q(status__in=PhaseStatuses.INACTIVE_STATUSES) & ~Q(
-            job__status__in=JobStatuses.CLOSED_STATUSES
+    def bookable_q(prefix=""):
+        """Q for phases whose schedule can be changed: the phase is between
+        Pending Scheduling and the end of QA, on an active job (not completed,
+        lost, deleted or archived). ``prefix`` (e.g. ``"phase__"``) applies it
+        across a relation, such as a TimeSlot queryset."""
+        return Q(**{prefix + "status__in": PhaseStatuses.BOOKABLE_STATUSES}) & Q(
+            **{prefix + "job__status__in": JobStatuses.ACTIVE_STATUSES}
         )
 
+    def booking_block_reason(self):
+        """Why this phase's schedule can't be changed, or ``None`` if it can.
+
+        Single source of truth for the booking guard (model save, scheduler
+        logic checks, bulk tools, undo and the timeline's locked items).
+        """
+        job = self.job
+        if job.status not in JobStatuses.ACTIVE_STATUSES:
+            hint = (
+                " Reopen the job to change its schedule."
+                if job.status == JobStatuses.COMPLETED
+                else ""
+            )
+            return "Its job is {}.{}".format(job.get_status_display(), hint)
+        if self.status in PhaseStatuses.BOOKABLE_STATUSES:
+            return None
+        if self.status == PhaseStatuses.DRAFT:
+            return (
+                "It's still Draft — phases can be scheduled once the job's scope "
+                "is signed off."
+            )
+        if self.status in PhaseStatuses.REOPENABLE_STATUSES:
+            return "It's {}. Reopen the phase to change its schedule.".format(
+                self.get_status_display()
+            )
+        return "It's {}.".format(self.get_status_display())
+
     def is_bookable(self):
+        return self.booking_block_reason() is None
+
+    def is_closed_for_booking(self):
+        """Hard integrity guard used by ``TimeSlot.save`` for every write,
+        including system imports of historical bookings: the phase is
+        cancelled/postponed/deleted/archived, or its job is lost/deleted/
+        archived. The stricter user-facing rule is :meth:`booking_block_reason`."""
         return (
-            self.status not in PhaseStatuses.INACTIVE_STATUSES
-            and self.job.status not in JobStatuses.CLOSED_STATUSES
+            self.status in PhaseStatuses.INACTIVE_STATUSES
+            or self.job.status in JobStatuses.CLOSED_STATUSES
         )
 
     def revert_to_pending_if_unscheduled(self):
@@ -741,6 +777,29 @@ class Phase(models.Model):
         # Update dates
         self.update_stored_dates()
         super(Phase, self).save(*args, **kwargs)
+        self._reopen_completed_job_if_unfinished()
+
+    def _reopen_completed_job_if_unfinished(self):
+        """Safety net: a completed job must not hide work in flight.
+
+        If this phase is in flight (Pending Scheduling up to Completed) but its
+        job is Completed — e.g. it was moved by a path that skipped the guards —
+        put the job back In Progress so the phase shows on the dashboard and in
+        the QA/delivery queues. Draft phases are ignored: they aren't on any
+        queue, and old completed jobs carry many never-started drafts.
+        """
+        if not (PhaseStatuses.PENDING_SCHED <= self.status < PhaseStatuses.DELIVERED):
+            return
+        job = self.job
+        if job.status != JobStatuses.COMPLETED:
+            return
+        job.to_reopen_for_phase(
+            self,
+            reason="automatic — {} is {} but the job was Completed".format(
+                self.phase_id, self.get_status_display()
+            ),
+        )
+        job.save()
 
     def get_absolute_url(self):
         return reverse(
@@ -2108,7 +2167,7 @@ class Phase(models.Model):
     def to_completed(self, user=None):
         log_system_activity(
             self,
-            self.MOVED_TO + PhaseStatuses.CHOICES[PhaseStatuses.DELIVERED][1],
+            self.MOVED_TO + PhaseStatuses.CHOICES[PhaseStatuses.COMPLETED][1],
             author=user,
         )
         self.actual_completed_date = timezone.now()
@@ -2194,7 +2253,7 @@ class Phase(models.Model):
 
         # Ok, check if all phases have completed...
         if self.job.all_phases_finished(exclude_phase=self):
-            if self.job.can_to_complete():
+            if self.job.can_to_complete(exclude_phase=self):
                 self.job.to_complete()
                 self.job.save()
         self.fire_status_notification(PhaseStatuses.DELIVERED)
@@ -2220,6 +2279,56 @@ class Phase(models.Model):
 
         # Do general check
         can_proceed_result = can_proceed(self.to_delivered)
+        if not can_proceed_result:
+            if notify_request:
+                messages.add_message(notify_request, messages.ERROR, self.INVALID_STATE)
+            _can_proceed = False
+        return _can_proceed
+
+    #####################
+    ## REOPEN (COMPLETED / DELIVERED -> IN_PROGRESS)
+    #####################
+    @transition(
+        field=status,
+        source=PhaseStatuses.REOPENABLE_STATUSES,
+        target=PhaseStatuses.IN_PROGRESS,
+        conditions=[_job_is_open],
+    )
+    def to_reopen(self, user=None, reason=""):
+        """Bring finished work back to In Progress (e.g. late fixes).
+
+        If the parent job had completed, it goes back to In Progress too so the
+        phase reappears on the dashboard and QA/delivery queues. Both moves are
+        recorded as workflow status changes with the reason given.
+        """
+        log_system_activity(
+            self,
+            "Reopened: moved from {} to {}. Reason: {}".format(
+                self.get_status_display(),
+                PhaseStatuses.CHOICES[PhaseStatuses.IN_PROGRESS][1],
+                reason or "none given",
+            ),
+            author=user,
+            category=AuditCategory.WORKFLOW,
+            verb=AuditVerb.STATUS_CHANGE,
+        )
+        if self.job.status == JobStatuses.COMPLETED:
+            self.job.to_reopen_for_phase(self, user=user, reason=reason)
+            self.job.save()
+        self.fire_status_notification(PhaseStatuses.IN_PROGRESS)
+
+    def can_proceed_to_reopen(self):
+        return can_proceed(self.to_reopen)
+
+    def can_to_reopen(self, notify_request=None):
+        _can_proceed = True
+        if notify_request and self.job.status == JobStatuses.COMPLETED:
+            messages.add_message(
+                notify_request,
+                messages.INFO,
+                "The job is Completed, so it will go back to In Progress too.",
+            )
+        can_proceed_result = can_proceed(self.to_reopen)
         if not can_proceed_result:
             if notify_request:
                 messages.add_message(notify_request, messages.ERROR, self.INVALID_STATE)

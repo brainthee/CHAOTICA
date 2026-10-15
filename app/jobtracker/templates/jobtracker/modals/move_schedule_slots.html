@@ -29,6 +29,7 @@
         {% endfor %}
       </ul>
       <div class="modal-body">
+        {% include 'partials/scheduler/locked_notice.html' %}
         <p class="text-body-secondary fs-9">Move all scheduled timeslots from one person to another.</p>
         {% crispy form %}
       </div>

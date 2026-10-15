@@ -1659,3 +1659,15 @@ svg.christmas {
 .rich-text-flush > :last-child {
   margin-bottom: 0;
 }
+
+/* Scheduler: delivery slots that can't be moved (phase finished / not yet
+   scoped, or job inactive). Subtle stripes over the slot colour so it reads
+   as "locked" in both light and dark themes. */
+.vis-item.sched-slot-locked {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgba(255, 255, 255, 0.18) 0 6px,
+    transparent 6px 12px
+  );
+  cursor: not-allowed;
+}

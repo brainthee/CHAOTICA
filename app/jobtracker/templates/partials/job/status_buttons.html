@@ -54,6 +54,13 @@
                 {% endif %} 
             </button>
         {% endif %}
+        {% if job.can_proceed_to_reopen %}
+            <button data-url="{% url 'job_update_workflow' job.slug 2 %}"
+                class="btn btn-outline-warning js-update-job-workflow"
+                data-status="Scoping" data-status-id="2" title="Reopen this completed job back to Scoping">
+                <span class="fa-solid fa-rotate-left me-1"></span>Reopen Job
+            </button>
+        {% endif %}
         {% if job.status == 5 %}
             <a href="{% url 'job_schedule' job.slug %}" 
                 class="btn btn-outline-success ">

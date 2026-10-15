@@ -12,10 +12,23 @@ Like a job, a Phase also has a `status` which follows a strict workflow. Even mo
 - Cancelling, postponing or deleting a phase deletes its scheduled timeslots.
 - A closed phase can't be cancelled or postponed again. In particular, a cancelled, deleted or archived phase can no longer be "revived" by postponing it and then moving it back to *Pending Scheduling*. Only a **Postponed** phase can return to *Pending Scheduling*.
 - Closed phases can't take new scheduler bookings, and slots can't be moved onto them (see [Booking & Validation](../../scheduling/validation.md)).
+- Only phases from **Pending Scheduling** to the end of QA can be scheduled at all — Draft, Completed and Delivered phases are locked in the scheduler too.
+
+## Reopening a phase
+
+**Completed** and **Delivered** phases show a **Reopen Phase** button (anyone
+who can update the job). It moves the phase back to **In Progress** — e.g. for
+late report fixes — and asks for a **reason**, recorded in the phase's Activity
+log as a workflow status change. If the job was **Completed**, it goes back to
+**In Progress** too (logged on the job, naming the phase), so the phase shows
+up on the dashboard and in the QA/delivery queues again. Once the phase is
+delivered again, the job completes automatically as usual.
+
+Phases on Lost, Deleted or Archived jobs can't be reopened.
 
 ## The job's status matters too
 
-Forward transitions (*Pending Scheduling* through *Delivered*) are only allowed while the job is open. If the job is **Lost**, **Deleted** or **Archived**, its phases can't progress. Phases on a **Completed** job can still be moved on, so older phases can be tidied up.
+Forward transitions (*Pending Scheduling* through *Delivered*) are only allowed while the job is open. If the job is **Lost**, **Deleted** or **Archived**, its phases can't progress. If an in-flight phase on a **Completed** job is moved on, the job goes back to **In Progress** so the work isn't hidden (see [Reopening a completed job](../lifecycle.md#reopening-a-completed-job)).
 
 ## Scheduling and status
 
@@ -120,6 +133,8 @@ digraph {
                 "jobtracker.Phase.status.0" -> "jobtracker.Phase.status.17" [label=to_postponed]
                 "jobtracker.Phase.status.14" -> "jobtracker.Phase.status.16" [label=to_cancelled]
                 "jobtracker.Phase.status.6" -> "jobtracker.Phase.status.7" [label=to_in_progress]
+                "jobtracker.Phase.status.14" -> "jobtracker.Phase.status.7" [label=to_reopen]
+                "jobtracker.Phase.status.15" -> "jobtracker.Phase.status.7" [label=to_reopen]
                 "jobtracker.Phase.status.3" -> "jobtracker.Phase.status.1" [label=to_pending_sched]
                 "jobtracker.Phase.status.4" -> "jobtracker.Phase.status.17" [label=to_postponed]
                 "jobtracker.Phase.status.5" -> "jobtracker.Phase.status.17" [label=to_postponed]

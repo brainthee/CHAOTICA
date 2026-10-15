@@ -1,0 +1,8 @@
+{# Required free-text reason for workflow moves that need one (reopening). #}
+{# Recorded in the Activity log with the status change.                   #}
+<div class="mb-3">
+  <label class="form-label fs-9" for="workflow-reason">Reason <span class="text-danger">*</span></label>
+  <textarea class="form-control{% if reason_error %} is-invalid{% endif %}" id="workflow-reason" name="reason" rows="3" required
+            placeholder="Why is this being reopened? This is recorded in the activity log.">{{ reason }}</textarea>
+  {% if reason_error %}<div class="invalid-feedback">Please give a reason.</div>{% endif %}
+</div>

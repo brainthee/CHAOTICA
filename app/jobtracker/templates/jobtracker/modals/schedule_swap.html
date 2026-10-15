@@ -11,6 +11,7 @@
         <button type="button" class="btn-close text-body-emphasis" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
+        {% include 'partials/scheduler/locked_notice.html' %}
         <p class="text-body-secondary fs-9">
           Swap all scheduled slots between two people — each takes over the other's work
           {% if phase %}on this phase{% else %}across the whole job{% endif %}.

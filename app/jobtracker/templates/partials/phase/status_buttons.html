@@ -84,5 +84,10 @@
         {% endif %}
       </button>
     {% endif %}
+    {% if phase.can_proceed_to_reopen %}
+      <button data-url="{% url 'phase_update_workflow' phase.job.slug phase.slug 7 %}" class="btn btn-outline-warning js-update-phase-workflow" data-status="In Progress" data-status-id="7" title="Bring this phase back to In Progress{% if phase.job.status == 8 %} (the job reopens too){% endif %}">
+        <span class="fa-solid fa-rotate-left me-1"></span>Reopen Phase
+      </button>
+    {% endif %}
   </div>
 </div>

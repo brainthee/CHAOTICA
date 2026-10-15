@@ -868,6 +868,29 @@ class PhaseStatuses:
         QA_PRES_AUTHOR_UPDATES,
     ]
 
+    #: Phases that can be scheduled (new bookings, or moving/resizing existing
+    #: ones): Pending Scheduling through the end of QA. Draft phases aren't
+    #: ready (they open up once the scope is signed off) and Completed /
+    #: Delivered work is done — reopen the phase to change its schedule.
+    BOOKABLE_STATUSES = [
+        PENDING_SCHED,
+        SCHEDULED_TENTATIVE,
+        SCHEDULED_CONFIRMED,
+        PRE_CHECKS,
+        CLIENT_NOT_READY,
+        READY_TO_BEGIN,
+        IN_PROGRESS,
+        PENDING_TQA,
+        QA_TECH,
+        QA_TECH_AUTHOR_UPDATES,
+        PENDING_PQA,
+        QA_PRES,
+        QA_PRES_AUTHOR_UPDATES,
+    ]
+
+    #: Phases that can be reopened back to In Progress.
+    REOPENABLE_STATUSES = [COMPLETED, DELIVERED]
+
     #: Phases that should carry a billing code (booked time is being coded):
     #: Schedule Tentative through Completed.
     CODE_REQUIRED_STATUSES = [
