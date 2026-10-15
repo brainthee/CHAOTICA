@@ -14,6 +14,7 @@ from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from django.template import loader
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
+from django.utils import timezone
 from guardian.shortcuts import get_objects_for_user
 from chaotica_utils.models import User, UserCost
 from chaotica_utils.utils.common import can_manage_user_lcr
@@ -99,12 +100,28 @@ def lcr_list(request):
     ):
         units_by_user.setdefault(ms.member_id, []).append(ms.unit)
 
-    # Current (latest-effective) rate per person, one query.
-    latest = {}
-    for uc in UserCost.objects.filter(user_id__in=person_ids).order_by(
-        "user_id", "-effective_from"
+    # Rate in force today per person, one query. Same rule as
+    # UserCost.cost_on: latest row effective on or before today, else the
+    # newest undated row. Future-dated rates aren't current yet.
+    today = timezone.now().date()
+    dated, undated = {}, {}
+    for uc in (
+        UserCost.objects.filter(user_id__in=person_ids)
+        .filter(Q(effective_from__lte=today) | Q(effective_from__isnull=True))
+        .order_by("user_id", "-effective_from", "-pk")
     ):
-        latest.setdefault(uc.user_id, uc)
+        target = undated if uc.effective_from is None else dated
+        target.setdefault(uc.user_id, uc)
+    latest = {
+        uid: dated.get(uid) or undated.get(uid)
+        for uid in person_ids
+        if uid in dated or uid in undated
+    }
+    upcoming = {}
+    for uc in UserCost.objects.filter(
+        user_id__in=person_ids, effective_from__gt=today
+    ).order_by("user_id", "effective_from"):
+        upcoming.setdefault(uc.user_id, uc)
 
     global_access = _global_lcr_access(request.user)
     rows = []
@@ -120,6 +137,7 @@ def lcr_list(request):
                 "user": person,
                 "units": person_units,
                 "current": current,
+                "upcoming": upcoming.get(person.pk),
                 "can_set": request.user.is_superuser
                 or (
                     person.pk != request.user.pk

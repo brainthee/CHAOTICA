@@ -9,6 +9,8 @@ Sensitive fields are deliberately omitted — see the module-level notes on each
 serializer and the permission section of the implementation plan.
 """
 
+from decimal import Decimal
+
 from cities_light.models import City
 from rest_framework import serializers
 
@@ -156,11 +158,11 @@ class UserJobLevelUpdateSerializer(serializers.Serializer):
 class UserCostUpdateSerializer(serializers.Serializer):
     """Write body for ``users/{id}/set-cost/`` — a date-effective loaded cost rate.
 
-    Mirrors the org-unit Finance tab's "set rate" action: add-only history, one
+    Mirrors the Operations → Loaded Cost Rates "set rate" action: add-only history, one
     row per effective date (re-posting the same date updates it)."""
 
     cost_per_hour = serializers.DecimalField(
-        max_digits=10, decimal_places=2, min_value=0
+        max_digits=10, decimal_places=2, min_value=Decimal("0.01")
     )
     effective_from = serializers.DateField(required=False)
 

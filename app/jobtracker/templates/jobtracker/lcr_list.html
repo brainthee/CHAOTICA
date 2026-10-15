@@ -87,7 +87,10 @@
                 {% if row.current %}{{ row.current.cost_per_hour|floatformat:2 }}{% else %}not set{% endif %}
               </span>
             </td>
-            <td data-order="{{ row.current.effective_from|date:'Y-m-d' }}"><span class="text-body-secondary">{{ row.current.effective_from|default:"—" }}</span></td>
+            <td data-order="{{ row.current.effective_from|date:'Y-m-d' }}">
+              <span class="text-body-secondary">{{ row.current.effective_from|default:"—" }}</span>
+              {% if row.upcoming %}<div class="fs-10 text-body-tertiary">{{ row.upcoming.cost_per_hour|floatformat:2 }} from {{ row.upcoming.effective_from }}</div>{% endif %}
+            </td>
             <td class="text-end pe-3">
               {% if row.can_set %}
                 <button class="btn btn-sm btn-phoenix-secondary js-load-modal-form"

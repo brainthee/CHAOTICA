@@ -151,3 +151,18 @@ class LoadedCostRatesTests(TestCase):
             )
             self.assertFalse(resp.json()["form_is_valid"], bad)
         self.assertEqual(UserCost.objects.filter(user=self.ada).count(), 1)
+
+    def test_future_rate_is_not_current(self):
+        UserCost.objects.create(
+            user=self.ada, effective_from=date(2099, 1, 1), cost_per_hour=Decimal("99")
+        )
+        self.http.force_login(self.finance)
+        rows = {r["user"].email: r for r in self._list().context["rows"]}
+        self.assertEqual(rows["ada@test.com"]["current"].cost_per_hour, Decimal("50"))
+        self.assertEqual(rows["ada@test.com"]["upcoming"].cost_per_hour, Decimal("99"))
+        # Only a future rate -> counts as "no rate set" today.
+        UserCost.objects.create(
+            user=self.bob, effective_from=date(2099, 1, 1), cost_per_hour=Decimal("40")
+        )
+        missing = [r["user"].email for r in self._list(rate="missing").context["rows"]]
+        self.assertIn("bob@test.com", missing)
