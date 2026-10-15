@@ -29,6 +29,9 @@ from django_bleach.models import BleachField
 from django.db.models.functions import Lower
 from collections import defaultdict
 
+# Services shown individually on the team Stats radar; the rest become "Other".
+SERVICE_BREAKDOWN_TOP_N = 8
+
 
 def get_media_image_file_path(_, filename):
     ext = filename.split(".")[-1]
@@ -245,6 +248,7 @@ class Team(models.Model):
             "member_utilisation": [],
             "delivery_throughput": {},
             "service_breakdown": [],
+            "service_breakdown_max": 0,
             "job_status_breakdown": [],
         }
 
@@ -292,13 +296,28 @@ class Team(models.Model):
             .annotate(participation_count=Count("id", distinct=True))
             .order_by("-participation_count")
         )
-        data["service_breakdown"] = [
+        breakdown = [
             {
                 "name": row["service__name"],
                 "participation_count": row["participation_count"],
             }
             for row in service_rows
         ]
+        # Keep the radar readable: busiest services, long tail rolled up.
+        if len(breakdown) > SERVICE_BREAKDOWN_TOP_N:
+            tail = breakdown[SERVICE_BREAKDOWN_TOP_N:]
+            breakdown = breakdown[:SERVICE_BREAKDOWN_TOP_N] + [
+                {
+                    "name": f"Other ({len(tail)} services)",
+                    "participation_count": sum(
+                        r["participation_count"] for r in tail
+                    ),
+                }
+            ]
+        data["service_breakdown"] = breakdown
+        data["service_breakdown_max"] = max(
+            (r["participation_count"] for r in breakdown), default=0
+        )
 
         # --- Job pipeline counts by status (jobs the team has slots on) ---
         status_labels = dict(JobStatuses.CHOICES)

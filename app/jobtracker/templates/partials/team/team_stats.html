@@ -503,7 +503,7 @@ $(function() {
                     splitNumber: 4,
                     indicator: [
                         {% for serv in stats.service_breakdown %}
-                        { name: '{{ serv.name|escapejs }}', max: {{ stats.service_breakdown.0.participation_count }}},
+                        { name: '{{ serv.name|escapejs }}', max: {{ stats.service_breakdown_max }}},
                         {% endfor %}
                     ],
                     name: {

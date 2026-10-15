@@ -254,6 +254,39 @@ class TeamGetStatsTests(TestCase):
         # 3 slots across 2 members on 1 phase -> still counts the phase once.
         self.assertEqual(breakdown[0]["participation_count"], 1)
 
+    def test_service_breakdown_rolls_long_tail_into_other(self):
+        from jobtracker.models.team import SERVICE_BREAKDOWN_TOP_N
+
+        start, end = _weekday_slot_times(timezone.now() - timedelta(days=14))
+        # Web App Test already has 1 phase; give 10 more services 1 phase each
+        # and one of them 2, so it ranks first.
+        for i in range(10):
+            svc = Service.objects.create(name=f"Svc {i}")
+            for _ in range(2 if i == 0 else 1):
+                phase = Phase.objects.create(job=self.job, title=f"P {i}")
+                phase.service = svc
+                phase.save()
+                TimeSlot.objects.create(
+                    user=self.m1,
+                    slot_type=self.slot_type,
+                    phase=phase,
+                    start=start,
+                    end=end,
+                    deliveryRole=TimeSlotDeliveryRole.DELIVERY,
+                )
+
+        stats = self.team.get_stats()
+        breakdown = stats["service_breakdown"]
+        self.assertEqual(len(breakdown), SERVICE_BREAKDOWN_TOP_N + 1)
+        self.assertEqual(breakdown[0]["name"], "Svc 0")
+        other = breakdown[-1]
+        self.assertEqual(other["name"], "Other (3 services)")
+        self.assertEqual(other["participation_count"], 3)
+        # 11 services / 12 phases in total; nothing lost in the roll-up.
+        self.assertEqual(sum(r["participation_count"] for r in breakdown), 12)
+        # "Other" outranks the busiest single service, so it sets the radar max.
+        self.assertEqual(stats["service_breakdown_max"], 3)
+
     def test_job_pipeline_deduplicated_by_distinct(self):
         pipeline = self.team.get_stats()["job_status_breakdown"]
         self.assertEqual(len(pipeline), 1)
