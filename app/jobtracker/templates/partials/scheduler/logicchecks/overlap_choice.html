@@ -9,6 +9,8 @@ ways to proceed; each button re-submits the create form with an overlap_mode.{% 
     {% if counts.internal %}<li><strong>{{ counts.internal }}</strong> internal slot{{ counts.internal|pluralize }}</li>{% endif %}
   </ul>
   <p class="mb-2 fs-9 text-body-secondary">How would you like to book this range?</p>
+  <textarea id="overlap-override-reason" class="form-control form-control-sm mb-2" rows="2"
+            placeholder="Reason (optional) — recorded in the schedule history if you book over or clear"></textarea>
   <div class="d-grid gap-2">
     <button type="button" class="btn btn-phoenix-primary js-overlap-mode" data-mode="around">
       <span class="fas fa-diagram-next me-1"></span> Book <strong>around</strong> them &mdash; skip busy days

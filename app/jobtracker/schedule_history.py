@@ -155,27 +155,86 @@ def _summarise(action_type, payload):
     return verbs.get(action_type, "Changed {} slot{}".format(n, plural))
 
 
-def record(actor, action_type, items_before, items_after):
+def is_forced(value):
+    """Whether a request's ``force`` flag means "Save anyway". Only explicit
+    truthy values count - "0" / "false" / "" must not bypass a warning."""
+    return str(value or "").strip().lower() in ("1", "true", "yes", "on")
+
+
+def record(
+    actor,
+    action_type,
+    items_before,
+    items_after,
+    forced=False,
+    override_reason="",
+    overridden="",
+    summary=None,
+):
     """Build one ScheduleAction from before/after snapshots and broadcast it.
 
     ``items_before`` / ``items_after`` are lists of :func:`snapshot` /
     :func:`snapshot_comment` results. Returns the created ScheduleAction, or None
     if the change was a no-op (empty payload).
+
+    ``forced`` marks a save made past a bypassable warning; ``overridden`` is a
+    short description of what was overridden (e.g. "overlap with 2 bookings;
+    over scope") and ``override_reason`` the user's optional reason. A forced
+    action is also written to the Activity Log as a warning-severity event.
     """
     payload = _build_payload(items_before, items_after)
     if not payload:
         return None
     job, phase = _derive_scope(payload)
+    text = summary or _summarise(action_type, payload)
+    if forced and overridden:
+        text = "{} (overrode: {})".format(text, overridden)
+    reason = (override_reason or "").strip() if forced else ""
     action = ScheduleAction.objects.create(
         actor=actor if getattr(actor, "pk", None) else None,
         action_type=action_type,
         job=job,
         phase=phase,
-        summary=_summarise(action_type, payload),
+        summary=text,
         payload=payload,
+        forced=bool(forced),
+        override_reason=reason,
     )
+    if forced:
+        _audit_override(action, actor, overridden, reason)
     _broadcast(action)
     return action
+
+
+def _audit_override(action, actor, overridden, reason):
+    """Activity Log entry for a warning that was overridden. ``record_audit``
+    directly: ``log_system_activity`` doesn't pass ``severity`` through."""
+    from chaotica_utils.audit import record_audit
+    from chaotica_utils.models import AuditCategory, AuditSeverity, AuditVerb, User
+
+    target = action.phase or action.job
+    if target is None:
+        uids = sorted(action._affected_user_ids())
+        target = User.objects.filter(pk__in=uids[:1]).first()
+    if target is None:
+        return
+    message = "Warning overridden: {}".format(overridden or "scheduling warning")
+    if reason:
+        message += " — reason: {}".format(reason)
+    record_audit(
+        target,
+        AuditVerb.SCHEDULE,
+        message=message,
+        actor=actor if getattr(actor, "pk", None) else None,
+        category=AuditCategory.SCHEDULE,
+        severity=AuditSeverity.WARNING,
+        metadata={
+            "reason": reason,
+            "mode": overridden,
+            "schedule_action": action.pk,
+            "summary": action.summary,
+        },
+    )
 
 
 def _snap(instance):
@@ -185,12 +244,13 @@ def _snap(instance):
     return snapshot_comment(instance)
 
 
-def record_creates(actor, instances, action_type=ScheduleActionType.CREATE):
-    """Record the creation of one or more slot/comment instances."""
+def record_creates(actor, instances, action_type=ScheduleActionType.CREATE, **kwargs):
+    """Record the creation of one or more slot/comment instances. ``kwargs``
+    (forced / override_reason / overridden / summary) pass to :func:`record`."""
     afters = [_snap(i) for i in instances if i is not None and i.pk]
     if not afters:
         return None
-    return record(actor, action_type, [], afters)
+    return record(actor, action_type, [], afters, **kwargs)
 
 
 def record_deletes(actor, snapshots_before, action_type=ScheduleActionType.DELETE):

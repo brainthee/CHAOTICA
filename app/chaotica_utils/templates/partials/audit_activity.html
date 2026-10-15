@@ -12,7 +12,8 @@ on any object detail page.
             <div class="timeline-item-bar position-relative">
                <div class="icon-item icon-item-md rounded-7 border">
                   <span class="fa-solid
-                     {% if event.verb == 'create' %}fa-plus text-success
+                     {% if event.severity >= 30 %}fa-triangle-exclamation text-warning
+                     {% elif event.verb == 'create' %}fa-plus text-success
                      {% elif event.verb == 'delete' %}fa-trash text-danger
                      {% elif event.verb == 'update' %}fa-pen text-info
                      {% elif event.verb == 'status_change' %}fa-arrows-rotate text-warning

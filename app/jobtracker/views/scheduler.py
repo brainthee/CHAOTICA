@@ -121,9 +121,10 @@ def _verify_users_schedulable(request, users):
             raise PermissionDenied
 
 
-def _check_framework_slot(framework, updated_slot, old_slot, request, force=False):
+def _check_framework_slot(framework, updated_slot, old_slot, request, force=False, overrides=None):
     """Check framework constraints (closed, over-allocation) for a modified slot.
-    Returns a data dict if blocked, or None if OK."""
+    Returns a data dict if blocked, or None if OK. A bypassed (forced) warning
+    is appended to ``overrides`` so the save can record what was overridden."""
     if framework.closed:
         return {
             "form_is_valid": False,
@@ -157,7 +158,9 @@ def _check_framework_slot(framework, updated_slot, old_slot, request, force=Fals
                     request=request,
                 ),
             }
-        elif not force:
+        elif force:
+            _note_override(overrides, "over framework budget")
+        else:
             return {
                 "form_is_valid": False,
                 "logic_checks_failed": True,
@@ -176,7 +179,18 @@ def _check_framework_slot(framework, updated_slot, old_slot, request, force=Fals
     return None
 
 
-def _check_phase_scoped(slot, request, force=False, old_slot=None):
+def _note_override(overrides, label):
+    """Collect a bypassed warning's label (for the forced ScheduleAction)."""
+    if overrides is not None and label not in overrides:
+        overrides.append(label)
+
+
+def _overlap_label(slots):
+    n = slots.count() if hasattr(slots, "count") else len(slots)
+    return "overlap with {} booking{}".format(n, "" if n == 1 else "s")
+
+
+def _check_phase_scoped(slot, request, force=False, old_slot=None, overrides=None):
     """Check if scheduling this slot would exceed the phase's scoped hours
     for the slot's delivery role. Returns a data dict if warning needed, or None if OK.
     This is a bypassable warning — schedulers can force-save."""
@@ -201,6 +215,7 @@ def _check_phase_scoped(slot, request, force=False, old_slot=None):
         return None  # Within scope
 
     if force:
+        _note_override(overrides, "over scope")
         return None  # User chose to bypass
 
     hours_in_day = float(phase.get_hours_in_day()) if phase.get_hours_in_day() else 0
@@ -231,7 +246,7 @@ def _check_phase_scoped(slot, request, force=False, old_slot=None):
     }
 
 
-def _check_onboarding(slot, request, force=False):
+def _check_onboarding(slot, request, force=False, overrides=None):
     """Enforce client onboarding for a delivery slot's assigned user.
 
     Returns a logic-check data dict (or None), mirroring the return shape of
@@ -257,7 +272,9 @@ def _check_onboarding(slot, request, force=False):
             ),
         }
 
-    if onboarding.is_stale and not force:
+    if onboarding.is_stale and force:
+        _note_override(overrides, "stale onboarding")
+    elif onboarding.is_stale:
         return {
             "form_is_valid": False,
             "logic_checks_failed": True,
@@ -488,6 +505,8 @@ def schedule_action_history(request):
                 "created": a.created.isoformat(),
                 "action_type": a.action_type,
                 "summary": a.summary,
+                "forced": a.forced,
+                "override_reason": a.override_reason,
                 "reverted": a.reverted,
                 "is_revert": a.action_type == ScheduleActionType.REVERT,
                 "can_revert": a.can_revert(request.user),
@@ -699,7 +718,12 @@ def change_scheduler_slot_date(request, pk=None):
     data = dict()
     if request.method == "POST":
         before = schedule_history.snapshot(slot)
-        force = request.POST.get("force", None)
+        force = schedule_history.is_forced(request.POST.get("force"))
+        # The form mutates ``slot`` in place, so keep the stored version (for
+        # the scope / framework deltas) and what it already overlapped (so an
+        # edit only warns about NEW overlaps, not ones it already had).
+        before_slot = TimeSlot.objects.get(pk=slot.pk)
+        old_overlap_pks = set(slot.overlapping_slots().values_list("pk", flat=True))
         form = ChangeTimeSlotDateModalForm(request.POST, instance=slot)
         if form.is_valid():
             updated_slot = form.save(commit=False)
@@ -710,29 +734,15 @@ def change_scheduler_slot_date(request, pk=None):
             error = _booking_rule_error(updated_slot)
             if error:
                 return JsonResponse({"form_is_valid": False, "error": error})
-            # Framework checks for delivery slots
-            if updated_slot.is_delivery() and updated_slot.phase:
-                framework = updated_slot.phase.job.associated_framework
-                if framework:
-                    _data = _check_framework_slot(framework, updated_slot, slot, request, force=force)
-                    if _data:
-                        _data["html_form"] = loader.render_to_string(
-                            "jobtracker/modals/job_slot.html", {"form": form}, request=request
-                        )
-                        return JsonResponse(_data)
-                _data = _check_phase_scoped(updated_slot, request, force=force, old_slot=slot)
-                if _data:
-                    _data["html_form"] = loader.render_to_string(
-                        "jobtracker/modals/job_slot.html", {"form": form}, request=request
-                    )
-                    return JsonResponse(_data)
-                # Non-bypassable if reassigning to a not-onboarded user (BUG-004)
-                _data = _check_onboarding(updated_slot, request, force=force)
-                if _data:
-                    _data["html_form"] = loader.render_to_string(
-                        "jobtracker/modals/job_slot.html", {"form": form}, request=request
-                    )
-                    return JsonResponse(_data)
+            overrides = []
+            _data = _edit_logic_checks(
+                request, updated_slot, before_slot, old_overlap_pks, force, overrides
+            )
+            if _data:
+                _data["html_form"] = loader.render_to_string(
+                    "jobtracker/modals/job_slot.html", {"form": form}, request=request
+                )
+                return JsonResponse(_data)
             try:
                 updated_slot.save()
             except ValidationError as e:
@@ -742,6 +752,9 @@ def change_scheduler_slot_date(request, pk=None):
             schedule_history.record(
                 request.user, ScheduleActionType.UPDATE,
                 [before], [schedule_history.snapshot(updated_slot)],
+                forced=bool(overrides),
+                overridden="; ".join(overrides),
+                override_reason=_override_reason(request),
             )
             data["form_is_valid"] = True
         else:
@@ -795,7 +808,12 @@ def change_scheduler_slot(request, pk=None):
 
     if request.method == "POST":
         before = schedule_history.snapshot(slot)
-        force = request.POST.get("force", None)
+        force = schedule_history.is_forced(request.POST.get("force"))
+        # The form mutates ``slot`` in place, so keep the stored version (for
+        # the scope / framework deltas) and what it already overlapped (so an
+        # edit only warns about NEW overlaps, not ones it already had).
+        before_slot = TimeSlot.objects.get(pk=slot.pk)
+        old_overlap_pks = set(slot.overlapping_slots().values_list("pk", flat=True))
         if slot.is_delivery():
             form = DeliveryTimeSlotModalForm(request.POST, instance=slot)
         elif slot.is_project():
@@ -816,29 +834,15 @@ def change_scheduler_slot(request, pk=None):
                     "jobtracker/modals/job_slot.html", {"form": form}, request=request
                 )
                 return JsonResponse(data)
-            # Framework checks for delivery slots
-            if updated_slot.is_delivery() and updated_slot.phase:
-                framework = updated_slot.phase.job.associated_framework
-                if framework:
-                    _data = _check_framework_slot(framework, updated_slot, slot, request, force=force)
-                    if _data:
-                        _data["html_form"] = loader.render_to_string(
-                            "jobtracker/modals/job_slot.html", {"form": form}, request=request
-                        )
-                        return JsonResponse(_data)
-                _data = _check_phase_scoped(updated_slot, request, force=force, old_slot=slot)
-                if _data:
-                    _data["html_form"] = loader.render_to_string(
-                        "jobtracker/modals/job_slot.html", {"form": form}, request=request
-                    )
-                    return JsonResponse(_data)
-                # Non-bypassable if reassigning to a not-onboarded user (BUG-004)
-                _data = _check_onboarding(updated_slot, request, force=force)
-                if _data:
-                    _data["html_form"] = loader.render_to_string(
-                        "jobtracker/modals/job_slot.html", {"form": form}, request=request
-                    )
-                    return JsonResponse(_data)
+            overrides = []
+            _data = _edit_logic_checks(
+                request, updated_slot, before_slot, old_overlap_pks, force, overrides
+            )
+            if _data:
+                _data["html_form"] = loader.render_to_string(
+                    "jobtracker/modals/job_slot.html", {"form": form}, request=request
+                )
+                return JsonResponse(_data)
             try:
                 updated_slot.save()
             except ValidationError as e:
@@ -846,6 +850,9 @@ def change_scheduler_slot(request, pk=None):
             schedule_history.record(
                 request.user, ScheduleActionType.UPDATE,
                 [before], [schedule_history.snapshot(updated_slot)],
+                forced=bool(overrides),
+                overridden="; ".join(overrides),
+                override_reason=_override_reason(request),
             )
             data["form_is_valid"] = True
         else:
@@ -882,6 +889,41 @@ def _selected_users(request):
             ids = [rid]
     by_pk = {u.pk: u for u in User.objects.filter(pk__in=ids)}
     return [by_pk[i] for i in ids if i in by_pk]
+
+
+def _edit_logic_checks(request, updated_slot, old_slot, old_overlap_pks, force, overrides):
+    """Bypassable / blocking checks for an edited or dragged slot - the same
+    rules as create. Returns a logic-check data dict, or None to save. Forced
+    bypasses are appended to ``overrides``."""
+    if updated_slot.is_delivery() and updated_slot.phase:
+        framework = updated_slot.phase.job.associated_framework
+        if framework:
+            _data = _check_framework_slot(
+                framework, updated_slot, old_slot, request, force=force, overrides=overrides
+            )
+            if _data:
+                return _data
+        _data = _check_phase_scoped(
+            updated_slot, request, force=force, old_slot=old_slot, overrides=overrides
+        )
+        if _data:
+            return _data
+        # Non-bypassable if reassigning to a not-onboarded user (BUG-004)
+        _data = _check_onboarding(updated_slot, request, force=force, overrides=overrides)
+        if _data:
+            return _data
+    if updated_slot.is_delivery() or updated_slot.is_project():
+        moved = (
+            old_slot.start != updated_slot.start
+            or old_slot.end != updated_slot.end
+            or old_slot.user_id != updated_slot.user_id
+        )
+        if moved:
+            overlaps = updated_slot.overlapping_slots()
+            if old_slot.user_id == updated_slot.user_id:
+                overlaps = overlaps.exclude(pk__in=old_overlap_pks)
+            return _check_overlaps(updated_slot, overlaps, request, force, overrides)
+    return None
 
 
 def _booking_rule_error(slot):
@@ -957,27 +999,33 @@ def _evaluate_delivery_slot(slot, request, force, check_overlaps=True):
                         {"framework": framework, "days_allocated": days_allocated,
                          "slot_days": slot_days, "new_total": new_total}, request=request)}
 
+    overrides = []
+    result["overrides"] = overrides
+
     # Onboarding: non-bypassable if not onboarded, bypassable "stale" warning
-    _onboard = _check_onboarding(slot, request, force=force)
+    _onboard = _check_onboarding(slot, request, force=force, overrides=overrides)
     if _onboard:
         return {"failed": True, "can_bypass": _onboard["logic_checks_can_bypass"],
-                "feedback": _onboard["logic_checks_feedback"]}
+                "feedback": _onboard["logic_checks_feedback"], "overrides": overrides}
 
-    # Bypassable checks (skipped entirely when forcing)
-    if not force:
-        _scoped = _check_phase_scoped(slot, request)
-        if _scoped:
-            result["failed"] = True
-            result["can_bypass"] = True
-            result["feedback"] += _scoped["logic_checks_feedback"]
+    # Bypassable checks: a warning unless forcing, in which case they're
+    # noted in ``overrides`` so the save records what was overridden.
+    _scoped = _check_phase_scoped(slot, request, force=force, overrides=overrides)
+    if _scoped:
+        result["failed"] = True
+        result["can_bypass"] = True
+        result["feedback"] += _scoped["logic_checks_feedback"]
 
-        if framework and framework.allow_over_allocation:
-            slot_hours = slot.get_business_hours()
-            hours_in_day = framework.get_hours_in_day()
-            slot_days = round(slot_hours / hours_in_day, 1) if hours_in_day else 0
-            days_allocated = framework.days_allocated()
-            new_total = days_allocated + slot_days
-            if new_total > framework.total_days:
+    if framework and framework.allow_over_allocation:
+        slot_hours = slot.get_business_hours()
+        hours_in_day = framework.get_hours_in_day()
+        slot_days = round(slot_hours / hours_in_day, 1) if hours_in_day else 0
+        days_allocated = framework.days_allocated()
+        new_total = days_allocated + slot_days
+        if new_total > framework.total_days:
+            if force:
+                _note_override(overrides, "over framework budget")
+            else:
                 result["failed"] = True
                 result["can_bypass"] = True
                 result["feedback"] += loader.render_to_string(
@@ -985,43 +1033,58 @@ def _evaluate_delivery_slot(slot, request, force, check_overlaps=True):
                     {"framework": framework, "days_allocated": days_allocated,
                      "slot_days": slot_days, "new_total": new_total}, request=request)
 
-        if check_overlaps and slots:
-            if slots.filter(slot_type__is_working=False).exists():
-                result["failed"] = True
-                result["can_bypass"] = False
-                result["feedback"] += loader.render_to_string(
-                    "partials/scheduler/logicchecks/unavailable.html",
-                    {"slot": slot, "unavailable_slots": slots.filter(slot_type__is_working=False)},
-                    request=request)
-            else:
-                result["failed"] = True
-                result["can_bypass"] = True
-                result["feedback"] += loader.render_to_string(
-                    "partials/scheduler/logicchecks/overlaps.html",
-                    {"slot": slot, "overlapping_slots": slots}, request=request)
+    if check_overlaps and slots:
+        _merge_check(result, _check_overlaps(slot, slots, request, force, overrides))
     return result
+
+
+def _merge_check(result, check):
+    """Fold a logic-check data dict (or None) into an evaluate() result."""
+    if not check:
+        return
+    result["failed"] = True
+    if not check["logic_checks_can_bypass"]:
+        result["can_bypass"] = False
+    result["feedback"] += check["logic_checks_feedback"]
+
+
+def _check_overlaps(slot, slots, request, force=False, overrides=None):
+    """Overlap rule shared by create, edit and drag. ``slots`` are the bookings
+    ``slot`` would overlap. Leave / unavailability always blocks - even on a
+    forced resubmit; other bookings are a bypassable warning. Returns a
+    logic-check data dict, or None if OK / forced."""
+    if not slots:
+        return None
+    unavailable = slots.filter(slot_type__is_working=False)
+    if unavailable.exists():
+        return {
+            "form_is_valid": False,
+            "logic_checks_failed": True,
+            "logic_checks_can_bypass": False,
+            "logic_checks_feedback": loader.render_to_string(
+                "partials/scheduler/logicchecks/unavailable.html",
+                {"slot": slot, "unavailable_slots": unavailable},
+                request=request),
+        }
+    if force:
+        _note_override(overrides, _overlap_label(slots))
+        return None
+    return {
+        "form_is_valid": False,
+        "logic_checks_failed": True,
+        "logic_checks_can_bypass": True,
+        "logic_checks_feedback": loader.render_to_string(
+            "partials/scheduler/logicchecks/overlaps.html",
+            {"slot": slot, "overlapping_slots": slots}, request=request),
+    }
 
 
 def _evaluate_project_slot(slot, request, force):
     """Overlap checks for ONE unsaved project slot (mirrors create_scheduler_project_slot)."""
-    result = {"failed": False, "can_bypass": True, "feedback": ""}
-    if force:
-        return result
+    result = {"failed": False, "can_bypass": True, "feedback": "", "overrides": []}
     slots = slot.overlapping_slots()
     if slots:
-        if slots.filter(slot_type__is_working=False).exists():
-            result["failed"] = True
-            result["can_bypass"] = False
-            result["feedback"] += loader.render_to_string(
-                "partials/scheduler/logicchecks/unavailable.html",
-                {"slot": slot, "unavailable_slots": slots.filter(slot_type__is_working=False)},
-                request=request)
-        else:
-            result["failed"] = True
-            result["can_bypass"] = True
-            result["feedback"] += loader.render_to_string(
-                "partials/scheduler/logicchecks/overlaps.html",
-                {"slot": slot, "overlapping_slots": slots}, request=request)
+        _merge_check(result, _check_overlaps(slot, slots, request, force, result["overrides"]))
     return result
 
 
@@ -1059,11 +1122,30 @@ def _run_batch_create(request, users, build_slot, evaluate, force):
         data["logic_checks_feedback"] = fb
         return data
 
-    # Save clean (+ forced bypassable); skip blocked.
+    # Save clean (+ forced bypassable); skip blocked. With force the bypassable
+    # checks pass (and note what they overrode), so forced slots land in
+    # ``clean``; leave / unavailability still blocks.
     to_save = clean + (needs_confirm if force else [])
+    if not to_save and blocked:
+        # Nothing bookable: say why instead of a silent "saved" with no slots.
+        fb = ""
+        for u, _s, e in blocked:
+            if batch:
+                fb += "<hr class='my-2'><strong>{}</strong>".format(escape(str(u)))
+            fb += e["feedback"]
+        data["form_is_valid"] = False
+        data["logic_checks_failed"] = True
+        data["logic_checks_can_bypass"] = False
+        data["logic_checks_feedback"] = fb
+        return data
     for _u, s, _e in to_save:
         s.save()
     data["_saved_slots"] = [s for _u, s, _e in to_save]
+    overrides = []
+    for _u, _s, e in to_save:
+        for label in e.get("overrides", []):
+            _note_override(overrides, label)
+    data["_overrides"] = overrides
     data["form_is_valid"] = True
     if batch:
         summary = "Booked {} {}.".format(len(to_save), "person" if len(to_save) == 1 else "people")
@@ -1074,12 +1156,29 @@ def _run_batch_create(request, users, build_slot, evaluate, force):
     return data
 
 
+def _override_reason(request):
+    return (request.POST.get("override_reason") or "").strip()[:2000]
+
+
 def _record_created(request, data):
     """Log a CREATE ScheduleAction for slots saved by a create helper, popping the
-    non-serialisable instance list out of the JSON response payload."""
-    slots = data.pop("_saved_slots", None)
-    if data.get("form_is_valid") and slots:
-        schedule_history.record_creates(request.user, slots)
+    non-serialisable instance list out of the JSON response payload.
+
+    ``_cleared`` (snapshots of slots a destructive booking deleted/split) goes in
+    the same action so one undo restores them; ``_overrides`` marks it forced."""
+    slots = data.pop("_saved_slots", None) or []
+    cleared = data.pop("_cleared", None) or []
+    overrides = data.pop("_overrides", None) or []
+    if data.get("form_is_valid") and (slots or cleared):
+        schedule_history.record(
+            request.user,
+            ScheduleActionType.BATCH if cleared else ScheduleActionType.CREATE,
+            cleared,
+            [schedule_history.snapshot(s) for s in slots],
+            forced=bool(overrides),
+            overridden="; ".join(overrides),
+            override_reason=_override_reason(request),
+        )
 
 
 def _occupied_dates(user, start, end, slot_type_pks=None):
@@ -1173,6 +1272,7 @@ def _create_delivery_single(request, base, force):
             "logic_checks_can_bypass": ev["can_bypass"],
             "logic_checks_feedback": ev["feedback"],
         }
+    overrides = list(ev.get("overrides", []))
 
     overlaps = base.overlapping_slots()
     overlap_mode = request.POST.get("overlap_mode")
@@ -1215,6 +1315,7 @@ def _create_delivery_single(request, base, force):
         return {
             "form_is_valid": True,
             "_saved_slots": saved,
+            "_overrides": overrides,
             "summary": (
                 "Booked {} slot{} around existing commitments.".format(created, "" if created == 1 else "s")
                 if created else "No free working days in that range — nothing booked."
@@ -1222,20 +1323,36 @@ def _create_delivery_single(request, base, force):
         }
 
     if overlap_mode == "destructive":
-        base.user.clear_timeslots_in_range(
-            base.start, base.end,
-            slot_type_pks=[DefaultTimeSlotTypes.DELIVERY, DefaultTimeSlotTypes.INTERNAL_PROJECT],
+        cleared_types = [DefaultTimeSlotTypes.DELIVERY, DefaultTimeSlotTypes.INTERNAL_PROJECT]
+        # Snapshot what's about to be deleted/split so the same ScheduleAction
+        # can restore it on undo (clear_timeslots_in_range only deletes and
+        # creates fragments, never edits in place).
+        doomed = (
+            base.user.timeslots.filter(
+                start__lt=base.end, end__gt=base.start, slot_type_id__in=cleared_types
+            ).exclude(TimeSlot.rm_managed_q())
+        )
+        cleared = [schedule_history.snapshot(s) for s in doomed]
+        if cleared:
+            _note_override(overrides, "cleared {} booking{}".format(
+                len(cleared), "" if len(cleared) == 1 else "s"))
+        _affected, fragments = base.user.clear_timeslots_in_range(
+            base.start, base.end, slot_type_pks=cleared_types,
         )
         base.save()
         return {
             "form_is_valid": True,
-            "_saved_slots": [base],
+            "_saved_slots": [base] + list(fragments),
+            "_cleared": cleared,
+            "_overrides": overrides,
             "summary": "Cleared overlapping delivery/project work and booked the range.",
         }
 
     # over (default) — book the whole range on top of existing slots
+    if overlaps.exists():
+        _note_override(overrides, _overlap_label(overlaps) + " (booked over)")
     base.save()
-    return {"form_is_valid": True, "_saved_slots": [base]}
+    return {"form_is_valid": True, "_saved_slots": [base], "_overrides": overrides}
 
 
 @unit_permission_required_or_403("jobtracker.can_schedule_job")
@@ -1317,7 +1434,7 @@ def create_scheduler_project_slot(request):
     _verify_unit_schedulable(request, getattr(project, "unit", None))
 
     if request.method == "POST":
-        force = request.POST.get("force", None)
+        force = schedule_history.is_forced(request.POST.get("force"))
         form = ProjectTimeSlotModalForm(
             request.POST,
             start=start,
@@ -1394,7 +1511,7 @@ def create_scheduler_phase_slot(request):
 
     single = len(users) == 1
     if request.method == "POST":
-        force = request.POST.get("force", None)
+        force = schedule_history.is_forced(request.POST.get("force"))
         form = DeliveryTimeSlotModalForm(
             request.POST, start=start, end=end, user=user, phase=phase, job=job, single=single
         )

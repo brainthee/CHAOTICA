@@ -109,8 +109,11 @@
                     refreshPhaseStatus();
                     $("#mainModal").modal("hide");
                 },
-                resubmit: function () {
+                resubmit: function (f, reason) {
+                    $('.js-submit-modal-timeslot-form').find('input[name="force"], input[name="override_reason"]').remove();
                     $('<input>').attr({ type: 'hidden', id: 'force', name: 'force', value: '1' })
+                        .appendTo('.js-submit-modal-timeslot-form');
+                    $('<input>').attr({ type: 'hidden', name: 'override_reason', value: reason || '' })
                         .appendTo('.js-submit-modal-timeslot-form');
                     $(".js-submit-modal-timeslot-form").submit();
                 },

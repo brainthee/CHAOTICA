@@ -56,8 +56,11 @@
                         refreshPhaseStatus();
                         $("#mainModal").modal("hide");
                     },
-                    resubmit: function () {
+                    resubmit: function (f, reason) {
+                        $('.js-submit-modal-form').find('input[name="force"], input[name="override_reason"]').remove();
                         $('<input>').attr({ type: 'hidden', id: 'force', name: 'force', value: '1' })
+                            .appendTo('.js-submit-modal-form');
+                        $('<input>').attr({ type: 'hidden', name: 'override_reason', value: reason || '' })
                             .appendTo('.js-submit-modal-form');
                         $(".js-submit-modal-form").submit();
                     },

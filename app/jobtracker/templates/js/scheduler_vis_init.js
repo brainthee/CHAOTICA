@@ -569,7 +569,7 @@
     });
   }
 
-  function saveItemMove(item, callback, changeBase, meta, startISO, endISO, force) {
+  function saveItemMove(item, callback, changeBase, meta, startISO, endISO, force, reason) {
     loading(true);
     var payload = {
       pk: meta.origId,
@@ -579,6 +579,7 @@
       csrfmiddlewaretoken: csrf
     };
     if (force) { payload.force = 1; }
+    if (reason) { payload.override_reason = reason; }
     $.ajax({
       url: changeBase + meta.origId,
       type: 'POST',
@@ -588,7 +589,7 @@
         // Standard rejection / warning / confirmation decode (see schedulerResponse).
         window.schedulerResponse(resp, {
           onSuccess: function () { callback(item); loadSlots(); loadMembers(); refreshCards(); },
-          resubmit: function () { saveItemMove(item, callback, changeBase, meta, startISO, endISO, true); },
+          resubmit: function (f, reason) { saveItemMove(item, callback, changeBase, meta, startISO, endISO, true, reason); },
           onReject: function () { callback(null); }  // revert the dragged item
         });
       },
@@ -632,7 +633,8 @@
   //
   // opts (all optional except onSuccess):
   //   onSuccess(data)   confirmation.
-  //   resubmit(force)   called with true to bypass a warning. Omit to make warnings
+  //   resubmit(force, reason)  called with true (+ the optional override reason)
+  //                     to bypass a warning. Omit to make warnings
   //                     behave as plain rejections (no "Save anyway").
   //   onFormError(data) field/validation errors (e.g. re-render html_form). Default:
   //                     Swal the derived plain-text reason.
@@ -669,10 +671,13 @@
           title: 'Warning',
           icon: 'warning',
           html: data.logic_checks_feedback,
+          input: 'textarea',
+          inputLabel: 'Reason (optional)',
+          inputPlaceholder: 'Why is this OK? Recorded in the schedule history.',
           showCancelButton: true,
           confirmButtonText: 'Save anyway'
         }).then(function (r) {
-          if (r.isConfirmed) { opts.resubmit(true); }
+          if (r.isConfirmed) { opts.resubmit(true, (r.value || '').trim()); }
           else { reject(); }
         });
       } else {
@@ -1257,7 +1262,12 @@
         '<div class="d-flex align-items-start gap-2 px-3 py-2 border-bottom border-translucent' + (a.reverted ? ' opacity-50' : '') + '">' +
           '<span class="fas ' + icon + ' fs-9 text-body-secondary mt-1"></span>' +
           '<div class="flex-1 min-w-0">' +
-            '<div class="fw-semibold fs-9 text-truncate">' + escapeHtml(a.summary) + '</div>' +
+            '<div class="fw-semibold fs-9 text-truncate" title="' + escapeHtml(a.summary) + '">' +
+              (a.forced ? '<span class="fas fa-triangle-exclamation text-warning me-1" title="Saved past a warning"></span>' : '') +
+              escapeHtml(a.summary) + '</div>' +
+            (a.forced && a.override_reason
+              ? '<div class="fs-10 text-warning-emphasis text-wrap">Reason: ' + escapeHtml(a.override_reason) + '</div>'
+              : '') +
             '<div class="text-body-secondary fs-10">' + escapeHtml(a.actor) + ' · ' + relTime(a.created) + '</div>' +
           '</div>' +
           '<div class="ms-auto">' + revertBtn + '</div>' +

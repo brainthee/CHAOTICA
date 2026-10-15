@@ -50,6 +50,11 @@ class ScheduleAction(models.Model):
 
     summary = models.TextField(default="", blank=True)
 
+    # Saved past a bypassable warning ("Save anyway"): overlap, over scope,
+    # framework budget... ``summary`` names what was overridden.
+    forced = models.BooleanField(default=False)
+    override_reason = models.TextField(default="", blank=True)
+
     # List of per-item snapshots:
     #   {"model": "timeslot"|"timeslotcomment", "pk": N,
     #    "before": {...}|null, "after": {...}|null}
