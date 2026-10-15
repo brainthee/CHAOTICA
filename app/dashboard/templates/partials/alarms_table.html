@@ -4,8 +4,8 @@
 </h5>
 
 {% if not alarm_count %}
-  <div class="alert alert-phoenix-success" role="alert">
-    <span class="fas fa-check-circle me-2"></span>No alarms — everything looks good.
+  <div class="alert alert-subtle-success d-flex align-items-center py-2 fs-9" role="alert">
+    <span class="fas fa-check-circle me-2"></span>No overdue alarms{% if stale_alarm_count %} — but there's stale work to tidy up below{% else %} — everything looks good{% endif %}.
   </div>
 {% endif %}
 
@@ -356,3 +356,5 @@
   </div>
 </div>
 {% endif %}
+
+{% include 'partials/alarms_stale.html' %}

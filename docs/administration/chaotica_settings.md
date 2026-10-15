@@ -52,6 +52,9 @@ Controls the throttling of repeat notifications when a phase is overdue for a wo
 | **TQA_LATE_HOURS** | `24` | Hours between repeat "late to TQA" notifications. |
 | **PQA_LATE_HOURS** | `24` | Hours between repeat "late to PQA" notifications. |
 | **DELIVERY_LATE_HOURS** | `24` | Hours between repeat "late to delivery" notifications. |
+| **STALE_PHASE_DAYS** | `30` | Days a Schedule Tentative–In Progress phase can go without a status change or any booking before it's a **stalled** [dashboard alarm](../user_guide/dashboard_alarms.md) (and its late reminders stop). Also the age at which never-booked Pending Scheduling phases are flagged. |
+| **STALE_POSTPONED_DAYS** | `90` | Days a phase can stay Postponed before it's flagged as stale. |
+| **STALE_JOB_DAYS** | `180` | Days a job can sit in Draft / scoping / sign-off without a status change before it's flagged as dormant. |
 
 !!! example
     With the default of 24 hours, if a phase is overdue for TQA, the first notification fires immediately. The next will not fire until 24 hours later, even if the background task runs more frequently.

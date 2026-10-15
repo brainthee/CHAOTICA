@@ -1103,6 +1103,16 @@ class Job(models.Model):
             Q(status__lt=PhaseStatuses.DELIVERED) | Q(status=PhaseStatuses.POSTPONED)
         ).exists()
 
+    def has_delivered_work(self, exclude_phase=None):
+        """True if at least one phase was delivered (``exclude_phase`` is the
+        one being delivered right now, which counts)."""
+        if exclude_phase is not None:
+            return True
+        return self.phases.filter(
+            Q(status=PhaseStatuses.DELIVERED)
+            | Q(status=PhaseStatuses.ARCHIVED, actual_delivery_date__isnull=False)
+        ).exists()
+
     # COMPLETED
     @transition(
         field=status, source=JobStatuses.IN_PROGRESS, target=JobStatuses.COMPLETED
@@ -1130,6 +1140,18 @@ class Job(models.Model):
                     messages.ERROR,
                     "One or more phases are still in progress (or postponed). "
                     "Deliver, cancel or delete them first.",
+                )
+            _can_proceed = False
+        # A job whose phases were all cancelled delivered nothing — that isn't
+        # "Completed" (it'd look like delivered work). It shows in the Stale
+        # alarms for someone to close as Lost / delete, or add work to.
+        elif not self.has_delivered_work(exclude_phase=exclude_phase):
+            if notify_request:
+                messages.add_message(
+                    notify_request,
+                    messages.ERROR,
+                    "No phase on this job was delivered, so it can't be marked "
+                    "Completed. Close it another way (e.g. Lost or Delete) instead.",
                 )
             _can_proceed = False
 

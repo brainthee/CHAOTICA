@@ -74,10 +74,15 @@ class task_fire_job_notifications(CronJobBase):
         # - Report late to PQA
         # - Report late to Delivery
 
-        # Never notify for phases belonging to a lost, deleted or archived job.
+        from .alarms import stalled_phase_q
+
+        # Never notify for phases belonging to a lost, deleted or archived job,
+        # nor for stalled ones (no bookings and no status change for
+        # STALE_PHASE_DAYS): reminding daily forever doesn't help — they show
+        # in the dashboard's Stale alarms for someone to close off instead.
         live_phases = Phase.objects.exclude(
             job__status__in=JobStatuses.CLOSED_STATUSES
-        )
+        ).exclude(stalled_phase_q())
 
         ## Phase pre-checks are late
         for phase in live_phases.filter(

@@ -23,6 +23,7 @@ nav:
       - Daemon Split (planned): installation/deployment/daemon-split.md
   - User Guide:
     - Global Search: user_guide/global_search.md
+    - Dashboard Alarms: user_guide/dashboard_alarms.md
     - Jobs:
       - Managing Jobs: user_guide/Jobs/managing_jobs.md
       - Lifecycle: user_guide/Jobs/lifecycle.md

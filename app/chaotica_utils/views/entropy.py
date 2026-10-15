@@ -7,8 +7,8 @@ same per-role/per-category scoping (unit-wide for managers, per-QA-role for QA
 holders, personal otherwise). So the score reflects the chaos the user actually
 sees on their dashboard, plus a short trend of how many phases went late.
 
-The alarm queries below intentionally mirror ``dashboard/views.py`` (the source
-of truth for alarm scoping). If that logic changes, mirror it here.
+Alarm counts come from :func:`jobtracker.alarms.build_alarms` — the same
+querysets the dashboard lists — so the two can't drift apart.
 
 Purely cosmetic and read-only. Gated behind the ``ENTROPY_METER_ENABLED``
 constance flag; when off the endpoint 404s.
@@ -39,6 +39,12 @@ _WEIGHTS = {
     "no_presqa": 6,
     "unscheduled": 5,
     "no_billing_code": 3,
+    # Stale work is untidy rather than urgent, so it nudges the score gently.
+    "stale_stalled": 2,
+    "stale_unbooked": 1,
+    "stale_postponed": 1,
+    "stale_no_live_phases": 2,
+    "stale_dormant_jobs": 1,
 }
 
 _LABELS = {
@@ -50,6 +56,11 @@ _LABELS = {
     "no_presqa": "Pres QA unassigned",
     "unscheduled": "Unscheduled phases",
     "no_billing_code": "Phases without a billing code",
+    "stale_stalled": "Stalled phases",
+    "stale_unbooked": "Never-booked phases",
+    "stale_postponed": "Long-postponed phases",
+    "stale_no_live_phases": "Jobs with no live phases",
+    "stale_dormant_jobs": "Dormant jobs",
 }
 
 # Order factors are presented in the full UI.
@@ -62,6 +73,11 @@ _ORDER = [
     "no_presqa",
     "unscheduled",
     "no_billing_code",
+    "stale_stalled",
+    "stale_no_live_phases",
+    "stale_unbooked",
+    "stale_postponed",
+    "stale_dormant_jobs",
 ]
 
 TREND_WEEKS = 8
@@ -79,134 +95,25 @@ def _level(score):
 
 def compute_entropy(user):
     """Return the user's chaos score, factor breakdown and late-delivery trend."""
-    from jobtracker.models import Job, Phase, OrganisationalUnit
-    from jobtracker.enums import JobStatuses, PhaseStatuses
+    from jobtracker.alarms import build_alarms
+    from jobtracker.models import OrganisationalUnit
 
     today = timezone.now().date()
+    counts = {key: qs.count() for key, qs in build_alarms(user).items()}
 
-    # Guardian-derived unit scopes — same set the dashboard uses to scope alarms.
-    units_can_view = get_objects_for_user(
-        user, "can_view_jobs", klass=OrganisationalUnit
-    )
-    units_can_tqa = get_objects_for_user(user, "can_tqa_jobs", klass=OrganisationalUnit)
-    units_can_pqa = get_objects_for_user(user, "can_pqa_jobs", klass=OrganisationalUnit)
+    # The late trend uses the manager-wide / personal scope (as the alarms do).
     units_can_manage = get_objects_for_user(
         user, "change_organisationalunit", klass=OrganisationalUnit
     )
-    units_can_schedule = get_objects_for_user(
-        user, "can_schedule_job", klass=OrganisationalUnit
-    )
-
-    # Unit managers see every alarm unit-wide; everyone else only for phases/jobs
-    # they're personally on (plus QA/scheduler roles for those categories).
     manager_units = (
-        units_can_view
+        get_objects_for_user(user, "can_view_jobs", klass=OrganisationalUnit)
         if units_can_manage.exists()
         else OrganisationalUnit.objects.none()
     )
-
     phase_involved = (
         Q(timeslots__user=user) | Q(report_author=user) | Q(project_lead=user)
     )
-    job_involved = (
-        Q(phases__timeslots__user=user)
-        | Q(phases__report_author=user)
-        | Q(phases__project_lead=user)
-        | Q(scoped_by=user)
-        | Q(account_manager=user)
-        | Q(dep_account_manager=user)
-    )
 
-    def _alarm_phases(unit_scope):
-        return Phase.objects.filter(
-            Q(job__unit__in=unit_scope) | phase_involved,
-            status__in=PhaseStatuses.ACTIVE_STATUSES,
-            job__status__in=JobStatuses.ACTIVE_STATUSES,
-        ).distinct()
-
-    base_mgr = _alarm_phases(manager_units)
-    base_tqa = _alarm_phases(manager_units | units_can_tqa)
-    base_pqa = _alarm_phases(manager_units | units_can_pqa)
-    base_sched = _alarm_phases(manager_units | units_can_schedule)
-
-    counts = {}
-    counts["delivery_overdue"] = (
-        base_mgr.annotate(db=Coalesce("desired_delivery_date", "_delivery_date"))
-        .filter(db__lt=today)
-        .count()
-    )
-    counts["tqa_overdue"] = (
-        base_tqa.annotate(db=Coalesce("due_to_techqa_set", "_due_to_techqa"))
-        .filter(
-            db__lt=today,
-            status__in=[
-                PhaseStatuses.IN_PROGRESS,
-                PhaseStatuses.PENDING_TQA,
-                PhaseStatuses.QA_TECH,
-                PhaseStatuses.QA_TECH_AUTHOR_UPDATES,
-            ],
-        )
-        .count()
-    )
-    counts["pqa_overdue"] = (
-        base_pqa.annotate(db=Coalesce("due_to_presqa_set", "_due_to_presqa"))
-        .filter(
-            db__lt=today,
-            status__in=[
-                PhaseStatuses.PENDING_PQA,
-                PhaseStatuses.QA_PRES,
-                PhaseStatuses.QA_PRES_AUTHOR_UPDATES,
-            ],
-        )
-        .count()
-    )
-    counts["no_techqa"] = base_tqa.filter(
-        techqa_by__isnull=True,
-        status__in=[
-            PhaseStatuses.PENDING_TQA,
-            PhaseStatuses.QA_TECH,
-            PhaseStatuses.QA_TECH_AUTHOR_UPDATES,
-        ],
-    ).count()
-    counts["no_presqa"] = base_pqa.filter(
-        presqa_by__isnull=True,
-        status__in=[
-            PhaseStatuses.PENDING_PQA,
-            PhaseStatuses.QA_PRES,
-            PhaseStatuses.QA_PRES_AUTHOR_UPDATES,
-        ],
-    ).count()
-    counts["unscheduled"] = base_sched.filter(
-        status__in=[
-            PhaseStatuses.SCHEDULED_TENTATIVE,
-            PhaseStatuses.SCHEDULED_CONFIRMED,
-            PhaseStatuses.PRE_CHECKS,
-            PhaseStatuses.CLIENT_NOT_READY,
-            PhaseStatuses.READY_TO_BEGIN,
-            PhaseStatuses.IN_PROGRESS,
-        ],
-        timeslots__isnull=True,
-    ).count()
-    counts["no_billing_code"] = (
-        Phase.objects.filter(
-            Q(job__unit__in=manager_units | units_can_schedule) | phase_involved,
-            status__in=PhaseStatuses.CODE_REQUIRED_STATUSES,
-            job__status__in=JobStatuses.ACTIVE_STATUSES,
-        )
-        .filter(Phase.missing_billing_code_q())
-        .distinct()
-        .count()
-    )
-    counts["job_overdue"] = (
-        Job.objects.filter(
-            Q(unit__in=manager_units) | job_involved,
-            status__in=JobStatuses.ACTIVE_STATUSES,
-        )
-        .annotate(db=Coalesce("desired_delivery_date", "_delivery_date"))
-        .filter(db__lt=today)
-        .distinct()
-        .count()
-    )
 
     alarm_count = sum(counts.values())
     raw = sum(counts[k] * _WEIGHTS[k] for k in counts)

@@ -1782,8 +1782,10 @@ class Phase(models.Model):
             author=user,
         )
         self.actual_start_date = timezone.now()
-        # lets make sure our parent job is in progress now!
-        if self.job.status == JobStatuses.PENDING_START:
+        # lets make sure our parent job is in progress now! A job can still be
+        # in Scoping Complete if Pending Start was skipped; leaving it there
+        # meant it could never auto-complete.
+        if self.job.status in (JobStatuses.SCOPING_COMPLETE, JobStatuses.PENDING_START):
             if self.job.can_to_in_progress():
                 self.job.to_in_progress()
                 self.job.save()

@@ -210,6 +210,24 @@ CONSTANCE_CONFIG = {
         24,
         "How many hours before sending another late to Delivery notficiation",
     ),
+    # Stale alarms: work that has stopped moving rather than running late.
+    "STALE_PHASE_DAYS": (
+        30,
+        "Days a Schedule Tentative to In Progress phase can go with no status change "
+        "and no recent or future bookings before it's flagged as stalled (and its "
+        "late reminders stop). Also how overdue a never-booked Pending Scheduling "
+        "phase must be to be flagged.",
+    ),
+    "STALE_POSTPONED_DAYS": (
+        90,
+        "Days a phase can stay Postponed (blocking its job from completing) before "
+        "it's flagged as stale.",
+    ),
+    "STALE_JOB_DAYS": (
+        180,
+        "Days a job can sit in Draft, scoping or scope sign-off without a status "
+        "change before it's flagged as dormant.",
+    ),
     # Default days to TQA/PQA/Delivery
     "DAYS_TO_TQA": (
         0,

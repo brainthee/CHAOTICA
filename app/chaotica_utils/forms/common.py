@@ -478,6 +478,12 @@ class CustomConfigForm(ConstanceForm):
                             "PQA_LATE_HOURS",
                             "DELIVERY_LATE_HOURS",
                         ),
+                        sect(
+                            "Stale Alarms",
+                            "STALE_PHASE_DAYS",
+                            "STALE_POSTPONED_DAYS",
+                            "STALE_JOB_DAYS",
+                        ),
                     ),
                     col(
                         sect(

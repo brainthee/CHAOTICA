@@ -26,6 +26,7 @@
           <span class="fa fa-bell me-sm-2 fs-7"></span>
           <span class="d-none d-sm-inline">Alarms
             {% if alarm_count %}<span class="badge bg-danger ms-1">{{ alarm_count }}</span>{% endif %}
+            {% if stale_alarm_count %}<span class="badge badge-phoenix badge-phoenix-secondary ms-1" title="Stale items (see the Stale section)">{{ stale_alarm_count }}</span>{% endif %}
           </span>
         </a>
         <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center{% if not show_alarms_first %} active{% endif %}"
