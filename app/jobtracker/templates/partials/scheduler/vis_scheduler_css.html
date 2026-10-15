@@ -2,7 +2,10 @@
 <link href="{% static 'vendors/vis-timeline/vis-timeline-graph2d.min.css' %}" rel="stylesheet">
 <style>
   /* Height is managed in JS so it sits above the fixed footer */
-  #vis-timeline { border: none; background-color: var(--phoenix-emphasis-bg); }
+  #vis-timeline {
+    border: none; background-color: var(--phoenix-emphasis-bg); position: relative;
+    --sched-label-w: 250px;   /* resizable name column (drag handle, saved per browser) */
+  }
   .vis-timeline { border: none; font-size: 0.8rem; background-color: var(--phoenix-emphasis-bg); }
   /* Keep the label (resource) column on the same surface */
   .vis-timeline .vis-panel.vis-left,
@@ -12,10 +15,10 @@
   .vis-foreground .vis-group {
     border-bottom: 1px solid var(--phoenix-border-color-translucent);
   }
-  .vis-label .vis-inner { display: block; padding: 0; width: 250px; }
+  .vis-label .vis-inner { display: block; padding: 0; width: var(--sched-label-w); }
   .sched-res {
     display: flex; align-items: center; justify-content: space-between;
-    gap: 8px; width: 250px; padding: 3px 10px; box-sizing: border-box;
+    gap: 8px; width: var(--sched-label-w); padding: 3px 10px; box-sizing: border-box;
   }
   .sched-res .meta { min-width: 0; line-height: 1.15; }
   .sched-res .name {
@@ -38,6 +41,41 @@
     background-color: var(--phoenix-secondary-bg);
     border: 1px solid var(--phoenix-border-color-translucent);
   }
+  /* Resize handles (T-13): name column, embedded height, side panel */
+  .sched-label-resizer {
+    position: absolute; top: 0; bottom: 0; width: 7px; margin-left: -4px; z-index: 6;
+    cursor: col-resize; touch-action: none;
+  }
+  .sched-embed-resizer {
+    height: 8px; cursor: row-resize; touch-action: none;
+    border-top: 1px solid var(--phoenix-border-color-translucent);
+    background: var(--phoenix-body-highlight-bg, transparent);
+  }
+  .sched-label-resizer:hover, .sched-label-resizer.is-dragging,
+  .sched-embed-resizer:hover, .sched-embed-resizer.is-dragging,
+  .sched-split-handle:hover, .sched-split-handle.is-dragging {
+    background-color: rgba(var(--phoenix-primary-rgb), 0.25);
+  }
+  .sched-split { --sched-panel-w: 25%; }
+  .sched-split-main { min-width: 0; }
+  @media (min-width: 768px) {
+    .sched-split { display: flex; }
+    .sched-split-main { flex: 1 1 auto; }
+    .sched-split-side { flex: 0 0 var(--sched-panel-w); width: var(--sched-panel-w); min-width: 0; }
+    .sched-split.is-collapsed .sched-split-side { display: none; }
+    .sched-split-handle {
+      flex: 0 0 8px; position: relative; cursor: col-resize; touch-action: none;
+      border-left: 1px solid var(--phoenix-border-color-translucent);
+    }
+    .sched-split.is-collapsed .sched-split-handle { cursor: default; }
+  }
+  .sched-split-toggle {
+    position: absolute; top: 8px; left: 50%; transform: translateX(-50%); z-index: 7;
+    width: 18px; height: 28px; padding: 0; line-height: 1; font-size: 0.65rem;
+  }
+  body.sched-resizing, body.sched-resizing * { user-select: none !important; }
+  body.sched-resizing.col { cursor: col-resize !important; }
+  body.sched-resizing.row { cursor: row-resize !important; }
   /* Subtle, non-blocking loading indicator */
   .sched-loading { display: inline-flex; align-items: center; opacity: 0; transition: opacity 0.15s ease; pointer-events: none; }
   .sched-loading[hidden] { display: inline-flex; }

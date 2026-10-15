@@ -45,15 +45,23 @@
   {% csrf_token %}
   {% include 'partials/phase/page_header.html' %}
 
-  <div class="row min-vh-100 g-0 mt-3 border-1 border-top bg-body-secondary">
-    <div class="col-12 col-md-9 px-0 border-1 border-end">
+  <div class="sched-split min-vh-100 mt-3 border-1 border-top bg-body-secondary" id="sched-split">
+    <div class="sched-split-main px-0">
       {% include 'partials/scheduler/vis_scheduler_toolbar.html' with readonly=sched_readonly %}
       <div id="sched-progress" class="sched-progress" role="progressbar" aria-hidden="true"></div>
       <div id="vis-timeline"></div>
     </div>
 
-    <div class="col-12 col-md-3 px-0 border-start-xxl border-300 border-top-0">
-      <div class="col-12 h-100">
+    <div class="sched-split-handle d-none d-md-block" id="sched-split-handle"
+         title="Drag to resize the side panel" role="separator" aria-orientation="vertical">
+      <button type="button" class="btn btn-phoenix-secondary sched-split-toggle" id="sched-split-toggle"
+              title="Collapse / expand the side panel" aria-label="Collapse or expand the side panel">
+        <span class="fas fa-chevron-right"></span>
+      </button>
+    </div>
+
+    <div class="sched-split-side px-0 border-300 border-top-0">
+      <div class="h-100">
         <div class="bg-body-secondary h-100 p-3">
           {% if not sched_readonly %}
           {% include 'partials/scheduler/schedule_tools.html' %}

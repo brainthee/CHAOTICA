@@ -155,6 +155,12 @@
   // Size the timeline to the space above the fixed footer; it then provides
   // its own internal vertical scrollbar for the long resource list.
   var footerEl = document.querySelector('footer');
+  function storedInt(key, lo, hi) {
+    var v = parseInt(localStorage.getItem(key), 10);
+    return isNaN(v) ? null : Math.max(lo, Math.min(hi, v));
+  }
+  var EMBED_MIN = 240, EMBED_MAX = 1600;
+  var embedHeight = embedded ? storedInt('sched-embed-h', EMBED_MIN, EMBED_MAX) : null;
   function fitHeight() {
     var cTop = container.getBoundingClientRect().top;
     // The global scheduler has a fixed-bottom footer, so clamp to it. Scoped
@@ -165,7 +171,8 @@
       ? footerEl.getBoundingClientRect().top
       : window.innerHeight;
     var h = Math.max(240, Math.floor(bottom - cTop - 8));
-    if (embedded) h = Math.min(h, 520);   // bounded preview inside a detail tab
+    // Bounded preview inside a detail tab; its bottom handle overrides the cap.
+    if (embedded) h = embedHeight || Math.min(h, 520);
     container.style.height = h + 'px';
     timeline.setOptions({ minHeight: h, maxHeight: h });
   }
@@ -211,6 +218,130 @@
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(function () { fitHeight(); chooseAxisScale(); forceRanged(); }, 150);
   });
+
+  // ---- Resizable panels (T-13): name column, side panel, embedded height ----
+  // Plain pointer events; sizes persist per browser in localStorage.
+  function dragHandle(handle, axis, onMove, onEnd) {
+    handle.addEventListener('pointerdown', function (e) {
+      if (e.button !== 0 || e.target.closest('button')) return;
+      e.preventDefault();
+      handle.setPointerCapture(e.pointerId);
+      handle.classList.add('is-dragging');
+      document.body.classList.add('sched-resizing', axis);
+      var move = function (ev) { onMove(ev); };
+      var up = function () {
+        handle.removeEventListener('pointermove', move);
+        handle.removeEventListener('pointerup', up);
+        handle.removeEventListener('pointercancel', up);
+        handle.classList.remove('is-dragging');
+        document.body.classList.remove('sched-resizing', axis);
+        if (onEnd) onEnd();
+      };
+      handle.addEventListener('pointermove', move);
+      handle.addEventListener('pointerup', up);
+      handle.addEventListener('pointercancel', up);
+    });
+  }
+
+  var reflowFrame = null;
+  function reflow() {
+    if (reflowFrame) return;
+    reflowFrame = requestAnimationFrame(function () {
+      reflowFrame = null;
+      fitHeight(); chooseAxisScale(); timeline.redraw();
+      placeLabelHandle();
+    });
+  }
+
+  // Name column: drag the handle on the label column's right edge.
+  var LABEL_MIN = 140, LABEL_MAX = 480;
+  var labelWidth = storedInt('sched-label-w', LABEL_MIN, LABEL_MAX) || 250;
+  container.style.setProperty('--sched-label-w', labelWidth + 'px');
+  var labelHandle = document.createElement('div');
+  labelHandle.className = 'sched-label-resizer';
+  labelHandle.title = 'Drag to resize the name column';
+  labelHandle.setAttribute('role', 'separator');
+  container.appendChild(labelHandle);
+  function placeLabelHandle() {
+    var left = container.querySelector('.vis-panel.vis-left');
+    labelHandle.style.left = (left ? left.offsetWidth : labelWidth) + 'px';
+  }
+  dragHandle(labelHandle, 'col', function (ev) {
+    var x = ev.clientX - container.getBoundingClientRect().left;
+    labelWidth = Math.max(LABEL_MIN, Math.min(LABEL_MAX, Math.round(x)));
+    container.style.setProperty('--sched-label-w', labelWidth + 'px');
+    reflow();
+  }, function () {
+    localStorage.setItem('sched-label-w', String(labelWidth));
+  });
+  timeline.on('changed', placeLabelHandle);
+  placeLabelHandle();
+
+  // Side panel on job / phase schedule pages: splitter + collapse button.
+  var split = document.getElementById('sched-split');
+  var splitHandle = document.getElementById('sched-split-handle');
+  if (split && splitHandle) {
+    var PANEL_MIN = 220, PANEL_MAX_FRAC = 0.6;
+    var panelWidth = storedInt('sched-panel-w', PANEL_MIN, 2000);
+    var applyPanel = function () {
+      if (panelWidth) split.style.setProperty('--sched-panel-w', panelWidth + 'px');
+    };
+    var setCollapsed = function (collapsed) {
+      split.classList.toggle('is-collapsed', collapsed);
+      var icon = splitHandle.querySelector('.sched-split-toggle .fas');
+      if (icon) {
+        icon.classList.toggle('fa-chevron-right', !collapsed);
+        icon.classList.toggle('fa-chevron-left', collapsed);
+      }
+      localStorage.setItem('sched-panel-collapsed', collapsed ? '1' : '0');
+      reflow();
+    };
+    applyPanel();
+    setCollapsed(localStorage.getItem('sched-panel-collapsed') === '1');
+    dragHandle(splitHandle, 'col', function (ev) {
+      if (split.classList.contains('is-collapsed')) return;
+      var rect = split.getBoundingClientRect();
+      var w = Math.round(rect.right - ev.clientX);
+      panelWidth = Math.max(PANEL_MIN, Math.min(Math.round(rect.width * PANEL_MAX_FRAC), w));
+      applyPanel();
+      reflow();
+    }, function () {
+      if (panelWidth) localStorage.setItem('sched-panel-w', String(panelWidth));
+    });
+    var toggle = document.getElementById('sched-split-toggle');
+    if (toggle) {
+      toggle.addEventListener('click', function () {
+        setCollapsed(!split.classList.contains('is-collapsed'));
+      });
+    }
+  }
+
+  // Embedded timelines (detail tabs): a bottom handle sets the height.
+  if (embedded) {
+    var embedHandle = document.createElement('div');
+    embedHandle.className = 'sched-embed-resizer';
+    embedHandle.title = 'Drag to resize the timeline';
+    embedHandle.setAttribute('role', 'separator');
+    embedHandle.setAttribute('aria-orientation', 'horizontal');
+    container.insertAdjacentElement('afterend', embedHandle);
+    dragHandle(embedHandle, 'row', function (ev) {
+      var top = container.getBoundingClientRect().top;
+      embedHeight = Math.max(EMBED_MIN, Math.min(EMBED_MAX, Math.round(ev.clientY - top)));
+      reflow();
+    }, function () {
+      if (embedHeight) localStorage.setItem('sched-embed-h', String(embedHeight));
+    });
+  }
+
+  // Any container width change (splitter drag, collapse, tab shown) re-flows.
+  if (window.ResizeObserver) {
+    var lastWidth = container.clientWidth;
+    new ResizeObserver(function () {
+      if (container.clientWidth === lastWidth) return;   // height changes are ours
+      lastWidth = container.clientWidth;
+      reflow();
+    }).observe(container);
+  }
 
   // ---- Loading helpers (subtle, non-blocking: toolbar spinner + top progress bar) ----
   var inflight = 0;
