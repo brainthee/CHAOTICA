@@ -388,6 +388,12 @@ def export_scheduler_view(request):
             "job_level_history__job_level",
         )
     )
+    # The users filter is lenient (stale / inactive pks are dropped so a saved
+    # view survives). For an export that would silently widen "these people"
+    # to EVERYONE when none resolve - export nobody instead.
+    requested_users = [v for v in request.GET.getlist("users") if v]
+    if requested_users and not (cleaned_data or {}).get("users"):
+        filtered_users = filtered_users.none()
     members = scheduler_member_rows(
         request, filtered_users=filtered_users, start=start, end=end, include_html=False
     )

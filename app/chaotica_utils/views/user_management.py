@@ -145,6 +145,12 @@ class UserDetailView(UserBaseView, DetailView):
         context["can_view_allocation"] = self.get_object().can_be_managed_by(
             self.request.user
         )
+        # Same rule as the Schedule tab's feeds and the schedule export.
+        try:
+            _get_schedule_viewable_user(self.request, self.get_object().email)
+            context["can_view_schedule"] = True
+        except PermissionDenied:
+            context["can_view_schedule"] = False
         if is_admin:
             context["user_permissions"] = self._get_effective_permissions(
                 self.get_object(), prefix
@@ -860,6 +866,97 @@ def user_schedule_timeslots(request, email):
         end=end,
     )
     return JsonResponse(data, safe=False)
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def user_schedule_export(request, email):
+    """One person's schedule as the scheduler XLSX (T-11).
+
+    Same visibility rule as their Schedule tab (self, manager, manage_user,
+    ``view_users_schedule`` on their unit) - deactivated people included. GET
+    returns the date-range modal; POST streams the file. Built for exactly
+    this user, not through the scheduler's lenient ``users=`` filter."""
+    from datetime import date, datetime, time, timedelta
+    from jobtracker.schedule_export import build_scheduler_xlsx, SCHEDULER_EXPORT_MAX_DAYS
+    from jobtracker.utils import collect_schedule_slots, scheduler_member_rows
+
+    user = _get_schedule_viewable_user(request, email)
+
+    if request.method == "GET":
+        today = timezone.localdate()
+        context = {
+            "export_user": user,
+            "default_start": (today - timedelta(days=30)).isoformat(),
+            "default_end": (today + timedelta(days=90)).isoformat(),
+            "max_days": SCHEDULER_EXPORT_MAX_DAYS,
+        }
+        return JsonResponse({
+            "html_form": loader.render_to_string(
+                "modals/user_schedule_export.html", context, request=request
+            )
+        })
+
+    try:
+        start_date = date.fromisoformat(request.POST.get("start", ""))
+        end_date = date.fromisoformat(request.POST.get("end", ""))
+    except ValueError:
+        start_date = end_date = None
+    if not start_date or not end_date or end_date < start_date:
+        messages.error(request, "Choose a valid date range to export.")
+        return HttpResponseRedirect(reverse("user_profile", kwargs={"email": user.email}))
+    if (end_date - start_date).days + 1 > SCHEDULER_EXPORT_MAX_DAYS:
+        messages.error(
+            request,
+            "Export range is limited to {} days.".format(SCHEDULER_EXPORT_MAX_DAYS),
+        )
+        return HttpResponseRedirect(reverse("user_profile", kwargs={"email": user.email}))
+
+    start = timezone.make_aware(datetime.combine(start_date, time.min))
+    end = timezone.make_aware(datetime.combine(end_date, time.max))
+    users_qs = User.objects.filter(pk=user.pk).prefetch_related(
+        "unit_memberships",
+        "unit_memberships__unit",
+        "job_level_history",
+        "job_level_history__job_level",
+    )
+    members = scheduler_member_rows(
+        request,
+        filtered_users=users_qs,
+        start=start,
+        end=end,
+        use_filter_form=False,
+        include_html=False,
+    )
+    users = {u.pk: u for u in users_qs}
+    members = [m for m in members if m["id"] in users]
+    dataset = collect_schedule_slots(users_qs, start, end)
+
+    fmt = "%d %b %Y"
+    header_rows = [
+        ("Person", "{} ({})".format(user.get_full_name(), user.email)),
+        ("Date Range", "{} to {}".format(start_date.strftime(fmt), end_date.strftime(fmt))),
+        ("Generated", "{} by {}".format(
+            timezone.localtime().strftime("%d %b %Y %H:%M"), request.user.get_full_name()
+        )),
+    ]
+    slug = (user.email.split("@")[0] or "user").replace(".", "-")
+    return build_scheduler_xlsx(
+        members,
+        users,
+        dataset,
+        start_date,
+        end_date,
+        filename="schedule-{}-{}-to-{}".format(
+            slug, start_date.isoformat(), end_date.isoformat()
+        ),
+        title="Schedule — {} — {} to {}".format(
+            user.get_full_name() or user.email,
+            start_date.strftime(fmt),
+            end_date.strftime(fmt),
+        ),
+        header_rows=header_rows,
+    )
 
 
 @login_required

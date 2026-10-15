@@ -40,6 +40,12 @@
             <i class="fas fa-file-invoice-dollar me-1"></i> Code Allocations
           </a>
           {% endif %}
+          {% if can_view_schedule %}
+          <a href="#" data-url="{% url 'user_schedule_export' email=user.email %}"
+             class="btn btn-phoenix btn-phoenix-secondary btn-sm js-load-modal-form">
+            <i class="fas fa-file-excel me-1"></i> Export schedule
+          </a>
+          {% endif %}
         </div>
       </div>
       
@@ -56,9 +62,11 @@
             <li class="nav-item me-3" role="presentation">
               <a class="nav-link text-nowrap" id="reports-tab" data-bs-toggle="tab" href="#tab-reports" role="tab" aria-controls="tab-reports" aria-selected="false" tabindex="-1"><span class="fas fa-star me-2"></span> Reports <span class="text-body-tertiary fw-normal">({{ user.get_reports|length }})</span></a>
             </li>
+            {% if can_view_schedule %}
             <li class="nav-item me-3" role="presentation">
               <a class="nav-link text-nowrap" id="schedule-tab" data-bs-toggle="tab" href="#tab-schedule" role="tab" aria-controls="tab-schedule" aria-selected="false" tabindex="-1"><span class="fas fa-calendar me-2"></span> Schedule</a>
             </li>
+            {% endif %}
             <li class="nav-item me-3" role="presentation">
               <a class="nav-link text-nowrap" id="schedule_history-tab" data-bs-toggle="tab" href="#tab-schedule_history" role="tab" aria-controls="tab-schedule_history" aria-selected="false" tabindex="-1"><span class="fas fa-calendar me-2"></span> Schedule History</a>
             </li>
@@ -80,9 +88,11 @@
           <div class="tab-pane fade" id="tab-reports" role="tabpanel" aria-labelledby="reports-tab">
             {% include 'partials/phase/reporting_list_table.html' with phases=user.get_reports disableAjax=1 %}
           </div>
+          {% if can_view_schedule %}
           <div class="tab-pane fade" id="tab-schedule" role="tabpanel" aria-labelledby="schedule-tab">
             <div class="calendar" data-bs-toggle="calendar" id="calendar"></div>
           </div>
+          {% endif %}
           <div class="tab-pane fade" id="tab-schedule_history" role="tabpanel" aria-labelledby="schedule_history-tab">
             {% include 'partials/users/user_schedule_history.html' %}
           </div>
@@ -130,6 +140,7 @@
 {% endblock %}
 
 {% block extra_js %}
+  {% if can_view_schedule %}
   <script>
     var calendarEl = document.getElementById('calendar')
     
@@ -216,4 +227,5 @@
       })
     })
   </script>
+  {% endif %}
 {% endblock %}

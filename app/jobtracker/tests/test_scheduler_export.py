@@ -376,3 +376,91 @@ class SchedulerFocusTests(HiddenWorkBase):
     def test_hide_flag_ignored_without_focus_filter(self):
         wb = self._workbook(self._export({"hide_unfocused": "1"}))
         self.assertEqual(wb["Bookings"].max_row, 4)
+
+
+class ProfileScheduleExportTests(SchedulerScopeBase):
+    """T-11: export one person's schedule from their profile."""
+
+    def _profile_export(self, person, viewer, method="post"):
+        from django.test import Client
+        from django.urls import reverse
+
+        http = Client(HTTP_HOST="localhost")
+        http.force_login(User.objects.get(pk=viewer.pk))
+        url = reverse("user_schedule_export", kwargs={"email": person.email})
+        if method == "get":
+            return http.get(url)
+        return http.post(url, {
+            "start": (self.start - timedelta(days=7)).date().isoformat(),
+            "end": (self.end + timedelta(days=7)).date().isoformat(),
+        })
+
+    def test_unit_schedule_viewer_can_export_only_that_person(self):
+        self._delivery_slot(user=self.other)
+        self._delivery_slot(user=self.actor)
+        wb = self._workbook(self._profile_export(self.other, self.actor))
+        self.assertEqual(self._resources(wb), [self.other.get_full_name()])
+        bookings = wb["Bookings"]
+        self.assertEqual(bookings.max_row, 2)
+        self.assertEqual(bookings.cell(row=2, column=1).value, self.other.get_full_name())
+
+    def test_self_can_export(self):
+        wb = self._workbook(self._profile_export(self.hidden, self.hidden))
+        self.assertEqual(self._resources(wb), [self.hidden.get_full_name()])
+
+    def test_manager_can_export(self):
+        self.hidden.manager = self.other
+        self.hidden.save()
+        wb = self._workbook(self._profile_export(self.hidden, self.other))
+        self.assertEqual(self._resources(wb), [self.hidden.get_full_name()])
+
+    def test_stranger_gets_403(self):
+        self.assertEqual(self._profile_export(self.hidden, self.actor).status_code, 403)
+        self.assertEqual(
+            self._profile_export(self.hidden, self.actor, method="get").status_code, 403
+        )
+
+    def test_deactivated_person_can_still_be_exported(self):
+        self.other.is_active = False
+        self.other.save()
+        wb = self._workbook(self._profile_export(self.other, self.actor))
+        self.assertEqual(self._resources(wb), [self.other.get_full_name()])
+
+    def test_get_returns_modal(self):
+        resp = self._profile_export(self.other, self.actor, method="get")
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("Download XLSX", json.loads(resp.content)["html_form"])
+
+    def test_profile_hides_schedule_tab_without_access(self):
+        from django.test import Client
+        from django.urls import reverse
+
+        from django.conf import settings
+        from chaotica_utils.enums import GlobalRoles
+        from chaotica_utils.models import Group
+
+        # The profile page needs a global role (the base fixture demotes actor).
+        group, _ = Group.objects.get_or_create(
+            name=settings.GLOBAL_GROUP_PREFIX + GlobalRoles.CHOICES[GlobalRoles.USER][1]
+        )
+        self.actor.groups.add(group)
+        http = Client(HTTP_HOST="localhost")
+        http.force_login(self.actor)
+        resp = http.get(reverse("user_profile", kwargs={"email": self.hidden.email}))
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(resp.context["can_view_schedule"])
+        self.assertNotContains(resp, 'id="schedule-tab"')
+        self.assertNotContains(resp, "Export schedule")
+        resp = http.get(reverse("user_profile", kwargs={"email": self.other.email}))
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(resp.context["can_view_schedule"])
+        self.assertContains(resp, 'id="schedule-tab"')
+        self.assertContains(resp, "Export schedule")
+
+    def test_global_export_with_unknown_user_does_not_leak_everyone(self):
+        self.other.is_active = False
+        self.other.save()
+        wb = self._workbook(self._export({"users": [str(self.other.pk)]}))
+        self.assertEqual(self._resources(wb), [])
+        wb = self._workbook(self._export({"users": ["999999"]}))
+        self.assertEqual(self._resources(wb), [])

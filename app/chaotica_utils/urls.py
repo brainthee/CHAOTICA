@@ -204,6 +204,11 @@ urlpatterns = [
         name="user_schedule_timeslots",
     ),
     path(
+        "profile/<str:email>/schedule/export",
+        views.user_schedule_export,
+        name="user_schedule_export",
+    ),
+    path(
         "profile/<str:email>/schedule/holidays/",
         views.user_schedule_holidays,
         name="user_schedule_holidays",

@@ -1,0 +1,34 @@
+<div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+        {# Plain POST (not js-submit-modal-form) so the submit streams the XLSX download and leaves the modal open. #}
+        <form method="post" action="{% url 'user_schedule_export' email=export_user.email %}">
+            {% csrf_token %}
+            <div class="modal-header">
+                <h6 class="modal-title font-weight-normal" id="modal-title-default">
+                    Export Schedule — {{ export_user.get_full_name|default:export_user.email }}
+                </h6>
+                <button type="button" class="btn-close text-body-emphasis" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="fs-9 text-body-secondary">
+                    Everything on this person's schedule for the range &mdash; bookings, leave, holidays and
+                    comments &mdash; as it appears on the scheduler. Up to {{ max_days }} days.
+                </p>
+                <div class="mb-3">
+                    <label for="start" class="form-label fw-semibold">Start Date</label>
+                    <input type="date" class="form-control" id="start" name="start" value="{{ default_start }}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="end" class="form-label fw-semibold">End Date</label>
+                    <input type="date" class="form-control" id="end" name="end" value="{{ default_end }}" required>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-phoenix-primary mb-0">
+                    <span class="fas fa-file-excel me-1"></span> Download XLSX
+                </button>
+                <button type="button" class="btn btn-light shadow-none mb-0" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
