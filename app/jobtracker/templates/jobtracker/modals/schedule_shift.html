@@ -14,13 +14,29 @@
         {% include 'partials/scheduler/locked_notice.html' %}
         <p class="text-body-secondary fs-9">
           Move every scheduled slot {% if phase %}on this phase{% else %}across the whole job{% endif %}
-          by a number of days. Each slot keeps its length and the spacing between them stays the same.
+          by a number of days, or to a new start date. Each slot keeps its length and the spacing
+          between them stays the same &mdash; moving to a start date counts both in working days,
+          skipping each person's weekends and holidays.
         </p>
         {% crispy form %}
+        <script>
+          (function () {
+            var form = document.querySelector('#mainModal .js-schedule-tool-form');
+            if (!form) return;
+            function sync() {
+              var checked = form.querySelector('input[name="mode"]:checked');
+              var mode = checked ? checked.value : 'days';
+              form.querySelectorAll('.js-shift-mode-days').forEach(function (el) { el.hidden = mode !== 'days'; });
+              form.querySelectorAll('.js-shift-mode-to_date').forEach(function (el) { el.hidden = mode !== 'to_date'; });
+            }
+            form.querySelectorAll('input[name="mode"]').forEach(function (el) { el.addEventListener('change', sync); });
+            sync();
+          })();
+        </script>
       </div>
       <div class="modal-footer">
         <button type="submit" class="btn btn-phoenix-primary">
-          <i class="fas fa-arrows-left-right me-1"></i> Shift
+          <i class="fas fa-arrows-left-right me-1"></i> Move
         </button>
         <button type="button" class="btn btn-light shadow-none" data-bs-dismiss="modal">Cancel</button>
       </div>

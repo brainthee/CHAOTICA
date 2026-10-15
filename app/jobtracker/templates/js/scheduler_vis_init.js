@@ -1165,6 +1165,18 @@
           loadSlots(); loadMembers(); refreshCards();
           var msg = data.message || ((data.moved || 0) + ' timeslot' + (data.moved !== 1 ? 's' : '') + ' moved.');
           Swal.fire('Done', msg, 'success');
+        } else if (data.logic_checks_failed) {
+          // Overlap at the destination: confirm ("Save anyway" + optional
+          // reason) and resubmit with force, or explain why it's blocked.
+          form.data('submitting', false); btn.prop('disabled', false);
+          window.schedulerResponse(data, {
+            resubmit: function (f, reason) {
+              form.find('input[name="force"], input[name="override_reason"]').remove();
+              $('<input>').attr({ type: 'hidden', name: 'force', value: '1' }).appendTo(form);
+              $('<input>').attr({ type: 'hidden', name: 'override_reason', value: reason || '' }).appendTo(form);
+              form.trigger('submit');
+            }
+          });
         } else {
           form.data('submitting', false);
           $('#mainModalContent').html(data.html_form);

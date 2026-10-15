@@ -2,6 +2,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.core.exceptions import PermissionDenied, SuspiciousOperation, ValidationError
 from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest, QueryDict
 from django.template import loader
+from django.db import transaction
 from django.db.models import Q, Prefetch
 from django.views.generic.edit import DeleteView
 from django.urls import reverse_lazy, reverse
@@ -186,7 +187,7 @@ def _note_override(overrides, label):
 
 
 def _overlap_label(slots):
-    n = slots.count() if hasattr(slots, "count") else len(slots)
+    n = len(slots) if isinstance(slots, (list, tuple, set)) else slots.count()
     return "overlap with {} booking{}".format(n, "" if n == 1 else "s")
 
 
@@ -2387,6 +2388,134 @@ def _refresh_phase_dates(phase_ids):
         ph.save()
 
 
+class _WorkingCalendar:
+    """One person's working days: their unit's business days (as
+    ``working_day_runs``) minus holidays for their country or global ones."""
+
+    def __init__(self, user, first, last):
+        org = user.unit_memberships.select_related("unit").first()
+        if org and org.unit.businessHours_days:
+            self.business_days = set(org.unit.businessHours_days)
+        else:
+            import json
+
+            self.business_days = set(json.loads(config.DEFAULT_WORKING_DAYS))
+        self.holidays = set(
+            Holiday.objects.filter(
+                Q(country=user.country) | Q(country__isnull=True),
+                date__gte=first,
+                date__lte=last,
+            ).values_list("date", flat=True)
+        )
+
+    def is_working(self, day):
+        # Sunday==0, Monday==1 … matches (weekday()+1) for Mon-Fri.
+        return (day.weekday() + 1) in self.business_days and day not in self.holidays
+
+    def count(self, first, last):
+        """Working days in [first, last] (inclusive)."""
+        from datetime import timedelta
+
+        n, d = 0, first
+        while d <= last:
+            if self.is_working(d):
+                n += 1
+            d += timedelta(days=1)
+        return n
+
+    def next_working(self, day):
+        """``day`` if it's a working day, else the next one."""
+        from datetime import timedelta
+
+        for _ in range(366):
+            if self.is_working(day):
+                return day
+            day += timedelta(days=1)
+        return day
+
+    def add(self, day, n):
+        """The ``n``-th working day after working day ``day`` (n=0 -> day)."""
+        from datetime import timedelta
+
+        while n > 0:
+            day = self.next_working(day + timedelta(days=1))
+            n -= 1
+        return day
+
+
+def _plan_move_to_date(slots, new_start):
+    """Re-lay ``slots`` so the earliest starts on ``new_start``, in working days.
+
+    Each slot keeps its offset from the earliest slot and its length, both
+    counted in its person's working days, and its start/end times of day; the
+    start date snaps forward to that person's next working day. Returns
+    ``[(slot, new_start_dt, new_end_dt), ...]``."""
+    from datetime import datetime, timedelta
+    from django.utils import timezone
+
+    if not slots:
+        return []
+    local = {s.pk: (timezone.localtime(s.start), timezone.localtime(s.end)) for s in slots}
+    anchor = min(st.date() for st, _ in local.values())
+    last = max(en.date() for _, en in local.values())
+    # Generous window: the re-laid schedule spans about as many calendar days.
+    window_last = max(last, new_start) + timedelta(days=(last - anchor).days * 2 + 60)
+    window_first = min(anchor, new_start)
+    calendars = {}
+    plan = []
+    for slot in slots:
+        cal = calendars.get(slot.user_id)
+        if cal is None:
+            cal = calendars[slot.user_id] = _WorkingCalendar(slot.user, window_first, window_last)
+        st, en = local[slot.pk]
+        offset = cal.count(anchor, st.date() - timedelta(days=1)) if st.date() > anchor else 0
+        length = max(1, cal.count(st.date(), en.date()))
+        start_day = cal.add(cal.next_working(new_start), offset)
+        end_day = cal.add(start_day, length - 1)
+        tz = timezone.get_current_timezone()
+        plan.append((
+            slot,
+            timezone.make_aware(datetime.combine(start_day, st.time().replace(tzinfo=None)), tz),
+            timezone.make_aware(datetime.combine(end_day, en.time().replace(tzinfo=None)), tz),
+        ))
+    return plan
+
+
+def _move_overlap_check(request, plan, force, overrides):
+    """Overlaps at the destination of a bulk move (ignoring the slots being
+    moved). Leave / unavailability blocks; other bookings are a bypassable
+    warning. Returns a logic-check data dict, or None."""
+    moved_pks = [slot.pk for slot, _s, _e in plan]
+    clashes = []
+    blocking = False
+    for slot, start, end in plan:
+        overlaps = (
+            TimeSlot.objects.filter(user_id=slot.user_id, end__gt=start, start__lt=end)
+            .exclude(pk__in=moved_pks)
+            .select_related("slot_type", "user", "phase", "project")
+        )
+        for other in overlaps:
+            clashes.append(other)
+            if not other.slot_type.is_working:
+                blocking = True
+    if not clashes:
+        return None
+    unique = list({c.pk: c for c in clashes}.values())
+    if not blocking and force:
+        _note_override(overrides, _overlap_label(unique))
+        return None
+    return {
+        "form_is_valid": False,
+        "logic_checks_failed": True,
+        "logic_checks_can_bypass": not blocking,
+        "logic_checks_feedback": loader.render_to_string(
+            "partials/scheduler/logicchecks/move_overlaps.html",
+            {"clashes": unique, "blocking": blocking},
+            request=request,
+        ),
+    }
+
+
 def _handle_shift(request, job, phase, template):
     from django.db.models import F
     from datetime import timedelta
@@ -2398,7 +2527,56 @@ def _handle_shift(request, job, phase, template):
         form = ScheduleShiftForm(request.POST)
         if form.is_valid() and not base.exists() and notice:
             _refuse_locked(form, notice)
-        if form.is_valid():
+        if form.is_valid() and form.to_date():
+            qs = base
+            if form.cleaned_data["only_future"]:
+                qs = qs.filter(start__date__gte=timezone.now().date())
+            slots = list(qs.select_related("user").order_by("start"))
+            new_start = form.cleaned_data["new_start"]
+            plan = _plan_move_to_date(slots, new_start)
+            force = schedule_history.is_forced(request.POST.get("force"))
+            overrides = []
+            check = _move_overlap_check(request, plan, force, overrides)
+            if check:
+                check["html_form"] = loader.render_to_string(
+                    template,
+                    {"form": form, "job": job, "phase": phase, "locked_notice": notice},
+                    request=request,
+                )
+                return JsonResponse(check)
+            before = [schedule_history.snapshot(s) for s in slots]
+            try:
+                with transaction.atomic():
+                    for slot, start, end in plan:
+                        slot.start, slot.end = start, end
+                        slot.save()
+            except ValidationError as e:
+                form.add_error(None, " ".join(e.messages))
+            else:
+                _refresh_phase_dates({s.phase_id for s in slots})
+                label = new_start.strftime("%d %b")
+                schedule_history.record(
+                    request.user, ScheduleActionType.MOVE,
+                    before, [schedule_history.snapshot(s) for s in slots],
+                    summary="Moved schedule to start {}".format(label),
+                    forced=bool(overrides),
+                    overridden="; ".join(overrides),
+                    override_reason=_override_reason(request),
+                )
+                logger.info(
+                    "Schedule moved to %s by %s: %d slots on %s",
+                    new_start, request.user, len(slots), phase or job,
+                )
+                data["form_is_valid"] = True
+                data["message"] = (
+                    "{} timeslot{} moved to start {}, keeping their spacing in "
+                    "working days.".format(
+                        len(slots), "" if len(slots) == 1 else "s",
+                        new_start.strftime("%d %b %Y"),
+                    )
+                )
+                return JsonResponse(data)
+        if form.is_valid() and not form.to_date():
             qs = base
             if form.cleaned_data["only_future"]:
                 qs = qs.filter(start__date__gte=timezone.now().date())

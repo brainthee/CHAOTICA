@@ -1100,19 +1100,48 @@ class MoveScheduleSlotsForm(forms.Form):
 
 
 class ScheduleShiftForm(forms.Form):
-    """Shift every scheduled slot in a job/phase by a whole number of days,
-    preserving each slot's duration and the spacing between them (FEATURE-002)."""
+    """Shift every scheduled slot in a job/phase, preserving each slot's
+    duration and the spacing between them (FEATURE-002).
 
+    Two modes: by a whole number of calendar days, or to a new start date -
+    the latter re-lays the schedule in working days (skipping each person's
+    weekends and holidays) from that date (T-08)."""
+
+    MODE_DAYS = "days"
+    MODE_TO_DATE = "to_date"
+
+    mode = forms.ChoiceField(
+        label="Move",
+        choices=(
+            (MODE_DAYS, "By a number of days"),
+            (MODE_TO_DATE, "To a new start date"),
+        ),
+        initial=MODE_DAYS,
+        required=False,  # absent = "by days" (the original behaviour)
+        widget=forms.RadioSelect,
+    )
     direction = forms.ChoiceField(
         label="Direction",
         choices=(("forward", "Later (push back)"), ("back", "Earlier (bring forward)")),
         initial="forward",
+        required=False,
     )
     days = forms.IntegerField(
         label="Number of days",
         min_value=1,
         initial=7,
+        required=False,
         help_text="Weekends and holidays count as days too.",
+    )
+    new_start = forms.DateField(
+        label="New start date",
+        required=False,
+        widget=forms.DateInput(attrs={"type": "date"}),
+        help_text=(
+            "The earliest slot moves here (or the person's next working day); "
+            "the rest keep their spacing and length in working days, skipping "
+            "weekends and holidays."
+        ),
     )
     only_future = forms.BooleanField(
         label="Only shift slots starting today or later",
@@ -1125,12 +1154,33 @@ class ScheduleShiftForm(forms.Form):
         self.helper = FormHelper(self)
         self.helper.form_tag = False
         self.helper.layout = Layout(
-            Row(
-                Column(Field("direction")),
-                Column(Field("days")),
+            Field("mode"),
+            Div(
+                Row(
+                    Column(Field("direction")),
+                    Column(Field("days")),
+                ),
+                css_class="js-shift-mode-days",
             ),
+            Div(Field("new_start"), css_class="js-shift-mode-to_date"),
             Field("only_future"),
         )
+
+    def clean(self):
+        cleaned = super().clean()
+        mode = cleaned["mode"] = cleaned.get("mode") or self.MODE_DAYS
+        if mode == self.MODE_TO_DATE:
+            if not cleaned.get("new_start"):
+                self.add_error("new_start", "Choose the new start date.")
+        else:
+            if not cleaned.get("days"):
+                self.add_error("days", "Enter the number of days.")
+            if not cleaned.get("direction"):
+                cleaned["direction"] = "forward"
+        return cleaned
+
+    def to_date(self):
+        return self.cleaned_data.get("mode") == self.MODE_TO_DATE
 
     def signed_days(self):
         n = self.cleaned_data["days"]

@@ -1,0 +1,16 @@
+<div class="alert {% if blocking %}alert-phoenix-danger{% else %}alert-phoenix-warning{% endif %} mb-3 text-start" role="alert">
+    <p class="mb-2"><strong>Overlapping slots:</strong> the moved schedule would land on existing bookings.</p>
+    <ul class="list-group list-group-flush mb-2">
+        {% for oSlot in clashes %}
+        <li class="list-group-item px-0 py-1 fs-9">
+            {{ oSlot.user }} &middot; {{ oSlot }}{% if not oSlot.slot_type.is_working %} <span class="badge badge-phoenix badge-phoenix-danger">unavailable</span>{% endif %}<br>
+            <span class="text-body-secondary">{{ oSlot.start }} &ndash; {{ oSlot.end }}</span>
+        </li>
+        {% endfor %}
+    </ul>
+    {% if blocking %}
+    <p class="mb-0 fs-9">Someone is on leave or unavailable at the new dates, so the move can't go ahead. Pick another start date.</p>
+    {% else %}
+    <p class="mb-0 fs-9 text-body-secondary">Confirm you wish to move the schedule on top of these bookings.</p>
+    {% endif %}
+</div>
