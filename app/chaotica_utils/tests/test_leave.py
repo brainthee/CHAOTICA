@@ -49,12 +49,12 @@ class CanCancelTests(LeaveRequestTestBase):
         self.assertFalse(leave.can_cancel())
 
 
-class CanApproveByTests(LeaveRequestTestBase):
+class GetApproversTests(LeaveRequestTestBase):
     def test_can_approve_by_manager(self):
         self.user.manager = self.manager
         self.user.save()
         leave = self._create_leave()
-        approvers = leave.can_approve_by()
+        approvers = leave.get_approvers()
         self.assertIn(self.manager, approvers)
 
     def test_can_approve_by_both_managers(self):
@@ -62,14 +62,14 @@ class CanApproveByTests(LeaveRequestTestBase):
         self.user.acting_manager = self.other
         self.user.save()
         leave = self._create_leave()
-        approvers = leave.can_approve_by()
+        approvers = leave.get_approvers()
         self.assertIn(self.manager, approvers)
         self.assertIn(self.other, approvers)
 
-    def test_can_approve_by_self_when_no_managers(self):
+    def test_never_self_when_no_managers(self):
         leave = self._create_leave()
-        approvers = leave.can_approve_by()
-        self.assertIn(self.user, approvers)
+        approvers = leave.get_approvers()
+        self.assertNotIn(self.user, approvers)
 
 
 class CanUserAuthTests(LeaveRequestTestBase):
@@ -85,9 +85,9 @@ class CanUserAuthTests(LeaveRequestTestBase):
         leave = self._create_leave()
         self.assertTrue(leave.can_user_auth(self.manager))
 
-    def test_can_user_auth_self_no_managers(self):
+    def test_cannot_auth_own_leave_without_managers(self):
         leave = self._create_leave()
-        self.assertTrue(leave.can_user_auth(self.user))
+        self.assertFalse(leave.can_user_auth(self.user))
 
     def test_can_user_auth_unrelated(self):
         self.user.manager = self.manager

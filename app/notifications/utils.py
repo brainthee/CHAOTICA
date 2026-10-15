@@ -252,39 +252,24 @@ def auto_subscribe_users(notification_type, entity):
         ).delete()
 
 
-def reassign_manager_subscriptions(user, old_manager, new_manager):
-    """
-    Reassign all subscriptions from old_manager to new_manager
-    for notifications related to the specified user
-    """
-    if old_manager == new_manager:
-        return  # No change needed
+def resync_leave_subscriptions(user):
+    """Re-run the leave notification rules for ``user``'s open requests.
 
-    # Get all entity types and IDs where the old manager has subscriptions related to this user
-    from notifications.models import NotificationSubscription
+    Called when who approves their leave changes (manager / acting manager
+    edited, or one of them (de)activated), so pending and upcoming requests
+    follow: the new approvers are subscribed and the old ones' rule-made
+    subscriptions dropped. Opt-outs and manual subscriptions are kept.
+    """
     from chaotica_utils.models import LeaveRequest
 
-    # For leave requests
-    leave_requests = LeaveRequest.objects.filter(user=user)
-    for leave_request in leave_requests:
-        # Get all subscriptions for the old manager
-        old_subs = NotificationSubscription.objects.filter(
-            entity_type="leave_request", entity_id=leave_request.id, user=old_manager
-        )
-
-        # For each subscription type the old manager had
-        for sub in old_subs:
-            # Create equivalent for new manager if it doesn't exist
-            NotificationSubscription.objects.get_or_create(
-                notification_type=sub.notification_type,
-                entity_type=sub.entity_type,
-                entity_id=sub.entity_id,
-                user=new_manager,
-                defaults={"created_by_rule": True, "created_at": timezone.now()},
-            )
-
-        # Remove old manager's subscriptions
-        old_subs.delete()
+    leave_types = [
+        t for t, cat in NotificationTypes.CATEGORIES.items() if cat == "Leave"
+    ]
+    for leave_request in LeaveRequest.objects.filter(
+        user=user, cancelled=False, declined=False, end_date__gte=timezone.now()
+    ).select_related("user__manager", "user__acting_manager"):
+        for notification_type in leave_types:
+            auto_subscribe_users(notification_type, leave_request)
 
 
 def get_entity_object(entity_type, entity_id):

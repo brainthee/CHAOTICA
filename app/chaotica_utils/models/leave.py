@@ -136,35 +136,41 @@ class LeaveRequest(models.Model):
             return False
         return True
 
-    def can_approve_by(self):
+    def get_unit_approvers(self):
+        """Active people holding ``can_approve_leave_requests`` in any unit
+        the requester currently belongs to (never the requester)."""
         from ..models import User
 
-        # Update to reflect logic...
-        user_pks = []
-        if self.user.manager and self.user.manager.pk not in user_pks:
-            user_pks.append(self.user.manager.pk)
-        if self.user.acting_manager and self.user.acting_manager.pk not in user_pks:
-            user_pks.append(self.user.acting_manager.pk)
-        if not self.user.manager and not self.user.acting_manager:
-            # No managers defined - can self approve
-            user_pks.append(self.user.pk)
+        pks = set()
+        for membership in self.user.unit_memberships.filter(
+            left_date__isnull=True
+        ).select_related("unit"):
+            pks.update(
+                membership.unit.get_active_members_with_perm(
+                    "can_approve_leave_requests"
+                ).values_list("pk", flat=True)
+            )
+        pks.discard(self.user.pk)
+        return User.objects.filter(pk__in=pks, is_active=True)
 
-        return User.objects.filter(pk__in=user_pks).distinct()
+    def get_approvers(self):
+        """Who this request goes to: the requester's active manager and
+        acting manager, or the unit leave approvers when neither is active."""
+        from ..models import User
+
+        managers = self.user.get_active_managers()
+        if managers:
+            return User.objects.filter(pk__in=[m.pk for m in managers])
+        return self.get_unit_approvers()
 
     def can_user_auth(self, user):
         if self.cancelled:
             return False
-        if user == self.user.manager or user == self.user.acting_manager:
-            return True
-
-        if (
-            not self.user.manager and not self.user.acting_manager
-        ) and user == self.user:
-            # No managers defined - can self approve
-            return True
         if user == self.user:
-            # Unit approvers can't approve their own leave.
+            # Nobody approves their own leave, with or without a manager.
             return False
+        if user in self.user.get_active_managers():
+            return True
         for membership in self.user.unit_memberships.filter(left_date__isnull=True):
             # Check if user has permission in any of the requester's current units...
             if user.has_perm("can_approve_leave_requests", membership.unit):

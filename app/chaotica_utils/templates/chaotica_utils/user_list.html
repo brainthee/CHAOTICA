@@ -16,7 +16,13 @@
   <div class="col">
     <h2 class="mb-0">Users</h2>
   </div>
-  <div class="col-3 d-flex justify-content-end">
+  <div class="col-auto d-flex justify-content-end gap-2">
+    {% if perms.chaotica_utils.manage_user %}
+      <a href="{% url 'user_import_managers' %}" class="btn btn-phoenix-secondary">
+        <i class="fa-solid fa-sitemap me-2"></i>
+        Import Managers
+      </a>
+    {% endif %}
     {% if config.INVITE_ENABLED %}
       <button data-url="{% url 'user_invite' %}" 
         class="btn btn-phoenix-primary js-load-modal-form">

@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% load menu %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block pageTitle %}Import Managers{% endblock %}
+{% block head_title %}Import Managers{% endblock %}
+
+{% block breadcrumbItem %}
+  <li class="breadcrumb-item"><a href="{% url 'user_list' %}">Users</a></li>
+  <li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">Import Managers</li>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4 gx-6 gy-3 mt-2 align-items-center">
+  <div class="col-lg-10 mx-auto">
+    <div class="card">
+      <div class="card-header">
+        <h2>Import Managers</h2>
+        <span class="text-700 lh-sm mb-0">Set people's manager and acting manager from a CSV file. You'll see a preview before anything changes.</span>
+      </div>
+      <div class="card-body">
+        {% if plan %}
+          <div class="alert alert-phoenix-{% if applied %}success{% else %}info{% endif %} mb-3">
+            {% if applied %}Applied.{% else %}Preview only &ndash; nothing has changed yet.{% endif %}
+            <strong>{{ summary.change }}</strong> change(s),
+            <strong>{{ summary.same }}</strong> already correct,
+            <strong>{{ summary.error }}</strong> can't be applied{% if not applied and summary.error %} (they'll be skipped){% endif %}.
+          </div>
+          <div class="table-responsive mb-3">
+            <table class="table table-sm fs-9 mb-0" id="managerImportPlan">
+              <caption class="visually-hidden">Manager import {% if applied %}result{% else %}preview{% endif %}</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Row</th>
+                  <th scope="col">Person</th>
+                  <th scope="col">Manager</th>
+                  <th scope="col">Acting manager</th>
+                  <th scope="col">Result</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for e in plan %}
+                  <tr>
+                    <td>{{ e.row }}</td>
+                    <td>{% if e.person %}{{ e.person }}<div class="text-body-tertiary">{{ e.email }}</div>{% else %}{{ e.email|default:"&ndash;" }}{% endif %}</td>
+                    {% if e.status == "error" %}
+                      <td colspan="2"></td>
+                      <td><span class="badge badge-phoenix badge-phoenix-danger">Can't apply</span> {{ e.reason }}</td>
+                    {% else %}
+                      <td>
+                        {% if e.old_manager != e.new_manager %}<span class="text-body-tertiary text-decoration-line-through">{{ e.old_manager|default:"none" }}</span> &rarr; {% endif %}{{ e.new_manager|default:"none" }}
+                      </td>
+                      <td>
+                        {% if e.old_acting != e.new_acting %}<span class="text-body-tertiary text-decoration-line-through">{{ e.old_acting|default:"none" }}</span> &rarr; {% endif %}{{ e.new_acting|default:"none" }}
+                      </td>
+                      <td>
+                        {% if e.status == "change" %}<span class="badge badge-phoenix badge-phoenix-primary">{% if applied %}Changed{% else %}Change{% endif %}</span>{% else %}<span class="badge badge-phoenix badge-phoenix-secondary">No change</span>{% endif %}
+                      </td>
+                    {% endif %}
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% if preview and summary.change %}
+            <form method="post" class="mb-4">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="apply">
+              <button type="submit" class="btn btn-phoenix-primary"><i class="fa fa-check me-1"></i> Apply {{ summary.change }} change(s)</button>
+              <a href="{% url 'user_import_managers' %}" class="btn btn-link">Cancel</a>
+            </form>
+          {% endif %}
+          <hr>
+        {% endif %}
+
+        <div class="alert alert-phoenix-info mb-4">
+          <h6>CSV File Format</h6>
+          <ul class="mb-2">
+            <li><strong>email</strong> &ndash; the person whose manager you're setting (required)</li>
+            <li><strong>manager_email</strong> &ndash; their manager</li>
+            <li><strong>acting_manager_email</strong> &ndash; their acting manager</li>
+          </ul>
+          <p class="mb-2">A blank cell leaves that field as it is; <code>-</code> or <code>none</code> clears it. Managers must have active accounts, nobody can manage themselves, and a change that would make a management loop is refused.</p>
+          <a href="{% url 'user_import_managers_template' %}" class="btn btn-phoenix btn-phoenix-primary"><i class="fa fa-download"></i> Download Template CSV</a>
+        </div>
+
+        <form method="post" enctype="multipart/form-data" novalidate>
+          {% csrf_token %}
+          <div class="mb-3">{{ form.csv_file|as_crispy_field }}</div>
+          <button type="submit" class="btn btn-phoenix btn-phoenix-primary"><i class="fa fa-upload"></i> Preview</button>
+          <a href="{% url 'user_list' %}" class="btn btn-link">Back to Users</a>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

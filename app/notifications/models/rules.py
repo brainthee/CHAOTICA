@@ -41,13 +41,13 @@ class OrgUnitRoleCriteria(BaseRuleCriteria):
         if isinstance(entity, User):
             # Get their orgs...
             units = OrganisationalUnit.objects.filter(
-                members__member=entity
+                members__member=entity, members__left_date__isnull=True
             )
 
         elif isinstance(entity, LeaveRequest):
             # Get their orgs...
             units = OrganisationalUnit.objects.filter(
-                members__member=entity.user
+                members__member=entity.user, members__left_date__isnull=True
             )
 
         elif hasattr(entity, "unit"):
@@ -60,10 +60,12 @@ class OrgUnitRoleCriteria(BaseRuleCriteria):
             return User.objects.none()
 
         # Find users with the specified role in any of the collected units
+        # (one filter() so all conditions apply to the same, current,
+        # membership row).
         users = User.objects.filter(
             unit_memberships__unit__in=units,
             unit_memberships__roles__in=[self.unit_role],
-            unit_memberships__member__is_active=True,
+            unit_memberships__left_date__isnull=True,
             is_active=True,
         ).distinct()
 

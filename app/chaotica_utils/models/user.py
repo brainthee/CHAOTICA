@@ -544,6 +544,17 @@ class User(AbstractUser):
     def has_manager(self):
         return self.manager or self.acting_manager
 
+    def get_active_managers(self):
+        """Manager and acting manager, leaving out deactivated accounts.
+
+        Empty means "no manager" for leave routing: requests then go to the
+        unit leave approvers instead."""
+        managers = []
+        for m in (self.manager, self.acting_manager):
+            if m is not None and m.is_active and m.pk != self.pk and m not in managers:
+                managers.append(m)
+        return managers
+
     def can_be_managed_by(self, requesting_user):
         if not requesting_user:
             return False

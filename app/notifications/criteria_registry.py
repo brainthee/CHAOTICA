@@ -72,20 +72,25 @@ def client_account_managers(entity, params=None):
 
 @register_criteria("user_manager")
 def user_manager(entity, params=None):
-    """Return the user's manager and acting manager"""
-    
+    """Return the user's active manager and acting manager.
+
+    For a leave request with neither active, the request's unit leave
+    approvers instead (the same people who can approve it)."""
+    from chaotica_utils.models import LeaveRequest
+
     # Add the ability to specify the field to lookup the user
     user_field = "user"
     if params and "user_field" in params:
         user_field = params["user_field"]
 
-    # For leave requests, the entity has a user field
-    if hasattr(entity, user_field) and getattr(entity, user_field) and getattr(entity, user_field).manager:
-        managers = [getattr(entity, user_field).manager]
-        if getattr(entity, user_field).acting_manager:
-            managers.append(getattr(entity, user_field).acting_manager)
-        return User.objects.filter(pk__in=[m.pk for m in managers if m], is_active=True)
-
+    person = getattr(entity, user_field, None)
+    if not person:
+        return User.objects.none()
+    managers = person.get_active_managers()
+    if managers:
+        return User.objects.filter(pk__in=[m.pk for m in managers])
+    if isinstance(entity, LeaveRequest) and user_field == "user":
+        return entity.get_unit_approvers()
     return User.objects.none()
 
 

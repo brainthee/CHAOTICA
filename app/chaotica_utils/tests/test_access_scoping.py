@@ -117,7 +117,11 @@ class SelfManagerTests(_Base):
             user = None
 
         req = _Req()
-        req.user = self.requester
+        # Self-editing is locked, so check via someone who manages them.
+        admin = User.objects.create_user(email="mgr-admin@test.com", password="pw")
+        assign_perm("chaotica_utils.manage_user", admin)
+        req.user = User.objects.get(pk=admin.pk)
+        req.method = "POST"
         form = EditProfileForm(
             data={"manager": self.requester.pk, "acting_manager": self.requester.pk},
             instance=self.requester,

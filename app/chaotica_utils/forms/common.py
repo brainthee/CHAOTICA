@@ -951,6 +951,25 @@ class EditProfileForm(forms.ModelForm):
         ),
     )
 
+    acting_manager = forms.ModelChoiceField(
+        queryset=User.objects.filter(is_active=True),
+        required=False,
+        widget=s2forms.ModelSelect2Widget(
+            attrs={
+                "class": "select2-widget",
+                "data-minimum-input-length": 3,
+                "data-ajax--url": "/autocomplete/users",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
+            },
+            search_fields=[
+                "first_name__icontains",
+                "last_name__icontains",
+                "email__icontains",
+            ],
+        ),
+    )
+
     city = forms.ModelChoiceField(
         queryset=City.objects.all(),
         required=False,
@@ -992,25 +1011,19 @@ class EditProfileForm(forms.ModelForm):
         for f in controlled_fields:
             self.fields[f].disabled = True
 
-        # Controlled fields:
-        # - leave
-        # - manager(s)
-
-        if usr.has_manager():
-            # Has manager so leave is sorted by them.
-            if usr.pk == self.current_request.user.pk:
+        # Controlled fields (manager(s) and leave allowance) decide who
+        # approves this person's leave and how much they get, so only someone
+        # who manages them may change them - never the person themselves.
+        requester = self.current_request.user if self.current_request else None
+        if requester is not None and requester.pk == usr.pk:
+            if self.current_request.method == "GET":
                 messages.add_message(
                     self.current_request,
                     messages.INFO,
-                    "You can not edit your own Work and Annual Leave Details while you have a manager.",
+                    "Your manager and leave allowance are set by your manager "
+                    "or an admin.",
                 )
-            else:
-                if usr.can_be_managed_by(self.current_request.user):
-                    # We're not ourselves and we can manage them:
-                    for f in controlled_fields:
-                        self.fields[f].disabled = False
-        else:
-            # We don't have a manager. Let us edit our own fields...
+        elif requester is not None and usr.can_be_managed_by(requester):
             for f in controlled_fields:
                 self.fields[f].disabled = False
 
