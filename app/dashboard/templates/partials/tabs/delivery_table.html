@@ -1,0 +1,6 @@
+{% comment %}Dashboard tab body, served by dashboard_tab (lazy load + auto-refresh).{% endcomment %}
+<div class="card">
+  <div class="p-3 bg-body-emphasis border-top border-bottom border-200">
+  {% include 'partials/phase/tables/delivery_table.html' with phases=items disableAjax=1 only %}
+  </div>
+</div>

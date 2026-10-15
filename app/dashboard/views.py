@@ -1,10 +1,11 @@
-from django.http import HttpResponse, HttpResponseForbidden
+from django.http import HttpResponse, HttpResponseForbidden, JsonResponse, Http404
+from django.utils.functional import cached_property
 from django.template import loader
 from django.contrib.auth.decorators import login_required
 import logging
-from chaotica_utils.utils import make_aware, get_start_of_week
+from chaotica_utils.utils import get_start_of_week
 from django.utils import timezone
-from datetime import datetime, timedelta
+from datetime import timedelta
 from jobtracker.models import Job, Phase, TimeSlot, OrganisationalUnit
 from chaotica_utils.models import LeaveRequest, User, UserJobLevel
 from jobtracker.enums import JobStatuses, PhaseStatuses, DefaultTimeSlotTypes
@@ -27,255 +28,314 @@ logger = logging.getLogger(__name__)
 # People Lead
 
 
-@login_required
-@require_safe
-def index(request):
-    context = {}
+#: How often the dashboard re-fetches the visible tab (milliseconds).
+DASHBOARD_REFRESH_MS = 3 * 60 * 1000
 
-    # this week's datetime objects
-    week_start_date = timezone.now().date() - timedelta(
-        days=timezone.now().date().weekday()
-    )
-    week_end_date = week_start_date + timedelta(days=6)
 
-    # Compute permission-based unit querysets once (avoids duplicate
-    # get_objects_for_user calls in both the view and template)
-    units_can_view = get_objects_for_user(
-        request.user, "can_view_jobs", klass=OrganisationalUnit
-    )
-    units_can_scope = get_objects_for_user(
-        request.user, "can_scope_jobs", klass=OrganisationalUnit
-    )
-    units_can_signoff = get_objects_for_user(
-        request.user, "can_signoff_scopes", klass=OrganisationalUnit
-    )
-    units_can_tqa = get_objects_for_user(
-        request.user, "can_tqa_jobs", klass=OrganisationalUnit
-    )
-    units_can_pqa = get_objects_for_user(
-        request.user, "can_pqa_jobs", klass=OrganisationalUnit
-    )
-    units_can_deliver = get_objects_for_user(
-        request.user, "can_deliver_job", klass=OrganisationalUnit
-    )
-    # Queue tabs are scoped to the units the user is actually a MEMBER of
-    # (intersected with the relevant permission) — NOT every unit a global role
-    # happens to grant can_view/can_tqa/etc. across. The personal-involvement
-    # predicates below are OR'd in so work the user is directly assigned to
-    # (e.g. doing PQA on a phase in another unit) still shows regardless of
-    # membership. Alarms further down keep their own wider role-based scoping.
-    member_units = OrganisationalUnit.objects.filter(
-        members__member=request.user, members__left_date__isnull=True
-    )
-    q_view_units = units_can_view.filter(pk__in=member_units)
-    q_scope_units = units_can_scope.filter(pk__in=member_units)
-    q_signoff_units = units_can_signoff.filter(pk__in=member_units)
-    q_deliver_units = units_can_deliver.filter(pk__in=member_units)
+class DashboardScope:
+    """Per-request permission scoping shared by the dashboard index (tab list
+    and badge counts) and each tab's partial view, so both always agree.
 
-    queue_phase_involved = (
-        Q(timeslots__user=request.user)
-        | Q(report_author=request.user)
-        | Q(project_lead=request.user)
-        | Q(techqa_by=request.user)
-        | Q(presqa_by=request.user)
-    )
-    queue_job_involved = (
-        Q(phases__timeslots__user=request.user)
-        | Q(phases__report_author=request.user)
-        | Q(phases__project_lead=request.user)
-        | Q(phases__techqa_by=request.user)
-        | Q(phases__presqa_by=request.user)
-        | Q(scoped_by=request.user)
-        | Q(account_manager=request.user)
-        | Q(dep_account_manager=request.user)
-    )
+    Everything is lazy: a tab partial only pays for the scoping it uses."""
 
-    # Boolean flags for template tab visibility
-    can_scope = units_can_scope.exists()
-    can_signoff_scope = units_can_signoff.exists()
-    can_tqa = units_can_tqa.exists()
-    can_pqa = units_can_pqa.exists()
-    can_deliver = units_can_deliver.exists()
-    is_people_mgr = request.user.is_people_manager()
+    def __init__(self, user):
+        self.user = user
+        self._unit_cache = {}
 
-    context["can_scope"] = can_scope
-    context["can_signoff_scope"] = can_signoff_scope
-    context["can_tqa"] = can_tqa
-    context["can_pqa"] = can_pqa
-    context["can_deliver"] = can_deliver
-    context["is_people_manager"] = is_people_mgr
+    def _units(self, perm):
+        if perm not in self._unit_cache:
+            self._unit_cache[perm] = get_objects_for_user(
+                self.user, perm, klass=OrganisationalUnit
+            )
+        return self._unit_cache[perm]
 
-    all_phases = Phase.objects.filter(
-        Q(job__unit__in=q_view_units) | queue_phase_involved,
-        status__in=PhaseStatuses.ACTIVE_STATUSES,  # Include active phase statuses only
-        job__status__in=JobStatuses.ACTIVE_STATUSES,  # Include active job statuses only
-    ).distinct()
+    @cached_property
+    def member_units(self):
+        # Queue tabs are scoped to the units the user is actually a MEMBER of
+        # (intersected with the relevant permission) — NOT every unit a global
+        # role happens to grant can_view/can_tqa/etc. across. The personal-
+        # involvement predicates are OR'd in so work the user is directly
+        # assigned to (e.g. doing PQA on a phase in another unit) still shows
+        # regardless of membership. Alarms keep their own wider role scoping.
+        return OrganisationalUnit.objects.filter(
+            members__member=self.user, members__left_date__isnull=True
+        )
 
-    has_oversight_role = (
-        can_tqa or can_pqa or can_scope or can_signoff_scope or can_deliver
-    )
+    def _member(self, perm):
+        return self._units(perm).filter(pk__in=self.member_units)
 
-    # In Flight / Scheduled This Week / Upcoming Reports show a unit-wide view for
-    # people-managers and oversight roles; everyone else sees only phases they are
-    # personally involved in (scheduled / lead / report author).
-    if is_people_mgr or has_oversight_role:
-        operational_base = all_phases
-    else:
-        operational_base = Phase.objects.phases_for_user(request.user)
+    @cached_property
+    def can_scope(self):
+        return self._units("can_scope_jobs").exists()
 
-    # Eagerly evaluate querysets with list() so the template can use
-    # |length instead of .count (avoids duplicate COUNT queries)
-    context["myJobs"] = list(
-        Job.objects.jobs_for_user(request.user).select_related(
+    @cached_property
+    def can_signoff_scope(self):
+        return self._units("can_signoff_scopes").exists()
+
+    @cached_property
+    def can_tqa(self):
+        return self._units("can_tqa_jobs").exists()
+
+    @cached_property
+    def can_pqa(self):
+        return self._units("can_pqa_jobs").exists()
+
+    @cached_property
+    def can_deliver(self):
+        return self._units("can_deliver_job").exists()
+
+    @cached_property
+    def is_people_manager(self):
+        return self.user.is_people_manager()
+
+    @cached_property
+    def phase_involved(self):
+        u = self.user
+        return (
+            Q(timeslots__user=u)
+            | Q(report_author=u)
+            | Q(project_lead=u)
+            | Q(techqa_by=u)
+            | Q(presqa_by=u)
+        )
+
+    @cached_property
+    def job_involved(self):
+        u = self.user
+        return (
+            Q(phases__timeslots__user=u)
+            | Q(phases__report_author=u)
+            | Q(phases__project_lead=u)
+            | Q(phases__techqa_by=u)
+            | Q(phases__presqa_by=u)
+            | Q(scoped_by=u)
+            | Q(account_manager=u)
+            | Q(dep_account_manager=u)
+        )
+
+    @cached_property
+    def all_phases(self):
+        return Phase.objects.filter(
+            Q(job__unit__in=self._member("can_view_jobs")) | self.phase_involved,
+            status__in=PhaseStatuses.ACTIVE_STATUSES,  # active phase statuses only
+            job__status__in=JobStatuses.ACTIVE_STATUSES,  # active job statuses only
+        ).distinct()
+
+    @cached_property
+    def operational_base(self):
+        # In Flight / Scheduled This Week / Upcoming Reports show a unit-wide
+        # view for people-managers and oversight roles; everyone else sees only
+        # phases they are personally involved in (scheduled / lead / author).
+        oversight = (
+            self.can_tqa or self.can_pqa or self.can_scope
+            or self.can_signoff_scope or self.can_deliver
+        )
+        if self.is_people_manager or oversight:
+            return self.all_phases
+        return Phase.objects.phases_for_user(self.user)
+
+    # --- tab querysets (unevaluated: index counts them, partials list them) ---
+
+    def my_jobs(self):
+        return Job.objects.jobs_for_user(self.user).select_related(
             "client", "unit"
         ).prefetch_related("phases")
-    )
-    context["myPhases"] = list(
-        Phase.objects.phases_for_user(request.user).select_related(
+
+    def my_phases(self):
+        return Phase.objects.phases_for_user(self.user).select_related(
             "service", "job__client", "project_lead", "report_author"
         )
-    )
 
-    context["in_flight"] = list(
-        operational_base.filter(
-            Q(status=PhaseStatuses.IN_PROGRESS)
-        ).select_related(
-            "service",
-            "job__client",
-            "project_lead",
-            "report_author",
+    def in_flight(self):
+        return self.operational_base.filter(
+            status=PhaseStatuses.IN_PROGRESS
+        ).select_related("service", "job__client", "project_lead", "report_author")
+
+    def scheduled_this_week(self):
+        week_start = timezone.now().date() - timedelta(days=timezone.now().date().weekday())
+        week_end = week_start + timedelta(days=6)
+        return (
+            self.operational_base.filter(
+                timeslots__end__date__gte=week_start,
+                timeslots__start__date__lte=week_end,
+            )
+            .distinct()
+            .select_related(
+                "service", "project_lead", "report_author", "techqa_by",
+                "presqa_by", "job__client",
+            )
+            .prefetch_related("timeslots")
         )
-    )
 
-    if can_tqa:
-        context["TQA"] = list(
-            all_phases.filter(
-                Q(status=PhaseStatuses.PENDING_TQA)
-                | Q(status=PhaseStatuses.QA_TECH)
-                | Q(status=PhaseStatuses.QA_TECH_AUTHOR_UPDATES)
-            )
-            .exclude(
-                Q(report_to_be_left_on_client_site=True) | Q(number_of_reports=0)
-            )
-            .annotate(
+    @staticmethod
+    def upcoming_reports_date():
+        return get_start_of_week() + timedelta(weeks=2)
+
+    def upcoming_reports(self):
+        return (
+            self.operational_base.annotate(
                 db_delivery_date=Coalesce("desired_delivery_date", "_delivery_date")
             )
+            .filter(
+                Q(status__lt=PhaseStatuses.DELIVERED)
+                & Q(db_delivery_date__lte=self.upcoming_reports_date())
+            )
+            .exclude(Q(report_to_be_left_on_client_site=True) | Q(number_of_reports=0))
             .order_by("db_delivery_date")
             .select_related(
-                "service",
-                "job__client",
-                "project_lead",
-                "report_author",
-                "techqa_by",
+                "service", "job__client", "project_lead", "report_author", "presqa_by",
             )
         )
-    else:
-        context["TQA"] = []
 
-    if can_pqa:
-        context["PQA"] = list(
-            all_phases.filter(
-                Q(status=PhaseStatuses.PENDING_PQA)
-                | Q(status=PhaseStatuses.QA_PRES)
-                | Q(status=PhaseStatuses.QA_PRES_AUTHOR_UPDATES)
-            )
-            .exclude(
-                Q(report_to_be_left_on_client_site=True) | Q(number_of_reports=0)
-            )
-            .annotate(
-                db_delivery_date=Coalesce("desired_delivery_date", "_delivery_date")
-            )
-            .order_by("db_delivery_date")
-            .select_related(
-                "service",
-                "job__client",
-                "project_lead",
-                "report_author",
-                "presqa_by",
-            )
-        )
-    else:
-        context["PQA"] = []
-
-    twoweeks = get_start_of_week() + timedelta(weeks=2)
-    context["upcoming_reports_date"] = twoweeks
-    context["upcoming_reports"] = list(
-        operational_base.annotate(
-            db_delivery_date=Coalesce("desired_delivery_date", "_delivery_date")
-        )
-        .filter(Q(status__lt=PhaseStatuses.DELIVERED) & Q(db_delivery_date__lte=twoweeks))
-        .exclude(
-            Q(report_to_be_left_on_client_site=True) | Q(number_of_reports=0)
-        )
-        .order_by("db_delivery_date")
-        .select_related(
-            "service",
-            "job__client",
-            "project_lead",
-            "report_author",
-            "presqa_by",
-        )
-    )
-
-    context["scheduled_phases_this_week"] = list(
-        operational_base.filter(
-            timeslots__end__date__gte=week_start_date,
-            timeslots__start__date__lte=week_end_date,
-        )
-        .distinct()
-        .select_related(
-            "service",
-            "project_lead",
-            "report_author",
-            "techqa_by",
-            "presqa_by",
-            "job__client",
-        )
-        .prefetch_related("timeslots")
-    )
-
-    if can_scope:
-        context["pendingScoping"] = list(
+    def scoping(self):
+        return (
             Job.objects.filter(
-                Q(unit__in=q_scope_units) | queue_job_involved,
+                Q(unit__in=self._member("can_scope_jobs")) | self.job_involved,
                 Q(status=JobStatuses.PENDING_SCOPE)
                 | Q(status=JobStatuses.SCOPING_ADDITIONAL_INFO_REQUIRED)
                 | Q(status=JobStatuses.SCOPING),
-            ).distinct().select_related("unit", "client")
+            )
+            .distinct()
+            .select_related("unit", "client")
             .prefetch_related("phases", "scoped_by")
         )
-    else:
-        context["pendingScoping"] = []
 
-    if can_signoff_scope:
-        context["scopesToSignoff"] = list(
+    def signoff(self):
+        return (
             Job.objects.filter(
-                Q(unit__in=q_signoff_units) | queue_job_involved,
+                Q(unit__in=self._member("can_signoff_scopes")) | self.job_involved,
                 status=JobStatuses.PENDING_SCOPING_SIGNOFF,
-            ).distinct().select_related("unit", "client")
+            )
+            .distinct()
+            .select_related("unit", "client")
             .prefetch_related("phases")
         )
-    else:
-        context["scopesToSignoff"] = []
 
-    # NB: the "My Team" and "Team Leave Requests" tabs are the two heaviest
-    # panels (a large card per report + a per-row scheduled-work check) and are
-    # never the default view. They are lazy-loaded on first tab-show via
-    # team_tab() / team_leave_tab() so the initial dashboard render doesn't pay
-    # for them. See dashboard_index.html.
+    def _qa(self, statuses, reviewer):
+        return (
+            self.all_phases.filter(status__in=statuses)
+            .exclude(Q(report_to_be_left_on_client_site=True) | Q(number_of_reports=0))
+            .annotate(db_delivery_date=Coalesce("desired_delivery_date", "_delivery_date"))
+            .order_by("db_delivery_date")
+            .select_related(
+                "service", "job__client", "project_lead", "report_author", reviewer,
+            )
+        )
 
-    if can_deliver:
-        context["pendingDelivery"] = list(
+    def tqa(self):
+        return self._qa(
+            [PhaseStatuses.PENDING_TQA, PhaseStatuses.QA_TECH,
+             PhaseStatuses.QA_TECH_AUTHOR_UPDATES],
+            "techqa_by",
+        )
+
+    def pqa(self):
+        return self._qa(
+            [PhaseStatuses.PENDING_PQA, PhaseStatuses.QA_PRES,
+             PhaseStatuses.QA_PRES_AUTHOR_UPDATES],
+            "presqa_by",
+        )
+
+    def pending_delivery(self):
+        return (
             Phase.objects.filter(
-                Q(job__unit__in=q_deliver_units) | queue_phase_involved,
-                Q(status=PhaseStatuses.COMPLETED),
-                job__status__in=JobStatuses.ACTIVE_STATUSES,  # not deleted/archived/lost jobs
-            ).distinct().select_related(
+                Q(job__unit__in=self._member("can_deliver_job")) | self.phase_involved,
+                status=PhaseStatuses.COMPLETED,
+                job__status__in=JobStatuses.ACTIVE_STATUSES,  # not deleted/archived/lost
+            )
+            .distinct()
+            .select_related(
                 "project_lead", "job__client", "job__account_manager", "job__unit",
             )
         )
-    else:
-        context["pendingDelivery"] = []
+
+    # --- alarms (scoping + rules live in jobtracker.alarms) ---
+
+    @cached_property
+    def alarm_querysets(self):
+        from jobtracker.alarms import build_alarms
+
+        return build_alarms(self.user)
+
+    def alarm_context(self):
+        """Materialised alarm lists + counts for ``partials/alarms_table.html``."""
+        from jobtracker.alarms import STALE_KEYS
+
+        phase_related = ("service", "job__client", "project_lead", "report_author")
+        alarms = {}
+        for key, qs in self.alarm_querysets.items():
+            if qs.model is Job:
+                alarms[key] = list(qs.select_related("client", "unit", "account_manager"))
+            else:
+                related = phase_related
+                if key == "tqa_overdue":
+                    related += ("techqa_by",)
+                elif key == "pqa_overdue":
+                    related += ("presqa_by",)
+                alarms[key] = list(qs.select_related(*related))
+        # The red tab badge counts overdue work only; stale items are listed
+        # (and badged) separately so old leftovers don't drown out what's late.
+        stale = sum(len(alarms[k]) for k in STALE_KEYS)
+        return {
+            "alarms": alarms,
+            "stale_alarm_count": stale,
+            "alarm_count": sum(len(v) for v in alarms.values()) - stale,
+        }
+
+
+#: Lazy dashboard tabs: key -> (queryset method, audience flag, template).
+#: ``None`` audience = everyone. Alarms are handled separately.
+DASHBOARD_TABS = {
+    "my_jobs": ("my_jobs", None, "partials/tabs/job_table.html"),
+    "my_phases": ("my_phases", None, "partials/tabs/phase_table.html"),
+    "in_flight": ("in_flight", None, "partials/tabs/phase_table.html"),
+    "scheduled_this_week": ("scheduled_this_week", None, "partials/tabs/phase_table.html"),
+    "upcoming_reports": ("upcoming_reports", None, "partials/tabs/phase_table.html"),
+    "scoping": ("scoping", "can_scope", "partials/tabs/scoping_table.html"),
+    "signoff": ("signoff", "can_signoff_scope", "partials/tabs/scoping_table.html"),
+    "tqa": ("tqa", "can_tqa", "partials/tabs/tqa_table.html"),
+    "pqa": ("pqa", "can_pqa", "partials/tabs/pqa_table.html"),
+    "pending_delivery": ("pending_delivery", "can_deliver", "partials/tabs/delivery_table.html"),
+}
+
+
+@login_required
+@require_safe
+def index(request):
+    """First paint only: which tabs exist, their badge counts (COUNT queries),
+    which opens first, and the consultant stats. Tab contents load on demand
+    (``dashboard_tab``) and refresh themselves while visible."""
+    scope = DashboardScope(request.user)
+    context = {
+        "can_scope": scope.can_scope,
+        "can_signoff_scope": scope.can_signoff_scope,
+        "can_tqa": scope.can_tqa,
+        "can_pqa": scope.can_pqa,
+        "can_deliver": scope.can_deliver,
+        "is_people_manager": scope.is_people_manager,
+        "upcoming_reports_date": scope.upcoming_reports_date(),
+        "refresh_ms": DASHBOARD_REFRESH_MS,
+    }
+    counts = {}
+    for key, (method, audience, _tmpl) in DASHBOARD_TABS.items():
+        if audience is None or getattr(scope, audience):
+            counts[key] = getattr(scope, method)().count()
+    context["tab_counts"] = counts
+
+    # Alarms open first when there's overdue work. Most users with alarms
+    # have them, so fetch the lists once and render the visible tab inline
+    # (no second request); the lists double as the badge counts.
+    alarm_ctx = scope.alarm_context()
+    context["alarm_count"] = alarm_ctx["alarm_count"]
+    context["stale_alarm_count"] = alarm_ctx["stale_alarm_count"]
+    context["show_alarms_first"] = alarm_ctx["alarm_count"] > 0
+    if context["show_alarms_first"]:
+        context["alarms_html"] = loader.render_to_string(
+            "partials/alarms_table.html", alarm_ctx, request=request
+        )
+
+    # NB: "My Team" / "Team Leave Requests" have their own lazy views
+    # (team_tab / team_leave_tab) - the two heaviest panels.
 
     # Pre-compute consultant stats so the template doesn't hit the DB
     context["consultant_stats"] = {
@@ -292,36 +352,35 @@ def index(request):
     context["tqa_feedback_12mo"] = request.user.get_average_techqa_feedback_12mo()
     context["pqa_feedback_12mo"] = request.user.get_average_presqa_feedback_12mo()
 
-    # --- Alarms --- (scoping + rules live in jobtracker.alarms)
-    from jobtracker.alarms import build_alarms, STALE_KEYS
-
-    alarm_qs = build_alarms(request.user)
-    phase_related = ("service", "job__client", "project_lead", "report_author")
-    alarms = {}
-    for key, qs in alarm_qs.items():
-        if qs.model is Job:
-            alarms[key] = list(qs.select_related("client", "unit", "account_manager"))
-        else:
-            related = phase_related
-            if key == "tqa_overdue":
-                related += ("techqa_by",)
-            elif key == "pqa_overdue":
-                related += ("presqa_by",)
-            alarms[key] = list(qs.select_related(*related))
-
-    context["alarms"] = alarms
-    # The red tab badge counts overdue work only; stale items are listed (and
-    # badged) separately so old leftovers don't drown out what's really late.
-    context["stale_alarm_count"] = sum(len(alarms[k]) for k in STALE_KEYS)
-    context["alarm_count"] = (
-        sum(len(v) for v in alarms.values()) - context["stale_alarm_count"]
-    )
-    # Show alarms tab by default only when there's overdue work to display.
-    context["show_alarms_first"] = context["alarm_count"] > 0
-
     context = {**context, **page_defaults(request)}
     template = loader.get_template("dashboard_index.html")
     return HttpResponse(template.render(context, request))
+
+
+@login_required
+@require_safe
+def dashboard_tab(request, key):
+    """One dashboard tab's content, for lazy load and auto-refresh:
+    ``{"html": ..., "count": N}`` (alarms add ``stale``)."""
+    scope = DashboardScope(request.user)
+    if key == "alarms":
+        ctx = scope.alarm_context()
+        html = loader.render_to_string("partials/alarms_table.html", ctx, request=request)
+        return JsonResponse(
+            {"html": html, "count": ctx["alarm_count"], "stale": ctx["stale_alarm_count"]}
+        )
+    if key not in DASHBOARD_TABS:
+        raise Http404()
+    method, audience, template = DASHBOARD_TABS[key]
+    if audience is not None and not getattr(scope, audience):
+        return HttpResponseForbidden()
+    items = list(getattr(scope, method)())
+    html = loader.render_to_string(
+        template,
+        {"items": items, "tab_key": key},
+        request=request,
+    )
+    return JsonResponse({"html": html, "count": len(items)})
 
 
 @login_required

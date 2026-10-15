@@ -25,8 +25,8 @@
           id="alarmsTab" data-bs-toggle="tab" data-bs-target="#alarmsTabContent" role="tab" aria-controls="alarmsTabContent" aria-selected="{% if show_alarms_first %}true{% else %}false{% endif %}">
           <span class="fa fa-bell me-sm-2 fs-7"></span>
           <span class="d-none d-sm-inline">Alarms
-            {% if alarm_count %}<span class="badge bg-danger ms-1">{{ alarm_count }}</span>{% endif %}
-            {% if stale_alarm_count %}<span class="badge badge-phoenix badge-phoenix-secondary ms-1" title="Stale items (see the Stale section)">{{ stale_alarm_count }}</span>{% endif %}
+            <span class="badge bg-danger ms-1 js-tab-count" data-tab-key="alarms"{% if not alarm_count %} hidden{% endif %}>{{ alarm_count }}</span>
+            <span class="badge badge-phoenix badge-phoenix-secondary ms-1 js-tab-stale" title="Stale items (see the Stale section)"{% if not stale_alarm_count %} hidden{% endif %}>{{ stale_alarm_count }}</span>
           </span>
         </a>
         <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center{% if not show_alarms_first %} active{% endif %}"
@@ -34,113 +34,84 @@
           <span class="fa fa-calendar me-sm-2 fs-7"></span>
           <span class="d-none d-sm-inline">Schedule</span>
         </a>
-  
-        <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center" 
+
+        <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center"
           id="jobTab" data-bs-toggle="tab" data-bs-target="#jobTabContent" role="tab" aria-controls="jobTabContent" aria-selected="false">
           <span class="fa fa-cubes me-sm-2 fs-7"></span>
           <span class="d-none d-sm-inline">My Jobs</span>
-          {% if myJobs|length %}
-          <span class="badge bg-primary ms-2">{{ myJobs|length }}</span>
-          {% endif %}
+          <span class="badge bg-primary ms-2 js-tab-count" data-tab-key="my_jobs"{% if not tab_counts.my_jobs %} hidden{% endif %}>{{ tab_counts.my_jobs }}</span>
         </a>
-  
-        <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center" 
+        <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center"
           id="phasesTab" data-bs-toggle="tab" data-bs-target="#phasesTabContent" role="tab" aria-controls="phasesTabContent" aria-selected="false">
           <span class="fa fa-cube me-sm-2 fs-7"></span>
           <span class="d-none d-sm-inline">My Phases</span>
-          {% if myPhases|length %}
-          <span class="badge bg-primary ms-2">{{ myPhases|length }}</span>
-          {% endif %}
+          <span class="badge bg-primary ms-2 js-tab-count" data-tab-key="my_phases"{% if not tab_counts.my_phases %} hidden{% endif %}>{{ tab_counts.my_phases }}</span>
         </a>
-  
-        {% if in_flight %}  
-        <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center" 
+        {% if tab_counts.in_flight %}
+        <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center"
           id="in_flightTab" data-bs-toggle="tab" data-bs-target="#in_flightTabContent" role="tab" aria-controls="in_flightTabContent" aria-selected="false">
           <span class="fa fa-cube me-sm-2 fs-7"></span>
           <span class="d-none d-sm-inline">In Flight</span>
-          {% if in_flight|length %}
-          <span class="badge bg-primary ms-2">{{ in_flight|length }}</span>
-          {% endif %}
-        </a>  
+          <span class="badge bg-primary ms-2 js-tab-count" data-tab-key="in_flight"{% if not tab_counts.in_flight %} hidden{% endif %}>{{ tab_counts.in_flight }}</span>
+        </a>
         {% endif %}
-
-        {% if scheduled_phases_this_week %}      
-        <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center" 
+        {% if tab_counts.scheduled_this_week %}
+        <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center"
           id="scheduled_phases_this_weekTab" data-bs-toggle="tab" data-bs-target="#scheduled_phases_this_weekTabContent" role="tab" aria-controls="scheduled_phases_this_weekTabContent" aria-selected="false">
           <span class="fa fa-cube me-sm-2 fs-7"></span>
           <span class="d-none d-sm-inline">Scheduled This Week</span>
-          {% if scheduled_phases_this_week|length %}
-          <span class="badge bg-primary ms-2">{{ scheduled_phases_this_week|length }}</span>
-          {% endif %}
+          <span class="badge bg-primary ms-2 js-tab-count" data-tab-key="scheduled_this_week"{% if not tab_counts.scheduled_this_week %} hidden{% endif %}>{{ tab_counts.scheduled_this_week }}</span>
         </a>
         {% endif %}
-
-        {% if upcoming_reports %}      
-        <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center" 
+        {% if tab_counts.upcoming_reports %}
+        <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center"
           id="upcoming_reportsTab" data-bs-toggle="tab" data-bs-target="#upcoming_reportsTabContent" role="tab" aria-controls="upcoming_reportsTabContent" aria-selected="false">
           <span class="fa fa-cube me-sm-2 fs-7"></span>
           <span class="d-none d-sm-inline">Upcoming Reports</span>
-          {% if upcoming_reports|length %}
-          <span class="badge bg-primary ms-2">{{ upcoming_reports|length }}</span>
-          {% endif %}
+          <span class="badge bg-primary ms-2 js-tab-count" data-tab-key="upcoming_reports"{% if not tab_counts.upcoming_reports %} hidden{% endif %}>{{ tab_counts.upcoming_reports }}</span>
         </a>
         {% endif %}
-  
         {% if can_scope %}
-        <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center" 
+        <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center"
           id="pendingScopeTab" data-bs-toggle="tab" data-bs-target="#pendingScopeTabContent" role="tab" aria-controls="pendingScopeTabContent" aria-selected="false">
           <span class="fa fa-microscope me-sm-2 fs-7"></span>
           <span class="d-none d-sm-inline">Scoping</span>
-          {% if pendingScoping|length %}
-          <span class="badge bg-primary ms-2">{{ pendingScoping|length }}</span>
-          {% endif %}
+          <span class="badge bg-primary ms-2 js-tab-count" data-tab-key="scoping"{% if not tab_counts.scoping %} hidden{% endif %}>{{ tab_counts.scoping }}</span>
         </a>
         {% endif %}
-  
         {% if can_signoff_scope %}
-        <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center" 
+        <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center"
           id="pendingSignoffTab" data-bs-toggle="tab" data-bs-target="#pendingSignoffTabContent" role="tab" aria-controls="pendingSignoffTabContent" aria-selected="false">
           <span class="fa fa-signature me-sm-2 fs-7"></span>
           <span class="d-none d-sm-inline">Pending Signoff</span>
-          {% if scopesToSignoff|length %}
-          <span class="badge bg-primary ms-2">{{ scopesToSignoff|length }}</span>
-          {% endif %}
-        </a>          
-        {% endif %}    
-  
+          <span class="badge bg-primary ms-2 js-tab-count" data-tab-key="signoff"{% if not tab_counts.signoff %} hidden{% endif %}>{{ tab_counts.signoff }}</span>
+        </a>
+        {% endif %}
         {% if can_tqa %}
-        <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center" 
+        <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center"
           id="TQATab" data-bs-toggle="tab" data-bs-target="#TQATabContent" role="tab" aria-controls="TQATabContent" aria-selected="false">
           <span class="fa fa-signature me-sm-2 fs-7"></span>
           <span class="d-none d-sm-inline">Technical QA</span>
-          {% if TQA|length %}
-          <span class="badge bg-primary ms-2">{{ TQA|length }}</span>
-          {% endif %}
-        </a>          
-        {% endif %}    
-  
+          <span class="badge bg-primary ms-2 js-tab-count" data-tab-key="tqa"{% if not tab_counts.tqa %} hidden{% endif %}>{{ tab_counts.tqa }}</span>
+        </a>
+        {% endif %}
         {% if can_pqa %}
-        <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center" 
+        <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center"
           id="PQATab" data-bs-toggle="tab" data-bs-target="#PQATabContent" role="tab" aria-controls="PQATabContent" aria-selected="false">
           <span class="fa fa-signature me-sm-2 fs-7"></span>
           <span class="d-none d-sm-inline">Presentation QA</span>
-          {% if PQA|length %}
-          <span class="badge bg-primary ms-2">{{ PQA|length }}</span>
-          {% endif %}
-        </a>          
-        {% endif %}  
-  
+          <span class="badge bg-primary ms-2 js-tab-count" data-tab-key="pqa"{% if not tab_counts.pqa %} hidden{% endif %}>{{ tab_counts.pqa }}</span>
+        </a>
+        {% endif %}
         {% if can_deliver %}
-        <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center" 
+        <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center"
           id="PDeliveryTab" data-bs-toggle="tab" data-bs-target="#PDeliveryTabContent" role="tab" aria-controls="PDeliveryTabContent" aria-selected="false">
           <span class="fa fa-signature me-sm-2 fs-7"></span>
           <span class="d-none d-sm-inline">Pending Delivery</span>
-          {% if pendingDelivery|length %}
-          <span class="badge bg-primary ms-2">{{ pendingDelivery|length }}</span>
-          {% endif %}
-        </a>          
-        {% endif %}    
-             
+          <span class="badge bg-primary ms-2 js-tab-count" data-tab-key="pending_delivery"{% if not tab_counts.pending_delivery %} hidden{% endif %}>{{ tab_counts.pending_delivery }}</span>
+        </a>
+        {% endif %}
+
         {% if is_people_manager %}
         <a class="nav-link border-end border-end-sm-0 border-bottom-sm border-300 text-center text-sm-start cursor-pointer outline-none d-sm-flex align-items-sm-center" 
           id="teamTab" data-bs-toggle="tab" data-bs-target="#teamTabContent" role="tab" aria-controls="teamTabContent" aria-selected="false">
@@ -160,11 +131,18 @@
     
   {% include 'partials/consultant_stats.html' %} 
   </div>
-  <div class="col mt-0 bg-body">
+  <div class="col mt-0 bg-body position-relative">
+    <div id="dashboard-updated" class="position-absolute top-0 end-0 me-3 mt-2 fs-10 text-body-tertiary" hidden></div>
     <div class="tab-content h-100"> 
 
       <div class="tab-pane fade h-100 p-3{% if show_alarms_first %} active show{% endif %}" id="alarmsTabContent" role="tabpanel" aria-labelledby="alarmsTab">
-        {% include 'partials/alarms_table.html' %}
+        <div class="dashboard-lazy-tab" data-tab-key="alarms" data-tab-url="{% url 'dashboard_tab' 'alarms' %}"{% if alarms_html %} data-loaded="true"{% endif %}>
+          {% if alarms_html %}{{ alarms_html }}{% else %}
+          <div class="text-center py-5 text-body-tertiary">
+            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Loading&hellip;
+          </div>
+          {% endif %}
+        </div>
       </div>
 
       <div class="tab-pane fade{% if not show_alarms_first %} active show{% endif %}" id="scheduleTabContent" role="tabpanel" aria-labelledby="#scheduleTab">
@@ -176,62 +154,62 @@
         <h5 class="mb-3 text-body-tertiary fw-semibold">
           Jobs you are involved in.
         </h5>
-        <div class="card">
-          <div class="p-3 bg-body-emphasis border-top border-bottom border-200">
-          {% include 'partials/job/job_list_table.html' with job_list=myJobs disableAjax=1 only %}
+        <div class="dashboard-lazy-tab" data-tab-key="my_jobs" data-tab-url="{% url 'dashboard_tab' 'my_jobs' %}">
+          <div class="text-center py-5 text-body-tertiary">
+            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Loading&hellip;
           </div>
         </div>
       </div>
 
       <div class="tab-pane fade h-100 p-3" id="phasesTabContent" role="tabpanel" aria-labelledby="phasesTab">
-        <h2 class="mb-3 lh-sm">My Phases</h2>   
+        <h2 class="mb-3 lh-sm">My Phases</h2>
         <h5 class="mb-3 text-body-tertiary fw-semibold">
           Phases you are involved in.
         </h5>
-        <div class="card">
-          <div class="p-3 bg-body-emphasis border-top border-bottom border-200">
-          {% include 'partials/phase/tables/basic_table.html' with phases=myPhases disableAjax=1 only %}
+        <div class="dashboard-lazy-tab" data-tab-key="my_phases" data-tab-url="{% url 'dashboard_tab' 'my_phases' %}">
+          <div class="text-center py-5 text-body-tertiary">
+            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Loading&hellip;
           </div>
         </div>
       </div>
 
-      {% if in_flight %}
+      {% if tab_counts.in_flight %}
       <div class="tab-pane fade h-100 p-3" id="in_flightTabContent" role="tabpanel" aria-labelledby="in_flightTab">
-        <h2 class="mb-3 lh-sm">In Flight</h2>   
+        <h2 class="mb-3 lh-sm">In Flight</h2>
         <h5 class="mb-3 text-body-tertiary fw-semibold">
           Phases from your organisational unit that are at <span class="badge text-wrap badge-phoenix badge-phoenix-danger">In Progress</span>.
         </h5>
-        <div class="card">
-          <div class="p-3 bg-body-emphasis border-top border-bottom border-200">
-          {% include 'partials/phase/tables/basic_table.html' with phases=in_flight disableAjax=1 only %}
+        <div class="dashboard-lazy-tab" data-tab-key="in_flight" data-tab-url="{% url 'dashboard_tab' 'in_flight' %}">
+          <div class="text-center py-5 text-body-tertiary">
+            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Loading&hellip;
           </div>
         </div>
       </div>
       {% endif %}
 
-      {% if scheduled_phases_this_week %}      
+      {% if tab_counts.scheduled_this_week %}
       <div class="tab-pane fade h-100 p-3" id="scheduled_phases_this_weekTabContent" role="tabpanel" aria-labelledby="scheduled_phases_this_weekTab">
-        <h2 class="mb-3 lh-sm">Scheduled This Week</h2>   
+        <h2 class="mb-3 lh-sm">Scheduled This Week</h2>
         <h5 class="mb-3 text-body-tertiary fw-semibold">
           Phases from your organisational unit that have scheduled slots this week.
         </h5>
-        <div class="card">
-          <div class="p-3 bg-body-emphasis border-top border-bottom border-200">
-          {% include 'partials/phase/tables/basic_table.html' with phases=scheduled_phases_this_week disableAjax=1 only %}
+        <div class="dashboard-lazy-tab" data-tab-key="scheduled_this_week" data-tab-url="{% url 'dashboard_tab' 'scheduled_this_week' %}">
+          <div class="text-center py-5 text-body-tertiary">
+            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Loading&hellip;
           </div>
         </div>
       </div>
       {% endif %}
 
-      {% if upcoming_reports %}      
+      {% if tab_counts.upcoming_reports %}
       <div class="tab-pane fade h-100 p-3" id="upcoming_reportsTabContent" role="tabpanel" aria-labelledby="upcoming_reportsTab">
-        <h2 class="mb-3 lh-sm">Upcoming Reports</h2>   
+        <h2 class="mb-3 lh-sm">Upcoming Reports</h2>
         <h5 class="mb-3 text-body-tertiary fw-semibold">
           Phases where the report is due before {{ upcoming_reports_date }} (end of next week) and the status is less than <span class="badge badge-phoenix badge-phoenix-success">Delivered</span>.
         </h5>
-        <div class="card">
-          <div class="p-3 bg-body-emphasis border-top border-bottom border-200">
-          {% include 'partials/phase/tables/basic_table.html' with phases=upcoming_reports disableAjax=1 only %}
+        <div class="dashboard-lazy-tab" data-tab-key="upcoming_reports" data-tab-url="{% url 'dashboard_tab' 'upcoming_reports' %}">
+          <div class="text-center py-5 text-body-tertiary">
+            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Loading&hellip;
           </div>
         </div>
       </div>
@@ -239,27 +217,27 @@
 
       {% if can_scope %}
       <div class="tab-pane fade h-100 p-3" id="pendingScopeTabContent" role="tabpanel" aria-labelledby="pendingScopeTab">
-        <h2 class="mb-3 lh-sm">Jobs in Scoping</h2>    
+        <h2 class="mb-3 lh-sm">Jobs in Scoping</h2>
         <h5 class="mb-3 text-body-tertiary fw-semibold">
           Jobs from your organisational unit that are at <span class="badge badge-phoenix badge-phoenix-info">Pending Scoping</span>, <span class="badge badge-phoenix badge-phoenix-info">Additional Scoping Required</span> or <span class="badge badge-phoenix badge-phoenix-info">Scoping</span>.
         </h5>
-        <div class="card">
-          <div class="p-3 bg-body-emphasis border-top border-bottom border-200">
-          {% include 'partials/job/scoping_job_list_table.html' with job_list=pendingScoping disableAjax=1 only %}
+        <div class="dashboard-lazy-tab" data-tab-key="scoping" data-tab-url="{% url 'dashboard_tab' 'scoping' %}">
+          <div class="text-center py-5 text-body-tertiary">
+            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Loading&hellip;
           </div>
         </div>
       </div>
       {% endif %}
 
       {% if can_signoff_scope %}
-      <div class="tab-pane fade h-100 p-3" id="pendingSignoffTabContent" role="tabpanel" aria-labelledby="pendingSignoffTab"> 
-        <h2 class="mb-3 lh-sm">Jobs Pending Signoff</h2>    
+      <div class="tab-pane fade h-100 p-3" id="pendingSignoffTabContent" role="tabpanel" aria-labelledby="pendingSignoffTab">
+        <h2 class="mb-3 lh-sm">Jobs Pending Signoff</h2>
         <h5 class="mb-3 text-body-tertiary fw-semibold">
-          Jobs from your organisational unit that are at <span class="badge badge-phoenix badge-phoenix-info">Additional Scoping Required</span>.
-        </h5>  
-        <div class="card">
-          <div class="p-3 bg-body-emphasis border-top border-bottom border-200">
-          {% include 'partials/job/scoping_job_list_table.html' with job_list=scopesToSignoff disableAjax=1 only %}
+          Jobs from your organisational unit that are at <span class="badge badge-phoenix badge-phoenix-info">Pending Scoping Signoff</span>.
+        </h5>
+        <div class="dashboard-lazy-tab" data-tab-key="signoff" data-tab-url="{% url 'dashboard_tab' 'signoff' %}">
+          <div class="text-center py-5 text-body-tertiary">
+            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Loading&hellip;
           </div>
         </div>
       </div>
@@ -267,13 +245,13 @@
 
       {% if can_tqa %}
       <div class="tab-pane fade h-100 p-3" id="TQATabContent" role="tabpanel" aria-labelledby="TQATab">
-        <h2 class="mb-3 lh-sm">Phases in TQA</h2>       
+        <h2 class="mb-3 lh-sm">Phases in TQA</h2>
         <h5 class="mb-3 text-body-tertiary fw-semibold">
           Phases from your organisational unit that are at <span class="badge badge-phoenix badge-phoenix-secondary">Pending Technical QA</span>, <span class="badge badge-phoenix badge-phoenix-info">Tech QA</span> or <span class="badge badge-phoenix badge-phoenix-info">Author Tech Updates</span>.
-        </h5>    
-        <div class="card">
-          <div class="p-3 bg-body-emphasis border-top border-bottom border-200">
-            {% include 'partials/phase/tables/tqa_table.html' with phases=TQA disableAjax=1 only %}
+        </h5>
+        <div class="dashboard-lazy-tab" data-tab-key="tqa" data-tab-url="{% url 'dashboard_tab' 'tqa' %}">
+          <div class="text-center py-5 text-body-tertiary">
+            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Loading&hellip;
           </div>
         </div>
       </div>
@@ -281,13 +259,13 @@
 
       {% if can_pqa %}
       <div class="tab-pane fade h-100 p-3" id="PQATabContent" role="tabpanel" aria-labelledby="PQATab">
-        <h2 class="mb-3 lh-sm">Phases in PQA</h2>      
+        <h2 class="mb-3 lh-sm">Phases in PQA</h2>
         <h5 class="mb-3 text-body-tertiary fw-semibold">
           Phases from your organisational unit that are at <span class="badge badge-phoenix badge-phoenix-secondary">Pending Presentation QA</span>, <span class="badge badge-phoenix badge-phoenix-info">Pres QA</span> or <span class="badge badge-phoenix badge-phoenix-info">Author Pres Updates</span>.
-        </h5>      
-        <div class="card">
-          <div class="p-3 bg-body-emphasis border-top border-bottom border-200">
-            {% include 'partials/phase/tables/pqa_table.html' with phases=PQA disableAjax=1 only %}
+        </h5>
+        <div class="dashboard-lazy-tab" data-tab-key="pqa" data-tab-url="{% url 'dashboard_tab' 'pqa' %}">
+          <div class="text-center py-5 text-body-tertiary">
+            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Loading&hellip;
           </div>
         </div>
       </div>
@@ -295,13 +273,13 @@
 
       {% if can_deliver %}
       <div class="tab-pane fade h-100 p-3" id="PDeliveryTabContent" role="tabpanel" aria-labelledby="PDeliveryTab">
-        <h2 class="mb-3 lh-sm">Pending Delivery</h2>      
+        <h2 class="mb-3 lh-sm">Pending Delivery</h2>
         <h5 class="mb-3 text-body-tertiary fw-semibold">
           Phases from your organisational unit that are at <span class="badge badge-phoenix badge-phoenix-secondary">Completed</span> and pending delivery to the client.
-        </h5>      
-        <div class="card">
-          <div class="p-3 bg-body-emphasis border-top border-bottom border-200">
-            {% include 'partials/phase/tables/delivery_table.html' with phases=pendingDelivery disableAjax=1 only %}
+        </h5>
+        <div class="dashboard-lazy-tab" data-tab-key="pending_delivery" data-tab-url="{% url 'dashboard_tab' 'pending_delivery' %}">
+          <div class="text-center py-5 text-body-tertiary">
+            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Loading&hellip;
           </div>
         </div>
       </div>
@@ -434,48 +412,143 @@ triggerTabList.forEach(function (triggerEl) {
   })
 })
 
-// Lazy-load heavy tab panels (My Team / Team Leave) on first tab-show so they
-// aren't built during the initial dashboard render.
-function loadLazyTab(container) {
-  if (!container || container.dataset.loaded === 'true' || container.dataset.loading === 'true') {
-    return;
-  }
+// Tab contents load on first show and then refresh themselves while visible
+// (every DASHBOARD_REFRESH_MS, paused while the page is hidden, and straight
+// away when the page comes back after being hidden longer than that).
+var DASHBOARD_REFRESH_MS = {{ refresh_ms|default:180000 }};
+
+function initTables(container) {
+  container.querySelectorAll('table.datatable').forEach(function (el) {
+    if (!$.fn.dataTable.isDataTable(el)) {
+      new DataTable(el, {
+        {% include 'js/dtDefaultConfig.js' %}
+      });
+    }
+  });
+}
+
+function setBadge(sel, n) {
+  document.querySelectorAll(sel).forEach(function (b) {
+    b.textContent = n;
+    b.hidden = !n;
+  });
+}
+
+function markUpdated() {
+  var note = document.getElementById('dashboard-updated');
+  if (!note) return;
+  var now = new Date();
+  note.textContent = 'Updated ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  note.hidden = false;
+}
+
+function loadLazyTab(container, force) {
+  if (!container || container.dataset.loading === 'true') { return; }
+  if (container.dataset.loaded === 'true' && !force) { return; }
   container.dataset.loading = 'true';
+  // Keep the reader's place: page scroll plus any table search / page.
+  var scrollY = window.scrollY;
+  var tableState = [];
+  container.querySelectorAll('table.datatable').forEach(function (el) {
+    if ($.fn.dataTable.isDataTable(el)) {
+      var dt = $(el).DataTable();
+      tableState.push({ search: dt.search(), page: dt.page() });
+      dt.destroy();
+    } else {
+      tableState.push(null);
+    }
+  });
   fetch(container.dataset.tabUrl, {
     headers: { 'X-Requested-With': 'XMLHttpRequest' },
     credentials: 'same-origin',
   })
     .then(function (resp) {
       if (!resp.ok) { throw new Error('HTTP ' + resp.status); }
-      return resp.text();
+      var type = resp.headers.get('Content-Type') || '';
+      return type.indexOf('application/json') !== -1
+        ? resp.json()
+        : resp.text().then(function (html) { return { html: html }; });
     })
-    .then(function (html) {
-      container.innerHTML = html;
+    .then(function (data) {
+      // jQuery .html() so any inline <script> in the partial runs.
+      $(container).html(data.html);
       container.dataset.loaded = 'true';
-      // Initialise any DataTables in the freshly injected content.
-      container.querySelectorAll('table.datatable').forEach(function (el) {
-        if (!el.classList.contains('dataTable')) {
-          new DataTable(el, {
-            {% include 'js/dtDefaultConfig.js' %}
-          });
+      initTables(container);
+      container.querySelectorAll('table.datatable').forEach(function (el, i) {
+        var st = tableState[i];
+        if (st && $.fn.dataTable.isDataTable(el)) {
+          $(el).DataTable().search(st.search).page(st.page).draw('page');
         }
       });
+      var key = container.dataset.tabKey;
+      if (key && typeof data.count === 'number') {
+        setBadge('.js-tab-count[data-tab-key="' + key + '"]', data.count);
+      }
+      if (key === 'alarms' && typeof data.stale === 'number') {
+        setBadge('.js-tab-stale', data.stale);
+      }
+      window.scrollTo(0, scrollY);
+      markUpdated();
     })
     .catch(function () {
-      container.innerHTML = '<div class="text-center py-5 text-danger">Failed to load. <a href="#" onclick="location.reload();return false;">Reload</a></div>';
+      if (container.dataset.loaded !== 'true') {
+        container.innerHTML = '<div class="text-center py-5 text-danger">Failed to load. <a href="#" onclick="location.reload();return false;">Reload</a></div>';
+      }
     })
     .finally(function () {
       container.dataset.loading = 'false';
     });
 }
 
-document.querySelectorAll('#teamTab, #leaveTab').forEach(function (tabEl) {
+function activePane() {
+  return document.querySelector('.tab-content > .tab-pane.active');
+}
+
+function refreshVisible() {
+  var pane = activePane();
+  if (!pane) return;
+  if (pane.id === 'scheduleTabContent') {
+    calendar.refetchEvents();
+    markUpdated();
+    return;
+  }
+  var lazy = pane.querySelector('.dashboard-lazy-tab');
+  if (lazy && lazy.dataset.loaded === 'true') { loadLazyTab(lazy, true); }
+}
+
+document.querySelectorAll('[data-bs-toggle="tab"][data-bs-target]').forEach(function (tabEl) {
   tabEl.addEventListener('shown.bs.tab', function () {
     var target = document.querySelector(tabEl.getAttribute('data-bs-target'));
     if (target) {
       loadLazyTab(target.querySelector('.dashboard-lazy-tab'));
     }
   });
+});
+
+// The tab that opens first: render-inline alarms just need their tables set
+// up; anything else lazy loads now.
+(function () {
+  var pane = activePane();
+  var lazy = pane && pane.querySelector('.dashboard-lazy-tab');
+  if (!lazy) return;
+  if (lazy.dataset.loaded === 'true') { initTables(lazy); markUpdated(); }
+  else { loadLazyTab(lazy); }
+})();
+
+setInterval(function () {
+  if (!document.hidden) { refreshVisible(); }
+}, DASHBOARD_REFRESH_MS);
+
+var hiddenSince = null;
+document.addEventListener('visibilitychange', function () {
+  if (document.hidden) {
+    hiddenSince = Date.now();
+  } else if (hiddenSince && Date.now() - hiddenSince > DASHBOARD_REFRESH_MS) {
+    hiddenSince = null;
+    refreshVisible();
+  } else {
+    hiddenSince = null;
+  }
 });
 </script>
 {% endblock extra_js %}

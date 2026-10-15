@@ -93,10 +93,12 @@ class StaleAlarmTests(CascadeTestBase):
         self.http.force_login(self.actor)
         resp = self.http.get(reverse("dashboard"))
         self.assertEqual(resp.status_code, 200)
-        self.assertContains(resp, "Long postponed")
         self.assertEqual(resp.context["stale_alarm_count"], 1)
         # The red badge is overdue-only.
         self.assertEqual(resp.context["alarm_count"], 0)
+        # Nothing overdue, so Alarms isn't the first tab: it loads on demand.
+        tab = self.http.get(reverse("dashboard_tab", args=["alarms"]))
+        self.assertContains(tab, "Long postponed")
 
     def test_entropy_counts_stale(self):
         from chaotica_utils.views.entropy import compute_entropy
