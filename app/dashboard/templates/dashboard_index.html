@@ -525,15 +525,17 @@ document.querySelectorAll('[data-bs-toggle="tab"][data-bs-target]').forEach(func
   });
 });
 
-// The tab that opens first: render-inline alarms just need their tables set
-// up; anything else lazy loads now.
-(function () {
+// The tab that opens first: inline-rendered alarms are already in the page,
+// so core.js initialises their tables on DOM ready (initialising them here
+// too triggers DataTables' "Cannot reinitialise" warning). Anything else
+// lazy loads - on DOM ready, after core.js's own DataTables pass.
+$(function () {
   var pane = activePane();
   var lazy = pane && pane.querySelector('.dashboard-lazy-tab');
   if (!lazy) return;
-  if (lazy.dataset.loaded === 'true') { initTables(lazy); markUpdated(); }
+  if (lazy.dataset.loaded === 'true') { markUpdated(); }
   else { loadLazyTab(lazy); }
-})();
+});
 
 setInterval(function () {
   if (!document.hidden) { refreshVisible(); }
