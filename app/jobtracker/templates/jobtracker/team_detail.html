@@ -236,24 +236,7 @@
       // Stats: after each (re)load, wire the custom range picker and show
       // the raw data in the "Detail" offcanvas.
       function onStatsLoaded(data) {
-        var picker = document.getElementById('stats-range-picker');
-        if (picker && window.flatpickr) {
-          flatpickr(picker, {
-            mode: 'range',
-            dateFormat: 'Y-m-d',
-            altInput: true,
-            altFormat: 'j M Y',
-            altInputClass: picker.className,
-            disableMobile: true,
-            maxDate: 'today',
-            defaultDate: [picker.dataset.start, picker.dataset.end],
-            onClose: function(dates, dateStr, fp) {
-              if (dates.length !== 2) return;
-              var fmt = function(d) { return fp.formatDate(d, 'Y-m-d'); };
-              loadStats(picker.dataset.url + '?start_date=' + fmt(dates[0]) + '&end_date=' + fmt(dates[1]));
-            }
-          });
-        }
+        initStatsRangePicker(document.getElementById('stats-content'), loadStats);
         if (data && data.stats_json) {
           var pre = document.createElement('pre');
           pre.className = 'fs-10';

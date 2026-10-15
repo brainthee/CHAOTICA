@@ -1,0 +1,4 @@
+{# Phoenix badges for a billing code's flags. Expects ``billingcode``. #}
+{% if billingcode.is_internal %}<span class="badge badge-phoenix badge-phoenix-info me-1">Internal</span>{% endif %}
+{% if billingcode.is_chargeable %}<span class="badge badge-phoenix badge-phoenix-success me-1">Chargeable</span>{% else %}<span class="badge badge-phoenix badge-phoenix-secondary me-1">Not chargeable</span>{% endif %}
+{% if billingcode.is_recoverable %}<span class="badge badge-phoenix badge-phoenix-warning me-1">Recoverable</span>{% endif %}

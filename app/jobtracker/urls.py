@@ -705,20 +705,9 @@ urlpatterns = [
         name="billingcode_list",
     ),
     path(
-        "ops/billingcodes/wbs/",
-        views.BillingCodeWBSListView.as_view(),
-        name="billingcode_wbs_list",
-    ),
-    path(
         "ops/billingcodes/analytics/",
         views.billingcode_analytics,
         name="billingcode_analytics",
-    ),
-    path(
-        "ops/billingcodes/wbs/analytics/",
-        views.billingcode_analytics,
-        {"internal_only": True},
-        name="billingcode_wbs_analytics",
     ),
     path(
         "ops/billingcode/create/",
@@ -734,6 +723,11 @@ urlpatterns = [
         "ops/billingcode/<str:code>/",
         views.BillingCodeDetailView.as_view(),
         name="billingcode_detail",
+    ),
+    path(
+        "ops/billingcode/<str:code>/analytics/",
+        views.billingcode_analytics_partial,
+        name="billingcode_analytics_partial",
     ),
     path(
         "ops/billingcode/<str:code>/update/",

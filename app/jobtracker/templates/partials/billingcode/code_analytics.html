@@ -1,0 +1,162 @@
+{# Billing code Analytics tab (lazy). Range links/picker are wired by       #}
+{# billingcode_detail.html. Same attribution rules as Billing Analytics.     #}
+<div class="text-start">
+  <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+    <div>
+      <h4 class="mb-0">Analytics</h4>
+      <p class="fs-9 text-body-tertiary mb-0">
+        {{ start_date|date:'j M Y' }} &ndash; {{ end_date|date:'j M Y' }}.
+        Scheduled hours booked against this code by people you can see &mdash; a forecast from the schedule, not a timesheet.
+      </p>
+    </div>
+    {% include 'partials/stats_range_controls.html' with allow_future=1 %}
+  </div>
+
+  {% with t=analytics.totals %}
+  <div class="row g-2">
+    <div class="col-6 col-md">
+      <div class="border border-translucent rounded-3 p-2 h-100">
+        <div class="fs-10 text-body-tertiary">Hours</div>
+        <div class="fs-7 fw-semibold {% if billingcode.is_chargeable %}text-success{% endif %}">{{ t.hours|floatformat:1 }}<span class="fs-10 text-body-tertiary">h</span></div>
+      </div>
+    </div>
+    <div class="col-6 col-md">
+      <div class="border border-translucent rounded-3 p-2 h-100">
+        <div class="fs-10 text-body-tertiary">Person-days</div>
+        <div class="fs-7 fw-semibold">{{ t.days }}</div>
+      </div>
+    </div>
+    <div class="col-6 col-md">
+      <div class="border border-translucent rounded-3 p-2 h-100">
+        <div class="fs-10 text-body-tertiary">People</div>
+        <div class="fs-7 fw-semibold">{{ t.people }}</div>
+      </div>
+    </div>
+    <div class="col-6 col-md">
+      <div class="border border-translucent rounded-3 p-2 h-100">
+        <div class="fs-10 text-body-tertiary">Engagements</div>
+        <div class="fs-7 fw-semibold">{{ analytics.by_target|length }}</div>
+      </div>
+    </div>
+  </div>
+  {% endwith %}
+
+  <div class="row g-3 mt-0">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">Hours per month</h5>
+          <p class="fs-9 text-body-tertiary mb-0">Scheduled hours against this code in each month of the range.</p>
+        </div>
+        <div class="card-body">
+          {% if analytics.totals.hours %}
+            <div class="echart-code-months" style="min-height:260px"></div>
+          {% else %}
+            <p class="fs-9 text-body-tertiary text-center py-5 mb-0">No time booked against this code in this range.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-xl-6">
+      <div class="card h-100">
+        <div class="card-header"><h5 class="mb-0">Per person</h5></div>
+        <div class="card-body p-0 scrollbar" style="max-height: 28rem;">
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0 fs-9">
+              <thead>
+                <tr class="text-body-secondary">
+                  <th class="ps-3">Person</th>
+                  <th class="text-end">Person-days</th>
+                  <th class="text-end pe-3">Hours</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in analytics.by_user %}
+                  <tr>
+                    <td class="ps-3"><a href="{{ row.user.get_absolute_url }}">{{ row.user }}</a></td>
+                    <td class="text-end">{{ row.days }}</td>
+                    <td class="text-end pe-3">{{ row.hours|floatformat:1 }}</td>
+                  </tr>
+                {% empty %}
+                  <tr><td colspan="3" class="text-center text-body-tertiary py-3">Nobody has time against this code in this range.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-xl-6">
+      <div class="card h-100">
+        <div class="card-header"><h5 class="mb-0">Per engagement</h5></div>
+        <div class="card-body p-0 scrollbar" style="max-height: 28rem;">
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0 fs-9">
+              <thead>
+                <tr class="text-body-secondary">
+                  <th class="ps-3">Phase / project</th>
+                  <th>Type</th>
+                  <th class="text-end pe-3">Hours</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in analytics.by_target %}
+                  <tr>
+                    <td class="ps-3">{% if row.url %}<a href="{{ row.url }}">{{ row.label }}</a>{% else %}{{ row.label }}{% endif %}</td>
+                    <td class="text-capitalize">{{ row.kind }}</td>
+                    <td class="text-end pe-3">{{ row.hours|floatformat:1 }}</td>
+                  </tr>
+                {% empty %}
+                  <tr><td colspan="3" class="text-center text-body-tertiary py-3">No engagements in this range.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var el = document.querySelector('#analytics-content .echart-code-months');
+    if (!el || !window.echarts || !window.phoenix) return;
+    var getColor = window.phoenix.utils.getColor;
+    var chart = echarts.init(el);
+    var options = function () {
+      return {
+        tooltip: {
+          trigger: 'axis', axisPointer: { type: 'shadow' }, padding: [7, 10],
+          backgroundColor: getColor('body-highlight-bg'), borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') }, borderWidth: 1,
+          valueFormatter: function (v) { return v + 'h'; }
+        },
+        xAxis: {
+          type: 'category',
+          data: [{% for m in analytics.by_month %}'{{ m.month|date:"M Y" }}',{% endfor %}],
+          axisLine: { lineStyle: { color: getColor('tertiary-bg') } },
+          axisTick: { show: false }, axisLabel: { color: getColor('quaternary-color') }
+        },
+        yAxis: {
+          type: 'value',
+          axisLabel: { color: getColor('quaternary-color') },
+          splitLine: { lineStyle: { color: getColor('secondary-bg') } }
+        },
+        series: [{
+          name: 'Hours', type: 'bar',
+          itemStyle: { color: getColor('{% if billingcode.is_chargeable %}success{% else %}info{% endif %}'), borderRadius: [3, 3, 0, 0] },
+          data: [{% for m in analytics.by_month %}{{ m.hours|floatformat:1 }},{% endfor %}]
+        }],
+        grid: { right: 15, left: 5, bottom: 5, top: '8%', containLabel: true }
+      };
+    };
+    chart.setOption(options());
+    window.addEventListener('resize', function () { chart.resize(); });
+    document.body.addEventListener('clickControl', function (e) {
+      if (e.detail && e.detail.control === 'phoenixTheme') chart.setOption(options());
+    });
+  })();
+</script>

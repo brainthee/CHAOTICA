@@ -2,10 +2,12 @@ from chaotica_utils.mixins import SecurePermissionRequiredMixin as PermissionReq
 from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponseBadRequest
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
+from django.template import loader
+from django.db.models import Count
 from django.utils import timezone
 from guardian.shortcuts import get_objects_for_user
 from chaotica_utils.decorators import permission_required_or_403
@@ -44,7 +46,15 @@ class BillingCodeListView(BillingCodeBaseView, ListView):
     """
 
     def get_queryset(self):
-        return BillingCode.objects.for_user(self.request.user)
+        return (
+            BillingCode.objects.for_user(self.request.user)
+            .select_related("client")
+            .annotate(
+                job_count=Count("assignments__job", distinct=True),
+                phase_count=Count("assignments__phase", distinct=True),
+                project_count=Count("assignments__project", distinct=True),
+            )
+        )
 
 
 class BillingCodeDetailView(ObjectActivityMixin, BillingCodeBaseView, PermissionRequiredMixin, DetailView):
@@ -60,7 +70,41 @@ class BillingCodeDetailView(ObjectActivityMixin, BillingCodeBaseView, Permission
 
     def get_queryset(self):
         # Scope by reachability so a direct URL can't leak another client's code.
-        return BillingCode.objects.for_user(self.request.user)
+        return BillingCode.objects.for_user(self.request.user).select_related(
+            "client"
+        )
+
+    def get_context_data(self, **kwargs):
+        from ..models import Job
+
+        context = super().get_context_data(**kwargs)
+        code = self.object
+        today = timezone.now().date()
+        assignments = list(
+            code.assignments.select_related(
+                "job", "job__client", "phase", "phase__job", "project", "created_by"
+            ).order_by("-start_date", "-created_at")
+        )
+        for a in assignments:
+            a.is_current = (a.start_date is None or a.start_date <= today) and (
+                a.end_date is None or a.end_date >= today
+            )
+        context["assignments"] = assignments
+        context["current_assignment_count"] = sum(1 for a in assignments if a.is_current)
+        context["job_assignment_count"] = sum(1 for a in assignments if a.job_id)
+        context["phase_assignment_count"] = sum(1 for a in assignments if a.phase_id)
+        context["project_assignment_count"] = sum(1 for a in assignments if a.project_id)
+
+        # Jobs the code applies to: assigned directly, or through a phase.
+        job_pks = {a.job_id for a in assignments if a.job_id} | {
+            a.phase.job_id for a in assignments if a.phase_id
+        }
+        context["job_list"] = list(
+            Job.objects.filter(pk__in=job_pks)
+            .select_related("client")
+            .annotate(phase_count=Count("phases", distinct=True))
+        )
+        return context
 
 
 class BillingCodeCreateView(BillingCodeBaseView, PermissionRequiredMixin, CreateView):
@@ -93,19 +137,6 @@ class BillingCodeDeleteView(ProtectedDeleteMixin, BillingCodeBaseView, Permissio
     success_url = reverse_lazy("billingcode_list")
     slug_url_kwarg = "code"
     slug_field = "code"
-
-
-class BillingCodeWBSListView(BillingCodeListView):
-    """Operations view of internal (client-less) billing codes — the "WBS".
-
-    "WBS" is simply the client-less subset of :class:`BillingCode`; no new
-    model. Reuses the scoped queryset then filters to codes with no client.
-    """
-
-    template_name = "jobtracker/billingcode_wbs_list.html"
-
-    def get_queryset(self):
-        return super().get_queryset().filter(client__isnull=True)
 
 
 @login_required
@@ -148,37 +179,28 @@ def _analytics_users(request):
     ).distinct()
 
 
-def _analytics_range(request):
-    start = end = None
-    raw = request.GET.get("dateRange", "")
-    if " to " in raw:
-        parts = raw.split(" to ")
-        if len(parts) == 2:
-            try:
-                start = datetime.datetime.strptime(parts[0], "%Y-%m-%d").date()
-                end = datetime.datetime.strptime(parts[1], "%Y-%m-%d").date()
-            except ValueError:
-                start = end = None
-    if start is None or end is None:
-        today = timezone.now().date()
-        start = today.replace(day=1)
-        end = today + datetime.timedelta(days=28)
-    return start, end
+def _analytics_range(request, default=None):
+    from .helpers import _stats_range
+
+    return _stats_range(request, default=default)
 
 
 @login_required
 @permission_required_or_403("jobtracker.view_billingcode")
-def billingcode_analytics(request, internal_only=False):
-    """Sales/client (or internal-WBS) analysis over billing-code usage.
+def billingcode_analytics(request):
+    """Sales/client analysis over billing-code usage.
 
     Aggregates scheduled hours per code across the viewer's reachable users
     within a date window, rolled up by client and chargeable vs internal.
     """
     from chaotica_utils.utils import build_code_analytics
 
-    start, end = _analytics_range(request)
+    today = timezone.now().date()
+    start, end, range_ctx = _analytics_range(
+        request, default=(today.replace(day=1), today + datetime.timedelta(days=28))
+    )
     users = _analytics_users(request)
-    analytics = build_code_analytics(users, start, end, internal_only=internal_only)
+    analytics = build_code_analytics(users, start, end)
 
     per_code = sorted(
         analytics["per_code"].values(),
@@ -196,6 +218,44 @@ def billingcode_analytics(request, internal_only=False):
         "per_code": per_code,
         "by_client": by_client,
         "totals": analytics["totals"],
-        "internal_only": internal_only,
+        "partial_url": reverse("billingcode_analytics"),
+        **range_ctx,
     }
     return render(request, "jobtracker/billingcode_analytics.html", context)
+
+
+@login_required
+@permission_required_or_403("jobtracker.view_billingcode")
+def billingcode_analytics_partial(request, code):
+    """Analytics tab on a billing code: who booked against it, on what, when.
+
+    Lazily loaded (JSON ``{html}``); scoped to codes and users the viewer can
+    reach, same as the Billing Analytics page.
+    """
+    from chaotica_utils.utils import build_single_code_analytics
+
+    billingcode = get_object_or_404(
+        BillingCode.objects.for_user(request.user), code=code
+    )
+    # Default to the last 12 months (matches the "12m" preset).
+    today = timezone.now().date()
+    start, end, range_ctx = _analytics_range(
+        request, default=(today - datetime.timedelta(days=365), today)
+    )
+    analytics = build_single_code_analytics(
+        billingcode, _analytics_users(request), start, end
+    )
+    context = {
+        "billingcode": billingcode,
+        "start_date": start,
+        "end_date": end,
+        "analytics": analytics,
+        "partial_url": reverse(
+            "billingcode_analytics_partial", kwargs={"code": billingcode.code}
+        ),
+        **range_ctx,
+    }
+    html = loader.render_to_string(
+        "partials/billingcode/code_analytics.html", context, request=request
+    )
+    return JsonResponse({"html": html})

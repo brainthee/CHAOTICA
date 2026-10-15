@@ -1,7 +1,9 @@
-{# Org-unit Jobs tab. Loaded lazily, so it initialises its own DataTable #}
-{# (core.js only auto-inits tables present at page load).               #}
-<table id="unitJobsTable" class="table table-sm align-middle mb-0 fs-9">
-  <caption class="visually-hidden">Jobs owned by this unit</caption>
+{# Compact jobs table (Billing-tab style). Initialises its own DataTable so it #}
+{# also works when injected lazily (core.js only inits tables at page load).  #}
+{# Expects ``job_list`` (annotated ``phase_count``); optional ``table_id``,   #}
+{# ``empty_text``.                                                            #}
+<table id="{{ table_id|default:'jobTableCompact' }}" class="table table-sm align-middle mb-0 fs-9">
+  <caption class="visually-hidden">Jobs</caption>
   <thead>
     <tr class="text-body-secondary">
       <th class="ps-3">ID</th>
@@ -30,11 +32,11 @@
 
 <script>
   (function () {
-    var table = document.getElementById('unitJobsTable');
+    var table = document.getElementById('{{ table_id|default:'jobTableCompact'|escapejs }}');
     if (!table || !window.DataTable || DataTable.isDataTable(table)) return;
     new DataTable(table, {
       {% include 'js/dtDefaultConfig.js' %}
-      language: { emptyTable: 'No jobs in this unit yet.' }
+      language: { emptyTable: '{{ empty_text|default:'No jobs.'|escapejs }}' }
     });
   })();
 </script>

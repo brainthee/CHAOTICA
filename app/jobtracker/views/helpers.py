@@ -174,12 +174,13 @@ def _render_cohort_billing(request, user_qs, partial_url):
 STATS_RANGE_PRESETS = (("30d", 30), ("3m", 91), ("6m", 182), ("12m", 365))
 
 
-def _stats_range(request, default_days=91):
+def _stats_range(request, default_days=91, default=None):
     """Parse a Stats-tab date range from the request.
 
     Accepts flatpickr's ``dateRange=YYYY-MM-DD to YYYY-MM-DD`` or explicit
-    ``start_date`` / ``end_date``; anything unparseable falls back to the last
-    ``default_days``. Returns ``(start, end, extra_context)`` where the context
+    ``start_date`` / ``end_date``; anything unparseable falls back to
+    ``default`` (a ``(start, end)`` tuple) or else the last ``default_days``.
+    Returns ``(start, end, extra_context)`` where the context
     carries the preset buttons for the range header.
     """
     import datetime
@@ -201,7 +202,10 @@ def _stats_range(request, default_days=91):
         start_date = _parse(request.GET.get("start_date"))
         end_date = _parse(request.GET.get("end_date"))
     if not (start_date and end_date):
-        start_date, end_date = today - datetime.timedelta(days=default_days), today
+        start_date, end_date = default or (
+            today - datetime.timedelta(days=default_days),
+            today,
+        )
     if start_date > end_date:
         start_date, end_date = end_date, start_date
 

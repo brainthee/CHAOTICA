@@ -11,13 +11,42 @@ assigned to **jobs, phases and projects**, each assignment optionally carrying a
 ## Administering codes
 
 Codes are managed per client from the client detail page under the **Billing
-Codes** tab (create / edit / delete). Client-less (internal) codes are managed
-from **Operations → Internal Codes (WBS)** and **Operations → Billing Codes**.
+Codes** tab (create / edit / delete), and all codes — including client-less
+(internal) ones — from **Operations → Billing Codes**. Whether a code is
+internal is a flag on the code itself (`is_internal`); there's no separate
+internal-codes page.
+
+### Billing Codes list
+
+**Operations → Billing Codes** lists every code you can reach with its client,
+type badges (Internal / Chargeable / Not chargeable / Recoverable), region,
+how many jobs, phases and projects it's assigned to, and whether it's open.
+Filter by **type** or **client** above the table; closed codes are hidden until
+you switch on **Show closed**. **Analytics** opens Billing Analytics and
+**New code** (needs `add_billingcode`) creates one.
+
+### Billing code page
+
+Each code's page has a header with the client, region, type badges and
+open/closed status, plus tiles for active assignments (today), jobs, phase
+assignments and project assignments. **Edit** and **Delete** need
+`change_billingcode` / `delete_billingcode`. Tabs:
+
+- **Analytics** — scheduled hours, person-days and people booked against the
+  code over a range (30d / 3m / 6m / 12m presets or a custom range, default
+  last 12 months; future dates allowed), hours per month, and breakdowns per
+  person and per phase/project. It uses exactly the same attribution rules as
+  Billing Analytics (assignment dates, phase overrides, duplicate-code policy)
+  and only counts people you can see.
+- **Assignments** — every job / phase / project the code is assigned to, with
+  its date range, who added it, and whether it applies today.
+- **Jobs** — jobs the code applies to, directly or through one of their phases.
+- **Activity** — changes to the code and its assignments.
 
 | Field | Description |
 |---|---|
 | `code` | The billing code string (unique) |
-| `client` | Owning client, or blank for internal / WBS codes |
+| `client` | Owning client, or blank for internal (client-less) codes |
 | `is_chargeable` | Work booked to this code is chargeable to the client |
 | `is_recoverable` | Costs are recoverable |
 | `is_internal` | Internal (non-client) code |
@@ -111,9 +140,9 @@ cash-outs included — so the team totals add up to the individual pages.
 ## Analytics & operations
 
 - **Operations → Billing Analytics** — hours per code across your reachable
-  teams over a date window, rolled up by client and chargeable vs internal.
-- **Operations → Internal Codes (WBS)** — the client-less subset, with its own
-  analytics view.
+  teams over a date range (presets or custom; default this month to four weeks
+  ahead), the 15 busiest codes as a chart, and roll-ups by client and per code
+  (chargeable vs internal).
 - Billing codes are also available as a data area in the custom report builder
   (joined to Client and Job).
 

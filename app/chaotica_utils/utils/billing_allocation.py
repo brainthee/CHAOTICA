@@ -22,6 +22,7 @@ Two deliberate policies (confirmed decisions):
 
 import datetime
 from decimal import Decimal
+from django.db.models import Q
 
 
 def code_applies_on(assignment, day):
@@ -745,7 +746,7 @@ def build_cohort_code_allocation(users, start, end):
     return {"rows": rows, "per_code": per_code, "totals": totals}
 
 
-def build_code_analytics(users, start, end, internal_only=False):
+def build_code_analytics(users, start, end):
     """Aggregate billing-code usage across many users over ``[start, end]``.
 
     Sums each code's scheduled business-hours and day-count across ``users`` and
@@ -757,8 +758,7 @@ def build_code_analytics(users, start, end, internal_only=False):
       internal_hours, codes: set()}}``.
     * ``totals``: overall hours split chargeable / internal / other.
 
-    Feeds the sales/client analysis and the internal-WBS operations pages.
-    ``internal_only`` restricts the roll-up to client-less (WBS) codes.
+    Feeds the Billing Analytics page.
 
     All of the data is fetched in a handful of batched queries — slots,
     org-memberships (for the business-hours timezone) and assignments are each
@@ -784,8 +784,6 @@ def build_code_analytics(users, start, end, internal_only=False):
         )
         alloc = _finalise_allocation(agg)
         for code_id, summary in alloc["per_code"].items():
-            if internal_only and summary["client_id"] is not None:
-                continue
             agg = per_code.setdefault(
                 code_id,
                 {
@@ -826,3 +824,108 @@ def build_code_analytics(users, start, end, internal_only=False):
             totals["internal"] += summary["hours"]
 
     return {"per_code": per_code, "by_client": by_client, "totals": totals}
+
+
+def build_single_code_analytics(code, users, start, end):
+    """Usage of one billing ``code`` across ``users`` over ``[start, end]``.
+
+    Same attribution rules as :func:`build_code_analytics` (assignment
+    override, dated ranges, duplicate-code policy), but only slots on targets
+    that can carry ``code`` are loaded — phases/jobs/projects it's assigned to
+    — so a code page stays cheap regardless of how many users are reachable.
+
+    Returns ``{totals, by_user, by_target, by_month}``:
+
+    * ``totals``: ``{hours, days, people}`` (``days`` = person-days).
+    * ``by_user``: ``[{user, hours, days}]`` busiest first.
+    * ``by_target``: ``[{label, url, kind, hours}]`` busiest first.
+    * ``by_month``: ``[{month (date, 1st), hours}]`` for every month in range.
+    """
+    from jobtracker.models import TimeSlot, OrganisationalUnitMember
+
+    if isinstance(start, datetime.datetime):
+        start = start.date()
+    if isinstance(end, datetime.datetime):
+        end = end.date()
+
+    assigned = code.assignments.all()
+    job_ids = {a.job_id for a in assigned if a.job_id}
+    phase_ids = {a.phase_id for a in assigned if a.phase_id}
+    project_ids = {a.project_id for a in assigned if a.project_id}
+
+    totals = {"hours": Decimal(0), "days": 0, "people": 0}
+    by_user, by_target, by_month = {}, {}, {}
+
+    if job_ids or phase_ids or project_ids:
+        users_by_id = {u.id: u for u in users}
+        slots = list(
+            TimeSlot.objects.filter(
+                Q(phase_id__in=phase_ids)
+                | Q(phase__job_id__in=job_ids)
+                | Q(project_id__in=project_ids),
+                user_id__in=list(users_by_id),
+                start__date__lte=end,
+                end__date__gte=start,
+            ).select_related(
+                "slot_type", "phase", "phase__job", "phase__job__client", "project"
+            )
+        )
+        slots_by_user = {}
+        for slot in slots:
+            slot.user = users_by_id[slot.user_id]
+            slots_by_user.setdefault(slot.user_id, []).append(slot)
+
+        # Prime the business-hours membership memo (see _load_cohort_slots).
+        for uid in slots_by_user:
+            users_by_id[uid]._business_membership_cache = None
+        for m in (
+            OrganisationalUnitMember.objects.filter(member_id__in=list(slots_by_user))
+            .select_related("unit")
+            .order_by("member_id", "pk")
+        ):
+            owner = users_by_id[m.member_id]
+            if owner._business_membership_cache is None:
+                owner._business_membership_cache = m
+
+        assignments = _resolve_slot_assignments(slots)
+        policy = duplicate_code_policy()
+        for uid, user_slots in slots_by_user.items():
+            agg = _aggregate_slots(user_slots, start, end, *assignments, policy=policy)
+            alloc = _finalise_allocation(agg)
+            summary = alloc["per_code"].get(code.id)
+            if not summary:
+                continue
+            by_user[uid] = {
+                "user": users_by_id[uid],
+                "hours": summary["hours"],
+                "days": summary["days"],
+            }
+            totals["hours"] += summary["hours"]
+            totals["days"] += summary["days"]
+            for day, entries in alloc["per_day"].items():
+                for entry in entries:
+                    if entry["code_id"] != code.id:
+                        continue
+                    month = day.replace(day=1)
+                    by_month[month] = by_month.get(month, Decimal(0)) + entry["hours"]
+                    for t in entry.get("targets", []):
+                        bucket = by_target.setdefault(
+                            (t["kind"], t["label"]),
+                            {"label": t["label"], "url": t["url"], "kind": t["kind"],
+                             "hours": Decimal(0)},
+                        )
+                        bucket["hours"] += t["hours"]
+        totals["people"] = len(by_user)
+
+    months = []
+    month = start.replace(day=1)
+    while month <= end:
+        months.append({"month": month, "hours": by_month.get(month, Decimal(0))})
+        month = (month + datetime.timedelta(days=32)).replace(day=1)
+
+    return {
+        "totals": totals,
+        "by_user": sorted(by_user.values(), key=lambda r: r["hours"], reverse=True),
+        "by_target": sorted(by_target.values(), key=lambda r: r["hours"], reverse=True),
+        "by_month": months,
+    }

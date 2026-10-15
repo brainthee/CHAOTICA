@@ -1,144 +1,170 @@
 {% extends "base.html" %}
 {% load menu %}{% load static %}
 
-{% block pageTitle %}{% if internal_only %}WBS{% else %}Billing{% endif %} Analytics{% endblock pageTitle %}
-{% block head_title %}{% if internal_only %}WBS{% else %}Billing{% endif %} Analytics{% endblock head_title %}
+{% block pageTitle %}Billing Analytics{% endblock pageTitle %}
+{% block head_title %}Billing Analytics{% endblock head_title %}
 
 {% block breadcrumbItem %}
-<li class="breadcrumb-item text-sm"><a href="{% url 'billingcode_list' %}">Billing Codes</a></li>
-<li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">{% if internal_only %}WBS{% else %}Billing{% endif %} Analytics</li>
+<li class="breadcrumb-item text-sm"><a class="opacity-50 text-body-emphasis" href="{% url 'billingcode_list' %}">Billing Codes</a></li>
+<li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">Analytics</li>
 {% endblock breadcrumbItem %}
 
 {% block content %}
-<div class="row pt-4 pb-2 align-items-center">
-  <div class="col-auto">
-    <h3 class="mb-0">{% if internal_only %}Internal (WBS){% else %}Billing{% endif %} Analytics</h3>
-    <p class="text-body-secondary fs-9 mb-0">Scheduled hours per billing code across your reachable teams. Person-days, not a timesheet.</p>
+<div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+  <div>
+    <h4 class="mb-0">Billing analytics</h4>
+    <p class="fs-9 text-body-tertiary mb-0">
+      {{ start_date|date:'j M Y' }} &ndash; {{ end_date|date:'j M Y' }}.
+      Scheduled hours per billing code across your reachable teams &mdash; a forecast from the schedule, not a timesheet.
+    </p>
   </div>
-  <div class="col-12 col-md-auto ms-md-auto mt-3 mt-md-0">
-    <form method="get" class="d-flex align-items-end gap-2">
-      <input type="hidden" name="dateRange" id="dateRangeField" value="{{ start_date|date:'Y-m-d' }} to {{ end_date|date:'Y-m-d' }}">
-      <div>
-        <label class="form-label fs-10 mb-1">From</label>
-        <input type="date" name="_start" value="{{ start_date|date:'Y-m-d' }}" class="form-control form-control-sm" onchange="document.getElementById('dateRangeField').value=this.value+' to '+this.form._end.value;">
-      </div>
-      <div>
-        <label class="form-label fs-10 mb-1">To</label>
-        <input type="date" name="_end" value="{{ end_date|date:'Y-m-d' }}" class="form-control form-control-sm" onchange="document.getElementById('dateRangeField').value=this.form._start.value+' to '+this.value;">
-      </div>
-      <button type="submit" class="btn btn-sm btn-phoenix-primary">Update</button>
-    </form>
+  {% include 'partials/stats_range_controls.html' with navigate=1 allow_future=1 %}
+</div>
+
+<div class="row g-2">
+  <div class="col-6 col-md">
+    <div class="border border-translucent rounded-3 p-2 h-100">
+      <div class="fs-10 text-body-tertiary">Total hours</div>
+      <div class="fs-7 fw-semibold">{{ totals.hours|floatformat:1 }}<span class="fs-10 text-body-tertiary">h</span></div>
+    </div>
+  </div>
+  <div class="col-6 col-md">
+    <div class="border border-translucent rounded-3 p-2 h-100">
+      <div class="fs-10 text-body-tertiary">Chargeable</div>
+      <div class="fs-7 fw-semibold text-success">{{ totals.chargeable|floatformat:1 }}<span class="fs-10 text-body-tertiary">h</span></div>
+    </div>
+  </div>
+  <div class="col-6 col-md">
+    <div class="border border-translucent rounded-3 p-2 h-100">
+      <div class="fs-10 text-body-tertiary">Internal</div>
+      <div class="fs-7 fw-semibold text-info">{{ totals.internal|floatformat:1 }}<span class="fs-10 text-body-tertiary">h</span></div>
+    </div>
+  </div>
+  <div class="col-6 col-md">
+    <div class="border border-translucent rounded-3 p-2 h-100">
+      <div class="fs-10 text-body-tertiary">Codes in use</div>
+      <div class="fs-7 fw-semibold">{{ per_code|length }}</div>
+    </div>
   </div>
 </div>
 
-<div class="row g-3 mb-3">
-  <div class="col-6 col-md-3">
-    <div class="card h-100"><div class="card-body py-3">
-      <p class="text-body-secondary fs-10 mb-1">Total hours</p>
-      <h4 class="mb-0">{{ totals.hours|floatformat:1 }}</h4>
-    </div></div>
-  </div>
-  <div class="col-6 col-md-3">
-    <div class="card h-100"><div class="card-body py-3">
-      <p class="text-body-secondary fs-10 mb-1">Chargeable hours</p>
-      <h4 class="mb-0 text-success">{{ totals.chargeable|floatformat:1 }}</h4>
-    </div></div>
-  </div>
-  <div class="col-6 col-md-3">
-    <div class="card h-100"><div class="card-body py-3">
-      <p class="text-body-secondary fs-10 mb-1">Internal hours</p>
-      <h4 class="mb-0 text-info">{{ totals.internal|floatformat:1 }}</h4>
-    </div></div>
-  </div>
-  <div class="col-6 col-md-3">
-    <div class="card h-100"><div class="card-body py-3">
-      <p class="text-body-secondary fs-10 mb-1">Codes in use</p>
-      <h4 class="mb-0">{{ per_code|length }}</h4>
-    </div></div>
-  </div>
-</div>
-
-<div class="row g-3">
+<div class="row g-3 mt-0">
   <div class="col-12 col-xl-6">
     <div class="card h-100">
-      <div class="card-header"><h5 class="mb-0">Hours per code</h5></div>
+      <div class="card-header">
+        <h5 class="mb-0">Hours per code</h5>
+        <p class="fs-9 text-body-tertiary mb-0">The 15 busiest codes in the range.</p>
+      </div>
       <div class="card-body">
-        <div id="code-hours-chart" style="height:280px;"></div>
+        {% if per_code %}
+          <div id="code-hours-chart" style="height:320px;"></div>
+        {% else %}
+          <p class="fs-9 text-body-tertiary text-center py-5 mb-0">No usage in this range.</p>
+        {% endif %}
       </div>
     </div>
   </div>
-  {% if not internal_only %}
   <div class="col-12 col-xl-6">
     <div class="card h-100">
       <div class="card-header"><h5 class="mb-0">Per client</h5></div>
-      <div class="card-body p-0">
-        <table class="table table-sm align-middle mb-0">
-          <thead><tr class="fs-9 text-body-secondary">
-            <th class="ps-3">Client</th><th class="text-end">Chargeable</th><th class="text-end">Internal</th><th class="text-end pe-3">Total</th>
-          </tr></thead>
-          <tbody>
-            {% for b in by_client %}
-              <tr>
-                <td class="ps-3 fs-9">{% if b.client %}{{ b.client }}{% else %}<em class="text-body-secondary">Internal / no client</em>{% endif %}</td>
-                <td class="text-end fs-9">{{ b.chargeable_hours|floatformat:1 }}</td>
-                <td class="text-end fs-9">{{ b.internal_hours|floatformat:1 }}</td>
-                <td class="text-end pe-3 fs-9">{{ b.hours|floatformat:1 }}</td>
+      <div class="card-body p-0 scrollbar" style="max-height: 24rem;">
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0 fs-9">
+            <thead>
+              <tr class="text-body-secondary">
+                <th class="ps-3">Client</th>
+                <th class="text-end">Chargeable</th>
+                <th class="text-end">Internal</th>
+                <th class="text-end pe-3">Total</th>
               </tr>
-            {% empty %}
-              <tr><td colspan="4" class="text-center text-body-secondary py-4">No usage in this window.</td></tr>
+            </thead>
+            <tbody>
+              {% for b in by_client %}
+                <tr>
+                  <td class="ps-3">{% if b.client %}<a href="{{ b.client.get_absolute_url }}">{{ b.client }}</a>{% else %}<span class="text-body-tertiary">Internal / no client</span>{% endif %}</td>
+                  <td class="text-end text-success">{{ b.chargeable_hours|floatformat:1 }}</td>
+                  <td class="text-end">{{ b.internal_hours|floatformat:1 }}</td>
+                  <td class="text-end pe-3 fw-semibold">{{ b.hours|floatformat:1 }}</td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="4" class="text-center text-body-tertiary py-3">No usage in this range.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header"><h5 class="mb-0">Per code</h5></div>
+      <div class="card-body">
+        <table class="table table-sm datatable align-middle mb-0 fs-9">
+          <caption class="visually-hidden">Hours per billing code</caption>
+          <thead>
+            <tr class="text-body-secondary">
+              <th class="ps-3">Code</th>
+              <th>Client</th>
+              <th>Type</th>
+              <th class="text-end">Person-days</th>
+              <th class="text-end pe-3 default-sort sort-desc">Hours</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in per_code %}
+              <tr>
+                <td class="ps-3">{% include 'partials/billingcode/billingcode_badge.html' with billingcode=c.code %}</td>
+                <td>{% if c.code.client %}<a href="{{ c.code.client.get_absolute_url }}">{{ c.code.client }}</a>{% else %}<span class="text-body-tertiary">Internal / no client</span>{% endif %}</td>
+                <td>{% include 'partials/billingcode/billingcode_flags.html' with billingcode=c.code %}</td>
+                <td class="text-end">{{ c.days }}</td>
+                <td class="text-end pe-3" data-order="{{ c.hours }}">{{ c.hours|floatformat:1 }}</td>
+              </tr>
             {% endfor %}
           </tbody>
         </table>
       </div>
     </div>
   </div>
-  {% endif %}
-</div>
-
-<div class="card mt-3">
-  <div class="card-header"><h5 class="mb-0">Per code</h5></div>
-  <div class="card-body p-0">
-    <table class="table table-sm align-middle mb-0">
-      <thead><tr class="fs-9 text-body-secondary">
-        <th class="ps-3">Code</th><th>Client</th><th class="text-center">Type</th><th class="text-end">Person-days</th><th class="text-end pe-3">Hours</th>
-      </tr></thead>
-      <tbody>
-        {% for c in per_code %}
-          <tr>
-            <td class="ps-3"><a href="{{ c.code.get_absolute_url }}">{{ c.code.code }}</a></td>
-            <td class="fs-9">{% if c.code.client %}{{ c.code.client }}{% else %}<em class="text-body-secondary">—</em>{% endif %}</td>
-            <td class="text-center fs-10">
-              {% if c.is_chargeable %}<span class="badge badge-phoenix badge-phoenix-success">Chargeable</span>{% endif %}
-              {% if c.is_internal %}<span class="badge badge-phoenix badge-phoenix-info">Internal</span>{% endif %}
-            </td>
-            <td class="text-end fs-9">{{ c.days }}</td>
-            <td class="text-end pe-3 fs-9">{{ c.hours|floatformat:1 }}</td>
-          </tr>
-        {% empty %}
-          <tr><td colspan="5" class="text-center text-body-secondary py-4">No usage in this window.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
 </div>
 
 <script>
-  (function () {
-    if (typeof echarts === 'undefined') { return; }
+  document.addEventListener('DOMContentLoaded', function () {
+    initStatsRangePicker(document);
+
     var el = document.getElementById('code-hours-chart');
-    if (!el) { return; }
-    var names = [{% for c in per_code %}"{{ c.code.code|escapejs }}",{% endfor %}];
-    var values = [{% for c in per_code %}{{ c.hours|floatformat:1 }},{% endfor %}];
-    if (!names.length) { return; }
+    if (!el || !window.echarts || !window.phoenix) return;
+    var getColor = window.phoenix.utils.getColor;
+    var names = [{% for c in per_code|slice:":15" %}"{{ c.code.code|escapejs }}",{% endfor %}].reverse();
+    var values = [{% for c in per_code|slice:":15" %}{value: {{ c.hours|floatformat:1 }}, itemStyle: {color: getColor('{% if c.is_chargeable %}success{% else %}info{% endif %}')}},{% endfor %}].reverse();
     var chart = echarts.init(el);
-    chart.setOption({
-      grid: { left: 120, right: 20, top: 10, bottom: 20 },
-      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: '{b}: {c}h' },
-      xAxis: { type: 'value' },
-      yAxis: { type: 'category', data: names.slice().reverse(), axisLabel: { fontSize: 10 } },
-      series: [{ type: 'bar', data: values.slice().reverse() }]
-    });
+    var options = function () {
+      return {
+        grid: { left: 5, right: 20, top: 5, bottom: 5, containLabel: true },
+        tooltip: {
+          trigger: 'axis', axisPointer: { type: 'shadow' }, padding: [7, 10],
+          backgroundColor: getColor('body-highlight-bg'), borderColor: getColor('border-color'),
+          textStyle: { color: getColor('light-text-emphasis') }, borderWidth: 1,
+          valueFormatter: function (v) { return v + 'h'; }
+        },
+        xAxis: {
+          type: 'value',
+          axisLabel: { color: getColor('quaternary-color') },
+          splitLine: { lineStyle: { color: getColor('secondary-bg') } }
+        },
+        yAxis: {
+          type: 'category', data: names,
+          axisLine: { lineStyle: { color: getColor('tertiary-bg') } },
+          axisTick: { show: false }, axisLabel: { color: getColor('quaternary-color'), fontSize: 10 }
+        },
+        series: [{ name: 'Hours', type: 'bar', data: values, itemStyle: { borderRadius: [0, 3, 3, 0] } }]
+      };
+    };
+    chart.setOption(options());
     window.addEventListener('resize', function () { chart.resize(); });
-  })();
+    document.body.addEventListener('clickControl', function (e) {
+      if (e.detail && e.detail.control === 'phoenixTheme') chart.setOption(options());
+    });
+  });
 </script>
 {% endblock content %}

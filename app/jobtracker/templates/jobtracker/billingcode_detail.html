@@ -1,169 +1,225 @@
 {% extends "base.html" %}
-{% load menu %}{% load index %}{% load static %}
+{% load menu %}{% load static %}
 
 {% block pageTitle %}{{ billingcode }}{% endblock pageTitle %}
 {% block head_title %}{{ billingcode }}{% endblock head_title %}
 
-
 {% block breadcrumbItem %}
 <li class="breadcrumb-item text-sm"><a class="opacity-50 text-body-emphasis" href="{% url 'billingcode_list' %}">Billing Codes</a></li>
-<li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">{{ billingcode }}</li>
+<li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">{{ billingcode.code }}</li>
 {% endblock breadcrumbItem %}
 
-{% block content_classes %}pt-15 px-0 {% endblock content_classes %}
+{% block content_classes %}pt-15 px-0{% endblock content_classes %}
 {% block breadcrumb_classes %}px-5{% endblock breadcrumb_classes %}
 
 {% block content %}
-
-<div class="row px-5">
-  <div class="col-12">
-    <div class="row align-items-center justify-content-between g-3 mt-0 mb-0">
-      <div class="col-3">
-        <h2 class="mb-2">
-            Billing Code Detail
-        </h2>
-      </div>
-
-      <div class="col-md-auto">
-        <div class="d-flex gap-2">
-            <a href="{% url 'billingcode_update' billingcode.code %}" class="btn btn-outline-secondary ms-auto">
-            Edit
-            </a>
-            {% if perms.jobtracker.delete_billingcode %}
-            <a href="{% url 'billingcode_delete' billingcode.code %}" class="btn btn-outline-danger">
-            Delete
-            </a>
+<div class="px-5 mt-2 mb-3">
+  <div class="card">
+    <div class="card-body">
+      <div class="d-flex flex-wrap align-items-start gap-3">
+        <div class="flex-1" style="min-width: 16rem;">
+          <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+            <h3 class="mb-0">{{ billingcode.code }}</h3>
+            {% if billingcode.is_closed %}
+              <span class="badge badge-phoenix badge-phoenix-secondary">Closed</span>
+            {% else %}
+              <span class="badge badge-phoenix badge-phoenix-success">Open</span>
             {% endif %}
+          </div>
+          <div class="d-flex flex-wrap align-items-center gap-3 fs-9 text-body-secondary mb-2">
+            <span>
+              <span class="fa-solid fa-building text-body-tertiary me-1"></span>
+              {% if billingcode.client %}<a class="fw-semibold" href="{{ billingcode.client.get_absolute_url }}">{{ billingcode.client }}</a>{% else %}<span class="text-body-tertiary">Internal / no client</span>{% endif %}
+            </span>
+            <span>
+              <span class="fa-solid fa-earth-europe text-body-tertiary me-1"></span>{{ billingcode.region.name }}
+            </span>
+          </div>
+          <div class="fs-9">{% include 'partials/billingcode/billingcode_flags.html' %}</div>
+        </div>
+
+        {% if perms.jobtracker.change_billingcode or perms.jobtracker.delete_billingcode %}
+          <div class="d-flex flex-wrap align-items-center gap-2 ms-lg-auto">
+            {% if perms.jobtracker.change_billingcode %}
+              <a href="{% url 'billingcode_update' billingcode.code %}" class="btn btn-sm btn-phoenix-secondary">
+                <span class="fa-solid fa-pen me-1"></span>Edit
+              </a>
+            {% endif %}
+            {% if perms.jobtracker.delete_billingcode %}
+              <div class="dropdown">
+                <button class="btn btn-sm btn-phoenix-secondary" type="button" data-bs-toggle="dropdown" data-boundary="window" aria-haspopup="true" aria-expanded="false" aria-label="More actions">
+                  <span class="fas fa-ellipsis-h"></span>
+                </button>
+                <div class="dropdown-menu dropdown-menu-end py-2">
+                  <a class="dropdown-item text-danger" href="{% url 'billingcode_delete' billingcode.code %}">
+                    <span class="fa-solid fa-trash me-2"></span>Delete code
+                  </a>
+                </div>
+              </div>
+            {% endif %}
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="row g-2 mt-2">
+        <div class="col-6 col-md-3">
+          <div class="border border-translucent rounded-3 p-2 h-100">
+            <div class="fs-10 text-body-tertiary">Active assignments <span class="text-body-quaternary">(today)</span></div>
+            <div class="fs-7 fw-semibold">{{ current_assignment_count }}</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="border border-translucent rounded-3 p-2 h-100">
+            <div class="fs-10 text-body-tertiary">Jobs</div>
+            <div class="fs-7 fw-semibold">{{ job_list|length }}</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="border border-translucent rounded-3 p-2 h-100">
+            <div class="fs-10 text-body-tertiary">Phase assignments</div>
+            <div class="fs-7 fw-semibold">{{ phase_assignment_count }}</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="border border-translucent rounded-3 p-2 h-100">
+            <div class="fs-10 text-body-tertiary">Project assignments</div>
+            <div class="fs-7 fw-semibold">{{ project_assignment_count }}</div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 </div>
 
+<div class="row g-0 border-1 border-top bg-body-secondary h-100">
+  <div class="col-12 pt-3 border-1 border-end">
+    <div class="row mx-1">
+      <ul class="nav nav-underline scrollbar px-6 flex-nowrap w-100 pb-1 mb-3" id="sectionNav" role="tablist" style="overflow-y: hidden;">
+        <li class="nav-item text-nowrap me-2" role="presentation">
+          <a class="nav-link active" id="analytics-tab" data-bs-toggle="tab" href="#analytics" role="tab" aria-controls="tab-analytics" aria-selected="true"><span class="fa-solid fa-chart-column me-2 tab-icon-color"></span>Analytics</a>
+        </li>
+        <li class="nav-item text-nowrap me-2" role="presentation">
+          <a class="nav-link" id="assignments-tab" data-bs-toggle="tab" href="#assignments" role="tab" aria-controls="tab-assignments" aria-selected="false" tabindex="-1"><span class="fa-solid fa-link me-2 tab-icon-color"></span>Assignments</a>
+        </li>
+        <li class="nav-item text-nowrap me-2" role="presentation">
+          <a class="nav-link" id="jobs-tab" data-bs-toggle="tab" href="#jobs" role="tab" aria-controls="tab-jobs" aria-selected="false" tabindex="-1"><span class="fa-solid fa-briefcase me-2 tab-icon-color"></span>Jobs</a>
+        </li>
+        <li class="nav-item text-nowrap me-2" role="presentation">
+          <a class="nav-link" id="activity-tab" data-bs-toggle="tab" href="#activity" role="tab" aria-controls="tab-activity" aria-selected="false" tabindex="-1"><span class="fa-solid fa-clock-rotate-left me-2 tab-icon-color"></span>Activity</a>
+        </li>
+      </ul>
 
-<div class="row justify-content-between ms-3 me-3 g-3 mt-0 mb-0">
-  <div class="col-4">
-    <div class="card">
-      <div class="card-body">
-        <div class="row align-items-center g-3">
-          <div class="col-12 col-sm-auto flex-1">
-            <h3 class="fw-bolder mb-2 line-clamp-1">
-              {{ billingcode }}
-              {% if billingcode.is_closed %}
-                <span class="badge badge-phoenix badge-phoenix-danger">
-                  Closed
-                </span>
-              {% endif %}
-            </h3>
-          </div>
-        </div>
-        <div class="row align-items-center g-3">
-          <div class="col-6 flex-1">
-
-            <table class="w-100 table-stats table-stats">
-              <caption>Billing Code Info</caption>
-              <tbody>
-                  <tr>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                  </tr>
-                  <tr>
-                    <td class="py-2">
-                        <p class="fw-bold mb-0">Is Internal</p>
-                    </td>
-                    <td class="py-2 d-none d-sm-block pe-sm-2">:</td>
-                    <td class="py-2">
-                        <p class="ps-6 ps-sm-0 fw-semi-bold mb-0">
-                          {% if billingcode.is_internal %}
-                          <span class="badge badge-phoenix badge-phoenix-success">Yes</span>
-                          {% else %}
-                          <span class="badge badge-phoenix badge-phoenix-secondary">No</span>
-                          {% endif %}
-                        </p>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td class="py-2">
-                        <p class="fw-bold mb-0">Is Chargable</p>
-                    </td>
-                    <td class="py-2 d-none d-sm-block pe-sm-2">:</td>
-                    <td class="py-2">
-                        <p class="ps-6 ps-sm-0 fw-semi-bold mb-0">
-                          {% if billingcode.is_chargeable %}
-                          <span class="badge badge-phoenix badge-phoenix-success">Yes</span>
-                          {% else %}
-                          <span class="badge badge-phoenix badge-phoenix-secondary">No</span>
-                          {% endif %}
-                        </p>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td class="py-2">
-                        <p class="fw-bold mb-0">Is Recoverable</p>
-                    </td>
-                    <td class="py-2 d-none d-sm-block pe-sm-2">:</td>
-                    <td class="py-2">
-                        <p class="ps-6 ps-sm-0 fw-semi-bold mb-0">
-                          {% if billingcode.is_recoverable %}
-                          <span class="badge badge-phoenix badge-phoenix-success">Yes</span>
-                          {% else %}
-                          <span class="badge badge-phoenix badge-phoenix-secondary">No</span>
-                          {% endif %}
-                        </p>
-                    </td>
-                  </tr>
-                  
-              </tbody>
-            </table>
-
-          </div>
-
-          <div class="col-6 flex-1">
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </div>
-
-  <div class="col-4">
-  </div>
-
-  <div class="col-4">
-  </div>
-</div>
-
-
-<div class="row g-0 mt-3 border-1 border-top bg-body-secondary h-100">
-    <div class="col-12 px-6 pt-3 border-1 border-end">
-
-        <div class="row mx-1">  
-            <ul class="nav nav-underline scrollbar flex-nowrap w-100 pb-1 mb-3" id="sectionNav" role="tablist" style="overflow-y: hidden;">
-                <li class="nav-item text-nowrap me-2" role="presentation">
-                    <a class="nav-link active" id="jobs-tab" data-bs-toggle="tab" href="#jobs" role="tab" aria-controls="tab-jobs" aria-selected="true">
-                    <span class="fa-solid fa-video me-2 tab-icon-color"></span>Jobs
-                    </a>
-                </li>
-                <li class="nav-item text-nowrap me-2" role="presentation">
-                    <a class="nav-link" id="activity-tab" data-bs-toggle="tab" href="#activity" role="tab" aria-controls="tab-activity" aria-selected="false" tabindex="-1">
-                    <span class="fa-solid fa-clock-rotate-left me-2 tab-icon-color"></span>Activity
-                    </a>
-                </li>
-            </ul>
-
-            <div class="tab-content" id="myTabContent">
-                <div class="tab-pane fade active show" id="jobs" role="tabpanel" aria-labelledby="jobs-tab">
-                  {% include 'partials/job/job_list_table.html' with job_list=billingcode.jobs.all disableAjax=1 only%}
-                </div>
-                <div class="tab-pane fade" id="activity" role="tabpanel" aria-labelledby="activity-tab">
-                  {% include 'partials/audit_activity.html' %}
-                </div>
+      <div class="tab-content pb-5" id="myTabContent">
+        <div class="tab-pane fade active show py-3" id="analytics" role="tabpanel" aria-labelledby="analytics-tab">
+          <div id="analytics-content">
+            <div class="text-center py-5">
+              <div class="spinner-border text-primary" role="status"></div>
+              <p class="mt-2 text-body-secondary">Loading analytics...</p>
             </div>
+          </div>
         </div>
-    </div>
-</div>
 
+        <div class="tab-pane fade py-3" id="assignments" role="tabpanel" aria-labelledby="assignments-tab">
+          <div class="mb-3">
+            <h4 class="mb-0">Assignments</h4>
+            <p class="fs-9 text-body-tertiary mb-0">Where this code applies. A phase with its own codes overrides its job's; blank dates mean the whole engagement.</p>
+          </div>
+          <div class="card">
+            <div class="card-body{% if not assignments %} p-0{% endif %}">
+              <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0 fs-9{% if assignments %} datatable{% endif %}">
+                  <caption class="visually-hidden">Billing code assignments</caption>
+                  <thead>
+                    <tr class="text-body-secondary">
+                      <th class="ps-3">Applies to</th>
+                      <th>Type</th>
+                      <th>From</th>
+                      <th>To</th>
+                      <th>Added by</th>
+                      <th class="text-end pe-3">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for a in assignments %}
+                      <tr>
+                        <td class="ps-3">
+                          {% if a.job %}<a class="fw-semibold" href="{{ a.job.get_absolute_url }}">{{ a.job }}</a>
+                          {% elif a.phase %}<a class="fw-semibold" href="{{ a.phase.get_absolute_url }}">{{ a.phase }}</a>
+                          {% elif a.project %}<a class="fw-semibold" href="{{ a.project.get_absolute_url }}">{{ a.project }}</a>{% endif %}
+                        </td>
+                        <td>{% if a.job %}Job{% elif a.phase %}Phase{% else %}Project{% endif %}</td>
+                        <td class="text-nowrap" data-order="{{ a.start_date|date:'c' }}">{% if a.start_date %}{{ a.start_date|date:'j M Y' }}{% else %}<span class="text-body-tertiary">Start</span>{% endif %}</td>
+                        <td class="text-nowrap" data-order="{{ a.end_date|date:'c' }}">{% if a.end_date %}{{ a.end_date|date:'j M Y' }}{% else %}<span class="text-body-tertiary">Open-ended</span>{% endif %}</td>
+                        <td>{% if a.created_by %}{{ a.created_by }}{% else %}<span class="text-body-tertiary">&mdash;</span>{% endif %}<div class="fs-10 text-body-tertiary">{{ a.created_at|date:'j M Y' }}</div></td>
+                        <td class="text-end pe-3">
+                          {% if a.is_current %}<span class="badge badge-phoenix badge-phoenix-success">Active</span>{% else %}<span class="badge badge-phoenix badge-phoenix-secondary">Not active</span>{% endif %}
+                        </td>
+                      </tr>
+                    {% empty %}
+                      <tr><td colspan="6" class="text-center text-body-tertiary py-3">This code isn't assigned to anything yet.</td></tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-pane fade py-3" id="jobs" role="tabpanel" aria-labelledby="jobs-tab">
+          <div class="mb-3">
+            <h4 class="mb-0">Jobs</h4>
+            <p class="fs-9 text-body-tertiary mb-0">Jobs this code is assigned to, directly or through one of their phases.</p>
+          </div>
+          <div class="card">
+            <div class="card-body">
+              {% include 'partials/job/job_table_compact.html' with table_id='codeJobsTable' empty_text='No jobs use this code.' %}
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-pane fade py-3" id="activity" role="tabpanel" aria-labelledby="activity-tab">
+          <div class="mb-3">
+            <h4 class="mb-0">Activity</h4>
+            <p class="fs-9 text-body-tertiary mb-0">Changes made to this code and its assignments.</p>
+          </div>
+          <div class="card">
+            <div class="card-body pb-0">
+              {% include 'partials/audit_activity.html' %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock content %}
 
-
+{% block extra_js %}
+  <script>
+    (function () {
+      var url = "{% url 'billingcode_analytics_partial' billingcode.code %}";
+      function loadAnalytics(target) {
+        var box = document.getElementById('analytics-content');
+        box.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><p class="mt-2 text-body-secondary">Loading analytics...</p></div>';
+        fetch(target, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            // jQuery .html() so the partial's inline chart <script> runs.
+            $(box).html(data.html);
+            initStatsRangePicker(box, loadAnalytics);
+          })
+          .catch(function () {
+            box.innerHTML = '<div class="text-center py-5 text-danger">Failed to load. Please refresh the page.</div>';
+          });
+      }
+      document.addEventListener('click', function (e) {
+        var link = e.target.closest('#analytics-content a[data-stats-range]');
+        if (link) {
+          e.preventDefault();
+          loadAnalytics(link.getAttribute('data-stats-range'));
+        }
+      });
+      document.addEventListener('DOMContentLoaded', function () { loadAnalytics(url); });
+    })();
+  </script>
+{% endblock extra_js %}

@@ -19,6 +19,30 @@ function getCookie(name) {
 
 var csrftoken = getCookie('csrftoken');
 
+// Wire the custom range input rendered by partials/stats_range_controls.html.
+// ``onRange(url)`` reloads a lazy tab; inputs marked data-navigate go to the
+// URL instead (full pages). Safe to call after every lazy (re)load.
+function initStatsRangePicker(root, onRange) {
+    var picker = (root || document).querySelector('#stats-range-picker');
+    if (!picker || !window.flatpickr || picker._flatpickr) return;
+    flatpickr(picker, {
+        mode: 'range',
+        dateFormat: 'Y-m-d',
+        altInput: true,
+        altFormat: 'j M Y',
+        altInputClass: picker.className,
+        disableMobile: true,
+        maxDate: picker.dataset.allowFuture ? null : 'today',
+        defaultDate: [picker.dataset.start, picker.dataset.end],
+        onClose: function (dates, dateStr, fp) {
+            if (dates.length !== 2) return;
+            var fmt = function (d) { return fp.formatDate(d, 'Y-m-d'); };
+            var url = picker.dataset.url + '?start_date=' + fmt(dates[0]) + '&end_date=' + fmt(dates[1]);
+            if (picker.dataset.navigate || !onRange) { window.location = url; } else { onRange(url); }
+        }
+    });
+}
+
 function csrfSafeMethod(method) {
     // these HTTP methods do not require CSRF protection
     return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));

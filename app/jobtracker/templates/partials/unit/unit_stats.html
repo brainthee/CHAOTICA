@@ -12,18 +12,7 @@
         The range applies to phases delivered and consultant utilisation.
       </p>
     </div>
-    <div class="d-flex flex-wrap align-items-center gap-2 ms-md-auto">
-      <div class="btn-group btn-group-sm" role="group" aria-label="Date range presets">
-        {% for p in presets %}
-          <a href="#" class="btn btn-phoenix-secondary{% if p.active %} active{% endif %}"
-             data-stats-range="{{ partial_url }}?start_date={{ p.start|date:'Y-m-d' }}&amp;end_date={{ p.end|date:'Y-m-d' }}">{{ p.label }}</a>
-        {% endfor %}
-      </div>
-      <input type="text" id="stats-range-picker" class="form-control form-control-sm{% if is_custom_range %} border-primary{% endif %}"
-             style="width: 14rem;" placeholder="Custom range" aria-label="Custom date range"
-             data-start="{{ start_date|date:'Y-m-d' }}" data-end="{{ end_date|date:'Y-m-d' }}"
-             data-url="{{ partial_url }}" />
-    </div>
+    {% include 'partials/stats_range_controls.html' %}
   </div>
 
   <div class="row g-2">

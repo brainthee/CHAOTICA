@@ -1,0 +1,22 @@
+{% comment %}
+Date-range header controls: preset buttons + a custom flatpickr range input.
+Expects the context from ``_stats_range`` (``presets``, ``is_custom_range``)
+plus ``start_date``, ``end_date`` and ``partial_url``.
+
+Lazy tabs (default): presets carry ``data-stats-range`` and the host page wires
+a delegated click + the picker after each load. Full pages pass
+``navigate=1``: presets are plain links and the picker navigates on close.
+{% endcomment %}
+<div class="d-flex flex-wrap align-items-center gap-2 ms-md-auto">
+  <div class="btn-group btn-group-sm" role="group" aria-label="Date range presets">
+    {% for p in presets %}
+      <a class="btn btn-phoenix-secondary{% if p.active %} active{% endif %}"
+         {% if navigate %}href="{{ partial_url }}?start_date={{ p.start|date:'Y-m-d' }}&amp;end_date={{ p.end|date:'Y-m-d' }}"
+         {% else %}href="#" data-stats-range="{{ partial_url }}?start_date={{ p.start|date:'Y-m-d' }}&amp;end_date={{ p.end|date:'Y-m-d' }}"{% endif %}>{{ p.label }}</a>
+    {% endfor %}
+  </div>
+  <input type="text" id="stats-range-picker" class="form-control form-control-sm{% if is_custom_range %} border-primary{% endif %}"
+         style="width: 14rem;" placeholder="Custom range" aria-label="Custom date range"
+         data-start="{{ start_date|date:'Y-m-d' }}" data-end="{{ end_date|date:'Y-m-d' }}"
+         data-url="{{ partial_url }}"{% if navigate %} data-navigate="1"{% endif %}{% if allow_future %} data-allow-future="1"{% endif %} />
+</div>

@@ -1,39 +1,100 @@
-<div class="table-responsive scrollbar mx-n1 px-1">
-  <table class="table fs-9 datatable mb-0">
-    <caption>Billing Codes</caption>
-    <thead>
-      <tr>
-        <th class="sort white-space-nowrap align-start ps-0" scope="col" data-sort="code" style="width:30%;">
-          Code
-        </th>
-        <th class="sort white-space-nowrap align-middle" scope="col" data-sort="client" style="width:30%;">
-          Client
-        </th>
-        <th class="sort align-middle text-end" scope="col" style="width:10%;">
-        </th>
-      </tr>
-    </thead>
-    <tbody>
-    {% for billingcode in billingcode_list %}
-    <tr>
-      <td class="align-middle time white-space-nowrap ps-0">
-        <h4>
-          <a class="fw-bold fs-8" href="{{ billingcode.get_absolute_url }}">
-            {% include 'partials/billingcode/billingcode_badge.html' %}
-          </a>
-        </h4>
-      </td>
-      <td class="align-middle time white-space-nowrap ps-0">
-        {% if billingcode.client %}
-        <a class="fw-bold fs-8" href="{{ billingcode.client.get_absolute_url }}">
-          {{ billingcode.client }}
-        </a>
-        {% endif %}
-      </td>
-      <td class="align-middle text-end white-space-nowrap pe-0 action">
-      </td>
-    </tr>
-    {% endfor %}        
-    </tbody>
-  </table>
+{# Billing code list. Filters are applied through a DataTables ext.search  #}
+{# scoped to this table (see the script below).                            #}
+<div class="d-flex flex-wrap align-items-center gap-2 mb-3" id="codeFilters">
+  <select id="codeTypeFilter" class="form-select form-select-sm" style="width: auto; min-width: 9rem;" aria-label="Filter by type">
+    <option value="">All types</option>
+    <option value="internal">Internal</option>
+    <option value="chargeable">Chargeable</option>
+    <option value="non-chargeable">Not chargeable</option>
+    <option value="recoverable">Recoverable</option>
+  </select>
+  <select id="codeClientFilter" class="form-select form-select-sm" style="width: auto; min-width: 10rem;" aria-label="Filter by client">
+    <option value="">All clients</option>
+    <option value="__none__">No client</option>
+  </select>
+  <div class="form-check form-switch mb-0 ms-1">
+    <input class="form-check-input" type="checkbox" id="codeShowClosed">
+    <label class="form-check-label fs-9" for="codeShowClosed">Show closed</label>
+  </div>
 </div>
+
+<div class="card">
+  <div class="card-body">
+    <table id="billingCodeTable" class="table table-sm datatable align-middle mb-0 fs-9">
+      <caption class="visually-hidden">Billing codes</caption>
+      <thead>
+        <tr class="text-body-secondary">
+          <th class="ps-3" scope="col">Code</th>
+          <th scope="col">Client</th>
+          <th scope="col">Type</th>
+          <th scope="col">Region</th>
+          <th class="text-end" scope="col">Jobs</th>
+          <th class="text-end" scope="col">Phases</th>
+          <th class="text-end" scope="col">Projects</th>
+          <th class="text-end pe-3" scope="col">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for billingcode in billingcode_list %}
+          <tr data-closed="{% if billingcode.is_closed %}1{% else %}0{% endif %}"
+              data-client="{% if billingcode.client %}{{ billingcode.client.name }}{% else %}__none__{% endif %}"
+              data-types="|{% if billingcode.is_internal %}internal|{% endif %}{% if billingcode.is_chargeable %}chargeable|{% else %}non-chargeable|{% endif %}{% if billingcode.is_recoverable %}recoverable|{% endif %}">
+            <td class="ps-3 white-space-nowrap">{% include 'partials/billingcode/billingcode_badge.html' %}</td>
+            <td>{% if billingcode.client %}<a href="{{ billingcode.client.get_absolute_url }}">{{ billingcode.client }}</a>{% else %}<span class="text-body-tertiary">Internal / no client</span>{% endif %}</td>
+            <td>{% include 'partials/billingcode/billingcode_flags.html' %}</td>
+            <td>{{ billingcode.region.name }}</td>
+            <td class="text-end">{% if billingcode.job_count %}{{ billingcode.job_count }}{% else %}<span class="text-body-tertiary">0</span>{% endif %}</td>
+            <td class="text-end">{% if billingcode.phase_count %}{{ billingcode.phase_count }}{% else %}<span class="text-body-tertiary">0</span>{% endif %}</td>
+            <td class="text-end">{% if billingcode.project_count %}{{ billingcode.project_count }}{% else %}<span class="text-body-tertiary">0</span>{% endif %}</td>
+            <td class="text-end pe-3">
+              {% if billingcode.is_closed %}<span class="badge badge-phoenix badge-phoenix-secondary">Closed</span>{% else %}<span class="badge badge-phoenix badge-phoenix-success">Open</span>{% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  (function () {
+    // core.js initialises DataTables on table.datatable; wait for that, then
+    // add filters scoped to this table only (ext.search is global).
+    function initCodeFilters() {
+      var table = document.getElementById('billingCodeTable');
+      if (!table) return;
+      if (!window.jQuery || !$.fn.dataTable || !$.fn.dataTable.isDataTable(table)) {
+        return setTimeout(initCodeFilters, 100);
+      }
+      var dt = $(table).DataTable();
+      var typeSel = document.getElementById('codeTypeFilter');
+      var clientSel = document.getElementById('codeClientFilter');
+      var showClosed = document.getElementById('codeShowClosed');
+
+      var clients = new Set();
+      table.querySelectorAll('tbody tr').forEach(function (tr) {
+        var c = tr.getAttribute('data-client');
+        if (c && c !== '__none__') clients.add(c);
+      });
+      Array.from(clients).sort().forEach(function (c) { clientSel.add(new Option(c, c)); });
+
+      $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
+        if (settings.nTable !== table) return true;
+        var tr = settings.aoData[dataIndex].nTr;
+        if (tr.getAttribute('data-closed') === '1' && !showClosed.checked) return false;
+        if (typeSel.value && (tr.getAttribute('data-types') || '').indexOf('|' + typeSel.value + '|') === -1) return false;
+        if (clientSel.value && tr.getAttribute('data-client') !== clientSel.value) return false;
+        return true;
+      });
+      [typeSel, clientSel, showClosed].forEach(function (el) {
+        el.addEventListener('change', function () { dt.draw(); });
+      });
+      dt.draw(); // apply the default filter (hide closed codes)
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initCodeFilters);
+    } else {
+      initCodeFilters();
+    }
+  })();
+</script>

@@ -20,21 +20,23 @@
 </div>
 {% endif %}
 
-<div class="row mb-4 gx-6 gy-3 mt-2 align-items-center">
-  <div class="col">
-    <h2 class="mb-0">Billing Codes</h2>
+<div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+  <div>
+    <h4 class="mb-0">Billing codes</h4>
+    <p class="fs-9 text-body-tertiary mb-0">Codes you can reach: your units' clients' codes plus internal (client-less) codes.</p>
   </div>
-  <div class="col-3 d-flex justify-content-end">
-    <a class="btn btn-phoenix-primary px-5" href="{% url 'billingcode_create' %}">
-      <i class="fa-solid fa-plus me-2"></i>
-      Add new Billing Code
+  <div class="d-flex flex-wrap align-items-center gap-2 ms-md-auto">
+    <a class="btn btn-sm btn-phoenix-secondary" href="{% url 'billingcode_analytics' %}">
+      <span class="fa-solid fa-chart-pie me-1"></span>Analytics
     </a>
+    {% if perms.jobtracker.add_billingcode %}
+      <a class="btn btn-sm btn-phoenix-primary" href="{% url 'billingcode_create' %}">
+        <span class="fa-solid fa-plus me-1"></span>New code
+      </a>
+    {% endif %}
   </div>
 </div>
 
-
-<div class="mx-n4 px-3 py-3 mx-lg-n6 px-lg-6 bg-body-emphasis border-top border-bottom border-200 position-relative top-1">
-  {% include 'partials/billingcode/billingcode_list_table.html' %}
-</div>
+{% include 'partials/billingcode/billingcode_list_table.html' %}
 
 {% endblock content %}

@@ -6,6 +6,7 @@ tests assert internal *consistency* (per-day sum equals the whole-slot total)
 rather than brittle absolute hour counts.
 """
 
+import json
 from datetime import date, timedelta
 from decimal import Decimal
 
@@ -395,12 +396,6 @@ class BuildCodeAnalyticsTests(TestCase):
         self.assertEqual(bucket["client"], self.client_obj)
         self.assertEqual(bucket["codes"], {self.code.id})
 
-    def test_internal_only_excludes_client_codes(self):
-        from chaotica_utils.utils import build_code_analytics
-
-        analytics = build_code_analytics(self.users, *self.win, internal_only=True)
-        self.assertEqual(analytics["per_code"], {})
-
     def test_query_count_does_not_grow_with_cohort_size(self):
         """The roll-up must not fan out per user (the original perf bug).
 
@@ -418,6 +413,37 @@ class BuildCodeAnalyticsTests(TestCase):
 
         self.assertEqual(len(many), len(one))
         self.assertLessEqual(len(many), 6)
+
+    def test_single_code_matches_cohort_rollup(self):
+        from chaotica_utils.utils import build_code_analytics, build_single_code_analytics
+
+        cohort = build_code_analytics(self.users, *self.win)["per_code"][self.code.id]
+        one = build_single_code_analytics(self.code, self.users, *self.win)
+        self.assertEqual(one["totals"]["hours"], cohort["hours"])
+        self.assertEqual(one["totals"]["days"], cohort["days"])
+        self.assertEqual(one["totals"]["people"], 3)
+        self.assertEqual({r["user"] for r in one["by_user"]}, set(self.users))
+        # All the time is on the one phase, and lands in its month.
+        self.assertEqual(len(one["by_target"]), 1)
+        self.assertEqual(one["by_target"][0]["hours"], cohort["hours"])
+        self.assertEqual(sum(m["hours"] for m in one["by_month"]), cohort["hours"])
+
+    def test_single_code_ignores_phase_override(self):
+        """A phase with its own codes doesn't inherit the job's code."""
+        from chaotica_utils.utils import build_single_code_analytics
+
+        other = BillingCode.objects.create(code="B-2", client=self.client_obj)
+        BillingCodeAssignment.objects.create(code=other, phase=self.phase)
+        one = build_single_code_analytics(self.code, self.users, *self.win)
+        self.assertEqual(one["totals"]["hours"], 0)
+        self.assertEqual(one["by_user"], [])
+
+    def test_unassigned_code_is_empty(self):
+        from chaotica_utils.utils import build_single_code_analytics
+
+        unused = BillingCode.objects.create(code="UNUSED")
+        one = build_single_code_analytics(unused, self.users, *self.win)
+        self.assertEqual(one["totals"], {"hours": 0, "days": 0, "people": 0})
 
 
 class BillingCodeScopingTests(TestCase):
@@ -482,11 +508,42 @@ class BillingViewSmokeTests(TestCase):
         )
         self.assertEqual(resp.status_code, 403)
 
-    def test_analytics_and_wbs_render(self):
+    def test_analytics_renders(self):
         self.http.force_login(self.root)  # superuser has view_billingcode
-        for name in ("billingcode_analytics", "billingcode_wbs_list", "billingcode_wbs_analytics"):
-            resp = self.http.get(reverse(name))
-            self.assertEqual(resp.status_code, 200, name)
+        url = reverse("billingcode_analytics")
+        for qs in ("", "?start_date=2026-01-01&end_date=2026-03-31", "?dateRange=bad"):
+            resp = self.http.get(url + qs)
+            self.assertEqual(resp.status_code, 200, qs)
+
+    def test_code_list_detail_and_analytics_tab_render(self):
+        code = BillingCode.objects.create(code="INT-9", is_internal=True)
+        self.http.force_login(self.root)
+        self.assertEqual(self.http.get(reverse("billingcode_list")).status_code, 200)
+        self.assertEqual(
+            self.http.get(reverse("billingcode_detail", kwargs={"code": code.code})).status_code,
+            200,
+        )
+        resp = self.http.get(
+            reverse("billingcode_analytics_partial", kwargs={"code": code.code})
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("stats-range-picker", json.loads(resp.content)["html"])
+
+    def test_analytics_tab_hides_unreachable_code(self):
+        client_code = BillingCode.objects.create(
+            code="SECRET-1", client=Client.objects.create(name="Hidden")
+        )
+        self.http.force_login(self.stranger)
+        resp = self.http.get(
+            reverse("billingcode_analytics_partial", kwargs={"code": client_code.code})
+        )
+        self.assertIn(resp.status_code, (403, 404))
+
+    def test_wbs_page_removed(self):
+        from django.urls import NoReverseMatch
+
+        with self.assertRaises(NoReverseMatch):
+            reverse("billingcode_wbs_list")
 
 
 class BuildCohortCodeAllocationTests(TestCase):

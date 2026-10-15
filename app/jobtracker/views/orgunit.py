@@ -353,8 +353,12 @@ def orgunit_jobs_partial(request, slug):
         unit.jobs.annotate(phase_count=Count("phases")).select_related("client")
     )
     html = loader.render_to_string(
-        "partials/unit/jobs_table.html",
-        {"job_list": job_list},
+        "partials/job/job_table_compact.html",
+        {
+            "job_list": job_list,
+            "table_id": "unitJobsTable",
+            "empty_text": "No jobs in this unit yet.",
+        },
         request=request,
     )
     return JsonResponse({"html": html})
