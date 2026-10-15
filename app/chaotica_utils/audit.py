@@ -100,7 +100,7 @@ def record_audit(
 ):
     """Write an :class:`AuditEvent`. Returns the instance, or ``None`` on failure.
 
-    ``actor`` defaults to the request thread-local user; pass ``None`` to force
+    ``actor`` defaults to the current request's user; pass ``None`` to force
     a SYSTEM event, or a specific user to override.
     """
     try:
@@ -117,6 +117,15 @@ def record_audit(
         ct, target_id, target_repr = _target_bits(target)
 
         meta = dict(metadata) if metadata else {}
+        if resolved_actor is not None:
+            # During impersonation the actor is the effective (impersonated)
+            # user; record who was really at the keyboard.
+            from .middleware.common import get_current_impersonator
+
+            impersonator = get_current_impersonator()
+            if impersonator is not None and impersonator != resolved_actor:
+                meta.setdefault("impersonator_id", impersonator.pk)
+                meta.setdefault("impersonator", str(impersonator)[:255])
         if request is not None:
             meta.setdefault("ip", _client_ip(request))
             meta.setdefault("path", request.path)
