@@ -33,8 +33,9 @@ class RolePermissionSyncTests(TestCase):
         # Scheduler must carry can_schedule_job regardless of any pk.
         perms = UnitRoles.get_default_permissions_for_role("Scheduler")
         self.assertIn("jobtracker.can_schedule_job", perms)
-        # Service Delivery and Manager too.
-        self.assertIn(
+        # Manager too - but not Service Delivery (only Schedulers and Managers
+        # schedule).
+        self.assertNotIn(
             "jobtracker.can_schedule_job",
             UnitRoles.get_default_permissions_for_role("Service Delivery"),
         )

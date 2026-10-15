@@ -313,7 +313,7 @@ def change_job_schedule_slot(request, slug, pk=None):
     return JsonResponse(data)
 
 
-@job_permission_required_or_403("jobtracker.can_schedule_job", (Job, "slug", "slug"))
+@job_permission_required_or_403("jobtracker.manage_members", (Job, "slug", "slug"))
 def job_support_team_add(request, slug):
     job = get_object_or_404(Job, slug=slug)
     data = dict()
@@ -347,7 +347,7 @@ def job_support_team_add(request, slug):
     return JsonResponse(data)
 
 
-@job_permission_required_or_403("jobtracker.can_schedule_job", (Job, "slug", "slug"))
+@job_permission_required_or_403("jobtracker.manage_members", (Job, "slug", "slug"))
 def job_support_team_edit(request, slug, pk):
     job = get_object_or_404(Job, slug=slug)
     support_role = get_object_or_404(JobSupportTeamRole, pk=pk, job=job)
@@ -386,7 +386,7 @@ def job_support_team_edit(request, slug, pk):
     return JsonResponse(data)
 
 
-@job_permission_required_or_403("jobtracker.can_schedule_job", (Job, "slug", "slug"))
+@job_permission_required_or_403("jobtracker.manage_members", (Job, "slug", "slug"))
 def job_support_team_mark_used(request, slug, pk):
     job = get_object_or_404(Job, slug=slug)
     support_role = get_object_or_404(JobSupportTeamRole, pk=pk, job=job)
@@ -413,7 +413,7 @@ def job_support_team_mark_used(request, slug, pk):
     return JsonResponse(data)
 
 
-@job_permission_required_or_403("jobtracker.can_schedule_job", (Job, "slug", "slug"))
+@job_permission_required_or_403("jobtracker.manage_members", (Job, "slug", "slug"))
 def job_support_team_delete(request, slug, pk):
     job = get_object_or_404(Job, slug=slug)
     support_role = get_object_or_404(JobSupportTeamRole, pk=pk, job=job)
@@ -441,7 +441,7 @@ def job_support_team_delete(request, slug, pk):
     return JsonResponse(data)
 
 
-@job_permission_required_or_403("jobtracker.can_schedule_job", (Job, "slug", "slug"))
+@job_permission_required_or_403("jobtracker.manage_members", (Job, "slug", "slug"))
 def job_support_team_apply_template(request, slug):
     """Choose / switch / re-apply the job's support profile.
 
@@ -503,7 +503,7 @@ def job_support_team_apply_template(request, slug):
     return JsonResponse(data)
 
 
-@job_permission_required_or_403("jobtracker.can_schedule_job", (Job, "slug", "slug"))
+@job_permission_required_or_403("jobtracker.manage_members", (Job, "slug", "slug"))
 def job_support_team_draw(request, slug, pk):
     """Cash-out (draw down) budgeted support hours for a timesheet period.
 
@@ -563,7 +563,8 @@ def job_support_team_draw(request, slug, pk):
 
 
 def can_reverse_support_draws(user, job):
-    """Who may reverse (delete) a cash-out: job schedulers or unit finance,
+    """Who may reverse (delete) a cash-out: job schedulers, support-team
+    managers (``manage_members``: Service Delivery / Manager) or unit finance,
     while the job can still be cashed out (reversing on a closed job would
     free budget that can never be drawn again).
 
@@ -577,13 +578,14 @@ def can_reverse_support_draws(user, job):
     return (
         user.has_perm("jobtracker.can_schedule_job", job)
         or user.has_perm("jobtracker.can_schedule_job", job.unit)
+        or user.has_perm("jobtracker.manage_members", job.unit)
         or user.has_perm("jobtracker.can_view_loaded_costs", job.unit)
     )
 
 
 def can_cash_out_support_role(user, support_role):
     """Who may cash out a support role from the job page (on top of
-    ``can_schedule_job``): the member themselves, their managers, or unit
+    ``manage_members``): the member themselves, their managers, or unit
     finance. Scheduling rights alone don't let you draw someone else's
     budget."""
     if user.is_superuser:
@@ -1071,6 +1073,10 @@ class JobScheduleView(UnitPermissionRequiredMixin, JobBaseView, DetailView):
         context["user_breakdown"] = get_user_schedule_breakdown(context["job"])
         context["utilisation"] = get_schedule_utilisation(context["job"])
         context["hours_in_day"] = context["job"].get_hours_in_day()
+        from ..utils import user_has_unit_perms
+        context["sched_readonly"] = not user_has_unit_perms(
+            self.request.user, "jobtracker.can_schedule_job", obj=context["job"]
+        )
         return context
 
 

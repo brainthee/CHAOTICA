@@ -441,6 +441,10 @@ class PhaseScheduleView(UnitPermissionRequiredMixin, PhaseBaseView, DetailView):
         )
         context["utilisation"] = get_schedule_utilisation(context["job"], context["phase"])
         context["hours_in_day"] = context["phase"].get_hours_in_day()
+        from ..utils import user_has_unit_perms
+        context["sched_readonly"] = not user_has_unit_perms(
+            self.request.user, "jobtracker.can_schedule_job", obj=context["phase"]
+        )
         # Scheduling Assistant: is the phase's schedule still a draft (tentative)?
         context["schedule_is_confirmed"] = (
             context["phase"].status >= PhaseStatuses.SCHEDULED_CONFIRMED

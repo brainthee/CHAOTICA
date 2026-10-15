@@ -1039,7 +1039,8 @@ class SupportProfileTests(SupportBudgetTestBase):
 
     def test_change_profile_view_premium_needs_finance_perm(self):
         scheduler = self._user(9)
-        assign_perm("jobtracker.can_schedule_job", scheduler, self.unit)
+        # Support teams are managed with manage_members (SD / Manager).
+        assign_perm("jobtracker.manage_members", scheduler, self.unit)
         assign_perm("jobtracker.can_view_jobs", scheduler, self.unit)
         http = TestHttpClient(HTTP_HOST="localhost")
         http.force_login(scheduler)
@@ -1111,7 +1112,7 @@ class SupportProfileTests(SupportBudgetTestBase):
 
 class CashOutRulesTests(SupportBudgetTestBase):
     """Server-side cash-out rules: never overdraw (all three entry points),
-    scheduling rights alone don't cash out someone else's budget, and only
+    support-team management rights alone don't cash out someone else's budget, and only
     current/past periods can be cashed out."""
 
     def setUp(self):
@@ -1123,8 +1124,10 @@ class CashOutRulesTests(SupportBudgetTestBase):
         self.member.save()
         self.scheduler = self._user(3)
         self.finance = self._user(4)
+        # The job-page support views are gated on manage_members (SD /
+        # Manager); can_cash_out_support_role then narrows who may draw.
         for u in (self.scheduler, self.manager, self.finance):
-            assign_perm("jobtracker.can_schedule_job", u, self.unit)
+            assign_perm("jobtracker.manage_members", u, self.unit)
             assign_perm("jobtracker.can_view_jobs", u, self.unit)
         assign_perm("jobtracker.can_view_loaded_costs", self.finance, self.unit)
         self.http = TestHttpClient(HTTP_HOST="localhost")

@@ -112,6 +112,44 @@ def viewable_schedule_user_pks(user):
     return pks
 
 
+def user_has_unit_perms(user, perms, obj=None, accept_global_perms=False, any_perm=False):
+    """The permission test behind the unit/job ``*_or_403`` decorators.
+
+    Passes on a global perm (if ``accept_global_perms``), an object perm on
+    ``obj``, or the perm on the governing unit (a Job / Phase's job unit / the
+    unit itself). With no ``obj`` it passes if ANY of the user's current
+    memberships grants the perms (not just the first) - endpoints like that
+    still verify the specific unit/object afterwards. Also used by pages to
+    decide whether to offer the edit UI, so the UI and the server agree."""
+    if not user.is_authenticated:
+        return False
+    if isinstance(perms, str):
+        perms = [perms]
+    check = any if any_perm else all
+    if accept_global_perms and all(user.has_perm(perm) for perm in perms):
+        return True
+    if check(user.has_perm(perm, obj) for perm in perms):
+        return True
+    units = []
+    if obj:
+        if isinstance(obj, Job):
+            units = [obj.unit]
+        if isinstance(obj, Phase):
+            units = [obj.job.unit]
+        if isinstance(obj, OrganisationalUnit):
+            units = [obj]
+    else:
+        units = [
+            m.unit
+            for m in user.unit_memberships.filter(left_date__isnull=True).select_related(
+                "unit"
+            )
+        ]
+    return any(
+        unit and check(user.has_perm(perm, unit) for perm in perms) for unit in units
+    )
+
+
 def get_unit_40x_or_None(
     request,
     perms,
@@ -137,45 +175,13 @@ def get_unit_40x_or_None(
             request.get_full_path(), login_url, redirect_field_name
         )
 
-    has_permissions = False
-
-    if request.user.is_authenticated:
-        # global perms check first (if accept_global_perms)
-        if accept_global_perms:
-            has_permissions = all(request.user.has_perm(perm) for perm in perms)
-        # if still no permission granted, try obj perms
-        if not has_permissions:
-            if any_perm:
-                has_permissions = any(
-                    request.user.has_perm(perm, obj) for perm in perms
-                )
-            else:
-                has_permissions = all(
-                    request.user.has_perm(perm, obj) for perm in perms
-                )
-        # Ok, now lets check unit permissions...
-        if not has_permissions:
-            unit = None
-            if obj:
-                if isinstance(obj, Job):
-                    unit = obj.unit
-                if isinstance(obj, Phase):
-                    unit = obj.job.unit
-                if isinstance(obj, OrganisationalUnit):
-                    unit = obj
-            else:
-                # get our own units
-                membership = request.user.unit_memberships.first()
-                unit = membership.unit if membership else None
-            if unit:
-                if any_perm:
-                    has_permissions = any(
-                        request.user.has_perm(perm, unit) for perm in perms
-                    )
-                else:
-                    has_permissions = all(
-                        request.user.has_perm(perm, unit) for perm in perms
-                    )
+    has_permissions = user_has_unit_perms(
+        request.user,
+        perms,
+        obj=obj,
+        accept_global_perms=accept_global_perms,
+        any_perm=any_perm,
+    )
 
     if not has_permissions:
         if return_403:

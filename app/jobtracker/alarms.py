@@ -15,7 +15,7 @@ Scoping is per role and per category:
   job's account/scoping team) -> every alarm for that phase/job.
 * Unit managers (change_organisationalunit) -> all alarms unit-wide.
 * TQA / PQA role -> TQA / PQA alarms unit-wide.
-* Schedulers / Service Delivery (can_schedule_job) -> unscheduled, missing
+* Schedulers (can_schedule_job) -> unscheduled, missing
   billing code and stale-demand alarms unit-wide.
 """
 

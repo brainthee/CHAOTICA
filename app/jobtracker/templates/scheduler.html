@@ -37,7 +37,7 @@
 {% block content %}
   {% csrf_token %}
   <div class="bg-body-emphasis w-100 {% if config.SITE_NOTICE_ENABLED %}pt-5{% endif %}">
-    {% include 'partials/scheduler/vis_scheduler_toolbar.html' %}
+    {% include 'partials/scheduler/vis_scheduler_toolbar.html' with readonly=sched_readonly %}
     <div id="sched-progress" class="sched-progress" role="progressbar" aria-hidden="true"></div>
     <div id="vis-timeline"></div>
   </div>
@@ -97,6 +97,8 @@
   <script>
     window.SCHEDULER_CONFIG = {
       scope: 'global',
+      readonly: {{ sched_readonly|yesno:'true,false' }},
+      embedded: false,
       membersUrl: "{% url 'view_scheduler_members' %}",
       slotsUrl: "{% url 'view_scheduler_slots' %}",
       exportUrl: "{% url 'export_scheduler_view' %}",

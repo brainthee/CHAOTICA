@@ -180,6 +180,9 @@ class OrganisationalUnit(SoftDeleteModel):
         "can_view_loaded_costs",
         "can_approve_leave_requests",
         "can_view_all_leave_requests",
+        # Without this, Service Delivery (manage_members) could hand itself the
+        # Scheduler role and side-step "only Schedulers and Managers schedule".
+        "can_schedule_job",
     }
 
     def assignable_roles(self, user):

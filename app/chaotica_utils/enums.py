@@ -519,7 +519,7 @@ class UnitRoles:
                 "jobtracker.can_add_note_job",
                 "jobtracker.view_users_schedule",
                 "jobtracker.can_refire_notifications_job",
-                "jobtracker.can_schedule_job",
+                # No can_schedule_job: only Schedulers and Managers schedule.
                 "jobtracker.manage_members",
                 # Leave
                 "jobtracker.can_approve_leave_requests",

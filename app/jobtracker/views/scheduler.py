@@ -46,6 +46,7 @@ from ..utils import (
     phase_assigned_role_map,
     can_view_job_schedule,
     viewable_schedule_user_pks,
+    user_has_unit_perms,
 )
 from .. import schedule_history
 import logging
@@ -284,6 +285,11 @@ def view_scheduler(request):
     context["filter_form"] = SchedulerFilter(request.GET, user=request.user)
     context["has_default_filter"] = bool(saved)
     context["is_default_view"] = request.GET.get("_dv") == "1"
+    # Same test the edit endpoints apply: no scheduling rights anywhere ->
+    # read-only timeline instead of edit tools that 403.
+    context["sched_readonly"] = not user_has_unit_perms(
+        request.user, "jobtracker.can_schedule_job"
+    )
     return HttpResponse(template.render(context, request))
 
 

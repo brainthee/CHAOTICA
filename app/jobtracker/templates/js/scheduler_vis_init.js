@@ -15,7 +15,10 @@
   var slotsUrl   = CFG.slotsUrl;
   var createUrls = CFG.createUrls || {};
   var createExtraParams = CFG.createExtraParams || '';
-  var readonly = !!CFG.readonly;   // embedded read-only view (detail tabs)
+  var readonly = !!CFG.readonly;   // no edit tools (detail tabs, or no scheduling rights)
+  // Embedded preview inside a detail tab (bounded height, deferred fit). Full
+  // scheduler pages that are read-only for this viewer pass embedded: false.
+  var embedded = ('embedded' in CFG) ? !!CFG.embedded : readonly;
   // Job/phase views fade in "other" slots (commitments outside this job/phase) so
   // gaps can be trusted; on the global view, slots outside the job/phase/client/
   // project filters are faded the same way. The user can hide that noise — remembered
@@ -162,7 +165,7 @@
       ? footerEl.getBoundingClientRect().top
       : window.innerHeight;
     var h = Math.max(240, Math.floor(bottom - cTop - 8));
-    if (readonly) h = Math.min(h, 520);   // bounded preview inside a detail tab
+    if (embedded) h = Math.min(h, 520);   // bounded preview inside a detail tab
     container.style.height = h + 'px';
     timeline.setOptions({ minHeight: h, maxHeight: h });
   }
@@ -1400,5 +1403,5 @@
   loadSlots();
   // Editable scoped pages (not hidden in a tab) can fit immediately; read-only
   // embeds defer to __schedRedraw above once their tab is shown.
-  if (scopedFit && !readonly) { didScopedFit = true; fitToData(); }
+  if (scopedFit && !embedded) { didScopedFit = true; fitToData(); }
 })();

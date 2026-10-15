@@ -47,7 +47,7 @@
 
   <div class="row min-vh-100 g-0 mt-3 border-1 border-top bg-body-secondary">
     <div class="col-12 col-md-9 px-0 border-1 border-end">
-      {% include 'partials/scheduler/vis_scheduler_toolbar.html' %}
+      {% include 'partials/scheduler/vis_scheduler_toolbar.html' with readonly=sched_readonly %}
       <div id="sched-progress" class="sched-progress" role="progressbar" aria-hidden="true"></div>
       <div id="vis-timeline"></div>
     </div>
@@ -55,8 +55,10 @@
     <div class="col-12 col-md-3 px-0 border-start-xxl border-300 border-top-0">
       <div class="col-12 h-100">
         <div class="bg-body-secondary h-100 p-3">
+          {% if not sched_readonly %}
           {% include 'partials/scheduler/schedule_tools.html' %}
           {% include 'partials/scheduler/schedule_assistant.html' %}
+          {% endif %}
           <div id="schedule-user-breakdown-container">
             {% include 'partials/scheduler/schedule_user_breakdown.html' %}
           </div>
@@ -74,6 +76,8 @@
   <script>
     window.SCHEDULER_CONFIG = {
       scope: 'phase',
+      readonly: {{ sched_readonly|yesno:'true,false' }},
+      embedded: false,
       membersUrl: "{% url 'view_phase_schedule_members' phase.job.slug phase.slug %}",
       slotsUrl: "{% url 'view_phase_schedule_slots' phase.job.slug phase.slug %}",
       changeDateUrl: "{% url 'change_scheduler_slot_date' %}",
