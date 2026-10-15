@@ -120,6 +120,26 @@ class AuditWriterTests(TestCase):
 
 
 @override_settings(ALLOWED_HOSTS=["*", "testserver", "localhost"])
+class AuditWriteFailureTests(TestCase):
+    def test_failed_write_leaves_callers_transaction_usable(self):
+        from unittest.mock import patch
+
+        from django.db import DatabaseError, transaction
+
+        def broken_save(self, *args, **kwargs):
+            # What a DB-level failure inside Model.save() does: marks the
+            # enclosing atomic block for rollback, then raises.
+            with transaction.mark_for_rollback_on_error():
+                raise DatabaseError("Incorrect string value")
+
+        with transaction.atomic():
+            with patch.object(AuditEvent, "save", broken_save):
+                self.assertIsNone(record_audit(None, AuditVerb.OTHER, message="x"))
+            # Without the savepoint this raises TransactionManagementError.
+            User.objects.create_user(email="after@audit.com", password="pw")
+        self.assertTrue(User.objects.filter(email="after@audit.com").exists())
+
+
 class AuditReadScopingTests(TestCase):
     def setUp(self):
         self.admin = User.objects.create_user(email="admin@test.com", password="pw12345")

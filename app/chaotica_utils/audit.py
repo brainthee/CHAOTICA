@@ -16,6 +16,7 @@ Design notes:
 """
 
 import logging
+from django.db import transaction
 
 logger = logging.getLogger(__name__)
 
@@ -134,7 +135,11 @@ def record_audit(
             changes=_scrub(changes) if changes else None,
             metadata=_scrub(meta) if meta else None,
         )
-        event.save()
+        # Savepoint: if the write fails (e.g. a 4-byte emoji in a name on a
+        # utf8mb3 column) only the audit row rolls back, not the caller's
+        # transaction, which would otherwise be unusable from here on.
+        with transaction.atomic():
+            event.save()
         return event
     except Exception:
         logger.exception("Failed to record audit event (verb=%s)", verb)
