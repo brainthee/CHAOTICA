@@ -70,8 +70,8 @@
         </div>
         <div class="col-6 col-md-3">
           <div class="border border-translucent rounded-3 p-2 h-100">
-            <div class="fs-10 text-body-tertiary">Jobs</div>
-            <div class="fs-7 fw-semibold">{{ job_list|length }}</div>
+            <div class="fs-10 text-body-tertiary">Job assignments</div>
+            <div class="fs-7 fw-semibold">{{ job_assignment_count }}</div>
           </div>
         </div>
         <div class="col-6 col-md-3">
@@ -100,9 +100,6 @@
         </li>
         <li class="nav-item text-nowrap me-2" role="presentation">
           <a class="nav-link" id="assignments-tab" data-bs-toggle="tab" href="#assignments" role="tab" aria-controls="tab-assignments" aria-selected="false" tabindex="-1"><span class="fa-solid fa-link me-2 tab-icon-color"></span>Assignments</a>
-        </li>
-        <li class="nav-item text-nowrap me-2" role="presentation">
-          <a class="nav-link" id="jobs-tab" data-bs-toggle="tab" href="#jobs" role="tab" aria-controls="tab-jobs" aria-selected="false" tabindex="-1"><span class="fa-solid fa-briefcase me-2 tab-icon-color"></span>Jobs</a>
         </li>
         <li class="nav-item text-nowrap me-2" role="presentation">
           <a class="nav-link" id="activity-tab" data-bs-toggle="tab" href="#activity" role="tab" aria-controls="tab-activity" aria-selected="false" tabindex="-1"><span class="fa-solid fa-clock-rotate-left me-2 tab-icon-color"></span>Activity</a>
@@ -161,18 +158,6 @@
                   </tbody>
                 </table>
               </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="tab-pane fade py-3" id="jobs" role="tabpanel" aria-labelledby="jobs-tab">
-          <div class="mb-3">
-            <h4 class="mb-0">Jobs</h4>
-            <p class="fs-9 text-body-tertiary mb-0">Jobs this code is assigned to, directly or through one of their phases.</p>
-          </div>
-          <div class="card">
-            <div class="card-body">
-              {% include 'partials/job/job_table_compact.html' with table_id='codeJobsTable' empty_text='No jobs use this code.' %}
             </div>
           </div>
         </div>

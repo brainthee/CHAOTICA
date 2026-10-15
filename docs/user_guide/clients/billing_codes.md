@@ -28,8 +28,8 @@ you switch on **Show closed**. **Analytics** opens Billing Analytics and
 ### Billing code page
 
 Each code's page has a header with the client, region, type badges and
-open/closed status, plus tiles for active assignments (today), jobs, phase
-assignments and project assignments. **Edit** and **Delete** need
+open/closed status, plus tiles for active assignments (today) and job, phase
+and project assignments. **Edit** and **Delete** need
 `change_billingcode` / `delete_billingcode`. Tabs:
 
 - **Analytics** — scheduled hours, person-days and people booked against the
@@ -40,7 +40,6 @@ assignments and project assignments. **Edit** and **Delete** need
   and only counts people you can see.
 - **Assignments** — every job / phase / project the code is assigned to, with
   its date range, who added it, and whether it applies today.
-- **Jobs** — jobs the code applies to, directly or through one of their phases.
 - **Activity** — changes to the code and its assignments.
 
 | Field | Description |

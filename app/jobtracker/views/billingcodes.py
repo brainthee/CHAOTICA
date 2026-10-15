@@ -75,8 +75,6 @@ class BillingCodeDetailView(ObjectActivityMixin, BillingCodeBaseView, Permission
         )
 
     def get_context_data(self, **kwargs):
-        from ..models import Job
-
         context = super().get_context_data(**kwargs)
         code = self.object
         today = timezone.now().date()
@@ -95,15 +93,6 @@ class BillingCodeDetailView(ObjectActivityMixin, BillingCodeBaseView, Permission
         context["phase_assignment_count"] = sum(1 for a in assignments if a.phase_id)
         context["project_assignment_count"] = sum(1 for a in assignments if a.project_id)
 
-        # Jobs the code applies to: assigned directly, or through a phase.
-        job_pks = {a.job_id for a in assignments if a.job_id} | {
-            a.phase.job_id for a in assignments if a.phase_id
-        }
-        context["job_list"] = list(
-            Job.objects.filter(pk__in=job_pks)
-            .select_related("client")
-            .annotate(phase_count=Count("phases", distinct=True))
-        )
         return context
 
 
