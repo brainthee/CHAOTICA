@@ -1947,6 +1947,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../operations/services/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Services
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../operations/loaded_cost_rates/" class="md-nav__link">
         
   
@@ -3289,15 +3317,17 @@ through the setup wizard).</p>
 <li>Save.</li>
 </ol>
 <p>If the email already belongs to an existing user, they're simply added to the
-unit (their existing site role is left untouched).</p>
-<p>If that account had been <strong>disabled</strong>:</p>
+unit (their existing site role is left untouched). If they had left the unit,
+their old membership is reopened with the roles it had, plus any you choose.</p>
+<p>If that account had been <strong>deactivated</strong>:</p>
 <ul>
-<li>Users with the global <strong>Manage Users</strong> permission <strong>re-enable</strong> it by
+<li>Users with the global <strong>Manage Users</strong> permission <strong>reactivate</strong> it by
   pre-loading or importing it, so someone who was off-boarded and later returns
-  regains access. The re-enable is recorded in the Activity Log.</li>
+  regains access. Reactivation also reopens the unit and team memberships that
+  deactivation closed. It's recorded in the Activity Log.</li>
 <li>Unit managers without that permission add the membership, but the account
-  <strong>stays disabled</strong> and you're told to ask an admin. Re-enabling an account is
-  a site-wide change, not a unit one.</li>
+  <strong>stays deactivated</strong> and you're told to ask an admin. Reactivating an account
+  is a site-wide change, not a unit one.</li>
 </ul>
 <p>You can't pre-load or import <strong>yourself</strong>, and you can only assign unit roles
 within your own authority: a role that carries unit-admin rights (managing

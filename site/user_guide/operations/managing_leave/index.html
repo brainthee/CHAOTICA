@@ -12,7 +12,7 @@
         <link rel="prev" href="../../scheduling/calendar_feeds/">
       
       
-        <link rel="next" href="../loaded_cost_rates/">
+        <link rel="next" href="../services/">
       
       
         
@@ -1955,6 +1955,28 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#who-approves-a-request" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Who approves a request
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#leave-from-resource-manager" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Leave from Resource Manager
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#approval-hierarchy" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2302,6 +2324,34 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../services/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Services
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -3639,6 +3689,28 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#who-approves-a-request" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Who approves a request
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#leave-from-resource-manager" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Leave from Resource Manager
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#approval-hierarchy" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4112,6 +4184,33 @@ Client Communication: How clients should be handled
 - Extended leave (&gt;2 weeks): Comprehensive handover planning
 - Recurring leave: Consider impact on team and clients</p>
 <h2 id="approval-process">Approval Process<a class="headerlink" href="#approval-process" title="Permanent link">&para;</a></h2>
+<h3 id="who-approves-a-request">Who approves a request<a class="headerlink" href="#who-approves-a-request" title="Permanent link">&para;</a></h3>
+<p>CHAOTICA sends each request to, and lets it be approved by:</p>
+<ol>
+<li>The person's <strong>manager</strong> and <strong>acting manager</strong>, if their accounts are active.</li>
+<li>Otherwise (no manager set, or both deactivated), the <strong>unit leave approvers</strong>:
+   people holding <em>Can approve leave requests</em> in a unit the person currently
+   belongs to (Service Delivery and Manager by default).</li>
+</ol>
+<p>Unit leave approvers can approve a member's leave even when the member has a
+manager. <strong>Nobody can approve their own leave</strong>, with or without a manager.</p>
+<p>When someone's manager or acting manager changes, or a manager's account is
+deactivated or reactivated, their open requests move to the new approvers
+straight away (notifications included). People who've left a unit no longer
+get its leave notifications.</p>
+<p>People can't set their own manager, acting manager or leave allowance; their
+manager or an admin does, on the profile's edit page or in bulk with
+<strong>Users → Import Managers</strong> (see <a href="../../team/user_management/#setting-managers-in-bulk">User Management</a>).</p>
+<h3 id="leave-from-resource-manager">Leave from Resource Manager<a class="headerlink" href="#leave-from-resource-manager" title="Permanent link">&para;</a></h3>
+<p>For people whose schedule comes from Resource Manager (RM), such as the Iberia
+team, RM is the source of truth. Their leave is imported from RM and shows a
+<strong>Managed in RM</strong> badge:</p>
+<ul>
+<li>It can't be cancelled or edited in CHAOTICA (the Cancel button is hidden and the
+  server refuses it). Change or cancel it in RM.</li>
+<li>If RM changes the dates or the leave type, the next sync updates the same
+  request rather than adding another. If it's removed from RM, it's removed here.</li>
+</ul>
 <h3 id="approval-hierarchy">Approval Hierarchy<a class="headerlink" href="#approval-hierarchy" title="Permanent link">&para;</a></h3>
 <p><strong>Direct Manager</strong>:
 - Primary approval for most leave requests

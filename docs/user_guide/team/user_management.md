@@ -45,8 +45,9 @@ User management in CHAOTICA encompasses creating accounts, managing permissions,
 - Resource scheduling and assignment
 - Notification delivery enabled
 
-**Inactive Accounts**:
-- Temporarily disabled access
+**Deactivated Accounts**:
+- Can't sign in; their unit and team memberships are closed
+- Reactivating the account reopens the memberships deactivation closed, with their roles
 - Scheduled reactivation possible
 - Historical data preserved
 - Limited system visibility
@@ -239,6 +240,7 @@ Time Zone: User's time zone
 - Configure notification settings
 
 **Restricted Fields**:
+- Manager, acting manager and leave allowance (set by the person's manager or an admin, never self-service)
 - Employee ID and administrative data
 - Role and permission assignments
 - Organizational unit memberships
@@ -287,6 +289,21 @@ Time Zone: User's time zone
 - Bulk role assignments and changes
 - Mass email and communication
 - Batch permission updates
+
+### Setting managers in bulk
+
+**Users → Import Managers** (needs the global *Manage Users* permission) sets
+people's manager and acting manager from a CSV with the columns `email`,
+`manager_email` and `acting_manager_email`. Download the template from the page.
+
+- A blank cell leaves that field as it is; `-` or `none` clears it.
+- **Preview first:** uploading changes nothing. Each row shows the change, *No
+  change*, or why it can't be applied: unknown person, unknown or deactivated
+  manager, someone set as their own manager, a duplicate row, or a change that
+  would make a management loop.
+- **Apply** re-checks the rows against current data and applies the changes in one
+  go, skipping rows that can't be applied. Each change is recorded in the Activity
+  Log, and the person's open leave requests move to the new manager.
 
 ### Reporting and Analytics
 

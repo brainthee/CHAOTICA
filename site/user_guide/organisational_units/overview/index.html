@@ -2051,6 +2051,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../operations/services/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Services
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../operations/loaded_cost_rates/" class="md-nav__link">
         
   
@@ -3485,7 +3513,7 @@ badge. <strong>New unit</strong> appears only for people with <code>add_organisa
 <li>Unit name and description</li>
 <li><strong>Leads</strong> — the unit's lead(s) shown as clickable avatar chips linking to each profile (or "No leads assigned"). Being named a lead automatically grants that person <strong>manager rights</strong> on the unit (including the ability to add and <a href="../preloading_members/">import members</a>).</li>
 <li><strong>At-a-glance stats</strong>:<ul>
-<li><strong>Members</strong> — active (non-disabled) members</li>
+<li><strong>Members</strong> — current members whose accounts are active (not deactivated)</li>
 <li><strong>Phases in flight</strong> — count of the unit's phases currently in progress or in QA</li>
 <li><strong>Utilisation</strong> — confirmed utilisation across the coming four weeks, using the <a href="../../scheduling/overview/">central formula</a> (confirmed days over effective working days), so it matches the Stats tab's four-week figure. Utilisation is calculated over <strong>consultants only</strong> (the members who get booked onto delivery), so managers, sales and other roles don't drag the figure down. This figure is loaded asynchronously (a spinner resolves to a percentage) because it is calculated from the full schedule.</li>
 </ul>
@@ -3511,15 +3539,25 @@ badge. <strong>New unit</strong> appears only for people with <code>add_organisa
 <li><strong>Actions</strong> — a per-row menu. Everyone sees <strong>View Profile</strong>, <strong>View Schedule</strong> and <strong>Email</strong>. Members with <code>manage_members</code> additionally get:<ul>
 <li><strong>Manage Roles</strong> — edit the member's unit roles</li>
 <li><strong>Make Unit Lead</strong> / <strong>Remove as Lead</strong> — promote the member to a unit lead (granting manager rights) or demote them again; the label reflects their current status. Demoting a lead also removes the manager role their lead status granted.</li>
-<li><strong>Remove from Unit</strong> — offboard the member (not shown for yourself). This is a soft-leave: the person loses access to the unit and its jobs and is dropped from the roster, but their membership history is kept, so re-adding them restores access. Removing a member also clears any lead status.</li>
+<li><strong>Remove from Unit</strong> — offboard the member (not shown for yourself). This is a soft-leave: the person loses access to the unit and its jobs and is dropped from the roster, but their membership history is kept, so re-adding them (or <strong>Rejoin</strong>, below) restores access with the roles they had. Removing a member also clears any lead status.</li>
 </ul>
 </li>
 </ul>
 <p>Utilisation and active-job counts are computed in bulk for the whole team, so the table stays fast regardless of member count.</p>
 <p>The table can be filtered by <strong>Role</strong> and <strong>Job level</strong> (top right of the tab), and searched
-by the free-text box (name, title, etc.). Members whose account is <strong>disabled</strong> are
-hidden by default; switch on <strong>Show disabled</strong> to include them (they're tagged with a
-"Disabled" badge).</p>
+by the free-text box (name, title, etc.). Members whose account is <strong>deactivated</strong> are
+hidden by default; switch on <strong>Show deactivated</strong> to include them (they're tagged with a
+"Deactivated" badge).</p>
+<p><strong>Show former members</strong> (shown when anyone has left the unit) lists people who
+left, most recent first, with the date they left and the roles they held. Members
+with <code>manage_members</code> get a <strong>Rejoin</strong> button that brings the person back with
+those roles and permissions. <strong>Add Member</strong>, <strong>Pre-load Member</strong> and <strong>Import CSV</strong>
+do the same for someone who'd left, rather than refusing them.</p>
+<p><strong>Deactivated and reactivated accounts.</strong> Deactivating an account closes all of
+the person's unit and team memberships. Reactivating it reopens the ones that
+deactivation closed, with their roles, so the person reappears in their units.
+Memberships they had left earlier for other reasons stay closed; use <strong>Rejoin</strong>
+for those.</p>
 <h3 id="jobs">Jobs<a class="headerlink" href="#jobs" title="Permanent link">&para;</a></h3>
 <p><em>Requires <code>can_view_jobs</code> permission.</em></p>
 <p>An AJAX-loaded, searchable and paginated table of every job owned by the unit — ID, title, client, start/end dates, phase count and status.</p>

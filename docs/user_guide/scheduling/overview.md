@@ -84,9 +84,12 @@ See [Booking & Validation](validation.md) for exactly which checks run and how t
 !!! warning "Leave and time off are read‑only here"
     Annual leave, sick and bank‑holiday slots **cannot be moved or edited from the scheduler** — the block isn't draggable and the backend refuses the change. Manage those through the leave request (see [Managing Leave](../operations/managing_leave.md)).
 
+!!! info "Managed in RM"
+    For people whose schedule comes from Resource Manager (RM), imported bookings and leave carry an **RM** badge and a lock. RM is the source of truth for them, so they can't be edited, moved or deleted here (the backend refuses it with "Managed in RM — change it there"). Change them in RM; the next sync updates CHAOTICA.
+
 ## Clearing a range
 
-The right‑click **Clear range** (and the sidebar **Clear** tool on job/phase pages) shows a confirmation listing exactly what will be removed before anything is deleted. On job/phase pages you can also clear by **all / a specific user / a specific role**.
+The right‑click **Clear range** (and the sidebar **Clear** tool on job/phase pages) shows a confirmation listing exactly what will be removed before anything is deleted. On job/phase pages you can also clear by **all / a specific user / a specific role**. Slots managed in RM are kept, and the confirmation says how many.
 
 ## Management tools (job & phase schedules)
 

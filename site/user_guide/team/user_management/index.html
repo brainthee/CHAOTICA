@@ -1654,6 +1654,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#setting-managers-in-bulk" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Setting managers in bulk
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#reporting-and-analytics" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2383,6 +2394,34 @@
     
   
     Managing Leave
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../operations/services/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Services
   
 
     
@@ -3900,6 +3939,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#setting-managers-in-bulk" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Setting managers in bulk
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#reporting-and-analytics" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4213,8 +4263,9 @@
 - Regular login and activity tracking
 - Resource scheduling and assignment
 - Notification delivery enabled</p>
-<p><strong>Inactive Accounts</strong>:
-- Temporarily disabled access
+<p><strong>Deactivated Accounts</strong>:
+- Can't sign in; their unit and team memberships are closed
+- Reactivating the account reopens the memberships deactivation closed, with their roles
 - Scheduled reactivation possible
 - Historical data preserved
 - Limited system visibility</p>
@@ -4369,6 +4420,7 @@ Time Zone: User&#39;s time zone
 - Upload profile photo and documents
 - Configure notification settings</p>
 <p><strong>Restricted Fields</strong>:
+- Manager, acting manager and leave allowance (set by the person's manager or an admin, never self-service)
 - Employee ID and administrative data
 - Role and permission assignments
 - Organizational unit memberships
@@ -4407,6 +4459,20 @@ Time Zone: User&#39;s time zone
 - Bulk role assignments and changes
 - Mass email and communication
 - Batch permission updates</p>
+<h3 id="setting-managers-in-bulk">Setting managers in bulk<a class="headerlink" href="#setting-managers-in-bulk" title="Permanent link">&para;</a></h3>
+<p><strong>Users → Import Managers</strong> (needs the global <em>Manage Users</em> permission) sets
+people's manager and acting manager from a CSV with the columns <code>email</code>,
+<code>manager_email</code> and <code>acting_manager_email</code>. Download the template from the page.</p>
+<ul>
+<li>A blank cell leaves that field as it is; <code>-</code> or <code>none</code> clears it.</li>
+<li><strong>Preview first:</strong> uploading changes nothing. Each row shows the change, <em>No
+  change</em>, or why it can't be applied: unknown person, unknown or deactivated
+  manager, someone set as their own manager, a duplicate row, or a change that
+  would make a management loop.</li>
+<li><strong>Apply</strong> re-checks the rows against current data and applies the changes in one
+  go, skipping rows that can't be applied. Each change is recorded in the Activity
+  Log, and the person's open leave requests move to the new manager.</li>
+</ul>
 <h3 id="reporting-and-analytics">Reporting and Analytics<a class="headerlink" href="#reporting-and-analytics" title="Permanent link">&para;</a></h3>
 <p><strong>User Reports</strong>:
 - User directory and contact lists

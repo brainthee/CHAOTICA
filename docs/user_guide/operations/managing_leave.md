@@ -124,6 +124,38 @@ Organizations can configure additional leave types:
 
 ## Approval Process
 
+### Who approves a request
+
+CHAOTICA sends each request to, and lets it be approved by:
+
+1. The person's **manager** and **acting manager**, if their accounts are active.
+2. Otherwise (no manager set, or both deactivated), the **unit leave approvers**:
+   people holding *Can approve leave requests* in a unit the person currently
+   belongs to (Service Delivery and Manager by default).
+
+Unit leave approvers can approve a member's leave even when the member has a
+manager. **Nobody can approve their own leave**, with or without a manager.
+
+When someone's manager or acting manager changes, or a manager's account is
+deactivated or reactivated, their open requests move to the new approvers
+straight away (notifications included). People who've left a unit no longer
+get its leave notifications.
+
+People can't set their own manager, acting manager or leave allowance; their
+manager or an admin does, on the profile's edit page or in bulk with
+**Users → Import Managers** (see [User Management](../team/user_management.md#setting-managers-in-bulk)).
+
+### Leave from Resource Manager
+
+For people whose schedule comes from Resource Manager (RM), such as the Iberia
+team, RM is the source of truth. Their leave is imported from RM and shows a
+**Managed in RM** badge:
+
+- It can't be cancelled or edited in CHAOTICA (the Cancel button is hidden and the
+  server refuses it). Change or cancel it in RM.
+- If RM changes the dates or the leave type, the next sync updates the same
+  request rather than adding another. If it's removed from RM, it's removed here.
+
 ### Approval Hierarchy
 
 **Direct Manager**:

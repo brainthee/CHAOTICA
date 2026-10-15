@@ -58,6 +58,7 @@ nav:
       - Calendar Feeds: user_guide/scheduling/calendar_feeds.md
     - Operations:
       - Managing Leave: user_guide/operations/managing_leave.md
+      - Services: user_guide/operations/services.md
       - Loaded Cost Rates: user_guide/operations/loaded_cost_rates.md
     - Workflows:
       - Quality Assurance: user_guide/workflows/quality_assurance.md
