@@ -778,6 +778,9 @@ class Phase(models.Model):
         self.update_stored_dates()
         super(Phase, self).save(*args, **kwargs)
         self._reopen_completed_job_if_unfinished()
+        from .service import Service
+
+        Service.clear_usage_cache(self.service_id)
 
     def _reopen_completed_job_if_unfinished(self):
         """Safety net: a completed job must not hide work in flight.

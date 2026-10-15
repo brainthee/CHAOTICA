@@ -891,8 +891,7 @@
           </div> {% endcomment %}
 
           <div class="tab-pane fade" id="engagements" role="tabpanel" aria-labelledby="engagements-tab">
-            <!-- Service Usage Analytics -->
-            {% with analytics=service.get_service_usage_analytics %}
+            <!-- Service Usage Analytics (phases on jobs you can see) -->
             <div class="row mb-4">
               <div class="col-12">
                 <h5 class="mb-3">Service Usage Overview</h5>
@@ -901,7 +900,7 @@
                 <div class="row g-3 mb-4">
                   <div class="col-md-3">
                     <div class="card text-center" data-bs-toggle="tooltip"
-                         title="Total number of phases using this service across all time">
+                         title="Phases using this service, across all time, on jobs you can see">
                       <div class="card-body py-3">
                         <h4 class="mb-1 text-primary">{{ analytics.total_phases }}</h4>
                         <p class="fs-10 mb-0 text-muted">Total Phases</p>
@@ -912,9 +911,9 @@
 
                   <div class="col-md-2">
                     <div class="card text-center" data-bs-toggle="tooltip"
-                         title="Phases currently in progress, ready to begin, or in QA">
+                         title="Phases in progress or in QA">
                       <div class="card-body py-3">
-                        <h4 class="mb-1 text-success">{{ analytics.active_phases|length }}</h4>
+                        <h4 class="mb-1 text-success">{{ analytics.active_count }}</h4>
                         <p class="fs-10 mb-0 text-muted">Active</p>
                         <small class="text-muted d-block">In progress</small>
                       </div>
@@ -923,9 +922,9 @@
 
                   <div class="col-md-2">
                     <div class="card text-center" data-bs-toggle="tooltip"
-                         title="Phases that are scheduled or planned but not yet started">
+                         title="Phases pending scheduling, scheduled or ready to begin, but not yet started">
                       <div class="card-body py-3">
-                        <h4 class="mb-1 text-info">{{ analytics.upcoming_phases|length }}</h4>
+                        <h4 class="mb-1 text-info">{{ analytics.upcoming_count }}</h4>
                         <p class="fs-10 mb-0 text-muted">Upcoming</p>
                         <small class="text-muted d-block">Scheduled</small>
                       </div>
@@ -934,9 +933,9 @@
 
                   <div class="col-md-2">
                     <div class="card text-center" data-bs-toggle="tooltip"
-                         title="Phases that have been completed and delivered to the client">
+                         title="Phases completed, delivered or archived">
                       <div class="card-body py-3">
-                        <h4 class="mb-1 text-secondary">{{ analytics.completed_phases|length }}</h4>
+                        <h4 class="mb-1 text-secondary">{{ analytics.completed_count }}</h4>
                         <p class="fs-10 mb-0 text-muted">Completed</p>
                         <small class="text-muted d-block">Delivered</small>
                       </div>
@@ -1016,8 +1015,6 @@
                 </div>
               </div>
             </div>
-            {% endwith %}
-
             <!-- Phase Status Tabs -->
             <div class="row mb-3">
               <div class="col-12">
@@ -1025,19 +1022,19 @@
                   <li class="nav-item" role="presentation">
                     <button class="nav-link active" id="active-phases-tab" data-bs-toggle="pill"
                             data-bs-target="#active-phases" type="button" role="tab">
-                      Active <span class="badge bg-success ms-1">{{ analytics.active_phases|length }}</span>
+                      Active <span class="badge bg-success ms-1">{{ analytics.active_count }}</span>
                     </button>
                   </li>
                   <li class="nav-item" role="presentation">
                     <button class="nav-link" id="upcoming-phases-tab" data-bs-toggle="pill"
                             data-bs-target="#upcoming-phases" type="button" role="tab">
-                      Upcoming <span class="badge bg-info ms-1">{{ analytics.upcoming_phases|length }}</span>
+                      Upcoming <span class="badge bg-info ms-1">{{ analytics.upcoming_count }}</span>
                     </button>
                   </li>
                   <li class="nav-item" role="presentation">
                     <button class="nav-link" id="completed-phases-tab" data-bs-toggle="pill"
                             data-bs-target="#completed-phases" type="button" role="tab">
-                      Completed <span class="badge bg-secondary ms-1">{{ analytics.completed_phases|length }}</span>
+                      Completed <span class="badge bg-secondary ms-1">{{ analytics.completed_count }}</span>
                     </button>
                   </li>
                   <li class="nav-item" role="presentation">
@@ -1052,21 +1049,21 @@
 
             <!-- Phase Lists by Status -->
             <div class="tab-content" id="phaseStatusContent">
-              <div class="tab-pane fade show active" id="active-phases" role="tabpanel">
-                {% include 'partials/phase/phase_list_table.html' with phases=analytics.active_phases no_schedule_bar=1 %}
+              <div class="tab-pane fade show active" id="active-phases" role="tabpanel"
+                   data-phases-url="{% url 'service_phases_partial' service.slug 'active' %}">
+                <div class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary" role="status"></div></div>
               </div>
-
-              <div class="tab-pane fade" id="upcoming-phases" role="tabpanel">
-                {% include 'partials/phase/phase_list_table.html' with phases=analytics.upcoming_phases no_schedule_bar=1 %}
+              <div class="tab-pane fade" id="upcoming-phases" role="tabpanel"
+                   data-phases-url="{% url 'service_phases_partial' service.slug 'upcoming' %}">
+                <div class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary" role="status"></div></div>
               </div>
-
-              <div class="tab-pane fade" id="completed-phases" role="tabpanel">
-                {% include 'partials/phase/phase_list_table.html' with phases=analytics.completed_phases no_schedule_bar=1 %}
+              <div class="tab-pane fade" id="completed-phases" role="tabpanel"
+                   data-phases-url="{% url 'service_phases_partial' service.slug 'completed' %}">
+                <div class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary" role="status"></div></div>
               </div>
-
-              <div class="tab-pane fade" id="all-phases" role="tabpanel">
-                {% get_phases_for_user request.user service.phases.all as all_phases %}
-                {% include 'partials/phase/phase_list_table.html' with phases=all_phases no_schedule_bar=1 %}
+              <div class="tab-pane fade" id="all-phases" role="tabpanel"
+                   data-phases-url="{% url 'service_phases_partial' service.slug 'all' %}">
+                <div class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary" role="status"></div></div>
               </div>
             </div>
           </div>
@@ -1229,5 +1226,41 @@
   }
   {% endwith %}
 
+  // Jobs tab phase lists: each pill loads once, the first time it's shown
+  // (Active when the Jobs tab opens). jQuery .html() so the table can init.
+  (function () {
+    function loadPhases(pane) {
+      if (!pane || pane.dataset.loaded) return;
+      pane.dataset.loaded = '1';
+      fetch(pane.dataset.phasesUrl, {headers: {'X-Requested-With': 'XMLHttpRequest'}})
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          $(pane).html(data.html);
+          var table = pane.querySelector('table.datatable');
+          if (table && window.DataTable && !DataTable.isDataTable(table)) {
+            new DataTable(table, {
+              {% include 'js/dtDefaultConfig.js' %}
+            });
+          }
+        })
+        .catch(function () {
+          pane.innerHTML = '<div class="text-center py-4 text-danger">Failed to load. Please refresh the page.</div>';
+        });
+    }
+    var jobsTab = document.getElementById('engagements-tab');
+    if (jobsTab) {
+      jobsTab.addEventListener('shown.bs.tab', function () {
+        loadPhases(document.querySelector('#phaseStatusContent .tab-pane.active'));
+      });
+      if (jobsTab.classList.contains('active')) {
+        loadPhases(document.querySelector('#phaseStatusContent .tab-pane.active'));
+      }
+    }
+    document.querySelectorAll('#phaseStatusTabs [data-bs-toggle="pill"]').forEach(function (btn) {
+      btn.addEventListener('shown.bs.tab', function () {
+        loadPhases(document.querySelector(btn.dataset.bsTarget));
+      });
+    });
+  })();
 </script>
 {% endblock %}

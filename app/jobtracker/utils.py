@@ -59,6 +59,15 @@ def can_view_job_schedule(user, job):
         return False
 
 
+def phases_visible_to(user, phases):
+    """``phases`` narrowed to those on jobs ``user`` can view, with the
+    relations the phase list tables render."""
+    my_jobs = get_objects_for_user(user, "jobtracker.view_job", Job)
+    return phases.filter(job__in=my_jobs).select_related(
+        "job__client", "job__unit", "service", "project_lead", "report_author"
+    )
+
+
 def can_view_job(user, job):
     """Whether ``user`` may view ``job`` - the same gate as JobDetailView /
     PhaseDetailView (can_view_jobs on the job or its unit, else the job team's

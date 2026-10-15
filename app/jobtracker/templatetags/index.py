@@ -19,17 +19,9 @@ def get_objects_for_user(user, perms, obj):
 
 @register.simple_tag
 def get_phases_for_user(user, phases):
-    from guardian.shortcuts import get_objects_for_user
-    from ..models import Job
+    from ..utils import phases_visible_to
 
-    my_jobs = get_objects_for_user(user, "jobtracker.view_job", Job)
-    return phases.prefetch_related(
-        "timeslots",
-        "job__client",
-        "job__unit",
-        "report_author",
-        "project_lead",
-    ).filter(job__in=my_jobs)
+    return phases_visible_to(user, phases).prefetch_related("timeslots")
 
 
 @register.simple_tag

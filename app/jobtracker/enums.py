@@ -924,6 +924,27 @@ class PhaseStatuses:
         ARCHIVED,
     ]
 
+    #: Service page buckets. Non-overlapping, and none include cancelled,
+    #: postponed or deleted phases (those only show under "All").
+    SERVICE_UPCOMING = [
+        PENDING_SCHED,
+        SCHEDULED_TENTATIVE,
+        SCHEDULED_CONFIRMED,
+        PRE_CHECKS,
+        CLIENT_NOT_READY,
+        READY_TO_BEGIN,
+    ]
+    SERVICE_ACTIVE = [
+        IN_PROGRESS,
+        PENDING_TQA,
+        QA_TECH,
+        QA_TECH_AUTHOR_UPDATES,
+        PENDING_PQA,
+        QA_PRES,
+        QA_PRES_AUTHOR_UPDATES,
+    ]
+    SERVICE_COMPLETED = COMPLETE_STATUSES
+
     BS_COLOURS = (
         (DRAFT, "secondary"),
         (PENDING_SCHED, "secondary"),

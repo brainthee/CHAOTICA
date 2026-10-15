@@ -750,6 +750,11 @@ urlpatterns = [
         name="service_detail",
     ),
     path(
+        "ops/service/<str:slug>/phases/<str:bucket>/",
+        views.service_phases_partial,
+        name="service_phases_partial",
+    ),
+    path(
         "ops/service/<str:slug>/update/",
         views.ServiceUpdateView.as_view(),
         name="service_update",

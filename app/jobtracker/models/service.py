@@ -1,3 +1,4 @@
+import uuid
 from django.db import models
 from ..enums import JobStatuses, PhaseStatuses, FeedbackType, LinkType, UserSkillRatings, QualificationStatus
 from ..models.skill import Skill, UserSkill
@@ -274,36 +275,55 @@ class Service(models.Model):
             }
         return team_data
 
-    def get_service_usage_analytics(self):
-        """Get comprehensive analytics about service usage across phases/jobs - optimized and cached"""
+    @staticmethod
+    def _usage_version_key(service_id):
+        return f"service_usage_version_{service_id}"
+
+    @classmethod
+    def clear_usage_cache(cls, service_id):
+        """Invalidate every viewer's cached usage analytics for one service
+        (bumps a version rather than deleting per-viewer keys). No queries,
+        so it's cheap enough to call on every phase save."""
+        from django.core.cache import cache
+
+        if service_id:
+            cache.set(cls._usage_version_key(service_id), uuid.uuid4().hex, None)
+
+    def get_service_usage_analytics(self, phases=None, cache_scope="all"):
+        """Summary figures for the phases using this service.
+
+        ``phases`` is the (already permission-filtered) phase queryset to
+        summarise, defaulting to every phase; ``cache_scope`` must identify
+        that filter (e.g. the viewer's pk) since the result is cached. Only
+        scalars and breakdown dicts are cached, never querysets.
+        """
         from django.core.cache import cache
         from django.db.models import Count, Sum, Avg, Q, F
         from django.utils import timezone
-        from ..enums import PhaseStatuses, JobStatuses
+        from ..enums import PhaseStatuses
         import datetime
 
-        cache_key = f"service_analytics_{self.id}_{self.phases.count()}"
+        version = cache.get(self._usage_version_key(self.id)) or "0"
+        cache_key = f"service_analytics_{self.id}_{version}_{cache_scope}"
         cached_result = cache.get(cache_key)
-        if cached_result:
+        if cached_result is not None:
             return cached_result
 
         now = timezone.now()
         current_year = now.year
         last_month = now - datetime.timedelta(days=30)
 
-        # Single query with all the data we need
-        phases_qs = self.phases.select_related('job', 'job__client', 'job__unit')
+        phases_qs = self.phases.all() if phases is None else phases
 
-        # Get all analytics in fewer queries - split aggregates to avoid conflicts
         all_phases_data = phases_qs.aggregate(
             total_count=Count('id'),
-            active_count=Count('id', filter=Q(status__in=PhaseStatuses.ACTIVE_STATUSES)),
-            completed_count=Count('id', filter=Q(status__in=PhaseStatuses.COMPLETE_STATUSES)),
-            upcoming_count=Count('id', filter=Q(status__in=PhaseStatuses.PENDING_STATUSES)),
+            active_count=Count('id', filter=Q(status__in=PhaseStatuses.SERVICE_ACTIVE)),
+            completed_count=Count('id', filter=Q(status__in=PhaseStatuses.SERVICE_COMPLETED)),
+            upcoming_count=Count('id', filter=Q(status__in=PhaseStatuses.SERVICE_UPCOMING)),
             recent_count=Count('id', filter=Q(actual_start_date__gte=last_month)),
             this_year_count=Count('id', filter=Q(actual_start_date__year=current_year)),
             on_time_count=Count('id', filter=Q(
-                status__in=PhaseStatuses.COMPLETE_STATUSES,
+                status__in=PhaseStatuses.SERVICE_COMPLETED,
                 actual_delivery_date__lte=F('desired_delivery_date')
             )),
             delivery_hours=Sum('delivery_hours'),
@@ -318,10 +338,9 @@ class Service(models.Model):
 
         # Separate query for average duration on completed phases only
         avg_duration_data = phases_qs.filter(
-            status__in=PhaseStatuses.COMPLETE_STATUSES
+            status__in=PhaseStatuses.SERVICE_COMPLETED
         ).aggregate(avg_duration=Avg('delivery_hours'))
 
-        # Calculate total hours
         total_hours = sum(h for h in [
             all_phases_data['delivery_hours'], all_phases_data['reporting_hours'],
             all_phases_data['mgmt_hours'], all_phases_data['qa_hours'],
@@ -329,38 +348,35 @@ class Service(models.Model):
             all_phases_data['contingency_hours'], all_phases_data['other_hours']
         ] if h is not None)
 
-        # Client and Unit breakdown in single queries
-        client_breakdown = phases_qs.values('job__client__name', 'job__client__id').annotate(
+        # order_by() first: the related manager's default ordering would
+        # otherwise split the GROUP BY.
+        client_breakdown = phases_qs.order_by().values('job__client__name', 'job__client__id').annotate(
             phase_count=Count('id'),
             total_hours=Sum('delivery_hours')
-        ).order_by('-phase_count')[:10]  # Limit to top 10
+        ).order_by('-phase_count')[:10]
 
-        unit_breakdown = phases_qs.values('job__unit__name', 'job__unit__id').annotate(
+        unit_breakdown = phases_qs.order_by().values('job__unit__name', 'job__unit__id').annotate(
             phase_count=Count('id'),
             total_hours=Sum('delivery_hours')
-        ).order_by('-phase_count')[:10]  # Limit to top 10
+        ).order_by('-phase_count')[:10]
 
-        # Get querysets for template use
-        active_phases = phases_qs.filter(status__in=PhaseStatuses.ACTIVE_STATUSES)
-        completed_phases = phases_qs.filter(status__in=PhaseStatuses.COMPLETE_STATUSES)
-        upcoming_phases = phases_qs.filter(status__in=PhaseStatuses.PENDING_STATUSES)
-
+        total = all_phases_data['total_count']
+        completed = all_phases_data['completed_count']
         result = {
-            'total_phases': all_phases_data['total_count'],
-            'active_phases': active_phases,
-            'completed_phases': completed_phases,
-            'upcoming_phases': upcoming_phases,
+            'total_phases': total,
+            'active_count': all_phases_data['active_count'],
+            'upcoming_count': all_phases_data['upcoming_count'],
+            'completed_count': completed,
             'recent_phases': all_phases_data['recent_count'],
             'this_year_phases': all_phases_data['this_year_count'],
             'total_allocated_hours': total_hours,
             'client_breakdown': list(client_breakdown),
             'unit_breakdown': list(unit_breakdown),
-            'completion_rate': round((all_phases_data['completed_count'] / all_phases_data['total_count'] * 100), 1) if all_phases_data['total_count'] > 0 else 0,
-            'on_time_rate': round((all_phases_data['on_time_count'] / all_phases_data['completed_count'] * 100), 1) if all_phases_data['completed_count'] > 0 else 0,
+            'completion_rate': round((completed / total * 100), 1) if total > 0 else 0,
+            'on_time_rate': round((all_phases_data['on_time_count'] / completed * 100), 1) if completed > 0 else 0,
             'avg_phase_duration': round(avg_duration_data['avg_duration'] or 0, 1),
         }
 
-        # Cache for 10 minutes
         cache.set(cache_key, result, 600)
         return result
 
@@ -625,7 +641,7 @@ class Service(models.Model):
         # Clear service readiness cache
         cache.delete(f"service_readiness_{self.id}_{self.skillsRequired.count()}_{self.skillsDesired.count()}")
         # Clear analytics cache
-        cache.delete(f"service_analytics_{self.id}_{self.phases.count()}")
+        Service.clear_usage_cache(self.id)
         # Clear skills coverage cache
         cache.delete(f"skills_coverage_{self.id}_{self.skillsRequired.count()}_{self.skillsDesired.count()}")
         # Clear performance metrics cache

@@ -3,10 +3,17 @@ from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
+from django.contrib.auth.decorators import login_required
+from django.http import Http404, JsonResponse
+from django.shortcuts import get_object_or_404
+from django.template import loader
+from chaotica_utils.decorators import permission_required_or_403
 from chaotica_utils.views import ChaoticaBaseView, ProtectedDeleteMixin
 from ..models import Service
+from ..enums import PhaseStatuses
 from ..forms import ServiceForm
 from ..mixins import PrefetchRelatedMixin
+from ..utils import phases_visible_to
 import logging
 
 
@@ -53,7 +60,7 @@ class ServiceListView(ServiceBaseView, ListView):
             # Count active phases
             active_phases_count=Count(
                 'phases',
-                filter=Q(phases__status__in=[7, 8, 9, 10, 11, 12, 13]),  # Active statuses
+                filter=Q(phases__status__in=PhaseStatuses.SERVICE_ACTIVE),
                 distinct=True
             ),
             # Risk score calculation (0 = high risk, higher = lower risk)
@@ -94,12 +101,6 @@ class ServiceDetailView(
         "skillsDesired",
         "qualificationsRequired",
         "qualificationsDesired",
-        "phases",
-        "phases__job",
-        "phases__timeslots",
-        "phases__job__client",
-        "phases__job__unit",
-        "phases__report_author",
     ]
     """View to list the details from one job.
     Use the 'job' variable in the template to access
@@ -114,6 +115,12 @@ class ServiceDetailView(
         # Users holding ALL qualifications required to deliver this service.
         context["users_with_required_quals"] = list(
             self.object.get_users_with_required_quals()
+        )
+        # Jobs tab: summary, badges and lists all cover only the phases on
+        # jobs the viewer can see (the lists load per bucket on demand).
+        context["analytics"] = self.object.get_service_usage_analytics(
+            phases=phases_visible_to(self.request.user, self.object.phases.all()),
+            cache_scope="user{}".format(self.request.user.pk),
         )
         return context
 
@@ -144,3 +151,33 @@ class ServiceDeleteView(ProtectedDeleteMixin, ServiceBaseView, PermissionRequire
     accept_global_perms = True
     return_403 = True
     success_url = reverse_lazy("service_list")
+
+
+SERVICE_PHASE_BUCKETS = {
+    "active": PhaseStatuses.SERVICE_ACTIVE,
+    "upcoming": PhaseStatuses.SERVICE_UPCOMING,
+    "completed": PhaseStatuses.SERVICE_COMPLETED,
+    "all": None,
+}
+
+
+@login_required
+@permission_required_or_403(
+    "jobtracker.view_service", (Service, "slug", "slug"), accept_global_perms=True
+)
+def service_phases_partial(request, slug, bucket):
+    """One of the service page's Active / Upcoming / Completed / All phase
+    lists, limited to phases on jobs the viewer can see."""
+    if bucket not in SERVICE_PHASE_BUCKETS:
+        raise Http404
+    service = get_object_or_404(Service, slug=slug)
+    phases = phases_visible_to(request.user, service.phases.all())
+    statuses = SERVICE_PHASE_BUCKETS[bucket]
+    if statuses is not None:
+        phases = phases.filter(status__in=statuses)
+    html = loader.render_to_string(
+        "partials/phase/phase_list_table.html",
+        {"phases": phases, "no_schedule_bar": 1},
+        request=request,
+    )
+    return JsonResponse({"html": html})
