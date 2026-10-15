@@ -11,9 +11,12 @@ RM is treated as the source of truth for PULL users. RM assignments are resolved
 * **RM-native project** — mirrored into a CHAOTICA internal ``Project`` (keyed by
   ``external_id``) with a link back to RM, and ``INTERNAL_PROJECT`` timeslots.
 
-Every timeslot created here is tracked by an ``RMInboundSlot``. When the record is
-authoritative, reconcile deletes only ``RMInboundSlot``-linked timeslots that no longer exist
-in RM — never a CHAOTICA-native or PUSH-origin slot.
+Every timeslot created here is tracked by an ``RMInboundSlot``. Imported leave follows RM:
+it's keyed by assignment id alone, so changed dates or type update it in place, and leave
+that disappears from RM is removed. When the record is authoritative, reconcile also deletes
+other ``RMInboundSlot``-linked timeslots that no longer exist in RM. Both only look at
+slots inside the fetched window (anything outside it wasn't asked about), and never touch a
+CHAOTICA-native or PUSH-origin slot.
 """
 
 import logging
@@ -347,6 +350,8 @@ def pull_user(record, client=None, dry_run=False):
         for r in record.inbound_slots.select_related("timeslot")
     }
     seen = set()
+    # Fetched date range; None = everything (the user has left RM).
+    window = None
 
     if rm_user.get("archived") or rm_user.get("deleted"):
         # User has left RM. Deactivate locally; assignments treated as empty so reconcile
@@ -362,6 +367,7 @@ def pull_user(record, client=None, dry_run=False):
         today = timezone.now().date()
         start = today - timedelta(days=max(0, int(config.RM_SYNC_PULL_LOOKBACK_DAYS)))
         end = today + timedelta(days=max(0, int(config.RM_SYNC_PULL_LOOKAHEAD_DAYS)))
+        window = (start, end)
         assignments = list(
             client.paginate(
                 "/api/v1/users/{}/assignments".format(record.rm_id),
@@ -382,18 +388,29 @@ def pull_user(record, client=None, dry_run=False):
                 "Inbound error on assignment %s: %s", assignment.get("id"), ex
             )
 
-    # Reconcile — authoritative PULL means RM wins, so drop imported slots gone from RM.
-    if record.sync_authoritative:
+    # Reconcile. Imported leave always follows RM; other slots are only pruned when the
+    # record is authoritative. Either way, only slots inside the fetched window: RM wasn't
+    # asked about the rest, so their absence means nothing. An errored run prunes nothing
+    # (an assignment that failed to process would look "gone").
+    if result.errors == 0:
         for key, inbound in existing.items():
-            if key not in seen:
-                result.deleted_slots += 1
-                result.note(
-                    "{} stale slot {}".format(
-                        "Would delete" if dry_run else "Deleting", inbound.timeslot_id
-                    )
+            if key in seen:
+                continue
+            is_leave = inbound.rm_data.get("kind") == "leave"
+            if not (is_leave or record.sync_authoritative):
+                continue
+            if not _in_window(inbound.timeslot, window):
+                continue
+            result.deleted_slots += 1
+            result.note(
+                "{} stale {} {}".format(
+                    "Would delete" if dry_run else "Deleting",
+                    "leave" if is_leave else "slot",
+                    inbound.timeslot_id,
                 )
-                if not dry_run:
-                    _delete_inbound(inbound)
+            )
+            if not dry_run:
+                _delete_inbound(inbound)
 
     if not dry_run:
         record.last_synced = timezone.now()
@@ -447,30 +464,40 @@ def _process_assignment(
         result.created_slots += 1
 
 
-def _handle_leave(record, assignment, client, existing, seen, result, dry_run):
-    user = record.user
-    tz = _business_tz(user)
-    start_date = _parse_date(assignment["starts_at"])
-    end_date = _parse_date(assignment["ends_at"])
-    key = (str(assignment["id"]), start_date)
-    seen.add(key)
-
-    if key in existing:
-        return  # leave slots are immutable once imported
-
-    start_dt = datetime.combine(start_date, time.min, tzinfo=tz)
-    end_dt = datetime.combine(end_date, time.max, tzinfo=tz)
-    result.created_leave += 1
-    if dry_run:
-        return
-
-    # Resolve the RM leave-type name → CHAOTICA type
+def _leave_type_for(client, assignment):
+    """``(RM leave-type name, CHAOTICA LeaveRequestTypes)`` for a leave assignment."""
     name = None
     for lt in client.leave_types():
         if lt["id"] == assignment["assignable_id"]:
             name = lt.get("name")
             break
-    type_of_leave = LEAVE_NAME_MAP.get(name, DEFAULT_LEAVE_TYPE)
+    return name, LEAVE_NAME_MAP.get(name, DEFAULT_LEAVE_TYPE)
+
+
+def _handle_leave(record, assignment, client, existing, seen, result, dry_run):
+    """Create, or bring up to date, the leave for one RM leave assignment.
+
+    Keyed on the assignment id alone (``day`` is None), so RM changing the dates or the
+    leave type updates the existing slot and LeaveRequest rather than adding another."""
+    user = record.user
+    tz = _business_tz(user)
+    start_date = _parse_date(assignment["starts_at"])
+    end_date = _parse_date(assignment["ends_at"])
+    key = (str(assignment["id"]), None)
+    seen.add(key)
+
+    start_dt = datetime.combine(start_date, time.min, tzinfo=tz)
+    end_dt = datetime.combine(end_date, time.max, tzinfo=tz)
+    name, type_of_leave = _leave_type_for(client, assignment)
+
+    inbound = existing.get(key)
+    if inbound:
+        _update_leave(inbound, start_dt, end_dt, name, type_of_leave, result, dry_run)
+        return
+
+    result.created_leave += 1
+    if dry_run:
+        return
 
     ts = TimeSlot.objects.create(
         user=user,
@@ -488,8 +515,44 @@ def _handle_leave(record, assignment, client, existing, seen, result, dry_run):
         authorised_on=timezone.now(),
         timeslot=ts,
     )
-    _register_inbound(
-        record, ts, assignment, start_date, kind="leave", extra={"leave": name}
+    _register_inbound(record, ts, assignment, None, kind="leave", extra={"leave": name})
+
+
+def _update_leave(inbound, start_dt, end_dt, name, type_of_leave, result, dry_run):
+    """Apply RM's current dates / type to already-imported leave."""
+    ts = inbound.timeslot
+    leave = LeaveRequest.objects.filter(timeslot=ts).first()
+    changed = ts.start != start_dt or ts.end != end_dt
+    if leave is not None:
+        changed = changed or (
+            leave.start_date != start_dt
+            or leave.end_date != end_dt
+            or leave.type_of_leave != type_of_leave
+        )
+    if not changed:
+        return
+    result.updated_slots += 1
+    if dry_run:
+        return
+    ts.start, ts.end = start_dt, end_dt
+    ts.save()
+    if leave is not None:
+        leave.start_date, leave.end_date = start_dt, end_dt
+        leave.type_of_leave = type_of_leave
+        leave.save()
+    inbound.rm_data = {**inbound.rm_data, "leave": name}
+    inbound.last_synced = timezone.now()
+    inbound.save(update_fields=["rm_data", "last_synced"])
+
+
+def _in_window(timeslot, window):
+    """Does ``timeslot`` overlap the fetched ``(start, end)`` dates? (None = all.)"""
+    if window is None:
+        return True
+    start, end = window
+    return (
+        timezone.localdate(timeslot.end) >= start
+        and timezone.localdate(timeslot.start) <= end
     )
 
 

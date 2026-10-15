@@ -519,6 +519,7 @@ def collect_schedule_slots(
         "slot_type",
         "user",
         "leaverequest",
+        "rm_inbound__record",
     )
 
     holidays = Holiday.objects.filter(date__gte=start.date(), date__lte=end.date())

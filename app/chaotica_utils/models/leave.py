@@ -128,8 +128,15 @@ class LeaveRequest(models.Model):
             days = hours / hours_in_working_day
         return round(days, 2)
 
+    @property
+    def rm_managed(self):
+        """Imported from Resource Manager, which owns it: change it in RM."""
+        return bool(self.timeslot_id) and self.timeslot.rm_managed
+
     def can_cancel(self):
-        # Only situ we can't cancel is if it's in the past or it's already cancelled.
+        # Can't cancel past or already-cancelled leave, or leave RM owns.
+        if self.rm_managed:
+            return False
         if self.start_date < timezone.now():
             return False
         if self.cancelled:

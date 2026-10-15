@@ -615,3 +615,208 @@ class ReadOnlyGuardTests(TestCase):
                 client.post("/api/v1/projects", json={"a": 1})
             with self.assertRaises(RMReadOnlyError):
                 client.delete("/api/v1/projects/1")
+
+
+class LeaveFollowsRMTests(RMSyncTestBase):
+    """Imported leave is keyed by assignment and tracks RM (T-05)."""
+
+    def setUp(self):
+        super().setUp()
+        self.user = _mk_user(email="iberia@example.com", first_name="Ib", last_name="Eria")
+        self.record = RMSyncRecord.objects.create(
+            user=self.user, rm_id="200", direction=RMSyncDirection.PULL
+        )
+        self.today = date.today()
+        self.types = [
+            {"id": 900, "name": "Regular Vacation"},
+            {"id": 901, "name": "Sick Leave"},
+        ]
+
+    def _fut(self, days):
+        return (self.today + timedelta(days=days)).strftime("%Y-%m-%d")
+
+    def _pull(self, *assignments):
+        return self.record.pull_records(
+            client=FakeClient(assignments=list(assignments), leave_types=self.types)
+        )
+
+    def test_changed_dates_and_type_update_in_place(self):
+        self._pull(_assignment(1, 900, self._fut(5), self._fut(6)))
+        lr = LeaveRequest.objects.get(user=self.user)
+        res = self._pull(_assignment(1, 901, self._fut(8), self._fut(10)))
+        self.assertEqual(res.created_leave, 0)
+        self.assertEqual(res.updated_slots, 1)
+        self.assertEqual(LeaveRequest.objects.filter(user=self.user).count(), 1)
+        self.assertEqual(RMInboundSlot.objects.filter(record=self.record).count(), 1)
+        lr.refresh_from_db()
+        self.assertEqual(lr.type_of_leave, LeaveRequestTypes.SICK)
+        self.assertEqual(timezone.localdate(lr.start_date), self.today + timedelta(days=8))
+        self.assertEqual(
+            timezone.localdate(lr.timeslot.end), self.today + timedelta(days=10)
+        )
+        # Unchanged on the next pull.
+        res = self._pull(_assignment(1, 901, self._fut(8), self._fut(10)))
+        self.assertEqual(res.updated_slots, 0)
+
+    def test_leave_removed_from_rm_is_deleted_even_when_not_authoritative(self):
+        self.assertFalse(self.record.sync_authoritative)
+        self._pull(_assignment(1, 900, self._fut(5), self._fut(6)))
+        slot_pk = LeaveRequest.objects.get(user=self.user).timeslot_id
+        res = self._pull()
+        self.assertEqual(res.deleted_slots, 1)
+        self.assertFalse(LeaveRequest.objects.filter(user=self.user).exists())
+        self.assertFalse(TimeSlot.objects.filter(pk=slot_pk).exists())
+
+    def test_prune_ignores_slots_outside_the_fetched_window(self):
+        self.record.sync_authoritative = True
+        self.record.save()
+        slot_type = TimeSlotType.get_builtin_object(DefaultTimeSlotTypes.INTERNAL_PROJECT)
+        proj = Project.objects.create(title="Far", created_by=self.user, external_id="901")
+        far_start = timezone.now() + timedelta(days=500)  # beyond the 365-day lookahead
+        far = TimeSlot.objects.create(
+            user=self.user, slot_type=slot_type, project=proj,
+            start=far_start, end=far_start + timedelta(hours=4),
+        )
+        RMInboundSlot.objects.create(
+            timeslot=far, record=self.record, rm_assignment_id="88",
+            day=far_start.date(), rm_data={"kind": "project"},
+        )
+        near = TimeSlot.objects.create(
+            user=self.user, slot_type=slot_type, project=proj,
+            start=timezone.now() + timedelta(days=2),
+            end=timezone.now() + timedelta(days=2, hours=4),
+        )
+        RMInboundSlot.objects.create(
+            timeslot=near, record=self.record, rm_assignment_id="89",
+            day=self.today, rm_data={"kind": "project"},
+        )
+        res = self._pull()
+        self.assertEqual(res.deleted_slots, 1)
+        self.assertTrue(TimeSlot.objects.filter(pk=far.pk).exists())
+        self.assertFalse(TimeSlot.objects.filter(pk=near.pk).exists())
+
+
+class RMManagedReadOnlyTests(RMSyncTestBase):
+    """Items RM owns can't be changed in CHAOTICA (T-05)."""
+
+    def setUp(self):
+        super().setUp()
+        from django.test import Client as HttpClient
+
+        self.admin = _mk_user(email="admin@example.com", is_superuser=True)
+        self.person = _mk_user(email="pull@example.com")
+        self.record = RMSyncRecord.objects.create(
+            user=self.person, rm_id="300", direction=RMSyncDirection.PULL
+        )
+        self.record.pull_records(
+            client=FakeClient(
+                assignments=[
+                    _assignment(
+                        1, 900,
+                        (date.today() + timedelta(days=5)).strftime("%Y-%m-%d"),
+                        (date.today() + timedelta(days=6)).strftime("%Y-%m-%d"),
+                    )
+                ],
+                leave_types=[{"id": 900, "name": "Regular Vacation"}],
+            )
+        )
+        self.leave = LeaveRequest.objects.get(user=self.person)
+        self.slot = self.leave.timeslot
+        self.http = HttpClient(HTTP_HOST="localhost")
+
+    def test_slot_and_leave_flagged(self):
+        self.assertTrue(self.slot.rm_managed)
+        data = self.slot.get_schedule_json()
+        self.assertFalse(data["can_edit"])
+        self.assertTrue(data["rm_managed"])
+        self.assertEqual(data["locked_reason"], "Managed in RM — change it there.")
+        self.assertTrue(self.leave.rm_managed)
+        self.assertFalse(self.leave.can_cancel())
+
+    def test_push_user_slot_is_not_rm_managed(self):
+        self.record.direction = RMSyncDirection.PUSH
+        self.record.save()
+        self.assertFalse(TimeSlot.objects.get(pk=self.slot.pk).rm_managed)
+
+    def test_scheduler_refuses_edit_move_and_delete(self):
+        from django.urls import reverse
+
+        self.http.force_login(self.admin)
+        for name in ("change_scheduler_slot", "change_scheduler_slot_date"):
+            resp = self.http.post(reverse(name, kwargs={"pk": self.slot.pk}), {})
+            self.assertFalse(resp.json()["form_is_valid"], name)
+            self.assertIn("Managed in RM", resp.json()["error"])
+        url = reverse("delete_scheduler_slot", kwargs={"pk": self.slot.pk})
+        resp = self.http.get(url)
+        self.assertIn("Managed in RM", resp.json()["html_form"])
+        resp = self.http.post(url, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+        self.assertFalse(resp.json()["form_is_valid"])
+        self.assertTrue(TimeSlot.objects.filter(pk=self.slot.pk).exists())
+
+    def test_range_clear_keeps_rm_slots(self):
+        self.person.clear_timeslots_in_range(
+            timezone.now(), timezone.now() + timedelta(days=30)
+        )
+        self.assertTrue(TimeSlot.objects.filter(pk=self.slot.pk).exists())
+
+    def test_own_cancel_refused_and_badged(self):
+        from django.urls import reverse
+
+        self.http.force_login(self.person)
+        url = reverse("cancel_own_leave", kwargs={"pk": self.leave.pk})
+        self.assertContains(self.http.get(url), "Managed in RM")
+        resp = self.http.post(url, {"user_action": "approve_action"})
+        self.assertEqual(resp.status_code, 403)
+        self.leave.refresh_from_db()
+        self.assertFalse(self.leave.cancelled)
+        page = self.http.get(reverse("view_own_leave"))
+        self.assertContains(page, "Managed in RM")
+        self.assertNotContains(page, url)
+
+
+class SyncEntryPointTests(RMSyncTestBase):
+    """run_rm_sync and the Settings 'Run' button (T-05)."""
+
+    def setUp(self):
+        super().setUp()
+        self.admin = _mk_user(email="root@example.com", is_superuser=True)
+        self.push = RMSyncRecord.objects.create(
+            user=_mk_user(email="push@example.com"), rm_id="1",
+            direction=RMSyncDirection.PUSH,
+        )
+        self.pull = RMSyncRecord.objects.create(
+            user=_mk_user(email="pullme@example.com"), rm_id="2",
+            direction=RMSyncDirection.PULL,
+        )
+        RMSyncRecord.objects.create(
+            user=_mk_user(email="off@example.com"), rm_id="3",
+            direction=RMSyncDirection.OFF,
+        )
+
+    @override_config(RM_SYNC_ENABLED=True)
+    def test_run_rm_sync_dispatches_by_direction(self):
+        from io import StringIO
+
+        from django.core.management import call_command
+
+        with patch.object(RMSyncRecord, "sync_records") as push, patch.object(
+            RMSyncRecord, "pull_records"
+        ) as pull:
+            call_command("run_rm_sync", stdout=StringIO())
+        self.assertEqual(push.call_count, 1)
+        self.assertEqual(pull.call_count, 1)
+
+    @override_config(RM_SYNC_ENABLED=True, RM_SYNC_READ_ONLY=True)
+    def test_run_button_runs_task_on_an_instance(self):
+        from django.test import Client as HttpClient
+        from django.urls import reverse
+
+        from .tasks import task_sync_rm_schedule
+
+        http = HttpClient(HTTP_HOST="localhost")
+        http.force_login(self.admin)
+        with patch.object(task_sync_rm_schedule, "do", autospec=True) as do:
+            resp = http.get(reverse("rm_run_sync"))
+        self.assertEqual(resp.status_code, 302)
+        do.assert_called_once()
+        self.assertIsInstance(do.call_args[0][0], task_sync_rm_schedule)

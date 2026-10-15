@@ -37,6 +37,7 @@ from ..forms import (
 )
 from ..enums import UserSkillRatings, TimeSlotDeliveryRole, PhaseStatuses, DefaultTimeSlotTypes, JobStatuses
 from ..models import ScheduleAction, ScheduleActionType
+from ..models.timeslot import RM_MANAGED_MESSAGE
 from ..utils import (
     get_scheduler_slots,
     get_scheduler_members,
@@ -682,6 +683,8 @@ def change_scheduler_slot_date(request, pk=None):
     _verify_slot_unit_access(request, slot)
     # Annual leave is owned by its leave request, not the scheduler — refuse to
     # move or edit it here (other non-working types e.g. Sick are fine to edit).
+    if slot.rm_managed:
+        return JsonResponse({"form_is_valid": False, "error": RM_MANAGED_MESSAGE})
     if slot.is_leave():
         return JsonResponse({
             "form_is_valid": False,
@@ -775,6 +778,8 @@ def change_scheduler_slot(request, pk=None):
     _verify_slot_unit_access(request, slot)
     # Annual leave is owned by its leave request, not the scheduler — refuse to
     # move or edit it here (other non-working types e.g. Sick are fine to edit).
+    if slot.rm_managed:
+        return JsonResponse({"form_is_valid": False, "error": RM_MANAGED_MESSAGE})
     if slot.is_leave():
         return JsonResponse({
             "form_is_valid": False,
@@ -1511,8 +1516,14 @@ def clear_scheduler_range(request):
         ):
             raise PermissionDenied
 
-    # Preview querysets across all selected users
-    timeslots = TimeSlot.objects.filter(user__in=users, start__lt=end, end__gt=start)
+    # Preview querysets across all selected users. Resource Manager-owned
+    # slots are never cleared here (clear_timeslots_in_range skips them too).
+    rm_managed = TimeSlot.objects.filter(
+        TimeSlot.rm_managed_q(), user__in=users, start__lt=end, end__gt=start
+    )
+    timeslots = TimeSlot.objects.filter(
+        user__in=users, start__lt=end, end__gt=start
+    ).exclude(TimeSlot.rm_managed_q())
     if scope_phases is not None:
         timeslots = timeslots.filter(phase__in=scope_phases)
     # Comments aren't job/phase-bound, so only clear them for an unscoped range clear
@@ -1552,12 +1563,26 @@ def clear_scheduler_range(request):
         "users": users,
         "batch": len(users) > 1,
         "timeslots": timeslots,
+        "rm_managed_count": rm_managed.count(),
         "comments": comments,
     }
     data["html_form"] = loader.render_to_string(
         "jobtracker/modals/clear_timeslot_range.html", context, request=request
     )
     return JsonResponse(data)
+
+
+def _rm_managed_response(request):
+    """Modal JSON refusing to change a Resource Manager-owned slot."""
+    return JsonResponse(
+        {
+            "form_is_valid": False,
+            "error": RM_MANAGED_MESSAGE,
+            "html_form": loader.render_to_string(
+                "jobtracker/modals/rm_managed.html", {}, request=request
+            ),
+        }
+    )
 
 
 class _SlotDeletePermissionMixin:
@@ -1571,7 +1596,10 @@ class _SlotDeletePermissionMixin:
 
     def dispatch(self, request, *args, **kwargs):
         if request.user.is_authenticated:
-            _verify_slot_unit_access(request, self.get_object())
+            obj = self.get_object()
+            _verify_slot_unit_access(request, obj)
+            if isinstance(obj, TimeSlot) and obj.rm_managed:
+                return _rm_managed_response(request)
         return super().dispatch(request, *args, **kwargs)
 
 

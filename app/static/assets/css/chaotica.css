@@ -1671,3 +1671,16 @@ svg.christmas {
   );
   cursor: not-allowed;
 }
+
+/* Scheduler: slots owned by Resource Manager (PULL sync) - read-only here. */
+.vis-item .sched-rm-badge {
+  display: inline-block;
+  padding: 0 0.3em;
+  border-radius: 0.25rem;
+  font-size: 0.7em;
+  font-weight: 700;
+  line-height: 1.4;
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  vertical-align: middle;
+}

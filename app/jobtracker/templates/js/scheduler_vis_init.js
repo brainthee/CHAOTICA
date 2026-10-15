@@ -426,6 +426,9 @@
     // inactive jobs) as locked — show a lock and say why in the tooltip.
     var locked = !!e.locked_reason;
     if (locked) icon = '<i class="fa-solid fa-lock me-1"></i>' + icon;
+    // Resource Manager owns it (PULL sync): badge it so it's clearly not
+    // editable here.
+    if (e.rm_managed) icon = '<span class="sched-rm-badge me-1" title="Managed in RM">RM</span>' + icon;
     return {
       id: idPrefix + e.id,
       group: e.resourceId,

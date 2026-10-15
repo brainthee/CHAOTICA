@@ -101,6 +101,9 @@
                 {% else %}
                   <span class="badge badge-phoenix badge-phoenix-info">Pending</span>
                 {% endif %}
+                {% if leave.rm_managed %}
+                  <span class="badge badge-phoenix badge-phoenix-info" title="Comes from Resource Manager - change it there">Managed in RM</span>
+                {% endif %}
                 {% if leave.requested_late %}
                   <span class="badge badge-phoenix badge-phoenix-warning">Late</span>
                 {% endif %}

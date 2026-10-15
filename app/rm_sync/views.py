@@ -136,7 +136,7 @@ def rm_run_sync(request):
         messages.warning(request, "RM Sync already running")
         return HttpResponseRedirect(reverse("rm_settings"))
 
-    task_sync_rm_schedule.do(request)
+    task_sync_rm_schedule().do()
     messages.info(request, "Sync Running...")
     return HttpResponseRedirect(reverse("rm_settings"))
 

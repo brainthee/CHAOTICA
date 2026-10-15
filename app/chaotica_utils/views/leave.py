@@ -28,7 +28,9 @@ from django.views.decorators.http import (
 @require_http_methods(["POST", "GET"])
 def view_own_leave(request):
     context = {}
-    leave_list = LeaveRequest.objects.filter(user=request.user)
+    leave_list = LeaveRequest.objects.filter(user=request.user).select_related(
+        "timeslot__rm_inbound__record"
+    )
     context = {
         "leave_list": leave_list,
     }
@@ -97,6 +99,7 @@ def manage_leave(request):
             "user__manager__city__country",
             "user__acting_manager__city",
             "user__acting_manager__city__country",
+            "timeslot__rm_inbound__record",
         )
         .prefetch_related(
             Prefetch(

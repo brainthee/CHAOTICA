@@ -14,7 +14,10 @@
             </div>
             <div class="modal-body">
                 <p>
-                    {% if leave.can_cancel %}
+                    {% if leave.rm_managed %}
+                    <span class="badge badge-phoenix badge-phoenix-info me-1">Managed in RM</span>
+                    This leave comes from Resource Manager (RM). Change or cancel it in RM; CHAOTICA picks up the change on the next sync.
+                    {% elif leave.can_cancel %}
                     Are you sure you wish to cancel your leave? This will update your schedule straight away.
                     {% else %}
                     This leave can not be cancelled as it's in the past.

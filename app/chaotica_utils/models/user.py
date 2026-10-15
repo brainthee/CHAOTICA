@@ -743,7 +743,7 @@ class User(AbstractUser):
         end = end or end_of_week
 
         slots = self.timeslots.filter(end__gte=start, start__lte=end).prefetch_related(
-            "phase", "phase__job"
+            "phase", "phase__job", "rm_inbound__record"
         )
         for slot in slots:
             slot_json = slot.get_schedule_json()
@@ -877,7 +877,10 @@ class User(AbstractUser):
         created_timeslots = []
 
         # Find timeslots that overlap with the range
-        queryset = self.timeslots.filter(start__lt=end_date, end__gt=start_date)
+        # Resource Manager-owned slots are left alone (they're managed in RM).
+        queryset = self.timeslots.filter(
+            start__lt=end_date, end__gt=start_date
+        ).exclude(TimeSlot.rm_managed_q())
         if slot_type_pks is not None:
             queryset = queryset.filter(slot_type_id__in=slot_type_pks)
 

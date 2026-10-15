@@ -30,6 +30,12 @@
             {% endfor %}
           </ul>
         </p>
+        {% if rm_managed_count %}
+          <p class="text-body-secondary fs-9">
+            <span class="badge badge-phoenix badge-phoenix-info">Managed in RM</span>
+            {{ rm_managed_count }} slot{{ rm_managed_count|pluralize }} from Resource Manager will be kept &ndash; change {{ rm_managed_count|pluralize:"it,them" }} in RM.
+          </p>
+        {% endif %}
 
         <p>
           This will modify the overlapping comments:

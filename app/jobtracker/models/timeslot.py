@@ -13,6 +13,10 @@ from django.contrib.contenttypes.fields import GenericRelation
 from chaotica_utils.models import Note, UserCost
 from chaotica_utils.utils import ext_reverse
 from chaotica_utils.views.common import log_system_activity
+from rm_sync.enums import RMSyncDirection
+
+#: Shown wherever CHAOTICA refuses to change a slot Resource Manager owns.
+RM_MANAGED_MESSAGE = "Managed in RM — change it there."
 from chaotica_utils.middleware.common import get_current_user
 from django.core.exceptions import ValidationError
 from django.utils import timezone as dj_timezone
@@ -192,6 +196,26 @@ class TimeSlot(models.Model):
     def is_project(self):
         return self.slot_type.pk == DefaultTimeSlotTypes.INTERNAL_PROJECT
 
+    @staticmethod
+    def rm_managed_q():
+        """Q matching slots Resource Manager owns (see :attr:`rm_managed`)."""
+        return models.Q(rm_inbound__record__direction=RMSyncDirection.PULL)
+
+    @property
+    def rm_managed(self):
+        """Imported from Resource Manager for someone RM is the source of truth
+        for (a PULL sync). Read-only here: a change in CHAOTICA would be
+        overwritten, or the item re-imported, on the next sync."""
+        if not self.pk:
+            return False
+        from django.core.exceptions import ObjectDoesNotExist
+
+        try:
+            inbound = self.rm_inbound
+        except ObjectDoesNotExist:
+            return False
+        return inbound.record.direction == RMSyncDirection.PULL
+
     def is_leave(self):
         # Annual leave is created & owned by a LeaveRequest, so it must be
         # managed there (not edited directly on the scheduler).
@@ -329,6 +353,11 @@ class TimeSlot(models.Model):
 
         if compressed_view:
             data["classNames"] += " fc-title-nowrap"
+
+        if self.rm_managed:
+            data["can_edit"] = False
+            data["rm_managed"] = True
+            data["locked_reason"] = RM_MANAGED_MESSAGE
 
         # Booking guard: delivery slots on finished / not-yet-scoped phases (or
         # inactive jobs) are locked on the timeline, with the reason shown.
