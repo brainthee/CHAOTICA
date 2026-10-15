@@ -109,8 +109,10 @@ member's **Manage roles** action on the Team tab.
 
 *Requires `can_view_loaded_costs`.*
 
-The unit's support-premium default, its support profiles (and their members),
-and each member's current loaded cost rate with a **Set rate** action.
+The unit's support-premium default and its support profiles (and their
+members). Loaded cost rates are managed site-wide on
+[Operations → Loaded Cost Rates](../operations/loaded_cost_rates.md); the tab
+links there, filtered to this unit.
 
 ### Activity
 

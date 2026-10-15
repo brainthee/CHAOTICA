@@ -67,15 +67,16 @@ job's profile is chosen on the job page.
 
 On the organisational-unit detail page, users with the **Can view loaded cost
 rates** permission see an extra **Support Teams** tab (hidden from everyone else). It
-holds three cards:
+holds two cards:
 
 - **Settings**: edit the unit's *support premium default %*, which is used by
   any profile that has no premium of its own.
 - **Support Profiles**: add, edit or delete profiles (name, premium, default).
   Use each profile's menu to add members, and the member rows to edit or remove
   them.
-- **Loaded Cost Rates** — set each member's date-effective LCR (see below). Rates
-  are add-only: a new rate keeps the previous ones for historical budgets.
+
+Loaded cost rates are on their own page, **Operations → Loaded Cost Rates**
+(see [Loaded cost rates](#loaded-cost-rates-lcr)).
 
 Because all of this is normal data behind a permission, changing the support
 model is a day-to-day operation, not a code change.
@@ -112,13 +113,15 @@ are likewise all editable data, not code.
 The money→hours conversion uses each person's **loaded cost rate**, a per-user,
 date-effective cost. Budgets are always shown at **today's** rate. Each cash-out
 also records the rate in force when it was made (see
-[Cashing out budget](#cashing-out-budget)). Manage rates from the unit's
-**Support Teams → Loaded Cost Rates** card.
+[Cashing out budget](#cashing-out-budget)). Manage rates from the
+**Operations → Loaded Cost Rates** page (see
+[Loaded Cost Rates](../operations/loaded_cost_rates.md)).
 
 **Visibility:** loaded cost rates are financially sensitive. They, and any £
 figures derived from them, are only shown to holders of the **Can view loaded
-cost rates** (`can_view_loaded_costs`) permission. That covers the unit
-**Support Teams** tab, money columns on the **Billing Codes** page, and the per-person
+cost rates** (`can_view_loaded_costs`) permission. That covers the
+**Loaded Cost Rates** page, the unit **Support Teams** tab, money columns on
+the **Billing Codes** page, and the per-person
 budget and hours on the job's **Sales** tab. Hours alone, next to revenue and
 share, would reveal a person's rate, so they are hidden too.
 

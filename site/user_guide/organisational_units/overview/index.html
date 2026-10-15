@@ -1131,6 +1131,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#unit-list" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Unit list
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#detail-page" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1213,6 +1224,39 @@
     <span class="md-ellipsis">
       
         Reviews
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#roles-permissions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Roles &amp; Permissions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#support-teams" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Support Teams
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#activity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Activity
       
     </span>
   </a>
@@ -1959,6 +2003,34 @@
     
   
     Managing Leave
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../operations/loaded_cost_rates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Loaded Cost Rates
   
 
     
@@ -3175,6 +3247,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#unit-list" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Unit list
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#detail-page" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3263,6 +3346,39 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#roles-permissions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Roles &amp; Permissions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#support-teams" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Support Teams
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#activity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Activity
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3331,18 +3447,23 @@
 
 <h1 id="organisational-units">Organisational Units<a class="headerlink" href="#organisational-units" title="Permanent link">&para;</a></h1>
 <p>Organisational units are the teams and departments that own jobs and manage members in CHAOTICA. They form the core organisational structure — permissions, job ownership, and scheduling access are all scoped to units.</p>
+<h2 id="unit-list">Unit list<a class="headerlink" href="#unit-list" title="Permanent link">&para;</a></h2>
+<p><strong>Operations → Organisational Units</strong> shows every unit you can see as a card with
+its leads, member count and job count. Units you belong to carry a <strong>Member</strong>
+badge. <strong>New unit</strong> appears only for people with <code>add_organisationalunit</code>.</p>
 <h2 id="detail-page">Detail Page<a class="headerlink" href="#detail-page" title="Permanent link">&para;</a></h2>
 <p>The unit detail page is accessed from the unit list or by navigating to a specific unit. The header displays:</p>
 <ul>
 <li>Unit name and description</li>
 <li><strong>Leads</strong> — the unit's lead(s) shown as clickable avatar chips linking to each profile (or "No leads assigned"). Being named a lead automatically grants that person <strong>manager rights</strong> on the unit (including the ability to add and <a href="../preloading_members/">import members</a>).</li>
 <li><strong>At-a-glance stats</strong>:<ul>
+<li><strong>Members</strong> — active (non-disabled) members</li>
 <li><strong>Phases in flight</strong> — count of the unit's phases currently in progress or in QA</li>
-<li><strong>Team utilisation</strong> — confirmed utilisation across the coming four weeks. Utilisation is calculated over <strong>consultants only</strong> (the members who get booked onto delivery), so managers, sales and other roles don't drag the figure down. This figure is loaded asynchronously (a spinner resolves to a percentage) because it is calculated from the full schedule.</li>
+<li><strong>Utilisation</strong> — confirmed utilisation across the coming four weeks, using the <a href="../../scheduling/overview/">central formula</a> (confirmed days over effective working days), so it matches the Stats tab's four-week figure. Utilisation is calculated over <strong>consultants only</strong> (the members who get booked onto delivery), so managers, sales and other roles don't drag the figure down. This figure is loaded asynchronously (a spinner resolves to a percentage) because it is calculated from the full schedule.</li>
 </ul>
 </li>
 <li>Special requirements (if any) shown as a highlighted banner</li>
-<li>Actions: a <strong>Members</strong> dropdown grouping <strong>Add Member</strong>, <strong>Pre-load Member</strong> and <strong>Import CSV</strong> (all require <code>manage_members</code>), and an <strong>Edit</strong> button (requires <code>change_organisationalunit</code>)</li>
+<li>Actions: <strong>Add member</strong> (requires <code>manage_members</code>), and a <strong>⋯</strong> menu with <strong>Pre-load member</strong> and <strong>Import members (CSV)</strong> (<code>manage_members</code>), <strong>Unit settings</strong> (<code>change_organisationalunit</code>) and <strong>Delete unit</strong> (<code>delete_organisationalunit</code>)</li>
 </ul>
 <blockquote>
 <p><strong>Add Member</strong> adds an <em>existing</em> user; <strong>Pre-load Member</strong> and <strong>Import CSV</strong> let you onboard people who haven't logged in yet. See <a href="../preloading_members/">Pre-loading &amp; Importing Members</a>.</p>
@@ -3356,7 +3477,7 @@
 <ul>
 <li><strong>Member</strong> — name and avatar (links to the profile)</li>
 <li><strong>Job level &amp; title</strong> — current job-level badge and job title</li>
-<li><strong>Utilisation</strong> — a bar and percentage of confirmed utilisation across the coming four weeks (consultants only; other roles show "—")</li>
+<li><strong>Utilisation</strong> — a bar and percentage of confirmed utilisation across the coming four weeks (consultants only; other roles show "—"), over effective working days like everywhere else</li>
 <li><strong>Active jobs</strong> — the number of the unit's active jobs the member is scheduled on</li>
 <li><strong>Roles</strong> — assigned unit role badges</li>
 <li><strong>Actions</strong> — a per-row menu. Everyone sees <strong>View Profile</strong>, <strong>View Schedule</strong> and <strong>Email</strong>. Members with <code>manage_members</code> additionally get:<ul>
@@ -3367,24 +3488,28 @@
 </li>
 </ul>
 <p>Utilisation and active-job counts are computed in bulk for the whole team, so the table stays fast regardless of member count.</p>
-<p>The table can be filtered above the header by <strong>Role</strong> and <strong>Job level</strong>, and searched
+<p>The table can be filtered by <strong>Role</strong> and <strong>Job level</strong> (top right of the tab), and searched
 by the free-text box (name, title, etc.). Members whose account is <strong>disabled</strong> are
-hidden by default; tick <strong>Show disabled users</strong> to include them (they're tagged with a
+hidden by default; switch on <strong>Show disabled</strong> to include them (they're tagged with a
 "Disabled" badge).</p>
 <h3 id="jobs">Jobs<a class="headerlink" href="#jobs" title="Permanent link">&para;</a></h3>
 <p><em>Requires <code>can_view_jobs</code> permission.</em></p>
-<p>An AJAX-loaded table listing all jobs owned by the unit, with phase counts and status information.</p>
+<p>An AJAX-loaded, searchable and paginated table of every job owned by the unit — ID, title, client, start/end dates, phase count and status.</p>
 <h3 id="board">Board<a class="headerlink" href="#board" title="Permanent link">&para;</a></h3>
 <p><em>Requires <code>can_view_jobs</code> permission.</em></p>
 <p>A kanban-style board showing all active phases for the unit's jobs, organised by workflow stage. See <a href="#kanban-board">Kanban Board</a> below.</p>
 <h3 id="stats">Stats<a class="headerlink" href="#stats" title="Permanent link">&para;</a></h3>
 <p><em>Always visible.</em></p>
-<p>AJAX-loaded statistics with date-range filtering, laid out top to bottom:</p>
+<p>AJAX-loaded statistics. The header has quick ranges (<strong>30d</strong>, <strong>3m</strong>, <strong>6m</strong>,
+<strong>12m</strong>) and a custom range picker (default: last three months); changing the
+range reloads the tab in place. The range applies to <strong>phases delivered</strong> and
+the <strong>consultant utilisation table</strong>; the other sections note their own period.
+Laid out top to bottom:</p>
 <ol>
 <li><strong>Summary tiles</strong> — active members, active jobs, phases delivered in the selected range, coming-4-week utilisation, and (only for users with <code>can_view_jobs</code>) total active-job revenue.</li>
-<li><strong>Upcoming availability</strong> — consultant utilisation across four time periods (this week, 2 weeks, 4 weeks, 8 weeks) for confirmed, tentative, non-delivery, and available time, with a stacked ECharts bar chart.</li>
+<li><strong>Upcoming availability</strong> — consultant utilisation across four time periods (this week, 2 weeks, 4 weeks, 8 weeks) for confirmed, tentative, internal, and available time, with a stacked ECharts bar chart. Each bar is 100% of the effective working days (leave and public holidays are already removed), and every day falls in exactly one segment — confirmed, then tentative, then internal, then available — so the green segment always matches the utilisation figure.</li>
 <li><strong>Delivery throughput</strong> — phases delivered per month over the last six months (bar chart).</li>
-<li><strong>Service breakdown</strong> — phases grouped by service (bar chart).</li>
+<li><strong>Service breakdown</strong> — all-time phases on the unit's jobs, grouped by service (bar chart).</li>
 <li><strong>Job pipeline</strong> — job counts by status.</li>
 <li><strong>Consultant utilisation table</strong> — each consultant's confirmed utilisation over the selected date range (utilisation is tracked for consultants only).</li>
 </ol>
@@ -3396,7 +3521,21 @@ roll-up. See
 <a href="../../clients/billing_codes/#team-and-unit-billing-tabs">Team and unit billing tabs</a>.</p>
 <h3 id="reviews">Reviews<a class="headerlink" href="#reviews" title="Permanent link">&para;</a></h3>
 <p><em>Requires <code>can_view_all_reviews</code> permission.</em></p>
-<p>Shows in-progress and recently completed (last 30 days) QA reviews for the unit. Users with <code>can_conduct_review</code> permission can start new reviews from this tab.</p>
+<p>Shows in-progress and recently completed (last 30 days) QA reviews for the unit, each with a count. Users with <code>can_conduct_review</code> permission can start new reviews from this tab.</p>
+<h3 id="roles-permissions">Roles &amp; Permissions<a class="headerlink" href="#roles-permissions" title="Permanent link">&para;</a></h3>
+<p><em>Requires permission to view the unit's permissions.</em></p>
+<p>A read-only grid of which members hold which unit roles, followed by a card per
+role listing the object-level permissions it grants. Roles are assigned from a
+member's <strong>Manage roles</strong> action on the Team tab.</p>
+<h3 id="support-teams">Support Teams<a class="headerlink" href="#support-teams" title="Permanent link">&para;</a></h3>
+<p><em>Requires <code>can_view_loaded_costs</code>.</em></p>
+<p>The unit's support-premium default and its support profiles (and their
+members). Loaded cost rates are managed site-wide on
+<a href="../../operations/loaded_cost_rates/">Operations → Loaded Cost Rates</a>; the tab
+links there, filtered to this unit.</p>
+<h3 id="activity">Activity<a class="headerlink" href="#activity" title="Permanent link">&para;</a></h3>
+<p><em>Always visible.</em></p>
+<p>A timeline of changes to the unit, its members and its settings.</p>
 <h2 id="kanban-board">Kanban Board<a class="headerlink" href="#kanban-board" title="Permanent link">&para;</a></h2>
 <p>The board tab provides a read-only kanban view of all active phases across the unit's jobs. Phases are mapped to seven columns based on their status:</p>
 <pre class="mermaid"><code>flowchart LR

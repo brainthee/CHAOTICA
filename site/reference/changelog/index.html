@@ -1781,6 +1781,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/operations/loaded_cost_rates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Loaded Cost Rates
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2940,6 +2968,24 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -2956,6 +3002,36 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#2026-10-14-permission-hardening" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2026-10-14 - Permission hardening
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -2989,6 +3065,25 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#2026-10-14-permission-hardening" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2026-10-14 - Permission hardening
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -3005,10 +3100,47 @@
 
 
 <h1 id="changelog">Changelog<a class="headerlink" href="#changelog" title="Permanent link">&para;</a></h1>
-<div class="admonition note">
-<p class="admonition-title">Coming Soon</p>
-<p>This section is under development. Check back for updates.</p>
-</div>
+<h2 id="2026-10-14-permission-hardening">2026-10-14 - Permission hardening<a class="headerlink" href="#2026-10-14-permission-hardening" title="Permanent link">&para;</a></h2>
+<p>Security fixes from the permissions review:</p>
+<ul>
+<li><strong>Site-data import</strong> (Settings → Import) now requires <code>manage_site_settings</code>. It
+  was reachable by any logged-in user, and the user CSV importer could set
+  <code>is_superuser</code> / <code>is_staff</code> / <code>is_active</code>; those columns are no longer accepted,
+  and manager columns no longer create accounts.</li>
+<li><strong>Impersonation</strong> is superuser-only (previously any <code>is_staff</code> user) and every
+  session start and stop is audited.</li>
+<li><strong>Workflow checklists</strong> require the <code>workflowtask</code> model permissions.</li>
+<li><strong>Scheduler</strong>: slot create/edit re-verifies the unit of the phase, project or
+  user actually submitted, so bookings can't be made in another unit's jobs.</li>
+<li><strong>Scheduled reports</strong> may only run as yourself or people you manage (report
+  admins: anyone), and only email internal addresses.</li>
+<li><strong>Job guests</strong>: being booked on a job grants view, schedule and notes;
+  <code>can_update_job</code> is limited to phase leads, authors and QA reviewers.</li>
+<li><strong>Org units</strong>:<ul>
+<li>deactivation revokes unit permissions immediately;</li>
+<li>only <code>manage_user</code> holders can re-enable a disabled account via pre-load;</li>
+<li>you can't pre-load yourself;</li>
+<li>roles carrying unit-admin rights can only be granted by someone holding
+  those rights.</li>
+</ul>
+</li>
+<li>
+<p><strong>Role codenames</strong>: three typos that silently dropped grants are fixed:</p>
+<ul>
+<li>qualification visibility for all global roles;</li>
+<li>Manage User for Delivery Managers;</li>
+<li>the Consultant delivery queue.</li>
+</ul>
+<p>Unknown codenames are now logged, and a test catches them.
+- <strong>Access scoping</strong>:
+- unit leave approvers only cover current members and can't approve their own
+  leave;
+- user calendar feeds follow the scheduler visibility rule;
+- following a job/phase/unit needs view access;
+- nobody can be their own manager.</p>
+</li>
+</ul>
+<p>See <a href="../../administration/permissions/">Permission Model</a>.</p>
 
 
 

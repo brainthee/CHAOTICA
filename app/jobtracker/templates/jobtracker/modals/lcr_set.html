@@ -5,7 +5,7 @@
         <form method="post" action="{{ request.get_full_path }}" class="js-submit-modal-form">
             {% csrf_token %}
             <div class="modal-header">
-                <h6 class="modal-title" id="modal-title-default">Loaded cost rate &mdash; {{ membership.member }}</h6>
+                <h6 class="modal-title" id="modal-title-default">Loaded cost rate &mdash; {{ target }}</h6>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body pb-0">

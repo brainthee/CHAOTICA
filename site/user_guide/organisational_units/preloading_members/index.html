@@ -1912,6 +1912,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../operations/loaded_cost_rates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Loaded Cost Rates
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -3233,9 +3261,20 @@ through the setup wizard).</p>
 <li>Save.</li>
 </ol>
 <p>If the email already belongs to an existing user, they're simply added to the
-unit (their existing site role is left untouched). If that account had been
-<strong>disabled</strong>, pre-loading (or importing) it again <strong>re-enables</strong> it — so someone
-who was off-boarded and later returns regains access.</p>
+unit (their existing site role is left untouched).</p>
+<p>If that account had been <strong>disabled</strong>:</p>
+<ul>
+<li>Users with the global <strong>Manage Users</strong> permission <strong>re-enable</strong> it by
+  pre-loading or importing it, so someone who was off-boarded and later returns
+  regains access. The re-enable is recorded in the Activity Log.</li>
+<li>Unit managers without that permission add the membership, but the account
+  <strong>stays disabled</strong> and you're told to ask an admin. Re-enabling an account is
+  a site-wide change, not a unit one.</li>
+</ul>
+<p>You can't pre-load or import <strong>yourself</strong>, and you can only assign unit roles
+within your own authority: a role that carries unit-admin rights (managing
+members, editing the unit, loaded costs, leave approval) needs you to hold those
+rights in the unit. For example, Service Delivery can't make someone a Manager.</p>
 <h3 id="site-global-roles">Site (global) roles<a class="headerlink" href="#site-global-roles" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Unit managers</strong> can only grant the default <strong>User</strong> site role. New accounts
@@ -3296,7 +3335,8 @@ accented names are read correctly.</p>
 </tbody>
 </table>
 <p>Rows are skipped (and reported) when the email is missing, the domain isn't
-allowed (see below), or a named unit/site role doesn't exist.</p>
+allowed (see below), a named unit/site role doesn't exist, the row is your own
+email, or a unit role is above what you can assign.</p>
 <h2 id="email-domain-allowlist">Email domain allowlist<a class="headerlink" href="#email-domain-allowlist" title="Permanent link">&para;</a></h2>
 <p>To stop typos or out-of-scope addresses being added, site administrators can
 restrict which email domains may be added or self-register. Set

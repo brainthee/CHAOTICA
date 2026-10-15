@@ -1,7 +1,8 @@
 {% load static %}
 <div class="mb-3">
   <h4 class="mb-0">Support Teams</h4>
-  <p class="fs-9 text-body-tertiary mb-0">Support-team defaults and loaded cost rates for this unit.</p>
+  <p class="fs-9 text-body-tertiary mb-0">Support-team defaults and profiles for this unit. Loaded cost rates are managed on
+    <a href="{% url 'lcr_list' %}?unit={{ organisationalunit.slug }}">Operations &rarr; Loaded Cost Rates</a>.</p>
 </div>
 
 <div class="row g-3">
@@ -114,53 +115,6 @@
           No support profiles configured. Add a profile (e.g. "Context") and its members so new jobs get a support team automatically.
         </div>
         {% endfor %}
-      </div>
-    </div>
-  </div>
-
-  <!-- Loaded Cost Rates -->
-  <div class="col-12">
-    <div class="card h-100">
-      <div class="card-header">
-        <h5 class="mb-0">Loaded Cost Rates</h5>
-        <p class="text-body-tertiary fs-9 mb-0">Only visible to holders of the "view loaded cost rates" permission.</p>
-      </div>
-      <div class="card-body p-0">
-        <div class="table-responsive">
-          <table class="table table-sm align-middle fs-9 mb-0">
-            <thead>
-              <tr class="text-body-secondary">
-                <th class="ps-3">Person</th>
-                <th class="text-end">Current rate (/hr)</th>
-                <th>Effective from</th>
-                <th class="text-end pe-3"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for ms in active_memberships %}
-              {% if not ms.is_disabled %}
-              <tr>
-                <td class="ps-3">
-                  {% include 'partials/users/user_table_display.html' with notitle=1 noorg=1 u=ms.member %}
-                </td>
-                <td class="text-end">
-                  <span class="fw-semibold {% if not ms.current_lcr %}text-danger{% endif %}">
-                    {% if ms.current_lcr %}{{ ms.current_lcr.cost_per_hour|floatformat:2 }}{% else %}not set{% endif %}
-                  </span>
-                </td>
-                <td><span class="text-body-secondary">{{ ms.current_lcr.effective_from|default:"—" }}</span></td>
-                <td class="text-end pe-3">
-                  <button class="btn btn-sm btn-phoenix-secondary js-load-modal-form"
-                     data-url="{% url 'organisationalunit_set_lcr' slug=organisationalunit.slug member_pk=ms.pk %}">
-                     Set rate
-                  </button>
-                </td>
-              </tr>
-              {% endif %}
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
       </div>
     </div>
   </div>

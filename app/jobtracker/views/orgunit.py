@@ -42,7 +42,6 @@ from ..forms import (
     OrganisationalUnitFinanceSettingsForm,
     SupportTemplateMemberForm,
     SupportProfileForm,
-    UserCostForm,
 )
 from ..mixins import PrefetchRelatedMixin
 from ..utils import get_scheduler_members, get_scheduler_slots
@@ -242,8 +241,6 @@ class OrganisationalUnitDetailView(
         )
         context["can_view_loaded_costs"] = can_view_loaded_costs
         if can_view_loaded_costs:
-            from chaotica_utils.models import UserCost
-
             context["support_profiles"] = list(
                 unit.support_profiles.prefetch_related(
                     Prefetch(
@@ -254,14 +251,6 @@ class OrganisationalUnitDetailView(
                     )
                 )
             )
-            # Current (latest-effective) LCR per member, one query.
-            latest_cost = {}
-            for uc in UserCost.objects.filter(user_id__in=member_ids).order_by(
-                "user_id", "-effective_from"
-            ):
-                latest_cost.setdefault(uc.user_id, uc)
-            for ms in memberships:
-                ms.current_lcr = latest_cost.get(ms.member_id)
 
         return context
 
@@ -1317,49 +1306,6 @@ def organisationalunit_support_profile_delete(request, slug, pk):
 
     data["html_form"] = loader.render_to_string(
         "jobtracker/modals/organisationalunit_support_profile_delete.html",
-        context,
-        request=request,
-    )
-    return JsonResponse(data)
-
-
-@permission_required_or_403(
-    "jobtracker.can_view_loaded_costs", (OrganisationalUnit, "slug", "slug")
-)
-def organisationalunit_set_lcr(request, slug, member_pk):
-    """Add a new date-effective loaded cost rate for a unit member."""
-    from chaotica_utils.models import UserCost
-
-    org_unit = get_object_or_404(OrganisationalUnit, slug=slug)
-    membership = get_object_or_404(
-        OrganisationalUnitMember, unit=org_unit, pk=member_pk
-    )
-    data = dict()
-    if request.method == "POST":
-        form = UserCostForm(request.POST)
-        if form.is_valid():
-            cost = form.save(commit=False)
-            cost.user = membership.member
-            cost.save()
-            data["form_is_valid"] = True
-        else:
-            data["form_is_valid"] = False
-            data["form_errors"] = form.errors
-    else:
-        form = UserCostForm()
-
-    # Show existing rate history for context.
-    history = UserCost.objects.filter(user=membership.member).order_by(
-        "-effective_from"
-    )
-    context = {
-        "orgUnit": org_unit,
-        "membership": membership,
-        "form": form,
-        "history": history,
-    }
-    data["html_form"] = loader.render_to_string(
-        "jobtracker/modals/organisationalunit_set_lcr.html",
         context,
         request=request,
     )

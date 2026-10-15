@@ -2941,13 +2941,18 @@ class SupportTemplateMemberForm(forms.ModelForm):
 class UserCostForm(forms.ModelForm):
     """Add a new date-effective loaded cost rate for a user.
 
-    ``user`` is fixed by the view (the member whose rate is being set), so the
+    ``user`` is fixed by the view (the person whose rate is being set), so the
     form only captures the effective date and rate — a new row per change keeps
     the history.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, user=None, **kwargs):
         super(UserCostForm, self).__init__(*args, **kwargs)
+        self.target_user = user
+        if user is not None:
+            self.instance.user = user
+        self.fields["effective_from"].required = True
+        self.fields["cost_per_hour"].required = True
         self.helper = FormHelper(self)
         self.helper.layout = Layout(
             Div(
@@ -2979,6 +2984,26 @@ class UserCostForm(forms.ModelForm):
                 css_class="modal-footer",
             ),
         )
+
+    def clean_cost_per_hour(self):
+        cost = self.cleaned_data.get("cost_per_hour")
+        if cost is not None and cost <= 0:
+            raise forms.ValidationError("Rate must be greater than zero.")
+        return cost
+
+    def clean_effective_from(self):
+        effective_from = self.cleaned_data.get("effective_from")
+        if (
+            effective_from
+            and self.target_user is not None
+            and UserCost.objects.filter(
+                user=self.target_user, effective_from=effective_from
+            ).exists()
+        ):
+            raise forms.ValidationError(
+                "A rate already starts on this date. Pick another date."
+            )
+        return effective_from
 
     class Meta:
         model = UserCost

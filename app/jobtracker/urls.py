@@ -863,11 +863,6 @@ urlpatterns = [
         name="organisationalunit_support_template_delete",
     ),
     path(
-        "ops/unit/<str:slug>/finance/lcr/<int:member_pk>",
-        views.organisationalunit_set_lcr,
-        name="organisationalunit_set_lcr",
-    ),
-    path(
         "ops/unit/<str:slug>/stats/",
         views.orgunit_stats_partial,
         name="orgunit_stats_partial",
@@ -903,6 +898,12 @@ urlpatterns = [
         name="organisationalunit_delete",
     ),
     # Team CRUD
+    path("ops/loaded-cost-rates/", views.lcr_list, name="lcr_list"),
+    path(
+        "ops/loaded-cost-rates/<int:user_pk>/set/",
+        views.lcr_set,
+        name="lcr_set",
+    ),
     path("ops/teams/", views.TeamListView.as_view(), name="team_list"),
     path(
         "ops/teams/create/",

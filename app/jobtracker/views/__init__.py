@@ -9,6 +9,7 @@ from .team import *
 from .client import *
 from .billingcodes import *
 from .orgunit import *
+from .lcr import *
 
 from .scheduler import *
 from .service import *

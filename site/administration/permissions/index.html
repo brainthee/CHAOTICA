@@ -1783,6 +1783,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user_guide/operations/loaded_cost_rates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Loaded Cost Rates
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -2861,6 +2889,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#impersonation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Impersonation
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2927,6 +2966,28 @@
     <span class="md-ellipsis">
       
         Unit Roles
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#assigning-unit-roles-role-ceiling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Assigning Unit Roles (role ceiling)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deactivating-and-re-enabling-accounts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deactivating and Re-enabling Accounts
       
     </span>
   </a>
@@ -4020,6 +4081,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#impersonation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Impersonation
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -4093,6 +4165,28 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#assigning-unit-roles-role-ceiling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Assigning Unit Roles (role ceiling)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deactivating-and-re-enabling-accounts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deactivating and Re-enabling Accounts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#customising-role-permissions" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4157,7 +4251,7 @@
 </tr>
 <tr>
 <td><strong>Job Guest Access</strong></td>
-<td>Django Guardian</td>
+<td>Computed at request time from the job team</td>
 <td>Per job</td>
 <td><code>jobtracker.enums.JobGuestPermissions</code></td>
 </tr>
@@ -4271,7 +4365,7 @@ grouped, humanised permission lists used across all three views.</p>
 </tbody>
 </table>
 <h3 id="global-admin">Global: Admin<a class="headerlink" href="#global-admin" title="Permanent link">&para;</a></h3>
-<p>Full system access including user management, impersonation, site settings, and activity logs.</p>
+<p>User management, site settings, and activity logs. (Impersonation is <strong>superuser-only</strong> - see <a href="#impersonation">Impersonation</a>.)</p>
 <table>
 <thead>
 <tr>
@@ -4338,7 +4432,7 @@ grouped, humanised permission lists used across all three views.</p>
 </tr>
 <tr>
 <td>Users</td>
-<td>Manage User, Impersonate Users, Manage Site Settings, View Activity Logs</td>
+<td>Manage User, Impersonate Users (unused - see <a href="#impersonation">Impersonation</a>), Manage Site Settings, View Activity Logs</td>
 </tr>
 </tbody>
 </table>
@@ -5250,7 +5344,7 @@ read-only, but every user can create projects and create/own their own reports.<
 </tr>
 <tr>
 <td><code>can_deliver_jobs</code></td>
-<td>Can deliver jobs</td>
+<td>Legacy duplicate - unused; the dashboard delivery queue checks <code>can_deliver_job</code></td>
 </tr>
 <tr>
 <td><code>can_conduct_review</code></td>
@@ -5395,11 +5489,11 @@ read-only, but every user can create projects and create/own their own reports.<
 </tr>
 <tr>
 <td><code>impersonate_users</code></td>
-<td>Can impersonate other users</td>
+<td>Can impersonate other users (not checked - impersonation is superuser-only)</td>
 </tr>
 <tr>
 <td><code>manage_site_settings</code></td>
-<td>Can change site settings</td>
+<td>Can change site settings (also gates the site-data import on the Settings page)</td>
 </tr>
 <tr>
 <td><code>view_activity_logs</code></td>
@@ -5407,35 +5501,49 @@ read-only, but every user can create projects and create/own their own reports.<
 </tr>
 </tbody>
 </table>
+<h3 id="impersonation">Impersonation<a class="headerlink" href="#impersonation" title="Permanent link">&para;</a></h3>
+<p>Impersonation (<a href="https://pypi.org/project/django-impersonate/">django-impersonate</a>)
+is restricted to <strong>superusers</strong> (<code>IMPERSONATE = {"REQUIRE_SUPERUSER": True}</code> in
+settings). Before this setting, the package default let any <code>is_staff</code> user
+impersonate. Every impersonation start and stop is written to the Activity Log as
+a <code>SECURITY</code> event (actor = the impersonator, target = the impersonated user).</p>
 <hr />
 <h2 id="job-guest-permissions">Job Guest Permissions<a class="headerlink" href="#job-guest-permissions" title="Permanent link">&para;</a></h2>
-<p>Users added as <strong>guests</strong> on a job receive a limited set of guardian permissions, defined in <code>JobGuestPermissions.ALLOWED</code> (<code>jobtracker/enums.py</code>):</p>
+<p>Members of a job's <strong>team</strong> get a limited set of permissions on that job without
+holding a unit role. No guardian rows are involved: <code>job_permission_required_or_403</code>
+and <code>JobPermissionRequiredMixin</code> compute this at request time via
+<code>JobGuestPermissions.permits()</code> (<code>jobtracker/enums.py</code>).</p>
+<p>The team (<code>Job.team()</code>) is anyone booked on the job, phase leads, report authors,
+TQA/PQA reviewers, the creator, account managers, scopers and the scope signer.</p>
 <table>
 <thead>
 <tr>
 <th>Permission</th>
-<th>Description</th>
+<th>Granted to</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>view_job_schedule</code></td>
-<td>View the job's schedule</td>
+<td><code>can_view_jobs</code></td>
+<td>Any team member</td>
 </tr>
 <tr>
-<td><code>can_update_job</code></td>
-<td>Update the job</td>
+<td><code>view_job_schedule</code></td>
+<td>Any team member</td>
 </tr>
 <tr>
 <td><code>can_add_note_job</code></td>
-<td>Add notes to the job</td>
+<td>Any team member</td>
 </tr>
 <tr>
-<td><code>can_view_jobs</code></td>
-<td>View the job</td>
+<td><code>can_update_job</code></td>
+<td><strong>Phase role holders only</strong> - project lead, report author, TQA or PQA on one of the job's phases</td>
 </tr>
 </tbody>
 </table>
+<p>Being booked on a job, or having created it, doesn't grant edit rights:
+<code>can_update_job</code> gates workflow transitions, field/role assignment, cloning,
+links, billing codes and dates. Edit rights otherwise come from a unit role.</p>
 <hr />
 <h2 id="phase-level-assignments">Phase-Level Assignments<a class="headerlink" href="#phase-level-assignments" title="Permanent link">&para;</a></h2>
 <p>Phases do not define their own permissions model. Access is inherited from the parent job's organisational unit. However, phases track key stakeholder assignments:</p>
@@ -5522,7 +5630,18 @@ the change on their next request — no per-user re-assignment is needed.</p>
 than waiting for the cron), ship it with a data migration that re-runs
 <code>sync_global_permissions()</code> for the existing groups — as
 <code>chaotica_utils/migrations/0036_resync_global_role_permissions.py</code> does for
-the project-creation and report create/view grants.</p>
+the project-creation and report create/view grants (and <code>0040</code> for the
+corrected codenames below).</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Codenames must exist - typos are dropped</p>
+<p>Permission strings in <code>GlobalRoles.PERMISSIONS</code> / <code>UnitRoles.PERMISSIONS</code>
+must be <code>app_label.codename</code> of a real permission. An unknown one is skipped
+by the sync and logged as an error (it used to be skipped silently). The test
+<code>chaotica_utils/tests/test_role_codenames.py</code> fails CI on any unknown codename.
+It was added after three typos had been silently dropping grants:
+<code>view_users_qualifications</code> (all global roles), <code>chaotica_utils.manage_user</code>
+(Delivery Manager), and the Consultant delivery queue (<code>can_deliver_job</code>).</p>
 </div>
 <div class="admonition note">
 <p class="admonition-title">Projects are gated site-wide, not per unit</p>
@@ -5558,8 +5677,36 @@ regardless of the roles' database pks. A role whose name isn't a known default
 <li>Removes any revoked permissions</li>
 </ol>
 <p>This ensures permissions always reflect the user's current roles.</p>
+<h3 id="assigning-unit-roles-role-ceiling">Assigning Unit Roles (role ceiling)<a class="headerlink" href="#assigning-unit-roles-role-ceiling" title="Permanent link">&para;</a></h3>
+<p>Anyone with <code>manage_members</code> on a unit can assign roles there. However, a role
+that carries a <strong>privileged</strong> unit permission can only be granted by someone who
+holds that permission in the unit themselves (superusers are exempt). The
+privileged permissions are <code>manage_members</code>, <code>change_organisationalunit</code>,
+<code>delete_organisationalunit</code>, <code>can_view_loaded_costs</code>,
+<code>can_approve_leave_requests</code> and <code>can_view_all_leave_requests</code>
+(<code>OrganisationalUnit.PRIVILEGED_PERMS</code>).</p>
+<p>For example, Service Delivery (which has <code>manage_members</code>) can assign Consultant,
+QA or Scheduler roles but <strong>not</strong> Manager. The rule applies to the role-edit
+modal, single pre-load and CSV import. When editing a member, any roles they
+already hold above the editor's ceiling are kept rather than stripped. Nobody
+(except superusers) can edit their own unit roles or pre-load/import themselves.</p>
+<h3 id="deactivating-and-re-enabling-accounts">Deactivating and Re-enabling Accounts<a class="headerlink" href="#deactivating-and-re-enabling-accounts" title="Permanent link">&para;</a></h3>
+<p>Deactivating a user (<code>User.set_active_status(False)</code>, used by the user management
+UI and <code>/api/v1/</code>) closes their team and unit memberships and <strong>immediately</strong>
+revokes their unit permissions. Re-enabling the account does not restore them -
+they have to be re-added to a unit. Both changes are recorded as <code>SECURITY</code>
+audit events.</p>
 <h3 id="customising-role-permissions">Customising Role Permissions<a class="headerlink" href="#customising-role-permissions" title="Permanent link">&para;</a></h3>
-<p>Unit role permissions can be customised beyond their defaults. Since <code>OrganisationalUnitRole.permissions</code> is a standard <code>ManyToManyField</code>, administrators can add or remove individual permissions from any role via the Django admin. The <code>sync_default_permissions()</code> method only runs when explicitly called to reset a role to its defaults.</p>
+<div class="admonition warning">
+<p class="admonition-title">Default roles are reset every day</p>
+<p>The daily <code>task_sync_role_permissions_to_default</code> cron (07:30) resets every
+unit role whose <strong>name</strong> matches a <code>UnitRoles</code> default back to its code
+definition, then re-syncs every unit. Global role groups are likewise reset by
+<code>task_sync_global_permissions</code>. Manual edits to a default role's or global
+group's permissions are therefore <strong>lost the next morning</strong>. To change a
+default role, change <code>UnitRoles.PERMISSIONS</code> / <code>GlobalRoles.PERMISSIONS</code> in
+code. Roles with a custom (non-default) name are left untouched by the reset.</p>
+</div>
 
 
 

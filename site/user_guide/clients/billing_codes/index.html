@@ -1060,6 +1060,28 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#billing-codes-list" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Billing Codes list
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#billing-code-page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Billing code page
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#visibility-scoping" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1943,6 +1965,34 @@
     
   
     Managing Leave
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../operations/loaded_cost_rates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Loaded Cost Rates
   
 
     
@@ -3171,6 +3221,28 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#billing-codes-list" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Billing Codes list
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#billing-code-page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Billing code page
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#visibility-scoping" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3306,8 +3378,33 @@ assigned to <strong>jobs, phases and projects</strong>, each assignment optional
 <strong>date range</strong> for <em>when</em> that code applies.</p>
 <h2 id="administering-codes">Administering codes<a class="headerlink" href="#administering-codes" title="Permanent link">&para;</a></h2>
 <p>Codes are managed per client from the client detail page under the <strong>Billing
-Codes</strong> tab (create / edit / delete). Client-less (internal) codes are managed
-from <strong>Operations → Internal Codes (WBS)</strong> and <strong>Operations → Billing Codes</strong>.</p>
+Codes</strong> tab (create / edit / delete), and all codes — including client-less
+(internal) ones — from <strong>Operations → Billing Codes</strong>. Whether a code is
+internal is a flag on the code itself (<code>is_internal</code>); there's no separate
+internal-codes page.</p>
+<h3 id="billing-codes-list">Billing Codes list<a class="headerlink" href="#billing-codes-list" title="Permanent link">&para;</a></h3>
+<p><strong>Operations → Billing Codes</strong> lists every code you can reach with its client,
+type badges (Internal / Chargeable / Not chargeable / Recoverable), region,
+how many jobs, phases and projects it's assigned to, and whether it's open.
+Filter by <strong>type</strong> or <strong>client</strong> above the table; closed codes are hidden until
+you switch on <strong>Show closed</strong>. <strong>Analytics</strong> opens Billing Analytics and
+<strong>New code</strong> (needs <code>add_billingcode</code>) creates one.</p>
+<h3 id="billing-code-page">Billing code page<a class="headerlink" href="#billing-code-page" title="Permanent link">&para;</a></h3>
+<p>Each code's page has a header with the client, region, type badges and
+open/closed status, plus tiles for active assignments (today) and job, phase
+and project assignments. <strong>Edit</strong> and <strong>Delete</strong> need
+<code>change_billingcode</code> / <code>delete_billingcode</code>. Tabs:</p>
+<ul>
+<li><strong>Analytics</strong> — scheduled hours, person-days and people booked against the
+  code over a range (30d / 3m / 6m / 12m presets or a custom range, default
+  last 12 months; future dates allowed), hours per month, and breakdowns per
+  person and per phase/project. It uses exactly the same attribution rules as
+  Billing Analytics (assignment dates, phase overrides, duplicate-code policy)
+  and only counts people you can see.</li>
+<li><strong>Assignments</strong> — every job / phase / project the code is assigned to, with
+  its date range, who added it, and whether it applies today.</li>
+<li><strong>Activity</strong> — changes to the code and its assignments.</li>
+</ul>
 <table>
 <thead>
 <tr>
@@ -3322,7 +3419,7 @@ from <strong>Operations → Internal Codes (WBS)</strong> and <strong>Operations
 </tr>
 <tr>
 <td><code>client</code></td>
-<td>Owning client, or blank for internal / WBS codes</td>
+<td>Owning client, or blank for internal (client-less) codes</td>
 </tr>
 <tr>
 <td><code>is_chargeable</code></td>
@@ -3418,9 +3515,9 @@ cash-outs included — so the team totals add up to the individual pages.</p>
 <h2 id="analytics-operations">Analytics &amp; operations<a class="headerlink" href="#analytics-operations" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Operations → Billing Analytics</strong> — hours per code across your reachable
-  teams over a date window, rolled up by client and chargeable vs internal.</li>
-<li><strong>Operations → Internal Codes (WBS)</strong> — the client-less subset, with its own
-  analytics view.</li>
+  teams over a date range (presets or custom; default this month to four weeks
+  ahead), the 15 busiest codes as a chart, and roll-ups by client and per code
+  (chargeable vs internal).</li>
 <li>Billing codes are also available as a data area in the custom report builder
   (joined to Client and Job).</li>
 </ul>

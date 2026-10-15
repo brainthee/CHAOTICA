@@ -466,7 +466,7 @@ def can_manage_user_lcr(requesting_user, target_user):
     cost rate (LCR).
 
     Loaded cost rates are gated by the ``jobtracker.can_view_loaded_costs``
-    permission (the same permission the org-unit Finance tab uses). This is the
+    permission (the same rule the Operations → Loaded Cost Rates page uses). This is the
     finance boundary — deliberately *not* the same as ``manage_user``/manager,
     so profile-editing rights never leak into cost-rate access. Granted if:
 
@@ -476,7 +476,8 @@ def can_manage_user_lcr(requesting_user, target_user):
        holds ``can_view_loaded_costs`` on *every* such unit (so you can only set
        the LCR of people entirely within your finance remit).
 
-    Self-service is intentionally excluded — a person cannot set their own LCR.
+    Self-service is intentionally excluded — a person cannot set their own LCR
+    (superusers excepted).
     """
     from ..models import User
 
@@ -490,6 +491,8 @@ def can_manage_user_lcr(requesting_user, target_user):
 
     if requesting_user.is_superuser:
         return True
+    if target_user.pk == requesting_user.pk:
+        return False
     # Global (model-level) grant — a finance admin who can see all costs.
     if requesting_user.has_perm("jobtracker.can_view_loaded_costs"):
         return True

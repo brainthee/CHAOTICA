@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block pageTitle %}Loaded Cost Rates{% endblock pageTitle %}
+{% block head_title %}Loaded Cost Rates{% endblock head_title %}
+
+{% block headerBlock_css %}mb-6{% endblock headerBlock_css %}
+
+{% block breadcrumbItem %}
+<li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">Loaded Cost Rates</li>
+{% endblock breadcrumbItem %}
+
+{% block content %}
+<div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+  <div>
+    <h4 class="mb-0">Loaded cost rates</h4>
+    <p class="fs-9 text-body-tertiary mb-0">Date-effective cost per hour for people in the units where you can view loaded cost rates. Adding a rate keeps the old ones for historical budgets.</p>
+  </div>
+</div>
+
+<form method="get" class="row g-2 align-items-end mb-3">
+  <div class="col-12 col-md-4">
+    <label class="form-label fs-9 mb-1" for="lcr-unit">Organisational unit</label>
+    <select id="lcr-unit" name="unit" class="form-select form-select-sm">
+      <option value="">All my units ({{ units|length }})</option>
+      {% for u in units %}
+        <option value="{{ u.slug }}" {% if selected_unit and selected_unit.pk == u.pk %}selected{% endif %}>{{ u.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-12 col-md-3">
+    <label class="form-label fs-9 mb-1" for="lcr-rate">Rate</label>
+    <select id="lcr-rate" name="rate" class="form-select form-select-sm">
+      <option value="">Any</option>
+      {% for key, label in rate_filters.items %}
+        <option value="{{ key }}" {% if rate_filter == key %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-12 col-md-3">
+    <label class="form-label fs-9 mb-1" for="lcr-q">Person</label>
+    <input id="lcr-q" type="search" name="q" value="{{ q }}" class="form-control form-control-sm" placeholder="Name or email">
+  </div>
+  <div class="col-12 col-md-2 d-flex gap-2">
+    <button type="submit" class="btn btn-sm btn-phoenix-primary flex-fill">Filter</button>
+    {% if selected_unit or rate_filter or q %}
+      <a href="{% url 'lcr_list' %}" class="btn btn-sm btn-phoenix-secondary">Clear</a>
+    {% endif %}
+  </div>
+</form>
+
+{% if missing_count %}
+<div class="alert alert-subtle-warning d-flex align-items-center py-2 fs-9" role="alert">
+  <i class="fas fa-exclamation-triangle me-2"></i>
+  <div><strong>{{ missing_count }}</strong> {{ missing_count|pluralize:"person has,people have" }} no rate set. Support budgets can't be cashed out for them.</div>
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-body p-0">
+    {% if rows %}
+    <div class="table-responsive">
+      <table class="table table-sm datatable align-middle fs-9 mb-0">
+        <thead>
+          <tr class="text-body-secondary">
+            <th class="ps-3">Person</th>
+            <th>Units</th>
+            <th class="text-end">Current rate (/hr)</th>
+            <th>Effective from</th>
+            <th class="text-end pe-3" data-orderable="false"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+          <tr>
+            <td class="ps-3" data-order="{{ row.user.last_name }} {{ row.user.first_name }}">
+              {% include 'partials/users/user_table_display.html' with notitle=1 noorg=1 u=row.user %}
+            </td>
+            <td>
+              {% for unit in row.units %}
+                <span class="badge badge-phoenix fs-10 {% if unit.pk in lcr_unit_ids %}badge-phoenix-secondary{% else %}badge-phoenix-warning{% endif %}"
+                      {% if unit.pk not in lcr_unit_ids %}title="You can't view loaded cost rates in this unit"{% endif %}>{{ unit.name }}</span>
+              {% endfor %}
+            </td>
+            <td class="text-end" data-order="{% if row.current %}{{ row.current.cost_per_hour|stringformat:'s' }}{% else %}-1{% endif %}">
+              <span class="fw-semibold {% if not row.current %}text-danger{% endif %}">
+                {% if row.current %}{{ row.current.cost_per_hour|floatformat:2 }}{% else %}not set{% endif %}
+              </span>
+            </td>
+            <td data-order="{{ row.current.effective_from|date:'Y-m-d' }}"><span class="text-body-secondary">{{ row.current.effective_from|default:"—" }}</span></td>
+            <td class="text-end pe-3">
+              {% if row.can_set %}
+                <button class="btn btn-sm btn-phoenix-secondary js-load-modal-form"
+                   data-url="{% url 'lcr_set' user_pk=row.user.pk %}">
+                   Set rate
+                </button>
+              {% elif row.user.pk == request.user.pk %}
+                <span class="text-body-tertiary fs-10" title="You can't set your own rate.">Your rate</span>
+              {% else %}
+                <span class="text-body-tertiary fs-10" title="This person is also in a unit where you can't view loaded cost rates, so only finance for every one of their units can change it.">Read only</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-center text-body-tertiary fs-9 py-4 mb-0">No people match these filters.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock content %}

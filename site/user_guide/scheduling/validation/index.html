@@ -1650,6 +1650,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Non‑bypassable checks (hard blocks)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#locked-bookings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Locked bookings
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1909,6 +1926,34 @@
     
   
     Managing Leave
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../operations/loaded_cost_rates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Loaded Cost Rates
   
 
     
@@ -3144,6 +3189,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Non‑bypassable checks (hard blocks)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#locked-bookings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Locked bookings
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -3265,9 +3327,9 @@
 </thead>
 <tbody>
 <tr>
-<td><strong>Phase closed</strong></td>
-<td>The phase is Cancelled, Postponed, Deleted or Archived, or its job is Lost, Deleted or Archived</td>
-<td>No new bookings. Existing slots on delivered/archived phases can still be edited, but a slot can't be moved onto a closed phase. Enforced on every save path (booking modal, batch booking, scheduling assistant, undo/revert). Closed phases aren't offered in the booking modal's phase list.</td>
+<td><strong>Phase not bookable</strong></td>
+<td>The phase isn't between <strong>Pending Scheduling</strong> and the end of QA (so Draft, Completed, Delivered, Cancelled, Postponed, Deleted and Archived are all out), or its job isn't active (Completed, Lost, Deleted or Archived)</td>
+<td>No new bookings, and <strong>existing bookings can't be moved, resized, reassigned, shifted, swapped or switched onsite/remote</strong> — reopen the phase or job first. The message says why (e.g. "It's Delivered. Reopen the phase to change its schedule."). Applies to the booking modal, batch booking, the scheduling assistant, drag/resize, the edit modal, the job/phase schedule tools and undo/revert. Such phases aren't offered in the booking modal's phase list. Deleting a booking is still allowed.</td>
 </tr>
 <tr>
 <td><strong>Framework closed</strong></td>
@@ -3286,6 +3348,21 @@
 </tr>
 </tbody>
 </table>
+<h3 id="locked-bookings">Locked bookings<a class="headerlink" href="#locked-bookings" title="Permanent link">&para;</a></h3>
+<p>On the timeline, delivery bookings on a phase that can't be scheduled show a
+<strong>lock icon</strong> and diagonal stripes, can't be dragged or resized, and their
+tooltip says why (e.g. <em>Locked: It's Delivered. Reopen the phase to change its
+schedule.</em>).</p>
+<p>The job/phase schedule tools (<strong>Shift</strong>, <strong>Swap</strong>, <strong>Onsite/remote</strong> and
+<strong>Move to another person</strong>) show the same notice in their dialog. On a job
+that's still active they change only the bookings on schedulable phases and
+leave the rest alone; on a locked phase, or a Completed/closed job, they refuse
+and explain how to unlock it. <strong>Undo</strong> is refused too if it would put back or
+move a booking on a phase that has since been locked.</p>
+<p>Imports of historical bookings (Resource Manager, Smartsheets) and demo data
+aren't subject to these rules; they're only stopped from adding bookings to
+Cancelled, Postponed, Deleted or Archived phases, or Lost, Deleted or Archived
+jobs.</p>
 <h2 id="bypassable-warnings-force-to-proceed">Bypassable warnings (force to proceed)<a class="headerlink" href="#bypassable-warnings-force-to-proceed" title="Permanent link">&para;</a></h2>
 <table>
 <thead>

@@ -792,15 +792,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#the-finance-tab" class="md-nav__link">
+  <a href="#the-support-teams-tab" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The Finance tab
+        The Support Teams tab
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="The Finance tab">
+    <nav class="md-nav" aria-label="The Support Teams tab">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1993,6 +1993,34 @@
     
   
     Managing Leave
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../operations/loaded_cost_rates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Loaded Cost Rates
   
 
     
@@ -3231,15 +3259,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#the-finance-tab" class="md-nav__link">
+  <a href="#the-support-teams-tab" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The Finance tab
+        The Support Teams tab
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="The Finance tab">
+    <nav class="md-nav" aria-label="The Support Teams tab">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -3454,21 +3482,21 @@ default, and if you delete the default, another profile takes its place.</p>
 </li>
 </ul>
 <p>Everything is managed in the main UI (the Django admin is not needed). Profiles
-live on the <strong>Finance tab</strong> (see <a href="#the-finance-tab">The Finance tab</a>), and a
+live on the <strong>Support Teams tab</strong> (see <a href="#the-support-teams-tab">The Support Teams tab</a>), and a
 job's profile is chosen on the job page.</p>
-<h2 id="the-finance-tab">The Finance tab<a class="headerlink" href="#the-finance-tab" title="Permanent link">&para;</a></h2>
+<h2 id="the-support-teams-tab">The Support Teams tab<a class="headerlink" href="#the-support-teams-tab" title="Permanent link">&para;</a></h2>
 <p>On the organisational-unit detail page, users with the <strong>Can view loaded cost
-rates</strong> permission see an extra <strong>Finance</strong> tab (hidden from everyone else). It
-holds three cards:</p>
+rates</strong> permission see an extra <strong>Support Teams</strong> tab (hidden from everyone else). It
+holds two cards:</p>
 <ul>
 <li><strong>Settings</strong>: edit the unit's <em>support premium default %</em>, which is used by
   any profile that has no premium of its own.</li>
 <li><strong>Support Profiles</strong>: add, edit or delete profiles (name, premium, default).
   Use each profile's menu to add members, and the member rows to edit or remove
   them.</li>
-<li><strong>Loaded Cost Rates</strong> — set each member's date-effective LCR (see below). Rates
-  are add-only: a new rate keeps the previous ones for historical budgets.</li>
 </ul>
+<p>Loaded cost rates are on their own page, <strong>Operations → Loaded Cost Rates</strong>
+(see <a href="#loaded-cost-rates-lcr">Loaded cost rates</a>).</p>
 <p>Because all of this is normal data behind a permission, changing the support
 model is a day-to-day operation, not a code change.</p>
 <h3 id="overrides">Overrides<a class="headerlink" href="#overrides" title="Permanent link">&para;</a></h3>
@@ -3498,12 +3526,14 @@ are likewise all editable data, not code.</p>
 <p>The money→hours conversion uses each person's <strong>loaded cost rate</strong>, a per-user,
 date-effective cost. Budgets are always shown at <strong>today's</strong> rate. Each cash-out
 also records the rate in force when it was made (see
-<a href="#cashing-out-budget">Cashing out budget</a>). Manage rates from the unit's
-<strong>Finance → Loaded Cost Rates</strong> card.</p>
+<a href="#cashing-out-budget">Cashing out budget</a>). Manage rates from the
+<strong>Operations → Loaded Cost Rates</strong> page (see
+<a href="../../operations/loaded_cost_rates/">Loaded Cost Rates</a>).</p>
 <p><strong>Visibility:</strong> loaded cost rates are financially sensitive. They, and any £
 figures derived from them, are only shown to holders of the <strong>Can view loaded
-cost rates</strong> (<code>can_view_loaded_costs</code>) permission. That covers the unit
-<strong>Finance</strong> tab, money columns on the <strong>Billing Codes</strong> page, and the per-person
+cost rates</strong> (<code>can_view_loaded_costs</code>) permission. That covers the
+<strong>Loaded Cost Rates</strong> page, the unit <strong>Support Teams</strong> tab, money columns on
+the <strong>Billing Codes</strong> page, and the per-person
 budget and hours on the job's <strong>Sales</strong> tab. Hours alone, next to revenue and
 share, would reveal a person's rate, so they are hidden too.</p>
 <h2 id="the-job-support-widget">The job Support widget<a class="headerlink" href="#the-job-support-widget" title="Permanent link">&para;</a></h2>

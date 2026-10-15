@@ -617,8 +617,9 @@ class SupportBudgetViewTests(SupportBudgetTestBase):
 
 
 class FinanceTabViewTests(SupportBudgetTestBase):
-    """The org-unit Finance tab (template + LCR + settings) lives in the main UI
-    and is gated on ``can_view_loaded_costs`` — no admin needed."""
+    """The org-unit Support Teams tab (settings + profiles) lives in the main UI
+    and is gated on ``can_view_loaded_costs`` — no admin needed. Loaded cost
+    rates moved to the site-wide page (see test_loaded_cost_rates)."""
 
     def setUp(self):
         super().setUp()
@@ -641,13 +642,16 @@ class FinanceTabViewTests(SupportBudgetTestBase):
         self.assertEqual(resp.status_code, 200)
         body = resp.content.decode()
         self.assertIn("Support Teams", body)
-        self.assertIn("Loaded Cost Rates", body)
+        self.assertIn("Support Profiles", body)
+        # LCRs are no longer edited here; the tab points at the ops page.
+        self.assertIn(reverse("lcr_list") + "?unit=" + self.unit.slug, body)
+        self.assertNotIn("Set rate", body)
 
     def test_finance_tab_hidden_without_perm(self):
         self.http.force_login(self.plain)
         resp = self.http.get(self._detail_url())
         self.assertEqual(resp.status_code, 200)
-        self.assertNotIn("Loaded Cost Rates", resp.content.decode())
+        self.assertNotIn("Support Profiles", resp.content.decode())
 
     def test_crud_endpoints_forbidden_without_perm(self):
         self.http.force_login(self.plain)
@@ -666,12 +670,11 @@ class FinanceTabViewTests(SupportBudgetTestBase):
                 "organisationalunit_support_profile_delete",
                 {"slug": self.unit.slug, "pk": self.profile.pk},
             ),
-            ("organisationalunit_set_lcr", {"slug": self.unit.slug, "member_pk": self.membership.pk}),
         ]:
             resp = self.http.get(reverse(name, kwargs=kwargs))
             self.assertEqual(resp.status_code, 403, name)
 
-    def test_add_template_member_and_set_lcr(self):
+    def test_add_template_member(self):
         self.http.force_login(self.finance)
         # Add a template member.
         resp = self.http.post(
@@ -687,16 +690,6 @@ class FinanceTabViewTests(SupportBudgetTestBase):
             OrganisationalUnitSupportTemplateMember.objects.filter(
                 profile=self.profile, unit=self.unit, user=self.member_user
             ).exists()
-        )
-        # Set a loaded cost rate for a member.
-        resp = self.http.post(
-            reverse("organisationalunit_set_lcr", kwargs={"slug": self.unit.slug, "member_pk": self.membership.pk}),
-            {"effective_from": "2026-01-01", "cost_per_hour": "55.00"},
-        )
-        self.assertEqual(resp.status_code, 200)
-        self.assertTrue(resp.json()["form_is_valid"])
-        self.assertEqual(
-            UserCost.objects.get(user=self.member_user).cost_per_hour, Decimal("55.00")
         )
 
     def test_edit_and_delete_template_member(self):

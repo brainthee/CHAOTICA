@@ -1344,6 +1344,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Stats tab">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#date-range-and-membership" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Date range and membership
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -1843,6 +1860,34 @@
     
   
     Managing Leave
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../operations/loaded_cost_rates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Loaded Cost Rates
   
 
     
@@ -3078,6 +3123,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Stats tab">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#date-range-and-membership" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Date range and membership
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -3104,7 +3166,8 @@ from its members' scheduled work rather than from job ownership.</p>
 <h2 id="team-detail-page">Team detail page<a class="headerlink" href="#team-detail-page" title="Permanent link">&para;</a></h2>
 <p>The team detail page has these tabs:</p>
 <ul>
-<li><strong>Team</strong> — the current membership list.</li>
+<li><strong>Team</strong> — the membership list, including former members (shown as
+  "Left").</li>
 <li><strong>Stats</strong> — quantitative analytics (loaded on demand, see below).</li>
 <li><strong>Debrief</strong> — a weekly delivery debrief (team owners and admins only).</li>
 <li><strong>Billing</strong> — members' billing-code hours for a timesheet period (team owners
@@ -3117,22 +3180,36 @@ page stays fast. Because a team has no direct job-ownership relationship, every
 figure is derived from the scheduled <code>TimeSlot</code>s of the team's active members
 (phases/jobs a phase is counted once even when several members are booked on
 it).</p>
+<h3 id="date-range-and-membership">Date range and membership<a class="headerlink" href="#date-range-and-membership" title="Permanent link">&para;</a></h3>
+<p>The header has quick ranges (<strong>30d</strong>, <strong>3m</strong>, <strong>6m</strong>, <strong>12m</strong>) and a custom
+range picker; the default is the last three months. Changing the range
+reloads the tab in place.</p>
+<p>Membership is date-aware. Anyone whose membership overlaps the range is
+included — even if they have since left the team — but only for the days they
+were a member: their membership is clipped to the range, and only time booked
+inside that window counts. People who joined after the range ended are left
+out. In the member table, anyone who joined or left part-way through is marked
+with the date.</p>
 <p>It shows:</p>
 <ul>
-<li><strong>Summary tiles</strong> — active members, active jobs the team has time booked on,
-  phases delivered in the selected range, and the rolling four-week
-  utilisation.</li>
-<li><strong>Future Utilisation</strong> — confirmed / tentative / non-delivery / available
-  time as percentages across the coming one, two, four and eight weeks.</li>
-<li><strong>Delivery Throughput</strong> — phases delivered per month over the last six
-  months.</li>
-<li><strong>Service Breakdown</strong> — the mix of services the team's members have worked
-  on, drawn as a radar chart.</li>
-<li><strong>Job Pipeline</strong> — the jobs the team has scheduled time on, grouped by
-  status.</li>
-<li><strong>Member Utilisation</strong> — a per-member table of confirmed utilisation and
-  available days over the selected range.</li>
+<li><strong>Summary tiles</strong> — members in the range, jobs worked on, phases delivered,
+  and the team's confirmed utilisation over the range.</li>
+<li><strong>Upcoming availability</strong> — confirmed / tentative / internal / available
+  time across the coming one, two, four and eight weeks. This is
+  forward-looking and always uses the <em>current</em> members, regardless of the
+  date range. Each bar is 100% of the effective working days (leave and public
+  holidays removed), and each day is counted in exactly one segment
+  (confirmed, then tentative, then internal, then available).</li>
+<li><strong>Delivery throughput</strong> — phases delivered per month in the range.</li>
+<li><strong>Service breakdown</strong> — phases worked on in the range by service, as a radar
+  chart. The eight busiest services are shown individually and the rest are
+  grouped as "Other (N services)".</li>
+<li><strong>Job pipeline</strong> — jobs worked on in the range, grouped by current status.</li>
+<li><strong>Member utilisation</strong> — a per-member table of confirmed utilisation and
+  available days over the range, for the days each person was a member.</li>
 </ul>
+<p>The <strong>Detail</strong> panel (bottom right) shows the raw JSON behind the current
+Stats view.</p>
 <p>Utilisation always uses the <a href="../../scheduling/overview/">central utilisation
 formula</a> — confirmed client-delivery days over
 effective working days.</p>

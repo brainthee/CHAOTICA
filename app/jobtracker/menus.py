@@ -1,6 +1,7 @@
 from django.urls import reverse
 from menu import Menu, MenuItem
 from chaotica_utils.utils import PermMenuItem, RoleMenuItem
+from .views.lcr import can_view_any_lcr
 
 
 Menu.add_item(
@@ -161,6 +162,16 @@ Menu.add_item(
         check=lambda request: request.user.is_authenticated,
         perm="jobtracker.view_billingcode",
         icon="chart-pie",
+        weight=5,
+    ),
+)
+Menu.add_item(
+    "ops",
+    MenuItem(
+        "Loaded Cost Rates",
+        reverse("lcr_list"),
+        check=lambda request: can_view_any_lcr(request.user),
+        icon="sterling-sign",
         weight=5,
     ),
 )
