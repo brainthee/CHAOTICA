@@ -61,9 +61,15 @@ def can_view_job_schedule(user, job):
 
 def phases_visible_to(user, phases):
     """``phases`` narrowed to those on jobs ``user`` can view, with the
-    relations the phase list tables render."""
-    my_jobs = get_objects_for_user(user, "jobtracker.view_job", Job)
-    return phases.filter(job__in=my_jobs).select_related(
+    relations the phase list tables render.
+
+    Same gate as the job list / ``can_view_job``: ``can_view_jobs`` on the
+    job's unit (a unit-level perm; global holders see everything), plus any
+    jobs granted directly with ``view_job``."""
+    units = get_objects_for_user(user, "jobtracker.can_view_jobs", OrganisationalUnit)
+    jobs = get_objects_for_user(user, "jobtracker.view_job", Job)
+    # Both conditions follow the phase's single job FK, so no duplicates.
+    return phases.filter(Q(job__unit__in=units) | Q(job__in=jobs)).select_related(
         "job__client", "job__unit", "service", "project_lead", "report_author"
     )
 

@@ -111,6 +111,18 @@ class ServicePhaseBucketTests(TestCase):
         phase.save()
         self.assertEqual(self.http.get(url).context["analytics"]["active_count"], 2)
 
+    def test_unit_level_can_view_jobs_sees_the_units_phases(self):
+        unit_viewer = User.objects.create_user(email="unit@svc.com", password="pw")
+        assign_perm("jobtracker.view_service", unit_viewer)
+        assign_perm("jobtracker.can_view_jobs", unit_viewer, self.unit)
+        self.http.force_login(unit_viewer)
+        self.assertIn("Secret phase", self._bucket("active"))
+        resp = self.http.get(
+            reverse("service_detail", kwargs={"slug": self.service.slug})
+        )
+        self.assertEqual(resp.context["analytics"]["total_phases"], 5)
+        self.assertEqual(resp.context["analytics"]["active_count"], 2)
+
     def test_requires_view_service_and_known_bucket(self):
         url = reverse(
             "service_phases_partial",
