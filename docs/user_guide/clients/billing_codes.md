@@ -122,7 +122,8 @@ them (their manager / unit lead).
 ## Team and unit billing tabs
 
 The **Team** page (team owners and admins) and the **Organisational Unit** page
-(`can_view_jobs` on the unit) each have a **Billing** tab. It covers the active
+(`can_view_all_leave_requests` on the unit, i.e. Service Delivery and Manager by
+default) each have a **Billing** tab. It covers the active
 members for one timesheet period (◀ / ▶ step periods; *Jump to current period*
 returns), and shows:
 

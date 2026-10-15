@@ -52,7 +52,7 @@
           <li class="nav-item text-nowrap me-2" role="presentation">
             <a class="nav-link" id="stats-tab" data-bs-toggle="tab" href="#stats" role="tab" aria-controls="tab-stats" aria-selected="false" tabindex="-1"><span class="fa-solid fa-chart-column me-2 tab-icon-color"></span>Stats</a>
           </li>
-          {% if 'can_view_jobs' in unit_perms %}
+          {% if 'can_view_all_leave_requests' in unit_perms %}
           <li class="nav-item text-nowrap me-2" role="presentation">
             <a class="nav-link" id="billing-tab" data-bs-toggle="tab" href="#billing" role="tab" aria-controls="tab-billing" aria-selected="false" tabindex="-1"><span class="fa-solid fa-file-invoice-dollar me-2 tab-icon-color"></span>Billing</a>
           </li>
@@ -137,7 +137,7 @@
             </div>
           </div>
 
-          {% if 'can_view_jobs' in unit_perms %}
+          {% if 'can_view_all_leave_requests' in unit_perms %}
           <div class="tab-pane fade py-3" id="billing" role="tabpanel" aria-labelledby="billing-tab">
             <div id="billing-content">
               <div class="text-center py-5">

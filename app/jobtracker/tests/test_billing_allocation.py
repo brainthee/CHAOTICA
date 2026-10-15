@@ -653,7 +653,8 @@ class BuildCohortCodeAllocationTests(TestCase):
 
 
 class CohortBillingTabViewTests(TestCase):
-    """Team (owners) and org-unit (can_view_jobs) Billing tab partials."""
+    """Team (owners) and org-unit (can_view_all_leave_requests) Billing tab
+    partials."""
 
     def setUp(self):
         from guardian.shortcuts import assign_perm
@@ -680,6 +681,12 @@ class CohortBillingTabViewTests(TestCase):
         self.unit.members.create(member=self.member)
         self.viewer = User.objects.create_user(email="view@tab.com", password="pw")
         assign_perm("jobtracker.can_view_jobs", self.viewer, self.unit)
+        assign_perm("jobtracker.view_organisationalunit", self.viewer, self.unit)
+        assign_perm("jobtracker.can_view_all_leave_requests", self.viewer, self.unit)
+        # A consultant: sees the unit's jobs but not colleagues' hours.
+        self.consultant = User.objects.create_user(email="con@tab.com", password="pw")
+        assign_perm("jobtracker.can_view_jobs", self.consultant, self.unit)
+        assign_perm("jobtracker.view_organisationalunit", self.consultant, self.unit)
         self.http = TestHttpClient(HTTP_HOST="localhost")
 
     def _team_url(self):
@@ -714,13 +721,25 @@ class CohortBillingTabViewTests(TestCase):
         ).content.decode()
         self.assertIn('id="billing-tab"', body)
 
-    def test_unit_requires_can_view_jobs(self):
+    def test_unit_requires_leave_visibility(self):
+        detail = reverse("organisationalunit_detail", kwargs={"slug": self.unit.slug})
         self.http.force_login(self.stranger)
         self.assertEqual(self.http.get(self._unit_url()).status_code, 403)
+        self.http.force_login(self.consultant)
+        self.assertEqual(self.http.get(self._unit_url()).status_code, 403)
+        self.assertNotContains(self.http.get(detail), 'id="billing-tab"')
         self.http.force_login(self.viewer)
         resp = self.http.get(self._unit_url())
         self.assertEqual(resp.status_code, 200)
         self.assertIn("Mem Ber", resp.json()["html"])
+        self.assertContains(self.http.get(detail), 'id="billing-tab"')
+
+    def test_role_mapping_gives_tab_to_service_delivery_and_manager_only(self):
+        from chaotica_utils.enums import UnitRoles
+
+        perm = "jobtracker.can_view_all_leave_requests"
+        holders = {role for role, perms in UnitRoles.PERMISSIONS if perm in perms}
+        self.assertEqual(holders, {UnitRoles.SERVICE_DELIVERY, UnitRoles.MANAGER})
 
     def test_profile_link_only_for_manageable_members(self):
         self.member.manager = self.viewer

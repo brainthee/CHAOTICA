@@ -1314,10 +1314,14 @@ def organisationalunit_support_profile_delete(request, slug, pk):
 
 @login_required
 @unit_permission_required_or_403(
-    "jobtracker.can_view_jobs", (OrganisationalUnit, "slug", "slug")
+    "jobtracker.can_view_all_leave_requests", (OrganisationalUnit, "slug", "slug")
 )
 def orgunit_billing_partial(request, slug):
-    """Billing tab: active members' coded / uncoded hours for a period."""
+    """Billing tab: active members' coded / uncoded hours for a period.
+
+    It shows everyone's leave/sick and support hours, so it needs
+    ``can_view_all_leave_requests`` (Service Delivery and Manager), not just
+    job visibility."""
     from .helpers import _render_cohort_billing
 
     unit = get_object_or_404(OrganisationalUnit, slug=slug)

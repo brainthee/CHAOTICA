@@ -85,7 +85,9 @@ The offcanvas **Raw Data** panel shows the underlying JSON used to build the pag
 
 ### Billing
 
-*Requires `can_view_jobs` permission.*
+*Requires `can_view_all_leave_requests` (by default the Service Delivery and
+Manager roles). The tab shows each member's leave and sickness hours, so job
+visibility alone isn't enough.*
 
 Active members' billing-code hours for a timesheet period, with a per-code
 roll-up. See
@@ -168,7 +170,8 @@ Organisational unit permissions are managed via Django Guardian at the object le
 | `view_organisationalunit` | Access to the unit detail page |
 | `change_organisationalunit` | "Edit" button on the detail page |
 | `manage_members` | "Add Member" button, manage roles, make/remove leads, remove members |
-| `can_view_jobs` | Jobs tab, Board tab, Billing tab |
+| `can_view_jobs` | Jobs tab, Board tab |
+| `can_view_all_leave_requests` | Billing tab (members' hours include leave and sickness) |
 | `can_schedule_job` | Creating and modifying time slots in the scheduler |
 | `can_view_all_reviews` | Reviews tab |
 | `can_conduct_review` | "Start New Review" button in Reviews tab |
