@@ -7,7 +7,7 @@ accepted wherever a user id is (``?lead=me``, ``?involving=me``).
 import django_filters
 from django.db.models import Q
 from rest_framework.exceptions import ValidationError
-from rest_framework.filters import SearchFilter
+from rest_framework.filters import OrderingFilter, SearchFilter
 
 from chaotica_utils.models import User
 from chaotica_utils.models.leave import LeaveRequest
@@ -20,6 +20,24 @@ class QSearchFilter(SearchFilter):
     """Free-text search on ``?q=`` (the views' ``search_fields``)."""
 
     search_param = "q"
+
+
+class AliasOrderingFilter(OrderingFilter):
+    """``?ordering=`` with public names for annotated sort keys: a view's
+    ``ordering_aliases = {"delivery_date": "delivery_on"}`` lets clients sort
+    by the field they see while the database sorts by the annotation."""
+
+    def get_ordering(self, request, queryset, view):
+        ordering = super().get_ordering(request, queryset, view)
+        aliases = getattr(view, "ordering_aliases", {})
+        if not ordering or not aliases:
+            return ordering
+        out = []
+        for term in ordering:
+            desc = term.startswith("-")
+            name = aliases.get(term.lstrip("-"), term.lstrip("-"))
+            out.append(("-" if desc else "") + name)
+        return out
 
 
 class NumberInFilter(django_filters.BaseInFilter, django_filters.NumberFilter):

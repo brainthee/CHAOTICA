@@ -70,7 +70,7 @@ def _registry():
                     "client_contact_detail",
                     kwargs={"client_slug": c.company.slug, "pk": c.pk},
                 )
-                if c.company.slug
+                if c.company_id and c.company.slug
                 else None
             ),
         ),

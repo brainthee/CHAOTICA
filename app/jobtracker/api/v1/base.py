@@ -3,14 +3,13 @@ import datetime
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import permissions, viewsets
-from rest_framework.filters import OrderingFilter
 from rest_framework.renderers import BrowsableAPIRenderer, JSONRenderer
 from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 from rest_framework.views import APIView
 
 from ...policy import PolicyContext
 from .exceptions import v1_exception_handler
-from .filters import QSearchFilter
+from .filters import AliasOrderingFilter, QSearchFilter
 from .pagination import StandardResultsPagination
 from .permissions import MaintenanceModePermission, OAuth2ScopeIfBearer
 
@@ -89,7 +88,7 @@ class BaseReadOnlyAPIViewSet(ApiV1Mixin, viewsets.ModelViewSet):
     http_method_names = ["get", "head", "options"]
 
     pagination_class = StandardResultsPagination
-    filter_backends = [DjangoFilterBackend, OrderingFilter, QSearchFilter]
+    filter_backends = [DjangoFilterBackend, AliasOrderingFilter, QSearchFilter]
     ordering_fields = ()
     ordering = ("pk",)  # stable pagination; ?ordering= overrides
 
