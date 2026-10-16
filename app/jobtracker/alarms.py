@@ -123,6 +123,24 @@ def dormant_job_q(days=None):
     return Q(status__in=EARLY_JOB_STATUSES, status_changed_date__lt=cutoff)
 
 
+#: Human labels for every alarm key (dashboard API, entropy meter).
+ALARM_LABELS = {
+    "delivery_overdue": "Overdue deliveries",
+    "job_overdue": "Overdue jobs",
+    "tqa_overdue": "Overdue tech QA",
+    "pqa_overdue": "Overdue pres QA",
+    "no_techqa": "Tech QA unassigned",
+    "no_presqa": "Pres QA unassigned",
+    "unscheduled": "Unscheduled phases",
+    "no_billing_code": "Phases without a billing code",
+    "stale_stalled": "Stalled phases",
+    "stale_unbooked": "Never-booked phases",
+    "stale_postponed": "Long-postponed phases",
+    "stale_no_live_phases": "Jobs with no live phases",
+    "stale_dormant_jobs": "Dormant jobs",
+}
+
+
 def stalled_phase_ids(phase_qs):
     """IDs of stalled phases within ``phase_qs`` (for the late-notification task)."""
     return set(phase_qs.filter(stalled_phase_q()).values_list("pk", flat=True))

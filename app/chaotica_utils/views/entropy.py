@@ -46,21 +46,7 @@ _WEIGHTS = {
     "stale_dormant_jobs": 1,
 }
 
-_LABELS = {
-    "delivery_overdue": "Overdue deliveries",
-    "job_overdue": "Overdue jobs",
-    "tqa_overdue": "Overdue tech QA",
-    "pqa_overdue": "Overdue pres QA",
-    "no_techqa": "Tech QA unassigned",
-    "no_presqa": "Pres QA unassigned",
-    "unscheduled": "Unscheduled phases",
-    "no_billing_code": "Phases without a billing code",
-    "stale_stalled": "Stalled phases",
-    "stale_unbooked": "Never-booked phases",
-    "stale_postponed": "Long-postponed phases",
-    "stale_no_live_phases": "Jobs with no live phases",
-    "stale_dormant_jobs": "Dormant jobs",
-}
+from jobtracker.alarms import ALARM_LABELS as _LABELS  # noqa: E402
 
 # Order factors are presented in the full UI.
 _ORDER = [
