@@ -1,4 +1,10 @@
 from decimal import Decimal
+from ..selectors.jobs import (
+    can_view_loaded_costs,
+    job_sales_summary,
+    job_support_roles,
+    phases_missing_billing_code,
+)
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.http import (
@@ -825,39 +831,16 @@ class JobDetailView(
         # Support-team budget (read-only computed view). Money/LCR columns are
         # only shown to users with the finance permission on the job's unit.
         job = context["job"]
-        context["can_view_loaded_costs"] = self.request.user.has_perm(
-            "jobtracker.can_view_loaded_costs", job.unit
+        context["can_view_loaded_costs"] = can_view_loaded_costs(
+            self.request.user, job
         )
         support_budget = job.get_support_budget()
         context["support_budget"] = support_budget
         context["has_support_profiles"] = job.unit.support_profiles.exists()
-        # Attach each member's computed budget to its role for easy rendering.
-        per_member = support_budget["per_member"]
-        support_roles = list(job.supporting_team.select_related("user").all())
-        for role in support_roles:
-            role.budget = per_member.get(role.user_id)
-            # Same rule as can_cash_out_support_role, finance check hoisted.
-            role.can_cash_out = (
-                self.request.user.is_superuser
-                or context["can_view_loaded_costs"]
-                or bool(role.user_id and role.user.can_be_managed_by(self.request.user))
-            )
-        context["support_roles"] = support_roles
-
-        # Live phases with no effective billing code (none of their own and
-        # none on the job). Phase assignments are prefetched.
-        phases_missing_code = []
-        if (
-            job.status not in JobStatuses.CLOSED_STATUSES
-            and not job.billing_code_assignments.exists()
-        ):
-            phases_missing_code = [
-                p
-                for p in job.phases.all()
-                if p.status not in PhaseStatuses.INACTIVE_STATUSES
-                and not p.billing_code_assignments.all()
-            ]
-        context["phases_missing_code"] = phases_missing_code
+        context["support_roles"] = job_support_roles(
+            job, self.request.user, context["can_view_loaded_costs"], support_budget
+        )
+        context["phases_missing_code"] = phases_missing_billing_code(job)
 
         return context
 
@@ -1104,22 +1087,10 @@ def view_job_schedule_user_breakdown(request, slug):
 
 @job_permission_required_or_403("jobtracker.view_job_schedule", (Job, "slug", "slug"))
 def view_job_team(request, slug):
-    from .scheduler import (
-        get_user_schedule_breakdown,
-        get_user_phase_breakdown,
-        build_team_rows,
-    )
-    from ..utils import job_assigned_role_map
+    from ..selectors.schedule import job_team
+
     job = get_object_or_404(Job, slug=slug)
-    breakdown = get_user_schedule_breakdown(job)
-    # Job-wide roles (AM / Deputy AM / Scoping) stay against the member; the
-    # per-phase roles (Lead / Author / Tech QA / Pres QA) move to the phase rows.
-    job_roles = job_assigned_role_map(job)
-    for entry in breakdown:
-        entry["assigned_roles"] = job_roles.get(entry["user"].pk, [])
-    capacity_labels, user_breakdown = build_team_rows(
-        breakdown, get_user_phase_breakdown(job)
-    )
+    capacity_labels, user_breakdown = job_team(job)
     context = {
         "user_breakdown": user_breakdown,
         "capacity_labels": capacity_labels,
@@ -1138,62 +1109,10 @@ def view_job_sales(request, slug):
     (``can_view_loaded_costs``) for the job's unit.
     """
     job = get_object_or_404(Job, slug=slug)
-
-    revenue = Decimal(job.revenue or 0)
-    staff_cost = Decimal(str(job.staff_cost() or 0))
-    profit = revenue - staff_cost
-    # Compute defensively (the model properties divide by revenue / scoped days).
-    profit_perc = round(profit / revenue * 100, 1) if revenue else Decimal(0)
-    target_profit = Decimal(job.unit.targetProfit) if job.unit_id else Decimal(0)
-    scoped_days = Decimal(str(job.get_total_scoped_days() or 0))
-    avg_day_rate = round(revenue / scoped_days, 2) if scoped_days else Decimal(0)
-
-    can_view_loaded_costs = request.user.is_superuser or (
-        job.unit_id
-        and request.user.has_perm("jobtracker.can_view_loaded_costs", job.unit)
-    )
-    support = job.get_support_budget()
-
-    # Scoped effort by category, summed across the job's phases.
-    effort_fields = [
-        ("Delivery", "delivery_hours"),
-        ("Reporting", "reporting_hours"),
-        ("Management", "mgmt_hours"),
-        ("QA", "qa_hours"),
-        ("Oversight", "oversight_hours"),
-        ("Debrief", "debrief_hours"),
-        ("Contingency", "contingency_hours"),
-        ("Other", "other_hours"),
-    ]
-    phases = list(job.phases.all())
-    effort = []
-    for label, field in effort_fields:
-        total = sum((getattr(p, field, 0) or Decimal(0)) for p in phases)
-        if total:
-            effort.append({"label": label, "hours": total})
-
-    # Support-team members (share % always; money gated).
-    support_members = sorted(
-        support["per_member"].values(),
-        key=lambda m: m["budget_money"],
-        reverse=True,
-    )
-
     context = {
         "job": job,
-        "revenue": revenue,
-        "staff_cost": staff_cost,
-        "profit": profit,
-        "profit_perc": profit_perc,
-        "target_profit": target_profit,
-        "meets_target": profit_perc >= target_profit,
-        "scoped_days": scoped_days,
-        "avg_day_rate": avg_day_rate,
-        "support_pool": support["pool"],
-        "support_premium": support["premium"],
-        "support_members": support_members,
-        "effort": effort,
-        "can_view_loaded_costs": can_view_loaded_costs,
+        **job_sales_summary(job),
+        "can_view_loaded_costs": can_view_loaded_costs(request.user, job),
     }
     return render(request, "partials/job/widgets/sales_dashboard.html", context)
 

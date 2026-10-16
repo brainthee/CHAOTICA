@@ -1,4 +1,5 @@
 from django.shortcuts import get_object_or_404, redirect, render
+from ..selectors.phases import concurrent_phases, phase_missing_billing_code
 from django.urls import reverse
 from django.http import HttpResponseRedirect, HttpResponseBadRequest, JsonResponse
 from django.template import loader
@@ -163,25 +164,8 @@ class PhaseDetailView(
         context["feedback_form"] = feedback_form
 
         phase = context["phase"]
-        if phase._start_date and phase._delivery_date and phase.status in PhaseStatuses.ACTIVE_STATUSES:
-            context["concurrent_phases"] = Phase.objects.filter(
-                job=phase.job,
-                _start_date__lte=phase._delivery_date,
-                _delivery_date__gte=phase._start_date,
-            ).exclude(pk=phase.pk).exclude(
-                status__in=[
-                    PhaseStatuses.CANCELLED,
-                    PhaseStatuses.POSTPONED,
-                    PhaseStatuses.DELETED,
-                    PhaseStatuses.ARCHIVED,
-                ]
-            )
-
-        context["missing_billing_code"] = (
-            phase.status not in PhaseStatuses.INACTIVE_STATUSES
-            and phase.job.status not in JobStatuses.CLOSED_STATUSES
-            and not phase.has_billing_code()
-        )
+        context["concurrent_phases"] = concurrent_phases(phase)
+        context["missing_billing_code"] = phase_missing_billing_code(phase)
 
         return context
 
@@ -466,12 +450,11 @@ def view_phase_schedule_user_breakdown(request, job_slug, slug):
 
 @job_permission_required_or_403("jobtracker.view_job_schedule", (Phase, "slug", "slug"))
 def view_phase_team(request, job_slug, slug):
-    from .scheduler import get_user_schedule_breakdown, build_team_rows
+    from ..selectors.schedule import phase_team
+
     job = get_object_or_404(Job, slug=job_slug)
     phase = get_object_or_404(Phase, job=job, slug=slug)
-    capacity_labels, user_breakdown = build_team_rows(
-        get_user_schedule_breakdown(job, phase)
-    )
+    capacity_labels, user_breakdown = phase_team(phase)
     context = {
         "user_breakdown": user_breakdown,
         "capacity_labels": capacity_labels,
