@@ -9,10 +9,11 @@ the UI. See the permission section of the implementation plan for the rationale.
 from django.db.models import Count, Exists, OuterRef, Prefetch, Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from drf_spectacular.openapi import AutoSchema
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 from guardian.shortcuts import get_objects_for_user
-from rest_framework import permissions, viewsets
+from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import MethodNotAllowed, PermissionDenied
 from rest_framework.filters import SearchFilter
@@ -52,7 +53,7 @@ from ...models import (
     TimeSlotType,
     UserSkill,
 )
-from .base import BaseReadOnlyAPIViewSet
+from .base import ApiV1Mixin, BaseReadOnlyAPIViewSet
 from .serializers import (
     ClientSerializer,
     JobSerializer,
@@ -500,7 +501,15 @@ class TimeSlotViewSet(BaseReadOnlyAPIViewSet):
         return queryset.filter(Q(user_id__in=member_ids) | Q(user=user)).distinct()
 
 
-class ScheduleViewSet(viewsets.ViewSet):
+class _SingleObjectSchema(AutoSchema):
+    """``list`` on a plain ViewSet is documented as an array by default; this
+    composite returns one object."""
+
+    def _is_list_view(self, serializer=None):
+        return False
+
+
+class ScheduleViewSet(ApiV1Mixin, viewsets.ViewSet):
     """Read-only composite schedule feed for a date window.
 
     Combines work timeslots, leave, holidays and per-user availability/utilisation
@@ -511,8 +520,8 @@ class ScheduleViewSet(viewsets.ViewSet):
     ``/users/{id}/schedule/`` action instead.
     """
 
-    permission_classes = [permissions.IsAuthenticated]
     renderer_classes = [JSONRenderer, BrowsableAPIRenderer]
+    schema = _SingleObjectSchema()
 
     @extend_schema(
         summary="Global schedule window",

@@ -32,6 +32,18 @@ from constance import config
 from guardian.shortcuts import get_objects_for_user
 
 
+def _acting_user(notify_request=None, user=None):
+    """Who a ``can_to_*`` check is for: explicit ``user``, else the request's,
+    else the current request user (templates call these with no arguments)."""
+    if user is not None:
+        return user
+    if notify_request is not None:
+        return notify_request.user
+    from chaotica_utils.middleware.common import get_current_user
+
+    return get_current_user()
+
+
 class JobManager(models.Manager):
 
     def jobs_with_unit_permission(self, user, perm):
@@ -772,8 +784,9 @@ class Job(models.Model):
     def can_proceed_to_scoping(self):
         return can_proceed(self.to_scoping)
 
-    def can_to_scoping(self, notify_request=None):
+    def can_to_scoping(self, notify_request=None, user=None):
         _can_proceed = True
+        user = _acting_user(notify_request, user)
         # Do logic checks
         # If no person is defined as scoped by, warn we'll set ourselves
         if self.status == JobStatuses.SCOPING_COMPLETE:
@@ -784,8 +797,8 @@ class Job(models.Model):
                     "The scope will need to be signed off again.",
                 )
 
-        if not self.scoped_by.all():
-            if notify_request.user.has_perm("can_scope_jobs", self.unit):
+        if not self.scoped_by.all() and user is not None:
+            if user.has_perm("can_scope_jobs", self.unit):
                 if notify_request:
                     messages.add_message(
                         notify_request,

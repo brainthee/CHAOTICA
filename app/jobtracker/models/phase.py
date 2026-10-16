@@ -20,7 +20,7 @@ from chaotica_utils.views.common import log_system_activity
 from datetime import timedelta
 from decimal import Decimal
 from django_bleach.models import BleachField
-from ..models.job import Job
+from ..models.job import Job, _acting_user
 from ..enums import (
     BOOL_CHOICES,
     TechQARatings,
@@ -1980,8 +1980,9 @@ class Phase(models.Model):
     def can_proceed_to_tech_qa_updates(self):
         return can_proceed(self.to_tech_qa_updates)
 
-    def can_to_tech_qa_updates(self, notify_request=None):
+    def can_to_tech_qa_updates(self, notify_request=None, user=None):
         _can_proceed = True
+        user = _acting_user(notify_request, user)
         # Do logic checks
         if not self.techqa_by:
             if notify_request:
@@ -1991,7 +1992,7 @@ class Phase(models.Model):
             _can_proceed = False
         else:
             # Check if we're the person...
-            if notify_request.user != self.techqa_by:
+            if user is not None and user != self.techqa_by:
                 if notify_request:
                     # We're not the person doing the TQA!
                     messages.add_message(
@@ -2133,8 +2134,9 @@ class Phase(models.Model):
     def can_proceed_to_pres_qa_updates(self):
         return can_proceed(self.to_pres_qa_updates)
 
-    def can_to_pres_qa_updates(self, notify_request=None):
+    def can_to_pres_qa_updates(self, notify_request=None, user=None):
         _can_proceed = True
+        user = _acting_user(notify_request, user)
         # Do logic checks
         if not self.presqa_by:
             if notify_request:
@@ -2144,7 +2146,7 @@ class Phase(models.Model):
             _can_proceed = False
         else:
             # Check if we're the person...
-            if notify_request.user != self.presqa_by:
+            if user is not None and user != self.presqa_by:
                 # We're not the person doing the TQA!
                 if notify_request:
                     messages.add_message(

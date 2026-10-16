@@ -1,10 +1,33 @@
+import datetime
+
+from django.utils import timezone
 from rest_framework import permissions, viewsets
 from rest_framework.renderers import BrowsableAPIRenderer, JSONRenderer
+from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 
 from .pagination import StandardResultsPagination
+from .permissions import MaintenanceModePermission
 
 
-class BaseReadOnlyAPIViewSet(viewsets.ModelViewSet):
+class ApiV1Mixin:
+    """Behaviour shared by every /api/v1/ view (viewsets and plain views).
+
+    - maintenance mode answers 503 (after authentication, so superusers pass);
+    - anon/user throttles;
+    - output is always UTC: the session middleware activates the user's
+      timezone, token callers get none, and clients should not have to care
+      which — they localise with the ``/me/`` timezone.
+    """
+
+    permission_classes = [MaintenanceModePermission, permissions.IsAuthenticated]
+    throttle_classes = [AnonRateThrottle, UserRateThrottle]
+
+    def initial(self, request, *args, **kwargs):
+        timezone.activate(datetime.timezone.utc)
+        super().initial(request, *args, **kwargs)
+
+
+class BaseReadOnlyAPIViewSet(ApiV1Mixin, viewsets.ModelViewSet):
     """Shared base for every ``/api/v1/`` endpoint.
 
     Read-only *today* — ``http_method_names`` is restricted to safe verbs — but it
@@ -25,8 +48,6 @@ class BaseReadOnlyAPIViewSet(viewsets.ModelViewSet):
 
     # Flip to include "post"/"put"/"patch"/"delete" when writes are added.
     http_method_names = ["get", "head", "options"]
-
-    permission_classes = [permissions.IsAuthenticated]
 
     # Override the datatables globals from settings.REST_FRAMEWORK, per-view.
     renderer_classes = [JSONRenderer, BrowsableAPIRenderer]

@@ -1,3 +1,4 @@
+from urllib.parse import urlencode
 import logging
 
 from django.contrib import messages
@@ -68,7 +69,7 @@ class LoginView(auth_views.LoginView):
                 success_url = None
 
             if success_url:
-                adfs_url += f"?next={success_url}"
+                adfs_url += "?" + urlencode({"next": success_url})
             return redirect(adfs_url)
 
         return super().get(request, *args, **kwargs)

@@ -17,25 +17,49 @@ from constance import config
 from django.contrib import messages
 from django.contrib.messages import get_messages
 import zoneinfo
-import threading
+from contextvars import ContextVar
 
-# Thread-local storage for current user
-_thread_locals = threading.local()
+# The request being served, and an optional explicit user override (tests,
+# consumers, management commands). ContextVars rather than thread-locals so the
+# value follows the request across asgiref's sync/async hops and never leaks
+# between concurrent requests sharing a thread.
+API_V1_PREFIX = "/api/v1/"
+
+_current_request = ContextVar("chaotica_current_request", default=None)
+_UNSET = object()
+_current_user_override = ContextVar("chaotica_current_user", default=_UNSET)
+
+
+def get_current_request():
+    return _current_request.get()
 
 
 def get_current_user():
+    """The user acting in this context, or None (anonymous, cron, Celery, shell).
+
+    Read lazily from the request so users authenticated later than middleware
+    (DRF token/OAuth2 users — DRF writes ``request.user`` through to the
+    underlying HttpRequest) and impersonated users are both seen.
     """
-    Get the current user from thread-local storage.
-    Returns None if no user is set (e.g., in management commands, background tasks).
-    """
-    return getattr(_thread_locals, "user", None)
+    override = _current_user_override.get()
+    if override is not _UNSET:
+        return override
+    request = _current_request.get()
+    user = getattr(request, "user", None) if request is not None else None
+    if user is None or not getattr(user, "is_authenticated", False):
+        return None
+    return user
+
+
+def get_current_impersonator():
+    """The real user behind an impersonation session, else None."""
+    request = _current_request.get()
+    return getattr(request, "impersonator", None) if request is not None else None
 
 
 def set_current_user(user):
-    """
-    Set the current user in thread-local storage.
-    """
-    _thread_locals.user = user
+    """Explicitly set the acting user; ``None`` clears the override."""
+    _current_user_override.set(_UNSET if user is None else user)
 
 
 class EnsureUserMiddleware:
@@ -99,6 +123,16 @@ class NewInstallMiddleware(MiddlewareMixin):
 
         # Check if setup wizard is needed
         if setup_needed and not config.MAINTENANCE_MODE:
+            if request.path.startswith(API_V1_PREFIX):
+                return JsonResponse(
+                    {
+                        "error": {
+                            "code": "setup_required",
+                            "message": "This instance has not been set up yet.",
+                        }
+                    },
+                    status=503,
+                )
             # Redirect to setup wizard...
             return HttpResponseRedirect(reverse("setup_wizard"))
 
@@ -127,25 +161,17 @@ class NewInstallMiddleware(MiddlewareMixin):
 
 
 class CurrentUserMiddleware:
-    """
-    Middleware that stores the current user in thread-local storage.
-    This allows models to access request.user without passing it explicitly.
-    """
+    """Exposes the current request to models (see :func:`get_current_user`)."""
 
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
-        # Store the user before processing the request
-        set_current_user(getattr(request, "user", None))
-
+        token = _current_request.set(request)
         try:
-            response = self.get_response(request)
+            return self.get_response(request)
         finally:
-            # Clean up after the request to avoid memory leaks
-            set_current_user(None)
-
-        return response
+            _current_request.reset(token)
 
 
 class AjaxLoginRedirect401Middleware:
@@ -199,6 +225,11 @@ class MaintenanceModeMiddleware(MiddlewareMixin):
         is_admin_path_allowed = any(
             path.startswith(allowed_path) for allowed_path in admin_allowed_paths
         )
+
+        # /api/v1/ authenticates in the view (token/OAuth2), so the user isn't
+        # known yet; MaintenanceModePermission answers 503 there instead.
+        if path.startswith(API_V1_PREFIX):
+            return
 
         if (
             config.MAINTENANCE_MODE

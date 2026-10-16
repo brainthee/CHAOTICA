@@ -692,6 +692,17 @@ REST_FRAMEWORK = {
     # overrides them per-view (see jobtracker/api/v1/base.py) so it emits clean JSON
     # without disturbing the UI feeds. Only DEFAULT_SCHEMA_CLASS is added here.
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    # Rates only; throttle classes are attached to /api/v1/ views (base.py),
+    # never globally, so the legacy UI feeds are unthrottled.
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": os.environ.get("API_THROTTLE_ANON", default="60/min"),
+        "user": os.environ.get("API_THROTTLE_USER", default="600/min"),
+        "auth_token": os.environ.get("API_THROTTLE_AUTH_TOKEN", default="10/min"),
+    },
+    # Reverse proxies in front of Django (nginx / load balancer). Throttles key
+    # anonymous clients on the X-Forwarded-For entry this many hops from the
+    # right; unset, DRF would trust the whole (client-spoofable) header.
+    "NUM_PROXIES": int(os.environ.get("API_NUM_PROXIES", default=1)),
 }
 
 # OpenAPI schema / docs (drf-spectacular) for the versioned `/api/v1/` API.
@@ -700,7 +711,10 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "Read-only REST API for CHAOTICA engagement lifecycle data.",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
-    "SERVE_PERMISSIONS": ["rest_framework.permissions.IsAuthenticated"],
+    "SERVE_PERMISSIONS": [
+        "jobtracker.api.v1.permissions.MaintenanceModePermission",
+        "rest_framework.permissions.IsAuthenticated",
+    ],
     # The legacy datatables viewsets aren't part of the documented API surface;
     # restrict schema generation to the versioned namespace.
     "SERVERS": [{"url": "/api/v1"}],
@@ -1031,7 +1045,14 @@ BOOTSTRAP_DATEPICKER_PLUS["app_static_url"] = (
 )
 
 
-CORS_ALLOW_ALL_ORIGINS = True
+# Cross-origin access is limited to the versioned API (and, from A8, the OAuth2
+# token endpoints) for explicitly listed origins. Never with credentials:
+# session cookies are SameSite=None in production, so a credentialed CORS grant
+# would let a listed origin act as the signed-in user.
+CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOWED_ORIGINS = os.environ.get("CORS_ALLOWED_ORIGINS", default="").split()
+CORS_URLS_REGEX = r"^/(api/v1/|o/(token|revoke_token)/)"
+CORS_ALLOW_CREDENTIALS = False
 
 CONTENT_SECURITY_POLICY = {
     "EXCLUDE_URL_PREFIXES": ["/excluded-path/"],
