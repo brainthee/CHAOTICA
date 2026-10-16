@@ -107,10 +107,49 @@ class FrameworkSerializer(serializers.ModelSerializer):
         ]
 
 
-class UsageRowSerializer(serializers.Serializer):
+class _Days(serializers.Serializer):
     used_days = serializers.FloatField()
     scheduled_days = serializers.FloatField()
     total_days = serializers.FloatField()
+
+
+class UsagePhaseSerializer(_Days):
+    phase = RefSerializer()
+
+
+class UsageJobSerializer(_Days):
+    job = RefSerializer()
+    phases = UsagePhaseSerializer(many=True)
+
+
+class UsagePersonSerializer(_Days):
+    user = RefSerializer()
+
+
+class UsageRoleSerializer(_Days):
+    role = serializers.CharField()
+
+
+class UsageServiceSerializer(_Days):
+    service = RefSerializer()
+
+
+class UsageMonthSerializer(serializers.Serializer):
+    month = serializers.CharField(help_text="YYYY-MM")
+    days = serializers.FloatField()
+    cumulative = serializers.FloatField()
+
+
+class FrameworkUsageSerializer(serializers.Serializer):
+    days_used = serializers.FloatField()
+    days_scheduled = serializers.FloatField()
+    days_available = serializers.FloatField()
+    over_allocated = serializers.BooleanField()
+    jobs = UsageJobSerializer(many=True)
+    people = UsagePersonSerializer(many=True)
+    roles = UsageRoleSerializer(many=True)
+    services = UsageServiceSerializer(many=True)
+    monthly = UsageMonthSerializer(many=True)
 
 
 class FrameworkDetailSerializer(FrameworkSerializer):
@@ -122,7 +161,7 @@ class FrameworkDetailSerializer(FrameworkSerializer):
     class Meta(FrameworkSerializer.Meta):
         fields = FrameworkSerializer.Meta.fields + ["usage"]
 
-    @extend_schema_field(serializers.DictField())
+    @extend_schema_field(FrameworkUsageSerializer)
     def get_usage(self, fw):
         request = self.context.get("request")
         u = framework_usage(fw)

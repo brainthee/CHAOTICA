@@ -17,11 +17,12 @@ strict and the gap is listed here. To be cleaned up as pages move onto the API.
 - The user profile page is open to any user with a global role, and its
   Schedule History tab is ungated. The API does not expose schedule history
   (A6).
-- Service performance metrics cover every phase, not only those the viewer
-  can see (`Service.get_performance_metrics`). The API scopes them (A7).
 - `user_skill_table.html` lists every user's rating for a skill. API
   `/skills/{id}/users/` uses UserSkill scoping (A7).
-- The skill matrix base set isn't limited by unit (A7).
+- The skill matrix shows every role holder's ratings to anyone with
+  `view_skill`; the API's matrix rows follow the `/user-skills/` rule (A7).
+- Service coverage lists people by competency to `view_service` holders; the
+  API returns counts, plus names only with `view_users_skill` (A7).
 - The client page lists contacts and frameworks to anyone who can view the
   client. The API includes them only with `view_contact` /
   `view_frameworkagreement` (A6).
@@ -59,3 +60,6 @@ strict and the gap is listed here. To be cleaned up as pages move onto the API.
   touching people the viewer may see.
 - Contact and framework pages (view, edit, delete) resolved any pk under any
   client slug; they are now bound to the client in the URL.
+- The service page's Performance tab covered every phase (and listed their
+  clients); it now covers the phases the viewer can see, like its Jobs tab.
+- Skill page Edit/Delete buttons checked `perms.chaotica.*` and never showed.

@@ -28,6 +28,7 @@ from .schedule import (  # noqa: F401
 from .catalogue import (  # noqa: F401
     SkillCategoryViewSet,
     SkillViewSet,
+    AwardingBodyViewSet,
     QualificationViewSet,
     ServiceViewSet,
 )

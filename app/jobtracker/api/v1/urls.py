@@ -46,6 +46,7 @@ router.register(
     basename="qualification-record",
 )
 router.register(r"services", views.ServiceViewSet, basename="service")
+router.register(r"awarding-bodies", views.AwardingBodyViewSet, basename="awarding-body")
 
 urlpatterns = [
     path("meta/", platform.MetaView.as_view(), name="meta"),
