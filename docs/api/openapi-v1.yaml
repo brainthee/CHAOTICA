@@ -438,6 +438,58 @@ paths:
               schema:
                 $ref: '#/components/schemas/JobSales'
           description: ''
+  /api/v1/jobs/{id}/schedule/:
+    get:
+      operationId: jobs_schedule_retrieve
+      description: |-
+        ``/{id}/notes/`` and ``/{id}/activity/``, visible to whoever can see
+        the object (the object's own scope applies via ``get_object``).
+      summary: Job schedule window
+      parameters:
+      - in: query
+        name: end
+        schema:
+          type: string
+          format: date
+        description: Window end (ISO date). Defaults to start + 28 days. Span must
+          be 366 days or fewer.
+      - in: query
+        name: hard
+        schema:
+          type: boolean
+        description: 'Only this schedule''s slots (default: also the people''s other
+          commitments, flagged via ``scope``).'
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9]+$
+        required: true
+      - in: query
+        name: include_user
+        schema:
+          type: array
+          items:
+            type: integer
+        description: Also show these people (if you can see their schedule).
+      - in: query
+        name: start
+        schema:
+          type: string
+          format: date
+        description: Window start (ISO date, YYYY-MM-DD). Defaults to today.
+      tags:
+      - jobs
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Schedule'
+          description: ''
   /api/v1/jobs/{id}/support-team/:
     get:
       operationId: jobs_support_team_list
@@ -1239,6 +1291,58 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedNoteList'
           description: ''
+  /api/v1/phases/{id}/schedule/:
+    get:
+      operationId: phases_schedule_retrieve
+      description: |-
+        ``/{id}/notes/`` and ``/{id}/activity/``, visible to whoever can see
+        the object (the object's own scope applies via ``get_object``).
+      summary: Phase schedule window
+      parameters:
+      - in: query
+        name: end
+        schema:
+          type: string
+          format: date
+        description: Window end (ISO date). Defaults to start + 28 days. Span must
+          be 366 days or fewer.
+      - in: query
+        name: hard
+        schema:
+          type: boolean
+        description: 'Only this schedule''s slots (default: also the people''s other
+          commitments, flagged via ``scope``).'
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9]+$
+        required: true
+      - in: query
+        name: include_user
+        schema:
+          type: array
+          items:
+            type: integer
+        description: Also show these people (if you can see their schedule).
+      - in: query
+        name: start
+        schema:
+          type: string
+          format: date
+        description: Window start (ISO date, YYYY-MM-DD). Defaults to today.
+      tags:
+      - phases
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Schedule'
+          description: ''
   /api/v1/phases/{id}/team/:
     get:
       operationId: phases_team_list
@@ -1370,6 +1474,63 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Project'
+          description: ''
+  /api/v1/projects/{id}/schedule/:
+    get:
+      operationId: projects_schedule_retrieve
+      description: |-
+        Shared base for every ``/api/v1/`` model endpoint.
+
+        Read-only *today* — ``http_method_names`` is restricted to safe verbs — but it
+        subclasses ``ModelViewSet`` (not ``ReadOnlyModelViewSet``) on purpose: enabling
+        writes later is a localised change (widen ``http_method_names``, point at a
+        write-capable serializer, add an object-level permission class) rather than a
+        rewrite.
+
+        It also *locally* overrides the global datatables renderer / pagination / filter
+        defaults (see ``settings.REST_FRAMEWORK``) so v1 emits clean paginated JSON
+        without affecting the legacy ``/api/`` DataTables UI endpoints.
+
+        Access scoping: set ``policy_scope`` to a :mod:`jobtracker.policy` scope
+        action (e.g. ``"job.view"``); ``None`` means reference data visible to every
+        authenticated user, and must be a deliberate choice. Override
+        :meth:`get_base_queryset` for select/prefetch.
+
+        Filtering: declare ``filterset_class`` / ``ordering_fields`` /
+        ``search_fields`` per view. Ordering is an allowlist — nothing is orderable
+        unless listed.
+      summary: Project schedule window
+      parameters:
+      - in: query
+        name: end
+        schema:
+          type: string
+          format: date
+        description: Window end (ISO date). Defaults to start + 28 days. Span must
+          be 366 days or fewer.
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9]+$
+        required: true
+      - in: query
+        name: start
+        schema:
+          type: string
+          format: date
+        description: Window start (ISO date, YYYY-MM-DD). Defaults to today.
+      tags:
+      - projects
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Schedule'
           description: ''
   /api/v1/qualification-records/:
     get:
@@ -1582,12 +1743,22 @@ paths:
   /api/v1/schedule/:
     get:
       operationId: schedule_retrieve
-      description: Composite schedule (timeslots, leave, holidays, per-user availability)
-        for the caller's visible users over a date window. Not paginated — bound the
-        result with ``start``/``end`` (default today → +28 days, max 366-day span).
-        Optionally narrow with ``unit`` and ``user``.
+      description: Not paginated — bound the result with ``start``/``end`` (default
+        today → +28 days, max 366-day span). Narrow with ``unit``, ``user`` or any
+        scheduler filter field (``org_units``, ``skills_specialist``, ``jobs``, ``clients``…,
+        repeated for several values).
       summary: Global schedule window
       parameters:
+      - in: query
+        name: clients
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: compressed_view
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
       - in: query
         name: end
         schema:
@@ -1596,21 +1767,109 @@ paths:
         description: Window end (ISO date). Defaults to start + 28 days. Span must
           be 366 days or fewer.
       - in: query
+        name: filter_by_city
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: include_user
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: job_levels
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: jobs
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: onboarded_to
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: ordering
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: ordering_direction
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: org_unit_roles
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: org_units
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: phases
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: projects
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: services
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: show_inactive_users
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: skills_can_do_alone
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: skills_can_do_support
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: skills_specialist
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
         name: start
         schema:
           type: string
           format: date
         description: Window start (ISO date, YYYY-MM-DD). Defaults to today.
       - in: query
+        name: teams
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
         name: unit
         schema:
           type: integer
-        description: Restrict to members of this org unit (within scope).
       - in: query
         name: user
         schema:
           type: integer
-        description: Restrict to a single user id (within scope).
+      - in: query
+        name: users
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
       tags:
       - schedule
       security:
@@ -1622,6 +1881,203 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Schedule'
+          description: ''
+  /api/v1/schedule/actions/:
+    get:
+      operationId: schedule_actions_retrieve
+      description: Newest first (max 100). With ``job``/``phase`` the history of that
+        schedule; without, recent changes touching people whose schedule you can see.
+      summary: Schedule change history
+      parameters:
+      - in: query
+        name: job
+        schema:
+          type: integer
+        description: Limit to a job (needs view_job_schedule).
+      - in: query
+        name: phase
+        schema:
+          type: integer
+        description: Limit to a phase (needs view_job_schedule).
+      tags:
+      - schedule
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduleAction'
+          description: ''
+  /api/v1/schedule/deltas/:
+    get:
+      operationId: schedule_deltas_retrieve
+      description: 'Polling alternative to the live socket: committed changes after
+        ``since`` (oldest first, max 200) as upserted and removed slots. Slots of
+        people you can''t see are left out.'
+      summary: Changes since a time
+      parameters:
+      - in: query
+        name: job
+        schema:
+          type: integer
+        description: Limit to a job (needs view_job_schedule).
+      - in: query
+        name: phase
+        schema:
+          type: integer
+        description: Limit to a phase (needs view_job_schedule).
+      - in: query
+        name: since
+        schema:
+          type: string
+          format: date-time
+        required: true
+      tags:
+      - schedule
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduleDeltas'
+          description: ''
+  /api/v1/schedule/resources/:
+    get:
+      operationId: schedule_resources_retrieve
+      description: The people the scheduler shows for the same filters, in display
+        order (``ordering`` / ``ordering_direction`` as on the page). Rows don't depend
+        on the dates (beyond utilisation), so fetch once per filter.
+      summary: Scheduler rows
+      parameters:
+      - in: query
+        name: clients
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: compressed_view
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: end
+        schema:
+          type: string
+          format: date
+        description: For utilisation.
+      - in: query
+        name: filter_by_city
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: include_user
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: job_levels
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: jobs
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: onboarded_to
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: ordering
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: ordering_direction
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: org_unit_roles
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: org_units
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: phases
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: projects
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: services
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: show_inactive_users
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: skills_can_do_alone
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: skills_can_do_support
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: skills_specialist
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: start
+        schema:
+          type: string
+          format: date
+        description: For utilisation.
+      - in: query
+        name: teams
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: users
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      tags:
+      - schedule
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduleResources'
           description: ''
   /api/v1/search/:
     get:
@@ -1955,6 +2411,84 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Skill'
+          description: ''
+  /api/v1/timeslot-comments/:
+    get:
+      operationId: timeslot_comments_list
+      description: Scheduler comments, visible like slots (scheduler visibility).
+      parameters:
+      - in: query
+        name: end
+        schema:
+          type: string
+          format: date-time
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: q
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: start
+        schema:
+          type: string
+          format: date-time
+      - in: query
+        name: user
+        schema:
+          type: string
+      tags:
+      - timeslot-comments
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTimeSlotCommentList'
+          description: ''
+  /api/v1/timeslot-comments/{id}/:
+    get:
+      operationId: timeslot_comments_retrieve
+      description: Scheduler comments, visible like slots (scheduler visibility).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9]+$
+        required: true
+      tags:
+      - timeslot-comments
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimeSlotComment'
           description: ''
   /api/v1/timeslot-types/:
     get:
@@ -2753,6 +3287,18 @@ components:
         * `1` - Available
         * `2` - Busy - Internal
         * `3` - Busy - Delivery
+    AvailabilityRun:
+      type: object
+      properties:
+        start:
+          type: string
+          format: date
+        end:
+          type: string
+          format: date
+      required:
+      - end
+      - start
     BillingBadge:
       type: object
       description: 'A billing code as a badge: code and name only, never money.'
@@ -2764,9 +3310,6 @@ components:
       required:
       - code
       - name
-    BlankEnum:
-      enum:
-      - ''
     Client:
       type: object
       properties:
@@ -3506,12 +4049,6 @@ components:
         date:
           type: string
           format: date
-        country:
-          nullable: true
-          oneOf:
-          - $ref: '#/components/schemas/CountryEnum'
-          - $ref: '#/components/schemas/BlankEnum'
-          - $ref: '#/components/schemas/NullEnum'
         reason:
           type: string
           maxLength: 255
@@ -4682,6 +5219,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Skill'
+    PaginatedTimeSlotCommentList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/TimeSlotComment'
     PaginatedTimeSlotList:
       type: object
       required:
@@ -5731,13 +6291,141 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Holiday'
+        comments:
+          type: array
+          items:
+            $ref: '#/components/schemas/TimeSlotComment'
+        availability:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserAvailabilityRuns'
+        refs:
+          $ref: '#/components/schemas/ScheduleRefs'
+        scope:
+          allOf:
+          - $ref: '#/components/schemas/ScheduleScope'
+          nullable: true
       required:
+      - availability
+      - comments
       - end
       - holidays
       - leave
+      - refs
+      - scope
       - start
       - timeslots
       - users
+    ScheduleAction:
+      type: object
+      properties:
+        id:
+          type: integer
+        created:
+          type: string
+          format: date-time
+        actor:
+          allOf:
+          - $ref: '#/components/schemas/Ref'
+          nullable: true
+          readOnly: true
+        action_type:
+          type: string
+        summary:
+          type: string
+        forced:
+          type: boolean
+        override_reason:
+          type: string
+        job:
+          type: integer
+          nullable: true
+        phase:
+          type: integer
+          nullable: true
+        reverted:
+          type: boolean
+        reverted_by:
+          type: integer
+          nullable: true
+        is_revert:
+          type: boolean
+          readOnly: true
+        can_revert:
+          type: boolean
+          readOnly: true
+        items:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+          readOnly: true
+      required:
+      - action_type
+      - actor
+      - can_revert
+      - created
+      - forced
+      - id
+      - is_revert
+      - items
+      - job
+      - override_reason
+      - phase
+      - reverted
+      - reverted_by
+      - summary
+    ScheduleDelta:
+      type: object
+      properties:
+        action_id:
+          type: integer
+        created:
+          type: string
+          format: date-time
+        actor_id:
+          type: integer
+          nullable: true
+        action_type:
+          type: string
+        timeslots:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScheduleTimeSlot'
+        comments:
+          type: array
+          items:
+            $ref: '#/components/schemas/TimeSlotComment'
+        removed_timeslots:
+          type: array
+          items:
+            type: integer
+        removed_comments:
+          type: array
+          items:
+            type: integer
+      required:
+      - action_id
+      - action_type
+      - actor_id
+      - comments
+      - created
+      - removed_comments
+      - removed_timeslots
+      - timeslots
+    ScheduleDeltas:
+      type: object
+      properties:
+        deltas:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScheduleDelta'
+        now:
+          type: string
+          format: date-time
+      required:
+      - deltas
+      - now
     ScheduleLeave:
       type: object
       description: Compact leave for the ``/schedule/`` composites (relations as ids).
@@ -5793,6 +6481,101 @@ components:
       - type_of_leave
       - type_of_leave_display
       - user
+    ScheduleRefs:
+      type: object
+      description: |-
+        Labels for every phase / project a slot in the window points at,
+        keyed by id (as a string).
+      properties:
+        phases:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Ref'
+        projects:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Ref'
+      required:
+      - phases
+      - projects
+    ScheduleResource:
+      type: object
+      description: 'A scheduler row: the user as a ref plus what the row header shows.'
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+        display:
+          type: string
+        url:
+          type: string
+          nullable: true
+        web_url:
+          type: string
+          nullable: true
+        first_name:
+          type: string
+        last_name:
+          type: string
+        job_level_label:
+          type: string
+        org_unit:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+        availability:
+          type: number
+          format: double
+        utilisation:
+          type: number
+          format: double
+      required:
+      - availability
+      - display
+      - first_name
+      - id
+      - job_level_label
+      - last_name
+      - org_unit
+      - roles
+      - type
+      - url
+      - utilisation
+      - web_url
+    ScheduleResources:
+      type: object
+      properties:
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScheduleResource'
+      required:
+      - users
+    ScheduleScope:
+      type: object
+      description: |-
+        Set on job/phase/project schedules: slots outside ``phase_ids`` /
+        ``project_ids`` are the people's other commitments (show faded).
+      properties:
+        phase_ids:
+          type: array
+          items:
+            type: integer
+          nullable: true
+        project_ids:
+          type: array
+          items:
+            type: integer
+          nullable: true
+        hard:
+          type: boolean
+      required:
+      - hard
+      - phase_ids
+      - project_ids
     ScheduleTimeSlot:
       type: object
       description: |-
@@ -6310,6 +7093,28 @@ components:
       - start
       - updated
       - user
+    TimeSlotComment:
+      type: object
+      description: A scheduler comment (``user`` as an id in schedule composites).
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        user:
+          type: integer
+        comment:
+          type: string
+      required:
+      - end
+      - id
+      - start
+      - user
     TimeSlotType:
       type: object
       properties:
@@ -6711,6 +7516,18 @@ components:
       - job_level
       - job_level_label
       - web_url
+    UserAvailabilityRuns:
+      type: object
+      properties:
+        user:
+          type: integer
+        runs:
+          type: array
+          items:
+            $ref: '#/components/schemas/AvailabilityRun'
+      required:
+      - runs
+      - user
     UserCostUpdate:
       type: object
       description: |-

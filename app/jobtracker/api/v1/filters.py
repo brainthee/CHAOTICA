@@ -12,7 +12,7 @@ from rest_framework.filters import OrderingFilter, SearchFilter
 from chaotica_utils.models import User
 from chaotica_utils.models.leave import LeaveRequest
 
-from ...models import Job, Phase, Service, Skill, TimeSlot
+from ...models import Job, Phase, Service, Skill, TimeSlot, TimeSlotComment
 from ...selectors.involvement import job_involvement_q, phase_involvement_q
 
 
@@ -151,6 +151,16 @@ class TimeSlotFilter(django_filters.FilterSet):
 
     class Meta:
         model = TimeSlot
+        fields = []
+
+
+class TimeSlotCommentFilter(django_filters.FilterSet):
+    start = django_filters.IsoDateTimeFilter(field_name="end", lookup_expr="gt")
+    end = django_filters.IsoDateTimeFilter(field_name="start", lookup_expr="lt")
+    user = MeOrIdFilter(field_name="user")
+
+    class Meta:
+        model = TimeSlotComment
         fields = []
 
 

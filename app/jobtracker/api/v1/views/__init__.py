@@ -20,6 +20,7 @@ from .phases import (  # noqa: F401
 from .schedule import (  # noqa: F401
     TimeSlotTypeViewSet,
     TimeSlotViewSet,
+    TimeSlotCommentViewSet,
     ScheduleViewSet,
 )
 from .catalogue import (  # noqa: F401

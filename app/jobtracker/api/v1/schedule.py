@@ -20,7 +20,10 @@ from rest_framework.exceptions import ValidationError
 from chaotica_utils.models.leave import LeaveRequest
 
 from ...utils import collect_schedule_members, collect_schedule_slots
+from ...selectors.schedule import availability_runs
+from .fields import make_ref
 from .serializers import (
+    TimeSlotCommentSerializer,
     HolidaySerializer,
     ScheduleLeaveSerializer,
     ScheduleTimeSlotSerializer,
@@ -101,14 +104,31 @@ def parse_int_param(request, name):
         raise ValidationError({name: "Expected an integer."})
 
 
-def build_schedule_payload(users, start, end):
+def build_schedule_payload(
+    users,
+    start,
+    end,
+    scope_phases=None,
+    scope_projects=None,
+    hard_scope=True,
+    request=None,
+):
     """Assemble the composite schedule window for ``users`` in ``[start, end]``.
 
     ``users`` is an already-permission-scoped User **queryset**; ``start``/``end``
-    are tz-aware datetimes. Returns a plain dict ready for ``Response`` — see
-    ``ScheduleSerializer`` for the shape.
+    are tz-aware datetimes. ``scope_*``/``hard_scope`` restrict (hard) or tag
+    (soft) slots for a job/phase/project schedule. Returns a plain dict ready
+    for ``Response`` — see ``ScheduleSerializer`` for the shape.
     """
-    dataset = collect_schedule_slots(users, start, end)
+    dataset = collect_schedule_slots(
+        users,
+        start,
+        end,
+        scope_phases=scope_phases,
+        scope_projects=scope_projects,
+        hard_scope=hard_scope,
+    )
+    slots = list(dataset["timeslots"])
 
     # start_date/end_date are DateTimeFields — filter with the aware datetimes
     # (not .date()) so leave overlapping the window is caught without coercing a
@@ -119,21 +139,60 @@ def build_schedule_payload(users, start, end):
         end_date__gte=start,
     ).select_related("user", "authorised_by", "timeslot")
 
-    # Scope holidays to the countries of the in-scope users (plus global,
-    # country-less holidays), mirroring how the vis-timeline feed matches a
-    # holiday to a user by country — rather than returning every country's
-    # holidays regardless of who the caller can see.
+    # The in-scope users' countries' holidays plus global (country-less) ones.
     countries = {c for c in users.values_list("country", flat=True) if c}
     holidays = dataset["holidays"].filter(
-        Q(country__in=countries) | Q(country__isnull=True)
+        Q(country__in=countries) | Q(country__isnull=True) | Q(country="")
     )
+
+    # One label per phase/project the window's slots point at, so a client
+    # can name slots without a request per phase.
+    phases, projects = {}, {}
+    for slot in slots:
+        if slot.phase_id and slot.phase_id not in phases:
+            phases[slot.phase_id] = make_ref(slot.phase, request)
+        if slot.project_id and slot.project_id not in projects:
+            projects[slot.project_id] = make_ref(slot.project, request)
+
+    runs = availability_runs(users, start, end, holidays)
+    scope = None
+    if (
+        dataset["scope_phase_ids"] is not None
+        or dataset["scope_project_ids"] is not None
+    ):
+        scope = {
+            "phase_ids": (
+                sorted(dataset["scope_phase_ids"])
+                if dataset["scope_phase_ids"] is not None
+                else None
+            ),
+            "project_ids": (
+                sorted(dataset["scope_project_ids"])
+                if dataset["scope_project_ids"] is not None
+                else None
+            ),
+            "hard": hard_scope,
+        }
 
     return {
         "start": start.date(),
         "end": end.date(),
         # collect_schedule_members already returns plain, JSON-safe dicts.
         "users": collect_schedule_members(users, start, end),
-        "timeslots": ScheduleTimeSlotSerializer(dataset["timeslots"], many=True).data,
+        "timeslots": ScheduleTimeSlotSerializer(slots, many=True).data,
         "leave": ScheduleLeaveSerializer(leave, many=True).data,
         "holidays": HolidaySerializer(holidays, many=True).data,
+        "comments": TimeSlotCommentSerializer(dataset["comments"], many=True).data,
+        "availability": [
+            {
+                "user": uid,
+                "runs": [{"start": a.isoformat(), "end": b.isoformat()} for a, b in r],
+            }
+            for uid, r in runs.items()
+        ],
+        "refs": {
+            "phases": {str(k): v for k, v in phases.items()},
+            "projects": {str(k): v for k, v in projects.items()},
+        },
+        "scope": scope,
     }

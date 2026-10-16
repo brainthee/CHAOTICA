@@ -14,9 +14,13 @@ from ..serializers import (
     PhaseDetailSerializer,
     PhaseFeedbackSerializer,
     PhaseSerializer,
+    ScheduleSerializer,
     TeamMemberSerializer,
 )
+from ....utils import merge_include_users
+from ..schedule import build_schedule_payload, parse_schedule_window
 from ._engagement import NotesActivityMixin
+from .jobs import SCHEDULE_PARAMS, _truthy
 
 
 class PhaseViewSet(NotesActivityMixin, BaseReadOnlyAPIViewSet):
@@ -61,6 +65,29 @@ class PhaseViewSet(NotesActivityMixin, BaseReadOnlyAPIViewSet):
                 "job__billing_code_assignments__code",
             )
         return qs
+
+    @extend_schema(
+        parameters=SCHEDULE_PARAMS,
+        responses=ScheduleSerializer,
+        summary="Phase schedule window",
+    )
+    @action(detail=True, methods=["get"], filter_backends=[], pagination_class=None)
+    def schedule(self, request, pk=None):
+        phase = self.get_object()
+        if not self.policy.can("job.view_schedule", phase.job):
+            raise PermissionDenied("You can't view this job's schedule.")
+        start, end = parse_schedule_window(request)
+        users = merge_include_users(request._request, phase.team())
+        return Response(
+            build_schedule_payload(
+                users,
+                start,
+                end,
+                scope_phases=[phase],
+                hard_scope=_truthy(request.query_params.get("hard")),
+                request=request,
+            )
+        )
 
     @extend_schema(responses=TeamMemberSerializer(many=True), summary="Phase team")
     @action(detail=True, methods=["get"], filter_backends=[], pagination_class=None)

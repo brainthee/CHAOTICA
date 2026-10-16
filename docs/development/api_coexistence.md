@@ -29,9 +29,22 @@ strict and the gap is listed here. To be cleaned up as pages move onto the API.
   (some mismatched). `jobtracker/workflow.py` is the shared description that
   the templates should render from (A9).
 
+## Scheduler (A5)
+- Utilisation: `/schedule/` uses `calculate_bulk_utilization` (via
+  `collect_schedule_members`). The scheduler rows (`/schedule/resources/`)
+  and the page's members feed use `get_bulk_stats`. Both feed the same
+  `calculate_utilisation` engine for the window; `get_bulk_stats` also adds
+  upcoming-availability ranges, which the window doesn't need.
+- Holidays: everywhere it is now the user's country's holidays plus global
+  ones. The page's holiday bands used to drop global holidays.
+
 ## Fixed in passing
 - `/api/v1/jobs/` and `/projects/` returned the business number as `id` while
   `/{id}/` looked up the primary key. `id` is now the pk; the number is
   `job_id` / `project_id`.
 - `/api/v1/timeslots/` showed slots of people who had left the viewer's unit;
   it now uses scheduler visibility (`viewable_schedule_user_pks`).
+- Job/phase schedule feeds: `include_user` added anyone by id (exposing
+  their other commitments); it is now limited to people the viewer may see.
+- Global schedule history listed every change; it now lists only changes
+  touching people the viewer may see.
