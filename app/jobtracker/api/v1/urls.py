@@ -13,7 +13,7 @@ from drf_spectacular.views import (
 from rest_framework import routers
 
 from . import views
-from .views import platform
+from .views import dashboard, platform
 from .auth import ThrottledObtainAuthToken
 
 app_name = "api_v1"
@@ -49,6 +49,29 @@ urlpatterns = [
         "me/preferences/", platform.MePreferencesView.as_view(), name="me-preferences"
     ),
     path("me/schedule/", platform.MeScheduleView.as_view(), name="me-schedule"),
+    path("me/dashboard/", dashboard.MeDashboardView.as_view(), name="me-dashboard"),
+    path("me/alarms/", dashboard.MeAlarmsView.as_view(), name="me-alarms"),
+    path("entropy/", dashboard.EntropyView.as_view(), name="entropy"),
+    path(
+        "notifications/",
+        dashboard.NotificationListView.as_view(),
+        name="notifications",
+    ),
+    path(
+        "notifications/unread-count/",
+        dashboard.NotificationUnreadCountView.as_view(),
+        name="notifications-unread-count",
+    ),
+    path(
+        "notifications/mark-read/",
+        dashboard.NotificationMarkReadView.as_view(),
+        name="notifications-mark-read",
+    ),
+    path(
+        "notifications/mark-all-read/",
+        dashboard.NotificationMarkAllReadView.as_view(),
+        name="notifications-mark-all-read",
+    ),
     path("search/", platform.SearchView.as_view(), name="search"),
     path("search/goto/", platform.SearchGotoView.as_view(), name="search-goto"),
     path("", include(router.urls)),

@@ -173,7 +173,9 @@ class PhaseDetailTests(JobPhaseBase):
 
         body = self.crew.get(f"/api/v1/phases/{self.phase.pk}/team/").json()
         _labels, entries = phase_team(self.phase)
-        self.assertEqual([m["user"]["id"] for m in body], [e["user"].pk for e in entries])
+        self.assertEqual(
+            [m["user"]["id"] for m in body], [e["user"].pk for e in entries]
+        )
         booked = next(m for m in body if m["user"]["id"] == self.member.pk)
         self.assertFalse(booked["unscheduled"])
 

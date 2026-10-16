@@ -19,6 +19,7 @@ from .people import (  # noqa: F401
     OrganisationalUnitSerializer,
     OrganisationalUnitMemberSerializer,
     LeaveRequestSerializer,
+    LeaveRequestListSerializer,
     UserSkillSerializer,
     QualificationRecordSerializer,
 )
@@ -67,4 +68,19 @@ from .catalogue import (  # noqa: F401
     SkillSerializer,
     QualificationSerializer,
     ServiceSerializer,
+)
+from .dashboard import (  # noqa: F401
+    QueueSerializer,
+    ConsultantStatsSerializer,
+    MonthlySeriesSerializer,
+    UserStatsSerializer,
+    DashboardStatsSerializer,
+    TeamUtilisationSerializer,
+    DashboardSerializer,
+    AlarmItemSerializer,
+    AlarmGroupSerializer,
+    AlarmsSerializer,
+    NotificationSerializer,
+    MarkReadSerializer,
+    UpdatedCountSerializer,
 )

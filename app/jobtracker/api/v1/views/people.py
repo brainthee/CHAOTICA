@@ -18,6 +18,7 @@ from chaotica_utils.utils.common import (
     can_manage_user_lcr,
 )
 
+from ....enums import DefaultTimeSlotTypes
 from ....utils import viewable_schedule_user_pks
 from ..schedule import (
     SCHEDULE_QUERY_PARAMS,
@@ -30,10 +31,14 @@ from ....models import (
     OrganisationalUnitMember,
     QualificationRecord,
     UserSkill,
+    TimeSlot,
 )
 from .. import filters
 from ..base import BaseReadOnlyAPIViewSet
+from ....selectors.dashboard import user_stats
 from ..serializers import (
+    UserStatsSerializer,
+    LeaveRequestListSerializer,
     LeaveRequestSerializer,
     OrganisationalUnitSerializer,
     OrganisationalUnitMemberSerializer,
@@ -247,6 +252,21 @@ class UserViewSet(BaseReadOnlyAPIViewSet):
         )
 
     @extend_schema(
+        summary="A user's consultant stats and QA ratings",
+        description=(
+            "Visible to the user, their (acting) manager and holders of "
+            "``manage_user`` (``User.can_be_managed_by``)."
+        ),
+        responses=UserStatsSerializer,
+    )
+    @action(detail=True, methods=["get"], url_path="stats")
+    def stats(self, request, pk=None):
+        target = get_object_or_404(User, pk=pk)
+        if not target.can_be_managed_by(request.user):
+            raise PermissionDenied("You can't view this user's stats.")
+        return Response(UserStatsSerializer(user_stats(target)).data)
+
+    @extend_schema(
         summary="A single user's schedule window",
         description=(
             "Composite schedule (timeslots, leave, holidays, availability) for "
@@ -332,13 +352,21 @@ class OrganisationalUnitViewSet(BaseReadOnlyAPIViewSet):
 
 
 class LeaveRequestViewSet(BaseReadOnlyAPIViewSet):
-    serializer_class = LeaveRequestSerializer
+    serializer_class = LeaveRequestListSerializer
     policy_scope = "leave.view"
     filterset_class = filters.LeaveRequestFilter
     ordering_fields = ("start_date", "requested_on")
 
     def get_base_queryset(self):
-        return LeaveRequest.objects.select_related("user", "authorised_by", "timeslot")
+        overlap = TimeSlot.objects.filter(
+            user=OuterRef("user"),
+            slot_type=DefaultTimeSlotTypes.DELIVERY,
+            start__lte=OuterRef("end_date"),
+            end__gte=OuterRef("start_date"),
+        )
+        return LeaveRequest.objects.select_related(
+            "user__manager", "user__acting_manager", "authorised_by", "timeslot"
+        ).annotate(overlaps_work_ann=Exists(overlap))
 
 
 class UserSkillViewSet(BaseReadOnlyAPIViewSet):

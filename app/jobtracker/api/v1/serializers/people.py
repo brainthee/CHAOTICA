@@ -204,6 +204,23 @@ class LeaveRequestSerializer(serializers.ModelSerializer):
         ]
 
 
+class LeaveRequestListSerializer(LeaveRequestSerializer):
+    """``/leave-requests/``: adds whether it clashes with booked delivery work
+    and whether the caller may approve it."""
+
+    overlaps_work = serializers.BooleanField(source="overlaps_work_ann", read_only=True)
+    can_authorise = serializers.SerializerMethodField()
+
+    class Meta(LeaveRequestSerializer.Meta):
+        fields = LeaveRequestSerializer.Meta.fields + ["overlaps_work", "can_authorise"]
+
+    def get_can_authorise(self, leave) -> bool:
+        request = self.context.get("request")
+        if request is None or leave.authorised or leave.declined or leave.cancelled:
+            return False
+        return bool(leave.can_user_auth(request.user))
+
+
 class UserSkillSerializer(serializers.ModelSerializer):
     user = RefField()
     skill = RefField()
