@@ -27,6 +27,9 @@ router.register(r"phases", views.PhaseViewSet, basename="phase")
 router.register(r"projects", views.ProjectViewSet, basename="project")
 router.register(r"timeslots", views.TimeSlotViewSet, basename="timeslot")
 router.register(r"schedule", views.ScheduleViewSet, basename="schedule")
+router.register(
+    r"timeslot-comments", views.TimeSlotCommentViewSet, basename="timeslot-comment"
+)
 router.register(r"timeslot-types", views.TimeSlotTypeViewSet, basename="timeslot-type")
 router.register(r"leave-requests", views.LeaveRequestViewSet, basename="leave-request")
 router.register(r"skills", views.SkillViewSet, basename="skill")

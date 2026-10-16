@@ -2,12 +2,13 @@
 
 from django.db.models import Count
 from django.db.models.functions import Coalesce
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
 from ....models import Job, Phase, Project
+from ....utils import merge_include_users
 from ....selectors.jobs import (
     can_view_loaded_costs,
     job_sales_summary,
@@ -23,9 +24,36 @@ from ..serializers import (
     JobTeamMemberSerializer,
     PhaseSerializer,
     ProjectSerializer,
+    ScheduleSerializer,
     SupportRoleSerializer,
 )
 from ._engagement import NotesActivityMixin
+from ..schedule import (
+    SCHEDULE_QUERY_PARAMS,
+    build_schedule_payload,
+    parse_schedule_window,
+)
+
+
+def _truthy(value):
+    return str(value or "").strip().lower() in ("1", "true", "yes", "on")
+
+
+SCHEDULE_PARAMS = SCHEDULE_QUERY_PARAMS + [
+    OpenApiParameter(
+        "hard",
+        bool,
+        description="Only this schedule's slots (default: also the people's "
+        "other commitments, flagged via ``scope``).",
+    ),
+    OpenApiParameter(
+        "include_user",
+        int,
+        many=True,
+        description="Also show these people (if you can see their schedule).",
+    ),
+]
+
 
 FINANCE_FIELDS = ("staff_cost", "profit", "profit_perc", "meets_target", "support_pool")
 
@@ -96,6 +124,29 @@ class JobViewSet(NotesActivityMixin, BaseReadOnlyAPIViewSet):
             PhaseSerializer(page, many=True, context=self.get_serializer_context()).data
         )
 
+    @extend_schema(
+        parameters=SCHEDULE_PARAMS,
+        responses=ScheduleSerializer,
+        summary="Job schedule window",
+    )
+    @action(detail=True, methods=["get"], filter_backends=[], pagination_class=None)
+    def schedule(self, request, pk=None):
+        job = self.get_object()
+        if not self.policy.can("job.view_schedule", job):
+            raise PermissionDenied("You can't view this job's schedule.")
+        start, end = parse_schedule_window(request)
+        users = merge_include_users(request._request, job.team_scheduled())
+        return Response(
+            build_schedule_payload(
+                users,
+                start,
+                end,
+                scope_phases=job.phases.all(),
+                hard_scope=_truthy(request.query_params.get("hard")),
+                request=request,
+            )
+        )
+
     @extend_schema(responses=JobTeamMemberSerializer(many=True), summary="Job team")
     @action(detail=True, methods=["get"], filter_backends=[], pagination_class=None)
     def team(self, request, pk=None):
@@ -158,3 +209,24 @@ class ProjectViewSet(BaseReadOnlyAPIViewSet):
 
     def get_base_queryset(self):
         return Project.objects.select_related("unit", "primary_poc", "created_by")
+
+    @extend_schema(
+        parameters=SCHEDULE_QUERY_PARAMS,
+        responses=ScheduleSerializer,
+        summary="Project schedule window",
+    )
+    @action(detail=True, methods=["get"], filter_backends=[], pagination_class=None)
+    def schedule(self, request, pk=None):
+        project = self.get_object()
+        # As the project page's schedule tab: global view_project.
+        if not request.user.has_perm("jobtracker.view_project"):
+            raise PermissionDenied("You can't view project schedules.")
+        from ....views.project import _project_scheduled_users
+
+        start, end = parse_schedule_window(request)
+        users = _project_scheduled_users(project)
+        return Response(
+            build_schedule_payload(
+                users, start, end, scope_projects=[project], request=request
+            )
+        )

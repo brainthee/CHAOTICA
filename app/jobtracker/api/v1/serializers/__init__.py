@@ -61,7 +61,17 @@ from .schedule import (  # noqa: F401
     ScheduleLeaveSerializer,
     HolidaySerializer,
     ScheduleUserAvailabilitySerializer,
+    TimeSlotCommentSerializer,
+    AvailabilityRunSerializer,
+    UserAvailabilityRunsSerializer,
+    ScheduleRefsSerializer,
+    ScheduleScopeSerializer,
     ScheduleSerializer,
+    ScheduleResourceSerializer,
+    ScheduleResourcesSerializer,
+    ScheduleActionSerializer,
+    ScheduleDeltaSerializer,
+    ScheduleDeltasSerializer,
 )
 from .catalogue import (  # noqa: F401
     SkillCategorySerializer,

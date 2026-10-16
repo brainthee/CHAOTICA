@@ -411,11 +411,19 @@ def merge_include_users(request, users):
     schedule 'Add User' tool can surface someone not yet scheduled on the
     job/phase. Returns a User QuerySet (get_bulk_stats needs a queryset).
 
-    ``users`` may be None/empty (e.g. a freshly cloned job with no schedule yet)."""
+    ``users`` may be None/empty (e.g. a freshly cloned job with no schedule yet).
+
+    Extras are clamped to people the viewer may already see on the scheduler:
+    the job/phase gate authorises its own team, not arbitrary user ids (whose
+    other commitments would then be returned)."""
     ids = {u.pk for u in users} if users else set()
+    allowed = None
     for i in request.GET.getlist("include_user"):
         if str(i).isdigit():
-            ids.add(int(i))
+            if allowed is None:
+                allowed = viewable_schedule_user_pks(request.user)
+            if int(i) in allowed:
+                ids.add(int(i))
     return User.objects.filter(pk__in=ids)
 
 
@@ -976,10 +984,11 @@ def get_scheduler_slots(
             slot_json["out_of_scope"] = True
         data.append(slot_json)
 
-    # Add the holidays
+    # Add the holidays: the user's country's, plus global (country-less) ones —
+    # the same rule as availability shading and the API.
     for user in filtered_users:
         for hol in dataset["holidays"]:
-            if user.country == hol.country:
+            if not hol.country or user.country == hol.country:
                 data.append(
                     {
                         "title": str(hol),
@@ -997,54 +1006,15 @@ def get_scheduler_slots(
     # Emitted per-user as `display: background` runs — mirroring the holiday
     # bands above — so vis-timeline draws them behind the booked slots.
     if config.SCHEDULE_SHADE_AVAILABLE and start and end:
-        from collections import defaultdict
         from datetime import timedelta
+
+        from .selectors.schedule import availability_runs
 
         available_colour = str(config.SCHEDULE_COLOR_AVAILABLE)
 
-        # Public holidays for the window, split into per-country and global
-        # (country-less applies to everyone — mirrors User.get_holidays).
-        holiday_by_country = defaultdict(set)
-        global_holidays = set()
-        for hol in dataset["holidays"]:
-            if hol.country:
-                holiday_by_country[str(hol.country)].add(hol.date)
-            else:
-                global_holidays.add(hol.date)
-
-        # Days a member already has ANY booking on (delivery, internal, leave,
-        # sick, etc.) — a booked day is NOT available. Queried UNSCOPED so a
-        # job/phase-scoped feed still hides days the member is booked elsewhere.
-        occupied_dates = defaultdict(set)
-        booked = TimeSlot.objects.filter(
-            user__in=filtered_users,
-            end__gte=start,
-            start__lte=end,
-        ).values_list("user_id", "start", "end")
-        for uid, slot_start, slot_end in booked:
-            d, last = slot_start.date(), slot_end.date()
-            while d <= last:
-                occupied_dates[uid].add(d)
-                d += timedelta(days=1)
-
-        # Each user's working days (first unit membership; default Mon–Fri),
-        # resolved in one query to avoid an N+1 over the member list.
-        member_days = {}
-        for m in (
-            OrganisationalUnitMember.objects.filter(member__in=filtered_users)
-            .select_related("unit")
-            .order_by("member_id", "pk")
-        ):
-            if m.member_id not in member_days:
-                member_days[m.member_id] = m.unit.businessHours_days or [1, 2, 3, 4, 5]
-
+        runs = availability_runs(filtered_users, start, end, dataset["holidays"])
         for user in filtered_users:
-            business_days = member_days.get(user.pk, [1, 2, 3, 4, 5])
-            user_holidays = holiday_by_country.get(str(user.country), set()) | global_holidays
-            user_occupied = occupied_dates.get(user.pk, set())
-            for run_start, run_end in available_day_runs(
-                start.date(), end.date(), business_days, user_holidays, user_occupied
-            ):
+            for run_start, run_end in runs.get(user.pk, []):
                 data.append(
                     {
                         "id": "avail-%d-%s" % (user.pk, run_start.isoformat()),

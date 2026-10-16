@@ -500,10 +500,14 @@ def _scope_history_qs(request, source):
 def schedule_action_history(request):
     """History panel data: the ScheduleAction log for the current scope, newest
     first, with a per-action ``can_revert`` computed for the requesting user."""
-    qs, _viewable = _scope_history_qs(request, request.GET)
-    qs = qs[:100]
+    from ..selectors.schedule import schedule_history
+
     actions = []
-    for a in qs:
+    for a in schedule_history(
+        request.user,
+        job_id=clean_int(request.GET.get("job")),
+        phase_id=clean_int(request.GET.get("phase")),
+    ):
         actions.append(
             {
                 "id": a.pk,
