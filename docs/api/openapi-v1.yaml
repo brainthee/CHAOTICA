@@ -140,6 +140,24 @@ paths:
               schema:
                 $ref: '#/components/schemas/Client'
           description: ''
+  /api/v1/entropy/:
+    get:
+      operationId: entropy_retrieve
+      description: Base for composite (non-model) endpoints, e.g. ``/me/dashboard/``.
+      summary: Entropy meter (404 when the feature is off)
+      tags:
+      - entropy
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /api/v1/jobs/:
     get:
       operationId: jobs_list
@@ -191,6 +209,10 @@ paths:
         required: false
         in: query
         description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: queue
         schema:
           type: string
       - in: query
@@ -563,7 +585,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedLeaveRequestList'
+                $ref: '#/components/schemas/PaginatedLeaveRequestListList'
           description: ''
   /api/v1/leave-requests/{id}/:
     get:
@@ -606,7 +628,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LeaveRequest'
+                $ref: '#/components/schemas/LeaveRequestList'
           description: ''
   /api/v1/me/:
     get:
@@ -624,6 +646,42 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Me'
+          description: ''
+  /api/v1/me/alarms/:
+    get:
+      operationId: me_alarms_retrieve
+      description: Base for composite (non-model) endpoints, e.g. ``/me/dashboard/``.
+      summary: My alarms
+      tags:
+      - me
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alarms'
+          description: ''
+  /api/v1/me/dashboard/:
+    get:
+      operationId: me_dashboard_retrieve
+      description: |-
+        The dashboard's first paint: which queues the caller has (with
+        counts), alarm counts, their stats and their primary unit's utilisation.
+      summary: My dashboard
+      tags:
+      - me
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dashboard'
           description: ''
   /api/v1/me/preferences/:
     get:
@@ -692,6 +750,93 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Meta'
+          description: ''
+  /api/v1/notifications/:
+    get:
+      operationId: notifications_list
+      description: Base for composite (non-model) endpoints, e.g. ``/me/dashboard/``.
+      summary: My notifications
+      parameters:
+      - in: query
+        name: unread_only
+        schema:
+          type: boolean
+      tags:
+      - notifications
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Notification'
+          description: ''
+  /api/v1/notifications/mark-all-read/:
+    post:
+      operationId: notifications_mark_all_read_create
+      description: Base for composite (non-model) endpoints, e.g. ``/me/dashboard/``.
+      summary: Mark all read
+      tags:
+      - notifications
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdatedCount'
+          description: ''
+  /api/v1/notifications/mark-read/:
+    post:
+      operationId: notifications_mark_read_create
+      description: Base for composite (non-model) endpoints, e.g. ``/me/dashboard/``.
+      summary: Mark notifications read or unread
+      tags:
+      - notifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MarkRead'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MarkRead'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MarkRead'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdatedCount'
+          description: ''
+  /api/v1/notifications/unread-count/:
+    get:
+      operationId: notifications_unread_count_retrieve
+      description: Base for composite (non-model) endpoints, e.g. ``/me/dashboard/``.
+      summary: Unread count
+      tags:
+      - notifications
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdatedCount'
           description: ''
   /api/v1/org-units/:
     get:
@@ -882,6 +1027,10 @@ paths:
         required: false
         in: query
         description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: queue
         schema:
           type: string
       - in: query
@@ -2423,6 +2572,31 @@ paths:
               schema:
                 $ref: '#/components/schemas/User'
           description: ''
+  /api/v1/users/{id}/stats/:
+    get:
+      operationId: users_stats_retrieve
+      description: Visible to the user, their (acting) manager and holders of ``manage_user``
+        (``User.can_be_managed_by``).
+      summary: A user's consultant stats and QA ratings
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9]+$
+        required: true
+      tags:
+      - users
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserStats'
+          description: ''
   /api/v1/users/{id}/update-profile/:
     post:
       operationId: users_update_profile_create
@@ -2489,6 +2663,68 @@ components:
       - id
       - message
       - verb
+    AlarmGroup:
+      type: object
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        severity:
+          $ref: '#/components/schemas/SeverityEnum'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AlarmItem'
+      required:
+      - items
+      - key
+      - label
+      - severity
+    AlarmItem:
+      type: object
+      properties:
+        ref:
+          allOf:
+          - $ref: '#/components/schemas/Ref'
+          nullable: true
+          readOnly: true
+        date:
+          type: string
+          format: date
+          nullable: true
+        people:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+          readOnly: true
+        message:
+          type: string
+      required:
+      - date
+      - message
+      - people
+      - ref
+    Alarms:
+      type: object
+      properties:
+        overdue:
+          type: array
+          items:
+            $ref: '#/components/schemas/AlarmGroup'
+        stale:
+          type: array
+          items:
+            $ref: '#/components/schemas/AlarmGroup'
+        counts:
+          type: object
+          additionalProperties:
+            type: integer
+      required:
+      - counts
+      - overdue
+      - stale
     AuthToken:
       type: object
       properties:
@@ -2569,6 +2805,25 @@ components:
       - name
       - tech_account_managers
       - web_url
+    ConsultantStats:
+      type: object
+      properties:
+        jobs_participated:
+          type: integer
+        jobs_led:
+          type: integer
+        reports_authored:
+          type: integer
+        scoped:
+          type: integer
+        qaed:
+          type: integer
+      required:
+      - jobs_led
+      - jobs_participated
+      - qaed
+      - reports_authored
+      - scoped
     ContactCard:
       type: object
       properties:
@@ -3099,6 +3354,85 @@ components:
         * `YE` - Yemen
         * `ZM` - Zambia
         * `ZW` - Zimbabwe
+    Dashboard:
+      type: object
+      properties:
+        queues:
+          type: array
+          items:
+            $ref: '#/components/schemas/Queue'
+        alarm_counts:
+          type: object
+          additionalProperties:
+            type: integer
+        stats:
+          $ref: '#/components/schemas/DashboardStats'
+        team_unit:
+          allOf:
+          - $ref: '#/components/schemas/Ref'
+          nullable: true
+          readOnly: true
+        team:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeamUtilisation'
+        capabilities:
+          type: object
+          additionalProperties:
+            type: boolean
+      required:
+      - alarm_counts
+      - capabilities
+      - queues
+      - stats
+      - team
+      - team_unit
+    DashboardStats:
+      type: object
+      properties:
+        consultant:
+          $ref: '#/components/schemas/ConsultantStats'
+        avg_tqa_rating:
+          type: number
+          format: double
+          nullable: true
+        avg_pqa_rating:
+          type: number
+          format: double
+          nullable: true
+        tqa_feedback_12mo:
+          $ref: '#/components/schemas/MonthlySeries'
+        pqa_feedback_12mo:
+          $ref: '#/components/schemas/MonthlySeries'
+        utilisation_30d:
+          type: number
+          format: double
+          nullable: true
+        utilisation_prior_30d:
+          type: number
+          format: double
+          nullable: true
+        utilisation_target:
+          type: number
+          format: double
+          nullable: true
+        leave_remaining_days:
+          type: number
+          format: double
+          nullable: true
+        leave_pending_requests:
+          type: integer
+      required:
+      - avg_pqa_rating
+      - avg_tqa_rating
+      - consultant
+      - leave_pending_requests
+      - leave_remaining_days
+      - pqa_feedback_12mo
+      - tqa_feedback_12mo
+      - utilisation_30d
+      - utilisation_prior_30d
+      - utilisation_target
     DeliveryRoleEnum:
       enum:
       - 0
@@ -3685,8 +4019,11 @@ components:
       - total_hours
       - unscheduled
       - user
-    LeaveRequest:
+    LeaveRequestList:
       type: object
+      description: |-
+        ``/leave-requests/``: adds whether it clashes with booked delivery work
+        and whether the caller may approve it.
       properties:
         id:
           type: integer
@@ -3734,10 +4071,18 @@ components:
         timeslot:
           type: integer
           nullable: true
+        overlaps_work:
+          type: boolean
+          readOnly: true
+        can_authorise:
+          type: boolean
+          readOnly: true
       required:
       - authorised_by
+      - can_authorise
       - end_date
       - id
+      - overlaps_work
       - requested_on
       - start_date
       - type_of_leave
@@ -3757,6 +4102,19 @@ components:
       - title
       - type
       - url
+    MarkRead:
+      type: object
+      properties:
+        ids:
+          type: array
+          items:
+            type: integer
+          maxItems: 500
+        read:
+          type: boolean
+          default: true
+      required:
+      - ids
     Me:
       type: object
       description: The caller (from ``chaotica_utils.selectors.users.current_user_profile``).
@@ -3926,6 +4284,23 @@ components:
       required:
       - logo_url
       - site_name
+    MonthlySeries:
+      type: object
+      description: '13 months, oldest first: ``months`` are first-of-month dates;
+        0 = no rating.'
+      properties:
+        months:
+          type: array
+          items:
+            type: string
+        data:
+          type: array
+          items:
+            type: number
+            format: double
+      required:
+      - data
+      - months
     Note:
       type: object
       properties:
@@ -3946,6 +4321,44 @@ components:
       - author
       - content
       - id
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: integer
+        type_display:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        title:
+          type: string
+        message:
+          type: string
+        link:
+          type: string
+          nullable: true
+        read:
+          type: boolean
+        entity_type:
+          type: string
+          nullable: true
+        entity_id:
+          type: integer
+          nullable: true
+      required:
+      - entity_id
+      - entity_type
+      - id
+      - link
+      - message
+      - read
+      - timestamp
+      - title
+      - type
+      - type_display
     NullEnum:
       enum:
       - null
@@ -4039,7 +4452,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Job'
-    PaginatedLeaveRequestList:
+    PaginatedLeaveRequestListList:
       type: object
       required:
       - count
@@ -4061,7 +4474,7 @@ components:
         results:
           type: array
           items:
-            $ref: '#/components/schemas/LeaveRequest'
+            $ref: '#/components/schemas/LeaveRequestList'
     PaginatedNoteList:
       type: object
       required:
@@ -5190,6 +5603,22 @@ components:
         * `6` - Awarded
         * `7` - Unsuccessful
         * `8` - Lapsed
+    Queue:
+      type: object
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        count:
+          type: integer
+        resource:
+          $ref: '#/components/schemas/ResourceEnum'
+      required:
+      - count
+      - key
+      - label
+      - resource
     RatingEnum:
       enum:
       - 0
@@ -5226,6 +5655,14 @@ components:
       - type
       - url
       - web_url
+    ResourceEnum:
+      enum:
+      - jobs
+      - phases
+      type: string
+      description: |-
+        * `jobs` - jobs
+        * `phases` - phases
     RestrictedDetailEnum:
       enum:
       - 3
@@ -5534,6 +5971,14 @@ components:
       - skillsDesired
       - skillsRequired
       - web_url
+    SeverityEnum:
+      enum:
+      - critical
+      - warning
+      type: string
+      description: |-
+        * `critical` - critical
+        * `warning` - warning
     Skill:
       type: object
       properties:
@@ -5768,6 +6213,21 @@ components:
       - role
       - role_display
       - tentative_hours
+    TeamUtilisation:
+      type: object
+      properties:
+        user:
+          allOf:
+          - $ref: '#/components/schemas/Ref'
+          nullable: true
+          readOnly: true
+        utilisation:
+          type: number
+          format: double
+          nullable: true
+      required:
+      - user
+      - utilisation
     TimeSlot:
       type: object
       description: |-
@@ -5922,6 +6382,16 @@ components:
         * `12` - Overtime Leave
         * `13` - Medical Appointment
         * `14` - Sabbatical Leave
+    UpdatedCount:
+      type: object
+      properties:
+        updated:
+          type: integer
+        unread_count:
+          type: integer
+      required:
+      - unread_count
+      - updated
     User:
       type: object
       description: |-
@@ -6591,6 +7061,29 @@ components:
       - rating_display
       - skill
       - user
+    UserStats:
+      type: object
+      properties:
+        consultant:
+          $ref: '#/components/schemas/ConsultantStats'
+        avg_tqa_rating:
+          type: number
+          format: double
+          nullable: true
+        avg_pqa_rating:
+          type: number
+          format: double
+          nullable: true
+        tqa_feedback_12mo:
+          $ref: '#/components/schemas/MonthlySeries'
+        pqa_feedback_12mo:
+          $ref: '#/components/schemas/MonthlySeries'
+      required:
+      - avg_pqa_rating
+      - avg_tqa_rating
+      - consultant
+      - pqa_feedback_12mo
+      - tqa_feedback_12mo
     UserStatusUpdate:
       type: object
       description: |-

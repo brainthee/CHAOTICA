@@ -78,12 +78,31 @@ class MeFilter(django_filters.CharFilter):
         return qs.filter(self.predicate(self.parent.request.user)).distinct()
 
 
+def _filter_queue(filterset, qs, value, resource):
+    from rest_framework.exceptions import PermissionDenied
+
+    from ...selectors.dashboard import QUEUE_META, DashboardScope, queue_queryset
+    from .base import get_policy
+
+    meta = QUEUE_META.get(value)
+    if meta is None or meta[1] != resource:
+        raise ValidationError({"queue": [f"Unknown {resource} queue '{value}'."]})
+    request = filterset.request
+    scope = DashboardScope(request.user, get_policy(request))
+    try:
+        queue = queue_queryset(scope, value)
+    except PermissionError:
+        raise PermissionDenied("You don't have this dashboard queue.")
+    return qs.filter(pk__in=queue.values("pk"))
+
+
 class JobFilter(django_filters.FilterSet):
     status__in = NumberInFilter(field_name="status", lookup_expr="in")
     unit = django_filters.NumberFilter(field_name="unit_id")
     client = django_filters.NumberFilter(field_name="client_id")
     account_manager = MeOrIdFilter(field_name="account_manager")
     involving = MeFilter(predicate=job_involvement_q)
+    queue = django_filters.CharFilter(method="filter_queue")
     desired_start_after = django_filters.DateFilter(
         field_name="desired_start_date", lookup_expr="gte"
     )
@@ -94,6 +113,9 @@ class JobFilter(django_filters.FilterSet):
     class Meta:
         model = Job
         fields = ["status"]
+
+    def filter_queue(self, qs, name, value):
+        return _filter_queue(self, qs, value, "jobs")
 
 
 class PhaseFilter(django_filters.FilterSet):
@@ -107,10 +129,14 @@ class PhaseFilter(django_filters.FilterSet):
     techqa_by = MeOrIdFilter(field_name="techqa_by")
     presqa_by = MeOrIdFilter(field_name="presqa_by")
     involving = MeFilter(predicate=phase_involvement_q)
+    queue = django_filters.CharFilter(method="filter_queue")
 
     class Meta:
         model = Phase
         fields = ["status"]
+
+    def filter_queue(self, qs, name, value):
+        return _filter_queue(self, qs, value, "phases")
 
 
 class TimeSlotFilter(django_filters.FilterSet):

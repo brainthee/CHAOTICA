@@ -1305,9 +1305,12 @@ class User(AbstractUser):
     def get_average_qa_rating(
         self,
         qa_field,
-        from_range=timezone.now() - relativedelta(months=12),
-        to_range=timezone.now(),
+        from_range=None,
+        to_range=None,
     ):
+        # Defaults were evaluated at import, freezing "now" at server start.
+        to_range = to_range or timezone.now()
+        from_range = from_range or to_range - relativedelta(months=12)
         my_reports = (
             self.get_reports()
             .filter(
@@ -1334,9 +1337,12 @@ class User(AbstractUser):
 
     def get_average_techqa_feedback(
         self,
-        from_range=timezone.now() - relativedelta(months=12),
-        to_range=timezone.now(),
+        from_range=None,
+        to_range=None,
     ):
+        # Defaults were evaluated at import, freezing "now" at server start.
+        to_range = to_range or timezone.now()
+        from_range = from_range or to_range - relativedelta(months=12)
         return (
             self.get_reports()
             .filter(
@@ -1350,9 +1356,12 @@ class User(AbstractUser):
 
     def get_average_presqa_feedback(
         self,
-        from_range=timezone.now() - relativedelta(months=12),
-        to_range=timezone.now(),
+        from_range=None,
+        to_range=None,
     ):
+        # Defaults were evaluated at import, freezing "now" at server start.
+        to_range = to_range or timezone.now()
+        from_range = from_range or to_range - relativedelta(months=12)
         return (
             self.get_reports()
             .filter(
@@ -1442,9 +1451,11 @@ class User(AbstractUser):
         else:
             return None
 
-    def update_cost(self, cost, effective_from=timezone.now()):
+    def update_cost(self, cost, effective_from=None):
         return UserCost.objects.create(
-            user=self, effective_from=effective_from, cost_per_hour=cost
+            user=self,
+            effective_from=effective_from or timezone.now(),
+            cost_per_hour=cost,
         )
 
     #### WORKING HOURS/DAYS STUFF

@@ -241,8 +241,16 @@ def _scope_by_model_perm(perm, klass_path):
 def _scope_users(p, qs):
     from chaotica_utils.models import User
 
+    # view_user holders, plus yourself and your (acting) reports — the people
+    # the dashboard's My Team tab shows a manager.
     allowed = get_objects_for_user(p.user, "chaotica_utils.view_user", klass=User)
-    return qs.filter(pk__in=allowed.values_list("pk", flat=True))
+    u = p.user
+    return qs.filter(
+        Q(pk__in=allowed.values_list("pk", flat=True))
+        | Q(pk=u.pk)
+        | Q(manager=u)
+        | Q(acting_manager=u)
+    ).distinct()
 
 
 def _scope_timeslots(p, qs):
