@@ -138,7 +138,279 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Client'
+                $ref: '#/components/schemas/ClientDetail'
+          description: ''
+  /api/v1/clients/{id}/contacts/:
+    get:
+      operationId: clients_contacts_list
+      description: |-
+        Shared base for every ``/api/v1/`` model endpoint.
+
+        Read-only *today* — ``http_method_names`` is restricted to safe verbs — but it
+        subclasses ``ModelViewSet`` (not ``ReadOnlyModelViewSet``) on purpose: enabling
+        writes later is a localised change (widen ``http_method_names``, point at a
+        write-capable serializer, add an object-level permission class) rather than a
+        rewrite.
+
+        It also *locally* overrides the global datatables renderer / pagination / filter
+        defaults (see ``settings.REST_FRAMEWORK``) so v1 emits clean paginated JSON
+        without affecting the legacy ``/api/`` DataTables UI endpoints.
+
+        Access scoping: set ``policy_scope`` to a :mod:`jobtracker.policy` scope
+        action (e.g. ``"job.view"``); ``None`` means reference data visible to every
+        authenticated user, and must be a deliberate choice. Override
+        :meth:`get_base_queryset` for select/prefetch.
+
+        Filtering: declare ``filterset_class`` / ``ordering_fields`` /
+        ``search_fields`` per view. Ordering is an allowlist — nothing is orderable
+        unless listed.
+      summary: A client's contacts
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9]+$
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - clients
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedContactList'
+          description: ''
+  /api/v1/clients/{id}/frameworks/:
+    get:
+      operationId: clients_frameworks_list
+      description: |-
+        Shared base for every ``/api/v1/`` model endpoint.
+
+        Read-only *today* — ``http_method_names`` is restricted to safe verbs — but it
+        subclasses ``ModelViewSet`` (not ``ReadOnlyModelViewSet``) on purpose: enabling
+        writes later is a localised change (widen ``http_method_names``, point at a
+        write-capable serializer, add an object-level permission class) rather than a
+        rewrite.
+
+        It also *locally* overrides the global datatables renderer / pagination / filter
+        defaults (see ``settings.REST_FRAMEWORK``) so v1 emits clean paginated JSON
+        without affecting the legacy ``/api/`` DataTables UI endpoints.
+
+        Access scoping: set ``policy_scope`` to a :mod:`jobtracker.policy` scope
+        action (e.g. ``"job.view"``); ``None`` means reference data visible to every
+        authenticated user, and must be a deliberate choice. Override
+        :meth:`get_base_queryset` for select/prefetch.
+
+        Filtering: declare ``filterset_class`` / ``ordering_fields`` /
+        ``search_fields`` per view. Ordering is an allowlist — nothing is orderable
+        unless listed.
+      summary: A client's frameworks
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9]+$
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - clients
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedFrameworkList'
+          description: ''
+  /api/v1/clients/{id}/jobs/:
+    get:
+      operationId: clients_jobs_list
+      description: |-
+        Shared base for every ``/api/v1/`` model endpoint.
+
+        Read-only *today* — ``http_method_names`` is restricted to safe verbs — but it
+        subclasses ``ModelViewSet`` (not ``ReadOnlyModelViewSet``) on purpose: enabling
+        writes later is a localised change (widen ``http_method_names``, point at a
+        write-capable serializer, add an object-level permission class) rather than a
+        rewrite.
+
+        It also *locally* overrides the global datatables renderer / pagination / filter
+        defaults (see ``settings.REST_FRAMEWORK``) so v1 emits clean paginated JSON
+        without affecting the legacy ``/api/`` DataTables UI endpoints.
+
+        Access scoping: set ``policy_scope`` to a :mod:`jobtracker.policy` scope
+        action (e.g. ``"job.view"``); ``None`` means reference data visible to every
+        authenticated user, and must be a deliberate choice. Override
+        :meth:`get_base_queryset` for select/prefetch.
+
+        Filtering: declare ``filterset_class`` / ``ordering_fields`` /
+        ``search_fields`` per view. Ordering is an allowlist — nothing is orderable
+        unless listed.
+      summary: A client's jobs
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9]+$
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - clients
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedJobList'
+          description: ''
+  /api/v1/contacts/:
+    get:
+      operationId: contacts_list
+      description: |-
+        Shared base for every ``/api/v1/`` model endpoint.
+
+        Read-only *today* — ``http_method_names`` is restricted to safe verbs — but it
+        subclasses ``ModelViewSet`` (not ``ReadOnlyModelViewSet``) on purpose: enabling
+        writes later is a localised change (widen ``http_method_names``, point at a
+        write-capable serializer, add an object-level permission class) rather than a
+        rewrite.
+
+        It also *locally* overrides the global datatables renderer / pagination / filter
+        defaults (see ``settings.REST_FRAMEWORK``) so v1 emits clean paginated JSON
+        without affecting the legacy ``/api/`` DataTables UI endpoints.
+
+        Access scoping: set ``policy_scope`` to a :mod:`jobtracker.policy` scope
+        action (e.g. ``"job.view"``); ``None`` means reference data visible to every
+        authenticated user, and must be a deliberate choice. Override
+        :meth:`get_base_queryset` for select/prefetch.
+
+        Filtering: declare ``filterset_class`` / ``ordering_fields`` /
+        ``search_fields`` per view. Ordering is an allowlist — nothing is orderable
+        unless listed.
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: q
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - contacts
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedContactList'
+          description: ''
+  /api/v1/contacts/{id}/:
+    get:
+      operationId: contacts_retrieve
+      description: |-
+        Shared base for every ``/api/v1/`` model endpoint.
+
+        Read-only *today* — ``http_method_names`` is restricted to safe verbs — but it
+        subclasses ``ModelViewSet`` (not ``ReadOnlyModelViewSet``) on purpose: enabling
+        writes later is a localised change (widen ``http_method_names``, point at a
+        write-capable serializer, add an object-level permission class) rather than a
+        rewrite.
+
+        It also *locally* overrides the global datatables renderer / pagination / filter
+        defaults (see ``settings.REST_FRAMEWORK``) so v1 emits clean paginated JSON
+        without affecting the legacy ``/api/`` DataTables UI endpoints.
+
+        Access scoping: set ``policy_scope`` to a :mod:`jobtracker.policy` scope
+        action (e.g. ``"job.view"``); ``None`` means reference data visible to every
+        authenticated user, and must be a deliberate choice. Override
+        :meth:`get_base_queryset` for select/prefetch.
+
+        Filtering: declare ``filterset_class`` / ``ordering_fields`` /
+        ``search_fields`` per view. Ordering is an allowlist — nothing is orderable
+        unless listed.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9]+$
+        required: true
+      tags:
+      - contacts
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contact'
           description: ''
   /api/v1/entropy/:
     get:
@@ -157,6 +429,110 @@ paths:
               schema:
                 type: object
                 additionalProperties: {}
+          description: ''
+  /api/v1/frameworks/:
+    get:
+      operationId: frameworks_list
+      description: |-
+        Shared base for every ``/api/v1/`` model endpoint.
+
+        Read-only *today* — ``http_method_names`` is restricted to safe verbs — but it
+        subclasses ``ModelViewSet`` (not ``ReadOnlyModelViewSet``) on purpose: enabling
+        writes later is a localised change (widen ``http_method_names``, point at a
+        write-capable serializer, add an object-level permission class) rather than a
+        rewrite.
+
+        It also *locally* overrides the global datatables renderer / pagination / filter
+        defaults (see ``settings.REST_FRAMEWORK``) so v1 emits clean paginated JSON
+        without affecting the legacy ``/api/`` DataTables UI endpoints.
+
+        Access scoping: set ``policy_scope`` to a :mod:`jobtracker.policy` scope
+        action (e.g. ``"job.view"``); ``None`` means reference data visible to every
+        authenticated user, and must be a deliberate choice. Override
+        :meth:`get_base_queryset` for select/prefetch.
+
+        Filtering: declare ``filterset_class`` / ``ordering_fields`` /
+        ``search_fields`` per view. Ordering is an allowlist — nothing is orderable
+        unless listed.
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: q
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - frameworks
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedFrameworkList'
+          description: ''
+  /api/v1/frameworks/{id}/:
+    get:
+      operationId: frameworks_retrieve
+      description: |-
+        Shared base for every ``/api/v1/`` model endpoint.
+
+        Read-only *today* — ``http_method_names`` is restricted to safe verbs — but it
+        subclasses ``ModelViewSet`` (not ``ReadOnlyModelViewSet``) on purpose: enabling
+        writes later is a localised change (widen ``http_method_names``, point at a
+        write-capable serializer, add an object-level permission class) rather than a
+        rewrite.
+
+        It also *locally* overrides the global datatables renderer / pagination / filter
+        defaults (see ``settings.REST_FRAMEWORK``) so v1 emits clean paginated JSON
+        without affecting the legacy ``/api/`` DataTables UI endpoints.
+
+        Access scoping: set ``policy_scope`` to a :mod:`jobtracker.policy` scope
+        action (e.g. ``"job.view"``); ``None`` means reference data visible to every
+        authenticated user, and must be a deliberate choice. Override
+        :meth:`get_base_queryset` for select/prefetch.
+
+        Filtering: declare ``filterset_class`` / ``ordering_fields`` /
+        ``search_fields`` per view. Ordering is an allowlist — nothing is orderable
+        unless listed.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9]+$
+        required: true
+      tags:
+      - frameworks
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FrameworkDetail'
           description: ''
   /api/v1/jobs/:
     get:
@@ -992,7 +1368,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OrganisationalUnit'
+                $ref: '#/components/schemas/OrganisationalUnitDetail'
           description: ''
   /api/v1/org-units/{id}/members/:
     get:
@@ -2949,7 +3325,33 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/UserDetail'
+          description: ''
+  /api/v1/users/{id}/profile/:
+    get:
+      operationId: users_profile_retrieve
+      description: Visible to anyone with a global role, as the profile page. ``contact``
+        needs ``view_user``; ``skills`` / ``qualifications`` follow the competency
+        rules (yourself, your manager, or the global view permission).
+      summary: A user's profile
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9]+$
+        required: true
+      tags:
+      - users
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
           description: ''
   /api/v1/users/{id}/schedule/:
     get:
@@ -3348,6 +3750,86 @@ components:
       - name
       - tech_account_managers
       - web_url
+    ClientDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          description: Legal name of the client
+          maxLength: 255
+        slug:
+          type: string
+          maxLength: 50
+          pattern: ^[-a-zA-Z0-9_]+$
+        is_ready:
+          type: boolean
+          readOnly: true
+        account_managers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ref'
+          readOnly: true
+        tech_account_managers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ref'
+          readOnly: true
+        web_url:
+          type: string
+          nullable: true
+          readOnly: true
+        short_name:
+          type: string
+          description: To be used when referring to this client in documents such
+            as proposals.
+          maxLength: 100
+        external_id:
+          type: string
+          maxLength: 255
+        hours_in_day:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,2}(?:\.\d{0,1})?$
+          description: The number of billable hours in a day
+        specific_requirements:
+          type: string
+          nullable: true
+          description: Any special notes, e.g. certain individuals, onboarding required
+            etc
+        specific_reporting_requirements:
+          type: string
+          nullable: true
+          description: Any special reporting requirements
+        onboarding_required:
+          type: boolean
+          description: Only onboarded users can be scheduled on jobs for this client.
+        onboarding_requirements:
+          type: string
+          nullable: true
+          title: Reoccurring Requirements
+          description: What requirements are there every renewal.
+        contacts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ref'
+          readOnly: true
+        frameworks:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ref'
+          readOnly: true
+      required:
+      - account_managers
+      - contacts
+      - frameworks
+      - id
+      - is_ready
+      - name
+      - tech_account_managers
+      - web_url
     ConsultantStats:
       type: object
       properties:
@@ -3367,6 +3849,54 @@ components:
       - qaed
       - reports_authored
       - scoped
+    Contact:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        display:
+          type: string
+          readOnly: true
+        salutation:
+          type: string
+          maxLength: 10
+        first_name:
+          type: string
+          maxLength: 200
+        last_name:
+          type: string
+          maxLength: 200
+        jobtitle:
+          type: string
+          maxLength: 200
+        department:
+          type: string
+          maxLength: 200
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        phone:
+          type: string
+          maxLength: 200
+        mobile:
+          type: string
+          maxLength: 200
+        client:
+          allOf:
+          - $ref: '#/components/schemas/Ref'
+          nullable: true
+          readOnly: true
+        web_url:
+          type: string
+          nullable: true
+          readOnly: true
+      required:
+      - client
+      - display
+      - id
+      - web_url
     ContactCard:
       type: object
       properties:
@@ -4037,6 +4567,94 @@ components:
       - id
       - type
       - type_display
+    Framework:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 200
+        client:
+          allOf:
+          - $ref: '#/components/schemas/Ref'
+          nullable: true
+          readOnly: true
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+          nullable: true
+        total_days:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        allow_over_allocation:
+          type: boolean
+        closed:
+          type: boolean
+        web_url:
+          type: string
+          nullable: true
+          readOnly: true
+      required:
+      - client
+      - id
+      - name
+      - start_date
+      - total_days
+      - web_url
+    FrameworkDetail:
+      type: object
+      description: |-
+        Usage: days used / scheduled / left, by job (and phase), person, role,
+        service and month — the framework page's figures.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 200
+        client:
+          allOf:
+          - $ref: '#/components/schemas/Ref'
+          nullable: true
+          readOnly: true
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+          nullable: true
+        total_days:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        allow_over_allocation:
+          type: boolean
+        closed:
+          type: boolean
+        web_url:
+          type: string
+          nullable: true
+          readOnly: true
+        usage:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+      required:
+      - client
+      - id
+      - name
+      - start_date
+      - total_days
+      - usage
+      - web_url
     Holiday:
       type: object
       description: |-
@@ -4920,6 +5538,48 @@ components:
       - id
       - name
       - web_url
+    OrganisationalUnitDetail:
+      type: object
+      description: '``/org-units/{id}/``: the unit page''s team table and header figures.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        slug:
+          type: string
+          maxLength: 50
+          pattern: ^[-a-zA-Z0-9_]+$
+        web_url:
+          type: string
+          nullable: true
+          readOnly: true
+        description:
+          type: string
+          nullable: true
+        leads:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ref'
+          readOnly: true
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/UnitMemberRow'
+          readOnly: true
+        utilisation_4wk:
+          type: number
+          format: double
+          readOnly: true
+      required:
+      - id
+      - leads
+      - members
+      - name
+      - utilisation_4wk
+      - web_url
     PaginatedActivityList:
       type: object
       required:
@@ -4966,6 +5626,52 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Client'
+    PaginatedContactList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Contact'
+    PaginatedFrameworkList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Framework'
     PaginatedJobList:
       type: object
       required:
@@ -6163,6 +6869,32 @@ components:
         * `6` - Awarded
         * `7` - Unsuccessful
         * `8` - Lapsed
+    QualificationSummary:
+      type: object
+      properties:
+        qualification:
+          allOf:
+          - $ref: '#/components/schemas/Ref'
+          nullable: true
+          readOnly: true
+        status:
+          type: integer
+        status_display:
+          type: string
+        awarded_date:
+          type: string
+          format: date
+          nullable: true
+        lapse_date:
+          type: string
+          format: date
+          nullable: true
+      required:
+      - awarded_date
+      - lapse_date
+      - qualification
+      - status
+      - status_display
     Queue:
       type: object
       properties:
@@ -6828,6 +7560,28 @@ components:
       - id
       - name
       - web_url
+    SkillRating:
+      type: object
+      properties:
+        skill:
+          allOf:
+          - $ref: '#/components/schemas/Ref'
+          nullable: true
+          readOnly: true
+        category:
+          type: string
+        rating:
+          type: integer
+        rating_display:
+          type: string
+        interested_in_improving_skill:
+          type: boolean
+      required:
+      - category
+      - interested_in_improving_skill
+      - rating
+      - rating_display
+      - skill
     StateEnum:
       enum:
       - done
@@ -6943,6 +7697,21 @@ components:
       - total_hours
       - unscheduled
       - user
+    TeamMembership:
+      type: object
+      properties:
+        team:
+          allOf:
+          - $ref: '#/components/schemas/Ref'
+          nullable: true
+          readOnly: true
+        joined_at:
+          type: string
+          format: date
+          nullable: true
+      required:
+      - joined_at
+      - team
     TeamPhaseRow:
       type: object
       properties:
@@ -7187,6 +7956,51 @@ components:
         * `12` - Overtime Leave
         * `13` - Medical Appointment
         * `14` - Sabbatical Leave
+    UnitMemberRow:
+      type: object
+      properties:
+        user:
+          allOf:
+          - $ref: '#/components/schemas/Ref'
+          nullable: true
+          readOnly: true
+        roles:
+          type: array
+          items:
+            type: string
+          readOnly: true
+        is_consultant:
+          type: boolean
+        is_deactivated:
+          type: boolean
+        util_pct:
+          type: number
+          format: double
+        active_job_count:
+          type: integer
+      required:
+      - active_job_count
+      - is_consultant
+      - is_deactivated
+      - roles
+      - user
+      - util_pct
+    UnitMembershipRef:
+      type: object
+      properties:
+        unit:
+          allOf:
+          - $ref: '#/components/schemas/Ref'
+          nullable: true
+          readOnly: true
+        roles:
+          type: array
+          items:
+            type: string
+          readOnly: true
+      required:
+      - roles
+      - unit
     UpdatedCount:
       type: object
       properties:
@@ -7528,6 +8342,22 @@ components:
       required:
       - runs
       - user
+    UserContact:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        notification_email:
+          type: string
+          format: email
+          nullable: true
+        phone:
+          type: string
+      required:
+      - email
+      - notification_email
+      - phone
     UserCostUpdate:
       type: object
       description: |-
@@ -7545,6 +8375,347 @@ components:
           format: date
       required:
       - cost_per_hour
+    UserDetail:
+      type: object
+      description: |-
+        ``/users/{id}/``: the profile card. ``contact`` (email addresses and
+        phone) only for yourself and holders of ``view_user``.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        display:
+          type: string
+          readOnly: true
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          title: Email Address
+          description: This is your authenticated email and can not be changed
+          maxLength: 254
+        is_active:
+          type: boolean
+          title: Active
+          description: Designates whether this user should be treated as active. Unselect
+            this instead of deleting accounts.
+        job_title:
+          type: string
+          nullable: true
+          maxLength: 255
+        job_level:
+          type: string
+          nullable: true
+          readOnly: true
+        job_level_label:
+          type: string
+          nullable: true
+          readOnly: true
+        city:
+          allOf:
+          - $ref: '#/components/schemas/Ref'
+          nullable: true
+          readOnly: true
+        country:
+          allOf:
+          - $ref: '#/components/schemas/CountryEnum'
+          description: |-
+            Used to determine which holidays apply.
+
+            * `AF` - Afghanistan
+            * `AX` - Åland Islands
+            * `AL` - Albania
+            * `DZ` - Algeria
+            * `AS` - American Samoa
+            * `AD` - Andorra
+            * `AO` - Angola
+            * `AI` - Anguilla
+            * `AQ` - Antarctica
+            * `AG` - Antigua and Barbuda
+            * `AR` - Argentina
+            * `AM` - Armenia
+            * `AW` - Aruba
+            * `AU` - Australia
+            * `AT` - Austria
+            * `AZ` - Azerbaijan
+            * `BS` - Bahamas
+            * `BH` - Bahrain
+            * `BD` - Bangladesh
+            * `BB` - Barbados
+            * `BY` - Belarus
+            * `BE` - Belgium
+            * `BZ` - Belize
+            * `BJ` - Benin
+            * `BM` - Bermuda
+            * `BT` - Bhutan
+            * `BO` - Bolivia
+            * `BQ` - Bonaire, Sint Eustatius and Saba
+            * `BA` - Bosnia and Herzegovina
+            * `BW` - Botswana
+            * `BV` - Bouvet Island
+            * `BR` - Brazil
+            * `IO` - British Indian Ocean Territory
+            * `BN` - Brunei
+            * `BG` - Bulgaria
+            * `BF` - Burkina Faso
+            * `BI` - Burundi
+            * `CV` - Cabo Verde
+            * `KH` - Cambodia
+            * `CM` - Cameroon
+            * `CA` - Canada
+            * `KY` - Cayman Islands
+            * `CF` - Central African Republic
+            * `TD` - Chad
+            * `CL` - Chile
+            * `CN` - China
+            * `CX` - Christmas Island
+            * `CC` - Cocos (Keeling) Islands
+            * `CO` - Colombia
+            * `KM` - Comoros
+            * `CG` - Congo
+            * `CD` - Congo (the Democratic Republic of the)
+            * `CK` - Cook Islands
+            * `CR` - Costa Rica
+            * `CI` - Côte d'Ivoire
+            * `HR` - Croatia
+            * `CU` - Cuba
+            * `CW` - Curaçao
+            * `CY` - Cyprus
+            * `CZ` - Czechia
+            * `DK` - Denmark
+            * `DJ` - Djibouti
+            * `DM` - Dominica
+            * `DO` - Dominican Republic
+            * `EC` - Ecuador
+            * `EG` - Egypt
+            * `SV` - El Salvador
+            * `GQ` - Equatorial Guinea
+            * `ER` - Eritrea
+            * `EE` - Estonia
+            * `SZ` - Eswatini
+            * `ET` - Ethiopia
+            * `FK` - Falkland Islands (Malvinas)
+            * `FO` - Faroe Islands
+            * `FJ` - Fiji
+            * `FI` - Finland
+            * `FR` - France
+            * `GF` - French Guiana
+            * `PF` - French Polynesia
+            * `TF` - French Southern Territories
+            * `GA` - Gabon
+            * `GM` - Gambia
+            * `GE` - Georgia
+            * `DE` - Germany
+            * `GH` - Ghana
+            * `GI` - Gibraltar
+            * `GR` - Greece
+            * `GL` - Greenland
+            * `GD` - Grenada
+            * `GP` - Guadeloupe
+            * `GU` - Guam
+            * `GT` - Guatemala
+            * `GG` - Guernsey
+            * `GN` - Guinea
+            * `GW` - Guinea-Bissau
+            * `GY` - Guyana
+            * `HT` - Haiti
+            * `HM` - Heard Island and McDonald Islands
+            * `VA` - Holy See
+            * `HN` - Honduras
+            * `HK` - Hong Kong
+            * `HU` - Hungary
+            * `IS` - Iceland
+            * `IN` - India
+            * `ID` - Indonesia
+            * `IR` - Iran
+            * `IQ` - Iraq
+            * `IE` - Ireland
+            * `IM` - Isle of Man
+            * `IL` - Israel
+            * `IT` - Italy
+            * `JM` - Jamaica
+            * `JP` - Japan
+            * `JE` - Jersey
+            * `JO` - Jordan
+            * `KZ` - Kazakhstan
+            * `KE` - Kenya
+            * `KI` - Kiribati
+            * `KW` - Kuwait
+            * `KG` - Kyrgyzstan
+            * `LA` - Laos
+            * `LV` - Latvia
+            * `LB` - Lebanon
+            * `LS` - Lesotho
+            * `LR` - Liberia
+            * `LY` - Libya
+            * `LI` - Liechtenstein
+            * `LT` - Lithuania
+            * `LU` - Luxembourg
+            * `MO` - Macao
+            * `MG` - Madagascar
+            * `MW` - Malawi
+            * `MY` - Malaysia
+            * `MV` - Maldives
+            * `ML` - Mali
+            * `MT` - Malta
+            * `MH` - Marshall Islands
+            * `MQ` - Martinique
+            * `MR` - Mauritania
+            * `MU` - Mauritius
+            * `YT` - Mayotte
+            * `MX` - Mexico
+            * `FM` - Micronesia
+            * `MD` - Moldova
+            * `MC` - Monaco
+            * `MN` - Mongolia
+            * `ME` - Montenegro
+            * `MS` - Montserrat
+            * `MA` - Morocco
+            * `MZ` - Mozambique
+            * `MM` - Myanmar
+            * `NA` - Namibia
+            * `NR` - Nauru
+            * `NP` - Nepal
+            * `NL` - Netherlands
+            * `NC` - New Caledonia
+            * `NZ` - New Zealand
+            * `NI` - Nicaragua
+            * `NE` - Niger
+            * `NG` - Nigeria
+            * `NU` - Niue
+            * `NF` - Norfolk Island
+            * `KP` - North Korea
+            * `MK` - North Macedonia
+            * `MP` - Northern Mariana Islands
+            * `NO` - Norway
+            * `OM` - Oman
+            * `PK` - Pakistan
+            * `PW` - Palau
+            * `PS` - Palestine, State of
+            * `PA` - Panama
+            * `PG` - Papua New Guinea
+            * `PY` - Paraguay
+            * `PE` - Peru
+            * `PH` - Philippines
+            * `PN` - Pitcairn
+            * `PL` - Poland
+            * `PT` - Portugal
+            * `PR` - Puerto Rico
+            * `QA` - Qatar
+            * `RE` - Réunion
+            * `RO` - Romania
+            * `RU` - Russia
+            * `RW` - Rwanda
+            * `BL` - Saint Barthélemy
+            * `SH` - Saint Helena, Ascension and Tristan da Cunha
+            * `KN` - Saint Kitts and Nevis
+            * `LC` - Saint Lucia
+            * `MF` - Saint Martin (French part)
+            * `PM` - Saint Pierre and Miquelon
+            * `VC` - Saint Vincent and the Grenadines
+            * `WS` - Samoa
+            * `SM` - San Marino
+            * `ST` - Sao Tome and Principe
+            * `SA` - Saudi Arabia
+            * `SN` - Senegal
+            * `RS` - Serbia
+            * `SC` - Seychelles
+            * `SL` - Sierra Leone
+            * `SG` - Singapore
+            * `SX` - Sint Maarten (Dutch part)
+            * `SK` - Slovakia
+            * `SI` - Slovenia
+            * `SB` - Solomon Islands
+            * `SO` - Somalia
+            * `ZA` - South Africa
+            * `GS` - South Georgia and the South Sandwich Islands
+            * `KR` - South Korea
+            * `SS` - South Sudan
+            * `ES` - Spain
+            * `LK` - Sri Lanka
+            * `SD` - Sudan
+            * `SR` - Suriname
+            * `SJ` - Svalbard and Jan Mayen
+            * `SE` - Sweden
+            * `CH` - Switzerland
+            * `SY` - Syria
+            * `TW` - Taiwan
+            * `TJ` - Tajikistan
+            * `TZ` - Tanzania
+            * `TH` - Thailand
+            * `TL` - Timor-Leste
+            * `TG` - Togo
+            * `TK` - Tokelau
+            * `TO` - Tonga
+            * `TT` - Trinidad and Tobago
+            * `TN` - Tunisia
+            * `TR` - Türkiye
+            * `TM` - Turkmenistan
+            * `TC` - Turks and Caicos Islands
+            * `TV` - Tuvalu
+            * `UG` - Uganda
+            * `UA` - Ukraine
+            * `AE` - United Arab Emirates
+            * `GB` - United Kingdom
+            * `UM` - United States Minor Outlying Islands
+            * `US` - United States of America
+            * `UY` - Uruguay
+            * `UZ` - Uzbekistan
+            * `VU` - Vanuatu
+            * `VE` - Venezuela
+            * `VN` - Vietnam
+            * `VG` - Virgin Islands (British)
+            * `VI` - Virgin Islands (U.S.)
+            * `WF` - Wallis and Futuna
+            * `EH` - Western Sahara
+            * `YE` - Yemen
+            * `ZM` - Zambia
+            * `ZW` - Zimbabwe
+        web_url:
+          type: string
+          nullable: true
+          readOnly: true
+        alias:
+          type: string
+          nullable: true
+          title: Alias/Nickname
+          description: A nickname or preferred display name for this user
+          maxLength: 255
+        avatar_url:
+          type: string
+          readOnly: true
+        manager:
+          allOf:
+          - $ref: '#/components/schemas/Ref'
+          nullable: true
+          readOnly: true
+        acting_manager:
+          allOf:
+          - $ref: '#/components/schemas/Ref'
+          nullable: true
+          readOnly: true
+        contact:
+          allOf:
+          - $ref: '#/components/schemas/UserContact'
+          nullable: true
+          readOnly: true
+      required:
+      - acting_manager
+      - avatar_url
+      - city
+      - contact
+      - display
+      - email
+      - id
+      - job_level
+      - job_level_label
+      - manager
+      - web_url
     UserJobLevelUpdate:
       type: object
       description: |-
@@ -7564,6 +8735,373 @@ components:
         effective_from:
           type: string
           format: date
+    UserProfile:
+      type: object
+      description: |-
+        ``/users/{id}/profile/``. ``skills`` / ``qualifications`` are null unless
+        you may see this person's competency records (``/user-skills/`` rules).
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        display:
+          type: string
+          readOnly: true
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          title: Email Address
+          description: This is your authenticated email and can not be changed
+          maxLength: 254
+        is_active:
+          type: boolean
+          title: Active
+          description: Designates whether this user should be treated as active. Unselect
+            this instead of deleting accounts.
+        job_title:
+          type: string
+          nullable: true
+          maxLength: 255
+        job_level:
+          type: string
+          nullable: true
+          readOnly: true
+        job_level_label:
+          type: string
+          nullable: true
+          readOnly: true
+        city:
+          allOf:
+          - $ref: '#/components/schemas/Ref'
+          nullable: true
+          readOnly: true
+        country:
+          allOf:
+          - $ref: '#/components/schemas/CountryEnum'
+          description: |-
+            Used to determine which holidays apply.
+
+            * `AF` - Afghanistan
+            * `AX` - Åland Islands
+            * `AL` - Albania
+            * `DZ` - Algeria
+            * `AS` - American Samoa
+            * `AD` - Andorra
+            * `AO` - Angola
+            * `AI` - Anguilla
+            * `AQ` - Antarctica
+            * `AG` - Antigua and Barbuda
+            * `AR` - Argentina
+            * `AM` - Armenia
+            * `AW` - Aruba
+            * `AU` - Australia
+            * `AT` - Austria
+            * `AZ` - Azerbaijan
+            * `BS` - Bahamas
+            * `BH` - Bahrain
+            * `BD` - Bangladesh
+            * `BB` - Barbados
+            * `BY` - Belarus
+            * `BE` - Belgium
+            * `BZ` - Belize
+            * `BJ` - Benin
+            * `BM` - Bermuda
+            * `BT` - Bhutan
+            * `BO` - Bolivia
+            * `BQ` - Bonaire, Sint Eustatius and Saba
+            * `BA` - Bosnia and Herzegovina
+            * `BW` - Botswana
+            * `BV` - Bouvet Island
+            * `BR` - Brazil
+            * `IO` - British Indian Ocean Territory
+            * `BN` - Brunei
+            * `BG` - Bulgaria
+            * `BF` - Burkina Faso
+            * `BI` - Burundi
+            * `CV` - Cabo Verde
+            * `KH` - Cambodia
+            * `CM` - Cameroon
+            * `CA` - Canada
+            * `KY` - Cayman Islands
+            * `CF` - Central African Republic
+            * `TD` - Chad
+            * `CL` - Chile
+            * `CN` - China
+            * `CX` - Christmas Island
+            * `CC` - Cocos (Keeling) Islands
+            * `CO` - Colombia
+            * `KM` - Comoros
+            * `CG` - Congo
+            * `CD` - Congo (the Democratic Republic of the)
+            * `CK` - Cook Islands
+            * `CR` - Costa Rica
+            * `CI` - Côte d'Ivoire
+            * `HR` - Croatia
+            * `CU` - Cuba
+            * `CW` - Curaçao
+            * `CY` - Cyprus
+            * `CZ` - Czechia
+            * `DK` - Denmark
+            * `DJ` - Djibouti
+            * `DM` - Dominica
+            * `DO` - Dominican Republic
+            * `EC` - Ecuador
+            * `EG` - Egypt
+            * `SV` - El Salvador
+            * `GQ` - Equatorial Guinea
+            * `ER` - Eritrea
+            * `EE` - Estonia
+            * `SZ` - Eswatini
+            * `ET` - Ethiopia
+            * `FK` - Falkland Islands (Malvinas)
+            * `FO` - Faroe Islands
+            * `FJ` - Fiji
+            * `FI` - Finland
+            * `FR` - France
+            * `GF` - French Guiana
+            * `PF` - French Polynesia
+            * `TF` - French Southern Territories
+            * `GA` - Gabon
+            * `GM` - Gambia
+            * `GE` - Georgia
+            * `DE` - Germany
+            * `GH` - Ghana
+            * `GI` - Gibraltar
+            * `GR` - Greece
+            * `GL` - Greenland
+            * `GD` - Grenada
+            * `GP` - Guadeloupe
+            * `GU` - Guam
+            * `GT` - Guatemala
+            * `GG` - Guernsey
+            * `GN` - Guinea
+            * `GW` - Guinea-Bissau
+            * `GY` - Guyana
+            * `HT` - Haiti
+            * `HM` - Heard Island and McDonald Islands
+            * `VA` - Holy See
+            * `HN` - Honduras
+            * `HK` - Hong Kong
+            * `HU` - Hungary
+            * `IS` - Iceland
+            * `IN` - India
+            * `ID` - Indonesia
+            * `IR` - Iran
+            * `IQ` - Iraq
+            * `IE` - Ireland
+            * `IM` - Isle of Man
+            * `IL` - Israel
+            * `IT` - Italy
+            * `JM` - Jamaica
+            * `JP` - Japan
+            * `JE` - Jersey
+            * `JO` - Jordan
+            * `KZ` - Kazakhstan
+            * `KE` - Kenya
+            * `KI` - Kiribati
+            * `KW` - Kuwait
+            * `KG` - Kyrgyzstan
+            * `LA` - Laos
+            * `LV` - Latvia
+            * `LB` - Lebanon
+            * `LS` - Lesotho
+            * `LR` - Liberia
+            * `LY` - Libya
+            * `LI` - Liechtenstein
+            * `LT` - Lithuania
+            * `LU` - Luxembourg
+            * `MO` - Macao
+            * `MG` - Madagascar
+            * `MW` - Malawi
+            * `MY` - Malaysia
+            * `MV` - Maldives
+            * `ML` - Mali
+            * `MT` - Malta
+            * `MH` - Marshall Islands
+            * `MQ` - Martinique
+            * `MR` - Mauritania
+            * `MU` - Mauritius
+            * `YT` - Mayotte
+            * `MX` - Mexico
+            * `FM` - Micronesia
+            * `MD` - Moldova
+            * `MC` - Monaco
+            * `MN` - Mongolia
+            * `ME` - Montenegro
+            * `MS` - Montserrat
+            * `MA` - Morocco
+            * `MZ` - Mozambique
+            * `MM` - Myanmar
+            * `NA` - Namibia
+            * `NR` - Nauru
+            * `NP` - Nepal
+            * `NL` - Netherlands
+            * `NC` - New Caledonia
+            * `NZ` - New Zealand
+            * `NI` - Nicaragua
+            * `NE` - Niger
+            * `NG` - Nigeria
+            * `NU` - Niue
+            * `NF` - Norfolk Island
+            * `KP` - North Korea
+            * `MK` - North Macedonia
+            * `MP` - Northern Mariana Islands
+            * `NO` - Norway
+            * `OM` - Oman
+            * `PK` - Pakistan
+            * `PW` - Palau
+            * `PS` - Palestine, State of
+            * `PA` - Panama
+            * `PG` - Papua New Guinea
+            * `PY` - Paraguay
+            * `PE` - Peru
+            * `PH` - Philippines
+            * `PN` - Pitcairn
+            * `PL` - Poland
+            * `PT` - Portugal
+            * `PR` - Puerto Rico
+            * `QA` - Qatar
+            * `RE` - Réunion
+            * `RO` - Romania
+            * `RU` - Russia
+            * `RW` - Rwanda
+            * `BL` - Saint Barthélemy
+            * `SH` - Saint Helena, Ascension and Tristan da Cunha
+            * `KN` - Saint Kitts and Nevis
+            * `LC` - Saint Lucia
+            * `MF` - Saint Martin (French part)
+            * `PM` - Saint Pierre and Miquelon
+            * `VC` - Saint Vincent and the Grenadines
+            * `WS` - Samoa
+            * `SM` - San Marino
+            * `ST` - Sao Tome and Principe
+            * `SA` - Saudi Arabia
+            * `SN` - Senegal
+            * `RS` - Serbia
+            * `SC` - Seychelles
+            * `SL` - Sierra Leone
+            * `SG` - Singapore
+            * `SX` - Sint Maarten (Dutch part)
+            * `SK` - Slovakia
+            * `SI` - Slovenia
+            * `SB` - Solomon Islands
+            * `SO` - Somalia
+            * `ZA` - South Africa
+            * `GS` - South Georgia and the South Sandwich Islands
+            * `KR` - South Korea
+            * `SS` - South Sudan
+            * `ES` - Spain
+            * `LK` - Sri Lanka
+            * `SD` - Sudan
+            * `SR` - Suriname
+            * `SJ` - Svalbard and Jan Mayen
+            * `SE` - Sweden
+            * `CH` - Switzerland
+            * `SY` - Syria
+            * `TW` - Taiwan
+            * `TJ` - Tajikistan
+            * `TZ` - Tanzania
+            * `TH` - Thailand
+            * `TL` - Timor-Leste
+            * `TG` - Togo
+            * `TK` - Tokelau
+            * `TO` - Tonga
+            * `TT` - Trinidad and Tobago
+            * `TN` - Tunisia
+            * `TR` - Türkiye
+            * `TM` - Turkmenistan
+            * `TC` - Turks and Caicos Islands
+            * `TV` - Tuvalu
+            * `UG` - Uganda
+            * `UA` - Ukraine
+            * `AE` - United Arab Emirates
+            * `GB` - United Kingdom
+            * `UM` - United States Minor Outlying Islands
+            * `US` - United States of America
+            * `UY` - Uruguay
+            * `UZ` - Uzbekistan
+            * `VU` - Vanuatu
+            * `VE` - Venezuela
+            * `VN` - Vietnam
+            * `VG` - Virgin Islands (British)
+            * `VI` - Virgin Islands (U.S.)
+            * `WF` - Wallis and Futuna
+            * `EH` - Western Sahara
+            * `YE` - Yemen
+            * `ZM` - Zambia
+            * `ZW` - Zimbabwe
+        web_url:
+          type: string
+          nullable: true
+          readOnly: true
+        alias:
+          type: string
+          nullable: true
+          title: Alias/Nickname
+          description: A nickname or preferred display name for this user
+          maxLength: 255
+        avatar_url:
+          type: string
+          readOnly: true
+        manager:
+          allOf:
+          - $ref: '#/components/schemas/Ref'
+          nullable: true
+          readOnly: true
+        acting_manager:
+          allOf:
+          - $ref: '#/components/schemas/Ref'
+          nullable: true
+          readOnly: true
+        contact:
+          allOf:
+          - $ref: '#/components/schemas/UserContact'
+          nullable: true
+          readOnly: true
+        units:
+          type: array
+          items:
+            $ref: '#/components/schemas/UnitMembershipRef'
+          readOnly: true
+        teams:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeamMembership'
+          readOnly: true
+        skills:
+          type: array
+          items:
+            $ref: '#/components/schemas/SkillRating'
+          nullable: true
+          readOnly: true
+        qualifications:
+          type: array
+          items:
+            $ref: '#/components/schemas/QualificationSummary'
+          nullable: true
+          readOnly: true
+      required:
+      - acting_manager
+      - avatar_url
+      - city
+      - contact
+      - display
+      - email
+      - id
+      - job_level
+      - job_level_label
+      - manager
+      - qualifications
+      - skills
+      - teams
+      - units
+      - web_url
     UserProfileUpdate:
       type: object
       description: |-

@@ -9,6 +9,8 @@ from .people import (  # noqa: F401
 )
 from .clients import (  # noqa: F401
     ClientViewSet,
+    ContactViewSet,
+    FrameworkViewSet,
 )
 from .jobs import (  # noqa: F401
     JobViewSet,

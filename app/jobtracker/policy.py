@@ -163,9 +163,16 @@ def _can_view_loaded_costs(p, job):
     )
 
 
+def _own_or_managed(p, target):
+    u = p.user
+    return u.pk in (target.pk, target.manager_id, target.acting_manager_id)
+
+
 def _can_view_user(p, target):
-    return p.user.has_perm("chaotica_utils.view_user") or p.user.has_perm(
-        "chaotica_utils.view_user", target
+    return (
+        target.pk == p.user.pk
+        or p.user.has_perm("chaotica_utils.view_user")
+        or p.user.has_perm("chaotica_utils.view_user", target)
     )
 
 
@@ -177,6 +184,15 @@ _CAN = {
     "phase.view": lambda p, phase: _can_view_job(p, phase.job),
     "phase.update": lambda p, phase: p.job_perm("jobtracker.can_update_job", phase),
     "user.view": _can_view_user,
+    # The profile page: any user holding a global role (UserDetailView).
+    "user.view_profile": lambda p, target: p.user.is_superuser
+    or p.user.groups.exists(),
+    # Competency data: yourself, your (acting) manager, or the global perm —
+    # the same rule as /user-skills/ and /qualification-records/.
+    "user.view_skills": lambda p, target: _own_or_managed(p, target)
+    or p.user.has_perm("jobtracker.view_users_skill"),
+    "user.view_qualifications": lambda p, target: _own_or_managed(p, target)
+    or p.user.has_perm("jobtracker.view_users_qualifications"),
 }
 
 
@@ -298,6 +314,10 @@ _SCOPE = {
     ),
     "service.view": _scope_by_model_perm(
         "jobtracker.view_service", "jobtracker.Service"
+    ),
+    "contact.view": _scope_by_model_perm("jobtracker.view_contact", "jobtracker.Contact"),
+    "framework.view": _scope_by_model_perm(
+        "jobtracker.view_frameworkagreement", "jobtracker.FrameworkAgreement"
     ),
     "user.view": _scope_users,
     "timeslot.view": _scope_timeslots,

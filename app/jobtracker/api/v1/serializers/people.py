@@ -5,7 +5,10 @@ from decimal import Decimal
 from cities_light.models import City
 from rest_framework import serializers
 
-from ..fields import RefField, WebUrlField
+from drf_spectacular.utils import extend_schema_field
+
+from ....selectors.orgunits import unit_member_rows
+from ..fields import RefField, RefListField, WebUrlField
 
 from chaotica_utils.models import User, JobLevel
 from chaotica_utils.models.leave import LeaveRequest
@@ -269,3 +272,164 @@ class QualificationRecordSerializer(serializers.ModelSerializer):
             "days_to_lapse",
             "expiry_urgency",
         ]
+
+
+class UserContactSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    notification_email = serializers.EmailField(allow_null=True)
+    phone = serializers.CharField(source="phone_number", allow_blank=True)
+
+    def to_representation(self, user):
+        data = super().to_representation(user)
+        data["phone"] = str(user.phone_number) if user.phone_number else ""
+        return data
+
+
+class UnitMembershipRefSerializer(serializers.Serializer):
+    unit = RefField()
+    roles = serializers.SerializerMethodField()
+
+    def get_roles(self, membership) -> list[str]:
+        return [r.name for r in membership.roles.all()]
+
+
+class UserDetailSerializer(UserSerializer):
+    """``/users/{id}/``: the profile card. ``contact`` (email addresses and
+    phone) only for yourself and holders of ``view_user``."""
+
+    avatar_url = serializers.SerializerMethodField()
+    manager = RefField()
+    acting_manager = RefField()
+    contact = serializers.SerializerMethodField()
+
+    class Meta(UserSerializer.Meta):
+        fields = UserSerializer.Meta.fields + [
+            "alias",
+            "avatar_url",
+            "manager",
+            "acting_manager",
+            "contact",
+        ]
+
+    def get_avatar_url(self, user) -> str:
+        request = self.context.get("request")
+        url = user.get_avatar_url()
+        return request.build_absolute_uri(url) if request else url
+
+    @extend_schema_field(UserContactSerializer(allow_null=True))
+    def get_contact(self, user):
+        if not self.context["policy"].can("user.view", user):
+            return None
+        return UserContactSerializer(user).data
+
+
+class TeamMembershipSerializer(serializers.Serializer):
+    team = RefField()
+    joined_at = serializers.DateField(allow_null=True)
+
+
+class SkillRatingSerializer(serializers.Serializer):
+    skill = RefField()
+    category = serializers.CharField(source="skill.category.name")
+    rating = serializers.IntegerField()
+    rating_display = serializers.CharField(source="get_rating_display")
+    interested_in_improving_skill = serializers.BooleanField()
+
+
+class QualificationSummarySerializer(serializers.Serializer):
+    qualification = RefField()
+    status = serializers.IntegerField()
+    status_display = serializers.CharField(source="get_status_display")
+    awarded_date = serializers.DateField(allow_null=True)
+    lapse_date = serializers.DateField(allow_null=True)
+
+
+class UserProfileSerializer(UserDetailSerializer):
+    """``/users/{id}/profile/``. ``skills`` / ``qualifications`` are null unless
+    you may see this person's competency records (``/user-skills/`` rules)."""
+
+    units = serializers.SerializerMethodField()
+    teams = serializers.SerializerMethodField()
+    skills = serializers.SerializerMethodField()
+    qualifications = serializers.SerializerMethodField()
+
+    class Meta(UserDetailSerializer.Meta):
+        fields = UserDetailSerializer.Meta.fields + [
+            "units",
+            "teams",
+            "skills",
+            "qualifications",
+        ]
+
+    @extend_schema_field(UnitMembershipRefSerializer(many=True))
+    def get_units(self, user):
+        memberships = (
+            user.unit_memberships.filter(left_date__isnull=True)
+            .select_related("unit")
+            .prefetch_related("roles")
+        )
+        return UnitMembershipRefSerializer(
+            memberships, many=True, context=self.context
+        ).data
+
+    @extend_schema_field(TeamMembershipSerializer(many=True))
+    def get_teams(self, user):
+        rows = user.teams.filter(left_at__isnull=True).select_related("team")
+        return TeamMembershipSerializer(rows, many=True, context=self.context).data
+
+    @extend_schema_field(SkillRatingSerializer(many=True, allow_null=True))
+    def get_skills(self, user):
+        if not self.context["policy"].can("user.view_skills", user):
+            return None
+        rows = user.skills.select_related("skill__category").order_by("skill__name")
+        return SkillRatingSerializer(rows, many=True, context=self.context).data
+
+    @extend_schema_field(QualificationSummarySerializer(many=True, allow_null=True))
+    def get_qualifications(self, user):
+        if not self.context["policy"].can("user.view_qualifications", user):
+            return None
+        rows = user.qualifications.select_related("qualification__awarding_body")
+        return QualificationSummarySerializer(
+            rows, many=True, context=self.context
+        ).data
+
+
+class UnitMemberRowSerializer(serializers.Serializer):
+    user = RefField(source="member")
+    roles = serializers.SerializerMethodField()
+    is_consultant = serializers.BooleanField()
+    is_deactivated = serializers.BooleanField()
+    util_pct = serializers.FloatField()
+    active_job_count = serializers.IntegerField()
+
+    def get_roles(self, membership) -> list[str]:
+        return [r.name for r in membership.roles.all()]
+
+
+class OrganisationalUnitDetailSerializer(OrganisationalUnitSerializer):
+    """``/org-units/{id}/``: the unit page's team table and header figures."""
+
+    leads = RefListField()
+    members = serializers.SerializerMethodField()
+    utilisation_4wk = serializers.SerializerMethodField()
+
+    class Meta(OrganisationalUnitSerializer.Meta):
+        fields = OrganisationalUnitSerializer.Meta.fields + [
+            "description",
+            "leads",
+            "members",
+            "utilisation_4wk",
+        ]
+
+    def _rows(self, unit):
+        if not hasattr(self, "_member_rows"):
+            self._member_rows = unit_member_rows(unit)
+        return self._member_rows
+
+    @extend_schema_field(UnitMemberRowSerializer(many=True))
+    def get_members(self, unit):
+        rows, _pct = self._rows(unit)
+        return UnitMemberRowSerializer(rows, many=True, context=self.context).data
+
+    def get_utilisation_4wk(self, unit) -> float:
+        return float(self._rows(unit)[1])

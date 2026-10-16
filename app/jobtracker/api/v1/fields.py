@@ -53,6 +53,7 @@ def _registry():
         Service,
         Skill,
         SkillCategory,
+        Team,
         TimeSlot,
         TimeSlotType,
     )
@@ -61,22 +62,17 @@ def _registry():
         User: RefType("user", "user", _user_display, lambda o: o.get_absolute_url()),
         OrganisationalUnit: RefType("org_unit", "org-unit", str, _slug_url),
         Client: RefType("client", "client", str, _slug_url),
+        # Contacts have no page of their own (the detail route has no
+        # template); link to their client's page.
         Contact: RefType(
             "contact",
-            None,
+            "contact",
             lambda c: f"{c.first_name} {c.last_name}".strip(),
-            lambda c: (
-                reverse(
-                    "client_contact_detail",
-                    kwargs={"client_slug": c.company.slug, "pk": c.pk},
-                )
-                if c.company_id and c.company.slug
-                else None
-            ),
+            lambda c: _slug_url(c.company) if c.company_id else None,
         ),
         FrameworkAgreement: RefType(
             "framework",
-            None,
+            "framework",
             lambda f: f.name,
             lambda f: f.get_absolute_url() if f.client.slug else None,
         ),
@@ -98,6 +94,7 @@ def _registry():
         AwardingBody: RefType("awarding_body", None, lambda b: b.name),
         QualificationTag: RefType("qualification_tag", None, lambda t: t.name),
         TimeSlot: RefType("timeslot", "timeslot", lambda t: str(t.pk)),
+        Team: RefType("team", None, lambda t: t.name, _slug_url),
         City: RefType("city", None, lambda c: c.name),
     }
 

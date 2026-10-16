@@ -37,6 +37,9 @@ from .. import filters
 from ..base import BaseReadOnlyAPIViewSet
 from ....selectors.dashboard import user_stats
 from ..serializers import (
+    OrganisationalUnitDetailSerializer,
+    UserDetailSerializer,
+    UserProfileSerializer,
     UserStatsSerializer,
     LeaveRequestListSerializer,
     LeaveRequestSerializer,
@@ -59,6 +62,12 @@ class UserViewSet(BaseReadOnlyAPIViewSet):
     filterset_class = filters.UserFilter
     ordering_fields = ("last_name", "first_name", "email")
     search_fields = ("first_name", "last_name", "email")
+
+    def get_serializer_class(self):
+        return UserDetailSerializer if self.action == "retrieve" else UserSerializer
+
+    def get_serializer_context(self):
+        return {**super().get_serializer_context(), "policy": self.policy}
 
     # Read verbs + POST — but POST is opened *only* for the set_status action
     # below; create() is overridden to 405 so this is not a user-creation route.
@@ -252,6 +261,27 @@ class UserViewSet(BaseReadOnlyAPIViewSet):
         )
 
     @extend_schema(
+        summary="A user's profile",
+        description=(
+            "Visible to anyone with a global role, as the profile page. "
+            "``contact`` needs ``view_user``; ``skills`` / ``qualifications`` "
+            "follow the competency rules (yourself, your manager, or the "
+            "global view permission)."
+        ),
+        responses=UserProfileSerializer,
+    )
+    @action(detail=True, methods=["get"], url_path="profile")
+    def profile(self, request, pk=None):
+        target = get_object_or_404(
+            self.get_base_queryset().select_related("manager", "acting_manager"), pk=pk
+        )
+        if not self.policy.can("user.view_profile", target):
+            raise PermissionDenied("You can't view profiles.")
+        return Response(
+            UserProfileSerializer(target, context=self.get_serializer_context()).data
+        )
+
+    @extend_schema(
         summary="A user's consultant stats and QA ratings",
         description=(
             "Visible to the user, their (acting) manager and holders of "
@@ -301,8 +331,16 @@ class OrganisationalUnitViewSet(BaseReadOnlyAPIViewSet):
     ordering_fields = ("name",)
     search_fields = ("name",)
 
+    def get_serializer_class(self):
+        if self.action == "retrieve":
+            return OrganisationalUnitDetailSerializer
+        return OrganisationalUnitSerializer
+
     def get_base_queryset(self):
-        return OrganisationalUnit.objects.all()
+        qs = OrganisationalUnit.objects.all()
+        if self.action == "retrieve":
+            qs = qs.prefetch_related("leads")
+        return qs
 
     @extend_schema(
         summary="List members of an org unit",
