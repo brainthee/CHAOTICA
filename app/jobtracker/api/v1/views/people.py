@@ -1,23 +1,14 @@
-"""Read-only /api/v1/ viewsets.
+"""Users, org units, leave and competency records."""
 
-Every viewset reproduces — never widens — the access checks the existing Django
-views apply. Rather than re-deriving the guardian logic, each ``scope_queryset``
-delegates to the canonical model managers / helpers so the API cannot drift from
-the UI. See the permission section of the implementation plan for the rationale.
-"""
-
-from django.db.models import Count, Exists, OuterRef, Prefetch, Q
+from django.db.models import Exists, OuterRef, Prefetch, Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from drf_spectacular.openapi import AutoSchema
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 from guardian.shortcuts import get_objects_for_user
-from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import MethodNotAllowed, PermissionDenied
 from rest_framework.filters import SearchFilter
-from rest_framework.renderers import BrowsableAPIRenderer, JSONRenderer
 from rest_framework.response import Response
 
 from chaotica_utils.models import User, UserCost
@@ -29,47 +20,26 @@ from chaotica_utils.utils.common import (
     can_manage_user_lcr,
 )
 
-from ...utils import viewable_schedule_user_pks
-from .schedule import (
+from ....utils import viewable_schedule_user_pks
+from ..schedule import (
     SCHEDULE_QUERY_PARAMS,
     build_schedule_payload,
-    parse_int_param,
     parse_schedule_window,
 )
 
-from ...models import (
-    Client,
-    Job,
+from ....models import (
     OrganisationalUnit,
     OrganisationalUnitMember,
-    Phase,
-    Project,
-    Qualification,
     QualificationRecord,
-    Service,
-    Skill,
-    SkillCategory,
-    TimeSlot,
-    TimeSlotType,
     UserSkill,
 )
-from .base import ApiV1Mixin, BaseReadOnlyAPIViewSet
-from .serializers import (
-    ClientSerializer,
-    JobSerializer,
+from ..base import BaseReadOnlyAPIViewSet
+from ..serializers import (
     LeaveRequestSerializer,
     OrganisationalUnitSerializer,
     OrganisationalUnitMemberSerializer,
-    PhaseSerializer,
-    ProjectSerializer,
     QualificationRecordSerializer,
-    QualificationSerializer,
     ScheduleSerializer,
-    ServiceSerializer,
-    SkillCategorySerializer,
-    SkillSerializer,
-    TimeSlotSerializer,
-    TimeSlotTypeSerializer,
     UserSerializer,
     UserSkillSerializer,
     UserStatusUpdateSerializer,
@@ -374,202 +344,6 @@ class OrganisationalUnitViewSet(BaseReadOnlyAPIViewSet):
         return Response(serializer.data)
 
 
-class ClientViewSet(BaseReadOnlyAPIViewSet):
-    serializer_class = ClientSerializer
-
-    def get_base_queryset(self):
-        return Client.objects.prefetch_related(
-            "account_managers", "tech_account_managers"
-        )
-
-    def scope_queryset(self, queryset, user):
-        allowed = get_objects_for_user(user, "jobtracker.view_client", klass=Client)
-        return queryset.filter(pk__in=allowed.values_list("pk", flat=True))
-
-
-class JobViewSet(BaseReadOnlyAPIViewSet):
-    serializer_class = JobSerializer
-
-    def get_base_queryset(self):
-        return Job.objects.select_related("unit", "client").annotate(
-            phase_count=Count("phases", distinct=True)
-        )
-
-    def scope_queryset(self, queryset, user):
-        # Faithful to JobPermissionRequiredMixin: unit `can_view_jobs` OR the
-        # team-membership guest bypass (jobs_for_user).
-        # ``jobs_for_user`` is a ``.distinct()`` queryset while
-        # ``jobs_with_unit_permission`` is not; combining a distinct and a
-        # non-distinct query with ``|`` raises "Cannot combine a unique query
-        # with a non-unique query". Union the pks instead.
-        allowed_ids = set(
-            Job.objects.jobs_with_unit_permission(
-                user, "jobtracker.can_view_jobs"
-            ).values_list("pk", flat=True)
-        )
-        allowed_ids.update(
-            Job.objects.jobs_for_user(user).values_list("pk", flat=True)
-        )
-        return queryset.filter(pk__in=allowed_ids)
-
-
-# ---------------------------------------------------------------------------
-# Engagements
-# ---------------------------------------------------------------------------
-
-
-class PhaseViewSet(BaseReadOnlyAPIViewSet):
-    serializer_class = PhaseSerializer
-
-    def get_base_queryset(self):
-        return Phase.objects.select_related(
-            "job",
-            "service",
-            "project_lead",
-            "report_author",
-            "techqa_by",
-            "presqa_by",
-        )
-
-    def scope_queryset(self, queryset, user):
-        # See JobViewSet: one side is distinct and the other isn't, so union
-        # the pks rather than combining the querysets with ``|``.
-        allowed_ids = set(
-            Phase.objects.phases_with_unit_permission(
-                user, "jobtracker.can_view_jobs"
-            ).values_list("pk", flat=True)
-        )
-        allowed_ids.update(
-            Phase.objects.phases_for_user(user).values_list("pk", flat=True)
-        )
-        return queryset.filter(pk__in=allowed_ids)
-
-
-class ProjectViewSet(BaseReadOnlyAPIViewSet):
-    serializer_class = ProjectSerializer
-
-    def get_base_queryset(self):
-        return Project.objects.select_related("unit", "primary_poc", "created_by")
-
-    def scope_queryset(self, queryset, user):
-        # Projects are gated by the ``view_project`` model permission (there is
-        # no unit-level project permission), plus the team-membership bypass.
-        # get_objects_for_user honours a global grant (returns all) or the
-        # per-object grants otherwise, matching ProjectListView.
-        allowed_ids = set(
-            get_objects_for_user(
-                user, "jobtracker.view_project", klass=Project
-            ).values_list("pk", flat=True)
-        )
-        allowed_ids.update(
-            Project.objects.projects_for_user(user).values_list("pk", flat=True)
-        )
-        return queryset.filter(pk__in=allowed_ids)
-
-
-# ---------------------------------------------------------------------------
-# Scheduling
-# ---------------------------------------------------------------------------
-
-
-class TimeSlotTypeViewSet(BaseReadOnlyAPIViewSet):
-    """Reference data — visible to all authenticated users."""
-
-    serializer_class = TimeSlotTypeSerializer
-
-    def get_base_queryset(self):
-        return TimeSlotType.objects.all()
-
-
-class TimeSlotViewSet(BaseReadOnlyAPIViewSet):
-    serializer_class = TimeSlotSerializer
-
-    def get_base_queryset(self):
-        return TimeSlot.objects.select_related(
-            "slot_type", "phase", "project", "user"
-        )
-
-    def scope_queryset(self, queryset, user):
-        # Mirrors the scheduler feeds: visible = members of units where the
-        # requester holds view_users_schedule, plus the requester's own slots.
-        units = get_objects_for_user(
-            user, "jobtracker.view_users_schedule", klass=OrganisationalUnit
-        )
-        member_ids = OrganisationalUnitMember.objects.filter(
-            unit__in=units
-        ).values_list("member_id", flat=True)
-        return queryset.filter(Q(user_id__in=member_ids) | Q(user=user)).distinct()
-
-
-class _SingleObjectSchema(AutoSchema):
-    """``list`` on a plain ViewSet is documented as an array by default; this
-    composite returns one object."""
-
-    def _is_list_view(self, serializer=None):
-        return False
-
-
-class ScheduleViewSet(ApiV1Mixin, viewsets.ViewSet):
-    """Read-only composite schedule feed for a date window.
-
-    Combines work timeslots, leave, holidays and per-user availability/utilisation
-    for every user the requester may see under ``view_users_schedule`` (plus
-    themselves). Renders the clean REST shape from the same shared core
-    (``jobtracker.utils.collect_schedule_*``) the vis-timeline UI feeds use, so
-    the API and the calendar cannot drift. For a single user use the
-    ``/users/{id}/schedule/`` action instead.
-    """
-
-    renderer_classes = [JSONRenderer, BrowsableAPIRenderer]
-    schema = _SingleObjectSchema()
-
-    @extend_schema(
-        summary="Global schedule window",
-        description=(
-            "Composite schedule (timeslots, leave, holidays, per-user "
-            "availability) for the caller's visible users over a date window. "
-            "Not paginated — bound the result with ``start``/``end`` (default "
-            "today → +28 days, max 366-day span). Optionally narrow with "
-            "``unit`` and ``user``."
-        ),
-        parameters=SCHEDULE_QUERY_PARAMS
-        + [
-            OpenApiParameter(
-                "unit",
-                OpenApiTypes.INT,
-                OpenApiParameter.QUERY,
-                description="Restrict to members of this org unit (within scope).",
-                required=False,
-            ),
-            OpenApiParameter(
-                "user",
-                OpenApiTypes.INT,
-                OpenApiParameter.QUERY,
-                description="Restrict to a single user id (within scope).",
-                required=False,
-            ),
-        ],
-        responses=ScheduleSerializer,
-    )
-    def list(self, request):
-        start, end = parse_schedule_window(request)
-        users = User.objects.filter(pk__in=viewable_schedule_user_pks(request.user))
-
-        unit_id = parse_int_param(request, "unit")
-        if unit_id is not None:
-            users = users.filter(unit_memberships__unit_id=unit_id).distinct()
-        user_id = parse_int_param(request, "user")
-        if user_id is not None:
-            users = users.filter(pk=user_id)
-
-        return Response(build_schedule_payload(users, start, end))
-
-
-# ---------------------------------------------------------------------------
-# People / competency
-# ---------------------------------------------------------------------------
-
-
 class LeaveRequestViewSet(BaseReadOnlyAPIViewSet):
     serializer_class = LeaveRequestSerializer
 
@@ -591,28 +365,6 @@ class LeaveRequestViewSet(BaseReadOnlyAPIViewSet):
         ).distinct()
 
 
-class SkillCategoryViewSet(BaseReadOnlyAPIViewSet):
-    """Reference data — visible to all authenticated users."""
-
-    serializer_class = SkillCategorySerializer
-
-    def get_base_queryset(self):
-        return SkillCategory.objects.all()
-
-
-class SkillViewSet(BaseReadOnlyAPIViewSet):
-    serializer_class = SkillSerializer
-
-    def get_base_queryset(self):
-        return Skill.objects.select_related("category").prefetch_related(
-            "prerequisites", "related_skills"
-        )
-
-    def scope_queryset(self, queryset, user):
-        allowed = get_objects_for_user(user, "jobtracker.view_skill", klass=Skill)
-        return queryset.filter(pk__in=allowed.values_list("pk", flat=True))
-
-
 class UserSkillViewSet(BaseReadOnlyAPIViewSet):
     serializer_class = UserSkillSerializer
 
@@ -632,21 +384,6 @@ class UserSkillViewSet(BaseReadOnlyAPIViewSet):
         ).distinct()
 
 
-class QualificationViewSet(BaseReadOnlyAPIViewSet):
-    serializer_class = QualificationSerializer
-
-    def get_base_queryset(self):
-        return Qualification.objects.select_related("awarding_body").prefetch_related(
-            "tags"
-        )
-
-    def scope_queryset(self, queryset, user):
-        allowed = get_objects_for_user(
-            user, "jobtracker.view_qualification", klass=Qualification
-        )
-        return queryset.filter(pk__in=allowed.values_list("pk", flat=True))
-
-
 class QualificationRecordViewSet(BaseReadOnlyAPIViewSet):
     serializer_class = QualificationRecordSerializer
 
@@ -663,19 +400,3 @@ class QualificationRecordViewSet(BaseReadOnlyAPIViewSet):
             | Q(user__manager=user)
             | Q(user__acting_manager=user)
         ).distinct()
-
-
-class ServiceViewSet(BaseReadOnlyAPIViewSet):
-    serializer_class = ServiceSerializer
-
-    def get_base_queryset(self):
-        return Service.objects.prefetch_related(
-            "skillsRequired",
-            "skillsDesired",
-            "qualificationsRequired",
-            "qualificationsDesired",
-        )
-
-    def scope_queryset(self, queryset, user):
-        allowed = get_objects_for_user(user, "jobtracker.view_service", klass=Service)
-        return queryset.filter(pk__in=allowed.values_list("pk", flat=True))
