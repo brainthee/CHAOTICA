@@ -13,7 +13,8 @@ from chaotica_utils.views import page_defaults
 from django.db.models import Q, Prefetch, Exists, OuterRef
 from django.db.models.functions import Coalesce
 from django.views.decorators.http import require_safe
-from guardian.shortcuts import get_objects_for_user
+from jobtracker.policy import PolicyContext
+from jobtracker.selectors.involvement import job_involvement_q, phase_involvement_q
 
 logger = logging.getLogger(__name__)
 
@@ -38,16 +39,12 @@ class DashboardScope:
 
     Everything is lazy: a tab partial only pays for the scoping it uses."""
 
-    def __init__(self, user):
+    def __init__(self, user, policy=None):
         self.user = user
-        self._unit_cache = {}
+        self.policy = policy or PolicyContext(user)
 
     def _units(self, perm):
-        if perm not in self._unit_cache:
-            self._unit_cache[perm] = get_objects_for_user(
-                self.user, perm, klass=OrganisationalUnit
-            )
-        return self._unit_cache[perm]
+        return self.policy.units(perm)
 
     @cached_property
     def member_units(self):
@@ -90,28 +87,11 @@ class DashboardScope:
 
     @cached_property
     def phase_involved(self):
-        u = self.user
-        return (
-            Q(timeslots__user=u)
-            | Q(report_author=u)
-            | Q(project_lead=u)
-            | Q(techqa_by=u)
-            | Q(presqa_by=u)
-        )
+        return phase_involvement_q(self.user)
 
     @cached_property
     def job_involved(self):
-        u = self.user
-        return (
-            Q(phases__timeslots__user=u)
-            | Q(phases__report_author=u)
-            | Q(phases__project_lead=u)
-            | Q(phases__techqa_by=u)
-            | Q(phases__presqa_by=u)
-            | Q(scoped_by=u)
-            | Q(account_manager=u)
-            | Q(dep_account_manager=u)
-        )
+        return job_involvement_q(self.user)
 
     @cached_property
     def all_phases(self):
@@ -255,7 +235,7 @@ class DashboardScope:
     def alarm_querysets(self):
         from jobtracker.alarms import build_alarms
 
-        return build_alarms(self.user)
+        return build_alarms(self.user, self.policy)
 
     def alarm_context(self):
         """Materialised alarm lists + counts for ``partials/alarms_table.html``."""
