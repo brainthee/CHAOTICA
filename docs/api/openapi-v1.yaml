@@ -144,26 +144,8 @@ paths:
     get:
       operationId: jobs_list
       description: |-
-        Shared base for every ``/api/v1/`` model endpoint.
-
-        Read-only *today* — ``http_method_names`` is restricted to safe verbs — but it
-        subclasses ``ModelViewSet`` (not ``ReadOnlyModelViewSet``) on purpose: enabling
-        writes later is a localised change (widen ``http_method_names``, point at a
-        write-capable serializer, add an object-level permission class) rather than a
-        rewrite.
-
-        It also *locally* overrides the global datatables renderer / pagination / filter
-        defaults (see ``settings.REST_FRAMEWORK``) so v1 emits clean paginated JSON
-        without affecting the legacy ``/api/`` DataTables UI endpoints.
-
-        Access scoping: set ``policy_scope`` to a :mod:`jobtracker.policy` scope
-        action (e.g. ``"job.view"``); ``None`` means reference data visible to every
-        authenticated user, and must be a deliberate choice. Override
-        :meth:`get_base_queryset` for select/prefetch.
-
-        Filtering: declare ``filterset_class`` / ``ordering_fields`` /
-        ``search_fields`` per view. Ordering is an allowlist — nothing is orderable
-        unless listed.
+        ``/{id}/notes/`` and ``/{id}/activity/``, visible to whoever can see
+        the object (the object's own scope applies via ``get_object``).
       parameters:
       - in: query
         name: account_manager
@@ -273,26 +255,8 @@ paths:
     get:
       operationId: jobs_retrieve
       description: |-
-        Shared base for every ``/api/v1/`` model endpoint.
-
-        Read-only *today* — ``http_method_names`` is restricted to safe verbs — but it
-        subclasses ``ModelViewSet`` (not ``ReadOnlyModelViewSet``) on purpose: enabling
-        writes later is a localised change (widen ``http_method_names``, point at a
-        write-capable serializer, add an object-level permission class) rather than a
-        rewrite.
-
-        It also *locally* overrides the global datatables renderer / pagination / filter
-        defaults (see ``settings.REST_FRAMEWORK``) so v1 emits clean paginated JSON
-        without affecting the legacy ``/api/`` DataTables UI endpoints.
-
-        Access scoping: set ``policy_scope`` to a :mod:`jobtracker.policy` scope
-        action (e.g. ``"job.view"``); ``None`` means reference data visible to every
-        authenticated user, and must be a deliberate choice. Override
-        :meth:`get_base_queryset` for select/prefetch.
-
-        Filtering: declare ``filterset_class`` / ``ordering_fields`` /
-        ``search_fields`` per view. Ordering is an allowlist — nothing is orderable
-        unless listed.
+        ``/{id}/notes/`` and ``/{id}/activity/``, visible to whoever can see
+        the object (the object's own scope applies via ``get_object``).
       parameters:
       - in: path
         name: id
@@ -310,7 +274,203 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Job'
+                $ref: '#/components/schemas/JobDetail'
+          description: ''
+  /api/v1/jobs/{id}/activity/:
+    get:
+      operationId: jobs_activity_list
+      description: |-
+        ``/{id}/notes/`` and ``/{id}/activity/``, visible to whoever can see
+        the object (the object's own scope applies via ``get_object``).
+      summary: Activity log
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9]+$
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - jobs
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedActivityList'
+          description: ''
+  /api/v1/jobs/{id}/notes/:
+    get:
+      operationId: jobs_notes_list
+      description: |-
+        ``/{id}/notes/`` and ``/{id}/activity/``, visible to whoever can see
+        the object (the object's own scope applies via ``get_object``).
+      summary: User notes
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9]+$
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - jobs
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedNoteList'
+          description: ''
+  /api/v1/jobs/{id}/phases/:
+    get:
+      operationId: jobs_phases_list
+      description: |-
+        ``/{id}/notes/`` and ``/{id}/activity/``, visible to whoever can see
+        the object (the object's own scope applies via ``get_object``).
+      summary: Phases of a job
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9]+$
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - jobs
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPhaseList'
+          description: ''
+  /api/v1/jobs/{id}/sales/:
+    get:
+      operationId: jobs_sales_retrieve
+      description: |-
+        ``/{id}/notes/`` and ``/{id}/activity/``, visible to whoever can see
+        the object (the object's own scope applies via ``get_object``).
+      summary: Sales summary
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9]+$
+        required: true
+      tags:
+      - jobs
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobSales'
+          description: ''
+  /api/v1/jobs/{id}/support-team/:
+    get:
+      operationId: jobs_support_team_list
+      description: |-
+        ``/{id}/notes/`` and ``/{id}/activity/``, visible to whoever can see
+        the object (the object's own scope applies via ``get_object``).
+      summary: Support team
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9]+$
+        required: true
+      tags:
+      - jobs
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SupportRole'
+          description: ''
+  /api/v1/jobs/{id}/team/:
+    get:
+      operationId: jobs_team_list
+      description: |-
+        ``/{id}/notes/`` and ``/{id}/activity/``, visible to whoever can see
+        the object (the object's own scope applies via ``get_object``).
+      summary: Job team
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9]+$
+        required: true
+      tags:
+      - jobs
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/JobTeamMember'
           description: ''
   /api/v1/leave-requests/:
     get:
@@ -673,26 +833,8 @@ paths:
     get:
       operationId: phases_list
       description: |-
-        Shared base for every ``/api/v1/`` model endpoint.
-
-        Read-only *today* — ``http_method_names`` is restricted to safe verbs — but it
-        subclasses ``ModelViewSet`` (not ``ReadOnlyModelViewSet``) on purpose: enabling
-        writes later is a localised change (widen ``http_method_names``, point at a
-        write-capable serializer, add an object-level permission class) rather than a
-        rewrite.
-
-        It also *locally* overrides the global datatables renderer / pagination / filter
-        defaults (see ``settings.REST_FRAMEWORK``) so v1 emits clean paginated JSON
-        without affecting the legacy ``/api/`` DataTables UI endpoints.
-
-        Access scoping: set ``policy_scope`` to a :mod:`jobtracker.policy` scope
-        action (e.g. ``"job.view"``); ``None`` means reference data visible to every
-        authenticated user, and must be a deliberate choice. Override
-        :meth:`get_base_queryset` for select/prefetch.
-
-        Filtering: declare ``filterset_class`` / ``ordering_fields`` /
-        ``search_fields`` per view. Ordering is an allowlist — nothing is orderable
-        unless listed.
+        ``/{id}/notes/`` and ``/{id}/activity/``, visible to whoever can see
+        the object (the object's own scope applies via ``get_object``).
       parameters:
       - in: query
         name: author
@@ -825,26 +967,8 @@ paths:
     get:
       operationId: phases_retrieve
       description: |-
-        Shared base for every ``/api/v1/`` model endpoint.
-
-        Read-only *today* — ``http_method_names`` is restricted to safe verbs — but it
-        subclasses ``ModelViewSet`` (not ``ReadOnlyModelViewSet``) on purpose: enabling
-        writes later is a localised change (widen ``http_method_names``, point at a
-        write-capable serializer, add an object-level permission class) rather than a
-        rewrite.
-
-        It also *locally* overrides the global datatables renderer / pagination / filter
-        defaults (see ``settings.REST_FRAMEWORK``) so v1 emits clean paginated JSON
-        without affecting the legacy ``/api/`` DataTables UI endpoints.
-
-        Access scoping: set ``policy_scope`` to a :mod:`jobtracker.policy` scope
-        action (e.g. ``"job.view"``); ``None`` means reference data visible to every
-        authenticated user, and must be a deliberate choice. Override
-        :meth:`get_base_queryset` for select/prefetch.
-
-        Filtering: declare ``filterset_class`` / ``ordering_fields`` /
-        ``search_fields`` per view. Ordering is an allowlist — nothing is orderable
-        unless listed.
+        ``/{id}/notes/`` and ``/{id}/activity/``, visible to whoever can see
+        the object (the object's own scope applies via ``get_object``).
       parameters:
       - in: path
         name: id
@@ -862,7 +986,137 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Phase'
+                $ref: '#/components/schemas/PhaseDetail'
+          description: ''
+  /api/v1/phases/{id}/activity/:
+    get:
+      operationId: phases_activity_list
+      description: |-
+        ``/{id}/notes/`` and ``/{id}/activity/``, visible to whoever can see
+        the object (the object's own scope applies via ``get_object``).
+      summary: Activity log
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9]+$
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - phases
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedActivityList'
+          description: ''
+  /api/v1/phases/{id}/feedback/:
+    get:
+      operationId: phases_feedback_retrieve
+      description: |-
+        ``/{id}/notes/`` and ``/{id}/activity/``, visible to whoever can see
+        the object (the object's own scope applies via ``get_object``).
+      summary: QA feedback and ratings
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9]+$
+        required: true
+      tags:
+      - phases
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhaseFeedback'
+          description: ''
+  /api/v1/phases/{id}/notes/:
+    get:
+      operationId: phases_notes_list
+      description: |-
+        ``/{id}/notes/`` and ``/{id}/activity/``, visible to whoever can see
+        the object (the object's own scope applies via ``get_object``).
+      summary: User notes
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9]+$
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - phases
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedNoteList'
+          description: ''
+  /api/v1/phases/{id}/team/:
+    get:
+      operationId: phases_team_list
+      description: |-
+        ``/{id}/notes/`` and ``/{id}/activity/``, visible to whoever can see
+        the object (the object's own scope applies via ``get_object``).
+      summary: Phase team
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9]+$
+        required: true
+      tags:
+      - phases
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TeamMember'
           description: ''
   /api/v1/projects/:
     get:
@@ -2209,6 +2463,32 @@ paths:
           description: ''
 components:
   schemas:
+    Activity:
+      type: object
+      properties:
+        id:
+          type: integer
+        at:
+          type: string
+          format: date-time
+        actor:
+          allOf:
+          - $ref: '#/components/schemas/Ref'
+          nullable: true
+          readOnly: true
+        verb:
+          type: string
+        category:
+          type: string
+        message:
+          type: string
+      required:
+      - actor
+      - at
+      - category
+      - id
+      - message
+      - verb
     AuthToken:
       type: object
       properties:
@@ -2237,6 +2517,17 @@ components:
         * `1` - Available
         * `2` - Busy - Internal
         * `3` - Busy - Delivery
+    BillingBadge:
+      type: object
+      description: 'A billing code as a badge: code and name only, never money.'
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+      required:
+      - code
+      - name
     BlankEnum:
       enum:
       - ''
@@ -2277,6 +2568,34 @@ components:
       - is_ready
       - name
       - tech_account_managers
+      - web_url
+    ContactCard:
+      type: object
+      properties:
+        id:
+          type: integer
+        display:
+          type: string
+        job_title:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        mobile:
+          type: string
+        web_url:
+          type: string
+          nullable: true
+          readOnly: true
+      required:
+      - display
+      - email
+      - id
+      - job_title
+      - mobile
+      - phone
       - web_url
     CountryEnum:
       enum:
@@ -2804,6 +3123,43 @@ components:
         * `7` - Contingency
         * `8` - Other
         * `9` - Shadowing
+    Effort:
+      type: object
+      properties:
+        label:
+          type: string
+        hours:
+          type: number
+          format: double
+      required:
+      - hours
+      - label
+    FeedbackItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: integer
+        type_display:
+          type: string
+        author:
+          allOf:
+          - $ref: '#/components/schemas/Ref'
+          nullable: true
+          readOnly: true
+        body:
+          type: string
+        created_on:
+          type: string
+          format: date-time
+      required:
+      - author
+      - body
+      - created_on
+      - id
+      - type
+      - type_display
     Holiday:
       type: object
       description: |-
@@ -2902,6 +3258,14 @@ components:
           nullable: true
           title: Delivery date
           description: If set, will override scheduled dates
+        start_date:
+          type: string
+          format: date
+          readOnly: true
+        delivery_date:
+          type: string
+          format: date
+          readOnly: true
         is_restricted:
           type: boolean
           nullable: true
@@ -2927,15 +3291,326 @@ components:
       required:
       - account_manager
       - client
+      - delivery_date
       - id
       - job_id
       - phase_count
       - restricted_detail_display
       - slug
+      - start_date
       - status_display
       - title
       - unit
       - web_url
+    JobDetail:
+      type: object
+      description: |-
+        ``workflow`` and ``capabilities`` from the request's PolicyContext
+        (``context["policy"]``).
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        job_id:
+          type: integer
+          readOnly: true
+        slug:
+          type: string
+          format: uuid
+          readOnly: true
+        external_id:
+          type: string
+          nullable: true
+          description: 'Optional: External reference ID'
+          maxLength: 255
+        title:
+          type: string
+          title: Job Title
+          maxLength: 250
+        status:
+          allOf:
+          - $ref: '#/components/schemas/JobStatusEnum'
+          title: Job Status
+          description: |-
+            Current state of the job
+
+            * `0` - Draft
+            * `1` - Pending Scoping
+            * `2` - Scoping
+            * `3` - Additional Scoping Required
+            * `4` - Pending Scope Signoff
+            * `5` - Scoping Complete
+            * `6` - Pending Start
+            * `7` - In Progress
+            * `8` - Completed
+            * `9` - Lost
+            * `10` - Deleted
+            * `11` - Archived
+          minimum: -2147483648
+          maximum: 2147483647
+        status_display:
+          type: string
+          readOnly: true
+        unit:
+          allOf:
+          - $ref: '#/components/schemas/Ref'
+          nullable: true
+          readOnly: true
+        client:
+          allOf:
+          - $ref: '#/components/schemas/Ref'
+          nullable: true
+          readOnly: true
+        account_manager:
+          allOf:
+          - $ref: '#/components/schemas/Ref'
+          nullable: true
+          readOnly: true
+        desired_start_date:
+          type: string
+          format: date
+          nullable: true
+          title: Start Date
+          description: If set, will override scheduled dates
+        desired_delivery_date:
+          type: string
+          format: date
+          nullable: true
+          title: Delivery date
+          description: If set, will override scheduled dates
+        start_date:
+          type: string
+          format: date
+          readOnly: true
+        delivery_date:
+          type: string
+          format: date
+          readOnly: true
+        is_restricted:
+          type: boolean
+          nullable: true
+          title: Is the engagement Protectively Marked
+        restricted_detail:
+          nullable: true
+          title: GSC level
+          minimum: -2147483648
+          maximum: 2147483647
+          oneOf:
+          - $ref: '#/components/schemas/RestrictedDetailEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        restricted_detail_display:
+          type: string
+          readOnly: true
+        phase_count:
+          type: integer
+          readOnly: true
+        web_url:
+          type: string
+          nullable: true
+          readOnly: true
+        overview:
+          type: string
+          nullable: true
+        is_imported:
+          type: boolean
+        high_risk:
+          type: boolean
+        reasons_for_high_risk:
+          type: string
+          nullable: true
+        technically_complex_test:
+          type: boolean
+          title: Does the job involve complex tech
+        is_time_limited:
+          type: boolean
+          title: Time Limited
+        retest_included:
+          type: boolean
+        report_to_third_party:
+          type: boolean
+          title: Report to 3rd party
+        bespoke_project:
+          type: boolean
+        additional_kit_required:
+          type: boolean
+          nullable: true
+        additional_kit_info:
+          type: string
+          nullable: true
+        kit_sourced_by_client:
+          type: boolean
+        scoping_requested_on:
+          type: string
+          format: date-time
+          nullable: true
+        scoping_completed_date:
+          type: string
+          format: date-time
+          nullable: true
+        status_changed_date:
+          type: string
+          format: date-time
+        dep_account_manager:
+          allOf:
+          - $ref: '#/components/schemas/Ref'
+          nullable: true
+          readOnly: true
+        created_by:
+          allOf:
+          - $ref: '#/components/schemas/Ref'
+          nullable: true
+          readOnly: true
+        scoped_by:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ref'
+          readOnly: true
+        scoped_signed_off_by:
+          allOf:
+          - $ref: '#/components/schemas/Ref'
+          nullable: true
+          readOnly: true
+        primary_poc:
+          allOf:
+          - $ref: '#/components/schemas/ContactCard'
+          nullable: true
+        contacts:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContactCard'
+        framework:
+          allOf:
+          - $ref: '#/components/schemas/Ref'
+          nullable: true
+          readOnly: true
+        related_jobs:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ref'
+          readOnly: true
+        indicative_services:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ref'
+          readOnly: true
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/Link'
+        billing:
+          type: array
+          items:
+            $ref: '#/components/schemas/BillingBadge'
+        warnings:
+          type: array
+          items:
+            type: string
+          readOnly: true
+        scoped_days:
+          type: number
+          format: double
+        workflow:
+          allOf:
+          - $ref: '#/components/schemas/Workflow'
+          readOnly: true
+        capabilities:
+          type: object
+          additionalProperties:
+            type: boolean
+          readOnly: true
+      required:
+      - account_manager
+      - billing
+      - capabilities
+      - client
+      - contacts
+      - created_by
+      - delivery_date
+      - dep_account_manager
+      - framework
+      - id
+      - indicative_services
+      - job_id
+      - links
+      - phase_count
+      - primary_poc
+      - related_jobs
+      - restricted_detail_display
+      - scoped_by
+      - scoped_days
+      - scoped_signed_off_by
+      - slug
+      - start_date
+      - status_display
+      - title
+      - unit
+      - warnings
+      - web_url
+      - workflow
+    JobSales:
+      type: object
+      description: |-
+        Sales summary. Finance fields are null unless the caller holds
+        ``can_view_loaded_costs`` on the job's unit.
+      properties:
+        revenue:
+          type: number
+          format: double
+        scoped_days:
+          type: number
+          format: double
+        avg_day_rate:
+          type: number
+          format: double
+        target_profit:
+          type: number
+          format: double
+        effort:
+          type: array
+          items:
+            $ref: '#/components/schemas/Effort'
+        support_premium:
+          type: number
+          format: double
+        staff_cost:
+          type: number
+          format: double
+          nullable: true
+        profit:
+          type: number
+          format: double
+          nullable: true
+        profit_perc:
+          type: number
+          format: double
+          nullable: true
+        meets_target:
+          type: boolean
+          nullable: true
+        support_pool:
+          type: number
+          format: double
+          nullable: true
+        support_members:
+          type: array
+          items:
+            $ref: '#/components/schemas/SalesMember'
+        includes_finance:
+          type: boolean
+      required:
+      - avg_day_rate
+      - effort
+      - includes_finance
+      - meets_target
+      - profit
+      - profit_perc
+      - revenue
+      - scoped_days
+      - staff_cost
+      - support_members
+      - support_pool
+      - support_premium
+      - target_profit
     JobStatusEnum:
       enum:
       - 0
@@ -2964,6 +3639,52 @@ components:
         * `9` - Lost
         * `10` - Deleted
         * `11` - Archived
+    JobTeamMember:
+      type: object
+      properties:
+        user:
+          allOf:
+          - $ref: '#/components/schemas/Ref'
+          nullable: true
+          readOnly: true
+        assigned_roles:
+          type: array
+          items:
+            type: string
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeamRole'
+        total_hours:
+          type: number
+          format: double
+        total_days:
+          type: number
+          format: double
+        unscheduled:
+          type: boolean
+        start:
+          type: string
+          format: date-time
+          nullable: true
+        end:
+          type: string
+          format: date-time
+          nullable: true
+        phases:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeamPhaseRow'
+      required:
+      - assigned_roles
+      - end
+      - phases
+      - roles
+      - start
+      - total_days
+      - total_hours
+      - unscheduled
+      - user
     LeaveRequest:
       type: object
       properties:
@@ -3022,6 +3743,20 @@ components:
       - type_of_leave
       - type_of_leave_display
       - user
+    Link:
+      type: object
+      properties:
+        title:
+          type: string
+        url:
+          type: string
+          nullable: true
+        type:
+          type: string
+      required:
+      - title
+      - type
+      - url
     Me:
       type: object
       description: The caller (from ``chaotica_utils.selectors.users.current_user_profile``).
@@ -3128,6 +3863,7 @@ components:
           type: string
         version:
           type: string
+          nullable: true
         api_version:
           type: string
         web_base_url:
@@ -3190,6 +3926,26 @@ components:
       required:
       - logo_url
       - site_name
+    Note:
+      type: object
+      properties:
+        id:
+          type: integer
+        at:
+          type: string
+          format: date-time
+        author:
+          allOf:
+          - $ref: '#/components/schemas/Ref'
+          nullable: true
+          readOnly: true
+        content:
+          type: string
+      required:
+      - at
+      - author
+      - content
+      - id
     NullEnum:
       enum:
       - null
@@ -3214,6 +3970,29 @@ components:
       - id
       - name
       - web_url
+    PaginatedActivityList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Activity'
     PaginatedClientList:
       type: object
       required:
@@ -3283,6 +4062,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/LeaveRequest'
+    PaginatedNoteList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Note'
     PaginatedOrganisationalUnitList:
       type: object
       required:
@@ -3729,6 +4531,331 @@ components:
       - techqa_by
       - title
       - web_url
+    PhaseDetail:
+      type: object
+      description: |-
+        ``workflow`` and ``capabilities`` from the request's PolicyContext
+        (``context["policy"]``).
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        phase_id:
+          type: string
+          maxLength: 100
+        slug:
+          type: string
+          maxLength: 50
+          pattern: ^[-a-zA-Z0-9_]+$
+        phase_number:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          default: 0
+        title:
+          type: string
+          maxLength: 200
+        status:
+          allOf:
+          - $ref: '#/components/schemas/PhaseStatusEnum'
+          minimum: -2147483648
+          maximum: 2147483647
+        status_display:
+          type: string
+          readOnly: true
+        job:
+          allOf:
+          - $ref: '#/components/schemas/Ref'
+          nullable: true
+          readOnly: true
+        client:
+          allOf:
+          - $ref: '#/components/schemas/Ref'
+          nullable: true
+          readOnly: true
+        service:
+          allOf:
+          - $ref: '#/components/schemas/Ref'
+          nullable: true
+          readOnly: true
+        project_lead:
+          allOf:
+          - $ref: '#/components/schemas/Ref'
+          nullable: true
+          readOnly: true
+        report_author:
+          allOf:
+          - $ref: '#/components/schemas/Ref'
+          nullable: true
+          readOnly: true
+        techqa_by:
+          allOf:
+          - $ref: '#/components/schemas/Ref'
+          nullable: true
+          readOnly: true
+        presqa_by:
+          allOf:
+          - $ref: '#/components/schemas/Ref'
+          nullable: true
+          readOnly: true
+        start_date:
+          type: string
+          format: date
+          readOnly: true
+        delivery_date:
+          type: string
+          format: date
+          readOnly: true
+        due_to_techqa:
+          type: string
+          format: date
+          readOnly: true
+        due_to_presqa:
+          type: string
+          format: date
+          readOnly: true
+        desired_start_date:
+          type: string
+          format: date
+          nullable: true
+          description: If left blank, this will be automatically determined from scheduled
+            slots
+        desired_delivery_date:
+          type: string
+          format: date
+          nullable: true
+          title: Delivery date
+          description: If left blank, this will be automatically determined from scheduled
+            slots
+        actual_start_date:
+          type: string
+          format: date-time
+          nullable: true
+          description: Date the phase actually started based on state change.
+        actual_delivery_date:
+          type: string
+          format: date-time
+          nullable: true
+          title: Actual delivered date
+          description: Date the phase actually delivered based on state change.
+        number_of_reports:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          description: If set to 0, this phase will not go through Technical or Presentation
+            QA
+        is_testing_onsite:
+          type: boolean
+          title: Testing Onsite
+        is_reporting_onsite:
+          type: boolean
+          title: Reporting Onsite
+        delivery_hours:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,3})?$
+        reporting_hours:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,3})?$
+        mgmt_hours:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,3})?$
+          title: Management Hours
+        qa_hours:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,3})?$
+        oversight_hours:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,3})?$
+        debrief_hours:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,3})?$
+        contingency_hours:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,3})?$
+        other_hours:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,3})?$
+        web_url:
+          type: string
+          nullable: true
+          readOnly: true
+        description:
+          type: string
+          nullable: true
+        test_target:
+          type: string
+          nullable: true
+          title: Test Target URL/IPs/Scope
+        location:
+          type: string
+          nullable: true
+          title: Onsite Location
+        comm_reqs:
+          type: string
+          nullable: true
+          title: Communication Requirements
+        prerequisites:
+          type: string
+          nullable: true
+          title: Pre-requisites
+        restrictions:
+          type: string
+          nullable: true
+          title: Time restrictions / Special requirements
+        scheduling_requirements:
+          type: string
+          nullable: true
+          title: Special requirements for scheduling
+        report_to_be_left_on_client_site:
+          type: boolean
+        pre_checks_done_date:
+          type: string
+          format: date-time
+          nullable: true
+          title: Pre-checks Completed Date
+          description: When the pre-checks were completed based on state change
+        actual_sent_to_tqa_date:
+          type: string
+          format: date-time
+          nullable: true
+          description: Date the report was sent to TQA based on state change
+        actual_sent_to_pqa_date:
+          type: string
+          format: date-time
+          nullable: true
+          description: Date the report was sent to PQA based on state change
+        actual_completed_date:
+          type: string
+          format: date-time
+          nullable: true
+          description: Date the phase was completed based on state change
+        is_delivery_late:
+          type: boolean
+          readOnly: true
+        is_techqa_late:
+          type: boolean
+          readOnly: true
+        is_presqa_late:
+          type: boolean
+          readOnly: true
+        is_prechecks_late:
+          type: boolean
+          readOnly: true
+        scoped_hours:
+          type: number
+          format: double
+        scoped_days:
+          type: number
+          format: double
+        scheduled_hours:
+          type: number
+          format: double
+        scheduled_days:
+          type: number
+          format: double
+        scheduled_pct:
+          type: number
+          format: double
+        billing:
+          type: array
+          items:
+            $ref: '#/components/schemas/BillingBadge'
+        missing_billing_code:
+          type: boolean
+          readOnly: true
+        concurrent_phases:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ref'
+          readOnly: true
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/Link'
+        deliverable_links:
+          type: array
+          items:
+            $ref: '#/components/schemas/Link'
+          readOnly: true
+        workflow:
+          allOf:
+          - $ref: '#/components/schemas/Workflow'
+          readOnly: true
+        capabilities:
+          type: object
+          additionalProperties:
+            type: boolean
+          readOnly: true
+      required:
+      - billing
+      - capabilities
+      - client
+      - concurrent_phases
+      - deliverable_links
+      - delivery_date
+      - due_to_presqa
+      - due_to_techqa
+      - id
+      - is_delivery_late
+      - is_prechecks_late
+      - is_presqa_late
+      - is_techqa_late
+      - job
+      - links
+      - missing_billing_code
+      - phase_id
+      - presqa_by
+      - project_lead
+      - report_author
+      - scheduled_days
+      - scheduled_hours
+      - scheduled_pct
+      - scoped_days
+      - scoped_hours
+      - service
+      - start_date
+      - status_display
+      - techqa_by
+      - title
+      - web_url
+      - workflow
+    PhaseFeedback:
+      type: object
+      properties:
+        scope_correct:
+          type: boolean
+          nullable: true
+        techqa_report_rating:
+          type: integer
+          nullable: true
+        techqa_report_rating_display:
+          type: string
+          nullable: true
+        presqa_report_rating:
+          type: integer
+          nullable: true
+        presqa_report_rating_display:
+          type: string
+          nullable: true
+        feedback:
+          type: array
+          items:
+            $ref: '#/components/schemas/FeedbackItem'
+      required:
+      - feedback
+      - presqa_report_rating
+      - presqa_report_rating_display
+      - scope_correct
+      - techqa_report_rating
+      - techqa_report_rating_display
     PhaseStatusEnum:
       enum:
       - 0
@@ -3982,7 +5109,7 @@ components:
           readOnly: true
         status:
           allOf:
-          - $ref: '#/components/schemas/QualificationRecordStatusEnum'
+          - $ref: '#/components/schemas/QualificationStatusEnum'
           minimum: -2147483648
           maximum: 2147483647
         status_display:
@@ -4041,7 +5168,7 @@ components:
       - status_display
       - user
       - verified_by
-    QualificationRecordStatusEnum:
+    QualificationStatusEnum:
       enum:
       - 0
       - 1
@@ -4111,6 +5238,33 @@ components:
         * `2` - OFFICIAL-SENSITIVE
         * `1` - OFFICIAL
         * `0` - Unknown
+    SalesMember:
+      type: object
+      properties:
+        user:
+          allOf:
+          - $ref: '#/components/schemas/Ref'
+          nullable: true
+          readOnly: true
+        role:
+          type: string
+        share_percent:
+          type: number
+          format: double
+        budget_money:
+          type: number
+          format: double
+          nullable: true
+        budget_days:
+          type: number
+          format: double
+          nullable: true
+      required:
+      - budget_days
+      - budget_money
+      - role
+      - share_percent
+      - user
     Schedule:
       type: object
       description: |-
@@ -4446,6 +5600,174 @@ components:
       - id
       - name
       - web_url
+    StateEnum:
+      enum:
+      - done
+      - current
+      - todo
+      type: string
+      description: |-
+        * `done` - done
+        * `current` - current
+        * `todo` - todo
+    SupportRole:
+      type: object
+      description: |-
+        A support-team member on a job. Money and hours budgets are null
+        unless the caller holds ``can_view_loaded_costs`` for the job's unit.
+      properties:
+        id:
+          type: integer
+        user:
+          allOf:
+          - $ref: '#/components/schemas/Ref'
+          nullable: true
+          readOnly: true
+        role:
+          type: integer
+        role_display:
+          type: string
+        is_overridden:
+          type: boolean
+        share_percent:
+          type: number
+          format: double
+          nullable: true
+          readOnly: true
+        budget_money:
+          type: number
+          format: double
+          nullable: true
+          readOnly: true
+        budget_hours:
+          type: number
+          format: double
+          nullable: true
+          readOnly: true
+        drawn_money:
+          type: number
+          format: double
+          nullable: true
+          readOnly: true
+        remaining_money:
+          type: number
+          format: double
+          nullable: true
+          readOnly: true
+        remaining_hours:
+          type: number
+          format: double
+          nullable: true
+          readOnly: true
+        can_cash_out:
+          type: boolean
+      required:
+      - budget_hours
+      - budget_money
+      - can_cash_out
+      - drawn_money
+      - id
+      - is_overridden
+      - remaining_hours
+      - remaining_money
+      - role
+      - role_display
+      - share_percent
+      - user
+    TeamMember:
+      type: object
+      properties:
+        user:
+          allOf:
+          - $ref: '#/components/schemas/Ref'
+          nullable: true
+          readOnly: true
+        assigned_roles:
+          type: array
+          items:
+            type: string
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeamRole'
+        total_hours:
+          type: number
+          format: double
+        total_days:
+          type: number
+          format: double
+        unscheduled:
+          type: boolean
+        start:
+          type: string
+          format: date-time
+          nullable: true
+        end:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - assigned_roles
+      - end
+      - roles
+      - start
+      - total_days
+      - total_hours
+      - unscheduled
+      - user
+    TeamPhaseRow:
+      type: object
+      properties:
+        phase:
+          allOf:
+          - $ref: '#/components/schemas/Ref'
+          nullable: true
+          readOnly: true
+        assigned_roles:
+          type: array
+          items:
+            type: string
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeamRole'
+        total_days:
+          type: number
+          format: double
+        unscheduled:
+          type: boolean
+      required:
+      - assigned_roles
+      - phase
+      - roles
+      - total_days
+      - unscheduled
+    TeamRole:
+      type: object
+      properties:
+        role:
+          type: integer
+        role_display:
+          type: string
+        hours:
+          type: number
+          format: double
+        days:
+          type: number
+          format: double
+        confirmed_hours:
+          type: number
+          format: double
+        tentative_hours:
+          type: number
+          format: double
+      required:
+      - confirmed_hours
+      - days
+      - hours
+      - role
+      - role_display
+      - tentative_hours
     TimeSlot:
       type: object
       description: |-
@@ -5281,6 +6603,67 @@ components:
           type: boolean
       required:
       - is_active
+    Workflow:
+      type: object
+      properties:
+        status:
+          type: integer
+        status_display:
+          type: string
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkflowStep'
+        transitions:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkflowTransition'
+      required:
+      - status
+      - status_display
+      - steps
+      - transitions
+    WorkflowStep:
+      type: object
+      properties:
+        status:
+          type: integer
+        label:
+          type: string
+        state:
+          $ref: '#/components/schemas/StateEnum'
+      required:
+      - label
+      - state
+      - status
+    WorkflowTransition:
+      type: object
+      properties:
+        name:
+          type: string
+        target:
+          type: integer
+        label:
+          type: string
+        style:
+          type: string
+        menu:
+          type: boolean
+        needs_reason:
+          type: boolean
+        ready:
+          type: boolean
+        allowed:
+          type: boolean
+      required:
+      - allowed
+      - label
+      - menu
+      - name
+      - needs_reason
+      - ready
+      - style
+      - target
   securitySchemes:
     cookieAuth:
       type: apiKey

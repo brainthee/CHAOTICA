@@ -23,7 +23,7 @@ class MetaSerializer(serializers.Serializer):
     """Schema for ``/meta/`` (assembled in the view)."""
 
     name = serializers.CharField()
-    version = serializers.CharField()
+    version = serializers.CharField(allow_null=True)  # null when anonymous
     api_version = serializers.CharField()
     web_base_url = serializers.CharField()
     ws_url = serializers.CharField()

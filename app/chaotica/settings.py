@@ -721,6 +721,12 @@ SPECTACULAR_SETTINGS = {
     "PREPROCESSING_HOOKS": [
         "jobtracker.api.v1.schema.exclude_non_v1_endpoints",
     ],
+    "ENUM_NAME_OVERRIDES": {
+        "JobStatusEnum": "jobtracker.enums.JobStatuses.CHOICES",
+        "PhaseStatusEnum": "jobtracker.enums.PhaseStatuses.CHOICES",
+        "ProjectStatusEnum": "jobtracker.enums.ProjectStatuses.CHOICES",
+        "QualificationStatusEnum": "jobtracker.enums.QualificationStatus.CHOICES",
+    },
 }
 
 SESSION_ENGINE = "qsessions.backends.db"

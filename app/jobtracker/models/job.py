@@ -499,9 +499,8 @@ class Job(models.Model):
         return total_scoped
 
     def get_total_scoped_days(self):
-        total_scoped_hrs = self.get_total_scoped_hours()
-        # Lets get the hours,
-        return round(total_scoped_hrs / self.client.hours_in_day, 2)
+        hid = self.get_hours_in_day()
+        return round(self.get_total_scoped_hours() / hid, 2) if hid else 0
 
     # Gets scheduled users and assigned users (e.g. lead/author/qa etc)
     def team(self):
@@ -587,21 +586,24 @@ class Job(models.Model):
         hid = self.get_hours_in_day()
         return round(hrs / hid, 1) if hid else 0
 
+    def _get_scheduled_totals(self):
+        # One pass over the job's slots (was one query per delivery role).
+        if not hasattr(self, "_scheduled_totals_cache"):
+            from ..models import TimeSlot
+
+            totals = {}
+            for slot in TimeSlot.objects.filter(phase__job=self).select_related("user"):
+                role = slot.deliveryRole
+                totals[role] = totals.get(role, Decimal(0)) + slot.get_business_hours()
+            self._scheduled_totals_cache = totals
+        return self._scheduled_totals_cache
+
     def get_all_total_scheduled_by_type(self):
-        data = dict()
-        for state in TimeSlotDeliveryRole.CHOICES:
-            data[state[0]] = self.get_total_scheduled_by_type(state[0])
-        return data
+        totals = self._get_scheduled_totals()
+        return {role: totals.get(role, Decimal()) for role, _ in TimeSlotDeliveryRole.CHOICES}
 
     def get_total_scheduled_by_type(self, slot_type):
-        from ..models import TimeSlot
-
-        slots = TimeSlot.objects.filter(phase__job=self, deliveryRole=slot_type)
-        total = Decimal()
-        for slot in slots:
-            diff = slot.get_business_hours()
-            total = total + diff
-        return total
+        return self._get_scheduled_totals().get(slot_type, Decimal())
 
     def get_all_total_scoped_by_type(self):
         data = dict()
