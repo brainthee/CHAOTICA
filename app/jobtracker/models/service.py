@@ -482,15 +482,19 @@ class Service(models.Model):
         cache.set(cache_key, result, 900)
         return result
 
-    def get_performance_metrics(self):
-        """Comprehensive performance metrics and trends - optimized and cached"""
+    def get_performance_metrics(self, phases=None, cache_scope="all"):
+        """Comprehensive performance metrics and trends - optimized and cached.
+
+        ``phases`` limits the figures (incl. per-client rows) to phases the
+        viewer may see; pass a ``cache_scope`` unique to that set."""
         from django.core.cache import cache
         from django.db.models import Count, Sum, Avg, Q, F, Case, When, IntegerField, DecimalField
         from django.utils import timezone
         from datetime import datetime, timedelta
         import calendar
 
-        cache_key = f"performance_metrics_{self.id}_{self.phases.count()}"
+        base = phases if phases is not None else self.phases.all()
+        cache_key = f"performance_metrics_{self.id}_{cache_scope}_{base.count()}"
         cached_result = cache.get(cache_key)
         if cached_result:
             return cached_result
@@ -500,7 +504,7 @@ class Service(models.Model):
         last_year = current_year - 1
 
         # Base queryset for completed phases
-        completed_phases = self.phases.filter(
+        completed_phases = base.filter(
             status__in=PhaseStatuses.COMPLETE_STATUSES
         ).select_related('job', 'job__client')
 

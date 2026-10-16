@@ -13,6 +13,7 @@ from ..models import Service
 from ..enums import PhaseStatuses
 from ..forms import ServiceForm
 from ..mixins import PrefetchRelatedMixin
+from ..selectors.catalogue import service_list_with_risk
 from ..utils import phases_visible_to
 import logging
 
@@ -39,39 +40,7 @@ class ServiceListView(ServiceBaseView, ListView):
     """Enhanced view to list services with core service focus and risk assessment"""
 
     def get_queryset(self):
-        from django.db.models import Count, Q, Case, When, IntegerField
-        from ..enums import UserSkillRatings
-
-        # Optimize queryset with annotations for risk assessment
-        return Service.objects.select_related().prefetch_related(
-            'skillsRequired', 'skillsDesired', 'owners'
-        ).annotate(
-            # Count specialists for risk assessment
-            specialist_count=Count(
-                'skillsRequired__users',
-                filter=Q(skillsRequired__users__rating=UserSkillRatings.SPECIALIST),
-                distinct=True
-            ),
-            # Count total people with skills
-            skilled_people_count=Count(
-                'skillsRequired__users',
-                distinct=True
-            ),
-            # Count active phases
-            active_phases_count=Count(
-                'phases',
-                filter=Q(phases__status__in=PhaseStatuses.SERVICE_ACTIVE),
-                distinct=True
-            ),
-            # Risk score calculation (0 = high risk, higher = lower risk)
-            risk_score=Case(
-                When(specialist_count=0, then=0),  # Critical risk
-                When(specialist_count=1, then=1),  # High risk
-                When(specialist_count=2, then=2),  # Medium risk
-                default=3,  # Low risk
-                output_field=IntegerField()
-            )
-        ).order_by('-is_core', 'risk_score', 'name')  # Core services first, then by risk
+        return service_list_with_risk()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -118,9 +87,16 @@ class ServiceDetailView(
         )
         # Jobs tab: summary, badges and lists all cover only the phases on
         # jobs the viewer can see (the lists load per bucket on demand).
+        visible_phases = phases_visible_to(self.request.user, self.object.phases.all())
+        cache_scope = "user{}".format(self.request.user.pk)
+        # Same scoping for the performance figures (they listed every phase's
+        # clients and hours to anyone who could view the service).
+        context["performance_metrics"] = self.object.get_performance_metrics(
+            phases=visible_phases, cache_scope=cache_scope
+        )
         context["analytics"] = self.object.get_service_usage_analytics(
-            phases=phases_visible_to(self.request.user, self.object.phases.all()),
-            cache_scope="user{}".format(self.request.user.pk),
+            phases=visible_phases,
+            cache_scope=cache_scope,
         )
         return context
 
