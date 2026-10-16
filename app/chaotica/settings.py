@@ -901,6 +901,11 @@ CACHES = {
         },
     }
 }
+if TESTING:
+    # Concurrent test runs (and dev servers) on this machine share the Redis
+    # db above; a per-run prefix keeps throttle counters, constance values and
+    # cached flags from leaking between them.
+    CACHES["default"]["KEY_PREFIX"] = f"test-{os.getpid()}"
 CONSTANCE_DATABASE_CACHE_BACKEND = "default"
 
 
