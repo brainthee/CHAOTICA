@@ -15,13 +15,19 @@ import argparse
 import datetime
 import os
 
-from chaotica_client import ChaoticaClient, ChaoticaClientError, die, print_table
+from chaotica_client import (
+    ChaoticaClient,
+    ChaoticaClientError,
+    die,
+    print_table,
+    ref_label,
+)
 
 
 COLUMNS = [
-    ("job", "Job"),
+    ("job_label", "Job"),
     ("title", "Title"),
-    ("service_name", "Service"),
+    ("service_label", "Service"),
     ("status_display", "Status"),
     ("delivery_date", "Delivery"),
     ("due_to_techqa", "Tech QA due"),
@@ -61,6 +67,8 @@ def main():
         # Keep the phase if any relevant date lands within [today, horizon].
         if any(today <= d <= horizon for d in candidates):
             phase["_sort"] = min(candidates)
+            phase["job_label"] = ref_label(phase.get("job"))
+            phase["service_label"] = ref_label(phase.get("service"))
             matches.append(phase)
 
     matches.sort(key=lambda p: p["_sort"])

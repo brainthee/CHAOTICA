@@ -25,7 +25,6 @@ from constance import config
 from django.db.models import Exists, OuterRef, Q, Subquery
 from django.db.models.functions import Coalesce
 from django.utils import timezone
-from guardian.shortcuts import get_objects_for_user
 
 from .enums import JobStatuses, PhaseStatuses
 
@@ -129,18 +128,19 @@ def stalled_phase_ids(phase_qs):
     return set(phase_qs.filter(stalled_phase_q()).values_list("pk", flat=True))
 
 
-def build_alarms(user):
+def build_alarms(user, policy=None):
     """All alarm querysets for ``user``: ``{key: queryset}``.
 
     Querysets are unevaluated: the dashboard lists them (with its own
-    select_related), the entropy meter counts them.
+    select_related), the entropy meter counts them. Pass the request's
+    ``PolicyContext`` to share its unit-permission lookups.
     """
     from .models import Job, OrganisationalUnit, Phase
+    from .policy import PolicyContext
 
     today = timezone.now().date()
-
-    def _units(perm):
-        return get_objects_for_user(user, perm, klass=OrganisationalUnit)
+    policy = policy or PolicyContext(user)
+    _units = policy.units
 
     units_can_view = _units("can_view_jobs")
     units_can_tqa = _units("can_tqa_jobs")

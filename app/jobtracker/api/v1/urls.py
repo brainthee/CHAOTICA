@@ -26,20 +26,14 @@ router.register(r"phases", views.PhaseViewSet, basename="phase")
 router.register(r"projects", views.ProjectViewSet, basename="project")
 router.register(r"timeslots", views.TimeSlotViewSet, basename="timeslot")
 router.register(r"schedule", views.ScheduleViewSet, basename="schedule")
-router.register(
-    r"timeslot-types", views.TimeSlotTypeViewSet, basename="timeslot-type"
-)
-router.register(
-    r"leave-requests", views.LeaveRequestViewSet, basename="leave-request"
-)
+router.register(r"timeslot-types", views.TimeSlotTypeViewSet, basename="timeslot-type")
+router.register(r"leave-requests", views.LeaveRequestViewSet, basename="leave-request")
 router.register(r"skills", views.SkillViewSet, basename="skill")
 router.register(
     r"skill-categories", views.SkillCategoryViewSet, basename="skill-category"
 )
 router.register(r"user-skills", views.UserSkillViewSet, basename="user-skill")
-router.register(
-    r"qualifications", views.QualificationViewSet, basename="qualification"
-)
+router.register(r"qualifications", views.QualificationViewSet, basename="qualification")
 router.register(
     r"qualification-records",
     views.QualificationRecordViewSet,

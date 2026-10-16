@@ -21,7 +21,6 @@ from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.db.models import Q
 from django.db.models.functions import Coalesce
-from guardian.shortcuts import get_objects_for_user
 from constance import config
 
 # NB: jobtracker models/enums are imported lazily inside the functions below —
@@ -93,21 +92,20 @@ def _level(score):
     return "calm"
 
 
-def compute_entropy(user):
+def compute_entropy(user, policy=None):
     """Return the user's chaos score, factor breakdown and late-delivery trend."""
     from jobtracker.alarms import build_alarms
     from jobtracker.models import OrganisationalUnit
+    from jobtracker.policy import PolicyContext
 
     today = timezone.now().date()
-    counts = {key: qs.count() for key, qs in build_alarms(user).items()}
+    policy = policy or PolicyContext(user)
+    counts = {key: qs.count() for key, qs in build_alarms(user, policy).items()}
 
     # The late trend uses the manager-wide / personal scope (as the alarms do).
-    units_can_manage = get_objects_for_user(
-        user, "change_organisationalunit", klass=OrganisationalUnit
-    )
     manager_units = (
-        get_objects_for_user(user, "can_view_jobs", klass=OrganisationalUnit)
-        if units_can_manage.exists()
+        policy.units("can_view_jobs")
+        if policy.units("change_organisationalunit").exists()
         else OrganisationalUnit.objects.none()
     )
     phase_involved = (

@@ -103,7 +103,7 @@ class ScopingTests(APIV1BaseTest):
         self.client.force_authenticate(self.normal)
         resp = self.client.get("/api/v1/user-skills/")
         self.assertEqual(resp.data["count"], 1)
-        self.assertEqual(resp.data["results"][0]["user"], self.normal.pk)
+        self.assertEqual(resp.data["results"][0]["user"]["id"], self.normal.pk)
 
     def test_user_does_not_see_others_user_skill(self):
         other = User.objects.create_user(
@@ -112,7 +112,7 @@ class ScopingTests(APIV1BaseTest):
         UserSkill.objects.create(user=other, skill=self.skill, rating=3)
         self.client.force_authenticate(self.normal)
         resp = self.client.get("/api/v1/user-skills/")
-        user_pks = {row["user"] for row in resp.data["results"]}
+        user_pks = {row["user"]["id"] for row in resp.data["results"]}
         self.assertNotIn(other.pk, user_pks)
         self.assertIn(self.normal.pk, user_pks)
 
@@ -258,8 +258,8 @@ class UpdateProfileActionTests(APIV1BaseTest):
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.normal.refresh_from_db()
         self.assertEqual(self.normal.city_id, city.pk)
-        self.assertEqual(resp.data["city"], city.pk)
-        self.assertEqual(resp.data["city_name"], "London")
+        self.assertEqual(resp.data["city"]["id"], city.pk)
+        self.assertEqual(resp.data["city"]["display"], "London")
 
     def test_status_not_writable_via_profile(self):
         # is_active must never be settable through the profile action.
@@ -619,7 +619,7 @@ class OrgUnitMembersActionTests(APIV1BaseTest):
         self.client.force_authenticate(self.superuser)
         resp = self.client.get(f"/api/v1/org-units/{unit.pk}/members/")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
-        member_ids = {row["user_id"] for row in resp.data}
+        member_ids = {row["user"]["id"] for row in resp.data}
         self.assertIn(current.pk, member_ids)
         self.assertNotIn(left.pk, member_ids)
 
@@ -637,6 +637,7 @@ class SensitiveFieldTests(APIV1BaseTest):
             fields,
             {
                 "id",
+                "display",
                 "first_name",
                 "last_name",
                 "email",
@@ -646,7 +647,7 @@ class SensitiveFieldTests(APIV1BaseTest):
                 "job_level_label",
                 # Org-chart location facts (non-PII, already shown across the UI).
                 "city",
-                "city_name",
                 "country",
+                "web_url",
             },
         )

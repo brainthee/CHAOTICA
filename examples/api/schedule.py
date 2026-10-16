@@ -21,8 +21,8 @@ from chaotica_client import (
     ChaoticaClientError,
     die,
     print_table,
-    resolve_user_names,
-    user_label,
+    ref_id,
+    ref_label,
 )
 
 
@@ -53,11 +53,10 @@ def _parse_date(value):
 
 
 def _engagement(slot):
-    if slot.get("phase") is not None:
-        return "phase #{}".format(slot["phase"])
-    if slot.get("project") is not None:
-        return "project #{}".format(slot["project"])
-    return slot.get("slot_type_name") or ""
+    for key in ("phase", "project", "slot_type"):
+        if slot.get(key):
+            return ref_label(slot[key])
+    return ""
 
 
 def main():
@@ -82,12 +81,12 @@ def main():
     horizon = today + datetime.timedelta(days=args.days)
 
     client = ChaoticaClient.from_env()
-    names = resolve_user_names(client)
+    names = {}
 
     # Group matching slots by user id.
     by_user = {}
     for slot in client.iterate("timeslots"):
-        if args.user is not None and slot.get("user") != args.user:
+        if args.user is not None and ref_id(slot.get("user")) != args.user:
             continue
         start = _parse_dt_date(slot.get("start"))
         end = _parse_dt_date(slot.get("end")) or start
@@ -96,7 +95,8 @@ def main():
         # Keep slots that overlap [today, horizon].
         if end < today or start > horizon:
             continue
-        by_user.setdefault(slot.get("user"), []).append(slot)
+        names[ref_id(slot.get("user"))] = ref_label(slot.get("user"))
+        by_user.setdefault(ref_id(slot.get("user")), []).append(slot)
 
     if not by_user:
         print(
@@ -109,11 +109,11 @@ def main():
     print(
         "Schedule from {} to {} ({} day window):".format(today, horizon, args.days)
     )
-    for user_id in sorted(by_user, key=lambda uid: user_label(names, uid)):
+    for user_id in sorted(by_user, key=lambda uid: names[uid]):
         slots = sorted(by_user[user_id], key=lambda s: s.get("start") or "")
         for slot in slots:
             slot["engagement"] = _engagement(slot)
-        print("\n== {} ==".format(user_label(names, user_id)))
+        print("\n== {} ==".format(names[user_id]))
         print_table(slots, COLUMNS)
 
 

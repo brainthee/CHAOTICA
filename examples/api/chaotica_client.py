@@ -294,6 +294,16 @@ def user_label(names, user_id):
     return names.get(user_id, "user #{}".format(user_id))
 
 
+def ref_id(ref):
+    """The id of a reference field (``{"id", "type", "display", ...}``) or None."""
+    return ref.get("id") if isinstance(ref, dict) else None
+
+
+def ref_label(ref, default="(none)"):
+    """The display label of a reference field, or ``default`` when it is null."""
+    return ref.get("display") if isinstance(ref, dict) else default
+
+
 def die(message):
     """Print ``message`` to stderr and exit non-zero."""
     print(message, file=sys.stderr)
