@@ -34,10 +34,10 @@
 
         <div class="col-md-auto">
           <div class="d-flex">
-            {% if perms.chaotica.change_skill %}
+            {% if perms.jobtracker.change_skill %}
             <a href="{% url 'skill_update' skill.slug %}" class="btn btn-outline-secondary ms-auto m-1">Edit</a>
             {% endif %}
-            {% if perms.chaotica.delete_skill %}
+            {% if perms.jobtracker.delete_skill %}
             <a href="{% url 'skill_delete' skill.slug %}" class="btn btn-outline-danger ms-auto m-1">Delete</a>  
             {% endif %}          
           </div>
