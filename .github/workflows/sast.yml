@@ -45,6 +45,17 @@ jobs:
           coverage run manage.py test --noinput --verbosity=1
           coverage xml -o coverage.xml
 
+      - name: Check the committed API schema is current
+        working-directory: app
+        env:
+          DJANGO_ENV: Dev
+        run: |
+          python manage.py spectacular --validate --fail-on-warn --file /tmp/openapi-v1.yaml
+          diff -u ../docs/api/openapi-v1.yaml /tmp/openapi-v1.yaml || {
+            echo "docs/api/openapi-v1.yaml is stale: run 'python manage.py spectacular --file ../docs/api/openapi-v1.yaml' in app/ and commit it."
+            exit 1
+          }
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4.0.1
         with:

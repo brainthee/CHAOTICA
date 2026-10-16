@@ -5,6 +5,8 @@ from decimal import Decimal
 from cities_light.models import City
 from rest_framework import serializers
 
+from ..fields import RefField, WebUrlField
+
 from chaotica_utils.models import User, JobLevel
 from chaotica_utils.models.leave import LeaveRequest
 
@@ -13,11 +15,6 @@ from ....models import (
     QualificationRecord,
     UserSkill,
 )
-
-
-# ---------------------------------------------------------------------------
-# Foundation / coherence entities
-# ---------------------------------------------------------------------------
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -30,14 +27,17 @@ class UserSerializer(serializers.ModelSerializer):
     automation. ``job_level`` is the short label (e.g. ``"JL5"``);
     ``job_level_label`` is the long description (may be null)."""
 
+    display = serializers.CharField(source="__str__", read_only=True)
     job_level = serializers.SerializerMethodField()
     job_level_label = serializers.SerializerMethodField()
-    city_name = serializers.CharField(source="city.name", read_only=True, default=None)
+    city = RefField()
+    web_url = WebUrlField()
 
     class Meta:
         model = User
         fields = [
             "id",
+            "display",
             "first_name",
             "last_name",
             "email",
@@ -46,15 +46,15 @@ class UserSerializer(serializers.ModelSerializer):
             "job_level",
             "job_level_label",
             "city",
-            "city_name",
             "country",
+            "web_url",
         ]
 
-    def get_job_level(self, obj):
+    def get_job_level(self, obj) -> str | None:
         current = obj.get_current_level()
         return current.job_level.short_label if current else None
 
-    def get_job_level_label(self, obj):
+    def get_job_level_label(self, obj) -> str | None:
         current = obj.get_current_level()
         return current.job_level.long_label if current else None
 
@@ -110,9 +110,7 @@ class UserJobLevelUpdateSerializer(serializers.Serializer):
         from django.utils import timezone
 
         if value and value > timezone.now().date():
-            raise serializers.ValidationError(
-                "Effective date cannot be in the future."
-            )
+            raise serializers.ValidationError("Effective date cannot be in the future.")
         return value
 
     def validate(self, attrs):
@@ -149,9 +147,11 @@ class UserCostUpdateSerializer(serializers.Serializer):
 
 
 class OrganisationalUnitSerializer(serializers.ModelSerializer):
+    web_url = WebUrlField()
+
     class Meta:
         model = OrganisationalUnit
-        fields = ["id", "name", "slug"]
+        fields = ["id", "name", "slug", "web_url"]
 
 
 class OrganisationalUnitMemberSerializer(serializers.Serializer):
@@ -164,16 +164,14 @@ class OrganisationalUnitMemberSerializer(serializers.Serializer):
     ``is_lead`` is an annotation added by the viewset (a boolean derived from
     whether the member appears in the unit's ``leads`` M2M)."""
 
-    user_id = serializers.IntegerField(source="member.id")
-    first_name = serializers.CharField(source="member.first_name")
-    last_name = serializers.CharField(source="member.last_name")
+    user = RefField(source="member")
     email = serializers.EmailField(source="member.email")
     is_active = serializers.BooleanField(source="member.is_active")
     job_title = serializers.CharField(source="member.job_title", default=None)
     is_lead = serializers.BooleanField()  # annotated by viewset
     roles = serializers.SerializerMethodField()
 
-    def get_roles(self, obj):
+    def get_roles(self, obj) -> list[str]:
         return [r.name for r in obj.roles.all()]
 
 
@@ -181,6 +179,8 @@ class LeaveRequestSerializer(serializers.ModelSerializer):
     type_of_leave_display = serializers.CharField(
         source="get_type_of_leave_display", read_only=True
     )
+    user = RefField()
+    authorised_by = RefField()
 
     class Meta:
         model = LeaveRequest
@@ -205,10 +205,9 @@ class LeaveRequestSerializer(serializers.ModelSerializer):
 
 
 class UserSkillSerializer(serializers.ModelSerializer):
-    skill_name = serializers.CharField(source="skill.name", read_only=True)
-    rating_display = serializers.CharField(
-        source="get_rating_display", read_only=True
-    )
+    user = RefField()
+    skill = RefField()
+    rating_display = serializers.CharField(source="get_rating_display", read_only=True)
 
     class Meta:
         model = UserSkill
@@ -216,7 +215,6 @@ class UserSkillSerializer(serializers.ModelSerializer):
             "id",
             "user",
             "skill",
-            "skill_name",
             "rating",
             "rating_display",
             "interested_in_improving_skill",
@@ -225,12 +223,10 @@ class UserSkillSerializer(serializers.ModelSerializer):
 
 
 class QualificationRecordSerializer(serializers.ModelSerializer):
-    qualification_name = serializers.CharField(
-        source="qualification.name", read_only=True
-    )
-    status_display = serializers.CharField(
-        source="get_status_display", read_only=True
-    )
+    qualification = RefField()
+    user = RefField()
+    verified_by = RefField()
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
     is_lapsed = serializers.BooleanField(read_only=True)
     days_to_lapse = serializers.IntegerField(read_only=True)
     expiry_urgency = serializers.CharField(read_only=True)
@@ -242,7 +238,6 @@ class QualificationRecordSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "qualification",
-            "qualification_name",
             "user",
             "status",
             "status_display",

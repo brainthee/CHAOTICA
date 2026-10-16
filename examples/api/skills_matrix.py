@@ -17,8 +17,8 @@ from chaotica_client import (
     ChaoticaClient,
     ChaoticaClientError,
     die,
-    resolve_user_names,
-    user_label,
+    ref_id,
+    ref_label,
 )
 
 
@@ -33,15 +33,13 @@ def main():
     for skill in client.iterate("skills"):
         skills[skill["id"]] = (
             skill.get("name") or "skill #{}".format(skill["id"]),
-            skill.get("category_name") or "Uncategorised",
+            ref_label(skill.get("category"), "Uncategorised"),
         )
-
-    names = resolve_user_names(client)
 
     # Group user-skills by skill id.
     holders = {}
     for us in client.iterate("user-skills"):
-        holders.setdefault(us.get("skill"), []).append(us)
+        holders.setdefault(ref_id(us.get("skill")), []).append(us)
 
     if not holders:
         print("No user-skill records visible to your token.")
@@ -68,7 +66,7 @@ def main():
         ):
             print(
                 "  - {:<28} {}".format(
-                    user_label(names, us.get("user")),
+                    ref_label(us.get("user")),
                     us.get("rating_display") or "(no rating)",
                 )
             )

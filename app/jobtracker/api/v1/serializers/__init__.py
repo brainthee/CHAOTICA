@@ -24,7 +24,9 @@ from .phases import (  # noqa: F401
 )
 from .schedule import (  # noqa: F401
     TimeSlotTypeSerializer,
+    ScheduleTimeSlotSerializer,
     TimeSlotSerializer,
+    ScheduleLeaveSerializer,
     HolidaySerializer,
     ScheduleUserAvailabilitySerializer,
     ScheduleSerializer,

@@ -1,12 +1,9 @@
 """Timeslots and composite schedule windows."""
 
-from django.db.models import Q
 from drf_spectacular.openapi import AutoSchema
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
-from guardian.shortcuts import get_objects_for_user
 from rest_framework import viewsets
-from rest_framework.renderers import BrowsableAPIRenderer, JSONRenderer
 from rest_framework.response import Response
 
 from chaotica_utils.models import User
@@ -20,11 +17,10 @@ from ..schedule import (
 )
 
 from ....models import (
-    OrganisationalUnit,
-    OrganisationalUnitMember,
     TimeSlot,
     TimeSlotType,
 )
+from .. import filters
 from ..base import ApiV1Mixin, BaseReadOnlyAPIViewSet
 from ..serializers import (
     ScheduleSerializer,
@@ -33,15 +29,11 @@ from ..serializers import (
 )
 
 
-# ---------------------------------------------------------------------------
-# Foundation / coherence entities
-# ---------------------------------------------------------------------------
-
-
 class TimeSlotTypeViewSet(BaseReadOnlyAPIViewSet):
     """Reference data — visible to all authenticated users."""
 
     serializer_class = TimeSlotTypeSerializer
+    policy_scope = None  # reference data
 
     def get_base_queryset(self):
         return TimeSlotType.objects.all()
@@ -49,22 +41,14 @@ class TimeSlotTypeViewSet(BaseReadOnlyAPIViewSet):
 
 class TimeSlotViewSet(BaseReadOnlyAPIViewSet):
     serializer_class = TimeSlotSerializer
+    policy_scope = "timeslot.view"
+    filterset_class = filters.TimeSlotFilter
+    ordering_fields = ("start", "end")
 
     def get_base_queryset(self):
         return TimeSlot.objects.select_related(
-            "slot_type", "phase", "project", "user"
+            "slot_type", "phase__job", "project", "user"
         )
-
-    def scope_queryset(self, queryset, user):
-        # Mirrors the scheduler feeds: visible = members of units where the
-        # requester holds view_users_schedule, plus the requester's own slots.
-        units = get_objects_for_user(
-            user, "jobtracker.view_users_schedule", klass=OrganisationalUnit
-        )
-        member_ids = OrganisationalUnitMember.objects.filter(
-            unit__in=units
-        ).values_list("member_id", flat=True)
-        return queryset.filter(Q(user_id__in=member_ids) | Q(user=user)).distinct()
 
 
 class _SingleObjectSchema(AutoSchema):
@@ -86,7 +70,6 @@ class ScheduleViewSet(ApiV1Mixin, viewsets.ViewSet):
     ``/users/{id}/schedule/`` action instead.
     """
 
-    renderer_classes = [JSONRenderer, BrowsableAPIRenderer]
     schema = _SingleObjectSchema()
 
     @extend_schema(

@@ -26,7 +26,7 @@ class MaintenanceModeTests(ApiV1TestCase):
     def test_token_user_gets_json_503_not_redirect(self):
         resp = self.token_client(self.normal).get("/api/v1/users/")
         self.assertEqual(resp.status_code, 503)
-        self.assertEqual(resp.json()["detail"].split()[0], "CHAOTICA")
+        self.assertEqual(resp.json()["error"]["code"], "maintenance")
 
     @override_config(MAINTENANCE_MODE=True)
     def test_superuser_token_passes(self):
@@ -174,9 +174,10 @@ class ScheduleSchemaTests(ApiV1TestCase):
         from drf_spectacular.generators import SchemaGenerator
 
         schema = SchemaGenerator().get_schema(request=None, public=True)
-        path = next(p for p in schema["paths"] if p.endswith("/schedule/") and "{" not in p)
+        path = next(
+            p for p in schema["paths"] if p.endswith("/schedule/") and "{" not in p
+        )
         op = schema["paths"][path]["get"]
         body = op["responses"]["200"]["content"]["application/json"]["schema"]
         self.assertNotEqual(body.get("type"), "array")
         self.assertIn("$ref", body)
-

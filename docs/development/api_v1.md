@@ -104,11 +104,26 @@ The API **reproduces the same access rules as the web UI** — it never widens t
 Sensitive fields are deliberately never serialized — notably qualification
 `certificate_file` and user PII such as phone numbers.
 
+## Conventions
+
+- **References.** Every relation is an object:
+  `{"id", "type", "display", "url", "web_url"}`. `url` is the API resource
+  (null if the type has none) and `web_url` the page in the main UI.
+- **Ids.** `id` is always the primary key used in `/{id}/` URLs. Jobs and
+  projects also carry the number people quote, as `job_id` / `project_id`.
+- **Errors.** `{"error": {"code", "message", "fields"?}}`, e.g. `not_found`,
+  `permission_denied`, `not_authenticated`, `invalid` (with `fields`),
+  `throttled` (with `retry_after`), `maintenance` (503).
+- **Lists** take `?q=` (search), `?ordering=` (an allowlist per resource) and
+  resource filters; `me` is accepted where a user id is (`?lead=me`).
+- **Times** are UTC (ISO 8601).
+- The full contract is the committed schema, `docs/api/openapi-v1.yaml`.
+
 ## Resources
 
 | Resource | Endpoint | Notes |
 |---|---|---|
-| Users | `/api/v1/users/` | identity, `job_title`, current `job_level`/`job_level_label`, `city`/`city_name`/`country`; no PII |
+| Users | `/api/v1/users/` | identity, `job_title`, current `job_level`/`job_level_label`, `city` (ref), `country` code; no PII |
 | Organisational units | `/api/v1/org-units/` | |
 | Clients | `/api/v1/clients/` | |
 | Jobs | `/api/v1/jobs/` | active jobs; includes `phase_count`, `is_restricted` flag |
@@ -295,9 +310,10 @@ curl -H "Authorization: Token <your-token>" \
             "title": "Web Application Assessment",
             "status": 5,
             "status_display": "In Progress",
-            "job": 2501,
-            "service": 12,
-            "service_name": "Web Application Testing",
+            "job": {"id": 2501, "type": "job", "display": "2501: Acme Web Refresh",
+                    "url": "/api/v1/jobs/2501/", "web_url": "https://your-instance/job/acme-web-refresh/"},
+            "service": {"id": 12, "type": "service", "display": "Web Application Testing",
+                        "url": "/api/v1/services/12/", "web_url": "https://your-instance/ops/service/web-app/"},
             "start_date": "2026-04-01",
             "delivery_date": "2026-04-15",
             "delivery_hours": "40.00"

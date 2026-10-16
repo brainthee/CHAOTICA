@@ -8,16 +8,19 @@ from ....models import (
 )
 
 
-# ---------------------------------------------------------------------------
-# Foundation / coherence entities
-# ---------------------------------------------------------------------------
+from ..fields import RefField, WebUrlField
 
 
 class PhaseSerializer(serializers.ModelSerializer):
-    status_display = serializers.CharField(
-        source="get_status_display", read_only=True
-    )
-    service_name = serializers.CharField(source="service.name", read_only=True)
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+    job = RefField()
+    client = RefField(source="job.client")
+    service = RefField()
+    project_lead = RefField()
+    report_author = RefField()
+    techqa_by = RefField()
+    presqa_by = RefField()
+    web_url = WebUrlField()
     # Computed date properties (may be None).
     start_date = serializers.DateField(read_only=True)
     delivery_date = serializers.DateField(read_only=True)
@@ -35,8 +38,8 @@ class PhaseSerializer(serializers.ModelSerializer):
             "status",
             "status_display",
             "job",
+            "client",
             "service",
-            "service_name",
             "project_lead",
             "report_author",
             "techqa_by",
@@ -60,4 +63,5 @@ class PhaseSerializer(serializers.ModelSerializer):
             "debrief_hours",
             "contingency_hours",
             "other_hours",
+            "web_url",
         ]

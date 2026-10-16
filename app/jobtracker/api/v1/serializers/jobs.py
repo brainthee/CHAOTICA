@@ -9,17 +9,19 @@ from ....models import (
 )
 
 
-# ---------------------------------------------------------------------------
-# Foundation / coherence entities
-# ---------------------------------------------------------------------------
+from ..fields import RefField, WebUrlField
 
 
 class JobSerializer(serializers.ModelSerializer):
-    status_display = serializers.CharField(
-        source="get_status_display", read_only=True
-    )
-    unit_name = serializers.CharField(source="unit.name", read_only=True)
-    client_name = serializers.CharField(source="client.name", read_only=True)
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+    # ``id`` is the primary key (what /jobs/{id}/ and refs use); the Job ID
+    # people quote is ``job_id``.
+    id = serializers.IntegerField(source="pk", read_only=True)
+    job_id = serializers.IntegerField(source="id", read_only=True)
+    unit = RefField()
+    client = RefField()
+    account_manager = RefField()
+    web_url = WebUrlField()
     restricted_detail_display = serializers.CharField(
         source="get_restricted_detail_display", read_only=True
     )
@@ -30,29 +32,33 @@ class JobSerializer(serializers.ModelSerializer):
         model = Job
         fields = [
             "id",
+            "job_id",
             "slug",
             "external_id",
             "title",
             "status",
             "status_display",
             "unit",
-            "unit_name",
             "client",
-            "client_name",
+            "account_manager",
             "desired_start_date",
             "desired_delivery_date",
             "is_restricted",
             "restricted_detail",
             "restricted_detail_display",
             "phase_count",
+            "web_url",
         ]
 
 
 class ProjectSerializer(serializers.ModelSerializer):
-    status_display = serializers.CharField(
-        source="get_status_display", read_only=True
-    )
-    unit_name = serializers.CharField(source="unit.name", read_only=True)
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+    id = serializers.IntegerField(source="pk", read_only=True)
+    project_id = serializers.IntegerField(source="id", read_only=True)
+    unit = RefField()
+    primary_poc = RefField()
+    created_by = RefField()
+    web_url = WebUrlField()
     is_tracked = serializers.BooleanField(read_only=True)
     # start_date / delivery_date are methods that fall back to the schedule.
     start_date = serializers.DateField(read_only=True)
@@ -62,13 +68,13 @@ class ProjectSerializer(serializers.ModelSerializer):
         model = Project
         fields = [
             "id",
+            "project_id",
             "slug",
             "external_id",
             "title",
             "status",
             "status_display",
             "unit",
-            "unit_name",
             "primary_poc",
             "created_by",
             "desired_start_date",
@@ -77,4 +83,5 @@ class ProjectSerializer(serializers.ModelSerializer):
             "delivery_date",
             "overview",
             "is_tracked",
+            "web_url",
         ]

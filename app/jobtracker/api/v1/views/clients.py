@@ -1,9 +1,5 @@
 """Clients."""
 
-from guardian.shortcuts import get_objects_for_user
-
-
-
 from ....models import (
     Client,
 )
@@ -13,19 +9,13 @@ from ..serializers import (
 )
 
 
-# ---------------------------------------------------------------------------
-# Foundation / coherence entities
-# ---------------------------------------------------------------------------
-
-
 class ClientViewSet(BaseReadOnlyAPIViewSet):
     serializer_class = ClientSerializer
+    policy_scope = "client.view"
+    ordering_fields = ("name",)
+    search_fields = ("name",)
 
     def get_base_queryset(self):
         return Client.objects.prefetch_related(
             "account_managers", "tech_account_managers"
         )
-
-    def scope_queryset(self, queryset, user):
-        allowed = get_objects_for_user(user, "jobtracker.view_client", klass=Client)
-        return queryset.filter(pk__in=allowed.values_list("pk", flat=True))

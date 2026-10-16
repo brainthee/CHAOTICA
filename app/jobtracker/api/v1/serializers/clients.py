@@ -8,17 +8,14 @@ from ....models import (
 )
 
 
-# ---------------------------------------------------------------------------
-# Foundation / coherence entities
-# ---------------------------------------------------------------------------
+from ..fields import RefListField, WebUrlField
 
 
 class ClientSerializer(serializers.ModelSerializer):
     is_ready = serializers.BooleanField(source="is_ready_for_jobs", read_only=True)
-    account_managers = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
-    tech_account_managers = serializers.PrimaryKeyRelatedField(
-        many=True, read_only=True
-    )
+    account_managers = RefListField()
+    tech_account_managers = RefListField()
+    web_url = WebUrlField()
 
     class Meta:
         model = Client
@@ -32,4 +29,5 @@ class ClientSerializer(serializers.ModelSerializer):
             "is_ready",
             "account_managers",
             "tech_account_managers",
+            "web_url",
         ]

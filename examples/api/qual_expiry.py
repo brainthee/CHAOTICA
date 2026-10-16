@@ -19,13 +19,12 @@ from chaotica_client import (
     ChaoticaClientError,
     die,
     print_table,
-    resolve_user_names,
-    user_label,
+    ref_label,
 )
 
 
 COLUMNS = [
-    ("qualification_name", "Qualification"),
+    ("qualification_label", "Qualification"),
     ("holder", "Holder"),
     ("lapse_date", "Lapses"),
     ("days_to_lapse", "Days left"),
@@ -45,14 +44,13 @@ def main():
     args = parser.parse_args()
 
     client = ChaoticaClient.from_env()
-    names = resolve_user_names(client)
-
     matches = []
     for record in client.iterate("qualification-records"):
         days = record.get("days_to_lapse")
         if days is None or days > args.days:
             continue
-        record["holder"] = user_label(names, record.get("user"))
+        record["qualification_label"] = ref_label(record.get("qualification"))
+        record["holder"] = ref_label(record.get("user"))
         matches.append(record)
 
     matches.sort(key=lambda r: r.get("days_to_lapse"))

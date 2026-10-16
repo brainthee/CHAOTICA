@@ -12,13 +12,19 @@ relevant permission (or that you are on the team of).
 
 import argparse
 
-from chaotica_client import ChaoticaClient, ChaoticaClientError, die, print_table
+from chaotica_client import (
+    ChaoticaClient,
+    ChaoticaClientError,
+    die,
+    print_table,
+    ref_label,
+)
 
 
 COLUMNS = [
-    ("id", "ID"),
+    ("job_id", "Job ID"),
     ("title", "Title"),
-    ("client_name", "Client"),
+    ("client_label", "Client"),
     ("status_display", "Status"),
     ("phase_count", "Phases"),
     ("desired_delivery_date", "Desired delivery"),
@@ -31,7 +37,9 @@ def main():
 
     client = ChaoticaClient.from_env()
     rows = list(client.iterate("jobs"))
-    rows.sort(key=lambda r: r.get("id") or 0)
+    for row in rows:
+        row["client_label"] = ref_label(row.get("client"))
+    rows.sort(key=lambda r: r.get("job_id") or 0)
     print_table(rows, COLUMNS)
 
 

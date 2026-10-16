@@ -11,21 +11,22 @@ from ....models import (
 )
 
 
-# ---------------------------------------------------------------------------
-# Foundation / coherence entities
-# ---------------------------------------------------------------------------
+from ..fields import RefField, RefListField, WebUrlField
 
 
 class SkillCategorySerializer(serializers.ModelSerializer):
+    web_url = WebUrlField()
+
     class Meta:
         model = SkillCategory
-        fields = ["id", "name", "description", "slug"]
+        fields = ["id", "name", "description", "slug", "web_url"]
 
 
 class SkillSerializer(serializers.ModelSerializer):
-    category_name = serializers.CharField(source="category.name", read_only=True)
-    prerequisites = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
-    related_skills = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    category = RefField()
+    prerequisites = RefListField()
+    related_skills = RefListField()
+    web_url = WebUrlField()
 
     class Meta:
         model = Skill
@@ -34,18 +35,17 @@ class SkillSerializer(serializers.ModelSerializer):
             "name",
             "description",
             "category",
-            "category_name",
             "slug",
             "prerequisites",
             "related_skills",
+            "web_url",
         ]
 
 
 class QualificationSerializer(serializers.ModelSerializer):
-    awarding_body_name = serializers.CharField(
-        source="awarding_body.name", read_only=True
-    )
-    tags = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    awarding_body = RefField()
+    tags = RefListField()
+    web_url = WebUrlField()
     validity_period_display = serializers.CharField(read_only=True)
 
     class Meta:
@@ -56,7 +56,6 @@ class QualificationSerializer(serializers.ModelSerializer):
             "short_name",
             "slug",
             "awarding_body",
-            "awarding_body_name",
             "tags",
             "description",
             "validity_period",
@@ -64,18 +63,16 @@ class QualificationSerializer(serializers.ModelSerializer):
             "verification_required",
             "url",
             "guidance_url",
+            "web_url",
         ]
 
 
 class ServiceSerializer(serializers.ModelSerializer):
-    skillsRequired = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
-    skillsDesired = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
-    qualificationsRequired = serializers.PrimaryKeyRelatedField(
-        many=True, read_only=True
-    )
-    qualificationsDesired = serializers.PrimaryKeyRelatedField(
-        many=True, read_only=True
-    )
+    skillsRequired = RefListField()
+    skillsDesired = RefListField()
+    qualificationsRequired = RefListField()
+    qualificationsDesired = RefListField()
+    web_url = WebUrlField()
 
     class Meta:
         model = Service
@@ -90,4 +87,5 @@ class ServiceSerializer(serializers.ModelSerializer):
             "skillsDesired",
             "qualificationsRequired",
             "qualificationsDesired",
+            "web_url",
         ]

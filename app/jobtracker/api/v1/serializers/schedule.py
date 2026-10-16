@@ -2,19 +2,14 @@
 
 from rest_framework import serializers
 
-from .people import LeaveRequestSerializer
-
 from chaotica_utils.models import Holiday
 
 from ....models import (
     TimeSlot,
     TimeSlotType,
 )
-
-
-# ---------------------------------------------------------------------------
-# Foundation / coherence entities
-# ---------------------------------------------------------------------------
+from ..fields import RefField
+from .people import LeaveRequestSerializer
 
 
 class TimeSlotTypeSerializer(serializers.ModelSerializer):
@@ -36,7 +31,10 @@ class TimeSlotTypeSerializer(serializers.ModelSerializer):
         ]
 
 
-class TimeSlotSerializer(serializers.ModelSerializer):
+class ScheduleTimeSlotSerializer(serializers.ModelSerializer):
+    """Compact slot for the ``/schedule/`` composites: relations are ids (a
+    window holds thousands of slots; labels come from the payload's lookups)."""
+
     slot_type_name = serializers.CharField(source="slot_type.name", read_only=True)
     deliveryRole_display = serializers.CharField(
         source="get_deliveryRole_display", read_only=True
@@ -62,6 +60,20 @@ class TimeSlotSerializer(serializers.ModelSerializer):
             "is_confirmed",
             "updated",
         ]
+
+
+class TimeSlotSerializer(ScheduleTimeSlotSerializer):
+    user = RefField()
+    slot_type = RefField()
+    phase = RefField()
+    project = RefField()
+
+
+class ScheduleLeaveSerializer(LeaveRequestSerializer):
+    """Compact leave for the ``/schedule/`` composites (relations as ids)."""
+
+    user = serializers.PrimaryKeyRelatedField(read_only=True)
+    authorised_by = serializers.PrimaryKeyRelatedField(read_only=True)
 
 
 class HolidaySerializer(serializers.ModelSerializer):
@@ -91,6 +103,6 @@ class ScheduleSerializer(serializers.Serializer):
     start = serializers.DateField()
     end = serializers.DateField()
     users = ScheduleUserAvailabilitySerializer(many=True)
-    timeslots = TimeSlotSerializer(many=True)
-    leave = LeaveRequestSerializer(many=True)
+    timeslots = ScheduleTimeSlotSerializer(many=True)
+    leave = ScheduleLeaveSerializer(many=True)
     holidays = HolidaySerializer(many=True)

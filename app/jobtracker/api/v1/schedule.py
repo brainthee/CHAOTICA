@@ -22,8 +22,8 @@ from chaotica_utils.models.leave import LeaveRequest
 from ...utils import collect_schedule_members, collect_schedule_slots
 from .serializers import (
     HolidaySerializer,
-    LeaveRequestSerializer,
-    TimeSlotSerializer,
+    ScheduleLeaveSerializer,
+    ScheduleTimeSlotSerializer,
 )
 
 # Default window when ``end`` is omitted, and the hard cap on span (both in days).
@@ -133,7 +133,7 @@ def build_schedule_payload(users, start, end):
         "end": end.date(),
         # collect_schedule_members already returns plain, JSON-safe dicts.
         "users": collect_schedule_members(users, start, end),
-        "timeslots": TimeSlotSerializer(dataset["timeslots"], many=True).data,
-        "leave": LeaveRequestSerializer(leave, many=True).data,
+        "timeslots": ScheduleTimeSlotSerializer(dataset["timeslots"], many=True).data,
+        "leave": ScheduleLeaveSerializer(leave, many=True).data,
         "holidays": HolidaySerializer(holidays, many=True).data,
     }

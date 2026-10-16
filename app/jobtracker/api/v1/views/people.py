@@ -1,14 +1,12 @@
 """Users, org units, leave and competency records."""
 
-from django.db.models import Exists, OuterRef, Prefetch, Q
+from django.db.models import Exists, OuterRef, Prefetch
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
-from guardian.shortcuts import get_objects_for_user
 from rest_framework.decorators import action
 from rest_framework.exceptions import MethodNotAllowed, PermissionDenied
-from rest_framework.filters import SearchFilter
 from rest_framework.response import Response
 
 from chaotica_utils.models import User, UserCost
@@ -33,6 +31,7 @@ from ....models import (
     QualificationRecord,
     UserSkill,
 )
+from .. import filters
 from ..base import BaseReadOnlyAPIViewSet
 from ..serializers import (
     LeaveRequestSerializer,
@@ -49,13 +48,12 @@ from ..serializers import (
 )
 
 
-# ---------------------------------------------------------------------------
-# Foundation / coherence entities
-# ---------------------------------------------------------------------------
-
-
 class UserViewSet(BaseReadOnlyAPIViewSet):
     serializer_class = UserSerializer
+    policy_scope = "user.view"
+    filterset_class = filters.UserFilter
+    ordering_fields = ("last_name", "first_name", "email")
+    search_fields = ("first_name", "last_name", "email")
 
     # Read verbs + POST — but POST is opened *only* for the set_status action
     # below; create() is overridden to 405 so this is not a user-creation route.
@@ -64,19 +62,15 @@ class UserViewSet(BaseReadOnlyAPIViewSet):
     def get_base_queryset(self):
         # Prefetch the current job level into ``_current_levels`` so the
         # serializer's get_current_level() fast-path avoids a query per user.
-        return User.objects.prefetch_related(
+        return User.objects.select_related("city").prefetch_related(
             Prefetch(
                 "job_level_history",
-                queryset=UserJobLevel.objects.filter(
-                    is_current=True
-                ).select_related("job_level"),
+                queryset=UserJobLevel.objects.filter(is_current=True).select_related(
+                    "job_level"
+                ),
                 to_attr="_current_levels",
             )
         )
-
-    def scope_queryset(self, queryset, user):
-        allowed = get_objects_for_user(user, "chaotica_utils.view_user", klass=User)
-        return queryset.filter(pk__in=allowed.values_list("pk", flat=True))
 
     def create(self, request, *args, **kwargs):
         # POST is enabled on this viewset only for set_status; the router still
@@ -115,9 +109,7 @@ class UserViewSet(BaseReadOnlyAPIViewSet):
             raise PermissionDenied("You cannot deactivate your own account.")
 
         changed = target.set_active_status(target_active)
-        return Response(
-            {"changed": changed, "user": UserSerializer(target).data}
-        )
+        return Response({"changed": changed, "user": UserSerializer(target).data})
 
     @extend_schema(
         request=UserProfileUpdateSerializer,
@@ -193,9 +185,7 @@ class UserViewSet(BaseReadOnlyAPIViewSet):
                     notes=body.validated_data.get("notes", ""),
                 )
                 changed = True
-        return Response(
-            {"changed": changed, "user": UserSerializer(target).data}
-        )
+        return Response({"changed": changed, "user": UserSerializer(target).data})
 
     @extend_schema(
         request=UserCostUpdateSerializer,
@@ -222,7 +212,9 @@ class UserViewSet(BaseReadOnlyAPIViewSet):
 
         body = UserCostUpdateSerializer(data=request.data)
         body.is_valid(raise_exception=True)
-        effective_from = body.validated_data.get("effective_from") or timezone.now().date()
+        effective_from = (
+            body.validated_data.get("effective_from") or timezone.now().date()
+        )
         new_cost = body.validated_data["cost_per_hour"]
 
         # Diff against the rate already effective on that date. If unchanged,
@@ -285,17 +277,12 @@ class UserViewSet(BaseReadOnlyAPIViewSet):
 
 class OrganisationalUnitViewSet(BaseReadOnlyAPIViewSet):
     serializer_class = OrganisationalUnitSerializer
-    filter_backends = [SearchFilter]
-    search_fields = ["name"]
+    policy_scope = "org_unit.view"
+    ordering_fields = ("name",)
+    search_fields = ("name",)
 
     def get_base_queryset(self):
         return OrganisationalUnit.objects.all()
-
-    def scope_queryset(self, queryset, user):
-        allowed = get_objects_for_user(
-            user, "jobtracker.view_organisationalunit", klass=OrganisationalUnit
-        )
-        return queryset.filter(pk__in=allowed.values_list("pk", flat=True))
 
     @extend_schema(
         summary="List members of an org unit",
@@ -346,57 +333,27 @@ class OrganisationalUnitViewSet(BaseReadOnlyAPIViewSet):
 
 class LeaveRequestViewSet(BaseReadOnlyAPIViewSet):
     serializer_class = LeaveRequestSerializer
+    policy_scope = "leave.view"
+    filterset_class = filters.LeaveRequestFilter
+    ordering_fields = ("start_date", "requested_on")
 
     def get_base_queryset(self):
-        return LeaveRequest.objects.select_related(
-            "user", "authorised_by", "timeslot"
-        )
-
-    def scope_queryset(self, queryset, user):
-        # Exactly the manage_leave visibility clause.
-        units = get_objects_for_user(
-            user, "can_view_all_leave_requests", klass=OrganisationalUnit
-        )
-        return queryset.filter(
-            Q(user__unit_memberships__unit__in=units)
-            | Q(user__manager=user)
-            | Q(user__acting_manager=user)
-            | Q(user=user)
-        ).distinct()
+        return LeaveRequest.objects.select_related("user", "authorised_by", "timeslot")
 
 
 class UserSkillViewSet(BaseReadOnlyAPIViewSet):
     serializer_class = UserSkillSerializer
+    policy_scope = "user_skill.view"
 
     def get_base_queryset(self):
         return UserSkill.objects.select_related("skill", "user")
 
-    def scope_queryset(self, queryset, user):
-        # Competency data is sensitive. Stricter than the (unenforced) profile
-        # view: own records + reports (manager/acting-manager) + holders of the
-        # declared view_users_skill permission.
-        if user.has_perm("jobtracker.view_users_skill"):
-            return queryset
-        return queryset.filter(
-            Q(user=user)
-            | Q(user__manager=user)
-            | Q(user__acting_manager=user)
-        ).distinct()
-
 
 class QualificationRecordViewSet(BaseReadOnlyAPIViewSet):
     serializer_class = QualificationRecordSerializer
+    policy_scope = "qualification_record.view"
 
     def get_base_queryset(self):
         return QualificationRecord.objects.select_related(
-            "qualification", "user", "verified_by"
+            "qualification__awarding_body", "user", "verified_by"
         )
-
-    def scope_queryset(self, queryset, user):
-        if user.has_perm("jobtracker.view_users_qualifications"):
-            return queryset
-        return queryset.filter(
-            Q(user=user)
-            | Q(user__manager=user)
-            | Q(user__acting_manager=user)
-        ).distinct()
