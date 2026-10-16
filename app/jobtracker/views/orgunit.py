@@ -1,4 +1,9 @@
 from chaotica_utils.mixins import ObjectActivityMixin
+from ..selectors.orgunits import (
+    consultant_utilisation_4wk,
+    unit_member_rows,
+    utilisation_pct,
+)
 from django.shortcuts import get_object_or_404, redirect
 from django.http import HttpResponseBadRequest, JsonResponse, HttpResponse
 from django.template import loader
@@ -130,7 +135,7 @@ class OrganisationalUnitDetailView(
         # Evaluate memberships once with proper prefetches. Deactivated members
         # are included so the team table can offer a "show deactivated" toggle;
         # they're flagged (below) and hidden by default client-side.
-        memberships = list(unit.get_activeMemberships(include_deactivated=True))
+        memberships, _util_pct = unit_member_rows(unit)
         context["active_memberships"] = memberships
         # People who left the unit, for the "Show former members" list (and
         # its Rejoin action).
@@ -142,46 +147,6 @@ class OrganisationalUnitDetailView(
             status__in=[PhaseStatuses.IN_PROGRESS] + PhaseStatuses.QA_STATUSES,
         ).count()
 
-        # Per-member utilisation + active-job counts for the Team table.
-        # Both are computed in bulk (one pandas call + one aggregate query) and
-        # attached onto each membership row so the template does no per-member work.
-        # Utilisation is scoped to consultants — only they get booked, so we skip
-        # the pandas work for everyone else and show "—" against them.
-        member_ids = [ms.member_id for ms in memberships]
-        consultant_ids = set(unit.get_consultant_ids())
-        week_start = (
-            timezone.now() - datetime.timedelta(days=timezone.now().weekday())
-        ).date()
-        util = (
-            unit.calculate_bulk_utilization(
-                week_start,
-                week_start + datetime.timedelta(days=28),
-                user_ids=list(consultant_ids),
-            )
-            if consultant_ids
-            else {}
-        )
-        active_job_counts = {
-            row["user"]: row["n"]
-            for row in TimeSlot.objects.filter(
-                user_id__in=member_ids,
-                phase__job__unit=unit,
-                phase__status__in=PhaseStatuses.ACTIVE_STATUSES,
-            )
-            .values("user")
-            .annotate(n=Count("phase__job", distinct=True))
-        }
-        for ms in memberships:
-            ms.is_consultant = ms.member_id in consultant_ids
-            ms.is_deactivated = not ms.member.is_active
-            m = util.get(ms.member_id, {})
-            effective = m.get("effective_working_days", 0)
-            ms.util_pct = (
-                round(m.get("confirmed_days", 0) / effective * 100, 1)
-                if effective
-                else 0
-            )
-            ms.active_job_count = active_job_counts.get(ms.member_id, 0)
         context["active_member_count"] = sum(
             1 for ms in memberships if not ms.is_deactivated
         )
@@ -317,21 +282,9 @@ def orgunit_header_stats_partial(request, slug):
     """
     unit = get_object_or_404(OrganisationalUnit, slug=slug)
     # Consultants only — the only members who get booked onto delivery.
-    consultant_ids = unit.get_consultant_ids()
-    if not consultant_ids:
-        return JsonResponse({"utilisation_4wk": 0})
-    week_start = (
-        timezone.now() - datetime.timedelta(days=timezone.now().weekday())
-    ).date()
-    util = unit.calculate_bulk_utilization(
-        week_start, week_start + datetime.timedelta(days=28), user_ids=consultant_ids
+    return JsonResponse(
+        {"utilisation_4wk": utilisation_pct(consultant_utilisation_4wk(unit))}
     )
-    # Central formula: confirmed / effective working days (matches the Stats
-    # tab's four-week figure).
-    total_confirmed = sum(m.get("confirmed_days", 0) for m in util.values())
-    total_effective = sum(m.get("effective_working_days", 0) for m in util.values())
-    pct = round(total_confirmed / total_effective * 100, 1) if total_effective else 0
-    return JsonResponse({"utilisation_4wk": pct})
 
 
 @login_required
