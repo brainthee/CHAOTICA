@@ -37,7 +37,13 @@ from .clients import (  # noqa: F401
     ClientDetailSerializer,
     ContactSerializer,
     FrameworkSerializer,
-    UsageRowSerializer,
+    UsagePhaseSerializer,
+    UsageJobSerializer,
+    UsagePersonSerializer,
+    UsageRoleSerializer,
+    UsageServiceSerializer,
+    UsageMonthSerializer,
+    FrameworkUsageSerializer,
     FrameworkDetailSerializer,
 )
 from .jobs import (  # noqa: F401
@@ -92,6 +98,10 @@ from .catalogue import (  # noqa: F401
     SkillSerializer,
     QualificationSerializer,
     ServiceSerializer,
+    SkillDetailSerializer,
+    ServiceListSerializer,
+    AwardingBodySerializer,
+    QualificationDetailSerializer,
 )
 from .dashboard import (  # noqa: F401
     QueueSerializer,

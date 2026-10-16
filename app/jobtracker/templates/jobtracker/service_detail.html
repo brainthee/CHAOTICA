@@ -669,7 +669,7 @@
 
           {% comment %} <div class="tab-pane fade" id="performance" role="tabpanel" aria-labelledby="performance-tab">
             <!-- Performance Metrics Dashboard -->
-            {% with metrics=service.get_performance_metrics %}
+            {% with metrics=performance_metrics %}
             <div class="row mb-4">
               <div class="col-12">
                 <h5 class="mb-3">Service Performance Dashboard</h5>
@@ -1146,7 +1146,7 @@
   });
 
   // Monthly Performance Trends Chart
-  {% with metrics=service.get_performance_metrics %}
+  {% with metrics=performance_metrics %}
   var monthlyChartDom = document.getElementById('monthly-trends-chart');
   if (monthlyChartDom) {
     var monthlyChart = echarts.init(monthlyChartDom);

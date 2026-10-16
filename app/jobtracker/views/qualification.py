@@ -1,4 +1,5 @@
 from chaotica_utils.mixins import SecurePermissionRequiredMixin as PermissionRequiredMixin
+from ..selectors.catalogue import qualification_record_stats
 from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
@@ -138,22 +139,11 @@ class QualificationDetailView(
 
         records = qualification.users.select_related("user", "verified_by").order_by("-awarded_date")
 
-        # Status counts
-        context["awarded_count"] = records.filter(
-            status=QualificationStatus.AWARDED
-        ).count()
-        context["in_progress_count"] = records.filter(
-            status__in=[QualificationStatus.IN_PROGRESS, QualificationStatus.PENDING]
-        ).count()
-        context["lapsed_count"] = records.filter(
-            status=QualificationStatus.LAPSED
-        ).count()
-        context["expiring_soon_count"] = records.filter(
-            status=QualificationStatus.AWARDED,
-            lapse_date__isnull=False,
-            lapse_date__lte=today + timedelta(days=90),
-            lapse_date__gt=today,
-        ).count()
+        stats = qualification_record_stats(qualification, today)
+        context["awarded_count"] = stats["awarded"]
+        context["in_progress_count"] = stats["in_progress"]
+        context["lapsed_count"] = stats["lapsed"]
+        context["expiring_soon_count"] = stats["expiring_soon"]
 
         # Record sets for tabs
         context["awarded_records"] = records.filter(

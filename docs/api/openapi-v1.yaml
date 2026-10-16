@@ -36,6 +36,70 @@ paths:
               schema:
                 $ref: '#/components/schemas/AuthToken'
           description: ''
+  /api/v1/awarding-bodies/:
+    get:
+      operationId: awarding_bodies_list
+      description: Reference data — visible to all authenticated users.
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: q
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - awarding-bodies
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAwardingBodyList'
+          description: ''
+  /api/v1/awarding-bodies/{id}/:
+    get:
+      operationId: awarding_bodies_retrieve
+      description: Reference data — visible to all authenticated users.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9]+$
+        required: true
+      tags:
+      - awarding-bodies
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AwardingBody'
+          description: ''
   /api/v1/clients/:
     get:
       operationId: clients_list
@@ -2114,7 +2178,43 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Qualification'
+                $ref: '#/components/schemas/QualificationDetail'
+          description: ''
+  /api/v1/qualifications/{id}/records/:
+    get:
+      operationId: qualifications_records_list
+      description: Records you may see (yourself, your reports, or everyone with view_users_qualifications).
+      summary: Who holds this qualification
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9]+$
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - qualifications
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedQualificationRecordList'
           description: ''
   /api/v1/schedule/:
     get:
@@ -2571,7 +2671,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedServiceList'
+                $ref: '#/components/schemas/PaginatedServiceListList'
           description: ''
   /api/v1/services/{id}/:
     get:
@@ -2615,6 +2715,124 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Service'
+          description: ''
+  /api/v1/services/{id}/coverage/:
+    get:
+      operationId: services_coverage_retrieve
+      description: Counts of people by competency for the required skills, desired-skill
+        coverage and qualification holders. Named people (``people``) only with view_users_skill.
+      summary: Who can deliver this service
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9]+$
+        required: true
+      tags:
+      - services
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/services/{id}/metrics/:
+    get:
+      operationId: services_metrics_retrieve
+      description: '``{usage, performance}`` — the service page''s Jobs and Performance
+        tabs, over the phases you can see.'
+      summary: Delivery metrics and usage
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9]+$
+        required: true
+      tags:
+      - services
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/services/{id}/phases/:
+    get:
+      operationId: services_phases_list
+      description: |-
+        Shared base for every ``/api/v1/`` model endpoint.
+
+        Read-only *today* — ``http_method_names`` is restricted to safe verbs — but it
+        subclasses ``ModelViewSet`` (not ``ReadOnlyModelViewSet``) on purpose: enabling
+        writes later is a localised change (widen ``http_method_names``, point at a
+        write-capable serializer, add an object-level permission class) rather than a
+        rewrite.
+
+        It also *locally* overrides the global datatables renderer / pagination / filter
+        defaults (see ``settings.REST_FRAMEWORK``) so v1 emits clean paginated JSON
+        without affecting the legacy ``/api/`` DataTables UI endpoints.
+
+        Access scoping: set ``policy_scope`` to a :mod:`jobtracker.policy` scope
+        action (e.g. ``"job.view"``); ``None`` means reference data visible to every
+        authenticated user, and must be a deliberate choice. Override
+        :meth:`get_base_queryset` for select/prefetch.
+
+        Filtering: declare ``filterset_class`` / ``ordering_fields`` /
+        ``search_fields`` per view. Ordering is an allowlist — nothing is orderable
+        unless listed.
+      summary: This service's phases (on jobs you can see)
+      parameters:
+      - in: query
+        name: bucket
+        schema:
+          type: string
+          enum:
+          - active
+          - all
+          - completed
+          - upcoming
+        description: Default all.
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9]+$
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - services
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPhaseList'
           description: ''
   /api/v1/skill-categories/:
     get:
@@ -2786,7 +3004,85 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Skill'
+                $ref: '#/components/schemas/SkillDetail'
+          description: ''
+  /api/v1/skills/{id}/users/:
+    get:
+      operationId: skills_users_list
+      description: Ratings of people whose skills you may see (yourself, your reports,
+        or everyone with view_users_skill).
+      summary: Who holds this skill
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^[0-9]+$
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - skills
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedUserSkillList'
+          description: ''
+  /api/v1/skills/matrix/:
+    get:
+      operationId: skills_matrix_retrieve
+      description: '``{categories[{category, skills[Ref]}], rows[{user, ratings{skill_id:
+        {rating, interested}}}], rating_choices, filters}``. Rows cover only people
+        whose skills you may see.'
+      summary: Skills matrix
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: string
+        description: Skill category slug.
+      - in: query
+        name: role
+        schema:
+          type: integer
+        description: Unit role id.
+      - in: query
+        name: team
+        schema:
+          type: string
+        description: Team slug.
+      - in: query
+        name: unit
+        schema:
+          type: string
+        description: Org unit slug.
+      tags:
+      - skills
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
           description: ''
   /api/v1/timeslot-comments/:
     get:
@@ -3701,6 +3997,29 @@ components:
       required:
       - end
       - start
+    AwardingBody:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 200
+        slug:
+          type: string
+          default: ''
+          maxLength: 50
+          pattern: ^[-a-zA-Z0-9_]+$
+        url:
+          type: string
+          format: uri
+          nullable: true
+          title: Website URL
+          maxLength: 2000
+      required:
+      - id
+      - name
     BillingBadge:
       type: object
       description: 'A billing code as a badge: code and name only, never money.'
@@ -4644,8 +4963,8 @@ components:
           nullable: true
           readOnly: true
         usage:
-          type: object
-          additionalProperties: {}
+          allOf:
+          - $ref: '#/components/schemas/FrameworkUsage'
           readOnly: true
       required:
       - client
@@ -4655,6 +4974,50 @@ components:
       - total_days
       - usage
       - web_url
+    FrameworkUsage:
+      type: object
+      properties:
+        days_used:
+          type: number
+          format: double
+        days_scheduled:
+          type: number
+          format: double
+        days_available:
+          type: number
+          format: double
+        over_allocated:
+          type: boolean
+        jobs:
+          type: array
+          items:
+            $ref: '#/components/schemas/UsageJob'
+        people:
+          type: array
+          items:
+            $ref: '#/components/schemas/UsagePerson'
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/UsageRole'
+        services:
+          type: array
+          items:
+            $ref: '#/components/schemas/UsageService'
+        monthly:
+          type: array
+          items:
+            $ref: '#/components/schemas/UsageMonth'
+      required:
+      - days_available
+      - days_scheduled
+      - days_used
+      - jobs
+      - monthly
+      - over_allocated
+      - people
+      - roles
+      - services
     Holiday:
       type: object
       description: |-
@@ -5603,6 +5966,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Activity'
+    PaginatedAwardingBodyList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AwardingBody'
     PaginatedClientList:
       type: object
       required:
@@ -5856,7 +6242,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/QualificationRecord'
-    PaginatedServiceList:
+    PaginatedServiceListList:
       type: object
       required:
       - count
@@ -5878,7 +6264,7 @@ components:
         results:
           type: array
           items:
-            $ref: '#/components/schemas/Service'
+            $ref: '#/components/schemas/ServiceList'
     PaginatedSkillCategoryList:
       type: object
       required:
@@ -6770,6 +7156,95 @@ components:
       - tags
       - validity_period_display
       - web_url
+    QualificationDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 200
+        short_name:
+          type: string
+          maxLength: 200
+        slug:
+          type: string
+          default: ''
+          maxLength: 50
+          pattern: ^[-a-zA-Z0-9_]+$
+        awarding_body:
+          allOf:
+          - $ref: '#/components/schemas/Ref'
+          nullable: true
+          readOnly: true
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ref'
+          readOnly: true
+        description:
+          type: string
+        validity_period:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+          description: How many days the qualification is valid for. If left empty,
+            it does not expire.
+        validity_period_display:
+          type: string
+          readOnly: true
+        verification_required:
+          type: boolean
+          title: Manager Verification Required
+          description: If enabled, awarded records require manager verification.
+        url:
+          type: string
+          format: uri
+          nullable: true
+          title: Qualification URL
+          maxLength: 2000
+        guidance_url:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 2000
+        web_url:
+          type: string
+          nullable: true
+          readOnly: true
+        demonstrated_skills:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ref'
+          readOnly: true
+        services_required:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ref'
+          readOnly: true
+        services_desired:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ref'
+          readOnly: true
+        record_counts:
+          type: object
+          additionalProperties:
+            type: integer
+          readOnly: true
+      required:
+      - awarding_body
+      - demonstrated_skills
+      - id
+      - name
+      - record_counts
+      - services_desired
+      - services_required
+      - tags
+      - validity_period_display
+      - web_url
     QualificationRecord:
       type: object
       properties:
@@ -7486,6 +7961,82 @@ components:
       - skillsDesired
       - skillsRequired
       - web_url
+    ServiceList:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 200
+        slug:
+          type: string
+          maxLength: 50
+          pattern: ^[-a-zA-Z0-9_]+$
+        description:
+          type: string
+          nullable: true
+          description: Description of service
+        link:
+          type: string
+          format: uri
+          nullable: true
+          description: Link to service information
+          maxLength: 2000
+        is_core:
+          type: boolean
+          title: Is Core Service
+          description: If checked, this service is considered critical
+        skillsRequired:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ref'
+          readOnly: true
+        skillsDesired:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ref'
+          readOnly: true
+        qualificationsRequired:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ref'
+          readOnly: true
+        qualificationsDesired:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ref'
+          readOnly: true
+        web_url:
+          type: string
+          nullable: true
+          readOnly: true
+        specialist_count:
+          type: integer
+          readOnly: true
+        skilled_people_count:
+          type: integer
+          readOnly: true
+        active_phases_count:
+          type: integer
+          readOnly: true
+        risk_score:
+          type: integer
+          readOnly: true
+          description: 0 critical, 1 high, 2 medium, 3 low.
+      required:
+      - active_phases_count
+      - id
+      - name
+      - qualificationsDesired
+      - qualificationsRequired
+      - risk_score
+      - skilled_people_count
+      - skillsDesired
+      - skillsRequired
+      - specialist_count
+      - web_url
     SeverityEnum:
       enum:
       - critical
@@ -7559,6 +8110,72 @@ components:
       required:
       - id
       - name
+      - web_url
+    SkillDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+          description: A short description of the skill
+        category:
+          allOf:
+          - $ref: '#/components/schemas/Ref'
+          nullable: true
+          readOnly: true
+        slug:
+          type: string
+          maxLength: 50
+          pattern: ^[-a-zA-Z0-9_]+$
+        prerequisites:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ref'
+          readOnly: true
+        related_skills:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ref'
+          readOnly: true
+        web_url:
+          type: string
+          nullable: true
+          readOnly: true
+        qualifications:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ref'
+          readOnly: true
+        services_required:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ref'
+          readOnly: true
+        services_desired:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ref'
+          readOnly: true
+        rating_counts:
+          type: object
+          additionalProperties:
+            type: integer
+          readOnly: true
+      required:
+      - category
+      - id
+      - name
+      - prerequisites
+      - qualifications
+      - rating_counts
+      - related_skills
+      - services_desired
+      - services_required
       - web_url
     SkillRating:
       type: object
@@ -8011,6 +8628,122 @@ components:
       required:
       - unread_count
       - updated
+    UsageJob:
+      type: object
+      properties:
+        used_days:
+          type: number
+          format: double
+        scheduled_days:
+          type: number
+          format: double
+        total_days:
+          type: number
+          format: double
+        job:
+          $ref: '#/components/schemas/Ref'
+        phases:
+          type: array
+          items:
+            $ref: '#/components/schemas/UsagePhase'
+      required:
+      - job
+      - phases
+      - scheduled_days
+      - total_days
+      - used_days
+    UsageMonth:
+      type: object
+      properties:
+        month:
+          type: string
+          description: YYYY-MM
+        days:
+          type: number
+          format: double
+        cumulative:
+          type: number
+          format: double
+      required:
+      - cumulative
+      - days
+      - month
+    UsagePerson:
+      type: object
+      properties:
+        used_days:
+          type: number
+          format: double
+        scheduled_days:
+          type: number
+          format: double
+        total_days:
+          type: number
+          format: double
+        user:
+          $ref: '#/components/schemas/Ref'
+      required:
+      - scheduled_days
+      - total_days
+      - used_days
+      - user
+    UsagePhase:
+      type: object
+      properties:
+        used_days:
+          type: number
+          format: double
+        scheduled_days:
+          type: number
+          format: double
+        total_days:
+          type: number
+          format: double
+        phase:
+          $ref: '#/components/schemas/Ref'
+      required:
+      - phase
+      - scheduled_days
+      - total_days
+      - used_days
+    UsageRole:
+      type: object
+      properties:
+        used_days:
+          type: number
+          format: double
+        scheduled_days:
+          type: number
+          format: double
+        total_days:
+          type: number
+          format: double
+        role:
+          type: string
+      required:
+      - role
+      - scheduled_days
+      - total_days
+      - used_days
+    UsageService:
+      type: object
+      properties:
+        used_days:
+          type: number
+          format: double
+        scheduled_days:
+          type: number
+          format: double
+        total_days:
+          type: number
+          format: double
+        service:
+          $ref: '#/components/schemas/Ref'
+      required:
+      - scheduled_days
+      - service
+      - total_days
+      - used_days
     User:
       type: object
       description: |-
