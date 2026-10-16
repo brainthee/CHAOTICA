@@ -13,6 +13,7 @@ from drf_spectacular.views import (
 from rest_framework import routers
 
 from . import views
+from .views import platform
 from .auth import ThrottledObtainAuthToken
 
 app_name = "api_v1"
@@ -42,6 +43,14 @@ router.register(
 router.register(r"services", views.ServiceViewSet, basename="service")
 
 urlpatterns = [
+    path("meta/", platform.MetaView.as_view(), name="meta"),
+    path("me/", platform.MeView.as_view(), name="me"),
+    path(
+        "me/preferences/", platform.MePreferencesView.as_view(), name="me-preferences"
+    ),
+    path("me/schedule/", platform.MeScheduleView.as_view(), name="me-schedule"),
+    path("search/", platform.SearchView.as_view(), name="search"),
+    path("search/goto/", platform.SearchGotoView.as_view(), name="search-goto"),
     path("", include(router.urls)),
     # Token issuance for programmatic clients (POST username/password -> token).
     path("auth/token/", ThrottledObtainAuthToken.as_view(), name="token"),
