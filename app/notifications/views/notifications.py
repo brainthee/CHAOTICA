@@ -1,4 +1,13 @@
 from django.http import JsonResponse, HttpResponse
+from ..selectors import (
+    MAX_PAGE_SIZE,
+    mark_all_read as mark_all_read_for,
+    notifications_for,
+    parse_positive_int,
+    serialize_notification,
+    set_read,
+    unread_count,
+)
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods, require_POST, require_GET
@@ -116,39 +125,20 @@ def notifications_api(request):
     """API endpoint for getting and marking notifications"""
     if request.method == "GET":
         # Get user's notifications, paginated
-        page = request.GET.get('page', 1)
-        per_page = request.GET.get('per_page', 10)
+        # Bad or huge paging values fall back / are capped instead of 500ing.
+        page = parse_positive_int(request.GET.get('page'), 1)
+        per_page = min(parse_positive_int(request.GET.get('per_page'), 10), MAX_PAGE_SIZE)
         unread_only = request.GET.get('unread_only') == 'true'
-        
-        notifications = Notification.objects.filter(user=request.user)
-        if unread_only:
-            notifications = notifications.filter(read=False)
-            
-        paginator = Paginator(notifications.order_by('-timestamp'), per_page)
+
+        paginator = Paginator(notifications_for(request.user, unread_only), per_page)
         page_obj = paginator.get_page(page)
-        
+
         data = {
             'count': paginator.count,
             'num_pages': paginator.num_pages,
-            'current_page': int(page),
-            'notifications': [
-                {
-                    'id': n.id,
-                    'type': n.notification_type,
-                    'type_display': n.get_notification_type_display(),
-                    'timestamp': n.timestamp.isoformat(),
-                    'timestamp_human': n.get_human_timestamp(),
-                    'title': n.title,
-                    'message': n.message,
-                    'link': n.link,
-                    'read': n.read,
-                    'entity_type': n.entity_type,
-                    'entity_id': n.entity_id,
-                    'metadata': n.metadata,
-                }
-                for n in page_obj.object_list
-            ],
-            'unread_count': Notification.objects.filter(user=request.user, read=False).count()
+            'current_page': page_obj.number,
+            'notifications': [serialize_notification(n) for n in page_obj.object_list],
+            'unread_count': unread_count(request.user),
         }
         
         return JsonResponse(data)
@@ -163,15 +153,9 @@ def notifications_api(request):
             if not notification_ids or action not in ['mark_read', 'mark_unread']:
                 return JsonResponse({'error': 'Invalid parameters'}, status=400)
             
-            # Only allow modifying user's own notifications
-            notifications = Notification.objects.filter(id__in=notification_ids, user=request.user)
-            
-            if action == 'mark_read':
-                notifications.update(read=True)
-            elif action == 'mark_unread':
-                notifications.update(read=False)
-                
-            return JsonResponse({'status': 'success', 'updated_count': notifications.count()})
+            # Only the user's own notifications are touched.
+            updated = set_read(request.user, notification_ids, read=(action == 'mark_read'))
+            return JsonResponse({'status': 'success', 'updated_count': updated})
             
         except json.JSONDecodeError:
             return JsonResponse({'error': 'Invalid JSON'}, status=400)
@@ -181,16 +165,16 @@ def notifications_api(request):
 @require_POST
 def mark_all_read(request):
     """Mark all notifications as read for the current user"""
-    count = Notification.objects.filter(user=request.user, read=False).update(read=True)
-    return JsonResponse({'status': 'success', 'updated_count': count})
+    return JsonResponse({'status': 'success', 'updated_count': mark_all_read_for(request.user)})
 
 
 @login_required
 @require_http_methods(["POST"])
 def remove_notification_subscription(request):
-    subscription_id = request.GET.get('subscription_id')
-    
-    if not subscription_id or not isinstance(subscription_id, int):
+    # Query values are strings; this used to test isinstance(int) and so
+    # always answered 400.
+    subscription_id = parse_positive_int(request.GET.get('subscription_id'), None)
+    if subscription_id is None:
         return JsonResponse({'error': 'Invalid subscription_id'}, status=400)
     
     """Remove a specific notification subscription"""
@@ -469,17 +453,17 @@ def notification_subscription_status(request):
 @require_GET
 def get_unread_count(request):
     """Get the count of unread notifications"""
-    count = Notification.objects.filter(user=request.user, read=False).count()
-    return JsonResponse({'unread_count': count})
+    return JsonResponse({'unread_count': unread_count(request.user)})
 
 
 @login_required
 @require_POST
 def update_subscription_settings(request):
     """Update email/app enabled settings for a subscription"""
-    subscription_id = request.GET.get('subscription_id')
-    
-    if not subscription_id or not isinstance(subscription_id, int):
+    # Query values are strings; this used to test isinstance(int) and so
+    # always answered 400.
+    subscription_id = parse_positive_int(request.GET.get('subscription_id'), None)
+    if subscription_id is None:
         return JsonResponse({'error': 'Invalid subscription_id'}, status=400)
     
     try:
