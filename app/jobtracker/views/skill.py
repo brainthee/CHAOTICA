@@ -1,4 +1,9 @@
 from chaotica_utils.mixins import SecurePermissionRequiredMixin as PermissionRequiredMixin, ObjectActivityMixin
+from ..selectors.catalogue import (
+    matrix_users,
+    skill_matrix,
+    skill_matrix_filter_options,
+)
 from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
@@ -164,73 +169,9 @@ class SkillMatrixView(PermissionRequiredMixin, ChaoticaBaseView, TemplateView):
             context['from_cache'] = True
             return context
 
-        # Start with active users
-        users_query = User.objects.filter(
-            is_active=True, groups__isnull=False,)
-
-        # Apply unit filter
-        if unit_filter:
-            users_query = users_query.filter(
-                unit_memberships__unit__slug=unit_filter,
-                unit_memberships__left_date__isnull=True
-            ).distinct()
-
-        # Apply team filter
-        if team_filter:
-            users_query = users_query.filter(
-                teams__team__slug=team_filter,
-                teams__left_at__isnull=True
-            ).distinct()
-
-        # Apply org role filter
-        if role_filter:
-            users_query = users_query.filter(
-                unit_memberships__roles__id=role_filter,
-                unit_memberships__left_date__isnull=True
-            ).distinct()
-
-        # Get users with their skills - optimize with select_related and only()
-        users = users_query.select_related().prefetch_related(
-            Prefetch(
-                'skills',
-                queryset=UserSkill.objects.select_related('skill', 'skill__category').only(
-                    'skill', 'rating', 'interested_in_improving_skill', 'user'
-                )
-            )
-        ).get_default_order()
-
-        # Get all skills organized by category (with optional category filter)
-        categories_query = SkillCategory.objects.all()
-        if category_filter:
-            categories_query = categories_query.filter(slug=category_filter)
-
-        categories = categories_query.prefetch_related(
-            Prefetch(
-                'skills',
-                queryset=Skill.objects.only('id', 'name', 'slug', 'description', 'category')
-            )
-        ).only('id', 'name', 'slug').order_by('name')
-
-        # Build matrix data
-        matrix_data = []
-        for user in users:
-            user_skills = {us.skill.id: us for us in user.skills.all()}
-            user_row = {
-                'user': user,
-                'skills': {}
-            }
-
-            for category in categories:
-                for skill in category.skills.all():
-                    user_skill = user_skills.get(skill.id)
-                    user_row['skills'][skill.id] = {
-                        'skill': skill,
-                        'user_skill': user_skill,
-                        'rating': user_skill.rating if user_skill else UserSkillRatings.NO_EXPERIENCE,
-                        'interested': user_skill.interested_in_improving_skill if user_skill else False
-                    }
-
-            matrix_data.append(user_row)
+        categories, matrix_data = skill_matrix(
+            matrix_users(), unit_filter, team_filter, category_filter, role_filter
+        )
 
         # Get filter options for the template
         from ..models import OrganisationalUnit, Team, OrganisationalUnitRole
@@ -248,21 +189,7 @@ class SkillMatrixView(PermissionRequiredMixin, ChaoticaBaseView, TemplateView):
         # Add non-cacheable data
         context.update(cacheable_data)
 
-        # Filter options (these change less frequently, cache separately)
-        filter_options_key = 'skill_matrix_filter_options'
-        # filter_options = cache.get(filter_options_key)
-        filter_options = None
-
-        if filter_options is None:
-            filter_options = {
-                'all_units': list(OrganisationalUnit.objects.all().order_by('name').values('slug', 'name')),
-                'all_teams': list(Team.objects.all().order_by('name').values('slug', 'name')),
-                'all_categories': list(SkillCategory.objects.all().order_by('name').values('slug', 'name')),
-                'all_org_roles': list(OrganisationalUnitRole.objects.all().order_by('name').values('name', 'id')),
-            }
-            # Cache filter options for 30 minutes
-            # cache.set(filter_options_key, filter_options, 1800)
-
+        filter_options = skill_matrix_filter_options()
         context.update(filter_options)
 
         # Current filters
