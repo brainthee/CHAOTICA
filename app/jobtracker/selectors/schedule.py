@@ -274,3 +274,93 @@ def job_team(job):
 def phase_team(phase):
     """The phase Team tab: ``(capacity_labels, entries)``."""
     return build_team_rows(get_user_schedule_breakdown(phase.job, phase))
+
+
+def availability_runs(users, start, end, holidays):
+    """``{user_pk: [(first_day, last_day), ...]}``: runs of days each user is
+    free to book — a working weekday for them, not a public holiday (their
+    country's or a global one), and with no timeslot of any kind. ``holidays``
+    is the window's Holiday queryset; ``start``/``end`` are datetimes."""
+    from collections import defaultdict
+    from datetime import timedelta
+
+    from ..models import OrganisationalUnitMember
+    from ..utils import available_day_runs
+
+    holiday_by_country = defaultdict(set)
+    global_holidays = set()
+    for hol in holidays:
+        if hol.country:
+            holiday_by_country[str(hol.country)].add(hol.date)
+        else:
+            global_holidays.add(hol.date)
+
+    # Any booking makes a day unavailable — queried unscoped, so a job-scoped
+    # view still hides days the person is booked elsewhere.
+    occupied = defaultdict(set)
+    booked = TimeSlot.objects.filter(
+        user__in=users, end__gte=start, start__lte=end
+    ).values_list("user_id", "start", "end")
+    for uid, slot_start, slot_end in booked:
+        d, last = slot_start.date(), slot_end.date()
+        while d <= last:
+            occupied[uid].add(d)
+            d += timedelta(days=1)
+
+    # Working days from each user's first unit membership (default Mon–Fri).
+    member_days = {}
+    for m in (
+        OrganisationalUnitMember.objects.filter(member__in=users)
+        .select_related("unit")
+        .order_by("member_id", "pk")
+    ):
+        member_days.setdefault(
+            m.member_id, m.unit.businessHours_days or [1, 2, 3, 4, 5]
+        )
+
+    runs = {}
+    for user in users:
+        days = member_days.get(user.pk, [1, 2, 3, 4, 5])
+        user_holidays = (
+            holiday_by_country.get(str(user.country), set()) | global_holidays
+        )
+        runs[user.pk] = available_day_runs(
+            start.date(), end.date(), days, user_holidays, occupied.get(user.pk, set())
+        )
+    return runs
+
+
+def schedule_history(
+    user, job_id=None, phase_id=None, limit=100, scan=1000, since=None
+):
+    """The scheduler's change log for a scope, newest first.
+
+    A job/phase scope requires ``view_job_schedule`` on the job (else empty).
+    The global log only lists actions touching someone whose schedule the
+    viewer may see (it used to list everyone's)."""
+    from ..models import Job, Phase, ScheduleAction
+    from ..utils import can_view_job_schedule, viewable_schedule_user_pks
+
+    qs = ScheduleAction.objects.select_related("actor", "reverted_by").order_by(
+        "-created"
+    )
+    if since is not None:
+        qs = qs.filter(created__gt=since)
+    if phase_id:
+        phase = Phase.objects.select_related("job__unit").filter(pk=phase_id).first()
+        if not phase or not can_view_job_schedule(user, phase.job):
+            return []
+        return list(qs.filter(phase_id=phase_id)[:limit])
+    if job_id:
+        job = Job.objects.select_related("unit").filter(pk=job_id).first()
+        if not job or not can_view_job_schedule(user, job):
+            return []
+        return list(qs.filter(job_id=job_id)[:limit])
+    viewable = viewable_schedule_user_pks(user)
+    out = []
+    for action in qs[:scan]:
+        if action._affected_user_ids() & viewable:
+            out.append(action)
+            if len(out) >= limit:
+                break
+    return out
