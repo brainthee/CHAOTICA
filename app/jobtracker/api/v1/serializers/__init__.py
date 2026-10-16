@@ -22,9 +22,23 @@ from .people import (  # noqa: F401
     LeaveRequestListSerializer,
     UserSkillSerializer,
     QualificationRecordSerializer,
+    UserContactSerializer,
+    UnitMembershipRefSerializer,
+    UserDetailSerializer,
+    TeamMembershipSerializer,
+    SkillRatingSerializer,
+    QualificationSummarySerializer,
+    UserProfileSerializer,
+    UnitMemberRowSerializer,
+    OrganisationalUnitDetailSerializer,
 )
 from .clients import (  # noqa: F401
     ClientSerializer,
+    ClientDetailSerializer,
+    ContactSerializer,
+    FrameworkSerializer,
+    UsageRowSerializer,
+    FrameworkDetailSerializer,
 )
 from .jobs import (  # noqa: F401
     JobSerializer,

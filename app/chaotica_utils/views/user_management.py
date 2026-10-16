@@ -1,3 +1,4 @@
+from django.utils.dateparse import parse_date
 from django.urls import reverse_lazy, reverse
 from django.template import loader
 from django.utils import timezone
@@ -78,6 +79,12 @@ class UserDetailView(UserBaseView, DetailView):
     role_required = "*"  # Allow all users with a role to view "public profiles"
 
     def get_object(self, queryset=None):
+        # Cached: get_context_data uses it several times.
+        if not hasattr(self, "_object"):
+            self._object = self._get_object()
+        return self._object
+
+    def _get_object(self):
         if self.kwargs.get("email"):
             return get_object_or_404(
                 User.objects.all().prefetch_related(
@@ -95,25 +102,19 @@ class UserDetailView(UserBaseView, DetailView):
 
         context = super(UserDetailView, self).get_context_data(**kwargs)
 
-        date_range_raw = self.request.GET.get("dateRange", "")
-        if " to " in date_range_raw:
-            date_range_split = date_range_raw.split(" to ")
-            if len(date_range_split) == 2:
-                context["start_date"] = timezone.datetime.strptime(
-                    date_range_split[0], "%Y-%m-%d"
-                )
-                context["end_date"] = timezone.datetime.strptime(
-                    date_range_split[1], "%Y-%m-%d"
-                )
-
-        if "start_date" not in context:
-            context["start_date"] = self.request.GET.get(
-                "start_date",
-                (timezone.now().date() - datetime.timedelta(days=30)),
-            )
-            context["end_date"] = self.request.GET.get(
-                "end_date", timezone.now().date()
-            )
+        # ?dateRange=YYYY-MM-DD to YYYY-MM-DD, or ?start_date= / ?end_date=;
+        # anything unparseable falls back to the last 30 days (it used to 500,
+        # or hand raw strings to get_stats).
+        today = timezone.now().date()
+        start_raw = self.request.GET.get("start_date")
+        end_raw = self.request.GET.get("end_date")
+        date_range_parts = self.request.GET.get("dateRange", "").split(" to ")
+        if len(date_range_parts) == 2:
+            start_raw, end_raw = date_range_parts
+        start = parse_date(start_raw or "") if start_raw else None
+        end = parse_date(end_raw or "") if end_raw else None
+        context["start_date"] = start or today - datetime.timedelta(days=30)
+        context["end_date"] = end or today
 
         org_raw = self.request.GET.get("org", None)
         if org_raw and org_raw.isdigit():

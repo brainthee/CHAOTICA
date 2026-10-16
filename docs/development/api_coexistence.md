@@ -22,6 +22,15 @@ strict and the gap is listed here. To be cleaned up as pages move onto the API.
 - `user_skill_table.html` lists every user's rating for a skill. API
   `/skills/{id}/users/` uses UserSkill scoping (A7).
 - The skill matrix base set isn't limited by unit (A7).
+- The client page lists contacts and frameworks to anyone who can view the
+  client. The API includes them only with `view_contact` /
+  `view_frameworkagreement` (A6).
+- The profile page shows skills and qualifications to anyone with a global
+  role. The API's `/users/{id}/profile/` includes them only for yourself, your
+  manager or holders of `view_users_skill` / `view_users_qualifications` (A6).
+- The contact detail route (`client_contact_detail`) has no template and
+  errors; contacts are only reachable through their edit modal. API contact
+  refs link to the client page instead (A6).
 
 ## Logic still in template views
 - Workflow buttons: four status-button templates, two workflow views and the
@@ -48,3 +57,5 @@ strict and the gap is listed here. To be cleaned up as pages move onto the API.
   their other commitments); it is now limited to people the viewer may see.
 - Global schedule history listed every change; it now lists only changes
   touching people the viewer may see.
+- Contact and framework pages (view, edit, delete) resolved any pk under any
+  client slug; they are now bound to the client in the URL.
