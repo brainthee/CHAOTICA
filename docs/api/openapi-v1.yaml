@@ -448,6 +448,91 @@ paths:
               schema:
                 $ref: '#/components/schemas/LeaveRequest'
           description: ''
+  /api/v1/me/:
+    get:
+      operationId: me_retrieve
+      description: Base for composite (non-model) endpoints, e.g. ``/me/dashboard/``.
+      summary: The signed-in user
+      tags:
+      - me
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Me'
+          description: ''
+  /api/v1/me/preferences/:
+    get:
+      operationId: me_preferences_retrieve
+      description: Base for composite (non-model) endpoints, e.g. ``/me/dashboard/``.
+      summary: My preferences
+      tags:
+      - me
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Preferences'
+          description: ''
+  /api/v1/me/schedule/:
+    get:
+      operationId: me_schedule_retrieve
+      description: '``/users/{me}/schedule/`` without needing the id first.'
+      summary: My schedule window
+      parameters:
+      - in: query
+        name: end
+        schema:
+          type: string
+          format: date
+        description: Window end (ISO date). Defaults to start + 28 days. Span must
+          be 366 days or fewer.
+      - in: query
+        name: start
+        schema:
+          type: string
+          format: date
+        description: Window start (ISO date, YYYY-MM-DD). Defaults to today.
+      tags:
+      - me
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Schedule'
+          description: ''
+  /api/v1/meta/:
+    get:
+      operationId: meta_retrieve
+      description: |-
+        What a client needs before signing in. Public, and answers during
+        maintenance (it reports it) — so no MaintenanceModePermission.
+      summary: Instance metadata
+      tags:
+      - meta
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Meta'
+          description: ''
   /api/v1/org-units/:
     get:
       operationId: org_units_list
@@ -1134,6 +1219,59 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Schedule'
+          description: ''
+  /api/v1/search/:
+    get:
+      operationId: search_retrieve
+      description: Base for composite (non-model) endpoints, e.g. ``/me/dashboard/``.
+      summary: Search everything
+      parameters:
+      - in: query
+        name: limit
+        schema:
+          type: integer
+        description: Per group, 1–50 (default 10).
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: At least 3 characters.
+        required: true
+      tags:
+      - search
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResults'
+          description: ''
+  /api/v1/search/goto/:
+    get:
+      operationId: search_goto_retrieve
+      description: Base for composite (non-model) endpoints, e.g. ``/me/dashboard/``.
+      summary: Jump to a job or phase by its ID
+      parameters:
+      - in: query
+        name: id
+        schema:
+          type: string
+        description: Job ID ("1234") or Phase ID ("1234-1").
+        required: true
+      tags:
+      - search
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ref'
           description: ''
   /api/v1/services/:
     get:
@@ -2884,6 +3022,174 @@ components:
       - type_of_leave
       - type_of_leave_display
       - user
+    Me:
+      type: object
+      description: The caller (from ``chaotica_utils.selectors.users.current_user_profile``).
+      properties:
+        id:
+          type: integer
+        display:
+          type: string
+        first_name:
+          type: string
+        last_name:
+          type: string
+        email:
+          type: string
+          format: email
+        avatar_url:
+          type: string
+          readOnly: true
+        job_title:
+          type: string
+          nullable: true
+        job_level:
+          type: string
+        job_level_label:
+          type: string
+        tz:
+          type: string
+          readOnly: true
+        theme:
+          type: string
+        city:
+          allOf:
+          - $ref: '#/components/schemas/Ref'
+          nullable: true
+          readOnly: true
+        country:
+          type: string
+          nullable: true
+        units:
+          type: array
+          items:
+            $ref: '#/components/schemas/Membership'
+        manager:
+          allOf:
+          - $ref: '#/components/schemas/Ref'
+          nullable: true
+          readOnly: true
+        acting_manager:
+          allOf:
+          - $ref: '#/components/schemas/Ref'
+          nullable: true
+          readOnly: true
+        global_roles:
+          type: array
+          items:
+            type: string
+        capabilities:
+          type: object
+          additionalProperties:
+            type: boolean
+        web_url:
+          type: string
+          nullable: true
+          readOnly: true
+      required:
+      - acting_manager
+      - avatar_url
+      - capabilities
+      - city
+      - country
+      - display
+      - email
+      - first_name
+      - global_roles
+      - id
+      - job_title
+      - last_name
+      - manager
+      - theme
+      - tz
+      - units
+      - web_url
+    Membership:
+      type: object
+      properties:
+        unit:
+          allOf:
+          - $ref: '#/components/schemas/Ref'
+          nullable: true
+          readOnly: true
+        roles:
+          type: array
+          items:
+            type: string
+          readOnly: true
+      required:
+      - roles
+      - unit
+    Meta:
+      type: object
+      description: Schema for ``/meta/`` (assembled in the view).
+      properties:
+        name:
+          type: string
+        version:
+          type: string
+        api_version:
+          type: string
+        web_base_url:
+          type: string
+        ws_url:
+          type: string
+        maintenance:
+          type: boolean
+        features:
+          type: object
+          additionalProperties:
+            type: boolean
+        auth:
+          $ref: '#/components/schemas/MetaAuth'
+        branding:
+          $ref: '#/components/schemas/MetaBranding'
+      required:
+      - api_version
+      - auth
+      - branding
+      - features
+      - maintenance
+      - name
+      - version
+      - web_base_url
+      - ws_url
+    MetaAuth:
+      type: object
+      properties:
+        session:
+          type: boolean
+        local_login:
+          type: boolean
+        sso:
+          type: boolean
+        login_url:
+          type: string
+        token_url:
+          type: string
+          nullable: true
+        oauth:
+          type: object
+          additionalProperties: {}
+          nullable: true
+      required:
+      - local_login
+      - login_url
+      - oauth
+      - session
+      - sso
+      - token_url
+    MetaBranding:
+      type: object
+      properties:
+        site_name:
+          type: string
+        logo_url:
+          type: string
+          nullable: true
+      required:
+      - logo_url
+      - site_name
     NullEnum:
       enum:
       - null
@@ -3467,6 +3773,23 @@ components:
         * `17` - Postponed
         * `18` - Deleted
         * `19` - Archived
+    Preferences:
+      type: object
+      properties:
+        theme:
+          type: string
+        tz:
+          type: string
+          readOnly: true
+        show_help:
+          type: boolean
+        scheduler_default_filter:
+          type: string
+      required:
+      - scheduler_default_filter
+      - show_help
+      - theme
+      - tz
     Project:
       type: object
       properties:
@@ -3971,6 +4294,33 @@ components:
       - business_hours
       - user
       - utilisation
+    SearchGroup:
+      type: object
+      properties:
+        type:
+          type: string
+        label:
+          type: string
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ref'
+      required:
+      - label
+      - results
+      - type
+    SearchResults:
+      type: object
+      properties:
+        q:
+          type: string
+        groups:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchGroup'
+      required:
+      - groups
+      - q
     Service:
       type: object
       properties:
