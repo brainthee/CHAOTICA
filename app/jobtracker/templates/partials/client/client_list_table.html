@@ -1,18 +1,17 @@
 <div class="table-responsive scrollbar mx-n1 px-1">
   <table class="table table-sm datatable fs-9 mb-0" id="clientTableAjax"
-  {% comment %} data-server-side=true {% endcomment %}
-  data-processing=true
-  data-ajax="{% url 'client-list' %}?format=datatables{% if filter_field %}&{{ filter_field }}={{ filter_value }}{% endif %}"
+  data-v1-url="{% url 'api_v1:client-list' %}"
+  {% if filter_field %}data-v1-params='{"{{ filter_field }}": "{{ filter_value }}"}'{% endif %}
   >
     <caption>Client List</caption>
     <thead>
       <tr>
-        <th class="white-space-nowrap align-middle ps-0" scope="col" data-data="name_link" data-name="name" style="width:30%;">Name</th>
-        <th class="align-middle ps-3" scope="col" data-data="ams_display" data-searchable=false data-sortable=false style="width:10%;">Account Managers</th>
-        <th class="align-middle ps-3" scope="col" data-data="tams_display" data-searchable=false data-sortable=false style="width:10%;">Technical Account Managers</th>
-        <th class="align-middle ps-3 text-end" scope="col" data-data="jobs_count" data-name="jobs_count" data-searchable=false style="width:8%;">Jobs</th>
-        <th class="align-middle ps-3 text-end" scope="col" data-data="projects_count" data-name="projects_count" data-searchable=false style="width:8%;">Projects</th>
-        <th class="align-middle ps-3" scope="col" data-data="status_display" data-searchable=false data-sortable=false data-sort="status" style="width:15%;">Status</th>
+        <th class="white-space-nowrap align-middle ps-0" scope="col" data-data="name" data-v1-render="link" data-v1-order="name" style="width:30%;">Name</th>
+        <th class="align-middle ps-3" scope="col" data-data="account_managers" data-v1-render="refs" style="width:10%;">Account Managers</th>
+        <th class="align-middle ps-3" scope="col" data-data="tech_account_managers" data-v1-render="refs" style="width:10%;">Technical Account Managers</th>
+        <th class="align-middle ps-3 text-end" scope="col" data-data="jobs_count" data-v1-order="jobs_count" style="width:8%;">Jobs</th>
+        <th class="align-middle ps-3 text-end" scope="col" data-data="projects_count" data-v1-order="projects_count" style="width:8%;">Projects</th>
+        <th class="align-middle ps-3" scope="col" data-data="is_ready" data-v1-render="client-status" style="width:15%;">Status</th>
       </tr>
     </thead>
   </table>

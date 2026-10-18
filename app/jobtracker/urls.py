@@ -6,11 +6,9 @@ from chaotica_utils.api import AuditEventViewSet
 
 router = routers.DefaultRouter()
 router.register(r"users", views.UserViewSet, basename="user")
-router.register(r"jobs", views.JobViewSet, basename="job")
 router.register(
     r"orgunit", views.OrganisationalUnitViewSet, basename="organisationalunit"
 )
-router.register(r"client", views.ClientViewSet, basename="client")
 router.register(r"notes", views.NoteViewSet, basename="note")
 router.register(r"auditevents", AuditEventViewSet, basename="auditevent")
 

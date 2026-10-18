@@ -86,11 +86,91 @@ $(document).ready(function() {
     });
 });
 
+// ---- Tables backed by /api/v1/ ---------------------------------------------
+// <table class="datatable" data-v1-url="/api/v1/jobs/" data-v1-params='{"k":"v"}'>
+// with <th data-data="field.path" data-v1-render="ref" data-v1-order="title">.
+// DataTables' server-side paging is mapped onto ?page=&page_size=&ordering=&q=
+// and cells are rendered here, escaped (the API returns data, not HTML).
+const V1_MAX_PAGE_SIZE = 200;
+
+function v1Escape(value) {
+    return String(value == null ? '' : value).replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+}
+
+function v1Link(href, text) {
+    const url = String(href || '');
+    if (!/^(\/(?!\/)|https?:\/\/)/i.test(url)) return v1Escape(text);
+    return `<a class="fw-bold fs-8" href="${v1Escape(url)}">${v1Escape(text)}</a>`;
+}
+
+const V1_RENDERERS = {
+    text: (value) => v1Escape(value),
+    link: (value, row) => v1Link(row.web_url, value),
+    ref: (value) => value ? v1Link(value.web_url, value.display) : '',
+    refs: (value) => (value || []).map(r => v1Link(r.web_url, r.display)).join(', '),
+    'job-status': (value, row) =>
+        `<span class="badge text-wrap badge-phoenix badge-phoenix-${v1Escape(row.status_colour)}">${v1Escape(row.status_display)}</span>`,
+    'client-status': (value) => value
+        ? '<span class="badge badge-phoenix badge-phoenix-success">Ready</span>'
+        : '<span class="badge badge-phoenix badge-phoenix-warning">Not Ready</span>',
+};
+
+function initV1Tables() {
+    document.querySelectorAll('table.datatable[data-v1-url]').forEach(function (table) {
+        const url = table.dataset.v1Url;
+        const extra = table.dataset.v1Params ? JSON.parse(table.dataset.v1Params) : {};
+        const heads = Array.from(table.querySelectorAll('thead th'));
+        const columns = heads.map(th => {
+            const render = V1_RENDERERS[th.dataset.v1Render || 'text'];
+            return {
+                data: th.dataset.data,
+                orderable: !!th.dataset.v1Order,
+                searchable: false,
+                defaultContent: '',
+                render: (value, type, row) => type === 'display' ? render(value, row) : value,
+            };
+        });
+        new DataTable(table, {
+            {% include 'js/dtDefaultConfig.js' %}
+            serverSide: true,
+            processing: true,
+            columns: columns,
+            ajax: function (data, callback) {
+                const size = data.length > 0 ? Math.min(data.length, V1_MAX_PAGE_SIZE) : V1_MAX_PAGE_SIZE;
+                const params = new URLSearchParams(Object.assign({}, extra, {
+                    page: Math.floor(data.start / size) + 1,
+                    page_size: size,
+                }));
+                if (data.search && data.search.value) params.set('q', data.search.value);
+                if (data.order && data.order.length) {
+                    const field = heads[data.order[0].column].dataset.v1Order;
+                    if (field) params.set('ordering', (data.order[0].dir === 'desc' ? '-' : '') + field);
+                }
+                fetch(url + '?' + params.toString(), {
+                    headers: { 'Accept': 'application/json' },
+                    credentials: 'same-origin',
+                })
+                    .then(r => r.ok ? r.json() : Promise.reject(r.status))
+                    .then(body => callback({
+                        draw: data.draw,
+                        recordsTotal: body.count,
+                        recordsFiltered: body.count,
+                        data: body.results,
+                    }))
+                    .catch(() => callback({ draw: data.draw, recordsTotal: 0, recordsFiltered: 0, data: [] }));
+            },
+        });
+    });
+}
+
 $(function() {
 
-    const dt = new DataTable('table.datatable', {
+    const dt = new DataTable('table.datatable:not([data-v1-url])', {
         {% include 'js/dtDefaultConfig.js' %}
     });
+    initV1Tables();
     dt.tables().every(function () {
         const th = this.table().header().querySelector('th.default-sort');
         if (!th) return;

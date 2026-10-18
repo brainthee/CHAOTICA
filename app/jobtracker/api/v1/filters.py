@@ -98,6 +98,7 @@ def _filter_queue(filterset, qs, value, resource):
 
 class JobFilter(django_filters.FilterSet):
     status__in = NumberInFilter(field_name="status", lookup_expr="in")
+    exclude_status = NumberInFilter(field_name="status", lookup_expr="in", exclude=True)
     unit = django_filters.NumberFilter(field_name="unit_id")
     client = django_filters.NumberFilter(field_name="client_id")
     account_manager = MeOrIdFilter(field_name="account_manager")

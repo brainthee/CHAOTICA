@@ -1,4 +1,4 @@
-"""The clients list exposes a (sortable) job count via the datatables API."""
+"""The clients list (now on /api/v1/clients/) shows sortable job / project counts."""
 from django.test import TestCase, Client as HttpClient, override_settings
 from django.urls import reverse
 
@@ -37,9 +37,9 @@ class ClientJobCountTests(TestCase):
         self.http = HttpClient(HTTP_HOST="localhost")
 
     def _row(self):
-        resp = self.http.get(reverse("client-list") + "?format=datatables")
+        resp = self.http.get(reverse("api_v1:client-list"))
         self.assertEqual(resp.status_code, 200)
-        return next(r for r in resp.json()["data"] if r["name"] == "Acme")
+        return next(r for r in resp.json()["results"] if r["name"] == "Acme")
 
     def test_jobs_count_excludes_deleted(self):
         self.http.force_login(self.superuser)
