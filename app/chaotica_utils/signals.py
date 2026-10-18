@@ -123,6 +123,7 @@ _AUDITED_MODELS = {
     ("notifications", "SubscriptionRule"): "config",
     ("reporting", "Report"): "config",
     ("reporting", "ScheduledReport"): "config",
+    ("oauth2_provider", "Application"): "security",  # Connected Apps
 }
 
 # (app_label, ModelName, m2m_field_name): AuditCategory value. Tracks
@@ -246,3 +247,88 @@ def connect_audit_signals():
             dispatch_uid=f"audit_m2m_{app_label}_{model_name}_{field_name}",
             weak=False,
         )
+
+
+# ---------------------------------------------------------------------------
+# Deactivated accounts lose their OAuth2 app access straight away (DOT itself
+# would keep honouring an issued token until it expires).
+# ---------------------------------------------------------------------------
+
+
+@receiver(pre_save, sender="chaotica_utils.User", dispatch_uid="oauth_note_active")
+def _note_was_active(sender, instance, **kwargs):
+    if instance.pk:
+        instance._was_active = (
+            sender.objects.filter(pk=instance.pk).values_list("is_active", flat=True).first()
+        )
+
+
+@receiver(post_save, sender="chaotica_utils.User", dispatch_uid="oauth_revoke_on_deactivate")
+def _revoke_tokens_on_deactivate(sender, instance, created, **kwargs):
+    if not created and getattr(instance, "_was_active", False) and not instance.is_active:
+        from django.db import transaction
+
+        from .oauth import revoke_user_tokens
+        from .realtime import disconnect_user
+
+        revoke_user_tokens(instance)
+        transaction.on_commit(lambda: disconnect_user(instance.pk))
+
+
+# ---------------------------------------------------------------------------
+# CORS for Connected Apps: a browser app on a registered origin may call the
+# API and the token endpoints (never other paths, never with cookies).
+# ---------------------------------------------------------------------------
+
+_APP_ORIGINS_KEY = "oauth_app_origins"
+
+
+def connected_app_origins():
+    from django.core.cache import cache
+
+    origins = cache.get(_APP_ORIGINS_KEY)
+    if origins is None:
+        from oauth2_provider.models import get_application_model
+
+        origins = set()
+        for value in get_application_model().objects.values_list(
+            "allowed_origins", flat=True
+        ):
+            origins.update(o.rstrip("/") for o in (value or "").split())
+        cache.set(_APP_ORIGINS_KEY, origins, 3600)
+    return origins
+
+
+def _cors_for_connected_apps(sender, request, **kwargs):
+    import re
+
+    from constance import config
+    from django.conf import settings
+
+    if not config.API_OAUTH2_ENABLED:
+        return False
+    if not re.match(settings.CORS_URLS_REGEX, request.path_info):
+        return False
+    origin = request.headers.get("Origin", "").rstrip("/")
+    return bool(origin) and origin in connected_app_origins()
+
+
+def _forget_app_origins(sender, **kwargs):
+    from django.core.cache import cache
+
+    cache.delete(_APP_ORIGINS_KEY)
+
+
+def connect_oauth_signals():
+    from corsheaders.signals import check_request_enabled
+    from django.db.models.signals import post_delete
+    from oauth2_provider.models import get_application_model
+
+    check_request_enabled.connect(
+        _cors_for_connected_apps, dispatch_uid="cors_connected_apps"
+    )
+    app_model = get_application_model()
+    post_save.connect(_forget_app_origins, sender=app_model, dispatch_uid="app_origins_save")
+    post_delete.connect(
+        _forget_app_origins, sender=app_model, dispatch_uid="app_origins_delete"
+    )

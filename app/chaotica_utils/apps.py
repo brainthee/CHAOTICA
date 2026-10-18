@@ -30,3 +30,4 @@ class ChaoticaUtilsConfig(AppConfig):
         from . import signals
 
         signals.connect_audit_signals()
+        signals.connect_oauth_signals()

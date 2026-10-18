@@ -152,6 +152,11 @@ CONSTANCE_CONFIG = {
     ),
     "REGISTRATION_ENABLED": (True, "Should we allow self-registration?"),
     "LOCAL_LOGIN_ENABLED": (True, "Should we allow logging in via local user?"),
+    "API_OAUTH2_ENABLED": (
+        False,
+        "Let registered apps (Settings → Connected Apps) sign people in with "
+        "OAuth2 to use the API",
+    ),
     # Support
     "SUPPORT_DOC_URL": ("https://docs.chaotica.app/en/latest/", "URL to Documentation"),
     "SUPPORT_MAILBOX": (
@@ -575,6 +580,7 @@ THIRD_PARTY_APPS = [
     "csp",
     "cities_light",  # City database for location validation
     "channels",  # ASGI / WebSockets for live scheduler updates
+    "oauth2_provider",  # OAuth2 sign-in for separate clients (API_OAUTH2_ENABLED)
 ]
 LOCAL_APPS = [
     "chaotica_utils",
@@ -655,6 +661,7 @@ DJANGO_CRON_LOCK_BACKEND = "django_cron.backends.lock.file.FileLock"
 CRON_CLASSES = [
     "notifications.tasks.task_send_email_notifications",
     "chaotica_utils.tasks.task_clean_historical_records",
+    "chaotica_utils.tasks.ClearExpiredOAuthTokens",
     "chaotica_utils.tasks.task_sync_global_permissions",
     "chaotica_utils.tasks.task_sync_role_permissions_to_default",
     "chaotica_utils.tasks.task_sync_role_permissions",
@@ -705,6 +712,36 @@ REST_FRAMEWORK = {
     "NUM_PROXIES": int(os.environ.get("API_NUM_PROXIES", default=1)),
 }
 
+# OAuth2 provider (django-oauth-toolkit) for /api/v1/ clients such as LCARS:
+# authorization code + PKCE (S256) only, short access tokens, rotating
+# single-use refresh tokens. Apps are registered on the Settings page.
+OAUTH2_PROVIDER = {
+    "PKCE_REQUIRED": True,
+    "SCOPES": {"read": "Read your CHAOTICA data", "write": "Make changes for you"},
+    "DEFAULT_SCOPES": ["read"],
+    "ACCESS_TOKEN_EXPIRE_SECONDS": 60 * 60,
+    "AUTHORIZATION_CODE_EXPIRE_SECONDS": 60,
+    "ROTATE_REFRESH_TOKEN": True,
+    "REFRESH_TOKEN_REUSE_PROTECTION": True,
+    "REFRESH_TOKEN_EXPIRE_SECONDS": 30 * 24 * 60 * 60,
+    "ALLOWED_REDIRECT_URI_SCHEMES": ["https"]
+    + (["http"] if DJANGO_ENV == "Dev" else []),
+    "OIDC_ENABLED": False,
+    # RFC 9700 (OAuth 2.0 security BCP): reject implicit/password grants and
+    # plain PKCE, hash stored tokens, keep tokens out of query strings, send
+    # `iss` on authorization responses.
+    "COMPLIANT_BCP_RFC9700_IMPLICIT_GRANT": True,
+    "COMPLIANT_BCP_RFC9700_PASSWORD_GRANT": True,
+    "COMPLIANT_BCP_RFC9700_PKCE_METHOD": True,
+    "COMPLIANT_BCP_RFC9700_PKCE_REQUIRED": True,
+    "COMPLIANT_BCP_RFC9700_ACCESS_TOKEN_TRANSPORT": True,
+    "COMPLIANT_BCP_RFC9700_AUTHZ_RESPONSE_ISS": True,
+    "COMPLIANT_BCP_RFC9700_TOKEN_STORAGE": True,
+    "COMPLIANT_BCP_RFC9700_REFRESH_TOKEN": True,
+    "COMPLIANT_BCP_RFC9700_REDIRECT_URI_SCHEME": True,
+    "COMPLIANT_BCP_RFC9700_REDIRECT_URI_MATCHING": True,
+}
+
 # OpenAPI schema / docs (drf-spectacular) for the versioned `/api/v1/` API.
 SPECTACULAR_SETTINGS = {
     "TITLE": "CHAOTICA API",
@@ -721,6 +758,13 @@ SPECTACULAR_SETTINGS = {
     "PREPROCESSING_HOOKS": [
         "jobtracker.api.v1.schema.exclude_non_v1_endpoints",
     ],
+    # OAuth2 (authorization code + PKCE) for API clients; see OAUTH2_PROVIDER.
+    "OAUTH2_FLOWS": ["authorizationCode"],
+    "OAUTH2_AUTHORIZATION_URL": "/o/authorize/",
+    "OAUTH2_TOKEN_URL": "/o/token/",
+    "OAUTH2_REFRESH_URL": "/o/token/",
+    "OAUTH2_SCOPES": {"read": "Read your CHAOTICA data", "write": "Make changes for you"},
+    "SWAGGER_UI_OAUTH2_CONFIG": {"usePkceWithAuthorizationCodeGrant": True},
     "ENUM_NAME_OVERRIDES": {
         "JobStatusEnum": "jobtracker.enums.JobStatuses.CHOICES",
         "PhaseStatusEnum": "jobtracker.enums.PhaseStatuses.CHOICES",
@@ -754,6 +798,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "simple_history.middleware.HistoryRequestMiddleware",
     "impersonate.middleware.ImpersonateMiddleware",
+    "chaotica_utils.middleware.common.OAuthGateMiddleware",
     "chaotica_utils.middleware.NewInstallMiddleware",
     "chaotica_utils.middleware.MaintenanceModeMiddleware",
 ]

@@ -432,6 +432,7 @@ class CustomConfigForm(ConstanceForm):
                             "LOCAL_LOGIN_ENABLED",
                             "ADFS_ENABLED",
                             "ADFS_AUTO_LOGIN",
+                            "API_OAUTH2_ENABLED",
                         ),
                     ),
                     col(

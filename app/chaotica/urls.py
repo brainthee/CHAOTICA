@@ -17,6 +17,7 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path, include, re_path
+from oauth2_provider import views as oauth2_views
 from django.http import HttpResponseRedirect
 from django.conf import settings
 from django.conf.urls.static import static
@@ -41,6 +42,31 @@ urlpatterns = [
     # Versioned, clean REST API. Kept separate from the legacy `/api/` DataTables
     # feeds in jobtracker.urls (which are unversioned and UI-coupled).
     path("api/v1/", include("jobtracker.api.v1.urls")),
+    # OAuth2 for API clients: authorize / token / revoke only (apps are managed
+    # on the Settings page; no dynamic registration, device or OIDC flows).
+    # NB /oauth2/ is ADFS. Gated by API_OAUTH2_ENABLED (OAuthGateMiddleware).
+    path(
+        "o/",
+        include(
+            (
+                [
+                    path(
+                        "authorize/",
+                        oauth2_views.AuthorizationView.as_view(),
+                        name="authorize",
+                    ),
+                    path("token/", oauth2_views.TokenView.as_view(), name="token"),
+                    path(
+                        "revoke_token/",
+                        oauth2_views.RevokeTokenView.as_view(),
+                        name="revoke-token",
+                    ),
+                ],
+                "oauth2_provider",
+            ),
+            namespace="oauth2_provider",
+        ),
+    ),
     re_path(r"", include("chaotica_utils.urls")),
     re_path(r"", include("jobtracker.urls")),
     path("rm_sync/", include("rm_sync.urls")),

@@ -254,3 +254,45 @@ class TimezoneMiddleware:
         else:
             dj_timezone.deactivate()
         return self.get_response(request)
+
+
+OAUTH_PREFIX = "/o/"
+OAUTH_TOKEN_PATHS = ("/o/token/", "/o/revoke_token/")
+
+
+class OAuthGateMiddleware:
+    """Guards the OAuth2 provider endpoints (``/o/``).
+
+    - off unless ``API_OAUTH2_ENABLED`` (404);
+    - no granting apps access while impersonating someone (403) — the token
+      would act as them long after the impersonation ends;
+    - the token endpoints answer maintenance mode with JSON, not a redirect
+      a client can't follow.
+
+    Must come after ImpersonateMiddleware and before MaintenanceModeMiddleware.
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        path = request.path
+        if path.startswith(OAUTH_PREFIX):
+            if not config.API_OAUTH2_ENABLED:
+                return JsonResponse(
+                    {"error": "not_found", "error_description": "OAuth2 is disabled."},
+                    status=404,
+                )
+            if getattr(request, "impersonator", None) is not None:
+                return HttpResponseForbidden(
+                    "Apps can't be connected while impersonating someone."
+                )
+            if config.MAINTENANCE_MODE and path in OAUTH_TOKEN_PATHS:
+                return JsonResponse(
+                    {
+                        "error": "temporarily_unavailable",
+                        "error_description": "CHAOTICA is in maintenance mode.",
+                    },
+                    status=503,
+                )
+        return self.get_response(request)

@@ -233,3 +233,17 @@ class task_sync_role_permissions(CronJobBase):
 
         for unit in OrganisationalUnit.objects.all():
             unit.sync_permissions()
+
+
+class ClearExpiredOAuthTokens(CronJobBase):
+    """Delete expired / revoked OAuth2 tokens and grants (django-oauth-toolkit's
+    ``cleartokens``)."""
+
+    RUN_EVERY_MINS = 60 * 24
+    schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
+    code = "chaotica_utils.clear_expired_oauth_tokens"
+
+    def do(self):
+        from oauth2_provider.models import clear_expired
+
+        clear_expired()

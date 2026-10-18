@@ -1,0 +1,42 @@
+{% extends "base_card.html" %}
+{% load i18n static %}
+
+{% block head_title %}Connect {{ application.name }}{% endblock head_title %}
+
+{% block left_col_content %}
+<div class="card card-plain m-3">
+  {% if not error %}
+  <form id="authorizationForm" method="post">
+    {% csrf_token %}
+    {% for field in form %}{% if field.is_hidden %}{{ field }}{% endif %}{% endfor %}
+    <div class="card-header pb-0 text-center">
+      <h4 class="font-weight-bolder">Connect {{ application.name }}?</h4>
+      <p class="text-body-secondary mb-0">Signed in as <strong>{{ request.user }}</strong></p>
+    </div>
+    <div class="card-body">
+      <p>{{ application.name }} will be able to:</p>
+      <ul>
+        {% for scope in scopes_descriptions %}<li>{{ scope }}</li>{% endfor %}
+      </ul>
+      <p class="fs-9 text-body-secondary">
+        It acts as you, with exactly your permissions. You can disconnect it at any
+        time from your profile (Connected Apps).
+      </p>
+      {{ form.non_field_errors }}
+      <div class="d-flex justify-content-center gap-2 mt-3">
+        <input type="submit" class="btn btn-phoenix-secondary" value="Cancel"/>
+        <input type="submit" class="btn btn-primary" name="allow" value="Allow"/>
+      </div>
+    </div>
+  </form>
+  {% else %}
+  <div class="card-header pb-0 text-center">
+    <h4 class="font-weight-bolder">Can't connect this app</h4>
+  </div>
+  <div class="card-body text-center">
+    <p class="mb-1"><code>{{ error.error }}</code></p>
+    <p class="text-body-secondary">{{ error.description }}</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock left_col_content %}
