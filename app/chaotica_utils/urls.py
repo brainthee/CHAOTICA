@@ -1,5 +1,6 @@
 from django.urls import path, include, re_path
 from . import views
+from .views import connected_apps
 from django.contrib.auth import views as auth_views
 
 
@@ -98,6 +99,26 @@ urlpatterns = [
     ),
     # Settings
     path("settings/", views.app_settings, name="app_settings"),
+    path(
+        "settings/apps/new",
+        connected_apps.connected_app_form,
+        name="connected_app_create",
+    ),
+    path(
+        "settings/apps/<int:pk>/edit",
+        connected_apps.connected_app_form,
+        name="connected_app_edit",
+    ),
+    path(
+        "settings/apps/<int:pk>/delete",
+        connected_apps.connected_app_delete,
+        name="connected_app_delete",
+    ),
+    path(
+        "profile/connected-apps/<int:pk>/revoke",
+        connected_apps.revoke_own_connected_app,
+        name="revoke_own_connected_app",
+    ),
     path(
         "settings/permissions/",
         views.PermissionsMatrixView.as_view(),

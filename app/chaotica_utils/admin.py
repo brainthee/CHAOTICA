@@ -98,7 +98,13 @@ class CustomUserAdmin(UserAdmin, GuardedModelAdmin):
                 request, "You cannot deactivate yourself.", level=messages.WARNING
             )
             queryset = queryset.exclude(pk=request.user.pk)
+        from .oauth import revoke_user_tokens
+
+        users = list(queryset)
         count = queryset.update(is_active=False)
+        # update() skips the post_save signal that revokes app access.
+        for user in users:
+            revoke_user_tokens(user)
         self.message_user(request, f"{count} user(s) deactivated.")
 
     @admin.action(description="Activate selected users")

@@ -2216,6 +2216,26 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedQualificationRecordList'
           description: ''
+  /api/v1/realtime/ticket/:
+    post:
+      operationId: realtime_ticket_create
+      description: |-
+        A single-use, 30-second ticket for opening a WebSocket as yourself
+        (``wss://…/ws/me/?ticket=…`` or a ``ws/schedule/…`` socket) — for clients
+        that can't send the session cookie, e.g. OAuth2 apps.
+      summary: WebSocket ticket
+      tags:
+      - realtime
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RealtimeTicket'
+          description: ''
   /api/v1/schedule/:
     get:
       operationId: schedule_retrieve
@@ -2739,8 +2759,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties: {}
+                $ref: '#/components/schemas/ServiceCoverage'
           description: ''
   /api/v1/services/{id}/metrics/:
     get:
@@ -3081,8 +3100,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties: {}
+                $ref: '#/components/schemas/SkillMatrix'
           description: ''
   /api/v1/timeslot-comments/:
     get:
@@ -4031,6 +4049,16 @@ components:
       required:
       - code
       - name
+    Choice:
+      type: object
+      properties:
+        value:
+          type: integer
+        label:
+          type: string
+      required:
+      - label
+      - value
     Client:
       type: object
       properties:
@@ -4746,6 +4774,117 @@ components:
         * `YE` - Yemen
         * `ZM` - Zambia
         * `ZW` - Zimbabwe
+    CoverageCounts:
+      type: object
+      properties:
+        specialists:
+          type: integer
+        independent_only:
+          type: integer
+        support_only:
+          type: integer
+        missing_skills:
+          type: integer
+        total_capable:
+          type: integer
+        required_quals_holders:
+          type: integer
+      required:
+      - independent_only
+      - missing_skills
+      - required_quals_holders
+      - specialists
+      - support_only
+      - total_capable
+    CoveragePeople:
+      type: object
+      properties:
+        specialists:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ref'
+        independent_only:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ref'
+        support_only:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ref'
+        missing_skills:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ref'
+        required_quals_holders:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ref'
+      required:
+      - independent_only
+      - missing_skills
+      - required_quals_holders
+      - specialists
+      - support_only
+    CoverageSkill:
+      type: object
+      properties:
+        skill:
+          $ref: '#/components/schemas/Ref'
+        total_users:
+          type: integer
+        specialists:
+          type: integer
+        independent:
+          type: integer
+        support_needed:
+          type: integer
+        coverage_percentage:
+          type: number
+          format: double
+        training_candidates:
+          type: integer
+        skill_gap:
+          type: integer
+        critical:
+          type: boolean
+        opportunity_score:
+          type: number
+          format: double
+      required:
+      - coverage_percentage
+      - independent
+      - skill
+      - specialists
+      - support_needed
+      - total_users
+      - training_candidates
+    CoverageSummary:
+      type: object
+      properties:
+        total_skilled_users:
+          type: integer
+        required_skills_count:
+          type: integer
+        desired_skills_count:
+          type: integer
+        critical_skills_count:
+          type: integer
+        avg_required_coverage:
+          type: number
+          format: double
+        avg_desired_coverage:
+          type: number
+          format: double
+        coverage_health:
+          type: string
+      required:
+      - avg_desired_coverage
+      - avg_required_coverage
+      - coverage_health
+      - critical_skills_count
+      - desired_skills_count
+      - required_skills_count
+      - total_skilled_users
     Dashboard:
       type: object
       properties:
@@ -5633,6 +5772,69 @@ components:
           default: true
       required:
       - ids
+    MatrixCategory:
+      type: object
+      properties:
+        category:
+          $ref: '#/components/schemas/Ref'
+        skills:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ref'
+      required:
+      - category
+      - skills
+    MatrixCell:
+      type: object
+      properties:
+        rating:
+          type: integer
+        interested:
+          type: boolean
+      required:
+      - interested
+      - rating
+    MatrixFilters:
+      type: object
+      properties:
+        all_units:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        all_teams:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        all_categories:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        all_org_roles:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+      required:
+      - all_categories
+      - all_org_roles
+      - all_teams
+      - all_units
+    MatrixRow:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/Ref'
+        ratings:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/MatrixCell'
+          description: Keyed by skill id.
+      required:
+      - ratings
+      - user
     Me:
       type: object
       description: The caller (from ``chaotica_utils.selectors.users.current_user_profile``).
@@ -5781,8 +5983,8 @@ components:
           type: string
           nullable: true
         oauth:
-          type: object
-          additionalProperties: {}
+          allOf:
+          - $ref: '#/components/schemas/MetaOAuth'
           nullable: true
       required:
       - local_login
@@ -5802,6 +6004,31 @@ components:
       required:
       - logo_url
       - site_name
+    MetaOAuth:
+      type: object
+      properties:
+        authorize_url:
+          type: string
+        token_url:
+          type: string
+        revoke_url:
+          type: string
+        scopes:
+          type: array
+          items:
+            type: string
+        pkce:
+          type: string
+        client_id:
+          type: string
+          nullable: true
+      required:
+      - authorize_url
+      - client_id
+      - pkce
+      - revoke_url
+      - scopes
+      - token_url
     MonthlySeries:
       type: object
       description: '13 months, oldest first: ``months`` are first-of-month dates;
@@ -7398,6 +7625,20 @@ components:
         * `1` - Require Support
         * `2` - Independent
         * `3` - Specialist
+    RealtimeTicket:
+      type: object
+      properties:
+        ticket:
+          type: string
+        expires_in:
+          type: integer
+          description: Seconds.
+        ws_url:
+          type: string
+      required:
+      - expires_in
+      - ticket
+      - ws_url
     Ref:
       type: object
       description: |-
@@ -7961,6 +8202,31 @@ components:
       - skillsDesired
       - skillsRequired
       - web_url
+    ServiceCoverage:
+      type: object
+      properties:
+        counts:
+          $ref: '#/components/schemas/CoverageCounts'
+        people:
+          allOf:
+          - $ref: '#/components/schemas/CoveragePeople'
+          nullable: true
+        required_skills:
+          type: array
+          items:
+            $ref: '#/components/schemas/CoverageSkill'
+        desired_skills:
+          type: array
+          items:
+            $ref: '#/components/schemas/CoverageSkill'
+        summary:
+          $ref: '#/components/schemas/CoverageSummary'
+      required:
+      - counts
+      - desired_skills
+      - people
+      - required_skills
+      - summary
     ServiceList:
       type: object
       properties:
@@ -8177,6 +8443,28 @@ components:
       - services_desired
       - services_required
       - web_url
+    SkillMatrix:
+      type: object
+      properties:
+        categories:
+          type: array
+          items:
+            $ref: '#/components/schemas/MatrixCategory'
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/MatrixRow'
+        rating_choices:
+          type: array
+          items:
+            $ref: '#/components/schemas/Choice'
+        filters:
+          $ref: '#/components/schemas/MatrixFilters'
+      required:
+      - categories
+      - filters
+      - rating_choices
+      - rows
     SkillRating:
       type: object
       properties:
@@ -10250,6 +10538,16 @@ components:
       type: apiKey
       in: cookie
       name: sessionid
+    oauth2:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: /o/authorize/
+          tokenUrl: /o/token/
+          refreshUrl: /o/token/
+          scopes:
+            read: Read your CHAOTICA data
+            write: Make changes for you
     tokenAuth:
       type: apiKey
       in: header

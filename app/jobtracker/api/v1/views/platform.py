@@ -25,6 +25,7 @@ from ..serializers.platform import (
     MeSerializer,
     MetaSerializer,
     PreferencesSerializer,
+    RealtimeTicketSerializer,
     SearchResultsSerializer,
 )
 
@@ -92,7 +93,23 @@ class MetaView(ApiView):
                         if config.LOCAL_LOGIN_ENABLED
                         else None
                     ),
-                    "oauth": None,  # A8
+                    "oauth": (
+                        {
+                            "authorize_url": absolute(
+                                reverse("oauth2_provider:authorize")
+                            ),
+                            "token_url": absolute(reverse("oauth2_provider:token")),
+                            "revoke_url": absolute(
+                                reverse("oauth2_provider:revoke-token")
+                            ),
+                            "scopes": list(settings.OAUTH2_PROVIDER["SCOPES"]),
+                            "pkce": "S256",
+                            # Per app: from Settings → Connected Apps.
+                            "client_id": None,
+                        }
+                        if config.API_OAUTH2_ENABLED
+                        else None
+                    ),
                 },
                 "branding": {
                     "site_name": "CHAOTICA",
@@ -177,3 +194,24 @@ class SearchGotoView(ApiView):
         if obj is None:
             raise Http404
         return Response(make_ref(obj, request))
+
+
+class RealtimeTicketView(ApiView):
+    """A single-use, 30-second ticket for opening a WebSocket as yourself
+    (``wss://…/ws/me/?ticket=…`` or a ``ws/schedule/…`` socket) — for clients
+    that can't send the session cookie, e.g. OAuth2 apps."""
+
+    @extend_schema(
+        request=None, responses=RealtimeTicketSerializer, summary="WebSocket ticket"
+    )
+    def post(self, request):
+        from chaotica_utils.realtime import TICKET_TTL_SECONDS, issue_ticket
+
+        ws_scheme = "wss" if request.is_secure() else "ws"
+        return Response(
+            {
+                "ticket": issue_ticket(request.user),
+                "expires_in": TICKET_TTL_SECONDS,
+                "ws_url": f"{ws_scheme}://{request.get_host()}/ws/",
+            }
+        )

@@ -1,12 +1,14 @@
 """/api/v1/ serializers, one module per area."""
 
 from .platform import (  # noqa: F401
+    MetaOAuthSerializer,
     MetaAuthSerializer,
     MetaBrandingSerializer,
     MetaSerializer,
     MembershipSerializer,
     MeSerializer,
     PreferencesSerializer,
+    RealtimeTicketSerializer,
     SearchGroupSerializer,
     SearchResultsSerializer,
 )
@@ -102,6 +104,17 @@ from .catalogue import (  # noqa: F401
     ServiceListSerializer,
     AwardingBodySerializer,
     QualificationDetailSerializer,
+    MatrixCategorySerializer,
+    MatrixCellSerializer,
+    MatrixRowSerializer,
+    ChoiceSerializer,
+    MatrixFiltersSerializer,
+    SkillMatrixSerializer,
+    CoverageCountsSerializer,
+    CoveragePeopleSerializer,
+    CoverageSkillSerializer,
+    CoverageSummarySerializer,
+    ServiceCoverageSerializer,
 )
 from .dashboard import (  # noqa: F401
     QueueSerializer,

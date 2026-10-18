@@ -1,0 +1,30 @@
+{% load crispy_forms_tags %}
+<div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+    <div class="modal-content">
+        <form method="post" action="{{ request.get_full_path }}" class="js-submit-modal-form">
+            {% csrf_token %}
+            <div class="modal-header">
+                <h6 class="modal-title font-weight-normal" id="modal-title-default">
+                    {% if app %}Edit Connected App{% else %}Register Connected App{% endif %}
+                </h6>
+                <button type="button" class="btn-close text-body-emphasis" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="card-body p-3">
+                {% if app %}
+                <div class="mb-3">
+                    <label class="form-label">Client ID</label>
+                    <input type="text" class="form-control font-monospace" readonly value="{{ app.client_id }}">
+                    <div class="form-text">Give this to the app. It is a public client: there is no secret, sign-in uses PKCE.</div>
+                </div>
+                {% endif %}
+                {% crispy form %}
+            </div>
+            <div class="card-footer p-3">
+                <div class="text-end">
+                    <button class="btn btn-link text-danger" type="button" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-sm btn-primary px-5" type="submit">Save</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

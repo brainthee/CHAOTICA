@@ -8,6 +8,7 @@ from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 from rest_framework.views import APIView
 
 from ...policy import PolicyContext
+from .authentication import API_V1_AUTHENTICATION
 from .exceptions import v1_exception_handler
 from .filters import AliasOrderingFilter, QSearchFilter
 from .pagination import StandardResultsPagination
@@ -37,6 +38,7 @@ class ApiV1Mixin:
       which — they localise with the ``/me/`` timezone.
     """
 
+    authentication_classes = API_V1_AUTHENTICATION
     permission_classes = [
         MaintenanceModePermission,
         permissions.IsAuthenticated,

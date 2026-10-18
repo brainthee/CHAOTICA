@@ -78,6 +78,11 @@ urlpatterns = [
         dashboard.NotificationMarkAllReadView.as_view(),
         name="notifications-mark-all-read",
     ),
+    path(
+        "realtime/ticket/",
+        platform.RealtimeTicketView.as_view(),
+        name="realtime-ticket",
+    ),
     path("search/", platform.SearchView.as_view(), name="search"),
     path("search/goto/", platform.SearchGotoView.as_view(), name="search-goto"),
     path("", include(router.urls)),
