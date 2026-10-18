@@ -2,9 +2,6 @@
 
 from .models import Notification
 
-MAX_PAGE_SIZE = 100
-
-
 def notifications_for(user, unread_only=False):
     qs = Notification.objects.filter(user=user).order_by("-timestamp", "-pk")
     return qs.filter(read=False) if unread_only else qs

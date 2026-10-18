@@ -3,16 +3,13 @@ from .views import notifications, subscription_rules
 
 urlpatterns = [
     # Notifications
-    # Notification API endpoints
-    path('api/', notifications.notifications_api, name='notifications_api'),
-    path('api/mark-all-read/', notifications.mark_all_read, name='mark_all_read'),
+    # Widget data (list / count / read state) is served by /api/v1/notifications/.
     path('api/subscription/delete/', notifications.remove_notification_subscription, name='remove_notification_subscription'),
     path('api/subscription/update/', notifications.update_subscription_settings, name='update_subscription_settings'),
     path('api/follow/', notifications.follow_entity, name='follow_entity'),
     path('api/unfollow/', notifications.unfollow_entity, name='unfollow_entity'),
     path('api/subscription-status/', notifications.notification_subscription_status, name='notification_subscription_status'),
     path('api/user-subscriptions/', notifications.get_user_subscriptions, name='get_user_subscriptions'),
-    path('api/unread-count/', notifications.get_unread_count, name='get_unread_count'),
     path('api/types/', notifications.get_notification_types, name='get_notification_types'),
     path('settings/', notifications.notification_settings, name='notification_settings'),
     

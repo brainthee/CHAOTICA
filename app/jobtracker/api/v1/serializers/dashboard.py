@@ -87,6 +87,7 @@ class NotificationSerializer(serializers.Serializer):
     type = serializers.IntegerField()
     type_display = serializers.CharField()
     timestamp = serializers.DateTimeField()
+    timestamp_human = serializers.CharField(help_text="e.g. '3 hours ago'.")
     title = serializers.CharField()
     message = serializers.CharField()
     link = serializers.CharField(allow_null=True)
